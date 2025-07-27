@@ -1,0 +1,5 @@
+classes:
+  app.QuestNpcOverrideData:
+    to_string: "QuestNpcOverrideData QuestId={_IDValue}"
+  app.QuestNpcOverride:
+    to_string: "QuestNpcOverrideData QuestId={_QuestID} NpcID={_NpcID}"

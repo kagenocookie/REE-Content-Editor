@@ -1,0 +1,182 @@
+entities:
+  items.item_data:
+    enum:
+      name: app.ItemIDEnum
+      format: "It{id:06}"
+    custom_id_range: [30000, 65000]
+    to_string: "Item {id}: {name}"
+    fields:
+      # name and desc, now with enum injection support, might work by just modifying the msg files
+      # assuming enum is enough to make the game generate the msg key strings correctly, otherwise we need a runtime patch as well
+      name:
+        # msg is a built-in field type that handles msg file-by-key integration, assuming the same file for each message
+        # it will get saved as a per-lang dictionary in the mod patch.json { en: "My English name", jp: "超日本人です" }
+        type: msg
+        label: Name
+        required: true
+        # @{field} makes the string formatter use the raw value instead of the clean display value
+        # may need to left-pad with 0? use c# string.Format()?
+        param:
+          key: "item_name_{id}"
+          file: natives/stm/message/ui/itemname.msg.22
+      description:
+        type: msg
+        label: Description
+        required: true
+        param:
+          key: "item_detail_{id}"
+          file: natives/stm/message/ui/itemdetail.msg.22
+          multiline: true
+      data:
+        type: object
+        label: Data
+        required: true
+        param:
+          classname: app.ItemCommonParam
+          matchBy: _Id   # Optional - default always match by id (assuming the target object has an ID set defined)
+      icon:
+        display_after: description
+        # if we used vanilla tech, there would be a uvs file, added to the item master uvs file, and then an ID taken from there
+        # alternatively we use content editor runtime tech, the patch needs to be saved as a CE bundle with tex and rect info
+        type: DD2_ItemIcon
+      armorEnhanceData:
+        type: objectArray
+        label: Enhance data
+        display_after: icon
+        when_classname:
+          field: data
+          classname: app.ItemArmorParam
+        param:
+          classname: app.ArmorEnhanceParam
+      weaponEnhanceData:
+        type: objectArray
+        label: Enhance data
+        display_after: icon
+        when_classname:
+          field: data
+          classname: app.ItemWeaponParam
+        param:
+          classname: app.WeaponEnhanceParam
+
+classes:
+  app.ItemCommonParam:
+    id: [_Id]
+    group: item
+    type: item_data
+    fields:
+      _Id: { enum: app.ItemIDEnum, readOnly: true }
+      _Attr: { enum: app.ItemAttrBits }
+    subclasses:
+      app.ItemDataParam:
+        patcher:
+          type: array-file
+          file: natives/stm/appsystem/item/itemdata/itemdata.user.2
+      app.ItemWeaponParam:
+        patcher:
+          type: array-file
+          file: natives/stm/appsystem/item/itemdata/itemweapondata.user.2
+      app.ItemArmorParam:
+        patcher:
+          type: array-file
+          file: natives/stm/appsystem/item/itemdata/itemarmordata.user.2
+  app.ItemDataParam:
+    fields:
+      _FakeItemId: { enum: app.ItemIDEnum }
+      _DecayedItemId: { enum: app.ItemIDEnum }
+      _UseAttr: { enum: app.ItemUseAttrBits }
+  app.ItemWeaponParam:
+    fields:
+      _Job: { enum: ItemJobFlags }
+
+  app.EnhanceParamBase:
+    id: [_ItemId]
+    subId: [_Type, _EnhanceNo]
+    group: item
+    type: item_enhance
+    to_string: "{_Type} {_EnhanceNo}"
+    fields:
+      _Type: { enum: app.EnhanceType }
+      _ItemId: { enum: app.ItemIDEnum }
+      _NeedItemId0: { enum: app.ItemIDEnum }
+      _NeedItemId1: { enum: app.ItemIDEnum }
+    subclasses:
+      app.WeaponEnhanceParam:
+        patcher:
+          type: array-file
+          file: natives/stm/appsystem/item/itemdata/weaponenhancedata.user.2
+      app.ArmorEnhanceParam:
+        patcher:
+          type: array-file
+          file: natives/stm/appsystem/item/itemdata/armorenhancedata.user.2
+
+  app.ItemMixParam:
+    id: [_ItemId]
+    group: item
+    type: item_mix
+    fields:
+      _ItemID: { enum: app.ItemIDEnum }
+      _MaterialA: { tooltip: 'Combination requires any MaterialA + any MaterialB item' }
+      _MaterialB: { tooltip: 'Combination requires any MaterialA + any MaterialB item' }
+      _IsNoSame: { tooltip: "Disallow picking the same item if it's present in both material sets" }
+      _IsAutoMix: { tooltip: 'Possibly used for logistician?' }
+
+  app.ItemMixMaterialParam:
+    id: [_ItemID]
+    group: item
+    type: item_combination
+    fields:
+      _ItemId: { enum: app.ItemIDEnum }
+
+  app.ItemMixMaterialParam.CombineData:
+    id: [_PairList, _CombineItem]
+    fields:
+      _PairList: { label: Items, tooltip: Combining with any item from this list will create the combine item }
+      _CombineItem: { label: 'Output item' }
+      _CombineMakeNum: { label: 'Output count' }
+    to_string: "{_CombineItem}: {_PairList}"
+
+# custom user-defined types (mainly useful for the content editor part, not raw file editing)
+# need to have at least one field
+# types:
+#   _GuiRect:
+#     fields:
+#       x:
+#         type: float
+#       y:
+#         type: float
+#       w:
+#         type: float
+#       h:
+#         type: float
+#   DD2_ItemIcon:
+#     fields:
+#       icon_rect:
+#         type: _GuiRect
+#       icon_path:
+#         type: resource
+#         param:
+#           resource_type: tex
+#     example: # (this wouldn't be here but in the mod patch.json file and edited through UI)
+#       icon_path: npc_outfits_for_arisen/npc_item_icons_01.tex.760230703
+#       icon_rect: { "x": 314, "y": 314, "h": 152, "w": 152 } # TODO add tex header reading so we can determine a default rect automatically
+
+### config field descriptions
+# id: used to determine unique entities
+# group: category to group the entity under
+# type: simplified name of the individiual entity type; should be unique
+# subId: for cases where an entity has one main ID but several sub-instances (e.g. item upgrade options); will get displayed as a list in the UI
+# subclasses: list of subclasses of this entity type, each can have their own patcher configs
+# fields: list of fields and their enum and UI overrides
+# to_string: method to use to generate a quick preview string of the entity (e.g. combo list, when it's collapsed inside an array); if unspecified, concat the ID fields; if that's unspecified too, use classname
+# patcher: the method of patching this object type; if unspecified, it will get patched with whatever the closest patchable parent is; if there is none, it's only used for UI purposes
+
+# items within the same group, sharing the same ID, will get grouped into subcategories in the UI
+
+# unresolved: how do we handle cases that have arrays of multiple different subtypes? (e.g. if there were an item array that had ArmorData and WeaponData?) are there such cases even?
+
+### patcher types (naming TBD)
+# array-file: a single user file with the root object containing an array field (takes the first array field if multiple), containing every single entity of the type
+# file-catalog: a single user file that serves as a catalog of multiple array-file files
+# scn-catalog: a scn file containing linked scn files per entity (quests)
+# user-pfb-catalog: a user file containing a catalog of pfb files (style data, armor meshes, probably)
+

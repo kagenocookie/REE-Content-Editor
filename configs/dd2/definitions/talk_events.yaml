@@ -1,0 +1,20 @@
+classes:
+  app.TalkEventResourcePack.PackData:
+    to_string: "TalkEvent Pack TalkEventId={_Data._Id}"
+  app.TalkEventDefine.TalkEventData:
+    id: [_Id]
+    to_string: "TalkEvent Data Id={_Id}"
+  app.NpcCommonTalkData:
+    to_string: "CommonTalkData Voice={_VoiceVariation}"
+  app.NpcUniqueTalkData:
+    to_string: "UniqueTalkData CharaID={_CharaID}"
+  app.NpcSituationTalkData:
+    to_string: "NpcSituationTalkData [{_ID}] {_Name}"
+  app.NpcCommonTalkSituation:
+    to_string: "CommonTalkSituation [{_ID}] {_Name}"
+  app.NpcJobTypeTalkSituations:
+    to_string: "JobTypeTalkSituations {_JobType}"
+  app.Ch230TalkData:
+    to_string: "Ch230TalkData Voice={_Voice}"
+  app.NpcTalkForbiddenData:
+    to_string: "NpcTalkForbiddenData {_CharaID}"

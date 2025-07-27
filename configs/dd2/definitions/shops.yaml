@@ -1,0 +1,51 @@
+entities:
+  shop:
+    fields:
+      data:
+        type: object
+        param:
+          classname: app.ItemShopParam
+      # name:
+      #   type: msg-guid
+      #   hidden: true
+      #   param:
+      #     file: natives/stm/message/ui/ailocalareaname.msg.22
+      #     guid: "data._ShopNameId"
+      #     key: shop_name_{id} # used when a new message key/name needs to be generated for custom entries
+    to_string: "Shop {id}: {data._ShopNameId}"
+
+classes:
+  app.ItemShopParam:
+    id: [_ShopId]
+    group: shop
+    type: shop
+    fields:
+      _ShopNameId: { translate_guid: true, translate_fallback_enum: ShopNameOverrides }
+    patcher:
+      type: array-file
+      file: appsystem/item/itemshopdata/itemshopdata.user.2
+    # TODO support actuall field string resolution (find translation) instead of plain values
+    to_string: "{_ShopId}: {_ShopNameId}"
+
+  app.ItemShopSellParam:
+    id: [_ItemId]
+    fields:
+      _ItemId: { enum: app.ItemIDEnum }
+    to_string: "{_ItemId}"
+
+  app.ItemShopBuyParam:
+    id: [_ItemId, _Stock, _ReleaseQuestId]
+    fields:
+      _ItemId: { enum: app.ItemIDEnum }
+    to_string: "{_ItemId} [{_Stock} stock, quest {_ReleaseQuestId}]"
+
+
+  app.GenerateTableData:
+    id: [_TableID]
+    group: spawns
+    type: autoset_spawns
+
+  app.GenerateRowData:
+    id: [_ManualSetGuid, _AutoSetGuid] ## TODO: verify are these really unique?
+    fields:
+      _CharaID: { enum: app.CharacterID }

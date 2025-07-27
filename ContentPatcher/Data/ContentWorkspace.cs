@@ -1,0 +1,110 @@
+using ContentEditor;
+using ContentEditor.Core;
+using ReeLib;
+
+namespace ContentPatcher;
+
+public class ContentWorkspace
+{
+    public Workspace Env { get; }
+    public ResourceManager ResourceManager { get; }
+    public ContentWorkspaceData Data { get; set; } = new();
+    public PatchDataContainer Config { get; }
+    public BundleManager BundleManager { get; set; }
+    public BundleManager? EditedBundleManager { get; private set; }
+    public Bundle? CurrentBundle { get; private set; }
+    public DiffHandler Diff { get; }
+    public GameIdentifier Game => Env.Config.Game;
+    public string VersionHash { get; private set; }
+
+    public ContentWorkspace(Workspace env, PatchDataContainer patchConfig, BundleManager? rootBundleManager = null)
+    {
+        Env = env;
+        Config = patchConfig;
+        BundleManager = rootBundleManager ?? new();
+        BundleManager.GamePath = env.Config.GamePath;
+        Diff = new DiffHandler(env);
+        ResourceManager = new ResourceManager(patchConfig);
+        if (!patchConfig.Entities.Any()) {
+            patchConfig.LoadPatchConfigs(env.RszParser);
+        }
+        VersionHash = ExeUtils.GetGameVersionHash(env);
+        ResourceManager.Setup(this);
+    }
+
+    public void SetBundle(string? bundle)
+    {
+        if (bundle == null) {
+            EditedBundleManager = null;
+            if (Data.ContentBundle != null) {
+                Data.ContentBundle = null;
+            }
+            CurrentBundle = null;
+            ResourceManager.SetBundle(BundleManager, null);
+            return;
+        }
+
+        if (Data.ContentBundle != bundle || EditedBundleManager == null) {
+            if (Data.Name == null) Data.Name = bundle;
+            Data.ContentBundle = bundle;
+            EditedBundleManager = BundleManager.GetBundleSpecificManager(bundle);
+            CurrentBundle = EditedBundleManager.GetBundle(bundle, null);
+            ResourceManager.SetBundle(EditedBundleManager, CurrentBundle);
+        }
+    }
+
+    public void SaveBundle()
+    {
+        if (Data.ContentBundle == null) {
+            return;
+        }
+
+        var bundle = EditedBundleManager?.GetBundle(Data.ContentBundle, null) ?? BundleManager.GetBundle(Data.ContentBundle, null);
+        if (bundle == null) {
+            WindowManager.Instance.ShowError($"Bundle '{Data.ContentBundle}' not found!");
+            return;
+        }
+
+        var deletes = new List<int>();
+        for (int i = 0; i < bundle.Entities.Count; i++) {
+            var entity = bundle.Entities[i];
+            if (entity is not ResourceEntity) {
+                // if it wasn't updated to a ResourceEntity, no resources were activated, therefore nothing was changed
+                continue;
+            }
+
+            var activeEntity = ResourceManager.GetActiveEntityInstance(entity.Type, entity.Id);
+            if (activeEntity == null) {
+                deletes.Add(i);
+                continue;
+            }
+
+            entity.Data = activeEntity?.CalculateDiff(this);
+            if (entity.Data == null) {
+                deletes.Add(i);
+                continue;
+            }
+
+            Logger.Debug($"Saving modified entity {entity.Label}");
+        }
+
+        deletes.Reverse();
+        foreach (var del in deletes) {
+            Logger.Info($"Removed entity {bundle.Entities[del].Label}");
+            bundle.Entities.RemoveAt(del);
+        }
+        bundle.GameVersion = VersionHash;
+
+        (EditedBundleManager ?? BundleManager).SaveBundle(bundle);
+    }
+
+    public override string ToString() => Data.Name ?? "New Workspace";
+}
+
+// serialized
+public class ContentWorkspaceData
+{
+    public string? Name { get; set; }
+    public string? ContentBundle { get; set; }
+    public List<WindowData> Windows { get; set; } = new();
+}

@@ -1,0 +1,3 @@
+[submodule "RE-Engine-Lib"]
+	path = RE-Engine-Lib
+	url = https://github.com/kagenocookie/RE-Engine-Lib.git

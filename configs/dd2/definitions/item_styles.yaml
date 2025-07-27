@@ -1,0 +1,22 @@
+entities:
+  items.style.TopsStyle:
+    group: styles
+    to_string: "Style {data[0]._TopsStyle}"
+    custom_id_range: [10000, 32700] #_StyleNo on the armor data is a signed short so we need to limit to that range
+    fields:
+      data:
+        type: objectArray
+        label: Data
+        required: true
+        param:
+          classname: app.TopsSwapItem
+
+classes:
+  app.TopsSwapItem:
+    id: [_TopsStyle]
+    subId: [_Gender]
+    to_string: "{class_shortname} {_TopsStyle} {_Gender}"
+    group: item
+    patcher:
+      type: array-file
+      file: natives/stm/appsystem/charaedit/ch000/swapdata/topsswapdata.user.2

@@ -1,0 +1,7 @@
+classes:
+  app.charaedit.ch000.EditDataTable.Data:
+    to_string: "EditDataTable CharacterID={_CharacterID}"
+  app.facial.LipSync.Phoneme:
+    to_string: "Phoneme: SoundID={_SoundMediaID}, duration={_TotalTime}"
+  app.facial.LipSync.Phoneme.KeyFrame:
+    to_string: "Keyframe {_Time} Vowel={_Vowel}"

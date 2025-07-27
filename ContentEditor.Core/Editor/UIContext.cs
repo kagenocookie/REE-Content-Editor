@@ -1,0 +1,249 @@
+using ContentEditor.Editor;
+using ImGuiNET;
+
+namespace ContentEditor;
+
+public class UIContext
+{
+    public string? state;
+    public UIOptions options;
+    public object? target;
+    public object? owner;
+    public UIContext root;
+    public FieldDisplaySettings? displaySettings;
+    public string label;
+    // public string field = string.Empty;
+    public object? originalValue;
+    private Func<UIContext, object?> getter;
+    private Action<UIContext, object?> setter;
+    public UIContext? parent;
+    public IObjectUIHandler? uiHandler;
+    public readonly List<UIContext> children = new();
+    public StringFormatter? stringFormatter;
+    private bool wasChanged;
+
+    public bool Changed
+    {
+        get => wasChanged;
+        set { if (value) SetChangedInParents(); else SetUnchanged(); }
+    }
+
+    public UIContext(string label, object? target, UIContext root, Func<UIContext, object?> getter, Action<UIContext, object?> setter, UIOptions options)
+    {
+        this.target = target;
+        this.label = label;
+        this.getter = getter;
+        this.setter = setter;
+        this.options = options;
+        this.root = root;
+        originalValue = GetRaw();
+    }
+
+    public static UIContext CreateRootContext(string label, object instance, UIOptions? options = null)
+    {
+        var root = new UIContext(label, instance, null!, (ctx) => ctx.target, (_, _) => throw new NotImplementedException(), options ?? new UIOptions());
+        root.root = root;
+        return root;
+    }
+
+    public UIContext? GetChild(int index) => index >= 0 && index < children.Count ? children[index] : null;
+    public UIContext? GetChild(object target)
+    {
+        foreach (var child in children) {
+            if (child.target == target) return child;
+        }
+        return null;
+    }
+    public UIContext? GetChild<T>() where T : IObjectUIHandler => children.FirstOrDefault(ch => ch.uiHandler is T);
+    public UIContext? GetChildByValue<T>() => children.FirstOrDefault(ch => ch.target is T);
+    public T? GetChildValue<T>() => (T?)children.FirstOrDefault(ch => ch.target is T)?.target;
+
+    public UIContext AddChild(string label, object? instance, IObjectUIHandler? handler = null, Func<UIContext, object?>? getter = null, Action<UIContext, object?>? setter = null)
+    {
+        setter ??= ((_, _) => throw new NotImplementedException());
+        var child = new UIContext(label, instance, root, getter ?? ((ctx) => ctx.target), setter, options) {
+            parent = this,
+        };
+        child.uiHandler = handler;
+        children.Add(child);
+        return child;
+    }
+    public UIContext AddChild<TTarget, TValue>(string label, TTarget? instance, IObjectUIHandler? handler = null, Func<TTarget?, object?>? getter = null, Action<TTarget, TValue?>? setter = null)
+    {
+        Func<UIContext, object?> boxedGetter = getter == null ? (ctx) => ctx.target : (ctx) => getter((TTarget?)ctx.target);
+        Action<UIContext, object?>? boxedSetter = setter == null ? null : (ctx, val) => {
+            setter.Invoke((TTarget)ctx.target!, (TValue?)val);
+        };
+        boxedSetter ??= ((_, _) => throw new NotImplementedException());
+        var child = new UIContext(label, instance, root, boxedGetter, boxedSetter, options) {
+            parent = this,
+        };
+        child.uiHandler = handler;
+        children.Add(child);
+        return child;
+    }
+
+    public bool IsChildOf(UIContext context)
+    {
+        var parent = this.parent;
+        while (parent != null) {
+            if (parent == context) return true;
+            parent = parent.parent;
+        }
+        return false;
+    }
+
+    private void SetChangedInParents()
+    {
+        SetChangedInParentsImpl(new EditorUIEvent(UIContextEvent.Changed, this));
+    }
+
+    private void SetChangedInParentsImpl(EditorUIEvent eventData)
+    {
+        wasChanged = true;
+        if (parent != null) {
+            if (uiHandler is IUIContextEventHandler handler) {
+                if (!handler.HandleEvent(this, eventData)) {
+                    return;
+                }
+            }
+            parent.SetChangedInParentsImpl(eventData);
+        }
+    }
+    public void SetChangedNoPropagate(bool changed)
+    {
+        wasChanged = changed;
+    }
+
+    private void SetUnchanged()
+    {
+        SetUnchangedImpl(new EditorUIEvent(UIContextEvent.Reverted, this));
+    }
+
+    private void SetUnchangedImpl(EditorUIEvent eventData)
+    {
+        if (!children.Any(c => c.Changed)) {
+            wasChanged = false;
+            if (parent != null) {
+                if (uiHandler is IUIContextEventHandler handler) {
+                    if (handler.HandleEvent(this, eventData)) {
+                        return;
+                    }
+                }
+                parent.SetUnchanged();
+            }
+        }
+    }
+
+    public void Revert()
+    {
+        RevertImpl(new EditorUIEvent(UIContextEvent.Reverting, this));
+    }
+
+    private void RevertImpl(EditorUIEvent eventData)
+    {
+        if (uiHandler is IUIContextEventHandler changedHandler) {
+            if (!changedHandler.HandleEvent(this, eventData)) {
+                return;
+            }
+        }
+        foreach (var child in children) {
+            child.RevertImpl(eventData);
+        }
+        if (originalValue != null) {
+            Set(originalValue);
+        }
+    }
+
+    public object? GetRaw() => getter.Invoke(this);
+    public T Get<T>() => (T?)getter.Invoke(this)!;
+    public T? Cast<T>() where T : class => getter.Invoke(this) as T;
+    public void Set<T>(T value)
+    {
+        setter.Invoke(this, value);
+        if (originalValue != null && originalValue.Equals(value)) {
+            SetUnchanged();
+        } else {
+            SetChangedInParents();
+        }
+    }
+
+    public void ClearChildren()
+    {
+        foreach (var child in children) {
+            (child.target as IDisposable)?.Dispose();
+            (child.uiHandler as IDisposable)?.Dispose();
+            child.ClearChildren();
+        }
+        children.Clear();
+    }
+
+    public void ShowUI()
+    {
+        if (uiHandler != null) {
+            uiHandler.OnIMGUI(this);
+        } else {
+            ImGui.TextColored(Colors.Error, $"{label} (unsupported type {GetRaw()?.GetType().Name ?? "NULL"} for value {GetRaw()})");
+        }
+    }
+
+    public void RemoveChild(UIContext context)
+    {
+        children.Remove(context);
+    }
+}
+
+public class FieldDisplaySettings
+{
+    public string? tooltip;
+    public int marginBefore;
+    public int marginAfter;
+}
+
+public class UIOptions
+{
+    public bool isReadonly;
+}
+
+public interface IObjectUIHandler
+{
+    void OnIMGUI(UIContext container);
+}
+
+public enum UIContextEvent
+{
+    /// <summary>
+    /// Any value was changed. Propagates upward.
+    /// </summary>
+    Changed,
+    /// <summary>
+    /// Any child value was reverted. Propagates upward.
+    /// </summary>
+    Reverted,
+    /// <summary>
+    /// The value is reverting. Propagates downward.
+    /// </summary>
+    Reverting,
+}
+
+
+/// <summary>
+/// A custom implementation for UIContext event handling.
+/// </summary>
+public interface IUIContextEventHandler
+{
+    /// <summary>
+    /// Handles a triggered editor event.
+    /// </summary>
+    /// <param name="context">The context that is currently invoking the event</param>
+    /// <param name="eventData">The event data</param>
+    /// <returns>True if the event should propagate, false if not.</returns>
+    bool HandleEvent(UIContext context, EditorUIEvent eventData);
+}
+
+/// <summary>
+/// Contains an editor event data.
+/// </summary>
+/// <param name="type">The event type that was triggered.</param>
+/// <param name="origin">The UIContext instance from which the event originates.</param>
+public readonly record struct EditorUIEvent(UIContextEvent type, UIContext origin);

@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net8.0;net8.0-windows</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <VersionPrefix>0.0.0</VersionPrefix>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Silk.NET" Version="2.22.0" />
+    <!-- <PackageReference Include="Silk.NET.Assimp" Version="2.22.0" /> -->
+    <PackageReference Include="Silk.NET.OpenGL.Extensions.ImGui" Version="2.22.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ContentPatcher\ContentPatcher.csproj" />
+    <ProjectReference Include="..\ContentEditor.App.PlatformShared\ContentEditor.App.PlatformShared.csproj" />
+    <ProjectReference Include="..\ContentEditor.App.Windows\ContentEditor.App.Windows.csproj" Condition="'$(TargetFramework)'=='net8.0-windows'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RE-Engine-Lib\REE-Lib.Tools\REE-Lib.Tools.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Shaders/**/*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="fonts/*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

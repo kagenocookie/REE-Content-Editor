@@ -1,0 +1,110 @@
+root = true
+
+# All Files
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+
+# JSON Files
+[*.{json}]
+indent_size = 2
+
+# YAML Files
+[*.{yml,yaml}]
+indent_size = 2
+
+[*_Generated.cs, *.g.cs, *.generated.cs]
+# Ignore a lack of documentation for generated code. Doesn't apply to builds,
+# just to viewing generation output.
+dotnet_diagnostic.CS1591.severity = none
+
+######## style settings
+
+# Dotnet namespace options
+#
+# We don't care about namespaces matching folder structure. Games and apps
+# are complicated and you are free to organize them however you like. Change
+# this if you want to enforce it.
+dotnet_style_namespace_match_folder = false
+dotnet_diagnostic.IDE0130.severity = none
+
+# C# formatting rules
+[*.{cs,csx,cake}]
+
+indent_size = 4
+dotnet_analyzer_diagnostic.category-Style.severity = none
+dotnet_diagnostic.CA2201.severity = none
+
+# Newline options
+csharp_new_line_before_open_brace = methods,types
+csharp_new_line_before_else = false
+csharp_new_line_before_catch = false
+csharp_new_line_before_finally = false
+csharp_new_line_before_members_in_object_initializers = false
+csharp_new_line_before_members_in_anonymous_types = false
+csharp_new_line_between_query_expression_clauses = false
+
+# Indentation options
+csharp_indent_switch_labels = true
+csharp_indent_case_contents = true
+csharp_indent_case_contents_when_block = true
+csharp_indent_labels = no_change
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+
+# Spacing options
+csharp_space_after_cast = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_between_parentheses = false
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_around_binary_operators = before_and_after
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false
+csharp_space_between_method_declaration_name_and_open_parenthesis = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_method_call_empty_parameter_list_parentheses = false
+csharp_space_between_method_call_name_and_opening_parenthesis = false
+csharp_space_after_comma = true
+csharp_space_before_comma = false
+csharp_space_after_dot = false
+csharp_space_before_dot = false
+csharp_space_after_semicolon_in_for_statement = true
+csharp_space_before_semicolon_in_for_statement = false
+csharp_space_around_declaration_statements = false
+csharp_space_before_open_square_brackets = false
+csharp_space_between_empty_square_brackets = false
+csharp_space_between_square_brackets = false
+
+# Wrap options
+csharp_preserve_single_line_statements = true
+csharp_preserve_single_line_blocks = true
+
+# Namespace options
+csharp_style_namespace_declarations = file_scoped:warning
+
+########### warnings
+[*.cs]
+
+# CA1725: Parameter names should match base declaration
+dotnet_diagnostic.CA1725.severity = none
+
+# CA1708: Identifiers should differ by more than case
+dotnet_diagnostic.CA1708.severity = none
+
+# CA1720: Identifier contains type name
+dotnet_diagnostic.CA1720.severity = none
+
+# CA1720: Identifier contains type name
+dotnet_diagnostic.CA1863.severity = suggestion
+
+# RS2008: Enable analyzer release tracking for the analyzer project containing rule 'RSZT001'
+dotnet_diagnostic.RS2008.severity = suggestion
+
+dotnet_diagnostic.IDE0130.severity = none
+
+dotnet_diagnostic.IDE0305.severity = none
