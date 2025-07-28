@@ -1,5 +1,6 @@
 using ContentEditor;
 using ContentEditor.Core;
+using ContentEditor.Editor;
 using ReeLib;
 
 namespace ContentPatcher;
@@ -51,6 +52,20 @@ public class ContentWorkspace
             CurrentBundle = EditedBundleManager.GetBundle(bundle, null);
             ResourceManager.SetBundle(EditedBundleManager, CurrentBundle);
         }
+    }
+
+    public int SaveModifiedFiles(IRectWindow? parent = null)
+    {
+        int count = 0;
+        foreach (var file in ResourceManager.GetModifiedResourceFiles()) {
+            if (file.Modified) {
+                if (parent == null || file.References.Any(ff => ff.Parent == parent)) {
+                    file.Save(this);
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     public void SaveBundle()

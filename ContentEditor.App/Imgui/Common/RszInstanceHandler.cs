@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Numerics;
+using System.Reflection;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -35,6 +36,10 @@ public class NestedRszInstanceHandler : IObjectUIHandler
             _wasInit = true;
             context.stringFormatter = WindowHandlerFactory.GetStringFormatter(instance);
         }
+        if (instance.Fields.Length == 0) {
+            // no point in showing it in the UI - at least until we add subclass selection
+            return;
+        }
         if (!ForceDefaultClose) {
             ImGui.SetNextItemOpen(instance.Fields.Length <= 3, ImGuiCond.FirstUseEver);
         }
@@ -52,52 +57,30 @@ public class NestedRszInstanceHandler : IObjectUIHandler
     }
 }
 
-public class ArrayRSZHandler : IObjectUIHandler
+public class ArrayRSZHandler : BaseListHandler
 {
     private RszField field;
-    public bool fixedSize;
 
     public ArrayRSZHandler(RszField field)
     {
         this.field = field;
     }
 
-    public void OnIMGUI(UIContext context)
+    protected override UIContext CreateElementContext(UIContext context, IList list, int elementIndex)
     {
-        var list = context.Get<IList>();
-        if (ImguiHelpers.TreeNodeSuffix(context.label, $"({list.Count})")) {
-            for (int i = 0; i < list.Count; ++i) {
-                ImGui.PushID(i);
-                if (i >= context.children.Count) {
-                    var ctx = WindowHandlerFactory.CreateRSZArrayElementContext(context, i);
-                    WindowHandlerFactory.CreateRSZFieldElementHandler(ctx, field);
-                    if (list.Count > 300 && ctx.uiHandler is NestedRszInstanceHandler lazy) {
-                        lazy.ForceDefaultClose = true;
-                    }
-                    context.children.Add(ctx);
-                }
-                var child = context.children[i];
-                var remove = !fixedSize && ImGui.Button("X");
-                ImGui.SameLine();
-                child.ShowUI();
-                if (remove) {
-                    int fixed_i = i;
-                    var item = list[i];
-                    UndoRedo.RecordListRemove(context, list, i);
-                    i--;
-                }
-                ImGui.PopID();
-            }
-            var env = context.GetWorkspace();
-            if (env != null) {
-                if (!fixedSize && ImGui.Button("Add")) {
-                    UndoRedo.RecordListAdd(context, list, RszInstance.CreateArrayItem(env.Env.RszParser, field));
-                }
-            } else {
-                ImGui.TextColored(Colors.Warning, "Root container does not support array element creation");
-            }
-            ImGui.TreePop();
+        var ctx = WindowHandlerFactory.CreateListElementContext(context, elementIndex);
+        WindowHandlerFactory.CreateRSZFieldElementHandler(ctx, field);
+        if (list.Count > 300 && ctx.uiHandler is NestedRszInstanceHandler lazy) {
+            lazy.ForceDefaultClose = true;
         }
+        return ctx;
+    }
+
+    protected override object? CreateNewElement(UIContext context)
+    {
+        var env = context.GetWorkspace();
+        if (env == null) return null;
+        return RszInstance.CreateArrayItem(env.Env.RszParser, field);
     }
 }
 
@@ -483,16 +466,33 @@ public class LabelHandler : IObjectUIHandler
 
 public class UnsupportedHandler : IObjectUIHandler
 {
-    public UnsupportedHandler(RszField field)
+    public UnsupportedHandler()
     {
-        Field = field;
+        FieldType = "unknown";
     }
 
-    public RszField Field { get; }
+    public UnsupportedHandler(RszField field)
+    {
+        FieldType = field.type.ToString();
+    }
+
+    public UnsupportedHandler(Type? type)
+    {
+        FieldType = type?.Name ?? "unknown";
+    }
+
+    public UnsupportedHandler(FieldInfo field) : this(field.FieldType) { }
+
+    public UnsupportedHandler(MemberInfo field)
+    {
+        FieldType = ((field as FieldInfo)?.FieldType)?.Name ?? (field as PropertyInfo)?.PropertyType?.Name ?? "unknown";
+    }
+
+    public string FieldType { get; }
 
     public void OnIMGUI(UIContext context)
     {
-        ImGui.TextColored(Colors.Error, $"{context.label} (unsupported {Field.type} value {context.GetRaw() ?? "NULL"})");
+        ImGui.TextColored(Colors.Error, $"{context.label} (unsupported {FieldType} value {context.GetRaw() ?? "NULL"})");
     }
 }
 

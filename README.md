@@ -5,6 +5,13 @@ Besides basic file editing, the tool is able to merge multiple changes to the sa
 
 The patcher currently works by emitting patches files directly into the natives folder, so it needs the loose file loader enabled on runtime. Files can alternatively be packed into a PAK file (manually, not directly with this tool yet).
 
+## Supported games
+- All mainline Resident Evil games
+- Dragon's Dogma 2
+- Devil May Cry 5
+
+Some files may not fully work for other RE ENGINE games.
+
 ## File support
 
 <div align="center">
@@ -17,15 +24,18 @@ The patcher currently works by emitting patches files directly into the natives 
 | .uvs      | ☑️ read/write | | |
 | .tex, .dds  | view only | | TEX/DDS conversion, better preview controls |
 | common image formats | view only | | TEX/DDS conversion, channel merging |
-| .pfb      | coming soon | coming soon | 3D display |
-| .scn      | coming soon | coming soon | 3D display |
-| .uvar     | coming soon | coming soon | expression node graph |
-| .mdf2     | coming soon | coming soon | material preview |
-| .efx      | coming soon | coming soon | graphic preview |
-| .rcol     | coming soon | coming soon | 3D display, overlay with mesh/pfb |
+| .pfb      | raw data read/write | coming soon | 3D display |
+| .scn      | raw data read/write | coming soon | 3D display |
+| .uvar     | raw data read/write | coming soon | expression node graph |
+| .mdf2     | raw data read/write | coming soon | material preview |
+| .efx      | raw data read/write | coming soon | graphic preview |
+| .rcol     | raw data read/write | coming soon | 3D display, overlay with mesh/pfb |
+| .motlist  | raw data read/write | coming not soon | data display, editing, patching |
 | .mesh     | coming not soon | | 3D display |
-| .motlist  | coming not soon | coming not soon | data display, editing, patching |
-| .ainvm  | coming not soon | | data display, 3D display, editing |
+| .mcol     | raw data read/write | | 3D display |
+| .ainvm    | raw data read/write | | data display, 3D display, editing |
+| .cdef, .def | ☑️ read/write | | |
+| .hf, .chf, .cmat, .cfil | raw data read/write | | |
 
 </div>
 

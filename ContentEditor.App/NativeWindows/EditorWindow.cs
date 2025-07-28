@@ -113,6 +113,8 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
             AddSubwindow(handler);
         } else if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {
             AddSubwindow(new TextureViewer(file));
+        } else if (file.Resource is not DummyFileResource) {
+            AddSubwindow(new RawDataEditor(workspace, file));
         } else {
             workspace.ResourceManager.CloseFile(file);
             AddSubwindow(new ErrorModal("Unsupported file", "File is not supported for editing:\n" + file.Filepath));
@@ -201,7 +203,7 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
             if (workspace != null) {
                 ImGui.BeginDisabled(!hasUnsavedFiles);
                 if (ImGui.MenuItem("Save modified files")) {
-                    workspace.SaveBundle();
+                    workspace.SaveModifiedFiles();
                 }
                 if (!hasUnsavedFiles && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.SetItemTooltip("No files have been modified yet.");
                 if (ImGui.MenuItem("Revert modified files")) {

@@ -4,7 +4,7 @@ using ReeLib;
 
 namespace ContentEditor.App.ImguiHandling;
 
-public class UserDataFileEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObjectUIHandler, IUIContextEventHandler
+public class UserDataFileEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObjectUIHandler
 {
     public override string HandlerName => "UserData";
 
@@ -28,11 +28,6 @@ public class UserDataFileEditor : FileEditor, IWorkspaceContainer, IRSZFileEdito
     {
         Reset();
         Instance = File.RSZ.ObjectList.FirstOrDefault();
-    }
-
-    protected override void OnFileSaved()
-    {
-        // Reset();
     }
 
     private void Reset()
@@ -64,29 +59,5 @@ public class UserDataFileEditor : FileEditor, IWorkspaceContainer, IRSZFileEdito
     void IObjectUIHandler.OnIMGUI(UIContext container)
     {
         this.OnIMGUI();
-    }
-
-    public bool HandleEvent(UIContext context, EditorUIEvent eventData)
-    {
-        if (eventData.type == UIContextEvent.Changed) {
-            var ws = context.GetWorkspace();
-            if (ws != null) {
-                ws.ResourceManager.MarkFileResourceModified(Filename, true);
-            }
-        }
-        if (eventData.type == UIContextEvent.Reverting) {
-            if (eventData.origin.IsChildOf(context)) {
-                return false;
-            }
-
-            if (eventData.origin == context) {
-                var ws = context.GetWorkspace();
-                if (ws != null) {
-                    ws.ResourceManager.MarkFileResourceModified(Filename, false);
-                }
-            }
-
-        }
-        return false;
     }
 }

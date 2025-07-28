@@ -1,4 +1,5 @@
 using ContentEditor.Core;
+using ContentEditor.Editor;
 using ReeLib;
 
 namespace ContentPatcher;
@@ -95,6 +96,7 @@ public enum FileHandleType
 public interface IFileHandleReferenceHolder
 {
     bool IsClosable { get; }
+    IRectWindow? Parent { get; }
 
     void Close();
 }

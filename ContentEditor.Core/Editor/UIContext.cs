@@ -93,6 +93,9 @@ public class UIContext
         return false;
     }
 
+    /// <summary>
+    /// Marks the value as changed, propagates to parents.
+    /// </summary>
     private void SetChangedInParents()
     {
         SetChangedInParentsImpl(new EditorUIEvent(UIContextEvent.Changed, this));
@@ -115,6 +118,9 @@ public class UIContext
         wasChanged = changed;
     }
 
+    /// <summary>
+    /// Marks this value as unchanged, propagates to parents as long as all their children are also unchanged.
+    /// </summary>
     private void SetUnchanged()
     {
         SetUnchangedImpl(new EditorUIEvent(UIContextEvent.Reverted, this));
@@ -135,6 +141,9 @@ public class UIContext
         }
     }
 
+    /// <summary>
+    /// Revert this and children's value to their original values.
+    /// </summary>
     public void Revert()
     {
         RevertImpl(new EditorUIEvent(UIContextEvent.Reverting, this));
@@ -152,6 +161,30 @@ public class UIContext
         }
         if (originalValue != null) {
             Set(originalValue);
+        }
+    }
+
+    /// <summary>
+    /// Notifies the value and all child values of a save event and update their original values.
+    /// </summary>
+    public void Save()
+    {
+        SaveImpl(new EditorUIEvent(UIContextEvent.Saved, this));
+    }
+
+    private void SaveImpl(EditorUIEvent eventData)
+    {
+        if (uiHandler is IUIContextEventHandler changedHandler) {
+            if (!changedHandler.HandleEvent(this, eventData)) {
+                return;
+            }
+        }
+        if (getter != null) {
+            originalValue = getter?.Invoke(this);
+            wasChanged = false;
+        }
+        foreach (var child in children) {
+            child.SaveImpl(eventData);
         }
     }
 
@@ -191,6 +224,8 @@ public class UIContext
     {
         children.Remove(context);
     }
+
+    public override string ToString() => $"{label} ({target})";
 }
 
 public class FieldDisplaySettings
@@ -224,6 +259,10 @@ public enum UIContextEvent
     /// The value is reverting. Propagates downward.
     /// </summary>
     Reverting,
+    /// <summary>
+    /// The value was saved. Propagates downward.
+    /// </summary>
+    Saved,
 }
 
 

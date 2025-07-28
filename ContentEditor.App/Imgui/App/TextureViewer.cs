@@ -1,6 +1,7 @@
 using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
+using ContentEditor.Editor;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
@@ -14,6 +15,8 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
     public string HandlerName => $"Texture Viewer";
 
     public bool IsClosable => true;
+
+    IRectWindow? IFileHandleReferenceHolder.Parent => data.ParentWindow;
 
     private Texture? texture;
     private string? texturePath;

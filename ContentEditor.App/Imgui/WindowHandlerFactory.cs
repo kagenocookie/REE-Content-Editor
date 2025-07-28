@@ -1,10 +1,14 @@
 using System.Collections;
+using System.Collections.ObjectModel;
+using System.Numerics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.Editor;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Efx;
+using ReeLib.Motbank;
 
 namespace ContentEditor.App;
 
@@ -40,6 +44,43 @@ public partial class WindowHandlerFactory
 
     private static bool showPrettyLabels = true;
     private static readonly Dictionary<string, string> prettyLabels = new();
+    private static readonly HashSet<Type> reflectionIgnoredTypes = [typeof(FileHandler), typeof(RszFileOption)];
+    private static readonly HashSet<string> ignoredProperties = ["set_Item", "get_Item"];
+    private static readonly HashSet<(Type type, string field)> ignoredFields = [
+        (typeof(BaseModel), nameof(BaseModel.Size)),
+        (typeof(BaseModel), nameof(BaseModel.Start)),
+        (typeof(BaseFile), nameof(BaseFile.Size)),
+        (typeof(BaseFile), nameof(BaseFile.Embedded)),
+        (typeof(MotlistItem), nameof(MotlistItem.Version))
+    ];
+    private static HashSet<Type> genericListTypes = [typeof(List<>), typeof(ObservableCollection<>)];
+
+    private static readonly Dictionary<Type, Func<IObjectUIHandler>> csharpTypeHandlers = new()
+    {
+        { typeof(sbyte), () => new NumericFieldHandler<sbyte>(ImGuiNET.ImGuiDataType.S8) },
+        { typeof(byte), () => new NumericFieldHandler<byte>(ImGuiNET.ImGuiDataType.U8) },
+        { typeof(short), () => new NumericFieldHandler<short>(ImGuiNET.ImGuiDataType.S16) },
+        { typeof(ushort), () => new NumericFieldHandler<ushort>(ImGuiNET.ImGuiDataType.U16) },
+        { typeof(int), () => new NumericFieldHandler<int>(ImGuiNET.ImGuiDataType.S32) },
+        { typeof(uint), () => new NumericFieldHandler<uint>(ImGuiNET.ImGuiDataType.U32) },
+        { typeof(long), () => new NumericFieldHandler<long>(ImGuiNET.ImGuiDataType.S64) },
+        { typeof(ulong), () => new NumericFieldHandler<ulong>(ImGuiNET.ImGuiDataType.U64) },
+        { typeof(string), () => new StringFieldHandler() },
+        { typeof(Guid), () => new GuidFieldHandler() },
+        { typeof(bool), () => new BoolFieldHandler() },
+        { typeof(Vector2), () => new Vector2FieldHandler() },
+        { typeof(Vector3), () => new Vector3FieldHandler() },
+        { typeof(Vector4), () => new Vector4FieldHandler() },
+        { typeof(ReeLib.via.Position), () => new PositionFieldHandler() },
+        { typeof(ReeLib.via.Range), () => new RangeFieldHandler() },
+        { typeof(ReeLib.via.RangeI), () => new IntRangeFieldHandler() },
+        { typeof(ReeLib.via.Size), () => new SizeFieldHandler() },
+        { typeof(ReeLib.via.Color), () => new ColorFieldHandler() },
+        { typeof(ReeLib.via.Rect), () => new RectFieldHandler() },
+        { typeof(Quaternion), () => new QuaternionFieldHandler() },
+        { typeof(RszInstance), () => new NestedRszInstanceHandler() },
+        { typeof(EFXExpressionParameter), () => new EFXExpressionParameterHandler() },
+    };
 
     static WindowHandlerFactory()
     {
@@ -61,6 +102,12 @@ public partial class WindowHandlerFactory
                 return new MsgFileEditor(env, file);
             case KnownFileFormats.UVSequence:
                 return new UVSequenceFileEditor(env, file);
+            case KnownFileFormats.UserVariables:
+                return new UvarEditor(env, file);
+            case KnownFileFormats.CollisionDefinition:
+                return new RawDataEditor<CdefFile>(env, file);
+            case KnownFileFormats.DynamicsDefinition:
+                return new RawDataEditor<DefFile>(env, file);
         }
         return null;
     }
@@ -82,6 +129,118 @@ public partial class WindowHandlerFactory
         return handler;
     }
 
+    #region Reflection-based handlers
+    public static bool SetupObjectUIContext(UIContext context, Type? type, bool includePrivate = false)
+    {
+        var instance = context.GetRaw();
+        var ws = context.GetWorkspace();
+        type ??= instance?.GetType()!;
+        if (type == null || instance == null) {
+            context.uiHandler = new UnsupportedHandler(type);
+            return false;
+        }
+
+        var reflectionOptions = BindingFlags.Instance | BindingFlags.Public;
+        if (includePrivate) reflectionOptions |= BindingFlags.NonPublic;
+
+        foreach (var field in type.GetFields(reflectionOptions)) {
+            if (reflectionIgnoredTypes.Contains(field.FieldType) || ignoredFields.Contains((field.DeclaringType ?? type, field.Name))) continue;
+            if (field.Name.EndsWith(">k__BackingField")) continue;
+
+            var ctx = context.AddChild(
+                GetFieldLabel(field.Name),
+                    instance,
+                    getter: (c) => field.GetValue(c.target),
+                    setter: (c, v) => field.SetValue(c.target, v)
+                );
+            ctx.uiHandler = CreateReflectionFieldHandler(context, field);
+        }
+
+        foreach (var prop in type.GetProperties(reflectionOptions)) {
+            if (prop.IsSpecialName ||
+                prop.GetMethod == null ||
+                reflectionIgnoredTypes.Contains(prop.PropertyType) ||
+                ignoredProperties.Contains(prop.GetMethod.Name) ||
+                ignoredFields.Contains((prop.DeclaringType ?? type, prop.Name))
+            ) {
+                continue;
+            }
+
+            var ctx = context.AddChild(
+                GetFieldLabel(prop.Name),
+                    instance,
+                    getter: (c) => prop.GetValue(c.target),
+                    setter: prop.SetMethod == null ? null : (c, v) => prop.SetValue(c.target, v)
+                );
+            ctx.uiHandler = CreateReflectionFieldHandler(context, prop);
+        }
+
+        return true;
+    }
+
+    public static IObjectUIHandler CreateReflectionFieldHandler(UIContext context, MemberInfo field)
+    {
+        var fieldType = ((field as FieldInfo)?.FieldType) ?? (field as PropertyInfo)?.PropertyType;
+        if (fieldType == null) return new UnsupportedHandler();
+
+        if (fieldType.IsArray) {
+            return new ArrayHandler(fieldType.GetElementType()!);
+        }
+
+        if (fieldType.IsEnum) {
+            return new CsharpEnumHandler(fieldType);
+        }
+
+        if (fieldType.IsGenericType && genericListTypes.Contains(fieldType.GetGenericTypeDefinition())) {
+            return new ListHandler(fieldType.GetGenericArguments()[0]);
+        }
+
+        if (csharpTypeHandlers.TryGetValue(fieldType, out var fac)) {
+            return fac.Invoke();
+        }
+
+        if (fieldType.IsClass || fieldType.IsValueType) {
+            return new LazyPlainObjectHandler(fieldType);
+        }
+        if (fieldType.IsAbstract) {
+            var value = context.GetRaw();
+            if (value?.GetType() != fieldType) {
+                SetupObjectUIContext(context, value!.GetType());
+                return context.uiHandler ?? new UnsupportedHandler(field);
+            }
+        }
+
+        return new UnsupportedHandler(field);
+    }
+
+    public static void SetupArrayElementHandler(UIContext context, Type elementType)
+    {
+        if (elementType.IsArray) {
+            context.uiHandler = new UnsupportedHandler(elementType.MakeArrayType());
+            return;
+        }
+
+        if (elementType.IsEnum) {
+            context.uiHandler = new CsharpEnumHandler(elementType);
+            return;
+        }
+
+        if (csharpTypeHandlers.TryGetValue(elementType, out var fac)) {
+            context.uiHandler = fac.Invoke();
+            return;
+        }
+
+        if (elementType.IsClass || elementType.IsValueType) {
+            context.uiHandler = new LazyPlainObjectHandler(elementType);
+            // WindowHandlerFactory.SetupObjectUIContext(context, elementType);
+            return;
+        }
+
+        context.uiHandler = new UnsupportedHandler(elementType);
+    }
+    #endregion
+
+    #region RSZ based handlers
     public static IObjectUIHandler CreateRSZFieldElementHandlerRaw(UIContext context, RszField field, out FieldConfig? fieldConfig, out ClassConfig? patchConfig)
     {
         static IObjectUIHandler? TryCreateEnumHandler(ContentWorkspace? workspace, string fieldClassname)
@@ -189,7 +348,9 @@ public partial class WindowHandlerFactory
 
             // RszFieldType.Data => variant.AsVector4I().ToSfix(),
 
-            _ => new UnsupportedHandler(field)
+            _ => RszInstance.RszFieldTypeToCSharpType(field.type) is Type otherType
+                ? csharpTypeHandlers.GetValueOrDefault(otherType)?.Invoke() ?? new LazyPlainObjectHandler(otherType)
+                : new UnsupportedHandler(field)
         };
     }
 
@@ -199,6 +360,40 @@ public partial class WindowHandlerFactory
         context.uiHandler = new RszInstanceHandler();
         return context;
     }
+
+    public static void SetupRSZInstanceHandler(UIContext context)
+    {
+        var instance = context.Get<RszInstance>();
+        var ws = context.GetWorkspace();
+        var config = ws?.Config.Get(instance.RszClass.name);
+        // if (config?.FieldOrder != null) {
+        //     // TODO support and use custom rsz field order
+        // }
+        if (classFormatters.TryGetValue(instance.RszClass, out var fmt)) {
+            context.stringFormatter = fmt;
+        }
+        for (int i = 0; i < instance.RszClass.fields.Length; i++) {
+            var field = instance.RszClass.fields[i];
+            var fieldCtx = CreateRSZFieldContext(instance, i, field, context);
+            context.children.Add(fieldCtx);
+            CreateRSZFieldHandler(fieldCtx, field);
+        }
+    }
+
+    public static UIContext CreateRSZFieldContext(RszInstance parent, string fieldName, UIContext parentContext)
+    {
+        var fieldIndex = parent.RszClass.IndexOfField(fieldName);
+        var field = parent.RszClass.fields[fieldIndex];
+        return CreateRSZFieldContext(parent, fieldIndex, field, parentContext);
+    }
+
+    public static UIContext CreateRSZFieldContext(RszInstance parent, int fieldIndex, RszField field, UIContext parentContext)
+    {
+        return new UIContext(GetFieldLabel(field.name), parent, parentContext.root, (ctx) => ((RszInstance)ctx.target!).Values[fieldIndex], (ctx, v) => ((RszInstance)ctx.target!).Values[fieldIndex] = v!, new UIOptions()) {
+            parent = parentContext
+        };
+    }
+    #endregion
 
     public static UIContext CreateResourceEntityHandler(UIContext context)
     {
@@ -249,44 +444,10 @@ public partial class WindowHandlerFactory
         return classFormatters.GetValueOrDefault(instance.RszClass);
     }
 
-    public static void SetupRSZInstanceHandler(UIContext context)
+    public static UIContext CreateListElementContext(UIContext parent, int index)
     {
-        var instance = context.Get<RszInstance>();
-        var ws = context.GetWorkspace();
-        var config = ws?.Config.Get(instance.RszClass.name);
-        // if (config?.FieldOrder != null) {
-        //     // TODO support and use custom rsz field order
-        // }
-        if (classFormatters.TryGetValue(instance.RszClass, out var fmt)) {
-            context.stringFormatter = fmt;
-        }
-        for (int i = 0; i < instance.RszClass.fields.Length; i++) {
-            var field = instance.RszClass.fields[i];
-            var fieldCtx = CreateRSZFieldContext(instance, i, field, context);
-            context.children.Add(fieldCtx);
-            CreateRSZFieldHandler(fieldCtx, field);
-        }
-    }
-
-    public static UIContext CreateRSZArrayElementContext(UIContext parent, int index)
-    {
-        return new UIContext(index.ToString(), parent.GetRaw()!, parent.root, (ctx) => ((IList)ctx.target!)[index], (ctx, v) => ((IList)ctx.target!)[index] = v, new UIOptions())
-        {
+        return new UIContext(index.ToString(), parent.GetRaw()!, parent.root, (ctx) => ((IList)ctx.target!)[index], (ctx, v) => ((IList)ctx.target!)[index] = v, new UIOptions()) {
             parent = parent,
-        };
-    }
-
-    public static UIContext CreateRSZFieldContext(RszInstance parent, string fieldName, UIContext parentContext)
-    {
-        var fieldIndex = parent.RszClass.IndexOfField(fieldName);
-        var field = parent.RszClass.fields[fieldIndex];
-        return CreateRSZFieldContext(parent, fieldIndex, field, parentContext);
-    }
-
-    public static UIContext CreateRSZFieldContext(RszInstance parent, int fieldIndex, RszField field, UIContext parentContext)
-    {
-        return new UIContext(GetFieldLabel(field), parent, parentContext.root, (ctx) => ((RszInstance)ctx.target!).Values[fieldIndex], (ctx, v) => ((RszInstance)ctx.target!).Values[fieldIndex] = v!, new UIOptions()) {
-            parent = parentContext
         };
     }
 
@@ -296,19 +457,19 @@ public partial class WindowHandlerFactory
     [GeneratedRegex(@"(\p{Ll})(\P{Ll})")]
     private static partial Regex PascalCaseFixerRegex2();
 
-    private static string GetFieldLabel(RszField field)
+    private static string GetFieldLabel(string name)
     {
-        if (!showPrettyLabels) return field.name;
+        if (!showPrettyLabels) return name;
 
-        if (prettyLabels.TryGetValue(field.name, out var label)) {
+        if (prettyLabels.TryGetValue(name, out var label)) {
             return label;
         }
 
         // https://stackoverflow.com/a/5796793/4721768
-        label = field.name.TrimStart('_');
+        label = name.TrimStart('_');
         label = PascalCaseFixerRegex1().Replace(label, "$1 $2");
         label = PascalCaseFixerRegex2().Replace(label, "$1 $2");
-        prettyLabels[field.name] = label;
+        prettyLabels[name] = label;
         return label;
     }
 }

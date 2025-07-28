@@ -38,11 +38,6 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
         Reset();
     }
 
-    protected override void OnFileSaved()
-    {
-        Reset();
-    }
-
     private void Reset()
     {
         failedToReadfile = false;

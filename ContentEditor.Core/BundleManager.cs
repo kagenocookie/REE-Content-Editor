@@ -84,6 +84,10 @@ public class BundleManager
                 Logger.Error("Failed to open bundle " + bundleJsonFile);
                 continue;
             }
+            if (string.IsNullOrEmpty(bundle.Name)) {
+                Logger.Error("Found invalid, unnamed bundle " + bundleJsonFile);
+                continue;
+            }
             bundle.SaveFilepath = Path.GetFileNameWithoutExtension(entry);
 
             var idx = settings.BundleOrder.IndexOf(bundle.Name);

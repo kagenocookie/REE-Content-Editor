@@ -21,9 +21,11 @@ public sealed class ContentEditorRszInstanceListHandler(CustomField field) : IOb
             ImGui.Text(context.label);
             var workspace = context.GetWorkspace();
             if (workspace != null) {
+                ImGui.PushID(context.label);
                 if (ImGui.Button("Create")) {
                     context.CreateEntityResource<RSZObjectListResource>(workspace, field);
                 }
+                ImGui.PopID();
             }
             ImGui.SameLine();
             return;

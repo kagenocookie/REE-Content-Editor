@@ -15,6 +15,7 @@ using ContentEditor.Themes;
 using System.Diagnostics.CodeAnalysis;
 using ContentEditor.App.Graphics;
 using ContentEditor.Editor;
+using ContentPatcher;
 
 namespace ContentEditor.App.Windowing;
 
@@ -248,6 +249,12 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
                 }
                 if (UndoRedo.CanRedo(this) && cfg.Key_Redo.Get().IsPressed()) {
                     UndoRedo.Redo(this);
+                }
+                if ((this as EditorWindow)?.Workspace is ContentWorkspace workspace && cfg.Key_Save.Get().IsPressed()) {
+                    int count = workspace.SaveModifiedFiles(this);
+                    if (count > 0) {
+                        Overlays.ShowTooltip($"Saved {count} files!", 1);
+                    }
                 }
             }
         }

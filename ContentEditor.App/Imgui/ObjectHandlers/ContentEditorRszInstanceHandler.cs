@@ -18,9 +18,11 @@ public sealed class ContentEditorRszInstanceHandler(CustomField field) : IObject
             var workspace = context.GetWorkspace();
             if (workspace != null) {
                 ImGui.SameLine();
+                ImGui.PushID(context.label);
                 if (ImGui.Button("Create")) {
                     context.CreateEntityResource<RSZObjectResource>(workspace, field);
                 }
+                ImGui.PopID();
             }
             return;
         }

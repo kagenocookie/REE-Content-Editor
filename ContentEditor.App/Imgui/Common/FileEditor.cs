@@ -8,7 +8,7 @@ using ReeLib;
 
 namespace ContentEditor.App.ImguiHandling;
 
-public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFocusableFileHandleReferenceHolder
+public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFocusableFileHandleReferenceHolder, IUIContextEventHandler
 {
     public virtual bool HasUnsavedChanges => context.Changed;
 
@@ -27,6 +27,8 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     protected virtual bool IsRevertable => true;
 
     public bool IsClosable => Handle.HandleType != FileHandleType.Embedded;
+
+    IRectWindow? IFileHandleReferenceHolder.Parent => context.Get<WindowData>().ParentWindow;
 
     protected FileEditor(FileHandle file)
     {
@@ -165,7 +167,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
 
     protected virtual void OnFileSaved()
     {
-        context.SetChangedNoPropagate(false);
+        context.Save();
     }
 
     private void OnModifiedChanged(bool changed)
@@ -230,5 +232,33 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
 
     protected virtual void Dispose(bool disposing)
     {
+    }
+
+    public virtual bool HandleEvent(UIContext context, EditorUIEvent eventData)
+    {
+        if (eventData.type == UIContextEvent.Changed) {
+            var ws = context.GetWorkspace();
+            if (ws != null) {
+                ws.ResourceManager.MarkFileResourceModified(Handle.Filepath, true);
+            }
+        }
+        if (eventData.type == UIContextEvent.Reverting) {
+            if (eventData.origin.IsChildOf(context)) {
+                return false;
+            }
+
+            if (eventData.origin == context) {
+                var ws = context.GetWorkspace();
+                if (ws != null) {
+                    ws.ResourceManager.MarkFileResourceModified(Handle.Filepath, false);
+                }
+            }
+        }
+
+        if (eventData.type == UIContextEvent.Saved && eventData.origin == context) {
+            return true;
+        }
+
+        return false;
     }
 }

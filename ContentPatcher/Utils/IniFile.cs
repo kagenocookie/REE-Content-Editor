@@ -91,6 +91,7 @@ public sealed class IniFile : IDisposable
             if (lastGroup != group) {
                 fs.WriteLine();
                 fs.WriteLine($"[{group}]");
+                lastGroup = group;
             }
 
             fs.WriteLine(key + " = " + value);

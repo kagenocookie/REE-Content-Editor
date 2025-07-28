@@ -113,6 +113,11 @@ public class SettingsWindowHandler : IWindowHandler
                 config.Key_Redo.Set(key);
             }
             if (key.Key != ImGuiKey.Y) ImGui.TextColored(Colors.Warning, "While focused, text inputs will not correctly take this setting into account and still use the default layout keys for undo/redo");
+
+            key = config.Key_Save.Get();
+            if (ImguiKeybinding("Save", ref key, ref filterKey2)) {
+                config.Key_Save.Set(key);
+            }
         } else {
             GameIdentifier game = selectedTab;
             var gamepath = config.GetGamePath(game);

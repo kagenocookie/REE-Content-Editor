@@ -26,6 +26,7 @@ public class AppConfig : Singleton<AppConfig>
 
         public const string Key_Undo = "key_undo";
         public const string Key_Redo = "key_redo";
+        public const string Key_Save = "key_save";
 
         public const string Gamepath = "game_path";
     }
@@ -103,6 +104,7 @@ public class AppConfig : Singleton<AppConfig>
 
     public readonly SettingWrapper<KeyBinding> Key_Undo = new SettingWrapper<KeyBinding>(Keys.Key_Undo, _lock, new KeyBinding(ImGuiKey.Z, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_Redo = new SettingWrapper<KeyBinding>(Keys.Key_Redo, _lock, new KeyBinding(ImGuiKey.Y, ctrl: true));
+    public readonly SettingWrapper<KeyBinding> Key_Save = new SettingWrapper<KeyBinding>(Keys.Key_Save, _lock, new KeyBinding(ImGuiKey.S, ctrl: true));
 
     public string? GetGamePath(GameIdentifier game) => _lock.Read(() => Instance.gameConfigs.GetValueOrDefault(game.name)?.gamepath);
     public void SetGamePath(GameIdentifier game, string path) => SetForGameAndSave(game.name, path, (cfg, val) => cfg.gamepath = val);
@@ -146,6 +148,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.PrettyLabels, instance.PrettyFieldLabels.ToString(), null),
             (Keys.Key_Undo, instance.Key_Undo.ToString(), "Keys"),
             (Keys.Key_Redo, instance.Key_Redo.ToString(), "Keys"),
+            (Keys.Key_Save, instance.Key_Save.ToString(), "Keys"),
         };
         foreach (var (game, data) in instance.gameConfigs) {
             if (!string.IsNullOrEmpty(data.gamepath)) {
@@ -169,19 +172,19 @@ public class AppConfig : Singleton<AppConfig>
                             instance.MaxFps.value = float.Parse(value);
                             break;
                         case Keys.MainWindowGame:
-                            instance.MainSelectedGame.value = value;
+                            instance.MainSelectedGame.value = string.IsNullOrEmpty(value) ? null : value;
                             break;
                         case Keys.MainActiveBundle:
-                            instance.MainActiveBundle.value = value;
+                            instance.MainActiveBundle.value = string.IsNullOrEmpty(value) ? null : value;
                             break;
                         case Keys.BlenderPath:
-                            instance.BlenderPath.value = value;
+                            instance.BlenderPath.value = string.IsNullOrEmpty(value) ? null : value;
                             break;
                         case Keys.RemoteDataSource:
                             instance.RemoteDataSource.value = string.IsNullOrEmpty(value) ? null : value;
                             break;
                         case Keys.GameConfigBaseFilepath:
-                            instance.GameConfigBaseFilepath.value = value;
+                            instance.GameConfigBaseFilepath.value = string.IsNullOrEmpty(value) ? null : value;
                             break;
                         case Keys.UnpackMaxThreads:
                             if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)) instance.UnpackMaxThreads.value = Math.Clamp(parsed, 1, 64);
@@ -206,6 +209,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.Key_Redo:
                             if (KeyBinding.TryParse(value, out _key)) instance.Key_Redo.value = _key;
+                            break;
+                        case Keys.Key_Save:
+                            if (KeyBinding.TryParse(value, out _key)) instance.Key_Save.value = _key;
                             break;
                     }
                 } else {
