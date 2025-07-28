@@ -42,8 +42,13 @@ public class UndoRedo
             } else if (CurrentIndex < Items.Count - 1) {
                 Items.RemoveAtAfter(CurrentIndex + 1);
             }
-            Items.Add(item);
-            CurrentIndex++;
+            if (CurrentIndex >= MaxSteps - 1) {
+                Items.RemoveAt(0);
+                Items.Add(item);
+            } else {
+                Items.Add(item);
+                CurrentIndex++;
+            }
             item.Do();
             Console.WriteLine($"State {Items.Count}[{CurrentIndex}] ");
         }
