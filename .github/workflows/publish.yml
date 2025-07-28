@@ -30,6 +30,8 @@ jobs:
       if: ${{ !startsWith(github.ref, 'refs/tags/') }}
       run: |
         dotnet publish -c Debug --no-restore -f net8.0-windows /p:VersionSuffix=${{ steps.vars.outputs.sha_short }} -o build ContentEditor.App/ContentEditor.App.csproj
+        rm -rf build/runtimes/linux-*
+        rm -rf build/runtimes/osx*
 
     - name: Publish release build
       if: startsWith(github.ref, 'refs/tags/')
