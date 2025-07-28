@@ -12,6 +12,11 @@ The patcher currently works by emitting patches files directly into the natives 
 
 Some files may not fully work for other RE ENGINE games.
 
+## Setup
+- Install the .NET 8 runtime (https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+- Download the latest [release](https://github.com/kagenocookie/REE-Content-Editor/releases) or [debug](https://github.com/kagenocookie/REE-Content-Editor/actions) build
+- Launch `ContentEditor.App.exe`
+
 ## File support
 
 <div align="center">
