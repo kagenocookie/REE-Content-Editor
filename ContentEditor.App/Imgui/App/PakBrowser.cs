@@ -142,7 +142,11 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                                 EditorWindow.CurrentWindow?.OpenFiles([file]);
                             } else {
                                 var stream = reader.GetFile(file);
-                                EditorWindow.CurrentWindow?.OpenFile(stream, file, PakFilePath + "://");
+                                if (stream == null) {
+                                    EditorWindow.CurrentWindow?.AddSubwindow(new ErrorModal("File not found", "File could not be found in the PAK file(s)."));
+                                } else {
+                                    EditorWindow.CurrentWindow?.OpenFile(stream, file, PakFilePath + "://");
+                                }
                             }
                         } else {
                             ImGui.PopID();
