@@ -13,7 +13,7 @@ public class RszDataFinder : IWindowHandler
     public string HandlerName => "Data Finder";
 
     public bool HasUnsavedChanges => false;
-    private string classname = "";
+    private string? classname = "";
     private string valueString = "";
     private int selectedFieldIndex;
     private bool searchUserFiles = true;
@@ -28,6 +28,8 @@ public class RszDataFinder : IWindowHandler
 
     private WindowData data = null!;
     protected UIContext context = null!;
+
+    private string[]? classNames;
 
     public void Init(UIContext context)
     {
@@ -52,6 +54,15 @@ public class RszDataFinder : IWindowHandler
         var cls = workspace.Env.RszParser.GetRSZClass(classname);
         if (cls == null) {
             ImGui.TextColored(Colors.Warning, "Classname not found");
+            classNames ??= workspace.Env.RszParser.ClassDict.Values.Select(cs => cs.name).ToArray();
+            var suggestions = classNames.OrderBy(s => s.Length).Where(cs => cs.Contains(classname, StringComparison.OrdinalIgnoreCase)).Take(100);
+            ImGui.BeginListBox("Suggestions", new System.Numerics.Vector2(ImGui.CalcItemWidth(), 400));
+            foreach (var sugg in suggestions) {
+                if (ImGui.Button(sugg)) {
+                    classname = sugg;
+                }
+            }
+            ImGui.EndListBox();
             return;
         }
 
