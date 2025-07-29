@@ -65,6 +65,8 @@ public partial class WindowHandlerFactory
         { typeof(uint), () => new NumericFieldHandler<uint>(ImGuiNET.ImGuiDataType.U32) },
         { typeof(long), () => new NumericFieldHandler<long>(ImGuiNET.ImGuiDataType.S64) },
         { typeof(ulong), () => new NumericFieldHandler<ulong>(ImGuiNET.ImGuiDataType.U64) },
+        { typeof(float), () => new NumericFieldHandler<float>(ImGuiNET.ImGuiDataType.Float) },
+        { typeof(double), () => new NumericFieldHandler<double>(ImGuiNET.ImGuiDataType.Double) },
         { typeof(string), () => new StringFieldHandler() },
         { typeof(Guid), () => new GuidFieldHandler() },
         { typeof(bool), () => new BoolFieldHandler() },
@@ -134,17 +136,17 @@ public partial class WindowHandlerFactory
     {
         var instance = context.GetRaw();
         var ws = context.GetWorkspace();
-        type ??= instance?.GetType()!;
-        if (type == null || instance == null) {
-            context.uiHandler = new UnsupportedHandler(type);
+        var targetType = instance?.GetType() ?? type;
+        if (targetType == null || instance == null) {
+            context.uiHandler = new UnsupportedHandler(targetType);
             return false;
         }
 
         var reflectionOptions = BindingFlags.Instance | BindingFlags.Public;
         if (includePrivate) reflectionOptions |= BindingFlags.NonPublic;
 
-        foreach (var field in type.GetFields(reflectionOptions)) {
-            if (reflectionIgnoredTypes.Contains(field.FieldType) || ignoredFields.Contains((field.DeclaringType ?? type, field.Name))) continue;
+        foreach (var field in targetType.GetFields(reflectionOptions)) {
+            if (reflectionIgnoredTypes.Contains(field.FieldType) || ignoredFields.Contains((field.DeclaringType ?? targetType, field.Name))) continue;
             if (field.Name.EndsWith(">k__BackingField")) continue;
 
             var ctx = context.AddChild(
@@ -156,12 +158,12 @@ public partial class WindowHandlerFactory
             ctx.uiHandler = CreateReflectionFieldHandler(context, field);
         }
 
-        foreach (var prop in type.GetProperties(reflectionOptions)) {
+        foreach (var prop in targetType.GetProperties(reflectionOptions)) {
             if (prop.IsSpecialName ||
                 prop.GetMethod == null ||
                 reflectionIgnoredTypes.Contains(prop.PropertyType) ||
                 ignoredProperties.Contains(prop.GetMethod.Name) ||
-                ignoredFields.Contains((prop.DeclaringType ?? type, prop.Name))
+                ignoredFields.Contains((prop.DeclaringType ?? targetType, prop.Name))
             ) {
                 continue;
             }
@@ -199,7 +201,16 @@ public partial class WindowHandlerFactory
             return fac.Invoke();
         }
 
-        if (fieldType.IsClass || fieldType.IsValueType) {
+        if (fieldType.IsClass) {
+            var target = context.GetRaw();
+            var value = (field as FieldInfo)?.GetValue(target) ?? (field as PropertyInfo)?.GetValue(target);
+            if (value != null) {
+                return new LazyPlainObjectHandler(value.GetType());
+            } else {
+                return new LazyPlainObjectHandler(fieldType);
+            }
+        }
+        if (fieldType.IsValueType) {
             return new LazyPlainObjectHandler(fieldType);
         }
         if (fieldType.IsAbstract) {

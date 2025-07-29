@@ -44,7 +44,7 @@ public class RawDataEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         var content = GetContent();
         if (content is BaseFile || ImGui.TreeNode("Raw data")) {
             if (rawContext == null) {
-                rawContext = context.AddChild("File", GetContent());
+                rawContext = context.AddChild("File", content);
                 rawContext.uiHandler = new PlainObjectHandler();
                 WindowHandlerFactory.SetupObjectUIContext(rawContext, null, true);
                 if (rawContext.children.Count == 1 && rawContext.children.First().uiHandler is LazyPlainObjectHandler lazy) {
