@@ -3,7 +3,7 @@ Desktop tool for editing and patching RE ENGINE files, the next evolution of [DD
 
 Besides basic file editing, the tool is able to merge multiple changes to the same file, allowing easy modification of content even when shared catalog files need to be modified by multiple mods. Also makes upgrading data easier after game updates break files with no major structural differences (which is most of the time).
 
-The patcher currently works by emitting patches files directly into the natives folder, so it needs the loose file loader enabled on runtime. Files can alternatively be packed into a PAK file (manually, not directly with this tool yet).
+The patcher currently works by emitting patched files directly into the natives folder, so it needs the loose file loader enabled on runtime. Files can alternatively be packed into a PAK file (manually, not directly with this tool yet).
 
 ## Supported games
 - All mainline Resident Evil games
@@ -35,10 +35,10 @@ Some files may not fully work for other RE ENGINE games.
 | .mdf2     | raw data read/write | coming soon | material preview |
 | .efx      | raw data read/write | coming soon | graphic preview |
 | .rcol     | raw data read/write | coming soon | 3D display, overlay with mesh/pfb |
-| .motlist  | raw data read/write | coming not soon | data display, editing, patching |
+| .motlist  | coming not soon | coming not soon | data display, editing, patching |
 | .mesh     | coming not soon | | 3D display |
 | .mcol     | raw data read/write | | 3D display |
-| .ainvm    | raw data read/write | | data display, 3D display, editing |
+| .ainvm    | raw data read | | data display, 3D display, editing |
 | .cdef, .def | ☑️ read/write | | |
 | .hf, .chf, .cmat, .cfil | raw data read/write | | |
 
