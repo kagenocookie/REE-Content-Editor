@@ -44,7 +44,7 @@ public partial class WindowHandlerFactory
 
     private static bool showPrettyLabels = true;
     private static readonly Dictionary<string, string> prettyLabels = new();
-    private static readonly HashSet<Type> reflectionIgnoredTypes = [typeof(FileHandler), typeof(RszFileOption)];
+    private static readonly HashSet<Type> reflectionIgnoredTypes = [typeof(FileHandler), typeof(RszFileOption), typeof(RszParser)];
     private static readonly HashSet<string> ignoredProperties = ["set_Item", "get_Item"];
     private static readonly HashSet<(Type type, string field)> ignoredFields = [
         (typeof(BaseModel), nameof(BaseModel.Size)),

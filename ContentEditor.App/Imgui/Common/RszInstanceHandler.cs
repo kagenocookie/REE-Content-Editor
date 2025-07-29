@@ -32,6 +32,10 @@ public class NestedRszInstanceHandler : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var instance = context.Get<RszInstance>();
+        if (instance == null) {
+            ImGui.Text(context.label + ": NULL");
+            return;
+        }
         if (!_wasInit) {
             _wasInit = true;
             context.stringFormatter = WindowHandlerFactory.GetStringFormatter(instance);
