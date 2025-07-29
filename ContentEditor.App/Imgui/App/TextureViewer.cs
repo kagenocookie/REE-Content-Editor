@@ -20,6 +20,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
 
     private Texture? texture;
     private string? texturePath;
+    private FileHandle? fileHandle;
 
     private static readonly HashSet<string> StandardImageFileExtensions = [".png", ".bmp", ".gif", ".jpg", ".jpeg", ".webp", ".tga", ".tiff", ".qoi", ".dds"];
 
@@ -37,6 +38,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         texture = new Texture();
         texture.LoadFromFile(file);
         file.References.Add(this);
+        fileHandle = file;
     }
 
     public TextureViewer()
@@ -57,6 +59,8 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
 
     public void SetImageSource(string filepath)
     {
+        fileHandle?.References.Remove(this);
+        fileHandle = null;
         texture?.Dispose();
         texturePath = filepath;
         texture = new Texture().LoadFromFile(filepath);
@@ -124,6 +128,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
 
     public void Dispose()
     {
+        fileHandle?.References.Remove(this);
         texture?.Dispose();
         texture = null;
     }
