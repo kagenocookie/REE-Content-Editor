@@ -22,7 +22,7 @@ public class ContentWorkspace
     {
         Env = env;
         Config = patchConfig;
-        BundleManager = rootBundleManager ?? new();
+        BundleManager = rootBundleManager ?? new() { VersionHash = VersionHash };
         BundleManager.GamePath = env.Config.GamePath;
         Diff = new DiffHandler(env);
         ResourceManager = new ResourceManager(patchConfig);

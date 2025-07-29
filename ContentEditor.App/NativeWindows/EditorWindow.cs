@@ -195,9 +195,10 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
         if (ImGui.BeginMenu("File")) {
             if (ImGui.MenuItem("Open ...")) {
                 PlatformUtils.ShowFileDialog((files) => {
-                    // TODO thread safety
-                    Logger.Info(string.Join("\n", files));
-                    OpenFiles(files);
+                    MainLoop.Instance.MainWindow.InvokeFromUIThread(() => {
+                        Logger.Info(string.Join("\n", files));
+                        OpenFiles(files);
+                    });
                 });
             }
             if (workspace != null) {

@@ -1,5 +1,9 @@
 using System.Text.Json.Nodes;
+using ContentEditor.Editor;
+using ContentPatcher.StringFormatting;
 using ReeLib.Common;
+using SmartFormat;
+using SmartFormat.Extensions;
 
 namespace ContentPatcher;
 
@@ -7,6 +11,7 @@ namespace ContentPatcher;
 public class SingleMsgCustomField : CustomField<MessageData>, ICustomResourceField, IDiffableField
 {
     public string keyFormat = null!;
+    public StringFormatter? formatter;
     public string file = null!;
     public bool multiline;
     public override string ResourceIdentifier => file;
@@ -18,7 +23,7 @@ public class SingleMsgCustomField : CustomField<MessageData>, ICustomResourceFie
             return null;
         }
         if (currentResource == null) {
-            string entityKey = FormatMessageKey(entity, keyFormat);
+            string entityKey = FormatMessageKey(entity);
             var messageId = MurMur3HashUtils.GetHash(entityKey);
             currentResource = new MessageData() { ResourceIdentifier = file, FilePath = file!, MessageKey = entityKey, Guid = Guid.NewGuid() };
             workspace.ResourceManager.AddResource(file, messageId, currentResource, state);
@@ -38,7 +43,7 @@ public class SingleMsgCustomField : CustomField<MessageData>, ICustomResourceFie
 
     public (long id, IContentResource resource) CreateResource(ContentWorkspace workspace, ClassConfig config, ResourceEntity entity, JsonNode? initialData)
     {
-        string entityKey = FormatMessageKey(entity, keyFormat);
+        string entityKey = FormatMessageKey(entity);
         var messageId = MurMur3HashUtils.GetHash(entityKey);
         var data = new MessageData() { FilePath = file!, Messages = new(), ResourceIdentifier = file!, MessageKey = entityKey, Guid = Guid.NewGuid() };
         if (initialData != null) {
@@ -55,15 +60,20 @@ public class SingleMsgCustomField : CustomField<MessageData>, ICustomResourceFie
 
     public override MessageData? FetchResource(ResourceManager workspace, ResourceEntity entity, ResourceState state)
     {
-        string entityKey = FormatMessageKey(entity, keyFormat);
+        string entityKey = FormatMessageKey(entity);
         var messageId = MurMur3HashUtils.GetHash(entityKey);
         return workspace.GetResourceInstance(file, messageId, state) as MessageData;
     }
 
-    private static string FormatMessageKey(ResourceEntity entity, string format)
+    private string FormatMessageKey(ResourceEntity entity)
     {
-        // TODO proper formatter implementation
-        return format.Replace("{id}", entity.Id.ToString());
+        if (formatter == null) {
+            var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
+            fmt.AddExtensions(new EntityStringFormatterSource(entity.Config), new RszFieldStringFormatterSource(), new RszFieldArrayStringFormatterSource());
+            fmt.AddExtensions(new DefaultFormatter());
+            formatter = new StringFormatter(keyFormat, fmt);
+        }
+        return formatter.GetString(entity);
     }
 
     public override void LoadParams(string fieldName, Dictionary<string, object>? param)

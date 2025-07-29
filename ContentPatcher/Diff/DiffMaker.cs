@@ -50,7 +50,7 @@ public class DiffMaker
         }
 
         if (target.GetValueKind() != source.GetValueKind()) {
-            // TODO throw error?
+            // TODO should we throw an error here instead?
             return source.DeepClone();
         }
 

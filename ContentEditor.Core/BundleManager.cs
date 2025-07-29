@@ -22,6 +22,7 @@ public class BundleManager
     public event Action<Dictionary<string, Bundle>>? EntitiesUpdated;
 
     public string? GamePath { get; set; }
+    public string? VersionHash { get; set; }
 
     public string BundlePath => Path.Combine(GamePath ?? string.Empty, "reframework/data/usercontent/bundles/");
     public string EnumsPath => Path.Combine(GamePath ?? string.Empty, "reframework/data/usercontent/enums/");
@@ -258,7 +259,7 @@ public class BundleManager
             Name = newBundleName,
             Author = GetEditorRootSetting("author_name")?.GetString() ?? "<unknown>",
             Description = GetEditorRootSetting("author_description")?.GetString() ?? "<unknown>",
-            GameVersion = "", // TODO get game exe version
+            GameVersion = VersionHash,
         };
         bundle.Touch();
         AllBundles.Add(bundle);
@@ -281,7 +282,7 @@ public class BundleManager
         if (bundleName == null) {
             return this;
         }
-        var manager = new BundleManager() { GamePath = GamePath };
+        var manager = new BundleManager() { GamePath = GamePath, VersionHash = VersionHash };
         manager._activeBundles = new();
         var bundle = GetBundle(bundleName, null);
         if (bundle == null) {

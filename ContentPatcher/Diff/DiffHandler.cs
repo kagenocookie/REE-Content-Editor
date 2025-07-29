@@ -65,7 +65,6 @@ public class DiffHandler(Workspace env)
 
     private static void GetDiffTreeInternal(JsonNode? diff, StringBuilder full, StringBuilder line)
     {
-        // TODO
         // depth first, then backtrack
         /*
         SomeObject._Param.0.sub._Params._Attack: 100

@@ -310,6 +310,42 @@ public class StringFieldHandler : IObjectUIHandler
     }
 }
 
+public class AutocompleteStringHandler(bool requireListedChoice, string[]? suggestions = null) : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var selected = context.Get<string>();
+
+        context.state ??= selected;
+        if (ImGui.InputText(context.label, ref context.state, 1024)) {
+            if (!requireListedChoice) {
+                selected = context.state;
+                OnSelected(context, selected);
+            }
+        }
+        var currentSuggestions = GetSuggestions(context, context.state);
+        if (currentSuggestions.Contains(context.state)){
+            return;
+        }
+
+        ImGui.BeginListBox($"Suggestions##{context.label}", new System.Numerics.Vector2(ImGui.CalcItemWidth(), 400));
+        var items = currentSuggestions.Where(cs => cs.Contains(context.state, StringComparison.OrdinalIgnoreCase));
+        foreach (var suggestion in items) {
+            if (ImGui.Button(suggestion)) {
+                OnSelected(context, suggestion);
+            }
+        }
+        ImGui.EndListBox();
+    }
+
+    protected virtual IEnumerable<string> GetSuggestions(UIContext context, string filter) => suggestions ?? Array.Empty<string>();
+
+    protected virtual void OnSelected(UIContext context, string selection)
+    {
+        UndoRedo.RecordSet(context, selection);
+    }
+}
+
 public class UserDataReferenceHandler : IObjectUIHandler
 {
     public RszField field;
