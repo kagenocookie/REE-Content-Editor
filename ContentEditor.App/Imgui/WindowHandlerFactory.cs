@@ -209,7 +209,7 @@ public static partial class WindowHandlerFactory
     {
         var fieldType = ((field as FieldInfo)?.FieldType) ?? (field as PropertyInfo)?.PropertyType;
         if (fieldType == null) return new UnsupportedHandler();
-        if (fieldType.IsClass) {
+        if (fieldType.IsClass && fieldType != typeof(string)) {
             var target = context.GetRaw();
             var value = (field as FieldInfo)?.GetValue(target) ?? (field as PropertyInfo)?.GetValue(target);
             if (value != null) {

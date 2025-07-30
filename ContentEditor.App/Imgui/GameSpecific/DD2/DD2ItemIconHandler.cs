@@ -65,7 +65,7 @@ public sealed class DD2ItemIconHandler(CustomField field) : IObjectUIHandler, IO
         var texHandler = context.GetChild<ResourcePathPicker>() ?? context.AddChild(
             "Icon Path",
             instance.data,
-            new ResourcePathPicker(),
+            new ResourcePathPicker(workspace, KnownFileFormats.Texture) { SaveWithNativePath = true },
             getter: (ctx) => ((ItemIconResource.ItemRectData)ctx.target!).IconTexture,
             setter: (ctx, val) => ((ItemIconResource.ItemRectData)ctx.target!).IconTexture = val as string
         );

@@ -82,15 +82,17 @@ public class MatHeaderImguiHandler : IObjectUIHandler
         typeof(MatHeader).GetProperty(nameof(MatHeader.Phong))!,
         typeof(MatHeader).GetProperty(nameof(MatHeader.Tesselation))!,
         typeof(MatHeader).GetField(nameof(MatHeader.ukn1))!,
-        typeof(MatHeader).GetField(nameof(MatHeader.mmtrPath))!,
     ];
 
     public void OnIMGUI(UIContext context)
     {
         if (context.children.Count == 0) {
             var tex = context.Get<MatHeader>();
+            var ws = context.GetWorkspace();
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(MatHeader), members: DisplayedFields);
+            context.AddChild<MatHeader, string>("MMTR path", tex, new ResourcePathPicker(ws, KnownFileFormats.MasterMaterial), (p) => p.mmtrPath, (p, v) => p.mmtrPath = v);
         }
+        ImGui.SetNextItemOpen(true, ImGuiCond.Always);
         context.ShowChildrenUI();
     }
 }

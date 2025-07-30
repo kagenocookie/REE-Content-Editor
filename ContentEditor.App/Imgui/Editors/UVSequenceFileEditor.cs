@@ -320,12 +320,10 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         var resourcePicker = context.GetChild<ResourcePathPicker>();
         if (resourcePicker == null || resourcePicker.target != texObject) {
             context.ClearChildren();
-            int texVersion = 0;
-            context.GetWorkspace()?.Env.TryGetFileExtensionVersion("tex", out texVersion);
             resourcePicker = context.AddChild<TextureBlock, string>(
                 "Texture",
                 texObject,
-                new ResourcePathPicker($"Texture|*.tex.{(texVersion == -1 ? "*" : texVersion.ToString())}"),
+                new ResourcePathPicker(context.GetWorkspace(), KnownFileFormats.Texture),
                 (target) => target?.path,
                 (target, newval) => {
                     UndoRedo.RecordCallbackSetter(context, target, target.path, newval, (p, newval) => {
