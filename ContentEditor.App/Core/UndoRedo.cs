@@ -94,14 +94,14 @@ public class UndoRedo
         GetState(window).Push(new ListInsertUndoRedo(context, list, item, index, $"{context.GetHashCode()} Insert {index}"));
     }
 
-    public static void RecordListRemove(UIContext context, IList list, int index, WindowBase? window = null)
+    public static void RecordListRemove(UIContext context, IList list, int index, WindowBase? window = null, int childIndexOffset = 0)
     {
-        GetState(window).Push(new ListRemoveUndoRedo(context, list, index, $"{context.GetHashCode()} Remove {index}"));
+        GetState(window).Push(new ListRemoveUndoRedo(context, list, index, $"{context.GetHashCode()} Remove {index}", childIndexOffset));
     }
 
-    public static void RecordListRemove<T>(UIContext context, IList list, T item, WindowBase? window = null) where T : class
+    public static void RecordListRemove<T>(UIContext context, IList list, T item, WindowBase? window = null, int childIndexOffset = 0) where T : class
     {
-        GetState(window).Push(new ListRemoveUndoRedo(context, list, list.IndexOf(item), $"{context.GetHashCode()} Remove {item}"));
+        GetState(window).Push(new ListRemoveUndoRedo(context, list, list.IndexOf(item), $"{context.GetHashCode()} Remove {item}", childIndexOffset));
     }
 
     public static void RecordCallback(UIContext? context, Action doCallback, Action undoCallback, string? id = null, WindowBase? window = null)
@@ -161,7 +161,7 @@ public class UndoRedo
             if (index < 0) {
                 index = -list.Count;
                 list.Add(item);
-                context.children.RemoveAtAfter(list.Count - 1);
+                // context.children.RemoveAtAfter(list.Count - 1);
             } else {
                 list.Insert(index, item);
                 context.children.RemoveAtAfter(index);
@@ -182,7 +182,7 @@ public class UndoRedo
         }
     }
 
-    public class ListRemoveUndoRedo(UIContext context, IList list, int index, string? id) : UndoRedoCommand(id ?? $"Callback_{RandomString(10)}")
+    public class ListRemoveUndoRedo(UIContext context, IList list, int index, string? id, int childIndexOffset) : UndoRedoCommand(id ?? $"Callback_{RandomString(10)}")
     {
         private object? item;
 
@@ -190,14 +190,14 @@ public class UndoRedo
         {
             item = list[index];
             list.RemoveAt(index);
-            context.children.RemoveAtAfter(index);
+            context.children.RemoveAtAfter(index + childIndexOffset);
             context.Changed = true;
         }
 
         public override void Undo()
         {
             list.Insert(index, item);
-            context.children.RemoveAtAfter(index);
+            context.children.RemoveAtAfter(index + childIndexOffset);
             context.Changed = true;
         }
 

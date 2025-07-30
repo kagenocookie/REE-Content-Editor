@@ -1,13 +1,11 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
+using ReeLib.Common;
 using ReeLib.Mdf;
-using ReeLib.UVar;
 using ReeLib.via;
 
 namespace ContentEditor.App.ImguiHandling.Mdf2;
@@ -129,7 +127,46 @@ public class MdfMaterialListImguiHandler : DictionaryListImguiHandler<string, Ma
     protected override string GetKey(MatData item) => item.Header.matName;
 
     protected override MatData CreateItem(UIContext context, string key)
-        => new MatData(new MatHeader(context.FindClassValueInParentValues<MdfFile>()!.Option.Version) { matName = key });
+        => new MatData(new MatHeader() { matName = key });
+
+    protected override void InitChildContext(UIContext itemContext)
+    {
+        if (itemContext.GetRaw() != null) {
+            itemContext.uiHandler = new MdfMaterialLazyPlainObjectHandler(typeof(MatData));
+        }
+    }
+}
+
+public class MdfMaterialLazyPlainObjectHandler : LazyPlainObjectHandler
+{
+    public MdfMaterialLazyPlainObjectHandler(Type type) : base(type)
+    {
+    }
+
+    protected override bool DoTreeNode(UIContext context, object instance)
+    {
+        var tree = base.DoTreeNode(context, instance);
+        var mat = (MatData)instance;
+        if (ImGui.BeginPopupContextItem(context.label)) {
+            if (ImGui.Button("Duplicate")) {
+                var list = context.parent!.Get<List<MatData>>();
+                var clone = mat.Clone();
+                clone.Header.matName = $"{mat.Header.matName}_copy".GetUniqueName(str => list.Any(l => l.Header.matName == str));
+                UndoRedo.RecordListAdd(context.parent, list, clone);
+                ImGui.CloseCurrentPopup();
+            }
+            if (ImGui.Button("Delete")) {
+                var list = context.parent!.Get<List<MatData>>();
+                UndoRedo.RecordListRemove(context.parent, list, mat, childIndexOffset: 1);
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
+        if (!tree && context.label != mat.Header.matName) {
+            context.label = mat.Header.matName;
+        }
+        return tree;
+    }
 }
 
 [ObjectImguiHandler(typeof(List<TexHeader>))]
@@ -143,7 +180,7 @@ public class TexHeaderListImguiHandler : DictionaryListImguiHandler<string, TexH
     protected override string GetKey(TexHeader item) => item.texType;
 
     protected override TexHeader CreateItem(UIContext context, string key)
-        => new TexHeader(context.FindClassValueInParentValues<MdfFile>()!.Option.Version);
+        => new TexHeader();
 }
 
 
@@ -158,7 +195,7 @@ public class ParamHeaderListImguiHandler : DictionaryListImguiHandler<string, Pa
     protected override string GetKey(ParamHeader item) => item.paramName;
 
     protected override ParamHeader CreateItem(UIContext context, string key)
-        => new ParamHeader(context.FindClassValueInParentValues<MdfFile>()!.Option.Version);
+        => new ParamHeader();
 }
 
 [ObjectImguiHandler(typeof(ParamHeader))]

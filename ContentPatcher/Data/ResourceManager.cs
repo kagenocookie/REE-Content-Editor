@@ -569,12 +569,24 @@ public class ResourceManager(PatchDataContainer config)
         }
         loader ??= UnknownStreamFileLoader.Instance;
 
+        if (format.version != -1) {
+            var ext = PathUtils.GetFilenameExtensionWithoutSuffixes(filepath);
+            if (workspace.Env.TryGetFileExtensionVersion(ext.ToString(), out var expectedVersion) && expectedVersion != format.version) {
+                Logger.Error($"Unexpected {workspace.Game} file version .{ext}.{format.version} for type {format.format}. Expected version {expectedVersion}. File may not work correctly.");
+            }
+        }
+
         var handle = new FileHandle(filepath, stream.ToMemoryStream(forceCopy: true), handleType, loader) {
             NativePath = nativePath ?? (filepath.IsNativePath() ? filepath : null),
         };
 
-        if (!loader.Load(workspace, handle)) {
-            Logger.Error($"Failed to load file {filepath}");
+        try {
+            if (!loader.Load(workspace, handle)) {
+                Logger.Error($"Failed to load file {filepath}");
+                return null;
+            }
+        } catch (Exception e) {
+            Logger.Error(e, $"Failed to load file {filepath}");
             return null;
         }
         handle.DiffHandler = handle.Loader.CreateDiffHandler();

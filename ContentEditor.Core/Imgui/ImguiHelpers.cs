@@ -11,6 +11,7 @@ public static class ImguiHelpers
 
     public static bool TreeNodeSuffix(string label, string suffix, Vector4 color = default)
     {
+        ImGui.BeginGroup();
         var show = ImGui.TreeNode(label);
         ImGui.SameLine();
         if (color.W == 0) {
@@ -18,6 +19,10 @@ public static class ImguiHelpers
         } else {
             ImGui.TextColored(color, suffix);
         }
+        ImGui.EndGroup();
+        // hack: doing BeginGroup means the indent doesn't apply, but we need the group if we want to have a context menu trigger on both node and suffix
+        // doing a manual indent fixes that
+        if (show) ImGui.Indent(ImGui.GetStyle().IndentSpacing);
         return show;
     }
 

@@ -34,16 +34,16 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
                 setter: (c, v) => c.Key = v!);
         }
         var newCtx = AllowAdditions ? context.children[0] : null;
+        var indexOffset = AllowAdditions ? 1 : 0;
 
         for (int i = 0; i < list.Count; ++i) {
             var item = list[i];
-            var key = GetKey(item);
             ImGui.PushID(i);
-            var ctxIndex = AllowAdditions ? i + 1 : i;
-            if (ctxIndex >= context.children.Count || context.children[ctxIndex] == null) {
-                var childCtx = WindowHandlerFactory.CreateListElementContext(context, i);
+            var ctxIndex = i + indexOffset;
+            while (ctxIndex >= context.children.Count || context.children[ctxIndex] == null) {
+                var childCtx = WindowHandlerFactory.CreateListElementContext(context, context.children.Count - indexOffset);
                 context.children.Add(childCtx);
-                childCtx.label = key.ToString() ?? childCtx.label;
+                childCtx.label = GetKey(list[context.children.Count - indexOffset - 1]).ToString() ?? childCtx.label;
             }
             var child = context.children[ctxIndex];
             if (item == null) {
@@ -62,9 +62,11 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
                 continue;
             }
             if (child.uiHandler == null) {
-                child.AddDefaultHandler<TItem>();
+                InitChildContext(child);
+                if (child.uiHandler == null) child.AddDefaultHandler<TItem>();
             }
             child.ShowUI();
+            PostItem(child);
 
             ImGui.PopID();
         }
@@ -79,4 +81,6 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
     [return: NotNull]
     protected abstract TKey GetKey(TItem item);
     protected abstract TItem CreateItem(UIContext context, TKey key);
+    protected virtual void PostItem(UIContext itemContext) {}
+    protected virtual void InitChildContext(UIContext itemContext) {}
 }

@@ -18,6 +18,12 @@ public class PlainObjectHandler : IObjectUIHandler
 public class LazyPlainObjectHandler(Type type) : IObjectUIHandler
 {
     public ImGuiCond AutoOpen { get; set; }
+    public Type Type { get; } = type;
+
+    protected virtual bool DoTreeNode(UIContext context, object instance)
+    {
+        return ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString() ?? string.Empty);
+    }
 
     public void OnIMGUI(UIContext context)
     {
@@ -26,7 +32,7 @@ public class LazyPlainObjectHandler(Type type) : IObjectUIHandler
             ImGui.Text($"{context.label}: NULL");
             ImGui.PushID(context.label);
             if (ImguiHelpers.SameLine() && ImGui.Button("Create")) {
-                context.Set(Activator.CreateInstance(type));
+                context.Set(Activator.CreateInstance(Type));
             }
             ImGui.PopID();
             return;
@@ -36,9 +42,9 @@ public class LazyPlainObjectHandler(Type type) : IObjectUIHandler
             ImGui.SetNextItemOpen(true, AutoOpen);
         }
 
-        if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString() ?? string.Empty)) {
+        if (DoTreeNode(context, instance)) {
             if (context.children.Count == 0) {
-                WindowHandlerFactory.SetupObjectUIContext(context, type);
+                WindowHandlerFactory.SetupObjectUIContext(context, Type);
             }
             ImGui.PushID(context.GetRaw()!.GetHashCode());
             foreach (var child in context.children) {
