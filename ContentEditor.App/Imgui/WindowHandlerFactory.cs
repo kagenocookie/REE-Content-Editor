@@ -4,6 +4,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using ContentEditor.App.ImguiHandling;
+using ContentEditor.App.ImguiHandling.Mdf2;
 using ContentEditor.Editor;
 using ContentPatcher;
 using ReeLib;
@@ -29,7 +30,7 @@ public class OpenFileContext
     }
 }
 
-public partial class WindowHandlerFactory
+public static partial class WindowHandlerFactory
 {
     private static Dictionary<Type, Func<CustomField, IObjectUIHandler>>? customFieldImguiHandlers;
 
@@ -54,6 +55,7 @@ public partial class WindowHandlerFactory
         (typeof(MotlistItem), nameof(MotlistItem.Version))
     ];
     private static HashSet<Type> genericListTypes = [typeof(List<>), typeof(ObservableCollection<>)];
+    private static readonly Dictionary<Type, MemberInfo[]> typeMembers = new();
 
     private static readonly Dictionary<Type, Func<IObjectUIHandler>> csharpTypeHandlers = new()
     {
@@ -81,13 +83,22 @@ public partial class WindowHandlerFactory
         { typeof(ReeLib.via.Rect), () => new RectFieldHandler() },
         { typeof(Quaternion), () => new QuaternionFieldHandler() },
         { typeof(RszInstance), () => new NestedRszInstanceHandler() },
-        { typeof(EFXExpressionParameter), () => new EFXExpressionParameterHandler() },
     };
 
     static WindowHandlerFactory()
     {
         AppConfig.Instance.PrettyFieldLabels.ValueChanged += (bool newValue) => showPrettyLabels = newValue;
         showPrettyLabels = AppConfig.Instance.PrettyFieldLabels.Get();
+        foreach (var type in typeof(WindowHandlerFactory).Assembly.GetTypes()) {
+            if (!type.IsAssignableTo(typeof(IObjectUIHandler))) {
+                Console.Error.WriteLine($"Invalid [WindowHandlerFactory] type {type}");
+                continue;
+            }
+            var attr = type.GetCustomAttribute<ObjectImguiHandlerAttribute>();
+            if (attr == null) continue;
+
+            csharpTypeHandlers.Add(attr.HandledFieldType, () => (IObjectUIHandler)Activator.CreateInstance(type)!);
+        }
     }
 
     public static void SetClassFormatter(RszClass cls, StringFormatter formatter)
@@ -106,6 +117,8 @@ public partial class WindowHandlerFactory
                 return new UVSequenceFileEditor(env, file);
             case KnownFileFormats.UserVariables:
                 return new UvarEditor(env, file);
+            case KnownFileFormats.MaterialDefinition:
+                return new MdfEditor(env, file);
             case KnownFileFormats.CollisionDefinition:
                 return new RawDataEditor<CdefFile>(env, file);
             case KnownFileFormats.DynamicsDefinition:
@@ -132,7 +145,7 @@ public partial class WindowHandlerFactory
     }
 
     #region Reflection-based handlers
-    public static bool SetupObjectUIContext(UIContext context, Type? type, bool includePrivate = false)
+    public static bool SetupObjectUIContext(UIContext context, Type? type, bool includePrivate = false, MemberInfo[]? members = null)
     {
         var instance = context.GetRaw();
         var ws = context.GetWorkspace();
@@ -145,36 +158,48 @@ public partial class WindowHandlerFactory
         var reflectionOptions = BindingFlags.Instance | BindingFlags.Public;
         if (includePrivate) reflectionOptions |= BindingFlags.NonPublic;
 
-        foreach (var field in targetType.GetFields(reflectionOptions)) {
-            if (reflectionIgnoredTypes.Contains(field.FieldType) || ignoredFields.Contains((field.DeclaringType ?? targetType, field.Name))) continue;
-            if (field.Name.EndsWith(">k__BackingField")) continue;
+        if (members == null && !typeMembers.TryGetValue(targetType, out members)) {
+            var list = new List<MemberInfo>();
 
+            foreach (var field in targetType.GetFields(reflectionOptions)) {
+                if (reflectionIgnoredTypes.Contains(field.FieldType) || ignoredFields.Contains((field.DeclaringType ?? targetType, field.Name))) continue;
+                if (field.Name.EndsWith(">k__BackingField")) continue;
+
+                list.Add(field);
+            }
+
+            foreach (var prop in targetType.GetProperties(reflectionOptions)) {
+                if (prop.IsSpecialName ||
+                    prop.GetMethod == null ||
+                    reflectionIgnoredTypes.Contains(prop.PropertyType) ||
+                    ignoredProperties.Contains(prop.GetMethod.Name) ||
+                    ignoredFields.Contains((prop.DeclaringType ?? targetType, prop.Name))
+                ) {
+                    continue;
+                }
+
+                list.Add(prop);
+            }
+            typeMembers[targetType] = members = list.ToArray();
+        }
+
+        foreach (var field in members) {
             var ctx = context.AddChild(
                 GetFieldLabel(field.Name),
                     instance,
-                    getter: (c) => field.GetValue(c.target),
-                    setter: (c, v) => field.SetValue(c.target, v)
+                    getter: field switch {
+                        FieldInfo fi => (c) => fi.GetValue(c.target),
+                        PropertyInfo prop => (c) => prop.GetValue(c.target),
+                        _ => throw new Exception()
+                    },
+                    setter: field switch {
+                        FieldInfo fi => (c, v) => fi.SetValue(c.target, v),
+                        PropertyInfo prop => prop.SetMethod == null ? null : (c, v) => prop.SetValue(c.target, v),
+                        _ => throw new Exception()
+                    }
                 );
+
             ctx.uiHandler = CreateReflectionFieldHandler(context, field);
-        }
-
-        foreach (var prop in targetType.GetProperties(reflectionOptions)) {
-            if (prop.IsSpecialName ||
-                prop.GetMethod == null ||
-                reflectionIgnoredTypes.Contains(prop.PropertyType) ||
-                ignoredProperties.Contains(prop.GetMethod.Name) ||
-                ignoredFields.Contains((prop.DeclaringType ?? targetType, prop.Name))
-            ) {
-                continue;
-            }
-
-            var ctx = context.AddChild(
-                GetFieldLabel(prop.Name),
-                    instance,
-                    getter: (c) => prop.GetValue(c.target),
-                    setter: prop.SetMethod == null ? null : (c, v) => prop.SetValue(c.target, v)
-                );
-            ctx.uiHandler = CreateReflectionFieldHandler(context, prop);
         }
 
         return true;
@@ -184,48 +209,82 @@ public partial class WindowHandlerFactory
     {
         var fieldType = ((field as FieldInfo)?.FieldType) ?? (field as PropertyInfo)?.PropertyType;
         if (fieldType == null) return new UnsupportedHandler();
-
-        if (fieldType.IsArray) {
-            return new ArrayHandler(fieldType.GetElementType()!);
-        }
-
-        if (fieldType.IsEnum) {
-            return new CsharpEnumHandler(fieldType);
-        }
-
-        if (fieldType.IsGenericType && genericListTypes.Contains(fieldType.GetGenericTypeDefinition())) {
-            return new ListHandler(fieldType.GetGenericArguments()[0]);
-        }
-
-        if (csharpTypeHandlers.TryGetValue(fieldType, out var fac)) {
-            return fac.Invoke();
-        }
-
         if (fieldType.IsClass) {
             var target = context.GetRaw();
             var value = (field as FieldInfo)?.GetValue(target) ?? (field as PropertyInfo)?.GetValue(target);
             if (value != null) {
-                return new LazyPlainObjectHandler(value.GetType());
+                return CreateUIHandler(value, value.GetType());
             } else {
                 return new LazyPlainObjectHandler(fieldType);
             }
         }
-        if (fieldType.IsValueType) {
-            return new LazyPlainObjectHandler(fieldType);
+        return CreateUIHandler(context.GetRaw(), fieldType);
+    }
+
+    public static void AddDefaultHandler(this UIContext context)
+    {
+        context.uiHandler = CreateUIHandler(context.GetRaw(), context.GetRaw()?.GetType());
+    }
+
+    public static void AddDefaultHandler<T>(this UIContext context)
+    {
+        context.uiHandler = CreateUIHandler(context.GetRaw(), typeof(T));
+    }
+
+    public static IObjectUIHandler CreateUIHandler<T>(object? value)
+    {
+        return CreateUIHandler(value, typeof(T));
+    }
+
+    public static IObjectUIHandler CreateUIHandler(object? value, Type? valueType)
+    {
+        valueType ??= value?.GetType();
+        if (valueType == null) {
+            return new UnsupportedHandler();
         }
-        if (fieldType.IsAbstract) {
-            var value = context.GetRaw();
-            if (value?.GetType() != fieldType) {
-                SetupObjectUIContext(context, value!.GetType());
-                return context.uiHandler ?? new UnsupportedHandler(field);
+
+        if (csharpTypeHandlers.TryGetValue(valueType, out var fac)) {
+            return fac.Invoke();
+        }
+
+        if (valueType.IsArray) {
+            return new ArrayHandler(valueType.GetElementType()!);
+        }
+
+        if (valueType.IsEnum) {
+            if (valueType.GetCustomAttribute<FlagsAttribute>() != null) {
+                return (IObjectUIHandler)Activator.CreateInstance(typeof(CsharpFlagsEnumFieldHandler<,>).MakeGenericType(valueType, valueType.GetEnumUnderlyingType()))!;
+            } else {
+                return new CsharpEnumHandler(valueType);
             }
         }
 
-        return new UnsupportedHandler(field);
+        if (valueType.IsGenericType && genericListTypes.Contains(valueType.GetGenericTypeDefinition())) {
+            return new ListHandler(valueType.GetGenericArguments()[0]) { CanCreateNewElements = true };
+        }
+
+        if (valueType.IsClass) {
+            return new LazyPlainObjectHandler(valueType);
+        }
+        if (valueType.IsValueType) {
+            return new LazyPlainObjectHandler(valueType);
+        }
+        if (valueType.IsAbstract) {
+            if (value != null && value.GetType() != valueType) {
+                return CreateUIHandler(value, value.GetType());
+            }
+        }
+
+        return new UnsupportedHandler(valueType);
     }
 
     public static void SetupArrayElementHandler(UIContext context, Type elementType)
     {
+        if (csharpTypeHandlers.TryGetValue(elementType, out var fac)) {
+            context.uiHandler = fac.Invoke();
+            return;
+        }
+
         if (elementType.IsArray) {
             context.uiHandler = new UnsupportedHandler(elementType.MakeArrayType());
             return;
@@ -233,11 +292,6 @@ public partial class WindowHandlerFactory
 
         if (elementType.IsEnum) {
             context.uiHandler = new CsharpEnumHandler(elementType);
-            return;
-        }
-
-        if (csharpTypeHandlers.TryGetValue(elementType, out var fac)) {
-            context.uiHandler = fac.Invoke();
             return;
         }
 

@@ -42,19 +42,19 @@ public class RawDataEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     protected override void DrawFileContents()
     {
         var content = GetContent();
-        if (content is BaseFile || ImGui.TreeNode("Raw data")) {
-            if (rawContext == null) {
-                rawContext = context.AddChild("File", content);
-                rawContext.uiHandler = new PlainObjectHandler();
+        if (rawContext == null) {
+            if (content is BaseFile) {
+                rawContext = context.AddChild("Data", content, new LazyPlainObjectHandler(content.GetType()) { AutoOpen = ImGuiCond.Always });
+            } else {
+                rawContext = context.AddChild("Raw data", content, new PlainObjectHandler());
                 WindowHandlerFactory.SetupObjectUIContext(rawContext, null, true);
                 if (rawContext.children.Count == 1 && rawContext.children.First().uiHandler is LazyPlainObjectHandler lazy) {
                     lazy.AutoOpen = ImGuiCond.Always;
                 }
             }
-
-            rawContext.ShowUI();
-            if (content is not BaseFile) ImGui.TreePop();
         }
+
+        rawContext.ShowUI();
     }
 
     void IObjectUIHandler.OnIMGUI(UIContext container)

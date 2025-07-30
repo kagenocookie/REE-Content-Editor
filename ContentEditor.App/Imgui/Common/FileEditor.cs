@@ -59,7 +59,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         var rootFile = Handle;
         var windowRoot = this;
         while (rootFile != null && rootFile.HandleType == FileHandleType.Embedded) {
-            var parent = context.FindInterfaceInParentValues<WindowData>();
+            var parent = context.FindClassValueInParentValues<WindowData>();
             var parentEditor = (parent?.Handler as FileEditor);
             if (parentEditor != null) {
                 rootFile = parentEditor.Handle;

@@ -21,9 +21,13 @@ public static class UIContextExtensions
         return context.Cast<IRectWindow>() ?? context.parent?.GetWindow() ?? EditorWindow.CurrentWindow;
     }
 
-    public static T? FindInterfaceInParentValues<T>(this UIContext context) where T : class
+    public static T? FindClassValueInParentValues<T>(this UIContext context) where T : class
     {
-        return context.Cast<T>() ?? context.parent?.FindInterfaceInParentValues<T>();
+        return context.Cast<T>() ?? context.parent?.FindClassValueInParentValues<T>();
+    }
+    public static T? FindValueInParents<T>(this UIContext context)
+    {
+        return context.Get<T>() ?? (context.parent == null ? default : context.parent.FindValueInParents<T>());
     }
 
     public static T? FindInterfaceInParentHandlers<T>(this UIContext context) where T : class

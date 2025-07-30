@@ -13,6 +13,7 @@ using ReeLib.via;
 
 namespace ContentEditor.App.ImguiHandling;
 
+[ObjectImguiHandler(typeof(EFXExpressionParameter))]
 public class EFXExpressionParameterHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)

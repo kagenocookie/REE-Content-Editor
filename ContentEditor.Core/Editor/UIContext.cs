@@ -22,6 +22,8 @@ public class UIContext
     public StringFormatter? stringFormatter;
     private bool wasChanged;
 
+    public bool HasChildren => children.Count != 0;
+
     public bool Changed
     {
         get => wasChanged;
@@ -220,6 +222,13 @@ public class UIContext
         }
     }
 
+    public void ShowChildrenUI()
+    {
+        foreach (var child in children) {
+            child.ShowUI();
+        }
+    }
+
     public void RemoveChild(UIContext context)
     {
         children.Remove(context);
@@ -242,7 +251,7 @@ public class UIOptions
 
 public interface IObjectUIHandler
 {
-    void OnIMGUI(UIContext container);
+    void OnIMGUI(UIContext context);
 }
 
 public enum UIContextEvent

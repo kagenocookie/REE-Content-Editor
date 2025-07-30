@@ -435,7 +435,7 @@ public class UserDataReferenceHandler : IObjectUIHandler
                     return;
                 }
                 var user = new UserFile(ws.Env.RszFileOption, rsz.FileHandler, rsz);
-                var parentFileHandle = context.FindInterfaceInParentValues<FileHandle>();
+                var parentFileHandle = context.FindClassValueInParentValues<FileHandle>();
                 FileHandle childHandle;
                 if (parentFileHandle != null) {
                     childHandle = FileHandle.CreateEmbedded(parentFileHandle.Loader, new BaseFileResource<UserFile>(user));
@@ -492,6 +492,14 @@ public class GuidFieldHandler : IObjectUIHandler
             } else {
                 ImGui.TextColored(Colors.Error, "Invalid GUID");
             }
+        }
+
+        if (ImGui.BeginPopupContextItem(context.label)) {
+            if (ImGui.Button("Randomize")) {
+                UndoRedo.RecordSet(context, Guid.NewGuid());
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
         }
     }
 }

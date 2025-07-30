@@ -6,7 +6,7 @@ public static class FileSystemUtils
 {
     public static void ShowFileInExplorer(string? file)
     {
-        if (File.Exists(file)) {
+        if (File.Exists(file) || Directory.Exists(file)) {
             Logger.Info("Filename: " + file);
             Process.Start(new ProcessStartInfo("explorer.exe") {
                 UseShellExecute = false,

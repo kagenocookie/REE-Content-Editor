@@ -27,8 +27,11 @@ public class BaseListHandler : IObjectUIHandler
                     context.children.Add(CreateElementContext(context, list, i));
                 }
                 var child = context.children[i];
-                var remove = !CanCreateNewElements && ImGui.Button("X");
-                ImGui.SameLine();
+                var remove = false;
+                if (CanCreateNewElements) {
+                    remove = ImGui.Button("X");
+                    ImGui.SameLine();
+                }
                 child.ShowUI();
                 if (remove) {
                     int fixed_i = i;
@@ -85,6 +88,18 @@ public class ListHandler : BaseListHandler
     {
         return Activator.CreateInstance(elementType)!;
     }
+}
+
+public class ListHandler<T> : ListHandler where T : class
+{
+    public Func<T>? Instantiator;
+    public ListHandler(Func<T>? instantiator) : base(typeof(T))
+    {
+        Instantiator = instantiator;
+        base.CanCreateNewElements = instantiator != null;
+    }
+
+    protected override object CreateNewElement(UIContext context) => Instantiator?.Invoke() ?? base.CreateNewElement(context);
 }
 
 public class ArrayHandler : BaseListHandler
