@@ -45,7 +45,7 @@ public static partial class WindowHandlerFactory
 
     private static bool showPrettyLabels = true;
     private static readonly Dictionary<string, string> prettyLabels = new();
-    private static readonly HashSet<Type> reflectionIgnoredTypes = [typeof(FileHandler), typeof(RszFileOption), typeof(RszParser)];
+    private static readonly HashSet<Type> reflectionIgnoredTypes = [typeof(FileHandler), typeof(RszFileOption), typeof(RszParser), typeof(RszClass)];
     private static readonly HashSet<string> ignoredProperties = ["set_Item", "get_Item"];
     private static readonly HashSet<(Type type, string field)> ignoredFields = [
         (typeof(BaseModel), nameof(BaseModel.Size)),
@@ -90,12 +90,12 @@ public static partial class WindowHandlerFactory
         AppConfig.Instance.PrettyFieldLabels.ValueChanged += (bool newValue) => showPrettyLabels = newValue;
         showPrettyLabels = AppConfig.Instance.PrettyFieldLabels.Get();
         foreach (var type in typeof(WindowHandlerFactory).Assembly.GetTypes()) {
+            var attr = type.GetCustomAttribute<ObjectImguiHandlerAttribute>();
+            if (attr == null) continue;
             if (!type.IsAssignableTo(typeof(IObjectUIHandler))) {
                 Console.Error.WriteLine($"Invalid [WindowHandlerFactory] type {type}");
                 continue;
             }
-            var attr = type.GetCustomAttribute<ObjectImguiHandlerAttribute>();
-            if (attr == null) continue;
 
             csharpTypeHandlers.Add(attr.HandledFieldType, () => (IObjectUIHandler)Activator.CreateInstance(type)!);
         }
@@ -347,7 +347,7 @@ public static partial class WindowHandlerFactory
             RszFieldType.RuntimeType => new StringFieldHandler(), // TODO proper RuntimeType editor (use il2cpp data)
             RszFieldType.Resource => new ResourcePathPicker(ws, field),
 
-            RszFieldType.UserData => new UserDataReferenceHandler(field),
+            RszFieldType.UserData => new UserDataReferenceHandler(),
 
             RszFieldType.S8 => new NumericFieldHandler<sbyte>(ImGuiNET.ImGuiDataType.S8),
             RszFieldType.S16 => TryCreateEnumHandler(ws, field.original_type) ?? new NumericFieldHandler<short>(ImGuiNET.ImGuiDataType.S16),

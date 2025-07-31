@@ -49,7 +49,11 @@ public class NestedRszInstanceHandler : IObjectUIHandler
         }
         if (ImguiHelpers.TreeNodeSuffix(context.label, context.stringFormatter?.GetString(instance) ?? instance.RszClass.name)) {
             if (context.children.Count == 0) {
-                WindowHandlerFactory.SetupRSZInstanceHandler(context);
+                if (instance.RSZUserData != null) {
+                    context.AddChild(context.label, instance, new UserDataReferenceHandler());
+                } else {
+                    WindowHandlerFactory.SetupRSZInstanceHandler(context);
+                }
             }
             ImGui.PushID(context.GetRaw()!.GetHashCode());
             foreach (var child in context.children) {
@@ -348,13 +352,6 @@ public class AutocompleteStringHandler(bool requireListedChoice, string[]? sugge
 
 public class UserDataReferenceHandler : IObjectUIHandler
 {
-    public RszField field;
-
-    public UserDataReferenceHandler(RszField field)
-    {
-        this.field = field;
-    }
-
     public void OnIMGUI(UIContext context)
     {
         var instance = context.Get<RszInstance>();
