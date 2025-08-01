@@ -542,6 +542,14 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     {
         using var _ = new OverrideCurrentWindow(this);
         Logger.Debug("DragDrop: " + data + " at " + position);
+        if (data.text != null) {
+            if (Path.IsPathFullyQualified(data.text) && (File.Exists(data.text) || Directory.Exists(data.text))) {
+                OnFileDrop([data.text], new Vector2D<int>(position.X, position.Y));
+            } else {
+                // TODO fake input if it's dropped on a text input?
+            }
+            return;
+        }
         if (data.filenames != null) {
             OnFileDrop(data.filenames, new Vector2D<int>(position.X, position.Y));
         }

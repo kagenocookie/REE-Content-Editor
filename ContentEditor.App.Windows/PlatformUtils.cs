@@ -1,6 +1,7 @@
 ﻿namespace ContentEditor.App.Windows;
 
 using System.Drawing;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
@@ -81,6 +82,9 @@ public class PlatformUtils
     [DllImport("user32.dll", ExactSpelling = true)]
     private static extern void SetCursor([In] IntPtr cursor);
 
+    [DllImport("shell32.dll", ExactSpelling = true)]
+    private static extern uint DragQueryFileA([In] IntPtr hDrop, [In] uint iFile, [In, Out] StringBuilder? lpszFile, int bufferSize);
+
     private static IntPtr GetCursor(int id = 6)
     {
         var l = LoadLibraryW("ole32.dll");
@@ -154,38 +158,25 @@ public class PlatformUtils
             var formatsEnum = dataObject.EnumFormatEtc(DATADIR.DATADIR_GET);
             FORMATETC[] formats = new FORMATETC[1];
             int[] readCounts = new int[1];
-            var sb = new StringBuilder(64);
-            bool foundFilenameW = false;
+            // var sb = new StringBuilder(64);
             string? filename = null;
+            // https://www.codeproject.com/Reference/1091137/Windows-Clipboard-Formats
             while (true) {
                 int res = formatsEnum.Next(1, formats, readCounts);
                 if (res != 0) break;
 
                 var readCount = readCounts[0];
                 if (readCount == 0) break;
+                var format = (ClipboardFormats)formats[0].cfFormat;
 
-                sb.Clear();
-                // note, we could probably skip the GetDataObjectType call and just check the actual values
-                // but eh, it's fine
-                var type = GetDataObjectType(ref formats[0], sb);
-                // https://www.codeproject.com/Reference/1091137/Windows-Clipboard-Formats
-                // FileContents => IStream
-
-                // text drop: cfFormat == 13 (CF_UNICODETEXT), type = ""
-                if (type == "" && formats[0].cfFormat == 13) {
-                    return new DragDropContextObject() { text = GetString(dataObject, ref formats[0], true) };
+                if (format == ClipboardFormats.CF_HDROP) {
+                    return new DragDropContextObject() {
+                        filenames = GetDropFiles(dataObject, ref formats[0], false),
+                    };
                 }
-
-                switch (type) {
-                    case "FileName":
-                        if (!foundFilenameW) {
-                            filename = GetString(dataObject, ref formats[0], false);
-                        }
-                        break;
-                    case "FileNameW":
-                        filename = GetString(dataObject, ref formats[0], true);
-                        foundFilenameW = true;
-                        break;
+                if (format is ClipboardFormats.CF_UNICODETEXT or ClipboardFormats.CF_TEXT) {
+                    var text = GetString(dataObject, ref formats[0], format is ClipboardFormats.CF_UNICODETEXT);
+                    return new DragDropContextObject() { text = text };
                 }
             }
             if (filename != null) {
@@ -194,21 +185,38 @@ public class PlatformUtils
 
             return null;
 
-            static string GetDataObjectType(ref FORMATETC format, StringBuilder sb)
-            {
-                var err = GetClipboardFormatNameW((uint)format.cfFormat, sb, sb.Capacity);
-                if (err != 0) {
-                    Console.Error.WriteLine("Failed to get clipboard format");
-                    return "";
-                }
-                return sb.ToString();
-            }
+            // static string GetDataObjectType(ref FORMATETC format, StringBuilder sb)
+            // {
+            //     var err = GetClipboardFormatNameW((uint)format.cfFormat, sb, sb.Capacity);
+            //     if (err != 0) {
+            //         Console.Error.WriteLine("Failed to get clipboard format");
+            //         return "";
+            //     }
+            //     return sb.ToString();
+            // }
             static string GetString(IDataObject dataObject, ref FORMATETC format, bool isUnicode)
             {
                 dataObject.GetData(ref format, out var medium);
                 var str = isUnicode ? Marshal.PtrToStringUni(*(IntPtr*)medium.unionmember) : Marshal.PtrToStringAnsi(*(IntPtr*)medium.unionmember);
                 FreeMedium(ref medium);
                 return str ?? string.Empty;
+            }
+            static string[] GetDropFiles(IDataObject dataObject, ref FORMATETC format, bool isUnicode)
+            {
+                dataObject.GetData(ref format, out var medium);
+                var dataPtr = *(DROPFILES**)medium.unionmember;
+                var data = *dataPtr;
+                var fileCount = DragQueryFileA((IntPtr)dataPtr, 0xffffffff, null, 0);
+                var files = new string[fileCount];
+                var offset = (nint)dataPtr + data.pFiles;
+                for (int i = 0; i < fileCount; ++i) {
+                    var str = data.fWide ? Marshal.PtrToStringUni(offset) : Marshal.PtrToStringAnsi(offset);
+                    files[i] = str!;
+                    offset += (str!.Length + 1) * (data.fWide ? 2 : 1);
+                }
+
+                FreeMedium(ref medium);
+                return files;
             }
             // static MemoryStream GetStream(IDataObject dataObject, ref FORMATETC format)
             // {
@@ -237,6 +245,44 @@ public class PlatformUtils
                 }
             }
         }
+    }
+
+    private enum ClipboardFormats
+    {
+        CF_TEXT = 1,
+        CF_BITMAP = 2,
+        CF_METAFILEPICT = 3,
+        CF_SYLK = 4,
+        CF_DIF = 5,
+        CF_TIFF = 6,
+        CF_OEMTEXT = 7,
+        CF_DIB = 8,
+        CF_PALETTE = 9,
+        CF_PENDATA = 10,
+        CF_RIFF = 11,
+        CF_WAVE = 12,
+        CF_UNICODETEXT = 13,
+        CF_ENHMETAFILE = 14,
+        CF_HDROP = 15,
+        CF_LOCALE = 16,
+        CF_DIBV5 = 17,
+        CF_DSPTEXT = 0x0081,
+        CF_DSPBITMAP = 0x0082,
+        CF_DSPMETAFILEPICT = 0x0083,
+        CF_DSPENHMETAFILE = 0x008E,
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    private struct DROPFILES
+    {
+        [FieldOffset(0)]
+        public int pFiles;
+        [FieldOffset(4)]
+        public Vector2 pt;
+        [FieldOffset(12)]
+        public bool fNC;
+        [FieldOffset(16)]
+        public bool fWide;
     }
 
     internal interface IUnknown
