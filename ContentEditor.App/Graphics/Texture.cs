@@ -221,6 +221,7 @@ public class Texture : IDisposable
         DxgiFormat.BC7_UNORM_SRGB => InternalFormat.CompressedRgbaBptcUnorm,
         // DxgiFormat.BC7_UNORM_SRGB => InternalFormat.CompressedSrgbAlphaS3TCDxt5Ext,
         DxgiFormat.BC4_UNORM => InternalFormat.CompressedRedRgtc1,
+        DxgiFormat.BC3_UNORM or DxgiFormat.BC3_UNORM_SRGB => InternalFormat.CompressedRgbaS3TCDxt5Ext,
 
         DxgiFormat.R16G16B16A16_FLOAT => InternalFormat.Rgba32f,
 
@@ -228,7 +229,6 @@ public class Texture : IDisposable
         DxgiFormat.BC1_UNORM_SRGB => InternalFormat.CompressedRgbaS3TCDxt1Ext,
         DxgiFormat.BC1_UNORM => InternalFormat.CompressedRgbaS3TCDxt1Ext,
         DxgiFormat.BC2_UNORM or DxgiFormat.BC2_UNORM_SRGB => InternalFormat.CompressedRgbaS3TCDxt3Ext,
-        DxgiFormat.BC3_UNORM or DxgiFormat.BC3_UNORM_SRGB => InternalFormat.CompressedRgbaS3TCDxt3Ext,
         _ => InternalFormat.CompressedRgba,
     };
 

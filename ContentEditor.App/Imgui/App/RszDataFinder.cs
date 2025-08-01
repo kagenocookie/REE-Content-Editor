@@ -158,6 +158,10 @@ public class RszDataFinder : IWindowHandler
                     if (ImGui.Button("Copy")) {
                         EditorWindow.CurrentWindow!.CopyToClipboard(match);
                     }
+                    ImGui.SameLine();
+                    if (ImGui.Button("Open")) {
+                        EditorWindow.CurrentWindow!.OpenFiles([match]);
+                    }
                     ImGui.PopID();
                 }
             }

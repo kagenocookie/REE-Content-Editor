@@ -60,10 +60,17 @@ public class UIContext
     public UIContext? GetChildByValue<T>() => children.FirstOrDefault(ch => ch.target is T);
     public T? GetChildValue<T>() => (T?)children.FirstOrDefault(ch => ch.target is T)?.target;
 
+    private static object? DefaultGetter(UIContext ctx) => ctx.target;
+
+    private static void NotImplementedSetter(UIContext ctx, object? val)
+    {
+        throw new NotImplementedException();
+    }
+
     public UIContext AddChild(string label, object? instance, IObjectUIHandler? handler = null, Func<UIContext, object?>? getter = null, Action<UIContext, object?>? setter = null)
     {
-        setter ??= ((_, _) => throw new NotImplementedException());
-        var child = new UIContext(label, instance, root, getter ?? ((ctx) => ctx.target), setter, options) {
+        setter ??= NotImplementedSetter;
+        var child = new UIContext(label, instance, root, getter ?? DefaultGetter, setter, options) {
             parent = this,
         };
         child.uiHandler = handler;
@@ -72,8 +79,8 @@ public class UIContext
     }
     public UIContext AddChild<TTarget, TValue>(string label, TTarget? instance, IObjectUIHandler? handler = null, Func<TTarget?, object?>? getter = null, Action<TTarget, TValue?>? setter = null)
     {
-        Func<UIContext, object?> boxedGetter = getter == null ? (ctx) => ctx.target : (ctx) => getter((TTarget?)ctx.target);
-        Action<UIContext, object?>? boxedSetter = setter == null ? null : (ctx, val) => {
+        Func<UIContext, object?> boxedGetter = getter == null ? DefaultGetter : (ctx) => getter((TTarget?)ctx.target);
+        Action<UIContext, object?>? boxedSetter = setter == null ? null :  (ctx, val) => {
             setter.Invoke((TTarget)ctx.target!, (TValue?)val);
         };
         boxedSetter ??= ((_, _) => throw new NotImplementedException());
@@ -206,7 +213,6 @@ public class UIContext
     public void ClearChildren()
     {
         foreach (var child in children) {
-            (child.target as IDisposable)?.Dispose();
             (child.uiHandler as IDisposable)?.Dispose();
             child.ClearChildren();
         }
@@ -224,8 +230,8 @@ public class UIContext
 
     public void ShowChildrenUI()
     {
-        foreach (var child in children) {
-            child.ShowUI();
+        for (int i = 0; i < children.Count; i++) {
+            children[i].ShowUI();
         }
     }
 

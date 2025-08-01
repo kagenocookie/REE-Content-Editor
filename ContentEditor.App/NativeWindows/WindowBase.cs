@@ -139,10 +139,12 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         Ready?.Invoke();
     }
 
-    public void AddSubwindow(IWindowHandler subwindow)
+    public WindowData AddSubwindow(IWindowHandler subwindow)
     {
         var pos = new Vector2(Size.X / 5 + Random.Shared.NextSingle() * 80, Size.Y / 5 + Random.Shared.NextSingle() * 80);
-        AddSubwindow(new WindowData() { Handler = subwindow, Position = pos, ParentWindow = this });
+        var window = new WindowData() { Handler = subwindow, Position = pos, ParentWindow = this };
+        AddSubwindow(window);
+        return window;
     }
 
     protected void AddSubwindow(WindowData data)
@@ -401,9 +403,11 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
                 Logger.Error(e, "Deferred callback failed");
             }
         }
-        foreach (var close in removeSubwindows) {
+        for (int i = 0; i < removeSubwindows.Count; i++) {
+            var close = removeSubwindows[i];
             if (subwindows.Remove(close)) {
                 (close.Handler as IDisposable)?.Dispose();
+                close.Context.Get<WindowData>().Handler?.OnClosed();
             }
         }
         removeSubwindows.Clear();

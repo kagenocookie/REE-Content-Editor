@@ -11,7 +11,7 @@ public static class UI
         MainLoop.Instance.OpenSubwindow(new EditorWindow(1, workspace));
     }
 
-    private static int FontSize { get; set; } = 20;
+    public static int FontSize { get; set; } = 20;
 
     private static ushort[] PolishRanges = [
         0x0020, 0x00FF,

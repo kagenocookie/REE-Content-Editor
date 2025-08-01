@@ -92,17 +92,6 @@ public class ArrayRSZHandler : BaseListHandler
     }
 }
 
-public class NumericFieldHandler<T>(ImGuiDataType type) : IObjectUIHandler where T : unmanaged
-{
-    public unsafe void OnIMGUI(UIContext context)
-    {
-        var num = (T)context.Get<object>();
-        if (ImGui.DragScalar(context.label, type, (IntPtr)(&num))) {
-            UndoRedo.RecordSet(context, num);
-        }
-    }
-}
-
 public class EnumFieldHandler : IObjectUIHandler
 {
     private EnumDescriptor enumDescriptor;
@@ -195,44 +184,6 @@ public class FlagsEnumFieldHandler : IObjectUIHandler
     }
 }
 
-public class BoolFieldHandler : IObjectUIHandler
-{
-    public void OnIMGUI(UIContext context)
-    {
-        var val = context.Get<bool>();
-        if (ImGui.Checkbox(context.label, ref val)) {
-            UndoRedo.RecordSet(context, val);
-        }
-    }
-}
-
-public class Vector2FieldHandler : IObjectUIHandler
-{
-    public void OnIMGUI(UIContext context)
-    {
-        var val = context.Get<Vector2>();
-        if (ImGui.DragFloat2(context.label, ref val)) UndoRedo.RecordSet(context, val);
-    }
-}
-
-public class Vector3FieldHandler : IObjectUIHandler
-{
-    public void OnIMGUI(UIContext context)
-    {
-        var val = context.Get<Vector3>();
-        if (ImGui.DragFloat3(context.label, ref val)) UndoRedo.RecordSet(context, val);
-    }
-}
-
-public class Vector4FieldHandler : IObjectUIHandler
-{
-    public void OnIMGUI(UIContext context)
-    {
-        var val = context.Get<Vector4>();
-        if (ImGui.DragFloat4(context.label, ref val)) UndoRedo.RecordSet(context, val);
-    }
-}
-
 public class RectFieldHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
@@ -279,74 +230,6 @@ public class SizeFieldHandler : IObjectUIHandler
         if (ImGui.DragFloatRange2(context.label, ref val.w, ref val.h)) {
             UndoRedo.RecordSet(context, val);
         }
-    }
-}
-
-public class IntRangeFieldHandler : IObjectUIHandler
-{
-    public void OnIMGUI(UIContext context)
-    {
-        var val = context.Get<ReeLib.via.RangeI>();
-        if (ImGui.DragIntRange2(context.label, ref val.r, ref val.s)) {
-            UndoRedo.RecordSet(context, val);
-        }
-    }
-}
-
-public class QuaternionFieldHandler : IObjectUIHandler
-{
-    public void OnIMGUI(UIContext context)
-    {
-        var val = context.Get<Quaternion>();
-        var vec = new Vector4(val.X, val.Y, val.Z, val.W);
-        if (ImGui.DragFloat4(context.label, ref vec)) UndoRedo.RecordSet(context, new Quaternion(vec.X, vec.Y, vec.Z, vec.W));
-    }
-}
-
-public class StringFieldHandler : IObjectUIHandler
-{
-    public void OnIMGUI(UIContext context)
-    {
-        var val = context.Get<string?>() ?? string.Empty;
-        if (ImGui.InputText(context.label, ref val, 255)) {
-            UndoRedo.RecordSet(context, val);
-        }
-    }
-}
-
-public class AutocompleteStringHandler(bool requireListedChoice, string[]? suggestions = null) : IObjectUIHandler
-{
-    public void OnIMGUI(UIContext context)
-    {
-        var selected = context.Get<string>();
-
-        context.state ??= selected;
-        if (ImGui.InputText(context.label, ref context.state, 1024)) {
-            if (!requireListedChoice) {
-                selected = context.state;
-                OnSelected(context, selected);
-            }
-        }
-        var currentSuggestions = GetSuggestions(context, context.state);
-        if (currentSuggestions.Contains(context.state)){
-            return;
-        }
-
-        ImGui.BeginListBox($"Suggestions##{context.label}", new System.Numerics.Vector2(ImGui.CalcItemWidth(), 400));
-        var items = currentSuggestions.Where(cs => cs.Contains(context.state, StringComparison.OrdinalIgnoreCase));
-        foreach (var suggestion in items) {
-            if (ImGui.Button(suggestion)) {
-                OnSelected(context, suggestion);
-            }
-        }
-        ImGui.EndListBox();
-    }
-
-    protected virtual IEnumerable<string> GetSuggestions(UIContext context, string filter) => suggestions ?? Array.Empty<string>();
-
-    protected virtual void OnSelected(UIContext context, string selection)
-    {
-        UndoRedo.RecordSet(context, selection);
     }
 }
 
@@ -463,18 +346,6 @@ public class UserDataReferenceHandler : IObjectUIHandler
     }
 }
 
-public class ColorFieldHandler : IObjectUIHandler
-{
-    public void OnIMGUI(UIContext context)
-    {
-        var val = context.Get<Color>();
-        var vec = val.ToVector4();
-        if (ImGui.ColorEdit4(context.label, ref vec, ImGuiColorEditFlags.Uint8)) {
-            UndoRedo.RecordSet(context, Color.FromVector4(vec));
-        }
-    }
-}
-
 public class GuidFieldHandler : IObjectUIHandler
 {
     private const uint GuidLength = 36;
@@ -501,7 +372,7 @@ public class GuidFieldHandler : IObjectUIHandler
     }
 }
 
-public class LabelHandler : IObjectUIHandler
+public class ReadOnlyLabelHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -509,52 +380,14 @@ public class LabelHandler : IObjectUIHandler
     }
 }
 
-public class UnsupportedHandler : IObjectUIHandler
+[ObjectImguiHandler(typeof(ResourceInfo))]
+public class ResourceInfoHandler : IObjectUIHandler
 {
-    public UnsupportedHandler()
-    {
-        FieldType = "unknown";
-    }
-
-    public UnsupportedHandler(RszField field)
-    {
-        FieldType = field.type.ToString();
-    }
-
-    public UnsupportedHandler(Type? type)
-    {
-        FieldType = type?.Name ?? "unknown";
-    }
-
-    public UnsupportedHandler(FieldInfo field) : this(field.FieldType) { }
-
-    public UnsupportedHandler(MemberInfo field)
-    {
-        FieldType = ((field as FieldInfo)?.FieldType)?.Name ?? (field as PropertyInfo)?.PropertyType?.Name ?? "unknown";
-    }
-
-    public string FieldType { get; }
-
     public void OnIMGUI(UIContext context)
     {
-        ImGui.TextColored(Colors.Error, $"{context.label} (unsupported {FieldType} value {context.GetRaw() ?? "NULL"})");
-    }
-}
-
-
-public class ReadOnlyWrapperHandler : IObjectUIHandler
-{
-    public IObjectUIHandler next;
-
-    public ReadOnlyWrapperHandler(IObjectUIHandler next)
-    {
-        this.next = next;
-    }
-
-    public void OnIMGUI(UIContext container)
-    {
-        ImGui.BeginDisabled();
-        next.OnIMGUI(container);
-        ImGui.EndDisabled();
+        if (context.children.Count == 0) {
+            context.AddChild<ResourceInfo, string>(context.label, context.Get<ResourceInfo>(), new ResourcePathPicker(), static (c) => c!.Path, static (c, v) => c.Path = v);
+        }
+        context.children[0].ShowUI();
     }
 }

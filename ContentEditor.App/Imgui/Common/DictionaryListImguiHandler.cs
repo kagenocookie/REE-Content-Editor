@@ -13,6 +13,15 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
     }
 
     protected bool AllowAdditions { get; set; } = true;
+    protected bool FlatList { get; set; }
+    protected bool Filterable { get; set; }
+
+    protected virtual bool Filter(UIContext context, string filter) => true;
+
+    protected virtual IObjectUIHandler CreateNewItemInput(UIContext context)
+    {
+        return WindowHandlerFactory.CreateUIHandler<TKey>(default(TKey));
+    }
 
     public void OnIMGUI(UIContext context)
     {
@@ -26,15 +35,32 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
             context.Set(list = new TListType());
         }
 
-        if (!ImGui.TreeNode(context.label)) return;
+        if (FlatList) {
+            ImGui.SeparatorText(context.label);
+        } else {
+            if (!ImGui.TreeNode(context.label)) return;
+        }
+        if (Filterable) {
+            context.state ??= string.Empty;
+            ImGui.InputText("Filter", ref context.state, 120);
+        }
         if (AllowAdditions && context.children.Count == 0) {
             var store = new KeyHolder(default(TKey)!);
-            context.AddChild<KeyHolder, TKey>("New item", store, WindowHandlerFactory.CreateUIHandler<TKey>(default(TKey)),
+            context.AddChild<KeyHolder, TKey>("New item", store, CreateNewItemInput(context),
                 getter: (c) => c!.Key,
                 setter: (c, v) => c.Key = v!);
         }
         var newCtx = AllowAdditions ? context.children[0] : null;
         var indexOffset = AllowAdditions ? 1 : 0;
+
+        if (AllowAdditions) {
+            if (ImGui.Button("Add")) {
+                var item = CreateItem(context, newCtx!.Get<TKey>());
+                if (item != null) list.Add(item);
+            }
+            ImGui.SameLine();
+            newCtx?.ShowUI();
+        }
 
         for (int i = 0; i < list.Count; ++i) {
             var item = list[i];
@@ -55,9 +81,14 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
                 child.ShowUI();
                 ImGui.SameLine();
                 if (ImGui.Button("Create")) {
-                    list[i] = CreateItem(context, child.Get<TKey>());
+                    var newItem = CreateItem(context, child.Get<TKey>());
+                    if (newItem != null) list[i] = newItem;
                     context.children[ctxIndex] = null!;
                 }
+                ImGui.PopID();
+                continue;
+            }
+            if (Filterable && !string.IsNullOrEmpty(context.state) && !Filter(child, context.state)) {
                 ImGui.PopID();
                 continue;
             }
@@ -71,16 +102,12 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
             ImGui.PopID();
         }
 
-        newCtx?.ShowUI();
-        if (AllowAdditions && ImGui.Button("Add")) {
-            list.Add(CreateItem(context, newCtx!.Get<TKey>()));
-        }
-        ImGui.TreePop();
+        if (!FlatList) ImGui.TreePop();
     }
 
     [return: NotNull]
     protected abstract TKey GetKey(TItem item);
-    protected abstract TItem CreateItem(UIContext context, TKey key);
+    protected abstract TItem? CreateItem(UIContext context, TKey key);
     protected virtual void PostItem(UIContext itemContext) {}
     protected virtual void InitChildContext(UIContext itemContext) {}
 }

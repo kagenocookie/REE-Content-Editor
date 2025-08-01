@@ -17,6 +17,11 @@ public class ResourcePathPicker : IObjectUIHandler
     /// </summary>
     public bool SaveWithNativePath { get; init; }
 
+    public ResourcePathPicker()
+    {
+        FileFormats = [];
+    }
+
     public ResourcePathPicker(ContentWorkspace? ws, params KnownFileFormats[] allowedFormats)
     {
         FileFormats = allowedFormats;
@@ -66,7 +71,7 @@ public class ResourcePathPicker : IObjectUIHandler
             }
         }
 
-        if (FileFormats.Length != 0) {
+        if (FileFormats.Length != 0 && !string.IsNullOrEmpty(context.state)) {
             var parsed = PathUtils.ParseFileFormat(context.state);
             if (!FileFormats.Contains(parsed.format)) {
                 ImGui.TextColored(Colors.Warning, "The file may be an incorrect type. Expected file types: " + FileExtensionFilter);

@@ -23,10 +23,10 @@ public interface IWindowHandler
 
 public static class DefaultWindowHandler
 {
-    public static void ShowDefaultWindow<THandler>(this THandler handler, UIContext context) where THandler : IWindowHandler
+    public static void ShowDefaultWindow<THandler>(this THandler handler, UIContext context, ImGuiWindowFlags flags = ImGuiWindowFlags.None) where THandler : IWindowHandler
     {
         var data = context.Get<WindowData>();
-        if (!ImguiHelpers.BeginWindow(data)) {
+        if (!ImguiHelpers.BeginWindow(data, null, flags)) {
             WindowManager.Instance.CloseWindow(data);
             return;
         }

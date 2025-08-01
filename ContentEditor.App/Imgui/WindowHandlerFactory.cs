@@ -119,6 +119,8 @@ public static partial class WindowHandlerFactory
                 return new UvarEditor(env, file);
             case KnownFileFormats.MaterialDefinition:
                 return new MdfEditor(env, file);
+            case KnownFileFormats.Prefab:
+                return new PrefabEditor(env, file);
             case KnownFileFormats.CollisionDefinition:
                 return new RawDataEditor<CdefFile>(env, file);
             case KnownFileFormats.DynamicsDefinition:
