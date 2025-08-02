@@ -72,6 +72,7 @@ public class ArrayRSZHandler : BaseListHandler
     public ArrayRSZHandler(RszField field)
     {
         this.field = field;
+        CanCreateNewElements = true;
     }
 
     protected override UIContext CreateElementContext(UIContext context, IList list, int elementIndex)
