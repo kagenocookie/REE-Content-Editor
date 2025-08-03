@@ -15,7 +15,17 @@ sealed class Program
             var result = loop.Run();
             return result;
         } catch (Exception e) {
-            File.AppendAllText("crashlog.txt", $"---------------------------\n{DateTime.UtcNow.ToString("O")}\n{e.Message}\n{e.StackTrace}\n");
+            File.AppendAllText("crashlog.txt", $"---------------------------\n{DateTime.UtcNow.ToString("O")}\n{e.Message}\n\n{e.StackTrace}\n");
+#if WINDOWS
+            System.Windows.Forms.MessageBox.Show($"""
+                Unhandled exception occurred: {e.Message}
+
+                Error details have been written to crashlog.txt.
+                Consider reporting the error on GitHub and include the crashlog.txt file as well as how to reproduce the issue if possible."
+
+                {e.StackTrace}
+                """);
+#endif
             return 1;
         }
     }
