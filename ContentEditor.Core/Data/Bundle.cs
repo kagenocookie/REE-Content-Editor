@@ -1,6 +1,7 @@
 ﻿namespace ContentEditor.Core;
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
@@ -53,11 +54,15 @@ public class Bundle
 
     public override string ToString() => Name;
 
+    [JsonIgnore]
+    private Dictionary<string, string>? _nativeToLocalResourcePathCache;
+
     public void Touch()
     {
         UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss \\U\\T\\C");
         UpdatedAtTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         if (CreatedAt == null) CreatedAt = UpdatedAt;
+        _nativeToLocalResourcePathCache = null;
     }
 
     public IEnumerable<Entity> GetEntities(string type)
@@ -76,6 +81,7 @@ public class Bundle
     /// <returns></returns>
     public EntityRecordUpdateType RecordEntity(Entity updated)
     {
+        _nativeToLocalResourcePathCache = null;
         for (int i = 0; i < Entities.Count; i++) {
             var entity = Entities[i];
             if (entity.Type == updated.Type && entity.Id == updated.Id) {
@@ -99,6 +105,22 @@ public class Bundle
             }
         }
         return null;
+    }
+
+    public void AddResource(string localFilepath, string nativeFilepath)
+    {
+        ResourceListing ??= new();
+        ResourceListing[localFilepath] = new ResourceListItem() { Target = nativeFilepath };
+        _nativeToLocalResourcePathCache = null;
+    }
+
+    public bool TryFindResourceByNativePath(string nativePath, [MaybeNullWhen(false)] out string localPath)
+    {
+        if (_nativeToLocalResourcePathCache == null) {
+            _nativeToLocalResourcePathCache = ResourceListing?.ToDictionary(k => k.Value.Target, k => k.Key) ?? new(0);
+        }
+
+        return _nativeToLocalResourcePathCache.TryGetValue(nativePath, out localPath);
     }
 
     public enum EntityRecordUpdateType

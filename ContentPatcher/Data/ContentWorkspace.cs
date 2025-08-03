@@ -56,6 +56,7 @@ public class ContentWorkspace
 
     public int SaveModifiedFiles(IRectWindow? parent = null)
     {
+        SaveBundle();
         int count = 0;
         foreach (var file in ResourceManager.GetModifiedResourceFiles()) {
             if (file.Modified) {
@@ -79,6 +80,16 @@ public class ContentWorkspace
         if (bundle == null) {
             WindowManager.Instance.ShowError($"Bundle '{Data.ContentBundle}' not found!");
             return;
+        }
+        if (bundle.ResourceListing != null) {
+            // update the diffs for all open and modified bundle resource files
+            foreach (var file in ResourceManager.GetOpenFiles()) {
+                if (file.Modified && file.NativePath != null && bundle.TryFindResourceByNativePath(file.NativePath, out var localPath) && file.DiffHandler != null) {
+                    var resourceListing = bundle.ResourceListing[localPath];
+                    resourceListing.Diff = file.DiffHandler.FindDiff(file);
+                    resourceListing.DiffTime = DateTime.UtcNow;
+                }
+            }
         }
 
         var deletes = new List<int>();

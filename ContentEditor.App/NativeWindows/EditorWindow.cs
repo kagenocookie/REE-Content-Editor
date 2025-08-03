@@ -157,12 +157,6 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
 
         if (workspace != null) {
             if (ImGui.BeginMenu($"Workspace: {workspace.Data.Name ?? "--"}")) {
-                if (ImGui.MenuItem("Save")) {
-                    workspace.SaveBundle();
-                }
-                if (workspace.CurrentBundle != null && ImGui.MenuItem("Open bundle folder")) {
-                    FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
-                }
                 if (ImGui.BeginMenu($"Active bundle: {workspace.Data.ContentBundle}")) {
                     if (ImGui.MenuItem("Create new...")) {
                         AddUniqueSubwindow(new BundleManagementUI(workspace.BundleManager));
@@ -175,6 +169,9 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                         }
                     }
                     ImGui.EndMenu();
+                }
+                if (workspace.CurrentBundle != null && ImGui.MenuItem("Open bundle folder")) {
+                    FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
                 }
                 ImGui.EndMenu();
             }

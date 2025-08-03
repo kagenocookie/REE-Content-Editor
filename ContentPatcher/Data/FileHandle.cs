@@ -16,6 +16,7 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
     public Stream Stream { get; set; } = stream;
     public IResourceFile Resource { get; internal set; } = null!;
     public List<IFileHandleReferenceHolder> References { get; set; } = new();
+    public string? FileSource { get; set; }
     private bool _modified;
     public bool Modified
     {
@@ -67,7 +68,10 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
     public bool Save(ContentWorkspace workspace, string? newFilepath = null)
     {
         if (newFilepath == null && !File.Exists(Filepath)) {
-            Logger.Warn($"Unable to save file because it doesn't have a disk file path associated to it: {Filepath}\nOpen its editor and manually save it.");
+            Logger.Warn(@$"""
+                Unable to save file because it doesn't have a disk file path associated to it: {Filepath}
+                Open its editor and manually save it somewhere (e.g. save as, save to bundle, ...).
+                You can re-open the file through the ""Open files"" menu");
             return false;
         }
         try {
@@ -100,14 +104,15 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
     internal static FileHandle FromDiskFilePath(string filepath, IFileLoader loader)
     {
         var stream = File.OpenRead(filepath);
-        return new FileHandle(filepath, stream, FileHandleType.DiskFile, loader);
+        return new FileHandle(filepath, stream, FileHandleType.Disk, loader);
     }
 }
 
 public enum FileHandleType
 {
-    DiskFile,
-    InMemoryFile,
+    Disk,
+    Bundle,
+    Memory,
     Embedded,
 }
 

@@ -24,10 +24,10 @@ public class BundleManager
     public string? GamePath { get; set; }
     public string? VersionHash { get; set; }
 
-    public string BundlePath => Path.Combine(GamePath ?? string.Empty, "reframework/data/usercontent/bundles/");
-    public string EnumsPath => Path.Combine(GamePath ?? string.Empty, "reframework/data/usercontent/enums/");
-    public string SettingsPath => Path.Combine(GamePath ?? string.Empty, "reframework/data/usercontent/editor_settings.json");
-    public string ResourcePatchLogPath => Path.Combine(GamePath ?? string.Empty, "reframework/content_patch_metadata.json");
+    public string BundlePath => Path.Combine(GamePath ?? string.Empty, "reframework/data/usercontent/bundles/").Replace('\\', '/');
+    public string EnumsPath => Path.Combine(GamePath ?? string.Empty, "reframework/data/usercontent/enums/").Replace('\\', '/');
+    public string SettingsPath => Path.Combine(GamePath ?? string.Empty, "reframework/data/usercontent/editor_settings.json").Replace('\\', '/');
+    public string ResourcePatchLogPath => Path.Combine(GamePath ?? string.Empty, "reframework/content_patch_metadata.json").Replace('\\', '/');
 
     private EditorSettings? settings;
 
@@ -161,20 +161,22 @@ public class BundleManager
 
     public string GetBundleFolder(Bundle bundle)
     {
-        return Path.Combine(BundlePath, bundle.Name);
+        return Path.Combine(BundlePath, bundle.Name).Replace('\\', '/');
     }
 
     public string? GetBundleResourcePath(Bundle bundle, string filepath)
     {
         if (bundle.ResourceListing == null) return null;
-
-        foreach (var br in bundle.ResourceListing) {
-            if (br.Value.Target == filepath) {
-                return Path.Combine(BundlePath, bundle.Name, br.Key);
-            }
+        if (bundle.TryFindResourceByNativePath(filepath, out var localPath)) {
+            return ResolveBundleLocalPath(bundle, localPath);
         }
 
         return null;
+    }
+
+    public string ResolveBundleLocalPath(Bundle bundle, string localPath)
+    {
+        return Path.Combine(BundlePath, bundle.Name, localPath);
     }
 
     public bool IsBundleActive(Bundle bundle)

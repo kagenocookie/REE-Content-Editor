@@ -123,15 +123,17 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                     savePath = Path.Combine(bundleFolder, localFilepath);
                 }
                 SaveTo(savePath, true);
-                bundle.ResourceListing ??= new();
-                bundle.ResourceListing[localFilepath] = new ResourceListItem() { Target = nativeFilepath };
+                bundle.AddResource(localFilepath, nativeFilepath);
                 workspace.BundleManager.SaveBundle(bundle);
             }
         }
-        if (Handle.HandleType == FileHandleType.DiskFile && System.IO.File.Exists(Handle.Filepath)) {
+        if (Handle.HandleType == FileHandleType.Disk && System.IO.File.Exists(Handle.Filepath)) {
             ImGui.SameLine();
             if (ImGui.Button("Show in file explorer")) {
                 FileSystemUtils.ShowFileInExplorer(Handle.Filepath);
+            }
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetItemTooltip("Filepath: " + Handle.Filepath);
             }
         }
         if (HasUnsavedChanges && IsRevertable) {
@@ -139,6 +141,12 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             if (ImGui.Button("Revert")) {
                 Handle.Revert(data.Context.GetWorkspace()!);
             }
+        }
+
+        if (Handle.FileSource != null) {
+            ImGui.TextColored(Colors.Faded, "File source: " + Handle.HandleType + " - " + Handle.FileSource);
+        } else {
+            ImGui.TextColored(Colors.Faded, "File source: " + Handle.HandleType);
         }
     }
 
@@ -240,10 +248,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     public virtual bool HandleEvent(UIContext context, EditorUIEvent eventData)
     {
         if (eventData.type == UIContextEvent.Changed) {
-            var ws = context.GetWorkspace();
-            if (ws != null) {
-                ws.ResourceManager.MarkFileResourceModified(Handle.Filepath, true);
-            }
+            Handle.Modified = true;
         }
         if (eventData.type == UIContextEvent.Reverting) {
             if (eventData.origin.IsChildOf(context)) {
