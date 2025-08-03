@@ -601,19 +601,40 @@ public class ResourceManager(PatchDataContainer config)
         // TODO should include dependency bundles as well here
         if (includeActiveBundle && activeBundle?.ResourceListing != null && activeBundle.TryFindResourceByNativePath(filepath, out var bundleLocalResource)) {
             // we can treat the above loaded handle as a "temporary" file and now load the active one
-            // reuse the temp file's diff handler since it should have internalized the source file within itself
 
             var resourceListing = activeBundle.ResourceListing[bundleLocalResource];
             var fullBundleFilePath = workspace.BundleManager.ResolveBundleLocalPath(activeBundle, bundleLocalResource).NormalizeFilepath();
             if (File.Exists(fullBundleFilePath)) {
-                var bundleStream = File.OpenRead(fullBundleFilePath);
+                using var bundleStream = File.OpenRead(fullBundleFilePath);
                 var activeHandle = CreateFileHandleInternal(fullBundleFilePath, resourceListing.Target, bundleStream);
-                if (activeHandle != null && handle != null) {
-                    activeHandle.DiffHandler = handle.DiffHandler ?? activeHandle.DiffHandler;
+                if (handle != null) {
+                    if (activeHandle != null) {
+                        // reuse the temp file's diff handler since it should have internalized the source file within itself
+                        // this way we can use it as the diff base easily
+                        activeHandle.DiffHandler = handle.DiffHandler ?? activeHandle.DiffHandler;
+                    } else {
+                        // if bundle file fails to load, it may be outdated - try patching it with the diff instead
+                        if (handle.DiffHandler != null && resourceListing.Diff != null) {
+                            handle.DiffHandler.ApplyDiff(resourceListing.Diff);
+                            // re-open the original file, this way we have a distinct pristine base file in the differ
+                            // (ApplyDiff likely reused existing instances from the previous base file, meaning we'd have the same instances in the base and in the patched file)
+                            var newBaseHandle = CreateFileHandleInternal(filepath, nativePath ?? resolvedFilename, workspace.Env.GetRequiredFile(resolvedFilename!))!;
+                            activeHandle = new FileHandle(fullBundleFilePath, new MemoryStream(), FileHandleType.Memory, handle.Loader) {
+                                NativePath = handle.NativePath,
+                                DiffHandler = newBaseHandle.DiffHandler,
+                                Resource = handle.Resource,
+                            };
+                            activeHandle.Modified = true;
+                            Logger.Warn("Bundle file could not be loaded directly, using the last partial patch instead:\n" + fullBundleFilePath);
+                        } else {
+                            Logger.Error("Failed to load bundle file - it may be outdated and no partial patch is available:\n" + fullBundleFilePath);
+                            handle.Modified = true;
+                        }
+                    }
                 }
                 handle = activeHandle;
                 if (handle != null) {
-                    handle.FileSource = "Bundle = " + activeBundle.Name;
+                    handle.FileSource = activeBundle.Name;
                 }
             }
         }

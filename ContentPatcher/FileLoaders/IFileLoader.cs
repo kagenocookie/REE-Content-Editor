@@ -36,7 +36,9 @@ public static class FileLoaderExtensions
     public static bool SaveOrWriteTo(this BaseFile file, FileHandle handle, string outputPath)
     {
         if (file.FileHandler.FilePath != handle.Filepath) {
-            throw new Exception("hmm");
+            // in some cases for a patched file flow, the filepath on the handle may have changed
+            file.FileHandler.Dispose();
+            file.FileHandler = new FileHandler(new MemoryStream(), outputPath);
         }
 
         if (outputPath == handle.Filepath) {

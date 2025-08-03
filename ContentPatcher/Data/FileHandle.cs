@@ -7,10 +7,10 @@ namespace ContentPatcher;
 
 public sealed class FileHandle(string path, Stream stream, FileHandleType handleType, IFileLoader loader) : IDisposable
 {
-    public string Filepath { get; } = path;
+    public string Filepath { get; private set; } = path;
     public string? NativePath { get; init; }
     public string? InternalPath => NativePath == null ? null : PathUtils.GetInternalFromNativePath(NativePath);
-    public FileHandleType HandleType { get; } = handleType;
+    public FileHandleType HandleType { get; private set; } = handleType;
     public IFileLoader Loader { get; set; } = loader;
     public IResourceFilePatcher? DiffHandler { get; set; }
     public Stream Stream { get; set; } = stream;
@@ -78,6 +78,11 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
             var success = Loader.Save(workspace, this, newFilepath ?? Filepath);
             if (!success) return false;
             if (newFilepath == null) {
+                if (HandleType == FileHandleType.Memory) {
+                    // assumption: a disk file has an empty file source, since the FilePath is already the source
+                    // a bundle file will always have the bundle name in the source
+                    HandleType = FileSource != null && Path.IsPathFullyQualified(FileSource) ? FileHandleType.Disk : FileHandleType.Bundle;
+                }
                 Modified = false;
                 Saved?.Invoke();
             }
