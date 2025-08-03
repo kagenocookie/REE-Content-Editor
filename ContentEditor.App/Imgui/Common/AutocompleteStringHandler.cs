@@ -11,7 +11,9 @@ public class AutocompleteStringHandler(bool requireListedChoice, string[]? sugge
         var selected = context.Get<string>();
 
         context.state ??= selected ?? string.Empty;
+        var didChange = false;
         if (ImGui.InputText(context.label, ref context.state, 1024)) {
+            didChange = true;
             if (!requireListedChoice) {
                 selected = context.state;
                 OnSelected(context, selected);
@@ -19,6 +21,13 @@ public class AutocompleteStringHandler(bool requireListedChoice, string[]? sugge
         }
         var currentSuggestions = GetSuggestions(context, context.state);
         if (currentSuggestions.Contains(context.state)){
+            if (requireListedChoice && didChange) {
+                OnSelected(context, context.state);
+            }
+            return;
+        }
+        if (requireListedChoice && !currentSuggestions.Any()) {
+            ImGui.TextColored(Colors.Info, "No options available");
             return;
         }
 

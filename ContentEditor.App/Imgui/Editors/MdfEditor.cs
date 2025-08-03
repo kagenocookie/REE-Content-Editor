@@ -16,7 +16,7 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 
     public RszInstance? Instance { get; private set; }
     public string Filename => Handle.Filepath;
-    public MdfFile File => Handle.GetContent<MdfFile>();
+    public MdfFile File => Handle.GetFile<MdfFile>();
 
     public ContentWorkspace Workspace { get; }
 

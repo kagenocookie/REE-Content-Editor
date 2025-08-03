@@ -60,9 +60,10 @@ public class SaveFileConfirmation : IWindowHandler
         ImGui.Spacing();
         ImGui.Spacing();
         if (ImGui.Button("Save", new Vector2(modalSize.X / 3 - 12, 28))) {
-            File.Save(context.GetWorkspace()!);
-            OnConfirmed.Invoke();
-            EditorWindow.CurrentWindow?.CloseSubwindow(this);
+            if (File.Save(context.GetWorkspace()!)) {
+                OnConfirmed.Invoke();
+                EditorWindow.CurrentWindow?.CloseSubwindow(this);
+            }
         }
         ImGui.SameLine();
         if (ImGui.Button("Don't save (discard changes)", new Vector2(modalSize.X / 3 - 12, 28))) {

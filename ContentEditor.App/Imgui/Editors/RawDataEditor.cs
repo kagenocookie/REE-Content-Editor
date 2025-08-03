@@ -69,5 +69,5 @@ public class RawDataEditor<TFile> : RawDataEditor where TFile : BaseFile
     {
     }
 
-    protected override object GetContent() => Handle.GetContent<TFile>();
+    protected override object GetContent() => Handle.GetFile<TFile>();
 }

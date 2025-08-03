@@ -26,9 +26,11 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
 
     protected virtual bool IsRevertable => true;
 
-    public bool IsClosable => Handle.HandleType != FileHandleType.Embedded;
+    public bool CanClose => Handle.HandleType != FileHandleType.Embedded && context.parent == context.root;
 
     IRectWindow? IFileHandleReferenceHolder.Parent => context.Get<WindowData>().ParentWindow;
+
+    public bool CanFocus => CanClose;
 
     protected FileEditor(FileHandle file)
     {
@@ -148,7 +150,8 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     private void SaveTo(string savePath, bool replaceFileHandle)
     {
         var workspace = context.GetWorkspace()!;
-        Handle.Save(workspace, savePath);
+        if (!Handle.Save(workspace, savePath)) return;
+
         Logger.Info("File saved to " + savePath);
         if (replaceFileHandle) {
             DisconnectFile();

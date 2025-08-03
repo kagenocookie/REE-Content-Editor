@@ -6,6 +6,7 @@ using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
+using ReeLib.Common;
 using ReeLib.Pfb;
 
 namespace ContentEditor.App.ImguiHandling;
@@ -14,7 +15,6 @@ namespace ContentEditor.App.ImguiHandling;
 public class GameObjectEditor : IObjectUIHandler
 {
     private static readonly MemberInfo[] BaseMembers = [
-        typeof(GameObject).GetProperty(nameof(GameObject.Name))!,
         typeof(GameObject).GetField(nameof(GameObject.Tags))!,
         typeof(GameObject).GetField(nameof(GameObject.Update))!,
         typeof(GameObject).GetField(nameof(GameObject.Draw))!,
@@ -32,6 +32,7 @@ public class GameObjectEditor : IObjectUIHandler
         if (context.children.Count == 0) {
             var ws = context.GetWorkspace();
             var obj = context.Get<GameObject>();
+            context.AddChild<GameObject, string>("Name", obj, new ConfirmedStringFieldHandler(), c => c.Name, (c, v) => c.Name = v);
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(GameObject), members: BaseMembers);
             if (ws?.Env.Classes.GameObject.IndexOfField(nameof(GameObject.TimeScale)) != -1) {
                 WindowHandlerFactory.SetupObjectUIContext(context, typeof(GameObject), members: BaseMembers2);
@@ -64,4 +65,25 @@ public class BaseComponentEditor : IObjectUIHandler
 
 public class GameObjectChildListEditor : NodeTreeEditor<GameObject, GameObjectChildListEditor>
 {
+    protected override void HandleContextMenu(GameObject node, UIContext context)
+    {
+        if (node.Parent == null) {
+            // the sole root instance mustn't be deleted or duplicated (pfb)
+            // TODO: handle folder parent
+            return;
+        }
+
+        if (ImGui.Button("Delete")) {
+            UndoRedo.RecordRemoveChild(context, node);
+            ImGui.CloseCurrentPopup();
+        }
+        if (ImGui.Button("Duplicate")) {
+            var clone = node.Clone();
+            UndoRedo.RecordAddChild(context, clone, node.Parent, node.Parent.GetChildIndex(node) + 1);
+            clone.MakeNameUnique();
+            var inspector = context.FindInterfaceInParentHandlers<IInspectorController>();
+            inspector?.SetPrimaryInspector(clone);
+            ImGui.CloseCurrentPopup();
+        }
+    }
 }

@@ -30,18 +30,17 @@ public class ComponentListEditor : DictionaryListImguiHandler<string, Component,
             return null;
         }
         var ws = context.GetWorkspace();
-        if (ws == null) {
-            Logger.Error("Missing workspace context");
-            return null;
-        }
+        if (Logger.ErrorIf(ws == null, "Missing workspace context")) return null;
 
         var cls = ws.Env.RszParser.GetRSZClass(key);
         if (cls == null) {
             Logger.Error("Invalid classname " + key);
             return null;
         }
+        var gameobj = context.FindClassValueInParentValues<GameObject>();
+        if (Logger.ErrorIf(gameobj == null, "Missing game object")) return null;
 
-        return new Component(RszInstance.CreateInstance(ws.Env.RszParser, cls));
+        return new Component(gameobj, RszInstance.CreateInstance(ws.Env.RszParser, cls));
     }
 
     protected override string GetKey(Component item)

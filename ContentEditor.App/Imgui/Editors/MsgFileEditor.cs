@@ -30,7 +30,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
     public MsgFileEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
         Workspace = env;
-        File = file.GetContent<MsgFile>();
+        File = file.GetFile<MsgFile>();
     }
 
     protected override void OnFileReverted()

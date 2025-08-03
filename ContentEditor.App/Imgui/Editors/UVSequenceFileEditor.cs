@@ -25,7 +25,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
     public UVSequenceFileEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
         Workspace = env;
-        File = file.GetContent<UvsFile>();
+        File = file.GetFile<UvsFile>();
         windowFlags = ImGuiWindowFlags.HorizontalScrollbar;
     }
 

@@ -34,5 +34,21 @@ sealed class Program
         };
         ResourceRepository.MetadataRemoteSource = AppConfig.Instance.RemoteDataSource.Get() ?? ResourceRepository.MetadataRemoteSource!;
         ConsoleWindow.EventLogger = evtLogger;
+        ReeLib.Common.Log.LogCallback = (level, msg) => {
+            switch (level) {
+                case ReeLib.Common.Log.LogLevel.Debug:
+                    Logger.Debug(msg);
+                    break;
+                case ReeLib.Common.Log.LogLevel.Info:
+                    Logger.Info(msg);
+                    break;
+                case ReeLib.Common.Log.LogLevel.Warn:
+                    Logger.Warn(msg);
+                    break;
+                case ReeLib.Common.Log.LogLevel.Error:
+                    Logger.Error(msg);
+                    break;
+            }
+        };
     }
 }

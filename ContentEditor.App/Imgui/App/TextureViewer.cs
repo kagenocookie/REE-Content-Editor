@@ -14,7 +14,8 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
 
     public string HandlerName => $"Texture Viewer";
 
-    public bool IsClosable => true;
+    public bool CanClose => true;
+    public bool CanFocus => true;
 
     IRectWindow? IFileHandleReferenceHolder.Parent => data.ParentWindow;
 

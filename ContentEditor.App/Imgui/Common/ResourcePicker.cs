@@ -93,6 +93,6 @@ public class ResourcePathPicker : IObjectUIHandler
                 newPath = PathUtils.GetFilepathWithoutSuffixes(newPath).ToString();
             }
         }
-        context.Set(newPath);
+        UndoRedo.RecordSet(context, newPath);
     }
 }

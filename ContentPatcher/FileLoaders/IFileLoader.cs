@@ -4,13 +4,29 @@ namespace ContentPatcher;
 
 public interface IFileLoader
 {
+    /// <summary>
+    /// The priority for picking this loader for a file. Lower number takes precedence before higher numbers.
+    /// </summary>
+    int Priority => 50;
+    /// <summary>
+    /// Check whether this loader can load the given file.
+    /// </summary>
     bool CanHandleFile(string filepath, REFileFormat format);
-    bool Load(ContentWorkspace workspace, FileHandle handle);
+    /// <summary>
+    /// Load a file. The file handle can already contain a previously loaded resource.
+    /// </summary>
+    IResourceFile? Load(ContentWorkspace workspace, FileHandle handle);
+    /// <summary>
+    /// Save the file to disk.
+    /// </summary>
     bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath);
+    /// <summary>
+    /// Create a partial diff handler for files supported by this file loader. Can return null if this is not supported.
+    /// </summary>
     IResourceFilePatcher? CreateDiffHandler();
 }
 
-public interface IFileHandleContentProvider<TFileType> where TFileType : BaseFile
+public interface IFileHandleContentProvider<TFileType> where TFileType : class
 {
     TFileType GetFile(FileHandle handle);
 }
@@ -21,7 +37,6 @@ public static class FileLoaderExtensions
     {
         if (file.FileHandler.FilePath != handle.Filepath) {
             throw new Exception("hmm");
-            // file.FileHandler = new FileHandler(handle.Stream, handle.Path);
         }
 
         if (outputPath == handle.Filepath) {

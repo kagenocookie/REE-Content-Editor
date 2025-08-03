@@ -85,6 +85,26 @@ public class StringFieldHandler : IObjectUIHandler
     }
 }
 
+public class ConfirmedStringFieldHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var curString = context.Get<string?>() ?? string.Empty;
+        context.state ??= curString;
+        if (ImGui.InputText(context.label, ref context.state, 255, ImGuiInputTextFlags.EnterReturnsTrue)) {
+            UndoRedo.RecordSet(context, context.state);
+        } else if (context.state != curString) {
+            if (ImGui.Button("Confirm")) {
+                UndoRedo.RecordSet(context, context.state);
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Cancel")) {
+                context.state = curString;
+            }
+        }
+    }
+}
+
 public class ColorFieldHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)

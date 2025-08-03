@@ -75,4 +75,6 @@ public class WindowData
 
         PersistentData[key] = JsonSerializer.SerializeToElement(value, JsonConfig.jsonOptions);
     }
+
+    public override string ToString() => $"{Name}##{ID}";
 }

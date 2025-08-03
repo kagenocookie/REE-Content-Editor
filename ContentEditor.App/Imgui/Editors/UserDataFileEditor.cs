@@ -10,7 +10,7 @@ public class UserDataFileEditor : FileEditor, IWorkspaceContainer, IRSZFileEdito
 
     public RszInstance? Instance { get; private set; }
     public string Filename => Handle.Filepath;
-    public UserFile File => Handle.GetContent<UserFile>();
+    public UserFile File => Handle.GetFile<UserFile>();
 
     public ContentWorkspace Workspace { get; }
 

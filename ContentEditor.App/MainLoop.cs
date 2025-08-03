@@ -42,7 +42,7 @@ internal sealed class MainLoop : IDisposable
 
         var stopwatch = Stopwatch.StartNew();
         float timer = 0;
-        windows.First().InitGraphics(null);
+        windows.First().InitGraphics();
         while (windows.FirstOrDefault()?.IsClosing == false) {
             while (mainThreadActions.TryDequeue(out var act)) {
                 try {
@@ -53,7 +53,7 @@ internal sealed class MainLoop : IDisposable
             }
 
             while (queuedWindows.TryDequeue(out var wnd)) {
-                wnd.InitGraphics(null);
+                wnd.InitGraphics();
                 windows.Add(wnd);
             }
             var deltaTime = stopwatch.ElapsedTicks / (float)Stopwatch.Frequency;

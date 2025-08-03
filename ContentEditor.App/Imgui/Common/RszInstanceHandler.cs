@@ -16,6 +16,10 @@ public class RszInstanceHandler : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var instance = context.Get<RszInstance>();
+        if (instance == null) {
+            ImGui.Text(context.label + ": NULL");
+            return;
+        }
         ImguiHelpers.TextSuffix(context.label, context.stringFormatter?.GetString(instance) ?? instance.RszClass.name);
 
         foreach (var child in context.children) {
@@ -28,12 +32,39 @@ public class NestedRszInstanceHandler : IObjectUIHandler
 {
     public bool ForceDefaultClose { get; set; }
     private bool _wasInit = false;
+    private readonly RszField? field;
+
+    public NestedRszInstanceHandler()
+    {
+    }
+
+    public NestedRszInstanceHandler(RszField field)
+    {
+        this.field = field;
+    }
 
     public void OnIMGUI(UIContext context)
     {
         var instance = context.Get<RszInstance>();
         if (instance == null) {
             ImGui.Text(context.label + ": NULL");
+
+            if (string.IsNullOrEmpty(field?.original_type)) return;
+
+            var ws = context.GetWorkspace();
+            if (ws == null) return;
+
+            ImGui.SameLine();
+            ImGui.PushID(context.label);
+            if (ImGui.Button("Create")) {
+                var cls = ws.Env.RszParser.GetRSZClass(field.original_type);
+                if (cls == null) {
+                    Logger.Error("Class not found");
+                } else {
+                    UndoRedo.RecordSet(context, RszInstance.CreateInstance(ws.Env.RszParser, cls));
+                }
+            }
+            ImGui.PopID();
             return;
         }
         if (!_wasInit) {
@@ -89,7 +120,18 @@ public class ArrayRSZHandler : BaseListHandler
     {
         var env = context.GetWorkspace();
         if (env == null) return null;
-        return RszInstance.CreateArrayItem(env.Env.RszParser, field);
+        string? classname;
+        if (string.IsNullOrEmpty(field.original_type)) {
+            var first = context.Get<IList<object>>().FirstOrDefault() as RszInstance;
+            classname = first?.RszClass.name;
+            if (classname == null) {
+                Logger.Error("Could not determine array element type");
+                return null;
+            }
+        } else {
+            classname = RszInstance.GetElementType(field.original_type);
+        }
+        return RszInstance.CreateArrayItem(env.Env.RszParser, field, classname);
     }
 }
 
@@ -266,8 +308,8 @@ public class UserDataReferenceHandler : IObjectUIHandler
         if (ImguiHelpers.TreeNodeSuffix(context.label, context.state ?? instance.RSZUserData.ClassName!)) {
             if (ImGui.Button("Open in new window")) {
                 if (context.children.Count > 0) {
-                    var editor = (UserDataFileEditor)context.children[0].uiHandler!;
-                    EditorWindow.CurrentWindow!.AddSubwindow(editor);
+                    var editor = context.GetChildHandler<UserDataFileEditor>()!;
+                    EditorWindow.CurrentWindow!.AddFileEditor(editor.Handle);
                 }
             }
             ImGui.SameLine();
@@ -285,6 +327,44 @@ public class UserDataReferenceHandler : IObjectUIHandler
             context.state = null;
 
             if (instance.RSZUserData is RSZUserDataInfo info) {
+                // var pathCtx = context.AddChild<RSZUserDataInfo, string>(
+                var pathCtx = context.AddChild(
+                    "Userdata file path",
+                    info,
+                    new ResourcePathPicker(ws, KnownFileFormats.UserData),
+                    getter: (c) => ((RSZUserDataInfo)c!.target!).Path,
+                    setter: (ctx, newPathObj) => {
+                        var info = (RSZUserDataInfo)ctx.target!;
+                        var newPath = newPathObj as string;
+                        if (info.Path == newPath) return;
+                        if (string.IsNullOrEmpty(newPath)) {
+                            Logger.Error("Empty user data file path not allowed");
+                            return;
+                        }
+                        if (!ws.ResourceManager.TryGetOrLoadFile(newPath, out var fileHandle)) {
+                            Logger.Error("User data file not found: " + newPath);
+                            return;
+                        }
+                        var file = fileHandle.GetFile<UserFile>();
+
+                        var rsz = ctx.FindInterfaceInParentHandlers<IRSZFileEditor>()?.GetRSZFile();
+                        if (rsz == null || !rsz.InstanceList.Any(ii => ii.RSZUserData?.InstanceId == info.InstanceId && ii != instance)) {
+                            // we can do a full replace here - eithe rif we can't find the rsz container, or if there's no other references to this same userdata intance
+                            info.Path = newPath;
+                            info.typeId = file.RSZ.ObjectList[0].RszClass.typeId;
+                        } else {
+                            // create a new userdata info
+                            ctx.parent!.Set(instance = new RszInstance(file.RSZ.ObjectList[0].RszClass, -1, new RSZUserDataInfo() {
+                                Path = newPath,
+                                typeId = file.RSZ.ObjectList[0].RszClass.typeId,
+                                instanceId = instance.Index,
+                            }));
+
+                            rsz.RSZUserDataInfoList.Add(instance.RSZUserData!);
+                        }
+                        ctx.parent?.ClearChildren();
+                    }
+                );
                 if (string.IsNullOrEmpty(info.Path)) {
                     ImGui.TextColored(Colors.Error, "No path for user data");
                     return;
@@ -334,15 +414,7 @@ public class UserDataReferenceHandler : IObjectUIHandler
         if (context.children.Count == 0) {
             ImGui.TextColored(Colors.Warning, "Failed to set up UserData reference");
         } else {
-            var prevChanged = context.children[0].Changed;
-            context.children[0].ShowUI();
-            if (!prevChanged && context.children[0].Changed) {
-                if (context.children[0].Get<WindowData>().Handler is UserDataFileEditor udfe) {
-                    udfe.Handle.Modified = true;
-                } else {
-                    Console.Error.WriteLine("a");
-                }
-            }
+            context.ShowChildrenUI();
         }
     }
 }

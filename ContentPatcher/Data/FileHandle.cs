@@ -1,3 +1,4 @@
+using ContentEditor;
 using ContentEditor.Core;
 using ContentEditor.Editor;
 using ReeLib;
@@ -35,8 +36,11 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
     public event Action<bool>? ModifiedChanged;
 
     public T GetResource<T>() where T : IResourceFile => (T)Resource;
-    public T GetContent<T>() where T : BaseFile => (Resource as BaseFileResource<T>)?.File
+    public T GetFile<T>() where T : BaseFile => (Resource as BaseFileResource<T>)?.File
         ?? (Loader as IFileHandleContentProvider<T>)?.GetFile(this)
+        ?? throw new NotImplementedException();
+
+    public T GetCustomContent<T>() where T : class => (Loader as IFileHandleContentProvider<T>)?.GetFile(this)
         ?? throw new NotImplementedException();
 
     public static FileHandle CreateEmbedded(IFileLoader loader, IResourceFile file)
@@ -50,19 +54,33 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
         Reverted?.Invoke();
     }
 
-    public void Load(ContentWorkspace workspace)
+    public bool Load(ContentWorkspace workspace)
     {
-        Loader.Load(workspace, this);
+        var resource = Loader.Load(workspace, this);
+        if (resource == null) return false;
+
+        Resource = resource;
         Modified = false;
+        return true;
     }
 
-    public void Save(ContentWorkspace workspace, string? newFilepath = null)
+    public bool Save(ContentWorkspace workspace, string? newFilepath = null)
     {
-        // TODO verify if we even have a proper disk filepath
-        Loader.Save(workspace, this, newFilepath ?? Filepath);
-        if (newFilepath == null) {
-            Modified = false;
-            Saved?.Invoke();
+        if (newFilepath == null && !File.Exists(Filepath)) {
+            Logger.Warn($"Unable to save file because it doesn't have a disk file path associated to it: {Filepath}\nOpen its editor and manually save it.");
+            return false;
+        }
+        try {
+            var success = Loader.Save(workspace, this, newFilepath ?? Filepath);
+            if (!success) return false;
+            if (newFilepath == null) {
+                Modified = false;
+                Saved?.Invoke();
+            }
+            return true;
+        } catch (Exception e) {
+            Logger.Error(e, "Failed to save file " + Filepath);
+            return false;
         }
     }
 
@@ -95,7 +113,7 @@ public enum FileHandleType
 
 public interface IFileHandleReferenceHolder
 {
-    bool IsClosable { get; }
+    bool CanClose { get; }
     IRectWindow? Parent { get; }
 
     void Close();
@@ -103,5 +121,6 @@ public interface IFileHandleReferenceHolder
 
 public interface IFocusableFileHandleReferenceHolder : IFileHandleReferenceHolder
 {
+    bool CanFocus { get; }
     void Focus();
 }

@@ -21,6 +21,16 @@ public static class UIContextExtensions
         return context.Cast<IRectWindow>() ?? context.parent?.GetWindow() ?? EditorWindow.CurrentWindow;
     }
 
+    public static EditorWindow? GetNativeWindow(this UIContext context)
+    {
+        return context.root.Cast<EditorWindow>();
+    }
+
+    public static IWindowHandler? GetWindowHandler(this UIContext context)
+    {
+        return context.Cast<IWindowHandler>() ?? context.parent?.GetWindowHandler();
+    }
+
     public static T? FindClassValueInParentValues<T>(this UIContext context) where T : class
     {
         return context.Cast<T>() ?? context.parent?.FindClassValueInParentValues<T>();

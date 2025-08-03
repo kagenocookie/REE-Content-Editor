@@ -9,28 +9,27 @@ public class UserFileLoader : IFileLoader, IFileHandleContentProvider<UserFile>
 
     public bool CanHandleFile(string filepath, REFileFormat format) => format.format == KnownFileFormats.UserData;
 
-    public UserFile GetFile(FileHandle handle) => handle.GetContent<UserFile>();
+    public UserFile GetFile(FileHandle handle) => handle.GetFile<UserFile>();
 
     public IResourceFilePatcher? CreateDiffHandler() => new UserFilePatcher();
 
-    public bool Load(ContentWorkspace workspace, FileHandle handle)
+    public IResourceFile? Load(ContentWorkspace workspace, FileHandle handle)
     {
         if (handle.Resource == null) {
             var file = new UserFile(workspace.Env.RszFileOption, new FileHandler(handle.Stream, handle.Filepath));
-            if (!file.Read()) return false;
+            if (!file.Read()) return null;
 
-            handle.Resource = new BaseFileResource<UserFile>(file);
-            return true;
+            return new BaseFileResource<UserFile>(file);
         } else {
             var file = ((BaseFileResource<UserFile>)handle.Resource).File;
             file.Clear();
-            return file.Read();
+            return file.Read() ? handle.Resource : null;
         }
     }
 
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
-        var file = handle.GetContent<UserFile>();
+        var file = handle.GetFile<UserFile>();
         file.RebuildInfoTable();
         return file.SaveOrWriteTo(handle, outputPath);
     }
@@ -53,14 +52,14 @@ public sealed class UserFilePatcher : RszFilePatcherBase, IDisposable
     public override IResourceFile LoadBase(ContentWorkspace workspace, FileHandle handle)
     {
         fileHandle = handle;
-        file = handle.GetContent<UserFile>();
+        file = handle.GetFile<UserFile>();
         this.workspace = workspace;
         return handle.Resource;
     }
 
     public override JsonNode? FindDiff(FileHandle handle)
     {
-        var newfile = handle.GetContent<UserFile>();
+        var newfile = handle.GetFile<UserFile>();
         var baseObj = file.RSZ.ObjectList[0];
         var patchObj = newfile.RSZ.ObjectList[0];
         var diff = GetRszInstanceDiff(baseObj, patchObj);

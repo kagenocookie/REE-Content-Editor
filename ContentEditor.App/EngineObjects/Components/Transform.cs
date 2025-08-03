@@ -12,11 +12,11 @@ public class Transform : Component
     public Quaternion LocalRotation => ((Vector4)Data.Values[1]).ToQuaternion();
     public Vector3 LocalScale => ((Vector4)Data.Values[2]).ToVec3();
 
-    public Transform(RszInstance data) : base(data)
+    public Transform(GameObject gameObject, RszInstance data) : base(gameObject, data)
     {
     }
 
-    public Transform(Workspace data) : base(RszInstance.CreateInstance(data.RszParser, data.Classes.Transform))
+    public Transform(GameObject gameObject, Workspace data) : base(gameObject, RszInstance.CreateInstance(data.RszParser, data.Classes.Transform))
     {
     }
 }

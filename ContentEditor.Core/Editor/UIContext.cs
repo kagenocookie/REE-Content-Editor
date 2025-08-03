@@ -23,6 +23,11 @@ public class UIContext
     private bool wasChanged;
 
     public bool HasChildren => children.Count != 0;
+    public bool StateBool
+    {
+        get => state != null;
+        set => state = value ? string.Empty : null;
+    }
 
     public bool Changed
     {
@@ -59,6 +64,7 @@ public class UIContext
     public UIContext? GetChild<T>() where T : IObjectUIHandler => children.FirstOrDefault(ch => ch.uiHandler is T);
     public UIContext? GetChildByValue<T>() => children.FirstOrDefault(ch => ch.target is T);
     public T? GetChildValue<T>() => (T?)children.FirstOrDefault(ch => ch.target is T)?.target;
+    public T? GetChildHandler<T>() => (T?)children.FirstOrDefault(ch => ch.uiHandler is T)?.uiHandler;
 
     private static object? DefaultGetter(UIContext ctx) => ctx.target;
 

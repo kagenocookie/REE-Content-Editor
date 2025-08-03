@@ -17,13 +17,13 @@ public class MsgFilePatcher : IResourceFilePatcher
     public IResourceFile LoadBase(ContentWorkspace workspace, FileHandle handle)
     {
         this.workspace = workspace;
-        baseFile = handle.GetContent<MsgFile>();
+        baseFile = handle.GetFile<MsgFile>();
         return handle.Resource;
     }
 
     public JsonNode? FindDiff(FileHandle file)
     {
-        var newfile = file.GetContent<MsgFile>();
+        var newfile = file.GetFile<MsgFile>();
 
         var missing = baseFile.Entries.ToDictionary(e => e.Name);
         JsonObject? messageDiffs = null;

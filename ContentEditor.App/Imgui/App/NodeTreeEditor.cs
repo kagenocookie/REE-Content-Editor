@@ -6,26 +6,22 @@ namespace ContentEditor.App.ImguiHandling;
 public abstract class NodeTreeEditor<TNodeHolder, TSelf> : IObjectUIHandler where TNodeHolder : NodeObject<TNodeHolder>
     where TSelf : NodeTreeEditor<TNodeHolder, TSelf>, new()
 {
-    protected virtual void HandleContextMenu(UIContext context) {}
+    protected virtual void HandleContextMenu(TNodeHolder node, UIContext context) {}
 
     public void OnIMGUI(UIContext context)
     {
         var node = context.Get<TNodeHolder>();
-        bool showChildren = false;
+        var showChildren = context.StateBool;
         if (node.Children.Count == 0) {
             // ImGui.Button(context.label);
-        } else if (context.state == null) {
-            showChildren = false;
+        } else if (!context.StateBool) {
             if (ImGui.ArrowButton($"arrow##{context.label}", ImGuiDir.Right)) {
-                showChildren = true;
-                context.state = string.Empty;
+                showChildren = context.StateBool = true;
             }
             ImGui.SameLine();
         } else {
-            showChildren = true;
             if (ImGui.ArrowButton($"arrow##{context.label}", ImGuiDir.Down)) {
-                showChildren = false;
-                context.state = null;
+                showChildren = context.StateBool = false;
             }
             ImGui.SameLine();
         }
@@ -36,19 +32,23 @@ public abstract class NodeTreeEditor<TNodeHolder, TSelf> : IObjectUIHandler wher
             }
         }
         if (ImGui.BeginPopupContextItem()) {
-            HandleContextMenu(context);
+            HandleContextMenu(node, context);
             ImGui.EndPopup();
         }
 
         if (showChildren) {
             ImGui.Indent(ImGui.GetStyle().IndentSpacing);
-            int i = 0;
-            foreach (var child in node.Children) {
+            for (int i = 0; i < node.Children.Count; i++) {
+                var child = node.Children[i];
                 while (i >= context.children.Count || context.children[i].target != child) {
                     context.children.RemoveAtAfter(i);
                     context.AddChild(child.Name + "##" + context.children.Count, child, new TSelf());
                 }
-                var childCtx = context.children[i++];
+                var childCtx = context.children[i];
+                var isNameMismatch = !childCtx.label.StartsWith(child.Name) || !childCtx.label.AsSpan().Slice(child.Name.Length, 2).SequenceEqual("##");
+                if (isNameMismatch) {
+                    childCtx.label = child.Name + "##" + i;
+                }
                 childCtx.ShowUI();
             }
             ImGui.Unindent(ImGui.GetStyle().IndentSpacing);

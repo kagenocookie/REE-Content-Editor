@@ -17,14 +17,14 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
 {
     public override string HandlerName => "Prefab";
 
-    public RszInstance? Instance { get; private set; }
     public string Filename => Handle.Filepath;
-    public PfbFile File => Handle.GetContent<PfbFile>();
+    public PfbFile File => Handle.GetFile<PfbFile>();
+    public Prefab Prefab => Handle.GetCustomContent<Prefab>();
 
     public ContentWorkspace Workspace { get; }
 
     private ObjectInspector? primaryInspector;
-    private GameObject? Root;
+    private Scene? scene;
     protected override bool IsRevertable => context.Changed;
 
     public object? PrimaryTarget => primaryInspector?.Target;
@@ -41,7 +41,6 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
     protected override void OnFileReverted()
     {
         Reset();
-        Instance = File.RSZ.ObjectList.FirstOrDefault();
     }
 
     private void Reset()
@@ -52,8 +51,8 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
         failedToReadfile = false;
         CloseInspectors();
         context.ClearChildren();
-        Root?.Dispose();
-        Root = null;
+        scene?.Dispose();
+        scene = null;
     }
 
     private void CloseInspectors()
@@ -66,17 +65,21 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
 
     protected override void DrawFileContents()
     {
-        if (Instance == null) {
-            if (File.RSZ.ObjectList.Count == 0 && !TryRead(File)) return;
-            Instance = File.RSZ.ObjectList[0];
-        }
-
         ImGui.PushID(Filename);
-        if (context.children.Count == 0) {
+        if (context.children.Count == 0 || scene == null) {
+            scene?.Dispose();
             context.ClearChildren();
+            var root = Prefab.GetSharedInstance();
+            if (Logger.ErrorIf(root == null, "Failed to instantiate prefab")) return;
             context.AddChild<PfbFile, List<ResourceInfo>>("Resources", File, getter: static (c) => c!.ResourceInfoList).AddDefaultHandler<List<ResourceInfo>>();
-            Root = new GameObject(File.GameObjects![0]);
-            context.AddChild(Root.Name, Root, new FullWindowWidthUIHandler(-50, new TextHeaderUIHandler("Children", new BoxedUIHandler(new GameObjectChildListEditor()))));
+
+            scene = root.Scene;
+            if (scene == null) {
+                scene = context.GetNativeWindow()?.SceneManager.CreateScene();
+                if (Logger.ErrorIf(scene == null, "Failed to create new scene")) return;
+                scene.Add(root);
+            }
+            context.AddChild(root.Name, root, new FullWindowWidthUIHandler(-50, new TextHeaderUIHandler("Children", new BoxedUIHandler(new GameObjectChildListEditor()))));
         }
         context.ShowChildrenUI();
         ImGui.PopID();

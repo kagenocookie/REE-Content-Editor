@@ -13,7 +13,7 @@ public class UvarEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 
     public RszInstance? Instance { get; private set; }
     public string Filename => Handle.Filepath;
-    public UVarFile File => Handle.GetContent<UVarFile>();
+    public UVarFile File => Handle.GetFile<UVarFile>();
 
     public ContentWorkspace Workspace { get; }
 

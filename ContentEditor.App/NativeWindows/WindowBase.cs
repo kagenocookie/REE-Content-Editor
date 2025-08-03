@@ -127,7 +127,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         _glfw.SetDropCallback(_glfwHandle, null);
     }
 
-    internal void InitGraphics(GL? glContext)
+    internal void InitGraphics()
     {
         _gl = _window.CreateOpenGL();
         _controller = new ImGuiController(_gl, _window, _inputContext, onConfigureIO: UI.ConfigureImgui);

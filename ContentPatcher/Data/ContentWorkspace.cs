@@ -60,8 +60,9 @@ public class ContentWorkspace
         foreach (var file in ResourceManager.GetModifiedResourceFiles()) {
             if (file.Modified) {
                 if (parent == null || file.References.Any(ff => ff.Parent == parent)) {
-                    file.Save(this);
-                    count++;
+                    if (file.Save(this)) {
+                        count++;
+                    }
                 }
             }
         }

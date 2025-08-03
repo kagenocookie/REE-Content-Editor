@@ -1,3 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+
 namespace ContentEditor;
 
 public static class Logger
@@ -8,9 +11,20 @@ public static class Logger
     public static void Info<T>(T msg) => CurrentLogger.Info(msg?.ToString()!);
     public static void Info(params object[] msg) => CurrentLogger.Info(msg);
 
+    public static void Warn(object msg) => CurrentLogger.Info("WARNING: " + msg);
+
     public static void Error(object msg) => CurrentLogger.Error(msg);
     public static void Error(Exception exception, params object[] msg) => CurrentLogger.Error(exception, msg);
     public static void Error(params object[] msg) => CurrentLogger.Error(msg);
+
+    public static bool ErrorIf([DoesNotReturnIf(true)] bool result, string? text = null, [CallerArgumentExpression(nameof(result))] string? condition = null)
+    {
+        if (result) {
+            Logger.Error($"Unexpected state: {condition}. {text}");
+            return true;
+        }
+        return false;
+    }
 }
 
 

@@ -30,9 +30,18 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
     protected ContentWorkspace? workspace;
     public event Action? GameChanged;
 
+    public SceneManager SceneManager { get; } = new();
+
     private static HashSet<string>? fullSupportedGames;
 
     private static bool runningRszInference;
+
+    internal EditorWindow(int id, ContentWorkspace? workspace = null) : base(id)
+    {
+        Ready += OnReady;
+        this.workspace = workspace;
+        env = workspace?.Env;
+    }
 
     public void SetWorkspace(GameIdentifier game, string? bundle)
     {
@@ -54,6 +63,7 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
         var patchConfig = workspace?.Config ?? new PatchDataContainer(Path.GetFullPath(configPath));
 
         workspace = new ContentWorkspace(env, patchConfig, workspace?.BundleManager);
+        workspace.ResourceManager.SetupFileLoaders(typeof(PrefabLoader).Assembly);
         SetupUI(workspace);
         workspace.SetBundle(bundle);
         GameChanged?.Invoke();
@@ -71,11 +81,9 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
         }
     }
 
-    internal EditorWindow(int id, ContentWorkspace? workspace = null) : base(id)
+    protected override void Update(float deltaTime)
     {
-        Ready += OnReady;
-        this.workspace = workspace;
-        env = workspace?.Env;
+        SceneManager.Update(deltaTime);
     }
 
     private void OnReady()
@@ -97,14 +105,14 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
             }
 
             if (workspace.ResourceManager.TryGetOrLoadFile(filename, out var file)) {
-                CreateFileEditor(file);
+                AddFileEditor(file);
             } else {
                 AddSubwindow(new ErrorModal("Unsupported file", "File is not supported:\n" + filename));
             }
         }
     }
 
-    protected void CreateFileEditor(FileHandle file)
+    public void AddFileEditor(FileHandle file)
     {
         if (workspace == null) return;
 
@@ -187,7 +195,7 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
         if (workspace == null) return;
 
         var file = workspace.ResourceManager.CreateFileHandle(discriminator + filepath, null, stream);
-        CreateFileEditor(file);
+        AddFileEditor(file);
     }
 
     protected void ShowMainMenuBar()
@@ -233,7 +241,7 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                                 if (ImGui.Button("Save")) file.Save(workspace);
                                 ImGui.SameLine();
                             }
-                            if (!file.References.Any(r => !r.IsClosable)) {
+                            if (!file.References.Any(r => !r.CanClose)) {
                                 if (ImGui.Button("Close")) {
                                     if (file.Modified) {
                                         AddSubwindow(new SaveFileConfirmation(
@@ -253,10 +261,10 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                             }
                             if (ImGui.MenuItem($"{file.Filepath} ({file.References.Count})")) {
                                 var editor = file.References.OfType<IFocusableFileHandleReferenceHolder>().FirstOrDefault();
-                                if (editor == null) {
-                                    OpenFiles([file.Filepath]);
-                                } else {
+                                if (editor?.CanFocus == true) {
                                     editor.Focus();
+                                } else {
+                                    AddFileEditor(file);
                                 }
                             }
                             ImGui.PopID();

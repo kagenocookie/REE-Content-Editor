@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContentEditor.Core", "Conte
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContentEditor.App.PlatformShared", "ContentEditor.App.PlatformShared\ContentEditor.App.PlatformShared.csproj", "{F8D500CF-0894-40F9-8A80-2147EB92722A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "REE-Lib.Tools", "RE-Engine-Lib\REE-Lib.Tools\REE-Lib.Tools.csproj", "{1C3F21BF-6C0F-4E4D-9B22-7493658B1407}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,8 +58,13 @@ Global
 		{F8D500CF-0894-40F9-8A80-2147EB92722A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F8D500CF-0894-40F9-8A80-2147EB92722A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F8D500CF-0894-40F9-8A80-2147EB92722A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C3F21BF-6C0F-4E4D-9B22-7493658B1407}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C3F21BF-6C0F-4E4D-9B22-7493658B1407}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C3F21BF-6C0F-4E4D-9B22-7493658B1407}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C3F21BF-6C0F-4E4D-9B22-7493658B1407}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{5DD976F1-EF16-47E5-8569-17CBE7E08DAB} = {C1C47733-9A57-45C0-BBFB-A99B12B0FFE9}
+		{1C3F21BF-6C0F-4E4D-9B22-7493658B1407} = {C1C47733-9A57-45C0-BBFB-A99B12B0FFE9}
 	EndGlobalSection
 EndGlobal

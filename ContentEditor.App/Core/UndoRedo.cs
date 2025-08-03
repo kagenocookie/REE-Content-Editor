@@ -1,4 +1,5 @@
 using System.Collections;
+using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ReeLib.via;
@@ -19,11 +20,19 @@ public class UndoRedo
 
     private class StateList
     {
-        public readonly List<UndoRedoCommand> Items = new();
-        public int CurrentIndex = -1;
-        public int MaxSteps { get; set; } = AppConfig.Instance.MaxUndoSteps.Get();
+        public int MaxSteps { get; internal set; } = AppConfig.Instance.MaxUndoSteps.Get();
         public bool CanUndo => CurrentIndex >= 0;
         public bool CanRedo => CurrentIndex < Items.Count - 1;
+
+        private readonly List<UndoRedoCommand> Items = new();
+        private int CurrentIndex = -1;
+        private readonly Dictionary<UndoRedoCommand, DisposableCommand> Disposables = new();
+
+        private struct DisposableCommand
+        {
+            public Action? DisposeBeforeState;
+            public Action? DisposeAfterState;
+        }
 
         public void Push(UndoRedoCommand item, UndoRedoMergeMode mode = UndoRedoMergeMode.MergeIdentical)
         {
@@ -37,13 +46,20 @@ public class UndoRedo
                 item.Do();
                 return;
             }
-            if (CurrentIndex == -1) {
-                Items.Clear();
-            } else if (CurrentIndex < Items.Count - 1) {
-                Items.RemoveAtAfter(CurrentIndex + 1);
+            if (CurrentIndex == -1 || CurrentIndex < Items.Count - 1) {
+                for (int i = Items.Count - 1; i >= CurrentIndex + 1; --i) {
+                    if (Disposables.Remove(Items[i], out var disposable)) {
+                        disposable.DisposeBeforeState?.Invoke();
+                    }
+                    Items.RemoveAt(i);
+                }
             }
             if (CurrentIndex >= MaxSteps - 1) {
+                var first = Items[0];
                 Items.RemoveAt(0);
+                if (Disposables.Remove(first, out var disposable)) {
+                    disposable.DisposeAfterState?.Invoke();
+                }
                 Items.Add(item);
             } else {
                 Items.Add(item);
@@ -69,6 +85,28 @@ public class UndoRedo
                 item.Do();
             }
             Console.WriteLine($"State {Items.Count}[{CurrentIndex}] ");
+        }
+
+        public void SetCommandDisposable(Action? disposeBefore, Action? disposeAfter)
+        {
+            var last = Items.LastOrDefault();
+            if (last == null) return;
+
+            if (disposeAfter == null && disposeBefore == null) return;
+
+            Disposables.Add(last, new DisposableCommand() {
+                DisposeBeforeState = disposeBefore,
+                DisposeAfterState = disposeAfter,
+            });
+        }
+
+        internal void Clear()
+        {
+            foreach (var disposable in Disposables.Values) {
+                disposable.DisposeBeforeState?.Invoke();
+                disposable.DisposeAfterState?.Invoke();
+            }
+            Disposables.Clear();
         }
     }
 
@@ -113,11 +151,50 @@ public class UndoRedo
         GetState(window).Push(new CallbackUndoRedo(context, () => setter(objContext, newValue), () => setter(objContext, oldValue), id));
     }
 
+    public static void RecordAddChild(UIContext context, GameObject node, GameObject parent, int index = -1, WindowBase? window = null)
+    {
+        if (Logger.ErrorIf(node.Parent != null, "Node already has parent")) return;
+        var state = GetState(window);
+        state.Push(new CallbackUndoRedo(
+            context,
+            index == -1 ? () => parent.AddChild(node) : () => parent.AddChild(node, index),
+            () => parent.RemoveChild(node),
+            $"Add child {node.GetHashCode()}"));
+        state.SetCommandDisposable(() => node.Dispose(), null);
+    }
+
+    public static void RecordMoveChild(UIContext context, GameObject node, GameObject newParent, int newIndex = -1, WindowBase? window = null)
+    {
+        if (Logger.ErrorIf(node.Parent == null, "Cannot remove node without parent")) return;
+        var prevParent = node.Parent;
+        var prevIndex = prevParent.GetChildIndex(node);
+        GetState(window).Push(new CallbackUndoRedo(context, () => newParent.AddChild(node, newIndex), () => prevParent.AddChild(node, prevIndex), $"Move node {node.GetHashCode()}"));
+    }
+
+    public static void RecordRemoveChild(UIContext context, GameObject node, WindowBase? window = null)
+    {
+        if (Logger.ErrorIf(node.Parent == null, "Cannot remove node without parent")) return;
+        var prevParent = node.Parent;
+        var prevIndex = prevParent.GetChildIndex(node);
+        var state = GetState(window);
+        state.Push(new CallbackUndoRedo(
+            context,
+            () => prevParent.RemoveChild(node),
+            () => prevParent.AddChild(node, prevIndex),
+            $"Remove node {node.GetHashCode()}"));
+        state.SetCommandDisposable(null, () => node.Dispose());
+    }
+
     public static void Undo(WindowBase? window = null) => GetState(window).Undo();
     public static void Redo(WindowBase? window = null) => GetState(window).Redo();
     public static bool CanUndo(WindowBase? window = null) => GetState(window).CanUndo;
     public static bool CanRedo(WindowBase? window = null) => GetState(window).CanRedo;
-    public static void Clear(WindowBase window) => states.Remove(window);
+    public static void Clear(WindowBase window)
+    {
+        if (states.Remove(window, out var state)) {
+            state.Clear();
+        }
+    }
 
     #region Undo command types
 
@@ -207,7 +284,8 @@ public class UndoRedo
         }
     }
 
-    public class CallbackUndoRedo(UIContext? context, Action doCallback, Action undoCallback, string? id) : UndoRedoCommand(id ?? $"Callback_{RandomString(10)}")
+    public class CallbackUndoRedo(UIContext? context, Action doCallback, Action undoCallback, string? id)
+        : UndoRedoCommand(id ?? $"Callback_{RandomString(10)}")
     {
         private Action undoCallback = undoCallback;
 

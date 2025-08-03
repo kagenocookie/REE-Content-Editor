@@ -14,10 +14,9 @@ public class UnknownStreamFileLoader : IFileLoader
 
     public IResourceFilePatcher? CreateDiffHandler() => null;
 
-    public bool Load(ContentWorkspace workspace, FileHandle handle)
+    public IResourceFile Load(ContentWorkspace workspace, FileHandle handle)
     {
-        handle.Resource = new DummyFileResource(handle.Stream);
-        return true;
+        return new DummyFileResource(handle.Stream);
     }
 
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)

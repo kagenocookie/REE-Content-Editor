@@ -11,7 +11,8 @@ public static class AppImguiHelpers
     public static bool InputFilepath(string label, [NotNull] ref string? path, string? extension = null)
     {
         var id = ImGui.GetID(label);
-        var textWidth = ImGui.CalcItemWidth() - ImGui.CalcTextSize("Browse...").X - ImGui.GetStyle().FramePadding.X * 4;
+        var x = ImGui.GetCursorPosX();
+        var textWidth = ImGui.CalcItemWidth() - ImGui.CalcTextSize("Browse...").X - ImGui.GetStyle().FramePadding.X * 4 - x;
         ImGui.PushID(label);
         if (ImGui.Button("Browse...")) {
             PlatformUtils.ShowFileDialog((list) => fileBrowseResults[id] = list[0], path, extension, false);

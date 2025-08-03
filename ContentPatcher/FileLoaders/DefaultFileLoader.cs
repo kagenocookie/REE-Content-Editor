@@ -25,17 +25,16 @@ public class DefaultFileLoader<TFileType> : IFileLoader, IFileHandleContentProvi
         }
     }
 
-    public bool Load(ContentWorkspace workspace, FileHandle handle)
+    public IResourceFile? Load(ContentWorkspace workspace, FileHandle handle)
     {
         if (handle.Resource != null) {
-            return ((BaseFileResource<TFileType>)handle.Resource).File.Read();
+            return ((BaseFileResource<TFileType>)handle.Resource).File.Read() ? handle.Resource : null;
         }
 
         var file = fileFactory.Invoke(workspace, new FileHandler(handle.Stream, handle.Filepath));
-        if (!file.Read()) return false;
+        if (!file.Read()) return null;
 
-        handle.Resource = new BaseFileResource<TFileType>(file);
-        return true;
+        return new BaseFileResource<TFileType>(file);
     }
 
     public bool CanHandleFile(string filepath, REFileFormat format) => format.format == supportedFormat;

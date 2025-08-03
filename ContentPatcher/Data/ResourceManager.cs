@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Text.Json.Nodes;
 using ContentEditor;
 using ContentEditor.Core;
@@ -70,11 +71,27 @@ public class ResourceManager(PatchDataContainer config)
 
     private void SetupFileLoaders()
     {
-        foreach (var type in typeof(UserFileLoader).Assembly.GetTypes()) {
+        SetupFileLoaders(typeof(UserFileLoader).Assembly);
+    }
+
+    public void SetupFileLoaders(Assembly assembly)
+    {
+        foreach (var type in assembly.GetTypes()) {
             if (!type.IsAbstract && type.IsAssignableTo(typeof(IFileLoader)) && type.GetConstructor(Array.Empty<Type>()) != null) {
                 var loader = (IFileLoader)Activator.CreateInstance(type)!;
                 FileLoaders.Add(loader);
             }
+        }
+        FileLoaders.Sort(FileLoaderPriorityComparer.Instance);
+    }
+
+    private class FileLoaderPriorityComparer : IComparer<IFileLoader>
+    {
+        public static readonly FileLoaderPriorityComparer Instance = new();
+        public int Compare(IFileLoader? x, IFileLoader? y)
+        {
+            if (x == null || y == null) return 0;
+            return x.Priority.CompareTo(y.Priority);
         }
     }
 
@@ -115,7 +132,11 @@ public class ResourceManager(PatchDataContainer config)
                 if (resInfo.Diff == null) {
                     var fullLocalFilepath = Path.Combine(bundleBasepath, localFile);
                     var tempFile = FileHandle.FromDiskFilePath(fullLocalFilepath, file.Loader);
-                    file.Loader.Load(workspace, tempFile);
+                    var resource = file.Loader.Load(workspace, tempFile);
+                    if (resource == null) {
+                        continue;
+                    }
+                    tempFile.Resource = resource;
 
                     // recalculate diff
                     changed = true;
@@ -581,7 +602,7 @@ public class ResourceManager(PatchDataContainer config)
         };
 
         try {
-            if (!loader.Load(workspace, handle)) {
+            if (!handle.Load(workspace)) {
                 Logger.Error($"Failed to load file {filepath}");
                 return null;
             }
@@ -611,7 +632,7 @@ public class ResourceManager(PatchDataContainer config)
         if (resource == null) {
             throw new NotSupportedException();
         }
-        var file = resource.GetContent<TFileType>();
+        var file = resource.GetFile<TFileType>();
 
         if (markModified) {
             resource.Modified = true;
@@ -640,7 +661,7 @@ public class ResourceManager(PatchDataContainer config)
     public TFileType? GetOpenFile<TFileType>(string filepath, bool markModified = false) where TFileType : BaseFile
     {
         if (openFiles?.TryGetValue(workspace.Env.PrependBasePath(filepath), out var handle) == true) {
-            var file = handle.GetContent<TFileType>();
+            var file = handle.GetFile<TFileType>();
             if (markModified) {
                 handle.Modified = true;
             }
