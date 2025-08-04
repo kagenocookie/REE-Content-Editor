@@ -116,7 +116,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             ImGui.TableHeadersRow();
             var sort = ImGui.TableGetSortSpecs();
             ImGui.TableNextColumn();
-            foreach (var file in baseList.GetFilesInFolder(CurrentDir)) {
+            foreach (var file in baseList.GetFiles(CurrentDir, rowsPerPage)) {
                 if (p < page) {
                     if (++i >= rowsPerPage) {
                         i = 0;
