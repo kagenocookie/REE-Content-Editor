@@ -100,6 +100,7 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
 
         foreach (var filename in filenames) {
             if (filename.EndsWith(".pak")) {
+                AppConfig.Instance.AddRecentFile(filename);
                 AddSubwindow(new PakBrowser(workspace.Env, filename));
                 continue;
             }
@@ -118,10 +119,13 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
 
         var handler = WindowHandlerFactory.CreateFileResourceHandler(workspace, file);
         if (handler != null) {
+            AppConfig.Instance.AddRecentFile(file.Filepath);
             AddSubwindow(handler);
         } else if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {
+            AppConfig.Instance.AddRecentFile(file.Filepath);
             AddSubwindow(new TextureViewer(file));
         } else if (file.Resource is not DummyFileResource) {
+            AppConfig.Instance.AddRecentFile(file.Filepath);
             AddSubwindow(new RawDataEditor(workspace, file));
         } else {
             workspace.ResourceManager.CloseFile(file);
@@ -225,9 +229,7 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.BeginMenu("Open files")) {
                     var files = workspace.ResourceManager.GetOpenFiles();
                     if (!files.Any()) {
-                        ImGui.BeginDisabled();
-                        ImGui.MenuItem("No files open");
-                        ImGui.EndDisabled();
+                        ImGui.MenuItem("No files open", false);
                     } else {
                         foreach (var file in files) {
                             if (file.Modified) {
@@ -269,6 +271,19 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                     }
                     ImGui.EndMenu();
                 }
+                if (ImGui.BeginMenu("Recent files")) {
+                    var recents = AppConfig.Instance.RecentFiles.Get();
+                    if (recents == null || recents.Length == 0) {
+                        ImGui.MenuItem("No recent files", false);
+                    } else {
+                        foreach (var file in recents) {
+                            if (ImGui.MenuItem(file)) {
+                                this.OnFileDrop([file], new Vector2D<int>());
+                            }
+                        }
+                    }
+                    ImGui.EndMenu();
+                }
                 ImGui.Separator();
                 ImGui.BeginDisabled(!UndoRedo.CanUndo(this));
                 if (ImGui.MenuItem("Undo")) UndoRedo.Undo(this);
@@ -286,7 +301,7 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem("Revert patches")) {
                     RevertContentPatches();
                 }
-                if (ImGui.MenuItem("Edit load orders...")) {
+                if (ImGui.MenuItem("Edit load orders ...")) {
                     AddUniqueSubwindow(new LoadOrderUI(workspace.BundleManager));
                 }
             }

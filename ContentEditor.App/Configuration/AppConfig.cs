@@ -23,6 +23,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string LogLevel = "log_level";
         public const string MaxUndoSteps = "max_undo_steps";
         public const string PrettyLabels = "pretty_labels";
+        public const string RecentFiles = "recent_files";
 
         public const string Key_Undo = "key_undo";
         public const string Key_Redo = "key_redo";
@@ -59,16 +60,16 @@ public class AppConfig : Singleton<AppConfig>
         });
         public void Reset() => Set(Initial);
 
-        public override string ToString() => value.ToString()!;
+        public override string ToString() => Get().ToString()!;
 
         public static implicit operator T(SettingWrapper<T> vv) => vv.Get();
     }
 
-    public sealed class RefSettingWrapper<T>(string settingKey, ReaderWriterLockSlim _lock, T? initial = default) where T : IEquatable<T>
+    public sealed class ClassSettingWrapper<T>(string settingKey, ReaderWriterLockSlim _lock, Func<T>? initial = default) where T : class
     {
-        internal T? value = initial;
+        internal T? value = initial?.Invoke() ?? default;
 
-        private readonly T? Initial = initial;
+        private readonly T? Initial = initial?.Invoke() ?? default;
         public readonly string SettingKey = settingKey;
 
         public event Action<T?>? ValueChanged;
@@ -81,9 +82,9 @@ public class AppConfig : Singleton<AppConfig>
         });
         public void Reset() => Set(Initial);
 
-        public override string? ToString() => value?.ToString();
+        public override string? ToString() => Get()?.ToString();
 
-        public static implicit operator T?(RefSettingWrapper<T> vv) => vv.Get();
+        public static implicit operator T?(ClassSettingWrapper<T> vv) => vv.Get();
     }
 
     public static readonly float EventLoopMaxFrameTime = 1 / 60f;
@@ -91,16 +92,18 @@ public class AppConfig : Singleton<AppConfig>
 
     public readonly SettingWrapper<float> MaxFps = new SettingWrapper<float>(Keys.UnpackMaxThreads, _lock, 60);
     public float MaxFrameTime { get => MaxFps > 0 ? 1f / MaxFps : 0; set => MaxFps.Set(1 / value); }
-    public readonly RefSettingWrapper<string> MainSelectedGame = new RefSettingWrapper<string>(Keys.MainWindowGame, _lock);
-    public readonly RefSettingWrapper<string> MainActiveBundle = new RefSettingWrapper<string>(Keys.MainActiveBundle, _lock);
-    public readonly RefSettingWrapper<string> BlenderPath = new RefSettingWrapper<string>(Keys.BlenderPath, _lock);
-    public readonly RefSettingWrapper<string> RemoteDataSource = new RefSettingWrapper<string>(Keys.RemoteDataSource, _lock);
-    public readonly RefSettingWrapper<string> GameConfigBaseFilepath = new RefSettingWrapper<string>(Keys.GameConfigBaseFilepath, _lock);
+    public readonly ClassSettingWrapper<string> MainSelectedGame = new ClassSettingWrapper<string>(Keys.MainWindowGame, _lock);
+    public readonly ClassSettingWrapper<string> MainActiveBundle = new ClassSettingWrapper<string>(Keys.MainActiveBundle, _lock);
+    public readonly ClassSettingWrapper<string> BlenderPath = new ClassSettingWrapper<string>(Keys.BlenderPath, _lock);
+    public readonly ClassSettingWrapper<string> RemoteDataSource = new ClassSettingWrapper<string>(Keys.RemoteDataSource, _lock);
+    public readonly ClassSettingWrapper<string> GameConfigBaseFilepath = new ClassSettingWrapper<string>(Keys.GameConfigBaseFilepath, _lock);
     public readonly SettingWrapper<int> UnpackMaxThreads = new SettingWrapper<int>(Keys.UnpackMaxThreads, _lock, 4);
     public readonly SettingWrapper<ReeLib.via.Color> BackgroundColor = new SettingWrapper<ReeLib.via.Color>(Keys.BackgroundColor, _lock, new ReeLib.via.Color(115, 140, 153, 255));
     public readonly SettingWrapper<bool> PrettyFieldLabels = new SettingWrapper<bool>(Keys.PrettyLabels, _lock, true);
     public readonly SettingWrapper<int> LogLevel = new SettingWrapper<int>(Keys.LogLevel, _lock, 0);
     public readonly SettingWrapper<int> MaxUndoSteps = new SettingWrapper<int>(Keys.MaxUndoSteps, _lock, 250);
+
+    public readonly ClassSettingWrapper<string[]> RecentFiles = new ClassSettingWrapper<string[]>(Keys.RecentFiles, _lock, () => []);
 
     public readonly SettingWrapper<KeyBinding> Key_Undo = new SettingWrapper<KeyBinding>(Keys.Key_Undo, _lock, new KeyBinding(ImGuiKey.Z, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_Redo = new SettingWrapper<KeyBinding>(Keys.Key_Redo, _lock, new KeyBinding(ImGuiKey.Y, ctrl: true));
@@ -109,6 +112,35 @@ public class AppConfig : Singleton<AppConfig>
     public string? GetGamePath(GameIdentifier game) => _lock.Read(() => Instance.gameConfigs.GetValueOrDefault(game.name)?.gamepath);
     public void SetGamePath(GameIdentifier game, string path) => SetForGameAndSave(game.name, path, (cfg, val) => cfg.gamepath = val);
     public bool HasAnyGameConfigured => _lock.Read(() => Instance.gameConfigs.Any(g => !string.IsNullOrEmpty(g.Value?.gamepath)));
+
+    private const int MaxRecentFileCount = 25;
+    public void AddRecentFile(string file)
+    {
+        _lock.EnterWriteLock();
+        try {
+            if (RecentFiles.value == null || RecentFiles.value.Length == 0) {
+                RecentFiles.value = [file];
+                return;
+            }
+
+            var arr = RecentFiles.value;
+            var prevIndex = Array.IndexOf(arr, file);
+            if (prevIndex == 0) return;
+            if (prevIndex != -1) {
+                Array.Copy(arr, 0, arr, 1, prevIndex);
+                arr[0] = file;
+            } else if (arr.Length < MaxRecentFileCount) {
+                RecentFiles.value = new string[] { file }.Concat(arr).ToArray();
+            } else {
+                RecentFiles.value = new string[MaxRecentFileCount];
+                RecentFiles.value[0] = file;
+                Array.Copy(arr, 0, RecentFiles.value, 1, MaxRecentFileCount - 1);
+            }
+        } finally {
+            _lock.ExitWriteLock();
+        }
+        _lock.ReadCallback(SaveConfigToIni);
+    }
 
     private static void SetAndSave<TValue>(TValue value, Action<TValue> func)
     {
@@ -136,19 +168,20 @@ public class AppConfig : Singleton<AppConfig>
         var instance = Instance;
         var items = new List<(string, string, string?)>() {
             (Keys.MaxFps, instance.MaxFps.value.ToString(CultureInfo.InvariantCulture), null),
-            (Keys.MainWindowGame, instance.MainSelectedGame.ToString() ?? "", null),
-            (Keys.MainActiveBundle, instance.MainActiveBundle.ToString() ?? "", null),
-            (Keys.BlenderPath, instance.BlenderPath.ToString() ?? "", null),
-            (Keys.UnpackMaxThreads, instance.UnpackMaxThreads.ToString(), null),
-            (Keys.RemoteDataSource, instance.RemoteDataSource.ToString() ?? "", null),
-            (Keys.GameConfigBaseFilepath, instance.GameConfigBaseFilepath.ToString() ?? "", null),
-            (Keys.BackgroundColor, instance.BackgroundColor.ToString(), null),
-            (Keys.LogLevel, instance.LogLevel.ToString(), null),
-            (Keys.MaxUndoSteps, instance.MaxUndoSteps.ToString(), null),
-            (Keys.PrettyLabels, instance.PrettyFieldLabels.ToString(), null),
-            (Keys.Key_Undo, instance.Key_Undo.ToString(), "Keys"),
-            (Keys.Key_Redo, instance.Key_Redo.ToString(), "Keys"),
-            (Keys.Key_Save, instance.Key_Save.ToString(), "Keys"),
+            (Keys.MainWindowGame, instance.MainSelectedGame.value?.ToString() ?? "", null),
+            (Keys.MainActiveBundle, instance.MainActiveBundle.value?.ToString() ?? "", null),
+            (Keys.BlenderPath, instance.BlenderPath.value?.ToString() ?? "", null),
+            (Keys.UnpackMaxThreads, instance.UnpackMaxThreads.value.ToString(), null),
+            (Keys.RemoteDataSource, instance.RemoteDataSource.value?.ToString() ?? "", null),
+            (Keys.GameConfigBaseFilepath, instance.GameConfigBaseFilepath.value?.ToString() ?? "", null),
+            (Keys.BackgroundColor, instance.BackgroundColor.value.ToString(), null),
+            (Keys.LogLevel, instance.LogLevel.value.ToString(), null),
+            (Keys.MaxUndoSteps, instance.MaxUndoSteps.value.ToString(), null),
+            (Keys.PrettyLabels, instance.PrettyFieldLabels.value.ToString(), null),
+            (Keys.RecentFiles, string.Join("|", instance.RecentFiles.value ?? Array.Empty<string>()), null),
+            (Keys.Key_Undo, instance.Key_Undo.value.ToString(), "Keys"),
+            (Keys.Key_Redo, instance.Key_Redo.value.ToString(), "Keys"),
+            (Keys.Key_Save, instance.Key_Save.value.ToString(), "Keys"),
         };
         foreach (var (game, data) in instance.gameConfigs) {
             if (!string.IsNullOrEmpty(data.gamepath)) {
@@ -200,6 +233,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.PrettyLabels:
                             instance.PrettyFieldLabels.value = value.Equals("true", StringComparison.OrdinalIgnoreCase) || value.Equals("yes", StringComparison.OrdinalIgnoreCase) || value == "1";
+                            break;
+                        case Keys.RecentFiles:
+                            instance.RecentFiles.value = value.Split('|', StringSplitOptions.RemoveEmptyEntries);
                             break;
                     }
                 } else if (group == "Keys") {
