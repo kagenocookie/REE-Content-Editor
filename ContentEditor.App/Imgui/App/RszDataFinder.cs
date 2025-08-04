@@ -5,6 +5,7 @@ using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
+using ReeLib.Msg;
 
 namespace ContentEditor.App;
 
@@ -21,15 +22,21 @@ public class RszDataFinder : IWindowHandler
     private bool searchScn = false;
     private bool searchClassOnly = false;
 
+    private string msgSearch = "";
+
     private CancellationTokenSource? cancellationTokenSource;
     private int searchedFiles;
+    private bool SearchInProgress => cancellationTokenSource != null;
 
-    private ConcurrentBag<string> matches = new();
+    private ConcurrentBag<(string label, string file)> matches = new();
 
     private WindowData data = null!;
     protected UIContext context = null!;
 
+    private int findType;
+
     private string[]? classNames;
+    private static readonly string[] FindTypes = ["RSZ Data", "Messages"];
 
     public void Init(UIContext context)
     {
@@ -47,8 +54,64 @@ public class RszDataFinder : IWindowHandler
             return;
         }
 
-        if (cancellationTokenSource != null) ImGui.BeginDisabled();
+        var searching = SearchInProgress;
+        if (searching) ImGui.BeginDisabled();
 
+        ImguiHelpers.Tabs(FindTypes, ref findType);
+        switch (findType) {
+            case 0:
+                ShowRszFind(workspace);
+                break;
+            case 1:
+                ShowMessageFind(workspace);
+                break;
+        }
+        if (searching) {
+            ImGui.EndDisabled();
+            ShowSearchStatus(true);
+        } else {
+            ShowSearchStatus(false);
+        }
+    }
+
+    private void ShowSearchStatus(bool searchInProgress)
+    {
+        if (cancellationTokenSource != null && searchInProgress) {
+            ImGui.Separator();
+            ImGui.Text("Query: " + valueString);
+            ImGui.Text("Search in progress...");
+            ImGui.Text("Searched file count: " + searchedFiles);
+            if (ImguiHelpers.SameLine() && ImGui.Button("Stop")) {
+                cancellationTokenSource.Cancel();
+                cancellationTokenSource = null;
+            }
+        } else if (!matches.IsEmpty) {
+            ImGui.Separator();
+            ImGui.Text("Last search results:");
+            if (ImguiHelpers.SameLine() && ImGui.Button("Clear")) matches.Clear();
+        } else {
+            return;
+        }
+
+        foreach (var (label, file) in matches) {
+            if (label == file) {
+                ImGui.Text(label);
+            } else {
+                ImGui.Text(label + " :  " + file);
+            }
+            ImGui.PushID(label + file);
+            if (ImguiHelpers.SameLine() && ImGui.Button("Copy")) {
+                EditorWindow.CurrentWindow!.CopyToClipboard(file);
+            }
+            if (ImguiHelpers.SameLine() && ImGui.Button("Open")) {
+                EditorWindow.CurrentWindow!.OpenFiles([file]);
+            }
+            ImGui.PopID();
+        }
+    }
+
+    private void ShowRszFind(ContentWorkspace workspace)
+    {
         ImGui.InputText("Classname", ref classname, 1024);
 
         var cls = workspace.Env.RszParser.GetRSZClass(classname);
@@ -113,10 +176,10 @@ public class RszDataFinder : IWindowHandler
                     case RszFieldType.U8 or RszFieldType.U16 or RszFieldType.U32 or RszFieldType.U64:
                     case RszFieldType.S8 or RszFieldType.S16 or RszFieldType.S32 or RszFieldType.S64:
                         if (ImGui.InputText("Value", ref tmpvalue, 100)) {
-                            if (long.TryParse(tmpvalue, out var vvv)) {
-                                valueString = tmpvalue;
-                                value = Convert.ChangeType(tmpvalue, csType);
-                            }
+                        }
+                        if (long.TryParse(tmpvalue, out var vvv)) {
+                            valueString = tmpvalue;
+                            value = Convert.ChangeType(tmpvalue, csType);
                         }
                         break;
                     case RszFieldType.Guid:
@@ -147,41 +210,7 @@ public class RszDataFinder : IWindowHandler
             ImGui.Checkbox("Search user files", ref searchUserFiles);
             ImGui.Checkbox("Search SCN files", ref searchScn);
             ImGui.Checkbox("Search PFB files", ref searchPfb);
-
-            if (!matches.IsEmpty) {
-                ImGui.Text("Last search results list:");
-                if (ImguiHelpers.SameLine() && ImGui.Button("Clear")) matches.Clear();
-                foreach (var match in matches) {
-                    ImGui.Text(match);
-                    ImGui.SameLine();
-                    ImGui.PushID(match);
-                    if (ImGui.Button("Copy")) {
-                        EditorWindow.CurrentWindow!.CopyToClipboard(match);
-                    }
-                    ImGui.SameLine();
-                    if (ImGui.Button("Open")) {
-                        EditorWindow.CurrentWindow!.OpenFiles([match]);
-                    }
-                    ImGui.PopID();
-                }
-            }
         } else {
-            ImGui.EndDisabled();
-
-            ImGui.Text("Query: " + valueString);
-            ImGui.Text("Search in progress...");
-            ImGui.Text("Searched file count: " + searchedFiles);
-            if (ImguiHelpers.SameLine() && ImGui.Button("Stop")) {
-                cancellationTokenSource.Cancel();
-                cancellationTokenSource = null;
-            }
-
-            foreach (var match in matches) {
-                ImGui.Text(match);
-                if (ImguiHelpers.SameLine() && ImGui.Button("Copy")) {
-                    EditorWindow.CurrentWindow!.CopyToClipboard(match);
-                }
-            }
             return;
         }
 
@@ -200,6 +229,49 @@ public class RszDataFinder : IWindowHandler
                 cancellationTokenSource.Cancel();
                 cancellationTokenSource = null;
             });
+        }
+    }
+
+    private void ShowMessageFind(ContentWorkspace workspace)
+    {
+        ImGui.InputText("Query", ref msgSearch, 100);
+
+        if (!string.IsNullOrEmpty(msgSearch) && ImGui.Button("Search")) {
+            matches.Clear();
+            cancellationTokenSource = new();
+            var (user, pfb, scn) = (searchUserFiles, searchPfb, searchScn);
+            var token = cancellationTokenSource.Token;
+            Task.Run(() => {
+                InvokeSearchMsg(workspace, (EditorWindow)data.ParentWindow, msgSearch, token);
+                cancellationTokenSource.Cancel();
+                cancellationTokenSource = null;
+            });
+        }
+    }
+
+    private static string LimitLength(string str, int maxlen) => str.Length <= maxlen - 2 ? str : str[0..^(maxlen - 3)] + "...";
+
+    private void InvokeSearchMsg(ContentWorkspace workspace, EditorWindow window, string query, CancellationToken token)
+    {
+        foreach (var (path, stream) in workspace.Env.GetFilesWithExtension("msg", token)) {
+            try {
+                if (token.IsCancellationRequested) return;
+
+                Interlocked.Increment(ref searchedFiles);
+                var file = new MsgFile(new FileHandler(stream, path));
+                file.Read();
+                //
+                foreach (var entry in file.Entries) {
+                    if (entry.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase) || entry.GetMessage(Language.English).Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
+                        var summary = entry.Name + " = " + LimitLength(entry.GetMessage(Language.English), 50);
+                        var str = "Found matching entry " + summary;
+                        matches.Add((summary, path));
+                        window.InvokeFromUIThread(() => Logger.Info(str));
+                    }
+                }
+            } catch (Exception e) {
+                window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
+            }
         }
     }
 
@@ -257,7 +329,7 @@ public class RszDataFinder : IWindowHandler
             if (inst.RszClass == cls && inst.RSZUserData == null) {
                 if (value == null) {
                     var str = "Found instance in file " + path;
-                    matches.Add(str);
+                    matches.Add((path, path));
                     window.InvokeFromUIThread(() => Logger.Info(str));
                     return;
                 }
@@ -268,14 +340,14 @@ public class RszDataFinder : IWindowHandler
                     foreach (var v in values) {
                         if (v.Equals(value)) {
                             var str = "Found match in instance " + inst + ": " + path;
-                            matches.Add(str);
+                            matches.Add((path, path));
                             window.InvokeFromUIThread(() => Logger.Info(str));
                         }
                     }
                 } else {
                     if (fieldValue.Equals(value)) {
                         var str = "Found match in instance " + inst + ": " + path;
-                        matches.Add(str);
+                        matches.Add((path, path));
                         window.InvokeFromUIThread(() => Logger.Info(str));
                     }
                 }

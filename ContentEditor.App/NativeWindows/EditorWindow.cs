@@ -350,7 +350,7 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
         }
 
         if (ImGui.BeginMenu("Tools")) {
-            if (ImGui.MenuItem("RSZ Data Search")) {
+            if (ImGui.MenuItem("Data Search")) {
                 AddUniqueSubwindow(new RszDataFinder());
             }
             if (ImGui.MenuItem("Rebuild RSZ patch data")) {
