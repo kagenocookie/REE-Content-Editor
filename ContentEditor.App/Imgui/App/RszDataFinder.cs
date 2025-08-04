@@ -260,9 +260,16 @@ public class RszDataFinder : IWindowHandler
                 Interlocked.Increment(ref searchedFiles);
                 var file = new MsgFile(new FileHandler(stream, path));
                 file.Read();
-                //
                 foreach (var entry in file.Entries) {
-                    if (entry.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase) || entry.GetMessage(Language.English).Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
+                    if (Guid.TryParse(query, out var guid)) {
+                        if (entry.Guid == guid) {
+                            var summary = entry.Name + " = " + LimitLength(entry.GetMessage(Language.English), 50);
+                            var str = "Found matching entry " + summary;
+                            matches.Add((summary, path));
+                            window.InvokeFromUIThread(() => Logger.Info(str));
+                            return;
+                        }
+                    } else if (entry.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase) || entry.GetMessage(Language.English).Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
                         var summary = entry.Name + " = " + LimitLength(entry.GetMessage(Language.English), 50);
                         var str = "Found matching entry " + summary;
                         matches.Add((summary, path));
