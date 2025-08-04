@@ -124,6 +124,12 @@ public class Mdf2GpbfPairImguiHandler : IObjectUIHandler
 [ObjectImguiHandler(typeof(List<MatData>))]
 public class MdfMaterialListImguiHandler : DictionaryListImguiHandler<string, MatData, List<MatData>>
 {
+    public MdfMaterialListImguiHandler()
+    {
+        Filterable = true;
+    }
+
+    protected override bool Filter(UIContext context, string filter) => context.Get<MatData>().Header.matName.Contains(filter, StringComparison.OrdinalIgnoreCase);
     protected override string GetKey(MatData item) => item.Header.matName;
 
     protected override MatData CreateItem(UIContext context, string key)
@@ -175,8 +181,10 @@ public class TexHeaderListImguiHandler : DictionaryListImguiHandler<string, TexH
     public TexHeaderListImguiHandler()
     {
         AllowAdditions = false;
+        Filterable = true;
     }
 
+    protected override bool Filter(UIContext context, string filter) => context.Get<TexHeader>().texType.Contains(filter, StringComparison.OrdinalIgnoreCase);
     protected override string GetKey(TexHeader item) => item.texType;
 
     protected override TexHeader CreateItem(UIContext context, string key)
@@ -190,7 +198,10 @@ public class ParamHeaderListImguiHandler : DictionaryListImguiHandler<string, Pa
     public ParamHeaderListImguiHandler()
     {
         AllowAdditions = false;
+        Filterable = true;
     }
+
+    protected override bool Filter(UIContext context, string filter) => context.Get<ParamHeader>().paramName.Contains(filter, StringComparison.OrdinalIgnoreCase);
 
     protected override string GetKey(ParamHeader item) => item.paramName;
 

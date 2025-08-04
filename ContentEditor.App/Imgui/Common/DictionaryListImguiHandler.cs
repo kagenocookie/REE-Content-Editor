@@ -42,7 +42,10 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
         }
         if (Filterable) {
             context.state ??= string.Empty;
+            ImGui.Indent(4);
             ImGui.InputText("Filter", ref context.state, 120);
+            ImGui.Unindent(4);
+            ImGui.Spacing();
         }
         if (AllowAdditions && context.children.Count == 0) {
             var store = new KeyHolder(default(TKey)!);
