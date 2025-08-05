@@ -56,7 +56,7 @@ public class Patcher : IDisposable
         // if the workspace is not null, assume it was already fully initialized
         _ = env.PakReader;
         if (workspace == null) {
-            var configPath = $"configs/{game.name}/definitions";
+            var configPath = $"configs/{game.name}";
             // 2. load game-specific patch config / overrides
             workspace = new ContentWorkspace(env, new PatchDataContainer(configPath));
         }

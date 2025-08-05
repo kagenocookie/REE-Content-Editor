@@ -1,10 +1,12 @@
 namespace ContentPatcher;
 
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher.StringFormatting;
 using ReeLib;
+using ReeLib.Il2cpp;
 using SmartFormat;
 using SmartFormat.Extensions;
 using VYaml.Annotations;
@@ -16,9 +18,14 @@ public class PatchDataContainer(string filepath)
     private readonly Dictionary<string, EntityConfig> entities = new();
     private readonly Dictionary<string, CustomTypeConfig> customTypes = new();
 
+    private string DefinitionFilepath { get; } = Path.Combine(filepath, "definitions");
+    private string EnumFilepath { get; } = Path.Combine(filepath, "enums");
+
     public IEnumerable<KeyValuePair<string, ClassConfig>> Classes => configs;
     public IEnumerable<KeyValuePair<string, EntityConfig>> Entities => entities;
     public IEnumerable<KeyValuePair<string, CustomTypeConfig>> CustomTypes => customTypes;
+
+    public bool IsLoaded { get; private set; }
 
     public EntityTypeList EntityHierarchy { get; } = new("");
 
@@ -31,11 +38,48 @@ public class PatchDataContainer(string filepath)
         patchers[type] = factory;
     }
 
+    public void Load(ContentWorkspace workspace)
+    {
+        IsLoaded = true;
+        LoadPatchConfigs(workspace.Env.RszParser);
+        if (!string.IsNullOrEmpty(workspace.Env.Config.GamePath)) {
+            var runtimeEnumConfigsPath = Path.Combine(workspace.Env.Config.GamePath, "reframework/data/usercontent/enums");
+            LoadEnums(workspace.Env, runtimeEnumConfigsPath);
+        }
+        LoadEnums(workspace.Env, EnumFilepath);
+    }
+
+    private static void LoadEnums(Workspace env, string filepath)
+    {
+        if (!Directory.Exists(filepath)) return;
+
+        foreach (var file in Directory.EnumerateFiles(filepath, "*.json")) {
+            var fs = File.OpenRead(file);
+            EnumConfig data;
+            try {
+                data = JsonSerializer.Deserialize<EnumConfig>(fs, JsonConfig.jsonOptions)!;
+                if (data == null || string.IsNullOrEmpty(data.EnumName)) continue;
+            } catch (Exception) {
+                continue;
+            } finally {
+                fs.Dispose();
+            }
+
+            var desc = env.TypeCache.GetEnumDescriptor(data.EnumName);
+            if (desc == EnumDescriptor<int>.Default) {
+                // TODO unknown / virtual enum
+                continue;
+            }
+
+            desc.SetDisplayLabels(data.DisplayLabels);
+        }
+    }
+
     public void LoadPatchConfigs(RszParser parser)
     {
         configs.Clear();
-        if (!Directory.Exists(filepath)) return;
-        foreach (var file in Directory.EnumerateFiles(filepath, "*.yaml")) {
+        if (!Directory.Exists(DefinitionFilepath)) return;
+        foreach (var file in Directory.EnumerateFiles(DefinitionFilepath, "*.yaml")) {
             var fs = File.OpenRead(file).ToMemoryStream();
             var memory = fs.GetBuffer().AsMemory(0, (int)fs.Length);
             var newDict = YamlSerializer.Deserialize<SerializedPatchConfigRoot>(memory, yamlOptions);

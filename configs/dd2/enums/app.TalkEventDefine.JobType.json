@@ -1,0 +1,33 @@
+{
+	"orderByValue": true,
+	"displayLabels": {
+		"JobType000": "Job000 Vernworth nobility",
+		"JobType001": "Job001 Vernworth official",
+		"JobType002": "Job002 Military officer",
+		"JobType003": "Job003 Soldier",
+		"JobType004": "Job004 Religious",
+		"JobType005": "Job005 Festival",
+		"JobType006": "Job006 Researcher",
+		"JobType007": "Job007 Farmer",
+		"JobType008": "Job008 Small-time merchant",
+		"JobType009": "Job009 Produce worker",
+		"JobType010": "Job010 Fisherman",
+		"JobType011": "Job011 House-husband",
+		"JobType012": "Job012 Dyer",
+		"JobType013": "Job013 Public worker",
+		"JobType014": "Job014 Trader",
+		"JobType015": "Job015 Sex worker",
+		"JobType016": "Job016 Performer",
+		"JobType017": "Job017 Craftsman",
+		"JobType018": "Job018 Oxcart worker",
+		"JobType019": "Job019 Servant",
+		"JobType020": "Job020 Cook",
+		"JobType021": "Job021 Wanderer",
+		"JobType022": "Job022 Traveling merchant",
+		"JobType023": "Job023 Robber",
+		"JobType024": "Job024 Prisoner/sick/unemployed",
+		"JobType025": "Job025 Child",
+		"JobType026": "Job026 Elf",
+		"JobType027": "Job027 Beastren"
+	}
+}

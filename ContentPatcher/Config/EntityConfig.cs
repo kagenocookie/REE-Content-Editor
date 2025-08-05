@@ -11,7 +11,8 @@ public class EntityConfig
     public required CustomField[] Fields { get; init; }
     public required CustomField[] DisplayFieldsOrder { get; init; }
     public long[]? CustomIDRange { get; init; }
-    public EntityEnumInfo? Enum { get; init; }
+    public EntityEnumInfo? PrimaryEnum { get; init; }
+    public EntityEnumInfo[]? Enums { get; init; }
     public StringFormatter? StringFormatter { get; set; }
 
     public bool HasField(string name) => GetField(name) != null;
@@ -26,7 +27,7 @@ public partial class EntityConfigSerialized
     public string? To_String { get; set; }
     [YamlMember("custom_id_range")]
     public long[]? CustomIDRange { get; set; }
-    public EntityEnumInfo? Enum { get; set; }
+    public EntityEnumInfo[]? Enums { get; set; }
 
     public EntityConfig ToRuntimeConfig()
     {
@@ -46,7 +47,9 @@ public partial class EntityConfigSerialized
             Fields = fieldlist.ToArray(),
             DisplayFieldsOrder = displaylist.ToArray(),
             CustomIDRange = CustomIDRange,
-            Enum = Enum,
+            PrimaryEnum = Enums?.FirstOrDefault(e => e.primary),
+            // Enums = Enums?.Where(e => !e.primary).ToArray(),
+            Enums = Enums?.ToArray(),
         };
         if (To_String != null) {
             var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
@@ -64,4 +67,5 @@ public partial class EntityEnumInfo
 {
     public string name = string.Empty;
     public string format = string.Empty;
+    public bool primary;
 }

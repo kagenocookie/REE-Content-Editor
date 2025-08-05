@@ -1,0 +1,16 @@
+{
+    "enumName": "app.Character.JobEnum",
+    "displayLabels": {
+        "Job01": "Job01 : Fighter",
+        "Job02": "Job02 : Archer",
+        "Job03": "Job03 : Mage",
+        "Job04": "Job04 : Thief",
+        "Job05": "Job05 : Warrior",
+        "Job06": "Job06 : Sorcerer",
+        "Job07": "Job07 : Mystic Spearhand",
+        "Job08": "Job08 : Magick Archer",
+        "Job09": "Job09 : Trickster",
+        "Job10": "Job10 : Warfarer",
+        "None": "None"
+    }
+}

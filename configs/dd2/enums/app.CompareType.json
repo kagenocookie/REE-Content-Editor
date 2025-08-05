@@ -1,0 +1,11 @@
+{
+    "enumName": "app.CompareType",
+    "displayLabels": {
+        "Eq": "Equal",
+        "Ge": "Greater or equal",
+        "Gt": "Greater than",
+        "Le": "Less or equal",
+        "Lt": "Less than",
+        "Neq": "Not equal"
+    }
+}

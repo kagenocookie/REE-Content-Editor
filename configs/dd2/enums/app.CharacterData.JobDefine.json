@@ -1,0 +1,12 @@
+{
+    "enumName": "app.CharacterData.JobDefine",
+    "displayLabels": {
+        "Job045": "Job045 Weaponsmith (Roderick, Celeste, Grisha, Awaran, Beatrice)",
+        "Job047": "Job047 Traveling merchant",
+        "Job049": "Job049 Blacksmith (Brokk)",
+        "Job080": "Job080 Petty merchant (Auriol)",
+        "Job082": "Job082 General store merchant (Philbert, Runne, Morris, Eldart, Isaac)",
+        "Job086": "Job086 Armorer merchant (Bjorn, Bodas)",
+        "Job096": "Job096 Scrap shop (Ibrahim)"
+    }
+}

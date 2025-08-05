@@ -1,9 +1,12 @@
 entities:
   items.item_data:
-    enum:
-      name: app.ItemIDEnum
+    enums:
+    - name: app.ItemIDEnum
       format: "It{id:06}"
+      primary: true # denotes that the entity label should override this enum's corresponding display labels (entity id == enum value)
     custom_id_range: [30000, 65000]
+    # SmartFormat library is used for all string interpolation functionality
+    # can fetch entity fields as well as nested object fields with "."
     to_string: "Item {id}: {name}"
     fields:
       # name and desc, now with enum injection support, might work by just modifying the msg files
@@ -14,8 +17,6 @@ entities:
         type: msg
         label: Name
         required: true
-        # @{field} makes the string formatter use the raw value instead of the clean display value
-        # may need to left-pad with 0? use c# string.Format()?
         param:
           key: "item_name_{id}"
           file: natives/stm/message/ui/itemname.msg.22

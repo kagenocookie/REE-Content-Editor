@@ -1,0 +1,11 @@
+{
+    "enumName": "app.AISituation.TaskStateConditionDefine.LogicalOperatorInt",
+    "displayLabels": {
+        "Equal": "Equal",
+        "Less": "Less or equal",
+        "Lessthan": "Less than",
+        "More": "Greater or equal",
+        "Morethan": "Greater than",
+        "NotEqual": "NotEqual"
+    }
+}

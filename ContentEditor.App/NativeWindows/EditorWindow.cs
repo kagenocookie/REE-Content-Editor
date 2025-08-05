@@ -56,9 +56,9 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
 
         string? configPath = AppConfig.Instance.GameConfigBaseFilepath;
         if (string.IsNullOrEmpty(configPath)) {
-            configPath = $"configs/{game.name}/definitions";
+            configPath = $"configs/{game.name}";
         } else {
-            configPath = $"{configPath}/{game.name}/definitions";
+            configPath = $"{configPath}/{game.name}";
         }
         var patchConfig = workspace?.Config ?? new PatchDataContainer(Path.GetFullPath(configPath));
 
@@ -325,6 +325,9 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem("PAK file browser")) {
                     AddSubwindow(new PakBrowser(workspace.Env, null));
                 }
+                if (ImGui.MenuItem("Data Search")) {
+                    AddUniqueSubwindow(new RszDataFinder());
+                }
             }
             ImGui.EndMenu();
         }
@@ -350,9 +353,6 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
         }
 
         if (ImGui.BeginMenu("Tools")) {
-            if (ImGui.MenuItem("Data Search")) {
-                AddUniqueSubwindow(new RszDataFinder());
-            }
             if (ImGui.MenuItem("Rebuild RSZ patch data")) {
                 if (workspace != null && !runningRszInference) {
                     runningRszInference = true;

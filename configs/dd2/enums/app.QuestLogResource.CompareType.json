@@ -1,0 +1,11 @@
+{
+    "enumName": "app.QuestLogResource.CompareType",
+    "displayLabels": {
+        "Eq": "Equal",
+        "Neq": "Not equal",
+        "Le": "Less or equal",
+        "Lt": "Less than",
+        "Ge": "Greater or equal",
+        "Gt": "Greater than"
+    }
+}

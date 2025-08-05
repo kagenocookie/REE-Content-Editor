@@ -147,7 +147,7 @@ public class EnumFieldHandler : IObjectUIHandler
     private struct RszEnumSource : IEnumDataSource
     {
         public EnumDescriptor descriptor;
-        public string[] GetLabels() => descriptor.GetLabels();
+        public string[] GetLabels() => descriptor.GetDisplayLabels();
         public object[] GetValues() => descriptor.GetValues();
     }
 
@@ -185,7 +185,7 @@ public class FlagsEnumFieldHandler : IObjectUIHandler
 
     public unsafe void OnIMGUI(UIContext context)
     {
-        var labels = enumDescriptor.GetLabels();
+        var labels = enumDescriptor.GetDisplayLabels();
         var values = enumDescriptor.GetValues();
         var value = context.GetRaw()!;
         ImguiHelpers.BeginRect();

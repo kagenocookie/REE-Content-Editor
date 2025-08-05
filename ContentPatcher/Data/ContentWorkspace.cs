@@ -26,8 +26,8 @@ public class ContentWorkspace
         BundleManager.GamePath = env.Config.GamePath;
         Diff = new DiffHandler(env);
         ResourceManager = new ResourceManager(patchConfig);
-        if (!patchConfig.Entities.Any()) {
-            patchConfig.LoadPatchConfigs(env.RszParser);
+        if (!patchConfig.IsLoaded) {
+            patchConfig.Load(this);
         }
         VersionHash = ExeUtils.GetGameVersionHash(env);
         ResourceManager.Setup(this);
