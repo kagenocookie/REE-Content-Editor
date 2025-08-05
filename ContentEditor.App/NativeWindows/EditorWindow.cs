@@ -344,15 +344,15 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
             }
         }
 
-        if (ImGui.MenuItem("Settings")) {
-            if (HasSubwindow<SettingsWindowHandler>(out var settings)) {
-                CloseSubwindow(settings);
-            } else {
-                AddSubwindow(new SettingsWindowHandler());
-            }
-        }
-
         if (ImGui.BeginMenu("Tools")) {
+            if (ImGui.MenuItem("Settings")) {
+                if (HasSubwindow<SettingsWindowHandler>(out var settings)) {
+                    CloseSubwindow(settings);
+                } else {
+                    AddSubwindow(new SettingsWindowHandler());
+                }
+            }
+
             if (ImGui.MenuItem("Rebuild RSZ patch data")) {
                 if (workspace != null && !runningRszInference) {
                     runningRszInference = true;

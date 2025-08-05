@@ -39,9 +39,9 @@ public class OverlaysWindow : IWindowHandler
         var size = ImGui.GetWindowViewport().Size - ImGui.GetStyle().WindowPadding;
         string? helptext = null;
         if (!AppConfig.Instance.HasAnyGameConfigured) {
-            helptext = "Go into the settings menu and configure the game you wish to edit";
+            helptext = "Go into the Tools > Settings menu and configure the game(s) you wish to edit";
         } else if (context.GetWorkspace() == null) {
-            helptext = "Select the game you wish to edit for in the menu";
+            helptext = "Activate the game you wish to edit in the menu";
         } else if (ShowHelp) {
             helptext = "Drag & drop a supported file here or use the menu to open a file";
         }
