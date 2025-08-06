@@ -119,7 +119,9 @@ public class Bundle
     public bool TryFindResourceByNativePath(string nativePath, [MaybeNullWhen(false)] out string localPath)
     {
         if (_nativeToLocalResourcePathCache == null) {
-            _nativeToLocalResourcePathCache = ResourceListing?.ToDictionary(k => k.Value.Target, k => k.Key) ?? new(0);
+            _nativeToLocalResourcePathCache = ResourceListing?
+                .GroupBy(k => k.Value.Target)
+                .ToDictionary(k => k.Key, k => k.First().Value.Target) ?? new(0);
         }
 
         return _nativeToLocalResourcePathCache.TryGetValue(nativePath, out localPath);
