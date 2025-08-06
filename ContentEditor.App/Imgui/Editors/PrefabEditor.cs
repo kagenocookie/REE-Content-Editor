@@ -39,7 +39,6 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
     private void Reset()
     {
         primaryInspector?.Context.ClearChildren();
-        // primaryInspector?.Context.parent?.RemoveChild(primaryInspector);
         primaryInspector = null;
         failedToReadfile = false;
         CloseInspectors();

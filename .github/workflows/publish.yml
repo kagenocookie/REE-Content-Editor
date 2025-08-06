@@ -41,6 +41,9 @@ jobs:
         rm -Recurse build/runtimes/linux-*
         rm -Recurse build/runtimes/osx*
 
+    - name: Copy configs
+      run: cp -R configs build/configs
+
     - name: Upload artifacts
       uses: actions/upload-artifact@v4.4.3
       with:

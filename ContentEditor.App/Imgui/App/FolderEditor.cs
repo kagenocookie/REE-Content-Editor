@@ -33,9 +33,8 @@ public class FolderDataEditor : IObjectUIHandler
         if (context.children.Count == 0) {
             var ws = context.GetWorkspace();
             if (folder.Parent != null) {
-                // context.AddChild<Folder, string>("Scene path", folder, new ConfirmedStringFieldHandler(), c => c.ScenePath, (c, v) => c.ScenePath = v);
                 WindowHandlerFactory.SetupObjectUIContext(context, typeof(Folder), members: BaseMembers);
-                if (ws?.Env.Classes.Folder.IndexOfField(nameof(Folder.Offset)) != -1) {
+                if (ws != null && ws.Env.Classes.Folder.fields.Any(f => f.type == RszFieldType.Position)) {
                     WindowHandlerFactory.SetupObjectUIContext(context, typeof(Folder), members: BaseMembers2);
                 }
             }
@@ -112,6 +111,7 @@ public class FolderNodeEditor : IObjectUIHandler
                 HandleSelect(context, folder);
             }
         }
+        ImGui.GetWindowDrawList().AddLine(ImGui.GetCursorScreenPos(), new Vector2(ImGui.GetCursorScreenPos().X + ImGui.CalcTextSize(folder.Name).X, ImGui.GetCursorScreenPos().Y), 0xffffffff);
         if (ImGui.BeginPopupContextItem(context.label)) {
             HandleContextMenu(folder, context);
             ImGui.EndPopup();

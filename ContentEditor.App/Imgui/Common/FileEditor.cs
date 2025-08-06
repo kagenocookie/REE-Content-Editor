@@ -28,6 +28,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
 
     public bool CanClose => Handle.HandleType != FileHandleType.Embedded && context.parent == context.root;
 
+    protected WindowData WindowData => context.Get<WindowData>();
     IRectWindow? IFileHandleReferenceHolder.Parent => context.Get<WindowData>().ParentWindow;
 
     public bool CanFocus => CanClose;
