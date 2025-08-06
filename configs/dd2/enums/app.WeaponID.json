@@ -1,0 +1,17 @@
+{
+    "enumName": "app.WeaponID",
+    "displayLabels": {
+        "wp00": "wp00 Sword",
+        "wp01": "wp01 Shield",
+        "wp02": "wp02 Greatsword",
+        "wp03": "wp03 Dagger",
+        "wp04": "wp04 Bow",
+        "wp05": "wp05 Magick Bow",
+        "wp06": "wp06 Quiver",
+        "wp07": "wp07 Staff",
+        "wp08": "wp08 Archistaff",
+        "wp09": "wp09 Duospear",
+        "wp10": "wp10 Censer",
+        "wp11": "wp11 Arrow"
+    }
+}

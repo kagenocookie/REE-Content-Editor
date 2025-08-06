@@ -67,6 +67,7 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
         SetupUI(workspace);
         workspace.SetBundle(bundle);
         GameChanged?.Invoke();
+        SceneManager.ChangeWorkspace(env);
     }
 
     private static void SetupUI(ContentWorkspace workspace)

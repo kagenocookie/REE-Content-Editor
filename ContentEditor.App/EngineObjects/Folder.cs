@@ -1,12 +1,79 @@
+using ReeLib;
+using ReeLib.Scn;
+
 namespace ContentEditor.App;
 
-public class Folder : NodeObject<Folder>, IDisposable
+public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder>, INodeObject<GameObject>
 {
     public readonly List<GameObject> GameObjects = new();
 
-    public Folder(string name)
+    public string Tags = string.Empty;
+    public bool Update = true;
+    public bool Draw = true;
+    public bool Active = true;
+    public string? ScenePath;
+    public ReeLib.via.Position Offset;
+
+    private RszInstance instance;
+
+    IEnumerable<GameObject> INodeObject<GameObject>.Children => GameObjects;
+
+    private Folder(RszInstance instance)
     {
+        this.instance = instance;
+        ImportInstanceFields();
+    }
+
+    public Folder(string name, Workspace workspace, Scene? scene = null)
+    {
+        instance = RszInstance.CreateInstance(workspace.RszParser, workspace.Classes.Folder);
         Name = name;
+        Scene = scene;
+        ExportInstanceFields();
+    }
+
+    public Folder(string name,
+        Workspace workspace,
+        IEnumerable<ScnFolderData> folders,
+        IEnumerable<ScnGameObject> gameObjects,
+        IList<ScnPrefabInfo> prefabs,
+        Scene? scene = null)
+    {
+        instance = RszInstance.CreateInstance(workspace.RszParser, workspace.Classes.Folder);
+        Name = name;
+        Scene = scene;
+        ExportInstanceFields();
+
+        foreach (var sub in folders) {
+            var folder = new Folder(sub, workspace, prefabs, scene) {
+                _parent = this,
+            };
+            base.Children.Add(folder);
+        }
+
+        foreach (var gobj in gameObjects) {
+            var obj = new GameObject(gobj, this, prefabs, scene);
+            GameObjects.Add(obj);
+        }
+    }
+
+    public Folder(ScnFolderData source, Workspace workspace, IList<ScnPrefabInfo> prefabs, Scene? scene = null)
+    {
+        instance = source.Instance!;
+        ImportInstanceFields();
+        Scene = scene;
+
+        foreach (var sub in source.Children) {
+            var child = new Folder(sub, workspace, prefabs, scene) {
+                _parent = this,
+            };
+            base.Children.Add(child);
+        }
+
+        foreach (var gobj in source.GameObjects) {
+            var obj = new GameObject(gobj, this, null, scene);
+            GameObjects.Add(obj);
+        }
     }
 
     public IEnumerable<GameObject> GetAllGameObjects()
@@ -49,6 +116,83 @@ public class Folder : NodeObject<Folder>, IDisposable
         return null;
     }
 
+    private void ImportInstanceFields()
+    {
+        Name = (string)instance.Values[0];
+        Tags = (string)instance.Values[1];
+        Draw = Convert.ToBoolean(instance.Values[2]);
+        Update = Convert.ToBoolean(instance.Values[3]);
+        Active = Convert.ToBoolean(instance.Values[4]);
+        ScenePath = instance.Values[5] as string;
+        Offset = instance.Values.Length > 6 ? (ReeLib.via.Position)instance.Values[6] : default;
+    }
+    private void ExportInstanceFields()
+    {
+        instance.Values[0] = Name;
+        instance.Values[1] = Tags;
+        instance.Values[2] = Draw;
+        instance.Values[3] = Update;
+        instance.Values[4] = Active;
+        instance.Values[5] = ScenePath ?? string.Empty;
+        if (instance.Values.Length > 6) {
+            instance.Values[6] = Offset;
+        }
+    }
+
+    public ScnFolderData ToScnFolder(List<ScnPrefabInfo>? prefabInfos)
+    {
+        ExportInstanceFields();
+
+        var scn = new ScnFolderData() {
+            Instance = instance,
+        };
+        foreach (var child in Children) {
+            scn.Children.Add(child.ToScnFolder(prefabInfos));
+        }
+        foreach (var child in GameObjects) {
+            var go = child.ToScnGameObject(prefabInfos);
+            scn.GameObjects.Add(go);
+            go.Folder = scn;
+        }
+        return scn;
+    }
+
+    internal void MoveToScene(Scene newScene)
+    {
+        if (Scene != null) {
+            // we probably need to handle some more edge cases here
+            if (Parent != null && Parent.Scene != newScene) {
+                Parent.RemoveChild(this);
+            }
+        }
+        Scene = newScene;
+        foreach (var child in Children) {
+            child.MoveToScene(newScene);
+        }
+        foreach (var obj in GameObjects) {
+            obj.MoveToScene(newScene);
+        }
+    }
+
+    public Folder Clone(Folder? parent = null)
+    {
+        ExportInstanceFields();
+        var newObj = new Folder(instance.Clone()) {
+            Scene = parent?.Scene ?? Scene,
+        };
+        foreach (var child in Children) {
+            child.Clone(newObj);
+        }
+        foreach (var child in GameObjects) {
+            var clone = child.Clone();
+            clone.MoveToScene(Scene);
+            GameObjects.Add(clone);
+        }
+        parent?.AddChild(newObj);
+
+        return newObj;
+    }
+
     public void Dispose()
     {
         foreach (var folder in Children) {
@@ -59,4 +203,26 @@ public class Folder : NodeObject<Folder>, IDisposable
             go.Dispose();
         }
     }
+
+    public override string ToString() => Name;
+
+    public void AddGameObject(GameObject gameObject, int index = -1)
+    {
+        if (index < 0 || index >= GameObjects.Count) {
+            GameObjects.Add(gameObject);
+        } else {
+            GameObjects.Insert(index, gameObject);
+        }
+        gameObject.MoveToFolder(this);
+    }
+
+    void INodeObject<GameObject>.AddChild(GameObject child, int index) => AddGameObject(child, index);
+
+    void INodeObject<GameObject>.RemoveChild(GameObject child)
+    {
+        GameObjects.Remove(child);
+    }
+
+    int INodeObject<GameObject>.GetChildIndex(GameObject child) => GameObjects.IndexOf(child);
+    INodeObject<GameObject>? INodeObject<GameObject>.GetParent() => null;
 }

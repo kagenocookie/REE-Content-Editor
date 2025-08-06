@@ -86,5 +86,4 @@ public class Prefab(FileHandle handle, PfbFile file) : IResourceFile
         file.AddGameObject(_instance.ToPfbGameObject());
         file.RSZ.RebuildInstanceList();
     }
-
 }

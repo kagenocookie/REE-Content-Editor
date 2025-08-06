@@ -13,4 +13,7 @@ public static class Colors
     public static readonly Vector4 Info = new Vector4(1, 1, 0.625f, 0.625f);
     public static readonly Vector4 Note = new Vector4(1, 1, 0.53f, 0.53f);
     public static readonly Vector4 Success = new Vector4(1, 1, 0.625f, 0.625f);
+
+    public static readonly Vector4 GameObject = new Vector4(1, 0.96f, 0.92f, 1);
+    public static readonly Vector4 Folder = new Vector4(0.9f, 1f, 0.9f, 1);
 }

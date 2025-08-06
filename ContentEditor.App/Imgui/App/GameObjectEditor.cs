@@ -37,7 +37,7 @@ public class GameObjectEditor : IObjectUIHandler
             if (ws?.Env.Classes.GameObject.IndexOfField(nameof(GameObject.TimeScale)) != -1) {
                 WindowHandlerFactory.SetupObjectUIContext(context, typeof(GameObject), members: BaseMembers2);
             }
-            if (obj.folder != null) {
+            if (obj.Folder != null) {
                 WindowHandlerFactory.SetupObjectUIContext(context, typeof(GameObject), members: SceneMembers);
             }
             context.AddChild("Components", obj.Components, new ComponentListEditor());
@@ -63,23 +63,38 @@ public class BaseComponentEditor : IObjectUIHandler
     }
 }
 
-public class GameObjectChildListEditor : NodeTreeEditor<GameObject, GameObjectChildListEditor>
+public class GameObjectNodeEditor : NodeTreeEditor<GameObject, GameObjectNodeEditor>
 {
+    public GameObjectNodeEditor()
+    {
+        nodeColor = Colors.GameObject;
+    }
+
     protected override void HandleContextMenu(GameObject node, UIContext context)
     {
-        if (node.Parent == null) {
+        // .Parent ?? node.folder as INodeObject<GameObject>
+        var parent = ((INodeObject<GameObject>)node).GetParent();
+        if (parent == null) {
             // the sole root instance mustn't be deleted or duplicated (pfb)
-            // TODO: handle folder parent
+            // TODO: verify folder parent handling
             return;
         }
 
+        if (ImGui.Button("New GameObject")) {
+            var ws = context.GetWorkspace();
+            var newgo = new GameObject("New_GameObject", ws!.Env, node.Folder, node.Scene);
+            UndoRedo.RecordAddChild(context, newgo, node);
+            newgo.MakeNameUnique();
+            context.FindInterfaceInParentHandlers<IInspectorController>()?.SetPrimaryInspector(newgo);
+            ImGui.CloseCurrentPopup();
+        }
         if (ImGui.Button("Delete")) {
             UndoRedo.RecordRemoveChild(context, node);
             ImGui.CloseCurrentPopup();
         }
         if (ImGui.Button("Duplicate")) {
             var clone = node.Clone();
-            UndoRedo.RecordAddChild(context, clone, node.Parent, node.Parent.GetChildIndex(node) + 1);
+            UndoRedo.RecordAddChild<GameObject>(context, clone, parent, parent.GetChildIndex(node) + 1);
             clone.MakeNameUnique();
             var inspector = context.FindInterfaceInParentHandlers<IInspectorController>();
             inspector?.SetPrimaryInspector(clone);

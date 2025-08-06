@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using ReeLib;
 
 namespace ContentEditor.App;
 
@@ -25,9 +26,14 @@ public class NodeTreeContainer
 
 public sealed class Scene : NodeTreeContainer, IDisposable
 {
-    private readonly Folder RootFolder = new("ROOT");
+    public readonly Folder RootFolder;
     public IEnumerable<Folder> Folders => RootFolder.Children;
     public IEnumerable<GameObject> GameObjects => RootFolder.GameObjects;
+
+    public Scene(Workspace env)
+    {
+        RootFolder = new("ROOT", env, this);
+    }
 
     public GameObject? Find(ReadOnlySpan<char> path) => RootFolder.Find(path);
 
@@ -50,6 +56,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable
     public void Add(Folder folder)
     {
         RootFolder.Children.Add(folder);
+        folder.MoveToScene(this);
     }
 
     public IEnumerable<GameObject> GetAllGameObjects() => RootFolder.GetAllGameObjects();

@@ -111,7 +111,9 @@ public class Bundle
     {
         ResourceListing ??= new();
         ResourceListing[localFilepath] = new ResourceListItem() { Target = nativeFilepath };
-        _nativeToLocalResourcePathCache = null;
+        if (_nativeToLocalResourcePathCache != null) {
+            _nativeToLocalResourcePathCache[nativeFilepath] = localFilepath;
+        }
     }
 
     public bool TryFindResourceByNativePath(string nativePath, [MaybeNullWhen(false)] out string localPath)

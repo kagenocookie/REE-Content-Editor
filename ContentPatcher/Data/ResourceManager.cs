@@ -595,7 +595,7 @@ public class ResourceManager(PatchDataContainer config)
         filepath = filepath.NormalizeFilepath();
         var stream = workspace.Env.FindSingleFile(filepath, out var resolvedFilename);
         if (stream != null) {
-            handle = CreateFileHandleInternal(filepath, nativePath ?? resolvedFilename, stream);
+            handle = CreateFileHandleInternal(filepath, nativePath ?? (resolvedFilename != null && !Path.IsPathFullyQualified(resolvedFilename) ? resolvedFilename : null), stream);
         }
 
         // TODO should include dependency bundles as well here

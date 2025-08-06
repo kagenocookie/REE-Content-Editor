@@ -20,7 +20,7 @@ public class ComponentListEditor : DictionaryListImguiHandler<string, Component,
     {
         var ws = context.GetWorkspace();
         if (ws == null) return new StringFieldHandler();
-        return new AutocompleteStringHandler(true, ws.Env.TypeCache.GetSubclasses("via.Behavior").ToArray()) { NoUndoRedo = true };
+        return new AutocompleteStringHandler(true, ws.Env.TypeCache.GetSubclasses("via.Component").ToArray()) { NoUndoRedo = true };
     }
 
     protected override Component? CreateItem(UIContext context, string key)

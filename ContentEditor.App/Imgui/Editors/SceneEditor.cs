@@ -6,13 +6,13 @@ using ReeLib.Pfb;
 
 namespace ContentEditor.App.ImguiHandling;
 
-public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObjectUIHandler, IInspectorController, IWindowHandler
+public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObjectUIHandler, IInspectorController, IWindowHandler
 {
-    public override string HandlerName => "Prefab";
+    public override string HandlerName => "Scene";
 
     public string Filename => Handle.Filepath;
-    public PfbFile File => Handle.GetFile<PfbFile>();
-    public Prefab Prefab => Handle.GetCustomContent<Prefab>();
+    public ScnFile File => Handle.GetFile<ScnFile>();
+    public RawScene Prefab => Handle.GetCustomContent<RawScene>();
 
     public ContentWorkspace Workspace { get; }
 
@@ -24,7 +24,7 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
 
     private readonly List<ObjectInspector> inspectors = new();
 
-    public PrefabEditor(ContentWorkspace env, FileHandle file) : base(file)
+    public SceneEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
         Workspace = env;
     }
@@ -62,9 +62,9 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
         if (context.children.Count == 0 || scene == null) {
             scene?.Dispose();
             context.ClearChildren();
-            var root = Prefab.GetSharedInstance();
+            var root = Prefab.GetSharedInstance(Workspace.Env);
             if (Logger.ErrorIf(root == null, "Failed to instantiate prefab")) return;
-            context.AddChild<PfbFile, List<ResourceInfo>>("Resources", File, getter: static (c) => c!.ResourceInfoList).AddDefaultHandler<List<ResourceInfo>>();
+            context.AddChild<ScnFile, List<ResourceInfo>>("Resources", File, getter: static (c) => c!.ResourceInfoList).AddDefaultHandler<List<ResourceInfo>>();
 
             scene = root.Scene;
             if (scene == null) {
@@ -72,7 +72,7 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
                 if (Logger.ErrorIf(scene == null, "Failed to create new scene")) return;
                 scene.Add(root);
             }
-            context.AddChild(root.Name, root, new FullWindowWidthUIHandler(-50, new TextHeaderUIHandler("Children", new BoxedUIHandler(new GameObjectNodeEditor()))));
+            context.AddChild(root.Name, root, new FullWindowWidthUIHandler(-50, new TextHeaderUIHandler("Scene objects", new BoxedUIHandler(new FolderNodeEditor()))));
         }
         context.ShowChildrenUI();
         ImGui.PopID();

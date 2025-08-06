@@ -2,9 +2,35 @@ using System.Runtime.CompilerServices;
 
 namespace ContentEditor.App;
 
-public class NodeObject : NotifiableObject { }
+public class NodeObject : NotifiableObject
+{
 
-public class NodeObject<TNode> : NodeObject
+}
+
+public interface IPathedObject
+{
+    string Path { get; }
+}
+
+public interface INodeObject
+{
+    IEnumerable<NodeObject> Children { get; }
+    NodeObject? Parent { get; }
+    Scene? Scene { get; }
+}
+
+public interface INodeObject<T> : INodeObject
+{
+    new IEnumerable<T> Children { get; }
+
+    void AddChild(T child, int index);
+    void AddChild(T child) => AddChild(child, -1);
+    void RemoveChild(T child);
+    INodeObject<T>? GetParent();
+    int GetChildIndex(T child);
+}
+
+public class NodeObject<TNode> : NodeObject, INodeObject<TNode>, IPathedObject
     where TNode : NodeObject<TNode>
 {
     public event NodeObjectEventHandler? ParentChanged;
@@ -17,16 +43,19 @@ public class NodeObject<TNode> : NodeObject
 
     public bool IsInTree => Scene?.Find(Name) != null || Parent?.IsInTree == true;
 
-    private string? _cachedPath;
-    public string Path {
-        get {
-            if (_cachedPath != null) return _cachedPath;
-            if (Parent != null) {
-                _cachedPath = Parent.Path + "/" + _cachedPath;
-            } else {
-                _cachedPath = Name;
-            }
-            return _cachedPath;
+    protected string? _cachedPath;
+    public string Path => _cachedPath ??= GetPath();
+
+    IEnumerable<NodeObject> INodeObject.Children => Children;
+    IEnumerable<TNode> INodeObject<TNode>.Children => Children;
+    NodeObject? INodeObject.Parent => Parent;
+
+    protected virtual string GetPath()
+    {
+        if (Parent != null) {
+            return Parent.Path + "/" + Name;
+        } else {
+            return Name;
         }
     }
 
@@ -177,13 +206,14 @@ public class NodeObject<TNode> : NodeObject
 
     public void MakeNameUnique()
     {
-        if (Parent == null) return;
+        var parent = ((INodeObject<TNode>)this).GetParent();
+        if (parent == null) return;
 
         var basename = Name;
-        int index = 0;
+        int index = 1;
         var newName = basename;
-        while (Parent.Children.Any(c => c.Name == newName && c != this)) {
-            newName = $"{basename}_copy" + (index == 0 ? "" : index.ToString());
+        while (parent.Children.Any(c => c.Name == newName && c != this)) {
+            newName = $"{basename}_" + index.ToString();
             index++;
         }
         Name = newName;
@@ -191,4 +221,6 @@ public class NodeObject<TNode> : NodeObject
 
     protected virtual void DeferAction(Action action) { }
     protected virtual void OnParentChanged() { }
+
+    INodeObject<TNode>? INodeObject<TNode>.GetParent() => _parent;
 }

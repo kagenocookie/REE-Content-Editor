@@ -40,6 +40,11 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
         if (context.children.Count == 0) {
             context.AddChild("Target", Target).AddDefaultHandler();
         }
+        if (Target is IPathedObject pathed) {
+            ImGui.TextColored(Colors.Faded, $"Target: [{Target?.GetType().Name}] {Target}: {pathed.Path}");
+        } else {
+            ImGui.TextColored(Colors.Faded, $"Target: [{Target?.GetType().Name}] {Target}");
+        }
         if (ImGui.Button("Duplicate window")) {
             if (parentWindow is IInspectorController inspectorController) {
                 var newInspector = inspectorController.AddInspector(_target);

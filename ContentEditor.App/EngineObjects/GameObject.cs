@@ -5,6 +5,7 @@ using ContentEditor.Core;
 using ReeLib;
 using ReeLib.Common;
 using ReeLib.Pfb;
+using ReeLib.Scn;
 using ReeLib.UVar;
 
 namespace ContentEditor.App;
@@ -18,7 +19,7 @@ public class NotifiableObject
     protected void NotifyPropertyChanged([CallerMemberName] string propertyName = "") => PropertyChanged?.Invoke(this, propertyName);
 }
 
-public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObject
+public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObject, INodeObject<GameObject>
 {
     public string Tags = string.Empty;
     public bool Update;
@@ -27,8 +28,21 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
     public Guid guid;
     public string? PrefabPath;
     public readonly List<Component> Components = new();
-    public Folder? folder;
+
+    public Folder? Folder { get; internal set; }
+    private List<GameObject> _BaseChildren => base.Children;
     public new IEnumerable<GameObject> Children => base.Children;
+
+    protected override string GetPath()
+    {
+        if (_parent != null) {
+            return _parent.Path + "/" + Name;
+        }
+        if (Folder != null) {
+            return Folder.Path + "//" + Name;
+        }
+        return Name;
+    }
 
     private RszInstance instance;
 
@@ -43,11 +57,12 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         ImportInstanceFields();
     }
 
-    public GameObject(string name, Workspace workspace, Scene? scene = null)
+    public GameObject(string name, Workspace workspace, Folder? folder = null, Scene? scene = null)
     {
         instance = RszInstance.CreateInstance(workspace.RszParser, workspace.Classes.GameObject);
         Name = name;
         Update = true;
+        Folder = folder;
         Draw = true;
         TimeScale = -1;
         guid = Guid.NewGuid();
@@ -67,6 +82,26 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
 
         foreach (var sourceChild in source.Children) {
             var child = new GameObject(sourceChild, scene) {
+                _parent = this
+            };
+            base.Children.Add(child);
+        }
+    }
+
+    public GameObject(ScnGameObject source, Folder folder, IList<ScnPrefabInfo>? prefabs = null, Scene? scene = null)
+    {
+        instance = source.Instance!;
+        ImportInstanceFields();
+        Scene = scene;
+        this.Folder = folder;
+        PrefabPath = prefabs == null || !(source.Info?.prefabId >= 0) ? null : prefabs[source.Info.prefabId].Path;
+
+        foreach (var comp in source.Components) {
+            Components.Add(new Component(this, comp));
+        }
+
+        foreach (var sourceChild in source.Children) {
+            var child = new GameObject(sourceChild, folder, prefabs, scene) {
                 _parent = this
             };
             base.Children.Add(child);
@@ -103,6 +138,40 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         return obj;
     }
 
+    public ScnGameObject ToScnGameObject(List<ScnPrefabInfo>? prefabInfos)
+    {
+        ExportInstanceFields();
+
+        var obj = new ScnGameObject() {
+            Instance = instance,
+        };
+        obj.Info ??= new();
+        obj.Info.guid = this.guid;
+        if (prefabInfos != null && !string.IsNullOrEmpty(PrefabPath)) {
+            var pfbId = prefabInfos.FindIndex(info => info.Path == PrefabPath);
+            if (pfbId == -1) {
+                pfbId = prefabInfos.Count;
+                prefabInfos.Add(new ScnPrefabInfo() { Path = PrefabPath });
+            }
+            obj.Info.prefabId = pfbId;
+            obj.Prefab = prefabInfos[pfbId];
+        } else {
+            obj.Info.prefabId = -1;
+        }
+
+        foreach (var comp in Components) {
+            obj.Components.Add(comp.Data);
+        }
+
+        foreach (var child in Children) {
+            var pfb = child.ToScnGameObject(prefabInfos);
+            pfb.Parent = obj;
+            obj.Children.Add(pfb);
+        }
+
+        return obj;
+    }
+
     private void ImportInstanceFields()
     {
         Name = (string)instance.Values[0];
@@ -122,18 +191,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         }
     }
 
-    public void Dispose()
-    {
-        foreach (var child in Children) {
-            child.Dispose();
-        }
-
-        foreach (var comp in Components) {
-            (comp as IDisposable)?.Dispose();
-        }
-    }
-
-    internal void MoveToScene(Scene newScene)
+    internal void MoveToScene(Scene? newScene)
     {
         if (Scene != null) {
             // we probably need to handle some more edge cases here
@@ -147,22 +205,54 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         }
     }
 
+    internal void MoveToFolder(Folder? folder)
+    {
+        if (Folder != null) {
+            // we probably need to handle some more edge cases here
+            Folder.GameObjects.Remove(this);
+        }
+        Folder = folder;
+        foreach (var child in Children) {
+            child.MoveToFolder(folder);
+        }
+
+        if (folder != null && folder.Scene != Scene) {
+            MoveToScene(folder.Scene);
+        }
+    }
+
     public GameObject Clone(GameObject? parent = null)
     {
         ExportInstanceFields();
         var newObj = new GameObject(instance.Clone()) {
             Scene = parent?.Scene ?? Scene,
+            _parent = parent,
         };
         foreach (var comp in Components) {
             comp.CloneTo(newObj);
         }
         foreach (var child in Children) {
-            child.Clone(this);
+            child.Clone(newObj);
         }
-        parent?.AddChild(newObj);
+        if (parent != null) {
+            parent._BaseChildren.Add(newObj);
+        }
 
         return newObj;
     }
+
+    public void Dispose()
+    {
+        foreach (var child in Children) {
+            child.Dispose();
+        }
+
+        foreach (var comp in Components) {
+            (comp as IDisposable)?.Dispose();
+        }
+    }
+
+    INodeObject<GameObject>? INodeObject<GameObject>.GetParent() => (INodeObject<GameObject>?)_parent ?? Folder;
 
     public override string ToString() => Name;
 }

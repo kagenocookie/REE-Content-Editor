@@ -122,12 +122,11 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                     localFilepath = PathUtils.RemoveNativesFolder(nativeFilepath);
                     savePath = Path.Combine(bundleFolder, localFilepath);
                 }
-                SaveTo(savePath, true);
-                bundle.AddResource(localFilepath, nativeFilepath);
+                SaveTo(savePath, true, () => bundle.AddResource(localFilepath, nativeFilepath));
                 workspace.BundleManager.SaveBundle(bundle);
             }
         }
-        if (Handle.HandleType == FileHandleType.Disk && System.IO.File.Exists(Handle.Filepath)) {
+        if (Handle.HandleType is FileHandleType.Disk or FileHandleType.Bundle && System.IO.File.Exists(Handle.Filepath)) {
             ImGui.SameLine();
             if (ImGui.Button("Show in file explorer")) {
                 FileSystemUtils.ShowFileInExplorer(Handle.Filepath);
@@ -155,13 +154,14 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         Handle.Save(context.GetWorkspace()!);
     }
 
-    private void SaveTo(string savePath, bool replaceFileHandle)
+    private void SaveTo(string savePath, bool replaceFileHandle, Action? beforeReplaceAction = null)
     {
         var workspace = context.GetWorkspace()!;
         if (!Handle.Save(workspace, savePath)) return;
 
         Logger.Info("File saved to " + savePath);
         if (replaceFileHandle) {
+            beforeReplaceAction?.Invoke();
             DisconnectFile();
             Handle = workspace.ResourceManager.GetFileHandle(savePath);
             ConnectFile();

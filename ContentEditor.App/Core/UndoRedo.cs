@@ -151,7 +151,8 @@ public class UndoRedo
         GetState(window).Push(new CallbackUndoRedo(context, () => setter(objContext, newValue), () => setter(objContext, oldValue), id));
     }
 
-    public static void RecordAddChild(UIContext context, GameObject node, GameObject parent, int index = -1, WindowBase? window = null)
+    public static void RecordAddChild<TNode>(UIContext context, TNode node, INodeObject<TNode> parent, int index = -1, WindowBase? window = null)
+        where TNode : INodeObject<TNode>, IDisposable
     {
         if (Logger.ErrorIf(node.Parent != null, "Node already has parent")) return;
         var state = GetState(window);
@@ -159,29 +160,33 @@ public class UndoRedo
             context,
             index == -1 ? () => parent.AddChild(node) : () => parent.AddChild(node, index),
             () => parent.RemoveChild(node),
-            $"Add child {node.GetHashCode()}"));
+            $"Add child {node.GetHashCode()}"), UndoRedoMergeMode.NeverMerge);
         state.SetCommandDisposable(() => node.Dispose(), null);
     }
 
-    public static void RecordMoveChild(UIContext context, GameObject node, GameObject newParent, int newIndex = -1, WindowBase? window = null)
+    public static void RecordMoveChild<TNode>(UIContext context, TNode node, TNode newParent, int newIndex = -1, WindowBase? window = null)
+        where TNode : class, INodeObject<TNode>, IDisposable
     {
-        if (Logger.ErrorIf(node.Parent == null, "Cannot remove node without parent")) return;
-        var prevParent = node.Parent;
+        var prevParent = node.GetParent();
+        if (Logger.ErrorIf(prevParent == null, "Cannot remove node without parent")) return;
         var prevIndex = prevParent.GetChildIndex(node);
-        GetState(window).Push(new CallbackUndoRedo(context, () => newParent.AddChild(node, newIndex), () => prevParent.AddChild(node, prevIndex), $"Move node {node.GetHashCode()}"));
+        GetState(window).Push(
+            new CallbackUndoRedo(context, () => newParent.AddChild(node, newIndex), () => prevParent.AddChild(node, prevIndex), $"Move node {node.GetHashCode()}"),
+            UndoRedoMergeMode.NeverMerge);
     }
 
-    public static void RecordRemoveChild(UIContext context, GameObject node, WindowBase? window = null)
+    public static void RecordRemoveChild<TNode>(UIContext context, TNode node, WindowBase? window = null)
+        where TNode : INodeObject<TNode>, IDisposable
     {
-        if (Logger.ErrorIf(node.Parent == null, "Cannot remove node without parent")) return;
-        var prevParent = node.Parent;
+        var prevParent = node.GetParent();
+        if (Logger.ErrorIf(prevParent == null, "Cannot remove node without parent")) return;
         var prevIndex = prevParent.GetChildIndex(node);
         var state = GetState(window);
         state.Push(new CallbackUndoRedo(
             context,
             () => prevParent.RemoveChild(node),
             () => prevParent.AddChild(node, prevIndex),
-            $"Remove node {node.GetHashCode()}"));
+            $"Remove node {node.GetHashCode()}"), UndoRedoMergeMode.NeverMerge);
         state.SetCommandDisposable(null, () => node.Dispose());
     }
 

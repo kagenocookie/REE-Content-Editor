@@ -1,14 +1,18 @@
 using System.Diagnostics;
+using ReeLib;
 
 namespace ContentEditor.App;
 
-public class SceneManager
+public sealed class SceneManager : IDisposable
 {
     private readonly List<Scene> scenes = new();
+    private Workspace? env;
 
     public Scene CreateScene()
     {
-        var scene = new Scene();
+        if (env == null) throw new Exception("Workspace unset");
+
+        var scene = new Scene(env);
         scenes.Add(scene);
         return scene;
     }
@@ -18,6 +22,14 @@ public class SceneManager
         scenes.Remove(scene);
     }
 
+    internal void ChangeWorkspace(Workspace workspace)
+    {
+        if (env == workspace) return;
+
+        ClearScenes();
+        env = workspace;
+    }
+
     public void Update(float deltaTime)
     {
         foreach (var scene in scenes) {
@@ -25,5 +37,18 @@ public class SceneManager
         }
 
         // TODO invoke all object updates once we have some behaviors
+    }
+
+    private void ClearScenes()
+    {
+        foreach (var scene in scenes) {
+            scene.Dispose();
+        }
+        scenes.Clear();
+    }
+
+    public void Dispose()
+    {
+        ClearScenes();
     }
 }
