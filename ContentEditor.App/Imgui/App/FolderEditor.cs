@@ -111,7 +111,6 @@ public class FolderNodeEditor : IObjectUIHandler
                 HandleSelect(context, folder);
             }
         }
-        ImGui.GetWindowDrawList().AddLine(ImGui.GetCursorScreenPos(), new Vector2(ImGui.GetCursorScreenPos().X + ImGui.CalcTextSize(folder.Name).X, ImGui.GetCursorScreenPos().Y), 0xffffffff);
         if (ImGui.BeginPopupContextItem(context.label)) {
             HandleContextMenu(folder, context);
             ImGui.EndPopup();
