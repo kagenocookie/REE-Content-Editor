@@ -347,7 +347,7 @@ public class UserDataReferenceHandler : IObjectUIHandler
                         }
                         var file = fileHandle.GetFile<UserFile>();
 
-                        var rsz = ctx.FindInterfaceInParentHandlers<IRSZFileEditor>()?.GetRSZFile();
+                        var rsz = ctx.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
                         if (rsz == null || !rsz.InstanceList.Any(ii => ii.RSZUserData?.InstanceId == info.InstanceId && ii != instance)) {
                             // we can do a full replace here - eithe rif we can't find the rsz container, or if there's no other references to this same userdata intance
                             info.Path = newPath;
@@ -375,12 +375,7 @@ public class UserDataReferenceHandler : IObjectUIHandler
                 }
 
                 var handle = ws.ResourceManager.GetFileHandle(resolvedPath!);
-                var data = new WindowData() {
-                    ParentWindow = context.GetWindow()!,
-                    Handler = new UserDataFileEditor(ws, handle),
-                };
-                data.Context = context.AddChild("UserFile", data, (UserDataFileEditor)data.Handler!);
-                data.Handler.Init(data.Context);
+                WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, new UserDataFileEditor(ws, handle), "UserFile");
             } else if (instance.RSZUserData is RSZUserDataInfo_TDB_LE_67 infoEmbedded) {
                 file = infoEmbedded.EmbeddedRSZ;
                 // TODO re7?
@@ -389,7 +384,7 @@ public class UserDataReferenceHandler : IObjectUIHandler
                     return;
                 }
 
-                var rsz = context.FindInterfaceInParentHandlers<IRSZFileEditor>()?.GetRSZFile();
+                var rsz = context.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
                 if (rsz == null) {
                     ImGui.TextColored(Colors.Warning, "Invalid UserData instance");
                     ImGui.TreePop();
@@ -403,9 +398,8 @@ public class UserDataReferenceHandler : IObjectUIHandler
                 } else {
                     childHandle = FileHandle.CreateEmbedded(UserFileLoader.Instance, new BaseFileResource<UserFile>(user));
                 }
-                var wd = new WindowData() { Handler = new UserDataFileEditor(ws, childHandle) };
-                wd.Context = context.AddChild("UserFile", ws, (UserDataFileEditor)wd.Handler);
-                wd.Handler.Init(wd.Context);
+
+                WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, new UserDataFileEditor(ws, childHandle), "UserFile");
             }
 
             // context.AddChild("UserFile", file);

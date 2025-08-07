@@ -142,12 +142,11 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         int p = 0, i = 0;
         var isCtrl = ImGui.IsKeyDown(ImGuiKey.ModCtrl);
         var isShift = ImGui.IsKeyDown(ImGuiKey.ModShift);
-        if (ImGui.BeginTable("List", 2, ImGuiTableFlags.Sortable | ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingStretchProp)) {
+        if (ImGui.BeginTable("List", 2, ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingStretchProp)) {
             ImGui.TableSetupColumn("Path", ImGuiTableColumnFlags.WidthStretch, 0.9f);
             ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize, 100);
             ImGui.TableSetupScrollFreeze(0, 1);
             ImGui.TableHeadersRow();
-            var sort = ImGui.TableGetSortSpecs();
             ImGui.TableNextColumn();
             foreach (var file in baseList.GetFiles(CurrentDir, rowsPerPage)) {
                 if (p < page) {

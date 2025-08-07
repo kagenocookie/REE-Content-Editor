@@ -24,9 +24,10 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
 
     private readonly List<ObjectInspector> inspectors = new();
 
-    public SceneEditor(ContentWorkspace env, FileHandle file) : base(file)
+    public SceneEditor(ContentWorkspace env, FileHandle file, SceneEditor? parent = null) : base(file)
     {
         Workspace = env;
+        primaryInspector = parent?.primaryInspector;
     }
 
     public RSZFile GetRSZFile() => File.RSZ;
@@ -38,8 +39,6 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
 
     private void Reset()
     {
-        primaryInspector?.Context.ClearChildren();
-        // primaryInspector?.Context.parent?.RemoveChild(primaryInspector);
         primaryInspector = null;
         failedToReadfile = false;
         CloseInspectors();

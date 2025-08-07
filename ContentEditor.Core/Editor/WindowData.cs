@@ -77,4 +77,16 @@ public class WindowData
     }
 
     public override string ToString() => $"{Name}##{ID}";
+
+    public static WindowData CreateEmbeddedWindow<THandler>(UIContext context, IRectWindow parentWindow, THandler handler, string label)
+        where THandler : IWindowHandler, IObjectUIHandler
+    {
+        var data = new WindowData() {
+            ParentWindow = parentWindow,
+            Handler = handler,
+        };
+        data.Context = context.AddChild(label, data, handler);
+        data.Handler.Init(data.Context);
+        return data;
+    }
 }

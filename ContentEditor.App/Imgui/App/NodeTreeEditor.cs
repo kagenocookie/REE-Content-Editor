@@ -15,7 +15,7 @@ public abstract class NodeTreeEditor<TNodeHolder, TSelf> : IObjectUIHandler
 
     protected virtual void HandleSelect(UIContext context, TNodeHolder node)
     {
-        context.FindInterfaceInParentHandlers<IInspectorController>()?.SetPrimaryInspector(node);
+        context.FindHandlerInParents<IInspectorController>()?.SetPrimaryInspector(node);
     }
 
     public virtual void OnIMGUI(UIContext context)
@@ -35,7 +35,7 @@ public abstract class NodeTreeEditor<TNodeHolder, TSelf> : IObjectUIHandler
             }
             ImGui.SameLine();
         }
-        var inspector = context.FindInterfaceInParentHandlers<IInspectorController>();
+        var inspector = context.FindHandlerInParents<IInspectorController>();
         ImGui.PushStyleColor(ImGuiCol.Text, nodeColor);
         if (ImGui.Selectable(context.label, node == inspector?.PrimaryTarget)) {
             HandleSelect(context, node);

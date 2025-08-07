@@ -85,7 +85,7 @@ public class GameObjectNodeEditor : NodeTreeEditor<GameObject, GameObjectNodeEdi
             var newgo = new GameObject("New_GameObject", ws!.Env, node.Folder, node.Scene);
             UndoRedo.RecordAddChild(context, newgo, node);
             newgo.MakeNameUnique();
-            context.FindInterfaceInParentHandlers<IInspectorController>()?.SetPrimaryInspector(newgo);
+            context.FindHandlerInParents<IInspectorController>()?.SetPrimaryInspector(newgo);
             ImGui.CloseCurrentPopup();
         }
         if (ImGui.Button("Delete")) {
@@ -96,7 +96,7 @@ public class GameObjectNodeEditor : NodeTreeEditor<GameObject, GameObjectNodeEdi
             var clone = node.Clone();
             UndoRedo.RecordAddChild<GameObject>(context, clone, parent, parent.GetChildIndex(node) + 1);
             clone.MakeNameUnique();
-            var inspector = context.FindInterfaceInParentHandlers<IInspectorController>();
+            var inspector = context.FindHandlerInParents<IInspectorController>();
             inspector?.SetPrimaryInspector(clone);
             ImGui.CloseCurrentPopup();
         }

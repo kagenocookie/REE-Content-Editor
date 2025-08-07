@@ -110,6 +110,10 @@ public class Bundle
     public void AddResource(string localFilepath, string nativeFilepath)
     {
         ResourceListing ??= new();
+        if (TryFindResourceByNativePath(nativeFilepath, out var prevLocal)) {
+            Logger.Error("Bundle already contains the file " + nativeFilepath + "\nBundle local filepath: " + prevLocal);
+            return;
+        }
         ResourceListing[localFilepath] = new ResourceListItem() { Target = nativeFilepath };
         if (_nativeToLocalResourcePathCache != null) {
             _nativeToLocalResourcePathCache[nativeFilepath] = localFilepath;
@@ -121,7 +125,7 @@ public class Bundle
         if (_nativeToLocalResourcePathCache == null) {
             _nativeToLocalResourcePathCache = ResourceListing?
                 .GroupBy(k => k.Value.Target)
-                .ToDictionary(k => k.Key, k => k.First().Value.Target) ?? new(0);
+                .ToDictionary(k => k.First().Value.Target, k => k.First().Key) ?? new(0);
         }
 
         return _nativeToLocalResourcePathCache.TryGetValue(nativePath, out localPath);

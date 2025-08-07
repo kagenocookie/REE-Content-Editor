@@ -144,9 +144,9 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         }
 
         if (Handle.FileSource != null) {
-            ImGui.TextColored(Colors.Faded, "File source: " + Handle.HandleType + " - " + Handle.FileSource);
+            ImGui.TextColored(Colors.Faded, $"File source: {Handle.HandleType} - {Handle.FileSource} ({Handle.NativePath})");
         } else {
-            ImGui.TextColored(Colors.Faded, "File source: " + Handle.HandleType);
+            ImGui.TextColored(Colors.Faded, $"File source: {Handle.HandleType} ({Handle.NativePath})");
         }
     }
 
@@ -164,6 +164,9 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         if (replaceFileHandle) {
             beforeReplaceAction?.Invoke();
             DisconnectFile();
+            if (Handle.References.Count == 0) {
+                workspace.ResourceManager.CloseFile(Handle);
+            }
             Handle = workspace.ResourceManager.GetFileHandle(savePath);
             ConnectFile();
             OnFileChanged();

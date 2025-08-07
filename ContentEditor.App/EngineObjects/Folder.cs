@@ -146,6 +146,9 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
         var scn = new ScnFolderData() {
             Instance = instance,
         };
+        if (!string.IsNullOrEmpty(ScenePath)) {
+            return scn;
+        }
         foreach (var child in Children) {
             scn.Children.Add(child.ToScnFolder(prefabInfos));
         }

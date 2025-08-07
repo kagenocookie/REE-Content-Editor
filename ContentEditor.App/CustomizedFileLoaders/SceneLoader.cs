@@ -63,7 +63,6 @@ public class RawScene(FileHandle handle, ScnFile file) : IResourceFile
     public Folder Instantiate(Workspace env, Folder? parentFolder = null)
     {
         var fn = Path.GetFileName(PathUtils.GetFilepathWithoutExtensionOrVersion(file.FileHandler.FilePath));
-        // File.PrefabInfoList
         var root = new Folder(
             fn.ToString(),
             env,

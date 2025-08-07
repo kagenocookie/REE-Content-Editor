@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
 using ContentEditor;
+using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
@@ -51,6 +52,10 @@ public class FolderNodeEditor : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var folder = context.Get<Folder>();
+        if (!string.IsNullOrEmpty(folder.ScenePath)) {
+            HandleLinkedScene(context, folder);
+            return;
+        }
         if (folder.Children.Count == 0) {
             var subfolder = context.GetChild<SubfolderNodeEditor>();
             if (subfolder != null) {
@@ -106,7 +111,7 @@ public class FolderNodeEditor : IObjectUIHandler
                 }
                 ImGui.SameLine();
             }
-            var inspector = context.FindInterfaceInParentHandlers<IInspectorController>();
+            var inspector = context.FindHandlerInParents<IInspectorController>();
             if (ImGui.Selectable(context.label, folder == inspector?.PrimaryTarget)) {
                 HandleSelect(context, folder);
             }
@@ -124,6 +129,66 @@ public class FolderNodeEditor : IObjectUIHandler
         }
     }
 
+    private void HandleLinkedScene(UIContext context, Folder folder)
+    {
+        var showChildren = context.StateBool;
+        ImGui.PushStyleColor(ImGuiCol.Text, nodeColor);
+        ImguiHelpers.BeginRect();
+        if (!context.StateBool) {
+            if (ImGui.ArrowButton($"arrow##{context.label}", ImGuiDir.Right)) {
+                showChildren = context.StateBool = true;
+            }
+            ImGui.SameLine();
+        } else {
+            if (ImGui.ArrowButton($"arrow##{context.label}", ImGuiDir.Down)) {
+                showChildren = context.StateBool = false;
+            }
+            ImGui.SameLine();
+        }
+
+        var inspector = context.FindHandlerInParents<IInspectorController>();
+        if (ImGui.Selectable(context.label, folder == inspector?.PrimaryTarget)) {
+            HandleSelect(context, folder);
+        }
+        ImGui.SameLine();
+        ImGui.TextColored(Colors.Faded, folder.ScenePath);
+
+        if (ImGui.BeginPopupContextItem(context.label)) {
+            HandleContextMenu(folder, context);
+            ImGui.EndPopup();
+        }
+        ImGui.PopStyleColor();
+        if (context.children.Count == 0 && showChildren) {
+            OpenLinkedScene(context, folder, folder.ScenePath!);
+        }
+
+        var indent = folder.Parent == null ? 2 : ImGui.GetStyle().IndentSpacing;
+        if (showChildren || folder.Parent == null) {
+            ImGui.Indent(indent);
+            context.ShowChildrenUI();
+            ImGui.Unindent(indent);
+        }
+        ImguiHelpers.EndRect(4);
+        ImGui.Spacing();
+    }
+
+    private static void OpenLinkedScene(UIContext context, Folder folder, string path)
+    {
+        var ws = context.GetWorkspace();
+        if (ws == null) {
+            Logger.Error("No active workspace for opening linked scene");
+            EditorWindow.CurrentWindow?.AddSubwindow(new ErrorModal("Linked scene open failed", "Workspace not found"));
+            return;
+        }
+
+        if (null == ws.Env.FindSingleFile(path, out var resolvedPath)) {
+            ImGui.TextColored(Colors.Error, "Linked scene file not found: " + path);
+            return;
+        }
+        var file = ws.ResourceManager.GetFileHandle(resolvedPath!);
+        var parentSceneEditor = context.FindHandlerInParents<SceneEditor>();
+        WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, new SceneEditor(ws, file, parentSceneEditor), "LinkedScene");
+    }
 
     protected void ShowChildren(UIContext context, Folder node)
     {
@@ -157,7 +222,7 @@ public class FolderNodeEditor : IObjectUIHandler
     private static void HandleSelect(UIContext context, Folder folder)
     {
         if (folder.Parent == null) return;
-        context.FindInterfaceInParentHandlers<IInspectorController>()?.SetPrimaryInspector(folder);
+        context.FindHandlerInParents<IInspectorController>()?.SetPrimaryInspector(folder);
     }
 
     private static void HandleContextMenu(Folder node, UIContext context)
@@ -167,7 +232,7 @@ public class FolderNodeEditor : IObjectUIHandler
             var newgo = new GameObject("New_GameObject", ws!.Env, node, node.Scene);
             UndoRedo.RecordListAdd(context, node.GameObjects, newgo);
             newgo.MakeNameUnique();
-            context.FindInterfaceInParentHandlers<IInspectorController>()?.SetPrimaryInspector(newgo);
+            context.FindHandlerInParents<IInspectorController>()?.SetPrimaryInspector(newgo);
             ImGui.CloseCurrentPopup();
         }
         if (ImGui.Button("New folder")) {
@@ -175,7 +240,7 @@ public class FolderNodeEditor : IObjectUIHandler
             var newFolder = new Folder("New_Folder", ws!.Env, node.Scene);
             UndoRedo.RecordAddChild(context, newFolder, node);
             newFolder.MakeNameUnique();
-            context.FindInterfaceInParentHandlers<IInspectorController>()?.SetPrimaryInspector(newFolder);
+            context.FindHandlerInParents<IInspectorController>()?.SetPrimaryInspector(newFolder);
             context.GetChild<SubfolderNodeEditor>()?.ClearChildren();
             ImGui.CloseCurrentPopup();
         }
@@ -188,7 +253,7 @@ public class FolderNodeEditor : IObjectUIHandler
                 var clone = node.Clone();
                 UndoRedo.RecordAddChild(context, clone, node.Parent, node.Parent.GetChildIndex(node) + 1);
                 clone.MakeNameUnique();
-                var inspector = context.FindInterfaceInParentHandlers<IInspectorController>();
+                var inspector = context.FindHandlerInParents<IInspectorController>();
                 inspector?.SetPrimaryInspector(clone);
                 ImGui.CloseCurrentPopup();
             }

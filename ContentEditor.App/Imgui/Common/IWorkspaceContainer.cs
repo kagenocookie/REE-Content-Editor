@@ -40,9 +40,9 @@ public static class UIContextExtensions
         return context.Get<T>() ?? (context.parent == null ? default : context.parent.FindValueInParents<T>());
     }
 
-    public static T? FindInterfaceInParentHandlers<T>(this UIContext context) where T : class
+    public static T? FindHandlerInParents<T>(this UIContext context) where T : class
     {
-        return context.uiHandler as T ?? context.parent?.FindInterfaceInParentHandlers<T>();
+        return context.uiHandler as T ?? context.parent?.FindHandlerInParents<T>();
     }
 
     public static ResourceEntity? GetOwnerEntity(this UIContext context)
