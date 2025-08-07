@@ -31,7 +31,7 @@ Some files may not fully work for other RE ENGINE games.
 | common image formats | view only | | TEX/DDS conversion, channel merging |
 | .pfb      | ☑️ read/write | coming soon | 3D display |
 | .scn      | ☑️ read/write | coming soon | 3D display |
-| .uvar     | raw data read/write | coming soon | expression node graph |
+| .uvar     | read/write | coming soon | expression node graph |
 | .mdf2     | ☑️ read/write | coming soon | material preview |
 | .efx      | raw data read/write | coming soon | graphic preview |
 | .rcol     | raw data read/write | coming soon | 3D display, overlay with mesh/pfb |

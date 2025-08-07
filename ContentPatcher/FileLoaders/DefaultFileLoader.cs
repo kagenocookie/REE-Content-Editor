@@ -47,6 +47,7 @@ public class DefaultFileLoader<TFileType> : IFileLoader, IFileHandleContentProvi
         if (outputPath == handle.Filepath) {
             file.Save();
         } else {
+            Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
             file.WriteTo(outputPath);
         }
         return true;

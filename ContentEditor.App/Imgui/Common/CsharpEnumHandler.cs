@@ -109,7 +109,7 @@ public class CsharpFlagsEnumFieldHandler<T, TUnderlying>() : IObjectUIHandler
                 var result = hasFlag
                     ? Unsafe.As<T, TUnderlying>(ref value) | Unsafe.As<T, TUnderlying>(ref flagValue)
                     : Unsafe.As<T, TUnderlying>(ref value) & ~Unsafe.As<T, TUnderlying>(ref flagValue);
-                UndoRedo.RecordSet(context, Unsafe.As<TUnderlying, T>(ref result));
+                UndoRedo.RecordSet(context, Unsafe.As<TUnderlying, T>(ref result), mergeMode: UndoRedoMergeMode.NeverMerge);
             }
         }
         ImGui.PopID();

@@ -51,6 +51,19 @@ public class BoxedUIHandler(IObjectUIHandler inner) : IObjectUIHandler
     }
 }
 
+public class ValueChangeCallbackUIHandler(IObjectUIHandler inner, Action<UIContext, object?, object?> callback) : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var prev = context.GetRaw();
+        inner.OnIMGUI(context);
+        var next = context.GetRaw();
+        if ((next == null) != (prev == null) || (next != null && !next.Equals(prev)) || (prev != null && !prev.Equals(next))) {
+            callback.Invoke(context, prev, next);
+        }
+    }
+}
+
 public class ReadOnlyWrapperHandler : IObjectUIHandler
 {
     public IObjectUIHandler next;

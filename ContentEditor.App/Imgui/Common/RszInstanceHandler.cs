@@ -219,7 +219,7 @@ public class FlagsEnumFieldHandler : IObjectUIHandler
 
             var hasFlag = enumDescriptor.HasFlag(value, flagValue);
             if (ImGui.Checkbox(label, ref hasFlag)) {
-                UndoRedo.RecordSet(context, hasFlag ? enumDescriptor.AddFlag(value, flagValue) : enumDescriptor.RemoveFlag(value, flagValue));
+                UndoRedo.RecordSet(context, hasFlag ? enumDescriptor.AddFlag(value, flagValue) : enumDescriptor.RemoveFlag(value, flagValue), mergeMode: UndoRedoMergeMode.NeverMerge);
             }
         }
         ImGui.PopID();
