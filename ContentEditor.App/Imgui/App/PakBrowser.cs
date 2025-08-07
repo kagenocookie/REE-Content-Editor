@@ -36,6 +36,35 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
 
     public void OnWindow() => this.ShowDefaultWindow(context);
 
+    private void ExtractCurrentList(string outputDir)
+    {
+        if (matchedList == null || reader == null) {
+            Logger.Error("File list missing");
+            return;
+        }
+
+        int success = 0, fail = 0;
+        int count = 0;
+        foreach (var file in matchedList.GetRecursiveFileList(CurrentDir, rowsPerPage)) {
+            var path = Path.Combine(outputDir, file);
+            count++;
+            var stream = reader.GetFile(file);
+            if (stream == null) {
+                Logger.Error("Could not get file " + file);
+                fail++;
+                continue;
+            }
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            using var outfs = File.Create(path);
+            stream?.WriteTo(outfs);
+            success++;
+            if (count % 100 == 0) {
+                Logger.Info($"Extracted {count} files");
+            }
+        }
+        Logger.Info($"Successfully extracted {success}/{count} files");
+    }
+
     private const string ManifestFilepath = "__MANIFEST/MANIFEST.TXT";
 
     public void OnIMGUI()
@@ -69,6 +98,10 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         }
 
         ImGui.Text("Total file count: " + reader.MatchedEntryCount);
+        ImGui.SameLine();
+        if (ImGui.Button("Extract to...")) {
+            PlatformUtils.ShowFolderDialog(ExtractCurrentList);
+        }
         ImGui.SameLine();
         if (PakFilePath == null) {
             if (ImGui.TreeNode("PAK count: " + reader.PakFilePriority.Count)) {
