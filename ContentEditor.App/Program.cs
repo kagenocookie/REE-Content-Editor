@@ -9,24 +9,43 @@ sealed class Program
     [STAThread]
     static int Main(string[] args)
     {
+        AppDomain.CurrentDomain.UnhandledException += HandleUnhandledExceptions;
         try {
             SetupConfigs();
             using var loop = new MainLoop();
             var result = loop.Run();
             return result;
         } catch (Exception e) {
-            File.AppendAllText("crashlog.txt", $"---------------------------\n{DateTime.UtcNow.ToString("O")}\n{e.Message}\n\n{e.StackTrace}\n");
+            HandleUnhandledExceptions(null!, new UnhandledExceptionEventArgs(e, true));
+            return 1;
+        }
+    }
+
+    private static void HandleUnhandledExceptions(object sender, UnhandledExceptionEventArgs e)
+    {
+        if (e.ExceptionObject is Exception ex) {
+            File.AppendAllText("crashlog.txt", $"---------------------------\nCrashed in thread {System.Threading.Thread.CurrentThread.ManagedThreadId}\n{DateTime.UtcNow.ToString("O")}\n{ex.Message}\n\n{ex.StackTrace}\n");
 #if WINDOWS
             System.Windows.Forms.MessageBox.Show($"""
-                Unhandled exception occurred: {e.Message}
+                Unhandled exception occurred in thread {System.Threading.Thread.CurrentThread.ManagedThreadId}: {ex.Message}
 
                 Error details have been written to crashlog.txt.
-                Consider reporting the error on GitHub and include the crashlog.txt file as well as how to reproduce the issue if possible."
+                Consider reporting the error on GitHub and include the crashlog.txt file as well as how to reproduce the issue if possible.
 
-                {e.StackTrace}
+                {ex.StackTrace}
                 """);
 #endif
-            return 1;
+        } else {
+            File.AppendAllText("crashlog.txt", $"---------------------------\nCrashed in thread {System.Threading.Thread.CurrentThread.ManagedThreadId}\n{DateTime.UtcNow.ToString("O")}\n{e.ExceptionObject}\n");
+#if WINDOWS
+            System.Windows.Forms.MessageBox.Show($"""
+                Unhandled exception occurred in thread {System.Threading.Thread.CurrentThread.ManagedThreadId}
+                Error details have been written to crashlog.txt.
+                Consider reporting the error on GitHub and include the crashlog.txt file as well as how to reproduce the issue if possible.
+
+                {e.ExceptionObject}
+                """);
+#endif
         }
     }
 
