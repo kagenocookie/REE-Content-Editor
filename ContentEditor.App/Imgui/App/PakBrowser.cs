@@ -120,7 +120,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         ImGui.SameLine();
 
         _editedDir ??= CurrentDir;
-        if (ImGui.InputText("Path", ref _editedDir, 250, ImGuiInputTextFlags.EnterReturnsTrue)) {
+        if (ImGui.InputText("Path", ref _editedDir, 250)) {
             if (_editedDir.EndsWith('/')) _editedDir = _editedDir[0..^1];
             CurrentDir = _editedDir;
             page = 0;
