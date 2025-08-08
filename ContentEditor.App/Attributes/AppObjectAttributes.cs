@@ -17,6 +17,7 @@ sealed class CustomFieldHandlerAttribute : System.Attribute
 sealed class ObjectImguiHandlerAttribute : System.Attribute
 {
     public Type HandledFieldType { get; }
+    public bool Inherited { get; set; }
 
     public ObjectImguiHandlerAttribute(Type handledFieldType)
     {

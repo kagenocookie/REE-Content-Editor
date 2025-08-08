@@ -10,6 +10,8 @@ public class CsharpEnumHandler : IObjectUIHandler
     private Type enumType;
     private EnumData data;
 
+    public bool NoUndoRedo { get; set; }
+
     private class EnumData
     {
         public required string[] Labels { get; init; }
@@ -17,9 +19,16 @@ public class CsharpEnumHandler : IObjectUIHandler
     }
     private static readonly Dictionary<Type, EnumData> Datas = new();
 
-    public CsharpEnumHandler(Type enumType)
+    public CsharpEnumHandler(Type enumType, Dictionary<object, string>? filteredValues = null)
     {
         this.enumType = enumType;
+        if (filteredValues != null) {
+            data = new EnumData() {
+                Values = filteredValues.OrderBy(kv => kv.Key).Select(kv => kv.Key).ToArray(),
+                Labels = filteredValues.OrderBy(kv => kv.Key).Select(kv => kv.Value).ToArray(),
+            };
+            return;
+        }
         if (!Datas.TryGetValue(enumType, out data!)) {
             var labels = enumType.GetEnumNames();
             Datas[enumType] = data = new EnumData() {
@@ -38,7 +47,12 @@ public class CsharpEnumHandler : IObjectUIHandler
     {
         var selected = context.GetRaw();
         if (ImguiHelpers.FilterableCombo(context.label, data.Labels, data.Values, ref selected, ref context.state)) {
-            UndoRedo.RecordSet(context, selected);
+            if (!NoUndoRedo) {
+                UndoRedo.RecordSet(context, selected);
+            } else {
+                context.Set(selected);
+                context.Changed = false;
+            }
         }
     }
 }

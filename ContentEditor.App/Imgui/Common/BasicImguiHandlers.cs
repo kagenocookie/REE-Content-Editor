@@ -15,7 +15,7 @@ public class NumericFieldHandler<T>(ImGuiDataType type) : IObjectUIHandler where
     }
 }
 
-public class BoolFieldHandler : IObjectUIHandler
+public class BoolFieldHandler : Singleton<BoolFieldHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -26,7 +26,7 @@ public class BoolFieldHandler : IObjectUIHandler
     }
 }
 
-public class Vector2FieldHandler : IObjectUIHandler
+public class Vector2FieldHandler : Singleton<Vector2FieldHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -35,7 +35,7 @@ public class Vector2FieldHandler : IObjectUIHandler
     }
 }
 
-public class Vector3FieldHandler : IObjectUIHandler
+public class Vector3FieldHandler : Singleton<Vector3FieldHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -44,7 +44,7 @@ public class Vector3FieldHandler : IObjectUIHandler
     }
 }
 
-public class Vector4FieldHandler : IObjectUIHandler
+public class Vector4FieldHandler : Singleton<Vector4FieldHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -53,7 +53,7 @@ public class Vector4FieldHandler : IObjectUIHandler
     }
 }
 
-public class IntRangeFieldHandler : IObjectUIHandler
+public class IntRangeFieldHandler : Singleton<IntRangeFieldHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -64,7 +64,7 @@ public class IntRangeFieldHandler : IObjectUIHandler
     }
 }
 
-public class QuaternionFieldHandler : IObjectUIHandler
+public class QuaternionFieldHandler : Singleton<QuaternionFieldHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -74,7 +74,7 @@ public class QuaternionFieldHandler : IObjectUIHandler
     }
 }
 
-public class StringFieldHandler : IObjectUIHandler
+public class StringFieldHandler : Singleton<StringFieldHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -85,7 +85,7 @@ public class StringFieldHandler : IObjectUIHandler
     }
 }
 
-public class ConfirmedStringFieldHandler : IObjectUIHandler
+public class ConfirmedStringFieldHandler : Singleton<ConfirmedStringFieldHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -105,7 +105,7 @@ public class ConfirmedStringFieldHandler : IObjectUIHandler
     }
 }
 
-public class ColorFieldHandler : IObjectUIHandler
+public class ColorFieldHandler : Singleton<ColorFieldHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {

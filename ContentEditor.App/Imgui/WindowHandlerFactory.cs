@@ -52,7 +52,10 @@ public static partial class WindowHandlerFactory
         (typeof(BaseModel), nameof(BaseModel.Start)),
         (typeof(BaseFile), nameof(BaseFile.Size)),
         (typeof(BaseFile), nameof(BaseFile.Embedded)),
-        (typeof(MotlistItem), nameof(MotlistItem.Version))
+        (typeof(MotlistItem), nameof(MotlistItem.Version)),
+        (typeof(EFXAttribute), nameof(EFXAttribute.Version)),
+        (typeof(EFXAttribute), nameof(EFXAttribute.type)),
+        (typeof(EFXAttribute), nameof(EFXAttribute.IsTypeAttribute))
     ];
     private static HashSet<Type> genericListTypes = [typeof(List<>), typeof(ObservableCollection<>)];
     private static readonly Dictionary<Type, MemberInfo[]> typeMembers = new();
@@ -69,19 +72,19 @@ public static partial class WindowHandlerFactory
         { typeof(ulong), () => new NumericFieldHandler<ulong>(ImGuiNET.ImGuiDataType.U64) },
         { typeof(float), () => new NumericFieldHandler<float>(ImGuiNET.ImGuiDataType.Float) },
         { typeof(double), () => new NumericFieldHandler<double>(ImGuiNET.ImGuiDataType.Double) },
-        { typeof(string), () => new StringFieldHandler() },
-        { typeof(Guid), () => new GuidFieldHandler() },
-        { typeof(bool), () => new BoolFieldHandler() },
-        { typeof(Vector2), () => new Vector2FieldHandler() },
-        { typeof(Vector3), () => new Vector3FieldHandler() },
-        { typeof(Vector4), () => new Vector4FieldHandler() },
-        { typeof(ReeLib.via.Position), () => new PositionFieldHandler() },
-        { typeof(ReeLib.via.Range), () => new RangeFieldHandler() },
-        { typeof(ReeLib.via.RangeI), () => new IntRangeFieldHandler() },
-        { typeof(ReeLib.via.Size), () => new SizeFieldHandler() },
-        { typeof(ReeLib.via.Color), () => new ColorFieldHandler() },
-        { typeof(ReeLib.via.Rect), () => new RectFieldHandler() },
-        { typeof(Quaternion), () => new QuaternionFieldHandler() },
+        { typeof(string), () => StringFieldHandler.Instance },
+        { typeof(Guid), () => GuidFieldHandler.Instance },
+        { typeof(bool), () => BoolFieldHandler.Instance },
+        { typeof(Vector2), () => Vector2FieldHandler.Instance },
+        { typeof(Vector3), () => Vector3FieldHandler.Instance },
+        { typeof(Vector4), () => Vector4FieldHandler.Instance },
+        { typeof(ReeLib.via.Position), () => PositionFieldHandler.Instance },
+        { typeof(ReeLib.via.Range), () => RangeFieldHandler.Instance },
+        { typeof(ReeLib.via.RangeI), () => IntRangeFieldHandler.Instance },
+        { typeof(ReeLib.via.Size), () => SizeFieldHandler.Instance },
+        { typeof(ReeLib.via.Color), () => ColorFieldHandler.Instance },
+        { typeof(ReeLib.via.Rect), () => RectFieldHandler.Instance },
+        { typeof(Quaternion), () => QuaternionFieldHandler.Instance },
         { typeof(RszInstance), () => new NestedRszInstanceHandler() },
     };
 
@@ -89,15 +92,24 @@ public static partial class WindowHandlerFactory
     {
         AppConfig.Instance.PrettyFieldLabels.ValueChanged += (bool newValue) => showPrettyLabels = newValue;
         showPrettyLabels = AppConfig.Instance.PrettyFieldLabels.Get();
-        foreach (var type in typeof(WindowHandlerFactory).Assembly.GetTypes()) {
-            var attr = type.GetCustomAttribute<ObjectImguiHandlerAttribute>();
-            if (attr == null) continue;
+        var types = typeof(WindowHandlerFactory).Assembly.GetTypes();
+        foreach (var type in types) {
+            var attrs = type.GetCustomAttributes<ObjectImguiHandlerAttribute>();
+            if (!attrs.Any()) continue;
             if (!type.IsAssignableTo(typeof(IObjectUIHandler))) {
                 Console.Error.WriteLine($"Invalid [WindowHandlerFactory] type {type}");
                 continue;
             }
 
-            csharpTypeHandlers.Add(attr.HandledFieldType, () => (IObjectUIHandler)Activator.CreateInstance(type)!);
+            foreach (var attr in attrs) {
+                var fact = () => (IObjectUIHandler)Activator.CreateInstance(type)!;
+                csharpTypeHandlers[attr.HandledFieldType] = fact;
+                if (attr.Inherited) {
+                    foreach (var subtype in types.Where(t => t.IsSubclassOf(attr.HandledFieldType))) {
+                        csharpTypeHandlers.TryAdd(subtype, fact);
+                    }
+                }
+            }
         }
     }
 
@@ -123,6 +135,8 @@ public static partial class WindowHandlerFactory
                 return new PrefabEditor(env, file);
             case KnownFileFormats.Scene:
                 return new SceneEditor(env, file);
+            case KnownFileFormats.Effect:
+                return new ImguiHandling.Efx.EfxEditor(env, file);
             case KnownFileFormats.CollisionDefinition:
                 return new RawDataEditor<CdefFile>(env, file);
             case KnownFileFormats.DynamicsDefinition:
@@ -204,6 +218,9 @@ public static partial class WindowHandlerFactory
                 );
 
             ctx.uiHandler = CreateReflectionFieldHandler(context, field);
+            if (field is PropertyInfo pp && pp.SetMethod == null && pp.PropertyType.IsValueType) {
+                ctx.uiHandler = new ReadOnlyWrapperHandler(ctx.uiHandler);
+            }
         }
 
         return true;
@@ -347,8 +364,8 @@ public static partial class WindowHandlerFactory
 
         return context.uiHandler = field.type switch {
             RszFieldType.Object or RszFieldType.Struct => new NestedRszInstanceHandler(),
-            RszFieldType.String => new StringFieldHandler(),
-            RszFieldType.RuntimeType => new StringFieldHandler(), // TODO proper RuntimeType editor (use il2cpp data)
+            RszFieldType.String => StringFieldHandler.Instance,
+            RszFieldType.RuntimeType => StringFieldHandler.Instance, // TODO proper RuntimeType editor (use il2cpp data)
             RszFieldType.Resource => new ResourcePathPicker(ws, field),
 
             RszFieldType.UserData => new UserDataReferenceHandler(),
@@ -363,18 +380,18 @@ public static partial class WindowHandlerFactory
             RszFieldType.U64 => TryCreateEnumHandler(ws, field.original_type) ?? new NumericFieldHandler<ulong>(ImGuiNET.ImGuiDataType.U64),
             RszFieldType.F32 => new NumericFieldHandler<float>(ImGuiNET.ImGuiDataType.Float),
             RszFieldType.F64 => new NumericFieldHandler<double>(ImGuiNET.ImGuiDataType.Double),
-            RszFieldType.Bool => new BoolFieldHandler(),
+            RszFieldType.Bool => BoolFieldHandler.Instance,
 
-            RszFieldType.Vec2 or ReeLib.RszFieldType.Float2 or RszFieldType.Point => new Vector2FieldHandler(),
-            RszFieldType.Vec3 or RszFieldType.Float3 => new Vector3FieldHandler(),
-            RszFieldType.Vec4 or RszFieldType.Float4 => new Vector4FieldHandler(),
-            RszFieldType.Quaternion => new QuaternionFieldHandler(),
-            RszFieldType.Position => new PositionFieldHandler(),
-            RszFieldType.Range => new RangeFieldHandler(),
-            RszFieldType.RangeI => new IntRangeFieldHandler(),
-            RszFieldType.Size => new SizeFieldHandler(),
-            RszFieldType.Color => new ColorFieldHandler(),
-            RszFieldType.Rect => new RectFieldHandler(),
+            RszFieldType.Vec2 or ReeLib.RszFieldType.Float2 or RszFieldType.Point => Vector2FieldHandler.Instance,
+            RszFieldType.Vec3 or RszFieldType.Float3 => Vector3FieldHandler.Instance,
+            RszFieldType.Vec4 or RszFieldType.Float4 => Vector4FieldHandler.Instance,
+            RszFieldType.Quaternion => QuaternionFieldHandler.Instance,
+            RszFieldType.Position => PositionFieldHandler.Instance,
+            RszFieldType.Range => RangeFieldHandler.Instance,
+            RszFieldType.RangeI => IntRangeFieldHandler.Instance,
+            RszFieldType.Size => SizeFieldHandler.Instance,
+            RszFieldType.Color => ColorFieldHandler.Instance,
+            RszFieldType.Rect => RectFieldHandler.Instance,
 
             // RszFieldType.Rect3D => variant.As<Rect3D>().ToRsz(),
             // RszFieldType.Mat3 => new ColorFieldHandler(),
@@ -387,8 +404,8 @@ public static partial class WindowHandlerFactory
             // RszFieldType.Int3 => TODO
             // RszFieldType.Int4 => TODO
 
-            RszFieldType.Guid => new GuidFieldHandler(),
-            RszFieldType.Uri => new GuidFieldHandler(),
+            RszFieldType.Guid => GuidFieldHandler.Instance,
+            RszFieldType.Uri => GuidFieldHandler.Instance,
 
             // RszFieldType.OBB => variant.As<OrientedBoundingBox>().ToRsz(),
             // RszFieldType.AABB => (ReeLib.via.AABB)variant.AsAabb().ToRsz(),
@@ -426,7 +443,7 @@ public static partial class WindowHandlerFactory
     public static UIContext CreateRSZInstanceHandlerContext(UIContext context)
     {
         SetupRSZInstanceHandler(context);
-        context.uiHandler = new RszInstanceHandler();
+        context.uiHandler = RszInstanceHandler.Instance;
         return context;
     }
 

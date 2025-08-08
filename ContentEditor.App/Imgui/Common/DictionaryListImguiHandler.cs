@@ -97,7 +97,7 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
             }
             if (child.uiHandler == null) {
                 InitChildContext(child);
-                if (child.uiHandler == null) child.AddDefaultHandler<TItem>();
+                if (child.uiHandler == null) AddItemHandler(child);
             }
             child.ShowUI();
             PostItem(child);
@@ -110,6 +110,7 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
 
     [return: NotNull]
     protected abstract TKey GetKey(TItem item);
+    protected virtual void AddItemHandler(UIContext item) => item.AddDefaultHandler<TItem>();
     protected abstract TItem? CreateItem(UIContext context, TKey key);
     protected virtual void PostItem(UIContext itemContext) {}
     protected virtual void InitChildContext(UIContext itemContext) {}

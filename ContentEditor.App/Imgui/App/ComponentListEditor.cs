@@ -37,7 +37,7 @@ public class ComponentListEditor : DictionaryListImguiHandler<string, Component,
             Logger.Error("Invalid classname " + key);
             return null;
         }
-        var gameobj = context.FindClassValueInParentValues<GameObject>();
+        var gameobj = context.FindValueInParentValues<GameObject>();
         if (Logger.ErrorIf(gameobj == null, "Missing game object")) return null;
 
         return new Component(gameobj, RszInstance.CreateInstance(ws.Env.RszParser, cls));

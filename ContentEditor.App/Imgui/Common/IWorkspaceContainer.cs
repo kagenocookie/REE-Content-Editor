@@ -31,17 +31,17 @@ public static class UIContextExtensions
         return context.Cast<IWindowHandler>() ?? context.parent?.GetWindowHandler();
     }
 
-    public static T? FindClassValueInParentValues<T>(this UIContext context) where T : class
+    public static T? FindValueInParentValues<T>(this UIContext context) where T : class
     {
-        return context.Cast<T>() ?? context.parent?.FindClassValueInParentValues<T>();
-    }
-    public static T? FindValueInParents<T>(this UIContext context)
-    {
-        return context.Get<T>() ?? (context.parent == null ? default : context.parent.FindValueInParents<T>());
+        return context.Cast<T>() ?? context.parent?.FindValueInParentValues<T>();
     }
 
-    public static T? FindHandlerInParents<T>(this UIContext context) where T : class
+    public static T? FindHandlerInParents<T>(this UIContext context, bool ignoreSelf = false) where T : class
     {
+        if (ignoreSelf) {
+            return context.parent?.FindHandlerInParents<T>();
+        }
+
         return context.uiHandler as T ?? context.parent?.FindHandlerInParents<T>();
     }
 

@@ -11,7 +11,7 @@ using ReeLib.via;
 
 namespace ContentEditor.App.ImguiHandling;
 
-public class RszInstanceHandler : IObjectUIHandler
+public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -135,7 +135,7 @@ public class ArrayRSZHandler : BaseListHandler
     }
 }
 
-public class EnumFieldHandler : IObjectUIHandler
+public class EnumFieldHandler : Singleton<EnumFieldHandler>, IObjectUIHandler
 {
     private EnumDescriptor enumDescriptor;
 
@@ -161,7 +161,7 @@ public class EnumFieldHandler : IObjectUIHandler
     }
 }
 
-public class FlagsEnumFieldHandler : IObjectUIHandler
+public class FlagsEnumFieldHandler : Singleton<FlagsEnumFieldHandler>, IObjectUIHandler
 {
     private EnumDescriptor enumDescriptor;
     private ImGuiDataType scalarType;
@@ -227,7 +227,7 @@ public class FlagsEnumFieldHandler : IObjectUIHandler
     }
 }
 
-public class RectFieldHandler : IObjectUIHandler
+public class RectFieldHandler : Singleton<RectFieldHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -238,23 +238,90 @@ public class RectFieldHandler : IObjectUIHandler
     }
 }
 
-public class PositionFieldHandler : IObjectUIHandler
+public class PositionFieldHandler : Singleton<PositionFieldHandler>, IObjectUIHandler
 {
-    public void OnIMGUI(UIContext context)
+    public unsafe void OnIMGUI(UIContext context)
     {
         var val = context.Get<Position>();
-        // we lose some precision here but I haven't yet seen a case where it makes a noticeable difference
-        var vec = new Vector3((float)val.x, (float)val.y, (float)val.z);
-        if (ImGui.DragFloat3(context.label, ref vec)) {
-            val.x = vec.X;
-            val.y = vec.Y;
-            val.z = vec.Z;
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.Double, (IntPtr)(&val), 4)) {
             UndoRedo.RecordSet(context, val);
         }
     }
 }
 
-public class RangeFieldHandler : IObjectUIHandler
+[ObjectImguiHandler(typeof(Int2))]
+public class Int2FieldHandler : Singleton<Int2FieldHandler>, IObjectUIHandler
+{
+    public unsafe void OnIMGUI(UIContext context)
+    {
+        var val = context.Get<Int2>();
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, (IntPtr)(&val), 2)) {
+            UndoRedo.RecordSet(context, val);
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(Int3))]
+public class Int3FieldHandler : Singleton<Int3FieldHandler>, IObjectUIHandler
+{
+    public unsafe void OnIMGUI(UIContext context)
+    {
+        var val = context.Get<Int3>();
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, (IntPtr)(&val), 3)) {
+            UndoRedo.RecordSet(context, val);
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(Int4))]
+public class Int4FieldHandler : Singleton<Int4FieldHandler>, IObjectUIHandler
+{
+    public unsafe void OnIMGUI(UIContext context)
+    {
+        var val = context.Get<Int4>();
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, (IntPtr)(&val), 4)) {
+            UndoRedo.RecordSet(context, val);
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(Uint2))]
+public class Uint2FieldHandler : Singleton<Uint2FieldHandler>, IObjectUIHandler
+{
+    public unsafe void OnIMGUI(UIContext context)
+    {
+        var val = context.Get<Uint2>();
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, (IntPtr)(&val), 2)) {
+            UndoRedo.RecordSet(context, val);
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(Uint3))]
+public class Uint3FieldHandler : Singleton<Uint3FieldHandler>, IObjectUIHandler
+{
+    public unsafe void OnIMGUI(UIContext context)
+    {
+        var val = context.Get<Uint3>();
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, (IntPtr)(&val), 3)) {
+            UndoRedo.RecordSet(context, val);
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(Uint4))]
+public class Uint4FieldHandler : Singleton<Uint4FieldHandler>, IObjectUIHandler
+{
+    public unsafe void OnIMGUI(UIContext context)
+    {
+        var val = context.Get<Uint4>();
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, (IntPtr)(&val), 4)) {
+            UndoRedo.RecordSet(context, val);
+        }
+    }
+}
+
+public class RangeFieldHandler : Singleton<RangeFieldHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -265,7 +332,7 @@ public class RangeFieldHandler : IObjectUIHandler
     }
 }
 
-public class SizeFieldHandler : IObjectUIHandler
+public class SizeFieldHandler : Singleton<SizeFieldHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -276,7 +343,7 @@ public class SizeFieldHandler : IObjectUIHandler
     }
 }
 
-public class UserDataReferenceHandler : IObjectUIHandler
+public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -391,7 +458,7 @@ public class UserDataReferenceHandler : IObjectUIHandler
                     return;
                 }
                 var user = new UserFile(ws.Env.RszFileOption, rsz.FileHandler, rsz);
-                var parentFileHandle = context.FindClassValueInParentValues<FileHandle>();
+                var parentFileHandle = context.FindValueInParentValues<FileHandle>();
                 FileHandle childHandle;
                 if (parentFileHandle != null) {
                     childHandle = FileHandle.CreateEmbedded(parentFileHandle.Loader, new BaseFileResource<UserFile>(user));
@@ -413,7 +480,7 @@ public class UserDataReferenceHandler : IObjectUIHandler
     }
 }
 
-public class GuidFieldHandler : IObjectUIHandler
+public class GuidFieldHandler : Singleton<GuidFieldHandler>, IObjectUIHandler
 {
     private const uint GuidLength = 36;
 
@@ -439,7 +506,7 @@ public class GuidFieldHandler : IObjectUIHandler
     }
 }
 
-public class ReadOnlyLabelHandler : IObjectUIHandler
+public class ReadOnlyLabelHandler : Singleton<ReadOnlyLabelHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -448,7 +515,7 @@ public class ReadOnlyLabelHandler : IObjectUIHandler
 }
 
 [ObjectImguiHandler(typeof(ResourceInfo))]
-public class ResourceInfoHandler : IObjectUIHandler
+public class ResourceInfoHandler : Singleton<ResourceInfoHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {

@@ -5,6 +5,7 @@ using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
+using ReeLib.Efx;
 using ReeLib.Msg;
 
 namespace ContentEditor.App;
@@ -24,6 +25,11 @@ public class RszDataFinder : IWindowHandler
 
     private string msgSearch = "";
 
+    private EfxAttributeType efxAttrType;
+    private string efxSearch = "";
+    private string? efxAttrFilter = "";
+    private bool efxFileMatchOnly = true;
+
     private CancellationTokenSource? cancellationTokenSource;
     private int searchedFiles;
     private bool SearchInProgress => cancellationTokenSource != null;
@@ -36,7 +42,7 @@ public class RszDataFinder : IWindowHandler
     private int findType;
 
     private string[]? classNames;
-    private static readonly string[] FindTypes = ["RSZ Data", "Messages"];
+    private static readonly string[] FindTypes = ["RSZ Data", "Messages", "EFX"];
 
     public void Init(UIContext context)
     {
@@ -65,6 +71,9 @@ public class RszDataFinder : IWindowHandler
             case 1:
                 ShowMessageFind(workspace);
                 break;
+            case 2:
+                ShowEfxFind(workspace);
+                break;
         }
         if (searching) {
             ImGui.EndDisabled();
@@ -87,7 +96,7 @@ public class RszDataFinder : IWindowHandler
             }
         } else if (!matches.IsEmpty) {
             ImGui.Separator();
-            ImGui.Text("Last search results:");
+            ImGui.Text($"Last search results: ({matches.Count} matches)");
             if (ImguiHelpers.SameLine() && ImGui.Button("Clear")) matches.Clear();
         } else {
             return;
@@ -249,6 +258,27 @@ public class RszDataFinder : IWindowHandler
         }
     }
 
+    private void ShowEfxFind(ContentWorkspace workspace)
+    {
+        ImguiHelpers.FilterableCSharpEnumCombo("Type", ref efxAttrType, ref efxAttrFilter);
+        ImGui.InputText("Query", ref efxSearch, 100);
+        ImGui.Checkbox("Match per file", ref efxFileMatchOnly);
+
+        if (efxAttrType == EfxAttributeType.Unknown && string.IsNullOrEmpty(efxSearch)) return;
+
+        if (ImGui.Button("Search")) {
+            matches.Clear();
+            cancellationTokenSource = new();
+            var (user, pfb, scn) = (searchUserFiles, searchPfb, searchScn);
+            var token = cancellationTokenSource.Token;
+            Task.Run(() => {
+                InvokeSearchEfx(workspace, (EditorWindow)data.ParentWindow, efxAttrType, efxSearch, token);
+                cancellationTokenSource.Cancel();
+                cancellationTokenSource = null;
+            });
+        }
+    }
+
     private static string LimitLength(string str, int maxlen) => str.Length <= maxlen - 2 ? str : str[0..^(maxlen - 3)] + "...";
 
     private void InvokeSearchMsg(ContentWorkspace workspace, EditorWindow window, string query, CancellationToken token)
@@ -358,6 +388,39 @@ public class RszDataFinder : IWindowHandler
                         window.InvokeFromUIThread(() => Logger.Info(str));
                     }
                 }
+            }
+        }
+    }
+
+    private void InvokeSearchEfx(ContentWorkspace workspace, EditorWindow window, EfxAttributeType type, string query, CancellationToken token)
+    {
+        foreach (var (path, stream) in workspace.Env.GetFilesWithExtension("efx", token)) {
+            try {
+                if (token.IsCancellationRequested) return;
+
+                Interlocked.Increment(ref searchedFiles);
+                var file = new EfxFile(new FileHandler(stream, path));
+                file.Read();
+
+                if (efxFileMatchOnly && !string.IsNullOrEmpty(query) && true == Path.GetFileNameWithoutExtension(file.FileHandler.FilePath)?.Contains(query, StringComparison.OrdinalIgnoreCase)) {
+                    matches.Add((path, path));
+                    continue;
+                }
+
+                foreach (var entry in file.Entries.Cast<EFXEntryBase>().Concat(file.Actions)) {
+                    var match1 = (type == EfxAttributeType.Unknown || entry.Contains(type));
+                    var match2 = string.IsNullOrEmpty(query) || entry.name?.Contains(query, StringComparison.OrdinalIgnoreCase) == true;
+
+                    if (match1 && match2) {
+                        var desc = entry is EFXEntry ? $"entry {entry.name}" : $"action {entry.name}";
+                        var str = $"Found instance ({desc}) in file {path}";
+                        matches.Add((desc, path));
+                        window.InvokeFromUIThread(() => Logger.Info(str));
+                        if (efxFileMatchOnly) break; else continue;
+                    }
+                }
+            } catch (Exception e) {
+                window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
             }
         }
     }
