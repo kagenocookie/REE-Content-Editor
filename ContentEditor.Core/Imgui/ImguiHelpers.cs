@@ -328,4 +328,16 @@ public static class ImguiHelpers
         ImGui.SameLine();
         return true;
     }
+
+    public static bool SelectableSuffix(string text, string? suffix, bool selected)
+    {
+        if (suffix == null) return ImGui.Selectable(text, selected);
+
+        ImGui.BeginGroup();
+        var select = ImGui.Selectable(text, selected);
+        ImGui.SameLine();
+        ImGui.TextColored(Colors.Faded, suffix);
+        ImGui.EndGroup();
+        return select;
+    }
 }

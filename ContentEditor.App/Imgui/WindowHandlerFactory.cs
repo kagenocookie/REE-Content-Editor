@@ -72,6 +72,7 @@ public static partial class WindowHandlerFactory
         { typeof(ulong), () => new NumericFieldHandler<ulong>(ImGuiNET.ImGuiDataType.U64) },
         { typeof(float), () => new NumericFieldHandler<float>(ImGuiNET.ImGuiDataType.Float) },
         { typeof(double), () => new NumericFieldHandler<double>(ImGuiNET.ImGuiDataType.Double) },
+        { typeof(byte[]), () => new ByteArrayHandler() },
         { typeof(string), () => StringFieldHandler.Instance },
         { typeof(Guid), () => GuidFieldHandler.Instance },
         { typeof(bool), () => BoolFieldHandler.Instance },
@@ -156,6 +157,8 @@ public static partial class WindowHandlerFactory
                 return new SceneEditor(env, file);
             case KnownFileFormats.Effect:
                 return new ImguiHandling.Efx.EfxEditor(env, file);
+            case KnownFileFormats.RequestSetCollider:
+                return new ImguiHandling.Rcol.RcolEditor(env, file);
             case KnownFileFormats.CollisionDefinition:
                 return new RawDataEditor<CdefFile>(env, file);
             case KnownFileFormats.DynamicsDefinition:
@@ -451,7 +454,7 @@ public static partial class WindowHandlerFactory
             // RszFieldType.Sfix3 => variant.AsVector3I().ToSfix(),
             // RszFieldType.Sfix4 => variant.AsVector4I().ToSfix(),
 
-            // RszFieldType.Data => variant.AsVector4I().ToSfix(),
+            RszFieldType.Data => new ByteArrayHandler(),
 
             _ => RszInstance.RszFieldTypeToCSharpType(field.type) is Type otherType
                 ? csharpTypeHandlers.GetValueOrDefault(otherType)?.Invoke() ?? new LazyPlainObjectHandler(otherType)
@@ -469,6 +472,8 @@ public static partial class WindowHandlerFactory
     public static void SetupRSZInstanceHandler(UIContext context)
     {
         var instance = context.Get<RszInstance>();
+        if (instance == null) return;
+
         var ws = context.GetWorkspace();
         var config = ws?.Config.Get(instance.RszClass.name);
         // if (config?.FieldOrder != null) {

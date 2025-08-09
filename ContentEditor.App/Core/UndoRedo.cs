@@ -122,7 +122,12 @@ public class UndoRedo
 
     public static void RecordSet<TValue>(UIContext context, TValue value, WindowBase? window = null, UndoRedoMergeMode mergeMode = UndoRedoMergeMode.MergeIdentical)
     {
-        GetState(window).Push(new ContextSetUndoRedo<TValue>(context, value, $"{context.GetHashCode()}"), mergeMode);
+        GetState(window).Push(new ContextSetUndoRedo<TValue>(context, value, null, $"{context.GetHashCode()}"), mergeMode);
+    }
+
+    public static void RecordSet<TValue>(UIContext context, TValue value, Action<UIContext> postChangeAction, WindowBase? window = null, UndoRedoMergeMode mergeMode = UndoRedoMergeMode.MergeIdentical)
+    {
+        GetState(window).Push(new ContextSetUndoRedo<TValue>(context, value, postChangeAction, $"{context.GetHashCode()}"), mergeMode);
     }
 
     public static void RecordListAdd<T>(UIContext context, IList list, T item, WindowBase? window = null) => RecordListInsert(context, list, item, -1, window);
@@ -215,18 +220,20 @@ public class UndoRedo
         return new String(stringChars);
     }
 
-    public class ContextSetUndoRedo<T>(UIContext context, T value, string id) : UndoRedoCommand(id)
+    public class ContextSetUndoRedo<T>(UIContext context, T value, Action<UIContext>? postChangeAction, string id) : UndoRedoCommand(id)
     {
         private T originalValue = context.Get<T>();
 
         public override void Do()
         {
             context.Set(value);
+            postChangeAction?.Invoke(context);
         }
 
         public override void Undo()
         {
             context.Set(originalValue);
+            postChangeAction?.Invoke(context);
         }
 
         public override bool Merge(UndoRedoCommand previousValue)

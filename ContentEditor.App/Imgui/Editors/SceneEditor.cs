@@ -87,7 +87,7 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
         CloseInspectors();
     }
 
-    public void SetPrimaryInspector(object target)
+    public void SetPrimaryInspector(object? target)
     {
         if (primaryInspector == null) {
             primaryInspector = AddInspector(target);
@@ -96,7 +96,7 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
         }
     }
 
-    public ObjectInspector AddInspector(object target)
+    public ObjectInspector AddInspector(object? target)
     {
         var inspector = new ObjectInspector(this);
         var window = EditorWindow.CurrentWindow!.AddSubwindow(inspector);

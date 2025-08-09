@@ -86,7 +86,7 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
         CloseInspectors();
     }
 
-    public void SetPrimaryInspector(object target)
+    public void SetPrimaryInspector(object? target)
     {
         if (primaryInspector == null) {
             primaryInspector = AddInspector(target);
@@ -95,7 +95,7 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
         }
     }
 
-    public ObjectInspector AddInspector(object target)
+    public ObjectInspector AddInspector(object? target)
     {
         var inspector = new ObjectInspector(this);
         var window = EditorWindow.CurrentWindow!.AddSubwindow(inspector);

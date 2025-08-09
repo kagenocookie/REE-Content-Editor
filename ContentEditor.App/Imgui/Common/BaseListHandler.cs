@@ -86,7 +86,7 @@ public class ListHandler : BaseListHandler
 
     protected override object CreateNewElement(UIContext context)
     {
-        return Activator.CreateInstance(elementType)!;
+        return elementType == typeof(string) ? string.Empty : Activator.CreateInstance(elementType)!;
     }
 }
 

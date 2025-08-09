@@ -52,8 +52,6 @@ public class EfxEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIns
     protected override void DrawFileContents()
     {
         if (context.children.Count == 0) {
-            // var raw = context.AddChild("Raw data", File, new PlainObjectHandler());
-            // WindowHandlerFactory.SetupObjectUIContext(raw, null, true);
             context.AddChild("Data", File, new EfxFileImguiHandler());
         }
         var p = ImGui.GetCursorPos();
@@ -66,15 +64,13 @@ public class EfxEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIns
         }
         if (context.children.Count > 1 && primaryInspector != null) {
             ImGui.SameLine();
-            // ImGui.CalcItemWidth();
             ImGui.BeginChild("Inspector");
             primaryInspector!.OnIMGUI();
-            // context.children[1].ShowUI();
             ImGui.EndChild();
         }
     }
 
-    public void SetPrimaryInspector(object target)
+    public void SetPrimaryInspector(object? target)
     {
         if (primaryInspector == null) {
             primaryInspector = AddEmbeddedInspector(target);
@@ -94,7 +90,7 @@ public class EfxEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIns
         return inspector;
     }
 
-    private ObjectInspector AddEmbeddedInspector(object target)
+    private ObjectInspector AddEmbeddedInspector(object? target)
     {
         var inspector = new ObjectInspector(this);
         var window = WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, inspector, "Inspector");

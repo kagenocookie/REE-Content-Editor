@@ -28,6 +28,80 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
     }
 }
 
+public class SwappableRszInstanceHandler(string? baseClass = null) : IObjectUIHandler
+{
+    private static readonly RszInstanceHandler inner = new();
+    private string[]? classOptions;
+    private HashSet<string>? classOptionsSet;
+    private string? classInput;
+
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<RszInstance?>();
+        if (context.children.Count == 0) {
+            var ws = context.GetWorkspace();
+            if (ws != null && !string.IsNullOrEmpty(baseClass)) {
+                classOptions = ws.Env.TypeCache.GetSubclasses(baseClass).ToArray();
+                classOptionsSet = classOptions.ToHashSet();
+            }
+            if (instance != null) {
+                WindowHandlerFactory.SetupRSZInstanceHandler(context);
+            }
+        }
+
+        if (classOptions != null) {
+            classInput ??= instance?.RszClass.name ?? string.Empty;
+            ImguiHelpers.FilterableCombo("Class", classOptions, classOptions, ref classInput, ref context.state);
+            if (!string.IsNullOrEmpty(classInput) && classInput != instance?.RszClass.name) {
+                if (ImGui.Button("Change")) {
+                    var ws = context.GetWorkspace();
+                    var cls = ws!.Env.RszParser.GetRSZClass(classInput);
+                    if (cls == null) {
+                        Logger.Error("Invalid classname " + classInput);
+                    } else {
+                        var newInstance = RszInstance.CreateInstance(ws!.Env.RszParser, cls);
+                        UndoRedo.RecordSet(context, newInstance, postChangeAction: (ctx) => {
+                            ctx.ClearChildren();
+                            WindowHandlerFactory.SetupRSZInstanceHandler(ctx);
+                            classInput = null;
+                        }, mergeMode: UndoRedoMergeMode.NeverMerge);
+                    }
+                }
+                ImGui.SameLine();
+                if (ImGui.Button("Cancel")) {
+                    classInput = null;
+                }
+            }
+        }
+
+        var rsz = context.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
+        if (rsz != null) {
+            RszInstance[] otherInstanceOptions;
+            if (classOptionsSet != null) {
+                otherInstanceOptions = rsz.InstanceList.Where(cls => classOptionsSet.Contains(cls.RszClass.name)).Take(500).ToArray();
+            } else {
+                otherInstanceOptions = rsz.InstanceList.Take(500).ToArray();
+            }
+            var labels = otherInstanceOptions.Select(inst => inst.Name).ToArray();
+
+            var newInstance = instance;
+            if (ImguiHelpers.FilterableCombo("Instance", labels, otherInstanceOptions, ref newInstance, ref context.state)) {
+                if (newInstance?.RszClass != instance?.RszClass) {
+                    UndoRedo.RecordSet(context, newInstance, (ctx) => {
+                        ctx.ClearChildren();
+                        WindowHandlerFactory.SetupRSZInstanceHandler(ctx);
+                        classInput = null;
+                    }, mergeMode: UndoRedoMergeMode.NeverMerge);
+                } else {
+                    UndoRedo.RecordSet(context, newInstance, mergeMode: UndoRedoMergeMode.NeverMerge);
+                }
+            }
+        }
+
+        inner.OnIMGUI(context);
+    }
+}
+
 public class NestedRszInstanceHandler : IObjectUIHandler
 {
     public bool ForceDefaultClose { get; set; }

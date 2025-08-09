@@ -34,7 +34,7 @@ Some files may not fully work for other RE ENGINE games.
 | .uvar     | read/write | coming soon | expression node graph |
 | .mdf2     | ☑️ read/write | coming soon | material preview |
 | .efx      | ☑️ read/write | coming soon | graphic preview |
-| .rcol     | raw data read/write | coming soon | 3D display, overlay with mesh/pfb |
+| .rcol     | read/write | coming soon | 3D display, overlay with mesh/pfb |
 | .motlist  | coming not soon | coming not soon | data display, editing, patching |
 | .mesh     | coming not soon | | 3D display |
 | .mcol     | raw data read/write | | 3D display |
