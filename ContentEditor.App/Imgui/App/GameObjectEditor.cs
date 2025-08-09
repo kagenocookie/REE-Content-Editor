@@ -11,7 +11,7 @@ using ReeLib.Pfb;
 
 namespace ContentEditor.App.ImguiHandling;
 
-[ObjectImguiHandler(typeof(GameObject))]
+[ObjectImguiHandler(typeof(GameObject), Stateless = true)]
 public class GameObjectEditor : IObjectUIHandler
 {
     private static readonly MemberInfo[] BaseMembers = [
@@ -32,7 +32,7 @@ public class GameObjectEditor : IObjectUIHandler
         if (context.children.Count == 0) {
             var ws = context.GetWorkspace();
             var obj = context.Get<GameObject>();
-            context.AddChild<GameObject, string>("Name", obj, new ConfirmedStringFieldHandler(), c => c.Name, (c, v) => c.Name = v);
+            context.AddChild<GameObject, string>("Name", obj, new ConfirmedStringFieldHandler(), c => c!.Name, (c, v) => c.Name = v ?? string.Empty);
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(GameObject), members: BaseMembers);
             if (ws?.Env.Classes.GameObject.IndexOfField(nameof(GameObject.TimeScale)) != -1) {
                 WindowHandlerFactory.SetupObjectUIContext(context, typeof(GameObject), members: BaseMembers2);
@@ -47,7 +47,7 @@ public class GameObjectEditor : IObjectUIHandler
     }
 }
 
-[ObjectImguiHandler(typeof(Component))]
+[ObjectImguiHandler(typeof(Component), Stateless = true)]
 public class BaseComponentEditor : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)

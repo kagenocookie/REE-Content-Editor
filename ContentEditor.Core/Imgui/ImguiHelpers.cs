@@ -287,6 +287,16 @@ public static class ImguiHelpers
         ImGui.Unindent(fullSize / 2 - w / 2);
     }
 
+    public static bool TextMultilineAutoResize(string label, ref string text, float width, float maxHeight, int fontsize)
+    {
+        var lineCount = text.Count(s => s == '\n') + 1;
+        var requiredHeight = lineCount * (fontsize) + ImGui.GetStyle().FramePadding.Y * 2;
+        if (ImGui.InputTextMultiline(label, ref text, 2048, new System.Numerics.Vector2(width, Math.Min(requiredHeight, maxHeight)), ImGuiInputTextFlags.AllowTabInput)) {
+            return true;
+        }
+        return false;
+    }
+
     public static DisposableColorOverride OverrideStyleCol(ImGuiCol style, uint color)
     {
         ImGui.PushStyleColor(style, color);

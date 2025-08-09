@@ -90,3 +90,18 @@ public class NestedUIHandlerStringSuffixed(IObjectUIHandler nested) : IObjectUIH
         }
     }
 }
+
+public abstract class TreeContextUIHandler(IObjectUIHandler nested) : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, context.GetRaw()?.ToString() ?? string.Empty);
+        HandleContextMenu(context);
+        if (show) {
+            nested.OnIMGUI(context);
+            ImGui.TreePop();
+        }
+    }
+
+    protected abstract void HandleContextMenu(UIContext context);
+}

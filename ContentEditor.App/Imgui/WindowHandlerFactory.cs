@@ -92,7 +92,10 @@ public static partial class WindowHandlerFactory
     {
         AppConfig.Instance.PrettyFieldLabels.ValueChanged += (bool newValue) => showPrettyLabels = newValue;
         showPrettyLabels = AppConfig.Instance.PrettyFieldLabels.Get();
+
         var types = typeof(WindowHandlerFactory).Assembly.GetTypes();
+        var subtypes = types.Concat(typeof(EFXAttribute).Assembly.GetTypes());
+        var dict = new Dictionary<Type, (int priority, Func<IObjectUIHandler> fact)>();
         foreach (var type in types) {
             var attrs = type.GetCustomAttributes<ObjectImguiHandlerAttribute>();
             if (!attrs.Any()) continue;
@@ -102,14 +105,30 @@ public static partial class WindowHandlerFactory
             }
 
             foreach (var attr in attrs) {
-                var fact = () => (IObjectUIHandler)Activator.CreateInstance(type)!;
+                Func<IObjectUIHandler> fact;
+                if (attr.Stateless) {
+                    var inst = (IObjectUIHandler)Activator.CreateInstance(type)!;
+                    fact = () => inst;
+                } else {
+                    fact = () => (IObjectUIHandler)Activator.CreateInstance(type)!;
+                }
                 csharpTypeHandlers[attr.HandledFieldType] = fact;
-                if (attr.Inherited) {
-                    foreach (var subtype in types.Where(t => t.IsSubclassOf(attr.HandledFieldType))) {
-                        csharpTypeHandlers.TryAdd(subtype, fact);
+                if (!dict.TryGetValue(attr.HandledFieldType, out var entry) || attr.Priority < entry.priority) {
+                    dict[attr.HandledFieldType] = (attr.Priority, fact);
+                }
+
+                if (attr.Inherited || attr.HandledFieldType.IsInterface) {
+                    foreach (var subtype in subtypes.Where(t => !t.IsAbstract && t.IsAssignableTo(attr.HandledFieldType))) {
+                        if (!dict.TryGetValue(subtype, out entry) || attr.Priority < entry.priority) {
+                            dict[subtype] = (attr.Priority, fact);
+                        }
                     }
                 }
             }
+        }
+
+        foreach (var (type, data) in dict) {
+            csharpTypeHandlers.TryAdd(type, data.fact);
         }
     }
 

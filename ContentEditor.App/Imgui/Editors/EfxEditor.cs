@@ -4,8 +4,11 @@ using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
+using ReeLib.Common;
 using ReeLib.Efx;
 using ReeLib.Efx.Structs.Basic;
+using ReeLib.Efx.Structs.Common;
+using SmartFormat.Core.Parsing;
 
 namespace ContentEditor.App.ImguiHandling.Efx;
 
@@ -18,7 +21,7 @@ public class EfxEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIns
     public EfxFile File => Handle.GetFile<EfxFile>();
 
     public ContentWorkspace Workspace { get; }
-    public EfxEditor RootEfx => context.FindHandlerInParents<EfxEditor>(true) ?? this;
+    public EfxEditor RootEditor => context.FindHandlerInParents<EfxEditor>(true) ?? this;
 
     protected override bool IsRevertable => context.Changed;
 
@@ -26,7 +29,7 @@ public class EfxEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIns
     private ObjectInspector? primaryInspector;
     public object? PrimaryTarget => primaryInspector?.Target;
 
-    public EfxEditor(ContentWorkspace env, FileHandle file) : base (file)
+    public EfxEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
         Workspace = env;
     }
@@ -42,6 +45,7 @@ public class EfxEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIns
             // not letting the child contexts dispose - so we don't dispose the file stream
             context.children.Clear();
         }
+        if (primaryInspector != null) primaryInspector.Target = null!;
         failedToReadfile = false;
     }
 
@@ -57,6 +61,9 @@ public class EfxEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIns
         ImGui.BeginChild("Tree", new System.Numerics.Vector2(400, s.Y - p.Y - ImGui.GetStyle().WindowPadding.Y), ImGuiChildFlags.ResizeX);
         context.children[0].ShowUI();
         ImGui.EndChild();
+        if (context.children.Count == 1 && primaryInspector != null) {
+            context.children.Add(primaryInspector.Context);
+        }
         if (context.children.Count > 1 && primaryInspector != null) {
             ImGui.SameLine();
             // ImGui.CalcItemWidth();
@@ -111,7 +118,7 @@ public class EfxEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIns
     }
 }
 
-[ObjectImguiHandler(typeof(EfxFile))]
+[ObjectImguiHandler(typeof(EfxFile), Stateless = true)]
 public class EfxFileImguiHandler : IObjectUIHandler
 {
     private static MemberInfo[] DisplayedFieldsRoot = [
@@ -143,8 +150,8 @@ public class EfxFileImguiHandler : IObjectUIHandler
     }
 }
 
-[ObjectImguiHandler(typeof(EFXEntry))]
-[ObjectImguiHandler(typeof(EFXAction))]
+[ObjectImguiHandler(typeof(EFXEntry), Stateless = true)]
+[ObjectImguiHandler(typeof(EFXAction), Stateless = true)]
 public class EFXEntryImguiHandler : IObjectUIHandler
 {
     private static MemberInfo[] DisplayedFields = [
@@ -165,9 +172,7 @@ public class EFXEntryImguiHandler : IObjectUIHandler
     {
         var entry = context.Get<EFXEntryBase>();
         if (context.children.Count == 0) {
-            if (entry.Contains(EfxAttributeType.PlayEmitter)) {
-                context.AddChild("TODO", entry, new ReadOnlyLabelHandler());
-            } else if (entry is EFXEntry) {
+            if (entry is EFXEntry) {
                 WindowHandlerFactory.SetupObjectUIContext(context, typeof(EFXEntry), members: DisplayedFields);
             } else {
                 WindowHandlerFactory.SetupObjectUIContext(context, typeof(EFXAction), members: DisplayedFieldsActions);
@@ -238,7 +243,18 @@ public class EfxEntriesListEditorBase<TType> : DictionaryListImguiHandler<string
     protected override void PostItem(UIContext itemContext)
     {
         if (ImGui.BeginPopupContextItem(itemContext.label)) {
-            ImGui.Text("TODO");
+            var item = itemContext.Get<TType>();
+            var list = itemContext.parent!.Get<List<TType>>();
+            if (ImGui.Button("Duplicate")) {
+                var clone = item.Clone();
+                clone.name = (clone.name ?? "New_entry").GetUniqueName((x) => list.Any(e => e.name == x), "copy");
+                UndoRedo.RecordListInsert(itemContext.parent, list, clone, list.IndexOf(item) + 1);
+                ImGui.CloseCurrentPopup();
+            }
+            if (ImGui.Button("Delete")) {
+                UndoRedo.RecordListRemove(itemContext.parent, list, item);
+                ImGui.CloseCurrentPopup();
+            }
             ImGui.EndPopup();
         }
     }
@@ -248,6 +264,7 @@ public class EfxEntriesListEditorBase<TType> : DictionaryListImguiHandler<string
         public void OnIMGUI(UIContext context)
         {
             var node = context.Get<EFXEntryBase>();
+            ImGui.BeginGroup();
             var inspector = context.FindHandlerInParents<IInspectorController>();
             if (ImGui.Selectable(context.label, node == inspector?.PrimaryTarget)) {
                 OnSelect(context, node);
@@ -257,11 +274,12 @@ public class EfxEntriesListEditorBase<TType> : DictionaryListImguiHandler<string
                 ImGui.SameLine();
                 ImGui.TextColored(Colors.Faded, typeAttr.type.ToString());
             }
+            ImGui.EndGroup();
         }
 
         protected virtual void OnSelect(UIContext context, EFXEntryBase entry)
         {
-            var efx = context.FindHandlerInParents<EfxEditor>()?.RootEfx;
+            var efx = context.FindHandlerInParents<EfxEditor>()?.RootEditor;
             if (efx == null) {
                 Logger.Error("UI structure invalid, EFX file not found");
                 return;
@@ -271,10 +289,10 @@ public class EfxEntriesListEditorBase<TType> : DictionaryListImguiHandler<string
         }
     }
 }
-[ObjectImguiHandler(typeof(List<EFXEntry>))]
-public class EfxEntriesListEditor : EfxEntriesListEditorBase<EFXEntry> {}
+[ObjectImguiHandler(typeof(List<EFXEntry>), Stateless = true)]
+public class EfxEntriesListEditor : EfxEntriesListEditorBase<EFXEntry> { }
 
-[ObjectImguiHandler(typeof(List<EFXAction>))]
+[ObjectImguiHandler(typeof(List<EFXAction>), Stateless = true)]
 public class EfxActionsListEditor : EfxEntriesListEditorBase<EFXAction>
 {
     public EfxActionsListEditor()
@@ -283,7 +301,7 @@ public class EfxActionsListEditor : EfxEntriesListEditorBase<EFXAction>
     }
 }
 
-[ObjectImguiHandler(typeof(EFXAttribute), Inherited = true)]
+[ObjectImguiHandler(typeof(EFXAttribute), Stateless = true, Inherited = true, Priority = 10)]
 public class EFXAttributeImguiHandler : IObjectUIHandler
 {
     private static MemberInfo[] BasicFields = [
@@ -300,8 +318,8 @@ public class EFXAttributeImguiHandler : IObjectUIHandler
             if (ws == null) {
                 WindowHandlerFactory.SetupObjectUIContext(context, entryType);
             } else {
-                if (ws.Env.EfxCacheData.AttributeTypes.TryGetValue(entry.type.ToString(), out var data)) {
-                    WindowHandlerFactory.SetupObjectUIContext(context, entryType, members: BasicFields);
+                if (ws.Env.EfxCacheData.EnumAttributeTypes.TryGetValue(entry.type, out var data)) {
+                    AddBaseFields(context, entryType);
                     var showFields = data.FieldInfos
                         .Where(fi => data.Fields[fi.Name].Flag is EfxFieldFlags.None or EfxFieldFlags.BitSet)
                         .ToArray();
@@ -313,9 +331,14 @@ public class EFXAttributeImguiHandler : IObjectUIHandler
         }
         context.ShowChildrenUI();
     }
+
+    public static void AddBaseFields(UIContext context, Type entryType)
+    {
+        WindowHandlerFactory.SetupObjectUIContext(context, entryType, members: BasicFields);
+    }
 }
 
-[ObjectImguiHandler(typeof(List<EFXAttribute>))]
+[ObjectImguiHandler(typeof(List<EFXAttribute>), Stateless = true)]
 public class EfxAttributeListEditor : DictionaryListImguiHandler<EfxAttributeType, EFXAttribute, List<EFXAttribute>>
 {
     public EfxAttributeListEditor()
@@ -323,8 +346,6 @@ public class EfxAttributeListEditor : DictionaryListImguiHandler<EfxAttributeTyp
         Filterable = true;
         FlatList = true;
     }
-
-    private static readonly NestedUIHandlerStringSuffixed NestedAttributeHandler = new NestedUIHandlerStringSuffixed(new EFXAttributeImguiHandler());
 
     protected override bool Filter(UIContext context, string filter)
     {
@@ -368,14 +389,177 @@ public class EfxAttributeListEditor : DictionaryListImguiHandler<EfxAttributeTyp
 
     protected override void InitChildContext(UIContext itemContext)
     {
-        itemContext.uiHandler = NestedAttributeHandler;
+        var handler = WindowHandlerFactory.CreateUIHandler(itemContext.GetRaw(), null);
+        itemContext.uiHandler = new EfxAttributeContextHandler(handler);
     }
 
-    protected override void PostItem(UIContext itemContext)
+    private sealed class EfxAttributeContextHandler(IObjectUIHandler handler) : TreeContextUIHandler(handler)
     {
-        if (ImGui.BeginPopupContextItem(itemContext.label)) {
+        protected override void HandleContextMenu(UIContext context)
+        {
+            if (ImGui.BeginPopupContextItem(context.label)) {
+                if (ImGui.Button("Delete")) {
+                    var list = context.parent!.Get<List<EFXAttribute>>();
+                    UndoRedo.RecordListRemove(context.parent, list, context.Get<EFXAttribute>(), null, 1);
+                    ImGui.CloseCurrentPopup();
+                }
+                ImGui.EndPopup();
+            }
+        }
+    }
+}
 
-            ImGui.EndPopup();
+[ObjectImguiHandler(typeof(IExpressionAttribute), Priority = 5)]
+public class EfxExpressionAttributeEditor : IObjectUIHandler
+{
+    private readonly Dictionary<int, string> pendingStrings = new();
+    private readonly Dictionary<int, string> confirmedStrings = new();
+
+    public void OnIMGUI(UIContext context)
+    {
+        var attr = context.Get<EFXAttribute>();
+        if (context.children.Count == 0) {
+            EFXAttributeImguiHandler.AddBaseFields(context, attr.GetType());
+        }
+
+        context.ShowChildrenUI();
+        var data = (IExpressionAttribute)attr;
+        if (data.Expression == null) {
+            if (ImGui.Button("Create expression")) {
+                data.Expression = new(attr.Version);
+            }
+            return;
+        }
+        var ws = context.GetWorkspace();
+        var efx = context.FindHandlerInParents<EfxEditor>()?.RootEditor.File;
+        if (efx == null || ws == null) {
+            ImGui.TextColored(Colors.Error, "EFX file or workspace not found");
+            return;
+        }
+
+        var bits = data.ExpressionBits;
+        if (data.Expression.ParsedExpressions == null) {
+            data.Expression.ParsedExpressions = EfxExpressionTreeUtils.ReconstructExpressionTreeList(data.Expression.Expressions, efx);
+        }
+
+        var set = 0;
+        var w = ImGui.CalcItemWidth();
+        var typeInfo = ws.Env.EfxCacheData.EnumAttributeTypes[attr.type];
+        for (int i = 0; i < bits.BitCount; ++i) {
+            int myBitIndex = i;
+            var name = bits.GetBitName(myBitIndex) ?? ("Field " + (i + 1));
+            var enabled = data.ExpressionBits.HasBit(myBitIndex);
+            // Velocity3DExpression has some extra floats at the start for whatever reason
+            var fieldInfoStartIndex = attr.type == EfxAttributeType.Velocity3DExpression && attr.Version != EfxVersion.RE8 ? 5 : 1;
+            ImGui.PushID(i);
+            ImGui.SetNextItemWidth(60);
+            if (ImGui.Checkbox("##enabled", ref enabled)) {
+                void ToggleBit(int bit, bool toggle)
+                {
+                    var index = bits.GetBitInsertIndex(bit);
+                    bits.SetBit(bit, toggle);
+                    if (toggle) {
+                        data.Expression!.expressions.Insert(index, new EFXExpressionObject(attr.Version));
+                        data.Expression!.ParsedExpressions!.Insert(index, new EFXExpressionTree());
+                    } else {
+                        data.Expression!.expressions.RemoveAt(index);
+                        data.Expression!.ParsedExpressions!.RemoveAt(index);
+                    }
+                }
+                UndoRedo.RecordCallback(context, () => ToggleBit(myBitIndex, enabled), () => ToggleBit(myBitIndex, !enabled));
+            }
+            ImGui.SameLine();
+            ImGui.Text(name);
+            if (enabled) {
+                var fieldInfo = typeInfo.FieldInfos[fieldInfoStartIndex + i];
+                var parsed = data.Expression.ParsedExpressions[set++];
+                var assign = (ExpressionAssignType)fieldInfo.GetValue(data)!;
+                var prevAssign = assign;
+                ImGui.SameLine();
+                ImGui.SetNextItemWidth(140);
+                if (ImguiHelpers.CSharpEnumCombo<ExpressionAssignType>("##assign", ref assign)) {
+                    UndoRedo.RecordCallbackSetter(context, data, prevAssign, assign, (d, v) => fieldInfo.SetValue(d, v));
+                }
+                if (!confirmedStrings.TryGetValue(myBitIndex, out var orgStr)) {
+                    confirmedStrings[myBitIndex] = orgStr = parsed.root.ToString()!;
+                }
+                var str = pendingStrings.GetValueOrDefault(myBitIndex) ?? orgStr;
+                ImGui.SameLine();
+                ImGui.SetNextItemWidth(30);
+                var showParams = ImGui.TreeNode("##showParams");
+                ImGui.SameLine();
+                if (ImguiHelpers.TextMultilineAutoResize("##expression", ref str, w - 230, 300, UI.FontSize)) {
+                    pendingStrings[myBitIndex] = str;
+                }
+                if (orgStr != str) {
+                    if (ImGui.Button("Revert")) {
+                        pendingStrings.Remove(myBitIndex);
+                    }
+                    ImGui.SameLine();
+                    var err = GetExpressionError(str, parsed.parameters);
+                    if (err == null) {
+                        if (ImGui.Button("Confirm")) {
+                            void UpdateExpression(string text)
+                            {
+                                var index = bits.GetBitInsertIndex(myBitIndex);
+                                var parsed = EfxExpressionStringParser.Parse(text, data.Expression!.expressions[index].parameters ?? new(0));
+                                data.Expression!.expressions[index].parameters = parsed.parameters.ToList();
+                                EfxExpressionTreeUtils.FlattenExpressions(data.Expression!.expressions[index].components, parsed, efx);
+                                data.Expression!.ParsedExpressions![index] = parsed;
+                                confirmedStrings[myBitIndex] = text;
+                            }
+                            UndoRedo.RecordCallback(context, () => UpdateExpression(str), () => UpdateExpression(orgStr));
+                        }
+                    } else {
+                        ImGui.TextColored(Colors.Error, err);
+                    }
+                }
+
+                if (showParams) {
+                    for (int paramIndex = 0; paramIndex < parsed.parameters.Count; paramIndex++) {
+                        var param = parsed.parameters[paramIndex];
+                        var paramName = param.GetName(efx) ?? "Hash: " + param.parameterNameHash;
+                        ImGui.PushID(paramIndex);
+                        var prevSource = param.source;
+                        ImGui.SetNextItemWidth(120);
+                        if (ImguiHelpers.CSharpEnumCombo<ExpressionParameterSource>("##source", ref prevSource)) {
+                            var updated = param with { source = prevSource };
+                            UndoRedo.RecordCallbackSetter(
+                                context, (parsed.parameters, paramIndex), param, updated,
+                                (listIndex, value) => listIndex.parameters[listIndex.paramIndex] = value,
+                                $"Param {paramName} source");
+                        }
+                        ImGui.SameLine();
+                        if (param.source != ExpressionParameterSource.Parameter) {
+                            var value = param.constantValue;
+                            ImGui.SetNextItemWidth(w - 120);
+                            if (ImGui.DragFloat(paramName + (param.source == ExpressionParameterSource.Constant ? " (Value)" : " (Default value)"), ref value, 0.001f)) {
+                                var updated = param with { constantValue = value };
+                                UndoRedo.RecordCallbackSetter(
+                                    context, (parsed.parameters, paramIndex), param, updated,
+                                    (listIndex, value) => listIndex.parameters[listIndex.paramIndex] = value,
+                                    $"Param {paramName} value");
+                            }
+                        } else {
+                            var efxParam = efx.FindParameterByHash(param.parameterNameHash);
+                            ImGui.Text(paramName + " = " + efxParam);
+                        }
+                        ImGui.PopID();
+                    }
+                    ImGui.TreePop();
+                }
+            }
+            ImGui.PopID();
+        }
+    }
+
+    private static string? GetExpressionError(string text, IEnumerable<EFXExpressionParameterName> parameters)
+    {
+        try {
+            var expression = EfxExpressionStringParser.Parse(text, parameters.ToArray());
+            return null;
+        } catch (Exception e) {
+            return "Syntax error: " + e.Message;
         }
     }
 }

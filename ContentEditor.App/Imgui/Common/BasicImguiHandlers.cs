@@ -9,7 +9,7 @@ public class NumericFieldHandler<T>(ImGuiDataType type) : IObjectUIHandler where
     public unsafe void OnIMGUI(UIContext context)
     {
         var num = (T)context.Get<object>();
-        if (ImGui.DragScalar(context.label, type, (IntPtr)(&num))) {
+        if (ImGui.DragScalar(context.label, type, (IntPtr)(&num), 0.05f)) {
             UndoRedo.RecordSet(context, num);
         }
     }
@@ -31,7 +31,7 @@ public class Vector2FieldHandler : Singleton<Vector2FieldHandler>, IObjectUIHand
     public void OnIMGUI(UIContext context)
     {
         var val = context.Get<Vector2>();
-        if (ImGui.DragFloat2(context.label, ref val)) UndoRedo.RecordSet(context, val);
+        if (ImGui.DragFloat2(context.label, ref val, 0.01f)) UndoRedo.RecordSet(context, val);
     }
 }
 
@@ -40,7 +40,7 @@ public class Vector3FieldHandler : Singleton<Vector3FieldHandler>, IObjectUIHand
     public void OnIMGUI(UIContext context)
     {
         var val = context.Get<Vector3>();
-        if (ImGui.DragFloat3(context.label, ref val)) UndoRedo.RecordSet(context, val);
+        if (ImGui.DragFloat3(context.label, ref val, 0.01f)) UndoRedo.RecordSet(context, val);
     }
 }
 
@@ -49,7 +49,7 @@ public class Vector4FieldHandler : Singleton<Vector4FieldHandler>, IObjectUIHand
     public void OnIMGUI(UIContext context)
     {
         var val = context.Get<Vector4>();
-        if (ImGui.DragFloat4(context.label, ref val)) UndoRedo.RecordSet(context, val);
+        if (ImGui.DragFloat4(context.label, ref val, 0.01f)) UndoRedo.RecordSet(context, val);
     }
 }
 
@@ -58,7 +58,7 @@ public class IntRangeFieldHandler : Singleton<IntRangeFieldHandler>, IObjectUIHa
     public void OnIMGUI(UIContext context)
     {
         var val = context.Get<ReeLib.via.RangeI>();
-        if (ImGui.DragIntRange2(context.label, ref val.r, ref val.s)) {
+        if (ImGui.DragIntRange2(context.label, ref val.r, ref val.s, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
     }
@@ -70,7 +70,7 @@ public class QuaternionFieldHandler : Singleton<QuaternionFieldHandler>, IObject
     {
         var val = context.Get<Quaternion>();
         var vec = new Vector4(val.X, val.Y, val.Z, val.W);
-        if (ImGui.DragFloat4(context.label, ref vec)) UndoRedo.RecordSet(context, new Quaternion(vec.X, vec.Y, vec.Z, vec.W));
+        if (ImGui.DragFloat4(context.label, ref vec, 0.001f)) UndoRedo.RecordSet(context, new Quaternion(vec.X, vec.Y, vec.Z, vec.W));
     }
 }
 

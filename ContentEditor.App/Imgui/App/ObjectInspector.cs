@@ -18,7 +18,7 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
         context.uiHandler = this;
     }
 
-    private object _target = null!;
+    private object? _target;
     private IWindowHandler parentWindow;
 
     public ObjectInspector(IWindowHandler parentWindow)
@@ -26,7 +26,7 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
         this.parentWindow = parentWindow;
     }
 
-    public object Target
+    public object? Target
     {
         get => _target;
         set {
@@ -39,6 +39,10 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
     {
         if (context.children.Count == 0) {
             context.AddChild("Target", Target).AddDefaultHandler();
+        }
+        if (_target == null) {
+            ImGui.TextColored(Colors.Faded, "No object selected");
+            return;
         }
         if (Target is IPathedObject pathed) {
             ImGui.TextColored(Colors.Faded, $"Target: [{Target?.GetType().Name}] {Target}: {pathed.Path}");

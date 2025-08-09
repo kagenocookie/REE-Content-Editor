@@ -13,7 +13,7 @@ using ReeLib.Pfb;
 
 namespace ContentEditor.App.ImguiHandling;
 
-[ObjectImguiHandler(typeof(Folder))]
+[ObjectImguiHandler(typeof(Folder), Stateless = true)]
 public class FolderDataEditor : IObjectUIHandler
 {
     private static readonly MemberInfo[] BaseMembers = [

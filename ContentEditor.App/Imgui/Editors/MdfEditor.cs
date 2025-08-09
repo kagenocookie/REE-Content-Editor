@@ -56,7 +56,7 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     }
 }
 
-[ObjectImguiHandler(typeof(MdfFile))]
+[ObjectImguiHandler(typeof(MdfFile), Stateless = true)]
 public class MdfFileImguiHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
@@ -69,7 +69,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
     }
 }
 
-[ObjectImguiHandler(typeof(MatHeader))]
+[ObjectImguiHandler(typeof(MatHeader), Stateless = true)]
 public class MatHeaderImguiHandler : IObjectUIHandler
 {
     private static MemberInfo[] DisplayedFields = [
@@ -88,27 +88,27 @@ public class MatHeaderImguiHandler : IObjectUIHandler
             var tex = context.Get<MatHeader>();
             var ws = context.GetWorkspace();
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(MatHeader), members: DisplayedFields);
-            context.AddChild<MatHeader, string>("MMTR path", tex, new ResourcePathPicker(ws, KnownFileFormats.MasterMaterial), (p) => p.mmtrPath, (p, v) => p.mmtrPath = v);
+            context.AddChild<MatHeader, string>("MMTR path", tex, new ResourcePathPicker(ws, KnownFileFormats.MasterMaterial), (p) => p!.mmtrPath, (p, v) => p.mmtrPath = v);
         }
         ImGui.SetNextItemOpen(true, ImGuiCond.Always);
         context.ShowChildrenUI();
     }
 }
 
-[ObjectImguiHandler(typeof(TexHeader))]
+[ObjectImguiHandler(typeof(TexHeader), Stateless = true)]
 public class TexHeaderImguiHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
         if (context.children.Count == 0) {
             var tex = context.Get<TexHeader>();
-            context.AddChild<TexHeader, string>(tex.texType, tex, new StringFieldHandler(), (p) => p.texPath, (p, v) => p.texPath = v);
+            context.AddChild<TexHeader, string>(tex.texType, tex, new StringFieldHandler(), (p) => p!.texPath, (p, v) => p.texPath = v);
         }
         context.children[0].ShowUI();
     }
 }
 
-[ObjectImguiHandler(typeof((GpbfHeader name, GpbfHeader data)))]
+[ObjectImguiHandler(typeof((GpbfHeader name, GpbfHeader data)), Stateless = true)]
 public class Mdf2GpbfPairImguiHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
@@ -121,7 +121,7 @@ public class Mdf2GpbfPairImguiHandler : IObjectUIHandler
     }
 }
 
-[ObjectImguiHandler(typeof(List<MatData>))]
+[ObjectImguiHandler(typeof(List<MatData>), Stateless = true)]
 public class MdfMaterialListImguiHandler : DictionaryListImguiHandler<string, MatData, List<MatData>>
 {
     public MdfMaterialListImguiHandler()
@@ -175,7 +175,7 @@ public class MdfMaterialLazyPlainObjectHandler : LazyPlainObjectHandler
     }
 }
 
-[ObjectImguiHandler(typeof(List<TexHeader>))]
+[ObjectImguiHandler(typeof(List<TexHeader>), Stateless = true)]
 public class TexHeaderListImguiHandler : DictionaryListImguiHandler<string, TexHeader, List<TexHeader>>
 {
     public TexHeaderListImguiHandler()
@@ -192,7 +192,7 @@ public class TexHeaderListImguiHandler : DictionaryListImguiHandler<string, TexH
 }
 
 
-[ObjectImguiHandler(typeof(List<ParamHeader>))]
+[ObjectImguiHandler(typeof(List<ParamHeader>), Stateless = true)]
 public class ParamHeaderListImguiHandler : DictionaryListImguiHandler<string, ParamHeader, List<ParamHeader>>
 {
     public ParamHeaderListImguiHandler()
@@ -209,7 +209,7 @@ public class ParamHeaderListImguiHandler : DictionaryListImguiHandler<string, Pa
         => new ParamHeader();
 }
 
-[ObjectImguiHandler(typeof(ParamHeader))]
+[ObjectImguiHandler(typeof(ParamHeader), Stateless = true)]
 public class ParamHeaderImguiHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
@@ -218,20 +218,20 @@ public class ParamHeaderImguiHandler : IObjectUIHandler
             var param = context.Get<ParamHeader>();
             switch (param.componentCount) {
                 case 1:
-                    context.AddChild<ParamHeader, float>(param.paramName, param, new NumericFieldHandler<float>(ImGuiDataType.Float), (p) => p.parameter.X, (p, v) => p.parameter = new Vector4(v, 0, 0, 0));
+                    context.AddChild<ParamHeader, float>(param.paramName, param, new NumericFieldHandler<float>(ImGuiDataType.Float), (p) => p!.parameter.X, (p, v) => p.parameter = new Vector4(v, 0, 0, 0));
                     break;
                 case 2:
-                    context.AddChild<ParamHeader, Vector2>(param.paramName, param, new Vector2FieldHandler(), (p) => p.parameter.ToVec2(), (p, v) => p.parameter = v.ToVec4());
+                    context.AddChild<ParamHeader, Vector2>(param.paramName, param, new Vector2FieldHandler(), (p) => p!.parameter.ToVec2(), (p, v) => p.parameter = v.ToVec4());
                     break;
                 case 3:
-                    context.AddChild<ParamHeader, Vector3>(param.paramName, param, new Vector3FieldHandler(), (p) => p.parameter.ToVec3(), (p, v) => p.parameter = v.ToVec4());
+                    context.AddChild<ParamHeader, Vector3>(param.paramName, param, new Vector3FieldHandler(), (p) => p!.parameter.ToVec3(), (p, v) => p.parameter = v.ToVec4());
                     break;
                 default:
                 case 4:
                     if (param.paramName.Contains("color", StringComparison.OrdinalIgnoreCase)) {
-                        context.AddChild<ParamHeader, Color>(param.paramName, param, new ColorFieldHandler(), (p) => Color.FromVector4(p.parameter), (p, v) => p.parameter = v.ToVector4());
+                        context.AddChild<ParamHeader, Color>(param.paramName, param, new ColorFieldHandler(), (p) => Color.FromVector4(p!.parameter), (p, v) => p.parameter = v.ToVector4());
                     } else {
-                        context.AddChild<ParamHeader, Vector4>(param.paramName, param, new Vector4FieldHandler(), (p) => p.parameter, (p, v) => p.parameter = v);
+                        context.AddChild<ParamHeader, Vector4>(param.paramName, param, new Vector4FieldHandler(), (p) => p!.parameter, (p, v) => p.parameter = v);
                     }
                     break;
             }

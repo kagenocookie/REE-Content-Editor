@@ -52,7 +52,7 @@ public class UvarEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     }
 }
 
-[ObjectImguiHandler(typeof(UVarFile))]
+[ObjectImguiHandler(typeof(UVarFile), Stateless = true)]
 public class UvarFileImguiHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
@@ -67,7 +67,7 @@ public class UvarFileImguiHandler : IObjectUIHandler
     }
 }
 
-[ObjectImguiHandler(typeof(Variable))]
+[ObjectImguiHandler(typeof(Variable), Stateless = true)]
 public class UvarVariableImguiHandler : IObjectUIHandler
 {
     private static MemberInfo[] DisplayedFields = [

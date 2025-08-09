@@ -135,7 +135,7 @@ public class ArrayRSZHandler : BaseListHandler
     }
 }
 
-public class EnumFieldHandler : Singleton<EnumFieldHandler>, IObjectUIHandler
+public class EnumFieldHandler : IObjectUIHandler
 {
     private EnumDescriptor enumDescriptor;
 
@@ -161,7 +161,7 @@ public class EnumFieldHandler : Singleton<EnumFieldHandler>, IObjectUIHandler
     }
 }
 
-public class FlagsEnumFieldHandler : Singleton<FlagsEnumFieldHandler>, IObjectUIHandler
+public class FlagsEnumFieldHandler : IObjectUIHandler
 {
     private EnumDescriptor enumDescriptor;
     private ImGuiDataType scalarType;
@@ -232,7 +232,7 @@ public class RectFieldHandler : Singleton<RectFieldHandler>, IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var vec = context.Get<Rect>().AsVector;
-        if (ImGui.DragFloat4(context.label, ref vec)) {
+        if (ImGui.DragFloat4(context.label, ref vec, 0.01f)) {
             UndoRedo.RecordSet(context, new Rect(vec.X, vec.Y, vec.Z, vec.W));
         }
     }
@@ -243,79 +243,79 @@ public class PositionFieldHandler : Singleton<PositionFieldHandler>, IObjectUIHa
     public unsafe void OnIMGUI(UIContext context)
     {
         var val = context.Get<Position>();
-        if (ImGui.DragScalarN(context.label, ImGuiDataType.Double, (IntPtr)(&val), 4)) {
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.Double, (IntPtr)(&val), 4, 0.01f)) {
             UndoRedo.RecordSet(context, val);
         }
     }
 }
 
-[ObjectImguiHandler(typeof(Int2))]
+[ObjectImguiHandler(typeof(Int2), Stateless = true)]
 public class Int2FieldHandler : Singleton<Int2FieldHandler>, IObjectUIHandler
 {
     public unsafe void OnIMGUI(UIContext context)
     {
         var val = context.Get<Int2>();
-        if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, (IntPtr)(&val), 2)) {
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, (IntPtr)(&val), 2, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
     }
 }
 
-[ObjectImguiHandler(typeof(Int3))]
+[ObjectImguiHandler(typeof(Int3), Stateless = true)]
 public class Int3FieldHandler : Singleton<Int3FieldHandler>, IObjectUIHandler
 {
     public unsafe void OnIMGUI(UIContext context)
     {
         var val = context.Get<Int3>();
-        if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, (IntPtr)(&val), 3)) {
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, (IntPtr)(&val), 3, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
     }
 }
 
-[ObjectImguiHandler(typeof(Int4))]
+[ObjectImguiHandler(typeof(Int4), Stateless = true)]
 public class Int4FieldHandler : Singleton<Int4FieldHandler>, IObjectUIHandler
 {
     public unsafe void OnIMGUI(UIContext context)
     {
         var val = context.Get<Int4>();
-        if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, (IntPtr)(&val), 4)) {
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, (IntPtr)(&val), 4, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
     }
 }
 
-[ObjectImguiHandler(typeof(Uint2))]
+[ObjectImguiHandler(typeof(Uint2), Stateless = true)]
 public class Uint2FieldHandler : Singleton<Uint2FieldHandler>, IObjectUIHandler
 {
     public unsafe void OnIMGUI(UIContext context)
     {
         var val = context.Get<Uint2>();
-        if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, (IntPtr)(&val), 2)) {
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, (IntPtr)(&val), 2, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
     }
 }
 
-[ObjectImguiHandler(typeof(Uint3))]
+[ObjectImguiHandler(typeof(Uint3), Stateless = true)]
 public class Uint3FieldHandler : Singleton<Uint3FieldHandler>, IObjectUIHandler
 {
     public unsafe void OnIMGUI(UIContext context)
     {
         var val = context.Get<Uint3>();
-        if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, (IntPtr)(&val), 3)) {
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, (IntPtr)(&val), 3, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
     }
 }
 
-[ObjectImguiHandler(typeof(Uint4))]
+[ObjectImguiHandler(typeof(Uint4), Stateless = true)]
 public class Uint4FieldHandler : Singleton<Uint4FieldHandler>, IObjectUIHandler
 {
     public unsafe void OnIMGUI(UIContext context)
     {
         var val = context.Get<Uint4>();
-        if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, (IntPtr)(&val), 4)) {
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, (IntPtr)(&val), 4, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
     }
@@ -514,7 +514,7 @@ public class ReadOnlyLabelHandler : Singleton<ReadOnlyLabelHandler>, IObjectUIHa
     }
 }
 
-[ObjectImguiHandler(typeof(ResourceInfo))]
+[ObjectImguiHandler(typeof(ResourceInfo), Stateless = true)]
 public class ResourceInfoHandler : Singleton<ResourceInfoHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
