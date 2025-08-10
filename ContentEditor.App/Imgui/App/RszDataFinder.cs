@@ -7,6 +7,7 @@ using ImGuiNET;
 using ReeLib;
 using ReeLib.Efx;
 using ReeLib.Msg;
+using ReeLib.UVar;
 
 namespace ContentEditor.App;
 
@@ -30,6 +31,9 @@ public class RszDataFinder : IWindowHandler
     private string? efxAttrFilter = "";
     private bool efxFileMatchOnly = true;
 
+    private Variable.TypeKind uvarKind;
+    private string uvarSearch = "";
+
     private CancellationTokenSource? cancellationTokenSource;
     private int searchedFiles;
     private bool SearchInProgress => cancellationTokenSource != null;
@@ -42,7 +46,7 @@ public class RszDataFinder : IWindowHandler
     private int findType;
 
     private string[]? classNames;
-    private static readonly string[] FindTypes = ["RSZ Data", "Messages", "EFX"];
+    private static readonly string[] FindTypes = ["RSZ Data", "Messages", "EFX", "Uvar"];
 
     public void Init(UIContext context)
     {
@@ -73,6 +77,9 @@ public class RszDataFinder : IWindowHandler
                 break;
             case 2:
                 ShowEfxFind(workspace);
+                break;
+            case 3:
+                ShowUvarFind(workspace);
                 break;
         }
         if (searching) {
@@ -279,6 +286,26 @@ public class RszDataFinder : IWindowHandler
         }
     }
 
+    private void ShowUvarFind(ContentWorkspace workspace)
+    {
+        ImguiHelpers.CSharpEnumCombo("Type", ref uvarKind);
+        ImGui.InputText("Query", ref uvarSearch, 100);
+
+        if (uvarKind == Variable.TypeKind.Unknown && string.IsNullOrEmpty(uvarSearch)) return;
+
+        if (ImGui.Button("Search")) {
+            matches.Clear();
+            cancellationTokenSource = new();
+            var (user, pfb, scn) = (searchUserFiles, searchPfb, searchScn);
+            var token = cancellationTokenSource.Token;
+            Task.Run(() => {
+                InvokeSearchUvar(workspace, (EditorWindow)data.ParentWindow, uvarKind, uvarSearch, token);
+                cancellationTokenSource.Cancel();
+                cancellationTokenSource = null;
+            });
+        }
+    }
+
     private static string LimitLength(string str, int maxlen) => str.Length <= maxlen - 2 ? str : str[0..^(maxlen - 3)] + "...";
 
     private void InvokeSearchMsg(ContentWorkspace workspace, EditorWindow window, string query, CancellationToken token)
@@ -417,6 +444,38 @@ public class RszDataFinder : IWindowHandler
                         matches.Add((desc, path));
                         window.InvokeFromUIThread(() => Logger.Info(str));
                         if (efxFileMatchOnly) break; else continue;
+                    }
+                }
+            } catch (Exception e) {
+                window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
+            }
+        }
+    }
+
+    private void InvokeSearchUvar(ContentWorkspace workspace, EditorWindow window, Variable.TypeKind type, string query, CancellationToken token)
+    {
+        foreach (var (path, stream) in workspace.Env.GetFilesWithExtension("uvar", token)) {
+            try {
+                if (token.IsCancellationRequested) return;
+
+                Interlocked.Increment(ref searchedFiles);
+                var file = new UVarFile(new FileHandler(stream, path));
+                file.Read();
+
+                foreach (var uv in file.Variables) {
+                    if (type != Variable.TypeKind.Unknown && type != uv.type) continue;
+                    if (!string.IsNullOrEmpty(query) && !uv.Name.Contains(query)) continue;
+
+                    matches.Add((uv.Name, path));
+                }
+
+                foreach (var embed in file.EmbeddedUVARs) {
+                    foreach (var uv in embed.Variables) {
+                        if (type != Variable.TypeKind.Unknown && type != uv.type) continue;
+                        if (!string.IsNullOrEmpty(query) && !uv.Name.Contains(query)) continue;
+
+                        var desc = $"[{embed.Header.name}] {uv.Name}";
+                        matches.Add((desc, path));
                     }
                 }
             } catch (Exception e) {
