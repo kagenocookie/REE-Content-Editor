@@ -568,6 +568,7 @@ public class ResourceManager(PatchDataContainer config)
 
     private FileHandle? ReadOrGetFileResource(string filepath, string? nativePath)
     {
+        filepath = filepath.NormalizeFilepath();
         nativePath ??= PreprocessNativeFilepath(filepath);
         if (openFiles.TryGetValue(nativePath ?? filepath, out var handle)) {
             return handle;
