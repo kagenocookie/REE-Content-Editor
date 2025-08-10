@@ -144,16 +144,17 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
             .ToHashSet();
 
         if (ImGui.BeginMenu("Game: " + (env == null ? "<unset>" : env.Config.Game.name))) {
-            foreach (var game in Enum.GetNames<GameName>()) {
-                if (fullSupportedGames.Contains(game) && AppConfig.Instance.GetGamePath(game) != null) {
+            var games = AppConfig.Instance.GetGamelist();
+            foreach (var (game, configured) in games) {
+                if (configured && fullSupportedGames.Contains(game)) {
                     if (ImGui.MenuItem(game)) SetWorkspace(game, null);
                 }
             }
             ImGui.Separator();
-            foreach (var game in Enum.GetNames<GameName>()) {
-                if (game == nameof(GameName.unknown) || fullSupportedGames.Contains(game)) continue;
-                if (AppConfig.Instance.GetGamePath(game) == null) continue;
-                if (ImGui.MenuItem(game)) SetWorkspace(game, null);
+            foreach (var (game, configured) in games) {
+                if (configured && !fullSupportedGames.Contains(game)) {
+                    if (ImGui.MenuItem(game)) SetWorkspace(game, null);
+                }
             }
             ImGui.Separator();
             if (ImGui.MenuItem("Configure games ...")) {
@@ -365,7 +366,6 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                             var sw = Stopwatch.StartNew();
                             var tools = new ReeLib.Tools.ResourceTools(workspace.Env);
                             tools.BaseOutputPath = Path.Combine(Directory.GetCurrentDirectory(), "rsz-output");
-                            tools.Log = (msg) => InvokeFromUIThread(() => Logger.Info(msg));
                             tools.InferRszData();
                             var end = sw.Elapsed;
                             InvokeFromUIThread(() => Logger.Info("RSZ data scan finished in " + end.TotalSeconds + "s."));

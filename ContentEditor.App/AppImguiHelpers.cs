@@ -12,7 +12,7 @@ public static class AppImguiHelpers
     {
         var id = ImGui.GetID(label);
         var x = ImGui.GetCursorPosX();
-        var textWidth = ImGui.CalcItemWidth() - ImGui.CalcTextSize("Browse...").X - ImGui.GetStyle().FramePadding.X * 4 - x;
+        var textWidth = ImGui.CalcItemWidth() - ImGui.CalcTextSize("Browse...").X - ImGui.GetStyle().FramePadding.X * 2 - x;
         ImGui.PushID(label);
         if (ImGui.Button("Browse...")) {
             PlatformUtils.ShowFileDialog((list) => fileBrowseResults[id] = list[0], path, extension, false);
@@ -31,10 +31,11 @@ public static class AppImguiHelpers
         return changed;
     }
 
-    public static bool InputFolder(string label, [NotNullWhen(true)] ref string? path)
+    public static bool InputFolder(string label, [NotNull] ref string? path)
     {
         var id = ImGui.GetID(label);
-        var textWidth = ImGui.CalcItemWidth() - ImGui.CalcTextSize("Browse...").X - ImGui.GetStyle().FramePadding.X * 4;
+        var x = ImGui.GetCursorPosX();
+        var textWidth = ImGui.CalcItemWidth() - ImGui.CalcTextSize("Browse...").X - ImGui.GetStyle().FramePadding.X * 2 - x;
         ImGui.PushID(label);
         if (ImGui.Button("Browse...")) {
             PlatformUtils.ShowFolderDialog((list) => fileBrowseResults[id] = list, path);

@@ -35,6 +35,7 @@ Some files may not fully work for other RE ENGINE games.
 | .mdf2     | ☑️ read/write | coming soon | material preview |
 | .efx      | ☑️ read/write | coming soon | graphic preview |
 | .rcol     | read/write | coming soon | 3D display, overlay with mesh/pfb |
+| .motbank  | read/write | | |
 | .motlist  | coming not soon | coming not soon | data display, editing, patching |
 | .mesh     | coming not soon | | 3D display |
 | .mcol     | raw data read/write | | 3D display |

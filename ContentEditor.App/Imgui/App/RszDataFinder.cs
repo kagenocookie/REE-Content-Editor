@@ -147,8 +147,14 @@ public class RszDataFinder : IWindowHandler
     private void ShowRszFind(Workspace env)
     {
         ImGui.InputText("Classname", ref classname, 1024);
+        RszClass? cls;
+        try {
+            cls = env.RszParser.GetRSZClass(classname);
+        } catch (Exception) {
+            ImGui.TextColored(Colors.Error, "RSZ files not supported for this game.");
+            return;
+        }
 
-        var cls = env.RszParser.GetRSZClass(classname);
         if (cls == null) {
             ImGui.TextColored(Colors.Warning, "Classname not found");
             classNames ??= env.RszParser.ClassDict.Values.Select(cs => cs.name).ToArray();

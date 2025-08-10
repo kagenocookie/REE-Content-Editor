@@ -22,6 +22,9 @@ public class SettingsWindowHandler : IWindowHandler
 
     private static bool? _wasOriginallyAlphaBg;
     private string? filterKey1, filterKey2;
+    private string customGameNameInput = "", customGameFilepath = "";
+
+    private static HashSet<string>? fullSupportedGames;
 
     public void Init(UIContext context)
     {
@@ -34,8 +37,13 @@ public class SettingsWindowHandler : IWindowHandler
     {
         if (tabs == null) {
             string[] list = ["General", "Keys"];
-            tabs = list.Concat(Enum.GetNames<GameName>().Where(n => n != nameof(GameName.unknown))).ToArray();
+            tabs = list.Concat(AppConfig.Instance.GetGamelist().Select(gs => gs.name)).Append("Add custom game").ToArray();
         }
+
+        fullSupportedGames ??= ResourceRepository.RemoteInfo.Resources
+            .Where(kv => kv.Value.IsFullySupported)
+            .Select(kv => kv.Key)
+            .ToHashSet();
 
         if (!ImguiHelpers.BeginWindow(data, "Settings")) {
             EditorWindow.CurrentWindow?.CloseSubwindow(data);
@@ -118,6 +126,16 @@ public class SettingsWindowHandler : IWindowHandler
             if (ImguiKeybinding("Save", ref key, ref filterKey2)) {
                 config.Key_Save.Set(key);
             }
+        } else if (currentTab == tabs.Length - 1) {
+            // add custom game
+            ImGui.InputText("Short name", ref customGameNameInput, 20);
+            AppImguiHelpers.InputFolder("Game path", ref customGameFilepath);
+            if (!string.IsNullOrEmpty(customGameNameInput) && !string.IsNullOrEmpty(customGameFilepath) && Directory.Exists(customGameFilepath)) {
+                if (ImGui.Button("Add")) {
+                    config.SetGamePath(customGameNameInput, customGameFilepath);
+                    tabs = null;
+                }
+            }
         } else {
             GameIdentifier game = selectedTab;
             var gamepath = config.GetGamePath(game);
@@ -126,6 +144,28 @@ public class SettingsWindowHandler : IWindowHandler
                 config.SetGamePath(game, gamepath);
             }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("The full path to the game. Should point to the folder containing the .exe and .pak files");
+
+            if (!fullSupportedGames.Contains(game.name)) {
+                var rszPath = config.GetGameRszJsonPath(game);
+                var filelist = config.GetGameFilelist(game);
+                var isCustomGame = !Enum.TryParse<GameName>(game.name, out _);
+                var tooltip = "Defining a custom path here may not be required if it's at least a partially supported game";
+                if (AppImguiHelpers.InputFilepath("File list", ref filelist, "List file|*.list,*.txt|Any|*.*")) {
+                    config.SetGameFilelist(game, filelist);
+                }
+                if (!isCustomGame && ImGui.IsItemHovered()) ImGui.SetItemTooltip(tooltip);
+                if (AppImguiHelpers.InputFilepath("RSZ template JSON path", ref rszPath, "JSON file|*.json")) {
+                    config.SetGameRszJsonPath(game, rszPath);
+                }
+                if (!isCustomGame && ImGui.IsItemHovered()) ImGui.SetItemTooltip(tooltip);
+                if (isCustomGame) {
+                    ImGui.TextColored(Colors.Info, "*This is a custom defined game. The app may need an upgrade to fully support all files, some files may not load correctly.");
+                }
+            } else {
+                ImGui.TextColored(Colors.Info, "*This is a fully supported game, other game specific data is fetched automatically.");
+            }
+
+            ImGui.TextColored(Colors.Info, "*Changes to these settings may require a restart of the app before they get applied");
         }
         ImGui.End();
     }

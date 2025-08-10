@@ -27,7 +27,14 @@ public class ContentWorkspace
         Diff = new DiffHandler(env);
         ResourceManager = new ResourceManager(patchConfig);
         if (!patchConfig.IsLoaded) {
-            patchConfig.Load(this);
+            var valid = false;
+            try {
+                _ = env.RszParser;
+                valid = true;
+            } catch (Exception) {
+                Logger.Error("RSZ files are not supported at the moment, the RSZ template json is either unconfigured or invalid.");
+            }
+            if (valid) patchConfig.Load(this);
         }
         VersionHash = ExeUtils.GetGameVersionHash(env);
         ResourceManager.Setup(this);

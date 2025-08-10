@@ -30,11 +30,16 @@ public class AppConfig : Singleton<AppConfig>
         public const string Key_Save = "key_save";
 
         public const string Gamepath = "game_path";
+        public const string RszJsonPath = "rsz_json_path";
+        public const string FilelistPath = "file_list_path";
     }
 
     private class AppGameConfig
     {
         public string gamepath = string.Empty;
+
+        public string? filelist;
+        public string? rszJson;
     }
 
     private static readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
@@ -111,6 +116,10 @@ public class AppConfig : Singleton<AppConfig>
 
     public string? GetGamePath(GameIdentifier game) => _lock.Read(() => gameConfigs.GetValueOrDefault(game.name)?.gamepath);
     public void SetGamePath(GameIdentifier game, string path) => SetForGameAndSave(game.name, path, (cfg, val) => cfg.gamepath = val);
+    public string? GetGameRszJsonPath(GameIdentifier game) => _lock.Read(() => gameConfigs.GetValueOrDefault(game.name)?.rszJson);
+    public void SetGameRszJsonPath(GameIdentifier game, string path) => SetForGameAndSave(game.name, path, (cfg, val) => cfg.rszJson = val);
+    public string? GetGameFilelist(GameIdentifier game) => _lock.Read(() => gameConfigs.GetValueOrDefault(game.name)?.filelist);
+    public void SetGameFilelist(GameIdentifier game, string path) => SetForGameAndSave(game.name, path, (cfg, val) => cfg.filelist = val);
     public bool HasAnyGameConfigured => _lock.Read(() => gameConfigs.Any(g => !string.IsNullOrEmpty(g.Value?.gamepath)));
     public IEnumerable<string> ConfiguredGames => _lock.Read(() => gameConfigs.Where(kv => !string.IsNullOrEmpty(kv.Value.gamepath)).Select(kv => kv.Key));
 
@@ -141,6 +150,21 @@ public class AppConfig : Singleton<AppConfig>
             _lock.ExitWriteLock();
         }
         _lock.ReadCallback(SaveConfigToIni);
+    }
+
+    public List<(string name, bool supported)> GetGamelist()
+    {
+        var names = Enum.GetNames<GameName>().Except([nameof(GameName.unknown)]).Select(name => (name, false)).ToList();
+        var configured = _lock.Read(() => gameConfigs.Where(kv => !string.IsNullOrEmpty(kv.Value.gamepath)).Select(kv => kv.Key));
+        foreach (var conf in configured) {
+            var index = names.IndexOf((conf, false));
+            if (index == -1) {
+                names.Add((conf, true));
+            } else {
+                names[index] = (conf, true);
+            }
+        }
+        return names;
     }
 
     private static void SetAndSave<TValue>(TValue value, Action<TValue> func)
@@ -187,6 +211,12 @@ public class AppConfig : Singleton<AppConfig>
         foreach (var (game, data) in instance.gameConfigs) {
             if (!string.IsNullOrEmpty(data.gamepath)) {
                 items.Add((Keys.Gamepath, data.gamepath, game));
+            }
+            if (!string.IsNullOrEmpty(data.filelist)) {
+                items.Add((Keys.FilelistPath, data.filelist, game));
+            }
+            if (!string.IsNullOrEmpty(data.rszJson)) {
+                items.Add((Keys.RszJsonPath, data.rszJson, game));
             }
         }
         IniFile.WriteToFile(IniFilepath, items);
@@ -260,6 +290,12 @@ public class AppConfig : Singleton<AppConfig>
                     switch (key) {
                         case Keys.Gamepath:
                             config.gamepath = value;
+                            break;
+                        case Keys.RszJsonPath:
+                            config.rszJson = value;
+                            break;
+                        case Keys.FilelistPath:
+                            config.filelist = value;
                             break;
                     }
                 }

@@ -14,6 +14,10 @@ public class WorkspaceManager : Singleton<WorkspaceManager>
                 AllowUseLooseFiles = true,
             });
             workspace.Instance.Config.GamePath = AppConfig.Instance.GetGamePath(game) ?? string.Empty;
+            var rszPath = AppConfig.Instance.GetGameRszJsonPath(game);
+            var filelist = AppConfig.Instance.GetGameFilelist(game);
+            if (!string.IsNullOrEmpty(rszPath)) workspace.Instance.Config.Resources.LocalPaths.RszPatchFiles = [rszPath];
+            if (!string.IsNullOrEmpty(filelist)) workspace.Instance.Config.Resources.LocalPaths.FileList = filelist;
         }
 
         workspace.AddRef();
