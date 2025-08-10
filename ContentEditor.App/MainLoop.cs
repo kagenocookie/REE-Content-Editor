@@ -104,7 +104,7 @@ internal sealed class MainLoop : IDisposable
         updateables.Add(updateable);
     }
 
-    public void OpenSubwindow(WindowBase window)
+    public void OpenNewWindow(WindowBase window)
     {
         Console.WriteLine("OpenSubwindow on thread: " + Thread.CurrentThread.ManagedThreadId);
         mainThreadActions.Enqueue(() => {

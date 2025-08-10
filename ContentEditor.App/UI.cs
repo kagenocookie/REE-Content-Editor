@@ -6,9 +6,13 @@ namespace ContentEditor.App;
 
 public static class UI
 {
-    public static void OpenWindow(ContentWorkspace? workspace)
+    private static int NextWindowId = 1;
+
+    public static EditorWindow OpenWindow(ContentWorkspace? workspace)
     {
-        MainLoop.Instance.OpenSubwindow(new EditorWindow(1, workspace));
+        var window = new EditorWindow(NextWindowId++, workspace);
+        MainLoop.Instance.OpenNewWindow(window);
+        return window;
     }
 
     public static int FontSize { get; set; } = 20;

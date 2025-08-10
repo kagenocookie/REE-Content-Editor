@@ -24,6 +24,8 @@ public class RszDataFinder : IWindowHandler
     private bool searchScn = false;
     private bool searchClassOnly = false;
 
+    private bool searchAllGames;
+
     private string msgSearch = "";
 
     private EfxAttributeType efxAttrType;
@@ -38,10 +40,13 @@ public class RszDataFinder : IWindowHandler
     private int searchedFiles;
     private bool SearchInProgress => cancellationTokenSource != null;
 
-    private ConcurrentBag<(string label, string file)> matches = new();
+    private ConcurrentBag<(GameIdentifier game, string label, string file)> matches = new();
+    private GameIdentifier currentGame;
 
     private WindowData data = null!;
     protected UIContext context = null!;
+
+    private SearchContext? searchContext;
 
     private int findType;
 
@@ -64,22 +69,25 @@ public class RszDataFinder : IWindowHandler
             return;
         }
 
+        currentGame = workspace.Env.Config.Game;
         var searching = SearchInProgress;
         if (searching) ImGui.BeginDisabled();
+
+        ImGui.Checkbox("Search all configured games", ref searchAllGames);
 
         ImguiHelpers.Tabs(FindTypes, ref findType);
         switch (findType) {
             case 0:
-                ShowRszFind(workspace);
+                ShowRszFind(workspace.Env);
                 break;
             case 1:
-                ShowMessageFind(workspace);
+                ShowMessageFind(workspace.Env);
                 break;
             case 2:
-                ShowEfxFind(workspace);
+                ShowEfxFind(workspace.Env);
                 break;
             case 3:
-                ShowUvarFind(workspace);
+                ShowUvarFind(workspace.Env);
                 break;
         }
         if (searching) {
@@ -98,7 +106,7 @@ public class RszDataFinder : IWindowHandler
             ImGui.Text("Search in progress...");
             ImGui.Text("Searched file count: " + searchedFiles);
             if (ImguiHelpers.SameLine() && ImGui.Button("Stop")) {
-                cancellationTokenSource.Cancel();
+                cancellationTokenSource?.Cancel();
                 cancellationTokenSource = null;
             }
         } else if (!matches.IsEmpty) {
@@ -109,31 +117,41 @@ public class RszDataFinder : IWindowHandler
             return;
         }
 
-        foreach (var (label, file) in matches) {
+        foreach (var (game, label, file) in matches) {
+            var isCurrent = currentGame == game;
+            var displayLabel = isCurrent ? label : $"[{game}] {label}";
             if (label == file) {
-                ImGui.Text(label);
+                ImGui.Text(displayLabel);
             } else {
-                ImGui.Text(label + " :  " + file);
+                ImGui.Text(displayLabel + " :  " + file);
             }
-            ImGui.PushID(label + file);
+            ImGui.PushID(displayLabel + file);
             if (ImguiHelpers.SameLine() && ImGui.Button("Copy")) {
                 EditorWindow.CurrentWindow!.CopyToClipboard(file);
             }
             if (ImguiHelpers.SameLine() && ImGui.Button("Open")) {
-                EditorWindow.CurrentWindow!.OpenFiles([file]);
+                if (isCurrent) {
+                    EditorWindow.CurrentWindow!.OpenFiles([file]);
+                } else {
+                    MainLoop.Instance.InvokeFromUIThread(() => {
+                        var window = UI.OpenWindow(null);
+                        window.SetWorkspace(game, null);
+                        window.InvokeFromUIThread(() => window.OpenFiles([file]));
+                    });
+                }
             }
             ImGui.PopID();
         }
     }
 
-    private void ShowRszFind(ContentWorkspace workspace)
+    private void ShowRszFind(Workspace env)
     {
         ImGui.InputText("Classname", ref classname, 1024);
 
-        var cls = workspace.Env.RszParser.GetRSZClass(classname);
+        var cls = env.RszParser.GetRSZClass(classname);
         if (cls == null) {
             ImGui.TextColored(Colors.Warning, "Classname not found");
-            classNames ??= workspace.Env.RszParser.ClassDict.Values.Select(cs => cs.name).ToArray();
+            classNames ??= env.RszParser.ClassDict.Values.Select(cs => cs.name).ToArray();
             var suggestions = classNames.OrderBy(s => s.Length).Where(cs => cs.Contains(classname, StringComparison.OrdinalIgnoreCase)).Take(100);
             ImGui.BeginListBox("Suggestions", new System.Numerics.Vector2(ImGui.CalcItemWidth(), 400));
             foreach (var sugg in suggestions) {
@@ -237,18 +255,25 @@ public class RszDataFinder : IWindowHandler
             var token = cancellationTokenSource.Token;
             searchedFiles = 0;
             Task.Run(() => {
-                if (user) InvokeSearchUser(workspace, (EditorWindow)data.ParentWindow, cls, selectedFieldIndex, field?.array ?? false, value, token);
-                if (token.IsCancellationRequested) return;
-                if (pfb) InvokeSearchPfb(workspace, (EditorWindow)data.ParentWindow, cls, selectedFieldIndex, field?.array ?? false, value, token);
-                if (token.IsCancellationRequested) return;
-                if (scn) InvokeSearchScn(workspace, (EditorWindow)data.ParentWindow, cls, selectedFieldIndex, field?.array ?? false, value, token);
-                cancellationTokenSource.Cancel();
+                foreach (var ee in GetWorkspaces(env)) {
+                    var curCls = ee.RszParser.GetRSZClass(cls.name);
+                    if (curCls == null) continue;
+                    var ctx = CreateContext(ee, env);
+
+                    if (user) InvokeSearchUser(ctx, curCls, selectedFieldIndex, field?.array ?? false, value);
+                    if (token.IsCancellationRequested) return;
+                    if (pfb) InvokeSearchPfb(ctx, curCls, selectedFieldIndex, field?.array ?? false, value);
+                    if (token.IsCancellationRequested) return;
+                    if (scn) InvokeSearchScn(ctx, curCls, selectedFieldIndex, field?.array ?? false, value);
+                    if (token.IsCancellationRequested) return;
+                }
+                cancellationTokenSource?.Cancel();
                 cancellationTokenSource = null;
             });
         }
     }
 
-    private void ShowMessageFind(ContentWorkspace workspace)
+    private void ShowMessageFind(Workspace env)
     {
         ImGui.InputText("Query", ref msgSearch, 100);
 
@@ -258,14 +283,16 @@ public class RszDataFinder : IWindowHandler
             var (user, pfb, scn) = (searchUserFiles, searchPfb, searchScn);
             var token = cancellationTokenSource.Token;
             Task.Run(() => {
-                InvokeSearchMsg(workspace, (EditorWindow)data.ParentWindow, msgSearch, token);
-                cancellationTokenSource.Cancel();
+                foreach (var ee in GetWorkspaces(env)) {
+                    InvokeSearchMsg(CreateContext(ee, env), msgSearch);
+                }
+                cancellationTokenSource?.Cancel();
                 cancellationTokenSource = null;
             });
         }
     }
 
-    private void ShowEfxFind(ContentWorkspace workspace)
+    private void ShowEfxFind(Workspace env)
     {
         ImguiHelpers.FilterableCSharpEnumCombo("Type", ref efxAttrType, ref efxAttrFilter);
         ImGui.InputText("Query", ref efxSearch, 100);
@@ -279,14 +306,16 @@ public class RszDataFinder : IWindowHandler
             var (user, pfb, scn) = (searchUserFiles, searchPfb, searchScn);
             var token = cancellationTokenSource.Token;
             Task.Run(() => {
-                InvokeSearchEfx(workspace, (EditorWindow)data.ParentWindow, efxAttrType, efxSearch, token);
-                cancellationTokenSource.Cancel();
+                foreach (var ee in GetWorkspaces(env)) {
+                    InvokeSearchEfx(CreateContext(ee, env), efxAttrType, efxSearch);
+                }
+                cancellationTokenSource?.Cancel();
                 cancellationTokenSource = null;
             });
         }
     }
 
-    private void ShowUvarFind(ContentWorkspace workspace)
+    private void ShowUvarFind(Workspace env)
     {
         ImguiHelpers.CSharpEnumCombo("Type", ref uvarKind);
         ImGui.InputText("Query", ref uvarSearch, 100);
@@ -299,20 +328,36 @@ public class RszDataFinder : IWindowHandler
             var (user, pfb, scn) = (searchUserFiles, searchPfb, searchScn);
             var token = cancellationTokenSource.Token;
             Task.Run(() => {
-                InvokeSearchUvar(workspace, (EditorWindow)data.ParentWindow, uvarKind, uvarSearch, token);
-                cancellationTokenSource.Cancel();
+                foreach (var ee in GetWorkspaces(env)) {
+                    InvokeSearchUvar(CreateContext(ee, env), uvarKind, uvarSearch);
+                }
+                cancellationTokenSource?.Cancel();
                 cancellationTokenSource = null;
             });
         }
     }
 
-    private static string LimitLength(string str, int maxlen) => str.Length <= maxlen - 2 ? str : str[0..^(maxlen - 3)] + "...";
-
-    private void InvokeSearchMsg(ContentWorkspace workspace, EditorWindow window, string query, CancellationToken token)
+    private void AddMatch(SearchContext context, string description, string path, string? log = null)
     {
-        foreach (var (path, stream) in workspace.Env.GetFilesWithExtension("msg", token)) {
+        if (log != null) {
+            context.Window.InvokeFromUIThread(() => Logger.Info(log));
+        }
+        matches.Add((context.Env.Config.Game, description, path));
+    }
+
+    private sealed class SearchContext(Workspace env, bool isActiveEnv, EditorWindow window, CancellationToken token)
+    {
+        public Workspace Env { get; } = env;
+        public bool IsActiveEnv { get; } = isActiveEnv;
+        public EditorWindow Window { get; } = window;
+        public CancellationToken Token { get; } = token;
+    }
+
+    private void InvokeSearchMsg(SearchContext context, string query)
+    {
+        foreach (var (path, stream) in context.Env.GetFilesWithExtension("msg", context.Token)) {
             try {
-                if (token.IsCancellationRequested) return;
+                if (context.Token.IsCancellationRequested) return;
 
                 Interlocked.Increment(ref searchedFiles);
                 var file = new MsgFile(new FileHandler(stream, path));
@@ -321,80 +366,74 @@ public class RszDataFinder : IWindowHandler
                     if (Guid.TryParse(query, out var guid)) {
                         if (entry.Guid == guid) {
                             var summary = entry.Name + " = " + LimitLength(entry.GetMessage(Language.English), 50);
-                            var str = "Found matching entry " + summary;
-                            matches.Add((summary, path));
-                            window.InvokeFromUIThread(() => Logger.Info(str));
+                            AddMatch(context, summary, path);
                             return;
                         }
                     } else if (entry.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase) || entry.GetMessage(Language.English).Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
                         var summary = entry.Name + " = " + LimitLength(entry.GetMessage(Language.English), 50);
-                        var str = "Found matching entry " + summary;
-                        matches.Add((summary, path));
-                        window.InvokeFromUIThread(() => Logger.Info(str));
+                        AddMatch(context, summary, path);
                     }
                 }
             } catch (Exception e) {
-                window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
+                context.Window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
             }
         }
     }
 
-    private void InvokeSearchUser(ContentWorkspace workspace, EditorWindow window, RszClass cls, int fieldIndex, bool array, object? value, CancellationToken token)
+    private void InvokeSearchUser(SearchContext context, RszClass cls, int fieldIndex, bool array, object? value)
     {
-        foreach (var (path, stream) in workspace.Env.GetFilesWithExtension("user", token)) {
+        foreach (var (path, stream) in context.Env.GetFilesWithExtension("user", context.Token)) {
             try {
-                if (token.IsCancellationRequested) return;
+                if (context.Token.IsCancellationRequested) return;
 
                 Interlocked.Increment(ref searchedFiles);
-                var file = new UserFile(workspace.Env.RszFileOption, new FileHandler(stream, path));
+                var file = new UserFile(context.Env.RszFileOption, new FileHandler(stream, path));
                 file.Read();
-                HandleInstanceList(file.RSZ, cls, fieldIndex, array, value, window, path);
+                HandleInstanceList(context, file.RSZ, cls, fieldIndex, array, value, path);
             } catch (Exception e) {
-                window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
+                context.Window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
             }
         }
     }
 
-    private void InvokeSearchPfb(ContentWorkspace workspace, EditorWindow window, RszClass cls, int fieldIndex, bool array, object? value, CancellationToken token)
+    private void InvokeSearchPfb(SearchContext context, RszClass cls, int fieldIndex, bool array, object? value)
     {
-        foreach (var (path, stream) in workspace.Env.GetFilesWithExtension("pfb", token)) {
+        foreach (var (path, stream) in context.Env.GetFilesWithExtension("pfb", context.Token)) {
             try {
-                if (token.IsCancellationRequested) return;
+                if (context.Token.IsCancellationRequested) return;
 
                 Interlocked.Increment(ref searchedFiles);
-                var file = new PfbFile(workspace.Env.RszFileOption, new FileHandler(stream, path));
+                var file = new PfbFile(context.Env.RszFileOption, new FileHandler(stream, path));
                 file.Read();
-                HandleInstanceList(file.RSZ, cls, fieldIndex, array, value, window, path);
+                HandleInstanceList(context, file.RSZ, cls, fieldIndex, array, value, path);
             } catch (Exception e) {
-                window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
+                context.Window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
             }
         }
     }
 
-    private void InvokeSearchScn(ContentWorkspace workspace, EditorWindow window, RszClass cls, int fieldIndex, bool array, object? value, CancellationToken token)
+    private void InvokeSearchScn(SearchContext context, RszClass cls, int fieldIndex, bool array, object? value)
     {
-        foreach (var (path, stream) in workspace.Env.GetFilesWithExtension("scn", token)) {
+        foreach (var (path, stream) in context.Env.GetFilesWithExtension("scn", context.Token)) {
             try {
-                if (token.IsCancellationRequested) return;
+                if (context.Token.IsCancellationRequested) return;
 
                 Interlocked.Increment(ref searchedFiles);
-                var file = new ScnFile(workspace.Env.RszFileOption, new FileHandler(stream, path));
+                var file = new ScnFile(context.Env.RszFileOption, new FileHandler(stream, path));
                 file.Read();
-                HandleInstanceList(file.RSZ, cls, fieldIndex, array, value, window, path);
+                HandleInstanceList(context, file.RSZ, cls, fieldIndex, array, value, path);
             } catch (Exception e) {
-                window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
+                context.Window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
             }
         }
     }
 
-    private void HandleInstanceList(RSZFile rsz, RszClass cls, int fieldIndex, bool array, object? value, EditorWindow window, string path)
+    private void HandleInstanceList(SearchContext context, RSZFile rsz, RszClass cls, int fieldIndex, bool array, object? value, string path)
     {
         foreach (var inst in rsz.InstanceList) {
             if (inst.RszClass == cls && inst.RSZUserData == null) {
                 if (value == null) {
-                    var str = "Found instance in file " + path;
-                    matches.Add((path, path));
-                    window.InvokeFromUIThread(() => Logger.Info(str));
+                    AddMatch(context, path, path);
                     return;
                 }
 
@@ -403,34 +442,30 @@ public class RszDataFinder : IWindowHandler
                     var values = (IList<object>)fieldValue;
                     foreach (var v in values) {
                         if (v.Equals(value)) {
-                            var str = "Found match in instance " + inst + ": " + path;
-                            matches.Add((path, path));
-                            window.InvokeFromUIThread(() => Logger.Info(str));
+                            AddMatch(context, path, path);
                         }
                     }
                 } else {
                     if (fieldValue.Equals(value)) {
-                        var str = "Found match in instance " + inst + ": " + path;
-                        matches.Add((path, path));
-                        window.InvokeFromUIThread(() => Logger.Info(str));
+                        AddMatch(context, path, path);
                     }
                 }
             }
         }
     }
 
-    private void InvokeSearchEfx(ContentWorkspace workspace, EditorWindow window, EfxAttributeType type, string query, CancellationToken token)
+    private void InvokeSearchEfx(SearchContext context, EfxAttributeType type, string query)
     {
-        foreach (var (path, stream) in workspace.Env.GetFilesWithExtension("efx", token)) {
+        foreach (var (path, stream) in context.Env.GetFilesWithExtension("efx", context.Token)) {
             try {
-                if (token.IsCancellationRequested) return;
+                if (context.Token.IsCancellationRequested) return;
 
                 Interlocked.Increment(ref searchedFiles);
                 var file = new EfxFile(new FileHandler(stream, path));
                 file.Read();
 
                 if (efxFileMatchOnly && !string.IsNullOrEmpty(query) && true == Path.GetFileNameWithoutExtension(file.FileHandler.FilePath)?.Contains(query, StringComparison.OrdinalIgnoreCase)) {
-                    matches.Add((path, path));
+                    AddMatch(context, path, path);
                     continue;
                 }
 
@@ -440,23 +475,21 @@ public class RszDataFinder : IWindowHandler
 
                     if (match1 && match2) {
                         var desc = entry is EFXEntry ? $"entry {entry.name}" : $"action {entry.name}";
-                        var str = $"Found instance ({desc}) in file {path}";
-                        matches.Add((desc, path));
-                        window.InvokeFromUIThread(() => Logger.Info(str));
+                        AddMatch(context, desc, path);
                         if (efxFileMatchOnly) break; else continue;
                     }
                 }
             } catch (Exception e) {
-                window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
+                context.Window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
             }
         }
     }
 
-    private void InvokeSearchUvar(ContentWorkspace workspace, EditorWindow window, Variable.TypeKind type, string query, CancellationToken token)
+    private void InvokeSearchUvar(SearchContext context, Variable.TypeKind type, string query)
     {
-        foreach (var (path, stream) in workspace.Env.GetFilesWithExtension("uvar", token)) {
+        foreach (var (path, stream) in context.Env.GetFilesWithExtension("uvar", context.Token)) {
             try {
-                if (token.IsCancellationRequested) return;
+                if (context.Token.IsCancellationRequested) return;
 
                 Interlocked.Increment(ref searchedFiles);
                 var file = new UVarFile(new FileHandler(stream, path));
@@ -466,7 +499,8 @@ public class RszDataFinder : IWindowHandler
                     if (type != Variable.TypeKind.Unknown && type != uv.type) continue;
                     if (!string.IsNullOrEmpty(query) && !uv.Name.Contains(query)) continue;
 
-                    matches.Add((uv.Name, path));
+                    var desc = $"{uv.Name} = {uv.Value}";
+                    AddMatch(context, desc, path);
                 }
 
                 foreach (var embed in file.EmbeddedUVARs) {
@@ -474,12 +508,38 @@ public class RszDataFinder : IWindowHandler
                         if (type != Variable.TypeKind.Unknown && type != uv.type) continue;
                         if (!string.IsNullOrEmpty(query) && !uv.Name.Contains(query)) continue;
 
-                        var desc = $"[{embed.Header.name}] {uv.Name}";
-                        matches.Add((desc, path));
+                        var desc = $"[{embed.Header.name}] {uv.Name} = {uv.Value}";
+                        AddMatch(context, desc, path);
                     }
                 }
             } catch (Exception e) {
-                window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
+                context.Window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
+            }
+        }
+    }
+
+    private static string LimitLength(string str, int maxlen) => str.Length <= maxlen - 2 ? str : str[0..^(maxlen - 3)] + "...";
+
+    private SearchContext CreateContext(Workspace env, Workspace activeEnv)
+    {
+        cancellationTokenSource ??= new();
+        return searchContext = new SearchContext(env, env == activeEnv, (EditorWindow)data.ParentWindow, cancellationTokenSource.Token);
+    }
+
+    private IEnumerable<Workspace> GetWorkspaces(Workspace current)
+    {
+        yield return current;
+        if (!searchAllGames) yield break;
+
+        foreach (var other in AppConfig.Instance.ConfiguredGames) {
+            if (other == current.Config.Game) continue;
+
+            var env = WorkspaceManager.Instance.GetWorkspace(other);
+            try {
+                Logger.Info("Starting search for game " + env.Config.Game);
+                yield return env;
+            } finally {
+                WorkspaceManager.Instance.Release(env);
             }
         }
     }
