@@ -150,7 +150,7 @@ public class SettingsWindowHandler : IWindowHandler
                 var filelist = config.GetGameFilelist(game);
                 var isCustomGame = !Enum.TryParse<GameName>(game.name, out _);
                 var tooltip = "Defining a custom path here may not be required if it's at least a partially supported game";
-                if (AppImguiHelpers.InputFilepath("File list", ref filelist, "List file|*.list,*.txt|Any|*.*")) {
+                if (AppImguiHelpers.InputFilepath("File list", ref filelist, "List file|*.list;*.txt|Any|*.*")) {
                     config.SetGameFilelist(game, filelist);
                 }
                 if (!isCustomGame && ImGui.IsItemHovered()) ImGui.SetItemTooltip(tooltip);
