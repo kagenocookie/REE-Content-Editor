@@ -49,7 +49,7 @@ public class UserDataFileEditor : FileEditor, IWorkspaceContainer, IRSZFileEdito
         if (context.children.Count == 0 || fileContext == null) {
             context.ClearChildren();
             fileContext = context.AddChild("Base type: " + Instance.RszClass.name, Instance);
-            WindowHandlerFactory.CreateRSZInstanceHandlerContext(fileContext);
+            WindowHandlerFactory.SetupRSZInstanceHandler(fileContext);
             fileContext.SetChangedNoPropagate(context.Changed);
         }
         fileContext.ShowUI();

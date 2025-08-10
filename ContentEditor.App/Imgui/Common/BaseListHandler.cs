@@ -7,6 +7,7 @@ namespace ContentEditor.App.ImguiHandling;
 public class BaseListHandler : IObjectUIHandler
 {
     public bool CanCreateNewElements { get; set; }
+    public bool BaseItemHasTooltip { get; set; }
 
     public void OnIMGUI(UIContext context)
     {
@@ -20,7 +21,10 @@ public class BaseListHandler : IObjectUIHandler
             ImGui.Text(context.label + ": <empty>");
             return;
         }
-        if (ImguiHelpers.TreeNodeSuffix(context.label, $"({count})")) {
+
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, $"({count})");
+        (this as ITooltipHandler)?.HandleTooltip(context);
+        if (show) {
             for (int i = 0; i < list.Count; ++i) {
                 ImGui.PushID(i);
                 if (i >= context.children.Count) {

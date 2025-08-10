@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Numerics;
 using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -25,6 +27,33 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
         foreach (var child in context.children) {
             child.ShowUI();
         }
+    }
+
+    public static void ShowDefaultTooltip(UIContext context)
+    {
+        if (ImGui.BeginPopupContextItem(context.label)) {
+            if (RszInstanceHandler.ShowTooltipActions(context)) {
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
+    }
+
+    public static bool ShowTooltipActions(UIContext context)
+    {
+        if (ImGui.Button("Copy as JSON")) {
+            var ws = context.GetWorkspace();
+            if (ws != null) {
+                EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(context.GetRaw(), ws.Env.JsonOptions)!);
+                EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Copied!", 1f);
+            }
+            return true;
+        }
+
+        if (WindowHandlerFactory.ShowCustomActions(context)) {
+            return true;
+        }
+        return false;
     }
 }
 
@@ -152,7 +181,9 @@ public class NestedRszInstanceHandler : IObjectUIHandler
         if (!ForceDefaultClose) {
             ImGui.SetNextItemOpen(instance.Fields.Length <= 3, ImGuiCond.FirstUseEver);
         }
-        if (ImguiHelpers.TreeNodeSuffix(context.label, context.stringFormatter?.GetString(instance) ?? instance.RszClass.name)) {
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, context.stringFormatter?.GetString(instance) ?? instance.RszClass.name);
+        RszInstanceHandler.ShowDefaultTooltip(context);
+        if (show) {
             if (context.children.Count == 0) {
                 if (instance.RSZUserData != null) {
                     context.AddChild(context.label, instance, new UserDataReferenceHandler());
@@ -170,7 +201,7 @@ public class NestedRszInstanceHandler : IObjectUIHandler
     }
 }
 
-public class ArrayRSZHandler : BaseListHandler
+public class ArrayRSZHandler : BaseListHandler, ITooltipHandler
 {
     private RszField field;
 
@@ -178,6 +209,11 @@ public class ArrayRSZHandler : BaseListHandler
     {
         this.field = field;
         CanCreateNewElements = true;
+    }
+
+    public void HandleTooltip(UIContext context)
+    {
+        RszInstanceHandler.ShowDefaultTooltip(context);
     }
 
     protected override UIContext CreateElementContext(UIContext context, IList list, int elementIndex)

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using ContentEditor.Editor;
 using ImGuiNET;
 
@@ -206,6 +207,7 @@ public class UIContext
     public object? GetRaw() => getter.Invoke(this);
     public T Get<T>() => (T?)getter.Invoke(this)!;
     public T? Cast<T>() where T : class => getter.Invoke(this) as T;
+    public bool TryCast<T>([MaybeNullWhen(false)] out T value) where T : class => (value = getter.Invoke(this) as T) != null;
     public void Set<T>(T value)
     {
         setter.Invoke(this, value);
@@ -264,6 +266,11 @@ public class UIOptions
 public interface IObjectUIHandler
 {
     void OnIMGUI(UIContext context);
+}
+
+public interface ITooltipHandler
+{
+    void HandleTooltip(UIContext context);
 }
 
 public enum UIContextEvent

@@ -28,7 +28,7 @@ public sealed class ContentEditorRszInstanceHandler(CustomField field) : IObject
         }
         if (context.children.Count == 0) {
             var child = context.AddChild(context.label, instance.Instance, setter: (ctx, val) => instance.Instance = (RszInstance?)val!);
-            WindowHandlerFactory.CreateRSZInstanceHandlerContext(child);
+            WindowHandlerFactory.SetupRSZInstanceHandler(child);
         }
         context.children[0].ShowUI();
     }

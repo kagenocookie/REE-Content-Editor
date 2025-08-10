@@ -98,30 +98,31 @@ public static partial class WindowHandlerFactory
         var subtypes = types.Concat(typeof(EFXAttribute).Assembly.GetTypes());
         var dict = new Dictionary<Type, (int priority, Func<IObjectUIHandler> fact)>();
         foreach (var type in types) {
-            var attrs = type.GetCustomAttributes<ObjectImguiHandlerAttribute>();
-            if (!attrs.Any()) continue;
-            if (!type.IsAssignableTo(typeof(IObjectUIHandler))) {
-                Console.Error.WriteLine($"Invalid [WindowHandlerFactory] type {type}");
-                continue;
-            }
-
-            foreach (var attr in attrs) {
-                Func<IObjectUIHandler> fact;
-                if (attr.Stateless) {
-                    var inst = (IObjectUIHandler)Activator.CreateInstance(type)!;
-                    fact = () => inst;
-                } else {
-                    fact = () => (IObjectUIHandler)Activator.CreateInstance(type)!;
-                }
-                csharpTypeHandlers[attr.HandledFieldType] = fact;
-                if (!dict.TryGetValue(attr.HandledFieldType, out var entry) || attr.Priority < entry.priority) {
-                    dict[attr.HandledFieldType] = (attr.Priority, fact);
+            var handlers = type.GetCustomAttributes<ObjectImguiHandlerAttribute>();
+            if (handlers.Any()) {
+                if (!type.IsAssignableTo(typeof(IObjectUIHandler))) {
+                    Console.Error.WriteLine($"Invalid [WindowHandlerFactory] type {type}");
+                    continue;
                 }
 
-                if (attr.Inherited || attr.HandledFieldType.IsInterface) {
-                    foreach (var subtype in subtypes.Where(t => !t.IsAbstract && t.IsAssignableTo(attr.HandledFieldType))) {
-                        if (!dict.TryGetValue(subtype, out entry) || attr.Priority < entry.priority) {
-                            dict[subtype] = (attr.Priority, fact);
+                foreach (var attr in handlers) {
+                    Func<IObjectUIHandler> fact;
+                    if (attr.Stateless) {
+                        var inst = (IObjectUIHandler)Activator.CreateInstance(type)!;
+                        fact = () => inst;
+                    } else {
+                        fact = () => (IObjectUIHandler)Activator.CreateInstance(type)!;
+                    }
+                    csharpTypeHandlers[attr.HandledFieldType] = fact;
+                    if (!dict.TryGetValue(attr.HandledFieldType, out var entry) || attr.Priority < entry.priority) {
+                        dict[attr.HandledFieldType] = (attr.Priority, fact);
+                    }
+
+                    if (attr.Inherited || attr.HandledFieldType.IsInterface) {
+                        foreach (var subtype in subtypes.Where(t => !t.IsAbstract && t.IsAssignableTo(attr.HandledFieldType))) {
+                            if (!dict.TryGetValue(subtype, out entry) || attr.Priority < entry.priority) {
+                                dict[subtype] = (attr.Priority, fact);
+                            }
                         }
                     }
                 }
@@ -133,6 +134,41 @@ public static partial class WindowHandlerFactory
         }
     }
 
+    private static readonly HashSet<GameIdentifier> setupGames = new();
+    private static readonly Dictionary<RszClass, List<Func<UIContext, bool>>> classActions = new();
+    public static void SetupTypesForGame(GameIdentifier game, Workspace env)
+    {
+        if (!setupGames.Add(game)) return;
+
+        var types = typeof(WindowHandlerFactory).Assembly.GetTypes();
+        foreach (var type in types) {
+            if (type.GetCustomAttribute<RszContextActionAttribute>() == null) continue;
+
+            foreach (var method in type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)) {
+                var actions = method.GetCustomAttributes<RszContextActionAttribute>();
+                foreach (var attr in actions) {
+                    if (attr.Games.Length > 0 && !attr.Games.Contains(game.name)) continue;
+
+                    var cls = env.RszParser.GetRSZClass(attr.Classname);
+                    if (cls == null) {
+                        Logger.Debug($"Class {attr.Classname} not found for game {game}");
+                        continue;
+                    }
+
+                    if (method.ReturnType != typeof(bool) || method.GetParameters().Length != 1 || method.GetParameters()[0].ParameterType != typeof(UIContext)) {
+                        Logger.Error($"Method {type.FullName}.{method.Name}() is not valid for {nameof(RszContextActionAttribute)}. Should be `bool {method.Name}(UIContext context)`.");
+                        continue;
+                    }
+
+                    if (!classActions.TryGetValue(cls, out var list)) {
+                        classActions[cls] = list = new();
+                    }
+
+                    list.Add((ctx) => (bool)method.Invoke(null, [ctx])!);
+                }
+            }
+        }
+    }
     public static void SetClassFormatter(RszClass cls, StringFormatter formatter)
     {
         classFormatters[cls] = formatter;
@@ -419,12 +455,12 @@ public static partial class WindowHandlerFactory
             // RszFieldType.Mat3 => new ColorFieldHandler(),
             // RszFieldType.Mat4 => new ColorFieldHandler(),
 
-            // RszFieldType.Uint2 => TODO
-            // RszFieldType.Uint3 => TODO
-            // RszFieldType.Uint4 => TODO
-            // RszFieldType.Int2 => TODO
-            // RszFieldType.Int3 => TODO
-            // RszFieldType.Int4 => TODO
+            RszFieldType.Uint2 => Uint2FieldHandler.Instance,
+            RszFieldType.Uint3 => Uint3FieldHandler.Instance,
+            RszFieldType.Uint4 => Uint4FieldHandler.Instance,
+            RszFieldType.Int2 => Int2FieldHandler.Instance,
+            RszFieldType.Int3 => Int3FieldHandler.Instance,
+            RszFieldType.Int4 => Int4FieldHandler.Instance,
 
             RszFieldType.Guid => GuidFieldHandler.Instance,
             RszFieldType.Uri => GuidFieldHandler.Instance,
@@ -462,15 +498,9 @@ public static partial class WindowHandlerFactory
         };
     }
 
-    public static UIContext CreateRSZInstanceHandlerContext(UIContext context)
-    {
-        SetupRSZInstanceHandler(context);
-        context.uiHandler = RszInstanceHandler.Instance;
-        return context;
-    }
-
     public static void SetupRSZInstanceHandler(UIContext context)
     {
+        context.uiHandler ??= RszInstanceHandler.Instance;
         var instance = context.Get<RszInstance>();
         if (instance == null) return;
 
@@ -502,6 +532,47 @@ public static partial class WindowHandlerFactory
         return new UIContext(GetFieldLabel(field.name), parent, parentContext.root, (ctx) => ((RszInstance)ctx.target!).Values[fieldIndex], (ctx, v) => ((RszInstance)ctx.target!).Values[fieldIndex] = v!, new UIOptions()) {
             parent = parentContext
         };
+    }
+
+    public static bool ShowCustomActions(UIContext context)
+    {
+        static bool Invoke(List<Func<UIContext, bool>> actions, UIContext context)
+        {
+            var end = false;
+            foreach (var act in actions) {
+                end = act.Invoke(context) || end;
+            }
+            return end;
+        }
+
+        if (context.TryCast<RszInstance>(out var instance)) {
+            // single instance
+            if (classActions.TryGetValue(instance.RszClass, out var actions)) {
+                return Invoke(actions, context);
+            }
+        } else if (context.TryCast<List<object>>(out var list)) {
+            // multi instance or arbitrary value array
+            var ws = context.GetWorkspace();
+            if (ws == null) return false;
+
+            if (context.parent?.TryCast<RszInstance>(out var parent) == true) {
+                var fieldIndex = Array.IndexOf(parent.Values, list);
+                if (fieldIndex == -1) {
+                    Logger.Debug("Invalid rsz array parent for custom actions");
+                    return false;
+                }
+
+                if (classActions.TryGetValue(ws.Env.RszParser.GetRSZClass(parent.Fields[fieldIndex].original_type)!, out var actions)) {
+                    return Invoke(actions, context);
+                }
+            } else if (list.FirstOrDefault() is RszInstance first) {
+                if (classActions.TryGetValue(first.RszClass, out var actions)) {
+                    return Invoke(actions, context);
+                }
+            }
+        }
+
+        return false;
     }
     #endregion
 

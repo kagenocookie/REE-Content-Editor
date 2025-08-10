@@ -80,6 +80,8 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                 WindowHandlerFactory.SetClassFormatter(cls, cfg.StringFormatter);
             }
         }
+
+        WindowHandlerFactory.SetupTypesForGame(workspace.Game, workspace.Env);
     }
 
     protected override void Update(float deltaTime)
