@@ -5,7 +5,7 @@ using ReeLib;
 
 namespace ContentEditor.App;
 
-public class SettingsWindowHandler : IWindowHandler
+public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
 {
     public bool HasUnsavedChanges => false;
 

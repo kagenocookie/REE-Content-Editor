@@ -107,7 +107,7 @@ public class DiffMaker
             var targetValue = target[prop.Key];
             if (targetValue == null) {
                 if (prop.Value != null) {
-                    diff.Add(prop);
+                    diff.Add(prop.Key, prop.Value.DeepClone());
                 }
             } else if (prop.Value == null) {
                 // field exists but it's explicitly set to null -> remove the target value

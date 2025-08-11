@@ -67,6 +67,8 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     private static int nextSubwindowID = 1;
 
+    public bool SaveInProgress { get; set; }
+
     private enum State
     {
         Uninitialized,
@@ -253,10 +255,17 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
                     UndoRedo.Redo(this);
                 }
                 if ((this as EditorWindow)?.Workspace is ContentWorkspace workspace && cfg.Key_Save.Get().IsPressed()) {
-                    int count = workspace.SaveModifiedFiles(this);
-                    if (count > 0) {
-                        Overlays.ShowTooltip($"Saved {count} files!", 1);
-                    }
+                    SaveInProgress = true;
+                    Task.Run(() => {
+                        try {
+                            int count = workspace.SaveModifiedFiles(this);
+                            if (count > 0) {
+                                Overlays.ShowTooltip($"Saved {count} files!", 1);
+                            }
+                        } finally {
+                            SaveInProgress = false;
+                        }
+                    });
                 }
             }
         }
@@ -411,9 +420,12 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
             }
         }
         removeSubwindows.Clear();
+
+        var saving = SaveInProgress;
         for (int i = 0; i < subwindows.Count; i++) {
             var sub = subwindows[i];
             if (sub.Handler != null) {
+                if (saving && sub.Handler is not IKeepEnabledWhileSaving) ImGui.BeginDisabled();
                 try {
                     ImGui.PushID(sub.ID);
                     sub.Handler.OnWindow();
@@ -421,6 +433,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
                 } catch (Exception e) {
                     Logger.Error(e, $"Error occurred in window {sub.Name}");
                 }
+                if (saving && sub.Handler is not IKeepEnabledWhileSaving) ImGui.EndDisabled();
             }
         }
 

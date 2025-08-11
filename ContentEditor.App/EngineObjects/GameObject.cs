@@ -93,6 +93,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         instance = source.Instance!;
         ImportInstanceFields();
         Scene = scene;
+        guid = source.Guid;
         this.Folder = folder;
         PrefabPath = prefabs == null || !(source.Info?.prefabId >= 0) ? null : prefabs[source.Info.prefabId].Path;
 

@@ -313,6 +313,8 @@ public struct KeyBinding : IEquatable<KeyBinding>
     public bool shift;
     public bool alt;
 
+    private ImGuiKey ModKey => Key | (ctrl ? ImGuiKey.ModCtrl : 0) | (shift ? ImGuiKey.ModShift : 0) | (alt ? ImGuiKey.ModAlt : 0);
+
     public KeyBinding(ImGuiKey key, bool ctrl = false, bool shift = false, bool alt = false)
     {
         Key = key;

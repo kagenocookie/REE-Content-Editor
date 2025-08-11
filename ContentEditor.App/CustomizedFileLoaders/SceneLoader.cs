@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using ContentEditor.App;
 using ReeLib;
 using ReeLib.Scn;
@@ -12,7 +14,7 @@ public class SceneLoader : IFileLoader,
 
     public bool CanHandleFile(string filepath, REFileFormat format) => format.format == KnownFileFormats.Scene;
 
-    public IResourceFilePatcher? CreateDiffHandler() => null;
+    public IResourceFilePatcher? CreateDiffHandler() => new ScenePatcher();
 
     public IResourceFile? Load(ContentWorkspace workspace, FileHandle handle)
     {
@@ -95,5 +97,4 @@ public class RawScene(FileHandle handle, ScnFile file) : IResourceFile
             file.GameObjects.Add(folder.ToScnGameObject(file.PrefabInfoList));
         }
     }
-
 }

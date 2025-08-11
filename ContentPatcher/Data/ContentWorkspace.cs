@@ -63,6 +63,7 @@ public class ContentWorkspace
 
     public int SaveModifiedFiles(IRectWindow? parent = null)
     {
+        Logger.Info("Saving files ...");
         SaveBundle();
         int count = 0;
         foreach (var file in ResourceManager.GetModifiedResourceFiles()) {

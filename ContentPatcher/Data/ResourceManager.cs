@@ -608,6 +608,7 @@ public class ResourceManager(PatchDataContainer config)
             if (File.Exists(fullBundleFilePath)) {
                 using var bundleStream = File.OpenRead(fullBundleFilePath);
                 var activeHandle = CreateFileHandleInternal(fullBundleFilePath, resourceListing.Target, bundleStream);
+                // FileHandle? activeHandle = null; // testing diff apply behavior
                 if (handle != null) {
                     if (activeHandle != null) {
                         // reuse the temp file's diff handler since it should have internalized the source file within itself

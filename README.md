@@ -30,7 +30,7 @@ Some files may not fully work for other RE ENGINE games.
 | .tex, .dds  | view only | | TEX/DDS conversion, better preview controls |
 | common image formats | view only | | TEX/DDS conversion, channel merging |
 | .pfb      | ☑️ read/write | ☑️ down to individual fields | 3D display |
-| .scn      | ☑️ read/write | coming soon | 3D display |
+| .scn      | ☑️ read/write | ☑️ down to individual fields | 3D display |
 | .uvar     | read/write | coming soon | expression node graph |
 | .mdf2     | ☑️ read/write | coming soon | material preview |
 | .efx      | ☑️ read/write | coming soon | graphic preview |
@@ -71,6 +71,10 @@ All the patching logic is based on 3 layers of modifications: files, resources a
 - Entities group together multiple resources into one logical and more easily digestable unit. These allow "Content Editor" style centralized editing of data.
 
 Patchable resources and entities are defined in `configs/<game>/definitions/*.yaml` files, intended to be easily extendable without modifying the code based on predefined patcher methods.
+
+There are some cases where doing a full overwrite of files may be required because the patch generation can't reliably detect some types of changes. You can mark a file as `"replace": true` in the bundle json file for those cases, which will fully replace the files instead of doing partial patching.
+- Removal of objects may not always get detected correctly or just not handled at all
+- Inserting new elements in the middle of an array or reordering them may not always interact correctly with multiple mods. Adding elements at the end is perfectly fine, and the app generally only lets you do that.
 
 ***Resource***
 

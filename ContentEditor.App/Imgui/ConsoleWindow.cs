@@ -5,7 +5,7 @@ using ImGuiNET;
 
 namespace ContentEditor.App;
 
-public class ConsoleWindow : IWindowHandler
+public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
 {
     public bool HasUnsavedChanges => false;
 

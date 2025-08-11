@@ -83,7 +83,7 @@ public abstract class RszFilePatcherBase : IResourceFilePatcher
     }
 
     private static readonly char[] PathSeparators = ['/', '#'];
-    protected static TGO? FindGameObjectByPath<TGO>(TGO parent, ReadOnlySpan<char> path) where TGO : class, IGameObject
+    protected static TGO? FindGameObjectByPath<TGO>(TGO root, ReadOnlySpan<char> path, IEnumerable<TGO>? rootChildren = null) where TGO : class, IGameObject
     {
         static (int sep, int slash, int counter) GetNextSegment(ReadOnlySpan<char> path)
         {
@@ -107,33 +107,32 @@ public abstract class RszFilePatcherBase : IResourceFilePatcher
         var (sep, slash, counter) = GetNextSegment(path);
 
         if (sep == -1) {
-            if (path.Length == 0) return parent;
-            if (path.SequenceEqual(parent.Name)) return parent;
+            if (path.Length == 0 || path.SequenceEqual(root.Name)) return root;
             return null;
         }
 
         var name = path.Slice(0, sep);
         // every diff path must include the root objects's name
-        if (!name.SequenceEqual(parent.Name) || counter != 1) return null;
+        if (!name.SequenceEqual(root.Name) || counter != 1) return null;
 
-        var next = parent;
+        var next = root;
         path = path.Slice(slash + 1);
         do {
             (sep, slash, counter) = GetNextSegment(path);
             name = sep == -1 ? path : path.Slice(0, sep);
             var found = false;
-            foreach (var child in next.GetChildren()) {
-                if (name.SequenceEqual(child.Name)) {
-                    if (--counter == 0) {
-                        if (slash == -1) {
-                            return (TGO)child;
-                        }
+            foreach (var child in (next == root && rootChildren != null ? rootChildren : next.GetChildren())) {
+                if (!name.SequenceEqual(child.Name)) continue;
 
-                        next = (TGO)child;
-                        found = true;
-                        path = path.Slice(slash + 1);
-                        break;
+                if (--counter == 0) {
+                    if (slash == -1) {
+                        return (TGO)child;
                     }
+
+                    next = (TGO)child;
+                    found = true;
+                    path = path.Slice(slash + 1);
+                    break;
                 }
             }
             if (!found) break;
