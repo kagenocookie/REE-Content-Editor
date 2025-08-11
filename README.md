@@ -23,13 +23,13 @@ Some files may not fully work for other RE ENGINE games.
 
 | File type | Basic support | Partial patching | Planned & considered additional features |
 | --------- | ------- | ---------------- | - |
-| .pak      | read files and view contents | | PAK creation |
+| .pak      | read / extract files, view contents | | PAK creation |
 | .user     | ☑️ read/write | ☑️ down to individual fields |
 | .msg      | ☑️ read/write | ☑️ down to individual translations | |
 | .uvs      | ☑️ read/write | | |
 | .tex, .dds  | view only | | TEX/DDS conversion, better preview controls |
 | common image formats | view only | | TEX/DDS conversion, channel merging |
-| .pfb      | ☑️ read/write | coming soon | 3D display |
+| .pfb      | ☑️ read/write | ☑️ down to individual fields | 3D display |
 | .scn      | ☑️ read/write | coming soon | 3D display |
 | .uvar     | read/write | coming soon | expression node graph |
 | .mdf2     | ☑️ read/write | coming soon | material preview |

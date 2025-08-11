@@ -183,6 +183,9 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     protected virtual void OnFileSaved()
     {
         context.Save();
+        if (this is IInspectorController inspector) {
+            inspector.EmitSave();
+        }
     }
 
     private void OnModifiedChanged(bool changed)

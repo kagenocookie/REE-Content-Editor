@@ -113,4 +113,9 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
             primaryInspector = null;
         }
     }
+
+    void IInspectorController.EmitSave()
+    {
+        foreach (var inspector in inspectors) inspector.Context.Save();
+    }
 }

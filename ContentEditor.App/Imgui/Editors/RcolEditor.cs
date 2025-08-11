@@ -122,6 +122,11 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
         }
     }
 
+    void IInspectorController.EmitSave()
+    {
+        foreach (var inspector in inspectors) inspector.Context.Save();
+    }
+
     void IObjectUIHandler.OnIMGUI(UIContext container)
     {
         this.OnIMGUI();

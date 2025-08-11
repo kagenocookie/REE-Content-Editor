@@ -40,15 +40,6 @@ public sealed class UserFilePatcher : RszFilePatcherBase, IDisposable
     private UserFile file = null!;
     private FileHandle fileHandle = null!;
 
-    private sealed class UserFileResource(UserFile file) : BaseFileResource<UserFile>(file), IResourceFile
-    {
-        void IResourceFile.WriteTo(string filepath)
-        {
-            File.RebuildInfoTable();
-            File.WriteTo(filepath);
-        }
-    }
-
     public override IResourceFile LoadBase(ContentWorkspace workspace, FileHandle handle)
     {
         fileHandle = handle;

@@ -304,7 +304,7 @@ public interface IUIContextEventHandler
     /// </summary>
     /// <param name="context">The context that is currently invoking the event</param>
     /// <param name="eventData">The event data</param>
-    /// <returns>True if the event should propagate, false if not.</returns>
+    /// <returns>True if the event should propagate, false if it should stop here.</returns>
     bool HandleEvent(UIContext context, EditorUIEvent eventData);
 }
 

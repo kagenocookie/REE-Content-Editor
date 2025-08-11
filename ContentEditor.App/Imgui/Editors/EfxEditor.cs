@@ -108,6 +108,11 @@ public class EfxEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIns
         }
     }
 
+    void IInspectorController.EmitSave()
+    {
+        foreach (var inspector in inspectors) inspector.Context.Save();
+    }
+
     void IObjectUIHandler.OnIMGUI(UIContext container)
     {
         this.OnIMGUI();

@@ -30,7 +30,7 @@ public class ResourcePathPicker : IObjectUIHandler
                 ",",
                 allowedFormats.SelectMany(format => ws.Env
                     .GetFileExtensionsForFormat(format)
-                    .Select(ext => $"{format} .{ext}|*.{ext}*")));
+                    .Select(ext => $"{format} .{ext}|*.{ext}.*")));
         }
     }
 

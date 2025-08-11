@@ -697,7 +697,17 @@ public class ResourceManager(PatchDataContainer config)
             return null;
         }
         handle.DiffHandler = handle.Loader.CreateDiffHandler();
-        handle.DiffHandler?.LoadBase(workspace, handle);
+        if (handle.DiffHandler != null && handle.NativePath != null && handle.HandleType is FileHandleType.Disk or FileHandleType.Bundle) {
+            var baseFile = workspace.Env.GetFile(handle.NativePath!);
+            if (baseFile != null) {
+                var baseFileHandle = CreateFileHandleInternal(filepath, nativePath, baseFile)!;
+                handle.DiffHandler.LoadBase(workspace, baseFileHandle);
+            } else {
+                handle.DiffHandler.LoadBase(workspace, handle);
+            }
+        } else {
+            handle.DiffHandler?.LoadBase(workspace, handle);
+        }
         return handle;
     }
 

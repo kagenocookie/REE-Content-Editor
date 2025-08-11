@@ -3,6 +3,7 @@ namespace ContentPatcher;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using ReeLib.Common;
 
 public class DiffMaker
 {
@@ -124,9 +125,24 @@ public class DiffMaker
 
     private JsonNode? GetArrayDiff(JsonArray target, JsonArray source, string? baseClass)
     {
-        if (target.Count == 0) return target.Count == 0 ? null : source.DeepClone();
+        if (target.Count == 0) return source.Count == 0 ? null : source.DeepClone();
 
         if (baseClass == null) {
+            // for now, just fully store all non-objects if there's any differences
+            if (source.Count > 0 && source[0]!.GetValueKind() != JsonValueKind.Object || target.Count > 0 && target[0]!.GetValueKind() != JsonValueKind.Object) {
+                if (source.Count != target.Count) {
+                    return source.DeepClone();
+                }
+
+                for (int i = 0; i < source.Count; i++) {
+                    if (GetMinimalDiff(target[i]!, source[i]!) != null) {
+                        return source.DeepClone();
+                    }
+                }
+
+                return null;
+            }
+
             baseClass = source[0]!["$type"]?.GetValue<string>() ?? target[0]!["$type"]?.GetValue<string>();
         }
 

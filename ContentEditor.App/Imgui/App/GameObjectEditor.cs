@@ -72,14 +72,6 @@ public class GameObjectNodeEditor : NodeTreeEditor<GameObject, GameObjectNodeEdi
 
     protected override void HandleContextMenu(GameObject node, UIContext context)
     {
-        // .Parent ?? node.folder as INodeObject<GameObject>
-        var parent = ((INodeObject<GameObject>)node).GetParent();
-        if (parent == null) {
-            // the sole root instance mustn't be deleted or duplicated (pfb)
-            // TODO: verify folder parent handling
-            return;
-        }
-
         if (ImGui.Button("New GameObject")) {
             var ws = context.GetWorkspace();
             var newgo = new GameObject("New_GameObject", ws!.Env, node.Folder, node.Scene);
@@ -88,6 +80,13 @@ public class GameObjectNodeEditor : NodeTreeEditor<GameObject, GameObjectNodeEdi
             context.FindHandlerInParents<IInspectorController>()?.SetPrimaryInspector(newgo);
             ImGui.CloseCurrentPopup();
         }
+
+        var parent = ((INodeObject<GameObject>)node).GetParent();
+        if (parent == null) {
+            // the sole root instance mustn't be deleted or duplicated (pfb)
+            return;
+        }
+
         if (ImGui.Button("Delete")) {
             UndoRedo.RecordRemoveChild(context, node);
             ImGui.CloseCurrentPopup();

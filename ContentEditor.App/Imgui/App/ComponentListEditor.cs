@@ -39,6 +39,10 @@ public class ComponentListEditor : DictionaryListImguiHandler<string, Component,
         }
         var gameobj = context.FindValueInParentValues<GameObject>();
         if (Logger.ErrorIf(gameobj == null, "Missing game object")) return null;
+        if (gameobj.Components.Any(c => c.Classname == key)) {
+            Logger.Error("GameObject already has component " + key);
+            return null;
+        }
 
         return new Component(gameobj, RszInstance.CreateInstance(ws.Env.RszParser, cls));
     }

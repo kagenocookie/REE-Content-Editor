@@ -114,4 +114,9 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
             primaryInspector = null;
         }
     }
+
+    void IInspectorController.EmitSave()
+    {
+        foreach (var inspector in inspectors) inspector.Context.Save();
+    }
 }

@@ -89,12 +89,17 @@ public class ContentWorkspace
             return;
         }
         if (bundle.ResourceListing != null) {
-            // update the diffs for all open and modified bundle resource files
+            // update the diffs for all open bundle resource files that are part of the bundle
+            // we don't check for file.Modified because it can be marked as false but still be different from the current diff
+            // e.g. if we manually replaced the file or undo'ed our changes
             foreach (var file in ResourceManager.GetOpenFiles()) {
-                if (file.Modified && file.NativePath != null && bundle.TryFindResourceByNativePath(file.NativePath, out var localPath) && file.DiffHandler != null) {
+                if (file.NativePath != null && bundle.TryFindResourceByNativePath(file.NativePath, out var localPath) && file.DiffHandler != null) {
                     var resourceListing = bundle.ResourceListing[localPath];
-                    resourceListing.Diff = file.DiffHandler.FindDiff(file);
-                    resourceListing.DiffTime = DateTime.UtcNow;
+                    var newdiff = file.DiffHandler.FindDiff(file);
+                    if (newdiff?.ToJsonString() != resourceListing.Diff?.ToJsonString()) {
+                        resourceListing.Diff = newdiff;
+                        resourceListing.DiffTime = DateTime.UtcNow;
+                    }
                 }
             }
         }

@@ -71,6 +71,9 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
     public bool HandleEvent(UIContext context, EditorUIEvent eventData)
     {
         (parentWindow as IUIContextEventHandler)?.HandleEvent(eventData.origin, eventData);
+        if (eventData.type is UIContextEvent.Saved or UIContextEvent.Reverting) {
+            return true;
+        }
         return false;
     }
 
