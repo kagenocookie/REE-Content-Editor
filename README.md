@@ -25,16 +25,16 @@ Some files may not fully work for other RE ENGINE games.
 | --------- | ------- | ---------------- | - |
 | .pak      | read / extract files, view contents | | PAK creation |
 | .user     | ☑️ read/write | ☑️ down to individual fields |
+| .pfb      | ☑️ read/write | ☑️ down to individual fields | 3D display |
+| .scn      | ☑️ read/write | ☑️ down to individual fields | 3D display |
 | .msg      | ☑️ read/write | ☑️ down to individual translations | |
 | .uvs      | ☑️ read/write | | |
 | .tex, .dds  | view only | | TEX/DDS conversion, better preview controls |
 | common image formats | view only | | TEX/DDS conversion, channel merging |
-| .pfb      | ☑️ read/write | ☑️ down to individual fields | 3D display |
-| .scn      | ☑️ read/write | ☑️ down to individual fields | 3D display |
 | .uvar     | read/write | coming soon | expression node graph |
 | .mdf2     | ☑️ read/write | coming soon | material preview |
-| .efx      | ☑️ read/write | coming soon | graphic preview |
-| .rcol     | read/write | coming soon | 3D display, overlay with mesh/pfb |
+| .efx      | ☑️ read/write | | graphic preview, maybe partial patching |
+| .rcol     | read/write | | 3D display, overlay with mesh/pfb, maybe partial patching |
 | .motbank  | read/write | | |
 | .motlist  | coming not soon | coming not soon | data display, editing, patching |
 | .mesh     | coming not soon | | 3D display |
