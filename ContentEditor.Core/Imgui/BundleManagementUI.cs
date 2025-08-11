@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Text.Json.Nodes;
 using ImGuiNET;
 
 namespace ContentEditor.Core;
@@ -7,10 +8,16 @@ namespace ContentEditor.Core;
 public class BundleManagementUI : IWindowHandler
 {
     private BundleManager bundleManager;
+    private readonly string? preselectBundle;
+    private readonly Action<string>? openFileCallback;
+    private readonly Action<string, JsonNode>? showDiff;
 
-    public BundleManagementUI(BundleManager workspace)
+    public BundleManagementUI(BundleManager workspace, string? preselectBundle, Action<string>? openFileCallback, Action<string, JsonNode>? showDiff)
     {
         this.bundleManager = workspace;
+        this.preselectBundle = preselectBundle;
+        this.openFileCallback = openFileCallback;
+        this.showDiff = showDiff;
     }
 
     public string HandlerName => "Bundle manager";
@@ -26,6 +33,7 @@ public class BundleManagementUI : IWindowHandler
     {
         this.context = context;
         data = context.Get<WindowData>();
+        data.SetPersistentData("selectedBundle", preselectBundle);
     }
 
     public void OnWindow() => this.ShowDefaultWindow(context);
@@ -121,6 +129,10 @@ public class BundleManagementUI : IWindowHandler
             }
         }
 
+        if (ImGui.Button("Open folder in explorer")) {
+            FileSystemUtils.ShowFileInExplorer(bundleManager.ResolveBundleLocalPath(bundle, ""));
+        }
+
         if (ImGui.TreeNode("Entities")) {
             var types = allOption.Concat(bundle.Entities.Select(e => e.Type).Distinct()).ToArray();
             ImGui.Combo("Type", ref selectedEntityType, types, types.Length);
@@ -128,6 +140,36 @@ public class BundleManagementUI : IWindowHandler
             foreach (var e in bundle.Entities) {
                 if (filter != null && e.Type != filter) continue;
                 ImGui.Text($"{e.Type} | {e.Id} : {e.Label}");
+            }
+
+            ImGui.TreePop();
+        }
+
+        if (bundle.ResourceListing != null && ImGui.TreeNode("Files")) {
+            foreach (var e in bundle.ResourceListing) {
+                ImGui.PushID(e.Key);
+                if (openFileCallback != null) {
+                    if (ImGui.Button("Open")) {
+                        var path = bundleManager.ResolveBundleLocalPath(bundle, e.Key);
+                        if (!File.Exists(path)) {
+                            openFileCallback.Invoke(e.Value.Target);
+                        } else {
+                            openFileCallback.Invoke(path);
+                        }
+                    }
+                    ImGui.SameLine();
+                }
+                if (e.Value.Diff != null && showDiff != null && (e.Value.Diff is JsonObject odiff && odiff.Count > 1)) {
+                    if (ImGui.Button("Show diff")) {
+                        showDiff.Invoke($"{e.Key} => {e.Value.Target}", e.Value.Diff);
+                    }
+                    if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Partial patch generation time: " + e.Value.DiffTime.ToString("O"));
+                    ImGui.SameLine();
+                }
+                ImGui.Text(e.Key);
+                ImGui.SameLine();
+                ImGui.TextColored(Colors.Faded, e.Value.Target);
+                ImGui.PopID();
             }
 
             ImGui.TreePop();

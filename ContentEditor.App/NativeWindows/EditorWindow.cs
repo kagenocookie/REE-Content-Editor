@@ -164,10 +164,19 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
         }
 
         if (workspace != null) {
+            void ShowBundleManagement()
+            {
+                AddUniqueSubwindow(new BundleManagementUI(
+                    workspace!.BundleManager,
+                    workspace.CurrentBundle?.Name,
+                    (path) => OpenFiles([path]),
+                    (path, diff) => AddSubwindow(new JsonViewer(diff, path))
+                ));
+            }
             if (ImGui.BeginMenu($"Workspace: {workspace.Data.Name ?? "--"}")) {
                 if (ImGui.BeginMenu($"Active bundle: {workspace.Data.ContentBundle}")) {
                     if (ImGui.MenuItem("Create new...")) {
-                        AddUniqueSubwindow(new BundleManagementUI(workspace.BundleManager));
+                        ShowBundleManagement();
                     }
                     ImGui.Separator();
                     if (!workspace.BundleManager.IsLoaded) workspace.BundleManager.LoadDataBundles();
@@ -177,6 +186,9 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                         }
                     }
                     ImGui.EndMenu();
+                }
+                if (ImGui.MenuItem("Bundle management")) {
+                        ShowBundleManagement();
                 }
                 if (workspace.CurrentBundle != null && ImGui.MenuItem("Open bundle folder")) {
                     FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
@@ -337,12 +349,9 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
         }
 
         if (workspace != null && workspace.Config.Entities.Any()) {
-            if (ImGui.BeginMenu("Content Editor")) {
+            if (ImGui.BeginMenu("Entities")) {
                 if (ImGui.MenuItem("Content editor window")) {
                     AddSubwindow(new AppContentEditorWindow(workspace));
-                }
-                if (ImGui.MenuItem("Bundle management")) {
-                    AddUniqueSubwindow(new BundleManagementUI(workspace.BundleManager));
                 }
                 ImGui.EndMenu();
             }

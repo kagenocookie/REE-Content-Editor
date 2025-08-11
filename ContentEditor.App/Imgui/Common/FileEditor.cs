@@ -115,7 +115,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             if (diff == null) {
                 EditorWindow.CurrentWindow?.Overlays.ShowTooltip("No changes detected compared to the base file", 3f);
             } else {
-                EditorWindow.CurrentWindow?.AddSubwindow(new JsonViewer(diff));
+                EditorWindow.CurrentWindow?.AddSubwindow(new JsonViewer(diff, Handle.Filepath));
             }
         }
         if (workspace.CurrentBundle != null && !Handle.IsInBundle(workspace, workspace.CurrentBundle)) {
