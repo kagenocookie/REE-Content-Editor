@@ -110,6 +110,14 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         if (ImGui.Button("Save copy to ...")) {
             PlatformUtils.ShowSaveFileDialog((path) => SaveTo(path, false), Handle.Filepath);
         }
+        if (Handle.DiffHandler != null && ImguiHelpers.SameLine() && ImGui.Button("See changes")) {
+            var diff = Handle.DiffHandler.FindDiff(Handle);
+            if (diff == null) {
+                EditorWindow.CurrentWindow?.Overlays.ShowTooltip("No changes detected compared to the base file", 3f);
+            } else {
+                EditorWindow.CurrentWindow?.AddSubwindow(new JsonViewer(diff));
+            }
+        }
         if (workspace.CurrentBundle != null && !Handle.IsInBundle(workspace, workspace.CurrentBundle)) {
             ImGui.SameLine();
             if (ImGui.Button("Save to bundle")) {

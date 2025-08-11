@@ -13,7 +13,7 @@ public interface IResourceFilePatcher
     /// </summary>
     IResourceFile LoadBase(ContentWorkspace workspace, FileHandle file);
     /// <summary>
-    /// Load a file and calculate a diff JSON for its changes on top of the previously loaded base file.
+    /// Calculate a diff JSON for a file's changes on top of the previously loaded base file.
     /// </summary>
     JsonNode? FindDiff(FileHandle file);
     /// <summary>

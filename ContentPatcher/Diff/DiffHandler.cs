@@ -105,6 +105,7 @@ public class DiffHandler(Workspace env)
                 GetDiffTreeInternal(prop.Value, full, line);
                 line.Length = len;
             }
+            return;
         }
         if (diff.GetValueKind() == JsonValueKind.Array) {
             var len = line.Length;
