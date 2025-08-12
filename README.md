@@ -75,6 +75,7 @@ Patchable resources and entities are defined in `configs/<game>/definitions/*.ya
 There are some cases where doing a full overwrite of files may be required because the patch generation can't reliably detect some types of changes. You can mark a file as `"replace": true` in the bundle json file for those cases, which will fully replace the files instead of doing partial patching.
 - Removal of objects may not always get detected correctly or just not handled at all
 - Inserting new elements in the middle of an array or reordering them may not always interact correctly with multiple mods. Adding elements at the end is perfectly fine, and the app generally only lets you do that.
+- Renaming existing GameObjects or folders may not work as expected because the pfb/scn patching relies on consistent names
 
 ***Resource***
 

@@ -77,7 +77,7 @@ public abstract class RszFilePatcherBase : IResourceFilePatcher
             }
             var subpath = counter == 1 ? $"{path}/{child.Name}" : $"{path}/{child.Name}#{counter}";
             foreach (var (subchild, subpath1) in IterateGameObjects(child, subpath)) {
-                yield return (child, subpath1);
+                yield return (subchild, subpath1);
             }
         }
     }
@@ -163,7 +163,7 @@ public abstract class RszFilePatcherBase : IResourceFilePatcher
             } else {
                 var comp = target.Components.FirstOrDefault(comp => comp.RszClass.name == key);
                 if (comp == null) {
-                    target.Components.Add(JsonSerializer.Deserialize<RszInstance>(prop) ?? throw new Exception("Invalid component " + key));
+                    target.Components.Add(JsonSerializer.Deserialize<RszInstance>(prop, workspace.Env.JsonOptions) ?? throw new Exception("Invalid component " + key));
                 } else {
                     ApplyObjectDiff(comp, prop);
                 }
