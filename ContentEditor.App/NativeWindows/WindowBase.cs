@@ -443,7 +443,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
             imguiOverlaysData.Context = context.AddChild("__overlays", imguiOverlaysData);
             imguiOverlays.Init(imguiOverlaysData.Context);
         }
-        imguiOverlays.ShowHelp = !_disableIntroGuide && !subwindows.Any(IsDefaultWindow);
+        imguiOverlays.ShowHelp = !_disableIntroGuide && !subwindows.Any(s => !IsDefaultWindow(s));
         imguiOverlays.OnIMGUI();
     }
 

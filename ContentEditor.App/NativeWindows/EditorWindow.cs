@@ -337,7 +337,14 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
             if (ImGui.MenuItem("Open new window")) {
                 UI.OpenWindow(workspace);
             }
+
             if (workspace != null) {
+                if (workspace.Config.Entities.Any()) {
+                    if (ImGui.MenuItem("Entities")) {
+                        AddSubwindow(new AppContentEditorWindow(workspace));
+                    }
+                }
+
                 if (ImGui.MenuItem("PAK file browser")) {
                     AddSubwindow(new PakBrowser(workspace.Env, null));
                 }
@@ -346,15 +353,6 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                 }
             }
             ImGui.EndMenu();
-        }
-
-        if (workspace != null && workspace.Config.Entities.Any()) {
-            if (ImGui.BeginMenu("Entities")) {
-                if (ImGui.MenuItem("Content editor window")) {
-                    AddSubwindow(new AppContentEditorWindow(workspace));
-                }
-                ImGui.EndMenu();
-            }
         }
 
         if (ImGui.BeginMenu("Tools")) {
