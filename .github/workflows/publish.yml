@@ -32,17 +32,25 @@ jobs:
         dotnet publish -c Debug --no-restore -f net8.0-windows /p:VersionSuffix=r${{ steps.vars.outputs.sha_short }} -o build ContentEditor.App/ContentEditor.App.csproj
         rm -Recurse build/runtimes/linux-*
         rm -Recurse build/runtimes/osx*
+        cp -R configs build/
 
-    - name: Publish release build
+    - name: Publish release app
       if: startsWith(github.ref, 'refs/tags/')
       run: |
         TAG=${{ github.ref_name }}
         dotnet publish -c Release --no-restore -f net8.0-windows /p:DebugType=none /p:DebugSymbols=false /p:VersionPrefix=${TAG#v} -o build ContentEditor.App/ContentEditor.App.csproj
         rm -Recurse build/runtimes/linux-*
         rm -Recurse build/runtimes/osx*
+        cp -R configs build/
 
-    - name: Copy configs
-      run: cp -R configs build/configs
+    - name: Publish release patcher
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        TAG=${{ github.ref_name }}
+        dotnet publish -c Release --no-restore /p:DebugType=none /p:DebugSymbols=false /p:VersionPrefix=${TAG#v} -o build_patcher ContentPatcher/ContentPatcher.csproj
+        rm -Recurse build_patcher/ImGui.NET.dll
+        rm -Recurse build_patcher/runtimes/*
+        cp -R configs build_patcher/
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4.4.3
@@ -56,6 +64,10 @@ jobs:
       run: |
         cd build/
         7z a ContentEditor.zip *
+        cd ../build_patcher/
+        7z a ContentPatcher.zip *
+        mv ContentPatcher.zip ../build/
+
     - name: Upload files to release
       uses: softprops/action-gh-release@v2.2.2
       if: startsWith(github.ref, 'refs/tags/')
