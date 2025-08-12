@@ -133,7 +133,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     {
         _gl = _window.CreateOpenGL();
         _controller = new ImGuiController(_gl, _window, _inputContext, onConfigureIO: UI.ConfigureImgui);
-        DefaultThemes.SetupRoundedVS();
+        UI.ApplyTheme(AppConfig.Instance.Theme.Get() ?? "default");
         // RemoveDropCallback();
         PlatformUtils.SetupDragDrop(this, _window);
         isReady = true;

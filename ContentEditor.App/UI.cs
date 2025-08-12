@@ -1,5 +1,7 @@
 using ContentEditor.App.Windowing;
+using ContentEditor.Themes;
 using ContentPatcher;
+using ContentPatcher.FileFormats;
 using ImGuiNET;
 
 namespace ContentEditor.App;
@@ -39,7 +41,7 @@ public static class UI
         fontCfg->MergeMode = 1;
         fonts.AddFontFromFileTTF("fonts/NotoSans-Regular.ttf", (float)FontSize, custom_icons, fonts.GetGlyphRangesDefault());
         fonts.AddFontFromFileTTF("fonts/NotoSans-Regular.ttf", (float)FontSize, custom_icons, fonts.GetGlyphRangesCyrillic());
-        fixed (ushort *ranges = PolishRanges) {
+        fixed (ushort* ranges = PolishRanges) {
             fonts.AddFontFromFileTTF("fonts/NotoSans-Regular.ttf", (float)FontSize, custom_icons, (nint)ranges);
         }
 
@@ -48,5 +50,23 @@ public static class UI
 #if !DEBUG
         io.ConfigErrorRecoveryEnableAssert = false;
 #endif
+    }
+
+    public unsafe static void ApplyTheme(string theme)
+    {
+        if (DefaultThemes.Themes.TryGetValue(theme, out var themeCallback)) {
+            themeCallback.Invoke();
+            return;
+        }
+
+        var themePath = Path.Combine("styles", theme + ".theme.txt");
+        if (!File.Exists(themePath)) {
+            Logger.Error("Theme not found: " + theme);
+            DefaultThemes.Themes["default"].Invoke();
+            return;
+        }
+
+        var ini = IniFile.ReadFile(themePath);
+        DefaultThemes.ApplyThemeData(ini);
     }
 }

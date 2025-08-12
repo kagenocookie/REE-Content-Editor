@@ -42,12 +42,13 @@ public class PlatformUtils
         thread.Start();
     }
 
-    public static void ShowSaveFile(Action<string> callback, string? initialFile = null)
+    public static void ShowSaveFile(Action<string> callback, string? initialFile = null, string? filter = null)
     {
         var thread = new Thread(() => {
             var dlg = new SaveFileDialog {
                 InitialDirectory = !string.IsNullOrEmpty(initialFile) ? Path.GetDirectoryName(initialFile) : Environment.CurrentDirectory,
                 FileName = Path.GetFileName(initialFile),
+                Filter = filter,
             };
             var result = dlg.ShowDialog();
             if (result == DialogResult.OK && dlg.FileName != null) {

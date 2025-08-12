@@ -31,10 +31,10 @@ public static class PlatformUtils
     /// <summary>
     /// Show a native file save dialog, non-blocking.
     /// </summary>
-    public static void ShowSaveFileDialog(Action<string> callback, string? initialFile = null)
+    public static void ShowSaveFileDialog(Action<string> callback, string? initialFile = null, string? filter = null)
     {
 #if WINDOWS
-        ContentEditor.App.Windows.PlatformUtils.ShowSaveFile(callback, initialFile);
+        ContentEditor.App.Windows.PlatformUtils.ShowSaveFile(callback, initialFile, filter);
 #else
         throw new NotImplementedException();
 #endif

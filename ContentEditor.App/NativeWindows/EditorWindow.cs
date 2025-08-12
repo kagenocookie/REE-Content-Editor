@@ -390,6 +390,9 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
             if (ImGui.MenuItem("IMGUI test window")) {
                 AddUniqueSubwindow(new ImguiTestWindow());
             }
+            if (ImGui.MenuItem("Theme editor")) {
+                AddUniqueSubwindow(new ThemeEditor());
+            }
             ImGui.EndMenu();
         }
 

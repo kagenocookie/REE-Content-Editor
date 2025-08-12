@@ -24,6 +24,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string MaxUndoSteps = "max_undo_steps";
         public const string PrettyLabels = "pretty_labels";
         public const string RecentFiles = "recent_files";
+        public const string Theme = "theme";
 
         public const string Key_Undo = "key_undo";
         public const string Key_Redo = "key_redo";
@@ -102,6 +103,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly ClassSettingWrapper<string> BlenderPath = new ClassSettingWrapper<string>(Keys.BlenderPath, _lock);
     public readonly ClassSettingWrapper<string> RemoteDataSource = new ClassSettingWrapper<string>(Keys.RemoteDataSource, _lock);
     public readonly ClassSettingWrapper<string> GameConfigBaseFilepath = new ClassSettingWrapper<string>(Keys.GameConfigBaseFilepath, _lock);
+    public readonly ClassSettingWrapper<string> Theme = new ClassSettingWrapper<string>(Keys.Theme, _lock);
     public readonly SettingWrapper<int> UnpackMaxThreads = new SettingWrapper<int>(Keys.UnpackMaxThreads, _lock, 4);
     public readonly SettingWrapper<ReeLib.via.Color> BackgroundColor = new SettingWrapper<ReeLib.via.Color>(Keys.BackgroundColor, _lock, new ReeLib.via.Color(115, 140, 153, 255));
     public readonly SettingWrapper<bool> PrettyFieldLabels = new SettingWrapper<bool>(Keys.PrettyLabels, _lock, true);
@@ -199,6 +201,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.UnpackMaxThreads, instance.UnpackMaxThreads.value.ToString(), null),
             (Keys.RemoteDataSource, instance.RemoteDataSource.value?.ToString() ?? "", null),
             (Keys.GameConfigBaseFilepath, instance.GameConfigBaseFilepath.value?.ToString() ?? "", null),
+            (Keys.Theme, instance.Theme.value?.ToString() ?? "", null),
             (Keys.BackgroundColor, instance.BackgroundColor.value.ToString(), null),
             (Keys.LogLevel, instance.LogLevel.value.ToString(), null),
             (Keys.MaxUndoSteps, instance.MaxUndoSteps.value.ToString(), null),
@@ -249,6 +252,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.GameConfigBaseFilepath:
                             instance.GameConfigBaseFilepath.value = string.IsNullOrEmpty(value) ? null : value;
+                            break;
+                        case Keys.Theme:
+                            instance.Theme.value = string.IsNullOrEmpty(value) ? "default" : value;
                             break;
                         case Keys.UnpackMaxThreads:
                             if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)) instance.UnpackMaxThreads.value = Math.Clamp(parsed, 1, 64);

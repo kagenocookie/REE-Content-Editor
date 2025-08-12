@@ -1,10 +1,81 @@
+using System.Globalization;
 using System.Numerics;
+using System.Reflection;
 using ImGuiNET;
 
 namespace ContentEditor.Themes;
 
 public class DefaultThemes
 {
+    public static readonly Dictionary<string, Action> Themes = new() {
+        { "default", SetupRoundedVS },
+        { "cherry", SetupCherry },
+        { "darkCyan", SetupComfortableDarkCyan },
+        { "light", SetupDefaultLight },
+        { "unreal", SetupUnreal },
+        { "dark", SetupDark },
+    };
+
+    private static string[]? _availableThemes;
+    public static string[] AvailableThemes => _availableThemes ??= RefreshAvailableThemes();
+
+    public static string[] RefreshAvailableThemes()
+    {
+        var themePath = Path.GetFullPath("styles");
+        var list = new List<string>(Themes.Keys.Order());
+        foreach (var file in Directory.EnumerateFiles(themePath, "*.theme.txt")) {
+            var theme = file.Replace(themePath, "").Replace(".theme.txt", "").Replace("\\", "");
+            list.Add(theme);
+        }
+        return _availableThemes = list.Distinct().ToArray();
+    }
+
+    private static readonly PropertyInfo[] ThemeFields = [
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.WindowPadding))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.FramePadding))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.ItemSpacing))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.ItemInnerSpacing))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.TouchExtraPadding))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.IndentSpacing))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.ScrollbarSize))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.GrabMinSize))!,
+
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.WindowBorderSize))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.ChildBorderSize))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.PopupBorderSize))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.FrameBorderSize))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.TabBorderSize))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.TabBarBorderSize))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.TabBarOverlineSize))!,
+
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.WindowRounding))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.ChildRounding))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.PopupRounding))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.ScrollbarRounding))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.GrabRounding))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.TabRounding))!,
+
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.CellPadding))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.TableAngledHeadersAngle))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.TableAngledHeadersTextAlign))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.WindowTitleAlign))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.WindowMenuButtonPosition))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.ButtonTextAlign))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.SelectableTextAlign))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.SeparatorTextBorderSize))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.SeparatorTextAlign))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.SeparatorTextPadding))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.LogSliderDeadzone))!,
+
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.DockingSeparatorSize))!,
+
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.HoverFlagsForTooltipMouse))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.HoverFlagsForTooltipNav))!,
+
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.DisplayWindowPadding))!,
+        typeof(ImGuiStylePtr).GetProperty(nameof(ImGuiStylePtr.DisplaySafeAreaPadding))!,
+    ];
+
     public static void SetupCherry()
     {
         // Cherry style from ImThemes
@@ -550,4 +621,93 @@ public class DefaultThemes
         style.Colors[(int)ImGuiCol.NavWindowingDimBg] = new Vector4(0.8f, 0.8f, 0.8f, 0.2000000029802322f);
         style.Colors[(int)ImGuiCol.ModalWindowDimBg] = new Vector4(0.8f, 0.8f, 0.8f, 0.3499999940395355f);
     }
+
+    public static unsafe string GetCurrentStyleData()
+    {
+        var style = ImGui.GetStyle();
+        var themeData = "";
+        var colors = Enum.GetValues<ImGuiCol>();
+        foreach (var col in colors) {
+            if (col == ImGuiCol.COUNT) continue;
+            var color = ImGui.GetColorU32(col);
+            themeData += "color " + col + " = " + color.ToString("X", CultureInfo.InvariantCulture) + "\n";
+        }
+
+        foreach (var field in ThemeFields) {
+            var value = field.GetValue(style);
+            string valueStr;
+            switch (value) {
+                case float flt:
+                    valueStr = flt.ToString(CultureInfo.InvariantCulture);
+                    break;
+                case bool boolean:
+                    valueStr = boolean ? "true" : "false";
+                    break;
+                case Vector2 vec2:
+                    valueStr = vec2.X.ToString(CultureInfo.InvariantCulture) + ", " + vec2.Y.ToString(CultureInfo.InvariantCulture);
+                    break;
+                case ImGuiHoveredFlags hovfl:
+                    valueStr = ((int)hovfl).ToString();
+                    break;
+                case ImGuiDir dir:
+                    valueStr = dir.ToString();
+                    break;
+                default:
+                    continue;
+            }
+            themeData += "prop " + field.Name + " = " + valueStr + "\n";
+        }
+        return themeData;
+    }
+
+    public static unsafe void ApplyThemeData(IEnumerable<(string key, string value, string? group)> ini)
+    {
+        var style = ImGui.GetStyle();
+        foreach (var kv in ini) {
+            if (kv.key.StartsWith("color ")) {
+                var name = kv.key.Replace("color ", "");
+                if (uint.TryParse(kv.value, System.Globalization.NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var colU32) && Enum.TryParse<ImGuiCol>(name, out var col)) {
+                    style.Colors[(int)col] = ImGui.ColorConvertU32ToFloat4(colU32);
+                }
+            } else if (kv.key.StartsWith("prop ")) {
+                var name = kv.key.Replace("prop ", "");
+                var prop = ThemeFields.FirstOrDefault(ff => ff.Name == name);
+                if (prop == null) continue;
+
+                var type = prop.PropertyType.GetElementType();
+
+                if (type == typeof(float)) {
+                    if (float.TryParse(kv.value, CultureInfo.InvariantCulture, out var flt)) {
+                        ref var val = ref ((floatGetter)Delegate.CreateDelegate(typeof(floatGetter), style, prop.GetMethod!))();
+                        val = flt;
+                    }
+                } else if (type == typeof(bool)) {
+                    ref var val = ref ((boolGetter)Delegate.CreateDelegate(typeof(boolGetter), style, prop.GetMethod!))();
+                    val = kv.value.Equals("yes", StringComparison.InvariantCultureIgnoreCase) || kv.value.Equals("true", StringComparison.InvariantCultureIgnoreCase);
+                } else if (type == typeof(Vector2)) {
+                    var vals = kv.value.Split(',');
+                    if (float.TryParse(vals[0], CultureInfo.InvariantCulture, out var v1) && float.TryParse(vals[0], CultureInfo.InvariantCulture, out var v2)) {
+                        ref var val = ref ((Vector2Getter)Delegate.CreateDelegate(typeof(Vector2Getter), style, prop.GetMethod!))();
+                        val = new Vector2(v1, v2);
+                    }
+                } else if (type == typeof(ImGuiDir)) {
+                    if (Enum.TryParse<ImGuiDir>(kv.value, out var dir)) {
+                        ref var val = ref ((ImGuiDirGetter)Delegate.CreateDelegate(typeof(ImGuiDirGetter), style, prop.GetMethod!))();
+                        val = dir;
+                    }
+                } else if (type == typeof(ImGuiHoveredFlags)) {
+                    if (int.TryParse(kv.value, out var num)) {
+                        ref var val = ref ((ImGuiHoveredFlagsGetter)Delegate.CreateDelegate(typeof(ImGuiHoveredFlagsGetter), style, prop.GetMethod!))();
+                        val = (ImGuiHoveredFlags)num;
+                    }
+                }
+            }
+        }
+    }
+
+    private delegate ref Vector2 Vector2Getter();
+    private delegate ref float floatGetter();
+    private delegate ref bool boolGetter();
+    private delegate ref ImGuiDir ImGuiDirGetter();
+    private delegate ref ImGuiHoveredFlags ImGuiHoveredFlagsGetter();
 }

@@ -8,7 +8,7 @@ namespace ContentEditor.App;
 
 public class ImguiTestWindow : IWindowHandler
 {
-    public string HandlerName => "Intro guide";
+    public string HandlerName => "ImGui Test window";
 
     public bool HasUnsavedChanges => false;
     public bool ShowHelp { get; set; }

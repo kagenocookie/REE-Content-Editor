@@ -1,5 +1,6 @@
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
+using ContentEditor.Themes;
 using ImGuiNET;
 using ReeLib;
 
@@ -86,6 +87,13 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                 config.PrettyFieldLabels.Set(prettyLabels);
             }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("Whether to simplify field labels instead of showing the raw field names (e.g. \"Target Object\" instead of \"_TargetObject\").");
+
+            var theme = config.Theme.Get();
+            if (ImguiHelpers.ValueCombo("Theme", DefaultThemes.AvailableThemes, DefaultThemes.AvailableThemes, ref theme)) {
+                UI.ApplyTheme(theme!);
+                config.Theme.Set(theme);
+            }
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip("Custom themes can be configured through Tools > Theme Editor.");
 
             var maxUndo = config.MaxUndoSteps.Get();
             if (ImGui.DragInt("Max undo steps", ref maxUndo, 0.25f, 0)) {
