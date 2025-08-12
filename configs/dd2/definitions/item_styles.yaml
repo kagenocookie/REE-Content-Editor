@@ -1,7 +1,7 @@
 entities:
   items.style.TopsStyle:
     group: styles
-    to_string: "Style {data[0]._TopsStyle}"
+    to_string: "Style {data[0]._TopsStyle:enum(app.TopsStyle)}"
     custom_id_range: [10000, 32700] #_StyleNo on the armor data is a signed short so we need to limit to that range
     fields:
       data:
@@ -15,7 +15,7 @@ classes:
   app.TopsSwapItem:
     id: [_TopsStyle]
     subId: [_Gender]
-    to_string: "{class_shortname} {_TopsStyle} {_Gender}"
+    to_string: "{class_shortname} {_TopsStyle:enum(app.TopsStyle)} {_Gender:enum(app.Gender)}"
     group: item
     patcher:
       type: array-file

@@ -12,7 +12,7 @@ entities:
       #     file: natives/stm/message/ui/ailocalareaname.msg.22
       #     guid: "data._ShopNameId"
       #     key: shop_name_{id} # used when a new message key/name needs to be generated for custom entries
-    to_string: "Shop {id}: {data._ShopNameId}"
+    to_string: "Shop {id}: {data._ShopNameId:translate()}"
 
 classes:
   app.ItemShopParam:
@@ -25,7 +25,7 @@ classes:
       type: array-file
       file: appsystem/item/itemshopdata/itemshopdata.user.2
     # TODO support actuall field string resolution (find translation) instead of plain values
-    to_string: "{_ShopId}: {_ShopNameId}"
+    to_string: "{_ShopId}: {_ShopNameId:translate()}"
 
   app.ItemShopSellParam:
     id: [_ItemId]

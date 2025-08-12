@@ -41,7 +41,7 @@ public class PatchDataContainer(string filepath)
     public void Load(ContentWorkspace workspace)
     {
         IsLoaded = true;
-        LoadPatchConfigs(workspace.Env.RszParser);
+        LoadPatchConfigs(workspace);
         if (!string.IsNullOrEmpty(workspace.Env.Config.GamePath)) {
             var runtimeEnumConfigsPath = Path.Combine(workspace.Env.Config.GamePath, "reframework/data/usercontent/enums");
             LoadEnums(workspace.Env, runtimeEnumConfigsPath);
@@ -75,7 +75,7 @@ public class PatchDataContainer(string filepath)
         }
     }
 
-    public void LoadPatchConfigs(RszParser parser)
+    public void LoadPatchConfigs(ContentWorkspace workspace)
     {
         configs.Clear();
         if (!Directory.Exists(DefinitionFilepath)) return;
@@ -99,13 +99,13 @@ public class PatchDataContainer(string filepath)
                     throw new Exception($"Unsupported user-defined object config {name}. Must have at least one field");
                 }
 
-                var config = entity.ToRuntimeConfig();
+                var config = entity.ToRuntimeConfig(workspace);
                 var shortname = EntityHierarchy.Add(name, config);
                 entities.Add(shortname, config);
             }
 
             if (newDict.Classes != null) foreach (var (cls, config) in newDict.Classes) {
-                var rszClass = parser.GetRSZClass(cls);
+                var rszClass = workspace.Env.RszParser.GetRSZClass(cls);
                 if (rszClass == null) {
                     throw new Exception($"Unknown RSZ class {cls}");
                 }
@@ -120,6 +120,8 @@ public class PatchDataContainer(string filepath)
                     var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
                     fmt.AddExtensions(new RszFieldStringFormatterSource(), new RszFieldArrayStringFormatterSource());
                     fmt.AddExtensions(new DefaultFormatter());
+                    fmt.AddExtensions(new TranslateGuidformatter(workspace.Messages));
+                    fmt.AddExtensions(new EnumLabelFormatter(workspace.Env));
                     runtimeConfig.StringFormatter = new StringFormatter(config.To_String, fmt);
                 }
 

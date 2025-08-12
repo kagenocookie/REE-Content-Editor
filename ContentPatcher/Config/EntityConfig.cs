@@ -29,7 +29,7 @@ public partial class EntityConfigSerialized
     public long[]? CustomIDRange { get; set; }
     public EntityEnumInfo[]? Enums { get; set; }
 
-    public EntityConfig ToRuntimeConfig()
+    public EntityConfig ToRuntimeConfig(ContentWorkspace workspace)
     {
         var fieldlist = new List<CustomField>();
         var displaylist = new List<CustomField>();
@@ -55,6 +55,8 @@ public partial class EntityConfigSerialized
             var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
             fmt.AddExtensions(new EntityStringFormatterSource(config), new RszFieldStringFormatterSource(), new RszFieldArrayStringFormatterSource());
             fmt.AddExtensions(new DefaultFormatter());
+            fmt.AddExtensions(new TranslateGuidformatter(workspace.Messages));
+            fmt.AddExtensions(new EnumLabelFormatter(workspace.Env));
             config.StringFormatter = new StringFormatter(To_String, fmt);
         }
 

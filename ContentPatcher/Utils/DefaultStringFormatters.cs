@@ -86,3 +86,49 @@ public class EntityStringFormatterSource(EntityConfig config) : ISource
         throw new Exception($"Invalid field {selectorInfo.SelectorText} for entity type {entity.Type}");
     }
 }
+
+public class TranslateGuidformatter(MessageManager msg) : IFormatter
+{
+    public string Name { get; set; } = "translate";
+    public bool CanAutoDetect { get; set; } = false;
+
+    public bool TryEvaluateFormat(IFormattingInfo formattingInfo)
+    {
+        if (formattingInfo.CurrentValue is not Guid guid) return false;
+
+        if (guid == Guid.Empty) {
+            return true;
+        }
+
+        var text = msg.GetText(guid);
+        if (text != null) {
+            formattingInfo.Write(text);
+        }
+
+        return true;
+    }
+}
+
+public class EnumLabelFormatter(Workspace env) : IFormatter
+{
+    public string Name { get; set; } = "enum";
+    public bool CanAutoDetect { get; set; } = false;
+
+    public bool TryEvaluateFormat(IFormattingInfo formattingInfo)
+    {
+        if (formattingInfo.CurrentValue == null) {
+            return true;
+        }
+
+        var enumDesc = env.TypeCache.GetEnumDescriptor(formattingInfo.FormatterOptions);
+        if (enumDesc == null) {
+            formattingInfo.Write(formattingInfo.CurrentValue.ToString() ?? string.Empty);
+            return true;
+        }
+
+        // should probably also handle enumDesc.IsFlags somehow
+        var label = enumDesc.GetDisplayLabel(formattingInfo.CurrentValue);
+        formattingInfo.Write(label ?? formattingInfo.CurrentValue.ToString() ?? string.Empty);
+        return true;
+    }
+}
