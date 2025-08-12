@@ -45,7 +45,10 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
 
         int success = 0, fail = 0;
         int count = 0;
-        foreach (var file in matchedList.GetRecursiveFileList(CurrentDir, rowsPerPage)) {
+        var files = CurrentDir.Contains('*')
+            ? matchedList!.GetFiles(CurrentDir, rowsPerPage)
+            : matchedList.GetRecursiveFileList(CurrentDir, rowsPerPage);
+        foreach (var file in files) {
             var path = Path.Combine(outputDir, file);
             count++;
             var stream = reader.GetFile(file);
