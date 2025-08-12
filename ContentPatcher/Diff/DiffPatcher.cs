@@ -39,7 +39,7 @@ public class DiffPatcher
                     ?? RszInstance.CreateArrayItem(env.RszParser, field)!;
             } else if (field.type is RszFieldType.Object or RszFieldType.Struct) {
                 instance.Values[fieldIndex] = CreateOrApplyRSZDiff(value as RszInstance, diffprop.Value, field.original_type, env);
-            } else if (field.type is RszFieldType.String or RszFieldType.RuntimeType) {
+            } else if (field.type is RszFieldType.String or RszFieldType.RuntimeType or RszFieldType.Resource) {
                 instance.Values[fieldIndex] = diffprop.Value?.GetValue<string>() ?? instance.Values[fieldIndex] ?? string.Empty;
             } else {
                 var csType = RszInstance.RszFieldTypeToCSharpType(field.type);

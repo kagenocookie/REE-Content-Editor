@@ -10,7 +10,6 @@ using ReeLib;
 
 public class Patcher : IDisposable
 {
-    public readonly GameIdentifier game;
     private Workspace env;
     private ContentWorkspace? workspace;
     private string runtimeEnumsPath = string.Empty;
@@ -56,7 +55,7 @@ public class Patcher : IDisposable
         // if the workspace is not null, assume it was already fully initialized
         _ = env.PakReader;
         if (workspace == null) {
-            var configPath = $"configs/{game.name}";
+            var configPath = $"configs/{env.Config.Game.name}";
             // 2. load game-specific patch config / overrides
             workspace = new ContentWorkspace(env, new PatchDataContainer(configPath));
         }
@@ -92,13 +91,13 @@ public class Patcher : IDisposable
         foreach (var bundle in workspace.BundleManager.ActiveBundles) {
             if (!(bundle.ResourceListing?.Count > 0)) continue;
 
-            var hasAnyUndiffedResources = bundle.ResourceListing?.Any(e => e.Value.Diff == null) == true;
+            var hasAnyUndiffedResources = bundle.ResourceListing?.Any(e => e.Value.Diff == null && e.Value.DiffTime < new DateTime(2025, 1, 1)) == true;
             if (hasAnyUndiffedResources) {
                 // NOTE: we could skip ResourceManager.ClearInstances() if active bundle != null
                 // also, we could avoid loading _everything_ and instead only calculate diffs for anything that's missing them
                 // although considering this only happens, maybe, one time, and then just reuses the precomputed diff, not very high priority
                 workspace.SetBundle(bundle.Name);
-                Logger.Info("Re-generating bundle resource file diffs " + bundle.Name);
+                Logger.Info("Re-generating bundle resource file diffs for " + bundle.Name);
                 workspace.ResourceManager.LoadActiveBundle();
                 // TODO Get list of modified resources?
                 workspace.SaveBundle();

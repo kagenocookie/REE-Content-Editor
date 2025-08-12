@@ -646,19 +646,19 @@ public class ResourceManager(PatchDataContainer config)
         return handle;
     }
 
+    private IFileLoader? GetLoaderForFile(string filepath, REFileFormat format)
+    {
+        foreach (var candidate in FileLoaders) {
+            if (candidate.CanHandleFile(filepath, format)) {
+                return candidate;
+            }
+        }
+        return null;
+    }
     private FileHandle? CreateFileHandleInternal(string filepath, string? nativePath, Stream stream)
     {
         var format = PathUtils.ParseFileFormat(filepath);
-        // var handleType = stream is MemoryStream ? FileHandleType.InMemoryFile : FileHandleType.DiskFile;
-
-        IFileLoader? loader = null;
-        foreach (var candidate in FileLoaders) {
-            if (candidate.CanHandleFile(filepath, format)) {
-                loader = candidate;
-                break;
-            }
-        }
-        loader ??= UnknownStreamFileLoader.Instance;
+        IFileLoader? loader = GetLoaderForFile(filepath, format) ?? UnknownStreamFileLoader.Instance;
 
         if (format.version != -1) {
             var ext = PathUtils.GetFilenameExtensionWithoutSuffixes(filepath);
@@ -677,6 +677,9 @@ public class ResourceManager(PatchDataContainer config)
                 handleType = FileHandleType.Bundle;
                 fileSource = Path.GetRelativePath(bundleRoot, filepath).Replace('\\', '/');
                 fileSource = fileSource.Split('/', 2).First();
+            } else if (filepath.IsNativePath()) {
+                handleType = FileHandleType.LooseFile;
+                fileSource = filepath;
             } else {
                 handleType = FileHandleType.Disk;
                 fileSource = filepath;
@@ -701,7 +704,7 @@ public class ResourceManager(PatchDataContainer config)
         if (handle.DiffHandler != null && handle.NativePath != null && handle.HandleType is FileHandleType.Disk or FileHandleType.Bundle) {
             var baseFile = workspace.Env.GetFile(handle.NativePath!);
             if (baseFile != null) {
-                var baseFileHandle = CreateFileHandleInternal(filepath, nativePath, baseFile)!;
+                var baseFileHandle = CreateFileHandleInternal(handle.NativePath!, handle.NativePath!, baseFile)!;
                 handle.DiffHandler.LoadBase(workspace, baseFileHandle);
             } else {
                 handle.DiffHandler.LoadBase(workspace, handle);

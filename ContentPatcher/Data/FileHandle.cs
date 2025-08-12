@@ -116,6 +116,7 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
 public enum FileHandleType
 {
     Disk,
+    LooseFile,
     Bundle,
     Memory,
     Embedded,

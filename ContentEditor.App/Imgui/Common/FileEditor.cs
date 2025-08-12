@@ -110,7 +110,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         if (ImGui.Button("Save copy to ...")) {
             PlatformUtils.ShowSaveFileDialog((path) => SaveTo(path, false), Handle.Filepath);
         }
-        if (Handle.DiffHandler != null && ImguiHelpers.SameLine() && ImGui.Button("See changes")) {
+        if (Handle.DiffHandler != null && ImguiHelpers.SameLine() && Handle.HandleType is not FileHandleType.Memory && ImGui.Button("See changes")) {
             var diff = Handle.DiffHandler.FindDiff(Handle);
             if (diff == null) {
                 EditorWindow.CurrentWindow?.Overlays.ShowTooltip("No changes detected compared to the base file", 3f);

@@ -27,7 +27,7 @@ public class SingleMsgHandler : ResourceHandler
                 var lang = langs[i];
                 msgData.Messages[lang.ToString()] = str;
             }
-            dict.Add(id, msgData);
+            dict[id] = msgData;
         }
     }
 

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using ContentEditor;
 using ReeLib;
 using ReeLib.Scn;
 
@@ -46,6 +47,10 @@ public sealed class ScenePatcher : RszFilePatcherBase, IDisposable
     public override JsonNode? FindDiff(FileHandle handle)
     {
         var newfile = handle.GetFile<ScnFile>();
+        if (handle == fileHandle) {
+            Logger.Error("Attempted diff between the exact same file: " + handle.Filepath);
+            return null;
+        }
 
         var diff = new JsonObject();
         // note, we aren't handling moved/renamed game objects
