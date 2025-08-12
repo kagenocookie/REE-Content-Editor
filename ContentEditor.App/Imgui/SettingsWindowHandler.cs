@@ -68,6 +68,13 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("The folder path that contains the game specific entity configurations. Will use relative path config/ by default if unspecified.");
 
+            var theme = config.Theme.Get();
+            if (ImguiHelpers.ValueCombo("Theme", DefaultThemes.AvailableThemes, DefaultThemes.AvailableThemes, ref theme)) {
+                UI.ApplyTheme(theme!);
+                config.Theme.Set(theme);
+            }
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip("Custom themes can be configured through Tools > Theme Editor.");
+
             var bgColor = config.BackgroundColor.Get().ToVector4();
             var isAlpha = bgColor.W < 1;
             if (_wasOriginallyAlphaBg == null) _wasOriginallyAlphaBg = isAlpha;
@@ -87,13 +94,6 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                 config.PrettyFieldLabels.Set(prettyLabels);
             }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("Whether to simplify field labels instead of showing the raw field names (e.g. \"Target Object\" instead of \"_TargetObject\").");
-
-            var theme = config.Theme.Get();
-            if (ImguiHelpers.ValueCombo("Theme", DefaultThemes.AvailableThemes, DefaultThemes.AvailableThemes, ref theme)) {
-                UI.ApplyTheme(theme!);
-                config.Theme.Set(theme);
-            }
-            if (ImGui.IsItemHovered()) ImGui.SetTooltip("Custom themes can be configured through Tools > Theme Editor.");
 
             var maxUndo = config.MaxUndoSteps.Get();
             if (ImGui.DragInt("Max undo steps", ref maxUndo, 0.25f, 0)) {
