@@ -23,6 +23,9 @@ public class RszDataFinder : IWindowHandler
     private bool searchPfb = false;
     private bool searchScn = false;
     private bool searchClassOnly = false;
+    private bool rszSearchByClass = true;
+    private RszFieldType rszFieldType = RszFieldType.String;
+    private string rszFieldTypeFilter = "";
 
     private bool searchAllGames;
 
@@ -78,7 +81,12 @@ public class RszDataFinder : IWindowHandler
         ImguiHelpers.Tabs(FindTypes, ref findType);
         switch (findType) {
             case 0:
-                ShowRszFind(workspace.Env);
+                ImGui.Checkbox("Search by specific class", ref rszSearchByClass);
+                if (rszSearchByClass) {
+                    ShowRszClassSearch(workspace.Env);
+                } else {
+                    ShowRszFieldSearch(workspace.Env);
+                }
                 break;
             case 1:
                 ShowMessageFind(workspace.Env);
@@ -144,7 +152,38 @@ public class RszDataFinder : IWindowHandler
         }
     }
 
-    private void ShowRszFind(Workspace env)
+    private void ShowRszFieldSearch(Workspace env)
+    {
+        ImguiHelpers.FilterableCSharpEnumCombo("Field type", ref rszFieldType, ref rszFieldTypeFilter!);
+        var value = RszValueInput(rszFieldType);
+        if (cancellationTokenSource != null) {
+            return;
+        }
+
+        if (ImGui.Button("Run search")) {
+            matches.Clear();
+            cancellationTokenSource = new();
+            var (user, pfb, scn) = (searchUserFiles, searchPfb, searchScn);
+            var token = cancellationTokenSource.Token;
+            searchedFiles = 0;
+            Task.Run(() => {
+                foreach (var ee in GetWorkspaces(env)) {
+                    var ctx = CreateContext(ee, env);
+
+                    if (user) InvokeRszSearchField(ctx, "user", (fo, fh) => new UserFile(fo, fh), rszFieldType, false, value);
+                    if (token.IsCancellationRequested) return;
+                    if (pfb) InvokeRszSearchField(ctx, "pfb", (fo, fh) => new PfbFile(fo, fh), rszFieldType, false, value);
+                    if (token.IsCancellationRequested) return;
+                    if (scn) InvokeRszSearchField(ctx, "scn", (fo, fh) => new ScnFile(fo, fh), rszFieldType, false, value);
+                    if (token.IsCancellationRequested) return;
+                }
+                cancellationTokenSource?.Cancel();
+                cancellationTokenSource = null;
+            });
+        }
+    }
+
+    private void ShowRszClassSearch(Workspace env)
     {
         ImGui.InputText("Classname", ref classname, 1024);
         RszClass? cls;
@@ -171,86 +210,16 @@ public class RszDataFinder : IWindowHandler
 
         RszField? field = null;
         ImGui.Checkbox("Search class instance only", ref searchClassOnly);
+        object? value = null;
         if (!searchClassOnly) {
             var fields = cls.fields.Select(f => f.name).ToArray();
             ImGui.Combo("Field", ref selectedFieldIndex, fields, fields.Length);
 
             field = selectedFieldIndex >= 0 && selectedFieldIndex < cls.fields.Length ? cls.fields[selectedFieldIndex] : null;
-            if (field == null) {
-                ImGui.TextColored(Colors.Warning, "Select a field");
-                return;
-            }
-
-            if (field.type is ReeLib.RszFieldType.Object or ReeLib.RszFieldType.Struct or ReeLib.RszFieldType.UserData) {
-                ImGui.TextColored(Colors.Warning, "Not a filterable field");
-                return;
-            }
+            value = RszValueInput(field?.type);
         }
 
-        object? value = null;
-        if (cancellationTokenSource == null) {
-            Type csType;
-            if (!searchClassOnly) {
-                if (field!.type is RszFieldType.String or RszFieldType.RuntimeType) {
-                    csType = typeof(string);
-                } else {
-                    try {
-                        csType = RszInstance.RszFieldTypeToCSharpType(field.type);
-                    } catch (Exception) {
-                        ImGui.TextColored(Colors.Warning, "Not a filterable field type: " + field.type);
-                        return;
-                    }
-
-                    if (!csType.Namespace!.StartsWith("System")) {
-                        ImGui.TextColored(Colors.Warning, "Not a filterable field type: " + csType);
-                        return;
-                    }
-                }
-
-                var tmpvalue = valueString;
-                switch (field.type) {
-                    case RszFieldType.String:
-                    case RszFieldType.RuntimeType:
-                        ImGui.InputText("Value", ref valueString, 100);
-                        break;
-                    case RszFieldType.U8 or RszFieldType.U16 or RszFieldType.U32 or RszFieldType.U64:
-                    case RszFieldType.S8 or RszFieldType.S16 or RszFieldType.S32 or RszFieldType.S64:
-                        if (ImGui.InputText("Value", ref tmpvalue, 100)) {
-                        }
-                        if (long.TryParse(tmpvalue, out var vvv)) {
-                            valueString = tmpvalue;
-                            value = Convert.ChangeType(tmpvalue, csType);
-                        }
-                        break;
-                    case RszFieldType.Guid:
-                        ImGui.InputText("Value", ref valueString, 100);
-                        value = Guid.TryParse(valueString, out var gg) ? gg : null;
-                        break;
-                    case RszFieldType.Bool:
-                        {
-                            var b = valueString == "true";
-                            ImGui.Checkbox("Value", ref b);
-                            valueString = b ? "true" : "false";
-                            value = b;
-                        }
-                        break;
-                    default:
-                        ImGui.TextColored(Colors.Warning, "Not a filterable field type: " + field.type);
-                        return;
-                }
-                if (value == null) {
-                    ImGui.TextColored(Colors.Danger, "Could not parse value");
-                    return;
-                }
-            }
-
-            ImGui.Separator();
-            ImGui.Text("Parsed value: " + value);
-
-            ImGui.Checkbox("Search user files", ref searchUserFiles);
-            ImGui.Checkbox("Search SCN files", ref searchScn);
-            ImGui.Checkbox("Search PFB files", ref searchPfb);
-        } else {
+        if (cancellationTokenSource != null) {
             return;
         }
 
@@ -266,17 +235,97 @@ public class RszDataFinder : IWindowHandler
                     if (curCls == null) continue;
                     var ctx = CreateContext(ee, env);
 
-                    if (user) InvokeSearchUser(ctx, curCls, selectedFieldIndex, field?.array ?? false, value);
+                    if (user) InvokeRszSearchClass(ctx, "user", (fo, fh) => new UserFile(fo, fh), curCls, selectedFieldIndex, field?.array ?? false, value);
                     if (token.IsCancellationRequested) return;
-                    if (pfb) InvokeSearchPfb(ctx, curCls, selectedFieldIndex, field?.array ?? false, value);
+                    if (pfb) InvokeRszSearchClass(ctx, "pfb", (fo, fh) => new PfbFile(fo, fh), curCls, selectedFieldIndex, field?.array ?? false, value);
                     if (token.IsCancellationRequested) return;
-                    if (scn) InvokeSearchScn(ctx, curCls, selectedFieldIndex, field?.array ?? false, value);
+                    if (scn) InvokeRszSearchClass(ctx, "scn", (fo, fh) => new ScnFile(fo, fh), curCls, selectedFieldIndex, field?.array ?? false, value);
                     if (token.IsCancellationRequested) return;
                 }
                 cancellationTokenSource?.Cancel();
                 cancellationTokenSource = null;
             });
         }
+    }
+
+    private object? RszValueInput(RszFieldType? type)
+    {
+        if (type == null) {
+            ImGui.TextColored(Colors.Warning, "Select a field");
+            return null;
+        }
+
+        if (type is ReeLib.RszFieldType.Object or ReeLib.RszFieldType.Struct or ReeLib.RszFieldType.UserData) {
+            ImGui.TextColored(Colors.Warning, "Not a filterable field");
+            return null;
+        }
+        object? value = null;
+        if (cancellationTokenSource == null) {
+            Type csType;
+            if (!searchClassOnly) {
+                if (type is RszFieldType.String or RszFieldType.RuntimeType or RszFieldType.Resource) {
+                    csType = typeof(string);
+                } else {
+                    try {
+                        csType = RszInstance.RszFieldTypeToCSharpType(type.Value);
+                    } catch (Exception) {
+                        ImGui.TextColored(Colors.Warning, "Not a filterable field type: " + type.Value);
+                        return null;
+                    }
+
+                    if (!csType.Namespace!.StartsWith("System")) {
+                        ImGui.TextColored(Colors.Warning, "Not a filterable field type: " + csType);
+                        return null;
+                    }
+                }
+
+                var tmpvalue = valueString;
+                switch (type) {
+                    case RszFieldType.String:
+                    case RszFieldType.RuntimeType:
+                    case RszFieldType.Resource:
+                        ImGui.InputText("Value", ref valueString, 100);
+                        value = valueString;
+                        break;
+                    case RszFieldType.U8 or RszFieldType.U16 or RszFieldType.U32 or RszFieldType.U64:
+                    case RszFieldType.S8 or RszFieldType.S16 or RszFieldType.S32 or RszFieldType.S64:
+                        if (ImGui.InputText("Value", ref tmpvalue, 100)) {
+                        }
+                        if (long.TryParse(tmpvalue, out var vvv)) {
+                            valueString = tmpvalue;
+                            value = Convert.ChangeType(tmpvalue, csType);
+                        }
+                        break;
+                    case RszFieldType.Guid:
+                        ImGui.InputText("Value", ref valueString, 100);
+                        value = Guid.TryParse(valueString, out var gg) ? gg : null;
+                        break;
+                    case RszFieldType.Bool: {
+                            var b = valueString == "true";
+                            ImGui.Checkbox("Value", ref b);
+                            valueString = b ? "true" : "false";
+                            value = b;
+                        }
+                        break;
+                    default:
+                        ImGui.TextColored(Colors.Warning, "Not a filterable field type: " + type);
+                        return null;
+                }
+                if (value == null) {
+                    ImGui.TextColored(Colors.Danger, "Could not parse value");
+                    return null;
+                }
+            }
+
+            ImGui.Separator();
+            ImGui.Text("Parsed value: " + value);
+        }
+
+        ImGui.Checkbox("Search user files", ref searchUserFiles);
+        ImGui.Checkbox("Search SCN files", ref searchScn);
+        ImGui.Checkbox("Search PFB files", ref searchPfb);
+
+        return value;
     }
 
     private void ShowMessageFind(Workspace env)
@@ -386,76 +435,85 @@ public class RszDataFinder : IWindowHandler
         }
     }
 
-    private void InvokeSearchUser(SearchContext context, RszClass cls, int fieldIndex, bool array, object? value)
+    private void InvokeRszSearchClass(SearchContext context, string ext, Func<RszFileOption, FileHandler, BaseRszFile> fileFact, RszClass cls, int fieldIndex, bool array, object? value)
     {
-        foreach (var (path, stream) in context.Env.GetFilesWithExtension("user", context.Token)) {
+        foreach (var (path, stream) in context.Env.GetFilesWithExtension(ext, context.Token)) {
             try {
                 if (context.Token.IsCancellationRequested) return;
 
                 Interlocked.Increment(ref searchedFiles);
-                var file = new UserFile(context.Env.RszFileOption, new FileHandler(stream, path));
+                var file = fileFact.Invoke(context.Env.RszFileOption, new FileHandler(stream, path));
                 file.Read();
-                HandleInstanceList(context, file.RSZ, cls, fieldIndex, array, value, path);
-            } catch (Exception e) {
-                context.Window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
-            }
-        }
-    }
 
-    private void InvokeSearchPfb(SearchContext context, RszClass cls, int fieldIndex, bool array, object? value)
-    {
-        foreach (var (path, stream) in context.Env.GetFilesWithExtension("pfb", context.Token)) {
-            try {
-                if (context.Token.IsCancellationRequested) return;
-
-                Interlocked.Increment(ref searchedFiles);
-                var file = new PfbFile(context.Env.RszFileOption, new FileHandler(stream, path));
-                file.Read();
-                HandleInstanceList(context, file.RSZ, cls, fieldIndex, array, value, path);
-            } catch (Exception e) {
-                context.Window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
-            }
-        }
-    }
-
-    private void InvokeSearchScn(SearchContext context, RszClass cls, int fieldIndex, bool array, object? value)
-    {
-        foreach (var (path, stream) in context.Env.GetFilesWithExtension("scn", context.Token)) {
-            try {
-                if (context.Token.IsCancellationRequested) return;
-
-                Interlocked.Increment(ref searchedFiles);
-                var file = new ScnFile(context.Env.RszFileOption, new FileHandler(stream, path));
-                file.Read();
-                HandleInstanceList(context, file.RSZ, cls, fieldIndex, array, value, path);
-            } catch (Exception e) {
-                context.Window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
-            }
-        }
-    }
-
-    private void HandleInstanceList(SearchContext context, RSZFile rsz, RszClass cls, int fieldIndex, bool array, object? value, string path)
-    {
-        foreach (var inst in rsz.InstanceList) {
-            if (inst.RszClass == cls && inst.RSZUserData == null) {
-                if (value == null) {
-                    AddMatch(context, path, path);
-                    return;
-                }
-
-                var fieldValue = inst.Values[fieldIndex];
-                if (array) {
-                    var values = (IList<object>)fieldValue;
-                    foreach (var v in values) {
-                        if (v.Equals(value)) {
+                foreach (var inst in file.GetRSZ()!.InstanceList) {
+                    if (inst.RszClass == cls && inst.RSZUserData == null) {
+                        if (value == null) {
                             AddMatch(context, path, path);
+                            return;
+                        }
+
+                        var fieldValue = inst.Values[fieldIndex];
+                        if (array) {
+                            var values = (IList<object>)fieldValue;
+                            foreach (var v in values) {
+                                if (v.Equals(value)) {
+                                    AddMatch(context, path, path);
+                                }
+                            }
+                        } else {
+                            if (fieldValue.Equals(value)) {
+                                AddMatch(context, path, path);
+                            }
                         }
                     }
-                } else {
-                    if (fieldValue.Equals(value)) {
-                        AddMatch(context, path, path);
+                }
+            } catch (Exception e) {
+                context.Window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
+            }
+        }
+    }
+
+    private void InvokeRszSearchField(SearchContext context, string ext, Func<RszFileOption, FileHandler, BaseRszFile> fileFact, RszFieldType fieldType, bool array , object? value)
+    {
+        Func<object?, object?, bool> equalityComparer = fieldType is RszFieldType.String or RszFieldType.RuntimeType or RszFieldType.Resource
+            ? (object? a, object? b) => (a as string)?.Equals(b as string, StringComparison.InvariantCultureIgnoreCase) == true
+            : (object? a, object? b) => a?.Equals(b) == true;
+
+        foreach (var (path, stream) in context.Env.GetFilesWithExtension(ext, context.Token)) {
+            try {
+                if (context.Token.IsCancellationRequested) return;
+
+                Interlocked.Increment(ref searchedFiles);
+                var file = fileFact.Invoke(context.Env.RszFileOption, new FileHandler(stream, path));
+                file.Read();
+
+                foreach (var inst in file.GetRSZ()!.InstanceList) {
+                    if (inst.RSZUserData != null) continue;
+                    foreach (var field in inst.Fields) {
+                        if (field.type != fieldType) continue;
+
+                        if (value == null) {
+                            AddMatch(context, $"{field.name} = {inst.GetFieldValue(field.name)}", path);
+                            return;
+                        }
+
+                        var fieldValue = inst.GetFieldValue(field.name);
+                        if (field.array) {
+                            var values = (IList<object>)fieldValue;
+                            foreach (var v in values) {
+                                if (equalityComparer(v, value)) {
+                                    AddMatch(context, path, path);
+                                }
+                            }
+                        } else {
+                            if (equalityComparer(fieldValue, value)) {
+                                AddMatch(context, path, path);
+                            }
+                        }
                     }
                 }
+            } catch (Exception e) {
+                context.Window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
             }
         }
     }
