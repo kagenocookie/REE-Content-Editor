@@ -5,6 +5,8 @@ Besides basic file editing, the tool is able to merge multiple changes to the sa
 
 The patcher currently works by emitting patched files directly into the natives folder, so it needs the loose file loader enabled on runtime. Files can alternatively be packed into a PAK file (manually, not directly with this tool yet).
 
+![UI overview](.github/overview.png)
+
 ## Supported games
 - All mainline Resident Evil games
 - Dragon's Dogma 2
