@@ -15,6 +15,7 @@ public class ContentWorkspace
     public BundleManager? EditedBundleManager { get; private set; }
     public Bundle? CurrentBundle { get; private set; }
     public DiffHandler Diff { get; }
+    public MessageManager Messages { get; }
     public GameIdentifier Game => Env.Config.Game;
     public string VersionHash { get; private set; }
 
@@ -26,6 +27,7 @@ public class ContentWorkspace
         BundleManager.GamePath = env.Config.GamePath;
         Diff = new DiffHandler(env);
         ResourceManager = new ResourceManager(patchConfig);
+        Messages = new MessageManager(env);
         if (!patchConfig.IsLoaded) {
             var valid = false;
             try {

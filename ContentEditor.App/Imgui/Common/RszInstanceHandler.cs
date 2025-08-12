@@ -611,6 +611,19 @@ public class GuidFieldHandler : Singleton<GuidFieldHandler>, IObjectUIHandler
                 UndoRedo.RecordSet(context, Guid.NewGuid());
                 ImGui.CloseCurrentPopup();
             }
+            if (ImGui.Button("Find translation")) {
+                var ws = context.GetWorkspace();
+                var window = EditorWindow.CurrentWindow;
+                ws?.Messages.GetTextAsync(val).ContinueWith((res) => {
+                    if (res.Result == null) {
+                        Logger.Info("Message not found for guid " + val);
+                    } else {
+                        Logger.Info("Guid " + val + " message:\n" + res.Result);
+                        window?.Overlays.ShowTooltip(res.Result, 1.5f);
+                    }
+                });
+                ImGui.CloseCurrentPopup();
+            }
             ImGui.EndPopup();
         }
     }
