@@ -1,8 +1,12 @@
+using ContentEditor.App.ImguiHandling;
+using ContentEditor.App.ImguiHandling.Efx;
 using ContentEditor.App.Windowing;
 using ContentEditor.Themes;
 using ContentPatcher;
 using ContentPatcher.FileFormats;
 using ImGuiNET;
+using ReeLib;
+using ReeLib.Efx;
 
 namespace ContentEditor.App;
 
@@ -44,6 +48,9 @@ public static class UI
         fixed (ushort* ranges = PolishRanges) {
             fonts.AddFontFromFileTTF("fonts/NotoSans-Regular.ttf", (float)FontSize, custom_icons, (nint)ranges);
         }
+        fixed (ushort* ranges = AppIcons.Range) {
+            fonts.AddFontFromFileTTF("fonts/appicons.ttf", (float)FontSize, custom_icons, (nint)ranges);
+        }
 
         fonts.Build();
         ImGuiNative.ImFontConfig_destroy(fontCfg);
@@ -69,4 +76,52 @@ public static class UI
         var ini = IniFile.ReadFile(themePath);
         DefaultThemes.ApplyThemeData(ini);
     }
+}
+
+public static class AppIcons
+{
+    public static readonly char EfxEntry = '\ue900';
+    public static readonly char EfxAction = '\ue901';
+    public static readonly char Prefab = '\ue902';
+    public static readonly char Efx = '\ue903';
+    public static readonly char Folder = '\ue905';
+    public static readonly char FolderLink = '\ue907';
+    public static readonly char GameObject = '\ue908';
+    public static readonly char Mesh = '\ue909';
+    public static readonly char Clip = '\ue90a';
+    public static readonly char List = '\ue90b';
+
+    public static string PrependIcon(this string text, object target)
+    {
+        var icon = GetIcon(target);
+        if (icon == '\0') return text;
+        return $"{icon} {text}";
+    }
+
+    public static string PrependIcon(this object target, string text)
+    {
+        var icon = GetIcon(target);
+        if (icon == '\0') return text;
+        return icon + text;
+    }
+
+    public static char GetIcon(object target, object fallback)
+    {
+        var icon = GetIcon(target);
+        if (icon == '\0') icon = GetIcon(fallback);
+        return icon;
+    }
+
+    public static char GetIcon(object target) => target switch {
+        GameObject go => string.IsNullOrEmpty(go.PrefabPath) ? GameObject : Prefab,
+        Folder scn => string.IsNullOrEmpty(scn.ScenePath) ? Folder : FolderLink,
+        PrefabEditor => Prefab,
+        SceneEditor => Folder,
+        EfxEditor => Efx,
+        EFXAction => EfxAction,
+        EFXEntry => EfxEntry,
+        _ => '\0',
+    };
+
+    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)List, 0];
 }

@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Numerics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
@@ -14,6 +15,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
 
     public virtual string HandlerName { get; } = "File";
     public FileHandle Handle { get; private set; }
+    char IWindowHandler.Icon => AppIcons.GetIcon(this, Handle.Resource);
 
     protected virtual bool CanSave => true;
 
@@ -76,7 +78,9 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     public virtual void OnWindow()
     {
         var data = context.Get<WindowData>();
-        if (!ImguiHelpers.BeginWindow(data, $"{HandlerName}: {Handle.Filename}##{data.ID}", windowFlags)) {
+        var icon = AppIcons.GetIcon(this);
+        var name = icon == '\0' ? $"{HandlerName}: {Handle.Filename}##{data.ID}" : $"{icon} {Handle.Filename}##{data.ID}";
+        if (!ImguiHelpers.BeginWindow(data, name, windowFlags)) {
             EditorWindow.CurrentWindow?.CloseSubwindow(data);
             return;
         }

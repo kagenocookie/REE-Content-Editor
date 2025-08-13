@@ -99,6 +99,7 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
                 InitChildContext(child);
                 if (child.uiHandler == null) AddItemHandler(child);
             }
+            AppImguiHelpers.PrependIcon(item);
             child.ShowUI();
             PostItem(child);
 

@@ -112,6 +112,7 @@ public class FolderNodeEditor : IObjectUIHandler
                 ImGui.SameLine();
             }
             var inspector = context.FindHandlerInParents<IInspectorController>();
+            AppImguiHelpers.PrependIcon(folder);
             if (ImGui.Selectable(context.label, folder == inspector?.PrimaryTarget)) {
                 HandleSelect(context, folder);
             }
@@ -147,6 +148,7 @@ public class FolderNodeEditor : IObjectUIHandler
         }
 
         var inspector = context.FindHandlerInParents<IInspectorController>();
+        AppImguiHelpers.PrependIcon(folder);
         if (ImGui.Selectable(context.label, folder == inspector?.PrimaryTarget)) {
             HandleSelect(context, folder);
         }

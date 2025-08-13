@@ -31,6 +31,15 @@ public static class AppImguiHelpers
         return changed;
     }
 
+    public static void PrependIcon(object target)
+    {
+        var icon = AppIcons.GetIcon(target);
+        if (icon != '\0') {
+            ImGui.Text(icon.ToString());
+            ImGui.SameLine();
+        }
+    }
+
     public static bool InputFolder(string label, [NotNull] ref string? path)
     {
         var id = ImGui.GetID(label);

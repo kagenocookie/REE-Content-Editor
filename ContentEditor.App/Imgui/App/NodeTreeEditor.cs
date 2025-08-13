@@ -11,7 +11,7 @@ public abstract class NodeTreeEditor<TNodeHolder, TSelf> : IObjectUIHandler
     protected Vector4 nodeColor = Vector4.One;
     protected bool EnableContextMenu = true;
 
-    protected virtual void HandleContextMenu(TNodeHolder node, UIContext context) {}
+    protected virtual void HandleContextMenu(TNodeHolder node, UIContext context) { }
 
     protected virtual void HandleSelect(UIContext context, TNodeHolder node)
     {
@@ -37,6 +37,7 @@ public abstract class NodeTreeEditor<TNodeHolder, TSelf> : IObjectUIHandler
         }
         var inspector = context.FindHandlerInParents<IInspectorController>();
         ImGui.PushStyleColor(ImGuiCol.Text, nodeColor);
+        AppImguiHelpers.PrependIcon(node);
         if (ImGui.Selectable(context.label, node == inspector?.PrimaryTarget)) {
             HandleSelect(context, node);
         }

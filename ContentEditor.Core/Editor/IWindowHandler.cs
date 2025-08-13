@@ -8,6 +8,7 @@ public interface IWindowHandler
     string HandlerName { get; }
     bool HasUnsavedChanges { get; }
     int FixedID => 0;
+    char Icon => '\0';
 
     void OnOpen() { }
     void OnClosed() { }
@@ -23,10 +24,10 @@ public interface IWindowHandler
 
 public static class DefaultWindowHandler
 {
-    public static void ShowDefaultWindow<THandler>(this THandler handler, UIContext context, ImGuiWindowFlags flags = ImGuiWindowFlags.None) where THandler : IWindowHandler
+    public static void ShowDefaultWindow<THandler>(this THandler handler, UIContext context, string? name = null, ImGuiWindowFlags flags = ImGuiWindowFlags.None) where THandler : IWindowHandler
     {
         var data = context.Get<WindowData>();
-        if (!ImguiHelpers.BeginWindow(data, null, flags)) {
+        if (!ImguiHelpers.BeginWindow(data, name: handler.Icon == '\0' ? name : handler.Icon.ToString() + " " + name, flags)) {
             WindowManager.Instance.CloseWindow(data);
             return;
         }

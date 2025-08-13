@@ -1,4 +1,5 @@
 using ContentEditor.App.Windowing;
+using ContentEditor.Core;
 using ImGuiNET;
 using ReeLib;
 
@@ -60,7 +61,18 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
         context.ShowChildrenUI();
     }
 
-    public void OnWindow() => this.ShowDefaultWindow(context);
+    public void OnWindow()
+    {
+        var data = context.Get<WindowData>();
+        var Icon = _target == null ? '\0' : AppIcons.GetIcon(_target);
+        if (!ImguiHelpers.BeginWindow(data, name: Icon == '\0' ? HandlerName : Icon.ToString() + " " + HandlerName)) {
+            WindowManager.Instance.CloseWindow(data);
+            return;
+        }
+
+        OnIMGUI();
+        ImGui.End();
+    }
 
     public bool RequestClose() => false;
 
