@@ -1,9 +1,10 @@
 using ContentEditor.App.Windowing;
 using ImGuiNET;
+using ReeLib;
 
 namespace ContentEditor.App.ImguiHandling;
 
-public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUIHandler
+public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUIHandler, IRSZFileEditor
 {
     public string HandlerName => "Inspector";
 
@@ -81,4 +82,6 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
     {
         OnWindow();
     }
+
+    RSZFile? IRSZFileEditor.GetRSZFile() => (parentWindow as IRSZFileEditor)?.GetRSZFile();
 }

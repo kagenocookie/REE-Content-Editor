@@ -4,5 +4,5 @@ namespace ContentEditor.App.ImguiHandling;
 
 public interface IRSZFileEditor
 {
-    RSZFile GetRSZFile();
+    RSZFile? GetRSZFile();
 }

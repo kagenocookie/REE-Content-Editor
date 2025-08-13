@@ -44,9 +44,11 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
     public T GetCustomContent<T>() where T : class => (Loader as IFileHandleContentProvider<T>)?.GetFile(this)
         ?? throw new NotImplementedException();
 
-    public static FileHandle CreateEmbedded(IFileLoader loader, IResourceFile file)
+    public static FileHandle CreateEmbedded(IFileLoader loader, IResourceFile file, string filepath = "")
     {
-        return new FileHandle(string.Empty, new MemoryStream(0), FileHandleType.Embedded, loader);
+        var handle = new FileHandle(filepath, new MemoryStream(0), FileHandleType.Embedded, loader);
+        handle.Resource = file;
+        return handle;
     }
 
     public void Revert(ContentWorkspace workspace)

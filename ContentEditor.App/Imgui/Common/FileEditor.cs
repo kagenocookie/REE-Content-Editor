@@ -15,7 +15,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     public virtual string HandlerName { get; } = "File";
     public FileHandle Handle { get; private set; }
 
-    public bool IsEmbedded { get; set; }
+    protected virtual bool CanSave => true;
 
     public Vector2 Size { get; private set; }
     public Vector2 Position { get; private set; }
@@ -98,45 +98,47 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     {
         if (failedToReadfile) return;
 
-        if (ImGui.Button("Save")) {
-            Save();
-        }
-        var workspace = data.Context.GetWorkspace()!;
-        ImGui.SameLine();
-        if (ImGui.Button("Save as ...")) {
-            PlatformUtils.ShowSaveFileDialog((path) => SaveTo(path, true), Handle.Filepath);
-        }
-        ImGui.SameLine();
-        if (ImGui.Button("Save copy to ...")) {
-            PlatformUtils.ShowSaveFileDialog((path) => SaveTo(path, false), Handle.Filepath);
-        }
-        if (Handle.DiffHandler != null && ImguiHelpers.SameLine() && Handle.HandleType is not FileHandleType.Memory && ImGui.Button("See changes")) {
-            var diff = Handle.DiffHandler.FindDiff(Handle);
-            if (diff == null) {
-                EditorWindow.CurrentWindow?.Overlays.ShowTooltip("No changes detected compared to the base file", 3f);
-            } else {
-                EditorWindow.CurrentWindow?.AddSubwindow(new JsonViewer(diff, Handle.Filepath));
+        if (CanSave) {
+            if (ImGui.Button("Save")) {
+                Save();
             }
-        }
-        if (workspace.CurrentBundle != null && !Handle.IsInBundle(workspace, workspace.CurrentBundle)) {
+            var workspace = data.Context.GetWorkspace()!;
             ImGui.SameLine();
-            if (ImGui.Button("Save to bundle")) {
-                var bundle = workspace.CurrentBundle;
-                var fn = Handle.Filename.ToString();
-                var bundleFolder = workspace.BundleManager.GetBundleFolder(bundle);
-                var nativeFilepath = Handle.NativePath ?? PathUtils.GetNativeFromFullFilepath(Handle.Filepath) ?? fn;
-                var localFilepath = fn;
-                var savePath = Path.Combine(bundleFolder, localFilepath);
-                if (File.Exists(savePath)) {
-                    localFilepath = PathUtils.RemoveNativesFolder(nativeFilepath);
-                    savePath = Path.Combine(bundleFolder, localFilepath);
+            if (ImGui.Button("Save as ...")) {
+                PlatformUtils.ShowSaveFileDialog((path) => SaveTo(path, true), Handle.Filepath);
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Save copy to ...")) {
+                PlatformUtils.ShowSaveFileDialog((path) => SaveTo(path, false), Handle.Filepath);
+            }
+            if (Handle.DiffHandler != null && ImguiHelpers.SameLine() && Handle.HandleType is not FileHandleType.Memory && ImGui.Button("See changes")) {
+                var diff = Handle.DiffHandler.FindDiff(Handle);
+                if (diff == null) {
+                    EditorWindow.CurrentWindow?.Overlays.ShowTooltip("No changes detected compared to the base file", 3f);
+                } else {
+                    EditorWindow.CurrentWindow?.AddSubwindow(new JsonViewer(diff, Handle.Filepath));
                 }
-                SaveTo(savePath, true, () => bundle.AddResource(localFilepath, nativeFilepath));
-                workspace.BundleManager.SaveBundle(bundle);
+            }
+            if (workspace.CurrentBundle != null && !Handle.IsInBundle(workspace, workspace.CurrentBundle)) {
+                ImGui.SameLine();
+                if (ImGui.Button("Save to bundle")) {
+                    var bundle = workspace.CurrentBundle;
+                    var fn = Handle.Filename.ToString();
+                    var bundleFolder = workspace.BundleManager.GetBundleFolder(bundle);
+                    var nativeFilepath = Handle.NativePath ?? PathUtils.GetNativeFromFullFilepath(Handle.Filepath) ?? fn;
+                    var localFilepath = fn;
+                    var savePath = Path.Combine(bundleFolder, localFilepath);
+                    if (File.Exists(savePath)) {
+                        localFilepath = PathUtils.RemoveNativesFolder(nativeFilepath);
+                        savePath = Path.Combine(bundleFolder, localFilepath);
+                    }
+                    SaveTo(savePath, true, () => bundle.AddResource(localFilepath, nativeFilepath));
+                    workspace.BundleManager.SaveBundle(bundle);
+                }
             }
         }
         if (Handle.HandleType is FileHandleType.Disk or FileHandleType.Bundle && System.IO.File.Exists(Handle.Filepath)) {
-            ImGui.SameLine();
+            if (CanSave) ImGui.SameLine();
             if (ImGui.Button("Show in file explorer")) {
                 FileSystemUtils.ShowFileInExplorer(Handle.Filepath);
             }
@@ -153,8 +155,10 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
 
         if (Handle.FileSource != null) {
             ImGui.TextColored(Colors.Faded, $"File source: {Handle.HandleType} - {Handle.FileSource} ({Handle.NativePath})");
-        } else {
+        } else if (!string.IsNullOrEmpty(Handle.NativePath)) {
             ImGui.TextColored(Colors.Faded, $"File source: {Handle.HandleType} ({Handle.NativePath})");
+        } else {
+            ImGui.TextColored(Colors.Faded, $"File source: {Handle.HandleType}");
         }
     }
 

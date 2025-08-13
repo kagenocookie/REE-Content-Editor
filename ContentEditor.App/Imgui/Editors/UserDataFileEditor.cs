@@ -23,6 +23,7 @@ public class UserDataFileEditor : FileEditor, IWorkspaceContainer, IRSZFileEdito
     }
 
     public RSZFile GetRSZFile() => File.RSZ;
+    protected override bool CanSave => context.GetWorkspace()?.Env.TryGetFileExtensionVersion("user", out _) != false || Handle.HandleType != FileHandleType.Embedded;
 
     protected override void OnFileReverted()
     {

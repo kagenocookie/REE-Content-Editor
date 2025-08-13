@@ -122,7 +122,9 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
 
         var handler = WindowHandlerFactory.CreateFileResourceHandler(workspace, file);
         if (handler != null) {
-            AppConfig.Instance.AddRecentFile(file.Filepath);
+            if (file.HandleType != FileHandleType.Embedded) {
+                AppConfig.Instance.AddRecentFile(file.Filepath);
+            }
             AddSubwindow(handler);
         } else if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {
             AppConfig.Instance.AddRecentFile(file.Filepath);

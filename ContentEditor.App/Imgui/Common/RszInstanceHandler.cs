@@ -564,16 +564,15 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                 var rsz = context.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
                 if (rsz == null) {
                     ImGui.TextColored(Colors.Warning, "Invalid UserData instance");
-                    ImGui.TreePop();
                     return;
                 }
-                var user = new UserFile(ws.Env.RszFileOption, rsz.FileHandler, rsz);
+                var user = new UserFile(ws.Env.RszFileOption, rsz.FileHandler, file);
                 var parentFileHandle = context.FindValueInParentValues<FileHandle>();
                 FileHandle childHandle;
                 if (parentFileHandle != null) {
-                    childHandle = FileHandle.CreateEmbedded(parentFileHandle.Loader, new BaseFileResource<UserFile>(user));
+                    childHandle = FileHandle.CreateEmbedded(parentFileHandle.Loader, new BaseFileResource<UserFile>(user), "embedded.user.0");
                 } else {
-                    childHandle = FileHandle.CreateEmbedded(UserFileLoader.Instance, new BaseFileResource<UserFile>(user));
+                    childHandle = FileHandle.CreateEmbedded(UserFileLoader.Instance, new BaseFileResource<UserFile>(user), "embedded.user.0");
                 }
 
                 WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, new UserDataFileEditor(ws, childHandle), "UserFile");
