@@ -646,6 +646,11 @@ public class ResourceManager(PatchDataContainer config)
         return handle;
     }
 
+    public bool CanLoadFile(string filepath)
+    {
+        return GetLoaderForFile(filepath, PathUtils.ParseFileFormat(filepath)) != null;
+    }
+
     private IFileLoader? GetLoaderForFile(string filepath, REFileFormat format)
     {
         foreach (var candidate in FileLoaders) {

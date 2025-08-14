@@ -546,7 +546,8 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                     ImGui.TextColored(Colors.Error, "No path for user data");
                     return;
                 }
-                if (null == ws.Env.FindSingleFile(info.Path, out var resolvedPath)) {
+                var resolvedPath = ws.Env.ResolveFilepath(info.Path);
+                if (resolvedPath == null) {
                     ImGui.TextColored(Colors.Error, "User data file not found: " + info.Path);
                     return;
                 }

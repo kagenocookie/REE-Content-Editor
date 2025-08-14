@@ -1,3 +1,4 @@
+using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
@@ -45,6 +46,45 @@ public class ResourcePathPicker : IObjectUIHandler
         context.state ??= currentPath;
         if (AppImguiHelpers.InputFilepath(context.label, ref context.state, FileExtensionFilter)) {
             context.Changed = true;
+        }
+
+        if (ImGui.BeginPopupContextItem()) {
+            if (ImGui.Button("Open file")) {
+                ImGui.CloseCurrentPopup();
+                var ws = context.GetWorkspace();
+                if (ws != null) {
+                    var resolvedPath = ws.Env.ResolveFilepath(currentPath);
+                    if (resolvedPath == null) {
+                        Logger.Error("File not found: " + currentPath);
+                    } else if (!ws.ResourceManager.CanLoadFile(resolvedPath)) {
+                        Logger.Error("Unable to load file: " + resolvedPath);
+                    } else if (!ws.ResourceManager.TryGetOrLoadFile(resolvedPath, out var file)) {
+                        Logger.Error("Failed to load file: " + resolvedPath);
+                    } else {
+                        EditorWindow.CurrentWindow?.AddFileEditor(file);
+                    }
+                }
+            }
+            if (ImGui.Button("Extract file")) {
+                ImGui.CloseCurrentPopup();
+                var ws = context.GetWorkspace();
+                if (ws != null) {
+                    var resolvedPath = ws.Env.ResolveFilepath(currentPath);
+                    if (resolvedPath == null) {
+                        Logger.Error("File not found: " + currentPath);
+                    } else {
+                        PlatformUtils.ShowSaveFileDialog(
+                            initialFile: Path.GetFileName(resolvedPath),
+                            filter: PathUtils.ParseFileFormat(currentPath).format + "|" + PathUtils.GetFilenameExtensionWithSuffixes(resolvedPath).ToString(),
+                            callback: (outpath) => {
+                                using var file = ws.Env.FindSingleFile(resolvedPath);
+                                using var outfs = File.Create(outpath);
+                                file?.CopyTo(outfs);
+                            });
+                    }
+                }
+            }
+            ImGui.EndPopup();
         }
 
         if (context.state != currentPath) {

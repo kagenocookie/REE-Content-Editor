@@ -164,6 +164,12 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         } else {
             ImGui.TextColored(Colors.Faded, $"File source: {Handle.HandleType}");
         }
+        if (!string.IsNullOrEmpty(Handle.NativePath)) {
+            if (ImGui.IsItemClicked()) {
+                EditorWindow.CurrentWindow?.CopyToClipboard(Handle.NativePath);
+                EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Native path copied!", 1);
+            }
+        }
     }
 
     private void Save()
