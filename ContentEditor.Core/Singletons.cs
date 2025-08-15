@@ -11,7 +11,7 @@ public static class Logger
     public static void Info<T>(T msg) => CurrentLogger.Info(msg?.ToString()!);
     public static void Info(params object[] msg) => CurrentLogger.Info(msg);
 
-    public static void Warn(object msg) => CurrentLogger.Info("WARNING: " + msg);
+    public static void Warn(object msg) => CurrentLogger.Warn(msg);
 
     public static void Error(object msg) => CurrentLogger.Error(msg);
     public static void Error(Exception exception, params object[] msg) => CurrentLogger.Error(exception, msg);

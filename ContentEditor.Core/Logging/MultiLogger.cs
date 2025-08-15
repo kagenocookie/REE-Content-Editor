@@ -25,6 +25,14 @@ public class MultiLogger(ILogger logger1, ILogger logger2) : ILogger
         }
     }
 
+    public void Warn(object msg)
+    {
+        if (LoggingLevel <= LogSeverity.Warning) {
+            logger1.Warn(msg);
+            logger2.Warn(msg);
+        }
+    }
+
     public void Error(object msg)
     {
         if (LoggingLevel <= LogSeverity.Error) {

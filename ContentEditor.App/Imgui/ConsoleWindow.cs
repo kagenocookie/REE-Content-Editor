@@ -23,7 +23,7 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
     private readonly List<LogEntry> info = new();
     private readonly List<LogEntry> warn = new();
     private readonly List<LogEntry> error = new();
-    private Vector4[] SeverityColors = [Colors.Faded, Colors.Default, Colors.Danger, Colors.Error];
+    private Vector4[] SeverityColors = [Colors.Faded, Colors.Default, Colors.Warning, Colors.Error];
 
     private WindowData? window;
 

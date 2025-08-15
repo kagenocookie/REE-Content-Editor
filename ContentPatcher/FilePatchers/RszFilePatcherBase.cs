@@ -2,6 +2,7 @@ namespace ContentPatcher;
 
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using ContentEditor;
 using ReeLib;
 using ReeLib.Scn;
 
@@ -171,4 +172,58 @@ public abstract class RszFilePatcherBase : IResourceFilePatcher
         }
     }
 
+    protected JsonObject? GetEmbeddedDiffs(RSZFile target, RSZFile source)
+    {
+        if (source.EmbeddedRSZFileList == null) return null;
+        if (source.EmbeddedRSZFileList.Count == 0 && (target.EmbeddedRSZFileList == null || target.EmbeddedRSZFileList.Count == 0)) return null;
+        var list = new JsonObject();
+        foreach (var sourceEmbed in source.EmbeddedRSZFileList) {
+            var path = sourceEmbed.ObjectList[0].Values[0] as string;
+            if (string.IsNullOrEmpty(path)) {
+                Logger.Warn("Found embedded userdata without file path");
+                continue;
+            }
+
+            var targetEmbed = target.EmbeddedRSZFileList?.FirstOrDefault(e => e.ObjectList[0].Values[0] as string == path);
+            if (targetEmbed == null) {
+                list.Add(path, sourceEmbed.ObjectList[0].ToJson(workspace.Env));
+                continue;
+            }
+
+            var diff = GetRszInstanceDiff(targetEmbed.ObjectList[0], sourceEmbed.ObjectList[0]);
+            if (diff != null) {
+                list.Add(path, diff);
+            }
+        }
+
+        if (list.Count == 0) return null;
+        return list;
+    }
+
+    protected void ApplyEmbeddedDiffs(RSZFile target, JsonObject? diff)
+    {
+        if (diff == null || diff.Count == 0) return;
+
+        target.EmbeddedRSZFileList ??= new();
+        foreach (var (path, data) in diff) {
+            if (data == null) {
+                // delete?
+                continue;
+            }
+            var userdata = target.EmbeddedRSZFileList.FirstOrDefault(e => e.ObjectList[0].Values[0] as string == path);
+            if (userdata == null) {
+                var instance = data.Deserialize<RszInstance>(workspace.Env.JsonOptions);
+                if (instance == null) {
+                    Logger.Error("Failed to deserialize embedded userdata instance " + path);
+                    continue;
+                }
+
+                userdata = new RSZFile(target.Option, target.FileHandler);
+                userdata.AddToObjectTable(instance);
+                continue;
+            }
+
+            ApplyObjectDiff(userdata.ObjectList[0], data);
+        }
+    }
 }

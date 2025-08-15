@@ -18,6 +18,13 @@ public class ConsoleLogger : ILogger
         }
     }
 
+    public void Warn(object msg)
+    {
+        if (LoggingLevel <= LogSeverity.Warning) {
+            Console.WriteLine("WARN: " + msg);
+        }
+    }
+
     public void Error(object msg)
     {
         if (LoggingLevel <= LogSeverity.Error) {

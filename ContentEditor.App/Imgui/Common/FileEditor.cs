@@ -296,6 +296,6 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             return true;
         }
 
-        return false;
+        return Handle.HandleType == FileHandleType.Embedded;
     }
 }

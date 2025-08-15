@@ -19,6 +19,13 @@ public class EventLogger : ILogger
         }
     }
 
+    public void Warn(object msg)
+    {
+        if (LoggingLevel <= LogSeverity.Warning) {
+            MessageReceived?.Invoke(msg.ToString()!, LogSeverity.Warning);
+        }
+    }
+
     public void Error(object msg)
     {
         if (LoggingLevel <= LogSeverity.Error) {

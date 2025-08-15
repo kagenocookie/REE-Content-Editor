@@ -7,6 +7,7 @@ public interface ILogger
 
     void Info(object msg);
     void Info(params object[] msg) => Info(string.Join(" ", msg));
+    void Warn(object msg) => Info("WARNING: " + string.Join(" ", msg));
 
     void Error(object msg) => Info($"ERROR: {msg}");
     void Error(Exception exception, params object[] msg) => Error($"{string.Join(" ", msg)} (Error: {exception.Message})\nStack:\n{exception.StackTrace ?? "N/A"}");

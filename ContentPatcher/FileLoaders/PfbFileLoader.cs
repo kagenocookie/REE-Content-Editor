@@ -67,6 +67,12 @@ public sealed class PrefabPatcher : RszFilePatcherBase, IDisposable
             }
         }
 
+        var embedDiff = GetEmbeddedDiffs(file.RSZ, newfile.RSZ);
+        if (embedDiff != null) {
+            diff ??= new JsonObject();
+            diff["__embeds"] = embedDiff;
+        }
+
         return diff;
     }
 
@@ -74,7 +80,7 @@ public sealed class PrefabPatcher : RszFilePatcherBase, IDisposable
     {
         if (diff is not JsonObject obj) return;
 
-        var unapplied = obj.Where(kv => kv.Value is JsonObject).Select(kv => kv.Key).ToHashSet();
+        var unapplied = obj.Where(kv => kv.Value is JsonObject && kv.Key != "__embeds").Select(kv => kv.Key).ToHashSet();
         var maxAttempts = unapplied.Count;
         // repeat the loop to ensure path order doesn't matter for newly added objects
         // e.g. if there's root/new/new_2/new_3 path, we always add them in the right parent order
@@ -104,6 +110,10 @@ public sealed class PrefabPatcher : RszFilePatcherBase, IDisposable
         }
         if (maxAttempts < 0) {
             throw new Exception("Invalid state - pfb diff failed to fully resolve");
+        }
+
+        if (obj.TryGetPropertyValue("__embeds", out var embedDiff) && embedDiff is JsonObject eDiffObj) {
+            ApplyEmbeddedDiffs(file.RSZ, eDiffObj);
         }
     }
 
