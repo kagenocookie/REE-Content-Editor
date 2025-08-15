@@ -39,7 +39,7 @@ Some files may not fully work for other RE ENGINE games.
 | .uvs      | ☑️ read/write | | |
 | .tex, .dds  | view only | | TEX/DDS conversion, better preview controls |
 | common image formats | view only | | TEX/DDS conversion, channel merging |
-| .uvar     | read/write | coming soon | expression node graph |
+| .uvar     | ☑️ read/write | coming soon | expression node graph |
 | .mdf2     | ☑️ read/write | coming soon | material preview |
 | .efx      | ☑️ read/write | | graphic preview, maybe partial patching |
 | .rcol     | read/write | | 3D display, overlay with mesh/pfb, maybe partial patching |

@@ -726,7 +726,12 @@ public class ResourceManager(PatchDataContainer config)
         if (handle == null) {
             throw new NotSupportedException();
         }
-        openFiles.Add(handle.NativePath ?? handle.Filepath, handle);
+        string filekey = handle.NativePath ?? handle.Filepath;
+        if (!openFiles.TryAdd(filekey, handle)) {
+            var prev = openFiles[filekey];
+            CloseFile(prev);
+            openFiles.Add(filekey, handle);
+        }
         return handle;
     }
 

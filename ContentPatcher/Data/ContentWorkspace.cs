@@ -119,6 +119,7 @@ public class ContentWorkspace
                     }
 
                     TryExecuteDiff(file);
+                    ResourceManager.CloseFile(file);
                 }
             } else {
                 foreach (var file in ResourceManager.GetOpenFiles()) {
@@ -186,17 +187,30 @@ public class ContentWorkspace
         var bundlePathNorm = bundlePath.NormalizeFilepath();
         bundle.GameVersion = VersionHash;
         bundle.ResourceListing ??= new();
+        foreach (var file in Directory.EnumerateFiles(bundlePath, "*.pak")) {
+            if (file.EndsWith(".pak")) {
+                Logger.Info("Unpacking PAK file: " + file);
+                var pak = new PakReader();
+                if (!pak.TryReadManifestFileList(file)) {
+                    pak.AddFiles(Env.ListFile?.Files ?? []);
+                }
+                var count = pak.UnpackFilesTo(bundlePath);
+                if (count == 0) {
+                    Logger.Warn("Couldn't find any files within PAK file: " + file);
+                }
+            }
+        }
+
         foreach (var file in Directory.EnumerateFiles(bundlePath, "*.*", SearchOption.AllDirectories)) {
             var localFile = file.NormalizeFilepath().Replace(bundlePathNorm, "").TrimStart('/');
             if (localFile == "modinfo.ini") continue;
-            var ext = Path.GetExtension(file);
-            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg") {
+            var ext = Path.GetExtension(file).ToLowerInvariant();
+            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".txt") {
                 // probably cover images
                 continue;
             }
             if (localFile.EndsWith(".pak")) {
-                Logger.Error("PAK files not currently supported for initialization. Aborting.\nFile: " + file);
-                return;
+                continue;
             }
 
             if (localFile.StartsWith("natives/")) {

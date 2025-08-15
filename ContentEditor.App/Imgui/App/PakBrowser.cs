@@ -68,8 +68,6 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         Logger.Info($"Successfully extracted {success}/{count} files");
     }
 
-    private const string ManifestFilepath = "__MANIFEST/MANIFEST.TXT";
-
     public void OnIMGUI()
     {
         var list = Workspace.ListFile;
@@ -87,12 +85,8 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             } else {
                 // single file
                 reader = new CachedMemoryPakReader();
-                reader.PakFilePriority = [PakFilePath];
-                reader.AddFiles([ManifestFilepath]);
-                var embeddedList = reader.FindFiles().SingleOrDefault();
-                reader.AddFiles(list.Files);
-                if (embeddedList.stream != null) {
-                    reader.AddFilesFromListFile(embeddedList.stream);
+                if (!reader.TryReadManifestFileList(PakFilePath)) {
+                    reader.AddFiles(list.Files);
                 }
                 reader.CacheEntries(true);
                 matchedList = new ListFileWrapper(reader.CachedPaths);
