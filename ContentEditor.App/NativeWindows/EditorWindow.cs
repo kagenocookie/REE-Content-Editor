@@ -176,18 +176,33 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                 ));
             }
             if (ImGui.BeginMenu($"Workspace: {workspace.Data.Name ?? "--"}")) {
+                if (!workspace.BundleManager.IsLoaded) workspace.BundleManager.LoadDataBundles();
                 if (ImGui.BeginMenu($"Active bundle: {workspace.Data.ContentBundle}")) {
                     if (ImGui.MenuItem("Create new...")) {
                         ShowBundleManagement();
                     }
                     ImGui.Separator();
-                    if (!workspace.BundleManager.IsLoaded) workspace.BundleManager.LoadDataBundles();
                     foreach (var b in workspace.BundleManager.AllBundles) {
                         if (ImGui.MenuItem(b.Name)) {
                             SetWorkspace(workspace.Env.Config.Game, b.Name);
                         }
                     }
                     ImGui.EndMenu();
+                }
+                if (workspace.BundleManager.UninitializedBundleFolders.Count > 0) {
+                    if (ImGui.BeginMenu("* Uninitialized bundle folders")) {
+                        foreach (var item in workspace.BundleManager.UninitializedBundleFolders) {
+                            if (ImGui.MenuItem(item)) {
+                                try {
+                                    workspace.InitializeUnlabelledBundle(item);
+                                } catch (Exception ex) {
+                                    Logger.Error(ex, "Failed to set up uninitialized bundle " + item);
+                                }
+                                break;
+                            }
+                        }
+                        ImGui.EndMenu();
+                    }
                 }
                 if (ImGui.MenuItem("Bundle management")) {
                         ShowBundleManagement();

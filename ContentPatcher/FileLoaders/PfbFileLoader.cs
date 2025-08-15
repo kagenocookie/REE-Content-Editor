@@ -73,6 +73,7 @@ public sealed class PrefabPatcher : RszFilePatcherBase, IDisposable
             diff["__embeds"] = embedDiff;
         }
 
+        if (diff.Count == 0) return null;
         return diff;
     }
 

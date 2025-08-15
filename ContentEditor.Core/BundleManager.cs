@@ -18,6 +18,8 @@ public class BundleManager
     }
     public List<SerializedEnum> Enums { get; } = new();
 
+    public List<string> UninitializedBundleFolders { get; } = new();
+
     public event Action<Dictionary<string, Bundle>>? EntitiesCreated;
     public event Action<Dictionary<string, Bundle>>? EntitiesUpdated;
 
@@ -65,6 +67,7 @@ public class BundleManager
         var unorderedBundles = new List<Bundle>();
         var bundleImports = new ImportSummary(new (), new());
         Directory.CreateDirectory(BundlePath);
+        UninitializedBundleFolders.Clear();
         foreach (var entry in Directory.EnumerateFileSystemEntries(BundlePath)) {
             var finfo = new FileInfo(entry);
             var isFolder = (finfo.Attributes & FileAttributes.Directory) != 0;
@@ -73,7 +76,12 @@ public class BundleManager
                 // CE.NET+ bundle
                 bundleJsonFile = Path.Combine(entry, "bundle.json");
                 // maybe handle folders with no bundle as a raw "resource-only" bundle instead? (and autogenerate the json)
-                if (!File.Exists(bundleJsonFile)) continue;
+                if (!File.Exists(bundleJsonFile)) {
+                    if (Directory.EnumerateFiles(entry).Any()) {
+                        UninitializedBundleFolders.Add(entry);
+                    }
+                    continue;
+                }
             } else if (entry.EndsWith(".json")) {
                 bundleJsonFile = entry;
             } else {

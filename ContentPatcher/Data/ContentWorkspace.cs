@@ -1,6 +1,7 @@
 using ContentEditor;
 using ContentEditor.Core;
 using ContentEditor.Editor;
+using ContentPatcher.FileFormats;
 using ReeLib;
 
 namespace ContentPatcher;
@@ -50,6 +51,7 @@ public class ContentWorkspace
                 Data.ContentBundle = null;
             }
             CurrentBundle = null;
+            Data.Name = null;
             ResourceManager.SetBundle(BundleManager, null);
             return;
         }
@@ -80,7 +82,7 @@ public class ContentWorkspace
         return count;
     }
 
-    public void SaveBundle()
+    public void SaveBundle(bool forceDiffAllFiles = false)
     {
         if (Data.ContentBundle == null) {
             return;
@@ -91,18 +93,36 @@ public class ContentWorkspace
             WindowManager.Instance.ShowError($"Bundle '{Data.ContentBundle}' not found!");
             return;
         }
+        var didAllowLoose = Env.AllowUseLooseFiles;
+        Env.AllowUseLooseFiles = false;
         if (bundle.ResourceListing != null) {
             // update the diffs for all open bundle resource files that are part of the bundle
             // we don't check for file.Modified because it can be marked as false but still be different from the current diff
             // e.g. if we manually replaced the file or undo'ed our changes
-            foreach (var file in ResourceManager.GetOpenFiles()) {
+            void TryExecuteDiff(FileHandle file)
+            {
                 if (file.NativePath != null && bundle.TryFindResourceByNativePath(file.NativePath, out var localPath) && file.DiffHandler != null) {
-                    var resourceListing = bundle.ResourceListing[localPath];
+                    var resourceListing = bundle.ResourceListing![localPath];
                     var newdiff = file.DiffHandler.FindDiff(file);
                     if (newdiff?.ToJsonString() != resourceListing.Diff?.ToJsonString()) {
                         resourceListing.Diff = newdiff;
-                        resourceListing.DiffTime = DateTime.UtcNow;
                     }
+                    resourceListing.DiffTime = DateTime.UtcNow;
+                }
+            }
+
+            if (forceDiffAllFiles) {
+                foreach (var (localPath, info) in bundle.ResourceListing) {
+                    var file = ResourceManager.GetFileHandle(info.Target);
+                    if (file == null) {
+                        throw new Exception("Failed to open bundle file " + info.Target);
+                    }
+
+                    TryExecuteDiff(file);
+                }
+            } else {
+                foreach (var file in ResourceManager.GetOpenFiles()) {
+                    TryExecuteDiff(file);
                 }
             }
         }
@@ -136,8 +156,90 @@ public class ContentWorkspace
             bundle.Entities.RemoveAt(del);
         }
         bundle.GameVersion = VersionHash;
+        Env.AllowUseLooseFiles = didAllowLoose;
 
         (EditedBundleManager ?? BundleManager).SaveBundle(bundle);
+    }
+
+    public void InitializeUnlabelledBundle(string bundlePath)
+    {
+        var originalBundle = this.CurrentBundle;
+        if (originalBundle != null) {
+            SetBundle(null);
+        }
+        var bundleJsonPath = Path.Combine(bundlePath, "bundle.json");
+        var bundle = new Bundle();
+        bundle.Name = new DirectoryInfo(bundlePath).Name;
+        var modIni = Path.Combine(bundlePath, "modinfo.ini");
+        if (File.Exists(modIni)) {
+            foreach (var (key, value) in IniFile.ReadFileIgnoreKeyCasing(modIni)) {
+                if (key == "author") {
+                    bundle.Author = value;
+                } else if (key == "description") {
+                    bundle.Description = bundle.Description == null ? value : bundle.Description + "\n\n" + value;
+                } else if (key == "name") {
+                    bundle.Description = "Mod name: " + (bundle.Description == null ? value : value + "\n\n" + bundle.Description);
+                }
+            }
+        }
+
+        var bundlePathNorm = bundlePath.NormalizeFilepath();
+        bundle.GameVersion = VersionHash;
+        bundle.ResourceListing ??= new();
+        foreach (var file in Directory.EnumerateFiles(bundlePath, "*.*", SearchOption.AllDirectories)) {
+            var localFile = file.NormalizeFilepath().Replace(bundlePathNorm, "").TrimStart('/');
+            if (localFile == "modinfo.ini") continue;
+            var ext = Path.GetExtension(file);
+            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg") {
+                // probably cover images
+                continue;
+            }
+            if (localFile.EndsWith(".pak")) {
+                Logger.Error("PAK files not currently supported for initialization. Aborting.\nFile: " + file);
+                return;
+            }
+
+            if (localFile.StartsWith("natives/")) {
+                bundle.ResourceListing[localFile] = new ResourceListItem() {
+                    Target = localFile,
+                };
+            } else if (localFile.StartsWith("reframework/data/usercontent/bundles/") && localFile.EndsWith(".json")) {
+                Logger.Error("Found nested bundle file, the mod was not installed correctly. Aborting.\nFile: " + file);
+                // we'll need a different flow for upgrading legacy DD2 bundles, as well as some sort of migration of legacy data
+                return;
+            } else if (localFile.StartsWith("reframework/")) {
+                Logger.Warn("REFramework files are not currently supported for patch installation. Install this manually for now: " + localFile);
+            } else {
+                var listfile = Env.ListFile;
+                var nativePath = localFile;
+                var isProbablyCorrect = false;
+                if (listfile != null) {
+                    var fn = Path.GetFileName(localFile);
+                    var possibleNatives = listfile.GetFiles($".*/{fn}$", 2);
+                    if (possibleNatives.Length == 1) {
+                        nativePath = possibleNatives[0];
+                        isProbablyCorrect = true;
+                    } else if (possibleNatives.Length > 1) {
+                        nativePath = possibleNatives[0];
+                    }
+                    listfile.ResetResultCache();
+                }
+                bundle.ResourceListing[localFile] = new ResourceListItem() {
+                    Target = nativePath,
+                };
+                if (!isProbablyCorrect) {
+                    Logger.Warn("Resource file at the bundle root. Unable to guarantee correctly determined native path. Please recheck the generated bundle json.\nFile: " + localFile);
+                }
+            }
+        }
+
+        bundle.Touch();
+        BundleManager.ActiveBundles.Add(bundle);
+        BundleManager.AllBundles.Add(bundle);
+        SetBundle(bundle.Name);
+        SaveBundle(true);
+        BundleManager.UninitializedBundleFolders.Remove(bundlePath);
+        SetBundle(originalBundle?.Name);
     }
 
     public override string ToString() => Data.Name ?? "New Workspace";
