@@ -65,7 +65,7 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
     {
         var data = context.Get<WindowData>();
         var Icon = _target == null ? '\0' : AppIcons.GetIcon(_target);
-        if (!ImguiHelpers.BeginWindow(data, name: Icon == '\0' ? HandlerName : Icon.ToString() + " " + HandlerName)) {
+        if (!ImguiHelpers.BeginWindow(data, name: Icon == '\0' ? $"{HandlerName}##{data.ID}" : $"{Icon} {HandlerName}##{data.ID}")) {
             WindowManager.Instance.CloseWindow(data);
             return;
         }

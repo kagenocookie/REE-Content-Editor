@@ -52,6 +52,31 @@ public class FolderNodeEditor : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var folder = context.Get<Folder>();
+        var filter = context.FindHandlerInParents<IFilterRoot>();
+        if (filter?.HasFilterActive == true) {
+            if (filter.MatchedObject == null) {
+                NodeEditorUtils.ShowFilteredNode(filter, folder);
+                foreach (var go in folder.GameObjects) {
+                    NodeEditorUtils.ShowFilteredNode<GameObject>(filter, go);
+                }
+                return;
+            }
+
+            if (filter.MatchedObject == folder) {
+                ImGui.SetNextItemOpen(true, ImGuiCond.Once);
+                HandleSelect(context, folder);
+            } else if (filter.MatchedObject is Folder matchNode) {
+                if (folder.IsParentOf(matchNode)) {
+                    ImGui.SetNextItemOpen(true, ImGuiCond.Once);
+                    context.StateBool = true;
+                }
+            } else if (filter.MatchedObject is GameObject node2) {
+                if (folder.IsParentOf(node2)) {
+                    ImGui.SetNextItemOpen(true, ImGuiCond.Once);
+                    context.StateBool = true;
+                }
+            }
+        }
         if (!string.IsNullOrEmpty(folder.ScenePath)) {
             HandleLinkedScene(context, folder);
             return;

@@ -156,6 +156,10 @@ public class RszDataFinder : IWindowHandler
     {
         ImguiHelpers.FilterableCSharpEnumCombo("Field type", ref rszFieldType, ref rszFieldTypeFilter!);
         var value = RszValueInput(rszFieldType);
+        ImGui.Checkbox("Search user files", ref searchUserFiles);
+        ImGui.Checkbox("Search SCN files", ref searchScn);
+        ImGui.Checkbox("Search PFB files", ref searchPfb);
+
         if (cancellationTokenSource != null) {
             return;
         }
@@ -210,14 +214,25 @@ public class RszDataFinder : IWindowHandler
 
         RszField? field = null;
         ImGui.Checkbox("Search class instance only", ref searchClassOnly);
+        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Search for any instance of this class, regardless of what fields it contains");
         object? value = null;
         if (!searchClassOnly) {
             var fields = cls.fields.Select(f => f.name).ToArray();
+            if (fields.Length == 0) {
+                if (cls.name != "") {
+                    ImGui.TextColored(Colors.Warning, "Chosen class has no serialized fields. Search by class only if you wish to find instances of it.");
+                }
+                return;
+            }
             ImGui.Combo("Field", ref selectedFieldIndex, fields, fields.Length);
 
             field = selectedFieldIndex >= 0 && selectedFieldIndex < cls.fields.Length ? cls.fields[selectedFieldIndex] : null;
             value = RszValueInput(field?.type);
         }
+
+        ImGui.Checkbox("Search user files", ref searchUserFiles);
+        ImGui.Checkbox("Search SCN files", ref searchScn);
+        ImGui.Checkbox("Search PFB files", ref searchPfb);
 
         if (cancellationTokenSource != null) {
             return;
@@ -320,10 +335,6 @@ public class RszDataFinder : IWindowHandler
             ImGui.Separator();
             ImGui.Text("Parsed value: " + value);
         }
-
-        ImGui.Checkbox("Search user files", ref searchUserFiles);
-        ImGui.Checkbox("Search SCN files", ref searchScn);
-        ImGui.Checkbox("Search PFB files", ref searchPfb);
 
         return value;
     }

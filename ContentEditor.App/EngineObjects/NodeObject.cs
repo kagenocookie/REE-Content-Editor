@@ -28,6 +28,16 @@ public interface INodeObject<T> : INodeObject
     void RemoveChild(T child);
     INodeObject<T>? GetParent();
     int GetChildIndex(T child);
+
+    public bool IsParentOf(INodeObject<T> child)
+    {
+        var parent = child.GetParent();
+        while (parent != null) {
+            if (ReferenceEquals(parent, this)) return true;
+            parent = parent.GetParent();
+        }
+        return false;
+    }
 }
 
 public class NodeObject<TNode> : NodeObject, INodeObject<TNode>, IPathedObject
@@ -223,4 +233,14 @@ public class NodeObject<TNode> : NodeObject, INodeObject<TNode>, IPathedObject
     protected virtual void OnParentChanged() { }
 
     INodeObject<TNode>? INodeObject<TNode>.GetParent() => _parent;
+
+    public bool IsParentOf<TNodeHolder>(TNodeHolder nodeHolder) where TNodeHolder : NodeObject<TNodeHolder>
+    {
+        var parent = nodeHolder.Parent;
+        while (parent != null) {
+            if (ReferenceEquals(parent, this)) return true;
+            parent = parent.Parent;
+        }
+        return false;
+    }
 }

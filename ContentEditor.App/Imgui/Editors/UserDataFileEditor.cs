@@ -4,7 +4,7 @@ using ReeLib;
 
 namespace ContentEditor.App.ImguiHandling;
 
-public class UserDataFileEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObjectUIHandler
+public class UserDataFileEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObjectUIHandler, IFilterRoot
 {
     public override string HandlerName => "UserData";
 
@@ -16,6 +16,10 @@ public class UserDataFileEditor : FileEditor, IWorkspaceContainer, IRSZFileEdito
 
     private UIContext? fileContext;
     protected override bool IsRevertable => context.Changed;
+
+    private readonly RszSearchHelper searcher = new();
+    bool IFilterRoot.HasFilterActive => searcher.HasFilterActive;
+    public object? MatchedObject { get => searcher.MatchedObject; set => searcher.MatchedObject = value; }
 
     public UserDataFileEditor(ContentWorkspace env, FileHandle file) : base (file)
     {
@@ -49,11 +53,12 @@ public class UserDataFileEditor : FileEditor, IWorkspaceContainer, IRSZFileEdito
         ImGui.PushID(Filename);
         if (context.children.Count == 0 || fileContext == null) {
             context.ClearChildren();
+            // context.AddChild("Filter", searcher, searcher);
             fileContext = context.AddChild("Base type: " + Instance.RszClass.name, Instance);
             WindowHandlerFactory.SetupRSZInstanceHandler(fileContext);
             fileContext.SetChangedNoPropagate(context.Changed);
         }
-        fileContext.ShowUI();
+        context.ShowChildrenUI();
         ImGui.PopID();
     }
 
@@ -61,4 +66,6 @@ public class UserDataFileEditor : FileEditor, IWorkspaceContainer, IRSZFileEdito
     {
         this.OnIMGUI();
     }
+
+    bool IFilterRoot.IsMatch(object? obj) => searcher.IsMatch(obj);
 }

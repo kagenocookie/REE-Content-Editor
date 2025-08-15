@@ -56,6 +56,9 @@ public class AppContentEditorWindow : IWindowHandler, IWorkspaceContainer
         if (!DefinedWindows.ContainsKey(game.name))
             SetupEditors();
 
+        if (Workspace.CurrentBundle == null) {
+            ImGui.TextColored(Colors.Warning, "No bundle selected. Changes will not be saveable. Select or create a new bundle first.");
+        }
         var data = context.Get<WindowData>();
         var selectedTabIndexes = data.GetOrAddPersistentClass<List<int>>("tabIndex");
         var curLevelList = Workspace.Config.EntityHierarchy;

@@ -85,6 +85,9 @@ public class ContentWorkspace
     public void SaveBundle(bool forceDiffAllFiles = false)
     {
         if (Data.ContentBundle == null) {
+            if (ResourceManager.HasAnyActivatedEntities) {
+                Logger.Warn("Entities may have been modified - A bundle is required to save such changes.");
+            }
             return;
         }
 

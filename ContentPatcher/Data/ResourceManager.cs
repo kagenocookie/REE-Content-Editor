@@ -18,6 +18,8 @@ public class ResourceManager(PatchDataContainer config)
 
     private readonly List<IFileLoader> FileLoaders = new();
 
+    public bool HasAnyActivatedEntities => entities.Values.Any(entityData => entityData.activatedInstances.Count != 0);
+
     private sealed class ResourceData
     {
         public ClassConfig config;

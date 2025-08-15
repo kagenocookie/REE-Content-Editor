@@ -6,7 +6,7 @@ using ReeLib.Pfb;
 
 namespace ContentEditor.App.ImguiHandling;
 
-public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObjectUIHandler, IInspectorController, IWindowHandler
+public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObjectUIHandler, IInspectorController, IWindowHandler, IFilterRoot
 {
     public override string HandlerName => "Prefab";
 
@@ -21,6 +21,10 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
     protected override bool IsRevertable => context.Changed;
 
     public object? PrimaryTarget => primaryInspector?.Target;
+
+    private readonly RszSearchHelper searcher = new();
+    bool IFilterRoot.HasFilterActive => searcher.HasFilterActive;
+    public object? MatchedObject { get => searcher.MatchedObject; set => searcher.MatchedObject = value; }
 
     private readonly List<ObjectInspector> inspectors = new();
 
@@ -64,6 +68,7 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
             if (Logger.ErrorIf(root == null, "Failed to instantiate prefab")) return;
             context.AddChild<PfbFile, List<ResourceInfo>>("Resources", File, getter: static (c) => c!.ResourceInfoList).AddDefaultHandler<List<ResourceInfo>>();
 
+            context.AddChild("Filter", searcher, searcher);
             scene = root.Scene;
             if (scene == null) {
                 scene = context.GetNativeWindow()?.SceneManager.CreateScene();
@@ -118,4 +123,6 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
     {
         foreach (var inspector in inspectors) inspector.Context.Save();
     }
+
+    bool IFilterRoot.IsMatch(object? obj) => searcher.IsMatch(obj);
 }

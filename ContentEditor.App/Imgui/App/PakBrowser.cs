@@ -124,6 +124,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         } else {
             _editedDir = null;
         }
+        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("You can use regex to match file patterns (e.g. natives/stm/character/**.mdf2.*)");
 
         DrawContents(matchedList!);
     }
