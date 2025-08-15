@@ -49,6 +49,14 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
             }
             return true;
         }
+        if (context.parent?.uiHandler is ArrayRSZHandler array && context.TryCast<RszInstance>(out var instance)) {
+            if (ImGui.Button("Duplicate")) {
+                var clone = instance.Clone();
+                var list = context.parent.Get<IList>();
+                UndoRedo.RecordListAdd(context.parent, list, clone);
+                return true;
+            }
+        }
 
         if (WindowHandlerFactory.ShowCustomActions(context)) {
             return true;
