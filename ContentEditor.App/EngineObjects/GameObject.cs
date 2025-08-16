@@ -47,7 +47,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
     private RszInstance instance;
 
     string? IGameObject.Name => Name;
-    RszInstance? IGameObject.Instance => instance;
+    public RszInstance? Instance => instance;
     IList<RszInstance> IGameObject.Components => Components.Select(c => c.Data).ToList();
     IEnumerable<IGameObject> IGameObject.GetChildren() => Children;
 

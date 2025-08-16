@@ -41,12 +41,24 @@ public class PatchDataContainer(string filepath)
     public void Load(ContentWorkspace workspace)
     {
         IsLoaded = true;
+        configs.Clear();
+        AddDefaultConfigs();
         LoadPatchConfigs(workspace);
         if (!string.IsNullOrEmpty(workspace.Env.Config.GamePath)) {
             var runtimeEnumConfigsPath = Path.Combine(workspace.Env.Config.GamePath, "reframework/data/usercontent/enums");
             LoadEnums(workspace.Env, runtimeEnumConfigsPath);
         }
         LoadEnums(workspace.Env, EnumFilepath);
+    }
+
+    private void AddDefaultConfigs()
+    {
+        var goFmt = new SmartFormatter();
+        goFmt.AddExtensions(new RszFieldStringFormatterSource());
+        goFmt.AddExtensions(new DefaultFormatter());
+        configs["via.GameObject"] = new ClassConfig() {
+            StringFormatter = new StringFormatter("{Name}", goFmt)
+        };
     }
 
     private static void LoadEnums(Workspace env, string filepath)
@@ -77,7 +89,6 @@ public class PatchDataContainer(string filepath)
 
     public void LoadPatchConfigs(ContentWorkspace workspace)
     {
-        configs.Clear();
         if (!Directory.Exists(DefinitionFilepath)) return;
         foreach (var file in Directory.EnumerateFiles(DefinitionFilepath, "*.yaml")) {
             var fs = File.OpenRead(file).ToMemoryStream();

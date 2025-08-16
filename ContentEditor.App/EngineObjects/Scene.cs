@@ -61,6 +61,28 @@ public sealed class Scene : NodeTreeContainer, IDisposable
 
     public IEnumerable<GameObject> GetAllGameObjects() => RootFolder.GetAllGameObjects();
 
+    public GameObject? FindGameObjectByInstance(RszInstance instance)
+    {
+        foreach (var obj in GetAllGameObjects()) {
+            if (obj.Instance == instance) {
+                return obj;
+            }
+        }
+
+        return null;
+    }
+
+    public GameObject? FindGameObjectByGuid(Guid guid)
+    {
+        foreach (var obj in GetAllGameObjects()) {
+            if (obj.guid == guid) {
+                return obj;
+            }
+        }
+
+        return null;
+    }
+
     public void Dispose()
     {
         RootFolder.Dispose();

@@ -6,7 +6,12 @@ using ReeLib.Pfb;
 
 namespace ContentEditor.App.ImguiHandling;
 
-public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObjectUIHandler, IInspectorController, IWindowHandler, IFilterRoot
+public interface ISceneEditor
+{
+    public Scene? GetScene();
+}
+
+public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObjectUIHandler, IInspectorController, IWindowHandler, IFilterRoot, ISceneEditor
 {
     public override string HandlerName => "Prefab";
 
@@ -34,6 +39,7 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
     }
 
     public RSZFile GetRSZFile() => File.RSZ;
+    public Scene? GetScene() => scene;
 
     protected override void OnFileReverted()
     {

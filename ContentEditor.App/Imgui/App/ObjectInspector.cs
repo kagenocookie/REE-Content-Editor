@@ -5,7 +5,7 @@ using ReeLib;
 
 namespace ContentEditor.App.ImguiHandling;
 
-public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUIHandler, IRSZFileEditor
+public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUIHandler, IRSZFileEditor, ISceneEditor
 {
     public string HandlerName => "Inspector";
 
@@ -96,4 +96,5 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
     }
 
     RSZFile? IRSZFileEditor.GetRSZFile() => (parentWindow as IRSZFileEditor)?.GetRSZFile();
+    Scene? ISceneEditor.GetScene() => (parentWindow as ISceneEditor)?.GetScene();
 }

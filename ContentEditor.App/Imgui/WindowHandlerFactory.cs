@@ -620,6 +620,11 @@ public static partial class WindowHandlerFactory
         return null;
     }
 
+    public static string GetString(this RszInstance instance)
+    {
+        return classFormatters.TryGetValue(instance.RszClass, out var fmt) ? fmt.GetString(instance) : instance.Name;
+    }
+
     public static StringFormatter? GetStringFormatter(RszInstance instance)
     {
         return classFormatters.GetValueOrDefault(instance.RszClass);

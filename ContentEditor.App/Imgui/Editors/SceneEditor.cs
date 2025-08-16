@@ -6,7 +6,7 @@ using ReeLib.Pfb;
 
 namespace ContentEditor.App.ImguiHandling;
 
-public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObjectUIHandler, IInspectorController, IWindowHandler, IFilterRoot
+public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObjectUIHandler, IInspectorController, IWindowHandler, IFilterRoot, ISceneEditor
 {
     public override string HandlerName => "Scene";
 
@@ -35,6 +35,7 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
     }
 
     public RSZFile GetRSZFile() => File.RSZ;
+    public Scene? GetScene() => scene;
 
     protected override void OnFileReverted()
     {

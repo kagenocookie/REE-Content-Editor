@@ -52,9 +52,37 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
         if (context.parent?.uiHandler is ArrayRSZHandler array && context.TryCast<RszInstance>(out var instance)) {
             if (ImGui.Button("Duplicate")) {
                 var clone = instance.Clone();
-                var list = context.parent.Get<IList>();
-                UndoRedo.RecordListAdd(context.parent, list, clone);
+                var parentList = context.parent.Get<IList>();
+                UndoRedo.RecordListAdd(context.parent, parentList, clone);
                 return true;
+            }
+        }
+        if (context.uiHandler is ArrayRSZHandler thisArray && context.TryCast<IList>(out var list)) {
+            var elementType = thisArray.GetElementClassnameType(context);
+            var type = thisArray.Field.type switch {
+                RszFieldType.Object or RszFieldType.String => typeof(RszInstance),
+                RszFieldType.String or RszFieldType.Resource or RszFieldType.RuntimeType => typeof(string),
+                // RszFieldType.UserData => typeof(RszInstance),
+                _ => RszInstance.RszFieldTypeToCSharpType(thisArray.Field.type)
+            };
+            if (type != null) {
+                var clipboard = EditorWindow.CurrentWindow?.GetClipboard();
+                if (!string.IsNullOrEmpty(clipboard)) {
+                    if (ImGui.Button("Paste JSON")) {
+                        var env = context.GetWorkspace()!.Env;
+                        try {
+                            var newItem = JsonSerializer.Deserialize(clipboard, type, env.JsonOptions);
+                            if (newItem is RszInstance rsz && elementType != null && !env.TypeCache.IsAssignableTo(rsz.RszClass.name, elementType)) {
+                                Logger.Error("Unsupported type " + rsz.RszClass.name + " for array element type " + elementType);
+                                return true;
+                            }
+                            UndoRedo.RecordListAdd(context, list, newItem);
+                        } catch (Exception) {
+                            Logger.Error("Invalid JSON");
+                        }
+                        return true;
+                    }
+                }
             }
         }
 
@@ -65,7 +93,7 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
     }
 }
 
-public class SwappableRszInstanceHandler(string? baseClass = null) : IObjectUIHandler
+public class SwappableRszInstanceHandler(string? baseClass = null, bool referenceOnly = false, string instanceLabel = "Instance") : IObjectUIHandler
 {
     private static readonly RszInstanceHandler inner = new();
     private string[]? classOptions;
@@ -81,12 +109,12 @@ public class SwappableRszInstanceHandler(string? baseClass = null) : IObjectUIHa
                 classOptions = ws.Env.TypeCache.GetSubclasses(baseClass).ToArray();
                 classOptionsSet = classOptions.ToHashSet();
             }
-            if (instance != null) {
+            if (instance != null && !referenceOnly) {
                 WindowHandlerFactory.SetupRSZInstanceHandler(context);
             }
         }
 
-        if (classOptions != null) {
+        if (classOptions != null && classOptions.Length > 1) {
             classInput ??= instance?.RszClass.name ?? string.Empty;
             ImguiHelpers.FilterableCombo("Class", classOptions, classOptions, ref classInput, ref context.state);
             if (!string.IsNullOrEmpty(classInput) && classInput != instance?.RszClass.name) {
@@ -119,10 +147,10 @@ public class SwappableRszInstanceHandler(string? baseClass = null) : IObjectUIHa
             } else {
                 otherInstanceOptions = rsz.InstanceList.Take(500).ToArray();
             }
-            var labels = otherInstanceOptions.Select(inst => inst.Name).ToArray();
+            var labels = otherInstanceOptions.Select(inst => inst.GetString()).ToArray();
 
             var newInstance = instance;
-            if (ImguiHelpers.FilterableCombo("Instance", labels, otherInstanceOptions, ref newInstance, ref context.state)) {
+            if (ImguiHelpers.FilterableCombo(instanceLabel, labels, otherInstanceOptions, ref newInstance, ref context.state)) {
                 if (newInstance?.RszClass != instance?.RszClass) {
                     UndoRedo.RecordSet(context, newInstance, (ctx) => {
                         ctx.ClearChildren();
@@ -135,7 +163,9 @@ public class SwappableRszInstanceHandler(string? baseClass = null) : IObjectUIHa
             }
         }
 
-        inner.OnIMGUI(context);
+        if (!referenceOnly) {
+            inner.OnIMGUI(context);
+        }
     }
 }
 
@@ -212,6 +242,7 @@ public class NestedRszInstanceHandler : IObjectUIHandler
 public class ArrayRSZHandler : BaseListHandler, ITooltipHandler
 {
     private RszField field;
+    public RszField Field => field;
 
     public ArrayRSZHandler(RszField field)
     {
@@ -234,20 +265,24 @@ public class ArrayRSZHandler : BaseListHandler, ITooltipHandler
         return ctx;
     }
 
+    public string? GetElementClassnameType(UIContext context)
+    {
+        if (string.IsNullOrEmpty(field.original_type)) {
+            var first = context.Get<IList<object>>().FirstOrDefault() as RszInstance;
+            return first?.RszClass.name;
+        } else {
+            return RszInstance.GetElementType(field.original_type);
+        }
+    }
+
     protected override object? CreateNewElement(UIContext context)
     {
         var env = context.GetWorkspace();
         if (env == null) return null;
-        string? classname;
-        if (string.IsNullOrEmpty(field.original_type)) {
-            var first = context.Get<IList<object>>().FirstOrDefault() as RszInstance;
-            classname = first?.RszClass.name;
-            if (classname == null) {
-                Logger.Error("Could not determine array element type");
-                return null;
-            }
-        } else {
-            classname = RszInstance.GetElementType(field.original_type);
+        string? classname = GetElementClassnameType(context);
+        if (classname == null) {
+            Logger.Error("Could not determine array element type");
+            return null;
         }
         return RszInstance.CreateArrayItem(env.Env.RszParser, field, classname);
     }
@@ -601,12 +636,15 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
 public class GuidFieldHandler : Singleton<GuidFieldHandler>, IObjectUIHandler
 {
     private const uint GuidLength = 36;
+    private bool noContextMenu;
+
+    public static readonly GuidFieldHandler NoContextMenuInstance = new GuidFieldHandler() { noContextMenu = true };
 
     public void OnIMGUI(UIContext context)
     {
         var val = context.Get<Guid>();
         var str = val.ToString();
-        if (ImGui.InputText(context.label, ref str, GuidLength, ImGuiInputTextFlags.CharsHexadecimal|ImGuiInputTextFlags.CharsNoBlank)) {
+        if (ImGui.InputText(context.label, ref str, GuidLength, ImGuiInputTextFlags.CharsHexadecimal | ImGuiInputTextFlags.CharsNoBlank)) {
             if (Guid.TryParse(str, out var newguid)) {
                 UndoRedo.RecordSet(context, newguid);
             } else {
@@ -614,7 +652,7 @@ public class GuidFieldHandler : Singleton<GuidFieldHandler>, IObjectUIHandler
             }
         }
 
-        if (ImGui.BeginPopupContextItem(context.label)) {
+        if (!noContextMenu && ImGui.BeginPopupContextItem(context.label)) {
             if (ImGui.Button("Randomize")) {
                 UndoRedo.RecordSet(context, Guid.NewGuid());
                 ImGui.CloseCurrentPopup();
@@ -654,5 +692,51 @@ public class ResourceInfoHandler : Singleton<ResourceInfoHandler>, IObjectUIHand
             context.AddChild<ResourceInfo, string>(context.label, context.Get<ResourceInfo>(), new ResourcePathPicker(), static (c) => c!.Path, static (c, v) => c.Path = v);
         }
         context.children[0].ShowUI();
+    }
+}
+
+[ObjectImguiHandler(typeof(GameObjectRef), Stateless = true)]
+public class GameObjectRefHandler : Singleton<GameObjectRefHandler>, IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var gref = context.Get<GameObjectRef>();
+        if (context.children.Count == 0) {
+            context.AddChild<GameObjectRef, Guid>("##Guid", gref, GuidFieldHandler.NoContextMenuInstance, (r) => r!.guid, (r, v) => r.guid = v);
+            context.AddChild("_", null, SameLineHandler.Instance);
+            context.AddChild(context.label, gref, new SwappableRszInstanceHandler("via.GameObject", true, context.label + " (GameObjectRef)"), (ctx) => ((GameObjectRef)ctx.target!).target?.Instance, (ctx, v) => {
+                var newInstance = (RszInstance?)v;
+                var gr = (GameObjectRef)ctx.target!;
+                if (newInstance == null) {
+                    // gr.target = null;
+                    // gr.guid = Guid.Empty;
+                    UndoRedo.RecordSet(ctx.parent!, new GameObjectRef(), mergeMode: UndoRedoMergeMode.NeverMerge);
+                    ctx.parent!.ClearChildren();
+                    return;
+                }
+
+                var owner = ctx.FindHandlerInParents<ISceneEditor>()?.GetScene();
+                if (owner == null) {
+                    Logger.Error("Could not find RSZ data owner");
+                    return;
+                }
+                var newGo = owner.FindGameObjectByInstance(newInstance);
+                if (newGo == null) {
+                    Logger.Error("Could not find target GameObject");
+                    return;
+                }
+
+                UndoRedo.RecordSet(ctx.parent!, new GameObjectRef(newGo.guid, newGo), mergeMode: UndoRedoMergeMode.NeverMerge);
+                ctx.parent!.ClearChildren();
+            });
+        }
+        // ImGui.Text(context.label);
+        // if (gref.target != null) {
+        //     ImGui.SameLine();
+        //     ImGui.TextColored(Colors.Faded, "Target: " + gref.target.ToString());
+        // }
+        ImGui.PushItemWidth(ImGui.CalcItemWidth() / 2 - ImGui.GetStyle().FramePadding.X);
+        context.ShowChildrenUI();
+        ImGui.PopItemWidth();
     }
 }

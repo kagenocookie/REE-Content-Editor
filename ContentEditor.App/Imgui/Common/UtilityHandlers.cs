@@ -90,6 +90,14 @@ public class NestedUIHandlerStringSuffixed(IObjectUIHandler nested) : IObjectUIH
         }
     }
 }
+public class SameLineHandler : IObjectUIHandler
+{
+    public static readonly SameLineHandler Instance = new();
+    public void OnIMGUI(UIContext context)
+    {
+        ImGui.SameLine();
+    }
+}
 
 public abstract class TreeContextUIHandler(IObjectUIHandler nested) : IObjectUIHandler
 {
