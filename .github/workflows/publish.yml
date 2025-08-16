@@ -37,8 +37,8 @@ jobs:
     - name: Publish release app
       if: startsWith(github.ref, 'refs/tags/')
       run: |
-        TAG=${{ github.ref_name }}
-        dotnet publish -c Release --no-restore -f net8.0-windows /p:DebugType=none /p:DebugSymbols=false /p:VersionPrefix=${TAG#v} -o build ContentEditor.App/ContentEditor.App.csproj
+        $TAG="${{ github.ref_name }}".Replace("v","")
+        dotnet publish -c Release --no-restore -f net8.0-windows /p:DebugType=none /p:DebugSymbols=false /p:VersionPrefix=$TAG -o build ContentEditor.App/ContentEditor.App.csproj
         rm -Recurse build/runtimes/linux-*
         rm -Recurse build/runtimes/osx*
         cp -R configs build/
@@ -46,8 +46,8 @@ jobs:
     - name: Publish release patcher
       if: startsWith(github.ref, 'refs/tags/')
       run: |
-        TAG=${{ github.ref_name }}
-        dotnet publish -c Release --no-restore /p:DebugType=none /p:DebugSymbols=false /p:VersionPrefix=${TAG#v} -o build_patcher ContentPatcher/ContentPatcher.csproj
+        $TAG="${{ github.ref_name }}".Replace("v","")
+        dotnet publish -c Release --no-restore /p:DebugType=none /p:DebugSymbols=false /p:VersionPrefix=$TAG -o build_patcher ContentPatcher/ContentPatcher.csproj
         rm -Recurse build_patcher/ImGui.NET.dll
         rm -Recurse build_patcher/runtimes/*
         cp -R configs build_patcher/
