@@ -24,8 +24,20 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
         }
         ImguiHelpers.TextSuffix(context.label, context.stringFormatter?.GetString(instance) ?? instance.RszClass.name);
 
-        foreach (var child in context.children) {
-            child.ShowUI();
+        if (context.children.Count >= 10) {
+            ImGui.Indent(8);
+            context.state ??= "";
+            ImGui.InputText("Filter fields", ref context.state, 48);
+            ImGui.Unindent(8);
+        }
+        if (string.IsNullOrEmpty(context.state)) {
+            context.ShowChildrenUI();
+        } else {
+            foreach (var child in context.children) {
+                if (child.label.Contains(context.state, StringComparison.InvariantCultureIgnoreCase)) {
+                    child.ShowUI();
+                }
+            }
         }
     }
 
@@ -216,8 +228,8 @@ public class NestedRszInstanceHandler : IObjectUIHandler
             // no point in showing it in the UI - at least until we add subclass selection
             return;
         }
-        if (!ForceDefaultClose) {
-            ImGui.SetNextItemOpen(instance.Fields.Length <= 3, ImGuiCond.FirstUseEver);
+        if (!ForceDefaultClose && instance.Fields.Length <= 3) {
+            ImGui.SetNextItemOpen(true, ImGuiCond.FirstUseEver);
         }
         var show = ImguiHelpers.TreeNodeSuffix(context.label, context.stringFormatter?.GetString(instance) ?? instance.RszClass.name);
         RszInstanceHandler.ShowDefaultTooltip(context);
@@ -230,9 +242,7 @@ public class NestedRszInstanceHandler : IObjectUIHandler
                 }
             }
             ImGui.PushID(context.GetRaw()!.GetHashCode());
-            foreach (var child in context.children) {
-                child.ShowUI();
-            }
+            RszInstanceHandler.Instance.OnIMGUI(context);
             ImGui.PopID();
             ImGui.TreePop();
         }
