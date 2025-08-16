@@ -232,11 +232,12 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
         AddFileEditor(file);
     }
 
+    private bool HasUnsavedChanges => workspace?.ResourceManager.GetModifiedResourceFiles().Any() == true;
+
     protected void ShowMainMenuBar()
     {
-
         ImGui.BeginMainMenuBar();
-        var hasUnsavedFiles = workspace?.ResourceManager.GetModifiedResourceFiles().Any() == true;
+        var hasUnsavedFiles = HasUnsavedChanges;
         if (ImGui.BeginMenu("File")) {
             if (ImGui.MenuItem("Open ...")) {
                 PlatformUtils.ShowFileDialog((files) => {
@@ -279,7 +280,7 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                                         AddSubwindow(new SaveFileConfirmation(
                                             "Unsaved changes",
                                             $"The file {file.Filepath} has unsaved changes.\nAre you sure you wish to close it?",
-                                            file,
+                                            [file],
                                             this,
                                             () => workspace.ResourceManager.CloseFile(file)
                                         ));
@@ -456,6 +457,25 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
         } catch (Exception e) {
             Logger.Error(e, "Failed to revert patches");
         }
+    }
+
+    protected override bool RequestAllowClose()
+    {
+        if (HasUnsavedChanges && workspace != null) {
+            if (HasSubwindow<SaveFileConfirmation>(out _)) return false;
+            AddSubwindow(new SaveFileConfirmation(
+                "Unsaved changes",
+                $"Some files have unsaved changes.\nAre you sure you wish to close the window?",
+                workspace.ResourceManager.GetModifiedResourceFiles(),
+                this,
+                () => {
+                    workspace.ResourceManager.CloseAllFiles();
+                    _window.Close();
+                }
+            ));
+            return false;
+        }
+        return true;
     }
 
     protected override void Dispose(bool disposing)

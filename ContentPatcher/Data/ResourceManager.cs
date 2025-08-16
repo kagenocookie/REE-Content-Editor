@@ -817,6 +817,14 @@ public class ResourceManager(PatchDataContainer config)
         }
         file.Dispose();
     }
+
+    public void CloseAllFiles()
+    {
+        var files = openFiles.Keys.ToList();
+        foreach (var file in files) {
+            CloseFile(openFiles[file]);
+        }
+    }
 }
 
 public enum ResourceState

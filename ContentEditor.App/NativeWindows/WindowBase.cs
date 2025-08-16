@@ -284,7 +284,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     private void OnClose()
     {
-        if (CloseRequested()) {
+        if (RequestAllowClose()) {
             isClosing.Set(); // Here we trigger the ManualEvent to let those waiting on it know the window is closing.
             _window.ContinueEvents(); // We wake up the Main Thread here 'cause we'll be done soon.
             // _window.Dispose();
@@ -294,9 +294,8 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         }
     }
 
-    protected virtual bool CloseRequested()
+    protected virtual bool RequestAllowClose()
     {
-        // TODO check for unsaved changes
         return true;
     }
 
@@ -405,13 +404,6 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     protected void DrawImguiWindows()
     {
-        while (uiThreadActions.TryDequeue(out var action)) {
-            try {
-                action.Invoke();
-            } catch (Exception e) {
-                Logger.Error(e, "Deferred callback failed");
-            }
-        }
         for (int i = 0; i < removeSubwindows.Count; i++) {
             var close = removeSubwindows[i];
             if (subwindows.Remove(close)) {
@@ -420,6 +412,14 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
             }
         }
         removeSubwindows.Clear();
+        // note: executing removes before thread actions, so we have an easy way of doing things after the window properly closes (unsaved changes)
+        while (uiThreadActions.TryDequeue(out var action)) {
+            try {
+                action.Invoke();
+            } catch (Exception e) {
+                Logger.Error(e, "Deferred callback failed");
+            }
+        }
 
         var saving = SaveInProgress;
         for (int i = 0; i < subwindows.Count; i++) {

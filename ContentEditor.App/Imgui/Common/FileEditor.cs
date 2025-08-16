@@ -237,10 +237,20 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     public bool RequestClose()
     {
         if (Handle.Modified || HasUnsavedChanges) {
-            EditorWindow.CurrentWindow!.AddSubwindow(new ConfirmationDialog(
+            var ownerWindow = EditorWindow.CurrentWindow!;
+            ownerWindow.AddSubwindow(new SaveFileConfirmation(
                 "Unsaved changes", "You have unsaved changes in this file, do you wish to save the file first?",
+                [Handle],
                 this,
-                () => Save(), () => {})
+                () => {
+                    var file = Handle;
+                    ownerWindow.CloseSubwindow(this);
+                    ownerWindow.InvokeFromUIThread(() => {
+                        if (file.References.Count == 0) {
+                            ownerWindow.Workspace?.ResourceManager.CloseFile(file);
+                        }
+                    });
+                })
             );
             return true;
         }

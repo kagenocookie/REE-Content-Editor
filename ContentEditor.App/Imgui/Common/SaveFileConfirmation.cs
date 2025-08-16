@@ -14,7 +14,7 @@ public class SaveFileConfirmation : IWindowHandler
 
     public string HandlerName => "Confirmation";
 
-    public FileHandle File { get; }
+    public List<FileHandle> Files { get; }
 
     private readonly string title;
     private readonly string text;
@@ -25,11 +25,11 @@ public class SaveFileConfirmation : IWindowHandler
     private WindowData data = null!;
     protected UIContext context = null!;
 
-    public SaveFileConfirmation(string title, string text, FileHandle file, IRectWindow parent, Action onConfirmed, Action? onCancelled = null)
+    public SaveFileConfirmation(string title, string text, IEnumerable<FileHandle> files, IRectWindow parent, Action onConfirmed, Action? onCancelled = null)
     {
         this.title = title;
         this.text = text;
-        File = file;
+        Files = files.ToList();
         this.parent = parent;
         OnConfirmed = onConfirmed;
         OnCancelled = onCancelled;
@@ -60,7 +60,14 @@ public class SaveFileConfirmation : IWindowHandler
         ImGui.Spacing();
         ImGui.Spacing();
         if (ImGui.Button("Save", new Vector2(modalSize.X / 3 - 12, 28))) {
-            if (File.Save(context.GetWorkspace()!)) {
+            var allSuccessful = true;
+            foreach (var file in Files) {
+                if (!file.Save(context.GetWorkspace()!)) {
+                    allSuccessful = false;
+                }
+            }
+
+            if (allSuccessful) {
                 OnConfirmed.Invoke();
                 EditorWindow.CurrentWindow?.CloseSubwindow(this);
             }
