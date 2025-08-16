@@ -103,7 +103,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly ClassSettingWrapper<string> BlenderPath = new ClassSettingWrapper<string>(Keys.BlenderPath, _lock);
     public readonly ClassSettingWrapper<string> RemoteDataSource = new ClassSettingWrapper<string>(Keys.RemoteDataSource, _lock);
     public readonly ClassSettingWrapper<string> GameConfigBaseFilepath = new ClassSettingWrapper<string>(Keys.GameConfigBaseFilepath, _lock);
-    public readonly ClassSettingWrapper<string> Theme = new ClassSettingWrapper<string>(Keys.Theme, _lock);
+    public readonly ClassSettingWrapper<string> Theme = new ClassSettingWrapper<string>(Keys.Theme, _lock, () => "default");
     public readonly SettingWrapper<int> UnpackMaxThreads = new SettingWrapper<int>(Keys.UnpackMaxThreads, _lock, 4);
     public readonly SettingWrapper<ReeLib.via.Color> BackgroundColor = new SettingWrapper<ReeLib.via.Color>(Keys.BackgroundColor, _lock, new ReeLib.via.Color(115, 140, 153, 255));
     public readonly SettingWrapper<bool> PrettyFieldLabels = new SettingWrapper<bool>(Keys.PrettyLabels, _lock, true);
