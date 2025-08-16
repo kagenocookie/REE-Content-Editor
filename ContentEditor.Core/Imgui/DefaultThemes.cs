@@ -23,6 +23,8 @@ public class DefaultThemes
     {
         var themePath = Path.GetFullPath("styles");
         var list = new List<string>(Themes.Keys.Order());
+        if (!Directory.Exists(themePath)) return _availableThemes = list.ToArray();
+
         foreach (var file in Directory.EnumerateFiles(themePath, "*.theme.txt")) {
             var theme = file.Replace(themePath, "").Replace(".theme.txt", "").Replace("\\", "");
             list.Add(theme);
