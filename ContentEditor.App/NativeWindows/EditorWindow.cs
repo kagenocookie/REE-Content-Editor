@@ -8,6 +8,7 @@ using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
+using ReeLib.Tools;
 using Silk.NET.Maths;
 
 public class EditorWindow : WindowBase, IWorkspaceContainer
@@ -403,6 +404,18 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                     Logger.Info("Scan already in progress or workspace missing");
                 }
             }
+
+            if (ImGui.MenuItem("Rebuild EFX data")) {
+                if (workspace != null && !runningRszInference) {
+                    runningRszInference = true;
+                    var efxOutput = Path.Combine(Directory.GetCurrentDirectory(), "efx_structs.json");
+                    EfxTools.GenerateEFXStructsJson(efxOutput, workspace.Env.EfxVersion);
+                    Logger.Info("JSON was written to file " + efxOutput);
+                } else {
+                    Logger.Info("Scan already in progress or workspace missing");
+                }
+            }
+
             if (ImGui.MenuItem("IMGUI test window")) {
                 AddUniqueSubwindow(new ImguiTestWindow());
             }
