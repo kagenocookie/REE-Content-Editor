@@ -27,8 +27,10 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
         if (context.children.Count >= 10) {
             ImGui.Indent(8);
             context.state ??= "";
+            ImGui.SetNextItemWidth(Math.Min(200, ImGui.CalcItemWidth() - 16));
             ImGui.InputText("Filter fields", ref context.state, 48);
             ImGui.Unindent(8);
+            ImGui.Spacing();
         }
         if (string.IsNullOrEmpty(context.state)) {
             context.ShowChildrenUI();
