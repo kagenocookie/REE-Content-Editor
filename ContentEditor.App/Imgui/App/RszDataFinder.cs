@@ -572,7 +572,7 @@ public class RszDataFinder : IWindowHandler
 
                 foreach (var uv in file.Variables) {
                     if (type != Variable.TypeKind.Unknown && type != uv.type) continue;
-                    if (!string.IsNullOrEmpty(query) && !uv.Name.Contains(query)) continue;
+                    if (!string.IsNullOrEmpty(query) && !uv.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) continue;
 
                     var desc = $"{uv.Name} = {uv.Value}";
                     AddMatch(context, desc, path);
@@ -581,7 +581,7 @@ public class RszDataFinder : IWindowHandler
                 foreach (var embed in file.EmbeddedUVARs) {
                     foreach (var uv in embed.Variables) {
                         if (type != Variable.TypeKind.Unknown && type != uv.type) continue;
-                        if (!string.IsNullOrEmpty(query) && !uv.Name.Contains(query)) continue;
+                        if (!string.IsNullOrEmpty(query) && !uv.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) continue;
 
                         var desc = $"[{embed.Header.name}] {uv.Name} = {uv.Value}";
                         AddMatch(context, desc, path);
