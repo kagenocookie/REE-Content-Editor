@@ -9,6 +9,7 @@ using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
 using ReeLib.Data;
+using ReeLib.Efx;
 using ReeLib.Tools;
 using Silk.NET.Maths;
 
@@ -417,7 +418,7 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                     foreach (var game in AppConfig.Instance.ConfiguredGames) {
                         var gameId = new GameIdentifier(game);
                         var efxOutput = Path.Combine(outDir, game, "efx_structs.json");
-                        EfxTools.GenerateEFXStructsJson(efxOutput, gameId.ToEfxVersion());
+                        EfxTools.GenerateEFXStructsJson(gameId.ToEfxVersion(), efxOutput);
                     }
                 } else {
                     Logger.Info("Scan already in progress or workspace missing");
