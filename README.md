@@ -19,6 +19,10 @@ Some files may not fully work for other RE ENGINE games.
 - Download the latest [release](https://github.com/kagenocookie/REE-Content-Editor/releases) or [debug](https://github.com/kagenocookie/REE-Content-Editor/actions) build
 - Launch `ContentEditor.App.exe`
 
+## Development setup
+- Use the `net8.0-windows` target to make native file dialogs work
+- Build with `dotnet build` or whichever C#-capable IDE's build features (vscode, VS)
+
 ## Features
 - Most common files are supported for viewing and editing
 - Load files directly from the PAK files, meaning you can just access whatever you need without having to extract everything first

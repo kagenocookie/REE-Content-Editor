@@ -12,7 +12,7 @@ public static class PlatformUtils
 #if WINDOWS
         ContentEditor.App.Windows.PlatformUtils.ShowOpenFile(callback, initialFile, fileExtension, allowMultiple);
 #else
-        throw new NotImplementedException();
+        Logger.Error("Native file dialogs not supported for the current platform");
 #endif
     }
 
@@ -24,7 +24,7 @@ public static class PlatformUtils
 #if WINDOWS
         ContentEditor.App.Windows.PlatformUtils.ShowFolderPicker(callback, initialFolder);
 #else
-        throw new NotImplementedException();
+        Logger.Error("Native file dialogs not supported for the current platform");
 #endif
     }
 
@@ -36,7 +36,7 @@ public static class PlatformUtils
 #if WINDOWS
         ContentEditor.App.Windows.PlatformUtils.ShowSaveFile(callback, initialFile, filter);
 #else
-        throw new NotImplementedException();
+        Logger.Error("Native file dialogs not supported for the current platform");
 #endif
     }
 
