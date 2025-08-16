@@ -244,7 +244,11 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     {
         if (isReady) {
             _controller.MakeCurrent();
-            _window.DoEvents();
+            try {
+                _window.DoEvents();
+            } catch (Exception e) {
+                Logger.Error($"Failed to handle input events: {e.Message}");
+            }
             var isInputting = ImGui.GetIO().WantTextInput;
             if (!isInputting) {
                 var cfg = AppConfig.Instance;
