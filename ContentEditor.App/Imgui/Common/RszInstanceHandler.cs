@@ -15,14 +15,14 @@ namespace ContentEditor.App.ImguiHandling;
 
 public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandler
 {
-    public void OnIMGUI(UIContext context)
+    public void OnIMGUI(UIContext context, bool showLabel)
     {
         var instance = context.Get<RszInstance>();
         if (instance == null) {
             ImGui.Text(context.label + ": NULL");
             return;
         }
-        ImguiHelpers.TextSuffix(context.label, context.stringFormatter?.GetString(instance) ?? instance.RszClass.name);
+        if (showLabel) ImguiHelpers.TextSuffix(context.label, context.stringFormatter?.GetString(instance) ?? instance.RszClass.name);
 
         if (context.children.Count >= 10) {
             ImGui.Indent(8);
@@ -39,6 +39,10 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
                 }
             }
         }
+    }
+    public void OnIMGUI(UIContext context)
+    {
+        OnIMGUI(context, true);
     }
 
     public static void ShowDefaultTooltip(UIContext context)
@@ -242,7 +246,7 @@ public class NestedRszInstanceHandler : IObjectUIHandler
                 }
             }
             ImGui.PushID(context.GetRaw()!.GetHashCode());
-            RszInstanceHandler.Instance.OnIMGUI(context);
+            RszInstanceHandler.Instance.OnIMGUI(context, false);
             ImGui.PopID();
             ImGui.TreePop();
         }
