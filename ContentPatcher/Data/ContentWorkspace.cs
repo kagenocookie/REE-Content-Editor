@@ -6,7 +6,7 @@ using ReeLib;
 
 namespace ContentPatcher;
 
-public class ContentWorkspace
+public sealed class ContentWorkspace : IDisposable
 {
     public Workspace Env { get; }
     public ResourceManager ResourceManager { get; }
@@ -260,6 +260,11 @@ public class ContentWorkspace
     }
 
     public override string ToString() => Data.Name ?? "New Workspace";
+
+    public void Dispose()
+    {
+        ResourceManager?.Dispose();
+    }
 }
 
 // serialized

@@ -382,6 +382,10 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                     AddSubwindow(new SettingsWindowHandler());
                 }
             }
+            if (ImGui.MenuItem("Theme editor")) {
+                AddUniqueSubwindow(new ThemeEditor());
+            }
+            ImGui.Separator();
 
             if (ImGui.MenuItem("Rebuild RSZ patch data")) {
                 if (workspace != null && !runningRszInference) {
@@ -419,8 +423,8 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
             if (ImGui.MenuItem("IMGUI test window")) {
                 AddUniqueSubwindow(new ImguiTestWindow());
             }
-            if (ImGui.MenuItem("Theme editor")) {
-                AddUniqueSubwindow(new ThemeEditor());
+            if (ImGui.MenuItem("File testing")) {
+                AddUniqueSubwindow(new FileTesterWindow());
             }
             ImGui.EndMenu();
         }

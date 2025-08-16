@@ -7,7 +7,7 @@ using ReeLib;
 
 namespace ContentPatcher;
 
-public class ResourceManager(PatchDataContainer config)
+public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 {
     private readonly Dictionary<string, ResourceData> resources = new();
     private readonly Dictionary<string, EntityData> entities = new();
@@ -662,7 +662,7 @@ public class ResourceManager(PatchDataContainer config)
         }
         return null;
     }
-    private FileHandle? CreateFileHandleInternal(string filepath, string? nativePath, Stream stream)
+    private FileHandle? CreateFileHandleInternal(string filepath, string? nativePath, Stream stream, bool allowDisposeStream = true)
     {
         var format = PathUtils.ParseFileFormat(filepath);
         IFileLoader? loader = GetLoaderForFile(filepath, format) ?? UnknownStreamFileLoader.Instance;
@@ -693,7 +693,7 @@ public class ResourceManager(PatchDataContainer config)
             }
         }
 
-        var handle = new FileHandle(filepath, stream.ToMemoryStream(forceCopy: true), handleType, loader) {
+        var handle = new FileHandle(filepath, stream.ToMemoryStream(disposeStream: allowDisposeStream, forceCopy: true), handleType, loader) {
             NativePath = nativePath ?? PreprocessNativeFilepath(filepath),
             FileSource = fileSource,
         };
@@ -722,9 +722,9 @@ public class ResourceManager(PatchDataContainer config)
         return handle;
     }
 
-    public FileHandle CreateFileHandle(string filepath, string? nativePath, Stream stream)
+    public FileHandle CreateFileHandle(string filepath, string? nativePath, Stream stream, bool allowDispose = true)
     {
-        var handle = this.CreateFileHandleInternal(filepath, nativePath, stream);
+        var handle = this.CreateFileHandleInternal(filepath, nativePath, stream, allowDispose);
         if (handle == null) {
             throw new NotSupportedException();
         }
@@ -824,6 +824,11 @@ public class ResourceManager(PatchDataContainer config)
         foreach (var file in files) {
             CloseFile(openFiles[file]);
         }
+    }
+
+    public void Dispose()
+    {
+        CloseAllFiles();
     }
 }
 

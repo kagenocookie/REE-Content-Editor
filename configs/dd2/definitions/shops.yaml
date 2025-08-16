@@ -24,7 +24,6 @@ classes:
     patcher:
       type: array-file
       file: appsystem/item/itemshopdata/itemshopdata.user.2
-    # TODO support actuall field string resolution (find translation) instead of plain values
     to_string: "{_ShopId}: {_ShopNameId:translate()}"
 
   app.ItemShopSellParam:

@@ -510,7 +510,7 @@ public class RszDataFinder : IWindowHandler
 
                         var fieldValue = inst.GetFieldValue(field.name);
                         if (field.array) {
-                            var values = (IList<object>)fieldValue;
+                            var values = (IList<object>)fieldValue!;
                             foreach (var v in values) {
                                 if (equalityComparer(v, value)) {
                                     AddMatch(context, path, path);
