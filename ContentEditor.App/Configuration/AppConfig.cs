@@ -25,6 +25,9 @@ public class AppConfig : Singleton<AppConfig>
         public const string PrettyLabels = "pretty_labels";
         public const string RecentFiles = "recent_files";
         public const string Theme = "theme";
+        public const string LatestVersion = "latest_version";
+        public const string EnableUpdateCheck = "enable_update_check";
+        public const string LastUpdateCheck = "last_update_check";
 
         public const string Key_Undo = "key_undo";
         public const string Key_Redo = "key_redo";
@@ -48,6 +51,7 @@ public class AppConfig : Singleton<AppConfig>
     private const string IniFilepath = "ce_config.ini";
 
     public static readonly string Version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion ?? "";
+    public static bool IsOutdatedVersion { get; internal set; }
 
     public sealed class SettingWrapper<T>(string settingKey, ReaderWriterLockSlim _lock, T initial) where T : struct, IEquatable<T>
     {
@@ -109,6 +113,9 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<bool> PrettyFieldLabels = new SettingWrapper<bool>(Keys.PrettyLabels, _lock, true);
     public readonly SettingWrapper<int> LogLevel = new SettingWrapper<int>(Keys.LogLevel, _lock, 0);
     public readonly SettingWrapper<int> MaxUndoSteps = new SettingWrapper<int>(Keys.MaxUndoSteps, _lock, 250);
+    public readonly SettingWrapper<bool> EnableUpdateCheck = new SettingWrapper<bool>(Keys.EnableUpdateCheck, _lock, true);
+    public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
+    public readonly ClassSettingWrapper<string> LatestVersion = new ClassSettingWrapper<string>(Keys.LatestVersion, _lock);
 
     public readonly ClassSettingWrapper<string[]> RecentFiles = new ClassSettingWrapper<string[]>(Keys.RecentFiles, _lock, () => []);
 
@@ -205,6 +212,9 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.BackgroundColor, instance.BackgroundColor.value.ToString(), null),
             (Keys.LogLevel, instance.LogLevel.value.ToString(), null),
             (Keys.MaxUndoSteps, instance.MaxUndoSteps.value.ToString(), null),
+            (Keys.LastUpdateCheck, instance.LastUpdateCheck.value.ToString("O"), null),
+            (Keys.LatestVersion, instance.LatestVersion.value?.ToString() ?? "", null),
+            (Keys.EnableUpdateCheck, instance.EnableUpdateCheck.value.ToString(), null),
             (Keys.PrettyLabels, instance.PrettyFieldLabels.value.ToString(), null),
             (Keys.RecentFiles, string.Join("|", instance.RecentFiles.value ?? Array.Empty<string>()), null),
             (Keys.Key_Undo, instance.Key_Undo.value.ToString(), "Keys"),
@@ -273,6 +283,15 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.RecentFiles:
                             instance.RecentFiles.value = value.Split('|', StringSplitOptions.RemoveEmptyEntries);
+                            break;
+                        case Keys.EnableUpdateCheck:
+                            instance.EnableUpdateCheck.value = value.Equals("true", StringComparison.OrdinalIgnoreCase) || value.Equals("yes", StringComparison.OrdinalIgnoreCase) || value == "1";
+                            break;
+                        case Keys.LastUpdateCheck:
+                            if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var _updateCheck)) instance.LastUpdateCheck.value = _updateCheck;
+                            break;
+                        case Keys.LatestVersion:
+                            instance.LatestVersion.value = string.IsNullOrEmpty(value) ? null : value;
                             break;
                     }
                 } else if (group == "Keys") {

@@ -95,6 +95,12 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("Whether to simplify field labels instead of showing the raw field names (e.g. \"Target Object\" instead of \"_TargetObject\").");
 
+            var doUpdateCheck = config.EnableUpdateCheck.Get();
+            if (ImGui.Checkbox("Automatically check for updates", ref doUpdateCheck)) {
+                config.EnableUpdateCheck.Set(doUpdateCheck);
+            }
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip("Will occasionally check GitHub for new releases.");
+
             var maxUndo = config.MaxUndoSteps.Get();
             if (ImGui.DragInt("Max undo steps", ref maxUndo, 0.25f, 0)) {
                 config.MaxUndoSteps.Set(maxUndo);

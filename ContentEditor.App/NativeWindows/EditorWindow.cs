@@ -436,6 +436,11 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
         if (ImGui.MenuItem("Support development (Ko-Fi)")) {
             Process.Start(new ProcessStartInfo("https://ko-fi.com/shadowcookie") { UseShellExecute = true });
         }
+
+        if (AppConfig.IsOutdatedVersion && ImGui.MenuItem($"New version ({AppConfig.Instance.LatestVersion.Get()}) available!")) {
+            Process.Start(new ProcessStartInfo("https://github.com/kagenocookie/REE-Content-Editor/releases/latest") { UseShellExecute = true });
+        }
+
         ImGui.EndMainMenuBar();
     }
 

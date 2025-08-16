@@ -40,7 +40,12 @@ public class MainWindow : EditorWindow
 
     private void OnGameChanged()
     {
-        AppConfig.Instance.MainSelectedGame.Set(env?.Config.Game.name);
-        AppConfig.Instance.MainActiveBundle.Set(workspace?.Data.ContentBundle);
+        var newGame = env?.Config.Game.name;
+        if (AppConfig.Instance.MainSelectedGame.Get() != newGame) {
+            AppConfig.Instance.MainSelectedGame.Set(newGame);
+        }
+        if (AppConfig.Instance.MainActiveBundle.Get() != workspace?.Data.ContentBundle) {
+            AppConfig.Instance.MainActiveBundle.Set(workspace?.Data.ContentBundle);
+        }
     }
 }
