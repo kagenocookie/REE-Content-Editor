@@ -8,6 +8,7 @@ using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
+using ReeLib.Data;
 using ReeLib.Tools;
 using Silk.NET.Maths;
 
@@ -412,9 +413,12 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
             if (ImGui.MenuItem("Rebuild EFX data")) {
                 if (workspace != null && !runningRszInference) {
                     runningRszInference = true;
-                    var efxOutput = Path.Combine(Directory.GetCurrentDirectory(), "efx_structs.json");
-                    EfxTools.GenerateEFXStructsJson(efxOutput, workspace.Env.EfxVersion);
-                    Logger.Info("JSON was written to file " + efxOutput);
+                    var outDir = Path.Combine(Directory.GetCurrentDirectory(), "efx_structs");
+                    foreach (var game in AppConfig.Instance.ConfiguredGames) {
+                        var gameId = new GameIdentifier(game);
+                        var efxOutput = Path.Combine(outDir, game, "efx_structs.json");
+                        EfxTools.GenerateEFXStructsJson(efxOutput, gameId.ToEfxVersion());
+                    }
                 } else {
                     Logger.Info("Scan already in progress or workspace missing");
                 }
