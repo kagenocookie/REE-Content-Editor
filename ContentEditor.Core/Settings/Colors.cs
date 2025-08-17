@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Reflection;
+using ImGuiNET;
 
 namespace ContentEditor;
 
@@ -29,12 +30,28 @@ public sealed class AppColors
     public Vector4 Error = new Vector4(1, 0.4f, 0.4f, 1);
     public Vector4 Danger = new Vector4(1, 0, 0.6f, 1);
     public Vector4 Warning = new Vector4(1, 0.75f, 0.5f, 1);
-    public Vector4 Info = new Vector4(1, 1, 0.625f, 0.625f);
-    public Vector4 Note = new Vector4(1, 1, 0.53f, 0.53f);
-    public Vector4 Success = new Vector4(1, 1, 0.625f, 0.625f);
+    public Vector4 Info = new Vector4(0.625f, 0.625f, 1, 1);
+    public Vector4 Note = new Vector4(0.53f, 0.93f, 1, 1);
+    public Vector4 Success = new Vector4(0.36f, 1, 0.32f, 1);
 
     public Vector4 GameObject = new Vector4(1, 0.96f, 0.92f, 1);
     public Vector4 Folder = new Vector4(0.9f, 1f, 0.9f, 1);
+
+    public static AppColors GetDarkThemeColors() => new AppColors();
+
+    public static AppColors GetLightThemeColors() => new AppColors() {
+        Default = new Vector4(0.02f, 0, 0, 1),
+        Disabled = new Vector4(0.5f, 0.5f, 0.5f, 0.9f),
+        Faded = new Vector4(0.18f, 0.27f, 0.37f, 0.8f),
+        Error = new Vector4(1, 0.13f, 0.13f, 1),
+        Danger = new Vector4(1, 0, 0.6f, 1),
+        Warning = new Vector4(0.93f, 0.6f, 0.24f, 1),
+        Info = new Vector4(0.34f, 0.5f, 0.88f, 1),
+        Note = new Vector4(0.22f, 0.08f, 0.66f, 1),
+        Success = new Vector4(0.04f, 0.73f, 0.13f, 1),
+        GameObject = new Vector4(0.36f, 0, 0, 1),
+        Folder = new Vector4(0.03f, 0.28f, 0.065f, 1),
+    };
 
     public static readonly FieldInfo[] ColorFields = typeof(AppColors).GetFields().Where(f => !f.IsStatic).ToArray();
 }

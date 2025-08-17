@@ -80,6 +80,7 @@ public class DefaultThemes
 
     public static void SetupCherry()
     {
+        Colors.Current = AppColors.GetDarkThemeColors();
         // Cherry style from ImThemes
         var style = ImGuiNET.ImGui.GetStyle();
 
@@ -171,6 +172,7 @@ public class DefaultThemes
 
     public static void SetupComfortableDarkCyan()
     {
+        Colors.Current = AppColors.GetDarkThemeColors();
         // Comfortable Dark Cyan styleSouthCraftX from ImThemes
         var style = ImGuiNET.ImGui.GetStyle();
 
@@ -262,6 +264,7 @@ public class DefaultThemes
 
     public static void SetupDefaultLight()
     {
+        Colors.Current = AppColors.GetLightThemeColors();
         // Light styledougbinks from ImThemes
         var style = ImGuiNET.ImGui.GetStyle();
 
@@ -353,6 +356,7 @@ public class DefaultThemes
 
     public static void SetupRoundedVS()
     {
+        Colors.Current = AppColors.GetDarkThemeColors();
         // Rounded Visual Studio styleRedNicStone from ImThemes
         var style = ImGuiNET.ImGui.GetStyle();
 
@@ -444,6 +448,7 @@ public class DefaultThemes
 
     public static void SetupUnreal()
     {
+        Colors.Current = AppColors.GetDarkThemeColors();
         // Unreal styledev0-1 from ImThemes
         var style = ImGuiNET.ImGui.GetStyle();
 
@@ -535,6 +540,7 @@ public class DefaultThemes
 
     public static void SetupDark()
     {
+        Colors.Current = AppColors.GetDarkThemeColors();
         // Dark style from ImThemes
         var style = ImGuiNET.ImGui.GetStyle();
 
@@ -670,7 +676,7 @@ public class DefaultThemes
     public static unsafe void ApplyThemeData(IEnumerable<(string key, string value, string? group)> ini)
     {
         var style = ImGui.GetStyle();
-        Colors.Current = new AppColors();
+        Colors.Current = AppColors.GetDarkThemeColors();
         foreach (var kv in ini) {
             if (kv.key.StartsWith("color ")) {
                 var name = kv.key.Replace("color ", "");
