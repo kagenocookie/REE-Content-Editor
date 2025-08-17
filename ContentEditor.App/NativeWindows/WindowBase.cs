@@ -165,10 +165,11 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         data.Handler?.OnOpen();
     }
 
-    public void CopyToClipboard(string text)
+    public void CopyToClipboard(string text, string? userNotice = null)
     {
         if (_inputContext.Keyboards.FirstOrDefault() is IKeyboard kb) {
             kb.ClipboardText = text;
+            if (userNotice != null) this.Overlays.ShowTooltip(userNotice, 1.5f);
         }
     }
 

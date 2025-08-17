@@ -85,8 +85,7 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
             ImGui.SameLine();
             var list = GetListForTab(currentTab);
             if (ImGui.Button("Copy all")) {
-                EditorWindow.CurrentWindow?.CopyToClipboard(string.Join("\n", list.Select(l => l.message)));
-                EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Copied!", 1f);
+                EditorWindow.CurrentWindow?.CopyToClipboard(string.Join("\n", list.Select(l => l.message)), "Copied!");
             }
             ImGui.Spacing();
             ImGui.Separator();
@@ -103,8 +102,7 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
                         .AddRectFilled(new Vector2(pos.X, lineY), new Vector2(data.Size.X, lineY - ImGui.GetItemRectSize().Y), 0x88fffff);
                 }
                 if (ImGui.IsItemClicked()) {
-                    EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Copied!", 1f);
-                    EditorWindow.CurrentWindow?.CopyToClipboard(item.message);
+                    EditorWindow.CurrentWindow?.CopyToClipboard(item.message, "Copied!");
                 }
             }
 

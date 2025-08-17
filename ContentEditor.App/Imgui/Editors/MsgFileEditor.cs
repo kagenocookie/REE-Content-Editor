@@ -200,12 +200,12 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
             ImGui.SameLine();
             if (ImGui.Button("Copy entry")) {
                 var data = new MessageData(selected, Filename, "");
-                EditorWindow.CurrentWindow?.CopyToClipboard(data.ToJson().ToJsonString());
+                EditorWindow.CurrentWindow?.CopyToClipboard(data.ToJson().ToJsonString(), "Entry copied!");
             }
             ImGui.Text("Guid: " + selected.Header.guid);
             ImGui.SameLine();
             if (ImGui.Button("Copy")) {
-                EditorWindow.CurrentWindow?.CopyToClipboard(selected.Header.guid.ToString());
+                EditorWindow.CurrentWindow?.CopyToClipboard(selected.Header.guid.ToString(), "GUID copied!");
             }
             var prevname = selected.Header.entryName;
             if (ImGui.InputText("Name", ref selected.Header.entryName, 128)) {
