@@ -13,6 +13,7 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
 
     private static string[] tabs = ["All", "Debug", "Info", "Warning", "Error"];
     private int currentTab;
+    private bool compactMultiline;
 
     internal static EventLogger? EventLogger { get; set; }
     private bool isOpen = false;
@@ -87,6 +88,8 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
             if (ImGui.Button("Copy all")) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(string.Join("\n", list.Select(l => l.message)), "Copied!");
             }
+            ImGui.SameLine();
+            ImGui.Checkbox("Compact multiline messages", ref compactMultiline);
             ImGui.Spacing();
             ImGui.Separator();
             ImGui.BeginChild("Content");
@@ -94,7 +97,16 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
             for (int i = 0; i < list.Count; i++) {
                 var item = list[i];
                 var col = SeverityColors[(int)item.level];
-                ImGui.TextColored(col, item.message);
+                if (compactMultiline) {
+                    var br = item.message.IndexOf('\n');
+                    if (br != -1) {
+                        ImGui.TextColored(col, item.message.AsSpan()[..br]);
+                    } else {
+                        ImGui.TextColored(col, item.message);
+                    }
+                } else {
+                    ImGui.TextColored(col, item.message);
+                }
                 if (ImGui.IsItemHovered()) {
                     var pos = ImGui.GetCursorScreenPos();
                     var lineY = pos.Y - ImGui.GetStyle().FramePadding.Y;
