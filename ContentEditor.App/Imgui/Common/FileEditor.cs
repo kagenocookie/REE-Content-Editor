@@ -158,11 +158,11 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         }
 
         if (Handle.FileSource != null) {
-            ImGui.TextColored(Colors.Faded, $"File source: {Handle.HandleType} - {Handle.FileSource} ({Handle.NativePath})");
+            ImGui.Text($"File source: {Handle.HandleType} - {Handle.FileSource} ({Handle.NativePath})");
         } else if (!string.IsNullOrEmpty(Handle.NativePath)) {
-            ImGui.TextColored(Colors.Faded, $"File source: {Handle.HandleType} ({Handle.NativePath})");
+            ImGui.Text($"File source: {Handle.HandleType} ({Handle.NativePath})");
         } else {
-            ImGui.TextColored(Colors.Faded, $"File source: {Handle.HandleType}");
+            ImGui.Text($"File source: {Handle.HandleType}");
         }
         if (!string.IsNullOrEmpty(Handle.NativePath)) {
             if (ImGui.IsItemClicked()) {
