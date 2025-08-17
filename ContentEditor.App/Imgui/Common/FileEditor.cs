@@ -166,8 +166,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         }
         if (!string.IsNullOrEmpty(Handle.NativePath)) {
             if (ImGui.IsItemClicked()) {
-                EditorWindow.CurrentWindow?.CopyToClipboard(Handle.NativePath);
-                EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Native path copied!", 1);
+                EditorWindow.CurrentWindow?.CopyToClipboard(Handle.NativePath, "Native path copied!");
             }
         }
     }

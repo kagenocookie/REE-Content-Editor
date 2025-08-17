@@ -19,6 +19,8 @@ public class ThemeEditor : IWindowHandler
     private WindowData data = null!;
     protected UIContext context = null!;
 
+    private int tab;
+
     public void Init(UIContext context)
     {
         this.context = context;
@@ -41,9 +43,29 @@ public class ThemeEditor : IWindowHandler
         }
 
         ImGui.SeparatorText("Style editor");
+        ImguiHelpers.Tabs(["Built-in", "Contextual"], ref tab, true);
         ImGui.BeginChild("Styles");
-        ImGui.ShowStyleEditor();
+        if (tab == 0) {
+            ImGui.ShowStyleEditor();
+        } else {
+            ShowContextualColorEditor();
+        }
         ImGui.EndChild();
+    }
+
+    private void ShowContextualColorEditor()
+    {
+        foreach (var field in AppColors.ColorFields) {
+            var col = (Vector4)field.GetValue(Colors.Current)!;
+            if (ImGui.ColorEdit4(field.Name, ref col)) {
+                UndoRedo.RecordCallbackSetter(null, field, (Vector4)field.GetValue(Colors.Current)!, col, (f, v) => f.SetValue(Colors.Current, v), field.Name);
+            }
+        }
+
+        foreach (var field in AppColors.ColorFields) {
+            var col = (Vector4)field.GetValue(Colors.Current)!;
+            ImGui.TextColored(col, "Lorem ipsum dolor sit amet");
+        }
     }
 
     public bool RequestClose()

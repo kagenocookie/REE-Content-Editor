@@ -135,7 +135,7 @@ public class RszDataFinder : IWindowHandler
             }
             ImGui.PushID(displayLabel + file);
             if (ImguiHelpers.SameLine() && ImGui.Button("Copy")) {
-                EditorWindow.CurrentWindow!.CopyToClipboard(file);
+                EditorWindow.CurrentWindow!.CopyToClipboard(file, "Copied!");
             }
             if (ImguiHelpers.SameLine() && ImGui.Button("Open")) {
                 if (isCurrent) {

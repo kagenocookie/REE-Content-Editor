@@ -35,6 +35,8 @@ public class FileTesterWindow : IWindowHandler
         data = context.Get<WindowData>();
     }
 
+    private readonly HashSet<GameIdentifier> hiddenGames = new();
+
     public void OnIMGUI()
     {
         var exec = SearchInProgress;
@@ -51,7 +53,7 @@ public class FileTesterWindow : IWindowHandler
 
         if (!results.IsEmpty) {
             ImGui.SameLine();
-            if (ImGui.Button("Cancel")) {
+            if (cancellationTokenSource != null && ImGui.Button("Stop")) {
                 cancellationTokenSource?.Cancel();
                 cancellationTokenSource = null;
             }
@@ -59,16 +61,22 @@ public class FileTesterWindow : IWindowHandler
             if (ImGui.Button("Clear results")) {
                 results.Clear();
             }
+            ImGui.SameLine();
+            if (ImGui.Button("Copy result summary")) {
+                var str = string.Join("\n", results.Select(data => $"{data.Key}: {data.Value.success}/{data.Value.success + data.Value.fails.Count}"));
+                EditorWindow.CurrentWindow?.CopyToClipboard(str, "Copied!");
+            }
             foreach (var (game, results) in results) {
                 ImGui.SeparatorText($"{game.name}: {results.success}/{results.success + results.fails.Count}");
-                if (!results.fails.IsEmpty) {
-
+                if (ImGui.IsItemClicked()) {
+                    if (!hiddenGames.Add(game)) hiddenGames.Remove(game);
+                }
+                if (!hiddenGames.Contains(game) && !results.fails.IsEmpty) {
                     ImGui.TextColored(Colors.Warning, "List of files that failed to read:");
                     foreach (var file in results.fails) {
-                        ImGui.Text($"[{game.name}]: {file}");
+                        ImGui.Text(file);
                         if (ImGui.IsItemClicked()) {
-                            EditorWindow.CurrentWindow!.CopyToClipboard(file);
-                            EditorWindow.CurrentWindow.Overlays.ShowTooltip("Copied file path!", 1f);
+                            EditorWindow.CurrentWindow!.CopyToClipboard(file, "Copied file path!");
                         }
                     }
                 }
@@ -95,6 +103,7 @@ public class FileTesterWindow : IWindowHandler
         // if (!workspace.ResourceManager.CanLoadFile()) return false;
         Task.Run(() => {
             try {
+                var token = cancellationTokenSource.Token;
                 foreach (var env in GetWorkspaces(workspace)) {
                     var rm = new ResourceManager(new PatchDataContainer("!"));
                     var exts = env.Env.GetFileExtensionsForFormat(format);
@@ -102,6 +111,7 @@ public class FileTesterWindow : IWindowHandler
                     var fails = new ConcurrentBag<string>();
                     results[env.Game] = (success, fails);
                     foreach (var (path, stream) in exts.SelectMany(ext => env.Env.GetFilesWithExtension(ext))) {
+                        if (token.IsCancellationRequested) return;
                         if (TryLoadFile(env, format, path, stream)) {
                             success++;
                             results[env.Game] = (success, fails);

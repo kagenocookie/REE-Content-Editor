@@ -62,8 +62,7 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
         if (ImGui.Button("Copy as JSON")) {
             var ws = context.GetWorkspace();
             if (ws != null) {
-                EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(context.GetRaw(), ws.Env.JsonOptions)!);
-                EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Copied!", 1f);
+                EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(context.GetRaw(), ws.Env.JsonOptions)!, "Copied!");
             }
             return true;
         }

@@ -635,6 +635,11 @@ public class DefaultThemes
             themeData += "color " + col + " = " + color.ToString("X", CultureInfo.InvariantCulture) + "\n";
         }
 
+        foreach (var field in AppColors.ColorFields) {
+            var col = (Vector4)field.GetValue(Colors.Current)!;
+            themeData += "maincol " + field.Name + " = " + ImGui.ColorConvertFloat4ToU32(col).ToString("X", CultureInfo.InvariantCulture) + "\n";
+        }
+
         foreach (var field in ThemeFields) {
             var value = field.GetValue(style);
             string valueStr;
@@ -665,11 +670,18 @@ public class DefaultThemes
     public static unsafe void ApplyThemeData(IEnumerable<(string key, string value, string? group)> ini)
     {
         var style = ImGui.GetStyle();
+        Colors.Current = new AppColors();
         foreach (var kv in ini) {
             if (kv.key.StartsWith("color ")) {
                 var name = kv.key.Replace("color ", "");
                 if (uint.TryParse(kv.value, System.Globalization.NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var colU32) && Enum.TryParse<ImGuiCol>(name, out var col)) {
                     style.Colors[(int)col] = ImGui.ColorConvertU32ToFloat4(colU32);
+                }
+            } else if(kv.key.StartsWith("maincol ")) {
+                var name = kv.key.Replace("maincol ", "");
+                var field = AppColors.ColorFields.FirstOrDefault(f => f.Name == name);
+                if (field != null && uint.TryParse(kv.value, System.Globalization.NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var colU32)) {
+                    field.SetValue(Colors.Current, ImGui.ColorConvertU32ToFloat4(colU32));
                 }
             } else if (kv.key.StartsWith("prop ")) {
                 var name = kv.key.Replace("prop ", "");

@@ -23,6 +23,7 @@ public static class ExeUtils
             }
         }
         hash ??= "v.ukn";
+        if (exePath == null) return hash;
 
         var paks = PakUtils.ScanPakFiles(Path.GetDirectoryName(exePath)!);
         if (paks.Count == 0) return hash;

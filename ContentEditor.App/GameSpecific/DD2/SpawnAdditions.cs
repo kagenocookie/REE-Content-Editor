@@ -72,7 +72,7 @@ public static class SpawnAdditions
                 }
             }
             if (data.Features.Count > 0) {
-                EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(data, JsonConfig.jsonOptionsIncludeFields));
+                EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(data, JsonConfig.jsonOptionsIncludeFields), "Copied!");
             } else {
                 Logger.Warn("No spawn position data found");
             }

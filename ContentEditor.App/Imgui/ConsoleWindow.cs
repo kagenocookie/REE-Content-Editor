@@ -13,6 +13,7 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
 
     private static string[] tabs = ["All", "Debug", "Info", "Warning", "Error"];
     private int currentTab;
+    private bool compactMultiline;
 
     internal static EventLogger? EventLogger { get; set; }
     private bool isOpen = false;
@@ -23,7 +24,13 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
     private readonly List<LogEntry> info = new();
     private readonly List<LogEntry> warn = new();
     private readonly List<LogEntry> error = new();
-    private Vector4[] SeverityColors = [Colors.Faded, Colors.Default, Colors.Warning, Colors.Error];
+
+    private static Vector4 GetColor(LogSeverity severity) => severity switch {
+        LogSeverity.Debug => Colors.Faded,
+        LogSeverity.Warning => Colors.Warning,
+        LogSeverity.Error => Colors.Error,
+        _ => Colors.Default,
+    };
 
     private WindowData? window;
 
@@ -85,17 +92,27 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
             ImGui.SameLine();
             var list = GetListForTab(currentTab);
             if (ImGui.Button("Copy all")) {
-                EditorWindow.CurrentWindow?.CopyToClipboard(string.Join("\n", list.Select(l => l.message)));
-                EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Copied!", 1f);
+                EditorWindow.CurrentWindow?.CopyToClipboard(string.Join("\n", list.Select(l => l.message)), "Copied!");
             }
+            ImGui.SameLine();
+            ImGui.Checkbox("Compact multiline messages", ref compactMultiline);
             ImGui.Spacing();
             ImGui.Separator();
             ImGui.BeginChild("Content");
             var isMaxScrolled = ImGui.GetScrollY() >= ImGui.GetScrollMaxY();
             for (int i = 0; i < list.Count; i++) {
                 var item = list[i];
-                var col = SeverityColors[(int)item.level];
-                ImGui.TextColored(col, item.message);
+                var col = GetColor(item.level);
+                if (compactMultiline) {
+                    var br = item.message.IndexOf('\n');
+                    if (br != -1) {
+                        ImGui.TextColored(col, item.message.AsSpan()[..br]);
+                    } else {
+                        ImGui.TextColored(col, item.message);
+                    }
+                } else {
+                    ImGui.TextColored(col, item.message);
+                }
                 if (ImGui.IsItemHovered()) {
                     var pos = ImGui.GetCursorScreenPos();
                     var lineY = pos.Y - ImGui.GetStyle().FramePadding.Y;
@@ -103,8 +120,7 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
                         .AddRectFilled(new Vector2(pos.X, lineY), new Vector2(data.Size.X, lineY - ImGui.GetItemRectSize().Y), 0x88fffff);
                 }
                 if (ImGui.IsItemClicked()) {
-                    EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Copied!", 1f);
-                    EditorWindow.CurrentWindow?.CopyToClipboard(item.message);
+                    EditorWindow.CurrentWindow?.CopyToClipboard(item.message, "Copied!");
                 }
             }
 
