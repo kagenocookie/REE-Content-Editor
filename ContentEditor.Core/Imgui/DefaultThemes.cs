@@ -706,7 +706,7 @@ public class DefaultThemes
                     val = kv.value.Equals("yes", StringComparison.InvariantCultureIgnoreCase) || kv.value.Equals("true", StringComparison.InvariantCultureIgnoreCase);
                 } else if (type == typeof(Vector2)) {
                     var vals = kv.value.Split(',');
-                    if (float.TryParse(vals[0], CultureInfo.InvariantCulture, out var v1) && float.TryParse(vals[0], CultureInfo.InvariantCulture, out var v2)) {
+                    if (float.TryParse(vals[0], CultureInfo.InvariantCulture, out var v1) && float.TryParse(vals[1], CultureInfo.InvariantCulture, out var v2)) {
                         ref var val = ref ((Vector2Getter)Delegate.CreateDelegate(typeof(Vector2Getter), style, prop.GetMethod!))();
                         val = new Vector2(v1, v2);
                     }
