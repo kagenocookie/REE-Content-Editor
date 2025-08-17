@@ -4,7 +4,7 @@ using ReeLib.Msg;
 
 namespace ContentPatcher;
 
-// public class Motfsm2FileLoader : DefaultFileLoader<Motfsm2File>
-// {
-//     public Motfsm2FileLoader() : base(KnownFileFormats.MotionFsm2) { }
-// }
+public class Motfsm2FileLoader : DefaultFileLoader<Motfsm2File>
+{
+    public Motfsm2FileLoader() : base(KnownFileFormats.MotionFsm2) { }
+}
