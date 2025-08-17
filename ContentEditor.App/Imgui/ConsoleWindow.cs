@@ -24,7 +24,13 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
     private readonly List<LogEntry> info = new();
     private readonly List<LogEntry> warn = new();
     private readonly List<LogEntry> error = new();
-    private Vector4[] SeverityColors = [Colors.Faded, Colors.Default, Colors.Warning, Colors.Error];
+
+    private static Vector4 GetColor(LogSeverity severity) => severity switch {
+        LogSeverity.Debug => Colors.Faded,
+        LogSeverity.Warning => Colors.Warning,
+        LogSeverity.Error => Colors.Error,
+        _ => Colors.Default,
+    };
 
     private WindowData? window;
 
@@ -96,7 +102,7 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
             var isMaxScrolled = ImGui.GetScrollY() >= ImGui.GetScrollMaxY();
             for (int i = 0; i < list.Count; i++) {
                 var item = list[i];
-                var col = SeverityColors[(int)item.level];
+                var col = GetColor(item.level);
                 if (compactMultiline) {
                     var br = item.message.IndexOf('\n');
                     if (br != -1) {
