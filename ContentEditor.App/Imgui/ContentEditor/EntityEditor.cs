@@ -1,3 +1,4 @@
+using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
@@ -8,11 +9,19 @@ public class EntityEditor : IWindowHandler
 {
     public string HandlerName => nameof(EntityEditor);
     public bool HasUnsavedChanges => data?.Context?.GetChildByValue<ResourceEntity>()?.Changed == true;
+    private long initialId = -1;
 
     public EntityEditor(ContentWorkspace workspace, string entityType)
     {
         this.workspace = workspace;
         this.entityType = entityType;
+    }
+
+    public EntityEditor(ContentWorkspace workspace, Entity initialEntity)
+    {
+        this.workspace = workspace;
+        this.entityType = initialEntity.Type;
+        initialId = initialEntity.Id;
     }
 
     private ContentWorkspace workspace;
@@ -24,6 +33,9 @@ public class EntityEditor : IWindowHandler
     {
         this.context = context;
         data = context.Get<WindowData>();
+        if (initialId != -1) {
+            data.SetPersistentData("selectedEntity", initialId);
+        }
     }
 
     public void OnWindow() => this.ShowDefaultWindow(context);
@@ -59,22 +71,38 @@ public class EntityEditor : IWindowHandler
             return;
         }
 
-        if (ImGui.TreeNode("Change label")) {
-            var newName = data.Context.GetChildValue<string>();
-            if (newName == null) {
-                data.Context.AddChild("Rename", newName = selected.Label);
+        if (ImGui.BeginPopupContextItem(entityType)) {
+            if (ImGui.Button("Change label")) {
+                data.Context.AddChild("Rename", selected.Label);
+                ImGui.CloseCurrentPopup();
             }
+            if (ImGui.Button("Reopen in new window")) {
+                EditorWindow.CurrentWindow?.AddSubwindow(new EntityEditor(workspace, selected));
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
+
+        var renameCtx = data.Context.GetChildByValue<string>();
+        if (renameCtx?.Get<string>() != null) {
+            ImGui.Indent(16);
+            var newName = renameCtx.Get<string>();
             if (ImGui.InputText("New label", ref newName, 200)) {
                 data.Context.GetChildByValue<string>()!.target = newName;
             }
-            if (newName != selected.Label && ImGui.Button("Confirm rename")) {
+            ImGui.Unindent(16);
+            if (ImGui.Button("Cancel rename")) {
+                data.Context.RemoveChild(renameCtx);
+            }
+            if (newName != selected.Label && ImguiHelpers.SameLine() && ImGui.Button("Confirm rename")) {
                 selected.Label = newName;
                 data.Context.Changed = true;
+                selected.Config.PrimaryEnum?.UpdateEnum(workspace, selected);
                 if (workspace.CurrentBundle != null && workspace.CurrentBundle.RecordEntity(selected) == Bundle.EntityRecordUpdateType.Addded) {
                     Logger.Info($"Entity {selected.Label} added to current bundle {workspace.CurrentBundle.Name}");
                 }
+                data.Context.RemoveChild(renameCtx);
             }
-            ImGui.TreePop();
         }
 
         ImGui.Separator();

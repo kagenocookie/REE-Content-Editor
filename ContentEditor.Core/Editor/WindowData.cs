@@ -89,4 +89,15 @@ public class WindowData
         data.Handler.Init(data.Context);
         return data;
     }
+
+    public static WindowData CreateEmbeddedWindow(UIContext context, IRectWindow parentWindow, IWindowHandler handler, string label)
+    {
+        var data = new WindowData() {
+            ParentWindow = parentWindow,
+            Handler = handler,
+        };
+        data.Context = context.AddChild(label, data, (IObjectUIHandler)handler);
+        data.Handler.Init(data.Context);
+        return data;
+    }
 }

@@ -72,7 +72,7 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
             context.ClearChildren();
             var root = Prefab.GetSharedInstance();
             if (Logger.ErrorIf(root == null, "Failed to instantiate prefab")) return;
-            context.AddChild<PfbFile, List<ResourceInfo>>("Resources", File, getter: static (c) => c!.ResourceInfoList).AddDefaultHandler<List<ResourceInfo>>();
+            context.AddChild<PfbFile, List<ResourceInfo>>("Resources", File, getter: static (c) => c!.ResourceInfoList, handler: new TooltipUIHandler(new ListHandler(typeof(ResourceInfo)), "List of resources that will be preloaded together with the file ingame.\nShould be updated automatically on save."));
 
             context.AddChild("Filter", searcher, searcher);
             scene = root.Scene;

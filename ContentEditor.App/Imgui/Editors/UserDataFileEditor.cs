@@ -54,6 +54,7 @@ public class UserDataFileEditor : FileEditor, IWorkspaceContainer, IRSZFileEdito
         if (context.children.Count == 0 || fileContext == null) {
             context.ClearChildren();
             // context.AddChild("Filter", searcher, searcher);
+            context.AddChild<UserFile, List<ResourceInfo>>("Resources", File, getter: static (c) => c!.ResourceInfoList, handler: new TooltipUIHandler(new ListHandler(typeof(ResourceInfo)), "List of resources that will be preloaded together with the file ingame.\nShould be updated automatically on save."));
             fileContext = context.AddChild("Base type: " + Instance.RszClass.name, Instance);
             WindowHandlerFactory.SetupRSZInstanceHandler(fileContext);
             fileContext.SetChangedNoPropagate(context.Changed);

@@ -130,6 +130,7 @@ public static class ImguiHelpers
 
     public static bool FilterableCombo<TValue>(string label, string[] labels, ReadOnlySpan<TValue> values, ref TValue? selected, ref string? filter)
     {
+        ImGui.BeginGroup();
         var w = ImGui.CalcItemWidth();
         ImGui.SetNextItemWidth(w / 2 - MarginX);
         bool changed = false;
@@ -162,6 +163,7 @@ public static class ImguiHelpers
         ImGui.SetNextItemWidth(w / 2 - MarginX);
         filter ??= "";
         ImGui.InputText(label, ref filter, 48);
+        ImGui.EndGroup();
         return changed;
     }
 

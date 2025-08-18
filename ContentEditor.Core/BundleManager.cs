@@ -169,7 +169,11 @@ public class BundleManager
 
     public string GetBundleFolder(Bundle bundle)
     {
-        return Path.Combine(BundlePath, bundle.Name).Replace('\\', '/');
+        var path = Path.Combine(BundlePath, bundle.Name).Replace('\\', '/');
+        if (!Directory.Exists(path)) {
+            Directory.CreateDirectory(path);
+        }
+        return path;
     }
 
     public string? GetBundleResourcePath(Bundle bundle, string filepath)

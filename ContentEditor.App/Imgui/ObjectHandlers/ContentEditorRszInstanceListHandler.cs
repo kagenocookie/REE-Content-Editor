@@ -15,7 +15,7 @@ public sealed class ContentEditorRszInstanceListHandler(CustomField field) : IOb
         var list = context.Get<RSZObjectListResource>()?.Instances;
         if (context.children.Count == 0) {
             var child = context.AddChild(context.label, list);
-            child.uiHandler = new ArrayRSZHandler(new RszField() { name = "", type = RszFieldType.Object, original_type = field.ResourceIdentifier });
+            child.uiHandler = new ArrayRSZHandler(new RszField() { name = "", type = RszFieldType.Object, original_type = field.ResourceIdentifier! });
         }
         if (list == null) {
             ImGui.Text(context.label);

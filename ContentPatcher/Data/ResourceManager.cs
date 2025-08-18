@@ -60,7 +60,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             entities[type] = new EntityData(patch);
 
             foreach (var field in patch.Fields) {
-                if (field is ICustomResourceField custom) {
+                if (field is ICustomResourceField custom && custom.ResourceIdentifier != null) {
                     var cfg = custom.CreateConfig();
                     resources[custom.ResourceIdentifier] = new ResourceData(cfg);
                 }
@@ -269,7 +269,9 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         }
         if (fieldResource == null) return null;
 
-        if (openFiles.TryGetValue(fieldResource.FilePath, out var file)) {
+        if (fieldResource.FilePath == null) {
+            // ignore - there's no file here
+        } else if (openFiles.TryGetValue(fieldResource.FilePath, out var file)) {
             file.Modified = true;
         } else {
             throw new Exception("New resource file should've been opened, wtf?");
@@ -280,7 +282,9 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
     public TResourceType CreateEntityResource<TResourceType>(ResourceEntity entity, CustomField field, ResourceState state, string? resourceKeyOverride = null) where TResourceType : IContentResource
     {
-        if (resources.TryGetValue(resourceKeyOverride ?? field.ResourceIdentifier, out var data)) {
+        var key = resourceKeyOverride ?? field.ResourceIdentifier;
+        if (key == null) return Activator.CreateInstance<TResourceType>();
+        if (resources.TryGetValue(key, out var data)) {
             if (data.baseInstances == null) {
                 data.baseInstances = new();
                 ReadObjectSourceData(data.config, data);
@@ -414,6 +418,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             }
 
             entity.ApplyDataValues(workspace, ResourceState.Base);
+            data.config.PrimaryEnum?.UpdateEnum(workspace, entity);
         }
     }
 
@@ -460,6 +465,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             }
             entity.LoadResources(this, ResourceState.Active);
             entity.ApplyDataValues(workspace, ResourceState.Active);
+            data.config.PrimaryEnum?.UpdateEnum(workspace, entity);
         }
     }
 
@@ -488,7 +494,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
         var entity = new ResourceEntity(id, type, data.config);
         foreach (var field in data.config.Fields) {
-            if (field.Condition?.IsEnabled(entity) == false) {
+            if (field.ResourceIdentifier == null || field.Condition?.IsEnabled(entity) == false) {
                 continue;
             }
 
@@ -504,6 +510,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                 }
             }
         }
+        entity.Label = data.config.StringFormatter?.GetString(entity) ?? $"{type} {id}";
         data.instances[id] = entity;
         data.activatedInstances.Add(id);
         if (activeBundle != null) {
@@ -566,6 +573,26 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     {
         fileHandle = ReadOrGetFileResource(filename, null);
         return fileHandle != null;
+    }
+
+    /// <summary>
+    /// Attempt to find and load a file based on an internal or native filepath. Checks base files with fallback to the active bundle.
+    /// </summary>
+    public bool TryResolveFile(string filename, [MaybeNullWhen(false)] out FileHandle file)
+    {
+        var nativePath = workspace.Env.ResolveFilepath(filename);
+        if (nativePath != null) {
+            return TryGetOrLoadFile(nativePath, out file);
+        }
+
+        foreach (var candidate in workspace.Env.FindPossibleFilepaths(filename)) {
+            file = ReadOrGetFileResource(candidate, null);
+            if (file != null) {
+                return true;
+            }
+        }
+        file = null;
+        return false;
     }
 
     private FileHandle? ReadOrGetFileResource(string filepath, string? nativePath)
@@ -772,9 +799,9 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         }
     }
 
-    public FileHandle GetFileHandle(string filepath)
+    public FileHandle GetFileHandle(string filepath, string? nativePath = null)
     {
-        var resource = ReadOrGetFileResource(filepath, null);
+        var resource = ReadOrGetFileResource(filepath, nativePath);
         if (resource == null) {
             throw new NotSupportedException();
         }

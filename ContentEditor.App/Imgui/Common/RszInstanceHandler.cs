@@ -88,12 +88,14 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
                     if (ImGui.Button("Paste JSON")) {
                         var env = context.GetWorkspace()!.Env;
                         try {
-                            var newItem = JsonSerializer.Deserialize(clipboard, type, env.JsonOptions);
-                            if (newItem is RszInstance rsz && elementType != null && !env.TypeCache.IsAssignableTo(rsz.RszClass.name, elementType)) {
-                                Logger.Error("Unsupported type " + rsz.RszClass.name + " for array element type " + elementType);
-                                return true;
+                            var newItems = ((IList)(JsonSerializer.Deserialize(clipboard, typeof(List<>).MakeGenericType(type), env.JsonOptions)!)).Cast<object>().ToList();
+                            foreach (var item in newItems) {
+                                if (item is RszInstance rsz && elementType != null && !env.TypeCache.IsAssignableTo(rsz.RszClass.name, elementType)) {
+                                    Logger.Error("Unsupported type " + rsz.RszClass.name + " for array element type " + elementType);
+                                    return true;
+                                }
                             }
-                            UndoRedo.RecordListAdd(context, list, newItem);
+                            UndoRedo.RecordSet(context, newItems);
                         } catch (Exception) {
                             Logger.Error("Invalid JSON");
                         }
@@ -753,5 +755,35 @@ public class GameObjectRefHandler : Singleton<GameObjectRefHandler>, IObjectUIHa
         ImGui.PushItemWidth(ImGui.CalcItemWidth() / 2 - ImGui.GetStyle().FramePadding.X);
         context.ShowChildrenUI();
         ImGui.PopItemWidth();
+    }
+}
+
+[RszClassHandler("via.Prefab")]
+public class PrefabRefHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<RszInstance>();
+        if (context.children.Count == 0) {
+            context.AddChild<RszInstance, string>(
+                context.label,
+                instance,
+                new ResourcePathPicker(context.GetWorkspace(), KnownFileFormats.Prefab),
+                getter: (inst) => inst?.Values[1] as string,
+                setter: (inst, str) => inst.Values[1] = str ?? string.Empty);
+        }
+
+        var preloadType = instance.Values[0].GetType();
+        var preload = instance.Values[0] is bool b ? b : (byte)instance.Values[0] != 0;
+        if (ImGui.Checkbox("Preload", ref preload)) {
+            if (preloadType == typeof(bool)) {
+                UndoRedo.RecordCallbackSetter(context, instance, !preload, preload, (i, v) => i.Values[0] = v, $"{instance.GetHashCode()} Preload");
+            } else {
+                UndoRedo.RecordCallbackSetter(context, instance, (byte)0, (byte)1, (i, v) => i.Values[0] = v, $"{instance.GetHashCode()} Preload");
+            }
+        }
+        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("If true, the prefab will get loaded immediately with the scene and included in the resources list.\nYou rarely want to change this for existing files.");
+        ImGui.SameLine();
+        context.ShowChildrenUI();
     }
 }

@@ -19,13 +19,13 @@ public sealed class DD2ItemIconHandler(CustomField field) : IObjectUIHandler, IO
         var data = entity?.Get("data") as RSZObjectResource;
         var workspace = context.GetWorkspace();
         if (entity == null || data == null || workspace == null) {
-            ImGui.TextColored(Colors.Error, $"{field.label ?? field.name} field requires a valid item entity and workspace");
+            ImGui.TextColored(Colors.Error, $"{field.label} field requires a valid item entity and workspace");
             return;
         }
 
         var instance = context.Get<ItemIconResource>();
         var iconNo = (ushort)data.Instance.GetFieldValue("_IconNo")!;
-        if (entity.Id <= 20000) {
+        if (iconNo <= 10000) {
             // default items
             var sequenceId = iconNo / 1000;
             var patternId = iconNo % 1000;
@@ -45,31 +45,39 @@ public sealed class DD2ItemIconHandler(CustomField field) : IObjectUIHandler, IO
 
             var (uv0, uv1) = pattern.GetBoundingPoints();
             ImGui.Image(texture, new System.Numerics.Vector2(200, 200), uv0, uv1);
-            return;
+            if (entity.Id < entity.Config.CustomIDRange![0]) {
+                return;
+            }
         }
 
-        if (iconNo != entity.Id) {
-            data.Instance.SetFieldValue("_IconNo", (ushort)entity.Id);
-        }
         if (instance == null) {
             ImGui.Text(context.label);
             if (workspace != null) {
                 ImGui.SameLine();
-                if (ImGui.Button("Create")) {
+                if (ImGui.Button("Add custom icon")) {
                     context.Set(new ItemIconResource());
                 }
             }
             return;
         }
 
+        if (iconNo != entity.Id) {
+            data.Instance.SetFieldValue("_IconNo", (ushort)entity.Id);
+        }
         var texHandler = context.GetChild<ResourcePathPicker>() ?? context.AddChild(
             "Icon Path",
             instance.data,
-            new ResourcePathPicker(workspace, KnownFileFormats.Texture) { SaveWithNativePath = true },
+            new ResourcePathPicker(workspace, KnownFileFormats.Texture) { SaveWithNativePath = false },
             getter: (ctx) => ((ItemIconResource.ItemRectData)ctx.target!).IconTexture,
             setter: (ctx, val) => ((ItemIconResource.ItemRectData)ctx.target!).IconTexture = val as string
         );
         texHandler.ShowUI();
+
+        if (ImGui.Button("Remove custom icon")) {
+            context.ClearChildren();
+            context.Set<object?>(null);
+            return;
+        }
 
         {
             var texPath = instance.data.IconTexture;

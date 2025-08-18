@@ -15,8 +15,11 @@ public class ContentEditorEntityImguiHandler : IObjectUIHandler
             EditorWindow.CurrentWindow?.CopyToClipboard(instance.Id.ToString(), "ID copied!");
         }
 
+        int i = 0;
         foreach (var child in context.children) {
+            ImGui.PushID(i++);
             child.ShowUI();
+            ImGui.PopID();
         }
     }
 }

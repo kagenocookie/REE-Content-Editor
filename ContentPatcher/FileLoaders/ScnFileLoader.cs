@@ -48,6 +48,10 @@ public sealed class ScenePatcher : RszFilePatcherBase, IDisposable
     {
         var newfile = handle.GetFile<ScnFile>();
         if (handle == fileHandle) {
+            if (handle.HandleType == FileHandleType.Bundle) {
+                // this can happen if a diff is attempted for a custom file - no need to log an error here
+                return null;
+            }
             Logger.Error("Attempted diff between the exact same file: " + handle.Filepath);
             return null;
         }

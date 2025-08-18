@@ -49,9 +49,9 @@ public class ResourcePathPicker : IObjectUIHandler
         }
 
         if (ImGui.BeginPopupContextItem()) {
+            var ws = context.GetWorkspace();
             if (ImGui.Button("Open file")) {
                 ImGui.CloseCurrentPopup();
-                var ws = context.GetWorkspace();
                 if (ws != null) {
                     var resolvedPath = ws.Env.ResolveFilepath(currentPath);
                     if (resolvedPath == null) {
@@ -65,9 +65,8 @@ public class ResourcePathPicker : IObjectUIHandler
                     }
                 }
             }
-            if (ImGui.Button("Extract file")) {
+            if (ImGui.Button("Extract file ...")) {
                 ImGui.CloseCurrentPopup();
-                var ws = context.GetWorkspace();
                 if (ws != null) {
                     var resolvedPath = ws.Env.ResolveFilepath(currentPath);
                     if (resolvedPath == null) {
@@ -83,6 +82,22 @@ public class ResourcePathPicker : IObjectUIHandler
                             });
                     }
                 }
+            }
+            if (ws?.CurrentBundle != null && ImGui.Button("Save to bundle ...")) {
+                if (ws.ResourceManager.TryResolveFile(currentPath, out var file)) {
+                    var wnd = EditorWindow.CurrentWindow!;
+                    SaveFileToBundle(ws, file, (bundle, savePath, localPath, nativePath) => {
+                        file.Save(ws, savePath);
+                        bundle.AddResource(localPath, nativePath);
+                        Logger.Info("File saved to " + savePath);
+                        wnd.InvokeFromUIThread(() => {
+                            ApplyPathChange(context, nativePath, wnd);
+                        });
+                    });
+                } else {
+                    Logger.Error("File could not be found!");
+                }
+                ImGui.CloseCurrentPopup();
             }
             ImGui.EndPopup();
         }
@@ -121,7 +136,7 @@ public class ResourcePathPicker : IObjectUIHandler
         // TODO expandable resource preview
     }
 
-    private void ApplyPathChange(UIContext context, string newPath)
+    private void ApplyPathChange(UIContext context, string newPath, WindowBase? window = null)
     {
         newPath = PathUtils.GetNativeFromFullFilepath(newPath) ?? newPath;
         if (SaveWithNativePath) {
@@ -133,6 +148,50 @@ public class ResourcePathPicker : IObjectUIHandler
                 newPath = PathUtils.GetFilepathWithoutSuffixes(newPath).ToString();
             }
         }
-        UndoRedo.RecordSet(context, newPath);
+        UndoRedo.RecordSet(context, newPath, window);
+        context.state = newPath;
+    }
+
+    public delegate void BundleSaveFileCallback(Bundle bundle, string savePath, string localPath, string nativePath);
+
+    public static void SaveFileToBundle(ContentWorkspace workspace, FileHandle file, BundleSaveFileCallback saveCallback)
+    {
+        var bundle = workspace.CurrentBundle;
+        if (bundle == null) {
+            Logger.Error("Can't save file - no active bundle");
+            return;
+        }
+
+        var fn = file.Filename.ToString();
+        var bundleFolder = workspace.BundleManager.GetBundleFolder(bundle);
+        var nativeFilepath = file.NativePath ?? PathUtils.GetNativeFromFullFilepath(file.Filepath) ?? fn;
+        var localFilepath = fn;
+        var suggestedSavePath = Path.Combine(bundleFolder, localFilepath);
+        if (File.Exists(suggestedSavePath)) {
+            localFilepath = PathUtils.RemoveNativesFolder(nativeFilepath);
+            suggestedSavePath = Path.Combine(bundleFolder, localFilepath);
+            Logger.Warn($"The file {suggestedSavePath} already exists, defaulting to the full file path instead.");
+        }
+        var orgFilename = Path.GetFileName(suggestedSavePath);
+        var saveFolder = Path.GetDirectoryName(suggestedSavePath)!;
+        if (!Directory.Exists(saveFolder)) {
+            Directory.CreateDirectory(saveFolder);
+        }
+        PlatformUtils.ShowSaveFileDialog((path) => {
+            path = path.NormalizeFilepath();
+            if (!path.StartsWith(bundleFolder)) {
+                Logger.Error("Chosen filepath is not inside the bundle folder! Use Save As instead if it was intentional.");
+                return;
+            }
+            localFilepath = path.Replace(bundleFolder, "").TrimStart('/');
+            var newFilename = Path.GetFileName(path);
+            if (!newFilename.Equals(orgFilename, StringComparison.InvariantCultureIgnoreCase)) {
+                Logger.Warn($"The filename has been automatically renamed from {orgFilename} to {newFilename} for the native path. If this was not intentional, modify the resource_listing entry in the bundle.json.");
+                nativeFilepath = nativeFilepath.Replace(orgFilename, newFilename);
+            }
+
+            saveCallback.Invoke(bundle, path, localFilepath, nativeFilepath);
+            workspace.BundleManager.SaveBundle(bundle);
+        }, suggestedSavePath);
     }
 }

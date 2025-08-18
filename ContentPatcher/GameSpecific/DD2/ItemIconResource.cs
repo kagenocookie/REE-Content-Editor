@@ -11,7 +11,7 @@ public class ItemIconResource : IContentResource
     public ItemRectData data = new();
 
     public string ResourceIdentifier => data.IconTexture + data.IconRect;
-    public string FilePath => string.Empty;
+    public string? FilePath => data.IconTexture;
 
     public IContentResource Clone() => new ItemIconResource() { data = data.Clone() };
 
@@ -46,12 +46,10 @@ public class ItemIconResource : IContentResource
 [ResourceField("DD2_ItemIcon", "dd2")]
 public class ItemIconField : CustomField<ItemIconResource>
 {
-    public override string ResourceIdentifier => "icon";
-    private string field = null!;
+    public override string? ResourceIdentifier => null;
 
     public override void LoadParams(string fieldName, Dictionary<string, object>? param)
     {
-        this.field = fieldName;
     }
 
     public override ItemIconResource? ApplyValue(ContentWorkspace workspace, ItemIconResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
@@ -68,6 +66,6 @@ public class ItemIconField : CustomField<ItemIconResource>
 
     public override IContentResource? FetchResource(ResourceManager resources, ResourceEntity entity, ResourceState state)
     {
-        return entity.Get(field);
+        return entity.Get(name);
     }
 }

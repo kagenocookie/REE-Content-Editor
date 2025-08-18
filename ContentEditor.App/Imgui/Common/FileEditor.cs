@@ -126,18 +126,9 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             if (workspace.CurrentBundle != null && !Handle.IsInBundle(workspace, workspace.CurrentBundle)) {
                 ImGui.SameLine();
                 if (ImGui.Button("Save to bundle")) {
-                    var bundle = workspace.CurrentBundle;
-                    var fn = Handle.Filename.ToString();
-                    var bundleFolder = workspace.BundleManager.GetBundleFolder(bundle);
-                    var nativeFilepath = Handle.NativePath ?? PathUtils.GetNativeFromFullFilepath(Handle.Filepath) ?? fn;
-                    var localFilepath = fn;
-                    var savePath = Path.Combine(bundleFolder, localFilepath);
-                    if (File.Exists(savePath)) {
-                        localFilepath = PathUtils.RemoveNativesFolder(nativeFilepath);
-                        savePath = Path.Combine(bundleFolder, localFilepath);
-                    }
-                    SaveTo(savePath, true, () => bundle.AddResource(localFilepath, nativeFilepath));
-                    workspace.BundleManager.SaveBundle(bundle);
+                    ResourcePathPicker.SaveFileToBundle(workspace, Handle, (bundle, savePath, localPath, nativePath) => {
+                        SaveTo(savePath, true, () => bundle.AddResource(localPath, nativePath));
+                    });
                 }
             }
         }
@@ -164,10 +155,8 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         } else {
             ImGui.TextColored(Colors.Faded, $"File source: {Handle.HandleType}");
         }
-        if (!string.IsNullOrEmpty(Handle.NativePath)) {
-            if (ImGui.IsItemClicked()) {
-                EditorWindow.CurrentWindow?.CopyToClipboard(Handle.NativePath, "Native path copied!");
-            }
+        if (ImGui.IsItemClicked()) {
+            EditorWindow.CurrentWindow?.CopyToClipboard(Handle.NativePath ?? Handle.Filepath, "Path copied!");
         }
     }
 
@@ -176,7 +165,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         Handle.Save(context.GetWorkspace()!);
     }
 
-    private void SaveTo(string savePath, bool replaceFileHandle, Action? beforeReplaceAction = null)
+    private void SaveTo(string savePath, bool replaceFileHandle, Action? beforeReplaceAction = null, string? nativePath = null)
     {
         var workspace = context.GetWorkspace()!;
         if (!Handle.Save(workspace, savePath)) return;
@@ -188,7 +177,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             if (Handle.References.Count == 0) {
                 workspace.ResourceManager.CloseFile(Handle);
             }
-            Handle = workspace.ResourceManager.GetFileHandle(savePath);
+            Handle = workspace.ResourceManager.GetFileHandle(savePath, nativePath);
             ConnectFile();
             OnFileChanged();
         }

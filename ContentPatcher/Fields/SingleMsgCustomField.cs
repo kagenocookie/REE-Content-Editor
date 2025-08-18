@@ -68,10 +68,7 @@ public class SingleMsgCustomField : CustomField<MessageData>, ICustomResourceFie
     private string FormatMessageKey(ResourceEntity entity)
     {
         if (formatter == null) {
-            var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
-            fmt.AddExtensions(new EntityStringFormatterSource(entity.Config), new RszFieldStringFormatterSource(), new RszFieldArrayStringFormatterSource());
-            fmt.AddExtensions(new DefaultFormatter());
-            formatter = new StringFormatter(keyFormat, fmt);
+            formatter = new StringFormatter(keyFormat, FormatterSettings.CreateFullEntityFormatter(entity.Config));
         }
         return formatter.GetString(entity);
     }

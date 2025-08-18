@@ -1,7 +1,11 @@
 using System.Collections;
+using System.Globalization;
+using ContentEditor.Editor;
 using ReeLib;
+using SmartFormat;
 using SmartFormat.Core.Extensions;
 using SmartFormat.Core.Settings;
+using SmartFormat.Extensions;
 
 namespace ContentPatcher.StringFormatting;
 
@@ -11,8 +15,51 @@ public static class FormatterSettings
         CaseSensitivity = SmartFormat.Core.Settings.CaseSensitivityType.CaseSensitive,
         StringFormatCompatibility = false,
     };
+
+    public static readonly SmartFormatter DefaultFormatter = ApplyDefaultFormatters(new SmartFormatter(FormatterSettings.DefaultSettings));
+
+    public static SmartFormatter CreateFullEntityFormatter(EntityConfig config, ContentWorkspace? workspace = null)
+    {
+        var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
+        fmt.AddExtensions(new EntityStringFormatterSource(config));
+        ApplyDefaultFormatters(fmt);
+        if (workspace != null) ApplyWorkspaceFormatters(fmt, workspace);
+        fmt.AddExtensions(new NullFallbackSource());
+        return fmt;
+    }
+
+    public static SmartFormatter CreateWorkspaceFormatter(ContentWorkspace workspace)
+    {
+        var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
+        ApplyDefaultFormatters(fmt);
+        ApplyWorkspaceFormatters(fmt, workspace);
+        return fmt;
+    }
+
+    private static SmartFormatter ApplyDefaultFormatters(SmartFormatter formatter)
+    {
+        formatter.AddExtensions(new RszFieldStringFormatterSource(), new RszFieldArrayStringFormatterSource());
+        formatter.AddExtensions(new DefaultFormatter(), new NullFormatter());
+        // @: used for RszFieldStringFormatterSource classname filtering
+        formatter.Settings.Parser.AddCustomSelectorChars(['@']);
+        return formatter;
+    }
+
+    private static SmartFormatter ApplyWorkspaceFormatters(SmartFormatter formatter, ContentWorkspace workspace)
+    {
+        formatter.AddExtensions(new TranslateGuidFormatter(workspace.Messages), new EnumLabelFormatter(workspace.Env));
+        formatter.AddExtensions(new EntityReverseLookupFormatter(workspace));
+        return formatter;
+    }
 }
 
+public class NullFallbackSource : ISource
+{
+    public bool TryEvaluateSelector(ISelectorInfo selectorInfo)
+    {
+        return selectorInfo.CurrentValue == null && selectorInfo.SelectorOperator.StartsWith('?');
+    }
+}
 public class RszFieldStringFormatterSource : ISource
 {
     public bool TryEvaluateSelector(ISelectorInfo selectorInfo)
@@ -30,7 +77,17 @@ public class RszFieldStringFormatterSource : ISource
             return true;
         }
 
-        if (instance.TryGetFieldValue(selectorInfo.SelectorText, out var value)) {
+        var field = selectorInfo.SelectorText;
+        var at = selectorInfo.SelectorText.IndexOf('@');
+        if (at != -1) {
+            var cls = selectorInfo.SelectorText.AsSpan()[(at+1)..];
+            if (!instance.RszClass.name.AsSpan().Contains(cls, StringComparison.InvariantCulture)) {
+                selectorInfo.Result = null;
+                return true;
+            }
+            field = selectorInfo.SelectorText[0..at];
+        }
+        if (instance.TryGetFieldValue(field, out var value)) {
             selectorInfo.Result = value;
             return true;
         }
@@ -87,7 +144,7 @@ public class EntityStringFormatterSource(EntityConfig config) : ISource
     }
 }
 
-public class TranslateGuidformatter(MessageManager msg) : IFormatter
+public class TranslateGuidFormatter(MessageManager msg) : IFormatter
 {
     public string Name { get; set; } = "translate";
     public bool CanAutoDetect { get; set; } = false;
@@ -127,8 +184,50 @@ public class EnumLabelFormatter(Workspace env) : IFormatter
         }
 
         // should probably also handle enumDesc.IsFlags somehow
-        var label = enumDesc.GetDisplayLabel(formattingInfo.CurrentValue);
+        var label = enumDesc.GetDisplayLabel(Convert.ChangeType(formattingInfo.CurrentValue, enumDesc.BackingType));
         formattingInfo.Write(label ?? formattingInfo.CurrentValue.ToString() ?? string.Empty);
+        return true;
+    }
+}
+
+public class EntityReverseLookupFormatter(ContentWorkspace env) : IFormatter
+{
+    public string Name { get; set; } = "reverseLookupEntity";
+    public bool CanAutoDetect { get; set; } = false;
+    private Dictionary<string, (StringFormatter entityFmt, StringFormatter resultFmt)> LookupFormatters = new();
+
+    public bool TryEvaluateFormat(IFormattingInfo formattingInfo)
+    {
+        if (formattingInfo.CurrentValue == null) {
+            return true;
+        }
+
+        var opts = formattingInfo.FormatterOptions.Split('|', StringSplitOptions.TrimEntries|StringSplitOptions.RemoveEmptyEntries);
+        if (opts.Length is < 2 or > 4) {
+            return true;
+        }
+
+        var entityType = opts[0];
+        var path = opts[1];
+        var resultFormat = opts.Length > 2 ? opts[2] : "{label}";
+        var fallbackString = opts.Length > 3 ? opts[3] : "";
+        if (!LookupFormatters.TryGetValue(path, out var formatters)) {
+            var settings = FormatterSettings.CreateFullEntityFormatter(env.Config.GetEntityConfig(entityType)!, env);
+            LookupFormatters[path] = formatters = (new StringFormatter(path, settings), new StringFormatter(resultFormat, settings));
+        }
+        var valueStr = Convert.ToString(formattingInfo.CurrentValue, CultureInfo.InvariantCulture)!;
+
+        var instances = env.ResourceManager.GetEntityInstances(entityType);
+        foreach (var entity in instances) {
+            // NOTE: should we cache the results somewhere for faster lookups?
+            var entityVal = formatters.entityFmt.GetString(entity.Value);
+            if (valueStr.Equals(entityVal, StringComparison.InvariantCultureIgnoreCase)) {
+                formattingInfo.Write(formatters.resultFmt.GetString(entity.Value));
+                return true;
+            }
+        }
+
+        formattingInfo.Write(fallbackString);
         return true;
     }
 }

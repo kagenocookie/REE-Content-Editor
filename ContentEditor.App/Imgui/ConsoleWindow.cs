@@ -103,16 +103,18 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
             for (int i = 0; i < list.Count; i++) {
                 var item = list[i];
                 var col = GetColor(item.level);
+                ImGui.PushStyleColor(ImGuiCol.Text, col);
                 if (compactMultiline) {
                     var br = item.message.IndexOf('\n');
                     if (br != -1) {
-                        ImGui.TextColored(col, item.message.AsSpan()[..br]);
+                        ImGui.TextWrapped(item.message.AsSpan()[..br]);
                     } else {
-                        ImGui.TextColored(col, item.message);
+                        ImGui.TextWrapped(item.message);
                     }
                 } else {
-                    ImGui.TextColored(col, item.message);
+                    ImGui.TextWrapped(item.message);
                 }
+                ImGui.PopStyleColor();
                 if (ImGui.IsItemHovered()) {
                     var pos = ImGui.GetCursorScreenPos();
                     var lineY = pos.Y - ImGui.GetStyle().FramePadding.Y;

@@ -51,6 +51,17 @@ public class BoxedUIHandler(IObjectUIHandler inner) : IObjectUIHandler
     }
 }
 
+public class TooltipUIHandler(IObjectUIHandler inner, string tooltip) : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        inner.OnIMGUI(context);
+        if (ImGui.IsItemHovered()) {
+            ImGui.SetItemTooltip(tooltip);
+        }
+    }
+}
+
 public class ValueChangeCallbackUIHandler(IObjectUIHandler inner, Action<UIContext, object?, object?> callback) : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)

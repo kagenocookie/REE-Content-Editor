@@ -172,7 +172,8 @@ public sealed class ContentWorkspace : IDisposable
             SetBundle(null);
         }
         var bundleJsonPath = Path.Combine(bundlePath, "bundle.json");
-        var bundle = new Bundle();
+        var bundleName = new DirectoryInfo(bundlePath).Name;
+        var bundle = BundleManager.GetBundle(bundleName, null) ?? new Bundle();
         bundle.Name = new DirectoryInfo(bundlePath).Name;
         var modIni = Path.Combine(bundlePath, "modinfo.ini");
         if (File.Exists(modIni)) {

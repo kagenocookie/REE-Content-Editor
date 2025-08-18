@@ -5,7 +5,7 @@ namespace ContentEditor.App;
 public static class PlatformUtils
 {
     /// <summary>
-    /// Show a native file picker dialog, non-blocking.
+    /// Show a native file picker dialog, non-blocking. The callback will likely be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
     /// </summary>
     public static void ShowFileDialog(Action<string[]> callback, string? initialFile = null, string? fileExtension = null, bool allowMultiple = false)
     {
@@ -17,7 +17,7 @@ public static class PlatformUtils
     }
 
     /// <summary>
-    /// Show a native folder picker dialog, non-blocking.
+    /// Show a native folder picker dialog, non-blocking. The callback will likely be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
     /// </summary>
     public static void ShowFolderDialog(Action<string> callback, string? initialFolder = null)
     {
@@ -29,7 +29,7 @@ public static class PlatformUtils
     }
 
     /// <summary>
-    /// Show a native file save dialog, non-blocking.
+    /// Show a native file save dialog, non-blocking. The callback will likely be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
     /// </summary>
     public static void ShowSaveFileDialog(Action<string> callback, string? initialFile = null, string? filter = null)
     {

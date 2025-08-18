@@ -7,7 +7,6 @@ namespace ContentEditor.App.ImguiHandling;
 public class BaseListHandler : IObjectUIHandler
 {
     public bool CanCreateNewElements { get; set; }
-    public bool BaseItemHasTooltip { get; set; }
 
     public void OnIMGUI(UIContext context)
     {

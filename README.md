@@ -61,7 +61,7 @@ Some files may not fully work for other RE ENGINE games.
 
 ### Dragon's Dogma 2
 - Shop modifications
-- Custom basic items (TODO: armors and weapons)
+- Custom basic items and weapons (TODO: armors)
 
 ## Structure
 The project consists of several individual modules.

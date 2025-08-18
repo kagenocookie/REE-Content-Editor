@@ -3,12 +3,18 @@ using VYaml.Annotations;
 
 namespace ContentPatcher;
 
+/// <summary>
+/// Describes a single custom field. One instance is created per entity and field, but shared between each entity instance.
+/// </summary>
 public abstract class CustomField
 {
     public required string name = string.Empty;
-    public string? label;
+    public string label = string.Empty;
 
-    public abstract string ResourceIdentifier { get; }
+    /// <summary>
+    /// An identifier of the resource type for grouping the resources. Can be null in case the field does not have any actual instance data (only serves as a reference to a file or custom UI display). If null, object will not be diffable.
+    /// </summary>
+    public abstract string? ResourceIdentifier { get; }
 
     /// <summary>
     /// Condition for when the field is valid and displayed.
@@ -39,9 +45,16 @@ public abstract class CustomField
     {
     }
 
+    public virtual void EntitySetup(EntityConfig entityConfig, ContentWorkspace workspace)
+    {
+    }
+
     public override string ToString() => $"{name} [{ResourceIdentifier}]";
 }
 
+/// <summary>
+/// <inheritdoc/>
+/// </summary>
 public abstract class CustomField<TContentType> : CustomField where TContentType : IContentResource
 {
     public sealed override IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
@@ -72,7 +85,10 @@ public interface IDiffableField
 
 public interface ICustomResourceField
 {
-    string ResourceIdentifier { get; }
+    /// <summary>
+    /// An identifier of the field's resource type for grouping the resources. Can be null in case the field does not have any actual instance data (only serves as a reference to a file or custom UI display). If null, object will not be diffable.
+    /// </summary>
+    string? ResourceIdentifier { get; }
     IEnumerable<KeyValuePair<long, IContentResource>> FetchInstances(ResourceManager workspace);
     (long id, IContentResource resource) CreateResource(ContentWorkspace workspace, ClassConfig config, ResourceEntity entity, JsonNode? initialData);
     ClassConfig CreateConfig();

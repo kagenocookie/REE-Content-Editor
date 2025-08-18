@@ -1,3 +1,5 @@
+using System.Numerics;
+using System.Text.RegularExpressions;
 using ContentEditor.Editor;
 using ContentPatcher.StringFormatting;
 using SmartFormat;
@@ -52,12 +54,16 @@ public partial class EntityConfigSerialized
             Enums = Enums?.ToArray(),
         };
         if (To_String != null) {
-            var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
-            fmt.AddExtensions(new EntityStringFormatterSource(config), new RszFieldStringFormatterSource(), new RszFieldArrayStringFormatterSource());
-            fmt.AddExtensions(new DefaultFormatter());
-            fmt.AddExtensions(new TranslateGuidformatter(workspace.Messages));
-            fmt.AddExtensions(new EnumLabelFormatter(workspace.Env));
-            config.StringFormatter = new StringFormatter(To_String, fmt);
+            config.StringFormatter = new StringFormatter(To_String, FormatterSettings.CreateFullEntityFormatter(config, workspace));
+        }
+        if (config.Enums != null) {
+            foreach (var ee in config.Enums) {
+                ee.Init(workspace, config);
+            }
+        }
+
+        foreach (var field in config.Fields) {
+            field.EntitySetup(config, workspace);
         }
 
         return config;
@@ -68,6 +74,32 @@ public partial class EntityConfigSerialized
 public partial class EntityEnumInfo
 {
     public string name = string.Empty;
-    public string format = string.Empty;
+    public string? format;
     public bool primary;
+
+    [GeneratedRegex("[^0-9a-zA-Z_]")]
+    private static partial Regex NonAlphanumericRegex();
+
+    [YamlIgnore]
+    private StringFormatter? formatter;
+
+    internal void Init(ContentWorkspace workspace, EntityConfig config)
+    {
+        formatter = format == null ? null : new StringFormatter(format, FormatterSettings.CreateFullEntityFormatter(config, workspace));
+    }
+
+    public void UpdateEnum<T>(ContentWorkspace workspace, T value, string label) where T : IBinaryInteger<T>
+    {
+        var desc = workspace.Env.TypeCache.GetEnumDescriptor(name);
+        desc.AddValue(value, label);
+    }
+
+    public void UpdateEnum(ContentWorkspace workspace, ResourceEntity entity)
+    {
+        // NOTE: we don't currently have a way of resetting custom enum entries. Probably not worth the effort to fix
+        // May cause issues if the user swaps bundles or if we ever support changing IDs in runtime.
+
+        var desc = workspace.Env.TypeCache.GetEnumDescriptor(name);
+        desc.AddValue(entity.Id, formatter?.GetString(entity) ?? NonAlphanumericRegex().Replace(entity.Label, ""), entity.Label);
+    }
 }

@@ -31,6 +31,7 @@ public class PatchDataContainer(string filepath)
 
     public ClassConfig? Get(string classname) => configs.GetValueOrDefault(classname);
     public FieldConfig? Get(string classname, string fieldName) => configs.GetValueOrDefault(classname)?.Fields?.GetValueOrDefault(fieldName);
+    public EntityConfig? GetEntityConfig(string entityType) => entities.GetValueOrDefault(entityType);
 
     private static readonly Dictionary<string, Func<JsonObject, ResourceHandler>> patchers = new();
     public static void RegisterResourcePatcher(string type, Func<JsonObject, ResourceHandler> factory)
@@ -53,11 +54,8 @@ public class PatchDataContainer(string filepath)
 
     private void AddDefaultConfigs()
     {
-        var goFmt = new SmartFormatter();
-        goFmt.AddExtensions(new RszFieldStringFormatterSource());
-        goFmt.AddExtensions(new DefaultFormatter());
         configs["via.GameObject"] = new ClassConfig() {
-            StringFormatter = new StringFormatter("{Name}", goFmt)
+            StringFormatter = new StringFormatter("{Name}", FormatterSettings.DefaultFormatter)
         };
     }
 
@@ -128,11 +126,7 @@ public class PatchDataContainer(string filepath)
                 config.MergeIntoRuntimeConfig(rszClass, runtimeConfig);
 
                 if (config.To_String != null) {
-                    var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
-                    fmt.AddExtensions(new RszFieldStringFormatterSource(), new RszFieldArrayStringFormatterSource());
-                    fmt.AddExtensions(new DefaultFormatter());
-                    fmt.AddExtensions(new TranslateGuidformatter(workspace.Messages));
-                    fmt.AddExtensions(new EnumLabelFormatter(workspace.Env));
+                    var fmt = FormatterSettings.CreateWorkspaceFormatter(workspace);
                     runtimeConfig.StringFormatter = new StringFormatter(config.To_String, fmt);
                 }
 

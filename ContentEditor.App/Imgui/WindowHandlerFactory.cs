@@ -89,6 +89,10 @@ public static partial class WindowHandlerFactory
         { typeof(RszInstance), () => new NestedRszInstanceHandler() },
     };
 
+    private static readonly HashSet<GameIdentifier> setupGames = new();
+    private static readonly Dictionary<RszClass, List<Func<UIContext, bool>>> classActions = new();
+    private static readonly Dictionary<RszClass, Func<IObjectUIHandler>> classHandlers = new();
+
     static WindowHandlerFactory()
     {
         AppConfig.Instance.PrettyFieldLabels.ValueChanged += (bool newValue) => showPrettyLabels = newValue;
@@ -134,19 +138,45 @@ public static partial class WindowHandlerFactory
         }
     }
 
-    private static readonly HashSet<GameIdentifier> setupGames = new();
-    private static readonly Dictionary<RszClass, List<Func<UIContext, bool>>> classActions = new();
     public static void SetupTypesForGame(GameIdentifier game, Workspace env)
     {
         if (!setupGames.Add(game)) return;
 
         var types = typeof(WindowHandlerFactory).Assembly.GetTypes();
         foreach (var type in types) {
-            if (type.GetCustomAttribute<RszContextActionAttribute>() == null) continue;
+            if (type.GetCustomAttribute<RszContextActionAttribute>() != null) {
+                foreach (var method in type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)) {
+                    var actions = method.GetCustomAttributes<RszContextActionAttribute>();
+                    foreach (var attr in actions) {
+                        if (attr.Games.Length > 0 && !attr.Games.Contains(game.name)) continue;
 
-            foreach (var method in type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)) {
-                var actions = method.GetCustomAttributes<RszContextActionAttribute>();
-                foreach (var attr in actions) {
+                        var cls = env.RszParser.GetRSZClass(attr.Classname);
+                        if (cls == null) {
+                            Logger.Debug($"Class {attr.Classname} not found for game {game}");
+                            continue;
+                        }
+
+                        if (method.ReturnType != typeof(bool) || method.GetParameters().Length != 1 || method.GetParameters()[0].ParameterType != typeof(UIContext)) {
+                            Logger.Error($"Method {type.FullName}.{method.Name}() is not valid for {nameof(RszContextActionAttribute)}. Should be `bool {method.Name}(UIContext context)`.");
+                            continue;
+                        }
+
+                        if (!classActions.TryGetValue(cls, out var list)) {
+                            classActions[cls] = list = new();
+                        }
+
+                        list.Add((ctx) => (bool)method.Invoke(null, [ctx])!);
+                    }
+                }
+            }
+
+            if (type.GetCustomAttribute<RszClassHandlerAttribute>() != null) {
+                if (!type.IsAssignableTo(typeof(IObjectUIHandler))) {
+                    Logger.Error($"RszClassHandler annotated class must implement {nameof(IObjectUIHandler)} (type {type.FullName})");
+                    continue;
+                }
+
+                foreach (var attr in type.GetCustomAttributes<RszClassHandlerAttribute>()) {
                     if (attr.Games.Length > 0 && !attr.Games.Contains(game.name)) continue;
 
                     var cls = env.RszParser.GetRSZClass(attr.Classname);
@@ -155,16 +185,7 @@ public static partial class WindowHandlerFactory
                         continue;
                     }
 
-                    if (method.ReturnType != typeof(bool) || method.GetParameters().Length != 1 || method.GetParameters()[0].ParameterType != typeof(UIContext)) {
-                        Logger.Error($"Method {type.FullName}.{method.Name}() is not valid for {nameof(RszContextActionAttribute)}. Should be `bool {method.Name}(UIContext context)`.");
-                        continue;
-                    }
-
-                    if (!classActions.TryGetValue(cls, out var list)) {
-                        classActions[cls] = list = new();
-                    }
-
-                    list.Add((ctx) => (bool)method.Invoke(null, [ctx])!);
+                    classHandlers[cls] = () => (IObjectUIHandler)Activator.CreateInstance(type)!;
                 }
             }
         }
@@ -200,6 +221,15 @@ public static partial class WindowHandlerFactory
             case KnownFileFormats.DynamicsDefinition:
                 return new RawDataEditor<DefFile>(env, file);
         }
+
+        if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {
+            return new TextureViewer(file);
+        }
+
+        if (file.Resource is not DummyFileResource) {
+            return new RawDataEditor(env, file);
+        }
+
         return null;
     }
 
@@ -420,6 +450,11 @@ public static partial class WindowHandlerFactory
             }
         }
 
+        var originalClass = string.IsNullOrEmpty(field.original_type) ? null : ws?.Env.RszParser.GetRSZClass(field.original_type);
+        if (originalClass != null && classHandlers.TryGetValue(originalClass, out var handlerFunc)) {
+            return context.uiHandler = handlerFunc.Invoke();
+        }
+
         return context.uiHandler = field.type switch {
             RszFieldType.Object or RszFieldType.Struct => new NestedRszInstanceHandler(),
             RszFieldType.String => StringFieldHandler.Instance,
@@ -500,9 +535,11 @@ public static partial class WindowHandlerFactory
 
     public static void SetupRSZInstanceHandler(UIContext context)
     {
-        context.uiHandler ??= RszInstanceHandler.Instance;
         var instance = context.Get<RszInstance>();
-        if (instance == null) return;
+        if (instance == null) {
+            context.uiHandler ??= RszInstanceHandler.Instance;
+            return;
+        }
 
         var ws = context.GetWorkspace();
         var config = ws?.Config.Get(instance.RszClass.name);
@@ -512,6 +549,13 @@ public static partial class WindowHandlerFactory
         if (classFormatters.TryGetValue(instance.RszClass, out var fmt)) {
             context.stringFormatter = fmt;
         }
+        if (classHandlers.TryGetValue(instance.RszClass, out var handlerFact)) {
+            context.uiHandler = handlerFact.Invoke();
+            return;
+        } else if (context.uiHandler == null) {
+            context.uiHandler = RszInstanceHandler.Instance;
+        }
+
         for (int i = 0; i < instance.RszClass.fields.Length; i++) {
             var field = instance.RszClass.fields[i];
             var fieldCtx = CreateRSZFieldContext(instance, i, field, context);
@@ -587,7 +631,7 @@ public static partial class WindowHandlerFactory
 
             var handler = GetCustomFieldImguiHandler(entity, field);
             if (handler != null) {
-                var child = context.AddChild(field.label ?? field.name, entity, getter: (ctx) => ((ResourceEntity)ctx.target!).Get(field.name), setter: (ctx, val) => ((ResourceEntity)ctx.target!).Set(field.name, val as IContentResource));
+                var child = context.AddChild(field.label, entity, getter: (ctx) => ((ResourceEntity)ctx.target!).Get(field.name), setter: (ctx, val) => ((ResourceEntity)ctx.target!).Set(field.name, val as IContentResource));
                 child.uiHandler = handler;
             }
         }

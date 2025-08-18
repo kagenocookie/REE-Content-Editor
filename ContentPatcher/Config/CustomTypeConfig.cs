@@ -65,7 +65,7 @@ public partial class CustomTypeConfigSerialized
         if (customFieldTypes.TryGetValue(data.type, out var t)) {
             var inst = (CustomField)Activator.CreateInstance(t)!;
             inst.name = name;
-            inst.label = data.label;
+            inst.label = data.label ?? name;
             return inst;
         }
         throw new NotImplementedException($"Unknown field type {data.type} for field {name}");

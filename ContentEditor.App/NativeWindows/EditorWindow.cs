@@ -23,7 +23,7 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
     public static EditorWindow? CurrentImguiWindow { get; protected set; }
 
     /// <summary>
-    /// Get the currently rendering window.
+    /// Get the currently rendering window. Should never be null during the ImGui render phase, likely to be null in multithreaded contexts.
     /// </summary>
     public static EditorWindow? CurrentWindow => _currentRenderingWindow as EditorWindow;
 
@@ -129,12 +129,6 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                 AppConfig.Instance.AddRecentFile(file.Filepath);
             }
             AddSubwindow(handler);
-        } else if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {
-            AppConfig.Instance.AddRecentFile(file.Filepath);
-            AddSubwindow(new TextureViewer(file));
-        } else if (file.Resource is not DummyFileResource) {
-            AppConfig.Instance.AddRecentFile(file.Filepath);
-            AddSubwindow(new RawDataEditor(workspace, file));
         } else {
             workspace.ResourceManager.CloseFile(file);
             AddSubwindow(new ErrorModal("Unsupported file", "File is not supported for editing:\n" + file.Filepath));

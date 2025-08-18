@@ -58,6 +58,41 @@ entities:
           classname: app.ItemWeaponParam
         param:
           classname: app.WeaponEnhanceParam
+  items.weapon:
+    enums:
+    - name: app.WeaponID
+      format: "{name}"
+      primary: true # denotes that the entity label should override this enum's corresponding display labels (entity id == enum value)
+    custom_id_range: [1000, 100000]
+    fields:
+      data:
+        type: object
+        label: Data
+        param:
+          classname: app.WeaponCatalogData.Data
+      name:
+        type: string
+        label: Weapon ID name
+        required: true
+        param:
+          regex: "^wp[0-9_]+$"
+          regexDescription: "Example: wp00_000"
+          tooltip: Enter a name for the weapon ID. This should be unique across all weapons.
+          initial: "{data.ID:enum(app.WeaponID)}"
+        display_after: start
+      offsets:
+        type: object
+        label: Offset setting
+        param:
+          classname: app.WeaponSetting.OffsetSetting
+      prefab:
+        type: resource
+        label: Weapon prefab
+        required: true
+        param:
+          type: Prefab
+          path: "{data?.Prefab?.Path}"
+    to_string: 'Weapon {id:enum(app.WeaponID)} (#{id}): {id:reverseLookupEntity(item_data|\{data?._WeaponId@ItemWeaponParam\}|\{label\}|Unknown item)}'
 
 classes:
   app.ItemCommonParam:
@@ -88,6 +123,16 @@ classes:
   app.ItemWeaponParam:
     fields:
       _Job: { enum: ItemJobFlags }
+  app.WeaponCatalogData.Data:
+    id: [ID]
+    patcher:
+      type: array-file
+      file: natives/stm/appsystem/catalog/maincontents/userdata/weaponcatalogdata.user.2
+  app.WeaponSetting.OffsetSetting:
+    id: [ID]
+    patcher:
+      type: array-file
+      file: natives/stm/appsystem/equipment/wp/weaponsetting.user.2
 
   app.EnhanceParamBase:
     id: [_ItemId]
