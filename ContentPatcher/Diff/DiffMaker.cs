@@ -35,18 +35,18 @@ public class DiffMaker
         new KeyValuePair<string, JsonNode?>("$index", index),
         new KeyValuePair<string, JsonNode?>("$item", diff)]);
 
-    public JsonNode? GetMinimalDiff(JsonNode target, JsonNode source)
+    public JsonNode? GetMinimalDiff(JsonNode? target, JsonNode? source)
     {
         return GetMinimalDiff(target, source, null);
     }
 
-    private JsonNode? GetMinimalDiff(JsonNode target, JsonNode source, DiffContext? differ)
+    private JsonNode? GetMinimalDiff(JsonNode? target, JsonNode? source, DiffContext? differ)
     {
-        if (target.GetValueKind() == JsonValueKind.Null) {
-            return source.GetValueKind() == JsonValueKind.Null ? null : source.DeepClone();
+        if (target == null || target.GetValueKind() == JsonValueKind.Null) {
+            return source?.GetValueKind() == JsonValueKind.Null ? null : source?.DeepClone();
         }
 
-        if (source.GetValueKind() == JsonValueKind.Null) {
+        if (source == null || source.GetValueKind() == JsonValueKind.Null) {
             return CreateRemoveMarker();
         }
 
@@ -167,7 +167,7 @@ public class DiffMaker
         int head = 0;
         int tail = 0;
         for (; head < target.Count && head < source.Count; ++head) {
-            var itemdiff = GetMinimalDiff(source[head]!, target[head]!);
+            var itemdiff = GetMinimalDiff(source[head], target[head]);
             if (itemdiff != null) break;
         }
         for (; tail < target.Count - head && tail < source.Count - head; ++tail) {

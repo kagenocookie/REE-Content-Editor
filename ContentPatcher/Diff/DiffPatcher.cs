@@ -72,16 +72,32 @@ public class DiffPatcher
     {
         if (diff == null) return new List<object>(0);
 
-        if (diff.GetValueKind() == JsonValueKind.Object) {
-            var jdiff = (JsonObject)diff;
-            // ID-enabled array, treat it basically like an object
-            return value;
-        }
-        IList list = value as IList ?? new List<object>();
-
-        // TODO userdata
         var csType = type is RszFieldType.Object or RszFieldType.Struct ? typeof(RszInstance)
             : RszInstance.RszFieldTypeToCSharpType(type);
+        IList list = value as IList ?? new List<object>();
+
+        if (diff.GetValueKind() == JsonValueKind.Object) {
+            var jdiff = (JsonObject)diff;
+            if (jdiff["$array"] != null) {
+                diff = jdiff["items"];
+                if (diff == null) return value;
+                if (diff is JsonArray arrrr && arrrr.Count > 0 && arrrr[0] != null && arrrr[0]!.GetValueKind() == JsonValueKind.Object && ReadPatchAction(diff[0]!.AsObject()) == 0) {
+                    // if the first item isn't a patch-annotated object, none of them will be
+                    // in other words, this is a fully serialized, non-diffed array
+                    // clear whatever we have in the current list and recreate the items from the json data
+                    list.Clear();
+                    foreach (var item in arrrr) {
+                        list.Add(item?.Deserialize(csType, env.JsonOptions));
+                    }
+                    return list;
+                }
+            } else {
+                // TODO ID-enabled array, treat it basically like an object
+                return value;
+            }
+        }
+
+        // TODO userdata
         var removeIndices = new List<int>();
         var arr = (JsonArray)diff;
         var indexOffset = 0;
