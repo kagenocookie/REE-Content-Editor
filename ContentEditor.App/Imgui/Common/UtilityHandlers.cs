@@ -1,3 +1,4 @@
+using System.Numerics;
 using ContentEditor.Core;
 using ImGuiNET;
 
@@ -123,4 +124,41 @@ public abstract class TreeContextUIHandler(IObjectUIHandler nested) : IObjectUIH
     }
 
     protected abstract void HandleContextMenu(UIContext context);
+}
+
+public class InstanceTypePickerHandler<T>(Type?[] classOptions, Func<UIContext, Type, T>? factory = null) : IObjectUIHandler
+{
+    private Type? chosenType;
+    private bool wasInit;
+
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<T>();
+        var labels = classOptions.Select(inst => inst?.Name ?? "<none>").ToArray();
+        var curType = instance?.GetType();
+        if (!wasInit) {
+            chosenType = curType;
+            wasInit = true;
+        }
+
+        ImguiHelpers.FilterableCombo(context.label, labels, classOptions!, ref chosenType, ref context.state);
+        if (chosenType != curType) {
+            if (ImGui.Button("Change")) {
+                T? newInstance;
+                if (chosenType == null) {
+                    newInstance = default;
+                } else if (factory == null) {
+                    newInstance = (T)Activator.CreateInstance(chosenType)!;
+                } else {
+                    newInstance = factory.Invoke(context, chosenType);
+                }
+                UndoRedo.RecordSet(context, newInstance, mergeMode: UndoRedoMergeMode.NeverMerge);
+            }
+
+            ImGui.SameLine();
+            if (ImGui.Button("Cancel")) {
+                chosenType = null;
+            }
+        }
+    }
 }

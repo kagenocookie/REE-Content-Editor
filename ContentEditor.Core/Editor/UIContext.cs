@@ -84,7 +84,7 @@ public class UIContext
         children.Add(child);
         return child;
     }
-    public UIContext AddChild<TTarget, TValue>(string label, TTarget? instance, IObjectUIHandler? handler = null, Func<TTarget?, object?>? getter = null, Action<TTarget, TValue?>? setter = null)
+    public UIContext AddChild<TTarget, TValue>(string label, TTarget? instance, IObjectUIHandler? handler = null, Func<TTarget?, TValue?>? getter = null, Action<TTarget, TValue?>? setter = null)
     {
         Func<UIContext, object?> boxedGetter = getter == null ? DefaultGetter : (ctx) => getter((TTarget?)ctx.target);
         Action<UIContext, object?>? boxedSetter = setter == null ? null :  (ctx, val) => {

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Globalization;
 using System.Numerics;
 using System.Reflection;
 using ContentEditor.App.Windowing;
@@ -23,7 +24,7 @@ public class ByteArrayHandler : IObjectUIHandler
             ImGui.Text(context.label + ": <empty>");
             return;
         }
-        var rows = len % cols;
+        var rows = (int)Math.Ceiling((float)len / cols);
         var show = true;
         if (rows > 1) {
             show = ImguiHelpers.TreeNodeSuffix(context.label, "Byte array");
@@ -33,15 +34,16 @@ public class ByteArrayHandler : IObjectUIHandler
         }
 
         if (show) {
-            var maxBytesForOffset = BitOperations.Log2((uint)len) / 8 + 3;
-            var maxOffset = ImGui.CalcTextSize(new string('0', maxBytesForOffset)).X;
-            float cellWidth = (ImGui.CalcItemWidth() - maxOffset) / cols;
+            var maxCharsOffset = BitOperations.Log2((uint)len) / 8 + 3;
+            var maxOffset = ImGui.CalcTextSize(new string('0', maxCharsOffset)).X;
+            float cellWidth = Math.Max(UI.FontSize + ImGui.GetStyle().FramePadding.X * 2, (ImGui.CalcItemWidth() - maxOffset) / cols);
             for (int i = 0; i < len; ++i) {
-                if (i % rows != 0) {
+                if (i % cols != 0) {
                     ImGui.SameLine();
                 } else if (rows > 1) {
                     var x = ImGui.GetCursorPosX();
-                    ImGui.Text(i.ToString("X"));
+                    // ImGui.Text("0x" + i.ToString("X"));
+                    ImGui.Text(i.ToString());
                     ImGui.SameLine();
                     ImGui.SetCursorPosX(x + maxOffset);
                 }

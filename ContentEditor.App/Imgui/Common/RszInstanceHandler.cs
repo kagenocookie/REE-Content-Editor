@@ -188,6 +188,40 @@ public class SwappableRszInstanceHandler(string? baseClass = null, bool referenc
     }
 }
 
+public class InstancePickerHandler<T>(bool allowNull, Func<UIContext, bool, IEnumerable<T>> instanceProvider, Action<UIContext, T?>? instanceSwapper = null) : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<T>();
+        var availableInstances = instanceProvider.Invoke(context, false).ToArray();
+        var labels = availableInstances.Select(inst => inst?.ToString() ?? "<NULL>").ToArray();
+
+        var restW = ImGui.CalcItemWidth();
+        if (allowNull && instance != null) {
+            if (ImGui.Button("Remove")) {
+                UndoRedo.RecordSet(context, default(T), mergeMode: UndoRedoMergeMode.NeverMerge);
+            }
+            ImGui.SameLine();
+            restW -= ImGui.CalcTextSize("Remove").X + ImGui.GetStyle().FramePadding.X * 2;
+        }
+        if (ImGui.Button("Refresh list")) {
+            _ = instanceProvider.Invoke(context, true).ToArray();
+        }
+        restW -= ImGui.CalcTextSize("Refresh list").X + ImGui.GetStyle().FramePadding.X * 2;
+        ImGui.SameLine();
+
+        ImGui.SetNextItemWidth(restW);
+        var newInstance = instance;
+        if (ImguiHelpers.FilterableCombo(context.label, labels, availableInstances, ref newInstance, ref context.state)) {
+            if (instanceSwapper != null) {
+                instanceSwapper.Invoke(context, newInstance);
+            } else {
+                UndoRedo.RecordSet(context, newInstance, mergeMode: UndoRedoMergeMode.NeverMerge);
+            }
+        }
+    }
+}
+
 public class NestedRszInstanceHandler : IObjectUIHandler
 {
     public bool ForceDefaultClose { get; set; }

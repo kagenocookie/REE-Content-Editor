@@ -216,6 +216,8 @@ public static partial class WindowHandlerFactory
                 return new ImguiHandling.Efx.EfxEditor(env, file);
             case KnownFileFormats.RequestSetCollider:
                 return new ImguiHandling.Rcol.RcolEditor(env, file);
+            case KnownFileFormats.MotionList:
+                return new MotlistEditor(env, file);
             case KnownFileFormats.CollisionDefinition:
                 return new RawDataEditor<CdefFile>(env, file);
             case KnownFileFormats.DynamicsDefinition:

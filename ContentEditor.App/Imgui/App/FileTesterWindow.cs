@@ -1,13 +1,11 @@
 using System.Collections.Concurrent;
-using System.Globalization;
-using System.Numerics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
-using ContentEditor.Themes;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
+using ReeLib.Common;
 
 namespace ContentEditor.App;
 
@@ -20,6 +18,9 @@ public class FileTesterWindow : IWindowHandler
     private KnownFileFormats format;
     private string? formatFilter;
     private bool allVersions;
+
+    private string? hashTest;
+    private uint testedHash;
 
     private UIContext context = null!;
     private WindowData data = null!;
@@ -36,9 +37,65 @@ public class FileTesterWindow : IWindowHandler
     }
 
     private readonly HashSet<GameIdentifier> hiddenGames = new();
+    private string? wordlistFilepath;
 
-    public void OnIMGUI()
+    public unsafe void OnIMGUI()
     {
+        if (ImGui.TreeNode("Tools")) {
+            hashTest ??= "";
+            if (ImGui.TreeNode("Hash calculation")) {
+                ImGui.PushItemWidth(ImGui.CalcItemWidth() / 4);
+                ImGui.InputText("Hash test", ref hashTest, 300);
+                ImGui.SameLine();
+                ImGui.Text("UTF16 hash: " + MurMur3HashUtils.GetHash(hashTest));
+                if (ImGui.IsItemClicked()) EditorWindow.CurrentWindow?.CopyToClipboard(MurMur3HashUtils.GetHash(hashTest).ToString());
+                ImGui.SameLine();
+                ImGui.Text("Ascii hash: " + MurMur3HashUtils.GetAsciiHash(hashTest));
+                if (ImGui.IsItemClicked()) EditorWindow.CurrentWindow?.CopyToClipboard(MurMur3HashUtils.GetAsciiHash(hashTest).ToString());
+                ImGui.SameLine();
+                ImGui.Text("UTF8 hash: " + MurMur3HashUtils.GetUTF8Hash(hashTest));
+                if (ImGui.IsItemClicked()) EditorWindow.CurrentWindow?.CopyToClipboard(MurMur3HashUtils.GetUTF8Hash(hashTest).ToString());
+                ImGui.PopItemWidth();
+                ImGui.TreePop();
+            }
+
+            if (ImGui.TreeNode("Hash reversing")) {
+                if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Will attempt to match the given UTF16 hash with a wordlist (lowercase, uppercase, capital case variants are attempted)");
+                AppImguiHelpers.InputFilepath("Wordlist filepath", ref wordlistFilepath);
+                var v = testedHash;
+                if (ImGui.InputScalar("Tested hash", ImGuiDataType.U32, (IntPtr)(&v))) {
+                    testedHash = v;
+                }
+                if (!string.IsNullOrEmpty(wordlistFilepath) && ImGui.Button("Find")) {
+                    var words = File.ReadAllLines(wordlistFilepath);
+                    // var testedHash = MurMur3HashUtils.GetHash(hashTest);
+                    if (testedHash == 2180083513) {
+                        Logger.Info("Requested hash is an empty string's hash!");
+                    }
+                    var found = false;
+                    foreach (var word in words) {
+                        if (word == "") continue;
+
+                        if (MurMur3HashUtils.GetHash(word) == testedHash) {
+                            Logger.Info($"Found hash match: {word} (UTF16 hash {testedHash})");
+                            found = true;
+                        }
+                        if (MurMur3HashUtils.GetHash(word.ToUpperInvariant()) == testedHash) {
+                            Logger.Info($"Found hash match: {word.ToUpperInvariant()} (UTF16 hash {testedHash})");
+                            found = true;
+                        }
+                        if (MurMur3HashUtils.GetHash(char.ToUpper(word[0]) + word.Substring(1)) == testedHash) {
+                            Logger.Info($"Found hash match: {char.ToUpper(word[0]) + word.Substring(1)} (UTF16 hash {testedHash})");
+                            found = true;
+                        }
+                    }
+                    Logger.Info(!found ? $"Hash lookup finished, no matches found." : "Hash lookup finished.");
+                }
+                ImGui.TreePop();
+            }
+
+            ImGui.TreePop();
+        }
         var exec = SearchInProgress;
         if (exec) ImGui.BeginDisabled();
         ImguiHelpers.FilterableCSharpEnumCombo("File type", ref format, ref formatFilter);

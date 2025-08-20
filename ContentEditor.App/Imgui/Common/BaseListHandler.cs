@@ -7,12 +7,19 @@ namespace ContentEditor.App.ImguiHandling;
 public class BaseListHandler : IObjectUIHandler
 {
     public bool CanCreateNewElements { get; set; }
+    private readonly Type? containerType;
+
+    public BaseListHandler() {}
+    public BaseListHandler(Type? containerType) { this.containerType = containerType; }
 
     public void OnIMGUI(UIContext context)
     {
         var list = context.Get<IList>();
         if (list == null) {
             ImGui.Text(context.label + ": NULL");
+            if (containerType != null && ImguiHelpers.SameLine() && ImGui.Button("Create")) {
+                context.Set(Activator.CreateInstance(containerType));
+            }
             return;
         }
         var count = list.Count;
@@ -75,7 +82,7 @@ public class ListHandler : BaseListHandler
 {
     private readonly Type elementType;
 
-    public ListHandler(Type elementType)
+    public ListHandler(Type elementType, Type? containerType = null) : base(containerType)
     {
         this.elementType = elementType;
     }
