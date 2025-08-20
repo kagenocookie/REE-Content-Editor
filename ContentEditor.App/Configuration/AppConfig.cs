@@ -34,6 +34,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string Key_Save = "key_save";
 
         public const string Gamepath = "game_path";
+        public const string GameExtractPath = "game_extract_path";
         public const string RszJsonPath = "rsz_json_path";
         public const string FilelistPath = "file_list_path";
     }
@@ -41,6 +42,7 @@ public class AppConfig : Singleton<AppConfig>
     private class AppGameConfig
     {
         public string gamepath = string.Empty;
+        public string? gameExtractPath;
 
         public string? filelist;
         public string? rszJson;
@@ -125,6 +127,8 @@ public class AppConfig : Singleton<AppConfig>
 
     public string? GetGamePath(GameIdentifier game) => _lock.Read(() => gameConfigs.GetValueOrDefault(game.name)?.gamepath);
     public void SetGamePath(GameIdentifier game, string path) => SetForGameAndSave(game.name, path, (cfg, val) => cfg.gamepath = val);
+    public string? GetGameExtractPath(GameIdentifier game) => _lock.Read(() => gameConfigs.GetValueOrDefault(game.name)?.gameExtractPath);
+    public void SetGameExtractPath(GameIdentifier game, string path) => SetForGameAndSave(game.name, path, (cfg, val) => cfg.gameExtractPath = val);
     public string? GetGameRszJsonPath(GameIdentifier game) => _lock.Read(() => gameConfigs.GetValueOrDefault(game.name)?.rszJson);
     public void SetGameRszJsonPath(GameIdentifier game, string path) => SetForGameAndSave(game.name, path, (cfg, val) => cfg.rszJson = val);
     public string? GetGameFilelist(GameIdentifier game) => _lock.Read(() => gameConfigs.GetValueOrDefault(game.name)?.filelist);
@@ -225,6 +229,9 @@ public class AppConfig : Singleton<AppConfig>
             if (!string.IsNullOrEmpty(data.gamepath)) {
                 items.Add((Keys.Gamepath, data.gamepath, game));
             }
+            if (!string.IsNullOrEmpty(data.gameExtractPath)) {
+                items.Add((Keys.GameExtractPath, data.gameExtractPath, game));
+            }
             if (!string.IsNullOrEmpty(data.filelist)) {
                 items.Add((Keys.FilelistPath, data.filelist, game));
             }
@@ -315,6 +322,9 @@ public class AppConfig : Singleton<AppConfig>
                     switch (key) {
                         case Keys.Gamepath:
                             config.gamepath = value;
+                            break;
+                        case Keys.GameExtractPath:
+                            config.gameExtractPath = value;
                             break;
                         case Keys.RszJsonPath:
                             config.rszJson = value;

@@ -97,7 +97,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         ImGui.Text("Total file count: " + reader.MatchedEntryCount);
         ImGui.SameLine();
         if (ImGui.Button("Extract to...")) {
-            PlatformUtils.ShowFolderDialog(ExtractCurrentList);
+            PlatformUtils.ShowFolderDialog(ExtractCurrentList, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
         }
         ImGui.SameLine();
         if (PakFilePath == null) {
@@ -186,6 +186,27 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                             CurrentDir = file;
                             return;
                         }
+                    }
+                    if (ImGui.BeginPopupContextItem()) {
+                        if (ImGui.Button("Copy path")) {
+                            EditorWindow.CurrentWindow?.CopyToClipboard(file);
+                            ImGui.CloseCurrentPopup();
+                        }
+                        if (ImGui.Button("Extract single file ...")) {
+                            var nativePath = file;
+                            PlatformUtils.ShowSaveFileDialog((savePath) => {
+                                var stream = reader.GetFile(nativePath);
+                                if (stream == null) {
+                                    Logger.Error("Could not find file " + nativePath + " in selected PAK files");
+                                    return;
+                                }
+                                Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
+                                using var fs = File.Create(savePath);
+                                stream.WriteTo(fs);
+                            }, Path.GetFileName(nativePath));
+                            ImGui.CloseCurrentPopup();
+                        }
+                        ImGui.EndPopup();
                     }
                 }
 

@@ -159,6 +159,13 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("The full path to the game. Should point to the folder containing the .exe and .pak files");
 
+            var extractPath = config.GetGameExtractPath(game);
+            if (AppImguiHelpers.InputFolder("Game extract path", ref extractPath)) {
+                extractPath = PathUtils.RemoveNativesFolder(extractPath);
+                config.SetGameExtractPath(game, extractPath);
+            }
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip("The default path to preselect when extracting files.");
+
             if (!fullSupportedGames.Contains(game.name)) {
                 var rszPath = config.GetGameRszJsonPath(game);
                 var filelist = config.GetGameFilelist(game);

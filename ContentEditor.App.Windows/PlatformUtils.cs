@@ -31,7 +31,7 @@ public class PlatformUtils
     {
         var thread = new Thread(() => {
             var dlg = new FolderBrowserDialog {
-                InitialDirectory = !string.IsNullOrEmpty(initialFolder) ? initialFolder : Environment.CurrentDirectory,
+                InitialDirectory = !string.IsNullOrEmpty(initialFolder) ? Path.GetFullPath(initialFolder) : Environment.CurrentDirectory,
             };
             var result = dlg.ShowDialog();
             if (result == DialogResult.OK) {

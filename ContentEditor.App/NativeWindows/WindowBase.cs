@@ -165,7 +165,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         data.Handler?.OnOpen();
     }
 
-    public void CopyToClipboard(string text, string? userNotice = null)
+    public void CopyToClipboard(string text, string? userNotice = "Copied!")
     {
         if (_inputContext.Keyboards.FirstOrDefault() is IKeyboard kb) {
             kb.ClipboardText = text;
