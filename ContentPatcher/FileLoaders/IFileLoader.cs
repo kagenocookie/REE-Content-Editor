@@ -41,10 +41,10 @@ public static class FileLoaderExtensions
             file.FileHandler = new FileHandler(new MemoryStream(), outputPath);
         }
 
+        Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
         if (outputPath == handle.Filepath) {
             return file.Save();
         } else {
-            Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
             return file.WriteTo(outputPath);
         }
     }

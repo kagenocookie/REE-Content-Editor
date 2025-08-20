@@ -70,11 +70,16 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
     public bool Save(ContentWorkspace workspace, string? newFilepath = null)
     {
         if (newFilepath == null && !File.Exists(Filepath)) {
-            Logger.Warn(@$"""
-                Unable to save file because it doesn't have a disk file path associated to it: {Filepath}
-                Open its editor and manually save it somewhere (e.g. save as, save to bundle, ...).
-                You can re-open the file through the ""Open files"" menu");
-            return false;
+            if (HandleType == FileHandleType.Disk && Path.IsPathFullyQualified(Filepath)) {
+                Logger.Warn(@$"""
+                    The original file seems to have been deleted: {Filepath}.\nRecheck if this was intentional. Saving anyway...");
+            } else {
+                Logger.Warn(@$"""
+                    Unable to save file because it doesn't have a disk file path associated to it: {Filepath}
+                    Open its editor and manually save it somewhere (e.g. save as, save to bundle, ...).
+                    You can re-open the file through the ""Open files"" menu");
+                return false;
+            }
         }
         try {
             var success = Loader.Save(workspace, this, newFilepath ?? Filepath);
