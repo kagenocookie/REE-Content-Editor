@@ -122,7 +122,7 @@ public static class ImguiHelpers
     {
         int i = 0;
         foreach (var item in span) {
-            if (item?.Equals(value) == true) return i;
+            if (item == null && value == null || item?.Equals(value) == true) return i;
             i++;
         }
         return -1;
@@ -137,7 +137,7 @@ public static class ImguiHelpers
         if (string.IsNullOrEmpty(filter)) {
             // could be optimized with a dictionary lookup instead of array index - but we can add that later
             // note: we can't add a where TValue : IEquatable<TValue> constraint to use the built in Span.IndexOf() because enum values are boxed
-            var selectedIndex = selected == null ? -1 : values.BoxedIndexOf(selected);
+            var selectedIndex = values!.BoxedIndexOf(selected);
             if (ImGui.Combo($"##{label}", ref selectedIndex, labels, labels.Length, 1000)) {
                 changed = true;
                 selected = values[selectedIndex];
