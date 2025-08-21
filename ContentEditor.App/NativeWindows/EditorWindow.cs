@@ -202,7 +202,7 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                     }
                 }
                 if (ImGui.MenuItem("Bundle management")) {
-                        ShowBundleManagement();
+                    ShowBundleManagement();
                 }
                 if (workspace.CurrentBundle != null && ImGui.MenuItem("Open bundle folder")) {
                     FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
@@ -262,6 +262,22 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                     if (!files.Any()) {
                         ImGui.MenuItem("No files open", false);
                     } else {
+                        if (ImGui.Button("Close all")) {
+                            if (HasUnsavedChanges) {
+                                if (!HasSubwindow<SaveFileConfirmation>(out _)) {
+                                    AddSubwindow(new SaveFileConfirmation(
+                                        "Unsaved changes",
+                                        $"Some files have unsaved changes.\nAre you sure you wish to close the window?",
+                                        workspace.ResourceManager.GetModifiedResourceFiles(),
+                                        this,
+                                        () => workspace.ResourceManager.CloseAllFiles()
+                                    ));
+                                }
+                            } else {
+                                workspace.ResourceManager.CloseAllFiles();
+                            }
+                            ImGui.CloseCurrentPopup();
+                        }
                         foreach (var file in files) {
                             if (file.Modified) {
                                 ImGui.Bullet();
