@@ -126,7 +126,7 @@ public abstract class TreeContextUIHandler(IObjectUIHandler nested) : IObjectUIH
     protected abstract void HandleContextMenu(UIContext context);
 }
 
-public class InstanceTypePickerHandler<T>(Type?[] classOptions, Func<UIContext, Type, T>? factory = null) : IObjectUIHandler
+public class InstanceTypePickerHandler<T>(Type?[] classOptions, Func<UIContext, Type, T>? factory = null, bool filterable = true) : IObjectUIHandler
 {
     private Type? chosenType;
     private bool wasInit;
@@ -141,7 +141,11 @@ public class InstanceTypePickerHandler<T>(Type?[] classOptions, Func<UIContext, 
             wasInit = true;
         }
 
-        ImguiHelpers.FilterableCombo(context.label, labels, classOptions!, ref chosenType, ref context.state);
+        if (filterable) {
+            ImguiHelpers.FilterableCombo(context.label, labels, classOptions!, ref chosenType, ref context.state);
+        } else {
+            ImguiHelpers.ValueCombo(context.label, labels, classOptions!, ref chosenType);
+        }
         if (chosenType != curType) {
             if (ImGui.Button("Change")) {
                 T? newInstance;

@@ -96,7 +96,7 @@ public class MotFileBaseHandler : IObjectUIHandler
     {
         var instance = context.Get<MotFileBase>();
         if (context.children.Count == 0) {
-            context.AddChild("Motion type", instance, new InstanceTypePickerHandler<MotFileBase>([null, typeof(MotFile), typeof(MotTreeFile)], (ctx, newType) => {
+            context.AddChild("Motion type", instance, new InstanceTypePickerHandler<MotFileBase>([null, typeof(MotFile), typeof(MotTreeFile)], filterable: false, factory: (ctx, newType) => {
                 var motlist = ctx.FindHandlerInParents<MotlistEditor>()?.File;
                 var newInstance = (MotFileBase)Activator.CreateInstance(newType, [motlist?.FileHandler ?? new FileHandler()])!;
                 return newInstance;
@@ -118,6 +118,7 @@ public class MotFileBaseHandler : IObjectUIHandler
             ImGui.TextColored(Colors.Info, "Motion not defined");
         }
         ImguiHelpers.EndRect(4);
+        ImGui.Spacing();
     }
 }
 
@@ -130,6 +131,7 @@ public class MotFileHandler : IObjectUIHandler
         if (context.children.Count == 0) {
             var ws = context.GetWorkspace();
             context.AddChild<MotFile, string>("Name", instance, getter: (m) => m!.Header.motName, setter: (m, v) => m!.Header.motName = v ?? string.Empty).AddDefaultHandler<string>();
+            context.AddChild<MotFile, float>("Frame Count", instance, getter: (m) => m!.Header.frameCount, setter: (m, v) => m!.Header.frameCount = v).AddDefaultHandler<float>();
             context.AddChild<MotFile, ushort>("Frame Rate", instance, getter: (m) => m!.Header.FrameRate, setter: (m, v) => m!.Header.FrameRate = v).AddDefaultHandler<ushort>();
             context.AddChild<MotFile, float>("Blending", instance, getter: (m) => m!.Header.blending, setter: (m, v) => m!.Header.blending = v).AddDefaultHandler<float>();
             context.AddChild<MotFile, string>("Joint Map", instance, getter: (m) => m!.Header.jointMapPath, setter: (m, v) => m!.Header.jointMapPath = v ?? string.Empty, handler: new ResourcePathPicker(ws, KnownFileFormats.JointMap));
