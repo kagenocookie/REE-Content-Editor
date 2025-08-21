@@ -1,12 +1,15 @@
+using System.Collections;
 using System.Collections.Concurrent;
+using System.Text;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
-using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
 using ReeLib.Efx;
 using ReeLib.Msg;
+using ReeLib.Pfb;
+using ReeLib.Scn;
 using ReeLib.UVar;
 
 namespace ContentEditor.App;
@@ -43,7 +46,7 @@ public class RszDataFinder : IWindowHandler
     private int searchedFiles;
     private bool SearchInProgress => cancellationTokenSource != null;
 
-    private ConcurrentBag<(GameIdentifier game, string label, string file)> matches = new();
+    private ConcurrentBag<(GameIdentifier game, string? label, string file)> matches = new();
     private GameIdentifier currentGame;
 
     private WindowData data = null!;
@@ -127,15 +130,16 @@ public class RszDataFinder : IWindowHandler
 
         foreach (var (game, label, file) in matches) {
             var isCurrent = currentGame == game;
-            var displayLabel = isCurrent ? label : $"[{game}] {label}";
-            if (label == file) {
+            var usedLabel = string.IsNullOrEmpty(label) || label == file ? file : label;
+            var displayLabel = isCurrent ? usedLabel : $"[{game}] {usedLabel}";
+            if (usedLabel == file) {
                 ImGui.Text(displayLabel);
             } else {
                 ImGui.Text(displayLabel + " :  " + file);
             }
             ImGui.PushID(displayLabel + file);
             if (ImguiHelpers.SameLine() && ImGui.Button("Copy")) {
-                EditorWindow.CurrentWindow!.CopyToClipboard(file, "Copied!");
+                EditorWindow.CurrentWindow!.CopyToClipboard(displayLabel + " :  " + file, "Copied!");
             }
             if (ImguiHelpers.SameLine() && ImGui.Button("Open")) {
                 if (isCurrent) {
@@ -403,12 +407,12 @@ public class RszDataFinder : IWindowHandler
         }
     }
 
-    private void AddMatch(SearchContext context, string description, string path, string? log = null)
+    private void AddMatch(SearchContext context, string? description, string path, string? log = null)
     {
         if (log != null) {
             context.Window.InvokeFromUIThread(() => Logger.Info(log));
         }
-        matches.Add((context.Env.Config.Game, description, path));
+        matches.Add((context.Env.Config.Game, description ?? "", path));
     }
 
     private sealed class SearchContext(Workspace env, bool isActiveEnv, EditorWindow window, CancellationToken token)
@@ -455,11 +459,13 @@ public class RszDataFinder : IWindowHandler
                 Interlocked.Increment(ref searchedFiles);
                 var file = fileFact.Invoke(context.Env.RszFileOption, new FileHandler(stream, path));
                 file.Read();
+                var rsz = file.GetRSZ()!;
 
-                foreach (var inst in file.GetRSZ()!.InstanceList) {
+                foreach (var inst in rsz.InstanceList) {
+                    if (context.Token.IsCancellationRequested) return;
                     if (inst.RszClass == cls && inst.RSZUserData == null) {
                         if (value == null) {
-                            AddMatch(context, path, path);
+                            AddMatch(context, FindPathToRszObject(rsz, inst, file), path);
                             return;
                         }
 
@@ -468,12 +474,12 @@ public class RszDataFinder : IWindowHandler
                             var values = (IList<object>)fieldValue;
                             foreach (var v in values) {
                                 if (v.Equals(value)) {
-                                    AddMatch(context, path, path);
+                                    AddMatch(context, FindPathToRszObject(rsz, inst, file), path);
                                 }
                             }
                         } else {
                             if (fieldValue.Equals(value)) {
-                                AddMatch(context, path, path);
+                                AddMatch(context, FindPathToRszObject(rsz, inst, file), path);
                             }
                         }
                     }
@@ -484,7 +490,7 @@ public class RszDataFinder : IWindowHandler
         }
     }
 
-    private void InvokeRszSearchField(SearchContext context, string ext, Func<RszFileOption, FileHandler, BaseRszFile> fileFact, RszFieldType fieldType, bool array , object? value)
+    private void InvokeRszSearchField(SearchContext context, string ext, Func<RszFileOption, FileHandler, BaseRszFile> fileFact, RszFieldType fieldType, bool array, object? value)
     {
         Func<object?, object?, bool> equalityComparer = fieldType is RszFieldType.String or RszFieldType.RuntimeType or RszFieldType.Resource
             ? (object? a, object? b) => (a as string)?.Equals(b as string, StringComparison.InvariantCultureIgnoreCase) == true
@@ -498,13 +504,14 @@ public class RszDataFinder : IWindowHandler
                 var file = fileFact.Invoke(context.Env.RszFileOption, new FileHandler(stream, path));
                 file.Read();
 
-                foreach (var inst in file.GetRSZ()!.InstanceList) {
+                var rsz = file.GetRSZ()!;
+                foreach (var inst in rsz.InstanceList) {
                     if (inst.RSZUserData != null) continue;
                     foreach (var field in inst.Fields) {
                         if (field.type != fieldType) continue;
 
                         if (value == null) {
-                            AddMatch(context, $"{field.name} = {inst.GetFieldValue(field.name)}", path);
+                            AddMatch(context, $"{FindPathToRszObject(rsz, inst, file)} {field.name} = {inst.GetFieldValue(field.name)}", path);
                             return;
                         }
 
@@ -513,12 +520,12 @@ public class RszDataFinder : IWindowHandler
                             var values = (IList<object>)fieldValue!;
                             foreach (var v in values) {
                                 if (equalityComparer(v, value)) {
-                                    AddMatch(context, path, path);
+                                    AddMatch(context, FindPathToRszObject(rsz, inst, file), path);
                                 }
                             }
                         } else {
                             if (equalityComparer(fieldValue, value)) {
-                                AddMatch(context, path, path);
+                                AddMatch(context, FindPathToRszObject(rsz, inst, file), path);
                             }
                         }
                     }
@@ -527,6 +534,116 @@ public class RszDataFinder : IWindowHandler
                 context.Window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
             }
         }
+    }
+
+    [ThreadStatic] private static StringBuilder? stringBuilder;
+    private static string? FindPathToRszObject(RSZFile file, RszInstance instance, BaseRszFile parentFile)
+    {
+        stringBuilder ??= new();
+        stringBuilder.Clear();
+        var instanceHierarchy = new List<RszInstance>();
+        instanceHierarchy.Add(instance);
+        while (true) {
+            // start searching from the instance index + 1 -- most of the time, the parent instance would be just after the instance itself
+            var searchedObject = instanceHierarchy.Last();
+            var searchStartIndex = instance.Index == -1 ? 0 : instance.Index;
+            var index = searchStartIndex;
+            var found = false;
+            while (true) {
+                index = (index + 1) % file.InstanceInfoList.Count;
+                if (index == searchStartIndex) break;
+                var nextInstance = file.InstanceList[index];
+                if (nextInstance == searchedObject || nextInstance.RSZUserData != null) {
+                    continue;
+                }
+
+                foreach (var value in nextInstance.Values) {
+                    if (value == searchedObject || value is IList list && list.Contains(searchedObject)) {
+                        found = true;
+                        instanceHierarchy.Add(nextInstance);
+                        break;
+                    }
+                }
+            }
+            if (!found) break;
+        }
+
+        for (int i = 0; i < instanceHierarchy.Count - 1; ++i) {
+            var nextInstance = instanceHierarchy[instanceHierarchy.Count - 1 - i];
+            var childInstance = instanceHierarchy[instanceHierarchy.Count - 2 - i];
+            for (int f = 0; f < nextInstance.Fields.Length; f++) {
+                var field = nextInstance.Fields[f];
+                var fieldValue = nextInstance.Values[f];
+                if (fieldValue == childInstance) {
+                    if (i != 0) stringBuilder.Append('.');
+                    stringBuilder.Append(field.name);
+                    break;
+                } else if (fieldValue is IList list) {
+                    var index = list.IndexOf(childInstance);
+                    if (index != -1) {
+                        if (i != 0) stringBuilder.Append('.');
+                        stringBuilder.Append(field.name).Append('.').Append(index);
+                    }
+                }
+            }
+        }
+
+        var topLevelObject = instanceHierarchy.Last();
+        if (parentFile is ScnFile scn) {
+            scn.SetupGameObjects();
+            ScnGameObject? gameObject;
+            if (instance.RszClass.name == "via.GameObject") {
+                gameObject = scn.IterAllGameObjects(true).FirstOrDefault(go => go.Instance == topLevelObject);
+            } else {
+                gameObject = scn.IterAllGameObjects(true).FirstOrDefault(go => go.Components.Contains(topLevelObject));
+            }
+            ScnFolderData? folder = null;
+            if (instance.RszClass.name == "via.Folder") {
+                folder = scn.IterAllFolders().FirstOrDefault(fi => fi.Instance == topLevelObject);
+            } else if (gameObject != null) {
+                folder = scn.IterAllFolders().FirstOrDefault(fi => fi.GameObjects.Contains(gameObject));
+            } else {
+                Logger.Error("Could not find object inside scn file. This should not happen.");
+                return stringBuilder.ToString();
+            }
+
+            if (gameObject != null) {
+                if (folder != null) {
+                    stringBuilder.Insert(0, topLevelObject.RszClass.name);
+                    stringBuilder.Insert(0, ':');
+                    stringBuilder.Insert(0, gameObject.GetHierarchyPath());
+                    stringBuilder.Insert(0, "//");
+                    stringBuilder.Insert(0, folder.GetHierarchyPath());
+                } else {
+                    stringBuilder.Insert(0, topLevelObject.RszClass.name);
+                    stringBuilder.Insert(0, ':');
+                    stringBuilder.Insert(0, gameObject.GetHierarchyPath());
+                }
+            } else if (folder != null) {
+                stringBuilder.Insert(0, "//");
+                stringBuilder.Insert(0, folder.GetHierarchyPath());
+            } else {
+                // probably never happens
+            }
+        } else if (parentFile is PfbFile pfb) {
+            pfb.SetupGameObjects();
+            PfbGameObject? gameObject;
+            if (instance.RszClass.name == "via.GameObject") {
+                gameObject = pfb.IterAllGameObjects(true).FirstOrDefault(go => go.Instance == topLevelObject);
+            } else {
+                gameObject = pfb.IterAllGameObjects(true).FirstOrDefault(go => go.Components.Contains(topLevelObject));
+            }
+            if (gameObject == null) {
+                Logger.Error("Could not find object inside pfb file. This should not happen.");
+                return stringBuilder.ToString();
+            }
+
+            stringBuilder.Insert(0, topLevelObject.RszClass.name);
+            stringBuilder.Insert(0, ':');
+            stringBuilder.Insert(0, gameObject.GetHierarchyPath());
+        }
+
+        return stringBuilder.ToString();
     }
 
     private void InvokeSearchEfx(SearchContext context, EfxAttributeType type, string query)
