@@ -111,6 +111,15 @@ public class SameLineHandler : IObjectUIHandler
     }
 }
 
+public class ChildrenOnlyHandler : IObjectUIHandler
+{
+    public static readonly ChildrenOnlyHandler Instance = new();
+    public void OnIMGUI(UIContext context)
+    {
+        context.ShowChildrenUI();
+    }
+}
+
 public abstract class TreeContextUIHandler(IObjectUIHandler nested) : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)

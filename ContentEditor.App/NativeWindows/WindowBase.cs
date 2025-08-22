@@ -352,10 +352,15 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         _gl.ClearColor(System.Drawing.Color.FromArgb(ClearColor.BGRA));
         _gl.Clear((uint) ClearBufferMask.ColorBufferBit);
 
+        Render((float)delta);
         OnIMGUI();
         // ImGui.ShowDemoWindow();
         _controller.Render();
         _currentRenderingWindow = null;
+    }
+
+    protected virtual void Render(float deltaTime)
+    {
     }
 
     protected void BeginDockableBackground(Vector2 offset)

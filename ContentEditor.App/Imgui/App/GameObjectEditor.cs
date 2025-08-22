@@ -47,7 +47,7 @@ public class GameObjectEditor : IObjectUIHandler
     }
 }
 
-[ObjectImguiHandler(typeof(Component), Stateless = true)]
+[ObjectImguiHandler(typeof(Component), Stateless = true, Inherited = true, Priority = 10)]
 public class BaseComponentEditor : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)

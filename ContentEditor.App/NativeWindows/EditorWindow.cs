@@ -67,13 +67,13 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
 
         workspace = new ContentWorkspace(env, patchConfig, workspace?.BundleManager);
         workspace.ResourceManager.SetupFileLoaders(typeof(PrefabLoader).Assembly);
-        SetupUI(workspace);
+        SetupTypes(workspace);
         workspace.SetBundle(bundle);
         GameChanged?.Invoke();
-        SceneManager.ChangeWorkspace(env);
+        SceneManager.ChangeWorkspace(workspace);
     }
 
-    private static void SetupUI(ContentWorkspace workspace)
+    private static void SetupTypes(ContentWorkspace workspace)
     {
         foreach (var (name, cfg) in workspace.Config.Classes) {
             if (cfg.StringFormatter != null) {
@@ -85,6 +85,7 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
         }
 
         WindowHandlerFactory.SetupTypesForGame(workspace.Game, workspace.Env);
+        Component.SetupTypesForGame(workspace.Game, typeof(Component).Assembly, workspace.Env);
     }
 
     protected override void Update(float deltaTime)

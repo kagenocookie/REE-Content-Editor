@@ -1,5 +1,6 @@
 using ReeLib;
 using ReeLib.Scn;
+using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 
@@ -12,7 +13,19 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
     public bool Draw = true;
     public bool Active = true;
     public string? ScenePath;
-    public ReeLib.via.Position Offset;
+    private ReeLib.via.Position _offset;
+    public ReeLib.via.Position Offset
+    {
+        get => _offset;
+        set {
+            if (value != _offset) {
+                foreach (var go in GameObjects) go.Transform.InvalidateTransform();
+                _offset = value;
+            }
+        }
+    }
+
+    public Vector3D<float> OffsetSilk => new Vector3D<float>((float)_offset.x, (float)_offset.y, (float)_offset.z);
 
     private RszInstance instance;
 
@@ -124,7 +137,7 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
         Update = Convert.ToBoolean(instance.Values[3]);
         Active = Convert.ToBoolean(instance.Values[4]);
         ScenePath = instance.Values[5] as string;
-        Offset = instance.Values.Length > 6 ? (ReeLib.via.Position)instance.Values[6] : default;
+        _offset = instance.Values.Length > 6 ? (ReeLib.via.Position)instance.Values[6] : default;
     }
     private void ExportInstanceFields()
     {
@@ -135,7 +148,7 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
         instance.Values[4] = Active;
         instance.Values[5] = ScenePath ?? string.Empty;
         if (instance.Values.Length > 6) {
-            instance.Values[6] = Offset;
+            instance.Values[6] = _offset;
         }
     }
 

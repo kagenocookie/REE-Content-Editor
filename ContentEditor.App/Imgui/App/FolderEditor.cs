@@ -25,7 +25,7 @@ public class FolderDataEditor : IObjectUIHandler
         typeof(Folder).GetField(nameof(Folder.Active))!,
     ];
     private static readonly MemberInfo[] BaseMembers2 = [
-        typeof(Folder).GetField(nameof(Folder.Offset))!,
+        typeof(Folder).GetProperty(nameof(Folder.Offset))!,
     ];
 
     public void OnIMGUI(UIContext context)

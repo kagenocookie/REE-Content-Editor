@@ -9,6 +9,11 @@ namespace ContentEditor.App.ImguiHandling;
 public interface ISceneEditor
 {
     public Scene? GetScene();
+    public Scene? GetRootScene(UIContext context)
+    {
+        var parentSceneHolderCtx = context.FindParentContextByHandler<ISceneEditor>();
+        return (parentSceneHolderCtx?.uiHandler as ISceneEditor)?.GetRootScene(parentSceneHolderCtx!) ?? GetScene();
+    }
 }
 
 public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObjectUIHandler, IInspectorController, IWindowHandler, IFilterRoot, ISceneEditor
@@ -77,7 +82,7 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
             context.AddChild("Filter", searcher, searcher);
             scene = root.Scene;
             if (scene == null) {
-                scene = context.GetNativeWindow()?.SceneManager.CreateScene();
+                scene = context.GetNativeWindow()?.SceneManager.CreateScene(((ISceneEditor)this).GetRootScene(context));
                 if (Logger.ErrorIf(scene == null, "Failed to create new scene")) return;
                 scene.Add(root);
             }

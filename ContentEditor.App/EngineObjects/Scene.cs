@@ -1,5 +1,9 @@
 using System.Collections.Concurrent;
+using ContentEditor.App.Windowing;
+using ContentEditor.Editor;
+using ContentPatcher;
 using ReeLib;
+using Silk.NET.OpenGL;
 
 namespace ContentEditor.App;
 
@@ -30,9 +34,27 @@ public sealed class Scene : NodeTreeContainer, IDisposable
     public IEnumerable<Folder> Folders => RootFolder.Children;
     public IEnumerable<GameObject> GameObjects => RootFolder.GameObjects;
 
-    public Scene(Workspace env)
+    public Scene? ParentScene { get; private set; }
+    public Scene RootScene => ParentScene?.RootScene ?? this;
+
+    public ContentWorkspace Workspace { get; }
+    public bool Renderable { get; set; } = true;
+
+    bool IFileHandleReferenceHolder.CanClose => true;
+    IRectWindow? IFileHandleReferenceHolder.Parent => null;
+
+    private List<RenderableComponent> renderComponents = new();
+
+    private GL _gl;
+
+    private Dictionary<IResourceFile, (FileHandle handle, int refcount)> _loadedResources = new();
+
+    public Scene(ContentWorkspace workspace, Scene? parentScene = null, GL? gl = null)
     {
-        RootFolder = new("ROOT", env, this);
+        Workspace = workspace;
+        ParentScene = parentScene;
+        _gl = gl ?? parentScene?._gl ?? EditorWindow.CurrentWindow?.GLContext ?? throw new Exception("Could not get OpenGL Context!");
+        RootFolder = new("ROOT", workspace.Env, this);
     }
 
     public GameObject? Find(ReadOnlySpan<char> path) => RootFolder.Find(path);

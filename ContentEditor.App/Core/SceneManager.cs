@@ -1,18 +1,17 @@
-using System.Diagnostics;
-using ReeLib;
+using ContentPatcher;
 
 namespace ContentEditor.App;
 
 public sealed class SceneManager : IDisposable
 {
     private readonly List<Scene> scenes = new();
-    private Workspace? env;
+    private ContentWorkspace? env;
 
-    public Scene CreateScene()
+    public Scene CreateScene(Scene? parentScene = null)
     {
         if (env == null) throw new Exception("Workspace unset");
 
-        var scene = new Scene(env);
+        var scene = new Scene(env, parentScene);
         scenes.Add(scene);
         return scene;
     }
@@ -22,7 +21,7 @@ public sealed class SceneManager : IDisposable
         scenes.Remove(scene);
     }
 
-    internal void ChangeWorkspace(Workspace workspace)
+    internal void ChangeWorkspace(ContentWorkspace workspace)
     {
         if (env == workspace) return;
 

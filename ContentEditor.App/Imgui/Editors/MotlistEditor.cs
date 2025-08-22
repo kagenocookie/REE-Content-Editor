@@ -1,12 +1,10 @@
 using System.Reflection;
-using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
 using ReeLib.Mot;
 using ReeLib.Motlist;
-using ReeLib.Msg;
 
 namespace ContentEditor.App.ImguiHandling;
 

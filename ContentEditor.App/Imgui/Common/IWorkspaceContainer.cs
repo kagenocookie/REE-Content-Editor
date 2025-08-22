@@ -45,6 +45,16 @@ public static class UIContextExtensions
         return context.uiHandler as T ?? context.parent?.FindHandlerInParents<T>();
     }
 
+    public static UIContext? FindParentContextByHandler<T>(this UIContext context, bool ignoreSelf = false) where T : class
+    {
+        if (ignoreSelf) {
+            return context.parent?.FindParentContextByHandler<T>();
+        }
+        if (context.uiHandler is T) return context;
+
+        return context.parent?.FindParentContextByHandler<T>();
+    }
+
     public static ResourceEntity? GetOwnerEntity(this UIContext context)
     {
         var parent = context.parent;

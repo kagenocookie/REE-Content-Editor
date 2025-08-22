@@ -1,12 +1,9 @@
-using System.Collections.ObjectModel;
-using System.Numerics;
 using System.Runtime.CompilerServices;
-using ContentEditor.Core;
+using ContentPatcher;
 using ReeLib;
-using ReeLib.Common;
 using ReeLib.Pfb;
 using ReeLib.Scn;
-using ReeLib.UVar;
+using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 
@@ -29,9 +26,13 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
     public string? PrefabPath;
     public readonly List<Component> Components = new();
 
+    public Transform Transform { get; }
+
     public Folder? Folder { get; internal set; }
     private List<GameObject> _BaseChildren => base.Children;
     public new IEnumerable<GameObject> Children => base.Children;
+
+    public Matrix4X4<float> WorldTransform => Transform.WorldTransform;
 
     protected override string GetPath()
     {
@@ -51,10 +52,11 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
     IList<RszInstance> IGameObject.Components => Components.Select(c => c.Data).ToList();
     IEnumerable<IGameObject> IGameObject.GetChildren() => Children;
 
-    private GameObject(RszInstance instance)
+    private GameObject(RszInstance instance, RszInstance transformInstance)
     {
         this.instance = instance;
         ImportInstanceFields();
+        Components.Add(Transform = new Transform(this, transformInstance));
     }
 
     public GameObject(string name, Workspace workspace, Folder? folder = null, Scene? scene = null)
@@ -66,7 +68,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         Draw = true;
         TimeScale = -1;
         guid = Guid.NewGuid();
-        Components.Add(new Transform(this, workspace));
+        Components.Add(Transform = new Transform(this, workspace));
         Scene = scene;
     }
 
@@ -77,7 +79,14 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         Scene = scene;
 
         foreach (var comp in source.Components) {
-            Components.Add(new Component(this, comp));
+            if (comp.RszClass.name == "via.Transform") {
+                Components.Add(Transform = new Transform(this, comp));
+            } else {
+                Component.Create(this, comp, false);
+            }
+        }
+        if (Transform == null) {
+            Transform = CreateTransformComponent();
         }
 
         foreach (var sourceChild in source.Children) {
@@ -86,6 +95,8 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
             };
             base.Children.Add(child);
         }
+
+        EnterSceneComponents();
     }
 
     public GameObject(ScnGameObject source, Folder folder, IList<ScnPrefabInfo>? prefabs = null, Scene? scene = null)
@@ -98,7 +109,14 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         PrefabPath = prefabs == null || !(source.Info?.prefabId >= 0) ? null : prefabs[source.Info.prefabId].Path;
 
         foreach (var comp in source.Components) {
-            Components.Add(new Component(this, comp));
+            if (comp.RszClass.name == "via.Transform") {
+                Components.Add(Transform = new Transform(this, comp));
+            } else {
+                Component.Create(this, comp, false);
+            }
+        }
+        if (Transform == null) {
+            Transform = CreateTransformComponent();
         }
 
         foreach (var sourceChild in source.Children) {
@@ -107,6 +125,66 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
             };
             base.Children.Add(child);
         }
+
+        EnterSceneComponents();
+    }
+
+    private Transform CreateTransformComponent()
+    {
+        var workspace = Scene?.Workspace ?? Folder?.Scene?.Workspace;
+        if (workspace == null) {
+            throw new Exception("Could not create GameObject - no transform component was given and no root workspace is accessible");
+        }
+        var transform = new Transform(this, RszInstance.CreateInstance(workspace.Env.RszParser, workspace.Env.Classes.Transform));
+        Components.Insert(0, transform);
+        return transform;
+    }
+
+    public bool HasComponent<TComponent>() where TComponent : Component
+    {
+        return Components.OfType<TComponent>().Any();
+    }
+
+    public bool HasComponent(string classname)
+    {
+        foreach (var comp in Components) {
+            if (comp.Classname == classname) return true;
+        }
+
+        return false;
+    }
+
+    public void AddComponent<TComponent>(TComponent component) where TComponent : Component
+    {
+        Components.Add(component);
+    }
+
+    public TComponent AddComponent<TComponent>() where TComponent : Component, IFixedClassnameComponent
+    {
+        var workspace = Scene?.Workspace ?? Folder?.Scene?.Workspace;
+        if (workspace == null) {
+            throw new Exception("Could not create Component - workspace is not accessible");
+        }
+        return (TComponent)Component.Create(this, workspace.Env, TComponent.Classname);
+    }
+
+    public Component AddComponent(string classname)
+    {
+        var workspace = Scene?.Workspace ?? Folder?.Scene?.Workspace;
+        if (workspace == null) {
+            throw new Exception("Could not create Component - workspace is not accessible");
+        }
+        return Component.Create(this, workspace.Env, classname);
+    }
+
+    public TComponent? GetComponent<TComponent>() where TComponent : Component
+    {
+        return Components.OfType<TComponent>().FirstOrDefault();
+    }
+
+    public TComponent RequireComponent<TComponent>() where TComponent : Component
+    {
+        return Components.OfType<TComponent>().First();
     }
 
     public GameObject? Find(ReadOnlySpan<char> path)
@@ -196,13 +274,19 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
     {
         if (Scene != null) {
             // we probably need to handle some more edge cases here
-            if (Parent != null && Parent.Scene != newScene) {
+            if (Parent == null) {
+                ExitSceneComponents();
+            } else if (Parent.Scene != newScene) {
+                ExitSceneComponents();
                 Parent.RemoveChild(this);
             }
         }
         Scene = newScene;
         foreach (var child in Children) {
             child.MoveToScene(newScene);
+        }
+        if (Parent == null) {
+            EnterSceneComponents();
         }
     }
 
@@ -225,11 +309,13 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
     public GameObject Clone(GameObject? parent = null)
     {
         ExportInstanceFields();
-        var newObj = new GameObject(instance.Clone()) {
+        var newObj = new GameObject(instance.Clone(), Transform.Data.Clone()) {
             Scene = parent?.Scene ?? Scene,
             _parent = parent,
         };
         foreach (var comp in Components) {
+            if (comp is Transform) continue;
+
             comp.CloneTo(newObj);
         }
         foreach (var child in Children) {
@@ -240,6 +326,38 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         }
 
         return newObj;
+    }
+
+    private void EnterSceneComponents()
+    {
+        var rootscene = Scene?.RootScene;
+        if (rootscene != null) {
+            foreach (var comp in Components) {
+                comp.OnEnterScene(rootscene);
+            }
+
+            foreach (var child in GetAllChildren()) {
+                foreach (var comp in child.Components) {
+                    comp.OnEnterScene(rootscene);
+                }
+            }
+        }
+    }
+
+    private void ExitSceneComponents()
+    {
+        var rootscene = Scene?.RootScene;
+        if (rootscene != null) {
+            foreach (var comp in Components) {
+                comp.OnExitScene(rootscene);
+            }
+
+            foreach (var child in GetAllChildren()) {
+                foreach (var comp in child.Components) {
+                    comp.OnExitScene(rootscene);
+                }
+            }
+        }
     }
 
     public void Dispose()
@@ -258,16 +376,10 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
     public override string ToString() => Name;
 }
 
-public class Component(GameObject gameObject, RszInstance data)
+public class MaterialResource : IResourceFile
 {
-    public RszInstance Data { get; } = data;
-    public GameObject GameObject { get; } = gameObject;
-
-    public string Classname => Data.RszClass.name;
-    public override string ToString() => Data.ToString();
-
-    public virtual void CloneTo(GameObject target)
+    public void WriteTo(string filepath)
     {
-        target.Components.Add(new Component(target, Data.Clone()));
+        throw new NotImplementedException();
     }
 }
