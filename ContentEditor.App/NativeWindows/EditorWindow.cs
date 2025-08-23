@@ -33,7 +33,7 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
     protected ContentWorkspace? workspace;
     public event Action? GameChanged;
 
-    public SceneManager SceneManager { get; } = new();
+    public SceneManager SceneManager { get; }
 
     private static HashSet<string>? fullSupportedGames;
 
@@ -44,6 +44,7 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
         Ready += OnReady;
         this.workspace = workspace;
         env = workspace?.Env;
+        SceneManager = new(this);
     }
 
     public void SetWorkspace(GameIdentifier game, string? bundle)
@@ -91,6 +92,11 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
     protected override void Update(float deltaTime)
     {
         SceneManager.Update(deltaTime);
+    }
+
+    protected override void Render(float deltaTime)
+    {
+        SceneManager.Render(deltaTime);
     }
 
     private void OnReady()
@@ -520,6 +526,7 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
     {
         if (env != null) WorkspaceManager.Instance.Release(env);
         env = null;
+        SceneManager?.Dispose();
         base.Dispose(disposing);
     }
 }

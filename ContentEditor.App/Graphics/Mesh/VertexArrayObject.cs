@@ -6,7 +6,7 @@ public class VertexArrayObject<TVertexType, TIndexType> : IDisposable
     where TVertexType : unmanaged
     where TIndexType : unmanaged
 {
-    private uint _handle;
+    internal uint _handle;
     private GL _gl;
 
     public VertexArrayObject(GL gl, BufferObject<TVertexType> vbo, BufferObject<TIndexType> ebo)
@@ -19,9 +19,9 @@ public class VertexArrayObject<TVertexType, TIndexType> : IDisposable
         ebo.Bind();
     }
 
-    public unsafe void VertexAttributePointer(uint index, int count, VertexAttribPointerType type, uint vertexSize, int offSet)
+    public unsafe void VertexAttributePointer(uint index, int count, VertexAttribPointerType type, uint vertexSize, int offset)
     {
-        _gl.VertexAttribPointer(index, count, type, false, vertexSize * (uint)sizeof(TVertexType), (void*)(offSet * sizeof(TVertexType)));
+        _gl.VertexAttribPointer(index, count, type, false, vertexSize * (uint)sizeof(TVertexType), (void*)(offset * sizeof(TVertexType)));
         _gl.EnableVertexAttribArray(index);
     }
 
@@ -34,4 +34,6 @@ public class VertexArrayObject<TVertexType, TIndexType> : IDisposable
     {
         _gl.DeleteVertexArray(_handle);
     }
+
+    public override string ToString() => $"[{_handle}] VAO<{typeof(TVertexType).Name}, {typeof(TIndexType).Name}>";
 }

@@ -7,8 +7,10 @@ using Silk.NET.Maths;
 namespace ContentEditor.App;
 
 [RszComponentClass("via.Transform")]
-public sealed class Transform : Component
+public sealed class Transform : Component, IConstructorComponent, IFixedClassnameComponent
 {
+    static string IFixedClassnameComponent.Classname => "via.Transform";
+
     public Vector3 LocalPosition
     {
         get => ((Vector4)Data.Values[0]).ToVec3();
@@ -77,6 +79,28 @@ public sealed class Transform : Component
             mat = Matrix4X4.CreateScale<float>(scale) * mat;
         }
         return mat;
+    }
+
+    public void Translate(Vector3 offset)
+    {
+        LocalPosition += offset;
+    }
+
+    public void TranslateForwardAligned(Vector3 offset)
+    {
+        LocalPosition += Vector3D.Transform(offset.ToGeneric(), Quaternion<float>.Inverse(SilkLocalRotation)).ToSystem();
+    }
+
+    public void ComponentInit()
+    {
+        LocalRotation = Quaternion.Identity;
+        LocalScale = Vector3.One;
+    }
+
+    public void Rotate(Quaternion<float> quaternion)
+    {
+        var newQuat = quaternion * SilkLocalRotation;
+        LocalRotation = newQuat.ToSystem();
     }
 
     public Transform(GameObject gameObject, RszInstance data) : base(gameObject, data)

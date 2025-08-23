@@ -31,4 +31,6 @@ public class BufferObject<TDataType> : IDisposable
     {
         _gl.DeleteBuffer(_handle);
     }
+
+    public override string ToString() => $"[{_handle}] Buffer<{typeof(TDataType).Name}>";
 }

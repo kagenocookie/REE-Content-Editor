@@ -25,8 +25,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AssimpNetter" Version="6.0.2" />
     <PackageReference Include="Silk.NET" Version="2.22.0" />
-    <!-- <PackageReference Include="Silk.NET.Assimp" Version="2.22.0" /> -->
     <PackageReference Include="Silk.NET.OpenGL.Extensions.ImGui" Version="2.22.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
   </ItemGroup>

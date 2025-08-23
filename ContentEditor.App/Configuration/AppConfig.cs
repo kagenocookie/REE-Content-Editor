@@ -21,6 +21,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string GameConfigBaseFilepath = "game_configs_base_filepath";
         public const string BackgroundColor = "background_color";
         public const string LogLevel = "log_level";
+        public const string ShowFps = "show_fps";
         public const string MaxUndoSteps = "max_undo_steps";
         public const string PrettyLabels = "pretty_labels";
         public const string RecentFiles = "recent_files";
@@ -116,6 +117,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<int> LogLevel = new SettingWrapper<int>(Keys.LogLevel, _lock, 0);
     public readonly SettingWrapper<int> MaxUndoSteps = new SettingWrapper<int>(Keys.MaxUndoSteps, _lock, 250);
     public readonly SettingWrapper<bool> EnableUpdateCheck = new SettingWrapper<bool>(Keys.EnableUpdateCheck, _lock, true);
+    public readonly SettingWrapper<bool> ShowFps = new SettingWrapper<bool>(Keys.ShowFps, _lock, true);
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
     public readonly ClassSettingWrapper<string> LatestVersion = new ClassSettingWrapper<string>(Keys.LatestVersion, _lock);
 
@@ -206,6 +208,7 @@ public class AppConfig : Singleton<AppConfig>
         var instance = Instance;
         var items = new List<(string, string, string?)>() {
             (Keys.MaxFps, instance.MaxFps.value.ToString(CultureInfo.InvariantCulture), null),
+            (Keys.ShowFps, instance.ShowFps.value.ToString(), null),
             (Keys.MainWindowGame, instance.MainSelectedGame.value?.ToString() ?? "", null),
             (Keys.MainActiveBundle, instance.MainActiveBundle.value?.ToString() ?? "", null),
             (Keys.BlenderPath, instance.BlenderPath.value?.ToString() ?? "", null),
@@ -254,6 +257,9 @@ public class AppConfig : Singleton<AppConfig>
                     switch (key) {
                         case Keys.MaxFps:
                             instance.MaxFps.value = float.Parse(value);
+                            break;
+                        case Keys.ShowFps:
+                            instance.ShowFps.value = value.Equals("true", StringComparison.OrdinalIgnoreCase) || value.Equals("yes", StringComparison.OrdinalIgnoreCase) || value == "1";
                             break;
                         case Keys.MainWindowGame:
                             instance.MainSelectedGame.value = string.IsNullOrEmpty(value) ? null : value;

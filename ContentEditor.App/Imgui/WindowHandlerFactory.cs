@@ -222,10 +222,16 @@ public static partial class WindowHandlerFactory
                 return new RawDataEditor<CdefFile>(env, file);
             case KnownFileFormats.DynamicsDefinition:
                 return new RawDataEditor<DefFile>(env, file);
+            case KnownFileFormats.Mesh:
+                return new MeshViewer(env, file);
         }
 
         if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {
             return new TextureViewer(file);
+        }
+
+        if (MeshViewer.IsSupportedFileExtension(file.Filepath)) {
+            return new MeshViewer(env, file);
         }
 
         if (file.Resource is not DummyFileResource) {

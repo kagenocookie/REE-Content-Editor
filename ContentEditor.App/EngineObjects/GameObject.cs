@@ -69,6 +69,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         TimeScale = -1;
         guid = Guid.NewGuid();
         Components.Add(Transform = new Transform(this, workspace));
+        Transform.ComponentInit();
         Scene = scene;
     }
 

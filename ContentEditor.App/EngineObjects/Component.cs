@@ -91,6 +91,14 @@ public class Component(GameObject gameObject, RszInstance data)
     /// <summary>
     /// Creates a new component and adds it to the target GameObject.
     /// </summary>
+    public static TComponent Create<TComponent>(GameObject gameObject, Workspace env) where TComponent : Component, IFixedClassnameComponent
+    {
+        return (TComponent)Create(gameObject, env, TComponent.Classname);
+    }
+
+    /// <summary>
+    /// Creates a new component and adds it to the target GameObject.
+    /// </summary>
     internal static Component Create(GameObject gameObject, RszInstance data, bool triggerEnterScene)
     {
         Component component;

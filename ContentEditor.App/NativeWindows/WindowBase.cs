@@ -1,21 +1,19 @@
-using System.Numerics;
-using ImGuiNET;
-using Silk.NET.Input;
-using Silk.NET.OpenGL;
-using Silk.NET.Windowing;
-using Silk.NET.OpenGL.Extensions.ImGui;
-
-using SilkWindow = Silk.NET.Windowing.Window;
-using Silk.NET.Maths;
 using System.Collections.Concurrent;
-using System.Reflection;
-using Silk.NET.GLFW;
-using System.Drawing;
-using ContentEditor.Themes;
 using System.Diagnostics.CodeAnalysis;
-using ContentEditor.App.Graphics;
+using System.Drawing;
+using System.Globalization;
+using System.Numerics;
+using System.Reflection;
 using ContentEditor.Editor;
 using ContentPatcher;
+using ImGuiNET;
+using Silk.NET.GLFW;
+using Silk.NET.Input;
+using Silk.NET.Maths;
+using Silk.NET.OpenGL;
+using Silk.NET.OpenGL.Extensions.ImGui;
+using Silk.NET.Windowing;
+using SilkWindow = Silk.NET.Windowing.Window;
 
 namespace ContentEditor.App.Windowing;
 
@@ -349,12 +347,17 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     {
         _currentRenderingWindow = this;
         HandleRenderActions();
+        _gl.Enable(Silk.NET.OpenGL.EnableCap.DepthTest);
         _gl.ClearColor(System.Drawing.Color.FromArgb(ClearColor.BGRA));
-        _gl.Clear((uint) ClearBufferMask.ColorBufferBit);
+        _gl.Clear(ClearBufferMask.ColorBufferBit|ClearBufferMask.DepthBufferBit);
 
         Render((float)delta);
         OnIMGUI();
-        // ImGui.ShowDemoWindow();
+        if (AppConfig.Instance.ShowFps) {
+            var fpsText = (1 / delta).ToString("0.0", CultureInfo.InvariantCulture);
+            var fpsSize = ImGui.CalcTextSize(fpsText);
+            ImGui.GetForegroundDrawList().AddText(new Vector2(Size.X - fpsSize.X, 0) - ImGui.GetStyle().FramePadding, 0xffffffff, fpsText);
+        }
         _controller.Render();
         _currentRenderingWindow = null;
     }

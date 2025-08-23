@@ -123,6 +123,11 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             if (ImGui.Combo("Logging level", ref logLevel, LogLevels, LogLevels.Length)) {
                 config.LogLevel.Set(logLevel);
             }
+
+            var showFps = config.ShowFps.Get();
+            if (ImGui.Checkbox("Show FPS", ref showFps)) {
+                config.ShowFps.Set(showFps);
+            }
         } else if (currentTab == 1) {
             var key = config.Key_Undo.Get();
             if (ImguiKeybinding("Undo", ref key, ref filterKey1)) {
