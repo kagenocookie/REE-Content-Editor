@@ -29,7 +29,7 @@ public abstract class RenderContext : IDisposable
     {
         // CameraMatrix = Matrix4X4.CreateTranslation<float>(new Vector3D<float>((float)Math.Sin(Time.Elapsed), 0, -5 + (float)Math.Cos(Time.Elapsed) / 4));
         var size = RenderOutputSize;
-        ProjectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView(80f * MathF.PI / 180, size.X / size.Y, 0.1f, 100.0f);
+        ProjectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView(80f * MathF.PI / 180, size.X / size.Y, 0.1f, 1000.0f);
         // CameraProjectionMatrix = ProjectionMatrix * CameraMatrix;
         CameraProjectionMatrix = CameraMatrix * ProjectionMatrix;
     }
@@ -155,7 +155,8 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             ObjectGroups[scene] = group = new(new());
         }
 
-        var shader = new Shader(GL, "Shaders/GLSL/standard3D.glsl");
+        // var shader = new Shader(GL, "Shaders/GLSL/standard3D.glsl");
+        var shader = new Shader(GL, "Shaders/GLSL/viewShaded.glsl");
 
         var mats = new List<Material>();
         var texDicts = new Dictionary<string, Texture>();
@@ -187,6 +188,10 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
                         tex = CreateDefaultTexture();
                     }
                 }
+                textures.Add(("_MainTexture", texUnit, tex));
+            } else {
+                var texUnit = TextureUnit.Texture0;
+                var tex = CreateDefaultTexture();
                 textures.Add(("_MainTexture", texUnit, tex));
             }
             var newMat = new Material(GL, shader, textures);
@@ -293,29 +298,29 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         return mat;
     }
 
-    private static readonly byte[] DefaultTextureBytes = [
-        0xff, 0x50, 0xff, 0xff,
-        0xff, 0x50, 0xff, 0xff,
-        0xff, 0x50, 0xff, 0xff,
-        0xff, 0x50, 0xff, 0xff,
-        0xff, 0x50, 0xff, 0xff,
-        0xff, 0x50, 0xff, 0xff,
-        0xff, 0x50, 0xff, 0xff,
-        0xff, 0x50, 0xff, 0xff,
-        0xff, 0x50, 0xff, 0xff,
-        0xff, 0x50, 0xff, 0xff,
-        0xff, 0x50, 0xff, 0xff,
-        0xff, 0x50, 0xff, 0xff,
-        0xff, 0x50, 0xff, 0xff,
-        0xff, 0x50, 0xff, 0xff,
-        0xff, 0x50, 0xff, 0xff,
-        0xff, 0x50, 0xff, 0xff,
+    private static readonly byte[] DefaultWhite = [
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff,
     ];
 
     private Texture CreateDefaultTexture()
     {
         var tex = new Texture(GL);
-        tex.LoadFromRawData(DefaultTextureBytes, 4, 4);
+        tex.LoadFromRawData(DefaultWhite, 4, 4);
         return tex;
     }
 

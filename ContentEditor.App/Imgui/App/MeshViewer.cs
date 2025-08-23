@@ -32,6 +32,9 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     private WindowData data = null!;
     protected UIContext context = null!;
 
+    private bool isDragging;
+    private Vector2 lastDragPos;
+
     public MeshViewer(ContentWorkspace workspace, FileHandle file)
     {
         meshPath = file.Filepath;
@@ -114,7 +117,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             if (ImGui.Button("Reset view")) {
                 scene.Camera.GameObject.Transform.LocalPosition = default;
                 scene.Camera.GameObject.Transform.LocalRotation = Quaternion.Identity;
-                lastDragDelta = new();
+                lastDragPos = new();
             }
             var expectedSize = ImGui.GetWindowSize() - ImGui.GetCursorPos() - ImGui.GetStyle().WindowPadding;
             expectedSize.X = Math.Max(expectedSize.X, 4);
@@ -128,38 +131,34 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             ImGui.Image((nint)scene.RenderContext.RenderTargetTextureHandle, expectedSize, new System.Numerics.Vector2(0, 1), new System.Numerics.Vector2(1, 0));
             ImGui.SetCursorPos(c);
             ImGui.InvisibleButton("##image", expectedSize, ImGuiButtonFlags.MouseButtonLeft|ImGuiButtonFlags.MouseButtonRight);
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Right) || ImGui.IsItemClicked(ImGuiMouseButton.Left)) {
+                if (!isDragging) {
+                    isDragging = true;
+                    lastDragPos = ImGui.GetMousePos();
+                }
+            } else if (isDragging && !ImGui.IsMouseDown(ImGuiMouseButton.Left) && !ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
+                isDragging = false;
+            }
 
-            if (ImGui.IsItemFocused()) {
-                if (ImGui.IsMouseDragging(ImGuiMouseButton.Left)) {
-                    var imguiDelta = ImGui.GetMouseDragDelta();
-                    var delta = imguiDelta - lastDragDelta;
-                    lastDragDelta = imguiDelta;
-                    if (delta != Vector2.Zero) {
+            if (isDragging) {
+                var delta = ImGui.GetMousePos() - lastDragPos;
+                lastDragPos = ImGui.GetMousePos();
+                if (delta != Vector2.Zero) {
+                    if (ImGui.IsMouseDown(ImGuiMouseButton.Left)) {
                         if (ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
                             scene.Camera.GameObject.Transform.TranslateForwardAligned(new Vector3(-delta.X, delta.Y, 0) * 0.05f);
                         } else {
                             scene.Camera.GameObject.Transform.TranslateForwardAligned(new Vector3(delta.X, 0, delta.Y) * -0.05f);
                         }
-                    }
-                } else if (ImGui.IsMouseDragging(ImGuiMouseButton.Right)) {
-                    var imguiDelta = ImGui.GetMouseDragDelta(ImGuiMouseButton.Right);
-                    var delta = imguiDelta - lastDragDelta;
-                    lastDragDelta = imguiDelta;
-                    if (delta != Vector2.Zero) {
+                    } else if (ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
                         scene.Camera.GameObject.Transform.Rotate(Quaternion<float>.CreateFromYawPitchRoll(delta.X * 0.01f, delta.Y * 0.01f, 0));
                     }
-                } else {
-                    lastDragDelta = Vector2.Zero;
                 }
-            } else {
-                lastDragDelta = Vector2.Zero;
             }
         } else {
             ImGui.Text("No mesh selected");
         }
     }
-
-    private Vector2 lastDragDelta;
 
     public static bool IsSupportedFileExtension(string filepathOrExtension)
     {

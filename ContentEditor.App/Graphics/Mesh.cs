@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ReeLib.via;
 using Silk.NET.OpenGL;
 
@@ -15,17 +16,47 @@ public class Mesh : IDisposable
         SetupMesh();
     }
 
+    private uint attrTotal;
+    private VertAttribute[] attributes;
+
+    private record struct VertAttribute(int Count, int Offset);
+
     public Mesh(GL gl, Assimp.Mesh sourceMesh)
     {
         GL = gl;
-        VertexData = new float[sourceMesh.VertexCount * 5];
         var uv0 = sourceMesh.TextureCoordinateChannels[0];
+        var hasTangents = sourceMesh.Tangents.Count > 0;
+        if (hasTangents) {
+            attrTotal = 11;
+            attributes = [
+                new VertAttribute(3, 0),
+                new VertAttribute(2, 3),
+                new VertAttribute(3, 5),
+                new VertAttribute(3, 8),
+            ];
+        } else {
+            attrTotal = 8;
+            attributes = [
+                new VertAttribute(3, 0),
+                new VertAttribute(2, 3),
+                new VertAttribute(3, 5),
+            ];
+        }
+        VertexData = new float[sourceMesh.VertexCount * attrTotal];
         for (int i = 0; i < sourceMesh.Vertices.Count; ++i) {
-            VertexData[i * 5 + 0] = sourceMesh.Vertices[i].X;
-            VertexData[i * 5 + 1] = sourceMesh.Vertices[i].Y;
-            VertexData[i * 5 + 2] = sourceMesh.Vertices[i].Z;
-            VertexData[i * 5 + 3] = uv0[i].X;
-            VertexData[i * 5 + 4] = uv0[i].Y;
+            VertexData[i * attrTotal + 0] = sourceMesh.Vertices[i].X;
+            VertexData[i * attrTotal + 1] = sourceMesh.Vertices[i].Y;
+            VertexData[i * attrTotal + 2] = sourceMesh.Vertices[i].Z;
+            VertexData[i * attrTotal + 3] = uv0[i].X;
+            VertexData[i * attrTotal + 4] = uv0[i].Y;
+            VertexData[i * attrTotal + 5] = sourceMesh.Normals[i].X;
+            VertexData[i * attrTotal + 6] = sourceMesh.Normals[i].Y;
+            VertexData[i * attrTotal + 7] = sourceMesh.Normals[i].Z;
+            if (hasTangents) {
+                VertexData[i * attrTotal + 8] = sourceMesh.Tangents[i].X;
+                VertexData[i * attrTotal + 9] = sourceMesh.Tangents[i].Y;
+                VertexData[i * attrTotal + 10] = sourceMesh.Tangents[i].Z;
+            }
         }
 
         Indices = sourceMesh.GetUnsignedIndices().ToArray();
@@ -46,10 +77,7 @@ public class Mesh : IDisposable
         VBO = new BufferObject<float>(GL, VertexData, BufferTargetARB.ArrayBuffer);
         EBO = new BufferObject<uint>(GL, Indices, BufferTargetARB.ElementArrayBuffer);
         VAO = new VertexArrayObject<float, uint>(GL, VBO, EBO);
-        // vertex position
-        VAO.VertexAttributePointer(0, 3, VertexAttribPointerType.Float, 5, 0);
-        // vertex UV0
-        VAO.VertexAttributePointer(1, 2, VertexAttribPointerType.Float, 5, 3);
+        ApplyVertexAttributes();
     }
 
     public void Bind()
@@ -57,10 +85,15 @@ public class Mesh : IDisposable
         VAO.Bind();
         VBO.Bind();
         EBO.Bind();
-        // vertex position
-        VAO.VertexAttributePointer(0, 3, VertexAttribPointerType.Float, 5, 0);
-        // vertex UV0
-        VAO.VertexAttributePointer(1, 2, VertexAttribPointerType.Float, 5, 3);
+        ApplyVertexAttributes();
+    }
+
+    private void ApplyVertexAttributes()
+    {
+        for (uint i = 0; i < attributes.Length; ++i) {
+            var va = attributes[i];
+            VAO.VertexAttributePointer(i, va.Count, VertexAttribPointerType.Float, attrTotal, va.Offset);
+        }
     }
 
     public void Dispose()
