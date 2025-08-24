@@ -11,6 +11,8 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
     public IRectWindow Window { get; } = window;
 
     public IEnumerable<Scene> RootMasterScenes => scenes.Where(scene => scene.RenderContext.RenderTargetTextureHandle == 0 && scene.ParentScene == null);
+    public bool HasActiveMasterScene => RootMasterScenes.Where(sc => sc.IsActive).Any();
+    public Scene? ActiveMasterScene => RootMasterScenes.FirstOrDefault(sc => sc.IsActive);
 
     public Scene CreateScene(string name, bool render, Scene? parentScene = null)
     {

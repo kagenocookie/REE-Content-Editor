@@ -111,10 +111,23 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         foreach (var kb in _inputContext.Keyboards) {
             kb.KeyDown += OnKeyDown;
             kb.KeyUp += OnKeyUp;
+            SetupKeyboard(kb);
         }
-        _inputContext.Mice[0].MouseMove += (m, vec) => {
-            _lastMouseMoveTime = DateTime.Now;
-        };
+        var mouse = _inputContext.Mice.FirstOrDefault();
+        if (mouse != null) {
+            mouse.MouseMove += (m, vec) => {
+                _lastMouseMoveTime = DateTime.Now;
+            };
+            SetupMouse(mouse);
+        }
+    }
+
+    protected virtual void SetupMouse(IMouse mouse)
+    {
+    }
+
+    protected virtual void SetupKeyboard(IKeyboard keyboard)
+    {
     }
 
     private unsafe void RemoveDropCallback()
@@ -456,7 +469,6 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
             imguiOverlaysData.Context = context.AddChild("__overlays", imguiOverlaysData);
             imguiOverlays.Init(imguiOverlaysData.Context);
         }
-        imguiOverlays.ShowHelp = !_disableIntroGuide && !subwindows.Any(s => !IsDefaultWindow(s));
         imguiOverlays.OnIMGUI();
     }
 

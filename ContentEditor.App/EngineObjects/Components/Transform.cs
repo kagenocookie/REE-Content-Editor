@@ -43,6 +43,8 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
     public Quaternion<float> SilkLocalRotation => ((Vector4)Data.Values[1]).ToSilkNetQuaternion();
     public Vector3D<float> SilkLocalScale => ((Vector4)Data.Values[2]).ToSilkNetVec3();
 
+    public Vector3 LocalForward => Vector3.Transform(Vector3.UnitZ, LocalRotation);
+
     private Matrix4X4<float> _cachedWorldTransform = Matrix4X4<float>.Identity;
     private bool _worldTransformValid;
     public ref readonly Matrix4X4<float> WorldTransform
@@ -87,7 +89,6 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
 
     public void TranslateForwardAligned(Vector3 offset)
     {
-        // LocalPosition += Vector3D.Transform(offset.ToGeneric(), Quaternion<float>.Inverse(SilkLocalRotation)).ToSystem();
         LocalPosition += Vector3D.Transform(offset.ToGeneric(), SilkLocalRotation).ToSystem();
     }
 
@@ -155,5 +156,32 @@ public static class TransformExtensions
             var num3 = 1f / num2;
             return new Quaternion<float>(vector.X * num3, vector.Y * num3, vector.Z * num3, num2 * 0.5f);
         }
+    }
+
+    /// <summary>
+    /// Returns the euler angles of the given quaternion (order: pitch, yaw, roll) in radians.
+    /// </summary>
+    public static Vector3 ToEuler(this Quaternion<float> q)
+    {
+        var euler = new Vector3();
+
+        // roll (Z)
+        float sinr_cosp = 2 * (q.W * q.X + q.Y * q.Z);
+        float cosr_cosp = 1 - 2 * (q.X * q.X + q.Y * q.Y);
+        euler.Z = MathF.Atan2(sinr_cosp, cosr_cosp);
+
+        // pitch (X)
+        float sinp = 2 * (q.W * q.X - q.Y * q.Z);
+        if (MathF.Abs(sinp) >= 1)
+            euler.X = MathF.CopySign(MathF.PI / 2, sinp); // clamp to 90°
+        else
+            euler.X = MathF.Asin(sinp);
+
+        // yaw (Y)
+        float siny_cosp = 2 * (q.W * q.Z + q.X * q.Y);
+        float cosy_cosp = 1 - 2 * (q.Y * q.Y + q.Z * q.Z);
+        euler.Y = MathF.Atan2(siny_cosp, cosy_cosp);
+
+        return euler;
     }
 }

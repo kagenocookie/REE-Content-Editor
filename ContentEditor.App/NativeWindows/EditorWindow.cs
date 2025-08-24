@@ -11,6 +11,7 @@ using ReeLib;
 using ReeLib.Data;
 using ReeLib.Efx;
 using ReeLib.Tools;
+using Silk.NET.Input;
 using Silk.NET.Maths;
 
 public class EditorWindow : WindowBase, IWorkspaceContainer
@@ -38,6 +39,25 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
     private static HashSet<string>? fullSupportedGames;
 
     private static bool runningRszInference;
+
+    private ActiveSceneBehavior sceneBehavior = new();
+    private ActiveSceneBehavior? ActiveSceneBehavior => SceneManager.HasActiveMasterScene ? sceneBehavior : null;
+
+    /// <summary>
+    /// True when the last input was on the main window content and not any imgui windows.
+    /// </summary>
+    private bool IsWindowContentFocused => isMouseDown || lastClickWasWindow;
+
+    private Vector2 firstMouseDownPosition;
+    private Vector2 lastLeftMouseDownPosition;
+    private Vector2 lastRightMouseDownPosition;
+    private Vector2 lastDragMousePosition;
+    private MouseButton firstMouseDownButton;
+    private bool isDragging = false;
+    private bool isMouseDown = false;
+    private bool lastClickWasWindow = false;
+
+    protected bool isBaseWindowFocused;
 
     internal EditorWindow(int id, ContentWorkspace? workspace = null) : base(id)
     {
@@ -92,6 +112,10 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
     protected override void Update(float deltaTime)
     {
         SceneManager.Update(deltaTime);
+        sceneBehavior.Keyboard = _inputContext.Keyboards[0];
+        if (IsWindowContentFocused) {
+            ActiveSceneBehavior?.Update(deltaTime);
+        }
     }
 
     protected override void Render(float deltaTime)
@@ -122,6 +146,102 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                 AddFileEditor(file);
             } else {
                 AddSubwindow(new ErrorModal("Unsupported file", "File is not supported:\n" + filename));
+            }
+        }
+    }
+
+    protected override void SetupMouse(IMouse mouse)
+    {
+        mouse.DoubleClickTime = 400;
+        mouse.MouseMove += (m, vec) => {
+            if (ImGui.GetIO().WantCaptureMouse) return;
+            OnMouseMove(m, vec);
+        };
+        mouse.Click += (m, btn, v) => {
+            if (ImGui.GetIO().WantCaptureMouse) return;
+            OnMouseClick(m, btn, v);
+        };
+        mouse.DoubleClick += (m, btn, v) => {
+            if (ImGui.GetIO().WantCaptureMouse) return;
+            OnMouseDoubleClick(m, btn, v);
+        };
+        mouse.MouseDown += (m, btn) => {
+            isBaseWindowFocused = !ImGui.GetIO().WantCaptureMouse;
+            if (!isBaseWindowFocused) {
+                lastClickWasWindow = false;
+                return;
+            }
+            lastClickWasWindow = true;
+            OnMouseDown(m, btn, m.Position);
+        };
+        mouse.MouseUp += (m, btn) => {
+            if (ImGui.GetIO().WantCaptureMouse) return;
+            OnMouseUp(m, btn, m.Position);
+        };
+    }
+
+    protected virtual void OnMouseClick(IMouse mouse, Silk.NET.Input.MouseButton button, Vector2 position)
+    {
+    }
+
+    protected virtual void OnMouseDoubleClick(IMouse mouse, Silk.NET.Input.MouseButton button, Vector2 position)
+    {
+    }
+
+    protected virtual void OnMouseDown(IMouse mouse, Silk.NET.Input.MouseButton button, Vector2 position)
+    {
+        if (button == MouseButton.Left) {
+            lastLeftMouseDownPosition = position;
+            if (!isMouseDown) {
+                isMouseDown = true;
+                firstMouseDownButton = button;
+                firstMouseDownPosition = position;
+                lastDragMousePosition = position;
+            }
+        } else if (button == MouseButton.Right) {
+            lastRightMouseDownPosition = position;
+            if (!isMouseDown) {
+                isMouseDown = true;
+                firstMouseDownButton = button;
+                firstMouseDownPosition = position;
+                lastDragMousePosition = position;
+            }
+        }
+    }
+
+    protected virtual void OnMouseUp(IMouse mouse, Silk.NET.Input.MouseButton button, Vector2 position)
+    {
+        mouse.IsButtonPressed(MouseButton.Left);
+        if (!mouse.IsButtonPressed(MouseButton.Right) && !mouse.IsButtonPressed(MouseButton.Left)) {
+            isMouseDown = false;
+            OnStopMouseDrag(mouse);
+        }
+    }
+
+    protected virtual void OnStopMouseDrag(IMouse mouse)
+    {
+        isDragging = false;
+        var scene = SceneManager.ActiveMasterScene;
+        if (scene != null) {
+            ActiveSceneBehavior?.OnMouseDragEnd(mouse, firstMouseDownButton, mouse.Position, firstMouseDownPosition);
+        }
+    }
+
+    protected virtual void OnMouseMove(IMouse mouse, Vector2 pos)
+    {
+        // var scene = SceneManager.ActiveMasterScene;
+        if (isMouseDown) {
+            var delta = lastDragMousePosition - pos;
+            lastDragMousePosition = pos;
+            if (delta != Vector2.Zero && !isDragging) {
+                isDragging = true;
+                ActiveSceneBehavior?.OnMouseDragStart(mouse, firstMouseDownButton, pos);
+            }
+            if (isDragging) {
+                var left = mouse.IsButtonPressed(MouseButton.Left);
+                var right = mouse.IsButtonPressed(MouseButton.Right);
+                var mouseEnum = (left ? MouseButtonFlags.Left : 0) | (right ? MouseButtonFlags.Right : 0);
+                ActiveSceneBehavior?.OnMouseDrag(mouseEnum, pos, delta);
             }
         }
     }
@@ -376,10 +496,12 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                     ImGui.Bullet();
                     if (ImGui.MenuItem(scene.Name)) {
                         SceneManager.ChangeMasterScene(null);
+                        sceneBehavior.Scene = null!;
                     }
                 } else {
                     if (ImGui.MenuItem(scene.Name)) {
                         SceneManager.ChangeMasterScene(scene);
+                        sceneBehavior.Scene = scene;
                     }
                 }
             }
@@ -482,6 +604,9 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
     {
         ShowMainMenuBar();
         BeginDockableBackground(new Vector2(0, ImGui.CalcTextSize("a").Y + ImGui.GetStyle().FramePadding.Y * 2));
+        if (Overlays != null) {
+            Overlays.ShowHelp = !_disableIntroGuide && !subwindows.Any(s => !IsDefaultWindow(s)) && !SceneManager.HasActiveMasterScene;
+        }
         DrawImguiWindows();
         EndDockableBackground();
     }
