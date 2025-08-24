@@ -857,7 +857,7 @@ public class TransformComponentHandler : IObjectUIHandler
             }
             ImGui.SetNextItemWidth(w * 0.75f);
             if (ImGui.DragFloat3("##Local Scale", ref localscale)) {
-                UndoRedo.RecordCallbackSetter(context, instance, instance.LocalScale, localscale, (i, v) => i.LocalPosition = v, $"{instance.GetHashCode()} LocalScale");
+                UndoRedo.RecordCallbackSetter(context, instance, instance.LocalScale, localscale, (i, v) => i.LocalScale = v, $"{instance.GetHashCode()} LocalScale");
             }
             ImGui.SameLine();
             ImGui.SetNextItemWidth(w * 0.25f - ImGui.GetStyle().FramePadding.X * 2);

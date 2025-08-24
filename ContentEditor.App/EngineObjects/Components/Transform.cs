@@ -57,7 +57,7 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
             } else if (GameObject.Folder != null) {
                 parentMatrix = Matrix4X4.CreateTranslation<float>(GameObject.Folder.OffsetSilk);
             }
-            _cachedWorldTransform = parentMatrix * ComputeLocalTransformMatrix();
+            _cachedWorldTransform = ComputeLocalTransformMatrix() * parentMatrix;
             _worldTransformValid = true;
             return ref _cachedWorldTransform;
         }
