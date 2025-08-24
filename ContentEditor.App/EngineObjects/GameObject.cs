@@ -97,7 +97,9 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
             base.Children.Add(child);
         }
 
-        EnterSceneComponents();
+        if (scene?.IsActive == true) {
+            ActivateComponents();
+        }
     }
 
     public GameObject(ScnGameObject source, Folder folder, IList<ScnPrefabInfo>? prefabs = null, Scene? scene = null)
@@ -127,7 +129,9 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
             base.Children.Add(child);
         }
 
-        EnterSceneComponents();
+        if (scene?.IsActive == true) {
+            ActivateComponents();
+        }
     }
 
     private Transform CreateTransformComponent()
@@ -276,9 +280,9 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         if (Scene != null) {
             // we probably need to handle some more edge cases here
             if (Parent == null) {
-                ExitSceneComponents();
+                DeactivateComponents();
             } else if (Parent.Scene != newScene) {
-                ExitSceneComponents();
+                DeactivateComponents();
                 Parent.RemoveChild(this);
             }
         }
@@ -286,8 +290,8 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         foreach (var child in Children) {
             child.MoveToScene(newScene);
         }
-        if (Parent == null) {
-            EnterSceneComponents();
+        if (Parent == null && newScene?.IsActive == true) {
+            ActivateComponents();
         }
     }
 
@@ -329,33 +333,42 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         return newObj;
     }
 
-    private void EnterSceneComponents()
+    public void SetActive(bool active)
+    {
+        if (active) {
+            ActivateComponents();
+        } else {
+            DeactivateComponents();
+        }
+    }
+
+    private void ActivateComponents()
     {
         var rootscene = Scene?.RootScene;
         if (rootscene != null) {
             foreach (var comp in Components) {
-                comp.OnEnterScene(rootscene);
+                comp.OnActivate(rootscene);
             }
 
             foreach (var child in GetAllChildren()) {
                 foreach (var comp in child.Components) {
-                    comp.OnEnterScene(rootscene);
+                    comp.OnActivate(rootscene);
                 }
             }
         }
     }
 
-    private void ExitSceneComponents()
+    private void DeactivateComponents()
     {
         var rootscene = Scene?.RootScene;
         if (rootscene != null) {
             foreach (var comp in Components) {
-                comp.OnExitScene(rootscene);
+                comp.OnDeactivate(rootscene);
             }
 
             foreach (var child in GetAllChildren()) {
                 foreach (var comp in child.Components) {
-                    comp.OnExitScene(rootscene);
+                    comp.OnDeactivate(rootscene);
                 }
             }
         }

@@ -11,7 +11,7 @@ public interface ISceneEditor
     public Scene? GetScene();
     public Scene? GetRootScene(UIContext context)
     {
-        var parentSceneHolderCtx = context.FindParentContextByHandler<ISceneEditor>();
+        var parentSceneHolderCtx = context.FindParentContextByHandler<ISceneEditor>(true);
         return (parentSceneHolderCtx?.uiHandler as ISceneEditor)?.GetRootScene(parentSceneHolderCtx!) ?? GetScene();
     }
 }
@@ -82,7 +82,7 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
             context.AddChild("Filter", searcher, searcher);
             scene = root.Scene;
             if (scene == null) {
-                scene = context.GetNativeWindow()?.SceneManager.CreateScene(((ISceneEditor)this).GetRootScene(context));
+                scene = context.GetNativeWindow()?.SceneManager.CreateScene(Handle.Filepath, false, ((ISceneEditor)this).GetRootScene(context));
                 if (Logger.ErrorIf(scene == null, "Failed to create new scene")) return;
                 scene.Add(root);
             }

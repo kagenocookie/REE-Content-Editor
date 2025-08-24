@@ -10,9 +10,9 @@ namespace ContentEditor.App.Graphics;
 public abstract class RenderContext : IDisposable
 {
     public float DeltaTime { get; internal set; }
-    internal Matrix4X4<float> CameraMatrix { get; set; } = Matrix4X4<float>.Identity;
+    internal Matrix4X4<float> ViewMatrix { get; set; } = Matrix4X4<float>.Identity;
     internal Matrix4X4<float> ProjectionMatrix { get; set; } = Matrix4X4<float>.Identity;
-    internal Matrix4X4<float> CameraProjectionMatrix { get; set; } = Matrix4X4<float>.Identity;
+    internal Matrix4X4<float> ViewProjectionMatrix { get; set; } = Matrix4X4<float>.Identity;
 
     protected Material? defaultMaterial;
 
@@ -27,11 +27,9 @@ public abstract class RenderContext : IDisposable
 
     internal virtual void BeforeRender()
     {
-        // CameraMatrix = Matrix4X4.CreateTranslation<float>(new Vector3D<float>((float)Math.Sin(Time.Elapsed), 0, -5 + (float)Math.Cos(Time.Elapsed) / 4));
         var size = RenderOutputSize;
         ProjectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView(80f * MathF.PI / 180, size.X / size.Y, 0.1f, 1000.0f);
-        // CameraProjectionMatrix = ProjectionMatrix * CameraMatrix;
-        CameraProjectionMatrix = CameraMatrix * ProjectionMatrix;
+        ViewProjectionMatrix = ViewMatrix * ProjectionMatrix;
     }
 
     internal virtual void AfterRender()
@@ -132,9 +130,9 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         }
 
         GL.BindBuffer(BufferTargetARB.UniformBuffer, _globalUniformBuffer);
-        SetUniformBufferMatrix(0, sizeof(Matrix4X4<float>), CameraMatrix);
+        SetUniformBufferMatrix(0, sizeof(Matrix4X4<float>), ViewMatrix);
         SetUniformBufferMatrix(sizeof(Matrix4X4<float>), sizeof(Matrix4X4<float>), ProjectionMatrix);
-        SetUniformBufferMatrix(sizeof(Matrix4X4<float>) * 2, sizeof(Matrix4X4<float>), CameraProjectionMatrix);
+        SetUniformBufferMatrix(sizeof(Matrix4X4<float>) * 2, sizeof(Matrix4X4<float>), ViewProjectionMatrix);
         GL.BindBufferBase(BufferTargetARB.UniformBuffer, 0, _globalUniformBuffer);
         GL.BindBuffer(BufferTargetARB.UniformBuffer, 0);
     }

@@ -41,18 +41,19 @@ Some files may not fully work for other RE ENGINE games.
 | .scn      | ☑️ read/write | ☑️ down to individual fields | 3D display |
 | .msg      | ☑️ read/write | ☑️ down to individual translations | |
 | .uvs      | ☑️ read/write | | |
-| .tex, .dds  | view only | | TEX/DDS conversion, better preview controls |
-| common image formats | view only | | TEX/DDS conversion, channel merging |
 | .uvar     | ☑️ read/write | coming soon | expression node graph |
 | .mdf2     | ☑️ read/write | coming soon | material preview |
 | .efx      | ☑️ read/write | | graphic preview, maybe partial patching |
+| .tex, .dds  | view only | | TEX/DDS conversion, better preview controls |
+| .mesh     | read-only 3D display | | |
 | .rcol     | read/write | | 3D display, overlay with mesh/pfb, maybe partial patching |
 | .motbank  | read/write | | |
 | .motlist  | coming not soon | coming not soon | data display, editing, patching |
-| .mesh     | coming not soon | | 3D display |
 | .mcol     | raw data read/write | | 3D display |
 | .ainvm    | raw data read | | data display, 3D display, editing |
 | .cdef, .def | ☑️ read/write | | |
+| common image formats | view only | | TEX/DDS conversion, channel merging |
+| common mesh formats | 3D display | | |
 | many other misc files | raw data read/write | | |
 
 </div>

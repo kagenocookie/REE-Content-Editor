@@ -21,6 +21,7 @@ public class Component(GameObject gameObject, RszInstance data)
 {
     public RszInstance Data { get; } = data;
     public GameObject GameObject { get; } = gameObject;
+    public Transform Transform => GameObject.Transform;
 
     public string Classname => Data.RszClass.name;
     public override string ToString() => Data.ToString();
@@ -30,8 +31,8 @@ public class Component(GameObject gameObject, RszInstance data)
         Component.Create(target, Data.Clone());
     }
 
-    internal virtual void OnExitScene(Scene rootScene) { }
-    internal virtual void OnEnterScene(Scene rootScene) { }
+    internal virtual void OnActivate(Scene rootScene) { }
+    internal virtual void OnDeactivate(Scene rootScene) { }
 
     private static readonly Dictionary<RszClass, Func<GameObject, RszInstance, Component>> componentTypes = new();
     private static readonly HashSet<(GameIdentifier, Assembly)> setupGames = new();
@@ -109,7 +110,7 @@ public class Component(GameObject gameObject, RszInstance data)
         }
 
         if (triggerEnterScene && gameObject.Scene != null) {
-            component.OnEnterScene(gameObject.Scene.RootScene);
+            component.OnActivate(gameObject.Scene.RootScene);
         }
 
         return component;

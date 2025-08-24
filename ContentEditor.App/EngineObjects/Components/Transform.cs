@@ -37,6 +37,8 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
         }
     }
 
+    public Vector3 Position => WorldTransform.Column4.ToSystem().ToVec3();
+
     public Vector3D<float> SilkLocalPosition => ((Vector4)Data.Values[0]).ToSilkNetVec3();
     public Quaternion<float> SilkLocalRotation => ((Vector4)Data.Values[1]).ToSilkNetQuaternion();
     public Vector3D<float> SilkLocalScale => ((Vector4)Data.Values[2]).ToSilkNetVec3();
@@ -49,7 +51,7 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
             if (_worldTransformValid) return ref _cachedWorldTransform;
             Matrix4X4<float> parentMatrix = Matrix4X4<float>.Identity;
             if (GameObject.Parent != null) {
-                parentMatrix = GameObject.WorldTransform;
+                parentMatrix = GameObject.Parent.WorldTransform;
             } else if (GameObject.Folder != null) {
                 parentMatrix = Matrix4X4.CreateTranslation<float>(GameObject.Folder.OffsetSilk);
             }
@@ -70,15 +72,12 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
     public Matrix4X4<float> ComputeLocalTransformMatrix()
     {
         var quat = SilkLocalRotation;
-        Matrix4X4<float> mat = Matrix4X4.CreateTranslation<float>(LocalPosition.ToSilkNet());
+        Matrix4X4<float> mat = Matrix4X4.CreateScale<float>(SilkLocalScale);
+
         if (!quat.IsIdentity) {
-            mat = Matrix4X4.Transform<float>(mat, LocalRotation.ToSilkNet());
+            mat = mat * Matrix4X4.CreateFromQuaternion(quat);
         }
-        var scale = SilkLocalScale;
-        if (scale != Vector3D<float>.One) {
-            mat = Matrix4X4.CreateScale<float>(scale) * mat;
-        }
-        return mat;
+        return mat * Matrix4X4.CreateTranslation(LocalPosition.ToSilkNet());
     }
 
     public void Translate(Vector3 offset)
@@ -88,7 +87,8 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
 
     public void TranslateForwardAligned(Vector3 offset)
     {
-        LocalPosition += Vector3D.Transform(offset.ToGeneric(), Quaternion<float>.Inverse(SilkLocalRotation)).ToSystem();
+        // LocalPosition += Vector3D.Transform(offset.ToGeneric(), Quaternion<float>.Inverse(SilkLocalRotation)).ToSystem();
+        LocalPosition += Vector3D.Transform(offset.ToGeneric(), SilkLocalRotation).ToSystem();
     }
 
     public void ComponentInit()
@@ -99,8 +99,18 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
 
     public void Rotate(Quaternion<float> quaternion)
     {
-        var newQuat = quaternion * SilkLocalRotation;
+        var newQuat = SilkLocalRotation * quaternion;
         LocalRotation = newQuat.ToSystem();
+    }
+
+    public void LookAt(Vector3 target)
+    {
+        LookAt(target, new Vector3(0, 1, 0));
+    }
+
+    public void LookAt(Vector3 target, Vector3 up)
+    {
+        LocalRotation = LocalPosition.CreateLookAtQuaternion(target, up).ToSystem();
     }
 
     public Transform(GameObject gameObject, RszInstance data) : base(gameObject, data)
@@ -119,4 +129,31 @@ public static class TransformExtensions
 
     public static Quaternion<float> ToSilkNetQuaternion(this Vector4 vec) => new Quaternion<float>(vec.X, vec.Y, vec.Z, vec.W);
     public static Vector3D<float> ToSilkNetVec3(this Vector4 vec) => new Vector3D<float>(vec.X, vec.Y, vec.Z);
+
+    public static Quaternion<float> CreateLookAtQuaternion(this Vector3 from, Vector3 to, Vector3 up)
+    {
+        var fwd = Vector3.Normalize(from - to);
+        var right = Vector3.Normalize(Vector3.Cross(up, fwd));
+        var newUp = Vector3.Cross(fwd, right);
+        var lookAt = new Matrix4X4<float>(
+            right.X, right.Y, right.Z, 0,
+            newUp.X, newUp.Y, newUp.Z, 0,
+            fwd.X, fwd.Y, fwd.Z, 0,
+            0, 0, 0, 1
+        );
+        return Quaternion<float>.CreateFromRotationMatrix(lookAt);
+    }
+
+    public static Quaternion<float> CreateFromToQuaternion(this Vector3 from, Vector3 to)
+    {
+        var vector = Vector3.Cross(from, to);
+        var dot = Vector3.Dot(from, to);
+        if (dot < -0.99999f) {
+            return new Quaternion<float>(0, 1, 0, 0);
+        } else {
+            var num2 = MathF.Sqrt((1f + dot) * 2f);
+            var num3 = 1f / num2;
+            return new Quaternion<float>(vector.X * num3, vector.Y * num3, vector.Z * num3, num2 * 0.5f);
+        }
+    }
 }

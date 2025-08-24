@@ -19,59 +19,80 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
     private MaterialResource material = null!;
     private Scene? objectOwnerScene;
 
+    private Scene RootScene => objectOwnerScene ??= GameObject.Scene!.RootScene;
+
     private int objectHandle;
-    public AABB MeshLocalBounds => objectOwnerScene?.RenderContext.GetBounds(objectHandle) ?? default;
+    public override AABB LocalBounds => objectHandle == 0 ? default : objectOwnerScene?.RenderContext.GetBounds(objectHandle) ?? default;
 
     public bool HasMesh => objectHandle != 0;
 
-    internal override void OnEnterScene(Scene rootScene)
+    internal override void OnActivate(Scene rootScene)
     {
-        base.OnEnterScene(rootScene);
+        base.OnActivate(rootScene);
+
+        UnloadMesh();
+        objectOwnerScene = rootScene;
         var meshPath = base.Data.Values[meshFieldIndex] as string;
-        if (!string.IsNullOrEmpty(meshPath)) {
-            mesh = rootScene.LoadResource<AssimpMeshResource>(meshPath);
-        }
         var matPath = base.Data.Values[meshFieldIndex] as string;
-        if (!string.IsNullOrEmpty(matPath)) {
-            // material = rootScene.LoadResource<MaterialResource>(matPath)!; // TODO add a default material
-        }
-        if (mesh != null) {
-            UpdateMesh(mesh, objectOwnerScene = rootScene);
-        } else {
-            objectOwnerScene = null;
+        if (!string.IsNullOrEmpty(meshPath)) {
+            SetMesh(meshPath, matPath);
         }
     }
 
-    internal override void OnExitScene(Scene rootScene)
+    public void SetMesh(string meshFilepath, string? materialFilepath)
     {
-        base.OnExitScene(rootScene);
-        objectOwnerScene?.RenderContext.DestroyObject(objectHandle);
-        if (mesh != null) {
+        var newMesh = RootScene.LoadResource<AssimpMeshResource>(meshFilepath);
+        // material = rootScene.LoadResource<MaterialResource>(matPath)!; // TODO load mdf2
+
+        UpdateMesh(newMesh, RootScene);
+    }
+
+    public void SetMesh(FileHandle meshFile)
+    {
+        var newMesh = meshFile.GetResource<AssimpMeshResource>();
+        RootScene.AddResourceReference(meshFile);
+        Data.Values[meshFieldIndex] = meshFile.InternalPath ?? string.Empty;
+        UpdateMesh(newMesh, RootScene);
+    }
+
+    internal override void OnDeactivate(Scene rootScene)
+    {
+        base.OnDeactivate(rootScene);
+        UnloadMesh();
+    }
+
+    private void UpdateMesh(AssimpMeshResource? newMesh, Scene scene)
+    {
+        UnloadMesh();
+        var rootScene = scene.RootScene;
+
+        if (mesh != null && mesh != newMesh) {
             rootScene.UnloadResource(mesh);
             mesh = null;
         }
-        if (material != null) {
-            rootScene.UnloadResource(material);
-            material = null!;
+        if (newMesh == null) {
+            return;
         }
+
+        mesh = newMesh;
+        objectOwnerScene = scene;
+        objectHandle = scene.RenderContext.CreateObject(newMesh.Scene);
     }
 
-    public void UpdateMesh(AssimpMeshResource? mesh, Scene scene)
+    private void UnloadMesh()
     {
-        var rootScene = GameObject.Scene?.RootScene;
-        if (rootScene == null) return;
+        if (mesh == null || objectOwnerScene == null) return;
 
-        if (this.mesh != null) {
-            rootScene.UnloadResource(this.mesh);
-        }
-        this.mesh = mesh;
+        objectOwnerScene.RenderContext.DestroyObject(objectHandle);
         if (mesh != null) {
-            rootScene.AddResourceReference(mesh);
-            objectOwnerScene = scene;
-            objectHandle = scene.RenderContext.CreateObject(mesh.Scene);
-        } else {
-            objectOwnerScene = null;
+            objectOwnerScene.UnloadResource(mesh);
+            mesh = null;
         }
+        if (material != null) {
+            objectOwnerScene.UnloadResource(material);
+            material = null!;
+        }
+        objectHandle = 0;
     }
 
     internal override unsafe void Render(RenderContext context)

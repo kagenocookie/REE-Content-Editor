@@ -119,6 +119,17 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
         return child?.Find(path.Slice(part + 1));
     }
 
+    public void SetActive(bool active)
+    {
+        foreach (var subfolder in Children) {
+            subfolder.SetActive(active);
+        }
+
+        foreach (var go in GameObjects) {
+            go.SetActive(active);
+        }
+    }
+
     private GameObject? FindGameObjectByName(ReadOnlySpan<char> name)
     {
         foreach (var go in GameObjects) {

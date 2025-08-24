@@ -242,6 +242,9 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
     {
         ImGui.BeginMainMenuBar();
         var hasUnsavedFiles = HasUnsavedChanges;
+        if (hasUnsavedFiles) {
+            ImGui.Bullet();
+        }
         if (ImGui.BeginMenu("File")) {
             if (ImGui.MenuItem("Open ...")) {
                 PlatformUtils.ShowFileDialog((files) => {
@@ -367,9 +370,22 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
             ImGui.EndMenu();
         }
 
-        if (hasUnsavedFiles) {
-            ImGui.Bullet();
+        if (SceneManager.RootMasterScenes.Any() && ImGui.BeginMenu("Scenes")) {
+            foreach (var scene in SceneManager.RootMasterScenes) {
+                if (scene.IsActive) {
+                    ImGui.Bullet();
+                    if (ImGui.MenuItem(scene.Name)) {
+                        SceneManager.ChangeMasterScene(null);
+                    }
+                } else {
+                    if (ImGui.MenuItem(scene.Name)) {
+                        SceneManager.ChangeMasterScene(scene);
+                    }
+                }
+            }
+            ImGui.EndMenu();
         }
+
         ShowGameSelectionMenu();
         if (ImGui.BeginMenu("Windows")) {
             if (ImGui.MenuItem("Open new window")) {

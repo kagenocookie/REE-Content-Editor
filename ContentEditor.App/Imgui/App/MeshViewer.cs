@@ -27,7 +27,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
     private AssimpMeshResource? mesh;
     private string? meshPath;
-    private FileHandle? fileHandle;
+    private FileHandle fileHandle;
 
     private WindowData data = null!;
     protected UIContext context = null!;
@@ -38,8 +38,6 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     public MeshViewer(ContentWorkspace workspace, FileHandle file)
     {
         meshPath = file.Filepath;
-        // texture = new Mesh(EditorWindow.CurrentWindow!.GLContext, );
-        // texture.LoadFromFile(file);
         file.References.Add(this);
         Workspace = workspace;
         fileHandle = file;
@@ -56,13 +54,6 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     {
         var data = context.Get<WindowData>();
         EditorWindow.CurrentWindow?.CloseSubwindow(data);
-    }
-
-    public void ChangeMesh(string filepath)
-    {
-        fileHandle?.References.Remove(this);
-        fileHandle = null;
-        meshPath = filepath;
     }
 
     public void Init(UIContext context)
@@ -83,40 +74,36 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         ImGui.End();
     }
 
+    private void CenterCameraToSceneObject()
+    {
+        if (previewGameobject == null || scene == null) return;
+
+        scene.Camera.LookAt(previewGameobject, true);
+    }
+
     public void OnIMGUI()
     {
         if (scene == null) {
-            scene = EditorWindow.CurrentWindow!.SceneManager.CreateScene();
+            scene = EditorWindow.CurrentWindow!.SceneManager.CreateScene(fileHandle.Filepath, true);
         }
+        MeshComponent meshComponent;
         if (previewGameobject == null) {
             scene.Add(previewGameobject = new GameObject("_preview", Workspace.Env, null, scene));
-            previewGameobject.AddComponent<MeshComponent>();
+            meshComponent = previewGameobject.AddComponent<MeshComponent>();
+        } else {
+            meshComponent = previewGameobject.RequireComponent<MeshComponent>();
         }
 
-        var meshComponent = previewGameobject.RequireComponent<MeshComponent>();
-        if (fileHandle != null && !meshComponent.HasMesh) {
-            scene.StoreResource(fileHandle);
-            meshComponent.UpdateMesh(mesh, scene);
-            var bounds = meshComponent.MeshLocalBounds;
-            scene.Camera.GameObject.Transform.LocalPosition = Vector3.One * (-(bounds.maxpos - bounds.minpos).Length() * 0.35f);
-            scene.Camera.GameObject.Transform.LocalRotation = Quaternion.CreateFromYawPitchRoll(Silk.NET.Maths.Scalar.DegreesToRadians(-30f), Silk.NET.Maths.Scalar.DegreesToRadians(45f), 0);
+        if (!meshComponent.HasMesh) {
+            meshComponent.SetMesh(fileHandle);
+            CenterCameraToSceneObject();
         }
 
-        if (mesh == null) {
-            if (meshPath == null) {
-                ImGui.Text("No mesh selected");
-                return;
-            }
-
-            ChangeMesh(meshPath);
-        }
-
-        if (mesh != null && fileHandle != null) {
+        if (mesh != null) {
             ImGui.Text(fileHandle.Filepath);
             ImGui.SameLine();
             if (ImGui.Button("Reset view")) {
-                scene.Camera.GameObject.Transform.LocalPosition = default;
-                scene.Camera.GameObject.Transform.LocalRotation = Quaternion.Identity;
+                CenterCameraToSceneObject();
                 lastDragPos = new();
             }
             var expectedSize = ImGui.GetWindowSize() - ImGui.GetCursorPos() - ImGui.GetStyle().WindowPadding;
@@ -146,12 +133,12 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 if (delta != Vector2.Zero) {
                     if (ImGui.IsMouseDown(ImGuiMouseButton.Left)) {
                         if (ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
-                            scene.Camera.GameObject.Transform.TranslateForwardAligned(new Vector3(-delta.X, delta.Y, 0) * 0.05f);
+                            scene.Camera.GameObject.Transform.TranslateForwardAligned(new Vector3(delta.X, 0, -delta.Y) * -0.04f);
                         } else {
-                            scene.Camera.GameObject.Transform.TranslateForwardAligned(new Vector3(delta.X, 0, delta.Y) * -0.05f);
+                            scene.Camera.GameObject.Transform.TranslateForwardAligned(new Vector3(-delta.X, delta.Y, 0) * 0.04f);
                         }
                     } else if (ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
-                        scene.Camera.GameObject.Transform.Rotate(Quaternion<float>.CreateFromYawPitchRoll(delta.X * 0.01f, delta.Y * 0.01f, 0));
+                        scene.Camera.GameObject.Transform.Rotate(Quaternion<float>.CreateFromYawPitchRoll(delta.X * -0.008f, delta.Y * -0.008f, 0));
                     }
                 }
             }

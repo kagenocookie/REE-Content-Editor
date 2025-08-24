@@ -1,5 +1,6 @@
 using ContentEditor.App.Graphics;
 using ReeLib;
+using ReeLib.via;
 
 namespace ContentEditor.App;
 
@@ -7,12 +8,14 @@ public abstract class RenderableComponent(GameObject gameObject, RszInstance dat
 {
     internal abstract void Render(RenderContext context);
 
-    internal override void OnEnterScene(Scene rootScene)
+    public abstract AABB LocalBounds { get; }
+
+    internal override void OnActivate(Scene rootScene)
     {
         GameObject.Scene!.AddRenderComponent(this);
     }
 
-    internal override void OnExitScene(Scene rootScene)
+    internal override void OnDeactivate(Scene rootScene)
     {
         GameObject.Scene!.RemoveRenderComponent(this);
     }
@@ -20,7 +23,7 @@ public abstract class RenderableComponent(GameObject gameObject, RszInstance dat
     public void Dispose()
     {
         if (GameObject.Scene != null) {
-            OnExitScene(GameObject.Scene.RootScene);
+            OnDeactivate(GameObject.Scene.RootScene);
         }
         Dispose(true);
         GC.SuppressFinalize(this);

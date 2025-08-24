@@ -1,10 +1,9 @@
-using System.Collections.Concurrent;
-using System.Numerics;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Editor;
 using ContentPatcher;
 using ReeLib;
+using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
 namespace ContentEditor.App;
@@ -18,8 +17,9 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
     public Scene? ParentScene { get; private set; }
     public Scene RootScene => ParentScene?.RootScene ?? this;
 
+    public string Name { get; }
     public ContentWorkspace Workspace { get; }
-    public bool Renderable { get; set; } = true;
+    public bool IsActive { get; set; }
 
     bool IFileHandleReferenceHolder.CanClose => true;
     IRectWindow? IFileHandleReferenceHolder.Parent => null;
@@ -36,8 +36,11 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
     private Camera camera;
     public Camera Camera => camera;
 
-    public Scene(ContentWorkspace workspace, Scene? parentScene = null, GL? gl = null)
+    private bool wasActivatedBefore;
+
+    public Scene(string name, ContentWorkspace workspace, Scene? parentScene = null, GL? gl = null)
     {
+        Name = name;
         Workspace = workspace;
         ParentScene = parentScene;
         _gl = gl ?? parentScene?._gl ?? EditorWindow.CurrentWindow?.GLContext ?? throw new Exception("Could not get OpenGL Context!");
@@ -97,8 +100,6 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
 
     public TResourceType? LoadResource<TResourceType>(string path) where TResourceType : class, IResourceFile
     {
-        if (!Renderable) return default;
-
         if (!Workspace.ResourceManager.TryGetOrLoadFile(path, out var fileHandle)) {
             Logger.Error("Failed to load resource " + path);
             return null;
@@ -106,20 +107,29 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
 
         var resource = fileHandle.GetResource<TResourceType>();
         if (_loadedResources.TryGetValue(resource, out var handleRefs)) {
-            _loadedResources[resource] = (handleRefs.handle, handleRefs.refcount - 1);
-            fileHandle = handleRefs.handle;
+            _loadedResources[resource] = (handleRefs.handle, handleRefs.refcount + 1);
         } else {
-            _loadedResources[resource] = (handleRefs.handle, 1);
+            _loadedResources[resource] = (fileHandle, 1);
             fileHandle.References.Add(this);
         }
 
         return resource;
     }
 
+    public void AddResourceReference(FileHandle file)
+    {
+        if (_loadedResources.TryGetValue(file.Resource, out var handleRefs)) {
+            _loadedResources[file.Resource] = (file, handleRefs.refcount + 1);
+        } else {
+            _loadedResources[file.Resource] = (file, 1);
+            file.References.Add(this);
+        }
+    }
+
     public void AddResourceReference(IResourceFile resource)
     {
         if (_loadedResources.TryGetValue(resource, out var handleRefs)) {
-            _loadedResources[resource] = (handleRefs.handle, handleRefs.refcount - 1);
+            _loadedResources[resource] = (handleRefs.handle, handleRefs.refcount + 1);
         } else {
             throw new Exception("Attempted to add scene reference to unknown resource");
         }
@@ -141,7 +151,11 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
         if (renderComponents.Count == 0) return;
 
         renderContext.DeltaTime = deltaTime;
-        renderContext.CameraMatrix = camera.GameObject.WorldTransform;
+        if (Matrix4X4.Invert(camera.GameObject.WorldTransform, out var inverted)) {
+            renderContext.ViewMatrix = inverted;
+        } else {
+            renderContext.ViewMatrix = Matrix4X4<float>.Identity;
+        }
         renderContext.BeforeRender();
         foreach (var render in renderComponents) {
             render.Render(renderContext);
@@ -149,8 +163,22 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
         renderContext.AfterRender();
     }
 
+    public void SetActive(bool active)
+    {
+        IsActive = active;
+        RootFolder.SetActive(active);
+        if (!wasActivatedBefore && active) {
+            wasActivatedBefore = true;
+            var lookTarget = renderComponents.FirstOrDefault()?.GameObject ?? GetAllGameObjects().FirstOrDefault();
+            if (lookTarget != null) {
+                camera.LookAt(lookTarget, true);
+            }
+        }
+    }
+
     public void Dispose()
     {
+        SetActive(false);
         renderContext.Dispose();
         RootFolder.Dispose();
     }

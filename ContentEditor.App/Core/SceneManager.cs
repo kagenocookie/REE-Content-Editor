@@ -10,11 +10,13 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
 
     public IRectWindow Window { get; } = window;
 
-    public Scene CreateScene(Scene? parentScene = null)
+    public IEnumerable<Scene> RootMasterScenes => scenes.Where(scene => scene.RenderContext.RenderTargetTextureHandle == 0 && scene.ParentScene == null);
+
+    public Scene CreateScene(string name, bool render, Scene? parentScene = null)
     {
         if (env == null) throw new Exception("Workspace unset");
 
-        var scene = new Scene(env, parentScene);
+        var scene = new Scene(name, env, parentScene) { IsActive = render };
         scenes.Add(scene);
         return scene;
     }
@@ -51,6 +53,18 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
             //     scene.OpenGL.Viewport(new System.Drawing.Size((int)Window.Size.X, (int)Window.Size.Y));
             // }
         }
+    }
+
+    public void ChangeMasterScene(Scene? scene)
+    {
+        foreach (var master in RootMasterScenes) {
+            if (master.IsActive) {
+                if (master == scene) return;
+                master.SetActive(false);
+            }
+        }
+
+        scene?.SetActive(true);
     }
 
     private void ClearScenes()
