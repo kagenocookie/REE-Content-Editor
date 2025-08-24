@@ -15,6 +15,7 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
     public RawScene Prefab => Handle.GetCustomContent<RawScene>();
 
     public ContentWorkspace Workspace { get; }
+    public SceneEditor? ParentEditor { get; }
 
     private ObjectInspector? primaryInspector;
     private Scene? scene;
@@ -31,6 +32,7 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
     public SceneEditor(ContentWorkspace env, FileHandle file, SceneEditor? parent = null) : base(file)
     {
         Workspace = env;
+        ParentEditor = parent;
         primaryInspector = parent?.primaryInspector;
     }
 
@@ -73,7 +75,7 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
             context.AddChild("Filter", searcher, searcher);
             scene = root.Scene;
             if (scene == null) {
-                scene = context.GetNativeWindow()?.SceneManager.CreateScene(Handle.Filepath, false);
+                scene = context.GetNativeWindow()?.SceneManager.CreateScene(Handle.Filepath, ParentEditor?.scene?.IsActive ?? false, ParentEditor?.scene);
                 if (Logger.ErrorIf(scene == null, "Failed to create new scene")) return;
                 scene.Add(root);
             }

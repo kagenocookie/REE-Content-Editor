@@ -34,7 +34,12 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
 
         if (!resetPosition) {
             var optimalDistance = offset.Length();
-            offset = Vector3.Normalize(targetCenter - Transform.Position) * optimalDistance;
+            var selfpos = Transform.Position;
+            if (selfpos == targetCenter) {
+                offset = Vector3.Normalize(offset) * optimalDistance;
+            } else{
+                offset = Vector3.Normalize(targetCenter - selfpos) * optimalDistance;
+            }
         } else {
             offset.X *= 0.4f;
         }

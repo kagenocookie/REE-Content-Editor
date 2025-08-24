@@ -10,12 +10,12 @@ public abstract class RenderableComponent(GameObject gameObject, RszInstance dat
 
     public abstract AABB LocalBounds { get; }
 
-    internal override void OnActivate(Scene rootScene)
+    internal override void OnActivate()
     {
         GameObject.Scene!.AddRenderComponent(this);
     }
 
-    internal override void OnDeactivate(Scene rootScene)
+    internal override void OnDeactivate()
     {
         GameObject.Scene!.RemoveRenderComponent(this);
     }
@@ -23,7 +23,7 @@ public abstract class RenderableComponent(GameObject gameObject, RszInstance dat
     public void Dispose()
     {
         if (GameObject.Scene != null) {
-            OnDeactivate(GameObject.Scene.RootScene);
+            OnDeactivate();
         }
         Dispose(true);
         GC.SuppressFinalize(this);

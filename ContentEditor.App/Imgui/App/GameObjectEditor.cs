@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using ContentEditor;
+using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
@@ -72,6 +73,12 @@ public class GameObjectNodeEditor : NodeTreeEditor<GameObject, GameObjectNodeEdi
 
     protected override void HandleContextMenu(GameObject node, UIContext context)
     {
+        if (node.Scene?.RootScene.IsActive == true) {
+            if (ImGui.Button("Focus in 3D view")) {
+                node.Scene?.ActiveCamera.LookAt(node, false);
+                ImGui.CloseCurrentPopup();
+            }
+        }
         if (ImGui.Button("New GameObject")) {
             var ws = context.GetWorkspace();
             var newgo = new GameObject("New_GameObject", ws!.Env, node.Folder, node.Scene);

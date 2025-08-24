@@ -17,21 +17,17 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
 
     private AssimpMeshResource? mesh;
     private MaterialResource material = null!;
-    private Scene? objectOwnerScene;
-
-    private Scene RootScene => objectOwnerScene ??= GameObject.Scene!.RootScene;
 
     private int objectHandle;
-    public override AABB LocalBounds => objectHandle == 0 ? default : objectOwnerScene?.RenderContext.GetBounds(objectHandle) ?? default;
+    public override AABB LocalBounds => objectHandle == 0 ? default : Scene?.RenderContext.GetBounds(objectHandle) ?? default;
 
     public bool HasMesh => objectHandle != 0;
 
-    internal override void OnActivate(Scene rootScene)
+    internal override void OnActivate()
     {
-        base.OnActivate(rootScene);
+        base.OnActivate();
 
         UnloadMesh();
-        objectOwnerScene = rootScene;
         var meshPath = base.Data.Values[meshFieldIndex] as string;
         var matPath = base.Data.Values[meshFieldIndex] as string;
         if (!string.IsNullOrEmpty(meshPath)) {
@@ -41,33 +37,32 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
 
     public void SetMesh(string meshFilepath, string? materialFilepath)
     {
-        var newMesh = RootScene.LoadResource<AssimpMeshResource>(meshFilepath);
-        // material = rootScene.LoadResource<MaterialResource>(matPath)!; // TODO load mdf2
+        var newMesh = Scene!.LoadResource<AssimpMeshResource>(meshFilepath);
+        // material = Scene.LoadResource<MaterialResource>(matPath)!; // TODO load mdf2
 
-        UpdateMesh(newMesh, RootScene);
+        UpdateMesh(newMesh);
     }
 
     public void SetMesh(FileHandle meshFile)
     {
         var newMesh = meshFile.GetResource<AssimpMeshResource>();
-        RootScene.AddResourceReference(meshFile);
+        Scene!.AddResourceReference(meshFile);
         Data.Values[meshFieldIndex] = meshFile.InternalPath ?? string.Empty;
-        UpdateMesh(newMesh, RootScene);
+        UpdateMesh(newMesh);
     }
 
-    internal override void OnDeactivate(Scene rootScene)
+    internal override void OnDeactivate()
     {
-        base.OnDeactivate(rootScene);
+        base.OnDeactivate();
         UnloadMesh();
     }
 
-    private void UpdateMesh(AssimpMeshResource? newMesh, Scene scene)
+    private void UpdateMesh(AssimpMeshResource? newMesh)
     {
         UnloadMesh();
-        var rootScene = scene.RootScene;
 
         if (mesh != null && mesh != newMesh) {
-            rootScene.UnloadResource(mesh);
+            Scene!.UnloadResource(mesh);
             mesh = null;
         }
         if (newMesh == null) {
@@ -75,21 +70,20 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         }
 
         mesh = newMesh;
-        objectOwnerScene = scene;
-        objectHandle = scene.RenderContext.CreateObject(newMesh.Scene);
+        objectHandle = Scene!.RenderContext.CreateObject(newMesh.Scene);
     }
 
     private void UnloadMesh()
     {
-        if (mesh == null || objectOwnerScene == null) return;
+        if (mesh == null || Scene == null) return;
 
-        objectOwnerScene.RenderContext.DestroyObject(objectHandle);
+        Scene.RenderContext.DestroyObject(objectHandle);
         if (mesh != null) {
-            objectOwnerScene.UnloadResource(mesh);
+            Scene.UnloadResource(mesh);
             mesh = null;
         }
         if (material != null) {
-            objectOwnerScene.UnloadResource(material);
+            Scene.UnloadResource(material);
             material = null!;
         }
         objectHandle = 0;

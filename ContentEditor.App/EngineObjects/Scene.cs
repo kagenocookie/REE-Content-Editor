@@ -16,6 +16,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
 
     public Scene? ParentScene { get; private set; }
     public Scene RootScene => ParentScene?.RootScene ?? this;
+    private readonly List<Scene> ChildScenes = new();
 
     public string Name { get; }
     public ContentWorkspace Workspace { get; }
@@ -35,6 +36,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
 
     private Camera camera;
     public Camera Camera => camera;
+    public Camera ActiveCamera => RootScene.Camera;
 
     private bool wasActivatedBefore;
 
@@ -48,6 +50,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
         RootFolder = new("ROOT", workspace.Env, this);
         var camGo = new GameObject("__editorCamera", workspace.Env);
         camera = Component.Create<Camera>(camGo, workspace.Env);
+        parentScene?.ChildScenes.Add(this);
     }
 
     public GameObject? Find(ReadOnlySpan<char> path) => RootFolder.Find(path);
@@ -151,7 +154,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
         if (renderComponents.Count == 0) return;
 
         renderContext.DeltaTime = deltaTime;
-        if (Matrix4X4.Invert(camera.GameObject.WorldTransform, out var inverted)) {
+        if (Matrix4X4.Invert(ActiveCamera.GameObject.WorldTransform, out var inverted)) {
             renderContext.ViewMatrix = inverted;
         } else {
             renderContext.ViewMatrix = Matrix4X4<float>.Identity;
@@ -165,14 +168,20 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
 
     public void SetActive(bool active)
     {
+        if (active == IsActive) return;
+
         IsActive = active;
         RootFolder.SetActive(active);
         if (!wasActivatedBefore && active) {
             wasActivatedBefore = true;
             var lookTarget = renderComponents.FirstOrDefault()?.GameObject ?? GetAllGameObjects().FirstOrDefault();
             if (lookTarget != null) {
-                camera.LookAt(lookTarget, true);
+                ActiveCamera.LookAt(lookTarget, true);
             }
+        }
+
+        foreach (var child in ChildScenes) {
+            child.SetActive(active);
         }
     }
 
@@ -181,6 +190,10 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
         SetActive(false);
         renderContext.Dispose();
         RootFolder.Dispose();
+        while (ChildScenes.Count != 0) {
+            ChildScenes.Last().Dispose();
+        }
+        ParentScene?.ChildScenes.Remove(this);
     }
 
     internal void AddRenderComponent(RenderableComponent renderComponent)
@@ -204,4 +217,6 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
     {
         _loadedResources.TryAdd(fileHandle.Resource, (fileHandle, 0));
     }
+
+    public override string ToString() => Name;
 }

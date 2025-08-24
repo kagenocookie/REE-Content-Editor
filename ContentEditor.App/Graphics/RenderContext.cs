@@ -201,7 +201,9 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             group.Objects.Add(new MeshObject(newMesh, mats[srcMesh.MaterialIndex]));
         }
 
-        return Objects.Add(group);
+        var id = Objects.Add(group);
+        // Logger.Debug("Created object handle " + id);
+        return id;
     }
 
     public override void DestroyObject(int objectIndex)
@@ -209,6 +211,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         if (objectIndex <= 0) return;
 
         Objects.Remove(objectIndex);
+        // Logger.Debug("Destroyed object handle " + objectIndex);
     }
 
     public override AABB GetBounds(int objectHandle)

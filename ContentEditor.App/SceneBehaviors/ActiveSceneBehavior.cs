@@ -21,7 +21,7 @@ public class ActiveSceneBehavior
             mouse.Cursor.CursorMode = CursorMode.Disabled;
             dragMode = DragMode.Rotation;
 
-            var fwd = Scene.Camera.Transform.LocalForward;
+            var fwd = Scene.ActiveCamera.Transform.LocalForward;
             camYaw = MathF.Atan2(fwd.X, fwd.Z);
             camPitch = -MathF.Asin(Math.Clamp(fwd.Y, -1f, 1f));
         }
@@ -42,11 +42,11 @@ public class ActiveSceneBehavior
             if (buttons == MouseButtonFlags.Right) {
                 camYaw = camYaw + delta.X * 0.008f;
                 camPitch = Math.Clamp(camPitch + delta.Y * 0.008f, -80f * MathF.PI / 180, 80f * MathF.PI / 180);
-                Scene.Camera.GameObject.Transform.LocalRotation = Quaternion<float>.CreateFromYawPitchRoll(camYaw, camPitch, 0).ToSystem();
+                Scene.ActiveCamera.GameObject.Transform.LocalRotation = Quaternion<float>.CreateFromYawPitchRoll(camYaw, camPitch, 0).ToSystem();
             } else if (buttons == MouseButtonFlags.Left) {
-                Scene.Camera.GameObject.Transform.TranslateForwardAligned(new Vector3(delta.X, 0, -delta.Y) * -0.04f);
+                Scene.ActiveCamera.GameObject.Transform.TranslateForwardAligned(new Vector3(delta.X, 0, -delta.Y) * -0.04f);
             } else if ((buttons & (MouseButtonFlags.Left|MouseButtonFlags.Right)) != 0) {
-                Scene.Camera.GameObject.Transform.TranslateForwardAligned(new Vector3(-delta.X, delta.Y, 0) * 0.04f);
+                Scene.ActiveCamera.GameObject.Transform.TranslateForwardAligned(new Vector3(-delta.X, delta.Y, 0) * 0.04f);
             }
         }
     }
@@ -63,7 +63,7 @@ public class ActiveSceneBehavior
             if (Keyboard.IsKeyPressed(Key.Q)) moveVec.Y -= 1;
             if (Keyboard.IsKeyPressed(Key.ShiftLeft)) moveVec *= 3;
 
-            Scene.Camera.GameObject.Transform.TranslateForwardAligned(moveVec * deltaTime * 10);
+            Scene.ActiveCamera.GameObject.Transform.TranslateForwardAligned(moveVec * deltaTime * 10);
         }
     }
 }

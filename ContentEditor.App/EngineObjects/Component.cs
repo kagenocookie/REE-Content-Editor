@@ -21,7 +21,9 @@ public class Component(GameObject gameObject, RszInstance data)
 {
     public RszInstance Data { get; } = data;
     public GameObject GameObject { get; } = gameObject;
+
     public Transform Transform => GameObject.Transform;
+    public Scene? Scene => GameObject.Scene;
 
     public string Classname => Data.RszClass.name;
     public override string ToString() => Data.ToString();
@@ -31,8 +33,8 @@ public class Component(GameObject gameObject, RszInstance data)
         Component.Create(target, Data.Clone());
     }
 
-    internal virtual void OnActivate(Scene rootScene) { }
-    internal virtual void OnDeactivate(Scene rootScene) { }
+    internal virtual void OnActivate() { }
+    internal virtual void OnDeactivate() { }
 
     private static readonly Dictionary<RszClass, Func<GameObject, RszInstance, Component>> componentTypes = new();
     private static readonly HashSet<(GameIdentifier, Assembly)> setupGames = new();
@@ -100,7 +102,7 @@ public class Component(GameObject gameObject, RszInstance data)
     /// <summary>
     /// Creates a new component and adds it to the target GameObject.
     /// </summary>
-    internal static Component Create(GameObject gameObject, RszInstance data, bool triggerEnterScene)
+    internal static Component Create(GameObject gameObject, RszInstance data, bool triggerActivate)
     {
         Component component;
         if (componentTypes.TryGetValue(data.RszClass, out var fac)) {
@@ -109,8 +111,8 @@ public class Component(GameObject gameObject, RszInstance data)
             gameObject.Components.Add(component = new Component(gameObject, data));
         }
 
-        if (triggerEnterScene && gameObject.Scene != null) {
-            component.OnActivate(gameObject.Scene.RootScene);
+        if (triggerActivate && gameObject.Scene?.IsActive == true) {
+            component.OnActivate();
         }
 
         return component;

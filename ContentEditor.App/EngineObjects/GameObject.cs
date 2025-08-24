@@ -290,7 +290,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         foreach (var child in Children) {
             child.MoveToScene(newScene);
         }
-        if (Parent == null && newScene?.IsActive == true) {
+        if (newScene?.IsActive == true) {
             ActivateComponents();
         }
     }
@@ -344,32 +344,26 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
 
     private void ActivateComponents()
     {
-        var rootscene = Scene?.RootScene;
-        if (rootscene != null) {
-            foreach (var comp in Components) {
-                comp.OnActivate(rootscene);
-            }
+        foreach (var comp in Components) {
+            comp.OnActivate();
+        }
 
-            foreach (var child in GetAllChildren()) {
-                foreach (var comp in child.Components) {
-                    comp.OnActivate(rootscene);
-                }
+        foreach (var child in GetAllChildren()) {
+            foreach (var comp in child.Components) {
+                comp.OnActivate();
             }
         }
     }
 
     private void DeactivateComponents()
     {
-        var rootscene = Scene?.RootScene;
-        if (rootscene != null) {
-            foreach (var comp in Components) {
-                comp.OnDeactivate(rootscene);
-            }
+        foreach (var comp in Components) {
+            comp.OnDeactivate();
+        }
 
-            foreach (var child in GetAllChildren()) {
-                foreach (var comp in child.Components) {
-                    comp.OnDeactivate(rootscene);
-                }
+        foreach (var child in GetAllChildren()) {
+            foreach (var comp in child.Components) {
+                comp.OnDeactivate();
             }
         }
     }
