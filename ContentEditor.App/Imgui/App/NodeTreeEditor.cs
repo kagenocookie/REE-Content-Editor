@@ -74,7 +74,7 @@ public static class NodeEditorUtils
                 ImGui.PushStyleColor(ImGuiCol.Text, Colors.Faded);
             }
             AppImguiHelpers.PrependIcon(child);
-            if (ImGui.Selectable(child.Name, false)) {
+            if (ImGui.Selectable(child.Name + "##" + i++, false)) {
                 filter.MatchedObject = child;
             }
             if (!selfMatch) {
