@@ -29,6 +29,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string LatestVersion = "latest_version";
         public const string EnableUpdateCheck = "enable_update_check";
         public const string LastUpdateCheck = "last_update_check";
+        public const string AutoExpandFieldsCount = "auto_expand_fields_count";
 
         public const string Key_Undo = "key_undo";
         public const string Key_Redo = "key_redo";
@@ -116,8 +117,9 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<bool> PrettyFieldLabels = new SettingWrapper<bool>(Keys.PrettyLabels, _lock, true);
     public readonly SettingWrapper<int> LogLevel = new SettingWrapper<int>(Keys.LogLevel, _lock, 0);
     public readonly SettingWrapper<int> MaxUndoSteps = new SettingWrapper<int>(Keys.MaxUndoSteps, _lock, 250);
+    public readonly SettingWrapper<int> AutoExpandFieldsCount = new SettingWrapper<int>(Keys.AutoExpandFieldsCount, _lock, 3);
     public readonly SettingWrapper<bool> EnableUpdateCheck = new SettingWrapper<bool>(Keys.EnableUpdateCheck, _lock, true);
-    public readonly SettingWrapper<bool> ShowFps = new SettingWrapper<bool>(Keys.ShowFps, _lock, true);
+    public readonly SettingWrapper<bool> ShowFps = new SettingWrapper<bool>(Keys.ShowFps, _lock, false);
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
     public readonly ClassSettingWrapper<string> LatestVersion = new ClassSettingWrapper<string>(Keys.LatestVersion, _lock);
 
@@ -219,6 +221,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.BackgroundColor, instance.BackgroundColor.value.ToString(), null),
             (Keys.LogLevel, instance.LogLevel.value.ToString(), null),
             (Keys.MaxUndoSteps, instance.MaxUndoSteps.value.ToString(), null),
+            (Keys.AutoExpandFieldsCount, instance.AutoExpandFieldsCount.value.ToString(), null),
             (Keys.LastUpdateCheck, instance.LastUpdateCheck.value.ToString("O"), null),
             (Keys.LatestVersion, instance.LatestVersion.value?.ToString() ?? "", null),
             (Keys.EnableUpdateCheck, instance.EnableUpdateCheck.value.ToString(), null),
@@ -286,10 +289,13 @@ public class AppConfig : Singleton<AppConfig>
                             if (ReeLib.via.Color.TryParse(value, out var _col)) instance.BackgroundColor.value =  _col;
                             break;
                         case Keys.LogLevel:
-                            if (int.TryParse(value, out var _log)) instance.LogLevel.value =  _log;
+                            if (int.TryParse(value, out var _intvalue)) instance.LogLevel.value =  _intvalue;
                             break;
                         case Keys.MaxUndoSteps:
-                            if (int.TryParse(value, out var _undoSteps)) instance.MaxUndoSteps.value = Math.Max(_undoSteps, 0);
+                            if (int.TryParse(value, out _intvalue)) instance.MaxUndoSteps.value = Math.Max(_intvalue, 0);
+                            break;
+                        case Keys.AutoExpandFieldsCount:
+                            if (int.TryParse(value, out _intvalue)) instance.AutoExpandFieldsCount.value = Math.Max(_intvalue, 0);
                             break;
                         case Keys.PrettyLabels:
                             instance.PrettyFieldLabels.value = value.Equals("true", StringComparison.OrdinalIgnoreCase) || value.Equals("yes", StringComparison.OrdinalIgnoreCase) || value == "1";

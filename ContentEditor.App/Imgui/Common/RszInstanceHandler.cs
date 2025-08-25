@@ -270,7 +270,7 @@ public class NestedRszInstanceHandler : IObjectUIHandler
             // no point in showing it in the UI - at least until we add subclass selection
             return;
         }
-        if (!ForceDefaultClose && instance.Fields.Length <= 3) {
+        if (!ForceDefaultClose && instance.Fields.Length <= AppConfig.Instance.AutoExpandFieldsCount) {
             ImGui.SetNextItemOpen(true, ImGuiCond.FirstUseEver);
         }
         var show = ImguiHelpers.TreeNodeSuffix(context.label, context.stringFormatter?.GetString(instance) ?? instance.RszClass.name);

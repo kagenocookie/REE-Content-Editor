@@ -119,6 +119,12 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("The maximum number of threads to be used when unpacking.\nThe actual thread count is determined automatically by the .NET runtime.");
 
+            var expandFields = config.AutoExpandFieldsCount.Get();
+            if (ImGui.SliderInt("Auto-expand field count", ref expandFields, 0, 16)) {
+                config.AutoExpandFieldsCount.Set(expandFields);
+            }
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip("The number of fields below which an RSZ object tree node should auto-expand.");
+
             var logLevel = config.LogLevel.Get();
             if (ImGui.Combo("Logging level", ref logLevel, LogLevels, LogLevels.Length)) {
                 config.LogLevel.Set(logLevel);
