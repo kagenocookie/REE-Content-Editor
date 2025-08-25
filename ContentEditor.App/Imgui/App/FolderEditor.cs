@@ -254,9 +254,13 @@ public class FolderNodeEditor : IObjectUIHandler
             ImGui.TextColored(Colors.Error, "Linked scene file not found: " + path);
             return;
         }
-        var file = ws.ResourceManager.GetFileHandle(resolvedPath!);
-        var parentSceneEditor = context.FindHandlerInParents<SceneEditor>();
-        WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, new SceneEditor(ws, file, parentSceneEditor), "LinkedScene");
+        try {
+            var file = ws.ResourceManager.GetFileHandle(resolvedPath!);
+            var parentSceneEditor = context.FindHandlerInParents<SceneEditor>();
+            WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, new SceneEditor(ws, file, parentSceneEditor), "LinkedScene");
+        } catch (Exception e) {
+            Logger.Error(e, "Failed to load linked scene");
+        }
     }
 
     protected void ShowChildren(UIContext context, Folder node)
