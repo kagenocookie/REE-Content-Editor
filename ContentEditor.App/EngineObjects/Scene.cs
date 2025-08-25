@@ -103,7 +103,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
 
     public TResourceType? LoadResource<TResourceType>(string path) where TResourceType : class, IResourceFile
     {
-        if (!Workspace.ResourceManager.TryGetOrLoadFile(path, out var fileHandle)) {
+        if (!Workspace.ResourceManager.TryResolveFile(path, out var fileHandle)) {
             Logger.Error("Failed to load resource " + path);
             return null;
         }

@@ -1,9 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using ContentPatcher;
+using ReeLib;
 using ReeLib.via;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
+using SmartFormat.Utilities;
 
 namespace ContentEditor.App.Graphics;
 
@@ -15,6 +19,13 @@ public abstract class RenderContext : IDisposable
     internal Matrix4X4<float> ViewProjectionMatrix { get; set; } = Matrix4X4<float>.Identity;
 
     protected Material? defaultMaterial;
+
+    protected ResourceManager _resourceManager = null!;
+    internal ResourceManager ResourceManager
+    {
+        get => _resourceManager;
+        set => UpdateResourceManager(value);
+    }
 
     public Vector2 ViewportSize { get; set; }
 
@@ -49,10 +60,18 @@ public abstract class RenderContext : IDisposable
 
     protected virtual void Dispose(bool disposing) { }
 
-    public abstract int CreateObject(Assimp.Scene scene);
+    public abstract int CreateObject(Assimp.Scene scene, int materialGroupId);
     public abstract void DestroyObject(int objectIndex);
 
+    public abstract int LoadMaterialGroup(Assimp.Scene scene);
+    public abstract void DestroyMaterialGroup(int objectIndex);
+
     public abstract AABB GetBounds(int objectHandle);
+
+    protected virtual void UpdateResourceManager(ResourceManager manager)
+    {
+        _resourceManager = manager;
+    }
 
     public void SetRenderToTexture(Vector2 textureSize = new())
     {
@@ -64,10 +83,13 @@ public abstract class RenderContext : IDisposable
         _renderTargetTextureSize = textureSize;
     }
 
-    protected sealed class SparseList<T> where T : class
+    protected sealed class ResourceContainer<TSource, T> where T : class where TSource : class
     {
         private List<T> Objects = new();
         private SortedSet<int> GapIndices = new();
+        private Dictionary<TSource, int> ResourceCache = new();
+
+        public IEnumerable<T> Instances => Objects.Where(o => o != null);
 
         public T this[int index] => Objects[index - 1];
 
@@ -85,13 +107,25 @@ public abstract class RenderContext : IDisposable
             return index;
         }
 
-        public void Remove(int itemIndex)
+        public bool TryGet(TSource item, [MaybeNullWhen(false)] out T data, out int index) => ResourceCache.TryGetValue(item, out index) ? (data = Objects[index]) != null : (data = null) != null;
+
+        public T Remove(int itemIndex)
         {
             var obj = Objects[itemIndex - 1];
             GapIndices.Add(itemIndex);
             (obj as IDisposable)?.Dispose();
             Objects[itemIndex - 1] = null!;
+            return obj;
         }
+
+        public void Clear()
+        {
+            ResourceCache.Clear();
+            GapIndices.Clear();
+            Objects.Clear();
+        }
+
+        public int GetIndex(T obj) => Objects.IndexOf(obj) + 1;
     }
 }
 
@@ -102,23 +136,34 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     private uint _outputBuffer;
     private uint _outputTexDepthBuffer;
 
-    private SparseList<MeshObjectGroup> Objects = new();
-    private Dictionary<Assimp.Scene, MeshObjectGroup> ObjectGroups = new();
+    private ResourceContainer<Assimp.Scene, MeshObjectGroup> Objects = new();
+    private ResourceContainer<Assimp.Scene, MaterialGroup> Materials = new();
+    private ResourceRefCounter<Texture> Textures = new();
+
+    private readonly Dictionary<string, Shader> shaders = new();
+
+    private Shader StandardShader => GetShader("Shaders/GLSL/standard3D.glsl");
+    private Shader ViewShadedShader => GetShader("Shaders/GLSL/viewShaded.glsl");
+
+    private uint _globalUniformBuffer;
+
+    private Texture? _missingTexture;
+    private Texture? _defaultTexture;
 
     private sealed record MeshObjectGroup(List<MeshObject> Objects) : IDisposable
     {
+        public int MaterialGroupId { get; set; }
+
         public void Dispose()
         {
             foreach (var o in Objects) {
                 o.Mesh.Dispose();
-                o.Material.Dispose();
+                // o.Material.Dispose();
             }
         }
     }
 
     private sealed record MeshObject(Mesh Mesh, Material Material);
-
-    private uint _globalUniformBuffer;
 
     private unsafe void ApplyGlobalUniforms()
     {
@@ -147,59 +192,58 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
     }
 
-    public override int CreateObject(Assimp.Scene scene)
+    private Shader GetShader(string path)
     {
-        if (!ObjectGroups.TryGetValue(scene, out var group)) {
-            ObjectGroups[scene] = group = new(new());
+        if (shaders.TryGetValue(path, out var shader)) {
+            return shader;
         }
 
-        // var shader = new Shader(GL, "Shaders/GLSL/standard3D.glsl");
-        var shader = new Shader(GL, "Shaders/GLSL/viewShaded.glsl");
+        return shaders[path] = shader = new Shader(GL, path);
+    }
+
+    public override int CreateObject(Assimp.Scene meshScene, int materialGroupId)
+    {
+        if (Objects.TryGet(meshScene, out var group, out var index)) {
+            // ?
+        } else {
+            group = new(new());
+        }
+
+        var inputMaterials = materialGroupId == 0 ? null : Materials[materialGroupId];
 
         var mats = new List<Material>();
         var texDicts = new Dictionary<string, Texture>();
-        var embeddedTex = scene.Textures;
-        foreach (var srcMat in scene.Materials) {
+        var embeddedTex = meshScene.Textures;
+        foreach (var srcMat in meshScene.Materials) {
             var textures = new List<(string name, TextureUnit slot, Texture tex)>();
-            if (srcMat.HasTextureDiffuse) {
+            Shader shader;
+            if (srcMat.HasName && true == inputMaterials?.Materials.TryGetValue(srcMat.Name, out var importMat)) {
+                shader = ViewShadedShader;
+                // textures.Add(("_MainTexture", TextureUnit.Texture0, importMat.textures));
+                textures.AddRange(importMat.textures);
+            } else if (srcMat.HasTextureDiffuse) {
                 var srcTex = srcMat.TextureDiffuse;
                 var texUnit = TextureUnit.Texture0;
                 if (!texDicts.TryGetValue(srcTex.FilePath, out var tex)) {
-                    texDicts[srcTex.FilePath] = tex = new Texture(GL);
-                    if (srcTex.FilePath.StartsWith('*')) {
-                        // embedded texture
-                        var texIndex = int.Parse(srcTex.FilePath.AsSpan().Slice(1), CultureInfo.InvariantCulture);
-                        var texData = embeddedTex[texIndex];
-                        // Stream stream;
-                        if (texData.HasCompressedData) {
-                            var stream = new MemoryStream(texData.CompressedData);
-                            tex.LoadFromStream(stream);
-                        } else {
-                            // untested
-                            var bytes = Unsafe.As<byte[]>(texData.NonCompressedData);
-                            tex.LoadFromRawData(bytes, (uint)texData.Width, (uint)texData.Height);
-                        }
-                    } else if (File.Exists(srcTex.FilePath)) {
-                        tex.LoadFromFile(srcTex.FilePath);
-                    } else {
-                        // TODO reuse textures
-                        tex = CreateDefaultTexture();
-                    }
+                    texDicts[srcTex.FilePath] = tex = LoadTexture(meshScene, srcMat.TextureDiffuse);
                 }
                 textures.Add(("_MainTexture", texUnit, tex));
+                shader = ViewShadedShader;
             } else {
                 var texUnit = TextureUnit.Texture0;
                 var tex = CreateDefaultTexture();
                 textures.Add(("_MainTexture", texUnit, tex));
+                shader = ViewShadedShader;
             }
             var newMat = new Material(GL, shader, textures);
             mats.Add(newMat);
         }
 
-        foreach (var srcMesh in scene.Meshes) {
+        foreach (var srcMesh in meshScene.Meshes) {
             var newMesh = new Mesh(GL, srcMesh);
             group.Objects.Add(new MeshObject(newMesh, mats[srcMesh.MaterialIndex]));
         }
+        group.MaterialGroupId = materialGroupId;
 
         var id = Objects.Add(group);
         // Logger.Debug("Created object handle " + id);
@@ -210,8 +254,81 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     {
         if (objectIndex <= 0) return;
 
-        Objects.Remove(objectIndex);
-        // Logger.Debug("Destroyed object handle " + objectIndex);
+        var obj = Objects.Remove(objectIndex);
+        if (obj.MaterialGroupId != 0) {
+            DestroyMaterialGroup(obj.MaterialGroupId);
+        }
+    }
+
+    private Texture LoadTexture(Assimp.Scene scene, Assimp.TextureSlot texture)
+    {
+        try {
+            if (texture.FilePath.StartsWith('*')) {
+                var texData = scene.GetEmbeddedTexture(texture.FilePath);
+                var tex = new Texture(GL);
+                if (texData.HasCompressedData) {
+                    var stream = new MemoryStream(texData.CompressedData);
+                    tex.LoadFromStream(stream);
+                } else {
+                    // untested
+                    var bytes = Unsafe.As<byte[]>(texData.NonCompressedData);
+                    tex.LoadFromRawData(bytes, (uint)texData.Width, (uint)texData.Height);
+                }
+                Textures.AddUnnamed(tex);
+                return tex;
+            } else if (Textures.TryAddReference(texture.FilePath, out var handle)) {
+                return handle.Resource;
+            } else if (ResourceManager.TryResolveFile(texture.FilePath, out var texHandle)) {
+                var tex = new Texture(GL).LoadFromFile(texHandle);
+                return tex;
+            } else {
+                return CreateMissingTexture();
+            }
+        } catch (Exception e) {
+            Logger.Error("Failed to load texture " + texture.FilePath + ": " + e.Message);
+            return CreateMissingTexture();
+        }
+    }
+
+    public override int LoadMaterialGroup(Assimp.Scene scene)
+    {
+        if (Materials.TryGet(scene, out var group, out var index)) {
+            return index;
+        }
+
+        group = new MaterialGroup();
+        foreach (var mat in scene.Materials) {
+            Material material;
+            if (mat.HasTextureDiffuse) {
+                var tex = LoadTexture(scene, mat.TextureDiffuse);
+                material = new Material(GL, StandardShader, [("_MainTexture", TextureUnit.Texture0, tex)]);
+            } else {
+                material = new Material(GL, ViewShadedShader, [("_MainTexture", TextureUnit.Texture0, CreateDefaultTexture())]);
+            }
+            group.Add(mat.Name, material);
+        }
+
+        return Materials.Add(group);
+    }
+
+    public override void DestroyMaterialGroup(int objectIndex)
+    {
+        var mats = Materials.Remove(objectIndex);
+        if (mats != null) {
+            foreach (var m in mats.Materials) {
+                foreach (var tex in m.Value.textures) {
+                    this.Textures.Dereference(tex.tex);
+                }
+            }
+        }
+    }
+
+    protected override void UpdateResourceManager(ResourceManager manager)
+    {
+        base.UpdateResourceManager(manager);
+        foreach (var obj in Objects.Instances) {
+            obj.Dispose();
+        }
     }
 
     public override AABB GetBounds(int objectHandle)
@@ -292,12 +409,24 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         }
     }
 
-    private Material CreateDefaultMaterial()
-    {
-        var shader = new Shader(GL, "Shaders/GLSL/standard3D.glsl");
-        var mat = new Material(GL, shader, new());
-        return mat;
-    }
+    private static readonly byte[] DefaultPink = [
+        0xff, 0x50, 0xff, 0xff,
+        0xff, 0x50, 0xff, 0xff,
+        0xff, 0x50, 0xff, 0xff,
+        0xff, 0x50, 0xff, 0xff,
+        0xff, 0x50, 0xff, 0xff,
+        0xff, 0x50, 0xff, 0xff,
+        0xff, 0x50, 0xff, 0xff,
+        0xff, 0x50, 0xff, 0xff,
+        0xff, 0x50, 0xff, 0xff,
+        0xff, 0x50, 0xff, 0xff,
+        0xff, 0x50, 0xff, 0xff,
+        0xff, 0x50, 0xff, 0xff,
+        0xff, 0x50, 0xff, 0xff,
+        0xff, 0x50, 0xff, 0xff,
+        0xff, 0x50, 0xff, 0xff,
+        0xff, 0x50, 0xff, 0xff,
+    ];
 
     private static readonly byte[] DefaultWhite = [
         0xff, 0xff, 0xff, 0xff,
@@ -318,11 +447,22 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         0xff, 0xff, 0xff, 0xff,
     ];
 
+    private Texture CreateMissingTexture()
+    {
+        if (_missingTexture != null) return _missingTexture;
+
+        _missingTexture = new Texture(GL);
+        _missingTexture.LoadFromRawData(DefaultPink, 4, 4);
+        return _missingTexture;
+    }
+
     private Texture CreateDefaultTexture()
     {
-        var tex = new Texture(GL);
-        tex.LoadFromRawData(DefaultWhite, 4, 4);
-        return tex;
+        if (_defaultTexture != null) return _defaultTexture;
+
+        _defaultTexture = new Texture(GL);
+        _defaultTexture.LoadFromRawData(DefaultWhite, 4, 4);
+        return _defaultTexture;
     }
 
     protected override void Dispose(bool disposing)
@@ -336,5 +476,12 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         if (_outputBuffer != 0) {
             GL.DeleteFramebuffer(_outputBuffer);
         }
+        foreach (var shader in shaders.Values) {
+            shader.Dispose();
+        }
+        _defaultTexture?.Dispose();
+        _missingTexture?.Dispose();
+        Textures.Dispose();
+        shaders.Clear();
     }
 }

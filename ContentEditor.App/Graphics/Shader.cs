@@ -4,7 +4,7 @@ using Silk.NET.OpenGL;
 
 namespace ContentEditor.App.Graphics;
 
-public class Shader : IDisposable
+public sealed class Shader : IDisposable
 {
     private uint _handle;
     public uint Handle => _handle;
@@ -99,7 +99,10 @@ public class Shader : IDisposable
 
     public void Dispose()
     {
-        _gl.DeleteProgram(_handle);
+        if (_handle != 0) {
+            _gl.DeleteProgram(_handle);
+            _handle = 0;
+        }
     }
 
     private (uint vertex, uint fragment) LoadCombinedShader(string shaderFilepath, string[]? defines, int version)

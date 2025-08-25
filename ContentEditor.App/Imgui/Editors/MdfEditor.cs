@@ -63,7 +63,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
     {
         if (context.children.Count == 0) {
             var file = context.Get<MdfFile>();
-            context.AddChild("Data", file.MatDatas).AddDefaultHandler<List<MatData>>();
+            context.AddChild("Data", file.Materials).AddDefaultHandler<List<MatData>>();
         }
         context.ShowChildrenUI();
     }

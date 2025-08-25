@@ -22,7 +22,6 @@ void main()
 #endif
     gl_Position = uProjectionView * uModel * vec4(vPos, 1.0);
     fUv = vUv;
-    // fNorm = gl_Normal;
     mat3 normalMatrix = transpose(inverse(mat3(uModel)));
     fNorm = normalize(normalMatrix * vNorm);
 }

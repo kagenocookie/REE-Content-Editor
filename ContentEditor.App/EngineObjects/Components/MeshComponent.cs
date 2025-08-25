@@ -29,7 +29,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
 
         UnloadMesh();
         var meshPath = base.Data.Values[meshFieldIndex] as string;
-        var matPath = base.Data.Values[meshFieldIndex] as string;
+        var matPath = base.Data.Values[materialFieldIndex] as string;
         if (!string.IsNullOrEmpty(meshPath)) {
             SetMesh(meshPath, matPath);
         }
@@ -37,10 +37,10 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
 
     public void SetMesh(string meshFilepath, string? materialFilepath)
     {
+        var newMat = string.IsNullOrEmpty(materialFilepath) ? null : Scene!.LoadResource<AssimpMaterialResource>(materialFilepath);
         var newMesh = Scene!.LoadResource<AssimpMeshResource>(meshFilepath);
-        // material = Scene.LoadResource<MaterialResource>(matPath)!; // TODO load mdf2
 
-        UpdateMesh(newMesh);
+        UpdateMesh(newMesh, newMat);
     }
 
     public void SetMesh(FileHandle meshFile)
@@ -48,7 +48,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         var newMesh = meshFile.GetResource<AssimpMeshResource>();
         Scene!.AddResourceReference(meshFile);
         Data.Values[meshFieldIndex] = meshFile.InternalPath ?? string.Empty;
-        UpdateMesh(newMesh);
+        UpdateMesh(newMesh, null);
     }
 
     internal override void OnDeactivate()
@@ -57,7 +57,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         UnloadMesh();
     }
 
-    private void UpdateMesh(AssimpMeshResource? newMesh)
+    private void UpdateMesh(AssimpMeshResource? newMesh, AssimpMaterialResource? newMat)
     {
         UnloadMesh();
 
@@ -70,7 +70,9 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         }
 
         mesh = newMesh;
-        objectHandle = Scene!.RenderContext.CreateObject(newMesh.Scene);
+
+        var matgroup = newMat == null ? 0 : Scene!.RenderContext.LoadMaterialGroup(newMat.Scene);
+        objectHandle = Scene!.RenderContext.CreateObject(newMesh.Scene, matgroup);
     }
 
     private void UnloadMesh()

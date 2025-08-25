@@ -19,6 +19,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
         if (env == null) throw new Exception("Workspace unset");
 
         var scene = new Scene(name, env, parentScene) { IsActive = render };
+        scene.RenderContext.ResourceManager = env.ResourceManager;
         scenes.Add(scene);
         return scene;
     }

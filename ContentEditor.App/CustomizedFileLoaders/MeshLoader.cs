@@ -115,10 +115,6 @@ public class AssimpMeshResource(Assimp.Scene importedScene) : IResourceFile
 
     public void WriteTo(string filepath)
     {
-        if (PathUtils.ParseFileFormat(filepath).format == KnownFileFormats.Mesh) {
-            throw new NotSupportedException("RE ENGINE mesh format export not yet supported");
-        }
-
         using AssimpContext importer = new AssimpContext();
 
         var ext = Path.GetExtension(filepath);

@@ -4,7 +4,7 @@ using Silk.NET.OpenGL;
 
 namespace ContentEditor.App.Graphics;
 
-public class Material : IDisposable
+public class Material
 {
     private GL _gl { get; }
 
@@ -55,13 +55,6 @@ public class Material : IDisposable
             tex.Bind(slot);
             shader.SetUniform(name, tex);
         }
-    }
-
-    public void Dispose()
-    {
-        shader.Dispose();
-        foreach (var (name, slot, tex) in textures) tex.Dispose();
-        textures.Clear();
     }
 
     public override string ToString() => $"{shader} [tex count: {textures.Count}]";
