@@ -14,7 +14,7 @@ public interface IFilterRoot
 public static class NodeEditorUtils
 {
     public static bool ShowFilteredNode<TNodeHolder>(IFilterRoot filter, TNodeHolder node)
-        where TNodeHolder : NodeObject<TNodeHolder>
+        where TNodeHolder : INodeObject<TNodeHolder>
     {
         var match = filter.IsMatch(node);
         if (match) {
@@ -24,22 +24,46 @@ public static class NodeEditorUtils
             }
         }
 
-        match = ShowFilteredChildren(filter, node) || match;
+        match = ShowFilteredChildren<TNodeHolder, TNodeHolder>(filter, node) || match;
         return match;
     }
-    public static bool ShowFilteredChildren<TNodeHolder>(IFilterRoot filter, TNodeHolder node)
-        where TNodeHolder : NodeObject<TNodeHolder>
+
+    private static bool AnyChildMatches<TNodeHolder>(IFilterRoot filter, TNodeHolder node)
+        where TNodeHolder : INodeObject<TNodeHolder>
+    {
+        foreach (var subchild in node.GetAllChildren()) {
+            if (filter.IsMatch(subchild)) {
+                return true;
+            }
+
+            if (subchild is Folder subfolder && typeof(TNodeHolder) == typeof(Folder)) {
+                foreach (var go in subfolder.GameObjects) {
+                    if (filter.IsMatch(go) || AnyChildMatches<GameObject>(filter, go)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        if (node is Folder folder && typeof(TNodeHolder) == typeof(Folder)) {
+            foreach (var go in folder.GameObjects) {
+                if (filter.IsMatch(go) || AnyChildMatches<GameObject>(filter, go)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public static bool ShowFilteredChildren<TNodeHolder, TChildType>(IFilterRoot filter, TNodeHolder node)
+        where TNodeHolder : INodeObject<TChildType>
+        where TChildType : INodeObject<TChildType>
     {
         var i = 0;
         bool hasAnyChildMatch = false;
         foreach (var child in node.Children) {
-            var hasChildMatch = false;
-            foreach (var subchild in child.GetAllChildren()) {
-                if (filter.IsMatch(subchild)) {
-                    hasChildMatch = true;
-                    break;
-                }
-            }
+            var hasChildMatch = AnyChildMatches(filter, child);
 
             hasAnyChildMatch = hasAnyChildMatch || hasChildMatch;
             var selfMatch = filter.IsMatch(child);
@@ -60,10 +84,14 @@ public static class NodeEditorUtils
             if (hasChildMatch) {
                 ImGui.PushID(i++);
                 ImGui.Indent(ImGui.GetStyle().IndentSpacing);
-                hasAnyChildMatch = ShowFilteredChildren(filter, child) || hasAnyChildMatch;
+                hasAnyChildMatch = ShowFilteredChildren<TChildType, TChildType>(filter, child) || hasAnyChildMatch;
                 ImGui.Unindent(ImGui.GetStyle().IndentSpacing);
                 ImGui.PopID();
             }
+        }
+
+        if (node is Folder folder2 && typeof(TChildType) == typeof(Folder)) {
+            hasAnyChildMatch = NodeEditorUtils.ShowFilteredChildren<Folder, GameObject>(filter, folder2) || hasAnyChildMatch;
         }
         return hasAnyChildMatch;
     }

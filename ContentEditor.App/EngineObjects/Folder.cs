@@ -252,4 +252,6 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
 
     int INodeObject<GameObject>.GetChildIndex(GameObject child) => GameObjects.IndexOf(child);
     INodeObject<GameObject>? INodeObject<GameObject>.GetParent() => null;
+
+    IEnumerable<GameObject> INodeObject<GameObject>.GetAllChildren() => GameObjects.SelectMany(go => go.GetAllChildren()).Concat(GetAllChildren().SelectMany(f => f.GameObjects));
 }

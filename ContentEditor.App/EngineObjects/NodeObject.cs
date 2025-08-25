@@ -4,7 +4,7 @@ namespace ContentEditor.App;
 
 public class NodeObject : NotifiableObject
 {
-
+    public string Name { get; set; } = string.Empty;
 }
 
 public interface IPathedObject
@@ -14,6 +14,7 @@ public interface IPathedObject
 
 public interface INodeObject
 {
+    public string Name { get; set; }
     IEnumerable<NodeObject> Children { get; }
     NodeObject? Parent { get; }
     Scene? Scene { get; }
@@ -28,6 +29,11 @@ public interface INodeObject<T> : INodeObject
     void RemoveChild(T child);
     INodeObject<T>? GetParent();
     int GetChildIndex(T child);
+
+    /// <summary>
+    /// Get all children within the hierarchy, including children's children.
+    /// </summary>
+    IEnumerable<T> GetAllChildren();
 
     public bool IsParentOf(INodeObject<T> child)
     {
@@ -48,8 +54,6 @@ public class NodeObject<TNode> : NodeObject, INodeObject<TNode>, IPathedObject
     public event NodeObjectEventHandler? ChildRemoved;
 
     public Scene? Scene { get; protected set; }
-
-    public string Name { get; set; } = string.Empty;
 
     public bool IsInTree => Scene?.Find(Name) != null || Parent?.IsInTree == true;
 
