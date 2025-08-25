@@ -49,6 +49,44 @@ public class FolderNodeEditor : IObjectUIHandler
 {
     private static readonly Vector4 nodeColor = Colors.Folder;
 
+    protected void ShowPrefixes(UIContext context)
+    {
+        var folder = context.Get<Folder>();
+        if (folder.Scene?.RootScene.IsActive != true) return;
+        if (!string.IsNullOrEmpty(folder.ScenePath)) {
+            var subscene = folder.Scene?.GetChildScene(folder.ScenePath);
+            if (subscene != null) {
+                if (ImGui.Button((subscene.IsActive ? AppIcons.Eye : AppIcons.EyeBlocked) + "##" + context.label)) {
+                    subscene.SetActive(!subscene.IsActive);
+                }
+            } else {
+                ImGui.BeginDisabled();
+                ImGui.Button(AppIcons.EyeBlocked + "##" + context.label);
+                ImGui.EndDisabled();
+                if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
+                    ImGui.SetItemTooltip("Linked scene is not loaded yet, visibility settings unavailable");
+                }
+            }
+        } else {
+            var drawSelf = folder.ShouldDrawSelf;
+            var drawParentHierarchy = folder.Parent?.ShouldDraw != false;
+
+            if (!drawParentHierarchy) {
+                ImGui.BeginDisabled();
+                ImGui.Button((drawSelf ? AppIcons.Eye : AppIcons.EyeBlocked) + "##" + context.label);
+                ImGui.EndDisabled();
+                if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
+                    ImGui.SetItemTooltip("Object is hidden because a parent is already marked hidden");
+                }
+            } else {
+                if (ImGui.Button((drawSelf ? AppIcons.Eye : AppIcons.EyeBlocked) + "##" + context.label)) {
+                    folder.ShouldDrawSelf = !drawSelf;
+                }
+            }
+        }
+        ImGui.SameLine();
+    }
+
     public void OnIMGUI(UIContext context)
     {
         var folder = context.Get<Folder>();
@@ -123,6 +161,7 @@ public class FolderNodeEditor : IObjectUIHandler
         var showChildren = context.StateBool;
         ImGui.PushStyleColor(ImGuiCol.Text, nodeColor);
         if (folder.Parent != null) {
+            ShowPrefixes(context);
             if (context.children.Count == 0 && folder.Children.Count == 0) {
                 // ImGui.Button(context.label);
             } else if (!context.StateBool) {
@@ -160,6 +199,8 @@ public class FolderNodeEditor : IObjectUIHandler
         var showChildren = context.StateBool;
         ImGui.PushStyleColor(ImGuiCol.Text, nodeColor);
         ImguiHelpers.BeginRect();
+        ShowPrefixes(context);
+        ImGui.BeginGroup();
         if (!context.StateBool) {
             if (ImGui.ArrowButton($"arrow##{context.label}", ImGuiDir.Right)) {
                 showChildren = context.StateBool = true;
@@ -179,6 +220,7 @@ public class FolderNodeEditor : IObjectUIHandler
         }
         ImGui.SameLine();
         ImGui.TextColored(Colors.Faded, folder.ScenePath);
+        ImGui.EndGroup();
 
         if (ImGui.BeginPopupContextItem(context.label)) {
             HandleContextMenu(folder, context);
@@ -294,6 +336,7 @@ public class SubfolderNodeEditor : NodeTreeEditor<Folder, FolderNodeEditor>
     {
         nodeColor = Colors.Folder;
         EnableContextMenu = false;
+        UseContextLabel = true;
     }
 
     protected override void HandleSelect(UIContext context, Folder node)

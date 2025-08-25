@@ -16,6 +16,15 @@ public class NotifiableObject
     protected void NotifyPropertyChanged([CallerMemberName] string propertyName = "") => PropertyChanged?.Invoke(this, propertyName);
 }
 
+[Flags]
+public enum SceneFlags
+{
+    Draw = (1 << 0),
+    Selectable = (1 << 1),
+    Update = (1 << 2),
+    All = Draw|Selectable|Update,
+}
+
 public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObject, INodeObject<GameObject>
 {
     public string Tags = string.Empty;
@@ -33,6 +42,15 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
     public new IEnumerable<GameObject> Children => base.Children;
 
     public Matrix4X4<float> WorldTransform => Transform.WorldTransform;
+
+    public SceneFlags SceneFlags { get; set; } = SceneFlags.All;
+
+    public bool ShouldDraw => (SceneFlags & SceneFlags.Draw) != 0 && (Parent == null ? Folder?.ShouldDraw != false : Parent?.ShouldDraw != false);
+    public bool ShouldDrawSelf
+    {
+        get => (SceneFlags & SceneFlags.Draw) != 0;
+        set => SceneFlags = (value ? SceneFlags|SceneFlags.Draw : SceneFlags&~SceneFlags.Draw);
+    }
 
     protected override string GetPath()
     {

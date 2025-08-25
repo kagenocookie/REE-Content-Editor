@@ -55,6 +55,17 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
 
     public GameObject? Find(ReadOnlySpan<char> path) => RootFolder.Find(path);
 
+    public Scene? GetChildScene(string sceneName)
+    {
+        foreach (var child in ChildScenes) {
+            if (child.Name.Equals(sceneName, StringComparison.InvariantCultureIgnoreCase) || PathUtils.GetInternalFromNativePath(child.Name).Equals(sceneName, StringComparison.InvariantCultureIgnoreCase)) {
+                return child;
+            }
+        }
+
+        return null;
+    }
+
     public GameObject? Find(Guid guid)
     {
         foreach (var go in GetAllGameObjects()) {
@@ -161,6 +172,8 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
         }
         renderContext.BeforeRender();
         foreach (var render in renderComponents) {
+            if (!render.GameObject.ShouldDraw) continue;
+
             render.Render(renderContext);
         }
         renderContext.AfterRender();

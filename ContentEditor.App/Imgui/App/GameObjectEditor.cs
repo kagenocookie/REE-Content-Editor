@@ -71,6 +71,24 @@ public class GameObjectNodeEditor : NodeTreeEditor<GameObject, GameObjectNodeEdi
         nodeColor = Colors.GameObject;
     }
 
+    protected override void ShowPrefixes(UIContext context)
+    {
+        var go = context.Get<GameObject>();
+        if (go.Scene?.RootScene.IsActive != true) return;
+        var drawSelf = go.ShouldDrawSelf;
+        var drawParentHierarchy = (go.Parent?.ShouldDraw ?? go.Folder?.ShouldDraw) != false;
+        if (!drawParentHierarchy) {
+            ImGui.BeginDisabled();
+            ImGui.Button((drawSelf ? AppIcons.Eye : AppIcons.EyeBlocked) + "##" + context.label);
+            ImGui.EndDisabled();
+        } else {
+            if (ImGui.Button((drawSelf ? AppIcons.Eye : AppIcons.EyeBlocked) + "##" + context.label)) {
+                go.ShouldDrawSelf = !drawSelf;
+            }
+        }
+        ImGui.SameLine();
+    }
+
     protected override void HandleContextMenu(GameObject node, UIContext context)
     {
         if (node.Scene?.RootScene.IsActive == true) {

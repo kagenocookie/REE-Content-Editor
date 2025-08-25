@@ -29,6 +29,15 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
 
     private RszInstance instance;
 
+    public SceneFlags SceneFlags { get; set; } = SceneFlags.All;
+
+    public bool ShouldDraw => (SceneFlags & SceneFlags.Draw) != 0 && Parent?.ShouldDraw != false;
+    public bool ShouldDrawSelf
+    {
+        get => (SceneFlags & SceneFlags.Draw) != 0;
+        set => SceneFlags = (value ? SceneFlags|SceneFlags.Draw : SceneFlags&~SceneFlags.Draw);
+    }
+
     IEnumerable<GameObject> INodeObject<GameObject>.Children => GameObjects;
 
     private Folder(RszInstance instance)

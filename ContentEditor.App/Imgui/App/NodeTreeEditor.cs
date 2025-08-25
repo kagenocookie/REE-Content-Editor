@@ -104,12 +104,17 @@ public abstract class NodeTreeEditor<TNodeHolder, TSelf> : IObjectUIHandler
 {
     protected Vector4 nodeColor = Vector4.One;
     protected bool EnableContextMenu = true;
+    protected bool UseContextLabel;
 
     protected virtual void HandleContextMenu(TNodeHolder node, UIContext context) { }
 
     protected virtual void HandleSelect(UIContext context, TNodeHolder node)
     {
         context.FindHandlerInParents<IInspectorController>()?.SetPrimaryInspector(node);
+    }
+
+    protected virtual void ShowPrefixes(UIContext context)
+    {
     }
 
     public virtual void OnIMGUI(UIContext context)
@@ -138,6 +143,7 @@ public abstract class NodeTreeEditor<TNodeHolder, TSelf> : IObjectUIHandler
             }
         }
         var showChildren = context.StateBool;
+        ShowPrefixes(context);
         if (context.children.Count == 0 && node.Children.Count == 0) {
             // ImGui.Button(context.label);
         } else if (!context.StateBool) {
@@ -154,7 +160,7 @@ public abstract class NodeTreeEditor<TNodeHolder, TSelf> : IObjectUIHandler
         var inspector = context.FindHandlerInParents<IInspectorController>();
         ImGui.PushStyleColor(ImGuiCol.Text, nodeColor);
         AppImguiHelpers.PrependIcon(node);
-        if (ImGui.Selectable(node.Name, node == inspector?.PrimaryTarget)) {
+        if (ImGui.Selectable(UseContextLabel ? context.label : node.Name, node == inspector?.PrimaryTarget)) {
             HandleSelect(context, node);
         }
         ImGui.PopStyleColor();

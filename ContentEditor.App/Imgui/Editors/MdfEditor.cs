@@ -102,7 +102,7 @@ public class TexHeaderImguiHandler : IObjectUIHandler
     {
         if (context.children.Count == 0) {
             var tex = context.Get<TexHeader>();
-            context.AddChild<TexHeader, string>(tex.texType, tex, new StringFieldHandler(), (p) => p!.texPath, (p, v) => p.texPath = v);
+            context.AddChild<TexHeader, string>(tex.texType, tex, new ResourcePathPicker(), (p) => p!.texPath, (p, v) => p.texPath = v);
         }
         context.children[0].ShowUI();
     }

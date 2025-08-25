@@ -90,6 +90,31 @@ public static class AppIcons
     public static readonly char Mesh = '\ue909';
     public static readonly char Clip = '\ue90a';
     public static readonly char List = '\ue90b';
+    public static readonly char Pencil = '\ue906';
+    public static readonly char Image = '\ue90d';
+    public static readonly char Copy = '\ue92c';
+    public static readonly char Paste = '\ue92d';
+    public static readonly char Tag = '\ue935';
+    public static readonly char Tags = '\ue936';
+    public static readonly char Pin = '\ue946';
+    public static readonly char Download = '\ue960';
+    public static readonly char Upload = '\ue961';
+    public static readonly char Spinner = '\ue984';
+    public static readonly char Search = '\ue986';
+    public static readonly char ZoomIn = '\ue987';
+    public static readonly char ZoomOut = '\ue988';
+    public static readonly char Enlarge = '\ue989';
+    public static readonly char Shrink = '\ue98a';
+    public static readonly char Lock = '\ue98f';
+    public static readonly char Unlock = '\ue990';
+    public static readonly char Sliders = '\ue992';
+    public static readonly char Tree = '\ue9bc';
+    public static readonly char Eye = '\ue9ce';
+    public static readonly char EyeBlocked = '\ue9d1';
+    public static readonly char Bookmark = '\ue9d2';
+    public static readonly char Bookmarks = '\ue9d3';
+    public static readonly char StarEmpty = '\ue9d7';
+    public static readonly char Star = '\ue9d9';
 
     public static string PrependIcon(this string text, object target)
     {
@@ -123,5 +148,5 @@ public static class AppIcons
         _ => '\0',
     };
 
-    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)List, 0];
+    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)Star, 0];
 }
