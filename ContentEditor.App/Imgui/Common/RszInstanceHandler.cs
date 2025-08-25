@@ -10,6 +10,7 @@ using ImGuiNET;
 using ReeLib;
 using ReeLib.Il2cpp;
 using ReeLib.via;
+using Silk.NET.Maths;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -843,20 +844,22 @@ public class TransformComponentHandler : IObjectUIHandler
             var localscale = instance.LocalScale;
             var w = ImGui.CalcItemWidth();
             ImGui.SetNextItemWidth(w * 0.75f);
-            if (ImGui.DragFloat3("##Local Position", ref localpos)) {
+            if (ImGui.DragFloat3("##Local Position", ref localpos, 0.005f)) {
                 UndoRedo.RecordCallbackSetter(context, instance, instance.LocalPosition, localpos, (i, v) => i.LocalPosition = v, $"{instance.GetHashCode()} LocalPos");
             }
             ImGui.SameLine();
             ImGui.SetNextItemWidth(w * 0.25f - ImGui.GetStyle().FramePadding.X * 2);
             ImGui.LabelText("Local Position", "##labelP");
-            if (ImGui.DragFloat4("Local Rotation", ref localrot)) {
+            if (ImGui.DragFloat4("Local Rotation", ref localrot, 0.002f)) {
+                localrot = Quaternion.Normalize(localrot.ToQuaternion()).ToVector4();
                 UndoRedo.RecordCallbackSetter(context, instance, (Vector4)data.Values[1], localrot, static (inst, value) => {
                     inst.Data.Values[1] = value;
                     inst.InvalidateTransform();
                 }, $"{instance.GetHashCode()} LocalRot");
             }
+
             ImGui.SetNextItemWidth(w * 0.75f);
-            if (ImGui.DragFloat3("##Local Scale", ref localscale)) {
+            if (ImGui.DragFloat3("##Local Scale", ref localscale, 0.005f)) {
                 UndoRedo.RecordCallbackSetter(context, instance, instance.LocalScale, localscale, (i, v) => i.LocalScale = v, $"{instance.GetHashCode()} LocalScale");
             }
             ImGui.SameLine();
