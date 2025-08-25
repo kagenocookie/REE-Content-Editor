@@ -102,18 +102,6 @@ public sealed class ContentWorkspace : IDisposable
             // update the diffs for all open bundle resource files that are part of the bundle
             // we don't check for file.Modified because it can be marked as false but still be different from the current diff
             // e.g. if we manually replaced the file or undo'ed our changes
-            void TryExecuteDiff(FileHandle file)
-            {
-                if (file.NativePath != null && bundle.TryFindResourceByNativePath(file.NativePath, out var localPath) && file.DiffHandler != null) {
-                    var resourceListing = bundle.ResourceListing![localPath];
-                    var newdiff = file.DiffHandler.FindDiff(file);
-                    if (newdiff?.ToJsonString() != resourceListing.Diff?.ToJsonString()) {
-                        resourceListing.Diff = newdiff;
-                    }
-                    resourceListing.DiffTime = DateTime.UtcNow;
-                }
-            }
-
             if (forceDiffAllFiles) {
                 foreach (var (localPath, info) in bundle.ResourceListing) {
                     var file = ResourceManager.GetFileHandle(info.Target);
@@ -121,12 +109,12 @@ public sealed class ContentWorkspace : IDisposable
                         throw new Exception("Failed to open bundle file " + info.Target);
                     }
 
-                    TryExecuteDiff(file);
+                    TryExecuteDiff(bundle, file);
                     ResourceManager.CloseFile(file);
                 }
             } else {
                 foreach (var file in ResourceManager.GetOpenFiles()) {
-                    TryExecuteDiff(file);
+                    TryExecuteDiff(bundle, file);
                 }
             }
         }
@@ -163,6 +151,29 @@ public sealed class ContentWorkspace : IDisposable
         Env.AllowUseLooseFiles = didAllowLoose;
 
         (EditedBundleManager ?? BundleManager).SaveBundle(bundle);
+    }
+
+    public void SaveBundleFileDiff(FileHandle file)
+    {
+        if (CurrentBundle == null) {
+            Logger.Error("No active bundle");
+            return;
+        }
+
+        TryExecuteDiff(CurrentBundle, file);
+        (EditedBundleManager ?? BundleManager).SaveBundle(CurrentBundle);
+    }
+
+    private static void TryExecuteDiff(Bundle bundle, FileHandle file)
+    {
+        if (file.NativePath != null && bundle.TryFindResourceByNativePath(file.NativePath, out var localPath) && file.DiffHandler != null) {
+            var resourceListing = bundle.ResourceListing![localPath];
+            var newdiff = file.DiffHandler.FindDiff(file);
+            if (newdiff?.ToJsonString() != resourceListing.Diff?.ToJsonString()) {
+                resourceListing.Diff = newdiff;
+            }
+            resourceListing.DiffTime = DateTime.UtcNow;
+        }
     }
 
     public void InitializeUnlabelledBundle(string bundlePath)

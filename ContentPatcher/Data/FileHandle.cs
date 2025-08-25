@@ -90,6 +90,10 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
                     // a bundle file will always have the bundle name in the source
                     HandleType = FileSource != null && Path.IsPathFullyQualified(FileSource) ? FileHandleType.Disk : FileHandleType.Bundle;
                 }
+                if (HandleType == FileHandleType.Bundle) {
+                    // ensure we also update the bundle diff
+                    workspace.SaveBundleFileDiff(this);
+                }
                 Modified = false;
                 Saved?.Invoke();
             }
