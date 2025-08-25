@@ -298,6 +298,10 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
         group = new MaterialGroup();
         foreach (var mat in scene.Materials) {
+            if (!mat.HasName) {
+                Logger.Debug("Material " + scene.Materials.IndexOf(mat) + " has no name");
+                continue;
+            }
             Material material;
             if (mat.HasTextureDiffuse) {
                 var tex = LoadTexture(scene, mat.TextureDiffuse);
@@ -482,6 +486,9 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         _defaultTexture?.Dispose();
         _missingTexture?.Dispose();
         Textures.Dispose();
+        foreach (var obj in Objects.Instances) {
+            obj.Dispose();
+        }
         shaders.Clear();
     }
 }

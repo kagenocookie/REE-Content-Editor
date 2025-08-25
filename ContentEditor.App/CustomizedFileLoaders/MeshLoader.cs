@@ -45,6 +45,7 @@ public class MeshLoader : IFileLoader
                 foreach (var mesh in meshData.LODs[0].MeshGroups) {
                     foreach (var sub in mesh.Submeshes) {
                         var aiMesh = new Mesh(PrimitiveType.Triangle);
+                        aiMesh.MaterialIndex = sub.materialIndex;
 
                         aiMesh.Vertices.AddRange(sub.Positions);
                         aiMesh.BoundingBox = new BoundingBox(meshData.boundingBox.minpos, meshData.boundingBox.maxpos);

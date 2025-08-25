@@ -57,7 +57,7 @@ public class Material
         }
     }
 
-    public override string ToString() => $"{shader} [tex count: {textures.Count}]";
+    public override string ToString() => $"{shader} [tex count: {textures.Count}; first: {textures.FirstOrDefault().tex}]";
 }
 
 public sealed class MaterialParameter<TValue>(TValue value, int location) where TValue : unmanaged, IEquatable<TValue>

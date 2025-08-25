@@ -213,6 +213,8 @@ public class Texture : IDisposable
         _gl.DeleteTexture(_handle);
     }
 
+    public override string ToString() => Path ?? _handle.ToString();
+
     public static implicit operator nint(Texture tex) => (nint)tex.Handle;
 
 #region ENUMS
