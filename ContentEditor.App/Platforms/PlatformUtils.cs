@@ -51,4 +51,13 @@ public static class PlatformUtils
         };
 #endif
     }
+
+    public static bool IsAppInForeground()
+    {
+#if WINDOWS
+        return ContentEditor.App.Windows.PlatformUtils.IsAppInForeground();
+#else
+        return true;
+#endif
+    }
 }

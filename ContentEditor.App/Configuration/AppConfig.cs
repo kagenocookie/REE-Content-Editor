@@ -13,6 +13,7 @@ public class AppConfig : Singleton<AppConfig>
     public static class Keys
     {
         public const string MaxFps = "max_fps";
+        public const string BackgroundMaxFps = "max_fps_background";
         public const string MainWindowGame = "main_selected_game";
         public const string MainActiveBundle = "main_active_bundle";
         public const string BlenderPath = "blender_path";
@@ -101,11 +102,10 @@ public class AppConfig : Singleton<AppConfig>
         public static implicit operator T?(ClassSettingWrapper<T> vv) => vv.Get();
     }
 
-    public static readonly float EventLoopMaxFrameTime = 1 / 60f;
     private Dictionary<string, AppGameConfig> gameConfigs = new();
 
-    public readonly SettingWrapper<float> MaxFps = new SettingWrapper<float>(Keys.UnpackMaxThreads, _lock, 60);
-    public float MaxFrameTime { get => MaxFps > 0 ? 1f / MaxFps : 0; set => MaxFps.Set(1 / value); }
+    public readonly SettingWrapper<int> MaxFps = new SettingWrapper<int>(Keys.MaxFps, _lock, 60);
+    public readonly SettingWrapper<int> BackgroundMaxFps = new SettingWrapper<int>(Keys.BackgroundMaxFps, _lock, 30);
     public readonly ClassSettingWrapper<string> MainSelectedGame = new ClassSettingWrapper<string>(Keys.MainWindowGame, _lock);
     public readonly ClassSettingWrapper<string> MainActiveBundle = new ClassSettingWrapper<string>(Keys.MainActiveBundle, _lock);
     public readonly ClassSettingWrapper<string> BlenderPath = new ClassSettingWrapper<string>(Keys.BlenderPath, _lock);
@@ -210,6 +210,7 @@ public class AppConfig : Singleton<AppConfig>
         var instance = Instance;
         var items = new List<(string, string, string?)>() {
             (Keys.MaxFps, instance.MaxFps.value.ToString(CultureInfo.InvariantCulture), null),
+            (Keys.BackgroundMaxFps, instance.BackgroundMaxFps.value.ToString(CultureInfo.InvariantCulture), null),
             (Keys.ShowFps, instance.ShowFps.value.ToString(), null),
             (Keys.MainWindowGame, instance.MainSelectedGame.value?.ToString() ?? "", null),
             (Keys.MainActiveBundle, instance.MainActiveBundle.value?.ToString() ?? "", null),
@@ -259,7 +260,10 @@ public class AppConfig : Singleton<AppConfig>
                 if (group == null) {
                     switch (key) {
                         case Keys.MaxFps:
-                            instance.MaxFps.value = float.Parse(value);
+                            instance.MaxFps.value = Math.Max(int.Parse(value), 10);
+                            break;
+                        case Keys.BackgroundMaxFps:
+                            instance.BackgroundMaxFps.value = Math.Clamp(int.Parse(value), 5, instance.MaxFps.value);
                             break;
                         case Keys.ShowFps:
                             instance.ShowFps.value = value.Equals("true", StringComparison.OrdinalIgnoreCase) || value.Equals("yes", StringComparison.OrdinalIgnoreCase) || value == "1";

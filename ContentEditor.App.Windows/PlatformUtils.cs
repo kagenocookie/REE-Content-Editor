@@ -59,6 +59,26 @@ public class PlatformUtils
         thread.Start();
     }
 
+    [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    private static extern int GetWindowThreadProcessId(IntPtr handle, out int processId);
+
+    public static bool IsAppInForeground()
+    {
+        var activatedHandle = GetForegroundWindow();
+        if (activatedHandle == IntPtr.Zero) {
+            return false;       // No window is currently activated
+        }
+
+        var procId = Environment.ProcessId;
+        int activeProcId;
+        var threadId = GetWindowThreadProcessId(activatedHandle, out activeProcId);
+
+        return activeProcId == procId;
+    }
+
     [DllImport("OLE32.DLL", ExactSpelling = true, PreserveSig = false)]
     private static extern void RegisterDragDrop(IntPtr hwnd, IDropTarget target);
 

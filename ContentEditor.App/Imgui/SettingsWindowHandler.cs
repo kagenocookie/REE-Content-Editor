@@ -130,6 +130,18 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                 config.LogLevel.Set(logLevel);
             }
 
+            var maxFps = config.MaxFps.Get();
+            if (ImGui.SliderInt("Max FPS", ref maxFps, 10, 240)) {
+                config.MaxFps.Set(maxFps);
+            }
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip("The maximum FPS for rendering.");
+
+            var inactiveMaxFps = config.BackgroundMaxFps.Get();
+            if (ImGui.SliderInt("Max FPS in background", ref inactiveMaxFps, 5, maxFps)) {
+                config.BackgroundMaxFps.Set(inactiveMaxFps);
+            }
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip("The maximum FPS when the editor window is not focused.");
+
             var showFps = config.ShowFps.Get();
             if (ImGui.Checkbox("Show FPS", ref showFps)) {
                 config.ShowFps.Set(showFps);

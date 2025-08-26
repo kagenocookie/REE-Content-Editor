@@ -43,7 +43,9 @@ internal sealed class MainLoop : IDisposable
         var stopwatch = Stopwatch.StartNew();
         float timer = 0;
         windows.First().InitGraphics();
+        var fpsLimit = new FpsLimiter();
         while (windows.FirstOrDefault()?.IsClosing == false) {
+            var deltaTime = fpsLimit.StartFrame();
             while (mainThreadActions.TryDequeue(out var act)) {
                 try {
                     act.Invoke();
@@ -56,8 +58,6 @@ internal sealed class MainLoop : IDisposable
                 wnd.InitGraphics();
                 windows.Add(wnd);
             }
-            var deltaTime = stopwatch.ElapsedTicks / (float)Stopwatch.Frequency;
-            stopwatch.Restart();
             time.Update(deltaTime, true);
             // Console.WriteLine($"Event delta: {deltaTime}");
             timer += deltaTime;
@@ -72,12 +72,8 @@ internal sealed class MainLoop : IDisposable
             }
             foreach (var s in windows) s.TriggerUpdate();
 
-            deltaTime = stopwatch.ElapsedTicks / (float)Stopwatch.Frequency;
-            var nextFrameDelay = WaitFpsLimit(deltaTime, AppConfig.EventLoopMaxFrameTime);
-            if (nextFrameDelay > 0) {
-                Thread.Sleep(TimeSpan.FromSeconds(nextFrameDelay));
-                deltaTime += nextFrameDelay;
-            }
+            fpsLimit.SetLimit(PlatformUtils.IsAppInForeground() ? AppConfig.Instance.MaxFps.Get() : AppConfig.Instance.BackgroundMaxFps.Get());
+            fpsLimit.TryLimit();
         }
     }
 
@@ -87,12 +83,53 @@ internal sealed class MainLoop : IDisposable
         return 0;
     }
 
+    private sealed class FpsLimiter
+    {
+        private Stopwatch stopwatch = new();
+        private int fpsLimit;
+        private double maxFrameTime;
+        private static readonly double ticksPerSecond = 1 / (double)Stopwatch.Frequency;
+
+        private const double sleepPrecisionLeeway = 0.001;
+
+        public float StartFrame()
+        {
+            var deltaTime = stopwatch.ElapsedTicks * ticksPerSecond;
+            stopwatch.Restart();
+            return (float)deltaTime;
+        }
+
+        public void SetLimit(int fps)
+        {
+            fpsLimit = fps;
+            maxFrameTime = 1.0 / fps;
+        }
+
+        public void TryLimit()
+        {
+            if (maxFrameTime > 0) {
+                var deltaTime = stopwatch.ElapsedTicks * ticksPerSecond;
+                var delay = maxFrameTime - deltaTime;
+                if (delay <= 0) return;
+
+                var sleepMs = (int)((delay - sleepPrecisionLeeway) * 1000);
+                if (sleepMs > 0) {
+                    var sleepStart = stopwatch.Elapsed;
+                    Thread.Sleep(sleepMs);
+                    delay -= (stopwatch.Elapsed - sleepStart).TotalSeconds;
+                }
+
+                while (stopwatch.ElapsedTicks * ticksPerSecond < maxFrameTime) { }
+            }
+        }
+    }
+
     private static float WaitFpsLimit(float deltaTime, float maxFrameTime)
     {
         if (maxFrameTime > 0) {
             var delay = maxFrameTime - deltaTime;
             if (delay > 0) {
-                // Logger.Log($"FPs delay time: {deltaTime} => {delay}");
+                // Logger.Debug($"FPS delay time: {deltaTime} => {delay}");
                 return delay;
             }
         }
