@@ -18,6 +18,14 @@ public sealed class ResourceRefCounter<TResource> : IDisposable where TResource 
 
     public RefCountedResource<TResource> AddUnnamed(TResource resource)
     {
+        // add a separate hashset for these instead?
+        foreach (var (pp, res) in resources) {
+            if (ReferenceEquals(res.Resource, resource)) {
+                res.References++;
+                return res;
+            }
+        }
+
         var path = RandomString(20);
         return resources[path] = new RefCountedResource<TResource>(path, resource, 1);
     }

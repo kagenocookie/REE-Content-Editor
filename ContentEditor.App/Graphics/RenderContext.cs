@@ -21,8 +21,7 @@ public abstract class RenderContext : IDisposable
     protected Material? defaultMaterial;
 
     protected ResourceManager _resourceManager = null!;
-    internal ResourceManager ResourceManager
-    {
+    internal ResourceManager ResourceManager {
         get => _resourceManager;
         set => UpdateResourceManager(value);
     }
@@ -144,6 +143,37 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
     private Shader StandardShader => GetShader("Shaders/GLSL/standard3D.glsl");
     private Shader ViewShadedShader => GetShader("Shaders/GLSL/viewShaded.glsl");
+    private Shader WireShader => GetShader("Shaders/GLSL/wireframe.glsl");
+
+    private Material? _standardMaterial;
+    private Material CreateStandardMaterial()
+    {
+        if (_standardMaterial != null) return _standardMaterial.Clone();
+        _standardMaterial = new(GL, StandardShader);
+        _standardMaterial.AddTextureParameter("_MainTexture", TextureUnit.Texture0);
+        return _standardMaterial.Clone();
+    }
+
+    private Material? _viewShadedMaterial;
+    private Material CreateViewShadedMaterial()
+    {
+        if (_viewShadedMaterial != null) return _viewShadedMaterial.Clone();
+        _viewShadedMaterial = new(GL, ViewShadedShader);
+        _viewShadedMaterial.AddTextureParameter("_MainTexture", TextureUnit.Texture0);
+        return _viewShadedMaterial.Clone();
+    }
+
+    private Material? _wireMaterial;
+    private Material CreateWireMaterial()
+    {
+        if (_wireMaterial != null) return _wireMaterial.Clone();
+        _wireMaterial = new(GL, WireShader);
+        _wireMaterial.BlendMode = new MaterialBlendMode(true, BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+        _wireMaterial.DisableDepth = true;
+        _wireMaterial.SetParameter("_MainColor", new Color(0, 0, 0, 5));
+        _wireMaterial.SetParameter("_WireColor", new Color(0, 255, 0, 200));
+        return _wireMaterial.Clone();
+    }
 
     private uint _globalUniformBuffer;
 
@@ -215,27 +245,26 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         var texDicts = new Dictionary<string, Texture>();
         var embeddedTex = meshScene.Textures;
         foreach (var srcMat in meshScene.Materials) {
-            var textures = new List<(string name, TextureUnit slot, Texture tex)>();
-            Shader shader;
             if (srcMat.HasName && true == inputMaterials?.Materials.TryGetValue(srcMat.Name, out var importMat)) {
-                shader = ViewShadedShader;
-                // textures.Add(("_MainTexture", TextureUnit.Texture0, importMat.textures));
-                textures.AddRange(importMat.textures);
-            } else if (srcMat.HasTextureDiffuse) {
+                var clone = importMat.Clone();
+                mats.Add(clone);
+                AddMaterialTextureReferences(clone);
+                continue;
+            }
+
+            var newMat = CreateViewShadedMaterial();
+            if (srcMat.HasTextureDiffuse) {
                 var srcTex = srcMat.TextureDiffuse;
                 var texUnit = TextureUnit.Texture0;
                 if (!texDicts.TryGetValue(srcTex.FilePath, out var tex)) {
                     texDicts[srcTex.FilePath] = tex = LoadTexture(meshScene, srcMat.TextureDiffuse);
                 }
-                textures.Add(("_MainTexture", texUnit, tex));
-                shader = ViewShadedShader;
+                newMat.SetParameter(texUnit, tex);
             } else {
                 var texUnit = TextureUnit.Texture0;
                 var tex = CreateDefaultTexture();
-                textures.Add(("_MainTexture", texUnit, tex));
-                shader = ViewShadedShader;
+                newMat.SetParameter(texUnit, tex);
             }
-            var newMat = new Material(GL, shader, textures);
             mats.Add(newMat);
         }
 
@@ -248,6 +277,18 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         var id = Objects.Add(group);
         // Logger.Debug("Created object handle " + id);
         return id;
+    }
+
+    private void AddMaterialTextureReferences(Material mat)
+    {
+        foreach (var tex in mat.Textures) {
+            if (tex == null) continue;
+            if (string.IsNullOrEmpty(tex.Path)) {
+                Textures.AddUnnamed(tex);
+            } else {
+                Textures.Add(tex.Path, tex);
+            }
+        }
     }
 
     public override void DestroyObject(int objectIndex)
@@ -302,12 +343,15 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
                 Logger.Debug("Material " + scene.Materials.IndexOf(mat) + " has no name");
                 continue;
             }
-            Material material;
-            if (mat.HasTextureDiffuse) {
-                var tex = LoadTexture(scene, mat.TextureDiffuse);
-                material = new Material(GL, StandardShader, [("_MainTexture", TextureUnit.Texture0, tex)]);
-            } else {
-                material = new Material(GL, ViewShadedShader, [("_MainTexture", TextureUnit.Texture0, CreateDefaultTexture())]);
+            var material = CreateViewShadedMaterial();
+            // var material = CreateWireMaterial();
+            if (material.HasTextureParameter(TextureUnit.Texture0)) {
+                if (mat.HasTextureDiffuse) {
+                    var tex = LoadTexture(scene, mat.TextureDiffuse);
+                    material.SetParameter(TextureUnit.Texture0, tex);
+                } else {
+                    material.SetParameter(TextureUnit.Texture0, CreateDefaultTexture());
+                }
             }
             group.Add(mat.Name, material);
         }
@@ -320,8 +364,8 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         var mats = Materials.Remove(objectIndex);
         if (mats != null) {
             foreach (var m in mats.Materials) {
-                foreach (var tex in m.Value.textures) {
-                    this.Textures.Dereference(tex.tex);
+                foreach (var tex in m.Value.Textures) {
+                    Textures.Dereference(tex);
                 }
             }
         }
@@ -346,12 +390,22 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         var obj = Objects[objectHandle];
         foreach (var sub in obj.Objects) {
             sub.Mesh.Bind();
-            sub.Material.Bind();
-            sub.Material.Shader.SetUniform("uModel", transform);
-            // var idx = GL.GetUniformBlockIndex(sub.Material.Shader.Handle, "GlobalData");
-            // GL.UniformBlockBinding(sub.Material.Shader.Handle, idx, 0);
+            var material = sub.Material;
+            material.Bind();
+            material.Shader.SetUniform("uModel", transform);
 
-            GL.DrawElements(PrimitiveType.Triangles, (uint)sub.Mesh.Indices.Length, DrawElementsType.UnsignedInt, null);
+            var blend = material.BlendMode;
+            if (blend.Blend) {
+                GL.Enable(EnableCap.Blend);
+                GL.BlendFunc(blend.BlendModeSrc, blend.BlendModeDest);
+            }
+            if (material.DisableDepth) {
+                GL.Disable(EnableCap.DepthTest);
+            }
+
+            GL.DrawArrays(PrimitiveType.Triangles, 0, (uint)sub.Mesh.Indices.Length);
+            GL.Enable(EnableCap.DepthTest);
+            GL.Disable(EnableCap.Blend);
         }
     }
 

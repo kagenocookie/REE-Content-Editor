@@ -8,7 +8,7 @@ namespace ContentEditor.App.Graphics;
 
 public class Mesh : IDisposable
 {
-    public Mesh(GL gl, float[] vertexData, uint[] indices, List<Texture> textures)
+    public Mesh(GL gl, float[] vertexData, int[] indices, List<Texture> textures)
     {
         GL = gl;
         VertexData = vertexData;
@@ -27,56 +27,62 @@ public class Mesh : IDisposable
         var uv0 = sourceMesh.TextureCoordinateChannels[0];
         var hasTangents = sourceMesh.Tangents.Count > 0;
         if (hasTangents) {
-            attrTotal = 11;
+            attrTotal = 12;
             attributes = [
-                new VertAttribute(3, 0),
-                new VertAttribute(2, 3),
-                new VertAttribute(3, 5),
-                new VertAttribute(3, 8),
+                new VertAttribute(3, 0), // position
+                new VertAttribute(2, 3), // uv
+                new VertAttribute(3, 5), // normal
+                new VertAttribute(1, 8), // index
+                new VertAttribute(3, 9), // tangent
             ];
         } else {
-            attrTotal = 8;
+            attrTotal = 9;
             attributes = [
-                new VertAttribute(3, 0),
-                new VertAttribute(2, 3),
-                new VertAttribute(3, 5),
+                new VertAttribute(3, 0), // position
+                new VertAttribute(2, 3), // uv
+                new VertAttribute(3, 5), // normal
+                new VertAttribute(1, 8), // index
             ];
         }
-        VertexData = new float[sourceMesh.VertexCount * attrTotal];
-        for (int i = 0; i < sourceMesh.Vertices.Count; ++i) {
-            VertexData[i * attrTotal + 0] = sourceMesh.Vertices[i].X;
-            VertexData[i * attrTotal + 1] = sourceMesh.Vertices[i].Y;
-            VertexData[i * attrTotal + 2] = sourceMesh.Vertices[i].Z;
-            VertexData[i * attrTotal + 3] = uv0[i].X;
-            VertexData[i * attrTotal + 4] = uv0[i].Y;
-            VertexData[i * attrTotal + 5] = sourceMesh.Normals[i].X;
-            VertexData[i * attrTotal + 6] = sourceMesh.Normals[i].Y;
-            VertexData[i * attrTotal + 7] = sourceMesh.Normals[i].Z;
+
+        Indices = sourceMesh.GetIndices().ToArray();
+
+        VertexData = new float[Indices.Length * attrTotal];
+        for (int index = 0; index < Indices.Length; ++index) {
+            var vert = (int)Indices[index];
+            VertexData[index * attrTotal + 0] = sourceMesh.Vertices[vert].X;
+            VertexData[index * attrTotal + 1] = sourceMesh.Vertices[vert].Y;
+            VertexData[index * attrTotal + 2] = sourceMesh.Vertices[vert].Z;
+            VertexData[index * attrTotal + 3] = uv0[vert].X;
+            VertexData[index * attrTotal + 4] = uv0[vert].Y;
+            VertexData[index * attrTotal + 5] = sourceMesh.Normals[vert].X;
+            VertexData[index * attrTotal + 6] = sourceMesh.Normals[vert].Y;
+            VertexData[index * attrTotal + 7] = sourceMesh.Normals[vert].Z;
+            VertexData[index * attrTotal + 8] = (float)index;
             if (hasTangents) {
-                VertexData[i * attrTotal + 8] = sourceMesh.Tangents[i].X;
-                VertexData[i * attrTotal + 9] = sourceMesh.Tangents[i].Y;
-                VertexData[i * attrTotal + 10] = sourceMesh.Tangents[i].Z;
+                VertexData[index * attrTotal + 9] = sourceMesh.Tangents[vert].X;
+                VertexData[index * attrTotal + 10] = sourceMesh.Tangents[vert].Y;
+                VertexData[index * attrTotal + 11] = sourceMesh.Tangents[vert].Z;
             }
         }
 
-        Indices = sourceMesh.GetUnsignedIndices().ToArray();
         BoundingBox = new AABB(sourceMesh.BoundingBox.Min, sourceMesh.BoundingBox.Max);
         SetupMesh();
     }
 
     public float[] VertexData { get; private set; }
-    public uint[] Indices { get; private set; }
-    public VertexArrayObject<float, uint> VAO { get; set; }
+    public int[] Indices { get; private set; }
+    public VertexArrayObject<float, int> VAO { get; set; }
     public BufferObject<float> VBO { get; set; }
-    public BufferObject<uint> EBO { get; set; }
+    public BufferObject<int> EBO { get; set; }
     public AABB BoundingBox { get; set; }
     public GL GL { get; }
 
     public unsafe void SetupMesh()
     {
         VBO = new BufferObject<float>(GL, VertexData, BufferTargetARB.ArrayBuffer);
-        EBO = new BufferObject<uint>(GL, Indices, BufferTargetARB.ElementArrayBuffer);
-        VAO = new VertexArrayObject<float, uint>(GL, VBO, EBO);
+        EBO = new BufferObject<int>(GL, Indices, BufferTargetARB.ElementArrayBuffer);
+        VAO = new VertexArrayObject<float, int>(GL, VBO, EBO);
         ApplyVertexAttributes();
     }
 

@@ -109,5 +109,8 @@ A bundle can contain any number of data modifications, effectively describes a s
 
 One bundle modifying the same file as a direct file and through entities at the same time is "undefined" and may or may not work as expected. During the patching process, direct file modifications are processed before entities within the individual bundle.
 
+## Contributing
+Pull requests are welcome. There are several open issues for bigger features for anyone interested in helping, but if you feel like anything else could be improved upon, feel free to make a feature request or contribute yourself. I'm willing to assist with pointers regarding implementation details.
+
 ## Disclaimer
 This project is in no way affiliated with, endorsed by, or connected to RE ENGINE, Capcom, or any of their affiliates. All trademarks are the property of their respective owners.
