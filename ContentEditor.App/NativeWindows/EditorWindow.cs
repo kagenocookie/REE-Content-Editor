@@ -603,12 +603,14 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
     protected override void OnIMGUI()
     {
         ShowMainMenuBar();
+        if (isDragging) ImGui.BeginDisabled();
         BeginDockableBackground(new Vector2(0, ImGui.CalcTextSize("a").Y + ImGui.GetStyle().FramePadding.Y * 2));
         if (Overlays != null) {
             Overlays.ShowHelp = !_disableIntroGuide && !subwindows.Any(s => !IsDefaultWindow(s)) && !SceneManager.HasActiveMasterScene;
         }
         DrawImguiWindows();
         EndDockableBackground();
+        if (isDragging) ImGui.EndDisabled();
     }
 
     protected void ApplyContentPatches(string? outputPath)
