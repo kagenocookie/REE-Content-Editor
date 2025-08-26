@@ -27,16 +27,19 @@ public sealed class Shader : IDisposable
 
     public bool LoadFromCombinedShaderFile(string shaderPath, string[]? defines = null, int version = 330)
     {
-        var (vertex, fragment) = LoadCombinedShader(shaderPath, defines, version);
-        CreateProgram(vertex, fragment);
+        var (vertex, fragment, geometry) = LoadCombinedShader(shaderPath, defines, version);
+        CreateProgram(vertex, fragment, geometry);
         return true;
     }
 
-    private void CreateProgram(uint vertex, uint fragment)
+    private void CreateProgram(uint vertex, uint fragment, uint geometry)
     {
         _handle = _gl.CreateProgram();
         _gl.AttachShader(_handle, vertex);
         _gl.AttachShader(_handle, fragment);
+        if (geometry != 0) {
+            _gl.AttachShader(_handle, geometry);
+        }
         _gl.LinkProgram(_handle);
         _gl.GetProgram(_handle, GLEnum.LinkStatus, out var status);
         if (status == 0) {
@@ -46,6 +49,10 @@ public sealed class Shader : IDisposable
         _gl.DetachShader(_handle, fragment);
         _gl.DeleteShader(vertex);
         _gl.DeleteShader(fragment);
+        if (geometry != 0) {
+            _gl.DetachShader(_handle, geometry);
+            _gl.DeleteShader(geometry);
+        }
     }
 
     public void Use()
@@ -105,16 +112,18 @@ public sealed class Shader : IDisposable
         }
     }
 
-    private (uint vertex, uint fragment) LoadCombinedShader(string shaderFilepath, string[]? defines, int version)
+    private (uint vertex, uint fragment, uint geometry) LoadCombinedShader(string shaderFilepath, string[]? defines, int version)
     {
         var ctx = new ShaderContext(Path.GetDirectoryName(shaderFilepath)!);
         defines ??= [];
         var vertexText = ctx.ParseShader(ShaderType.VertexShader, shaderFilepath, Path.GetFileName(shaderFilepath), version, defines, true);
         var fragmentText = ctx.ParseShader(ShaderType.FragmentShader, shaderFilepath, Path.GetFileName(shaderFilepath), version, defines, true);
+        var geometryText = ctx.ParseShader(ShaderType.GeometryShader, shaderFilepath, Path.GetFileName(shaderFilepath), version, defines, true);
 
         var vertex = LoadShader(ShaderType.VertexShader, vertexText);
         var frag = LoadShader(ShaderType.FragmentShader, fragmentText);
-        return (vertex, frag);
+        var geometry = string.IsNullOrEmpty(geometryText)? 0 : LoadShader(ShaderType.GeometryShader, geometryText);
+        return (vertex, frag, geometry);
     }
 
     private uint LoadShader(ShaderType type, string src)
@@ -135,18 +144,36 @@ public sealed class Shader : IDisposable
     {
         public Dictionary<string, string> VertShaders = new();
         public Dictionary<string, string> FragShaders = new();
+        public Dictionary<string, string> GeoShaders = new();
 
         public string ParseShader(ShaderType type, string shaderFilepath, string name, int version, string[] defines, bool isMain)
         {
-            var dict = type == ShaderType.VertexShader ? VertShaders : FragShaders;
+            var dict = type switch {
+                ShaderType.VertexShader => VertShaders,
+                ShaderType.FragmentShader => FragShaders,
+                ShaderType.GeometryShader => GeoShaders,
+                _ => null,
+            };
+            if (dict == null) return string.Empty;
             if (dict.TryGetValue(name, out var text)) return text;
 
             var shaderLines = File.ReadAllLines(shaderFilepath).ToList();
             if (isMain) {
+                var typeDefine = type switch {
+                    ShaderType.FragmentShader => "FRAGMENT_PROGRAM",
+                    ShaderType.VertexShader => "VERTEX_PROGRAM",
+                    ShaderType.GeometryShader => "GEOMETRY_PROGRAM",
+                    _ => null,
+                };
+                if (typeDefine == null) return "";
+                if (!shaderLines.Contains("#ifdef " + typeDefine)) {
+                    return string.Empty;
+                }
+
                 if (!shaderLines[0].StartsWith("#version")) {
                     shaderLines.Insert(0, $"#version {version} core");
                 }
-                var typeDefine = type == ShaderType.FragmentShader ? "FRAGMENT_PROGRAM" : "VERTEX_PROGRAM";
+
                 if (!shaderLines[1].StartsWith("#define " + typeDefine)) {
                     shaderLines.Insert(1, "#define " + typeDefine);
                 }
