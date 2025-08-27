@@ -516,7 +516,6 @@ public static partial class WindowHandlerFactory
             RszFieldType.Int4 => Int4FieldHandler.Instance,
 
             RszFieldType.Guid => GuidFieldHandler.Instance,
-            RszFieldType.Uri => GuidFieldHandler.Instance,
 
             // RszFieldType.OBB => variant.As<OrientedBoundingBox>().ToRsz(),
             // RszFieldType.AABB => (ReeLib.via.AABB)variant.AsAabb().ToRsz(),
