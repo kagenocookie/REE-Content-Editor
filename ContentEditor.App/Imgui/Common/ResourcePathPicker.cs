@@ -25,8 +25,9 @@ public class ResourcePathPicker : IObjectUIHandler
 
     public ResourcePathPicker(ContentWorkspace? ws, params KnownFileFormats[] allowedFormats)
     {
-        FileFormats = allowedFormats;
-        if (ws != null) {
+        var isKnownFormats = (allowedFormats.Length > 1 || allowedFormats.Length == 1 && allowedFormats[0] != KnownFileFormats.Unknown);
+        FileFormats = isKnownFormats ? allowedFormats : [];
+        if (ws != null && isKnownFormats) {
             FileExtensionFilter = string.Join(
                 ",",
                 allowedFormats.SelectMany(format => ws.Env
