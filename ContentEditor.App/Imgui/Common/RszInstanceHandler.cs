@@ -832,14 +832,11 @@ public class GameObjectRefHandler : Singleton<GameObjectRefHandler>, IObjectUIHa
                 ctx.parent!.ClearChildren();
             });
         }
-        // ImGui.Text(context.label);
-        // if (gref.target != null) {
-        //     ImGui.SameLine();
-        //     ImGui.TextColored(Colors.Faded, "Target: " + gref.target.ToString());
-        // }
+        ImGui.PushID(context.label);
         ImGui.PushItemWidth(ImGui.CalcItemWidth() / 2 - ImGui.GetStyle().FramePadding.X);
         context.ShowChildrenUI();
         ImGui.PopItemWidth();
+        ImGui.PopID();
     }
 }
 
