@@ -11,7 +11,7 @@ namespace ContentEditor.App;
 
 public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWindowHandler
 {
-    public string HandlerName => "PAK file browser";
+    public string HandlerName => " PAK File Browser ";
 
     public Workspace Workspace { get; } = workspace;
     public string? PakFilePath { get; } = pakFilePath;
@@ -94,25 +94,34 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             // TODO handle unknowns properly
         }
 
-        ImGui.Text("Total file count: " + reader.MatchedEntryCount);
+        ImGui.Text("Total File Count: " + reader.MatchedEntryCount);
         ImGui.SameLine();
-        if (ImGui.Button("Extract to...")) {
-            PlatformUtils.ShowFolderDialog(ExtractCurrentList, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
-        }
-        ImGui.SameLine();
+
         if (PakFilePath == null) {
-            if (ImGui.TreeNode("PAK count: " + reader.PakFilePriority.Count)) {
+            if (ImGui.TreeNode("PAK Count: " + reader.PakFilePriority.Count)) {
+                ImGui.Separator();
                 foreach (var pak in reader.PakFilePriority) {
                     ImGui.Text(pak);
                 }
+                ImGui.Separator();
                 ImGui.TreePop();
             }
         } else {
             ImGui.Text("PAK file: " + PakFilePath);
         }
 
-        if (ImGui.Button("Up")) {
+        if (ImGui.ArrowButton("##left", ImGuiDir.Left)) {
             CurrentDir = Path.GetDirectoryName(CurrentDir)?.Replace('\\', '/') ?? string.Empty;
+        }
+        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Back");
+        ImGui.SameLine();
+
+        // SILVER: Only show the 'Return to Top' button when we are at least 3 layers deep
+        if (CurrentDir.Count(c => c == '/') >= 3) {
+            if (ImGui.ArrowButton("##up", ImGuiDir.Up)) {
+                CurrentDir = Workspace.BasePath[0..^1];
+            }
+            if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Return to Top");
         }
         ImGui.SameLine();
 
@@ -125,7 +134,11 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             _editedDir = null;
         }
         if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("You can use regex to match file patterns (e.g. natives/stm/character/**.mdf2.*)");
+        ImGui.SameLine();
 
+        if (ImGui.Button("Extract to...")) {
+            PlatformUtils.ShowFolderDialog(ExtractCurrentList, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
+        }
         DrawContents(matchedList!);
     }
 
@@ -140,9 +153,9 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         int p = 0, i = 0;
         var isCtrl = ImGui.IsKeyDown(ImGuiKey.ModCtrl);
         var isShift = ImGui.IsKeyDown(ImGuiKey.ModShift);
-        if (ImGui.BeginTable("List", 2, ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingStretchProp)) {
-            ImGui.TableSetupColumn("Path", ImGuiTableColumnFlags.WidthStretch, 0.9f);
-            ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize, 100);
+        if (ImGui.BeginTable("List", 2, ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingStretchProp | ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersOuterV)) {
+            ImGui.TableSetupColumn(" Path ", ImGuiTableColumnFlags.WidthStretch, 0.9f);
+            ImGui.TableSetupColumn(" Actions ", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize, 100);
             ImGui.TableSetupScrollFreeze(0, 1);
             ImGui.TableHeadersRow();
             ImGui.TableNextColumn();
@@ -188,11 +201,11 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                         }
                     }
                     if (ImGui.BeginPopupContextItem()) {
-                        if (ImGui.Button("Copy path")) {
+                        if (ImGui.Selectable("Copy Path")) {
                             EditorWindow.CurrentWindow?.CopyToClipboard(file);
                             ImGui.CloseCurrentPopup();
                         }
-                        if (ImGui.Button("Extract single file ...")) {
+                        if (ImGui.Selectable("Extract File to ...")) {
                             var nativePath = file;
                             PlatformUtils.ShowSaveFileDialog((savePath) => {
                                 var stream = reader.GetFile(nativePath);
@@ -209,7 +222,6 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                         ImGui.EndPopup();
                     }
                 }
-
                 ImGui.TableNextColumn();
                 ImGui.PopID();
                 ImGui.TableNextColumn();
