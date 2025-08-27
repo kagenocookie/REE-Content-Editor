@@ -463,8 +463,18 @@ public static partial class WindowHandlerFactory
             return context.uiHandler = handlerFunc.Invoke();
         }
 
+        static IObjectUIHandler CreateObjectHandler(RszField field, ContentWorkspace? workspace)
+        {
+            if (string.IsNullOrEmpty(field.original_type) || workspace == null) return new NestedRszInstanceHandler();
+            var subtypes = workspace.Env.TypeCache.GetSubclasses(field.original_type);
+            if (subtypes.Count == 0 || subtypes.Count == 1 && subtypes[0] == field.original_type) return new NestedRszInstanceHandler();
+
+            return new NestedUIHandlerStringSuffixed(new RszClassnamePickerHandler(field.original_type));
+        }
+
         return context.uiHandler = field.type switch {
-            RszFieldType.Object or RszFieldType.Struct => new NestedRszInstanceHandler(),
+            RszFieldType.Object => CreateObjectHandler(field, ws),
+            RszFieldType.Struct => new NestedRszInstanceHandler(),
             RszFieldType.String => StringFieldHandler.Instance,
             RszFieldType.RuntimeType => StringFieldHandler.Instance, // TODO proper RuntimeType editor (use il2cpp data)
             RszFieldType.Resource => new ResourcePathPicker(ws, field),

@@ -113,6 +113,56 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
     }
 }
 
+public class RszClassnamePickerHandler(string? baseClass = null, string label = "Classname") : IObjectUIHandler
+{
+    private static readonly RszInstanceHandler inner = new();
+    private string[]? classOptions;
+    private HashSet<string>? classOptionsSet;
+    private string? classInput;
+
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<RszInstance?>();
+        if (context.children.Count == 0) {
+            var ws = context.GetWorkspace();
+            if (ws != null && !string.IsNullOrEmpty(baseClass)) {
+                classOptions = ws.Env.TypeCache.GetSubclasses(baseClass).ToArray();
+                classOptionsSet = classOptions.ToHashSet();
+            }
+            if (instance != null) {
+                WindowHandlerFactory.SetupRSZInstanceHandler(context);
+            }
+        }
+
+        if (classOptions?.Length > 1) {
+            classInput ??= instance?.RszClass.name ?? string.Empty;
+            ImguiHelpers.FilterableCombo(label, classOptions, classOptions, ref classInput, ref context.state);
+            if (!string.IsNullOrEmpty(classInput) && classInput != instance?.RszClass.name) {
+                if (ImGui.Button("Change")) {
+                    var ws = context.GetWorkspace();
+                    var cls = ws!.Env.RszParser.GetRSZClass(classInput);
+                    if (cls == null) {
+                        Logger.Error("Invalid classname " + classInput);
+                    } else {
+                        var newInstance = RszInstance.CreateInstance(ws!.Env.RszParser, cls);
+                        UndoRedo.RecordSet(context, newInstance, postChangeAction: (ctx) => {
+                            ctx.ClearChildren();
+                            WindowHandlerFactory.SetupRSZInstanceHandler(ctx);
+                            classInput = null;
+                        }, mergeMode: UndoRedoMergeMode.NeverMerge);
+                    }
+                }
+                ImGui.SameLine();
+                if (ImGui.Button("Cancel")) {
+                    classInput = null;
+                }
+            }
+        }
+
+        inner.OnIMGUI(context);
+    }
+}
+
 public class SwappableRszInstanceHandler(string? baseClass = null, bool referenceOnly = false, string instanceLabel = "Instance") : IObjectUIHandler
 {
     private static readonly RszInstanceHandler inner = new();
