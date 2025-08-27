@@ -20,6 +20,9 @@ Some files may not fully work for other RE ENGINE games.
 - Launch `ContentEditor.App.exe`
 
 ## Development setup
+- Clone the repository
+- `git submodule init`
+- `git submodule update`
 - Use the `net8.0-windows` target to make native file dialogs work
 - Build with `dotnet build` or whichever C#-capable IDE's build features (vscode, VS)
 
@@ -43,8 +46,8 @@ Some files may not fully work for other RE ENGINE games.
 | .msg      | ☑️ read/write | ☑️ down to individual translations | |
 | .uvs      | ☑️ read/write | | |
 | .uvar     | ☑️ read/write | coming soon | expression node graph |
-| .mdf2     | ☑️ read/write | coming soon | material preview |
-| .efx      | ☑️ read/write | | graphic preview, maybe partial patching |
+| .mdf2     | ☑️ read/write | | material preview |
+| .efx      | ☑️ read/write | | graphic preview |
 | .tex, .dds  | view only | | TEX/DDS conversion, better preview controls |
 | .mesh     | read-only 3D display | | |
 | .rcol     | read/write | | 3D display, overlay with mesh/pfb, maybe partial patching |

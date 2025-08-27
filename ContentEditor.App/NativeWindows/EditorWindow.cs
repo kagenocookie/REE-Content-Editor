@@ -67,11 +67,12 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
         SceneManager = new(this);
     }
 
-    public void SetWorkspace(GameIdentifier game, string? bundle)
+    public void SetWorkspace(GameIdentifier game, string? bundle) => SetWorkspace(game, bundle, false);
+    private void SetWorkspace(GameIdentifier game, string? bundle, bool forceReloadEnv)
     {
         // close all subwindows since they won't necessarily have the correct data anymore
         if (!RequestCloseAllSubwindows()) return;
-        if (env != null && env.Config.Game != game) {
+        if (env != null && (env.Config.Game != game || forceReloadEnv)) {
             WorkspaceManager.Instance.Release(env);
             env = null;
             workspace = null;
@@ -543,6 +544,13 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                 AddUniqueSubwindow(new ThemeEditor());
             }
             ImGui.Separator();
+            if (workspace != null && ImGui.MenuItem("Check for updated game data cache")) {
+                if (RequestCloseAllSubwindows()) {
+                    ResourceRepository.ResetCache(workspace.Game);
+                    ResourceRepository.Initialize(true);
+                    SetWorkspace(workspace.Game, workspace.CurrentBundle?.Name, true);
+                }
+            }
 
             if (ImGui.MenuItem("Rebuild RSZ patch data")) {
                 if (workspace != null && !runningRszInference) {
