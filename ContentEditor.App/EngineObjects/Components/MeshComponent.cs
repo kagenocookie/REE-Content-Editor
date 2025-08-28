@@ -10,9 +10,6 @@ namespace ContentEditor.App;
 [RszComponentClass("via.render.Mesh")]
 public class MeshComponent(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data), IFixedClassnameComponent
 {
-    private readonly int meshFieldIndex = data.IndexedFields.First(fi => fi.field.type is RszFieldType.String or RszFieldType.Resource).index;
-    private readonly int materialFieldIndex = data.IndexedFields.Where(fi => fi.field.type is RszFieldType.String or RszFieldType.Resource).Skip(1).First().index;
-
     static string IFixedClassnameComponent.Classname => "via.render.Mesh";
 
     private AssimpMeshResource? mesh;
@@ -28,8 +25,8 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         base.OnActivate();
 
         UnloadMesh();
-        var meshPath = base.Data.Values[meshFieldIndex] as string;
-        var matPath = base.Data.Values[materialFieldIndex] as string;
+        var meshPath = RszFieldCache.Mesh.Resource.Get(Data);
+        var matPath = RszFieldCache.Mesh.Material.Get(Data);
         if (!string.IsNullOrEmpty(meshPath)) {
             SetMesh(meshPath, matPath);
         }
@@ -47,7 +44,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
     {
         var newMesh = meshFile.GetResource<AssimpMeshResource>();
         Scene!.AddResourceReference(meshFile);
-        Data.Values[meshFieldIndex] = meshFile.InternalPath ?? string.Empty;
+        RszFieldCache.Mesh.Resource.Set(Data, meshFile.InternalPath ?? string.Empty);
         UpdateMesh(newMesh, null);
     }
 

@@ -33,7 +33,13 @@ public class Component(GameObject gameObject, RszInstance data)
         Component.Create(target, Data.Clone());
     }
 
+    /// <summary>
+    /// Activate this component's scene capabilities. Invoked whenever the component is added to an active scene or an inactive scene is activated.
+    /// </summary>
     internal virtual void OnActivate() { }
+    /// <summary>
+    /// Deactivate this component's scene capabilities. Invoked whenever the component is removed from an active scene or the scene is made inactive.
+    /// </summary>
     internal virtual void OnDeactivate() { }
 
     private static readonly Dictionary<RszClass, Func<GameObject, RszInstance, Component>> componentTypes = new();
