@@ -238,6 +238,10 @@ public static partial class WindowHandlerFactory
             return new RawDataEditor(env, file);
         }
 
+        if (file.Filepath.EndsWith(".json") || file.Filepath.EndsWith(".txt") || file.Filepath.EndsWith(".ini")) {
+            return new TextViewer(file.Stream, $"File ({file.HandleType} {file.FileSource})\n{file.Filepath}", true);
+        }
+
         return null;
     }
 

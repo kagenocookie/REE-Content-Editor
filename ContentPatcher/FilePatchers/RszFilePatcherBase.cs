@@ -14,6 +14,7 @@ public abstract class RszFilePatcherBase : IResourceFilePatcher
 
     public abstract JsonNode? FindDiff(FileHandle file);
     public abstract void ApplyDiff(JsonNode diff);
+    public abstract void ApplyDiff(FileHandle targetFile, JsonNode diff);
 
     protected JsonNode? GetRszInstanceDiff(RszInstance target, RszInstance source)
     {

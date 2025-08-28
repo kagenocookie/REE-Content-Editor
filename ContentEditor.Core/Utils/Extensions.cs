@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 
 namespace ContentEditor.Core;
 
@@ -21,6 +23,39 @@ public static class Extensions
         if (disposeStream) stream.Dispose();
         resultStream.Seek(0, SeekOrigin.Begin);
         return resultStream;
+    }
+
+    public static bool TryDeserializeJsonFile<T>(this string jsonFilepath, [MaybeNullWhen(false)] out T result, out string? error, JsonSerializerOptions? options = null)
+    {
+        if (!File.Exists(jsonFilepath)) {
+            result = default;
+            error = "File not found";
+            return false;
+        }
+
+        using var fs = File.OpenRead(jsonFilepath);
+        try {
+            result = JsonSerializer.Deserialize<T>(fs, options);
+            error = null;
+            return result != null;
+        } catch (Exception e) {
+            result = default;
+            error = e.Message;
+            return false;
+        }
+    }
+    public static bool TryDeserializeJson<T>(this string json, [MaybeNullWhen(false)] out T result, out string? error, JsonSerializerOptions? options = null)
+    {
+        try {
+            var obj = JsonSerializer.Deserialize<T>(json, options);
+            result = obj;
+            error = null;
+            return obj != null;
+        } catch (Exception e) {
+            result = default;
+            error = e.Message;
+            return false;
+        }
     }
 
     public static uint ToArgb(this Vector4 vec) => (uint)((byte)(vec.X * 255) + ((byte)(vec.Y * 255) << 8) + ((byte)(vec.Z * 255) << 16) + ((byte)(vec.W * 255) << 24));

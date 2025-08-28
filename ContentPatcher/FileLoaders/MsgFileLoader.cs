@@ -12,11 +12,13 @@ public class MsgFileLoader : DefaultFileLoader<MsgFile>
 public class MsgFilePatcher : IResourceFilePatcher
 {
     private MsgFile baseFile = null!;
+    private FileHandle fileHandle = null!;
     private ContentWorkspace workspace = null!;
 
     public IResourceFile LoadBase(ContentWorkspace workspace, FileHandle handle)
     {
         this.workspace = workspace;
+        fileHandle = handle;
         baseFile = handle.GetFile<MsgFile>();
         return handle.Resource;
     }
@@ -81,8 +83,11 @@ public class MsgFilePatcher : IResourceFilePatcher
         return messageDiffs;
     }
 
-    public void ApplyDiff(JsonNode diff)
+    public void ApplyDiff(JsonNode diff) => ApplyDiff(fileHandle, diff);
+    public void ApplyDiff(FileHandle targetFile, JsonNode diff)
     {
+        var baseFile = targetFile.GetFile<MsgFile>();
+
         if (diff is JsonObject dobj) {
             if (dobj.TryGetPropertyValue("Entries", out var entriesNode) && entriesNode is JsonObject entriesObj) {
 

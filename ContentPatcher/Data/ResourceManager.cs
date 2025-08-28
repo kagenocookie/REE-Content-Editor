@@ -576,6 +576,23 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     }
 
     /// <summary>
+    /// Loads a disk file fully ignoring any in-memory, PAK or bundle changes, and does not store the file in the resource manager.
+    /// The caller must take care of disposing the file handle.
+    /// </summary>
+    public bool TryLoadUniqueFile(string filepath, [MaybeNullWhen(false)] out FileHandle fileHandle)
+    {
+        try {
+            using var fs = File.OpenRead(filepath);
+            fileHandle = CreateFileHandleInternal(filepath, null, fs, true);
+            return fileHandle != null;
+        } catch (Exception e) {
+            Logger.Error("Failed to load file: " + e.Message);
+            fileHandle = null;
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Attempt to find and load a file based on an internal or native filepath. Checks base files with fallback to the active bundle.
     /// </summary>
     public bool TryResolveFile(string filename, [MaybeNullWhen(false)] out FileHandle file)

@@ -171,9 +171,11 @@ public sealed class ScenePatcher : RszFilePatcherBase, IDisposable
         return null;
     }
 
-    public override void ApplyDiff(JsonNode diff)
+    public override void ApplyDiff(JsonNode diff) => ApplyDiff(fileHandle, diff);
+    public override void ApplyDiff(FileHandle targetFile, JsonNode diff)
     {
         if (diff is not JsonObject obj) return;
+        var file = targetFile.GetFile<ScnFile>();
 
         var unapplied = obj.Where(kv => kv.Value is JsonObject && kv.Key != "__embeds").Select(kv => kv.Key).ToHashSet();
         var maxAttempts = unapplied.Count;

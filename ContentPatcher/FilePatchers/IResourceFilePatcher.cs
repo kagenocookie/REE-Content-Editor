@@ -12,14 +12,21 @@ public interface IResourceFilePatcher
     /// Loads the base file for this handler. The data from the file should be kept in memory as it will be re-read during the diffing process.
     /// </summary>
     IResourceFile LoadBase(ContentWorkspace workspace, FileHandle file);
+
     /// <summary>
     /// Calculate a diff JSON for a file's changes on top of the previously loaded base file.
     /// </summary>
     JsonNode? FindDiff(FileHandle file);
+
     /// <summary>
     /// Apply a diff to the previously loaded base file.
     /// </summary>
     void ApplyDiff(JsonNode diff);
+
+    /// <summary>
+    /// Apply a diff to the the given target file.
+    /// </summary>
+    void ApplyDiff(FileHandle targetFile, JsonNode diff);
 }
 
 /// <summary>

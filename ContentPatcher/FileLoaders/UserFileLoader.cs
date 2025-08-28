@@ -62,8 +62,10 @@ public sealed class UserFilePatcher : RszFilePatcherBase, IDisposable
         return diff;
     }
 
-    public override void ApplyDiff(JsonNode diff)
+    public override void ApplyDiff(JsonNode diff) => ApplyDiff(fileHandle, diff);
+    public override void ApplyDiff(FileHandle targetFile, JsonNode diff)
     {
+        var file = targetFile.GetFile<UserFile>();
         ApplyObjectDiff(file.RSZ.ObjectList[0], diff);
         if (diff is JsonObject obj && obj.TryGetPropertyValue("__embeds", out var embedDiff) && embedDiff is JsonObject eDiffObj) {
             ApplyEmbeddedDiffs(file.RSZ, eDiffObj);
