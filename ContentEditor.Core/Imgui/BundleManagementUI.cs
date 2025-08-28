@@ -139,7 +139,7 @@ public class BundleManagementUI : IWindowHandler
             var filter = selectedEntityType > 0 && selectedEntityType < types.Length ? types[selectedEntityType] : null;
             foreach (var e in bundle.Entities) {
                 if (filter != null && e.Type != filter) continue;
-                ImGui.Text($"{e.Type} | {e.Id} : {e.Label}");
+                ImGui.Text($"{e.Type} {e.Id} : {e.Label}");
             }
 
             ImGui.TreePop();
@@ -163,7 +163,7 @@ public class BundleManagementUI : IWindowHandler
                     if (ImGui.Button("Show diff")) {
                         showDiff.Invoke($"{e.Key} => {e.Value.Target}", e.Value.Diff);
                     }
-                    if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Partial patch generation time: " + e.Value.DiffTime.ToString("O"));
+                    if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Partial patch generated at: " + e.Value.DiffTime.ToString("O"));
                     ImGui.SameLine();
                 }
                 ImGui.Text(e.Key);

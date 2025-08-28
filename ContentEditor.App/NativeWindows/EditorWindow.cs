@@ -291,15 +291,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
 
         if (workspace != null) {
-            void ShowBundleManagement()
-            {
-                AddUniqueSubwindow(new BundleManagementUI(
-                    workspace!.BundleManager,
-                    workspace.CurrentBundle?.Name,
-                    (path) => OpenFiles([path]),
-                    (path, diff) => AddSubwindow(new JsonViewer(diff, path))
-                ));
-            }
             if (ImGui.BeginMenu($"Workspace: {workspace.Data.Name ?? "--"}")) {
                 if (!workspace.BundleManager.IsLoaded) workspace.BundleManager.LoadDataBundles();
                 if (ImGui.BeginMenu($"Active bundle: {workspace.Data.ContentBundle}")) {
@@ -376,9 +367,23 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (workspace.CurrentBundle != null && ImGui.MenuItem("Open bundle folder")) {
                     FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
                 }
+                if (workspace.CurrentBundle != null && ImGui.MenuItem("Publish mod ...")) {
+                    AddUniqueSubwindow(new ModPublisherWindow(workspace));
+                }
                 ImGui.EndMenu();
             }
         }
+    }
+
+    internal void ShowBundleManagement()
+    {
+        if (workspace == null) return;
+        AddUniqueSubwindow(new BundleManagementUI(
+            workspace.BundleManager,
+            workspace.CurrentBundle?.Name,
+            (path) => OpenFiles([path]),
+            (path, diff) => AddSubwindow(new JsonViewer(diff, path))
+        ));
     }
 
     protected virtual void OnFileOpen(Stream stream, string filename)
@@ -662,20 +667,22 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         if (isDragging) ImGui.EndDisabled();
     }
 
-    protected void ApplyContentPatches(string? outputPath)
+    internal bool ApplyContentPatches(string? outputPath, string? singleBundle = null)
     {
         if (workspace == null) {
             Logger.Error("Select a game first!");
-            return;
+            return false;
         }
 
         try {
-            var patchWorkspace = new ContentWorkspace(workspace.Env, workspace.Config, workspace.BundleManager);
+            var manager = singleBundle == null ? workspace.BundleManager : workspace.BundleManager.CreateBundleSpecificManager(singleBundle);
+            var patchWorkspace = new ContentWorkspace(workspace.Env, workspace.Config, manager);
             var patcher = new Patcher(patchWorkspace);
             patcher.OutputFolder = outputPath;
-            patcher.Execute();
+            return patcher.Execute(singleBundle == null);
         } catch (Exception e) {
             Logger.Error(e, "Failed to execute patcher");
+            return false;
         }
     }
 

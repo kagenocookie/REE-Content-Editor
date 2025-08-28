@@ -8,6 +8,8 @@ public class DefaultFileLoader<TFileType> : IFileLoader, IFileHandleContentProvi
     private readonly Func<IResourceFilePatcher>? diffHandler;
     private readonly Func<ContentWorkspace, FileHandler, TFileType> fileFactory;
 
+    protected bool SaveRawStream { get; init; }
+
     public DefaultFileLoader(KnownFileFormats format, Func<IResourceFilePatcher>? diffHandler = null)
     {
         this.supportedFormat = format;
@@ -43,6 +45,13 @@ public class DefaultFileLoader<TFileType> : IFileLoader, IFileHandleContentProvi
 
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
+        if (SaveRawStream) {
+            Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+            using var fs = File.Create(outputPath);
+            if (handle.Stream.CanSeek) handle.Stream.Seek(0, SeekOrigin.Begin);
+            handle.Stream.CopyTo(fs);
+            return true;
+        }
         var file = GetFile(handle);
         if (outputPath == handle.Filepath) {
             file.Save();

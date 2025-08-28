@@ -296,7 +296,7 @@ public class BundleManager
         JsonSerializer.Serialize(fs, bundle, JsonConfig.luaJsonOptions);
     }
 
-    public BundleManager GetBundleSpecificManager(string? bundleName)
+    public BundleManager CreateBundleSpecificManager(string? bundleName)
     {
         if (bundleName == null) {
             return this;

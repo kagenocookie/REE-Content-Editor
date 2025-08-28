@@ -60,7 +60,7 @@ public sealed class ContentWorkspace : IDisposable
         if (Data.ContentBundle != bundle || EditedBundleManager == null) {
             if (Data.Name == null) Data.Name = bundle;
             Data.ContentBundle = bundle;
-            EditedBundleManager = BundleManager.GetBundleSpecificManager(bundle);
+            EditedBundleManager = BundleManager.CreateBundleSpecificManager(bundle);
             CurrentBundle = EditedBundleManager.GetBundle(bundle, null);
             ResourceManager.SetBundle(EditedBundleManager, CurrentBundle);
         }

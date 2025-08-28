@@ -4,6 +4,6 @@ namespace ContentPatcher;
 
 public class ClipFileLoader : DefaultFileLoader<ClipFile>
 {
-    public ClipFileLoader() : base(KnownFileFormats.Clip) { }
+    public ClipFileLoader() : base(KnownFileFormats.Clip) { SaveRawStream = true; }
 }
 

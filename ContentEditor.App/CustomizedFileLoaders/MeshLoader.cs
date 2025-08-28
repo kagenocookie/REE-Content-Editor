@@ -106,7 +106,11 @@ public class MeshLoader : IFileLoader
 
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
-        return false;
+        Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+        using var fs = File.Create(outputPath);
+        if (handle.Stream.CanSeek) handle.Stream.Seek(0, SeekOrigin.Begin);
+        handle.Stream.CopyTo(fs);
+        return true;
     }
 }
 

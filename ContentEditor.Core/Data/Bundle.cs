@@ -131,6 +131,15 @@ public class Bundle
         return _nativeToLocalResourcePathCache.TryGetValue(nativePath, out localPath);
     }
 
+    public string ToModConfigIni()
+    {
+        return $"""
+            name={Name}
+            description={Description?.Replace("\n", "\\n")}
+            author={Author}
+            """;
+    }
+
     public enum EntityRecordUpdateType
     {
         AlreadyRecorded,

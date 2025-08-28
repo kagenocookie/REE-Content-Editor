@@ -42,11 +42,11 @@ public class Patcher : IDisposable
         config.LoadValues(values);
     }
 
-    public void Execute()
+    public bool Execute(bool reloadBundles = true)
     {
         if (string.IsNullOrEmpty(config.GamePath) || !Directory.Exists(config.GamePath)) {
             Logger.Error("Could not execute patch. Game path is incorrect or not configured.");
-            return;
+            return false;
         }
 
         var sw = Stopwatch.StartNew();
@@ -66,8 +66,10 @@ public class Patcher : IDisposable
         sw.Restart();
 
         // 3. resolve / find all active mods
-        workspace.BundleManager.LoadDataBundles();
-        Logger.Info($"Loaded {workspace.BundleManager.AllBundles.Count} bundles ({workspace.BundleManager.ActiveBundles.Count} active) in {sw.Elapsed.TotalSeconds}");
+        if (reloadBundles) {
+            workspace.BundleManager.LoadDataBundles();
+            Logger.Info($"Loaded {workspace.BundleManager.AllBundles.Count} bundles ({workspace.BundleManager.ActiveBundles.Count} active) in {sw.Elapsed.TotalSeconds}");
+        }
 
         // 4. check all active mods and fetch their diffs
         sw.Restart();
@@ -82,6 +84,7 @@ public class Patcher : IDisposable
         patch.PatchTimeUtc = DateTime.UtcNow;
         // 7. dump metadata
         DumpPatchMetadata(patch);
+        return true;
     }
 
     private void PreparePatchDiffs()
