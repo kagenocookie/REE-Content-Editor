@@ -14,7 +14,7 @@ using ReeLib.Tools;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 
-public class EditorWindow : WindowBase, IWorkspaceContainer
+public partial class EditorWindow : WindowBase, IWorkspaceContainer
 {
     protected readonly List<IWindowHandler> windowHandlers = new();
 
@@ -305,6 +305,47 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.BeginMenu($"Active bundle: {workspace.Data.ContentBundle}")) {
                     if (ImGui.MenuItem("Create new...")) {
                         ShowBundleManagement();
+                    }
+                    if (ImGui.MenuItem("Create from PAK file")) {
+                        PlatformUtils.ShowFileDialog((pak) => {
+                            var reader = new PakReader();
+                            reader.AddFiles("modinfo.ini");
+                            reader.PakFilePriority = [pak[0]];
+                            var modinfo = reader.FindFiles().FirstOrDefault();
+                            var initialName = Path.GetFileNameWithoutExtension(pak[0]).Replace(".", "_");
+                            if (modinfo.stream != null) {
+                                var modData = new StreamReader(modinfo.stream).ReadToEnd().Split('\n');
+                                var nameEntry = modData.FirstOrDefault(line => line.StartsWith("name") && line.Contains('='));
+                                if (nameEntry != null) initialName = nameEntry.Split('=')[1].Trim();
+                            }
+                            AddSubwindow(new NameInputDialog(
+                                "Bundle creation",
+                                "Select name for the bundle to be created from the PAK file:\n" + pak[0],
+                                initialName,
+                                FilenameRegex(),
+                                this,
+                                (name) => workspace.CreateBundleFromPAK(name, pak[0])
+                            ));
+                        }, fileExtension: "PAK file (*.pak)|*.pak", allowMultiple: false);
+                    }
+                    if (ImGui.MenuItem("Create from loose file mod")) {
+                        PlatformUtils.ShowFolderDialog((folder) => {
+                            var modinfoPath = Path.Combine(folder, "modinfo.ini");
+                            var initialName = Path.GetFileName(folder);
+                            if (File.Exists(modinfoPath)) {
+                                var modData = File.ReadAllLines(modinfoPath);
+                                var nameEntry = modData.FirstOrDefault(line => line.StartsWith("name") && line.Contains('='));
+                                if (nameEntry != null) initialName = nameEntry.Split('=')[1].Trim();
+                            }
+                            AddSubwindow(new NameInputDialog(
+                                "Bundle creation",
+                                "Select name for the bundle to be created from the PAK file:\n" + folder,
+                                initialName,
+                                FilenameRegex(),
+                                this,
+                                (name) => workspace.InitializeUnlabelledBundle(name, folder)
+                            ));
+                        });
                     }
                     ImGui.Separator();
                     foreach (var b in workspace.BundleManager.AllBundles) {
@@ -680,4 +721,7 @@ public class EditorWindow : WindowBase, IWorkspaceContainer
         SceneManager?.Dispose();
         base.Dispose(disposing);
     }
+
+    [System.Text.RegularExpressions.GeneratedRegex("^[ a-zA-Z0-9_-]+$")]
+    private static partial System.Text.RegularExpressions.Regex FilenameRegex();
 }

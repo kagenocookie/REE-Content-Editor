@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ContentEditor;
 using ContentEditor.Core;
 using ContentEditor.Editor;
@@ -104,9 +105,16 @@ public sealed class ContentWorkspace : IDisposable
             // e.g. if we manually replaced the file or undo'ed our changes
             if (forceDiffAllFiles) {
                 foreach (var (localPath, info) in bundle.ResourceListing) {
-                    var file = ResourceManager.GetFileHandle(info.Target);
-                    if (file == null) {
-                        throw new Exception("Failed to open bundle file " + info.Target);
+                    FileHandle? file;
+                    try {
+                        file = ResourceManager.GetFileHandle(info.Target);
+                        if (file == null) {
+                            Logger.Error("Failed to open bundle file " + info.Target);
+                            continue;
+                        }
+                    } catch (Exception e) {
+                        Logger.Error("Failed to open bundle file " + info.Target + ": " + e.Message);
+                        continue;
                     }
 
                     TryExecuteDiff(bundle, file);
@@ -176,16 +184,37 @@ public sealed class ContentWorkspace : IDisposable
         }
     }
 
-    public void InitializeUnlabelledBundle(string bundlePath)
+    public void CreateBundleFromPAK(string bundleName, string pakFilepath)
     {
+        var bundlePath = BundleManager.GetBundleFolder(bundleName);
+
+        var pak = new PakReader();
+        if (!pak.TryReadManifestFileList(pakFilepath)) {
+            pak.AddFiles(Env.ListFile?.Files ?? []);
+        }
+        pak.UnpackFilesTo(bundlePath);
+        InitializeUnlabelledBundle(bundlePath, null, bundleName);
+    }
+
+    public void InitializeUnlabelledBundle(string bundlePath, string? sourcePath = null, string? name = null)
+    {
+        if (!Path.IsPathFullyQualified(bundlePath)) bundlePath = BundleManager.GetBundleFolder(bundlePath);
+        if (sourcePath != null && sourcePath.NormalizeFilepath() != bundlePath.NormalizeFilepath()) {
+            // copy all files from source to the bundle path
+            foreach (var srcfile in Directory.EnumerateFiles(sourcePath, "*.*", SearchOption.AllDirectories)) {
+                var destFile = Path.Combine(bundlePath, srcfile.NormalizeFilepath().Replace(sourcePath.NormalizeFilepath(), "").TrimStart('/'));
+                Directory.CreateDirectory(Path.GetDirectoryName(destFile)!);
+                File.Copy(srcfile, destFile, true);
+            }
+        }
         var originalBundle = this.CurrentBundle;
         if (originalBundle != null) {
             SetBundle(null);
         }
         var bundleJsonPath = Path.Combine(bundlePath, "bundle.json");
-        var bundleName = new DirectoryInfo(bundlePath).Name;
+        var bundleName = name ?? new DirectoryInfo(bundlePath).Name;
         var bundle = BundleManager.GetBundle(bundleName, null) ?? new Bundle();
-        bundle.Name = new DirectoryInfo(bundlePath).Name;
+        bundle.Name = bundleName;
         var modIni = Path.Combine(bundlePath, "modinfo.ini");
         if (File.Exists(modIni)) {
             foreach (var (key, value) in IniFile.ReadFileIgnoreKeyCasing(modIni)) {
@@ -199,19 +228,32 @@ public sealed class ContentWorkspace : IDisposable
             }
         }
 
+        var hasPreviousBundleData = false;
+        if (Path.Exists(bundleJsonPath)) {
+            using var fs = File.OpenRead(bundleJsonPath);
+            var data = JsonSerializer.Deserialize<Bundle>(fs);
+            if (data != null) {
+                bundle = data;
+                bundle.Name = bundleName;
+                hasPreviousBundleData = true;
+            }
+        }
+
         var bundlePathNorm = bundlePath.NormalizeFilepath();
-        bundle.GameVersion = VersionHash;
-        bundle.ResourceListing ??= new();
-        foreach (var file in Directory.EnumerateFiles(bundlePath, "*.pak")) {
-            if (file.EndsWith(".pak")) {
-                Logger.Info("Unpacking PAK file: " + file);
-                var pak = new PakReader();
-                if (!pak.TryReadManifestFileList(file)) {
-                    pak.AddFiles(Env.ListFile?.Files ?? []);
-                }
-                var count = pak.UnpackFilesTo(bundlePath);
-                if (count == 0) {
-                    Logger.Warn("Couldn't find any files within PAK file: " + file);
+        if (!hasPreviousBundleData) {
+            bundle.GameVersion = VersionHash;
+            bundle.ResourceListing ??= new();
+            foreach (var file in Directory.EnumerateFiles(bundlePath, "*.pak")) {
+                if (file.EndsWith(".pak")) {
+                    Logger.Info("Unpacking PAK file: " + file);
+                    var pak = new PakReader();
+                    if (!pak.TryReadManifestFileList(file)) {
+                        pak.AddFiles(Env.ListFile?.Files ?? []);
+                    }
+                    var count = pak.UnpackFilesTo(bundlePath);
+                    if (count == 0) {
+                        Logger.Warn("Couldn't find any files within PAK file: " + file);
+                    }
                 }
             }
         }
@@ -220,7 +262,7 @@ public sealed class ContentWorkspace : IDisposable
             var localFile = file.NormalizeFilepath().Replace(bundlePathNorm, "").TrimStart('/');
             if (localFile == "modinfo.ini") continue;
             var ext = Path.GetExtension(file).ToLowerInvariant();
-            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".txt") {
+            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".txt" || ext == ".json") {
                 // probably cover images
                 continue;
             }
@@ -229,6 +271,7 @@ public sealed class ContentWorkspace : IDisposable
             }
 
             if (localFile.StartsWith("natives/")) {
+                bundle.ResourceListing ??= new();
                 bundle.ResourceListing[localFile] = new ResourceListItem() {
                     Target = localFile,
                 };
@@ -253,6 +296,7 @@ public sealed class ContentWorkspace : IDisposable
                     }
                     listfile.ResetResultCache();
                 }
+                bundle.ResourceListing ??= new();
                 bundle.ResourceListing[localFile] = new ResourceListItem() {
                     Target = nativePath,
                 };
