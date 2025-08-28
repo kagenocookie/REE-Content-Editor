@@ -16,7 +16,7 @@ public static partial class RszFieldCache
         /// <summary>
         /// via.physics.Collider[]
         /// </summary>
-        public static readonly RszFieldAccessorFirst<List<object>> ColliderList = new RszFieldAccessorFirst<List<object>>(
+        public static readonly RszFieldAccessorFirst<List<object>> ColliderList = First<List<object>>(
             fi => fi.array && fi.type is not RszFieldType.String and not RszFieldType.Resource,
             "Colliders"
         ).Object("via.physics.Collider[]");
@@ -30,7 +30,7 @@ public static partial class RszFieldCache
         /// <summary>
         /// via.physics.Shape
         /// </summary>
-        public static readonly RszFieldAccessorFirstFallbacks<RszInstance> Shape = new RszFieldAccessorFirstFallbacks<RszInstance>([
+        public static readonly RszFieldAccessorFirstFallbacks<RszInstance> Shape = First<RszInstance>([
             (field) => field.original_type == "via.physics.Shape",
             (field) => field.type == RszFieldType.Object
         ]).Object("via.physics.Shape");
@@ -44,9 +44,9 @@ public static partial class RszFieldCache
         /// <summary>
         /// via.physics.Sphere
         /// </summary>
-        public static readonly RszFieldAccessorFirst<Sphere> Sphere = new RszFieldAccessorFirst<Sphere>(
-            (field) => field.type is RszFieldType.Sphere or RszFieldType.Vec4
-        ).Type(RszFieldType.Sphere);
+        public static readonly RszFieldAccessorFirst<Sphere> Sphere =
+            First<Sphere>((field) => field.type is RszFieldType.Sphere or RszFieldType.Vec4)
+            .Type(RszFieldType.Sphere);
     }
 
     /// <summary>
@@ -57,7 +57,7 @@ public static partial class RszFieldCache
         /// <summary>
         /// via.physics.Capsule
         /// </summary>
-        public static readonly RszFieldAccessorFirstFallbacks<Capsule> Capsule = new RszFieldAccessorFirstFallbacks<Capsule>([
+        public static readonly RszFieldAccessorFirstFallbacks<Capsule> Capsule = First<Capsule>([
             (field) => field.type is RszFieldType.Capsule,
             (field) => field.type is RszFieldType.Data && field.size == 48
         ]).Type(RszFieldType.Capsule);
@@ -71,7 +71,7 @@ public static partial class RszFieldCache
         /// <summary>
         /// via.physics.Capsule
         /// </summary>
-        public static readonly RszFieldAccessorFirstFallbacks<Cylinder> Cylinder = new RszFieldAccessorFirstFallbacks<Cylinder>([
+        public static readonly RszFieldAccessorFirstFallbacks<Cylinder> Cylinder = First<Cylinder>([
             (field) => field.type is RszFieldType.Cylinder,
             (field) => field.type is RszFieldType.Data && field.size == 48
         ]).Type(RszFieldType.Cylinder);
@@ -82,7 +82,7 @@ public static partial class RszFieldCache
     /// </summary>
     public static class BoxShape
     {
-        public static readonly RszFieldAccessorFirst<OBB> Box = new RszFieldAccessorFirst<OBB>(
+        public static readonly RszFieldAccessorFirst<OBB> Box = First<OBB>(
             (field) => field.type is RszFieldType.OBB
         ).Type(RszFieldType.OBB);
     }
@@ -94,7 +94,7 @@ public static partial class RszFieldCache
     {
         // note: need to go by last one here because the newer games have an AABB field[0] in every shape type
 
-        public static readonly RszFieldAccessorLastCallbacks<AABB> Aabb = new RszFieldAccessorLastCallbacks<AABB>([
+        public static readonly RszFieldAccessorLastFallbacks<AABB> Aabb = Last<AABB>([
             (field) => field.type is RszFieldType.AABB,
             (field) => field.size == 32 && !field.array
         ]).Type(RszFieldType.AABB);
@@ -105,9 +105,9 @@ public static partial class RszFieldCache
     /// </summary>
     public static class MeshShape
     {
-        public static readonly RszFieldAccessorFirst<string> Mesh = new RszFieldAccessorFirst<string>(
-            (field) => field.type is RszFieldType.String or RszFieldType.Resource
-        ).Resource("via.render.MeshResourceHolder");
+        public static readonly RszFieldAccessorFirst<string> Mesh =
+            First<string>((field) => field.type is RszFieldType.String or RszFieldType.Resource)
+            .Resource("via.render.MeshResourceHolder");
     }
 
     /// <summary>
@@ -115,18 +115,18 @@ public static partial class RszFieldCache
     /// </summary>
     public static class StaticCompoundShape
     {
-        public static readonly RszFieldAccessorFirst<string> Shapes = new RszFieldAccessorFirst<string>(
-            (field) => field.array
-        ).Object("via.physics.StaticCompoundShape.Instance");
+        public static readonly RszFieldAccessorFirst<string> Shapes =
+            First<string>((field) => field.array)
+            .Object("via.physics.StaticCompoundShape.Instance");
 
         /// <summary>
         /// via.physics.StaticCompoundShape.Instance
         /// </summary>
         public static class Instance
         {
-            public static readonly RszFieldAccessorFirst<string> Shape = new RszFieldAccessorFirst<string>(
-                (field) => field.size == 4
-            ).Object("via.physics.Shape");
+            public static readonly RszFieldAccessorFirst<string> Shape =
+                First<string>((field) => field.size == 4)
+                .Object("via.physics.Shape");
         }
     }
 
@@ -135,8 +135,8 @@ public static partial class RszFieldCache
     /// </summary>
     public static class HeightFieldShape
     {
-        public static readonly RszFieldAccessorFirst<string> HeightField = new RszFieldAccessorFirst<string>(
-            (field) => field.type is RszFieldType.Resource or RszFieldType.String
-        ).Resource("via.physics.CollisionHeightFieldResourceHolder");
+        public static readonly RszFieldAccessorFirst<string> HeightField =
+            First<string>((field) => field.type is RszFieldType.Resource or RszFieldType.String)
+            .Resource("via.physics.CollisionHeightFieldResourceHolder");
     }
 }

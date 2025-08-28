@@ -21,6 +21,8 @@ public abstract class RszFieldAccessorBase(string name)
 
         return -1;
     }
+
+    public override string ToString() => name;
 }
 public abstract class RszFieldAccessorBase<T>(string name) : RszFieldAccessorBase(name)
 {
@@ -122,7 +124,7 @@ public sealed class RszFieldAccessorFirstFallbacks<T>(Func<RszField, bool>[] con
     }
 }
 
-public sealed class RszFieldAccessorLastCallbacks<T>(Func<RszField, bool>[] conditions, [CallerMemberName] string name = "") : RszFieldAccessorBase<T>(name)
+public sealed class RszFieldAccessorLastFallbacks<T>(Func<RszField, bool>[] conditions, [CallerMemberName] string name = "") : RszFieldAccessorBase<T>(name)
 {
     public sealed override int GetIndex(RszClass instanceClass)
     {
@@ -174,4 +176,19 @@ public static partial class RszFieldCache
         accessor.Override.fieldType = RszFieldType.Resource;
         return accessor;
     }
+
+    private static RszFieldAccessorFirst<T> First<T>(Func<RszField, bool> condition, [CallerMemberName] string name = "")
+        => new RszFieldAccessorFirst<T>(condition, name);
+
+    private static RszFieldAccessorFirstFallbacks<T> First<T>(Func<RszField, bool>[] conditions, [CallerMemberName] string name = "")
+        => new RszFieldAccessorFirstFallbacks<T>(conditions, name);
+
+    private static RszFieldAccessorLast<T> Last<T>(Func<RszField, bool> condition, [CallerMemberName] string name = "")
+        => new RszFieldAccessorLast<T>(condition, name);
+
+    private static RszFieldAccessorLastFallbacks<T> Last<T>(Func<RszField, bool>[] conditions, [CallerMemberName] string name = "")
+        => new RszFieldAccessorLastFallbacks<T>(conditions, name);
+
+    private static RszFieldAccessorFieldList<T> FromList<T>(Func<IEnumerable<(RszField field, int index)>, int> conditions, [CallerMemberName] string name = "")
+        => new RszFieldAccessorFieldList<T>(conditions, name);
 }
