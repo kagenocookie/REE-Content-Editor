@@ -887,7 +887,7 @@ public class TransformComponentHandler : IObjectUIHandler
         }
         if (show) {
             var localpos = instance.LocalPosition;
-            var localrot = (Vector4)data.Values[1];
+            var localrot = instance.LocalRotation.ToVector4();
             var localscale = instance.LocalScale;
             var w = ImGui.CalcItemWidth();
             ImGui.SetNextItemWidth(w * 0.75f);
@@ -899,10 +899,17 @@ public class TransformComponentHandler : IObjectUIHandler
             ImGui.LabelText("Local Position", "##labelP");
             if (ImGui.DragFloat4("Local Rotation", ref localrot, 0.002f)) {
                 localrot = Quaternion.Normalize(localrot.ToQuaternion()).ToVector4();
-                UndoRedo.RecordCallbackSetter(context, instance, (Vector4)data.Values[1], localrot, static (inst, value) => {
-                    inst.Data.Values[1] = value;
-                    inst.InvalidateTransform();
-                }, $"{instance.GetHashCode()} LocalRot");
+                if (data.Values[1] is Vector4) {
+                    UndoRedo.RecordCallbackSetter(context, instance, (Vector4)data.Values[1], localrot, static (inst, value) => {
+                        inst.Data.Values[1] = value;
+                        inst.InvalidateTransform();
+                    }, $"{instance.GetHashCode()} LocalRot");
+                } else {
+                    UndoRedo.RecordCallbackSetter(context, instance, (Quaternion)data.Values[1], localrot.ToQuaternion(), static (inst, value) => {
+                        inst.Data.Values[1] = value;
+                        inst.InvalidateTransform();
+                    }, $"{instance.GetHashCode()} LocalRot");
+                }
             }
 
             ImGui.SetNextItemWidth(w * 0.75f);
