@@ -12,13 +12,12 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
 {
     static string IFixedClassnameComponent.Classname => "via.render.Mesh";
 
-    private AssimpMeshResource? mesh;
-    private MaterialResource material = null!;
+    private MeshHandle? mesh;
+    private MaterialGroup? material;
 
-    private int objectHandle;
-    public override AABB LocalBounds => objectHandle == 0 ? default : Scene?.RenderContext.GetBounds(objectHandle) ?? default;
+    public override AABB LocalBounds => mesh?.BoundingBox ?? default;
 
-    public bool HasMesh => objectHandle != 0;
+    public bool HasMesh => mesh?.Meshes.Any() == true;
 
     internal override void OnActivate()
     {
@@ -26,26 +25,36 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
 
         UnloadMesh();
         var meshPath = RszFieldCache.Mesh.Resource.Get(Data);
-        var matPath = RszFieldCache.Mesh.Material.Get(Data);
         if (!string.IsNullOrEmpty(meshPath)) {
-            SetMesh(meshPath, matPath);
+            SetMesh(meshPath, RszFieldCache.Mesh.Material.Get(Data));
         }
     }
 
     public void SetMesh(string meshFilepath, string? materialFilepath)
     {
-        var newMat = string.IsNullOrEmpty(materialFilepath) ? null : Scene!.LoadResource<AssimpMaterialResource>(materialFilepath);
-        var newMesh = Scene!.LoadResource<AssimpMeshResource>(meshFilepath);
-
-        UpdateMesh(newMesh, newMat);
+        UnloadMesh();
+        // note - when loading material groups from the mesh file, we receive a placeholder material with just a default shader and white texture
+        material = string.IsNullOrEmpty(materialFilepath)
+            ? Scene!.RenderContext.LoadMaterialGroup(meshFilepath)
+            : Scene!.RenderContext.LoadMaterialGroup(materialFilepath);
+        mesh = Scene.RenderContext.LoadMesh(meshFilepath);
+        if (mesh != null && material != null) {
+            Scene.RenderContext.SetMeshMaterial(mesh, material);
+        }
+        RszFieldCache.Mesh.Resource.Set(Data, meshFilepath);
+        RszFieldCache.Mesh.Material.Set(Data, materialFilepath ?? string.Empty);
     }
 
-    public void SetMesh(FileHandle meshFile)
+    public void SetMesh(FileHandle meshFile, FileHandle? materialFile)
     {
-        var newMesh = meshFile.GetResource<AssimpMeshResource>();
-        Scene!.AddResourceReference(meshFile);
+        UnloadMesh();
+        material = Scene!.RenderContext.LoadMaterialGroup(materialFile ?? meshFile);
+        mesh = Scene.RenderContext.LoadMesh(meshFile);
+        if (mesh != null) {
+            Scene.RenderContext.SetMeshMaterial(mesh, material);
+        }
         RszFieldCache.Mesh.Resource.Set(Data, meshFile.InternalPath ?? string.Empty);
-        UpdateMesh(newMesh, null);
+        RszFieldCache.Mesh.Material.Set(Data, materialFile?.InternalPath ?? string.Empty);
     }
 
     internal override void OnDeactivate()
@@ -54,45 +63,26 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         UnloadMesh();
     }
 
-    private void UpdateMesh(AssimpMeshResource? newMesh, AssimpMaterialResource? newMat)
-    {
-        UnloadMesh();
-
-        if (mesh != null && mesh != newMesh) {
-            Scene!.UnloadResource(mesh);
-            mesh = null;
-        }
-        if (newMesh == null) {
-            return;
-        }
-
-        mesh = newMesh;
-
-        var matgroup = newMat == null ? 0 : Scene!.RenderContext.LoadMaterialGroup(newMat.Scene);
-        objectHandle = Scene!.RenderContext.CreateObject(newMesh.Scene, matgroup);
-    }
-
     private void UnloadMesh()
     {
         if (mesh == null || Scene == null) return;
 
-        Scene.RenderContext.DestroyObject(objectHandle);
         if (mesh != null) {
-            Scene.UnloadResource(mesh);
+            // TODO: would we rather just store the render context inside mesh refs / material groups, and have them be IDispoable?
+            Scene.RenderContext.UnloadMesh(mesh);
             mesh = null;
         }
         if (material != null) {
-            Scene.UnloadResource(material);
-            material = null!;
+            Scene.RenderContext.UnloadMaterialGroup(material);
+            material = null;
         }
-        objectHandle = 0;
     }
 
     internal override unsafe void Render(RenderContext context)
     {
-        if (objectHandle != 0) {
+        if (mesh != null) {
             ref readonly var transform = ref GameObject.Transform.WorldTransform;
-            context.RenderSimple(objectHandle, transform);
+            context.RenderSimple(mesh, transform);
         }
     }
 }

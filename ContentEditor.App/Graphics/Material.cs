@@ -15,15 +15,17 @@ public class Material
     private readonly List<MaterialParameter<float>> floatParameters = new();
     private readonly List<(string name, TextureUnit slot, Texture? tex)> textureParameters = new();
 
+    public string name = string.Empty;
     public MaterialBlendMode BlendMode = new();
     public bool DisableDepth;
 
     public IEnumerable<Texture> Textures => textureParameters.Where(t => t.tex != null).Select(t => t.tex!);
 
-    public Material(GL gl, Shader shader)
+    public Material(GL gl, Shader shader, string name = "")
     {
         _gl = gl;
         this.shader = shader;
+        this.name = name;
     }
 
     private void SetParameter<TValue>(List<MaterialParameter<TValue>> list, string name, TValue vec)
@@ -100,6 +102,7 @@ public class Material
         mat.textureParameters.AddRange(textureParameters);
         mat.BlendMode = new MaterialBlendMode(BlendMode.Blend, BlendMode.BlendModeSrc, BlendMode.BlendModeDest);
         mat.DisableDepth = DisableDepth;
+        mat.name = name;
         return mat;
     }
 
@@ -118,3 +121,9 @@ public record MaterialBlendMode(
     BlendingFactor BlendModeSrc = BlendingFactor.SrcAlpha,
     BlendingFactor BlendModeDest = BlendingFactor.DstAlpha
 );
+
+public enum EditorPresetMaterials
+{
+    Default,
+    Wireframe,
+}

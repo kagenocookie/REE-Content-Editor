@@ -5,7 +5,7 @@ using ReeLib;
 
 namespace ContentPatcher;
 
-public sealed class FileHandle(string path, Stream stream, FileHandleType handleType, IFileLoader loader) : IDisposable
+public sealed class FileHandle(string path, Stream stream, FileHandleType handleType, IFileLoader loader) : IDisposable, IEquatable<FileHandle>
 {
     public string Filepath { get; private set; } = path;
     public string? NativePath { get; init; }
@@ -122,6 +122,8 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
         var stream = File.OpenRead(filepath);
         return new FileHandle(filepath, stream, FileHandleType.Disk, loader);
     }
+
+    bool IEquatable<FileHandle>.Equals(FileHandle? other) => ReferenceEquals(other, this);
 }
 
 public enum FileHandleType

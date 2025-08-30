@@ -2,87 +2,80 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ContentEditor.App;
 
-public sealed class ResourceRefCounter<TResource> : IDisposable where TResource : IDisposable
+public sealed class ResourceRefCounter<TKey, TResource> : IDisposable
+    where TResource : class
+    where TKey : notnull, IEquatable<TKey>
 {
-    private readonly Dictionary<string, RefCountedResource<TResource>> resources = new();
+    private readonly Dictionary<TKey, RefCountedResource> keyedResources = new();
+    private readonly Dictionary<TResource, RefCountedResource> instances = new();
+    private int _nextInstanceID = 1;
+    public int NextInstanceID => _nextInstanceID;
 
-    public RefCountedResource<TResource> Add(string path, TResource resource)
+    public RefCountedResource Add(TKey path, TResource resource)
     {
-        if (resources.TryGetValue(path, out var handle)) {
-            handle.References++;
-            return handle;
+        if (keyedResources.TryGetValue(path, out var refs)) {
+            refs.References++;
+            return refs;
         }
 
-        return resources[path] = handle = new RefCountedResource<TResource>(path, resource, 1);
+        var id = _nextInstanceID++;
+        instances[resource] = refs = new RefCountedResource(path, resource, 1, id);
+        return keyedResources[path] = refs;
     }
 
-    public RefCountedResource<TResource> AddUnnamed(TResource resource)
+    public RefCountedResource AddUnnamed(TResource resource)
     {
-        // add a separate hashset for these instead?
-        foreach (var (pp, res) in resources) {
-            if (ReferenceEquals(res.Resource, resource)) {
-                res.References++;
-                return res;
-            }
+        if (instances.TryGetValue(resource, out var refs)) {
+            refs.References++;
+        } else {
+            var id = _nextInstanceID++;
+            instances[resource] = refs = new RefCountedResource(default!, resource, 1, id);
         }
-
-        var path = RandomString(20);
-        return resources[path] = new RefCountedResource<TResource>(path, resource, 1);
+        return refs;
     }
 
-    public bool TryAddReference(string filePath, [MaybeNullWhen(false)] out RefCountedResource<TResource> resource)
+    public bool TryAddReference(TKey filePath, [MaybeNullWhen(false)] out RefCountedResource resource)
     {
-        if (resources.TryGetValue(filePath, out resource)) {
+        if (keyedResources.TryGetValue(filePath, out resource)) {
             resource.References++;
             return true;
         }
         return false;
     }
 
-    public void Dereference(RefCountedResource<TResource> resource)
+    public void Dereference(RefCountedResource resource)
     {
         resource.References--;
         if (resource.References <= 0) {
-            resources.Remove(resource.Name);
-            resource.Resource.Dispose();
+            if (!resource.Key.Equals(default)) {
+                keyedResources.Remove(resource.Key);
+            }
+            instances.Remove(resource.Resource);
+            (resource.Resource as IDisposable)?.Dispose();
         }
     }
 
     public void Dereference(TResource resource)
     {
-        foreach (var res in resources.Values) {
-            if (ReferenceEquals(res.Resource, resource)) {
-                Dereference(res);
-                return;
-            }
+        if (instances.TryGetValue(resource, out var refs)) {
+            Dereference(refs);
         }
-    }
-
-    private static Random random = new Random();
-    private static string RandomString(int length)
-    {
-        var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        var stringChars = new char[length];
-
-        for (int i = 0; i < stringChars.Length; i++) {
-            stringChars[i] = chars[random.Next(chars.Length)];
-        }
-        return new String(stringChars);
     }
 
     public void Dispose()
     {
-        foreach (var handle in resources.Values) {
-            handle.Resource.Dispose();
+        foreach (var handle in instances.Values) {
+            (handle.Resource as IDisposable)?.Dispose();
         }
-        resources.Clear();
+        instances.Clear();
+        keyedResources.Clear();
+    }
+
+    public class RefCountedResource(TKey name, TResource resource, int references, int id)
+    {
+        public TKey Key { get; } = name;
+        public int InstanceID { get; } = id;
+        public TResource Resource { get; } = resource;
+        public int References { get; set; } = references;
     }
 }
-
-public class RefCountedResource<TResource>(string name, TResource resource, int references)
-{
-    public string Name { get; } = name;
-    public TResource Resource { get; } = resource;
-    public int References { get; set; } = references;
-}
-

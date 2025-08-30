@@ -95,7 +95,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         }
 
         if (!meshComponent.HasMesh) {
-            meshComponent.SetMesh(fileHandle);
+            meshComponent.SetMesh(fileHandle, fileHandle);
             CenterCameraToSceneObject();
         }
 

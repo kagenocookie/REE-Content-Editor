@@ -8,7 +8,7 @@ using Silk.NET.OpenGL;
 
 namespace ContentEditor.App;
 
-public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReferenceHolder
+public sealed class Scene : NodeTreeContainer, IDisposable
 {
     public readonly Folder RootFolder;
     public IEnumerable<Folder> Folders => RootFolder.Children;
@@ -22,14 +22,9 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
     public ContentWorkspace Workspace { get; }
     public bool IsActive { get; set; }
 
-    bool IFileHandleReferenceHolder.CanClose => true;
-    IRectWindow? IFileHandleReferenceHolder.Parent => null;
-
     private List<RenderableComponent> renderComponents = new();
 
     private GL _gl;
-
-    private Dictionary<IResourceFile, (FileHandle handle, int refcount)> _loadedResources = new();
 
     private RenderContext renderContext;
     public RenderContext RenderContext => renderContext;
@@ -112,54 +107,6 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
         return null;
     }
 
-    public TResourceType? LoadResource<TResourceType>(string path) where TResourceType : class, IResourceFile
-    {
-        if (!Workspace.ResourceManager.TryResolveFile(path, out var fileHandle)) {
-            Logger.Error("Failed to load resource " + path);
-            return null;
-        }
-
-        var resource = fileHandle.GetResource<TResourceType>();
-        if (_loadedResources.TryGetValue(resource, out var handleRefs)) {
-            _loadedResources[resource] = (handleRefs.handle, handleRefs.refcount + 1);
-        } else {
-            _loadedResources[resource] = (fileHandle, 1);
-            fileHandle.References.Add(this);
-        }
-
-        return resource;
-    }
-
-    public void AddResourceReference(FileHandle file)
-    {
-        if (_loadedResources.TryGetValue(file.Resource, out var handleRefs)) {
-            _loadedResources[file.Resource] = (file, handleRefs.refcount + 1);
-        } else {
-            _loadedResources[file.Resource] = (file, 1);
-            file.References.Add(this);
-        }
-    }
-
-    public void AddResourceReference(IResourceFile resource)
-    {
-        if (_loadedResources.TryGetValue(resource, out var handleRefs)) {
-            _loadedResources[resource] = (handleRefs.handle, handleRefs.refcount + 1);
-        } else {
-            throw new Exception("Attempted to add scene reference to unknown resource");
-        }
-    }
-
-    internal void UnloadResource(IResourceFile resource)
-    {
-        if (_loadedResources.Remove(resource, out var handleRefs)) {
-            if (handleRefs.refcount == 1) {
-                handleRefs.handle.References.Remove(this);
-            } else {
-                _loadedResources[resource] = (handleRefs.handle, handleRefs.refcount - 1);
-            }
-        }
-    }
-
     internal void Render(float deltaTime)
     {
         if (renderComponents.Count == 0) return;
@@ -217,18 +164,6 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IFileHandleReference
     internal void RemoveRenderComponent(RenderableComponent renderComponent)
     {
         renderComponents.Remove(renderComponent);
-    }
-
-    void IFileHandleReferenceHolder.Close()
-    {
-        // foreach (var render in renderComponents) {
-        //     render.OnExitScene(RootScene);
-        // }
-    }
-
-    internal void StoreResource(FileHandle fileHandle)
-    {
-        _loadedResources.TryAdd(fileHandle.Resource, (fileHandle, 0));
     }
 
     public override string ToString() => Name;

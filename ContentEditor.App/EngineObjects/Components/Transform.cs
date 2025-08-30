@@ -65,13 +65,14 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
     {
         get {
             if (_worldTransformValid) return ref _cachedWorldTransform;
-            Matrix4X4<float> parentMatrix = Matrix4X4<float>.Identity;
+
             if (GameObject.Parent != null) {
-                parentMatrix = GameObject.Parent.WorldTransform;
+                _cachedWorldTransform = ComputeLocalTransformMatrix() * GameObject.Parent.WorldTransform;
             } else if (GameObject.Folder != null) {
-                parentMatrix = Matrix4X4.CreateTranslation<float>(GameObject.Folder.OffsetSilk);
+                _cachedWorldTransform = ComputeLocalTransformMatrix() * Matrix4X4.CreateTranslation<float>(GameObject.Folder.OffsetSilk);
+            } else {
+                _cachedWorldTransform = ComputeLocalTransformMatrix();
             }
-            _cachedWorldTransform = ComputeLocalTransformMatrix() * parentMatrix;
             _worldTransformValid = true;
             return ref _cachedWorldTransform;
         }
