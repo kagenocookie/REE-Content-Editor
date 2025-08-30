@@ -23,6 +23,12 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
     {
         base.OnActivate();
 
+        if (!AppConfig.Instance.RenderMeshes.Get()) return;
+        RefreshMesh();
+    }
+
+    private void RefreshMesh()
+    {
         UnloadMesh();
         var meshPath = RszFieldCache.Mesh.Resource.Get(Data);
         if (!string.IsNullOrEmpty(meshPath)) {
@@ -80,6 +86,14 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
 
     internal override unsafe void Render(RenderContext context)
     {
+        // TODO - this may be better handled on the level of scene + component grouping instead of inside individual components
+        var render = AppConfig.Instance.RenderMeshes.Get();
+        if (!render) {
+            return;
+        }
+        if (mesh == null) {
+            RefreshMesh();
+        }
         if (mesh != null) {
             ref readonly var transform = ref GameObject.Transform.WorldTransform;
             context.RenderSimple(mesh, transform);

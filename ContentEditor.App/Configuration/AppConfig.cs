@@ -32,6 +32,9 @@ public class AppConfig : Singleton<AppConfig>
         public const string LastUpdateCheck = "last_update_check";
         public const string AutoExpandFieldsCount = "auto_expand_fields_count";
 
+        public const string RenderMeshes = "render_meshes";
+        public const string RenderColliders = "render_colliders";
+
         public const string Key_Undo = "key_undo";
         public const string Key_Redo = "key_redo";
         public const string Key_Save = "key_save";
@@ -122,6 +125,9 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<bool> ShowFps = new SettingWrapper<bool>(Keys.ShowFps, _lock, false);
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
     public readonly ClassSettingWrapper<string> LatestVersion = new ClassSettingWrapper<string>(Keys.LatestVersion, _lock);
+
+    public readonly SettingWrapper<bool> RenderMeshes = new SettingWrapper<bool>(Keys.RenderMeshes, _lock, true);
+    public readonly SettingWrapper<bool> RenderColliders = new SettingWrapper<bool>(Keys.RenderColliders, _lock, true);
 
     public readonly ClassSettingWrapper<string[]> RecentFiles = new ClassSettingWrapper<string[]>(Keys.RecentFiles, _lock, () => []);
 
@@ -228,6 +234,10 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.EnableUpdateCheck, instance.EnableUpdateCheck.value.ToString(), null),
             (Keys.PrettyLabels, instance.PrettyFieldLabels.value.ToString(), null),
             (Keys.RecentFiles, string.Join("|", instance.RecentFiles.value ?? Array.Empty<string>()), null),
+
+            (Keys.RenderMeshes, instance.RenderMeshes.value.ToString(), null),
+            (Keys.RenderColliders, instance.RenderColliders.value.ToString(), null),
+
             (Keys.Key_Undo, instance.Key_Undo.value.ToString(), "Keys"),
             (Keys.Key_Redo, instance.Key_Redo.value.ToString(), "Keys"),
             (Keys.Key_Save, instance.Key_Save.value.ToString(), "Keys"),
@@ -253,6 +263,9 @@ public class AppConfig : Singleton<AppConfig>
 
     private static void LoadConfigs(IEnumerable<(string key, string value, string? group)> values)
     {
+        static bool ReadBool(string str) => str.Equals("true", StringComparison.OrdinalIgnoreCase) || str.Equals("yes", StringComparison.OrdinalIgnoreCase) || str == "1";
+        static string? ReadString(string str) => string.IsNullOrEmpty(str) ? null : str;
+
         _lock.EnterWriteLock();
         var instance = Instance;
         try {
@@ -266,22 +279,22 @@ public class AppConfig : Singleton<AppConfig>
                             instance.BackgroundMaxFps.value = Math.Clamp(int.Parse(value), 5, instance.MaxFps.value);
                             break;
                         case Keys.ShowFps:
-                            instance.ShowFps.value = value.Equals("true", StringComparison.OrdinalIgnoreCase) || value.Equals("yes", StringComparison.OrdinalIgnoreCase) || value == "1";
+                            instance.ShowFps.value = ReadBool(value);
                             break;
                         case Keys.MainWindowGame:
-                            instance.MainSelectedGame.value = string.IsNullOrEmpty(value) ? null : value;
+                            instance.MainSelectedGame.value = ReadString(value);
                             break;
                         case Keys.MainActiveBundle:
-                            instance.MainActiveBundle.value = string.IsNullOrEmpty(value) ? null : value;
+                            instance.MainActiveBundle.value = ReadString(value);
                             break;
                         case Keys.BlenderPath:
-                            instance.BlenderPath.value = string.IsNullOrEmpty(value) ? null : value;
+                            instance.BlenderPath.value = ReadString(value);
                             break;
                         case Keys.RemoteDataSource:
-                            instance.RemoteDataSource.value = string.IsNullOrEmpty(value) ? null : value;
+                            instance.RemoteDataSource.value = ReadString(value);
                             break;
                         case Keys.GameConfigBaseFilepath:
-                            instance.GameConfigBaseFilepath.value = string.IsNullOrEmpty(value) ? null : value;
+                            instance.GameConfigBaseFilepath.value = ReadString(value);
                             break;
                         case Keys.Theme:
                             instance.Theme.value = string.IsNullOrEmpty(value) ? "default" : value;
@@ -302,19 +315,26 @@ public class AppConfig : Singleton<AppConfig>
                             if (int.TryParse(value, out _intvalue)) instance.AutoExpandFieldsCount.value = Math.Max(_intvalue, 0);
                             break;
                         case Keys.PrettyLabels:
-                            instance.PrettyFieldLabels.value = value.Equals("true", StringComparison.OrdinalIgnoreCase) || value.Equals("yes", StringComparison.OrdinalIgnoreCase) || value == "1";
+                            instance.PrettyFieldLabels.value = ReadBool(value);
                             break;
                         case Keys.RecentFiles:
                             instance.RecentFiles.value = value.Split('|', StringSplitOptions.RemoveEmptyEntries);
                             break;
                         case Keys.EnableUpdateCheck:
-                            instance.EnableUpdateCheck.value = value.Equals("true", StringComparison.OrdinalIgnoreCase) || value.Equals("yes", StringComparison.OrdinalIgnoreCase) || value == "1";
+                            instance.EnableUpdateCheck.value = ReadBool(value);
                             break;
                         case Keys.LastUpdateCheck:
                             if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var _updateCheck)) instance.LastUpdateCheck.value = _updateCheck;
                             break;
                         case Keys.LatestVersion:
-                            instance.LatestVersion.value = string.IsNullOrEmpty(value) ? null : value;
+                            instance.LatestVersion.value = ReadString(value);
+                            break;
+
+                        case Keys.RenderMeshes:
+                            instance.RenderMeshes.value = ReadBool(value);
+                            break;
+                        case Keys.RenderColliders:
+                            instance.RenderColliders.value = ReadBool(value);
                             break;
                     }
                 } else if (group == "Keys") {

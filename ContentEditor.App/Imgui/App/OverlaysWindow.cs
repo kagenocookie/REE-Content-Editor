@@ -45,13 +45,14 @@ public class OverlaysWindow : IWindowHandler
         } else if (ShowHelp) {
             helptext = "Drag & drop a supported file here or use the menu to open a file";
         }
+        var editorWindow = data.ParentWindow as EditorWindow;
         if (helptext != null) {
             var wndSize = new Vector2(Math.Min(500, size.X), Math.Min(40, size.Y));
             ImGui.SetNextWindowPos(new Vector2((size.X - wndSize.X) / 2, (size.Y - wndSize.Y) / 2));
             ImGui.SetNextWindowSize(wndSize);
             ImGui.Begin("Guide", ImGuiWindowFlags.NoTitleBar|ImGuiWindowFlags.NoResize|ImGuiWindowFlags.NoMove|ImGuiWindowFlags.NoScrollbar|ImGuiWindowFlags.NoCollapse);
             ImguiHelpers.TextCentered(helptext);
-            if (data.ParentWindow is EditorWindow editorWindow && ImGui.IsItemClicked()) {
+            if (editorWindow != null && ImGui.IsItemClicked()) {
                 PlatformUtils.ShowFileDialog((files) => {
                     Logger.Info(string.Join("\n", files));
                     editorWindow.OpenFiles(files);
@@ -68,6 +69,37 @@ public class OverlaysWindow : IWindowHandler
             if (tooltipTime <= 0) {
                 tooltipMsg = null;
             }
+        }
+
+        if (editorWindow != null && editorWindow.SceneManager.HasActiveMasterScene) {
+            var style = ImGui.GetStyle();
+            var btnSize = style.FramePadding * 2 + new Vector2(UI.FontSize, UI.FontSize);
+            btnSize.X = 2 * (btnSize.X + style.FramePadding.X) + style.WindowPadding.X * 2;
+            ImGui.SetNextWindowPos(new Vector2(size.X - btnSize.X - 8, 32));
+            ImGui.SetNextWindowSize(new Vector2(btnSize.X, btnSize.Y + style.WindowPadding.Y * 2));
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0);
+            ImGui.Begin("##toolbar", ImGuiWindowFlags.NoBringToFrontOnFocus|ImGuiWindowFlags.NoCollapse|ImGuiWindowFlags.NoResize|ImGuiWindowFlags.NoTitleBar|ImGuiWindowFlags.NoDocking|ImGuiWindowFlags.NoScrollbar);
+            var meshIcon = AppIcons.Mesh.ToString();
+
+            // meshes
+            ImGui.PushStyleColor(ImGuiCol.Text, AppConfig.Instance.RenderMeshes.Get() ? Colors.Default : Colors.Faded);
+            if (ImGui.Button(meshIcon + "##mesh")) {
+                AppConfig.Instance.RenderMeshes.Set(!AppConfig.Instance.RenderMeshes);
+            }
+            ImGui.PopStyleColor();
+            if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Show meshes");
+
+            // colliders
+            ImGui.SameLine();
+            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0, AppConfig.Instance.RenderColliders.Get() ? 1 : 0.6f, 0, 0.8f));
+            if (ImGui.Button(meshIcon + "##coll")) {
+                AppConfig.Instance.RenderColliders.Set(!AppConfig.Instance.RenderColliders);
+            }
+            ImGui.PopStyleColor();
+            if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Show colliders");
+
+            ImGui.End();
+            ImGui.PopStyleVar();
         }
     }
 

@@ -73,7 +73,6 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     {
         if (_filledWireMaterial != null) return _filledWireMaterial.Clone();
         _filledWireMaterial = new(GL, FilledWireShader);
-        _filledWireMaterial.SetParameter("_MainColor", new Color(0, 255, 0, 200));
         _filledWireMaterial.SetParameter("_OuterColor", new Color(0, 0, 0, 5));
         _filledWireMaterial.SetParameter("_InnerColor", new Color(0, 255, 0, 200));
         _filledWireMaterial.name = "wireFilled";

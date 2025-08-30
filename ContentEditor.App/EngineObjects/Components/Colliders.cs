@@ -30,6 +30,7 @@ public class Colliders(GameObject gameObject, RszInstance data) : RenderableComp
     {
         base.OnActivate();
 
+        if (!AppConfig.Instance.RenderColliders.Get()) return;
         UpdateColliderMeshes();
     }
 
@@ -170,6 +171,14 @@ public class Colliders(GameObject gameObject, RszInstance data) : RenderableComp
 
     internal override unsafe void Render(RenderContext context)
     {
+        var render = AppConfig.Instance.RenderColliders.Get();
+        if (!render) {
+            UnloadMeshes();
+            return;
+        }
+        if (meshes.Count == 0) {
+            UpdateColliderMeshes();
+        }
         ref readonly var transform = ref GameObject.Transform.WorldTransform;
         foreach (var coll in meshes) {
             if (coll != null) {
