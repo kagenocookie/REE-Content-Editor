@@ -1,12 +1,14 @@
+using ContentPatcher;
 using ReeLib;
 
-namespace ContentEditor.App;
+namespace ContentPatcher;
 
 public static partial class RszFieldCache
 {
     /// <summary>
     /// via.render.Mesh
     /// </summary>
+    [RszAccessor("via.render.Mesh")]
     public static class Mesh
     {
         /// <summary>

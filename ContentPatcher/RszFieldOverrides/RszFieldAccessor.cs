@@ -1,7 +1,10 @@
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using ContentEditor;
+using ContentPatcher;
 using ReeLib;
 
-namespace ContentEditor.App;
+namespace ContentPatcher;
 
 public abstract class RszFieldAccessorBase(string name)
 {
@@ -191,4 +194,46 @@ public static partial class RszFieldCache
 
     private static RszFieldAccessorFieldList<T> FromList<T>(Func<IEnumerable<(RszField field, int index)>, int> conditions, [CallerMemberName] string name = "")
         => new RszFieldAccessorFieldList<T>(conditions, name);
+
+    public static void InitializeFieldOverrides(RszParser parser)
+    {
+        InitializeFieldOverrides(parser, typeof(RszFieldCache));
+    }
+
+    private static void InitializeFieldOverrides(RszParser parser, Type type)
+    {
+        var fields = type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+        var classTargets = type.GetCustomAttributes<RszAccessorAttribute>();
+        foreach (var field in fields) {
+            if (!field.FieldType.IsAssignableTo(typeof(RszFieldAccessorBase))) continue;
+
+            var targets = classTargets.Concat(field.GetCustomAttributes<RszAccessorAttribute>());
+            if (!targets.Any()) continue;
+
+            var accessor = (RszFieldAccessorBase)field.GetValue(null)!;
+            if (accessor.Override == null) continue;
+
+            foreach (var attr in targets) {
+                var cls = parser.GetRSZClass(attr.Classname);
+                if (cls == null) continue;
+
+                var index = accessor.GetIndex(cls);
+                if (index == -1) continue;
+
+                var rszField = cls.fields[index];
+                if (accessor.Override.fieldType != null) {
+                    rszField.type = accessor.Override.fieldType.Value;
+                }
+
+                if (accessor.Override.originalType != null) {
+                    rszField.original_type = accessor.Override.originalType;
+                }
+            }
+        }
+
+        var nested = type.GetNestedTypes(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+        foreach (var sub in nested) {
+            InitializeFieldOverrides(parser, sub);
+        }
+    }
 }

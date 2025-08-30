@@ -1,7 +1,8 @@
+using ContentPatcher;
 using ReeLib;
 using ReeLib.via;
 
-namespace ContentEditor.App;
+namespace ContentPatcher;
 
 /// <summary>
 /// Container for game-agonstic RSZ field lookup conditions.
@@ -11,6 +12,7 @@ public static partial class RszFieldCache
     /// <summary>
     /// via.physics.Colliders
     /// </summary>
+    [RszAccessor("via.physics.Colliders")]
     public static class Colliders
     {
         /// <summary>
@@ -19,12 +21,13 @@ public static partial class RszFieldCache
         public static readonly RszFieldAccessorFirst<List<object>> ColliderList = First<List<object>>(
             fi => fi.array && fi.type is not RszFieldType.String and not RszFieldType.Resource,
             "Colliders"
-        ).Object("via.physics.Collider[]");
+        ).Object("via.physics.Collider");
     }
 
     /// <summary>
     /// via.physics.Collider
     /// </summary>
+    [RszAccessor("via.physics.Collider")]
     public static class Collider
     {
         /// <summary>
@@ -39,6 +42,8 @@ public static partial class RszFieldCache
     /// <summary>
     /// via.physics.SphereShape, via.physics.ContinuousSphereShape
     /// </summary>
+    [RszAccessor("via.physics.SphereShape")]
+    [RszAccessor("via.physics.ContinuousSphereShape")]
     public static class SphereShape
     {
         /// <summary>
@@ -52,6 +57,8 @@ public static partial class RszFieldCache
     /// <summary>
     /// via.physics.CapsuleShape, via.physics.ContinuousCapsuleShape
     /// </summary>
+    [RszAccessor("via.physics.CapsuleShape")]
+    [RszAccessor("via.physics.ContinuousCapsuleShape")]
     public static class CapsuleShape
     {
         /// <summary>
@@ -66,6 +73,7 @@ public static partial class RszFieldCache
     /// <summary>
     /// via.physics.CylinderShape
     /// </summary>
+    [RszAccessor("via.physics.CylinderShape")]
     public static class CylinderShape
     {
         /// <summary>
@@ -80,6 +88,7 @@ public static partial class RszFieldCache
     /// <summary>
     /// via.physics.BoxShape
     /// </summary>
+    [RszAccessor("via.physics.BoxShape")]
     public static class BoxShape
     {
         public static readonly RszFieldAccessorFirst<OBB> Box = First<OBB>(
@@ -90,6 +99,7 @@ public static partial class RszFieldCache
     /// <summary>
     /// via.physics.AabbShape
     /// </summary>
+    [RszAccessor("via.physics.AabbShape")]
     public static class AabbShape
     {
         // note: need to go by last one here because the newer games have an AABB field[0] in every shape type
@@ -103,16 +113,18 @@ public static partial class RszFieldCache
     /// <summary>
     /// via.physics.MeshShape
     /// </summary>
+    [RszAccessor("via.physics.MeshShape")]
     public static class MeshShape
     {
         public static readonly RszFieldAccessorFirst<string> Mesh =
             First<string>((field) => field.type is RszFieldType.String or RszFieldType.Resource)
-            .Resource("via.render.MeshResourceHolder");
+            .Resource("via.physics.CollisionMeshResourceHolder");
     }
 
     /// <summary>
     /// via.physics.StaticCompoundShape
     /// </summary>
+    [RszAccessor("via.physics.StaticCompoundShape")]
     public static class StaticCompoundShape
     {
         public static readonly RszFieldAccessorFirst<string> Shapes =
@@ -122,6 +134,7 @@ public static partial class RszFieldCache
         /// <summary>
         /// via.physics.StaticCompoundShape.Instance
         /// </summary>
+        [RszAccessor("via.physics.StaticCompoundShape.Instance")]
         public static class Instance
         {
             public static readonly RszFieldAccessorFirst<string> Shape =
@@ -133,6 +146,7 @@ public static partial class RszFieldCache
     /// <summary>
     /// via.physics.HeightFieldShape
     /// </summary>
+    [RszAccessor("via.physics.HeightFieldShape")]
     public static class HeightFieldShape
     {
         public static readonly RszFieldAccessorFirst<string> HeightField =
