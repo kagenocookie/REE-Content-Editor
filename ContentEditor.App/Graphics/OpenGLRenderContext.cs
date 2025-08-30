@@ -340,6 +340,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
         _missingTexture = new Texture(GL);
         _missingTexture.LoadFromRawData(DefaultPink, 4, 4);
+        _missingTexture.Path = "__missing";
         return _missingTexture;
     }
 
@@ -349,6 +350,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
         _defaultTexture = new Texture(GL);
         _defaultTexture.LoadFromRawData(DefaultWhite, 4, 4);
+        _defaultTexture.Path = "__default";
         return _defaultTexture;
     }
 

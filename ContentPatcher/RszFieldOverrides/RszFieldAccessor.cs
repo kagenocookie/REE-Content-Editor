@@ -12,6 +12,7 @@ public abstract class RszFieldAccessorBase(string name)
     protected bool hasLoggedError;
 
     public TypeCacheOverride? Override { get; set; }
+    public string Name { get; } = name;
 
     public abstract int GetIndex(RszClass instanceClass);
 
@@ -19,13 +20,13 @@ public abstract class RszFieldAccessorBase(string name)
     {
         if (!hasLoggedError) {
             hasLoggedError = true;
-            Logger.Error($"Failed to resolve field {name} for class {instanceClass}");
+            Logger.Error($"Failed to resolve field {Name} for class {instanceClass}");
         }
 
         return -1;
     }
 
-    public override string ToString() => name;
+    public override string ToString() => Name;
 }
 public abstract class RszFieldAccessorBase<T>(string name) : RszFieldAccessorBase(name)
 {
@@ -48,6 +49,7 @@ public sealed class TypeCacheOverride
 {
     public RszFieldType? fieldType;
     public string? originalType;
+    public string? name;
 }
 
 public sealed class RszFieldAccessorFixedIndex<T>(int index, [CallerMemberName] string name = "") : RszFieldAccessorBase<T>(name)
@@ -185,6 +187,14 @@ public static partial class RszFieldCache
         return accessor;
     }
 
+    public static TAcc Rename<TAcc>(this TAcc accessor, string? name = null)
+        where TAcc : RszFieldAccessorBase
+    {
+        accessor.Override ??= new();
+        accessor.Override.name = name ?? accessor.Name;
+        return accessor;
+    }
+
     private static RszFieldAccessorFixedIndex<T> Index<T>(int index, [CallerMemberName] string name = "")
         => new RszFieldAccessorFixedIndex<T>(index, name);
 
@@ -235,6 +245,9 @@ public static partial class RszFieldCache
 
                 if (accessor.Override.originalType != null) {
                     rszField.original_type = accessor.Override.originalType;
+                }
+                if (accessor.Override.name != null) {
+                    rszField.name = accessor.Override.name;
                 }
             }
         }

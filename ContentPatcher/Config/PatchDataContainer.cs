@@ -87,8 +87,15 @@ public class PatchDataContainer(string filepath)
 
     public void LoadPatchConfigs(ContentWorkspace workspace)
     {
-        if (!Directory.Exists(DefinitionFilepath)) return;
-        foreach (var file in Directory.EnumerateFiles(DefinitionFilepath, "*.yaml")) {
+        LoadConfigsFromDir(workspace, DefinitionFilepath);
+        var globalPath = Path.Combine(Path.GetDirectoryName(filepath)!, "global/definitions");
+        LoadConfigsFromDir(workspace, globalPath);
+    }
+
+    private void LoadConfigsFromDir(ContentWorkspace workspace, string directory)
+    {
+        if (!Directory.Exists(directory)) return;
+        foreach (var file in Directory.EnumerateFiles(directory, "*.yaml")) {
             var fs = File.OpenRead(file).ToMemoryStream();
             var memory = fs.GetBuffer().AsMemory(0, (int)fs.Length);
             var newDict = YamlSerializer.Deserialize<SerializedPatchConfigRoot>(memory, yamlOptions);

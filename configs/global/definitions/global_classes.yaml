@@ -1,0 +1,3 @@
+classes:
+  via.physics.Collider:
+    to_string: "Collider: {Shape?.class_shortname} {CollisionFilter}"

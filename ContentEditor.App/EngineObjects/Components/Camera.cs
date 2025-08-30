@@ -26,6 +26,10 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
         var targetCenter = target.Transform.Position;
         if (renderable != null) {
             var bounds = renderable.LocalBounds;
+            if (bounds.minpos == bounds.maxpos) {
+                bounds.minpos = new Vector3(-1, -1, -1);
+                bounds.maxpos = new Vector3(1, 1, 1);
+            }
             offset = Vector3.One * (bounds.Size.Length() * 0.35f);
             targetCenter += Vector3D.Transform(renderable.LocalBounds.Center.ToGeneric(), renderable.Transform.WorldTransform).ToSystem();
         } else {

@@ -37,6 +37,23 @@ public static partial class RszFieldCache
             (field) => field.original_type == "via.physics.Shape",
             (field) => field.type == RszFieldType.Object
         ]).Object("via.physics.Shape");
+
+        public static readonly RszFieldAccessorFirstFallbacks<string> FilterInfo = First<string>([
+            (field) => field.original_type == "via.physics.FilterInfo",
+            (field) => field.original_type != "via.physics.Shape" && field.type == RszFieldType.Object
+        ]).Object("via.physics.FilterInfo").Rename();
+
+        public static readonly RszFieldAccessorFirstFallbacks<string> CollisionFilter = First<string>([
+            (field) => field.original_type == "via.physics.CollisionFilterResourceHolder",
+            (field) => field.type == RszFieldType.Resource,
+            (field) => field.type == RszFieldType.String
+        ]).Resource("via.physics.CollisionFilterResourceHolder").Rename();
+
+        public static readonly RszFieldAccessorFirstFallbacks<string> CollisionMaterial = First<string>([
+            (field) => field.original_type == "via.physics.CollisionMaterialResourceHolder",
+            (field) => field.name != nameof(CollisionFilter) && field.type == RszFieldType.Resource,
+            (field) => field.name != nameof(CollisionFilter) && field.type == RszFieldType.String
+        ]).Resource("via.physics.CollisionMaterialResourceHolder").Rename();
     }
 
     /// <summary>
