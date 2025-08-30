@@ -50,6 +50,11 @@ public sealed class TypeCacheOverride
     public string? originalType;
 }
 
+public sealed class RszFieldAccessorFixedIndex<T>(int index, [CallerMemberName] string name = "") : RszFieldAccessorBase<T>(name)
+{
+    public override int GetIndex(RszClass instanceClass) => index;
+}
+
 public sealed class RszFieldAccessorFieldList<T>(Func<IEnumerable<(RszField field, int index)>, int> condition, [CallerMemberName] string name = "") : RszFieldAccessorBase<T>(name)
 {
     public sealed override int GetIndex(RszClass instanceClass)
@@ -179,6 +184,9 @@ public static partial class RszFieldCache
         accessor.Override.fieldType = RszFieldType.Resource;
         return accessor;
     }
+
+    private static RszFieldAccessorFixedIndex<T> Index<T>(int index, [CallerMemberName] string name = "")
+        => new RszFieldAccessorFixedIndex<T>(index, name);
 
     private static RszFieldAccessorFirst<T> First<T>(Func<RszField, bool> condition, [CallerMemberName] string name = "")
         => new RszFieldAccessorFirst<T>(condition, name);

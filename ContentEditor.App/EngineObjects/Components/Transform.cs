@@ -10,52 +10,46 @@ namespace ContentEditor.App;
 public sealed class Transform : Component, IConstructorComponent, IFixedClassnameComponent
 {
     static string IFixedClassnameComponent.Classname => "via.Transform";
-    private readonly bool isVec3;
-    private readonly bool isQuaternion;
 
     public Transform(GameObject gameObject, RszInstance data) : base(gameObject, data)
     {
-        isVec3 = data.Fields[0].type == RszFieldType.Vec3;
-        isQuaternion = data.Fields[1].type == RszFieldType.Quaternion;
     }
 
     public Transform(GameObject gameObject, Workspace data) : base(gameObject, RszInstance.CreateInstance(data.RszParser, data.Classes.Transform))
     {
-        isVec3 = Data.Fields[0].type == RszFieldType.Vec3;
-        isQuaternion = Data.Fields[1].type == RszFieldType.Quaternion;
     }
 
     public Vector3 LocalPosition
     {
-        get => isVec3 ? ((Vector3)Data.Values[0]) : ((Vector4)Data.Values[0]).ToVec3();
+        get => ((Vector3)Data.Values[0]);
         set {
-            Data.Values[0] = isVec3 ? value : new Vector4(value.X, value.Y, value.Z, 0);
+            Data.Values[0] = value;
             InvalidateTransform();
         }
     }
 
     public Quaternion LocalRotation
     {
-        get => isQuaternion ? ((Quaternion)Data.Values[1]) : ((Vector4)Data.Values[1]).ToQuaternion();
+        get => ((Quaternion)Data.Values[1]);
         set {
-            Data.Values[1] = isQuaternion ? value : new Vector4(value.X, value.Y, value.Z, value.W);
+            Data.Values[1] = value;
             InvalidateTransform();
         }
     }
 
     public Vector3 LocalScale {
-        get => isVec3 ? ((Vector3)Data.Values[2]) : ((Vector4)Data.Values[2]).ToVec3();
+        get => ((Vector3)Data.Values[2]);
         set {
-            Data.Values[2] = isVec3 ? value : new Vector4(value.X, value.Y, value.Z, 0);
+            Data.Values[2] = value;
             InvalidateTransform();
         }
     }
 
     public Vector3 Position => WorldTransform.Column4.ToSystem().ToVec3();
 
-    public Vector3D<float> SilkLocalPosition => isVec3 ? ((Vector3)Data.Values[0]).ToGeneric() : ((Vector4)Data.Values[0]).ToSilkNetVec3();
-    public Quaternion<float> SilkLocalRotation => isQuaternion ? ((Quaternion)Data.Values[1]).ToGeneric() : ((Vector4)Data.Values[1]).ToSilkNetQuaternion();
-    public Vector3D<float> SilkLocalScale => isVec3 ? ((Vector3)Data.Values[2]).ToGeneric() : ((Vector4)Data.Values[2]).ToSilkNetVec3();
+    public Vector3D<float> SilkLocalPosition => ((Vector3)Data.Values[0]).ToGeneric();
+    public Quaternion<float> SilkLocalRotation => ((Quaternion)Data.Values[1]).ToGeneric();
+    public Vector3D<float> SilkLocalScale => ((Vector3)Data.Values[2]).ToGeneric();
 
     public Vector3 LocalForward => Vector3.Transform(Vector3.UnitZ, LocalRotation);
 
