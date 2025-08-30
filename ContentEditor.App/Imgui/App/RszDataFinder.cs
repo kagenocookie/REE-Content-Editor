@@ -452,6 +452,10 @@ public class RszDataFinder : IWindowHandler
 
     private void InvokeRszSearchClass(SearchContext context, string ext, Func<RszFileOption, FileHandler, BaseRszFile> fileFact, RszClass cls, int fieldIndex, bool array, object? value)
     {
+        Func<object?, object?, bool> equalityComparer = cls.fields[fieldIndex].type is RszFieldType.String or RszFieldType.RuntimeType or RszFieldType.Resource
+            ? (object? a, object? b) => (a as string)?.Equals(b as string, StringComparison.InvariantCultureIgnoreCase) == true
+            : (object? a, object? b) => a?.Equals(b) == true;
+
         foreach (var (path, stream) in context.Env.GetFilesWithExtension(ext, context.Token)) {
             try {
                 if (context.Token.IsCancellationRequested) return;
@@ -473,12 +477,12 @@ public class RszDataFinder : IWindowHandler
                         if (array) {
                             var values = (IList<object>)fieldValue;
                             foreach (var v in values) {
-                                if (v.Equals(value)) {
+                                if (equalityComparer(v, value)) {
                                     AddMatch(context, FindPathToRszObject(rsz, inst, file), path);
                                 }
                             }
                         } else {
-                            if (fieldValue.Equals(value)) {
+                            if (equalityComparer(fieldValue, value)) {
                                 AddMatch(context, FindPathToRszObject(rsz, inst, file), path);
                             }
                         }
@@ -720,6 +724,7 @@ public class RszDataFinder : IWindowHandler
 
     private IEnumerable<Workspace> GetWorkspaces(Workspace current)
     {
+        current.PakReader.EnableConsoleLogging = false;
         yield return current;
         if (!searchAllGames) yield break;
 
@@ -728,6 +733,7 @@ public class RszDataFinder : IWindowHandler
 
             var env = WorkspaceManager.Instance.GetWorkspace(other);
             try {
+                env.PakReader.EnableConsoleLogging = false;
                 Logger.Info("Starting search for game " + env.Config.Game);
                 yield return env;
             } finally {

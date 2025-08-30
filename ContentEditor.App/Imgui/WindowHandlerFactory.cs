@@ -222,6 +222,8 @@ public static partial class WindowHandlerFactory
                 return new RawDataEditor<CdefFile>(env, file);
             case KnownFileFormats.DynamicsDefinition:
                 return new RawDataEditor<DefFile>(env, file);
+            case KnownFileFormats.CollisionFilter:
+                return new CfilEditor(env, file);
             case KnownFileFormats.Mesh:
                 return new MeshViewer(env, file);
         }
