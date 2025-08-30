@@ -26,7 +26,7 @@ public class Component(GameObject gameObject, RszInstance data)
     public Scene? Scene => GameObject.Scene;
 
     public string Classname => Data.RszClass.name;
-    public override string ToString() => Data.ToString();
+    public override string ToString() => $"{GameObject} [{Data}]";
 
     public virtual void CloneTo(GameObject target)
     {

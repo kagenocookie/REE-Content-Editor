@@ -23,12 +23,15 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     private Shader StandardShader => GetShader("Shaders/GLSL/standard3D.glsl");
     private Shader ViewShadedShader => GetShader("Shaders/GLSL/viewShaded.glsl");
     private Shader WireShader => GetShader("Shaders/GLSL/wireframe.glsl");
+    private Shader FilledWireShader => GetShader("Shaders/GLSL/wireframe-uv.glsl");
 
     public override Material GetPresetMaterial(EditorPresetMaterials preset)
     {
         switch (preset) {
             case EditorPresetMaterials.Wireframe:
                 return CreateWireMaterial();
+            case EditorPresetMaterials.WireframeFilled:
+                return CreateFilledWireMaterial();
             case EditorPresetMaterials.Default:
             default:
                 return CreateViewShadedMaterial();
@@ -60,12 +63,21 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     {
         if (_wireMaterial != null) return _wireMaterial.Clone();
         _wireMaterial = new(GL, WireShader);
-        _wireMaterial.BlendMode = new MaterialBlendMode(true, BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-        _wireMaterial.DisableDepth = true;
-        _wireMaterial.SetParameter("_MainColor", new Color(0, 0, 0, 5));
-        _wireMaterial.SetParameter("_WireColor", new Color(0, 255, 0, 200));
-        _wireMaterial.name = "default";
+        _wireMaterial.SetParameter("_OuterColor", new Color(0, 0, 0, 5));
+        _wireMaterial.SetParameter("_InnerColor", new Color(0, 255, 0, 200));
+        _wireMaterial.name = "wire";
         return _wireMaterial.Clone();
+    }
+    private Material? _filledWireMaterial;
+    private Material CreateFilledWireMaterial()
+    {
+        if (_filledWireMaterial != null) return _filledWireMaterial.Clone();
+        _filledWireMaterial = new(GL, FilledWireShader);
+        _filledWireMaterial.SetParameter("_MainColor", new Color(0, 255, 0, 200));
+        _filledWireMaterial.SetParameter("_OuterColor", new Color(0, 0, 0, 5));
+        _filledWireMaterial.SetParameter("_InnerColor", new Color(0, 255, 0, 200));
+        _filledWireMaterial.name = "wireFilled";
+        return _filledWireMaterial.Clone();
     }
 
     private unsafe void ApplyGlobalUniforms()
