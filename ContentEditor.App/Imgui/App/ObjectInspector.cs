@@ -46,6 +46,12 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
             ImGui.TextColored(Colors.Faded, "No object selected");
             return;
         }
+
+        var icon = AppIcons.GetIcon(_target);
+        if (icon != '\0') {
+            ImGui.Text(icon.ToString());
+            ImGui.SameLine();
+        }
         if (Target is IPathedObject pathed) {
             ImGui.TextColored(Colors.Faded, $"Target: [{Target?.GetType().Name}] {Target}: {pathed.Path}");
         } else {
@@ -64,8 +70,7 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
     public void OnWindow()
     {
         var data = context.Get<WindowData>();
-        var Icon = _target == null ? '\0' : AppIcons.GetIcon(_target);
-        if (!ImguiHelpers.BeginWindow(data, name: Icon == '\0' ? $"{HandlerName}##{data.ID}" : $"{Icon} {HandlerName}##{data.ID}")) {
+        if (!ImguiHelpers.BeginWindow(data, name: $"{HandlerName}##{data.ID}")) {
             WindowManager.Instance.CloseWindow(data);
             return;
         }
