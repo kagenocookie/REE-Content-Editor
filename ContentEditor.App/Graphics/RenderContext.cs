@@ -38,7 +38,7 @@ public abstract class RenderContext : IDisposable
     internal virtual void BeforeRender()
     {
         var size = RenderOutputSize;
-        ProjectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView(80f * MathF.PI / 180, size.X / size.Y, 0.1f, 1000.0f);
+        ProjectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView(80f * MathF.PI / 180, size.X / size.Y, 0.1f, 8096.0f);
         ViewProjectionMatrix = ViewMatrix * ProjectionMatrix;
     }
 
