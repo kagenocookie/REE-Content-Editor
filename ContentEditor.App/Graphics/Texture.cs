@@ -152,7 +152,7 @@ public class Texture : IDisposable
         // https://www.oldunreal.com/editing/s3tc/ARB_texture_compression.pdf
         var data = new DDSFile.MipMapLevelData();
         var intFormat = DxgiToGLInternalFormat(compressedFormat);
-        Logger.Debug("Loading DDS with format " + compressedFormat + " => " + intFormat);
+        // Logger.Debug("Loading DDS with format " + compressedFormat + " => " + intFormat);
         var mips = 0;
         while (iterator.Next(ref data)) {
             fixed (byte* bytes = data.data) {
@@ -166,7 +166,7 @@ public class Texture : IDisposable
     {
         var fmt = GetFormatInfo(format);
         var data = new DDSFile.MipMapLevelData();
-        Logger.Debug("Loading DDS with format " + format + " => " + fmt.internalFormat);
+        // Logger.Debug("Loading DDS with format " + format + " => " + fmt.internalFormat);
         var mips = 0;
         var internalFormat = fmt.internalFormat;
         while (iterator.Next(ref data)) {
@@ -181,7 +181,7 @@ public class Texture : IDisposable
     {
         var data = new DDSFile.MipMapLevelData();
         var intFormat = DxgiToGLInternalFormat(compressedFormat);
-        Logger.Debug("Loading DDS with format " + compressedFormat + " => " + intFormat);
+        // Logger.Debug("Loading DDS with format " + compressedFormat + " => " + intFormat);
         var mips = 0;
         while (iterator.Next(ref data)) {
             fixed (byte* bytes = data.data) {

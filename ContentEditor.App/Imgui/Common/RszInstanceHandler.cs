@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using ContentEditor.App.Windowing;
@@ -903,6 +904,131 @@ public class TransformStructHandler : IObjectUIHandler
             ImGui.SameLine();
             ImGui.SetNextItemWidth(w * 0.25f - ImGui.GetStyle().FramePadding.X * 2);
             ImGui.LabelText("Scale", "##labelS");
+            ImGui.TreePop();
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(ReeLib.via.Sphere), Stateless = true)]
+public class SphereStructHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var sphere = context.Get<ReeLib.via.Sphere>();
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, sphere.ToString());
+        if (show) {
+            if (ImGui.DragFloat3("Position", ref sphere.pos, 0.005f)) {
+                UndoRedo.RecordSet(context, sphere, undoId: $"{context.GetHashCode()} pos");
+            }
+            if (ImGui.DragFloat("Radius", ref sphere.r, 0.002f)) {
+                UndoRedo.RecordSet(context, sphere, undoId: $"{context.GetHashCode()} radius");
+            }
+            ImGui.TreePop();
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(ReeLib.via.OBB), Stateless = true)]
+public class OBBStructHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var box = context.Get<ReeLib.via.OBB>();
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, box.ToString());
+        if (show) {
+            Matrix4X4.Decompose(box.Coord.ToSystem().ToGeneric(), out var scale, out var rot, out var trans);
+
+            if (ImGui.DragFloat3("Offset", ref Unsafe.As<Vector3D<float>, Vector3>(ref trans), 0.005f)) {
+                box.Coord = Transform.GetMatrixFromTransforms(trans, rot, scale).ToSystem();
+                UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} offset");
+            }
+            if (ImGui.DragFloat4("Rotation", ref Unsafe.As<Quaternion<float>, Vector4>(ref rot), 0.005f)) {
+                box.Coord = Transform.GetMatrixFromTransforms(trans, rot, scale).ToSystem();
+                UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} rotation");
+            }
+            if (ImGui.DragFloat3("Scale", ref Unsafe.As<Vector3D<float>, Vector3>(ref scale), 0.005f)) {
+                box.Coord = Transform.GetMatrixFromTransforms(trans, rot, scale).ToSystem();
+                UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} scale");
+            }
+
+            var ext = box.Extent;
+            if (ImGui.DragFloat3("Extent", ref ext, 0.002f)) {
+                box.Extent = ext;
+                UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} radius");
+            }
+            ImGui.TreePop();
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(ReeLib.via.Capsule), Stateless = true)]
+public class CapsuleStructHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var capsule = context.Get<ReeLib.via.Capsule>();
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, capsule.ToString());
+        if (show) {
+            if (ImGui.DragFloat3("Point 1", ref capsule.p0, 0.005f)) {
+                UndoRedo.RecordSet(context, capsule, undoId: $"{context.GetHashCode()} p0");
+            }
+
+            if (ImGui.DragFloat3("Point 2", ref capsule.p1, 0.005f)) {
+                UndoRedo.RecordSet(context, capsule, undoId: $"{context.GetHashCode()} p1");
+            }
+
+            if (ImGui.DragFloat("Radius", ref capsule.r, 0.005f)) {
+                UndoRedo.RecordSet(context, capsule, undoId: $"{context.GetHashCode()} r");
+            }
+
+            ImGui.TreePop();
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(ReeLib.via.Cylinder), Stateless = true)]
+public class CylinderStructHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var cylinder = context.Get<ReeLib.via.Cylinder>();
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, cylinder.ToString());
+        if (show) {
+            if (ImGui.DragFloat3("Point 1", ref cylinder.p0, 0.005f)) {
+                UndoRedo.RecordSet(context, cylinder, undoId: $"{context.GetHashCode()} p0");
+            }
+
+            if (ImGui.DragFloat3("Point 2", ref cylinder.p1, 0.005f)) {
+                UndoRedo.RecordSet(context, cylinder, undoId: $"{context.GetHashCode()} p1");
+            }
+
+            if (ImGui.DragFloat("Radius", ref cylinder.r, 0.005f)) {
+                UndoRedo.RecordSet(context, cylinder, undoId: $"{context.GetHashCode()} r");
+            }
+
+            ImGui.TreePop();
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(ReeLib.via.AABB), Stateless = true)]
+public class AABBStructHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var AABB = context.Get<ReeLib.via.AABB>();
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, AABB.ToString());
+        if (show) {
+            var center = AABB.Center;
+            var size = AABB.Size / 2;
+            if (ImGui.DragFloat3("Center", ref center, 0.005f)) {
+                UndoRedo.RecordSet(context, new AABB(center - size, center + size), undoId: $"{context.GetHashCode()} c");
+            }
+
+            if (ImGui.DragFloat3("Size", ref size, 0.005f)) {
+                UndoRedo.RecordSet(context, new AABB(center - size, center + size), undoId: $"{context.GetHashCode()} s");
+            }
+
             ImGui.TreePop();
         }
     }

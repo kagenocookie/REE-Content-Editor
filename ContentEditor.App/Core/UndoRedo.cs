@@ -120,9 +120,9 @@ public class UndoRedo
         return state;
     }
 
-    public static void RecordSet<TValue>(UIContext context, TValue value, WindowBase? window = null, UndoRedoMergeMode mergeMode = UndoRedoMergeMode.MergeIdentical)
+    public static void RecordSet<TValue>(UIContext context, TValue value, WindowBase? window = null, UndoRedoMergeMode mergeMode = UndoRedoMergeMode.MergeIdentical, string? undoId = null)
     {
-        GetState(window).Push(new ContextSetUndoRedo<TValue>(context, value, null, $"{context.GetHashCode()}"), mergeMode);
+        GetState(window).Push(new ContextSetUndoRedo<TValue>(context, value, null, undoId ?? $"{context.GetHashCode()}"), mergeMode);
     }
 
     public static void RecordSet<TValue>(UIContext context, TValue value, Action<UIContext> postChangeAction, WindowBase? window = null, UndoRedoMergeMode mergeMode = UndoRedoMergeMode.MergeIdentical)
