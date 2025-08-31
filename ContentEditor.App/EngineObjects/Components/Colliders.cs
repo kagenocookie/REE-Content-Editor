@@ -11,9 +11,6 @@ namespace ContentEditor.App;
 [RszComponentClass("via.physics.Colliders")]
 public class Colliders(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data), IFixedClassnameComponent
 {
-    private readonly int collidersFieldIndex = data.IndexedFields
-        .First(fi => fi.field.array && fi.field.type is not RszFieldType.String and not RszFieldType.Resource).index;
-
     static string IFixedClassnameComponent.Classname => "via.physics.Colliders";
 
     private List<object> CollidersList => RszFieldCache.Colliders.ColliderList.Get(Data);
@@ -153,9 +150,10 @@ public class Colliders(GameObject gameObject, RszInstance data) : RenderableComp
 
     private void UnloadMeshes()
     {
-        for (int i = CollidersList.Count; i < CollidersList.Count; ++i) {
+        for (int i = 0; i < CollidersList.Count; ++i) {
             UnloadMesh(i);
         }
+        meshes.Clear();
     }
 
     private void UnloadMesh(int index)

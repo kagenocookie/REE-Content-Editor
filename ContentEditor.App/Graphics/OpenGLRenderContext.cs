@@ -219,21 +219,44 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             // var bounds = sub.mesh.BoundingBox;
 
             mesh.Bind();
-            material.Bind();
+            BindMaterial(material);
             material.Shader.SetUniform("uModel", transform);
-
-            var blend = material.BlendMode;
-            if (blend.Blend) {
-                GL.Enable(EnableCap.Blend);
-                GL.BlendFunc(blend.BlendModeSrc, blend.BlendModeDest);
-            }
-            if (material.DisableDepth) {
-                GL.Disable(EnableCap.DepthTest);
-            }
 
             GL.DrawArrays(PrimitiveType.Triangles, 0, (uint)mesh.Indices.Length);
             GL.Enable(EnableCap.DepthTest);
             GL.Disable(EnableCap.Blend);
+        }
+        lastInstancedMesh = null;
+    }
+
+    private MeshHandle? lastInstancedMesh;
+    public override void RenderInstanced(MeshHandle mesh, int instanceIndex, int instanceCount, in Matrix4X4<float> transform)
+    {
+        var actMesh = mesh.GetMesh(0);
+        if (lastInstancedMesh != mesh) {
+            BindMaterial(mesh.GetMaterial(0));
+            lastInstancedMesh = mesh;
+        }
+
+        actMesh.Bind();
+        mesh.GetMaterial(0).Shader.SetUniform("uModel", transform);
+        GL.DrawArrays(PrimitiveType.Triangles, 0, (uint)actMesh.Indices.Length);
+
+        // TODO actually do instanced drawing
+        // GL.DrawArraysInstanced(PrimitiveType.Triangles, 0, (uint)actMesh.Indices.Length, instanceCount);
+    }
+
+    private void BindMaterial(Material material)
+    {
+        material.Bind();
+
+        var blend = material.BlendMode;
+        if (blend.Blend) {
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(blend.BlendModeSrc, blend.BlendModeDest);
+        }
+        if (material.DisableDepth) {
+            GL.Disable(EnableCap.DepthTest);
         }
     }
 

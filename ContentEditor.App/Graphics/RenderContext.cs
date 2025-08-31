@@ -54,6 +54,7 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
     /// Render a simple mesh (static, single mesh with no animation)
     /// </summary>
     public abstract void RenderSimple(MeshHandle mesh, in Matrix4X4<float> transform);
+    public abstract void RenderInstanced(MeshHandle mesh, int instanceIndex, int instanceCount, in Matrix4X4<float> transform);
 
     public abstract MaterialGroup LoadMaterialGroup(FileHandle file);
     public abstract Material GetPresetMaterial(EditorPresetMaterials preset);

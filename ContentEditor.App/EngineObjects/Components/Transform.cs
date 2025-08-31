@@ -82,13 +82,17 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
 
     public Matrix4X4<float> ComputeLocalTransformMatrix()
     {
-        var quat = SilkLocalRotation;
-        Matrix4X4<float> mat = Matrix4X4.CreateScale<float>(SilkLocalScale);
+        return GetMatrixFromTransforms(SilkLocalPosition, SilkLocalRotation, SilkLocalScale);
+    }
 
-        if (!quat.IsIdentity) {
-            mat = mat * Matrix4X4.CreateFromQuaternion(quat);
+    public static Matrix4X4<float> GetMatrixFromTransforms(Vector3D<float> pos, Quaternion<float> rot, Vector3D<float> scale)
+    {
+        Matrix4X4<float> mat = Matrix4X4.CreateScale<float>(scale);
+
+        if (!rot.IsIdentity) {
+            mat = mat * Matrix4X4.CreateFromQuaternion(rot);
         }
-        return mat * Matrix4X4.CreateTranslation(LocalPosition.ToSilkNet());
+        return mat * Matrix4X4.CreateTranslation(pos);
     }
 
     public void Translate(Vector3 offset)

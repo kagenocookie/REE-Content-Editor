@@ -21,7 +21,7 @@ public class MaterialGroupLoader : IFileLoader,
 
     public IResourceFilePatcher? CreateDiffHandler() => null;
 
-    private static HashSet<string> AlbedoTextures = ["BaseDielectricMap", "ALBD", "ALBDmap", "BackMap", "BaseMetalMap", "BaseDielectricMapBase"];
+    private static HashSet<string> AlbedoTextures = ["BaseDielectricMap", "ALBD", "ALBDmap", "BackMap", "BaseMetalMap", "BaseDielectricMapBase", "BaseAlphaMap"];
 
     public IResourceFile? Load(ContentWorkspace workspace, FileHandle handle)
     {
