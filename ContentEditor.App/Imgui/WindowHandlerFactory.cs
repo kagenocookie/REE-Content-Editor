@@ -277,6 +277,7 @@ public static partial class WindowHandlerFactory
 
         var reflectionOptions = BindingFlags.Instance | BindingFlags.Public;
         if (includePrivate) reflectionOptions |= BindingFlags.NonPublic;
+        var isValueType = targetType.IsValueType;
 
         if (members == null && !typeMembers.TryGetValue(targetType, out members)) {
             var list = new List<MemberInfo>();
@@ -313,7 +314,10 @@ public static partial class WindowHandlerFactory
                         _ => throw new Exception()
                     },
                     setter: field switch {
-                        FieldInfo fi => (c, v) => fi.SetValue(c.target, v),
+                        FieldInfo fi => !isValueType ? (c, v) => fi.SetValue(c.target, v) : (c, v) => {
+                            fi.SetValue(c.target, v);
+                            c.parent?.Set(c.target);
+                        },
                         PropertyInfo prop => prop.SetMethod == null ? null : (c, v) => prop.SetValue(c.target, v),
                         _ => throw new Exception()
                     }

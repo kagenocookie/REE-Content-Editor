@@ -46,7 +46,7 @@ public class LazyPlainObjectHandler(Type type) : IObjectUIHandler
             if (context.children.Count == 0) {
                 WindowHandlerFactory.SetupObjectUIContext(context, Type);
             }
-            ImGui.PushID(context.GetRaw()!.GetHashCode());
+            ImGui.PushID(context.label);
             foreach (var child in context.children) {
                 child.ShowUI();
             }
