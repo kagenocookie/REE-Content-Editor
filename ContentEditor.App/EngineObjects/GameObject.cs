@@ -358,6 +358,9 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         } else {
             DeactivateComponents();
         }
+        foreach (var child in Children) {
+            child.SetActive(active);
+        }
     }
 
     private void ActivateComponents()

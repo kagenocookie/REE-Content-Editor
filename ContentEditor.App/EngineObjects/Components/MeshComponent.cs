@@ -27,6 +27,12 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         RefreshMesh();
     }
 
+    internal override void OnDeactivate()
+    {
+        base.OnDeactivate();
+        UnloadMesh();
+    }
+
     private void RefreshMesh()
     {
         UnloadMesh();
@@ -61,12 +67,6 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         }
         RszFieldCache.Mesh.Resource.Set(Data, meshFile.InternalPath ?? string.Empty);
         RszFieldCache.Mesh.Material.Set(Data, materialFile?.InternalPath ?? string.Empty);
-    }
-
-    internal override void OnDeactivate()
-    {
-        base.OnDeactivate();
-        UnloadMesh();
     }
 
     private void UnloadMesh()
