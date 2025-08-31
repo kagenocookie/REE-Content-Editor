@@ -55,6 +55,19 @@ public static class UIContextExtensions
         return context.parent?.FindParentContextByHandler<T>();
     }
 
+    public static UIContext? FindInHierarchy(this UIContext context, UIContext endParent, Func<UIContext, bool> condition, bool includeSelf = false)
+    {
+        var p = includeSelf ? context : context.parent;
+        while (p != null && p != endParent) {
+            if (condition.Invoke(p)) {
+                return p;
+            }
+            p = p.parent;
+        }
+
+        return null;
+    }
+
     public static ResourceEntity? GetOwnerEntity(this UIContext context)
     {
         var parent = context.parent;

@@ -58,7 +58,7 @@ public class ShapeMesh : Mesh
         var totalBounds = AABB.MaxMin;
         // an OBB is just an AABB with a transformation applied to it
         for (int i = 0; i < BoxTrianglePoints.Length; ++i) {
-            var point = box.Coord.Multiply(BoxTrianglePoints[i]);
+            var point = box.Coord.Multiply(BoxTrianglePoints[i] * extent);
             VertexData[i * attributeNumberCount + 0] = point.X;
             VertexData[i * attributeNumberCount + 1] = point.Y;
             VertexData[i * attributeNumberCount + 2] = point.Z;

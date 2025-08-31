@@ -152,7 +152,7 @@ public class UIContext
                         return;
                     }
                 }
-                parent.SetUnchanged();
+                parent.SetUnchangedImpl(eventData);
             }
         }
     }
