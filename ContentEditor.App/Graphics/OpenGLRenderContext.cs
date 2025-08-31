@@ -25,16 +25,17 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     private Shader WireShader => GetShader("Shaders/GLSL/wireframe.glsl");
     private Shader FilledWireShader => GetShader("Shaders/GLSL/wireframe-uv.glsl");
 
-    public override Material GetPresetMaterial(EditorPresetMaterials preset)
+    public override IEnumerable<Material> GetPresetMaterials(EditorPresetMaterials preset)
     {
         switch (preset) {
             case EditorPresetMaterials.Wireframe:
-                return CreateWireMaterial();
-            case EditorPresetMaterials.WireframeFilled:
-                return CreateFilledWireMaterial();
+                yield return CreateFilledWireMaterial();
+                yield return CreateWireMaterial();
+                yield break;
             case EditorPresetMaterials.Default:
             default:
-                return CreateViewShadedMaterial();
+                yield return CreateViewShadedMaterial();
+                yield break;
         }
     }
 
@@ -120,7 +121,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
     protected override MeshResourceHandle? LoadMeshResource(FileHandle fileHandle)
     {
-        var meshResource = fileHandle.GetResource<AssimpMeshResource>();
+        var meshResource = fileHandle.Resource as AssimpMeshResource ?? fileHandle.GetCustomContent<AssimpMeshResource>();
         if (meshResource == null) return null;
 
         var handle = new MeshResourceHandle(MeshRefs.NextInstanceID);

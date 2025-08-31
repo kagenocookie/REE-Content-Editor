@@ -67,7 +67,7 @@ public class Colliders(GameObject gameObject, RszInstance data) : RenderableComp
         while (meshes.Count <= colliderIndex) meshes.Add(null);
         var meshHandle = meshes[colliderIndex];
         var curMesh = meshHandle?.GetMesh(0);
-        material ??= ctx.GetPresetMaterialGroup(EditorPresetMaterials.WireframeFilled);
+        material ??= ctx.GetPresetMaterialGroup(EditorPresetMaterials.Wireframe);
 
         switch (shape.RszClass.name) {
             case "via.physics.SphereShape":
@@ -123,8 +123,8 @@ public class Colliders(GameObject gameObject, RszInstance data) : RenderableComp
                     UnloadMesh(colliderIndex);
                     var mcolFilepath = RszFieldCache.MeshShape.Mesh.Get(shape);
                     if (!string.IsNullOrEmpty(mcolFilepath)) {
-                        // TODO mcol
-                        // meshes[colliderIndex] = ctx.LoadMesh(mesh);
+                        // TODO mcol shapes
+                        meshHandle = ctx.LoadMesh(mcolFilepath);
                     }
                     break;
                 }
@@ -145,6 +145,10 @@ public class Colliders(GameObject gameObject, RszInstance data) : RenderableComp
         meshes[colliderIndex] = meshHandle;
         if (meshHandle != null) {
             ctx.SetMeshMaterial(meshHandle, material);
+            for (int i = 0; i < meshHandle.Handle.Meshes.Count; i++) {
+                var submesh = meshHandle.Handle.Meshes[i];
+                meshHandle.SetMaterial(i, submesh is TriangleMesh ? "wire" : "wireFilled");
+            }
         }
     }
 

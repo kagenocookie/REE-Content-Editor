@@ -126,5 +126,4 @@ public enum EditorPresetMaterials
 {
     Default,
     Wireframe,
-    WireframeFilled,
 }

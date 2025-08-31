@@ -32,11 +32,17 @@ public sealed class MeshHandle
             remappedIndex = MaterialIndicesRemap[meshIndex];
         }
 
-        if (remappedIndex >= 0 && remappedIndex < MaterialIndicesRemap.Count) {
+        if (remappedIndex >= 0 && remappedIndex < Material.Materials.Count) {
             return Material.Materials[remappedIndex];
         }
 
         return Material.Materials[0];
+    }
+
+    public void SetMaterial(int meshIndex, string materialName)
+    {
+        var matIndex = Material.GetMaterialIndex(materialName);
+        MaterialIndicesRemap[meshIndex] = matIndex;
     }
 
     public override string ToString() => $"[Mesh handle {Handle}]";

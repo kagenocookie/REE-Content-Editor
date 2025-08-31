@@ -26,6 +26,7 @@ public class TriangleMesh : Mesh
         Indices = sourceMesh.GetIndices().ToArray();
 
         VertexData = new float[Indices.Length * attributeNumberCount];
+        var hasNormals = sourceMesh.HasNormals;
         for (int index = 0; index < Indices.Length; ++index) {
             var vert = (int)Indices[index];
             VertexData[index * attributeNumberCount + 0] = sourceMesh.Vertices[vert].X;
@@ -33,9 +34,9 @@ public class TriangleMesh : Mesh
             VertexData[index * attributeNumberCount + 2] = sourceMesh.Vertices[vert].Z;
             VertexData[index * attributeNumberCount + 3] = uv0[vert].X;
             VertexData[index * attributeNumberCount + 4] = uv0[vert].Y;
-            VertexData[index * attributeNumberCount + 5] = sourceMesh.Normals[vert].X;
-            VertexData[index * attributeNumberCount + 6] = sourceMesh.Normals[vert].Y;
-            VertexData[index * attributeNumberCount + 7] = sourceMesh.Normals[vert].Z;
+            VertexData[index * attributeNumberCount + 5] = !hasNormals ? 0 : sourceMesh.Normals[vert].X;
+            VertexData[index * attributeNumberCount + 6] = !hasNormals ? 0 : sourceMesh.Normals[vert].Y;
+            VertexData[index * attributeNumberCount + 7] = !hasNormals ? 1 : sourceMesh.Normals[vert].Z;
             VertexData[index * attributeNumberCount + 8] = (float)index;
             if (hasTangents) {
                 VertexData[index * attributeNumberCount + 9] = sourceMesh.Tangents[vert].X;

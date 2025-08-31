@@ -57,7 +57,7 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
     public abstract void RenderInstanced(MeshHandle mesh, int instanceIndex, int instanceCount, in Matrix4X4<float> transform);
 
     public abstract MaterialGroup LoadMaterialGroup(FileHandle file);
-    public abstract Material GetPresetMaterial(EditorPresetMaterials preset);
+    public abstract IEnumerable<Material> GetPresetMaterials(EditorPresetMaterials preset);
 
     public abstract (MeshHandle, ShapeMesh) CreateShapeMesh();
     protected abstract MeshResourceHandle? LoadMeshResource(FileHandle fileHandle);
@@ -174,9 +174,11 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
 
     public MaterialGroup GetPresetMaterialGroup(EditorPresetMaterials preset)
     {
-        var mat = GetPresetMaterial(preset);
+        var mats = GetPresetMaterials(preset);
         var grp = new MaterialGroup();
-        grp.Add(mat);
+        foreach (var mat in mats) {
+            grp.Add(mat);
+        }
         return grp;
     }
 
@@ -184,15 +186,14 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
     {
         var handle = mesh.Handle;
         var matIndices = new List<int>();
-        var meshes = handle.Meshes;
-        foreach (var srcMesh in meshes) {
+        foreach (var srcMesh in handle.Meshes) {
             var matName = handle.GetMaterialName(matIndices.Count);
             var target = material.GetByName(matName);
             if (target != null) {
                 matIndices.Add(material.GetMaterialIndex(target));
             } else {
                 if (material.Materials.Count == 0) {
-                    material.Materials.Add(GetPresetMaterial(EditorPresetMaterials.Default));
+                    material.Materials.Add(GetPresetMaterials(EditorPresetMaterials.Default).First());
                     material.Materials[0].name = matName;
                 }
                 matIndices.Add(0);

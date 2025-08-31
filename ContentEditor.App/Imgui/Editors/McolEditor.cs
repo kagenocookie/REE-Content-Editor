@@ -60,10 +60,6 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         }
 
         var window = EditorWindow.CurrentWindow!;
-        // if (ImGui.Button("Show geometry")) {
-        //     // TODO create and open in scene
-        // }
-        // ImGui.SameLine();
         if (ImGui.Button("Export to mesh ...")) {
             PlatformUtils.ShowSaveFileDialog((fn) => {
                 lastFilepath = fn;
@@ -139,6 +135,7 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         var scene = new Assimp.Scene();
         scene.RootNode = new Node() { Transform = Matrix4x4.Identity };
         for (int i = 0; i < bvh.stringTable.Count; ++i) {
+
             var mat = new Material();
             scene.Materials.Add(mat);
             mat.Name = LayerToMaterialName(i, bvh.stringTable[i].main);
@@ -150,6 +147,7 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
             mesh.UVComponentCount[0] = 2;
             var col = mesh.VertexColorChannels[0];
             int index = 0;
+            var bounds = new ReeLib.via.AABB();
             foreach (var tri in bvh.triangles) {
                 if (tri.info.layerIndex != i) continue;
                 var uv = new Vector3(tri.info.partId / MaxPartId, 1, 0);
@@ -165,10 +163,17 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
                 col.Add(maskCol);
                 col.Add(maskCol);
                 col.Add(maskCol);
+
+                bounds = bounds.Extend(bvh.vertices[tri.posIndex1]).Extend(bvh.vertices[tri.posIndex2]).Extend(bvh.vertices[tri.posIndex3]);
             }
 
+            mesh.BoundingBox = new BoundingBox(bounds.minpos, bounds.maxpos);
+
+            // don't add empty meshes
+            if (index == 0) continue;
+
             scene.Meshes.Add(mesh);
-            scene.RootNode.MeshIndices.Add(i);
+            scene.RootNode.MeshIndices.Add(scene.Meshes.Count - 1);
         }
 
         return scene;
@@ -182,14 +187,11 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         bvh.triangles.Clear();
         bvh.vertices.Clear();
 
-        var matcount = scene.MaterialCount;
-        for (int i = 0; i < scene.MaterialCount; ++i) {
-            var mat = scene.Materials[i];
-        }
-
         var unsetEdgeIndex = file.FileHandler.FileVersion <= 3017 ? 0 : -1;
 
         foreach (var mesh in scene.Meshes) {
+            if (mesh.Vertices.Count == 0 || mesh.FaceCount == 0) continue;
+
             var mat = scene.Materials[mesh.MaterialIndex];
             var layerIndex = GetLayerIndexFromMaterialName(mat.Name);
 
