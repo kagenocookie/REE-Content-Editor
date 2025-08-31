@@ -45,7 +45,10 @@ public static class FileLoaderExtensions
         if (outputPath == handle.Filepath) {
             return file.Save();
         } else {
-            return file.WriteTo(outputPath);
+            // write to a temp memory stream and not directly to disk to speed it up
+            // WriteTo will then dump the memory stream to the outputPath
+            var handler = new FileHandler(new MemoryStream(), outputPath);
+            return file.WriteTo(handler);
         }
     }
 }
