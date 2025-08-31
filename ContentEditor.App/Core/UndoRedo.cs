@@ -66,7 +66,7 @@ public class UndoRedo
                 CurrentIndex++;
             }
             item.Do();
-            Console.WriteLine($"State {Items.Count}[{CurrentIndex}] ");
+            // Console.WriteLine($"State {Items.Count}[{CurrentIndex}] ");
         }
 
         public void Undo()
@@ -75,7 +75,7 @@ public class UndoRedo
                 var item = Items[CurrentIndex--];
                 item.Undo();
             }
-            Console.WriteLine($"State {Items.Count}[{CurrentIndex}] ");
+            // Console.WriteLine($"State {Items.Count}[{CurrentIndex}] ");
         }
 
         public void Redo()
@@ -84,7 +84,7 @@ public class UndoRedo
                 var item = Items[++CurrentIndex];
                 item.Do();
             }
-            Console.WriteLine($"State {Items.Count}[{CurrentIndex}] ");
+            // Console.WriteLine($"State {Items.Count}[{CurrentIndex}] ");
         }
 
         public void SetCommandDisposable(Action? disposeBefore, Action? disposeAfter)

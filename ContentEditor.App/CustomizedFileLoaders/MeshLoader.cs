@@ -127,6 +127,7 @@ public class AssimpMeshResource(Assimp.Scene importedScene) : IResourceFile
         foreach (var fmt in importer.GetSupportedExportFormats()) {
             if (fmt.FileExtension == ext) {
                 exportFormat = fmt.FormatId;
+                break;
             }
         }
         if (exportFormat == null) {
