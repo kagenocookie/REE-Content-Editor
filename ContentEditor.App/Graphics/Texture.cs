@@ -19,6 +19,7 @@ public class Texture : IDisposable
 
     public int Width { get; private set; }
     public int Height { get; private set; }
+    public string? Format { get; set; }
 
     public unsafe Texture()
     {
@@ -112,6 +113,7 @@ public class Texture : IDisposable
         it.Dispose();
         Width = (int)dds.Header.width;
         Height = (int)dds.Header.height;
+        Format = dds.Header.DX10.Format.ToString();
         return this;
     }
 
@@ -143,7 +145,7 @@ public class Texture : IDisposable
         }
         Width = tex.Header.width;
         Height = tex.Header.height;
-
+        Format = tex.Header.format.ToString();
         return this;
     }
 
