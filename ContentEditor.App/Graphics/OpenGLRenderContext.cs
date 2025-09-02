@@ -282,6 +282,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             GL.BlendFunc(blend.BlendModeSrc, blend.BlendModeDest);
         } else if (_wasBlend) {
             GL.Disable(EnableCap.Blend);
+            _wasBlend = false;
         }
 
         if (material.DisableDepth) {
@@ -291,6 +292,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             }
         } else if (_wasDisableDepth) {
             GL.Enable(EnableCap.DepthTest);
+            _wasDisableDepth = false;
         }
     }
 
