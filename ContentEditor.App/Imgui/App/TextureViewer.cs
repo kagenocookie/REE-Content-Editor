@@ -6,6 +6,7 @@ using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
 using System.Numerics;
+using static ContentEditor.App.Graphics.Texture;
 
 namespace ContentEditor.App;
 
@@ -28,7 +29,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
 
     private WindowData data = null!;
     protected UIContext context = null!;
-
+    private TextureChannel currentChannel = TextureChannel.RGBA;
     public TextureViewer(string path)
     {
         texturePath = path;
@@ -109,7 +110,73 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
 
         if (texture != null) {
             ImGui.Text($"Path: {texture.Path}");
-            ImGui.Text($"Size: {texture.Width} x {texture.Height} | Format: {texture.Format} |");
+            ImGui.Text($"Size: {texture.Width} x {texture.Height} | Format: {texture.Format} | Channels:");
+            ImGui.SameLine();
+            if (ImGui.RadioButton("RGBA", currentChannel == TextureChannel.RGBA)) {
+                currentChannel = TextureChannel.RGBA;
+                texture.Bind();
+                texture.SetChannel(currentChannel);
+            }
+            ImGui.SameLine();
+
+            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0.3f, 0.3f, 0.3f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, new Vector4(0.5f, 0.5f, 0.5f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.CheckMark, new Vector4(1f, 1f, 1f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.8f, 0.8f, 0.8f, 1f));
+            if (ImGui.RadioButton("RGB", currentChannel == TextureChannel.RGB)) {
+                currentChannel = TextureChannel.RGB;
+                texture.Bind();
+                texture.SetChannel(currentChannel);
+            }
+            ImGui.PopStyleColor(4);
+            ImGui.SameLine();
+
+            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0.3f, 0f, 0f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, new Vector4(0.6f, 0f, 0f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.CheckMark, new Vector4(1f, 0f, 0f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1f, 0f, 0f, 1f));
+            if (ImGui.RadioButton("R", currentChannel == TextureChannel.Red)) {
+                currentChannel = TextureChannel.Red;
+                texture.Bind();
+                texture.SetChannel(currentChannel);
+            }
+            ImGui.PopStyleColor(4);
+            ImGui.SameLine();
+
+            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0f, 0.3f, 0f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, new Vector4(0f, 0.6f, 0f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.CheckMark, new Vector4(0f, 1f, 0f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0f, 1f, 0f, 1f));
+            if (ImGui.RadioButton("G", currentChannel == TextureChannel.Green)) {
+                currentChannel = TextureChannel.Green;
+                texture.Bind();
+                texture.SetChannel(currentChannel);
+            }
+            ImGui.PopStyleColor(4);
+            ImGui.SameLine();
+
+            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0f, 0f, 0.4f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, new Vector4(0f, 0f, 0.6f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.CheckMark, new Vector4(0f, 0.5f, 1f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0f, 0.5f, 1f, 1f));
+            if (ImGui.RadioButton("B", currentChannel == TextureChannel.Blue)) {
+                currentChannel = TextureChannel.Blue;
+                texture.Bind();
+                texture.SetChannel(currentChannel);
+            }
+            ImGui.PopStyleColor(4);
+            ImGui.SameLine();
+
+            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0.2f, 0.2f, 0.3f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, new Vector4(0.4f, 0.4f, 0.6f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.CheckMark, new Vector4(0.8f, 0.8f, 0.9f, 1f));
+            if (ImGui.RadioButton("A", currentChannel == TextureChannel.Alpha)) {
+                currentChannel = TextureChannel.Alpha;
+                texture.Bind();
+                texture.SetChannel(currentChannel);
+            }
+            ImGui.PopStyleColor(3);
+            ImGui.Separator();
             ImGui.Spacing();
 
             Vector2 tabPadding = new Vector2(10, 10);
