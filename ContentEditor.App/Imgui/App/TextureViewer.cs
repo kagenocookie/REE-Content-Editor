@@ -5,6 +5,7 @@ using ContentEditor.Editor;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
+using System.Numerics;
 
 namespace ContentEditor.App;
 
@@ -75,6 +76,9 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
 
     public void OnWindow()
     {
+        if (texture != null) {
+            ImGui.SetNextWindowSize(new Vector2(texture.Width, texture.Height + ImGui.GetFrameHeight()));
+        }
         if (!ImguiHelpers.BeginWindow(data, null, ImGuiWindowFlags.MenuBar)) {
             WindowManager.Instance.CloseWindow(data);
             return;
@@ -100,15 +104,26 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                 ImGui.Text("No texture selected");
                 return;
             }
-
             this.SetImageSource(texturePath);
         }
 
         if (texture != null) {
-            ImGui.Text(texture.Path);
-            ImGui.Image((nint)texture.Handle, ImGui.GetWindowSize() - ImGui.GetCursorPos() - ImGui.GetStyle().WindowPadding);
-        } else {
-            ImGui.Text("No texture selected");
+            ImGui.Text($"Path: {texture.Path}");
+            ImGui.Text($"Size: {texture.Width} x {texture.Height} | Format: {texture.Format} |");
+            ImGui.Spacing();
+
+            Vector2 tabPadding = new Vector2(10, 10);
+            Vector2 tabSize = ImGui.GetContentRegionAvail() - tabPadding * 2;
+            Vector2 size;
+            float tabSpace = tabSize.X / tabSize.Y;
+            float texSize = (float)texture.Width / texture.Height;
+       
+            if (texSize > tabSpace) {
+                size = new Vector2(tabSize.X, tabSize.X / texSize);
+            } else {
+                size = new Vector2(tabSize.Y * texSize, tabSize.Y);
+            }
+            ImGui.Image((nint)texture.Handle, size);
         }
     }
 
