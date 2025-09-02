@@ -51,7 +51,7 @@ public class ShapeMesh : Mesh
     public void SetShape(OBB box)
     {
         var center = box.Coord.Multiply(Vector3.Zero);
-        var extent = box.Extent / 2;
+        var extent = box.Extent;
         var baseAabb = new AABB() { minpos = center - extent, maxpos = center + extent };
         SetupBoxMesh(baseAabb);
 
