@@ -144,10 +144,12 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
             MeshRefs.Add(file, resource);
         }
 
-        var mesh = new MeshHandle(resource);
+        var mesh = CreateMeshInstanceHandle(resource, file);
         SetMeshMaterial(mesh, mesh.Material);
         return mesh;
     }
+
+    protected virtual MeshHandle CreateMeshInstanceHandle(MeshResourceHandle resource, FileHandle file) => new MeshHandle(resource);
 
     public void UnloadMesh(MeshHandle handle)
     {

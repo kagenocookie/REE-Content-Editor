@@ -6,7 +6,7 @@ namespace ContentEditor.App.Graphics;
 /// Reference to a mesh + material combination.
 /// This is separate from the raw mesh data so we can apply different materials to the same mesh without loading the mesh geometry twice.
 /// </summary>
-public sealed class MeshHandle
+public class MeshHandle
 {
     internal MeshResourceHandle Handle { get; }
     internal MaterialGroup Material { get; private set; } = new();
@@ -38,6 +38,11 @@ public sealed class MeshHandle
 
         return Material.Materials[0];
     }
+
+    /// <summary>
+    /// For dynamic meshes, this will make the mesh list and / or geometry update.
+    /// </summary>
+    public virtual void Update() { }
 
     public void SetMaterial(int meshIndex, string materialName)
     {

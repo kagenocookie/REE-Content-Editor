@@ -4,7 +4,7 @@ namespace ContentEditor.App;
 
 public sealed class ResourceRefCounter<TKey, TResource> : IDisposable
     where TResource : class
-    where TKey : notnull, IEquatable<TKey>
+    where TKey : IEquatable<TKey>
 {
     private readonly Dictionary<TKey, RefCountedResource> keyedResources = new();
     private readonly Dictionary<TResource, RefCountedResource> instances = new();
@@ -47,7 +47,7 @@ public sealed class ResourceRefCounter<TKey, TResource> : IDisposable
     {
         resource.References--;
         if (resource.References <= 0) {
-            if (!resource.Key.Equals(default)) {
+            if (false == resource.Key?.Equals(default)) {
                 keyedResources.Remove(resource.Key);
             }
             instances.Remove(resource.Resource);

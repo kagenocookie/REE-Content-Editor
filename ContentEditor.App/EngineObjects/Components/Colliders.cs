@@ -149,6 +149,7 @@ public class Colliders(GameObject gameObject, RszInstance data) : RenderableComp
                 var submesh = meshHandle.Handle.Meshes[i];
                 meshHandle.SetMaterial(i, submesh is TriangleMesh ? "wire" : "wireFilled");
             }
+            meshHandle.Update();
         }
     }
 
@@ -184,6 +185,9 @@ public class Colliders(GameObject gameObject, RszInstance data) : RenderableComp
         ref readonly var transform = ref GameObject.Transform.WorldTransform;
         foreach (var coll in meshes) {
             if (coll != null) {
+                // NOTE: ideally the update should only happen when things actually change
+                // but we don't have a file.Changed event at the moment
+                // coll.Update();
                 context.RenderSimple(coll, transform);
             }
         }

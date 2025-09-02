@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using ContentPatcher;
+using ReeLib;
 using ReeLib.via;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
@@ -17,6 +18,8 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
     private Texture? _missingTexture;
     private Texture? _defaultTexture;
+
+    private bool _wasBlend, _wasDisableDepth;
 
     private readonly Dictionary<string, Shader> shaders = new();
 
@@ -116,6 +119,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         var mesh = new ShapeMesh(GL);
         var innerHandle = new MeshResourceHandle(mesh);
         var handle = new MeshHandle(innerHandle);
+        MeshRefs.AddUnnamed(innerHandle);
         return (handle, mesh);
     }
 
@@ -140,6 +144,15 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         }
 
         return handle;
+    }
+
+    protected override MeshHandle CreateMeshInstanceHandle(MeshResourceHandle resource, FileHandle file)
+    {
+        if (file.Loader is McolFileLoader) {
+            return new McolMeshHandle(GL, resource, file.GetFile<McolFile>());
+        } else {
+            return new MeshHandle(resource);
+        }
     }
 
     private Texture LoadTexture(Assimp.Scene scene, Assimp.TextureSlot texture)
@@ -210,6 +223,8 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         return group;
     }
 
+    private MeshHandle? lastInstancedMesh;
+    private Material? lastMaterial;
     public override unsafe void RenderSimple(MeshHandle handle, in Matrix4X4<float> transform)
     {
         for (int i = 0; i < handle.Handle.Meshes.Count; i++) {
@@ -220,7 +235,10 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             // var bounds = sub.mesh.BoundingBox;
 
             mesh.Bind();
-            BindMaterial(material);
+            if (lastMaterial != material) {
+                lastMaterial = material;
+                material.Bind();
+            }
             material.Shader.SetUniform("uModel", transform);
 
             GL.DrawArrays(PrimitiveType.Triangles, 0, (uint)mesh.Indices.Length);
@@ -230,12 +248,11 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         lastInstancedMesh = null;
     }
 
-    private MeshHandle? lastInstancedMesh;
     public override void RenderInstanced(MeshHandle mesh, int instanceIndex, int instanceCount, in Matrix4X4<float> transform)
     {
         var actMesh = mesh.GetMesh(0);
         if (lastInstancedMesh != mesh) {
-            BindMaterial(mesh.GetMaterial(0));
+            mesh.GetMaterial(0).Bind();
             lastInstancedMesh = mesh;
         }
 
@@ -250,19 +267,37 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     private void BindMaterial(Material material)
     {
         material.Bind();
+        BindMaterialFlags(material);
+    }
 
+    private void BindMaterialFlags(Material material)
+    {
         var blend = material.BlendMode;
         if (blend.Blend) {
-            GL.Enable(EnableCap.Blend);
+            if (!_wasBlend) {
+                GL.Enable(EnableCap.Blend);
+                _wasBlend = true;
+            }
+
             GL.BlendFunc(blend.BlendModeSrc, blend.BlendModeDest);
+        } else if (_wasBlend) {
+            GL.Disable(EnableCap.Blend);
         }
+
         if (material.DisableDepth) {
-            GL.Disable(EnableCap.DepthTest);
+            if (!_wasDisableDepth) {
+                GL.Disable(EnableCap.DepthTest);
+                _wasDisableDepth = true;
+            }
+        } else if (_wasDisableDepth) {
+            GL.Enable(EnableCap.DepthTest);
         }
     }
 
     internal override void BeforeRender()
     {
+        lastMaterial = null;
+        lastInstancedMesh = null;
         if (_renderTargetTextureSizeOutdated) {
             UpdateRenderTarget();
         }

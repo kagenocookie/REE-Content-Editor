@@ -2,11 +2,6 @@ using ReeLib;
 
 namespace ContentPatcher;
 
-// public class McolFileLoader : DefaultFileLoader<McolFile>
-// {
-//     public McolFileLoader() : base(KnownFileFormats.CollisionMesh) { }
-// }
-
 public class McolFileLoader : IFileLoader, IFileHandleContentProvider<McolFile>
 {
     public bool CanHandleFile(string filepath, REFileFormat format) => format.format == KnownFileFormats.CollisionMesh;
