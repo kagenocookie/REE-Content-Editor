@@ -22,7 +22,7 @@ public class ColliderComponentHandler : IObjectUIHandler, IUIContextEventHandler
     public bool HandleEvent(UIContext context, EditorUIEvent eventData)
     {
         var shapeCtx = context.children.FirstOrDefault(c => c.label == nameof(RszFieldCache.Collider.Shape));
-        var eventShapeCtx = eventData.origin.FindInHierarchy(context, (c) => c == shapeCtx);
+        var eventShapeCtx = eventData.origin.FindInHierarchy(context, (c) => c == shapeCtx, true);
         if (eventShapeCtx != null) {
             var colliders = context.FindValueInParentValues<Colliders>();
             if (colliders != null) {
