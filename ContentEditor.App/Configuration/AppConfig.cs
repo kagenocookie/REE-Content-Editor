@@ -31,6 +31,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string EnableUpdateCheck = "enable_update_check";
         public const string LastUpdateCheck = "last_update_check";
         public const string AutoExpandFieldsCount = "auto_expand_fields_count";
+        public const string UsePakFilePreviewWindow = "use_pak_preview_window";
 
         public const string RenderMeshes = "render_meshes";
         public const string RenderColliders = "render_colliders";
@@ -122,6 +123,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<int> MaxUndoSteps = new SettingWrapper<int>(Keys.MaxUndoSteps, _lock, 250);
     public readonly SettingWrapper<int> AutoExpandFieldsCount = new SettingWrapper<int>(Keys.AutoExpandFieldsCount, _lock, 3);
     public readonly SettingWrapper<bool> EnableUpdateCheck = new SettingWrapper<bool>(Keys.EnableUpdateCheck, _lock, true);
+    public readonly SettingWrapper<bool> UsePakFilePreviewWindow = new SettingWrapper<bool>(Keys.UsePakFilePreviewWindow, _lock, true);
     public readonly SettingWrapper<bool> ShowFps = new SettingWrapper<bool>(Keys.ShowFps, _lock, false);
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
     public readonly ClassSettingWrapper<string> LatestVersion = new ClassSettingWrapper<string>(Keys.LatestVersion, _lock);
@@ -232,6 +234,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.LastUpdateCheck, instance.LastUpdateCheck.value.ToString("O"), null),
             (Keys.LatestVersion, instance.LatestVersion.value?.ToString() ?? "", null),
             (Keys.EnableUpdateCheck, instance.EnableUpdateCheck.value.ToString(), null),
+            (Keys.UsePakFilePreviewWindow, instance.UsePakFilePreviewWindow.value.ToString(), null),
             (Keys.PrettyLabels, instance.PrettyFieldLabels.value.ToString(), null),
             (Keys.RecentFiles, string.Join("|", instance.RecentFiles.value ?? Array.Empty<string>()), null),
 
@@ -322,6 +325,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.EnableUpdateCheck:
                             instance.EnableUpdateCheck.value = ReadBool(value);
+                            break;
+                        case Keys.UsePakFilePreviewWindow:
+                            instance.UsePakFilePreviewWindow.value = ReadBool(value);
                             break;
                         case Keys.LastUpdateCheck:
                             if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var _updateCheck)) instance.LastUpdateCheck.value = _updateCheck;

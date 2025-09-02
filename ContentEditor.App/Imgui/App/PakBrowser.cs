@@ -1,15 +1,10 @@
-using System.Collections.Concurrent;
-using System.Text.RegularExpressions;
-using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
-using ContentEditor.Core;
-using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
 
 namespace ContentEditor.App;
 
-public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWindowHandler
+public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWindowHandler, IDisposable
 {
     public string HandlerName => " PAK File Browser ";
 
@@ -23,6 +18,8 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
     // note: purposely not disposing the reader, in case we just reused the "main" pak reader from the workspace
     // it doesn't really need disposing with the current implementation either way
     private CachedMemoryPakReader? reader;
+
+    private FilePreviewWindow? previewWindow;
 
     private WindowData data = null!;
     protected UIContext context = null!;
@@ -95,6 +92,11 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         }
 
         ImGui.Text("Total File Count: " + reader.MatchedEntryCount);
+        ImGui.SameLine();
+        var usePreviewWindow = AppConfig.Instance.UsePakFilePreviewWindow.Get();
+        if (ImGui.Checkbox("Open files in preview window", ref usePreviewWindow)) {
+            AppConfig.Instance.UsePakFilePreviewWindow.Set(usePreviewWindow);
+        }
         ImGui.SameLine();
 
         if (PakFilePath == null) {
@@ -179,9 +181,20 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                         selectedRow = i;
                     }
                 } else {
+                    var usePreviewWindow = AppConfig.Instance.UsePakFilePreviewWindow.Get();
                     if (ImGui.Selectable(file, false, ImGuiSelectableFlags.SpanAllColumns)) {
                         if (isFile) {
-                            if (PakFilePath == null) {
+                            if (usePreviewWindow) {
+                                if (previewWindow == null) {
+                                    EditorWindow.CurrentWindow!.AddSubwindow(previewWindow = new FilePreviewWindow());
+                                }
+
+                                if (PakFilePath != null && reader.GetFile(file) is Stream stream) {
+                                    previewWindow.SetFile(stream, file, PakFilePath);
+                                } else {
+                                    previewWindow.SetFile(file);
+                                }
+                            } else if (PakFilePath == null) {
                                 EditorWindow.CurrentWindow?.OpenFiles([file]);
                             } else {
                                 var stream = reader.GetFile(file);
@@ -234,5 +247,12 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
     public bool RequestClose()
     {
         return false;
+    }
+
+    public void Dispose()
+    {
+        if (previewWindow != null) {
+            EditorWindow.CurrentWindow?.CloseSubwindow(previewWindow);
+        }
     }
 }
