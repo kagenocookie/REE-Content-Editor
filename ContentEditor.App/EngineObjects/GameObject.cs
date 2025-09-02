@@ -368,24 +368,12 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         foreach (var comp in Components) {
             comp.OnActivate();
         }
-
-        foreach (var child in GetAllChildren()) {
-            foreach (var comp in child.Components) {
-                comp.OnActivate();
-            }
-        }
     }
 
     private void DeactivateComponents()
     {
         foreach (var comp in Components) {
             comp.OnDeactivate();
-        }
-
-        foreach (var child in GetAllChildren()) {
-            foreach (var comp in child.Components) {
-                comp.OnDeactivate();
-            }
         }
     }
 
