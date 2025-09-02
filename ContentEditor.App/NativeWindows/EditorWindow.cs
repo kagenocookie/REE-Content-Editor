@@ -557,7 +557,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
         ShowGameSelectionMenu();
         if (ImGui.BeginMenu("Windows")) {
-            if (ImGui.MenuItem("Open New Workplace")) {
+            if (ImGui.MenuItem("Open New Workspace")) {
                 UI.OpenWindow(workspace);
             }
             ImGui.Separator();
