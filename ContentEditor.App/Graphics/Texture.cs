@@ -19,6 +19,17 @@ public class Texture : IDisposable
 
     public int Width { get; private set; }
     public int Height { get; private set; }
+    public string? Format { get; set; }
+
+    public enum TextureChannel
+    {
+        RGBA,
+        RGB,
+        Red,
+        Green,
+        Blue,
+        Alpha
+    }
 
     public unsafe Texture()
     {
@@ -112,6 +123,7 @@ public class Texture : IDisposable
         it.Dispose();
         Width = (int)dds.Header.width;
         Height = (int)dds.Header.height;
+        Format = dds.Header.DX10.Format.ToString();
         return this;
     }
 
@@ -143,7 +155,7 @@ public class Texture : IDisposable
         }
         Width = tex.Header.width;
         Height = tex.Header.height;
-
+        Format = tex.Header.format.ToString();
         return this;
     }
 
@@ -200,6 +212,53 @@ public class Texture : IDisposable
         _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBaseLevel, 0);
         _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, 8);
         _gl.GenerateMipmap(TextureTarget.Texture2D);
+    }
+
+    public void SetChannel(TextureChannel channel)
+    {
+        switch (channel) {
+            case TextureChannel.RGBA:
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleR, (int)GLEnum.Red);
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleG, (int)GLEnum.Green);
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleB, (int)GLEnum.Blue);
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleA, (int)GLEnum.Alpha);
+                break;
+
+            case TextureChannel.RGB:
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleR, (int)GLEnum.Red);
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleG, (int)GLEnum.Green);
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleB, (int)GLEnum.Blue);
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleA, (int)GLEnum.One);
+                break;
+
+            case TextureChannel.Red:
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleR, (int)GLEnum.Red);
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleG, (int)GLEnum.Red);
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleB, (int)GLEnum.Red);
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleA, (int)GLEnum.One);
+                break;
+
+            case TextureChannel.Green:
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleR, (int)GLEnum.Green);
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleG, (int)GLEnum.Green);
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleB, (int)GLEnum.Green);
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleA, (int)GLEnum.One);
+                break;
+
+            case TextureChannel.Blue:
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleR, (int)GLEnum.Blue);
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleG, (int)GLEnum.Blue);
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleB, (int)GLEnum.Blue);
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleA, (int)GLEnum.One);
+                break;
+
+            case TextureChannel.Alpha:
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleR, (int)GLEnum.Alpha);
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleG, (int)GLEnum.Alpha);
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleB, (int)GLEnum.Alpha);
+                _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureSwizzleA, (int)GLEnum.One);
+                break;
+        }
     }
 
     public void Bind(TextureUnit textureSlot = TextureUnit.Texture0)
