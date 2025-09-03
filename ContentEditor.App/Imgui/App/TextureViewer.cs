@@ -24,12 +24,13 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
     private Texture? texture;
     private string? texturePath;
     private FileHandle? fileHandle;
+    private TextureChannel currentChannel = TextureChannel.RGBA;
 
     private static readonly HashSet<string> StandardImageFileExtensions = [".png", ".bmp", ".gif", ".jpg", ".jpeg", ".webp", ".tga", ".tiff", ".qoi", ".dds"];
 
     private WindowData data = null!;
     protected UIContext context = null!;
-    private TextureChannel currentChannel = TextureChannel.RGBA;
+    
     public TextureViewer(string path)
     {
         texturePath = path;
@@ -85,11 +86,31 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
             return;
         }
         if (ImGui.BeginMenuBar()) {
-            if (ImGui.MenuItem("Open ...")) {
-                var window = EditorWindow.CurrentWindow!;
-                PlatformUtils.ShowFileDialog((files) => {
-                    window.InvokeFromUIThread(() => SetImageSource(files[0]));
-                });
+            if (ImGui.BeginMenu("File")) {
+                if (ImGui.MenuItem("Open")) {
+                    var window = EditorWindow.CurrentWindow!;
+                    PlatformUtils.ShowFileDialog((files) => {
+                        window.InvokeFromUIThread(() => SetImageSource(files[0]));
+                    });
+                }
+                if (texture != null && texturePath != null) {
+                    // SILVER: Strip double extensions from REE .tex files
+                    string baseName = Path.GetFileName(texturePath);
+                    while (Path.HasExtension(baseName))
+                        baseName = Path.GetFileNameWithoutExtension(baseName);
+
+                    if (ImGui.MenuItem("Save As ...")) {
+                    var window = EditorWindow.CurrentWindow!;
+                    PlatformUtils.ShowSaveFileDialog((file) => {
+                        window.InvokeFromUIThread(() => {
+                            if (!string.IsNullOrEmpty(file))
+                                texture.SaveAs(file);
+                        });
+                    },
+                        baseName, filter: "TGA (*.tga)|*.tga");
+                    }
+                }
+                ImGui.EndMenu();
             }
             ImGui.EndMenuBar();
         }
@@ -192,6 +213,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
             }
             ImGui.Image((nint)texture.Handle, size);
         }
+        
     }
 
     public static bool IsSupportedFileExtension(string filepathOrExtension)
