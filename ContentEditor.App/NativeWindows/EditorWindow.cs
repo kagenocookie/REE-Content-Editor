@@ -516,8 +516,11 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem("Redo")) UndoRedo.Redo(this);
                 ImGui.EndDisabled();
                 ImGui.Separator();
-                if (ImGui.MenuItem("Apply patches")) {
+                if (ImGui.MenuItem("Apply patches (loose file)")) {
                     ApplyContentPatches(null);
+                }
+                if (ImGui.MenuItem("Apply patches (PAK)")) {
+                    ApplyContentPatches("pak");
                 }
                 if (ImGui.MenuItem("Patch to ...")) {
                     PlatformUtils.ShowFolderDialog((path) => ApplyContentPatches(path), workspace.Env.Config.GamePath);
@@ -680,7 +683,13 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             var manager = singleBundle == null ? workspace.BundleManager : workspace.BundleManager.CreateBundleSpecificManager(singleBundle);
             var patchWorkspace = new ContentWorkspace(workspace.Env, workspace.Config, manager);
             var patcher = new Patcher(patchWorkspace);
-            patcher.OutputFolder = outputPath;
+            if (outputPath == "pak") {
+                patcher.OutputFilepath = patcher.FindActivePatchPak()
+                    ?? PakUtils.GetNextPakFilepath(Workspace.Env.Config.GamePath);
+            } else {
+                patcher.OutputFilepath = outputPath;
+            }
+            patcher.IsPublishingMod = singleBundle != null;
             return patcher.Execute(singleBundle == null);
         } catch (Exception e) {
             Logger.Error(e, "Failed to execute patcher");
@@ -699,6 +708,11 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             var patchWorkspace = new ContentWorkspace(workspace.Env, workspace.Config, workspace.BundleManager);
             var patcher = new Patcher(patchWorkspace);
             patcher.RevertPreviousPatch();
+            var patchPakFilepath = patcher.FindActivePatchPak();
+            if (patchPakFilepath != null) {
+                File.Delete(patchPakFilepath);
+                Logger.Info("Deleted patch PAK: " + patchPakFilepath);
+            }
         } catch (Exception e) {
             Logger.Error(e, "Failed to revert patches");
         }

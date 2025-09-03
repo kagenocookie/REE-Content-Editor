@@ -2,6 +2,7 @@ namespace ContentPatcher;
 
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using System.Text.Json;
 using ContentEditor;
 using ContentEditor.Core;
@@ -18,7 +19,8 @@ public class Patcher : IDisposable
     public Workspace Env => env;
     private GameConfig config => env.Config;
 
-    public string? OutputFolder { get; set; }
+    public string? OutputFilepath { get; set; }
+    public bool IsPublishingMod { get; set; }
 
     public Patcher(GameConfig config)
     {
@@ -118,11 +120,23 @@ public class Patcher : IDisposable
         workspace!.SetBundle(null);
         workspace!.ResourceManager.ClearInstances();
         workspace!.ResourceManager.LoadBaseBundleData();
-        var outputPath = OutputFolder ?? config.GamePath;
-        // var stagingOutput = Path.Combine(config.GamePath, "content-patcher-staging");
+        string outputDir;
+
+        var outfile = OutputFilepath;
+        var isPak = Path.GetExtension(OutputFilepath) == ".pak";
+        if (isPak) {
+            outputDir = Path.Combine(config.GamePath, ".content-patcher-staging");
+            if (Directory.Exists(outputDir)) {
+                Directory.Delete(outputDir, true);
+            }
+            outfile = OutputFilepath!;
+        } else {
+            outputDir = OutputFilepath ?? config.GamePath;
+            outfile = outputDir;
+        }
         foreach (var file in workspace!.ResourceManager.GetModifiedResourceFiles()) {
             var nativePath = file.NativePath ?? file.Filepath;
-            var fileOutput = Path.Combine(outputPath, nativePath);
+            var fileOutput = Path.Combine(outputDir, nativePath);
             Directory.CreateDirectory(Path.GetDirectoryName(fileOutput)!);
             file.Loader.Save(workspace, file, fileOutput);
             patch.Resources[nativePath] = new PatchedResourceMetadata() {
@@ -130,41 +144,90 @@ public class Patcher : IDisposable
                 SourceFilepath = file.Filepath,
             };
         }
+        if (isPak) {
+            var writer = new PakWriter();
+            writer.AddFilesFromDirectory(outputDir, true);
+            if (IsPublishingMod && workspace.BundleManager.ActiveBundles.LastOrDefault() != null) {
+                var bundle = workspace.BundleManager.ActiveBundles.Last();
+                var modConfigPath = Path.Combine(workspace.BundleManager.GetBundleFolder(bundle), "modinfo.ini");
+                if (File.Exists(modConfigPath)) {
+                    writer.AddFile("modinfo.ini", modConfigPath);
+                } else {
+                    writer.AddFile("modinfo.ini", Encoding.Default.GetBytes(bundle.ToModConfigIni()));
+                }
+                writer.AddFile("bundle.json", Encoding.Default.GetBytes(JsonSerializer.Serialize(bundle, JsonConfig.jsonOptions)));
+            }
+            writer.SaveTo(outfile);
+            Logger.Info("Patch saved to PAK file: " + outfile);
+            patch.PakSize = new FileInfo(outfile).Length;
+        }
         return patch;
     }
 
     public void RevertPreviousPatch()
     {
         // note: if we implement patch-to-PAK, this won't be always needed, then we just find our PAK file
-        var path = workspace!.BundleManager.ResourcePatchLogPath;
-        if (!File.Exists(path)) return;
+        var loosePatchMetaFile = workspace!.BundleManager.ResourcePatchLogPath;
+        if (File.Exists(loosePatchMetaFile)) {
+            if (TryDeserialize<PatchInfo>(loosePatchMetaFile, out var data)) {
+                Logger.Info("Clearing previous patch data based on metadata in " + loosePatchMetaFile);
+                foreach (var file in data.Resources) {
+                    // var looseFilePath = Path.Combine(config.GamePath, file.Key);
+                    if (File.Exists(file.Value.TargetFilepath)) {
+                        Logger.Info("Deleting", file.Value.TargetFilepath);
+                        File.Delete(file.Value.TargetFilepath);
+                    }
+                }
+                File.Delete(loosePatchMetaFile);
+                Logger.Info("Cleared previous patch data");
+            }
+        }
 
-        if (TryDeserialize<PatchInfo>(path, out var data)) {
-            Logger.Info("Clearing previous patch data based on metadata in " + path);
-            foreach (var file in data.Resources) {
-                // var looseFilePath = Path.Combine(config.GamePath, file.Key);
-                if (File.Exists(file.Value.TargetFilepath)) {
-                    Logger.Info("Deleting", file.Value.TargetFilepath);
-                    File.Delete(file.Value.TargetFilepath);
+        var pak = FindActivePatchPak();
+        if (pak != null) {
+            Logger.Info("Deleting previous patch PAK: " + pak);
+            File.Delete(pak);
+            if (File.Exists(pak + ".patch_metadata.json")) {
+                File.Delete(pak + ".patch_metadata.json");
+            }
+        }
+    }
+
+    public string? FindActivePatchPak()
+    {
+        var previousPatchMeta = Directory.EnumerateFiles(env.Config.GamePath, "*.pak.patch_metadata.json").FirstOrDefault();
+        if (previousPatchMeta != null) {
+            var pakPath = previousPatchMeta.Replace(".patch_metadata.json", "");
+            if (File.Exists(pakPath) && TryDeserialize<PatchInfo>(previousPatchMeta, out var meta)) {
+                // if the file size does not match the last patch metadata info, something's wrong
+                // either the patch PAK got renamed/reordered or straight deleted, in either case we can treat it as missing
+                // may be more reliably implemented by adding a marker file inside the PAK at some point
+                if (meta.PakSize != 0 && meta.PakSize == new FileInfo(pakPath).Length) {
+                    return pakPath;
                 }
             }
-            File.Delete(path);
-            Logger.Info("Cleared previous patch data");
         }
+        return null;
     }
 
     private void DumpPatchMetadata(PatchInfo patch)
     {
-        var path = OutputFolder != null ? Path.Combine(OutputFolder, "_patch_metadata.json") : workspace!.BundleManager.ResourcePatchLogPath;
-        using var fs = File.Create(path);
+        string metaPath;
+        if (Path.GetExtension(OutputFilepath) == ".pak" && Path.Exists(OutputFilepath)) {
+            metaPath = OutputFilepath + ".patch_metadata.json";
+        } else {
+            metaPath = OutputFilepath != null ? Path.Combine(OutputFilepath, "_patch_metadata.json") : workspace!.BundleManager.ResourcePatchLogPath;
+        }
+        using var fs = File.Create(metaPath);
         JsonSerializer.Serialize(fs, patch, JsonConfig.jsonOptions);
-        Logger.Info("Patch metadata written to " + path);
+        Logger.Info("Patch metadata written to " + metaPath);
         Logger.Info("File list:\n", string.Join("\n", patch.Resources.Select(r => r.Key)));
     }
 
     private sealed class PatchInfo
     {
         public DateTime PatchTimeUtc { get; set; }
+        public long PakSize { get; set; }
 
         public Dictionary<string, PatchedResourceMetadata> Resources { get; set; } = new();
     }

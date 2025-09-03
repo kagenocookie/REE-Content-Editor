@@ -61,6 +61,20 @@ public class ModPublisherWindow : IWindowHandler
                 }
             });
         }
+        ImGui.SameLine();
+        if (ImGui.Button("Publish as PAK ...")) {
+            var srcFolder = Workspace.BundleManager.GetBundleFolder(Workspace.CurrentBundle);
+            PlatformUtils.ShowSaveFileDialog((outputPath) => {
+                var modconfig = Path.Combine(srcFolder, "modinfo.ini");
+                if (!File.Exists(modconfig)) {
+                    File.WriteAllText(modconfig, bundle.ToModConfigIni());
+                    Logger.Info("Created modinfo.ini in " + modconfig);
+                }
+                if (!window.ApplyContentPatches(outputPath, bundle.Name)) {
+                    Logger.Error("Publishing failed");
+                }
+            }, null, "PAK file (*.pak)|*.pak");
+        }
 
         ImGui.SeparatorText("Content");
         if (bundle.Entities.Count > 0 && ImGui.TreeNode("Entities")) {
