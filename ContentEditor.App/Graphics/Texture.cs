@@ -1,10 +1,12 @@
 using ContentEditor.App.Windowing;
 using ContentPatcher;
+using ImGuiNET;
 using ReeLib;
 using ReeLib.DDS;
 using Silk.NET.OpenGL;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace ContentEditor.App.Graphics;
 
@@ -201,6 +203,31 @@ public class Texture : IDisposable
             }
         }
         _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, mips - 1);
+    }
+
+    private unsafe Image<Rgba32> GetCurrentTexture()
+    {
+        var data = new byte[Width * Height * 4];
+
+        Bind();
+
+        fixed (byte* bytes = data) {
+            _gl.GetTexImage(TextureTarget.Texture2D, 0, PixelFormat.Rgba, PixelType.UnsignedByte, bytes);
+        }
+
+        var image = Image.LoadPixelData<Rgba32>(data, Width, Height);
+        return image;
+    }
+    public void SaveAs(string filepath)
+    {
+        using var image = GetCurrentTexture();
+        if (image != null) {
+            image.Save(filepath, new SixLabors.ImageSharp.Formats.Tga.TgaEncoder {
+                BitsPerPixel = SixLabors.ImageSharp.Formats.Tga.TgaBitsPerPixel.Pixel32,
+                Compression = SixLabors.ImageSharp.Formats.Tga.TgaCompression.None
+            });
+            Logger.Info($"Texture saved as TGA to: {filepath}");
+        }
     }
 
     private void SetDefaultParameters()
