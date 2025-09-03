@@ -11,6 +11,10 @@ public abstract class RszFieldAccessorBase(string name)
     protected readonly Dictionary<RszClass, int> resolvedFields = new();
     protected bool hasLoggedError;
 
+    public bool Optional { get; set; }
+
+    public bool Exists(RszClass cls) => GetIndex(cls) != -1;
+
     public TypeCacheOverride? Override { get; set; }
     public string Name { get; } = name;
 
@@ -20,7 +24,7 @@ public abstract class RszFieldAccessorBase(string name)
     {
         if (!hasLoggedError) {
             hasLoggedError = true;
-            Logger.Error($"Failed to resolve field {Name} for class {instanceClass}");
+            if (!Optional) Logger.Error($"Failed to resolve field {Name} for class {instanceClass}");
         }
 
         return -1;
@@ -192,6 +196,13 @@ public static partial class RszFieldCache
     {
         accessor.Override ??= new();
         accessor.Override.name = name ?? accessor.Name;
+        return accessor;
+    }
+
+    public static TAcc Optional<TAcc>(this TAcc accessor)
+        where TAcc : RszFieldAccessorBase
+    {
+        accessor.Optional = true;
         return accessor;
     }
 

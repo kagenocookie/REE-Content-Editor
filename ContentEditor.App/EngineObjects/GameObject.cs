@@ -276,21 +276,19 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
 
     private void ImportInstanceFields()
     {
-        Name = (string)instance.Values[0];
-        Tags = (string)instance.Values[1];
-        Draw = (bool)instance.Values[2];
-        Update = (bool)instance.Values[3];
-        TimeScale = instance.Values.Length > 4 ? (float)instance.Values[4] : -1;
+        Name = RszFieldCache.GameObject.Name.Get(instance);
+        Tags = RszFieldCache.GameObject.Tags.Get(instance);
+        Draw = RszFieldCache.GameObject.Draw.Get(instance);
+        Update = RszFieldCache.GameObject.Update.Get(instance);
+        TimeScale = RszFieldCache.GameObject.TimeScale.Get(instance);
     }
     private void ExportInstanceFields()
     {
-        instance.Values[0] = Name;
-        instance.Values[1] = Tags;
-        instance.Values[2] = Draw;
-        instance.Values[3] = Update;
-        if (instance.Values.Length > 4) {
-            instance.Values[4] = TimeScale;
-        }
+        RszFieldCache.GameObject.Name.Set(instance, Name);
+        RszFieldCache.GameObject.Tags.Set(instance, Tags);
+        RszFieldCache.GameObject.Draw.Set(instance, Draw);
+        RszFieldCache.GameObject.Update.Set(instance, Update);
+        RszFieldCache.GameObject.TimeScale.Set(instance, TimeScale);
     }
 
     internal void MoveToScene(Scene? newScene)

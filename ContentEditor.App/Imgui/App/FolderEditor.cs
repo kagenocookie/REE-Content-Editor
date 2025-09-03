@@ -22,9 +22,9 @@ public class FolderDataEditor : IObjectUIHandler
         typeof(Folder).GetField(nameof(Folder.ScenePath))!,
         typeof(Folder).GetField(nameof(Folder.Update))!,
         typeof(Folder).GetField(nameof(Folder.Draw))!,
-        typeof(Folder).GetField(nameof(Folder.Active))!,
+        typeof(Folder).GetField(nameof(Folder.Standby))!,
     ];
-    private static readonly MemberInfo[] BaseMembers2 = [
+    private static readonly MemberInfo[] Offset = [
         typeof(Folder).GetProperty(nameof(Folder.Offset))!,
     ];
 
@@ -35,8 +35,8 @@ public class FolderDataEditor : IObjectUIHandler
             var ws = context.GetWorkspace();
             if (folder.Parent != null) {
                 WindowHandlerFactory.SetupObjectUIContext(context, typeof(Folder), members: BaseMembers);
-                if (ws != null && ws.Env.Classes.Folder.fields.Any(f => f.type == RszFieldType.Position)) {
-                    WindowHandlerFactory.SetupObjectUIContext(context, typeof(Folder), members: BaseMembers2);
+                if (ws != null && RszFieldCache.Folder.UniversalOffset.Exists(ws.Env.Classes.Folder)) {
+                    WindowHandlerFactory.SetupObjectUIContext(context, typeof(Folder), members: Offset);
                 }
             }
         }

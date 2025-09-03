@@ -35,7 +35,7 @@ public class GameObjectEditor : IObjectUIHandler
             var obj = context.Get<GameObject>();
             context.AddChild<GameObject, string>("Name", obj, new ConfirmedStringFieldHandler(), c => c!.Name, (c, v) => c.Name = v ?? string.Empty);
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(GameObject), members: BaseMembers);
-            if (ws?.Env.Classes.GameObject.IndexOfField(nameof(GameObject.TimeScale)) != -1) {
+            if (ws != null && RszFieldCache.GameObject.TimeScale.Exists(ws.Env.Classes.GameObject)) {
                 WindowHandlerFactory.SetupObjectUIContext(context, typeof(GameObject), members: BaseMembers2);
             }
             if (obj.Folder != null) {

@@ -1,3 +1,4 @@
+using ContentPatcher;
 using ReeLib;
 using ReeLib.Scn;
 using Silk.NET.Maths;
@@ -11,7 +12,7 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
     public string Tags = string.Empty;
     public bool Update = true;
     public bool Draw = true;
-    public bool Active = true;
+    public bool Standby = true;
     public string? ScenePath;
     private ReeLib.via.Position _offset;
     public ReeLib.via.Position Offset
@@ -151,25 +152,24 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
 
     private void ImportInstanceFields()
     {
-        Name = (string)instance.Values[0];
-        Tags = (string)instance.Values[1];
-        Draw = Convert.ToBoolean(instance.Values[2]);
-        Update = Convert.ToBoolean(instance.Values[3]);
-        Active = Convert.ToBoolean(instance.Values[4]);
-        ScenePath = instance.Values[5] as string;
-        _offset = instance.Values.Length > 6 ? (ReeLib.via.Position)instance.Values[6] : default;
+        Name = RszFieldCache.Folder.Name.Get(instance);
+        Tags = RszFieldCache.Folder.Tags.Get(instance);
+        Draw = RszFieldCache.Folder.Draw.Get(instance);
+        Update = RszFieldCache.Folder.Update.Get(instance);
+        Standby = RszFieldCache.Folder.Standby.Get(instance);
+        ScenePath = RszFieldCache.Folder.ScenePath.Get(instance);
+        _offset = RszFieldCache.Folder.UniversalOffset.Get(instance);
     }
+
     private void ExportInstanceFields()
     {
-        instance.Values[0] = Name;
-        instance.Values[1] = Tags;
-        instance.Values[2] = Draw;
-        instance.Values[3] = Update;
-        instance.Values[4] = Active;
-        instance.Values[5] = ScenePath ?? string.Empty;
-        if (instance.Values.Length > 6) {
-            instance.Values[6] = _offset;
-        }
+        RszFieldCache.Folder.Name.Set(instance, Name);
+        RszFieldCache.Folder.Tags.Set(instance, Tags);
+        RszFieldCache.Folder.Draw.Set(instance, Draw);
+        RszFieldCache.Folder.Update.Set(instance, Update);
+        RszFieldCache.Folder.Standby.Set(instance, Standby);
+        RszFieldCache.Folder.ScenePath.Set(instance, ScenePath ?? string.Empty);
+        RszFieldCache.Folder.UniversalOffset.Set(instance, _offset);
     }
 
     public ScnFolderData ToScnFolder(List<ScnPrefabInfo>? prefabInfos)
