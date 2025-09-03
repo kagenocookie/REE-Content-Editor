@@ -185,7 +185,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                     if (ImGui.Selectable(file, false, ImGuiSelectableFlags.SpanAllColumns)) {
                         if (isFile) {
                             if (usePreviewWindow) {
-                                if (previewWindow == null) {
+                                if (previewWindow == null || !EditorWindow.CurrentWindow!.HasSubwindow<FilePreviewWindow>(out _, w => w.Handler == previewWindow)) {
                                     EditorWindow.CurrentWindow!.AddSubwindow(previewWindow = new FilePreviewWindow());
                                 }
 

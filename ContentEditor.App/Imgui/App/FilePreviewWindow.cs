@@ -68,6 +68,7 @@ public class FilePreviewWindow : IWindowHandler, IObjectUIHandler, IDisposable
         shouldDisposeFile = false;
         this.file = file;
         (innerWindow as IDisposable)?.Dispose();
+        innerWindow?.OnClosed();
         innerWindow = WindowHandlerFactory.CreateFileResourceHandler(workspace, file);
         fileContext?.ClearChildren();
         if (innerWindow != null) {
@@ -79,6 +80,7 @@ public class FilePreviewWindow : IWindowHandler, IObjectUIHandler, IDisposable
                     ParentWindow = data.ParentWindow,
                 };
                 fileContext = context.AddChild("File", fileWindow);
+                fileWindow.Context = fileContext;
                 innerWindow.Init(fileContext);
             }
         }
