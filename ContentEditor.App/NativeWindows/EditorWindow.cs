@@ -576,6 +576,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem("Texture Viewer")) {
                     AddSubwindow(new TextureViewer());
                 }
+                if (ImGui.MenuItem("Console Log")) {
+                    Logger.Info("Console Log Requested");
+                }
                 if (ImGui.MenuItem("Data Search")) {
                     AddUniqueSubwindow(new RszDataFinder());
                 }
