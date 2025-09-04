@@ -256,7 +256,9 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
 
     void INodeObject<GameObject>.RemoveChild(GameObject child)
     {
-        GameObjects.Remove(child);
+        if (Logger.ErrorIf(!GameObjects.Contains(child), "Removed GameObject must be a child of Folder")) return;
+
+        child.MoveToFolder(null);
     }
 
     int INodeObject<GameObject>.GetChildIndex(GameObject child) => GameObjects.IndexOf(child);
