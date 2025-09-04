@@ -93,21 +93,23 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                         window.InvokeFromUIThread(() => SetImageSource(files[0]));
                     });
                 }
+
                 if (texture != null && texturePath != null) {
                     // SILVER: Strip double extensions from REE .tex files
                     string baseName = Path.GetFileName(texturePath);
-                    while (Path.HasExtension(baseName))
+                    while (Path.HasExtension(baseName)) {
                         baseName = Path.GetFileNameWithoutExtension(baseName);
+                    }
 
                     if (ImGui.MenuItem("Save As ...")) {
-                    var window = EditorWindow.CurrentWindow!;
-                    PlatformUtils.ShowSaveFileDialog((file) => {
-                        window.InvokeFromUIThread(() => {
-                            if (!string.IsNullOrEmpty(file))
-                                texture.SaveAs(file);
-                        });
-                    },
-                        baseName, filter: "TGA (*.tga)|*.tga");
+                        var window = EditorWindow.CurrentWindow!;
+                        PlatformUtils.ShowSaveFileDialog((file) => {
+                            window.InvokeFromUIThread(() => {
+                                if (!string.IsNullOrEmpty(file)) {
+                                    texture.SaveAs(file);
+                                }
+                            });
+                        }, baseName, filter: "TGA (*.tga)|*.tga|PNG (*.png)|*.png");
                     }
                 }
                 ImGui.EndMenu();
