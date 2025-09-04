@@ -163,11 +163,11 @@ public class FileTesterWindow : IWindowHandler
                 var token = cancellationTokenSource.Token;
                 foreach (var env in GetWorkspaces(workspace)) {
                     var rm = new ResourceManager(new PatchDataContainer("!"));
-                    var exts = env.Env.GetFileExtensionsForFormat(format);
                     var success = 0;
                     var fails = new ConcurrentBag<string>();
                     results[env.Game] = (success, fails);
-                    foreach (var (path, stream) in exts.SelectMany(ext => env.Env.GetFilesWithExtension(ext))) {
+
+                    foreach (var (path, stream) in GetFileList(env, format)) {
                         if (token.IsCancellationRequested) return;
                         if (TryLoadFile(env, format, path, stream)) {
                             success++;
@@ -186,6 +186,40 @@ public class FileTesterWindow : IWindowHandler
                 cancellationTokenSource = null;
             }
         });
+    }
+
+    private static IEnumerable<(string path, MemoryStream stream)> GetFileList(ContentWorkspace env, KnownFileFormats format)
+    {
+        var exts = env.Env.GetFileExtensionsForFormat(format);
+        if (PakUtils.ScanPakFiles(env.Env.Config.GamePath).Count == 0) {
+            var extractPath = AppConfig.Instance.GetGameExtractPath(env.Game);
+            if (string.IsNullOrEmpty(extractPath) || !Directory.Exists(extractPath)) {
+                return [];
+            }
+
+            IEnumerable<(string path, MemoryStream stream)> Iterate() {
+                foreach (var ext in exts) {
+                    if (!env.Env.TryGetFileExtensionVersion(ext, out var version)) {
+                        Logger.Info($"Unknown version for {format} file .{ext}");
+                        continue;
+                    }
+
+                    var memstream = new MemoryStream();
+                    foreach (var f in Directory.EnumerateFiles(extractPath, "*." + ext + "." + version, SearchOption.AllDirectories)) {
+                        using var fs = File.OpenRead(f);
+                        memstream.Seek(0, SeekOrigin.Begin);
+                        memstream.SetLength(0);
+                        fs.CopyTo(memstream);
+                        fs.Close();
+                        yield return (Path.GetRelativePath(extractPath, f), memstream);
+                    }
+                }
+            }
+
+            return Iterate();
+        } else {
+            return exts.SelectMany(ext => env.Env.GetFilesWithExtension(ext));
+        }
     }
 
     private static bool TryLoadFile(ContentWorkspace env, KnownFileFormats format, string path, Stream stream)
