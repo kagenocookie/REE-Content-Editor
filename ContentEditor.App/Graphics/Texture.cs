@@ -1,6 +1,5 @@
 using ContentEditor.App.Windowing;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.DDS;
 using Silk.NET.OpenGL;
@@ -221,14 +220,27 @@ public class Texture : IDisposable
     public void SaveAs(string filepath)
     {
         using var image = GetCurrentTexture();
-        if (image != null) {
+        if (image == null) return;
+
+        string ext = System.IO.Path.GetExtension(filepath).ToLowerInvariant();
+
+        if (ext == ".tga") {
             image.Save(filepath, new SixLabors.ImageSharp.Formats.Tga.TgaEncoder {
                 BitsPerPixel = SixLabors.ImageSharp.Formats.Tga.TgaBitsPerPixel.Pixel32,
                 Compression = SixLabors.ImageSharp.Formats.Tga.TgaCompression.None
             });
             Logger.Info($"Texture saved as TGA to: {filepath}");
+        } else if (ext == ".png") {
+            image.Save(filepath, new SixLabors.ImageSharp.Formats.Png.PngEncoder {
+                ColorType = SixLabors.ImageSharp.Formats.Png.PngColorType.RgbWithAlpha,
+                CompressionLevel = SixLabors.ImageSharp.Formats.Png.PngCompressionLevel.BestCompression,
+            });
+            Logger.Info($"Texture saved as PNG to: {filepath}");
+        } else {
+            throw new Exception($"Unsupported export format: {ext}");
         }
     }
+
 
     private void SetDefaultParameters()
     {
