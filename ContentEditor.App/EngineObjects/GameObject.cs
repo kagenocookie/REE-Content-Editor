@@ -317,7 +317,11 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
             // we probably need to handle some more edge cases here
             Folder.GameObjects.Remove(this);
         }
+        var folderChanged = (Parent == null && Folder != folder);
         Folder = folder;
+        if (folderChanged) {
+            OnParentChanged();
+        }
         foreach (var child in Children) {
             child.MoveToFolder(folder);
         }
@@ -347,6 +351,17 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         }
 
         return newObj;
+    }
+
+    protected override void OnParentChanged()
+    {
+        if (Parent == null && Folder == null) {
+            DeactivateComponents();
+        } else {
+            if (Scene?.IsActive == true) {
+                ActivateComponents();
+            }
+        }
     }
 
     public void SetActive(bool active)
