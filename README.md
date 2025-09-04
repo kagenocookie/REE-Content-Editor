@@ -37,28 +37,28 @@ Some files may not fully work for other RE ENGINE games.
 ### File support table
 <div align="center">
 
-| File type | Basic support | Partial patching | Planned & considered additional features |
-| --------- | ------- | ---------------- | - |
-| .pak      | read / extract files, view contents | | PAK creation |
-| .user     | ☑️ read/write | ☑️ down to individual fields |
-| .pfb      | ☑️ read/write | ☑️ down to individual fields | |
-| .scn      | ☑️ read/write | ☑️ down to individual fields | |
-| .msg      | ☑️ read/write | ☑️ down to individual translations | |
-| .uvs      | ☑️ read/write | | |
-| .uvar     | ☑️ read/write | coming soon | expression node graph |
-| .mdf2     | ☑️ read/write | | material preview |
-| .efx      | ☑️ read/write | | graphic preview |
-| .tex, .dds  | view only | | TEX/DDS conversion, better preview controls |
-| .mesh     | read-only 3D display | | |
-| .rcol     | read/write | | 3D display, overlay with mesh/pfb, maybe partial patching |
-| .motbank  | read/write | | |
-| .motlist  | coming not soon | coming not soon | data display, editing, patching |
-| .mcol     | raw data read/write | | 3D display |
-| .ainvm    | raw data read | | data display, 3D display, editing |
-| .cdef, .def | ☑️ read/write | | |
-| common image formats | view only | | TEX/DDS conversion, channel merging |
-| common mesh formats | 3D display | | |
-| many other misc files | raw data read/write | | |
+| File type | Basic support | Additional features |
+| --------- | ------- | ---------------- |
+| .pak      | ☑️ read/create | Direct file access, file extraction
+| .user     | ☑️ read/write | Partial patching down to individual fields
+| .pfb      | ☑️ read/write | Partial patching down to individual fields, 3D preview
+| .scn      | ☑️ read/write | Partial patching down to individual fields, 3D preview
+| .msg      | ☑️ read/write | Partial patching down to individual translations
+| .uvs      | ☑️ read/write | Animation preview
+| .uvar     | ☑️ read/write
+| .mdf2     | ☑️ read/write
+| .efx      | ☑️ read/write
+| .tex, .dds  | view, convert  | Convert to TGA/PNG
+| .mesh     | read-only 3D display
+| .rcol     | read/write
+| .motbank  | read/write
+| .mcol     | read/write | .glb import/export for collision mesh
+| .motlist  | partial read, incomplete
+| .ainvm    | raw data read
+| .cdef, .def | ☑️ read/write
+| common image formats | view only
+| common mesh formats | 3D display
+| many other misc files | raw data read/write
 
 </div>
 
