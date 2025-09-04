@@ -164,13 +164,21 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     {
         if (data.Handler != null && data.Handler.FixedID != 0) {
             data.ID = data.Handler.FixedID;
+        } else if (data.Handler != null) {
+            var sameTypeWindows = subwindows.Where(sw => sw.Handler?.GetType() == data.Handler.GetType());
+            if (sameTypeWindows.Any()) {
+                data.ID = sameTypeWindows.Max(w => w.ID) + 1;
+            } else {
+                data.ID = 1;
+            }
         } else {
             data.ID = nextSubwindowID++;
         }
+        var label = $"{data.Handler?.HandlerName}##{data.ID}";
         if (string.IsNullOrEmpty(data.Name)) {
-            data.Name = $"{data.Handler?.HandlerName}##{data.ID}";
+            data.Name = label;
         }
-        data.Context = context.AddChild(data.ID.ToString(), this, data.Handler as IObjectUIHandler, (w) => data);
+        data.Context = context.AddChild(label, this, data.Handler as IObjectUIHandler, (w) => data);
         data.Handler?.Init(data.Context);
         subwindows.Add(data);
         data.Handler?.OnOpen();
