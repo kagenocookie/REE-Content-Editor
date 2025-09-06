@@ -1,0 +1,19 @@
+{
+  "re8": [
+    {
+      "Path": "natives/stm/character/ch",
+      "Tags": ["Character"],
+      "Comment": "Folder containing base game characters"
+    },
+    {
+      "Path": "natives/stm/_ge/character/ch",
+      "Tags": ["Character"],
+      "Comment": "Folder containing 'Gold Edition' characters"
+    },
+    {
+      "Path": "natives/stm/character/it",
+      "Tags": ["Weapon", "Item"],
+      "Comment": "Folder containing base game weapons and items"
+    }
+  ]
+}
