@@ -36,9 +36,11 @@ public static partial class RszFieldCache
         /// <summary>
         /// Mesh resource path
         /// </summary>
-        public static readonly RszFieldAccessorFirst<List<object>> InstanceGroups =
-            First<List<object>>(f => f.array && f.type is RszFieldType.Object, "InstanceGroups")
-            .Object("via.render.CompositeMeshInstanceGroup");
+        public static readonly RszFieldAccessorFirstFallbacks<List<object>> InstanceGroups =
+            First<List<object>>([
+                f => f.array && f.type is RszFieldType.Object,
+                f => f.array
+            ]).Object("via.render.CompositeMeshInstanceGroup");
 
         [RszAccessor("via.render.CompositeMeshInstanceGroup")]
         public static class InstanceGroup
