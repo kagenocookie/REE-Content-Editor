@@ -69,6 +69,13 @@ namespace ContentEditor.App
                 SaveBookmarks();
             }
         }
+        public bool IsBookmarked(string game, string path)
+        {
+            if (!_bookmarks.TryGetValue(game, out var list)) {
+                return false;
+            }
+            return list.Any(b => b.Path.Equals(path, StringComparison.OrdinalIgnoreCase));
+        }
         private void LoadBookmarks()
         {
             if (!File.Exists(_jsonFilePath)) return;
@@ -79,6 +86,7 @@ namespace ContentEditor.App
         }
         public void SaveBookmarks()
         {
+            Directory.CreateDirectory(Path.GetDirectoryName(_jsonFilePath)!);
             var json = JsonSerializer.Serialize(_bookmarks, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_jsonFilePath, json);
             Logger.Debug($"Bookmarks saved to {_jsonFilePath}");
