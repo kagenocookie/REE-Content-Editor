@@ -13,6 +13,16 @@ public class TriangleMesh : Mesh
         UpdateBuffers();
     }
 
+    public TriangleMesh(GL gl, float[] vertexData, int[] indices, AABB bounds, bool includeTangents = false) : this(gl, vertexData, indices)
+    {
+        BoundingBox = bounds;
+        if (includeTangents) {
+            SetAttributesWithTangents();
+        } else {
+            SetAttributesNoTangents();
+        }
+    }
+
     public TriangleMesh(GL gl, Assimp.Mesh sourceMesh) : base(gl)
     {
         var uv0 = sourceMesh.TextureCoordinateChannels[0];

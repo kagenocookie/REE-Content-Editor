@@ -120,7 +120,7 @@ public class FileTesterWindow : IWindowHandler
             }
             ImGui.SameLine();
             if (ImGui.Button("Copy result summary")) {
-                var str = string.Join("\n", results.Select(data => $"{data.Key}: {data.Value.success}/{data.Value.success + data.Value.fails.Count}"));
+                var str = string.Join("\n", results.OrderBy(r => r.Key.ToString()).Select(data => $"{data.Key}: {data.Value.success}/{data.Value.success + data.Value.fails.Count}"));
                 EditorWindow.CurrentWindow?.CopyToClipboard(str, "Copied!");
             }
             foreach (var (game, results) in results) {
@@ -226,7 +226,7 @@ public class FileTesterWindow : IWindowHandler
     {
         if (!env.ResourceManager.CanLoadFile(path)) return false;
         try {
-            var file = env.ResourceManager.CreateFileHandle(path, path, stream, allowDispose: false);
+            var file = env.ResourceManager.CreateFileHandle(path, path, stream, allowDispose: false, keepFileReference: false);
             if (file != null) {
                 env.ResourceManager.CloseFile(file);
                 return true;

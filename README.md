@@ -40,10 +40,10 @@ Some files may not fully work for other RE ENGINE games.
 | File type | Basic support | Additional features |
 | --------- | ------- | ---------------- |
 | .pak      | ☑️ read/create | Direct file access, file extraction
-| .user     | ☑️ read/write | Partial patching down to individual fields
-| .pfb      | ☑️ read/write | Partial patching down to individual fields, 3D preview
-| .scn      | ☑️ read/write | Partial patching down to individual fields, 3D preview
-| .msg      | ☑️ read/write | Partial patching down to individual translations
+| .user     | ☑️ read/write | Partial patching individual fields
+| .pfb      | ☑️ read/write | Partial patching individual fields, 3D preview
+| .scn      | ☑️ read/write | Partial patching individual fields, 3D preview
+| .msg      | ☑️ read/write | Partial patching individual translations
 | .uvs      | ☑️ read/write | Animation preview
 | .uvar     | ☑️ read/write
 | .mdf2     | ☑️ read/write
@@ -52,7 +52,7 @@ Some files may not fully work for other RE ENGINE games.
 | .mesh     | read-only 3D display
 | .rcol     | read/write
 | .motbank  | read/write
-| .mcol     | read/write | .glb import/export for collision mesh
+| .mcol     | ☑️ read/write | .glb import/export for collision mesh
 | .motlist  | partial read, incomplete
 | .ainvm    | raw data read
 | .cdef, .def | ☑️ read/write

@@ -110,7 +110,10 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     public static void ExportMcolToGlb(McolFile file, string outputFilepath)
     {
         var scene = GetMeshScene(file);
-        if (scene == null) return;
+        if (scene == null) {
+            Logger.Error("Selected .mcol file has no triangles, can't export.");
+            return;
+        }
 
         using var ctx = new AssimpContext();
         ctx.ExportFile(scene, outputFilepath, "glb2");
@@ -126,7 +129,6 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     public static Assimp.Scene? GetMeshScene(McolFile file)
     {
         if (!(file.bvh?.vertices.Count > 0)) {
-            Logger.Error("Selected .mcol file has no triangles, can't export.");
             return null;
         }
 
@@ -239,10 +241,11 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 
     private static int GetLayerIndexFromMaterialName(string name)
     {
-        var id = name.IndexOf(LayerNameDescSeparator);
-        if (id == -1) {
-            throw new Exception("Unsupported mcol material - material name does not meet the Layer##__ requirement");
+        var pos = name.IndexOf(LayerNameDescSeparator);
+        if (pos == -1 || !int.TryParse(name.AsSpan()[5..pos], out var id)) {
+            Logger.Error($"Unsupported mcol material \"{name}\" - material name does not meet the Layer##___ format requirement. Defaulting to layer 0.");
+            return 0;
         }
-        return id == -1 ? 0 : int.Parse(name.AsSpan()[5..id]);
+        return id;
     }
 }

@@ -26,6 +26,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     private Shader StandardShader => GetShader("Shaders/GLSL/standard3D.glsl");
     private Shader ViewShadedShader => GetShader("Shaders/GLSL/viewShaded.glsl");
     private Shader WireShader => GetShader("Shaders/GLSL/wireframe.glsl");
+    private Shader MonoShader => GetShader("Shaders/GLSL/unshaded-color.glsl");
     private Shader FilledWireShader => GetShader("Shaders/GLSL/wireframe-uv.glsl");
 
     public override IEnumerable<Material> GetPresetMaterials(EditorPresetMaterials preset)

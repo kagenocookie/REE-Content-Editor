@@ -766,14 +766,14 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         return handle;
     }
 
-    public FileHandle CreateFileHandle(string filepath, string? nativePath, Stream stream, bool allowDispose = true)
+    public FileHandle CreateFileHandle(string filepath, string? nativePath, Stream stream, bool allowDispose = true, bool keepFileReference = true)
     {
         var handle = this.CreateFileHandleInternal(filepath, nativePath, stream, allowDispose);
         if (handle == null) {
             throw new NotSupportedException();
         }
         string filekey = handle.NativePath ?? handle.Filepath;
-        if (!openFiles.TryAdd(filekey, handle)) {
+        if (keepFileReference && !openFiles.TryAdd(filekey, handle)) {
             var prev = openFiles[filekey];
             CloseFile(prev);
             openFiles.Add(filekey, handle);
