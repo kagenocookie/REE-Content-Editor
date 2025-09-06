@@ -49,7 +49,7 @@ public class ItemPositions(GameObject gameObject, RszInstance data) : BaseSingle
         var pfbPath = $"ObjectRoot/SetModel/sm7x_Item/common/item/tentative/{label}.pfb";
         LoadMeshFromPrefab(pfbPath);
         lastItemId = itemId;
-        lastWeaponId = 0;
+        lastWeaponId = CurrentWeaponID;
     }
 
     private void SetWeaponID(int weaponId)
@@ -59,7 +59,7 @@ public class ItemPositions(GameObject gameObject, RszInstance data) : BaseSingle
         var pfbPath = $"ObjectRoot/Prefab/UI/Weapon/{label}.pfb";
         LoadMeshFromPrefab(pfbPath);
         lastWeaponId = weaponId;
-        lastItemId = 0;
+        lastItemId = CurrentItemID;
     }
 
     protected override bool IsMeshUpToDate()
