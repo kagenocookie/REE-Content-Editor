@@ -52,7 +52,6 @@ public class FilePreviewWindow : IWindowHandler, IObjectUIHandler, IDisposable
     {
         if (workspace.ResourceManager.TryResolveFile(filepath, out var file)) {
             SetFile(file);
-            shouldDisposeFile = true;
         }
     }
 
@@ -90,11 +89,25 @@ public class FilePreviewWindow : IWindowHandler, IObjectUIHandler, IDisposable
 
     public bool RequestClose()
     {
+        if (innerWindow != null && innerWindow.RequestClose()) {
+            if (!EditorWindow.CurrentWindow!.HasSubwindow<SaveFileConfirmation>(out _)) {
+                EditorWindow.CurrentWindow!.AddSubwindow(new SaveFileConfirmation(
+                    "Unsaved changes",
+                    $"Some files have unsaved changes.\nAre you sure you wish to close the window?",
+                    workspace.ResourceManager.GetModifiedResourceFiles(),
+                    data.ParentWindow,
+                    () => workspace.ResourceManager.CloseAllFiles()
+                ));
+            }
+            return true;
+        }
+
         return false;
     }
 
     public void Dispose()
     {
+        (innerWindow as IDisposable)?.Dispose();
         if (shouldDisposeFile) {
             file?.Dispose();
         }

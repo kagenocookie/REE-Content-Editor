@@ -254,6 +254,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
 
                         if (ImGui.BeginPopupContextItem(bm.Path)) {
                             if (ImGui.Selectable("Jump to...")) {
+
                                 CurrentDir = bm.Path;
                             }
                             if (ImGui.Selectable("Copy Path")) {
@@ -494,7 +495,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
 
     public void Dispose()
     {
-        if (previewWindow != null) {
+        if (previewWindow != null && !previewWindow.RequestClose()) {
             EditorWindow.CurrentWindow?.CloseSubwindow(previewWindow);
         }
     }
