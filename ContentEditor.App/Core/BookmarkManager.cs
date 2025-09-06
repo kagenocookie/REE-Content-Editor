@@ -19,15 +19,7 @@ namespace ContentEditor.App
         private readonly string _jsonFilePath;
         private Dictionary<string, List<BookmarkEntry>> _bookmarks = new();
         public bool IsHideDefaults { get; set; } = false;
-        // SILVER: Maybe these shouldn't be hardcode into the class? + TODO SILVER: Add more default bookmarks
-        public static readonly Dictionary<string, List<BookmarkEntry>> DefaultBookmarks = new() {
-            ["re8"] = new List<BookmarkEntry> {
-                new BookmarkEntry { Path = "natives/stm/character/ch",      Tags = ["Character"],   Comment = "Folder containing base game characters"},
-                new BookmarkEntry { Path = "natives/stm/_ge/character/ch",  Tags = ["Character"],   Comment = "Folder containing 'Gold Edition' characters"},
-                new BookmarkEntry { Path = "natives/stm/character/it",      Tags = ["Weapon"],      Comment = "Folder containing base game weapons and items"},
-            },
-        };
-        // SILVER: But these colors should be hardcoded
+        // SILVER: These colors should stay hardcoded
         public static readonly Dictionary<string, Vector4[]> TagColors = new()
         {
             { "Character", new[] { new Vector4(0.2f, 0.6f, 1f, 0.5f),   new Vector4(0.3f, 0.7f, 1f, 0.8f),      new Vector4(0.1f, 0.5f, 0.9f, 1f)}},
@@ -36,7 +28,6 @@ namespace ContentEditor.App
             { "Stage",     new[] { new Vector4(0.6f, 0.3f, 0.9f, 0.5f), new Vector4(0.6f, 0.3f, 0.9f, 0.8f),    new Vector4(0.6f, 0.3f, 0.9f, 1f)}},
             { "Misc",      new[] { new Vector4(0.9f, 0.8f, 0.2f, 0.5f), new Vector4(1f, 0.9f, 0.3f, 0.8f),      new Vector4(0.8f, 0.7f, 0.1f, 1f)}},
         };
-
         public BookmarkManager(string jsonFilePath)
         {
             _jsonFilePath = jsonFilePath;
