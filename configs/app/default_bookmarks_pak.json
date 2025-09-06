@@ -15,5 +15,47 @@
       "Tags": ["Weapon", "Item"],
       "Comment": "Folder containing base game weapons and items"
     }
+  ],
+  "dd2": [
+    {
+      "Path": "natives/stm/character/wp",
+      "Tags": ["Weapon", "Item"],
+      "Comment": "Weapon meshes"
+    },
+    {
+      "Path": "natives/stm/appsystem/equipment",
+      "Tags": ["Weapon", "Item"],
+      "Comment": "Equipment prefabs"
+    },
+    {
+      "Path": "natives/stm/character/_kit/_equipment",
+      "Tags": ["Item"],
+      "Comment": "Player equipment"
+    },
+    {
+      "Path": "natives/stm/character/_kit",
+      "Tags": ["Character"],
+      "Comment": "Human customization parts"
+    },
+    {
+      "Path": "natives/stm/appdata/field",
+      "Tags": ["Stage"],
+      "Comment": "Open world field scenes"
+    },
+    {
+      "Path": "natives/stm/appdata/contents",
+      "Tags": ["Stage"],
+      "Comment": "Towns & dungeons"
+    },
+    {
+      "Path": "natives/stm/appdata/generate",
+      "Tags": ["Misc"],
+      "Comment": "Spawn data"
+    },
+    {
+      "Path": "natives/stm/appdata/quest",
+      "Tags": ["Misc"],
+      "Comment": "Quests"
+    }
   ]
 }
