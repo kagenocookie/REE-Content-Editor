@@ -1,12 +1,13 @@
 using ContentEditor.App.Windowing;
 using ImGuiNET;
 using ReeLib;
+using System.Numerics;
 
 namespace ContentEditor.App;
 
 public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWindowHandler, IDisposable
 {
-    public string HandlerName => " PAK File Browser ";
+    public string HandlerName => "PAK File Browser";
 
     public Workspace Workspace { get; } = workspace;
     public string? PakFilePath { get; } = pakFilePath;
@@ -18,12 +19,13 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
     // note: purposely not disposing the reader, in case we just reused the "main" pak reader from the workspace
     // it doesn't really need disposing with the current implementation either way
     private CachedMemoryPakReader? reader;
-
     private FilePreviewWindow? previewWindow;
-
     private WindowData data = null!;
     protected UIContext context = null!;
     private ListFileWrapper? matchedList;
+    private BookmarkManager _bookmarkManagerDefaults = new BookmarkManager("configs//app//default_bookmarks_pak.json"); // TODO SILVER: Add more default bookmarks
+    private BookmarkManager _bookmarkManager = new BookmarkManager("configs//user//bookmarks_pak.json");
+    private List<string> _activeTagFilter = new();
 
     public void Init(UIContext context)
     {
@@ -90,26 +92,236 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             }
             // TODO handle unknowns properly
         }
-
-        ImGui.Text("Total File Count: " + reader.MatchedEntryCount);
+        if (ImGui.Button("PAK Info")) {
+            ImGui.OpenPopup("PAKInfoPopup");
+        }
+        if (ImGui.BeginPopup("PAKInfoPopup")) {
+            ImGui.Text("Total File Count: " + reader.MatchedEntryCount);
+            ImGui.SameLine();
+            if (PakFilePath == null) {
+                ImGui.Text($"| PAK Count: {reader.PakFilePriority.Count}");
+                ImGui.Separator();
+                foreach (var pak in reader.PakFilePriority) {
+                    ImGui.BulletText(pak);
+                }
+            } else {
+                ImGui.Text("PAK file: " + PakFilePath);
+            }
+            ImGui.EndPopup();
+        }
         ImGui.SameLine();
         var usePreviewWindow = AppConfig.Instance.UsePakFilePreviewWindow.Get();
         if (ImGui.Checkbox("Open files in preview window", ref usePreviewWindow)) {
             AppConfig.Instance.UsePakFilePreviewWindow.Set(usePreviewWindow);
         }
         ImGui.SameLine();
-
-        if (PakFilePath == null) {
-            if (ImGui.TreeNode("PAK Count: " + reader.PakFilePriority.Count)) {
-                ImGui.Separator();
-                foreach (var pak in reader.PakFilePriority) {
-                    ImGui.Text(pak);
-                }
-                ImGui.Separator();
-                ImGui.TreePop();
+        var bookmarks = _bookmarkManager.GetBookmarks(Workspace.Config.Game.name);
+        var defaults = _bookmarkManagerDefaults.GetBookmarks(Workspace.Config.Game.name);
+        bool isHideDefaults = _bookmarkManagerDefaults.IsHideDefaults;
+        bool isBookmarked = _bookmarkManager.IsBookmarked(Workspace.Config.Game.name, CurrentDir);
+        if (ImGui.TreeNode($"{AppIcons.Bookmarks} Bookmarks")) {
+            ImGui.Spacing();
+            ImGui.Separator();
+            if (ImGui.Checkbox("Hide Default Bookmarks", ref isHideDefaults)) {
+                _bookmarkManagerDefaults.IsHideDefaults = isHideDefaults;
             }
-        } else {
-            ImGui.Text("PAK file: " + PakFilePath);
+            if (bookmarks.Count > 0) {
+                ImGui.SameLine();
+                if (ImGui.Button("Clear Custom Bookmarks")) {
+                    ImGui.OpenPopup("Confirm Action");
+                }
+
+                if (ImGui.BeginPopupModal("Confirm Action", ImGuiWindowFlags.AlwaysAutoResize)) {
+                    ImGui.Text("Are you sure you want to delete all custom bookmarks?");
+                    ImGui.Separator();
+
+                    if (ImGui.Button("Yes", new Vector2(170, 0))) {
+                        _bookmarkManager.ClearBookmarks(Workspace.Config.Game.name);
+                        Logger.Info($"Cleared custom bookmarks for {Workspace.Config.Game.name}");
+                        ImGui.CloseCurrentPopup();
+                    }
+                    ImGui.SameLine();
+                    if (ImGui.Button("No", new Vector2(170, 0))) {
+                        ImGui.CloseCurrentPopup();
+                    }
+
+                    ImGui.EndPopup();
+                }
+            }
+
+
+
+            if (defaults.Count > 0) {
+                if (_activeTagFilter.Count > 0) {
+                    ImGui.SameLine();
+                    ImGui.Text("Active Tag Filters: ");
+                    ImGui.SameLine();
+
+                    foreach (var tag in _activeTagFilter) {
+                        ImGui.PushID("ActiveTag_" + tag);
+                        if (BookmarkManager.TagColors.TryGetValue(tag, out var colors)) {
+                            ImGui.PushStyleColor(ImGuiCol.Text, colors[1]);
+                        }
+                        ImGui.Text(tag);
+                        ImGui.PopStyleColor();
+                        ImGui.SameLine();
+                        ImGui.Text("|");
+                        ImGui.PopID();
+                        ImGui.SameLine();
+                    }
+
+                    if (ImGui.Button("Clear Filters")) {
+                        _activeTagFilter.Clear();
+                    }
+                }
+
+                if (!_bookmarkManagerDefaults.IsHideDefaults) {
+                    ImGui.SeparatorText("Default");
+                    if (ImGui.BeginTable("BookmarksTable", 3, ImGuiTableFlags.Resizable | ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.RowBg)) {
+                        ImGui.TableSetupColumn("Path", ImGuiTableColumnFlags.WidthStretch, 0.5f);
+                        ImGui.TableSetupColumn("Tags", ImGuiTableColumnFlags.WidthStretch, 0.3f);
+                        ImGui.TableSetupColumn("Comment", ImGuiTableColumnFlags.WidthStretch, 0.2f);
+                        ImGui.TableHeadersRow();
+
+                        foreach (var bm in defaults) {
+                            if (_activeTagFilter.Count > 0 && !_activeTagFilter.Any(t => bm.Tags.Contains(t))) {
+                                continue;
+                            }
+
+                            ImGui.TableNextRow();
+                            ImGui.TableSetColumnIndex(0);
+                            if (ImGui.Selectable(bm.Path, false)) {
+                                CurrentDir = bm.Path;
+                            }
+
+                            ImGui.TableSetColumnIndex(1);
+                            foreach (var tag in bm.Tags) {
+                                ImGui.PushID($"{bm.Path}_{tag}");
+
+                                if (BookmarkManager.TagColors.TryGetValue(tag, out var colors)) {
+                                    ImGui.PushStyleColor(ImGuiCol.Button, colors[0]);
+                                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, colors[1]);
+                                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, colors[2]);
+                                } else {
+                                    ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0.5f, 0.5f, 0.5f, 1f));
+                                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, new Vector4(0.6f, 0.6f, 0.6f, 1f));
+                                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, new Vector4(0.4f, 0.4f, 0.4f, 1f));
+                                }
+
+                                ImGui.PushStyleColor(ImGuiCol.Text, Vector4.One);
+                                if (ImGui.Button($"[ {tag} ]")) {
+                                    if (_activeTagFilter.Contains(tag)) {
+                                        _activeTagFilter.Remove(tag);
+                                    } else {
+                                        _activeTagFilter.Add(tag);
+                                    }
+                                }
+
+                                ImGui.PopStyleColor(4);
+                                ImGui.PopID();
+                                ImGui.SameLine();
+                            }
+
+                            ImGui.TableSetColumnIndex(2);
+                            if (!string.IsNullOrEmpty(bm.Comment)) {
+                                ImGui.TextDisabled(bm.Comment);
+                            }
+                        }
+                        ImGui.EndTable();
+                    }
+                }
+            }
+
+            if (bookmarks.Count > 0) {
+                ImGui.SeparatorText("Custom");
+                if (ImGui.BeginTable("UserBookmarksTable", 3, ImGuiTableFlags.Resizable | ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.RowBg)) {
+                    ImGui.TableSetupColumn("Path", ImGuiTableColumnFlags.WidthStretch, 0.5f);
+                    ImGui.TableSetupColumn("Tags", ImGuiTableColumnFlags.WidthStretch, 0.3f);
+                    ImGui.TableSetupColumn("Comment", ImGuiTableColumnFlags.WidthStretch, 0.2f);
+                    ImGui.TableHeadersRow();
+
+                    foreach (var bm in bookmarks.ToList()) {
+                        if (_activeTagFilter.Count > 0 && !_activeTagFilter.Any(t => bm.Tags.Contains(t))) {
+                            continue;
+                        }
+
+                        ImGui.TableNextRow();
+                        ImGui.TableSetColumnIndex(0);
+                        if (ImGui.Selectable(bm.Path, false))
+                        {
+                            CurrentDir = bm.Path;
+                        }
+
+                        if (ImGui.BeginPopupContextItem(bm.Path)) {
+                            if (ImGui.Selectable("Jump to...")) {
+                                CurrentDir = bm.Path;
+                            }
+                            if (ImGui.Selectable("Copy Path")) {
+                                EditorWindow.CurrentWindow?.CopyToClipboard(bm.Path);
+                            }
+                            if (ImGui.Selectable("Remove from Bookmarks")) {
+                                _bookmarkManager.RemoveBookmark(Workspace.Config.Game.name, bm.Path);
+                            }
+                            if (ImGui.BeginMenu("Tags")) {
+                                foreach (var tag in BookmarkManager.TagColors.Keys) {
+                                    bool hasTag = bm.Tags.Contains(tag);
+                                    if (ImGui.MenuItem(tag, "", hasTag)) {
+                                        if (hasTag) {
+                                            bm.Tags.Remove(tag);
+                                        } else {
+                                            bm.Tags.Add(tag);
+                                            _bookmarkManager.SaveBookmarks();
+                                        }
+                                    }
+                                }
+                                ImGui.EndMenu();
+                            }
+                            string comment = bm.Comment;
+                            if (ImGui.InputText("Edit Comment", ref comment, 64, ImGuiInputTextFlags.EnterReturnsTrue)) {
+                                bm.Comment = comment;
+                                _bookmarkManager.SaveBookmarks();
+                            }
+                            ImGui.EndPopup();
+                        }
+                        ImGui.TableSetColumnIndex(1);
+                        foreach (var tag in bm.Tags) {
+                            ImGui.PushID($"{bm.Path}_{tag}");
+
+                            if (BookmarkManager.TagColors.TryGetValue(tag, out var colors)) {
+                                ImGui.PushStyleColor(ImGuiCol.Button, colors[0]);
+                                ImGui.PushStyleColor(ImGuiCol.ButtonHovered, colors[1]);
+                                ImGui.PushStyleColor(ImGuiCol.ButtonActive, colors[2]);
+                            } else {
+                                ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0.5f, 0.5f, 0.5f, 1f));
+                                ImGui.PushStyleColor(ImGuiCol.ButtonHovered, new Vector4(0.6f, 0.6f, 0.6f, 1f));
+                                ImGui.PushStyleColor(ImGuiCol.ButtonActive, new Vector4(0.4f, 0.4f, 0.4f, 1f));
+                            }
+
+                            ImGui.PushStyleColor(ImGuiCol.Text, Vector4.One);
+                            if (ImGui.Button($"[ {tag} ]")) {
+                                if (_activeTagFilter.Contains(tag)) {
+                                    _activeTagFilter.Remove(tag);
+                                } else {
+                                    _activeTagFilter.Add(tag);
+                                }
+                            }
+                            ImGui.PopStyleColor(4);
+                            ImGui.PopID();
+                            ImGui.SameLine();
+                        }
+                        ImGui.TableSetColumnIndex(2);
+                        if (!string.IsNullOrEmpty(bm.Comment)) {
+                            ImGui.Text($"{bm.Comment}");
+                        }
+                    }
+                    ImGui.EndTable();
+                }
+            } else {
+                ImGui.TextDisabled("No Custom Bookmarks yet...");
+            }
+            ImGui.Separator();
+            ImGui.Spacing();
+            ImGui.TreePop();
         }
 
         if (ImGui.ArrowButton("##left", ImGuiDir.Left)) {
@@ -137,7 +349,20 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         }
         if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("You can use regex to match file patterns (e.g. natives/stm/character/**.mdf2.*)");
         ImGui.SameLine();
-
+        if (isBookmarked) {
+            ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.PlotHistogramHovered]);
+        } else {
+            ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.Text]);
+        }
+        if (ImGui.Button((isBookmarked ? AppIcons.Star : AppIcons.StarEmpty) + "##bookmark")) {
+            if (isBookmarked) {
+                _bookmarkManager.RemoveBookmark(Workspace.Config.Game.name, CurrentDir);
+            } else {
+                _bookmarkManager.AddBookmark(Workspace.Config.Game.name, CurrentDir);
+            }
+        }
+        ImGui.PopStyleColor();
+        ImGui.SameLine();
         if (ImGui.Button("Extract to...")) {
             PlatformUtils.ShowFolderDialog(ExtractCurrentList, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
         }
@@ -182,13 +407,19 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                     }
                 } else {
                     var usePreviewWindow = AppConfig.Instance.UsePakFilePreviewWindow.Get();
+                    var bookmarks = _bookmarkManager.GetBookmarks(Workspace.Config.Game.name);
+                    bool isBookmarked = _bookmarkManager.IsBookmarked(Workspace.Config.Game.name, file);
+                    if (isBookmarked) {
+                        ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.PlotHistogramHovered]);
+                    } else {
+                        ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.Text]);
+                    }
                     if (ImGui.Selectable(file, false, ImGuiSelectableFlags.SpanAllColumns)) {
                         if (isFile) {
                             if (usePreviewWindow) {
                                 if (previewWindow == null || !EditorWindow.CurrentWindow!.HasSubwindow<FilePreviewWindow>(out _, w => w.Handler == previewWindow)) {
                                     EditorWindow.CurrentWindow!.AddSubwindow(previewWindow = new FilePreviewWindow());
                                 }
-
                                 if (PakFilePath != null && reader.GetFile(file) is Stream stream) {
                                     previewWindow.SetFile(stream, file, PakFilePath);
                                 } else {
@@ -205,6 +436,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                                 }
                             }
                         } else {
+                            ImGui.PopStyleColor();
                             ImGui.PopID();
                             ImGui.TableNextColumn();
                             ImGui.EndTable();
@@ -213,6 +445,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                             return;
                         }
                     }
+                    ImGui.PopStyleColor();
                     if (ImGui.BeginPopupContextItem()) {
                         if (ImGui.Selectable("Copy Path")) {
                             EditorWindow.CurrentWindow?.CopyToClipboard(file);
@@ -231,6 +464,16 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                                 stream.WriteTo(fs);
                             }, Path.GetFileName(nativePath));
                             ImGui.CloseCurrentPopup();
+                        }
+                        
+                        if (isBookmarked) {
+                            if (ImGui.Selectable("Remove from Bookmarks")) {
+                                _bookmarkManager.RemoveBookmark(Workspace.Config.Game.name, file);
+                            }
+                        } else {
+                            if (ImGui.Selectable("Add to Bookmarks")) {
+                                _bookmarkManager.AddBookmark(Workspace.Config.Game.name, file);
+                            }
                         }
                         ImGui.EndPopup();
                     }
