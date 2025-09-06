@@ -57,5 +57,124 @@
       "Tags": ["Misc"],
       "Comment": "Quests"
     }
+  ],
+  "re4": [
+    {
+      "Path": "natives/stm/_chainsaw/character/wp",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Weapons"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ac/ac00",
+      "Tags": [
+        "Misc"
+      ],
+      "Comment": "Accessories"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Characters"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/authoring/campaign1001",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Main campaign root scene"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/appsystem/scene/optimized/stage/st40",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Optimized static stage scenes"
+    }
+  ],
+  "re2": [
+    {
+      "Path": "natives/x64/sectionroot/character",
+      "Tags": [
+        "Character",
+        "Weapon"
+      ],
+      "Comment": "Character and weapon meshes"
+    },
+    {
+      "Path": "natives/x64/objectroot/scene/location",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Location scenes"
+    },
+    {
+      "Path": "natives/x64/objectroot/prefab/character/survivor/parts",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Player costume prefabs"
+    }
+  ],
+  "re2rt": [
+    {
+      "Path": "natives/stm/sectionroot/character",
+      "Tags": [
+        "Character",
+        "Weapon"
+      ],
+      "Comment": "Character and weapon meshes"
+    },
+    {
+      "Path": "natives/stm/objectroot/scene/location",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Location scenes"
+    },
+    {
+      "Path": "natives/stm/objectroot/prefab/character/survivor/parts",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Player costume prefabs"
+    }
+  ],
+  "re3": [
+    {
+      "Path": "natives/stm/escape/character",
+      "Tags": [
+        "Character",
+        "Weapon"
+      ],
+      "Comment": "Character and weapon meshes"
+    },
+    {
+      "Path": "natives/stm/escape/scene/location",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Main locations"
+    }
+  ],
+  "re3rt": [
+    {
+      "Path": "natives/stm/escape/character",
+      "Tags": [
+        "Character",
+        "Weapon"
+      ],
+      "Comment": "Character and weapon meshes"
+    },
+    {
+      "Path": "natives/stm/escape/scene/location",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Main locations"
+    }
   ]
 }
