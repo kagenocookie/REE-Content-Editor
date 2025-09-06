@@ -19,6 +19,11 @@ public abstract class RszFieldAccessorBase(string name)
     public string Name { get; } = name;
 
     public abstract int GetIndex(RszClass instanceClass);
+    public RszField? GetField(RszClass instanceClass)
+    {
+        var index = GetIndex(instanceClass);
+        return index == -1 ? null : instanceClass.fields[index];
+    }
 
     protected int Fail(RszClass instanceClass)
     {
@@ -65,6 +70,10 @@ public sealed class RszFieldAccessorFixedIndex<T>(int index, [CallerMemberName] 
 public sealed class RszFieldAccessorFixedFunc<T>(Func<RszClass, int> func, [CallerMemberName] string name = "") : RszFieldAccessorBase<T>(name)
 {
     public override int GetIndex(RszClass instanceClass) => func.Invoke(instanceClass);
+}
+public sealed class RszFieldAccessorName<T>(string fieldName, [CallerMemberName] string name = "") : RszFieldAccessorBase<T>(name)
+{
+    public override int GetIndex(RszClass instanceClass) => instanceClass.IndexOfField(fieldName);
 }
 
 public sealed class RszFieldAccessorFieldList<T>(Func<IEnumerable<(RszField field, int index)>, int> condition, [CallerMemberName] string name = "") : RszFieldAccessorBase<T>(name)
@@ -188,6 +197,15 @@ public static partial class RszFieldCache
         return accessor;
     }
 
+    public static TAcc Enum<TAcc>(this TAcc accessor, RszFieldType type, string originalType)
+        where TAcc : RszFieldAccessorBase
+    {
+        accessor.Override ??= new();
+        accessor.Override.originalType = originalType;
+        accessor.Override.fieldType = type;
+        return accessor;
+    }
+
     public static TAcc Resource<TAcc>(this TAcc accessor, string resourceHolderType)
         where TAcc : RszFieldAccessorBase
     {
@@ -217,6 +235,9 @@ public static partial class RszFieldCache
 
     private static RszFieldAccessorFixedFunc<T> Func<T>(Func<RszClass, int> func, [CallerMemberName] string name = "")
         => new RszFieldAccessorFixedFunc<T>(func, name);
+
+    private static RszFieldAccessorName<T> Name<T>([CallerMemberName] string fieldName = "", [CallerMemberName] string name = "")
+        => new RszFieldAccessorName<T>(fieldName, name);
 
     private static RszFieldAccessorFirst<T> First<T>(Func<RszField, bool> condition, [CallerMemberName] string name = "")
         => new RszFieldAccessorFirst<T>(condition, name);
