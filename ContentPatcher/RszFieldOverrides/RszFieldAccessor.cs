@@ -24,7 +24,9 @@ public abstract class RszFieldAccessorBase(string name)
     {
         if (!hasLoggedError) {
             hasLoggedError = true;
-            if (!Optional) Logger.Error($"Failed to resolve field {Name} for class {instanceClass}");
+            if (!Optional) {
+                Logger.Error($"Failed to resolve field {Name} for class {instanceClass}");
+            }
         }
 
         return -1;
@@ -59,6 +61,10 @@ public sealed class TypeCacheOverride
 public sealed class RszFieldAccessorFixedIndex<T>(int index, [CallerMemberName] string name = "") : RszFieldAccessorBase<T>(name)
 {
     public override int GetIndex(RszClass instanceClass) => index;
+}
+public sealed class RszFieldAccessorFixedFunc<T>(Func<RszClass, int> func, [CallerMemberName] string name = "") : RszFieldAccessorBase<T>(name)
+{
+    public override int GetIndex(RszClass instanceClass) => func.Invoke(instanceClass);
 }
 
 public sealed class RszFieldAccessorFieldList<T>(Func<IEnumerable<(RszField field, int index)>, int> condition, [CallerMemberName] string name = "") : RszFieldAccessorBase<T>(name)
@@ -208,6 +214,9 @@ public static partial class RszFieldCache
 
     private static RszFieldAccessorFixedIndex<T> Index<T>(int index, [CallerMemberName] string name = "")
         => new RszFieldAccessorFixedIndex<T>(index, name);
+
+    private static RszFieldAccessorFixedFunc<T> Func<T>(Func<RszClass, int> func, [CallerMemberName] string name = "")
+        => new RszFieldAccessorFixedFunc<T>(func, name);
 
     private static RszFieldAccessorFirst<T> First<T>(Func<RszField, bool> condition, [CallerMemberName] string name = "")
         => new RszFieldAccessorFirst<T>(condition, name);
