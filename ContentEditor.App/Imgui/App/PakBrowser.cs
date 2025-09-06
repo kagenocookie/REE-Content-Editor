@@ -115,21 +115,42 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             AppConfig.Instance.UsePakFilePreviewWindow.Set(usePreviewWindow);
         }
         ImGui.SameLine();
-        if (ImGui.TreeNode("Bookmarks")) {
-            var bookmarks = _bookmarkManager.GetBookmarks(Workspace.Config.Game.name);
-            var defaults = _bookmarkManagerDefaults.GetBookmarks(Workspace.Config.Game.name);
-            bool hideDefaults = _bookmarkManagerDefaults.IsHideDefaults;
+        var bookmarks = _bookmarkManager.GetBookmarks(Workspace.Config.Game.name);
+        var defaults = _bookmarkManagerDefaults.GetBookmarks(Workspace.Config.Game.name);
+        bool isHideDefaults = _bookmarkManagerDefaults.IsHideDefaults;
+        bool isBookmarked = _bookmarkManager.IsBookmarked(Workspace.Config.Game.name, CurrentDir);
+        if (ImGui.TreeNode($"{AppIcons.Bookmarks} Bookmarks")) {
             ImGui.Spacing();
             ImGui.Separator();
-            if (ImGui.Checkbox("Hide Default Bookmarks", ref hideDefaults)) {
-                _bookmarkManagerDefaults.IsHideDefaults = hideDefaults;
+            if (ImGui.Checkbox("Hide Default Bookmarks", ref isHideDefaults)) {
+                _bookmarkManagerDefaults.IsHideDefaults = isHideDefaults;
             }
-            ImGui.SameLine();
-            if (ImGui.Button("Clear Custom Bookmarks")) {
-                _bookmarkManager.ClearBookmarks(Workspace.Config.Game.name);
-                Logger.Info($"Cleared custom bookmarks for {Workspace.Config.Game.name}");
+            if (bookmarks.Count > 0) {
+                ImGui.SameLine();
+                if (ImGui.Button("Clear Custom Bookmarks")) {
+                    ImGui.OpenPopup("Confirm Action");
+                }
+
+                if (ImGui.BeginPopupModal("Confirm Action", ImGuiWindowFlags.AlwaysAutoResize)) {
+                    ImGui.Text("Are you sure you want to delete all custom bookmarks?");
+                    ImGui.Separator();
+
+                    if (ImGui.Button("Yes", new Vector2(170, 0))) {
+                        _bookmarkManager.ClearBookmarks(Workspace.Config.Game.name);
+                        Logger.Info($"Cleared custom bookmarks for {Workspace.Config.Game.name}");
+                        ImGui.CloseCurrentPopup();
+                    }
+                    ImGui.SameLine();
+                    if (ImGui.Button("No", new Vector2(170, 0))) {
+                        ImGui.CloseCurrentPopup();
+                    }
+
+                    ImGui.EndPopup();
+                }
             }
-           
+
+
+
             if (defaults.Count > 0) {
                 if (_activeTagFilter.Count > 0) {
                     ImGui.SameLine();
@@ -328,7 +349,20 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         }
         if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("You can use regex to match file patterns (e.g. natives/stm/character/**.mdf2.*)");
         ImGui.SameLine();
-
+        if (isBookmarked) {
+            ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.PlotHistogramHovered]);
+        } else {
+            ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.Text]);
+        }
+        if (ImGui.Button((isBookmarked ? AppIcons.Star : AppIcons.StarEmpty) + "##bookmark")) {
+            if (isBookmarked) {
+                _bookmarkManager.RemoveBookmark(Workspace.Config.Game.name, CurrentDir);
+            } else {
+                _bookmarkManager.AddBookmark(Workspace.Config.Game.name, CurrentDir);
+            }
+        }
+        ImGui.PopStyleColor();
+        ImGui.SameLine();
         if (ImGui.Button("Extract to...")) {
             PlatformUtils.ShowFolderDialog(ExtractCurrentList, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
         }
@@ -374,7 +408,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                 } else {
                     var usePreviewWindow = AppConfig.Instance.UsePakFilePreviewWindow.Get();
                     var bookmarks = _bookmarkManager.GetBookmarks(Workspace.Config.Game.name);
-                    bool isBookmarked = bookmarks.Any(b => b.Path == file);
+                    bool isBookmarked = _bookmarkManager.IsBookmarked(Workspace.Config.Game.name, file);
                     if (isBookmarked) {
                         ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.PlotHistogramHovered]);
                     } else {
