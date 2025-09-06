@@ -19,14 +19,13 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
     // note: purposely not disposing the reader, in case we just reused the "main" pak reader from the workspace
     // it doesn't really need disposing with the current implementation either way
     private CachedMemoryPakReader? reader;
-
     private FilePreviewWindow? previewWindow;
-
     private WindowData data = null!;
     protected UIContext context = null!;
     private ListFileWrapper? matchedList;
-    private BookmarkManager _bookmarkManager = new BookmarkManager("ce_bookmarks_pak.json");
-    private string? _activeTagFilter = null;
+    private BookmarkManager _bookmarkManagerDefaults = new BookmarkManager("configs//app//default_bookmarks_pak.json"); // TODO SILVER: Add more default bookmarks
+    private BookmarkManager _bookmarkManager = new BookmarkManager("configs//user//bookmarks_pak.json");
+    private List<string> _activeTagFilter = new();
 
     public void Init(UIContext context)
     {
@@ -93,20 +92,22 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             }
             // TODO handle unknowns properly
         }
-        //TODO SILVER: move these into a sub-menu
-        ImGui.Text("Total File Count: " + reader.MatchedEntryCount);
-        ImGui.SameLine();
-        if (PakFilePath == null) {
-            if (ImGui.TreeNode("PAK Count: " + reader.PakFilePriority.Count)) {
+        if (ImGui.Button("PAK Info")) {
+            ImGui.OpenPopup("PAKInfoPopup");
+        }
+        if (ImGui.BeginPopup("PAKInfoPopup")) {
+            ImGui.Text("Total File Count: " + reader.MatchedEntryCount);
+            ImGui.SameLine();
+            if (PakFilePath == null) {
+                ImGui.Text($"| PAK Count: {reader.PakFilePriority.Count}");
                 ImGui.Separator();
                 foreach (var pak in reader.PakFilePriority) {
-                    ImGui.Text(pak);
+                    ImGui.BulletText(pak);
                 }
-                ImGui.Separator();
-                ImGui.TreePop();
+            } else {
+                ImGui.Text("PAK file: " + PakFilePath);
             }
-        } else {
-            ImGui.Text("PAK file: " + PakFilePath);
+            ImGui.EndPopup();
         }
         ImGui.SameLine();
         var usePreviewWindow = AppConfig.Instance.UsePakFilePreviewWindow.Get();
@@ -114,28 +115,46 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             AppConfig.Instance.UsePakFilePreviewWindow.Set(usePreviewWindow);
         }
         ImGui.SameLine();
-
-        var bookmarks = _bookmarkManager.GetBookmarks(Workspace.Config.Game.name);
-        bool hideDefaults = _bookmarkManager.IsHideDefaults;
         if (ImGui.TreeNode("Bookmarks")) {
+            var bookmarks = _bookmarkManager.GetBookmarks(Workspace.Config.Game.name);
+            var defaults = _bookmarkManagerDefaults.GetBookmarks(Workspace.Config.Game.name);
+            bool hideDefaults = _bookmarkManagerDefaults.IsHideDefaults;
+            ImGui.Spacing();
+            ImGui.Separator();
             if (ImGui.Checkbox("Hide Default Bookmarks", ref hideDefaults)) {
-                _bookmarkManager.IsHideDefaults = hideDefaults;
+                _bookmarkManagerDefaults.IsHideDefaults = hideDefaults;
             }
             ImGui.SameLine();
             if (ImGui.Button("Clear Custom Bookmarks")) {
                 _bookmarkManager.ClearBookmarks(Workspace.Config.Game.name);
                 Logger.Info($"Cleared custom bookmarks for {Workspace.Config.Game.name}");
             }
-            if (BookmarkManager.DefaultBookmarks.TryGetValue(Workspace.Config.Game.name, out var defaults)) {
-                if (_activeTagFilter != null) {
+           
+            if (defaults.Count > 0) {
+                if (_activeTagFilter.Count > 0) {
                     ImGui.SameLine();
-                    ImGui.Text($"Active Tag Filters: {_activeTagFilter}");
+                    ImGui.Text("Active Tag Filters: ");
                     ImGui.SameLine();
+
+                    foreach (var tag in _activeTagFilter) {
+                        ImGui.PushID("ActiveTag_" + tag);
+                        if (BookmarkManager.TagColors.TryGetValue(tag, out var colors)) {
+                            ImGui.PushStyleColor(ImGuiCol.Text, colors[1]);
+                        }
+                        ImGui.Text(tag);
+                        ImGui.PopStyleColor();
+                        ImGui.SameLine();
+                        ImGui.Text("|");
+                        ImGui.PopID();
+                        ImGui.SameLine();
+                    }
+
                     if (ImGui.Button("Clear Filters")) {
-                        _activeTagFilter = null;
+                        _activeTagFilter.Clear();
                     }
                 }
-                if (!_bookmarkManager.IsHideDefaults) {
+
+                if (!_bookmarkManagerDefaults.IsHideDefaults) {
                     ImGui.SeparatorText("Default");
                     if (ImGui.BeginTable("BookmarksTable", 3, ImGuiTableFlags.Resizable | ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.RowBg)) {
                         ImGui.TableSetupColumn("Path", ImGuiTableColumnFlags.WidthStretch, 0.5f);
@@ -144,7 +163,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                         ImGui.TableHeadersRow();
 
                         foreach (var bm in defaults) {
-                            if (_activeTagFilter != null && !bm.Tags.Contains(_activeTagFilter)) {
+                            if (_activeTagFilter.Count > 0 && !_activeTagFilter.Any(t => bm.Tags.Contains(t))) {
                                 continue;
                             }
 
@@ -170,7 +189,11 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
 
                                 ImGui.PushStyleColor(ImGuiCol.Text, Vector4.One);
                                 if (ImGui.Button($"[ {tag} ]")) {
-                                    _activeTagFilter = _activeTagFilter == tag ? null : tag;
+                                    if (_activeTagFilter.Contains(tag)) {
+                                        _activeTagFilter.Remove(tag);
+                                    } else {
+                                        _activeTagFilter.Add(tag);
+                                    }
                                 }
 
                                 ImGui.PopStyleColor(4);
@@ -197,7 +220,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                     ImGui.TableHeadersRow();
 
                     foreach (var bm in bookmarks.ToList()) {
-                        if (_activeTagFilter != null && !bm.Tags.Contains(_activeTagFilter)) {
+                        if (_activeTagFilter.Count > 0 && !_activeTagFilter.Any(t => bm.Tags.Contains(t))) {
                             continue;
                         }
 
@@ -233,7 +256,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                                 ImGui.EndMenu();
                             }
                             string comment = bm.Comment;
-                            if (ImGui.InputText("Comment", ref comment, 64, ImGuiInputTextFlags.EnterReturnsTrue)) {
+                            if (ImGui.InputText("Edit Comment", ref comment, 64, ImGuiInputTextFlags.EnterReturnsTrue)) {
                                 bm.Comment = comment;
                                 _bookmarkManager.SaveBookmarks();
                             }
@@ -255,7 +278,11 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
 
                             ImGui.PushStyleColor(ImGuiCol.Text, Vector4.One);
                             if (ImGui.Button($"[ {tag} ]")) {
-                                _activeTagFilter = _activeTagFilter == tag ? null : tag;
+                                if (_activeTagFilter.Contains(tag)) {
+                                    _activeTagFilter.Remove(tag);
+                                } else {
+                                    _activeTagFilter.Add(tag);
+                                }
                             }
                             ImGui.PopStyleColor(4);
                             ImGui.PopID();
@@ -271,6 +298,8 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             } else {
                 ImGui.TextDisabled("No Custom Bookmarks yet...");
             }
+            ImGui.Separator();
+            ImGui.Spacing();
             ImGui.TreePop();
         }
 
