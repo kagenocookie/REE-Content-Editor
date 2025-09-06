@@ -110,7 +110,10 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     public static void ExportMcolToGlb(McolFile file, string outputFilepath)
     {
         var scene = GetMeshScene(file);
-        if (scene == null) return;
+        if (scene == null) {
+            Logger.Error("Selected .mcol file has no triangles, can't export.");
+            return;
+        }
 
         using var ctx = new AssimpContext();
         ctx.ExportFile(scene, outputFilepath, "glb2");
@@ -126,7 +129,6 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     public static Assimp.Scene? GetMeshScene(McolFile file)
     {
         if (!(file.bvh?.vertices.Count > 0)) {
-            Logger.Error("Selected .mcol file has no triangles, can't export.");
             return null;
         }
 
