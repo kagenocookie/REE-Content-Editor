@@ -26,7 +26,7 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
         var targetCenter = target.Transform.Position;
         if (renderable != null) {
             var bounds = renderable.LocalBounds;
-            if (bounds.minpos == bounds.maxpos) {
+            if (bounds.minpos == bounds.maxpos || bounds.Size.LengthSquared() > 10000*10000) {
                 bounds.minpos = new Vector3(-1, -1, -1);
                 bounds.maxpos = new Vector3(1, 1, 1);
             }
