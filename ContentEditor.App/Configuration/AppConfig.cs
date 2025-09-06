@@ -137,6 +137,8 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<KeyBinding> Key_Redo = new SettingWrapper<KeyBinding>(Keys.Key_Redo, _lock, new KeyBinding(ImGuiKey.Y, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_Save = new SettingWrapper<KeyBinding>(Keys.Key_Save, _lock, new KeyBinding(ImGuiKey.S, ctrl: true));
 
+    public string ConfigBasePath => GameConfigBaseFilepath.Get() ?? "configs";
+
     public string? GetGamePath(GameIdentifier game) => _lock.Read(() => gameConfigs.GetValueOrDefault(game.name)?.gamepath);
     public void SetGamePath(GameIdentifier game, string path) => SetForGameAndSave(game.name, path, (cfg, val) => cfg.gamepath = val);
     public string? GetGameExtractPath(GameIdentifier game) => _lock.Read(() => gameConfigs.GetValueOrDefault(game.name)?.gameExtractPath);

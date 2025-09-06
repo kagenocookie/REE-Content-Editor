@@ -41,15 +41,15 @@ public static class UI
             PixelSnapH = true,
         };
 
-        fonts.AddFontFromFileTTF("fonts/NotoSansJP-Regular.ttf", (float)FontSize, custom_icons, fonts.GetGlyphRangesChineseFull());
+        fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/NotoSansJP-Regular.ttf"), (float)FontSize, custom_icons, fonts.GetGlyphRangesChineseFull());
         fontCfg->MergeMode = 1;
-        fonts.AddFontFromFileTTF("fonts/NotoSans-Regular.ttf", (float)FontSize, custom_icons, fonts.GetGlyphRangesDefault());
-        fonts.AddFontFromFileTTF("fonts/NotoSans-Regular.ttf", (float)FontSize, custom_icons, fonts.GetGlyphRangesCyrillic());
+        fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/NotoSans-Regular.ttf"), (float)FontSize, custom_icons, fonts.GetGlyphRangesDefault());
+        fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/NotoSans-Regular.ttf"), (float)FontSize, custom_icons, fonts.GetGlyphRangesCyrillic());
         fixed (ushort* ranges = PolishRanges) {
-            fonts.AddFontFromFileTTF("fonts/NotoSans-Regular.ttf", (float)FontSize, custom_icons, (nint)ranges);
+            fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/NotoSans-Regular.ttf"), (float)FontSize, custom_icons, (nint)ranges);
         }
         fixed (ushort* ranges = AppIcons.Range) {
-            fonts.AddFontFromFileTTF("fonts/appicons.ttf", (float)FontSize, custom_icons, (nint)ranges);
+            fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/appicons.ttf"), (float)FontSize, custom_icons, (nint)ranges);
         }
 
         fonts.Build();

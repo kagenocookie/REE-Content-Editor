@@ -79,12 +79,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
         env ??= WorkspaceManager.Instance.GetWorkspace(game);
 
-        string? configPath = AppConfig.Instance.GameConfigBaseFilepath;
-        if (string.IsNullOrEmpty(configPath)) {
-            configPath = $"configs/{game.name}";
-        } else {
-            configPath = $"{configPath}/{game.name}";
-        }
+        var configPath = Path.Combine(AppConfig.Instance.ConfigBasePath, game.name);
         var patchConfig = workspace?.Config ?? new PatchDataContainer(Path.GetFullPath(configPath));
 
         workspace = new ContentWorkspace(env, patchConfig, workspace?.BundleManager);

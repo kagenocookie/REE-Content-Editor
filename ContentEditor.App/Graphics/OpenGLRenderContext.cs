@@ -112,7 +112,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             return shader;
         }
 
-        return shaders[path] = shader = new Shader(GL, path);
+        return shaders[path] = shader = new Shader(GL, Path.Combine(AppContext.BaseDirectory, path));
     }
 
     public override (MeshHandle, ShapeMesh) CreateShapeMesh()

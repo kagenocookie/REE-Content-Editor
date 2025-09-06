@@ -23,8 +23,8 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
     private WindowData data = null!;
     protected UIContext context = null!;
     private ListFileWrapper? matchedList;
-    private BookmarkManager _bookmarkManagerDefaults = new BookmarkManager("configs//app//default_bookmarks_pak.json"); // TODO SILVER: Add more default bookmarks
-    private BookmarkManager _bookmarkManager = new BookmarkManager("configs//user//bookmarks_pak.json");
+    private BookmarkManager _bookmarkManagerDefaults = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "app/default_bookmarks_pak.json")); // TODO SILVER: Add more default bookmarks
+    private BookmarkManager _bookmarkManager = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "user/bookmarks_pak.json"));
     private List<string> _activeTagFilter = new();
 
     public void Init(UIContext context)
@@ -465,7 +465,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                             }, Path.GetFileName(nativePath));
                             ImGui.CloseCurrentPopup();
                         }
-                        
+
                         if (isBookmarked) {
                             if (ImGui.Selectable("Remove from Bookmarks")) {
                                 _bookmarkManager.RemoveBookmark(Workspace.Config.Game.name, file);

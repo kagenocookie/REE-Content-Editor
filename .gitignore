@@ -18,3 +18,4 @@ imgui.ini
 ce_config.ini
 /ContentEditor.App/resources
 crashlog.txt
+configs/user

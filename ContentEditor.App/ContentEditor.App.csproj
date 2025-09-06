@@ -23,11 +23,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="configs\app\default_bookmarks_pak.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="AssimpNetter" Version="6.0.2" />
@@ -47,6 +42,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="$(ConfigRoot)**/*.*" >
+      <Link>configs\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+
     <None Update="Shaders/**/*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
