@@ -334,6 +334,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                         });
                     }
                     ImGui.Separator();
+                    if (workspace.CurrentBundle != null && ImGui.MenuItem("Unload current bundle")) {
+                        SetWorkspace(workspace.Env.Config.Game, null);
+                    }
                     foreach (var b in workspace.BundleManager.AllBundles) {
                         if (ImGui.MenuItem(b.Name)) {
                             SetWorkspace(workspace.Env.Config.Game, b.Name);
