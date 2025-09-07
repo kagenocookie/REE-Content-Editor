@@ -183,7 +183,9 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
             return scn;
         }
         foreach (var child in Children) {
-            scn.Children.Add(child.ToScnFolder(prefabInfos));
+            var cf = child.ToScnFolder(prefabInfos);
+            scn.Children.Add(cf);
+            cf.Parent = scn;
         }
         foreach (var child in GameObjects) {
             var go = child.ToScnGameObject(prefabInfos);
