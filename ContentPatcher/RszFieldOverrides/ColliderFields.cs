@@ -144,8 +144,8 @@ public static partial class RszFieldCache
     [RszAccessor("via.physics.StaticCompoundShape")]
     public static class StaticCompoundShape
     {
-        public static readonly RszFieldAccessorFirst<string> Shapes =
-            First<string>((field) => field.array)
+        public static readonly RszFieldAccessorFirst<List<object>> Shapes =
+            First<List<object>>((field) => field.array)
             .Object("via.physics.StaticCompoundShape.Instance");
 
         /// <summary>
@@ -154,8 +154,8 @@ public static partial class RszFieldCache
         [RszAccessor("via.physics.StaticCompoundShape.Instance")]
         public static class Instance
         {
-            public static readonly RszFieldAccessorFirst<string> Shape =
-                First<string>((field) => field.size == 4)
+            public static readonly RszFieldAccessorFirst<RszInstance> Shape =
+                First<RszInstance>((field) => field.size == 4)
                 .Object("via.physics.Shape");
         }
     }
