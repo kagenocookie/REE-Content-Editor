@@ -1,6 +1,7 @@
 using ContentEditor.App.Windowing;
 using ImGuiNET;
 using ReeLib;
+using System.Diagnostics;
 using System.Numerics;
 
 namespace ContentEditor.App;
@@ -35,36 +36,50 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
 
     public void OnWindow() => this.ShowDefaultWindow(context);
 
+    private PakReader? unpacker;
+    private int unpackExpectedFiles;
+
     private void ExtractCurrentList(string outputDir)
     {
+        if (unpacker != null) return;
+
         if (matchedList == null || reader == null) {
             Logger.Error("File list missing");
             return;
         }
 
-        int success = 0, fail = 0;
-        int count = 0;
-        var files = CurrentDir.Contains('*')
-            ? matchedList!.GetFiles(CurrentDir, rowsPerPage)
-            : matchedList.GetRecursiveFileList(CurrentDir, rowsPerPage);
-        foreach (var file in files) {
-            var path = Path.Combine(outputDir, file);
-            count++;
-            var stream = reader.GetFile(file);
-            if (stream == null) {
-                Logger.Error("Could not get file " + file);
-                fail++;
-                continue;
+        try {
+            string[] files;
+            if (CurrentDir.Contains('*')) {
+                files = matchedList!.FilterAllFiles(CurrentDir, int.MaxValue, true);
+            } else if (reader.FileExists(CurrentDir)) {
+                files = [CurrentDir];
+            } else {
+                files = matchedList!.FilterAllFiles(CurrentDir + ".*", int.MaxValue, true);
             }
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            using var outfs = File.Create(path);
-            stream?.WriteTo(outfs);
-            success++;
-            if (count % 100 == 0) {
-                Logger.Info($"Extracted {count} files");
-            }
+
+            unpackExpectedFiles = files.Length;
+            unpacker = new PakReader();
+            unpacker.PakFilePriority = reader.PakFilePriority;
+            unpacker.MaxThreads = AppConfig.Instance.UnpackMaxThreads.Get();
+            unpacker.EnableConsoleLogging = false;
+            unpacker.AddFiles(files);
+
+            var t = Stopwatch.StartNew();
+            Logger.Info($"Starting unpack of {unpackExpectedFiles} files ...");
+            var success = unpacker.UnpackFilesAsyncTo(outputDir).ContinueWith((task) => {
+                if (task.IsCompletedSuccessfully) {
+                    var success = task.Result;
+                    Logger.Info($"Successfully extracted {success}/{unpackExpectedFiles} files in {t.Elapsed}");
+                } else {
+                    Logger.Error($"Extraction failed. " + task.Exception);
+                }
+                unpacker = null;
+            });
+        } catch (Exception e) {
+            unpacker = null;
+            Logger.Error(e, "Extraction failed.");
         }
-        Logger.Info($"Successfully extracted {success}/{count} files");
     }
 
     public void OnIMGUI()
@@ -364,7 +379,14 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         }
         ImGui.PopStyleColor();
         ImGui.SameLine();
-        if (ImGui.Button("Extract to...")) {
+
+        var unpackedFiles = unpacker?.unpackedFileCount;
+        if (unpackedFiles != null) {
+            var style = ImGui.GetStyle();
+            var w = ImGui.GetWindowSize().X - ImGui.GetCursorPos().X - style.WindowPadding.X;
+            var total = unpackExpectedFiles;
+            ImGui.ProgressBar((float)unpackedFiles.Value / total, new Vector2(w, UI.FontSize + style.FramePadding.Y * 2), $"{unpackedFiles.Value}/{total}");
+        } else if (ImGui.Button("Extract to...")) {
             PlatformUtils.ShowFolderDialog(ExtractCurrentList, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
         }
         DrawContents(matchedList!);
