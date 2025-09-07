@@ -85,28 +85,28 @@ public abstract class RszFilePatcherBase : IResourceFilePatcher
     }
 
     private static readonly char[] PathSeparators = ['/', '#'];
+    protected static (int sep, int slash, int counter) GetNextPathSegment(ReadOnlySpan<char> path)
+    {
+        var sep = path.IndexOfAny(PathSeparators);
+        if (sep == -1) {
+            return (-1, -1, 1);
+        }
+        var slash = sep;
+        var counter = 1;
+        if (path[sep] == '#') {
+            slash = path.IndexOf('/');
+            if (slash == -1) {
+                counter = int.Parse(path[(sep + 1)..]);
+            } else {
+                counter = int.Parse(path[(sep + 1)..slash]);
+            }
+        }
+        return (sep, slash, counter);
+    }
+
     protected static TGO? FindGameObjectByPath<TGO>(TGO root, ReadOnlySpan<char> path, IEnumerable<TGO>? rootChildren = null) where TGO : class, IGameObject
     {
-        static (int sep, int slash, int counter) GetNextSegment(ReadOnlySpan<char> path)
-        {
-            var sep = path.IndexOfAny(PathSeparators);
-            if (sep == -1) {
-                return (-1, -1, 1);
-            }
-            var slash = sep;
-            var counter = 1;
-            if (path[sep] == '#') {
-                slash = path.IndexOf('/');
-                if (slash == -1) {
-                    counter = int.Parse(path[(sep + 1)..]);
-                } else {
-                    counter = int.Parse(path[(sep + 1)..slash]);
-                }
-            }
-            return (sep, slash, counter);
-        }
-
-        var (sep, slash, counter) = GetNextSegment(path);
+        var (sep, slash, counter) = GetNextPathSegment(path);
 
         if (sep == -1) {
             if (path.Length == 0 || path.SequenceEqual(root.Name)) return root;
@@ -115,12 +115,13 @@ public abstract class RszFilePatcherBase : IResourceFilePatcher
 
         var name = path.Slice(0, sep);
         // every diff path must include the root objects's name
-        if (!name.SequenceEqual(root.Name) || counter != 1) return null;
+        // we can't handle counters here because we don't know which number we're on, we can only assume the caller handled that
+        if (!name.SequenceEqual(root.Name)) return null;
 
         var next = root;
         path = path.Slice(slash + 1);
         do {
-            (sep, slash, counter) = GetNextSegment(path);
+            (sep, slash, counter) = GetNextPathSegment(path);
             name = sep == -1 ? path : path.Slice(0, sep);
             var found = false;
             foreach (var child in (next == root && rootChildren != null ? rootChildren : next.GetChildren())) {

@@ -120,17 +120,36 @@ public sealed class ScenePatcher : RszFilePatcherBase, IDisposable
     private static ScnGameObject? FindGameObjectByPath(IEnumerable<ScnGameObject> rootChildren, ReadOnlySpan<char> path)
     {
         while (path[0] == '/') path = path.Slice(1);
+        var (sep, slash, targetCounter) = GetNextPathSegment(path);
+        var rootName = sep == -1 ? path : path.Slice(0, sep);
+        var counter = 0;
         foreach (var ch in rootChildren) {
-            var match = FindGameObjectByPath(ch, path);
-            if (match != null) return match;
+            if (!rootName.SequenceEqual(ch.Name)) {
+                continue;
+            }
+
+            ++counter;
+            if (counter != targetCounter) continue;
+            if (slash == -1) return ch;
+
+            return FindGameObjectByPath(ch, path);
         }
         return null;
     }
 
     private static IEnumerable<(ScnGameObject target, string path)> IterateGameObjects(IEnumerable<ScnGameObject> rootChildren)
     {
+        var dupes = new Dictionary<string, int>();
         foreach (var ch in rootChildren) {
-            foreach (var (go, path) in IterateGameObjects(ch)) {
+            string chPath;
+            if (dupes.TryGetValue(ch.Name!, out var counter)) {
+                dupes[ch.Name!] = ++counter;
+                chPath = ch.Name + "#" + counter;
+            } else {
+                dupes[ch.Name!] = counter = 1;
+                chPath = ch.Name!;
+            }
+            foreach (var (go, path) in IterateGameObjects(ch, chPath)) {
                 yield return (go, path);
             }
         }
@@ -144,7 +163,7 @@ public sealed class ScenePatcher : RszFilePatcherBase, IDisposable
             if (!string.IsNullOrEmpty(child.Path)) continue;
 
             foreach (var (subchild, subpath1) in IterateFolders(child.Children, subpath)) {
-                yield return (child, subpath1);
+                yield return (subchild, subpath1);
             }
         }
     }
@@ -163,7 +182,7 @@ public sealed class ScenePatcher : RszFilePatcherBase, IDisposable
 
         var name = path.Slice(0, sep);
         foreach (var folder in folders) {
-            if (path.SequenceEqual(folder.Name)) {
+            if (name.SequenceEqual(folder.Name)) {
                 return FindFolderByPath(folder.Children, path.Slice(sep + 1));
             }
         }
