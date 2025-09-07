@@ -211,6 +211,7 @@ public class FileTesterWindow : IWindowHandler
                         memstream.SetLength(0);
                         fs.CopyTo(memstream);
                         fs.Close();
+                        memstream.Seek(0, SeekOrigin.Begin);
                         yield return (Path.GetRelativePath(extractPath, f), memstream);
                     }
                 }
