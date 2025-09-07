@@ -134,7 +134,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable
 
         IsActive = active;
         RootFolder.SetActive(active);
-        if (!wasActivatedBefore && active) {
+        if (!wasActivatedBefore && active && RootScene == this) {
             wasActivatedBefore = true;
             var lookTarget = renderComponents.FirstOrDefault()?.GameObject ?? GetAllGameObjects().FirstOrDefault();
             if (lookTarget != null) {
