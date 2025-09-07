@@ -19,6 +19,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable
     private readonly List<Scene> ChildScenes = new();
 
     public string Name { get; }
+    public string InternalPath { get; }
     public ContentWorkspace Workspace { get; }
     public bool IsActive { get; set; }
 
@@ -35,9 +36,10 @@ public sealed class Scene : NodeTreeContainer, IDisposable
 
     private bool wasActivatedBefore;
 
-    public Scene(string name, ContentWorkspace workspace, Scene? parentScene = null, GL? gl = null)
+    public Scene(string name, string internalPath, ContentWorkspace workspace, Scene? parentScene = null, GL? gl = null)
     {
         Name = name;
+        InternalPath = internalPath;
         Workspace = workspace;
         ParentScene = parentScene;
         _gl = gl ?? parentScene?._gl ?? EditorWindow.CurrentWindow?.GLContext ?? throw new Exception("Could not get OpenGL Context!");
@@ -50,10 +52,10 @@ public sealed class Scene : NodeTreeContainer, IDisposable
 
     public GameObject? Find(ReadOnlySpan<char> path) => RootFolder.Find(path);
 
-    public Scene? GetChildScene(string sceneName)
+    public Scene? GetChildScene(string nameOrPath)
     {
         foreach (var child in ChildScenes) {
-            if (child.Name.Equals(sceneName, StringComparison.InvariantCultureIgnoreCase) || PathUtils.GetInternalFromNativePath(child.Name).Equals(sceneName, StringComparison.InvariantCultureIgnoreCase)) {
+            if (child.Name.Equals(nameOrPath, StringComparison.InvariantCultureIgnoreCase) || child.InternalPath.Equals(nameOrPath, StringComparison.InvariantCultureIgnoreCase)) {
                 return child;
             }
         }

@@ -75,7 +75,7 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
             context.AddChild("Filter", searcher, searcher);
             scene = root.Scene;
             if (scene == null) {
-                scene = context.GetNativeWindow()?.SceneManager.CreateScene(Handle.Filepath, ParentEditor?.scene?.IsActive ?? false, ParentEditor?.scene);
+                scene = context.GetNativeWindow()?.SceneManager.CreateScene(Handle, ParentEditor?.scene?.IsActive ?? false, ParentEditor?.scene);
                 if (Logger.ErrorIf(scene == null, "Failed to create new scene")) return;
                 scene.Add(root);
             }

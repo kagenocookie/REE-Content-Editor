@@ -84,7 +84,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     public void OnIMGUI()
     {
         if (scene == null) {
-            scene = EditorWindow.CurrentWindow!.SceneManager.CreateScene(fileHandle.Filepath, true);
+            scene = EditorWindow.CurrentWindow!.SceneManager.CreateScene(fileHandle, true);
         }
         MeshComponent meshComponent;
         if (previewGameobject == null) {

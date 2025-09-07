@@ -1,5 +1,6 @@
 using ContentEditor.Editor;
 using ContentPatcher;
+using ReeLib;
 
 namespace ContentEditor.App;
 
@@ -14,11 +15,18 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
     public bool HasActiveMasterScene => RootMasterScenes.Where(sc => sc.IsActive).Any();
     public Scene? ActiveMasterScene => RootMasterScenes.FirstOrDefault(sc => sc.IsActive);
 
-    public Scene CreateScene(string name, bool render, Scene? parentScene = null)
+    public Scene CreateScene(FileHandle sourceFile, bool render, Scene? parentScene = null)
+    {
+        return CreateScene(sourceFile.Filepath, sourceFile.InternalPath ?? sourceFile.Filepath, render, parentScene);
+    }
+
+    public Scene CreateScene(string name, string internalPath, bool render, Scene? parentScene = null)
     {
         if (env == null) throw new Exception("Workspace unset");
 
-        var scene = new Scene(name, env, parentScene) { IsActive = render };
+        // convert in case we received a native and not internal path
+        internalPath = PathUtils.GetInternalFromNativePath(internalPath);
+        var scene = new Scene(name, internalPath, env, parentScene) { IsActive = render };
         scene.RenderContext.ResourceManager = env.ResourceManager;
         scenes.Add(scene);
         return scene;

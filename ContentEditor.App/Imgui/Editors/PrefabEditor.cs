@@ -82,7 +82,7 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
             context.AddChild("Filter", searcher, searcher);
             scene = root.Scene;
             if (scene == null) {
-                scene = context.GetNativeWindow()?.SceneManager.CreateScene(Handle.Filepath, false, ((ISceneEditor)this).GetRootScene(context));
+                scene = context.GetNativeWindow()?.SceneManager.CreateScene(Handle, false, ((ISceneEditor)this).GetRootScene(context));
                 if (Logger.ErrorIf(scene == null, "Failed to create new scene")) return;
                 scene.Add(root);
             }
