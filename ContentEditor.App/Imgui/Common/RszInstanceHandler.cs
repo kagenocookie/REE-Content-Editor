@@ -61,15 +61,32 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
 
     public static bool ShowTooltipActions(UIContext context)
     {
-        if (ImGui.Button("Copy as JSON")) {
+        if (ImGui.Selectable("Copy as JSON")) {
             var ws = context.GetWorkspace();
             if (ws != null) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(context.GetRaw(), ws.Env.JsonOptions)!, "Copied!");
             }
             return true;
         }
-        if (context.parent?.uiHandler is ArrayRSZHandler array && context.TryCast<RszInstance>(out var instance)) {
-            if (ImGui.Button("Duplicate")) {
+        var instance = context.Cast<RszInstance>();
+        if (instance != null) {
+            var clipboard = EditorWindow.CurrentWindow?.GetClipboard();
+            if (!string.IsNullOrEmpty(clipboard)) {
+                if (ImGui.Selectable("Paste JSON (replace value)")) {
+                    var env = context.GetWorkspace()!;
+                    try {
+                        var newJson = JsonSerializer.Deserialize<JsonNode>(clipboard, env.Env.JsonOptions)!;
+                        var prevJson = instance.ToJson(env.Env);
+                        UndoRedo.RecordCallbackSetter(context, instance, prevJson, newJson, (target, json) => env.Diff.ApplyDiff(target, json));
+                    } catch (Exception e) {
+                        Logger.Error(e, "Invalid JSON");
+                    }
+                    return true;
+                }
+            }
+        }
+        if (context.parent?.uiHandler is ArrayRSZHandler array && instance != null) {
+            if (ImGui.Selectable("Duplicate")) {
                 var clone = instance.Clone();
                 var parentList = context.parent.Get<IList>();
                 UndoRedo.RecordListAdd(context.parent, parentList, clone);
@@ -78,16 +95,12 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
         }
         if (context.uiHandler is ArrayRSZHandler thisArray && context.TryCast<IList>(out var list)) {
             var elementType = thisArray.GetElementClassnameType(context);
-            var type = thisArray.Field.type switch {
-                RszFieldType.Object or RszFieldType.String => typeof(RszInstance),
-                RszFieldType.String or RszFieldType.Resource or RszFieldType.RuntimeType => typeof(string),
-                // RszFieldType.UserData => typeof(RszInstance),
-                _ => RszInstance.RszFieldTypeToCSharpType(thisArray.Field.type)
-            };
+            // note: UserData copy is not supported atm because it behaves differently from plain RszInstances
+            var type = thisArray.Field.type == RszFieldType.UserData ? null : RszInstance.RszFieldTypeToRuntimeCSharpType(thisArray.Field.type);
             if (type != null) {
                 var clipboard = EditorWindow.CurrentWindow?.GetClipboard();
                 if (!string.IsNullOrEmpty(clipboard)) {
-                    if (ImGui.Button("Paste JSON")) {
+                    if (ImGui.Selectable("Paste JSON")) {
                         var env = context.GetWorkspace()!.Env;
                         try {
                             var newItems = ((IList)(JsonSerializer.Deserialize(clipboard, typeof(List<>).MakeGenericType(type), env.JsonOptions)!)).Cast<object>().ToList();

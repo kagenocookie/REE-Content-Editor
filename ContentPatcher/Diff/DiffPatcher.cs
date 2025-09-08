@@ -72,8 +72,7 @@ public class DiffPatcher
     {
         if (diff == null) return new List<object>(0);
 
-        var csType = type is RszFieldType.Object or RszFieldType.Struct ? typeof(RszInstance)
-            : RszInstance.RszFieldTypeToCSharpType(type);
+        var csType = RszInstance.RszFieldTypeToRuntimeCSharpType(type);
         IList list = value as IList ?? new List<object>();
 
         if (diff.GetValueKind() == JsonValueKind.Object) {
@@ -100,6 +99,28 @@ public class DiffPatcher
         // TODO userdata
         var removeIndices = new List<int>();
         var arr = (JsonArray)diff;
+        if (arr.Count > 0 && arr[0]?.GetValueKind() is JsonValueKind.True or JsonValueKind.False or JsonValueKind.Number) {
+            // not a diffable array type, apply it as a whole
+            list.Clear();
+            switch (arr[0]!.GetValueKind()) {
+                case JsonValueKind.True:
+                case JsonValueKind.False:
+                    foreach (var item in arr) list.Add(item?.GetValue<bool>() ?? false);
+                    return list;
+                case JsonValueKind.Number:
+                    // in this case we need to match the target value type
+                    foreach (var item in arr) {
+                        if (type == RszFieldType.U64) {
+                            list.Add(Convert.ChangeType(item!.GetValue<ulong>(), csType));
+                        } else {
+                            list.Add(Convert.ChangeType(item!.GetValue<long>(), csType));
+                        }
+                    }
+                    return list;
+                default:
+                    throw new NotImplementedException("Unsupported diff array element type " + arr[0]!.GetValueKind());
+            }
+        }
         var indexOffset = 0;
         // constraints: array item indices must be in ascending order
         for (var i = 0; i < arr.Count; i++) {

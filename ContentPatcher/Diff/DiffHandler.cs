@@ -24,7 +24,9 @@ public class DiffHandler(Workspace env)
         var newInstance = instance;
         patcher.ApplyRSZObjectDiff(ref newInstance, diff, env);
         if (newInstance != instance) {
-            instance.CopyValuesFrom(newInstance);
+            if (!instance.CopyValuesFrom(newInstance)) {
+                throw new Exception($"The given instance types {instance.RszClass} and {newInstance.RszClass} are incompatible!");
+            }
         }
     }
 
