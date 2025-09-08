@@ -585,17 +585,17 @@ public static partial class WindowHandlerFactory
             context.uiHandler = RszInstanceHandler.Instance;
         }
 
-        for (int i = 0; i < instance.RszClass.fields.Length; i++) {
-            var field = instance.RszClass.fields[i];
-            var fieldCtx = CreateRSZFieldContext(instance, i, field, context);
-            context.children.Add(fieldCtx);
-            CreateRSZFieldHandler(fieldCtx, field);
-        }
+        AddRszInstanceFieldChildren(instance, context, 0);
     }
 
     public static void AddRszInstanceFieldChildren(UIContext context, int startIndex = 0)
     {
         var instance = context.Get<RszInstance>();
+        AddRszInstanceFieldChildren(instance, context, startIndex);
+    }
+
+    private static void AddRszInstanceFieldChildren(RszInstance instance, UIContext context, int startIndex = 0)
+    {
         for (int i = startIndex; i < instance.RszClass.fields.Length; i++) {
             var field = instance.RszClass.fields[i];
             var fieldCtx = CreateRSZFieldContext(instance, i, field, context);

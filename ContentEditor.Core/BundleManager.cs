@@ -47,6 +47,7 @@ public class BundleManager
             settings = new EditorSettings();
         }
         settings.BundleOrder ??= new();
+        settings.BundleSettings ??= new();
     }
 
     public void SaveSettings()
