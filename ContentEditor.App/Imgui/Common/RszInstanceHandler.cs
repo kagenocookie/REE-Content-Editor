@@ -920,7 +920,7 @@ public class SphereStructHandler : IObjectUIHandler
             if (ImGui.DragFloat3("Position", ref sphere.pos, 0.005f)) {
                 UndoRedo.RecordSet(context, sphere, undoId: $"{context.GetHashCode()} pos");
             }
-            if (ImGui.DragFloat("Radius", ref sphere.r, 0.002f)) {
+            if (ImGui.DragFloat("Radius", ref sphere.r, 0.002f, 0.001f, 1000f)) {
                 UndoRedo.RecordSet(context, sphere, undoId: $"{context.GetHashCode()} radius");
             }
             ImGui.TreePop();
@@ -952,7 +952,7 @@ public class OBBStructHandler : IObjectUIHandler
             }
 
             var ext = box.Extent;
-            if (ImGui.DragFloat3("Extent", ref ext, 0.002f)) {
+            if (ImGui.DragFloat3("Extent", ref ext, 0.002f, 0.001f, 1000f)) {
                 box.Extent = ext;
                 UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} radius");
             }
@@ -977,7 +977,7 @@ public class CapsuleStructHandler : IObjectUIHandler
                 UndoRedo.RecordSet(context, capsule, undoId: $"{context.GetHashCode()} p1");
             }
 
-            if (ImGui.DragFloat("Radius", ref capsule.r, 0.005f)) {
+            if (ImGui.DragFloat("Radius", ref capsule.r, 0.005f, 0.001f, 1000f)) {
                 UndoRedo.RecordSet(context, capsule, undoId: $"{context.GetHashCode()} r");
             }
 
@@ -1002,7 +1002,7 @@ public class CylinderStructHandler : IObjectUIHandler
                 UndoRedo.RecordSet(context, cylinder, undoId: $"{context.GetHashCode()} p1");
             }
 
-            if (ImGui.DragFloat("Radius", ref cylinder.r, 0.005f)) {
+            if (ImGui.DragFloat("Radius", ref cylinder.r, 0.005f, 0.001f, 1000f)) {
                 UndoRedo.RecordSet(context, cylinder, undoId: $"{context.GetHashCode()} r");
             }
 
@@ -1025,7 +1025,7 @@ public class AABBStructHandler : IObjectUIHandler
                 UndoRedo.RecordSet(context, new AABB(center - size, center + size), undoId: $"{context.GetHashCode()} c");
             }
 
-            if (ImGui.DragFloat3("Size", ref size, 0.005f)) {
+            if (ImGui.DragFloat3("Size", ref size, 0.005f, 0.001f, 1000f)) {
                 UndoRedo.RecordSet(context, new AABB(center - size, center + size), undoId: $"{context.GetHashCode()} s");
             }
 
