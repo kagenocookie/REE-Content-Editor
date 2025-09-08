@@ -100,6 +100,19 @@ public class ResourcePathPicker : IObjectUIHandler
                 }
                 ImGui.CloseCurrentPopup();
             }
+            if (ImGui.Button("Find files ...")) {
+                var exts = FileExtensionFilter?.Split('|').Where((x, i) => i % 2 == 1).Select(x => x.Replace("*.", "").Replace(".*", "")).ToArray() ?? [];
+                var extRegex = string.Join("|", exts);
+                if (exts.Length == 0) {
+                    EditorWindow.CurrentWindow!.AddSubwindow(new PakBrowser(ws!.Env, null));
+                } else {
+                    if (exts.Length > 1) {
+                        extRegex = "(?:" + extRegex + ")";
+                    }
+                    var pattern = ws!.Env.BasePath + "**\\." + extRegex + "\\.**";
+                    EditorWindow.CurrentWindow!.AddSubwindow(new PakBrowser(ws.Env, null) { CurrentDir = pattern });
+                }
+            }
             ImGui.EndPopup();
         }
 
@@ -127,7 +140,7 @@ public class ResourcePathPicker : IObjectUIHandler
             }
         }
 
-        if (FileFormats.Length != 0 && !string.IsNullOrEmpty(context.state)) {
+        if (FileFormats.Length != 0 && !string.IsNullOrEmpty(context.state) && !string.IsNullOrEmpty(FileExtensionFilter)) {
             var parsed = PathUtils.ParseFileFormat(context.state);
             if (!FileFormats.Contains(parsed.format)) {
                 ImGui.TextColored(Colors.Warning, "The file may be an incorrect type. Expected file types: " + FileExtensionFilter);
