@@ -21,7 +21,7 @@ public class DefaultThemes
 
     public static string[] RefreshAvailableThemes()
     {
-        var themePath = Path.GetFullPath("styles");
+        var themePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "styles"));
         var list = new List<string>(Themes.Keys.Order());
         if (!Directory.Exists(themePath)) return _availableThemes = list.ToArray();
 

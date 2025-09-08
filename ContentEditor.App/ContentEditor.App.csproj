@@ -15,14 +15,6 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <OutputType>WinExe</OutputType>
   </PropertyGroup>
-  <ItemGroup>
-    <None Remove="styles\YoRHa.theme.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="styles\YoRHa.theme.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="AssimpNetter" Version="6.0.2" />
@@ -53,6 +45,7 @@
     <None Update="fonts/*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="styles/*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

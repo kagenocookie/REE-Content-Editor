@@ -36,10 +36,11 @@ public class ThemeEditor : IWindowHandler
         if (ImGui.Button("Save to file ...")) {
             var themeData = DefaultThemes.GetCurrentStyleData();
 
-            Directory.CreateDirectory(Path.GetFullPath("styles"));
+            var themePath = Path.Combine(AppContext.BaseDirectory, "styles");
+            Directory.CreateDirectory(themePath);
             PlatformUtils.ShowSaveFileDialog((path) => {
                 File.WriteAllText(path, themeData);
-            }, initialFile: Path.GetFullPath("styles/custom_theme.theme.txt"), filter: ".theme.txt|*.theme.txt");
+            }, initialFile: Path.GetFullPath(Path.Combine(themePath, "custom_theme.theme.txt")), filter: ".theme.txt|*.theme.txt");
         }
 
         ImGui.SeparatorText("Style editor");

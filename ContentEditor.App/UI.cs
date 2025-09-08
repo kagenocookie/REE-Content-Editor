@@ -66,7 +66,7 @@ public static class UI
             return;
         }
 
-        var themePath = Path.Combine("styles", theme + ".theme.txt");
+        var themePath = Path.Combine(AppContext.BaseDirectory, "styles", theme + ".theme.txt");
         if (!File.Exists(themePath)) {
             Logger.Error("Theme not found: " + theme);
             DefaultThemes.Themes["default"].Invoke();

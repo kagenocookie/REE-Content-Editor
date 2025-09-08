@@ -192,13 +192,6 @@ public sealed class Shader : IDisposable
         }
     }
 
-    private static string ParseShader(ShaderType type, string shaderFile, int version)
-    {
-        var shader = File.ReadAllText(shaderFile);
-
-        return shader;
-    }
-
     public override string ToString() => $"[{_handle}] {Name}";
 }
 
