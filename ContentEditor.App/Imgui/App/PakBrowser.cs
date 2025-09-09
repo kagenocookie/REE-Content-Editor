@@ -28,6 +28,11 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
     private BookmarkManager _bookmarkManager = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "user/bookmarks_pak.json"));
     private List<string> _activeTagFilter = new();
 
+    private PakReader? unpacker;
+    private int unpackExpectedFiles;
+
+    private bool hasInvalidatedPaks;
+
     public void Init(UIContext context)
     {
         this.context = context;
@@ -35,9 +40,6 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
     }
 
     public void OnWindow() => this.ShowDefaultWindow(context);
-
-    private PakReader? unpacker;
-    private int unpackExpectedFiles;
 
     private void ExtractCurrentList(string outputDir)
     {
@@ -96,6 +98,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                 Workspace.PakReader.CacheEntries();
                 reader = Workspace.PakReader.Clone();
                 matchedList = list;
+                hasInvalidatedPaks = reader.FileExists(0);
             } else {
                 // single file
                 reader = new CachedMemoryPakReader();
@@ -104,6 +107,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                 }
                 reader.CacheEntries(true);
                 matchedList = new ListFileWrapper(reader.CachedPaths);
+                hasInvalidatedPaks = reader.FileExists(0);
             }
             // TODO handle unknowns properly
         }
@@ -123,6 +127,13 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                 ImGui.Text("PAK file: " + PakFilePath);
             }
             ImGui.EndPopup();
+        }
+        if (hasInvalidatedPaks) {
+            ImGui.SameLine();
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.Warning);
+            ImGui.Button("!", new Vector2(UI.FontSize + ImGui.GetStyle().FramePadding.Y * 2));
+            ImGui.PopStyleColor();
+            if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Invalidated PAK entries have been detected (most likely from Fluffy Mod Manager).\nYou may be unable to open some files.");
         }
         ImGui.SameLine();
         var usePreviewWindow = AppConfig.Instance.UsePakFilePreviewWindow.Get();
@@ -419,7 +430,6 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                 }
                 ImGui.PushID(i);
                 i++;
-                var isFile = reader.FileExists(file);
                 if (isCtrl) {
                     if (ImGui.Selectable(file, i == selectedRow, ImGuiSelectableFlags.SpanAllColumns)) {
                         selectedRow = i;
@@ -438,7 +448,25 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                         ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.Text]);
                     }
                     if (ImGui.Selectable(file, false, ImGuiSelectableFlags.SpanAllColumns)) {
-                        if (isFile) {
+                        if (!baseList.FileExists(file)) {
+                            // if it's not a full list file match then it's a folder, navigate to it
+                            ImGui.PopStyleColor();
+                            ImGui.PopID();
+                            ImGui.TableNextColumn();
+                            ImGui.EndTable();
+                            ImGui.EndChild();
+                            CurrentDir = file;
+                            return;
+                        }
+
+                        if (!reader.FileExists(file)) {
+                            var hasLooseFile = File.Exists(Path.Combine(Workspace.Config.GamePath, file));
+                            if (hasLooseFile) {
+                                Logger.Error("File could not be found in the loaded PAK files. Matching loose file was found, the file entry may have been invalidated by Fluffy Mod Manager.");
+                            } else {
+                                Logger.Error("File could not be found in the loaded PAK files. Possible causes: Fluffy Mod Manager archive invalidation, missing some DLC content, not having the right PAK files open, or a wrong file list.");
+                            }
+                        } else {
                             if (usePreviewWindow) {
                                 if (previewWindow == null || !EditorWindow.CurrentWindow!.HasSubwindow<FilePreviewWindow>(out _, w => w.Handler == previewWindow)) {
                                     EditorWindow.CurrentWindow!.AddSubwindow(previewWindow = new FilePreviewWindow());
@@ -458,14 +486,6 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                                     EditorWindow.CurrentWindow?.OpenFile(stream, file, PakFilePath + "://");
                                 }
                             }
-                        } else {
-                            ImGui.PopStyleColor();
-                            ImGui.PopID();
-                            ImGui.TableNextColumn();
-                            ImGui.EndTable();
-                            ImGui.EndChild();
-                            CurrentDir = file;
-                            return;
                         }
                     }
                     ImGui.PopStyleColor();
