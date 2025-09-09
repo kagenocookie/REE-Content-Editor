@@ -963,11 +963,14 @@ public class OBBStructHandler : IObjectUIHandler
                 box.Coord = Transform.GetMatrixFromTransforms(trans, rot, scale).ToSystem();
                 UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} scale");
             }
+            if (MathF.Abs(scale.X - 1) > 0.001f || MathF.Abs(scale.Y - 1) > 0.001f || MathF.Abs(scale.Z - 1) > 0.001f) {
+                ImGui.TextColored(Colors.Warning, "A scale different from (1, 1, 1) may cause issues with collisions. It's usually more reliable to modify Extent instead.");
+            }
 
             var ext = box.Extent;
             if (ImGui.DragFloat3("Extent", ref ext, 0.002f, 0.001f, 1000f)) {
                 box.Extent = ext;
-                UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} radius");
+                UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} extent");
             }
             ImGui.TreePop();
         }
