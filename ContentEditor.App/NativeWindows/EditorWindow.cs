@@ -365,6 +365,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (workspace.CurrentBundle != null && ImGui.MenuItem("Open bundle folder")) {
                     FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
                 }
+                if (!string.IsNullOrEmpty(workspace.Env.Config.GamePath) && ImGui.MenuItem("Open game folder")) {
+                    FileSystemUtils.ShowFileInExplorer(workspace.Env.Config.GamePath);
+                }
                 if (workspace.CurrentBundle != null && ImGui.MenuItem("Publish mod ...")) {
                     AddUniqueSubwindow(new ModPublisherWindow(workspace));
                 }
