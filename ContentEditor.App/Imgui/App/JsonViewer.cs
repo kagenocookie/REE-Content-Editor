@@ -146,7 +146,12 @@ public class JsonViewer : IWindowHandler
             }
         } else {
             if (JsonNode == null) {
-                JsonNode = JsonSerializer.Deserialize<JsonNode>(Json!)!;
+                try {
+                    JsonNode = JsonSerializer.Deserialize<JsonNode>(Json!)!;
+                } catch (Exception e) {
+                    Logger.Error("Invalid JSON: " + e.Message);
+                    JsonNode = new JsonObject();
+                }
             }
             if (jsonPathList == null) {
                 jsonPathList = DiffHandler.GetDiffTree(JsonNode);
