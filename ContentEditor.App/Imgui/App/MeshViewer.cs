@@ -166,8 +166,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     {
         fileHandle?.References.Remove(this);
         if (scene != null) {
-            EditorWindow.CurrentWindow?.SceneManager.RemoveScene(scene);
-            scene.Dispose();
+            EditorWindow.CurrentWindow?.SceneManager.UnloadScene(scene);
             scene = null;
         }
         mesh = null;

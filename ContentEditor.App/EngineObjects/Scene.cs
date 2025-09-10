@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Editor;
@@ -16,7 +17,8 @@ public sealed class Scene : NodeTreeContainer, IDisposable
 
     public Scene? ParentScene { get; private set; }
     public Scene RootScene => ParentScene?.RootScene ?? this;
-    private readonly List<Scene> ChildScenes = new();
+    private readonly List<Scene> childScenes = new();
+    internal ReadOnlyCollection<Scene> ChildScenes => childScenes.AsReadOnly();
 
     public string Name { get; }
     public string InternalPath { get; }
@@ -36,7 +38,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable
 
     private bool wasActivatedBefore;
 
-    public Scene(string name, string internalPath, ContentWorkspace workspace, Scene? parentScene = null, GL? gl = null)
+    public Scene(string name, string internalPath, ContentWorkspace workspace, Scene? parentScene = null, Folder? rootFolder = null, GL? gl = null)
     {
         Name = name;
         InternalPath = internalPath;
@@ -44,17 +46,17 @@ public sealed class Scene : NodeTreeContainer, IDisposable
         ParentScene = parentScene;
         _gl = gl ?? parentScene?._gl ?? EditorWindow.CurrentWindow?.GLContext ?? throw new Exception("Could not get OpenGL Context!");
         renderContext = new OpenGLRenderContext(_gl);
-        RootFolder = new("ROOT", workspace.Env, this);
+        RootFolder = rootFolder ?? new("ROOT", workspace.Env, this);
         var camGo = new GameObject("__editorCamera", workspace.Env);
         camera = Component.Create<Camera>(camGo, workspace.Env);
-        parentScene?.ChildScenes.Add(this);
+        parentScene?.childScenes.Add(this);
     }
 
     public GameObject? Find(ReadOnlySpan<char> path) => RootFolder.Find(path);
 
     public Scene? GetChildScene(string nameOrPath)
     {
-        foreach (var child in ChildScenes) {
+        foreach (var child in childScenes) {
             if (child.Name.Equals(nameOrPath, StringComparison.InvariantCultureIgnoreCase) || child.InternalPath.Equals(nameOrPath, StringComparison.InvariantCultureIgnoreCase)) {
                 return child;
             }
@@ -142,7 +144,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable
             }
         }
 
-        foreach (var child in ChildScenes) {
+        foreach (var child in childScenes) {
             child.SetActive(active);
         }
     }
@@ -152,10 +154,10 @@ public sealed class Scene : NodeTreeContainer, IDisposable
         SetActive(false);
         renderContext.Dispose();
         RootFolder.Dispose();
-        while (ChildScenes.Count != 0) {
-            ChildScenes.Last().Dispose();
+        while (childScenes.Count != 0) {
+            childScenes.Last().Dispose();
         }
-        ParentScene?.ChildScenes.Remove(this);
+        ParentScene?.childScenes.Remove(this);
     }
 
     internal void AddRenderComponent(RenderableComponent renderComponent)

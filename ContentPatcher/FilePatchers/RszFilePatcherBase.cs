@@ -34,14 +34,18 @@ public abstract class RszFilePatcherBase : IResourceFilePatcher
             return null;
         }
 
-        var diff = new JsonObject();
+        JsonObject? diff = null;
         if (target is ScnGameObject targetScn && source is ScnGameObject sourceScn) {
             if (targetScn.Guid != sourceScn.Guid) {
+                diff ??= new();
                 diff["_guid"] = sourceScn.Guid.ToString();
             }
 
-            if (targetScn.Prefab?.Path != sourceScn.Prefab?.Path) {
-                diff["_prefab"] = sourceScn.Prefab?.Path?.ToString();
+            var targetPfb = string.IsNullOrEmpty(targetScn.Prefab?.Path) ? null : targetScn.Prefab?.Path;
+            var sourcePfb = string.IsNullOrEmpty(sourceScn.Prefab?.Path) ? null : sourceScn.Prefab?.Path;
+            if (targetPfb != sourcePfb) {
+                diff ??= new();
+                diff["_prefab"] = sourcePfb;
             }
         }
 
@@ -50,18 +54,20 @@ public abstract class RszFilePatcherBase : IResourceFilePatcher
         var sourceComps = new JsonObject(source.Components.ToDictionary(comp => comp.RszClass.name, comp => JsonSerializer.SerializeToNode(comp, workspace.Env.JsonOptions)!)!);
         var compDiff = (JsonObject?)workspace.Diff.Maker.GetMinimalDiff(targetComps, sourceComps);
         if (dataDiff == null && compDiff == null) {
-            return null;
+            return diff;
         }
 
         if (dataDiff != null) {
+            diff ??= new();
             diff["_data"] = dataDiff;
         }
         if (compDiff != null) {
+            diff ??= new();
             foreach (var (k, v) in compDiff) {
                 diff[k] = v?.DeepClone();
             }
         }
-        if (diff.Count == 0) return null;
+        if (diff == null || diff.Count == 0) return null;
         return diff;
     }
 

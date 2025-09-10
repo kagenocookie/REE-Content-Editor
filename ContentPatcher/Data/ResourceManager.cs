@@ -104,9 +104,9 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         activeBundle = active;
     }
 
-    private bool LoadAndApplyBundle(Bundle bundle, ResourceState state)
+    private void LoadAndApplyBundle(Bundle bundle, ResourceState state)
     {
-        var changed = false;
+        var success = true;
         if (bundle.ResourceListing != null) {
             var bundleBasepath = workspace.BundleManager.GetBundleFolder(bundle);
             foreach (var (localFile, resInfo) in bundle.ResourceListing) {
@@ -115,8 +115,8 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                     continue;
                 }
 
-                var fileChanged = ApplyBundleFile(bundleBasepath, localFile, resInfo, true);
-                changed = fileChanged || changed;
+                var fileSuccess = ApplyBundleFile(bundleBasepath, localFile, resInfo, true);
+                success = fileSuccess && success;
             }
         }
 
@@ -153,17 +153,32 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             }
         }
 
-        return changed;
+        if (!success) {
+            Logger.Error($"Loading of bundle {bundle.Name} was not fully successful.");
+        }
     }
 
     private bool ApplyBundleFile(string bundleBasepath, string localFile, ResourceListItem resourceEntry, bool markModifiedOnChange)
     {
+        var fullLocalFilepath = Path.Combine(bundleBasepath, localFile);
+        if (resourceEntry.Replace) {
+            if (File.Exists(fullLocalFilepath)) {
+                var local = ReadOrGetFileResource(fullLocalFilepath, resourceEntry.Target);
+                if (local != null) {
+                    openFiles[resourceEntry.Target] = local;
+                    return true;
+                }
+
+                // pray that it's a partially patchable file and we have a file to base changes on
+                Logger.Error($"Could not load source file marked as Replace: {fullLocalFilepath}. Attempting partial load...");
+            }
+        }
+
         var file = ReadOrGetFileResource(resourceEntry.Target, null);
         if (file?.DiffHandler == null) {
             // not diffable, give it an empty diff object just to mark it as not null
             resourceEntry.Diff = new JsonObject();
             resourceEntry.DiffTime = DateTime.UtcNow;
-            var fullLocalFilepath = Path.Combine(bundleBasepath, localFile);
             if (File.Exists(fullLocalFilepath)) {
                 if (openFiles.Remove(resourceEntry.Target, out var previousFile)) {
                     previousFile.Dispose();
@@ -175,10 +190,15 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         }
 
         if (resourceEntry.Diff == null) {
-            var fullLocalFilepath = Path.Combine(bundleBasepath, localFile);
+            if (!File.Exists(fullLocalFilepath)) {
+                Logger.Error("File not found: " + fullLocalFilepath);
+                return false;
+            }
             var tempFile = FileHandle.FromDiskFilePath(fullLocalFilepath, file.Loader);
+            if (tempFile == null) return false;
             var resource = file.Loader.Load(workspace, tempFile);
             if (resource == null) {
+                Logger.Error("File could not be loaded: " + fullLocalFilepath);
                 return false;
             }
             tempFile.Resource = resource;
@@ -193,9 +213,25 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         }
 
         // apply diff
-        file.DiffHandler.ApplyDiff(resourceEntry.Diff);
-        if (markModifiedOnChange) file.Modified = true;
-        return true;
+        try {
+            file.DiffHandler.ApplyDiff(resourceEntry.Diff);
+            if (markModifiedOnChange) file.Modified = true;
+            return true;
+        } catch (Exception e) {
+            Logger.Error(e, $"Failed to apply patch for file {localFile}. This could indicate issues with the patch generation or . Attempting simple replacement...");
+
+            if (File.Exists(fullLocalFilepath)) {
+                var local = ReadOrGetFileResource(fullLocalFilepath, resourceEntry.Target);
+                if (local != null) {
+                    openFiles[resourceEntry.Target] = local;
+                    return true;
+                }
+
+                Logger.Error($"Could not load source file {fullLocalFilepath}.");
+            }
+
+            return false;
+        }
     }
 
     /// <summary>

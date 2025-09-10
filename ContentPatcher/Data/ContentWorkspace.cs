@@ -70,7 +70,6 @@ public sealed class ContentWorkspace : IDisposable
     public int SaveModifiedFiles(IRectWindow? parent = null)
     {
         Logger.Info("Saving files ...");
-        SaveBundle();
         int count = 0;
         foreach (var file in ResourceManager.GetModifiedResourceFiles()) {
             if (file.Modified) {
@@ -81,6 +80,7 @@ public sealed class ContentWorkspace : IDisposable
                 }
             }
         }
+        SaveBundle();
         return count;
     }
 
@@ -123,6 +123,8 @@ public sealed class ContentWorkspace : IDisposable
                 }
             } else {
                 foreach (var file in ResourceManager.GetOpenFiles()) {
+                    if (file.HandleType == FileHandleType.Memory) continue;
+
                     TryExecuteDiff(bundle, file);
                 }
             }

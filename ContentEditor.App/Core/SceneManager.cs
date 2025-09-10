@@ -15,26 +15,33 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
     public bool HasActiveMasterScene => RootMasterScenes.Where(sc => sc.IsActive).Any();
     public Scene? ActiveMasterScene => RootMasterScenes.FirstOrDefault(sc => sc.IsActive);
 
-    public Scene CreateScene(FileHandle sourceFile, bool render, Scene? parentScene = null)
+    public Scene CreateScene(FileHandle sourceFile, bool render, Scene? parentScene = null, Folder? rootFolder = null)
     {
-        return CreateScene(sourceFile.Filepath, sourceFile.InternalPath ?? sourceFile.Filepath, render, parentScene);
+        return CreateScene(sourceFile.Filepath, sourceFile.InternalPath ?? sourceFile.Filepath, render, parentScene, rootFolder);
     }
 
-    public Scene CreateScene(string name, string internalPath, bool render, Scene? parentScene = null)
+    public Scene CreateScene(string name, string internalPath, bool render, Scene? parentScene = null, Folder? rootFolder = null)
     {
         if (env == null) throw new Exception("Workspace unset");
 
         // convert in case we received a native and not internal path
         internalPath = PathUtils.GetInternalFromNativePath(internalPath);
-        var scene = new Scene(name, internalPath, env, parentScene) { IsActive = render };
+        var scene = new Scene(name, internalPath, env, parentScene, rootFolder) { IsActive = render };
         scene.RenderContext.ResourceManager = env.ResourceManager;
         scenes.Add(scene);
         return scene;
     }
 
-    public void RemoveScene(Scene scene)
+    private void RemoveScene(Scene scene)
     {
         scenes.Remove(scene);
+        foreach (var sub in scene.ChildScenes) RemoveScene(sub);
+    }
+
+    public void UnloadScene(Scene scene)
+    {
+        RemoveScene(scene);
+        scene?.Dispose();
     }
 
     internal void ChangeWorkspace(ContentWorkspace workspace)

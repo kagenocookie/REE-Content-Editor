@@ -12,7 +12,7 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
 
     public string Filename => Handle.Filepath;
     public ScnFile File => Handle.GetFile<ScnFile>();
-    public RawScene Prefab => Handle.GetCustomContent<RawScene>();
+    public RawScene SourceScene => Handle.GetCustomContent<RawScene>();
 
     public ContentWorkspace Workspace { get; }
     public SceneEditor? ParentEditor { get; }
@@ -62,23 +62,39 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
         }
     }
 
+    protected override void OnFileChanged()
+    {
+        base.OnFileChanged();
+        if (scene != null) {
+            EditorWindow.CurrentWindow?.SceneManager.UnloadScene(scene);
+            scene = LoadScene();
+        }
+    }
+
+    private Scene? LoadScene()
+    {
+        context.ClearChildren();
+        var root = SourceScene.GetSharedInstance(Workspace.Env);
+        if (Logger.ErrorIf(root == null, "Failed to instantiate scene")) return null;
+        scene = root.Scene;
+        if (scene == null) {
+            scene = context.GetNativeWindow()?.SceneManager.CreateScene(Handle, ParentEditor?.scene?.IsActive ?? false, ParentEditor?.scene, root);
+            if (Logger.ErrorIf(scene == null, "Failed to create new scene")) return null;
+        }
+        return scene;
+    }
+
     protected override void DrawFileContents()
     {
         ImGui.PushID(Filename);
-        if (context.children.Count == 0 || scene == null) {
-            scene?.Dispose();
-            context.ClearChildren();
-            var root = Prefab.GetSharedInstance(Workspace.Env);
-            if (Logger.ErrorIf(root == null, "Failed to instantiate prefab")) return;
-            context.AddChild<ScnFile, List<ResourceInfo>>("Resources", File, getter: static (c) => c!.ResourceInfoList, handler: new TooltipUIHandler(new ListHandler(typeof(ResourceInfo)), "List of resources that will be preloaded together with the file ingame.\nShould be updated automatically on save."));
+        if (scene == null) {
+            if ((scene = LoadScene()) == null) return;
+        }
 
+        if (context.children.Count == 0) {
+            var root = scene.RootFolder;
+            context.AddChild<ScnFile, List<ResourceInfo>>("Resources", File, getter: static (c) => c!.ResourceInfoList, handler: new TooltipUIHandler(new ListHandler(typeof(ResourceInfo)), "List of resources that will be preloaded together with the file ingame.\nShould be updated automatically on save."));
             context.AddChild("Filter", searcher, searcher);
-            scene = root.Scene;
-            if (scene == null) {
-                scene = context.GetNativeWindow()?.SceneManager.CreateScene(Handle, ParentEditor?.scene?.IsActive ?? false, ParentEditor?.scene);
-                if (Logger.ErrorIf(scene == null, "Failed to create new scene")) return;
-                scene.Add(root);
-            }
             context.AddChild(root.Name, root, new FullWindowWidthUIHandler(-50, new TextHeaderUIHandler("Scene objects", new BoxedUIHandler(new FolderNodeEditor()))));
         }
         context.ShowChildrenUI();
