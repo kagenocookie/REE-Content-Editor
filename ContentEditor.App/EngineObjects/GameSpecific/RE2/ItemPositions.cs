@@ -8,10 +8,10 @@ using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 
-[RszComponentClass("app.ropeway.item.ItemPositions", nameof(GameIdentifier.re2))]
-public class ItemPositions(GameObject gameObject, RszInstance data) : BaseSingleMeshComponent(gameObject, data), IFixedClassnameComponent
+[RszComponentClass("app.ropeway.item.ItemPositions", nameof(GameIdentifier.re2), nameof(GameIdentifier.re2rt))]
+[RszComponentClass("offline.item.ItemPositions", nameof(GameIdentifier.re3), nameof(GameIdentifier.re3rt))]
+public class ItemPositions(GameObject gameObject, RszInstance data) : BaseSingleMeshComponent(gameObject, data)
 {
-    static string IFixedClassnameComponent.Classname => "app.ropeway.item.ItemPositions";
     private int lastItemId;
     private int lastWeaponId;
 

@@ -10,9 +10,11 @@ public static partial class RszFieldCache
     public static class RE2
     {
         /// <summary>
-        /// app.ropeway.item.ItemPositions
+        /// [RE2] app.ropeway.item.ItemPositions
+        /// [RE3] offline.item.ItemPositions
         /// </summary>
         [RszAccessor("app.ropeway.item.ItemPositions", nameof(GameIdentifier.re2), nameof(GameIdentifier.re2rt))]
+        [RszAccessor("offline.item.ItemPositions", nameof(GameIdentifier.re3), nameof(GameIdentifier.re3rt))]
         public static class ItemPositions
         {
             public static readonly RszFieldAccessorName<int> InitializeItemId = Name<int>();
@@ -21,9 +23,11 @@ public static partial class RszFieldCache
         }
 
         /// <summary>
-        /// app.ropeway.EnemyContextController
+        /// [RE2] app.ropeway.EnemyContextController
+        /// [RE3] offline.EnemyContextController
         /// </summary>
         [RszAccessor("app.ropeway.EnemyContextController", nameof(GameIdentifier.re2), nameof(GameIdentifier.re2rt))]
+        [RszAccessor("offline.EnemyContextController", nameof(GameIdentifier.re3), nameof(GameIdentifier.re3rt))]
         public static class EnemyContextController
         {
             public static readonly RszFieldAccessorName<int> InitialKind = Name<int>();

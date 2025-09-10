@@ -52,13 +52,14 @@ public class Component(GameObject gameObject, RszInstance data)
         var types = typeof(WindowHandlerFactory).Assembly.GetTypes();
         foreach (var type in types) {
 
-            if (type.GetCustomAttribute<RszComponentClassAttribute>() != null) {
+            var clsAttrs = type.GetCustomAttributes<RszComponentClassAttribute>();
+            if (clsAttrs.Any()) {
                 if (!type.IsAssignableTo(typeof(Component))) {
                     Logger.Error($"RszComponentClass annotated class must be a sublcass of {nameof(Component)} (type {type.FullName})");
                     continue;
                 }
 
-                foreach (var attr in type.GetCustomAttributes<RszComponentClassAttribute>()) {
+                foreach (var attr in clsAttrs) {
                     if (attr.Games.Length > 0 && !attr.Games.Contains(game.name)) continue;
 
                     var cls = env.RszParser.GetRSZClass(attr.Classname);

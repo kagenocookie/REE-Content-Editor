@@ -9,10 +9,10 @@ using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 
-[RszComponentClass("app.ropeway.EnemyContextController", nameof(GameIdentifier.re2))]
-public class EnemyContextController(GameObject gameObject, RszInstance data) : BaseSingleMeshComponent(gameObject, data), IFixedClassnameComponent
+[RszComponentClass("app.ropeway.EnemyContextController", nameof(GameIdentifier.re2), nameof(GameIdentifier.re2rt))]
+[RszComponentClass("offline.EnemyContextController", nameof(GameIdentifier.re3), nameof(GameIdentifier.re3rt))]
+public class EnemyContextController(GameObject gameObject, RszInstance data) : BaseSingleMeshComponent(gameObject, data)
 {
-    static string IFixedClassnameComponent.Classname => "app.ropeway.EnemyContextController";
     private int lastEnemyId = -1;
 
     protected override void RefreshMesh()
@@ -28,7 +28,8 @@ public class EnemyContextController(GameObject gameObject, RszInstance data) : B
 
     private void SetEnemyID(int enemyId)
     {
-        var label = Scene!.Workspace.Env.TypeCache.GetEnumDescriptor("app.ropeway.EnemyDefine.KindID").GetLabel(enemyId);
+        var desc = Scene!.Workspace.Env.TypeCache.GetEnumDescriptor(RszFieldCache.RE2.EnemyContextController.InitialKind.GetField(Data.RszClass)!.original_type);
+        var label = desc.GetLabel(enemyId);
         if (!TryLoadMesh($"SectionRoot/Character/Enemy/{label}/Body/Body00/{label}_body00.mesh")) {
             if (!TryLoadMesh($"SectionRoot/Character/Enemy/{label}/{label}/{label}.mesh")) {
                 UnloadMesh();
