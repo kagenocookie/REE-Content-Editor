@@ -94,7 +94,7 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
         }
 
         foreach (var gobj in source.GameObjects) {
-            var obj = new GameObject(gobj, this, null, scene);
+            var obj = new GameObject(gobj, this, prefabs, scene);
             GameObjects.Add(obj);
         }
     }
