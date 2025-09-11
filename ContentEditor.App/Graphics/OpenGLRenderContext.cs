@@ -230,6 +230,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     {
         for (int i = 0; i < handle.Handle.Meshes.Count; i++) {
             var mesh = handle.Handle.Meshes[i];
+            if (!handle.GetMeshPartEnabled(i)) continue;
             var material = handle.GetMaterial(i);
 
             // TODO frustum culling

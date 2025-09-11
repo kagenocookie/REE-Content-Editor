@@ -44,9 +44,10 @@ public class ResourcePathPicker : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var currentPath = context.Get<string>();
-        context.state ??= currentPath;
-        if (AppImguiHelpers.InputFilepath(context.label, ref context.state, FileExtensionFilter)) {
+        var newPath = context.state ?? currentPath;
+        if (AppImguiHelpers.InputFilepath(context.label, ref newPath, FileExtensionFilter)) {
             context.Changed = true;
+            context.state = newPath;
         }
 
         if (ImGui.BeginPopupContextItem()) {
@@ -116,9 +117,9 @@ public class ResourcePathPicker : IObjectUIHandler
             ImGui.EndPopup();
         }
 
-        if (context.state != currentPath) {
+        if (newPath != currentPath) {
             if (ImGui.Button("Update path")) {
-                ApplyPathChange(context, context.state);
+                ApplyPathChange(context, newPath);
                 context.state = null;
             }
             if (ImguiHelpers.SameLine() && ImGui.Button("Cancel change")) {

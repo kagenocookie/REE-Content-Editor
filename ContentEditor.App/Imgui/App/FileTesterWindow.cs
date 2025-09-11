@@ -94,6 +94,17 @@ public class FileTesterWindow : IWindowHandler
                 ImGui.TreePop();
             }
 
+            if (ImGui.Button("Test RSZ field overrides")) {
+                Logger.Info("Starting RSZ override test...");
+
+                Task.Run(() => {
+                    foreach (var env in GetWorkspaces((data.ParentWindow as IWorkspaceContainer)!.Workspace, true)) {
+                        Logger.Info("Loading RSZ Parser " + env.Game);
+                        _ = env.Env.RszParser;
+                    }
+                    Logger.Info("RSZ override test finished");
+                });
+            }
             ImGui.TreePop();
         }
         var exec = SearchInProgress;
@@ -161,7 +172,7 @@ public class FileTesterWindow : IWindowHandler
         Task.Run(() => {
             try {
                 var token = cancellationTokenSource.Token;
-                foreach (var env in GetWorkspaces(workspace)) {
+                foreach (var env in GetWorkspaces(workspace, allVersions)) {
                     var rm = new ResourceManager(new PatchDataContainer("!"));
                     var success = 0;
                     var fails = new ConcurrentBag<string>();
@@ -238,7 +249,7 @@ public class FileTesterWindow : IWindowHandler
         }
     }
 
-    private IEnumerable<ContentWorkspace> GetWorkspaces(ContentWorkspace current)
+    private static IEnumerable<ContentWorkspace> GetWorkspaces(ContentWorkspace current, bool allVersions)
     {
         yield return current;
         if (!allVersions) yield break;

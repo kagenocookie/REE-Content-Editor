@@ -35,7 +35,8 @@ public static partial class RszFieldCache
         /// </summary>
         public static readonly RszFieldAccessorFirstFallbacks<RszInstance> Shape = First<RszInstance>([
             (field) => field.original_type == "via.physics.Shape",
-            (field) => field.type == RszFieldType.Object
+            (field) => field.type == RszFieldType.Object,
+            (field) => field.size == 4
         ]).Object("via.physics.Shape");
 
         public static readonly RszFieldAccessorFirstFallbacks<string> FilterInfo = First<string>([

@@ -18,6 +18,7 @@ public class MeshHandle
 
     public IEnumerable<Mesh> Meshes => Handle.Meshes.AsReadOnly();
     public AABB BoundingBox => Handle.BoundingBox;
+    private readonly HashSet<int> DisabledParts = new(0);
 
     internal MeshHandle(MeshResourceHandle mesh)
     {
@@ -37,6 +38,13 @@ public class MeshHandle
         }
 
         return Material.Materials[0];
+    }
+
+    public bool GetMeshPartEnabled(int index) => !DisabledParts.Contains(index);
+    public void SetMeshPartEnabled(int index, bool enabled)
+    {
+        if (enabled) DisabledParts.Remove(index);
+        else DisabledParts.Add(index);
     }
 
     /// <summary>

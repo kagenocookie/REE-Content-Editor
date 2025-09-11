@@ -25,6 +25,11 @@ public static partial class RszFieldCache
         public static readonly RszFieldAccessorFieldList<string> Material =
             FromList<string>(list => list.Where(fi => fi.field.type is RszFieldType.String or RszFieldType.Resource).Skip(1).First().index)
             .Resource("via.render.MeshMaterialResourceHolder");
+
+        public static readonly RszFieldAccessorFirst<List<object>> PartsEnable =
+            First<List<object>>(fi => fi.array && fi.size == 1)
+            .Type(RszFieldType.Bool)
+            .Rename();
     }
 
     /// <summary>

@@ -8,7 +8,7 @@ using Silk.NET.Maths;
 namespace ContentEditor.App;
 
 [RszComponentClass("via.render.Mesh")]
-public class MeshComponent(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data), IFixedClassnameComponent
+public class MeshComponent(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data), IFixedClassnameComponent, IConstructorComponent
 {
     public static new string Classname => "via.render.Mesh";
 
@@ -19,18 +19,29 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
 
     public bool HasMesh => mesh?.Meshes.Any() == true;
 
+    public void ComponentInit()
+    {
+        RszFieldCache.Mesh.PartsEnable.Set(Data, Enumerable.Range(0, 256).Select(_ => (object)true).ToList());
+    }
+
     internal override void OnActivate()
     {
         base.OnActivate();
 
-        if (!AppConfig.Instance.RenderMeshes.Get()) return;
-        RefreshMesh();
+        RefreshIfActive();
     }
 
     internal override void OnDeactivate()
     {
         base.OnDeactivate();
         UnloadMesh();
+    }
+
+    public void RefreshIfActive()
+    {
+        if (Scene?.IsActive != true || !AppConfig.Instance.RenderMeshes.Get()) return;
+
+        RefreshMesh();
     }
 
     private void RefreshMesh()
@@ -55,6 +66,14 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         }
         RszFieldCache.Mesh.Resource.Set(Data, meshFilepath);
         RszFieldCache.Mesh.Material.Set(Data, materialFilepath ?? string.Empty);
+
+        if (mesh != null) {
+            var parts = RszFieldCache.Mesh.PartsEnable.Get(Data);
+            for (int i = 0; i < parts.Count; ++i) {
+                var enabled = (bool)parts[i];
+                mesh.SetMeshPartEnabled(i, enabled);
+            }
+        }
     }
 
     public void SetMesh(FileHandle meshFile, FileHandle? materialFile)

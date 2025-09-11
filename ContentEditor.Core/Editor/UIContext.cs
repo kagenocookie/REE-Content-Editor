@@ -154,6 +154,21 @@ public class UIContext
                 }
                 parent.SetUnchangedImpl(eventData);
             }
+        } else {
+            PropagateUpdateEvent(new EditorUIEvent(UIContextEvent.Updated, eventData.origin));
+        }
+    }
+
+    private void PropagateUpdateEvent(EditorUIEvent eventData)
+    {
+        if (parent != null) {
+            if (parent.uiHandler is IUIContextEventHandler handler) {
+                if (handler.HandleEvent(parent, eventData)) {
+                    return;
+                }
+            }
+
+            parent.PropagateUpdateEvent(eventData);
         }
     }
 
@@ -283,6 +298,10 @@ public enum UIContextEvent
     /// Any child value was reverted. Propagates upward.
     /// </summary>
     Reverted,
+    /// <summary>
+    /// The value was updated (any sort of change was triggered, unrelated to whether it's different from original or not). Propagates upward.
+    /// </summary>
+    Updated,
     /// <summary>
     /// The value is reverting. Propagates downward.
     /// </summary>
