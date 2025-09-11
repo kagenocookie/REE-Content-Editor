@@ -30,8 +30,7 @@ public class ThemeEditor : IWindowHandler
     public void OnWindow() => this.ShowDefaultWindow(context);
     public void OnIMGUI()
     {
-        ImGui.Text("Change any settings you wish in the below style editor section.");
-        ImGui.Text("Once you're satisfied with your changes, press \"Save to file\" and store it in the styles folder.");
+        ImGui.TextWrapped("Change any settings you wish in the below style editor section. You can use Tools > IMGUI test window menu option to preview most components. Once you're satisfied with your changes, press \"Save to file\" and store it in the styles folder.");
 
         if (ImGui.Button("Save to file ...")) {
             var themeData = DefaultThemes.GetCurrentStyleData();
