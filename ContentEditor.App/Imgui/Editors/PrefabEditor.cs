@@ -51,6 +51,22 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
         Reset();
     }
 
+    protected override void OnFileChanged()
+    {
+        base.OnFileChanged();
+        if (scene != null) {
+            var window = context.GetNativeWindow();
+            window!.SceneManager.UnloadScene(scene);
+            if (EditorWindow.CurrentWindow == null) {
+                window.InvokeFromUIThread(() => {
+                    scene = LoadScene();
+                });
+            } else {
+                scene = LoadScene();
+            }
+        }
+    }
+
     private void Reset()
     {
         primaryInspector = null;
@@ -69,23 +85,32 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
         }
     }
 
+    private Scene? LoadScene()
+    {
+        context.ClearChildren();
+        var root = Prefab.GetSharedInstance();
+        if (Logger.ErrorIf(root == null, "Failed to instantiate prefab")) return null;
+        scene = root.Scene;
+        if (scene == null) {
+            scene = context.GetNativeWindow()?.SceneManager.CreateScene(Handle, false, ((ISceneEditor)this).GetRootScene(context));
+            if (Logger.ErrorIf(scene == null, "Failed to create new scene")) return null;
+            scene.Add(root);
+        }
+        return scene;
+    }
+
     protected override void DrawFileContents()
     {
-        ImGui.PushID(Filename);
-        if (context.children.Count == 0 || scene == null) {
-            scene?.Dispose();
-            context.ClearChildren();
-            var root = Prefab.GetSharedInstance();
-            if (Logger.ErrorIf(root == null, "Failed to instantiate prefab")) return;
-            context.AddChild<PfbFile, List<ResourceInfo>>("Resources", File, getter: static (c) => c!.ResourceInfoList, handler: new TooltipUIHandler(new ListHandler(typeof(ResourceInfo)), "List of resources that will be preloaded together with the file ingame.\nShould be updated automatically on save."));
+        if (scene == null) {
+            scene = LoadScene();
+            if (scene == null) return;
+        }
 
+        ImGui.PushID(Filename);
+        if (context.children.Count == 0) {
+            var root = scene.RootFolder.GameObjects.First();
+            context.AddChild<PfbFile, List<ResourceInfo>>("Resources", File, getter: static (c) => c!.ResourceInfoList, handler: new TooltipUIHandler(new ListHandler(typeof(ResourceInfo)), "List of resources that will be preloaded together with the file ingame.\nShould be updated automatically on save."));
             context.AddChild("Filter", searcher, searcher);
-            scene = root.Scene;
-            if (scene == null) {
-                scene = context.GetNativeWindow()?.SceneManager.CreateScene(Handle, false, ((ISceneEditor)this).GetRootScene(context));
-                if (Logger.ErrorIf(scene == null, "Failed to create new scene")) return;
-                scene.Add(root);
-            }
             context.AddChild(root.Name, root, new FullWindowWidthUIHandler(-50, new TextHeaderUIHandler("Children", new BoxedUIHandler(new GameObjectNodeEditor()))));
         }
         context.ShowChildrenUI();

@@ -66,8 +66,15 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
     {
         base.OnFileChanged();
         if (scene != null) {
-            EditorWindow.CurrentWindow?.SceneManager.UnloadScene(scene);
-            scene = LoadScene();
+            var window = context.GetNativeWindow();
+            window!.SceneManager.UnloadScene(scene);
+            if (EditorWindow.CurrentWindow == null) {
+                window.InvokeFromUIThread(() => {
+                    scene = LoadScene();
+                });
+            } else {
+                scene = LoadScene();
+            }
         }
     }
 
@@ -88,7 +95,8 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
     {
         ImGui.PushID(Filename);
         if (scene == null) {
-            if ((scene = LoadScene()) == null) return;
+            scene = LoadScene();
+            if (scene == null) return;
         }
 
         if (context.children.Count == 0) {
