@@ -20,6 +20,7 @@ internal sealed class MainLoop : IDisposable
     internal static MainLoop Instance => _instance!;
 
     private static readonly Thread MainThread = Thread.CurrentThread;
+    public static bool IsMainThread => MainThread == Thread.CurrentThread;
 
     internal MainLoop()
     {
