@@ -941,6 +941,46 @@ public class SphereStructHandler : IObjectUIHandler
     }
 }
 
+[ObjectImguiHandler(typeof(ReeLib.via.mat4), Stateless = true)]
+public class Mat4StructHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var mat = context.Get<ReeLib.via.mat4>();
+        if (ImguiHelpers.TreeNodeSuffix(context.label, mat.ToString())) {
+            Matrix4X4.Decompose(mat.ToSystem().ToGeneric(), out var scale, out var rot, out var trans);
+
+            var w = ImGui.CalcItemWidth();
+            ImGui.SetNextItemWidth(w * 0.75f);
+            if (ImGui.DragFloat3("##Offset", ref Unsafe.As<Vector3D<float>, Vector3>(ref trans), 0.005f)) {
+                mat = Transform.GetMatrixFromTransforms(trans, rot, scale).ToSystem();
+                UndoRedo.RecordSet(context, mat, undoId: $"{context.GetHashCode()} offset");
+            }
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(w * 0.25f - ImGui.GetStyle().FramePadding.X * 2);
+            ImGui.LabelText("Offset", "##labelP");
+
+            if (ImGui.DragFloat4("Rotation", ref Unsafe.As<Quaternion<float>, Vector4>(ref rot), 0.005f)) {
+                mat = Transform.GetMatrixFromTransforms(trans, rot, scale).ToSystem();
+                UndoRedo.RecordSet(context, mat, undoId: $"{context.GetHashCode()} rotation");
+            }
+            ImGui.SetNextItemWidth(w * 0.75f);
+            if (ImGui.DragFloat3("##Scale", ref Unsafe.As<Vector3D<float>, Vector3>(ref scale), 0.005f)) {
+                mat = Transform.GetMatrixFromTransforms(trans, rot, scale).ToSystem();
+                UndoRedo.RecordSet(context, mat, undoId: $"{context.GetHashCode()} scale");
+            }
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(w * 0.25f - ImGui.GetStyle().FramePadding.X * 2);
+            ImGui.LabelText("Scale", "##labelS");
+            if (MathF.Abs(scale.X - scale.Y) > 0.001f || MathF.Abs(scale.Y - scale.Z) > 0.001f) {
+                ImGui.TextColored(Colors.Warning, "A non-uniform scale can sometimes cause issues with collisions.");
+            }
+
+            ImGui.TreePop();
+        }
+    }
+}
+
 [ObjectImguiHandler(typeof(ReeLib.via.OBB), Stateless = true)]
 public class OBBStructHandler : IObjectUIHandler
 {
