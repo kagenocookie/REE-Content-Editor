@@ -181,7 +181,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 }
             }
 
-            ImGui.SetCursorPos(new Vector2(20, 45));
+            ImGui.SetCursorPos(new Vector2(17, 75));
             ImGui.PushStyleColor(ImGuiCol.ChildBg, new System.Numerics.Vector4(0.2f, 0.2f, 0.2f, 0.5f));
             ImGui.BeginChild("OverlayControls", new Vector2(480, 220), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders);
 
@@ -209,7 +209,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 }
             } else {
                 float ortho = scene.RenderContext.OrthoSize;
-                if (ImGui.SliderFloat("Field of View", ref ortho, 0.1f, 2.0f)) {
+                if (ImGui.SliderFloat("Field of View", ref ortho, 0.1f, 10.0f)) {
                     scene.RenderContext.OrthoSize = ortho;
                 }
             }
