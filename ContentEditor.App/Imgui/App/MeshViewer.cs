@@ -34,7 +34,11 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
     private bool isDragging;
     private Vector2 lastDragPos;
-
+    private float moveSpeed = 25.0f;
+    private float rotateSpeed = 2.0f;
+    private float zoomSpeed = 0.1f;
+    private float yaw, pitch;
+    private const float pitchLimit = MathF.PI / 2 - 0.01f;
     public MeshViewer(ContentWorkspace workspace, FileHandle file)
     {
         meshPath = file.Filepath;
@@ -80,7 +84,15 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
         scene.Camera.LookAt(previewGameobject, true);
     }
-
+    private Vector3 GetMeshCenter(GameObject gameObject)
+    {
+        var meshComp = gameObject.GetComponent<MeshComponent>();
+        if (meshComp != null) {
+            var bounds = meshComp.LocalBounds;
+            return (bounds.minpos + bounds.maxpos) * 0.5f;
+        }
+        return gameObject.Transform.Position;
+    }
     public void OnIMGUI()
     {
         if (scene == null) {
@@ -96,16 +108,11 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
         if (!meshComponent.HasMesh) {
             meshComponent.SetMesh(fileHandle, fileHandle);
+            scene.RenderContext.ProjectionMode = RenderContext.CameraProjection.Orthographic;
             CenterCameraToSceneObject();
         }
 
         if (mesh != null) {
-            ImGui.Text(fileHandle.Filepath);
-            ImGui.SameLine();
-            if (ImGui.Button("Reset view")) {
-                CenterCameraToSceneObject();
-                lastDragPos = new();
-            }
             var expectedSize = ImGui.GetWindowSize() - ImGui.GetCursorPos() - ImGui.GetStyle().WindowPadding;
             expectedSize.X = Math.Max(expectedSize.X, 4);
             expectedSize.Y = Math.Max(expectedSize.Y, 4);
@@ -130,18 +137,92 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             if (isDragging) {
                 var delta = ImGui.GetMousePos() - lastDragPos;
                 lastDragPos = ImGui.GetMousePos();
+
                 if (delta != Vector2.Zero) {
+                    var moveDelta = new Vector2(delta.X / expectedSize.X, delta.Y / expectedSize.Y);
                     if (ImGui.IsMouseDown(ImGuiMouseButton.Left)) {
-                        if (ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
-                            scene.Camera.GameObject.Transform.TranslateForwardAligned(new Vector3(delta.X, 0, -delta.Y) * -0.04f);
-                        } else {
-                            scene.Camera.GameObject.Transform.TranslateForwardAligned(new Vector3(-delta.X, delta.Y, 0) * 0.04f);
+                        if (ImGui.IsMouseDown(ImGuiMouseButton.Left)) {
+                            if (ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
+                                scene.Camera.GameObject.Transform.TranslateForwardAligned(new Vector3(moveDelta.X, 0, -moveDelta.Y) * moveSpeed * scene.RenderContext.DeltaTime);
+                            } else {
+                                scene.Camera.GameObject.Transform.TranslateForwardAligned(new Vector3(-moveDelta.X, moveDelta.Y, 0) * moveSpeed * scene.RenderContext.DeltaTime);
+                            }
                         }
                     } else if (ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
-                        scene.Camera.GameObject.Transform.Rotate(Quaternion<float>.CreateFromYawPitchRoll(delta.X * -0.008f, delta.Y * -0.008f, 0));
+                        yaw += moveDelta.X * rotateSpeed;
+                        pitch += moveDelta.Y * rotateSpeed;
+                        if (scene.RenderContext.ProjectionMode == RenderContext.CameraProjection.Perspective) {
+                            var rotation = Quaternion<float>.CreateFromYawPitchRoll(yaw, pitch, 0);
+                            scene.Camera.GameObject.Transform.LocalRotation = rotation.ToSystem();
+                        } else {
+                            pitch = Math.Clamp(pitch, -pitchLimit, pitchLimit);
+                            var target = previewGameobject != null ? GetMeshCenter(previewGameobject): Vector3.Zero;
+                            float distance = Vector3.Distance(scene.Camera.GameObject.Transform.Position, target);
+                            var rotation = Quaternion<float>.CreateFromYawPitchRoll(yaw, pitch, 0);
+                            var offset = Vector3.Transform(new Vector3(0, 0, -distance), rotation.ToSystem());
+                            scene.Camera.GameObject.Transform.LocalPosition = target + offset;
+                            scene.Camera.GameObject.Transform.LocalRotation = rotation.ToSystem();
+                        }
                     }
                 }
             }
+            if (ImGui.IsItemHovered()) {
+                float wheel = ImGui.GetIO().MouseWheel;
+                if (Math.Abs(wheel) > float.Epsilon) {
+                    if (scene.RenderContext.ProjectionMode == RenderContext.CameraProjection.Perspective) {
+                        var zoom = scene.Camera.GameObject.Transform.LocalForward * (wheel * zoomSpeed) * -1.0f;
+                        scene.Camera.GameObject.Transform.LocalPosition += zoom;
+                    } else {
+                        float ortho = scene.RenderContext.OrthoSize;
+                        ortho *= (1.0f - wheel * zoomSpeed);
+                        ortho = Math.Clamp(ortho, 0.01f, 100.0f);
+                        scene.RenderContext.OrthoSize = ortho;
+                    }
+                }
+            }
+
+            ImGui.SetCursorPos(new Vector2(20, 45));
+            ImGui.PushStyleColor(ImGuiCol.ChildBg, new System.Numerics.Vector4(0.2f, 0.2f, 0.2f, 0.5f));
+            ImGui.BeginChild("OverlayControls", new Vector2(480, 220), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders);
+
+            ImGui.SeparatorText("Camera Controls:");
+            if (ImGui.RadioButton("Orthographic", scene.RenderContext.ProjectionMode == RenderContext.CameraProjection.Orthographic)) {
+                scene.RenderContext.ProjectionMode = RenderContext.CameraProjection.Orthographic;
+                CenterCameraToSceneObject();
+                lastDragPos = new();
+            }
+            ImGui.SameLine();
+            if (ImGui.RadioButton("Perspective", scene.RenderContext.ProjectionMode == RenderContext.CameraProjection.Perspective)) {
+                scene.RenderContext.ProjectionMode = RenderContext.CameraProjection.Perspective;
+                CenterCameraToSceneObject();
+                lastDragPos = new();
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Reset View")) {
+                CenterCameraToSceneObject();
+                lastDragPos = new();
+            }
+            if (scene.RenderContext.ProjectionMode == RenderContext.CameraProjection.Perspective) {
+                float fov = scene.RenderContext.FieldOfView;
+                if (ImGui.SliderAngle("Field of View", ref fov, 10.0f, 120.0f)) {
+                    scene.RenderContext.FieldOfView = fov;
+                }
+            } else {
+                float ortho = scene.RenderContext.OrthoSize;
+                if (ImGui.SliderFloat("Field of View", ref ortho, 0.1f, 2.0f)) {
+                    scene.RenderContext.OrthoSize = ortho;
+                }
+            }
+            ImGui.SliderFloat("Move Speed", ref moveSpeed, 1.0f, 50.0f);
+            ImGui.SliderFloat("Rotate Speed", ref rotateSpeed, 0.1f, 10.0f);
+            ImGui.SliderFloat("Zoom Speed", ref zoomSpeed, 0.01f, 1.0f);
+            if (ImGui.TreeNode("Mesh Info")) {
+                // TODO SILVER: Fix path display, add more info about the mesh i.e.: vert count, tris count, submesh (material) count 
+                ImGui.Text($"Path: {fileHandle.Filepath}");
+                ImGui.TreePop();
+            }
+            ImGui.PopStyleColor();
+            ImGui.EndChild();
         } else {
             ImGui.Text("No mesh selected");
         }
@@ -161,7 +242,6 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     {
         return false;
     }
-
     public void Dispose()
     {
         fileHandle?.References.Remove(this);
