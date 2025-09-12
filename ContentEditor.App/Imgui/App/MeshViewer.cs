@@ -35,6 +35,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     private bool isDragging;
     private Vector2 lastDragPos;
     private float moveSpeed = 25.0f;
+    private float moveSpeedMultiplier = 1.0f;
     private float rotateSpeed = 2.0f;
     private float zoomSpeed = 0.1f;
     private float yaw, pitch;
@@ -77,21 +78,11 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         ImGui.EndGroup();
         ImGui.End();
     }
-
     private void CenterCameraToSceneObject()
     {
         if (previewGameobject == null || scene == null) return;
 
         scene.Camera.LookAt(previewGameobject, true);
-    }
-    private Vector3 GetMeshCenter(GameObject gameObject)
-    {
-        var meshComp = gameObject.GetComponent<MeshComponent>();
-        if (meshComp != null) {
-            var bounds = meshComp.LocalBounds;
-            return (bounds.minpos + bounds.maxpos) * 0.5f;
-        }
-        return gameObject.Transform.Position;
     }
     public void OnIMGUI()
     {
@@ -117,6 +108,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             expectedSize.X = Math.Max(expectedSize.X, 4);
             expectedSize.Y = Math.Max(expectedSize.Y, 4);
             var nativeSize = data.ParentWindow.Size;
+            float meshSize = meshComponent.LocalBounds.Size.Length();
+            scene.RenderContext.FarPlane = meshSize + 100.0f;
             scene.RenderContext.SetRenderToTexture(expectedSize);
 
             if (scene.RenderContext.RenderTargetTextureHandle == 0) return;
@@ -137,31 +130,24 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             if (isDragging) {
                 var delta = ImGui.GetMousePos() - lastDragPos;
                 lastDragPos = ImGui.GetMousePos();
-
                 if (delta != Vector2.Zero) {
                     var moveDelta = new Vector2(delta.X / expectedSize.X, delta.Y / expectedSize.Y);
                     if (ImGui.IsMouseDown(ImGuiMouseButton.Left)) {
-                        if (ImGui.IsMouseDown(ImGuiMouseButton.Left)) {
-                            if (ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
-                                scene.Camera.GameObject.Transform.TranslateForwardAligned(new Vector3(moveDelta.X, 0, -moveDelta.Y) * moveSpeed * scene.RenderContext.DeltaTime);
-                            } else {
-                                scene.Camera.GameObject.Transform.TranslateForwardAligned(new Vector3(-moveDelta.X, moveDelta.Y, 0) * moveSpeed * scene.RenderContext.DeltaTime);
-                            }
+                        moveSpeedMultiplier = ImGui.IsKeyDown(ImGuiKey.LeftShift) ? 10.0f : 1.0f;
+                        float cameraMoveSpeed = moveSpeed * moveSpeedMultiplier;
+                        if (ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
+                            scene.Camera.GameObject.Transform.TranslateForwardAligned(new Vector3(moveDelta.X, 0, -moveDelta.Y) * cameraMoveSpeed * scene.RenderContext.DeltaTime);
+                        } else {
+                            scene.Camera.GameObject.Transform.TranslateForwardAligned(new Vector3(-moveDelta.X, moveDelta.Y, 0) * cameraMoveSpeed * scene.RenderContext.DeltaTime);
                         }
                     } else if (ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
                         yaw += moveDelta.X * rotateSpeed;
                         pitch += moveDelta.Y * rotateSpeed;
                         if (scene.RenderContext.ProjectionMode == RenderContext.CameraProjection.Perspective) {
-                            var rotation = Quaternion<float>.CreateFromYawPitchRoll(yaw, pitch, 0);
-                            scene.Camera.GameObject.Transform.LocalRotation = rotation.ToSystem();
+                            scene.Camera.GameObject.Transform.LocalRotation = Quaternion<float>.CreateFromYawPitchRoll(yaw, pitch, 0).ToSystem();
                         } else {
                             pitch = Math.Clamp(pitch, -pitchLimit, pitchLimit);
-                            var target = previewGameobject != null ? GetMeshCenter(previewGameobject): Vector3.Zero;
-                            float distance = Vector3.Distance(scene.Camera.GameObject.Transform.Position, target);
-                            var rotation = Quaternion<float>.CreateFromYawPitchRoll(yaw, pitch, 0);
-                            var offset = Vector3.Transform(new Vector3(0, 0, -distance), rotation.ToSystem());
-                            scene.Camera.GameObject.Transform.LocalPosition = target + offset;
-                            scene.Camera.GameObject.Transform.LocalRotation = rotation.ToSystem();
+                            scene.Camera.GameObject.Transform.LocalRotation = Quaternion<float>.CreateFromYawPitchRoll(yaw, pitch, 0).ToSystem();
                         }
                     }
                 }
@@ -214,6 +200,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 }
             }
             ImGui.SliderFloat("Move Speed", ref moveSpeed, 1.0f, 50.0f);
+            if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Hold Left Shift to move 10x faster.");
             ImGui.SliderFloat("Rotate Speed", ref rotateSpeed, 0.1f, 10.0f);
             ImGui.SliderFloat("Zoom Speed", ref zoomSpeed, 0.01f, 1.0f);
             if (ImGui.TreeNode("Mesh Info")) {
