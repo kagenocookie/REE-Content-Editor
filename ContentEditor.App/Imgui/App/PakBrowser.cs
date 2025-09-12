@@ -295,6 +295,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                                     if (ImGui.MenuItem(tag, "", hasTag)) {
                                         if (hasTag) {
                                             bm.Tags.Remove(tag);
+                                            _bookmarkManager.SaveBookmarks();
                                         } else {
                                             bm.Tags.Add(tag);
                                             _bookmarkManager.SaveBookmarks();
