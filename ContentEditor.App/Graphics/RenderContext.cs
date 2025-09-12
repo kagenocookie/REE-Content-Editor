@@ -58,7 +58,6 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
         } else {
             float halfW = OrthoSize * size.X / size.Y * 0.5f;
             float halfH = OrthoSize * 0.5f;
-            FarPlane = 100.0f; // SILVER: High FarPlane values cause artifacting on some meshes
             ProjectionMatrix = Matrix4X4.CreateOrthographicOffCenter(-halfW, halfW, -halfH, halfH, NearPlane, FarPlane);
         }
         ViewProjectionMatrix = ViewMatrix * ProjectionMatrix;
