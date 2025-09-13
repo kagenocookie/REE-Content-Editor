@@ -71,7 +71,7 @@ public class StringCustomField : CustomField<StringResource>, ICustomResourceFie
 
     public override StringResource? FetchResource(ResourceManager workspace, ResourceEntity entity, ResourceState state)
     {
-        if (state == ResourceState.Base) return null;
+        // if (state == ResourceState.Base) return null;
 
         var res = entity.Get(name) as StringResource;
         if (res == null) {

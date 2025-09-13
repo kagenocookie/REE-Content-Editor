@@ -1,0 +1,24 @@
+# grid -> weather mapping: natives/stm/editdata/gridattribute/weather/gridattributeweather.user.2
+# main weather data: natives/stm/appsystem/weather/weatheruserdata.user.2
+
+# additional data:
+# - post effect settings: natives/stm/appsystem/weather/weatherposteffectuserdata.user.2
+# - weather schedules: natives/stm/appsystem/weather/weatherschedulesetting1.user.2  (and additional 2-6 files)
+
+entities:
+  weather:
+    to_string: "Weather {id}: {data.Area:enum(app.WeatherArea)} {data.Weather:enum(app.WeatherManager.WeatherEnum)}"
+    fields:
+      data:
+        type: object
+        label: Data
+        param:
+          classname: app.WeatherUserData.WeatherData
+
+classes:
+  app.WeatherUserData.WeatherData:
+    id: [Area, Weather]
+    to_string: "Weather Data {Area:enum(app.WeatherArea)} {Weather:enum(app.WeatherManager.WeatherEnum)}"
+    patcher:
+      type: array-file
+      file: natives/stm/appsystem/weather/weatheruserdata.user.2

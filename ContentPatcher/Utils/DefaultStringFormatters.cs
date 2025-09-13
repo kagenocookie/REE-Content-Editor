@@ -47,7 +47,7 @@ public static class FormatterSettings
 
     private static SmartFormatter ApplyWorkspaceFormatters(SmartFormatter formatter, ContentWorkspace workspace)
     {
-        formatter.AddExtensions(new TranslateGuidFormatter(workspace.Messages), new EnumLabelFormatter(workspace.Env));
+        formatter.AddExtensions(new TranslateGuidFormatter(workspace.Messages), new EnumLabelFormatter(workspace.Env), new EnumNameFormatter(workspace.Env));
         formatter.AddExtensions(new EntityReverseLookupFormatter(workspace));
         return formatter;
     }
@@ -162,6 +162,30 @@ public class TranslateGuidFormatter(MessageManager msg) : IFormatter
             formattingInfo.Write(text);
         }
 
+        return true;
+    }
+}
+
+public class EnumNameFormatter(Workspace env) : IFormatter
+{
+    public string Name { get; set; } = "enum_name";
+    public bool CanAutoDetect { get; set; } = false;
+
+    public bool TryEvaluateFormat(IFormattingInfo formattingInfo)
+    {
+        if (formattingInfo.CurrentValue == null) {
+            return true;
+        }
+
+        var enumDesc = env.TypeCache.GetEnumDescriptor(formattingInfo.FormatterOptions);
+        if (enumDesc == null) {
+            formattingInfo.Write(formattingInfo.CurrentValue.ToString() ?? string.Empty);
+            return true;
+        }
+
+        // should probably also handle enumDesc.IsFlags somehow
+        var label = enumDesc.GetLabel(Convert.ChangeType(formattingInfo.CurrentValue, enumDesc.BackingType));
+        formattingInfo.Write(label ?? formattingInfo.CurrentValue.ToString() ?? string.Empty);
         return true;
     }
 }

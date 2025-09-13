@@ -64,6 +64,7 @@ entities:
       format: "{name}"
       primary: true # denotes that the entity label should override this enum's corresponding display labels (entity id == enum value)
     custom_id_range: [1000, 100000]
+    to_string: 'Weapon {id:enum(app.WeaponID)} (#{id}): {id:reverseLookupEntity(item_data|\{data?._WeaponId@ItemWeaponParam\}|\{label\}|Unknown item)}'
     fields:
       data:
         type: object
@@ -78,7 +79,7 @@ entities:
           regex: "^wp[0-9_]+$"
           regexDescription: "Example: wp00_000"
           tooltip: Enter a name for the weapon ID. This should be unique across all weapons.
-          initial: "{data.ID:enum(app.WeaponID)}"
+          initial: "{id:enum(app.WeaponID)}"
         display_after: start
       offsets:
         type: object
@@ -92,7 +93,6 @@ entities:
         param:
           type: Prefab
           path: "{data?.Prefab?.Path}"
-    to_string: 'Weapon {id:enum(app.WeaponID)} (#{id}): {id:reverseLookupEntity(item_data|\{data?._WeaponId@ItemWeaponParam\}|\{label\}|Unknown item)}'
 
 classes:
   app.ItemCommonParam:

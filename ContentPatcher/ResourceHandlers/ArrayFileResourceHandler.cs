@@ -6,9 +6,15 @@ namespace ContentPatcher;
 [ResourcePatcher("array-file", nameof(Deserialize))]
 public class ArrayFileResourceHandler : ResourceHandler
 {
+    private string? targetArrayField;
+
     public static ArrayFileResourceHandler Deserialize(string resourceKey, Dictionary<string, object> data)
     {
-        return new ArrayFileResourceHandler() { file = (string)data["file"], ResourceKey = resourceKey };
+        return new ArrayFileResourceHandler() {
+            file = (string)data["file"],
+            ResourceKey = resourceKey,
+            targetArrayField = data.TryGetValue("field", out var ff) ? ff as string : null,
+        };
     }
 
     public override (long id, IContentResource resource) CreateResource(ContentWorkspace workspace, ClassConfig config, ResourceEntity entity, JsonNode? initialData)
@@ -81,8 +87,11 @@ public class ArrayFileResourceHandler : ResourceHandler
         UserFile userfile = workspace.ResourceManager.ReadFileResource<UserFile>(file!, modify);
 
         var instance = userfile.RSZ.ObjectList[0];
-        var arrayField = instance.RszClass.fields.FirstOrDefault(f => f.array);
-        if (arrayField == null) throw new Exception($"Invalid array-field patcher - root instance {instance} has no array fields");
+        var arrayField = string.IsNullOrEmpty(targetArrayField)
+            ? instance.RszClass.fields.FirstOrDefault(f => f.array)
+            : instance.RszClass.fields.FirstOrDefault(f => f.name == targetArrayField);
+        if (arrayField == null) throw new Exception(targetArrayField == null ? $"Invalid array-field patcher - root instance {instance} has no array fields"
+            : $"Invalid array-field patcher - root instance {instance} does not have field{targetArrayField}");
 
         return (IList<object>)instance.GetFieldValue(arrayField.name)!;
     }

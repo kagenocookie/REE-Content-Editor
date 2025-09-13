@@ -1,0 +1,52 @@
+# TODO optimize UI for app.SuddenQuestSelectData.SelectData: display only ID + expandable event context info, or a button to open the context in a new window
+
+entities:
+  events.event:
+    to_string: "Event {id}: {select_data._StartLocation:enum(app.AIKeyLocation)}"
+    custom_id_range: [10000, 999000]
+    fields:
+      select_data:
+        type: object
+        label: Data
+        param:
+          classname: app.SuddenQuestSelectData
+  events.event_context:
+    to_string: "Event context {id}: {data._Data._Type:enum(app.QuestDefine.SuddenQuestType)} - {data._Data._NpcID:enum(app.CharacterID)}"
+    custom_id_range: [10000, 999000]
+    fields:
+      data:
+        type: object
+        label: Data
+        param:
+          classname: app.SuddenQuestContextData
+  events.event_spawns:
+    to_string: "Event spawn table {id}: {id:enum(app.DomainQueryGenerateRequestID)}"
+    fields:
+      data:
+        type: object
+        label: Data
+        param:
+          classname: app.DomainQueryGenerateTable.DomainQueryGenetateTableElement
+
+
+classes:
+  app.SuddenQuestSelectData:
+    id: [_SerialNum]
+    to_string: "Event select data {_SerialNum}"
+    patcher:
+      type: array-file
+      file: natives/stm/appsystem/quest/userdata/questsudden/suddenquesttable.user.2
+      field: _SelectDataArray
+  app.SuddenQuestContextData:
+    id: [_SerialNum]
+    to_string: "Event context data {_SerialNum}"
+    patcher:
+      type: array-file
+      file: natives/stm/appsystem/quest/userdata/questsudden/suddenquesttable.user.2
+      field: _ContextDataArray
+  app.DomainQueryGenerateTable.DomainQueryGenetateTableElement:
+    id: [_RequestID]
+    to_string: "Generate table {_RequestID:enum(app.DomainQueryGenerateRequestID)}"
+    patcher:
+      type: array-file
+      file: natives/stm/leveldesign/generate/domainquerygenerate/domainquerygeneratetable.user.2
