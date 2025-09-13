@@ -203,6 +203,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Hold Left Shift to move 10x faster.");
             ImGui.SliderFloat("Rotate Speed", ref rotateSpeed, 0.1f, 10.0f);
             ImGui.SliderFloat("Zoom Speed", ref zoomSpeed, 0.01f, 1.0f);
+            var meshGroupIds = mesh.Scene.Meshes.Select(m => string.IsNullOrEmpty(m.Name) ? 0 : MeshLoader.GetMeshGroupFromName(m.Name)).Distinct().ToList();
+            var groups = string.Join(", ", meshGroupIds);
             if (ImGui.TreeNode("Mesh Info")) {
                 ImGui.TextWrapped($"Path: {fileHandle.Filepath}");
                 if (ImGui.BeginPopupContextItem("##filepath")) {
@@ -216,9 +218,23 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 ImGui.Text("Total Polygons: " + mesh.Scene.Meshes.Sum(m => m.FaceCount));
                 ImGui.Text("Sub Meshes: " + mesh.Scene.MeshCount);
                 ImGui.Text("Materials: " + mesh.Scene.MaterialCount);
-                var groups = string.Join(", ", mesh.Scene.Meshes.Select(m => string.IsNullOrEmpty(m.Name) ? 0 : MeshLoader.GetMeshGroupFromName(m.Name)).Distinct());
-                ImGui.Text("Mesh Groups: " + groups);
                 ImGui.TreePop();
+            }
+
+            if (meshGroupIds.Count > 1) {
+                if (ImGui.TreeNode($"Mesh Groups ({meshGroupIds.Count})")) {
+                    var parts = RszFieldCache.Mesh.PartsEnable.Get(meshComponent.Data);
+                    foreach (var group in meshGroupIds) {
+                        if (group < 0 || group >= parts.Count) continue;
+
+                        var enabled = (bool)parts[group];
+                        if (ImGui.Checkbox(group.ToString(), ref enabled)) {
+                            parts[group] = (object)enabled;
+                            meshComponent.RefreshIfActive();
+                        }
+                    }
+                    ImGui.TreePop();
+                }
             }
             ImGui.PopStyleColor();
             ImGui.EndChild();

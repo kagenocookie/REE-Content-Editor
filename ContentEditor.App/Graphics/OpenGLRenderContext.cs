@@ -135,6 +135,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         var matDict = new Dictionary<string, int>(meshScene.Meshes.Count);
         foreach (var srcMesh in meshScene.Meshes) {
             var newMesh = new TriangleMesh(GL, srcMesh);
+            newMesh.MeshGroup = MeshLoader.GetMeshGroupFromName(srcMesh.Name);
             if (meshScene.HasMaterials) {
                 var matname = meshScene.Materials[srcMesh.MaterialIndex].Name;
                 handle.SetMaterialName(handle.Meshes.Count, matname);
@@ -230,7 +231,8 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     {
         for (int i = 0; i < handle.Handle.Meshes.Count; i++) {
             var mesh = handle.Handle.Meshes[i];
-            if (!handle.GetMeshPartEnabled(i)) continue;
+            if (!handle.GetMeshPartEnabled(mesh.MeshGroup)) continue;
+
             var material = handle.GetMaterial(i);
 
             // TODO frustum culling

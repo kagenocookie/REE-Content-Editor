@@ -22,6 +22,7 @@ public abstract class Mesh : IDisposable
     public BufferObject<float> VBO { get; protected set; }
     public BufferObject<int> EBO { get; protected set; }
     public AABB BoundingBox { get; protected set; }
+    public int MeshGroup { get; set; }
 
     protected Mesh(GL gl)
     {
