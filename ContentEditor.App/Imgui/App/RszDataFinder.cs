@@ -6,6 +6,7 @@ using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ImGuiNET;
 using ReeLib;
+using ReeLib.Common;
 using ReeLib.Efx;
 using ReeLib.Msg;
 using ReeLib.Pfb;
@@ -274,7 +275,7 @@ public class RszDataFinder : IWindowHandler
             return null;
         }
 
-        if (type is ReeLib.RszFieldType.Object or ReeLib.RszFieldType.Struct or ReeLib.RszFieldType.UserData) {
+        if (type is ReeLib.RszFieldType.Object or ReeLib.RszFieldType.Struct) {
             ImGui.TextColored(Colors.Warning, "Not a filterable field");
             return null;
         }
@@ -282,7 +283,7 @@ public class RszDataFinder : IWindowHandler
         if (cancellationTokenSource == null) {
             Type csType;
             if (!searchClassOnly) {
-                if (type is RszFieldType.String or RszFieldType.RuntimeType or RszFieldType.Resource) {
+                if (type is RszFieldType.String or RszFieldType.RuntimeType or RszFieldType.Resource or RszFieldType.UserData) {
                     csType = typeof(string);
                 } else {
                     try {
@@ -303,13 +304,13 @@ public class RszDataFinder : IWindowHandler
                     case RszFieldType.String:
                     case RszFieldType.RuntimeType:
                     case RszFieldType.Resource:
-                        ImGui.InputText("Value", ref valueString, 100);
+                    case RszFieldType.UserData:
+                        ImGui.InputText("Value", ref valueString, 400);
                         value = valueString;
                         break;
                     case RszFieldType.U8 or RszFieldType.U16 or RszFieldType.U32 or RszFieldType.U64:
                     case RszFieldType.S8 or RszFieldType.S16 or RszFieldType.S32 or RszFieldType.S64:
-                        if (ImGui.InputText("Value", ref tmpvalue, 100)) {
-                        }
+                        ImGui.InputText("Value", ref tmpvalue, 400);
                         if (long.TryParse(tmpvalue, out var vvv)) {
                             valueString = tmpvalue;
                             value = Convert.ChangeType(tmpvalue, csType);
@@ -452,9 +453,19 @@ public class RszDataFinder : IWindowHandler
 
     private void InvokeRszSearchClass(SearchContext context, string ext, Func<RszFileOption, FileHandler, BaseRszFile> fileFact, RszClass cls, int fieldIndex, bool array, object? value)
     {
-        Func<object?, object?, bool> equalityComparer = cls.fields[fieldIndex].type is RszFieldType.String or RszFieldType.RuntimeType or RszFieldType.Resource
-            ? (object? a, object? b) => (a as string)?.Equals(b as string, StringComparison.InvariantCultureIgnoreCase) == true
-            : (object? a, object? b) => a?.Equals(b) == true;
+        Func<object?, object?, bool> equalityComparer;
+        if (cls.fields[fieldIndex].type is RszFieldType.String or RszFieldType.RuntimeType or RszFieldType.Resource) {
+            equalityComparer = (object? a, object? b) => (a as string)?.Equals(b as string, StringComparison.InvariantCultureIgnoreCase) == true;
+        } else if (cls.fields[fieldIndex].type is RszFieldType.UserData) {
+            if (context.Env.IsEmbeddedUserdata) {
+                var hash = MurMur3HashUtils.GetHash((string)value!);
+                equalityComparer = (object? a, object? b) => ((a as RszInstance)?.RSZUserData as RSZUserDataInfo_TDB_LE_67)?.jsonPathHash == hash;
+            } else {
+                equalityComparer = (object? a, object? b) => ((a as RszInstance)?.RSZUserData as RSZUserDataInfo)?.Path?.Equals(b as string, StringComparison.InvariantCultureIgnoreCase) == true;
+            }
+        } else {
+            equalityComparer = (object? a, object? b) => a?.Equals(b) == true;
+        }
 
         foreach (var (path, stream) in context.Env.GetFilesWithExtension(ext, context.Token)) {
             try {
@@ -496,9 +507,19 @@ public class RszDataFinder : IWindowHandler
 
     private void InvokeRszSearchField(SearchContext context, string ext, Func<RszFileOption, FileHandler, BaseRszFile> fileFact, RszFieldType fieldType, bool array, object? value)
     {
-        Func<object?, object?, bool> equalityComparer = fieldType is RszFieldType.String or RszFieldType.RuntimeType or RszFieldType.Resource
-            ? (object? a, object? b) => (a as string)?.Equals(b as string, StringComparison.InvariantCultureIgnoreCase) == true
-            : (object? a, object? b) => a?.Equals(b) == true;
+        Func<object?, object?, bool> equalityComparer;
+        if (fieldType is RszFieldType.String or RszFieldType.RuntimeType or RszFieldType.Resource) {
+            equalityComparer = (object? a, object? b) => (a as string)?.Equals(b as string, StringComparison.InvariantCultureIgnoreCase) == true;
+        } else if (fieldType is RszFieldType.UserData) {
+            if (context.Env.IsEmbeddedUserdata) {
+                var hash = MurMur3HashUtils.GetHash((string)value!);
+                equalityComparer = (object? a, object? b) => ((a as RszInstance)?.RSZUserData as RSZUserDataInfo_TDB_LE_67)?.jsonPathHash == hash;
+            } else {
+                equalityComparer = (object? a, object? b) => ((a as RszInstance)?.RSZUserData as RSZUserDataInfo)?.Path?.Equals(b as string, StringComparison.InvariantCultureIgnoreCase) == true;
+            }
+        } else {
+            equalityComparer = (object? a, object? b) => a?.Equals(b) == true;
+        }
 
         foreach (var (path, stream) in context.Env.GetFilesWithExtension(ext, context.Token)) {
             try {
