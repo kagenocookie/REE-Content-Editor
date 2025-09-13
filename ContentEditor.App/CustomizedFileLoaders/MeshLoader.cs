@@ -1,14 +1,13 @@
-using System.Reflection.Metadata;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using Assimp;
-using Assimp.Configs;
-using Assimp.Unmanaged;
 using ContentEditor;
 using ContentEditor.App;
 using ReeLib;
 
 namespace ContentPatcher;
 
-public class MeshLoader : IFileLoader
+public partial class MeshLoader : IFileLoader
 {
     int IFileLoader.Priority => 30;
 
@@ -79,6 +78,7 @@ public class MeshLoader : IFileLoader
                             f.Indices.Add(sub.Indices[i * 3 + 2]);
                             aiMesh.Faces.Add(f);
                         }
+                        aiMesh.Name = $"Group_{mesh.groupId.ToString(CultureInfo.InvariantCulture)}";
 
                         importedScene.Meshes.Add(aiMesh);
                     }
@@ -111,6 +111,18 @@ public class MeshLoader : IFileLoader
         if (handle.Stream.CanSeek) handle.Stream.Seek(0, SeekOrigin.Begin);
         handle.Stream.CopyTo(fs);
         return true;
+    }
+
+    [GeneratedRegex("Group_([\\d]+)")]
+    private static partial Regex MeshNameRegex();
+
+    public static int GetMeshGroupFromName(string meshName)
+    {
+        var match = MeshNameRegex().Match(meshName);
+        if (match.Success) {
+            return int.Parse(match.Groups[1].ValueSpan, CultureInfo.InvariantCulture);
+        }
+        return 0;
     }
 }
 

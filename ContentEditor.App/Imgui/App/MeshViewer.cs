@@ -168,8 +168,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             }
 
             ImGui.SetCursorPos(new Vector2(17, 75));
-            ImGui.PushStyleColor(ImGuiCol.ChildBg, new System.Numerics.Vector4(0.2f, 0.2f, 0.2f, 0.5f));
-            ImGui.BeginChild("OverlayControls", new Vector2(480, 220), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders);
+            ImGui.PushStyleColor(ImGuiCol.ChildBg, ImguiHelpers.GetColor(ImGuiCol.WindowBg) with { W = 0.5f });
+            ImGui.BeginChild("OverlayControls", new Vector2(480, 0), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
 
             ImGui.SeparatorText("Camera Controls:");
             if (ImGui.RadioButton("Orthographic", scene.RenderContext.ProjectionMode == RenderContext.CameraProjection.Orthographic)) {
@@ -204,8 +204,20 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             ImGui.SliderFloat("Rotate Speed", ref rotateSpeed, 0.1f, 10.0f);
             ImGui.SliderFloat("Zoom Speed", ref zoomSpeed, 0.01f, 1.0f);
             if (ImGui.TreeNode("Mesh Info")) {
-                // TODO SILVER: Fix path display, add more info about the mesh i.e.: vert count, tris count, submesh (material) count 
-                ImGui.Text($"Path: {fileHandle.Filepath}");
+                ImGui.TextWrapped($"Path: {fileHandle.Filepath}");
+                if (ImGui.BeginPopupContextItem("##filepath")) {
+                    if (ImGui.Selectable("Copy path")) {
+                        EditorWindow.CurrentWindow?.CopyToClipboard(fileHandle.Filepath);
+                        ImGui.CloseCurrentPopup();
+                    }
+                    ImGui.EndPopup();
+                }
+                ImGui.Text("Total Vertices: " + mesh.Scene.Meshes.Sum(m => m.VertexCount));
+                ImGui.Text("Total Polygons: " + mesh.Scene.Meshes.Sum(m => m.FaceCount));
+                ImGui.Text("Sub Meshes: " + mesh.Scene.MeshCount);
+                ImGui.Text("Materials: " + mesh.Scene.MaterialCount);
+                var groups = string.Join(", ", mesh.Scene.Meshes.Select(m => string.IsNullOrEmpty(m.Name) ? 0 : MeshLoader.GetMeshGroupFromName(m.Name)).Distinct());
+                ImGui.Text("Mesh Groups: " + groups);
                 ImGui.TreePop();
             }
             ImGui.PopStyleColor();
