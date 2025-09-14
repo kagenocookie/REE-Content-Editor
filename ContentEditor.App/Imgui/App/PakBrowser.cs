@@ -422,7 +422,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         string[]? sortedEntries = null;
         var remainingHeight = ImGui.GetWindowSize().Y - ImGui.GetCursorPosY() - ImGui.GetStyle().WindowPadding.Y - UI.FontSize - ImGui.GetStyle().FramePadding.Y;
         if (ImGui.BeginTable("List", 2, ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingStretchProp | ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.Sortable, new Vector2(0, remainingHeight))) {
-            ImGui.TableSetupColumn(" Path ", ImGuiTableColumnFlags.WidthStretch | ImGuiTableColumnFlags.PreferSortDescending, 0.9f);
+            ImGui.TableSetupColumn(" Path ", ImGuiTableColumnFlags.WidthStretch, 0.9f);
             ImGui.TableSetupColumn(" Size ", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize | ImGuiTableColumnFlags.PreferSortDescending, 100);
             ImGui.TableSetupScrollFreeze(0, 1);
             var sort = ImGui.TableGetSortSpecs();
@@ -430,9 +430,9 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             if (!cachedResults.TryGetValue(cacheKey, out sortedEntries)) {
                 var files = baseList.GetFiles(CurrentDir);
                 var sorted = sort.Specs.ColumnIndex switch {
-                    0 => sort.Specs.SortDirection == ImGuiSortDirection.Descending ? files : files.Reverse(),
-                    1 => sort.Specs.SortDirection == ImGuiSortDirection.Descending ? files.OrderByDescending(e => reader.GetSize(e)) : files.OrderBy(e => reader.GetSize(e)),
-                    _ => sort.Specs.SortDirection == ImGuiSortDirection.Descending ? files : files.Reverse(),
+                    0 => sort.Specs.SortDirection == ImGuiSortDirection.Ascending ? files : files.Reverse(),
+                    1 => sort.Specs.SortDirection == ImGuiSortDirection.Ascending ? files.OrderBy(e => reader.GetSize(e)) : files.OrderByDescending(e => reader.GetSize(e)),
+                    _ => sort.Specs.SortDirection == ImGuiSortDirection.Ascending ? files : files.Reverse(),
                 };
                 cachedResults[cacheKey] = sortedEntries = sorted.ToArray();
             }
