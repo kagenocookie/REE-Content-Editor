@@ -17,6 +17,19 @@ public class NumericFieldHandler<T>(ImGuiDataType type) : IObjectUIHandler where
     }
 }
 
+public class HalfFloatFieldHandler : IObjectUIHandler
+{
+    public static readonly HalfFloatFieldHandler Instance = new();
+
+    public unsafe void OnIMGUI(UIContext context)
+    {
+        var num = (float)context.Get<Half>();
+        if (ImGui.DragFloat(context.label, ref num, 0.05f)) {
+            UndoRedo.RecordSet(context, (Half)num);
+        }
+    }
+}
+
 public class BoolFieldHandler : Singleton<BoolFieldHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)

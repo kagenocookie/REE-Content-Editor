@@ -49,4 +49,14 @@ public static partial class RszFieldCache
             list => list.Any(fi => fi.index == 4) ? 4 : -1
         ).Type(RszFieldType.F32).Optional();
     }
+
+    /// <summary>
+    /// via.AnimationCurve
+    /// </summary>
+    [RszAccessor("via.AnimationCurve")]
+    public static class AnimationCurve
+    {
+        public static readonly RszFieldAccessorFirst<ReeLib.via.KeyFrame> Keys = First<ReeLib.via.KeyFrame>(f => f.array).Type(RszFieldType.KeyFrame).Rename();
+    }
+
 }

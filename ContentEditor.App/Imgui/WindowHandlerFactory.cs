@@ -71,6 +71,7 @@ public static partial class WindowHandlerFactory
         { typeof(long), () => new NumericFieldHandler<long>(ImGuiNET.ImGuiDataType.S64) },
         { typeof(ulong), () => new NumericFieldHandler<ulong>(ImGuiNET.ImGuiDataType.U64) },
         { typeof(float), () => new NumericFieldHandler<float>(ImGuiNET.ImGuiDataType.Float) },
+        { typeof(Half), () => HalfFloatFieldHandler.Instance },
         { typeof(double), () => new NumericFieldHandler<double>(ImGuiNET.ImGuiDataType.Double) },
         { typeof(byte[]), () => new ByteArrayHandler() },
         { typeof(string), () => StringFieldHandler.Instance },
