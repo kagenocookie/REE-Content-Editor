@@ -189,24 +189,23 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             }
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("The default path to preselect when extracting files.");
 
-            if (!fullSupportedGames.Contains(game.name)) {
-                var rszPath = config.GetGameRszJsonPath(game);
-                var filelist = config.GetGameFilelist(game);
-                var isCustomGame = !Enum.TryParse<GameName>(game.name, out _);
-                var tooltip = "Defining a custom path here may not be required if it's at least a partially supported game";
-                if (AppImguiHelpers.InputFilepath("File list", ref filelist, "List file|*.list;*.txt|Any|*.*")) {
-                    config.SetGameFilelist(game, filelist);
-                }
-                if (!isCustomGame && ImGui.IsItemHovered()) ImGui.SetItemTooltip(tooltip);
-                if (AppImguiHelpers.InputFilepath("RSZ template JSON path", ref rszPath, "JSON file|*.json")) {
-                    config.SetGameRszJsonPath(game, rszPath);
-                }
-                if (!isCustomGame && ImGui.IsItemHovered()) ImGui.SetItemTooltip(tooltip);
-                if (isCustomGame) {
-                    ImGui.TextColored(Colors.Info, "*This is a custom defined game. The app may need an upgrade to fully support all files, some files may not load correctly.");
-                }
-            } else {
-                ImGui.TextColored(Colors.Info, "*This is a fully supported game, other game specific data is fetched automatically.");
+            ImGui.Spacing();
+            var rszPath = config.GetGameRszJsonPath(game);
+            var filelist = config.GetGameFilelist(game);
+            var isCustomGame = !Enum.TryParse<GameName>(game.name, out _);
+            var tooltip = "Defining a custom path here may not be required if it's at least a partially supported game";
+            if (AppImguiHelpers.InputFilepath("File list", ref filelist, "List file|*.list;*.txt|Any|*.*")) {
+                config.SetGameFilelist(game, filelist);
+            }
+            if (!isCustomGame && ImGui.IsItemHovered()) ImGui.SetItemTooltip(tooltip);
+            if (AppImguiHelpers.InputFilepath("RSZ template JSON path", ref rszPath, "JSON file|*.json")) {
+                config.SetGameRszJsonPath(game, rszPath);
+            }
+            if (!isCustomGame && ImGui.IsItemHovered()) ImGui.SetItemTooltip(tooltip);
+            if (isCustomGame) {
+                ImGui.TextColored(Colors.Info, "*This is a custom defined game. The app may need an upgrade to fully support all files, some files may not load correctly.");
+            } else if (fullSupportedGames.Contains(game.name)) {
+                ImGui.TextColored(Colors.Info, "*This is a fully supported game, game specific data can be fetched automatically.");
             }
 
             ImGui.TextColored(Colors.Info, "*Changes to these settings may require a restart of the app before they get applied");
