@@ -67,8 +67,11 @@ public static partial class RszFieldCache
             /// <summary>
             /// Instance transforms
             /// </summary>
-            public static readonly RszFieldAccessorFirst<List<object>> Transforms =
-                First<List<object>>(fi => fi.array && fi.type == RszFieldType.Object)
+            public static readonly RszFieldAccessorFirstFallbacks<List<object>> Transforms =
+                First<List<object>>([
+                    fi => fi.array && fi.type == RszFieldType.Object,
+                    fi => fi.array && fi.size == 4
+                ])
                 .Object("via.render.CompositeMeshTransformController");
         }
 
