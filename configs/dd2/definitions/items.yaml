@@ -80,6 +80,7 @@ entities:
           regexDescription: "Example: wp00_000"
           tooltip: Enter a name for the weapon ID. This should be unique across all weapons.
           initial: "{id:enum(app.WeaponID)}"
+          diffable: false
         display_after: start
       offsets:
         type: object

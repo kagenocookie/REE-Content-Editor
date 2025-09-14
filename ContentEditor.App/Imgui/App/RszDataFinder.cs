@@ -27,7 +27,6 @@ public class RszDataFinder : IWindowHandler
     private bool searchPfb = false;
     private bool searchScn = false;
     private bool searchClassOnly = false;
-    private bool rszSearchByClass = true;
     private RszFieldType rszFieldType = RszFieldType.String;
     private string rszFieldTypeFilter = "";
 
@@ -85,8 +84,8 @@ public class RszDataFinder : IWindowHandler
         ImguiHelpers.Tabs(FindTypes, ref findType);
         switch (findType) {
             case 0:
-                ImGui.Checkbox("Search by specific class", ref rszSearchByClass);
-                if (rszSearchByClass) {
+                ImGui.Checkbox("Search by specific class", ref searchClassOnly);
+                if (searchClassOnly) {
                     ShowRszClassSearch(workspace.Env);
                 } else {
                     ShowRszFieldSearch(workspace.Env);
@@ -454,7 +453,9 @@ public class RszDataFinder : IWindowHandler
     private void InvokeRszSearchClass(SearchContext context, string ext, Func<RszFileOption, FileHandler, BaseRszFile> fileFact, RszClass cls, int fieldIndex, bool array, object? value)
     {
         Func<object?, object?, bool> equalityComparer;
-        if (cls.fields[fieldIndex].type is RszFieldType.String or RszFieldType.RuntimeType or RszFieldType.Resource) {
+        if (value == null) {
+            equalityComparer = (object? a, object? b) => a == null && b == null;
+        } else if (cls.fields[fieldIndex].type is RszFieldType.String or RszFieldType.RuntimeType or RszFieldType.Resource) {
             equalityComparer = (object? a, object? b) => (a as string)?.Equals(b as string, StringComparison.InvariantCultureIgnoreCase) == true;
         } else if (cls.fields[fieldIndex].type is RszFieldType.UserData) {
             if (context.Env.IsEmbeddedUserdata) {

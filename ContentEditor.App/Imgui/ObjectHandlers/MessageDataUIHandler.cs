@@ -1,3 +1,4 @@
+using ContentEditor.App.ImguiHandling;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib.Msg;
@@ -26,7 +27,9 @@ public class MessageDataUIHandler : IObjectUIHandler, IObjectUIInstantiator
             ImGui.Text("No translations for " + context.label);
             ImGui.SameLine();
             if (ImGui.Button("Create message")) {
-                Logger.Error("TODO");
+                var entity = context.GetOwnerEntity()!;
+                var newData = context.GetWorkspace()!.ResourceManager.CreateEntityResource<MessageData>(entity, field, ResourceState.Active, null);
+                UndoRedo.RecordSet(context, newData);
             }
         } else {
             // TODO app configurable default language?

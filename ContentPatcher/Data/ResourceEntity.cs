@@ -50,7 +50,7 @@ public class ResourceEntity : Entity
                 continue;
             }
 
-            if (field is not IDiffableField diffable) {
+            if (field is not IDiffableField diffable || !diffable.EnableDiff) {
                 resultDiff ??= new();
                 resultDiff[name] = value?.ToJson(workspace.Env);
                 continue;

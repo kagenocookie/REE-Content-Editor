@@ -72,6 +72,7 @@ public interface IMainField
 
 public interface IDiffableField
 {
+    bool EnableDiff => false;
     JsonNode? GetDiff(ContentWorkspace workspace, IContentResource value, IContentResource baseValue)
     {
         // default diff implementation - converts both values to json and naively diffs that

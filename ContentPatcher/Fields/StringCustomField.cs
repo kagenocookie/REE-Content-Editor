@@ -17,7 +17,10 @@ public class StringCustomField : CustomField<StringResource>, ICustomResourceFie
     public string? Tooltip { get; private set; }
     private string? initialFormatString;
     private StringFormatter? initialFormat;
+    private bool allowDiff;
     public override string? ResourceIdentifier => null;
+
+    bool IDiffableField.EnableDiff => allowDiff;
 
     public override void LoadParams(string fieldName, Dictionary<string, object>? param)
     {
@@ -26,6 +29,7 @@ public class StringCustomField : CustomField<StringResource>, ICustomResourceFie
         RegexDescription = param?.GetValueOrDefault("regexDescription") as string;
         Tooltip = param?.GetValueOrDefault("tooltip") as string;
         initialFormatString = param?.GetValueOrDefault("initial") as string;
+        allowDiff = param?.GetValueOrDefault("diffable") is bool b ? b : true;
     }
 
     public override void EntitySetup(EntityConfig entityConfig, ContentWorkspace workspace)
@@ -71,8 +75,6 @@ public class StringCustomField : CustomField<StringResource>, ICustomResourceFie
 
     public override StringResource? FetchResource(ResourceManager workspace, ResourceEntity entity, ResourceState state)
     {
-        // if (state == ResourceState.Base) return null;
-
         var res = entity.Get(name) as StringResource;
         if (res == null) {
             res = new StringResource(initialFormat?.GetString(entity) ?? string.Empty);

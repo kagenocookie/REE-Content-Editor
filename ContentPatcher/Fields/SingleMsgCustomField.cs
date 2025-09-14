@@ -62,7 +62,11 @@ public class SingleMsgCustomField : CustomField<MessageData>, ICustomResourceFie
     {
         string entityKey = FormatMessageKey(entity);
         var messageId = MurMur3HashUtils.GetHash(entityKey);
-        return workspace.GetResourceInstance(file, messageId, state) as MessageData;
+        var data = workspace.GetResourceInstance(file, messageId, state) as MessageData;
+        if (data != null) {
+            data.MessageKey = entityKey;
+        }
+        return data;
     }
 
     private string FormatMessageKey(ResourceEntity entity)

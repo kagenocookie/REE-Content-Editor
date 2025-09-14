@@ -1,32 +1,30 @@
 # list of resources required for a new common NPC:
+# - character data natives/stm/appsystem/ch/ch300/userdata/characterdatalist.user.2
 # - head bake pfb (app.PartSwapTextureHolder pfb)
 # -> catalog - natives/stm/appsystem/charaedit/ch000/catalog/headprebaketexturecatalog_npc.user.2
 # - body bake pfb (app.PartSwapTextureHolder pfb)
 # -> catalog - natives/stm/appsystem/charaedit/ch000/catalog/bodyprebaketexturecatalog_npc.user.2
+# -> catalog _Hash is computed from "ch300000_0" - _0 or _1 for the main/replacement NPCs; does the value matter for anything, can we just pass in the chara ID?
 # - npcart image (app.GUITextureHolder pfb) - natives/stm/appsystem/gui/prefab/textureholder/npcart/npcart_ch300002_00_00.pfb.17
-# -> add to prefab list? - natives/stm/appsystem/gui/userdata/newtextureholderdata/guinpcarttextureholderdata.user.2
-# - corpse image (app.GUITextureHolder pfb) - natives/stm/appsystem/gui/prefab/textureholder/corpsethumb/corpsethumb_ch300002_00.pfb.17
-# -> add to prefab list? - natives/stm/appsystem/gui/userdata/newtextureholderdata/corpsethumbtextureholderdata.user.2
+# -> add to prefab list - natives/stm/appsystem/gui/userdata/newtextureholderdata/guinpcarttextureholderdata.user.2
+# -> enum: app.GUITextureLoaderDefine.NPCArtTextureID, enum format "NPCArt_{charaId}_{variantId}_{costumeId?}"
 # - add thumbnail (app.GUITextureHolder pfb) - natives/stm/appsystem/gui/prefab/textureholder/npcthumb/npcthumb_ch300000_00_00.pfb.17
-# -> add to prefab list? - natives/stm/appsystem/gui/userdata/newtextureholderdata/guinpcthumbnailtextureholderdata.user.2
+# -> add to prefab list - natives/stm/appsystem/gui/userdata/newtextureholderdata/guinpcthumbnailtextureholderdata.user.2
+# -> enum: app.GUITextureLoaderDefine.NPCThumbnailTextureID, enum format "NPCThumb_{charaId}_{variantId}_{costumeId?}"
+# - corpse image (app.GUITextureHolder pfb) - natives/stm/appsystem/gui/prefab/textureholder/corpsethumb/corpsethumb_ch300002_00.pfb.17
+# -> add to prefab list - natives/stm/appsystem/gui/userdata/newtextureholderdata/corpsethumbtextureholderdata.user.2
+# -> enum: app.GUITextureLoaderDefine.CorpseThumbTextureID, enum format "CorpseThumb_{charaId}_{variantId}"
 # - lipsync user file - natives/stm/appsystem/ch/lipsync/npc/ch300002.pfb.17
 # -> catalog - natives/stm/appsystem/catalog/maincontents/userdata/lipsynccataloguserdata.user.2
 # - textures - body (ALBD, NRRA), head (ALBD, NRRA)
 # - appearance and costume data (app.charaedit.ch000.EditDataTable.Data) - natives/stm/appsystem/charaedit/ch000/editdatatable_npc.user.2
 # - name "Mes_{_CharacterID:enum(app.CharacterID)}" (natives/stm/message/ui/charactername.msg.22)
-# TODO: how do we differentiate between main and replacement character, and do we even need to? (ch300049, ch300049_X1)
 # - NPC schedule - natives/stm/appsystem/ch/ch300/userdata/npcscheduledata.user.2
 # - spawn them somewhere - natives/stm/appdata/generate/manualset/content/**/npc/normal/normal.user.2
 
 # other, maybe useless?
 # natives/stm/appdata/generate/manualset/simpleglobalnpcsettable.user.2
 # natives/stm/appdata/generate/manualset/simpleglobalappendnpcsettable.user.2
-
-# open questions
-# - how do the image holder pfb's get linked to?
-# is it a fixed filename -> in which case why is there a user file with a list of them
-# is it filtered out from the filename based on character ID? Please no.
-# is there an index for the image list anywhere?
 
 entities:
   characters.npc_data:
@@ -40,6 +38,13 @@ entities:
       data:
         type: object
         label: Data
+        required: true
+        param:
+          classname: app.CharacterData
+          nested: false
+      edit_data:
+        type: object
+        label: Customization
         param:
           classname: app.charaedit.ch000.EditDataTable.Data
           nested: false
@@ -50,15 +55,17 @@ entities:
         param:
           regex: "^ch3[0-9_]{5}$"
           regexDescription: "Example: ch302345"
-          tooltip: Enter a name for the weapon ID. This should be unique across all weapons.
+          tooltip: Enter a code name for the NPC. This should be unique across all characters, used for translation keys and file names.
           initial: "{id:enum_name(app.CharacterID)}"
+          diffable: false
         display_after: start
       displayName:
         type: msg
         label: Name
         required: true
         param:
-          key: "Mes_{name}"
+          key: "Mes_{name}" # if data._SubNPC -> _X1 suffix
+          # key might not really matter, there's a NameID on the character data
           file: natives/stm/message/ui/charactername.msg.22
         display_after: name
 
@@ -69,6 +76,12 @@ classes:
     patcher:
       type: array-file
       file: natives/stm/appsystem/charaedit/ch000/editdatatable_npc.user.2
+  app.CharacterData:
+    id: [ID]
+    to_string: "{ID:enum_name(app.CharacterID)} {NameID:translate()}"
+    patcher:
+      type: array-file
+      file: natives/stm/appsystem/ch/ch300/userdata/characterdatalist.user.2
 
   app.facial.LipSync.Phoneme:
     to_string: "Phoneme: SoundID={_SoundMediaID}, duration={_TotalTime}"
