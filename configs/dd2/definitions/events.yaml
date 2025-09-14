@@ -10,8 +10,9 @@ entities:
         label: Data
         param:
           classname: app.SuddenQuestSelectData
+          nested: false
   events.event_context:
-    to_string: "Event context {id}: {data._Data._Type:enum(app.QuestDefine.SuddenQuestType)} - {data._Data._NpcID:enum(app.CharacterID)}"
+    to_string: "Event context {id}: {data._Data._Type:enum(app.QuestDefine.SuddenQuestType)} - NPC={data._Data._NpcID:enum(app.CharacterID)}"
     custom_id_range: [10000, 999000]
     fields:
       data:
@@ -19,7 +20,12 @@ entities:
         label: Data
         param:
           classname: app.SuddenQuestContextData
+          nested: false
   events.event_spawns:
+    enums:
+    - name: app.DomainQueryGenerateRequestID
+      format: "CustomTable{id}"
+      primary: true
     to_string: "Event spawn table {id}: {id:enum(app.DomainQueryGenerateRequestID)}"
     fields:
       data:
@@ -27,6 +33,7 @@ entities:
         label: Data
         param:
           classname: app.DomainQueryGenerateTable.DomainQueryGenetateTableElement
+          nested: false
 
 
 classes:
@@ -50,3 +57,11 @@ classes:
     patcher:
       type: array-file
       file: natives/stm/leveldesign/generate/domainquerygenerate/domainquerygeneratetable.user.2
+  app.GenerateRowData:
+    id: [_ManualSetGuid, _AutoSetGuid] ## TODO: verify are these really unique?
+    fields:
+      _CharaID: { enum: app.CharacterID }
+  app.GenerateTableData:
+    id: [_TableID]
+    group: spawns
+    type: autoset_spawns

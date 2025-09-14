@@ -42,6 +42,7 @@ entities:
         label: Data
         param:
           classname: app.charaedit.ch000.EditDataTable.Data
+          nested: false
       name:
         type: string
         label: NPC internal code name
@@ -59,6 +60,7 @@ entities:
         param:
           key: "Mes_{name}"
           file: natives/stm/message/ui/charactername.msg.22
+        display_after: name
 
 classes:
   app.charaedit.ch000.EditDataTable.Data:

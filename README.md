@@ -66,6 +66,9 @@ Some files may not fully work for other RE ENGINE games.
 - Shop modifications
 - Custom basic items and weapons (TODO: armors)
 
+### Resident Evil 2, 3, 4, 8
+- Basic weapon data
+
 ## Structure
 The project consists of several individual modules.
 

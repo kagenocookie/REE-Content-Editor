@@ -11,6 +11,7 @@ entities:
         required: true
         param:
           classname: app.QuestContextData.ContextData
+          nested: false
       variables:
         type: object
         label: Variable Data

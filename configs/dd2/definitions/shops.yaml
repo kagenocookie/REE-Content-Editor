@@ -5,6 +5,7 @@ entities:
         type: object
         param:
           classname: app.ItemShopParam
+          nested: false
       # name:
       #   type: msg-guid
       #   hidden: true
