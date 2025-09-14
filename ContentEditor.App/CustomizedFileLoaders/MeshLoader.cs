@@ -34,10 +34,26 @@ public partial class MeshLoader : IFileLoader
             }
 
             importedScene = new Assimp.Scene();
+            importedScene.RootNode = new Node(PathUtils.GetFilepathWithoutExtensionOrVersion(handle.Filename).ToString());
             foreach (var name in file.MaterialNames) {
                 var aiMat = new Material();
                 aiMat.Name = name;
                 importedScene.Materials.Add(aiMat);
+            }
+
+            var boneDict = new Dictionary<int, Node>();
+            if (file.Bones.Count > 0 && file.MeshBuffer.Weights.Length > 0) {
+                foreach (var srcBone in file.Bones) {
+                    var boneNode = new Node(srcBone.name, srcBone.parentIndex == -1 ? null : boneDict[srcBone.parentIndex]);
+                    boneDict[srcBone.index] = boneNode;
+                    if (srcBone.Parent == null) {
+                        importedScene.RootNode.Children.Add(boneNode);
+                    } else {
+                        boneNode.Transform = srcBone.localTransform.ToSystem();
+                        boneNode.Metadata.Add("remap_index", new Metadata.Entry(MetaDataType.Int32, srcBone.remapIndex));
+                        boneDict[srcBone.parentIndex].Children.Add(boneNode);
+                    }
+                }
             }
 
             foreach (var meshData in file.Meshes) {
@@ -68,6 +84,27 @@ public partial class MeshLoader : IFileLoader
                             var colOut = aiMesh.VertexColorChannels[0];
                             colOut.EnsureCapacity(sub.Colors.Length);
                             foreach (var col in sub.Colors) colOut.Add(col.ToVector4());
+                        }
+                        if (file.Bones.Count > 0 && file.MeshBuffer.Weights.Length > 0) {
+                            // should we only be grabbing SkinBones here?
+                            foreach (var srcBone in file.Bones) {
+                                var bone = new Bone();
+                                bone.Name = srcBone.name;
+                                // or should it be globalTransform here?
+                                bone.OffsetMatrix = srcBone.localTransform.ToSystem();
+                                aiMesh.Bones.Add(bone);
+                            }
+
+                            foreach (var vd in sub.Weights) {
+                                for (int i = 0; i < vd.boneIndices.Length; ++i) {
+                                    var weight = vd.boneWeights[i];
+                                    if (weight > 0) {
+                                        var srcBone = file.DeformBones[vd.boneIndices[i]];
+                                        var bone = aiMesh.Bones[srcBone.index];
+                                        bone.VertexWeights.Add(new VertexWeight(vd.boneIndices[i], weight));
+                                    }
+                                }
+                            }
                         }
                         var faces = sub.Indices.Length / 3;
                         aiMesh.Faces.EnsureCapacity(faces);

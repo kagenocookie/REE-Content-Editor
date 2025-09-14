@@ -218,6 +218,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 ImGui.Text("Total Polygons: " + mesh.Scene.Meshes.Sum(m => m.FaceCount));
                 ImGui.Text("Sub Meshes: " + mesh.Scene.MeshCount);
                 ImGui.Text("Materials: " + mesh.Scene.MaterialCount);
+                // there can't be more than one skeleton per .mesh file, so any one mesh will do here for the count
+                ImGui.Text("Bones: " + mesh.Scene.Meshes[0].BoneCount);
                 ImGui.TreePop();
             }
 
