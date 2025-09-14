@@ -7,11 +7,13 @@ public class ObjectCustomField : CustomField, IMainField, IDiffableField
 {
     public string classname = null!;
     public override string ResourceIdentifier => classname;
+    public bool? forceNested;
 
     public override void LoadParams(string fieldName, Dictionary<string, object>? param)
     {
         ArgumentNullException.ThrowIfNull(param);
         classname = (string)param["classname"];
+        if (param.TryGetValue("nested", out var nested)) forceNested = (bool)nested;
     }
 
     public IEnumerable<KeyValuePair<long, IContentResource>> FetchInstances(ResourceManager resources)

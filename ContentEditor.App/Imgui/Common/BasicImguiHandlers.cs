@@ -1,5 +1,7 @@
 using System.Numerics;
+using ContentEditor.App.Windowing;
 using ImGuiNET;
+using ReeLib.Common;
 using ReeLib.via;
 
 namespace ContentEditor.App.ImguiHandling;
@@ -81,6 +83,16 @@ public class StringFieldHandler : Singleton<StringFieldHandler>, IObjectUIHandle
         var val = context.Get<string?>() ?? string.Empty;
         if (ImGui.InputText(context.label, ref val, 255)) {
             UndoRedo.RecordSet(context, val);
+        }
+
+
+        if (ImGui.BeginPopupContextItem(context.label)) {
+            if (ImGui.Button("Copy UTF-16 hash")) {
+                var hash = MurMur3HashUtils.GetHash(val);
+                EditorWindow.CurrentWindow?.CopyToClipboard(hash.ToString(), "Copied hash: " + hash);
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
         }
     }
 }

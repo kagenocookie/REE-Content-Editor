@@ -1,0 +1,32 @@
+# character/it/prefab_resourceitem/ri3115/ri3115_inventory.pfb
+
+entities:
+  weapon:
+    enums:
+    - name: offline.EquipmentDefine.WeaponType
+      format: "{name}"
+      primary: true
+    to_string: "Weapon {id}: {data.Basic.NameMessageID:translate()}"
+    fields:
+      data:
+        type: object
+        label: Data
+        required: true
+        param:
+          classname: app.ItemSpecificationData.SpecUnit
+          nested: false
+      # prefab:
+      #   type: resource
+      #   label: Weapon prefab
+      #   required: true
+      #   param:
+      #     type: Prefab
+      #     path: "{catalog?.Prefab?.Path}"
+
+classes:
+  app.ItemSpecificationData.SpecUnit:
+    id: [ItemID]
+    to_string: "Item {ItemID}: {Basic.NameMessageID:translate()}"
+    patcher:
+      type: array-file
+      file: natives/stm/singletonuserdatas/playerweaponspecificationdata.user.2

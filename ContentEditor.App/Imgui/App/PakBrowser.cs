@@ -542,10 +542,10 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                     } else {
                         prettySize = ((float)size / 1024).ToString("0.00") + " KB";
                     }
-                    var posX = (ImGui.GetCursorPosX() + ImGui.GetColumnWidth() - ImGui.CalcTextSize(prettySize).X
-                        - ImGui.GetScrollX() - 2 * ImGui.GetStyle().ItemSpacing.X);
-                    if (posX > ImGui.GetCursorPosX())
-                    ImGui.SetCursorPosX(posX);
+                    var posX = ImGui.GetCursorPosX() + ImGui.GetColumnWidth() - ImGui.CalcTextSize(prettySize).X - ImGui.GetScrollX() - ImGui.GetStyle().ItemSpacing.X;
+                    if (posX > ImGui.GetCursorPosX()) {
+                        ImGui.SetCursorPosX(posX);
+                    }
                     ImGui.Text(prettySize);
                 }
                 ImGui.PopID();
@@ -567,7 +567,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             }
         }
         ImGui.SameLine();
-        ImGui.Text($"Total matches: {sortedEntries?.Length} | Displayed: {page * rowsPerPage + Math.Sign(i)}-{page * rowsPerPage + i}");
+        ImGui.Text($"Total matches: {sortedEntries?.Length} | Displaying: {page * rowsPerPage + Math.Sign(i)}-{page * rowsPerPage + i}");
         ImGui.EndChild();
     }
 

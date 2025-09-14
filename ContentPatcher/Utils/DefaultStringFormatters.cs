@@ -39,7 +39,7 @@ public static class FormatterSettings
     private static SmartFormatter ApplyDefaultFormatters(SmartFormatter formatter)
     {
         formatter.AddExtensions(new RszFieldStringFormatterSource(), new RszFieldArrayStringFormatterSource());
-        formatter.AddExtensions(new DefaultFormatter(), new NullFormatter());
+        formatter.AddExtensions(new DefaultFormatter(), new NullFormatter(), LowerCaseFormatter.Instance, UpperCaseFormatter.Instance);
         // @: used for RszFieldStringFormatterSource classname filtering
         formatter.Settings.Parser.AddCustomSelectorChars(['@']);
         return formatter;
@@ -210,6 +210,32 @@ public class EnumLabelFormatter(Workspace env) : IFormatter
         // should probably also handle enumDesc.IsFlags somehow
         var label = enumDesc.GetDisplayLabel(Convert.ChangeType(formattingInfo.CurrentValue, enumDesc.BackingType));
         formattingInfo.Write(label ?? formattingInfo.CurrentValue.ToString() ?? string.Empty);
+        return true;
+    }
+}
+
+public class LowerCaseFormatter : IFormatter
+{
+    public string Name { get; set; } = "lower";
+    public bool CanAutoDetect { get; set; } = false;
+    public static readonly LowerCaseFormatter Instance = new();
+
+    public bool TryEvaluateFormat(IFormattingInfo formattingInfo)
+    {
+        formattingInfo.Write(formattingInfo.CurrentValue?.ToString()?.ToLowerInvariant() ?? string.Empty);
+        return true;
+    }
+}
+
+public class UpperCaseFormatter : IFormatter
+{
+    public string Name { get; set; } = "upper";
+    public bool CanAutoDetect { get; set; } = false;
+    public static readonly UpperCaseFormatter Instance = new();
+
+    public bool TryEvaluateFormat(IFormattingInfo formattingInfo)
+    {
+        formattingInfo.Write(formattingInfo.CurrentValue?.ToString()?.ToUpperInvariant() ?? string.Empty);
         return true;
     }
 }

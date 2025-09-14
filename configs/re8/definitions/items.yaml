@@ -1,0 +1,32 @@
+# TODO support patchers for the same classname but different files (weapons and items share spec classes)
+# items: natives/stm/singletonuserdatas/itemspecificationdata.user.2
+# item combinations? natives/stm/singletonuserdatas/itemcompounddata.user.2
+
+# natives/stm/singletonuserdatas/inventoryitemprefabholder.user.2
+
+# entities:
+#   item:
+#     to_string: "Item {id}: {data.Basic.NameMessageID:translate()}"
+#     fields:
+#       data:
+#         type: object
+#         label: Data
+#         required: true
+#         param:
+#           classname: app.ItemSpecificationData.SpecUnit
+#           nested: false
+#       # prefab:
+#       #   type: resource
+#       #   label: Weapon prefab
+#       #   required: true
+#       #   param:
+#       #     type: Prefab
+#       #     path: "{catalog?.Prefab?.Path}"
+
+# classes:
+#   app.ItemSpecificationData.SpecUnit:
+#     id: [ItemID]
+#     to_string: "Item {ItemID}: {Basic.NameMessageID:translate()}"
+#     patcher:
+#       type: array-file
+#       file: natives/stm/singletonuserdatas/itemspecificationdata.user.2

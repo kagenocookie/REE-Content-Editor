@@ -1,0 +1,75 @@
+# additional files:
+# costume weapon positioning settings: natives/stm/sectionroot/userdata/system/equipment/weaponequippedpositionuserdata.user.2
+
+# TODO hardcoded-catalog patcher: natives/stm/sectionroot/userdata/esweaponuserdata.user.2
+
+entities:
+  weapon:
+    enums:
+    - name: offline.EquipmentDefine.WeaponType
+      format: "{name}"
+      primary: true
+    to_string: "Weapon {name} {displayName}"
+    fields:
+      # data:
+      #   type: object
+      #   label: Data
+      #   param:
+      #     field: "{name:lower()}"
+      #     classname: offline.gamemastering.item.WeaponElement
+      catalog:
+        type: object
+        label: Catalog data
+        required: true
+        param:
+          classname: offline.WeaponPrefabUserData.WeaponParam
+          nested: false
+      name:
+        type: string
+        label: Weapon code name
+        required: true
+        param:
+          regex: "^WP[0-9_]{4}$"
+          regexDescription: "Example: WP0123"
+          tooltip: Enter a code name for the weapon. This should be unique across all weapons and is used for enum entries.
+          initial: "{id:enum(offline.EquipmentDefine.WeaponType)}"
+        display_after: start
+      displayName:
+        type: msg
+        required: true
+        param:
+          key: "Weapon_{name:lower()}"
+          file: natives/stm/escape/message/mes_weapon.msg.67305745
+        display_after: name
+      prefab:
+        type: resource
+        label: Weapon prefab
+        required: true
+        param:
+          type: Prefab
+          path: "{catalog?.Prefab?.Path}"
+
+classes:
+  offline.WeaponPrefabUserData.WeaponParam:
+    id: [_Type]
+    to_string: "Weapon {_Type:enum(offline.EquipmentDefine.WeaponType)} ({_Name}) {Prefab.Path}"
+    patcher:
+      type: array-file
+      file: natives/stm/sectionroot/userdata/system/equipment/weaponprefabuserdata.user.2
+  # offline.gamemastering.item.WeaponElement:
+  #   patcher:
+  #     type: hardcoded-catalog
+  #     classname: offline.gamemastering.item.WeaponElementList
+  #     file: natives/stm/sectionroot/userdata/ropewayweaponuserdata.user.2
+  offline.survivor.motion.WeaponCharacterMotionResourceContainer:
+    id: [_WeaponType]
+    to_string: "Weapon {_WeaponType:enum(offline.EquipmentDefine.WeaponType)} Motions"
+    patcher:
+      type: array-file
+      file: natives/stm/sectionroot/userdata/system/equipment/weaponcharactermotionresourceuserdata.user.2
+  offline.WeaponEquippedPositionUserData.PlayerParam:
+    to_string: "{PlayerType:enum(offline.PlayerDefine.PlayerType)}"
+  offline.WeaponEquippedPositionUserData.CostumeParam:
+    to_string: "{CostumeType:enum(offline.SurvivorDefine.Costume)}"
+  offline.WeaponEquippedPositionUserData.EquipParam:
+    to_string: "{WeaponType:enum(offline.EquipmentDefine.WeaponType)}"
