@@ -61,12 +61,13 @@ Some files may not fully work for other RE ENGINE games.
 </div>
 
 ## Custom entity support
+Accessible under the Windows > Entities menu option for supported games, these are streamlined editors for game-specific data. They can be used to more easily modify or add custom items and other game content related objects.
 
 ### Dragon's Dogma 2
 - Shop modifications
 - Custom basic items and weapons (TODO: armors)
 
-### Resident Evil 2, 3, 4, 8
+### Resident Evil 2 (RT), 3 (RT), 4, 8
 - Basic weapon data
 
 ## Structure
