@@ -1,4 +1,5 @@
 using ContentEditor.App.Windowing;
+using ContentEditor.Core;
 using ImGuiNET;
 using ReeLib;
 using System.Diagnostics;
@@ -33,7 +34,13 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
 
     private bool hasInvalidatedPaks;
 
-    public void Init(UIContext context)
+    private int page;
+    private int rowsPerPage = 1000;
+    private int selectedRow = -1;
+
+    private readonly Dictionary<(string, int, ImGuiSortDirection), string[]> cachedResults = new();
+
+    public unsafe void Init(UIContext context)
     {
         this.context = context;
         data = context.Get<WindowData>();
@@ -53,11 +60,11 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         try {
             string[] files;
             if (CurrentDir.Contains('*')) {
-                files = matchedList!.FilterAllFiles(CurrentDir, int.MaxValue, true);
+                files = matchedList!.FilterAllFiles(CurrentDir);
             } else if (reader.FileExists(CurrentDir)) {
                 files = [CurrentDir];
             } else {
-                files = matchedList!.FilterAllFiles(CurrentDir + ".*", int.MaxValue, true);
+                files = matchedList!.FilterAllFiles(CurrentDir + ".*");
             }
 
             unpackExpectedFiles = files.Length;
@@ -359,7 +366,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         ImGui.SameLine();
 
         // SILVER: Only show the 'Return to Top' button when we are at least 3 layers deep
-        if (CurrentDir.Count(c => c == '/') >= 3) {
+        using (var _ = ImguiHelpers.Disabled(CurrentDir.Count(c => c == '/') < 3)) {
             if (ImGui.ArrowButton("##up", ImGuiDir.Up)) {
                 CurrentDir = Workspace.BasePath[0..^1];
             }
@@ -404,10 +411,6 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         DrawContents(matchedList!);
     }
 
-    private int page;
-    private int rowsPerPage = 1000;
-    private int selectedRow = -1;
-
     private void DrawContents(ListFileWrapper baseList)
     {
         if (reader == null) return;
@@ -415,20 +418,28 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         int p = 0, i = 0;
         var isCtrl = ImGui.IsKeyDown(ImGuiKey.ModCtrl);
         var isShift = ImGui.IsKeyDown(ImGuiKey.ModShift);
-        if (ImGui.BeginTable("List", 2, ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingStretchProp | ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersOuterV)) {
-            ImGui.TableSetupColumn(" Path ", ImGuiTableColumnFlags.WidthStretch, 0.9f);
-            ImGui.TableSetupColumn(" Actions ", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize, 100);
+        int maxPage = 0;
+        string[]? sortedEntries = null;
+        var remainingHeight = ImGui.GetWindowSize().Y - ImGui.GetCursorPosY() - ImGui.GetStyle().WindowPadding.Y - UI.FontSize - ImGui.GetStyle().FramePadding.Y;
+        if (ImGui.BeginTable("List", 2, ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingStretchProp | ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.Sortable, new Vector2(0, remainingHeight))) {
+            ImGui.TableSetupColumn(" Path ", ImGuiTableColumnFlags.WidthStretch | ImGuiTableColumnFlags.PreferSortDescending, 0.9f);
+            ImGui.TableSetupColumn(" Size ", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize | ImGuiTableColumnFlags.PreferSortDescending, 100);
             ImGui.TableSetupScrollFreeze(0, 1);
+            var sort = ImGui.TableGetSortSpecs();
+            var cacheKey = (CurrentDir, sort.Specs.ColumnIndex, sort.Specs.SortDirection);
+            if (!cachedResults.TryGetValue(cacheKey, out sortedEntries)) {
+                var files = baseList.GetFiles(CurrentDir);
+                var sorted = sort.Specs.ColumnIndex switch {
+                    0 => sort.Specs.SortDirection == ImGuiSortDirection.Descending ? files : files.Reverse(),
+                    1 => sort.Specs.SortDirection == ImGuiSortDirection.Descending ? files.OrderByDescending(e => reader.GetSize(e)) : files.OrderBy(e => reader.GetSize(e)),
+                    _ => sort.Specs.SortDirection == ImGuiSortDirection.Descending ? files : files.Reverse(),
+                };
+                cachedResults[cacheKey] = sortedEntries = sorted.ToArray();
+            }
+            maxPage = (int)Math.Floor((float)sortedEntries.Length / rowsPerPage);
             ImGui.TableHeadersRow();
             ImGui.TableNextColumn();
-            foreach (var file in baseList.GetFiles(CurrentDir, rowsPerPage)) {
-                if (p < page) {
-                    if (++i >= rowsPerPage) {
-                        i = 0;
-                        p++;
-                    }
-                    continue;
-                }
+            foreach (var file in sortedEntries.Skip(rowsPerPage * page).Take(rowsPerPage)) {
                 ImGui.PushID(i);
                 i++;
                 if (isCtrl) {
@@ -523,11 +534,40 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                     }
                 }
                 ImGui.TableNextColumn();
+                var size = reader.GetSize(file);
+                if (size > 0) {
+                    string prettySize;
+                    if (size >= 1024 * 1024) {
+                        prettySize = ((float)size / (1024 * 1024)).ToString("0.00") + " MB";
+                    } else {
+                        prettySize = ((float)size / 1024).ToString("0.00") + " KB";
+                    }
+                    var posX = (ImGui.GetCursorPosX() + ImGui.GetColumnWidth() - ImGui.CalcTextSize(prettySize).X
+                        - ImGui.GetScrollX() - 2 * ImGui.GetStyle().ItemSpacing.X);
+                    if (posX > ImGui.GetCursorPosX())
+                    ImGui.SetCursorPosX(posX);
+                    ImGui.Text(prettySize);
+                }
                 ImGui.PopID();
                 ImGui.TableNextColumn();
             }
             ImGui.EndTable();
         }
+        using (var _ = ImguiHelpers.Disabled(page <= 0)) {
+            if (ImGui.ArrowButton("##prev", ImGuiDir.Left)) {
+                page--;
+            }
+        }
+        ImGui.SameLine();
+        ImGui.Text(i == 0 ? "Page 0 / 0" : $"Page {page + 1} / {maxPage + 1}");
+        ImGui.SameLine();
+        using (var _ = ImguiHelpers.Disabled(page >= maxPage)) {
+            if (ImGui.ArrowButton("##next", ImGuiDir.Right)) {
+                page++;
+            }
+        }
+        ImGui.SameLine();
+        ImGui.Text($"Total matches: {sortedEntries?.Length} | Displayed: {page * rowsPerPage + Math.Sign(i)}-{page * rowsPerPage + i}");
         ImGui.EndChild();
     }
 

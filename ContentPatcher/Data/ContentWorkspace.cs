@@ -290,7 +290,7 @@ public sealed class ContentWorkspace : IDisposable
                 var isProbablyCorrect = false;
                 if (listfile != null) {
                     var fn = Path.GetFileName(localFile);
-                    var possibleNatives = listfile.GetFiles($".*/{fn}$", 2);
+                    var possibleNatives = listfile.GetFiles($".*/{fn}$");
                     if (possibleNatives.Length == 1) {
                         nativePath = possibleNatives[0];
                         isProbablyCorrect = true;

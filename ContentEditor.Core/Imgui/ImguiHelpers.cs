@@ -309,6 +309,10 @@ public static class ImguiHelpers
         ImGui.PushStyleColor(style, color);
         return new DisposableColorOverride();
     }
+    public static DisposableDisableOverride Disabled(bool disabled)
+    {
+        return new DisposableDisableOverride(disabled);
+    }
 
     public static Vector4 GetColor(ImGuiCol style)
     {
@@ -322,6 +326,21 @@ public static class ImguiHelpers
     public struct DisposableColorOverride() : IDisposable
     {
         public void Dispose() => ImGui.PopStyleColor();
+    }
+    public struct DisposableDisableOverride : IDisposable
+    {
+        private readonly bool disabled;
+
+        public DisposableDisableOverride(bool disabled)
+        {
+            this.disabled = disabled;
+            if (disabled) ImGui.BeginDisabled();
+        }
+
+        public void Dispose()
+        {
+            if (disabled) ImGui.EndDisabled();
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
