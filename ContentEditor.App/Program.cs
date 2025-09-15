@@ -13,50 +13,57 @@ sealed class Program
     static int Main(string[] args)
     {
         AppDomain.CurrentDomain.UnhandledException += HandleUnhandledExceptions;
+        MainLoop? loop = null;
         try {
             SetupConfigs();
-            using var loop = new MainLoop();
+            loop = new MainLoop();
             if (AppConfig.Instance.EnableUpdateCheck) {
                 Task.Run(CheckForUpdate);
             }
             var result = loop.Run();
+            loop.Dispose();
             return result;
         } catch (Exception e) {
             HandleUnhandledExceptions(null!, new UnhandledExceptionEventArgs(e, true));
+            loop?.Dispose();
             return 1;
         }
     }
 
     private static async Task CheckForUpdate()
     {
-        var config = AppConfig.Instance;
-        if (AppConfig.Version == "0.0.0") {
-            config.LatestVersion.Set(null);
-            return;
-        }
-        if ((DateTime.UtcNow - config.LastUpdateCheck.Get()) < TimeSpan.FromHours(4)) {
-            AppConfig.IsOutdatedVersion = config.LatestVersion.Get() != null && config.LatestVersion.Get() != AppConfig.Version;
-            return;
-        }
-        var http = new HttpClient();
-        var request = new HttpRequestMessage(HttpMethod.Get, new Uri("https://api.github.com/repos/kagenocookie/REE-Content-Editor/releases/latest"));
-
-        request.Headers.Add("Accept", "application/json");
-        request.Headers.Add("User-Agent", $"REE-Content-Editor/{AppConfig.Version}");
-        var response = await http.SendAsync(request);
-        if (response.StatusCode == System.Net.HttpStatusCode.OK) {
-            var content = await response.Content.ReadAsStringAsync();
-            config.LastUpdateCheck.Set(DateTime.UtcNow);
-            try {
-                var data = JsonSerializer.Deserialize<GithubReleaseInfo>(content);
-                var remoteTag = data?.TagName?.Replace("v", "");
-                config.LatestVersion.Set(remoteTag);
-                if (remoteTag != null && remoteTag != AppConfig.Version) {
-                    AppConfig.IsOutdatedVersion = true;
-                }
-            } catch (Exception) {
-                // ignore
+        try {
+            var config = AppConfig.Instance;
+            if (AppConfig.Version == "0.0.0") {
+                config.LatestVersion.Set(null);
+                return;
             }
+            if ((DateTime.UtcNow - config.LastUpdateCheck.Get()) < TimeSpan.FromHours(4)) {
+                AppConfig.IsOutdatedVersion = config.LatestVersion.Get() != null && config.LatestVersion.Get() != AppConfig.Version;
+                return;
+            }
+            var http = new HttpClient();
+            var request = new HttpRequestMessage(HttpMethod.Get, new Uri("https://api.github.com/repos/kagenocookie/REE-Content-Editor/releases/latest"));
+
+            request.Headers.Add("Accept", "application/json");
+            request.Headers.Add("User-Agent", $"REE-Content-Editor/{AppConfig.Version}");
+            var response = await http.SendAsync(request);
+            if (response.StatusCode == System.Net.HttpStatusCode.OK) {
+                var content = await response.Content.ReadAsStringAsync();
+                config.LastUpdateCheck.Set(DateTime.UtcNow);
+                try {
+                    var data = JsonSerializer.Deserialize<GithubReleaseInfo>(content);
+                    var remoteTag = data?.TagName?.Replace("v", "");
+                    config.LatestVersion.Set(remoteTag);
+                    if (remoteTag != null && remoteTag != AppConfig.Version) {
+                        AppConfig.IsOutdatedVersion = true;
+                    }
+                } catch (Exception) {
+                    // ignore
+                }
+            }
+        } catch (Exception e) {
+            Logger.Warn("Automatic update check failed: " + e.Message);
         }
     }
 
