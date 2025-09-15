@@ -309,11 +309,14 @@ public static class ImguiHelpers
         ImGui.PushStyleColor(style, color);
         return new DisposableColorOverride();
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static DisposableDisableOverride Disabled(bool disabled)
     {
         return new DisposableDisableOverride(disabled);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector4 GetColor(ImGuiCol style)
     {
         return ImGui.GetStyle().Colors[(int)style];

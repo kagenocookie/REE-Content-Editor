@@ -25,7 +25,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
     private WindowData data = null!;
     protected UIContext context = null!;
     private ListFileWrapper? matchedList;
-    private BookmarkManager _bookmarkManagerDefaults = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "app/default_bookmarks_pak.json")); // TODO SILVER: Add more default bookmarks
+    private BookmarkManager _bookmarkManagerDefaults = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "app/default_bookmarks_pak.json"));
     private BookmarkManager _bookmarkManager = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "user/bookmarks_pak.json"));
     private List<string> _activeTagFilter = new();
 
@@ -152,6 +152,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         var defaults = _bookmarkManagerDefaults.GetBookmarks(Workspace.Config.Game.name);
         bool isHideDefaults = _bookmarkManagerDefaults.IsHideDefaults;
         bool isBookmarked = _bookmarkManager.IsBookmarked(Workspace.Config.Game.name, CurrentDir);
+        bool isDefaultBookmark = !isHideDefaults && _bookmarkManagerDefaults.IsBookmarked(Workspace.Config.Game.name, CurrentDir);
         if (ImGui.TreeNode($"{AppIcons.Bookmarks} Bookmarks")) {
             ImGui.Spacing();
             ImGui.Separator();
@@ -384,10 +385,10 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         }
         if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("You can use regex to match file patterns (e.g. natives/stm/character/**.mdf2.*)");
         ImGui.SameLine();
-        if (isBookmarked) {
-            ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.PlotHistogramHovered]);
+        if (isBookmarked || isDefaultBookmark) {
+            ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered));
         } else {
-            ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.Text]);
+            ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.Text));
         }
         if (ImGui.Button((isBookmarked ? AppIcons.Star : AppIcons.StarEmpty) + "##bookmark")) {
             if (isBookmarked) {
