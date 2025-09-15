@@ -49,6 +49,14 @@ public class Component(GameObject gameObject, RszInstance data)
     {
         if (!setupGames.Add((game, assembly))) return;
 
+        RszParser parser;
+        try {
+            parser = env.RszParser;
+        } catch (Exception e) {
+            Logger.Error(e, "Could not setup RSZ component types");
+            return;
+        }
+
         var types = typeof(WindowHandlerFactory).Assembly.GetTypes();
         foreach (var type in types) {
 
@@ -62,7 +70,7 @@ public class Component(GameObject gameObject, RszInstance data)
                 foreach (var attr in clsAttrs) {
                     if (attr.Games.Length > 0 && !attr.Games.Contains(game.name)) continue;
 
-                    var cls = env.RszParser.GetRSZClass(attr.Classname);
+                    var cls = parser.GetRSZClass(attr.Classname);
                     if (cls == null) {
                         Logger.Debug($"Class {attr.Classname} not found for game {game}");
                         continue;

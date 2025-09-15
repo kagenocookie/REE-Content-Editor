@@ -142,6 +142,13 @@ public static partial class WindowHandlerFactory
     public static void SetupTypesForGame(GameIdentifier game, Workspace env)
     {
         if (!setupGames.Add(game)) return;
+        RszParser parser;
+        try {
+            parser = env.RszParser;
+        } catch (Exception e) {
+            Logger.Error(e, "Could not setup RSZ UI handlers");
+            return;
+        }
 
         var types = typeof(WindowHandlerFactory).Assembly.GetTypes();
         foreach (var type in types) {
@@ -151,7 +158,7 @@ public static partial class WindowHandlerFactory
                     foreach (var attr in actions) {
                         if (attr.Games.Length > 0 && !attr.Games.Contains(game.name)) continue;
 
-                        var cls = env.RszParser.GetRSZClass(attr.Classname);
+                        var cls = parser.GetRSZClass(attr.Classname);
                         if (cls == null) {
                             Logger.Debug($"Class {attr.Classname} not found for game {game}");
                             continue;
