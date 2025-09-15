@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Text.Json;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
@@ -118,6 +119,39 @@ public class UndoRedo
             return states[window] = state = new();
         }
         return state;
+    }
+
+    public static void RecordClipboardSet<TValue>(UIContext context)
+    {
+        try {
+            var data = EditorWindow.CurrentWindow?.GetClipboard();
+            if (string.IsNullOrEmpty(data)) return;
+
+            var val = JsonSerializer.Deserialize<TValue>(data, JsonConfig.jsonOptionsIncludeFields);
+            if (val == null) {
+                Logger.Error($"Failed to deserialize {typeof(TValue).Name}.");
+                return;
+            }
+            RecordSet(context, val, mergeMode: UndoRedoMergeMode.NeverMerge);
+        } catch (Exception e) {
+            Logger.Error($"Failed to deserialize {typeof(TValue).Name}: " + e.Message);
+        }
+    }
+
+    public static void RecordClipboardSet(UIContext context, Type valueType)
+    {
+        try {
+            var data = EditorWindow.CurrentWindow?.GetClipboard();
+            if (string.IsNullOrEmpty(data)) return;
+
+            var val = JsonSerializer.Deserialize(data, valueType, JsonConfig.jsonOptionsIncludeFields);
+            if (val == null) {
+                return;
+            }
+            RecordSet(context, val, mergeMode: UndoRedoMergeMode.NeverMerge);
+        } catch (Exception e) {
+            Logger.Error("Invalid clipboard content: " + e.Message);
+        }
     }
 
     public static void RecordSet<TValue>(UIContext context, TValue value, WindowBase? window = null, UndoRedoMergeMode mergeMode = UndoRedoMergeMode.MergeIdentical, string? undoId = null)

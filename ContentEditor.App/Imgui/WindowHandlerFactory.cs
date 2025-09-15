@@ -614,7 +614,18 @@ public static partial class WindowHandlerFactory
 
     public static UIContext CreateRSZFieldContext(RszInstance parent, int fieldIndex, RszField field, UIContext parentContext)
     {
-        return new UIContext(GetFieldLabel(field.name), parent, parentContext.root, (ctx) => ((RszInstance)ctx.target!).Values[fieldIndex], (ctx, v) => ((RszInstance)ctx.target!).Values[fieldIndex] = v!, new UIOptions()) {
+        return new UIContext(
+            GetFieldLabel(field.name),
+            parent,
+            parentContext.root,
+            (ctx) => ((RszInstance)ctx.target!).Values[fieldIndex],
+            !field.array ? (ctx, v) => ((RszInstance)ctx.target!).Values[fieldIndex] = v! : (ctx, v) => {
+                ((RszInstance)ctx.target!).Values[fieldIndex] = v!;
+                // array fields are likely to have semi-cached element handlers, ensure they get reset
+                ctx.ClearChildren();
+            },
+            new UIOptions()
+        ) {
             parent = parentContext
         };
     }

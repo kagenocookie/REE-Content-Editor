@@ -29,7 +29,10 @@ public class BaseListHandler : IObjectUIHandler
         }
 
         var show = ImguiHelpers.TreeNodeSuffix(context.label, $"({count})");
-        (this as ITooltipHandler)?.HandleTooltip(context);
+        if (true == (this as ITooltipHandler)?.HandleTooltip(context)) {
+            // re-fetch the list in case the instance got changed
+            list = context.Get<IList>();
+        }
         if (show) {
             for (int i = 0; i < list.Count; ++i) {
                 ImGui.PushID(i);

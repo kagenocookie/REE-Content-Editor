@@ -123,7 +123,6 @@ public class Colliders(GameObject gameObject, RszInstance data) : RenderableComp
                     UnloadMesh(colliderIndex);
                     var mcolFilepath = RszFieldCache.MeshShape.Mesh.Get(shape);
                     if (!string.IsNullOrEmpty(mcolFilepath)) {
-                        // TODO mcol shapes
                         meshHandle = ctx.LoadMesh(mcolFilepath);
                     }
                     break;

@@ -285,7 +285,7 @@ public interface IObjectUIHandler
 
 public interface ITooltipHandler
 {
-    void HandleTooltip(UIContext context);
+    bool HandleTooltip(UIContext context);
 }
 
 public enum UIContextEvent

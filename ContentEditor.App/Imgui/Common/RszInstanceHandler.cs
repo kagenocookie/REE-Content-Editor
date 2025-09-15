@@ -49,14 +49,17 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
         OnIMGUI(context, true);
     }
 
-    public static void ShowDefaultTooltip(UIContext context)
+    public static bool ShowDefaultTooltip(UIContext context)
     {
+        var popupClicked = false;
         if (ImGui.BeginPopupContextItem(context.label)) {
             if (RszInstanceHandler.ShowTooltipActions(context)) {
                 ImGui.CloseCurrentPopup();
+                popupClicked = true;
             }
             ImGui.EndPopup();
         }
+        return popupClicked;
     }
 
     public static bool ShowTooltipActions(UIContext context)
@@ -112,7 +115,7 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
                             }
                             UndoRedo.RecordSet(context, newItems);
                         } catch (Exception) {
-                            Logger.Error("Invalid JSON");
+                            Logger.Error($"Could not deserialize JSON as {elementType} list");
                         }
                         return true;
                     }
@@ -366,9 +369,9 @@ public class ArrayRSZHandler : BaseListHandler, ITooltipHandler
         CanCreateNewElements = true;
     }
 
-    public void HandleTooltip(UIContext context)
+    public bool HandleTooltip(UIContext context)
     {
-        RszInstanceHandler.ShowDefaultTooltip(context);
+        return RszInstanceHandler.ShowDefaultTooltip(context);
     }
 
     protected override UIContext CreateElementContext(UIContext context, IList list, int elementIndex)
@@ -427,6 +430,7 @@ public class EnumFieldHandler : IObjectUIHandler
         if (ImguiHelpers.FilterableEnumCombo(context.label, enumsrc, ref selected, ref context.state)) {
             UndoRedo.RecordSet(context, selected);
         }
+        AppImguiHelpers.ShowDefaultCopyPopup(selected, selected!.GetType(), context);
     }
 }
 
@@ -493,6 +497,7 @@ public class FlagsEnumFieldHandler : IObjectUIHandler
         }
         ImGui.PopID();
         ImguiHelpers.EndRect(2);
+        AppImguiHelpers.ShowDefaultCopyPopup(value, value.GetType(), context);
     }
 }
 
@@ -504,6 +509,7 @@ public class RectFieldHandler : Singleton<RectFieldHandler>, IObjectUIHandler
         if (ImGui.DragFloat4(context.label, ref vec, 0.01f)) {
             UndoRedo.RecordSet(context, new Rect(vec.X, vec.Y, vec.Z, vec.W));
         }
+        AppImguiHelpers.ShowDefaultCopyPopup(ref vec, context);
     }
 }
 
@@ -515,6 +521,7 @@ public class PositionFieldHandler : Singleton<PositionFieldHandler>, IObjectUIHa
         if (ImGui.DragScalarN(context.label, ImGuiDataType.Double, (IntPtr)(&val), 4, 0.01f)) {
             UndoRedo.RecordSet(context, val);
         }
+        AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);
     }
 }
 
@@ -527,6 +534,7 @@ public class Int2FieldHandler : Singleton<Int2FieldHandler>, IObjectUIHandler
         if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, (IntPtr)(&val), 2, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
+        AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);
     }
 }
 
@@ -539,6 +547,7 @@ public class Int3FieldHandler : Singleton<Int3FieldHandler>, IObjectUIHandler
         if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, (IntPtr)(&val), 3, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
+        AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);
     }
 }
 
@@ -551,6 +560,7 @@ public class Int4FieldHandler : Singleton<Int4FieldHandler>, IObjectUIHandler
         if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, (IntPtr)(&val), 4, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
+        AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);
     }
 }
 
@@ -563,6 +573,7 @@ public class Uint2FieldHandler : Singleton<Uint2FieldHandler>, IObjectUIHandler
         if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, (IntPtr)(&val), 2, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
+        AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);
     }
 }
 
@@ -575,6 +586,7 @@ public class Uint3FieldHandler : Singleton<Uint3FieldHandler>, IObjectUIHandler
         if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, (IntPtr)(&val), 3, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
+        AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);
     }
 }
 
@@ -587,6 +599,7 @@ public class Uint4FieldHandler : Singleton<Uint4FieldHandler>, IObjectUIHandler
         if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, (IntPtr)(&val), 4, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
+        AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);
     }
 }
 
@@ -598,6 +611,7 @@ public class RangeFieldHandler : Singleton<RangeFieldHandler>, IObjectUIHandler
         if (ImGui.DragFloatRange2(context.label, ref val.r, ref val.s)) {
             UndoRedo.RecordSet(context, val);
         }
+        AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);
     }
 }
 
@@ -609,6 +623,7 @@ public class SizeFieldHandler : Singleton<SizeFieldHandler>, IObjectUIHandler
         if (ImGui.DragFloatRange2(context.label, ref val.w, ref val.h)) {
             UndoRedo.RecordSet(context, val);
         }
+        AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);
     }
 }
 
@@ -769,11 +784,11 @@ public class GuidFieldHandler : Singleton<GuidFieldHandler>, IObjectUIHandler
         }
 
         if (!noContextMenu && ImGui.BeginPopupContextItem(context.label)) {
-            if (ImGui.Button("Randomize")) {
+            if (ImGui.Selectable("Randomize")) {
                 UndoRedo.RecordSet(context, Guid.NewGuid());
                 ImGui.CloseCurrentPopup();
             }
-            if (ImGui.Button("Find translation")) {
+            if (ImGui.Selectable("Find translation")) {
                 var ws = context.GetWorkspace();
                 var window = EditorWindow.CurrentWindow;
                 ws?.Messages.GetTextAsync(val).ContinueWith((res) => {
@@ -786,6 +801,8 @@ public class GuidFieldHandler : Singleton<GuidFieldHandler>, IObjectUIHandler
                 });
                 ImGui.CloseCurrentPopup();
             }
+            ImGui.Separator();
+            AppImguiHelpers.ShowDefaultCopyPopupButtons(ref val, context);
             ImGui.EndPopup();
         }
     }
@@ -824,8 +841,6 @@ public class GameObjectRefHandler : Singleton<GameObjectRefHandler>, IObjectUIHa
                 var newInstance = (RszInstance?)v;
                 var gr = (GameObjectRef)ctx.target!;
                 if (newInstance == null) {
-                    // gr.target = null;
-                    // gr.guid = Guid.Empty;
                     UndoRedo.RecordSet(ctx.parent!, new GameObjectRef(), mergeMode: UndoRedoMergeMode.NeverMerge);
                     ctx.parent!.ClearChildren();
                     return;
@@ -891,6 +906,7 @@ public class TransformStructHandler : IObjectUIHandler
     {
         var data = context.Get<ReeLib.via.Transform>();
         var show = ImguiHelpers.TreeNodeSuffix("Transform", data.ToString()!);
+        AppImguiHelpers.ShowDefaultCopyPopup(ref data, context);
         if (show) {
             var pos = data.pos;
             var rot = data.rot.ToVector4();
@@ -929,6 +945,7 @@ public class SphereStructHandler : IObjectUIHandler
     {
         var sphere = context.Get<ReeLib.via.Sphere>();
         var show = ImguiHelpers.TreeNodeSuffix(context.label, sphere.ToString());
+        AppImguiHelpers.ShowDefaultCopyPopup(ref sphere, context);
         if (show) {
             if (ImGui.DragFloat3("Position", ref sphere.pos, 0.005f)) {
                 UndoRedo.RecordSet(context, sphere, undoId: $"{context.GetHashCode()} pos");
@@ -947,6 +964,7 @@ public class Mat4StructHandler : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var mat = context.Get<ReeLib.via.mat4>();
+        AppImguiHelpers.ShowDefaultCopyPopup(ref mat, context);
         if (ImguiHelpers.TreeNodeSuffix(context.label, mat.ToString())) {
             Matrix4X4.Decompose(mat.ToSystem().ToGeneric(), out var scale, out var rot, out var trans);
 
@@ -961,6 +979,7 @@ public class Mat4StructHandler : IObjectUIHandler
             ImGui.LabelText("Offset", "##labelP");
 
             if (ImGui.DragFloat4("Rotation", ref Unsafe.As<Quaternion<float>, Vector4>(ref rot), 0.005f)) {
+                rot = Quaternion<float>.Normalize(rot);
                 mat = Transform.GetMatrixFromTransforms(trans, rot, scale).ToSystem();
                 UndoRedo.RecordSet(context, mat, undoId: $"{context.GetHashCode()} rotation");
             }
@@ -988,6 +1007,7 @@ public class OBBStructHandler : IObjectUIHandler
     {
         var box = context.Get<ReeLib.via.OBB>();
         var show = ImguiHelpers.TreeNodeSuffix(context.label, box.ToString());
+        AppImguiHelpers.ShowDefaultCopyPopup(ref box, context);
         if (show) {
             Matrix4X4.Decompose(box.Coord.ToSystem().ToGeneric(), out var scale, out var rot, out var trans);
 
@@ -996,6 +1016,7 @@ public class OBBStructHandler : IObjectUIHandler
                 UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} offset");
             }
             if (ImGui.DragFloat4("Rotation", ref Unsafe.As<Quaternion<float>, Vector4>(ref rot), 0.005f)) {
+                rot = Quaternion<float>.Normalize(rot);
                 box.Coord = Transform.GetMatrixFromTransforms(trans, rot, scale).ToSystem();
                 UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} rotation");
             }
@@ -1024,6 +1045,7 @@ public class CapsuleStructHandler : IObjectUIHandler
     {
         var capsule = context.Get<ReeLib.via.Capsule>();
         var show = ImguiHelpers.TreeNodeSuffix(context.label, capsule.ToString());
+        AppImguiHelpers.ShowDefaultCopyPopup(ref capsule, context);
         if (show) {
             if (ImGui.DragFloat3("Point 1", ref capsule.p0, 0.005f)) {
                 UndoRedo.RecordSet(context, capsule, undoId: $"{context.GetHashCode()} p0");
@@ -1049,6 +1071,7 @@ public class CylinderStructHandler : IObjectUIHandler
     {
         var cylinder = context.Get<ReeLib.via.Cylinder>();
         var show = ImguiHelpers.TreeNodeSuffix(context.label, cylinder.ToString());
+        AppImguiHelpers.ShowDefaultCopyPopup(ref cylinder, context);
         if (show) {
             if (ImGui.DragFloat3("Point 1", ref cylinder.p0, 0.005f)) {
                 UndoRedo.RecordSet(context, cylinder, undoId: $"{context.GetHashCode()} p0");
@@ -1072,11 +1095,12 @@ public class AABBStructHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
-        var AABB = context.Get<ReeLib.via.AABB>();
-        var show = ImguiHelpers.TreeNodeSuffix(context.label, AABB.ToString());
+        var aabb = context.Get<ReeLib.via.AABB>();
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, aabb.ToString());
+        AppImguiHelpers.ShowDefaultCopyPopup(ref aabb, context);
         if (show) {
-            var center = AABB.Center;
-            var size = AABB.Size / 2;
+            var center = aabb.Center;
+            var size = aabb.Size / 2;
             if (ImGui.DragFloat3("Center", ref center, 0.005f)) {
                 UndoRedo.RecordSet(context, new AABB(center - size, center + size), undoId: $"{context.GetHashCode()} c");
             }

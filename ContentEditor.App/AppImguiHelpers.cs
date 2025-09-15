@@ -1,5 +1,8 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using ContentEditor.App.Windowing;
+using ContentEditor.Core;
 using ImGuiNET;
 
 namespace ContentEditor.App;
@@ -61,5 +64,48 @@ public static class AppImguiHelpers
         }
 
         return changed;
+    }
+
+    public static void ShowDefaultCopyPopup<T>(ref T value, UIContext context)
+    {
+        if (ImGui.BeginPopupContextItem(context.label)) {
+            ShowDefaultCopyPopupButtons(ref value, context);
+            ImGui.EndPopup();
+        }
+    }
+
+    public static void ShowDefaultCopyPopupButtons<T>(ref T value, UIContext context)
+    {
+        if (ImGui.Selectable("Copy value")) {
+            EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(value, JsonConfig.jsonOptionsIncludeFields), $"Copied value of {context.label}!");
+            ImGui.CloseCurrentPopup();
+        }
+        if (ImGui.Selectable("Copy field name")) {
+            EditorWindow.CurrentWindow?.CopyToClipboard(context.label, $"Copied {context.label}!");
+            ImGui.CloseCurrentPopup();
+        }
+        if (ImGui.Selectable("Paste value")) {
+            UndoRedo.RecordClipboardSet<T>(context);
+            ImGui.CloseCurrentPopup();
+        }
+    }
+
+    public static void ShowDefaultCopyPopup(object? value, Type type, UIContext context)
+    {
+        if (ImGui.BeginPopupContextItem(context.label)) {
+            if (ImGui.Selectable("Copy value")) {
+                EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(value, type, JsonConfig.jsonOptionsIncludeFields), $"Copied value of {context.label}!");
+                ImGui.CloseCurrentPopup();
+            }
+            if (ImGui.Selectable("Copy field name")) {
+                EditorWindow.CurrentWindow?.CopyToClipboard(context.label, $"Copied {context.label}!");
+                ImGui.CloseCurrentPopup();
+            }
+            if (ImGui.Selectable("Paste value")) {
+                UndoRedo.RecordClipboardSet(context, type);
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
     }
 }

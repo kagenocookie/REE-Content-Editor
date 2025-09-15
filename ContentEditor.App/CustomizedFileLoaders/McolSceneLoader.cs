@@ -20,7 +20,6 @@ public class McolSceneLoader : McolFileLoader,
         if (scene == null) {
             scene = new Assimp.Scene();
         }
-        // TODO also handle other non-triangle shapes
         return new AssimpMeshResource(scene);
     }
 }
