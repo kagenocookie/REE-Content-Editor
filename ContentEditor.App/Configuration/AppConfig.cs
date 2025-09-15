@@ -22,6 +22,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string GameConfigBaseFilepath = "game_configs_base_filepath";
         public const string BackgroundColor = "background_color";
         public const string LogLevel = "log_level";
+        public const string LogToFile = "log_to_file";
         public const string ShowFps = "show_fps";
         public const string MaxUndoSteps = "max_undo_steps";
         public const string PrettyLabels = "pretty_labels";
@@ -125,6 +126,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<bool> EnableUpdateCheck = new SettingWrapper<bool>(Keys.EnableUpdateCheck, _lock, true);
     public readonly SettingWrapper<bool> UsePakFilePreviewWindow = new SettingWrapper<bool>(Keys.UsePakFilePreviewWindow, _lock, true);
     public readonly SettingWrapper<bool> ShowFps = new SettingWrapper<bool>(Keys.ShowFps, _lock, false);
+    public readonly SettingWrapper<bool> LogToFile = new SettingWrapper<bool>(Keys.LogToFile, _lock, true);
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
     public readonly ClassSettingWrapper<string> LatestVersion = new ClassSettingWrapper<string>(Keys.LatestVersion, _lock);
 
@@ -222,6 +224,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.MaxFps, instance.MaxFps.value.ToString(CultureInfo.InvariantCulture), null),
             (Keys.BackgroundMaxFps, instance.BackgroundMaxFps.value.ToString(CultureInfo.InvariantCulture), null),
             (Keys.ShowFps, instance.ShowFps.value.ToString(), null),
+            (Keys.LogToFile, instance.LogToFile.value.ToString(), null),
             (Keys.MainWindowGame, instance.MainSelectedGame.value?.ToString() ?? "", null),
             (Keys.MainActiveBundle, instance.MainActiveBundle.value?.ToString() ?? "", null),
             (Keys.BlenderPath, instance.BlenderPath.value?.ToString() ?? "", null),
@@ -285,6 +288,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.ShowFps:
                             instance.ShowFps.value = ReadBool(value);
+                            break;
+                        case Keys.LogToFile:
+                            instance.LogToFile.value = ReadBool(value);
                             break;
                         case Keys.MainWindowGame:
                             instance.MainSelectedGame.value = ReadString(value);

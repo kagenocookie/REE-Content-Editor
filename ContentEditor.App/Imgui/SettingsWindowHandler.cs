@@ -126,9 +126,15 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             if (ImGui.IsItemHovered()) ImGui.SetTooltip("The number of fields below which an RSZ object tree node should auto-expand.");
 
             var logLevel = config.LogLevel.Get();
-            if (ImGui.Combo("Logging level", ref logLevel, LogLevels, LogLevels.Length)) {
+            if (ImGui.Combo("Minimum logging level", ref logLevel, LogLevels, LogLevels.Length)) {
                 config.LogLevel.Set(logLevel);
             }
+
+            var logToFile = config.LogToFile.Get();
+            if (ImGui.Checkbox("Output logs to file", ref logToFile)) {
+                config.LogToFile.Set(logToFile);
+            }
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip($"If checked, any logging will also be output to file {FileLogger.DefaultLogFilePath}.\nChanging this setting requires a restart of the app.");
 
             var maxFps = config.MaxFps.Get();
             if (ImGui.SliderInt("Max FPS", ref maxFps, 10, 240)) {

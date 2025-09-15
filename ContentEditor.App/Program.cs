@@ -86,7 +86,7 @@ sealed class Program
                 Unhandled exception occurred in thread {System.Threading.Thread.CurrentThread.ManagedThreadId}: {ex.Message}
 
                 Error details have been written to crashlog.txt.
-                Consider reporting the error on GitHub and include the crashlog.txt file as well as how to reproduce the issue if possible.
+                Consider reporting the error on GitHub and include the crashlog.txt and content_editor_log.txt files as well as how to reproduce the issue if possible.
 
                 {ex.StackTrace}
                 """);
@@ -97,7 +97,7 @@ sealed class Program
             System.Windows.Forms.MessageBox.Show($"""
                 Unhandled exception occurred in thread {System.Threading.Thread.CurrentThread.ManagedThreadId}
                 Error details have been written to crashlog.txt.
-                Consider reporting the error on GitHub and include the crashlog.txt file as well as how to reproduce the issue if possible.
+                Consider reporting the error on GitHub and include the crashlog.txt and content_editor_log.txt files as well as how to reproduce the issue if possible.
 
                 {e.ExceptionObject}
                 """);
@@ -112,7 +112,9 @@ sealed class Program
         WindowManager.Instance.ErrorCallback = (msg, parent) => EditorWindow.CurrentWindow!.AddSubwindow(new ErrorModal("Error", msg, parent?.Handler as IRectWindow));
 
         var evtLogger = new EventLogger();
-        Logger.CurrentLogger = new MultiLogger(Logger.CurrentLogger, evtLogger);
+        Logger.CurrentLogger = AppConfig.Instance.LogToFile.Get()
+            ? new MultiLogger(Logger.CurrentLogger, evtLogger, new FileLogger())
+            : new MultiLogger(Logger.CurrentLogger, evtLogger);
         Logger.CurrentLogger.LoggingLevel = (LogSeverity)AppConfig.Instance.LogLevel.Get();
         AppConfig.Instance.LogLevel.ValueChanged += (level) => {
             Logger.CurrentLogger.LoggingLevel = (LogSeverity)level;
