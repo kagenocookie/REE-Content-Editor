@@ -25,7 +25,11 @@ sealed class Program
             return result;
         } catch (Exception e) {
             HandleUnhandledExceptions(null!, new UnhandledExceptionEventArgs(e, true));
-            loop?.Dispose();
+            try {
+                loop?.Dispose();
+            } catch (Exception) {
+                // ignore, we're on our way out anyway
+            }
             return 1;
         }
     }
