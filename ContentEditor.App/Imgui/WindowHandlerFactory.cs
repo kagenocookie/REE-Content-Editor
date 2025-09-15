@@ -106,7 +106,7 @@ public static partial class WindowHandlerFactory
             var handlers = type.GetCustomAttributes<ObjectImguiHandlerAttribute>();
             if (handlers.Any()) {
                 if (!type.IsAssignableTo(typeof(IObjectUIHandler))) {
-                    Console.Error.WriteLine($"Invalid [WindowHandlerFactory] type {type}");
+                    Logger.Error($"Invalid [WindowHandlerFactory] type {type}");
                     continue;
                 }
 

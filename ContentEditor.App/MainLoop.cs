@@ -144,7 +144,6 @@ internal sealed class MainLoop : IDisposable
 
     public void OpenNewWindow(WindowBase window)
     {
-        Console.WriteLine("OpenSubwindow on thread: " + Thread.CurrentThread.ManagedThreadId);
         mainThreadActions.Enqueue(() => {
             window.InitializeWindow();
             queuedWindows.Enqueue(window);
