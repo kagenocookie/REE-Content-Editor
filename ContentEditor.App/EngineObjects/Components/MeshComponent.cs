@@ -18,6 +18,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
     public override AABB LocalBounds => mesh?.BoundingBox ?? default;
 
     public bool HasMesh => mesh?.Meshes.Any() == true;
+    private bool invalidMesh;
 
     public void ComponentInit()
     {
@@ -55,6 +56,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
 
     public void SetMesh(string meshFilepath, string? materialFilepath)
     {
+        invalidMesh = false;
         UnloadMesh();
         // note - when loading material groups from the mesh file, we receive a placeholder material with just a default shader and white texture
         material = string.IsNullOrEmpty(materialFilepath)
@@ -111,7 +113,11 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
             return;
         }
         if (mesh == null) {
+            if (invalidMesh) return;
             RefreshMesh();
+            if (mesh == null) {
+                invalidMesh = true;
+            }
         }
         if (mesh != null) {
             ref readonly var transform = ref GameObject.Transform.WorldTransform;

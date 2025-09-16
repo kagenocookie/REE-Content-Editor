@@ -482,7 +482,7 @@ public class RszDataFinder : IWindowHandler
                     if (inst.RszClass == cls && inst.RSZUserData == null) {
                         if (value == null) {
                             AddMatch(context, FindPathToRszObject(rsz, inst, file), path);
-                            return;
+                            break;
                         }
 
                         var fieldValue = inst.Values[fieldIndex];

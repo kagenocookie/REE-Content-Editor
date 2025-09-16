@@ -94,6 +94,7 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
         ref readonly var transform = ref GameObject.Transform.WorldTransform;
         for (int i = 0; i < meshes.Count; i++) {
             var coll = meshes[i];
+            if (!coll.Meshes.Any()) continue;
             var group = file?.InstanceGroups?[i];
             if (group != null) {
                 foreach (var inst in group.transforms!) {
