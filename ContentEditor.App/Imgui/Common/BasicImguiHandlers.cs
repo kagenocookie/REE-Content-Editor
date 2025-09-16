@@ -89,7 +89,10 @@ public class QuaternionFieldHandler : Singleton<QuaternionFieldHandler>, IObject
     {
         var val = context.Get<Quaternion>();
         var vec = new Vector4(val.X, val.Y, val.Z, val.W);
-        if (ImGui.DragFloat4(context.label, ref vec, 0.001f)) UndoRedo.RecordSet(context, new Quaternion(vec.X, vec.Y, vec.Z, vec.W));
+        if (ImGui.DragFloat4(context.label, ref vec, 0.001f)) {
+            val = Quaternion.Normalize(new Quaternion(vec.X, vec.Y, vec.Z, vec.W));
+            UndoRedo.RecordSet(context, val);
+        }
         AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);
     }
 }
