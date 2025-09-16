@@ -262,6 +262,7 @@ public class FileTesterWindow : IWindowHandler
             try {
                 cw = new ContentWorkspace(env, new PatchDataContainer("!"));
                 Logger.Info("Starting search for game " + env.Config.Game);
+                cw.Env.PakReader.EnableConsoleLogging = false;
                 yield return cw;
             } finally {
                 cw?.Dispose();

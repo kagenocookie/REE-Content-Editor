@@ -14,15 +14,15 @@ public static class AppImguiHelpers
     public static bool InputFilepath(string label, [NotNull] ref string? path, string? extension = null)
     {
         var id = ImGui.GetID(label);
-        var x = ImGui.GetCursorPosX();
-        var textWidth = ImGui.CalcItemWidth() - ImGui.CalcTextSize("Browse...").X - ImGui.GetStyle().FramePadding.X * 2 - x;
+        var w = ImGui.CalcItemWidth();
+        var buttonWidth = ImGui.CalcTextSize("Browse...").X + ImGui.GetStyle().FramePadding.X * 4;
         ImGui.PushID(label);
         if (ImGui.Button("Browse...")) {
             PlatformUtils.ShowFileDialog((list) => fileBrowseResults[id] = list[0], path, extension, false);
         }
         ImGui.SameLine();
         path ??= "";
-        ImGui.SetNextItemWidth(textWidth);
+        ImGui.SetNextItemWidth(w - buttonWidth);
         var changed = ImGui.InputText(label, ref path, 280, ImGuiInputTextFlags.ElideLeft);
         ImGui.PopID();
 

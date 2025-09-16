@@ -46,6 +46,7 @@ public class MotIndexImguiHandler : IObjectUIHandler
     private static MemberInfo[] DisplayedFields = [
         typeof(MotIndex).GetField(nameof(MotIndex.motNumber))!,
         typeof(MotIndex).GetField(nameof(MotIndex.Switch))!,
+        typeof(MotIndex).GetField(nameof(MotIndex.data))!,
     ];
 
     public void OnIMGUI(UIContext context)
@@ -55,13 +56,15 @@ public class MotIndexImguiHandler : IObjectUIHandler
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(MotIndex), members: DisplayedFields);
             var motlist = context.FindHandlerInParents<MotlistEditor>()?.File;
             if (motlist != null) {
-                context.AddChild<MotIndex, MotFileBase>("Mot File Instance", mot, getter: (c) => c!.MotFile, setter: (c, v) => c.MotFile = v,
-                    handler: new InstancePickerHandler<MotFileBase>(true, (ctx, forceRefresh) => {
-                        if (forceRefresh) motlist = ctx.FindHandlerInParents<MotlistEditor>()!.File;
-                        return motlist.MotFiles;
-                    }, (ctx, mf) => {
-                        UndoRedo.RecordSet(ctx, mf);
-                    }));
+                context.AddChild("Mot File Instance", (object)mot, getter: (c) => ((MotIndex)c.target!).MotFile, setter: (c, v) => {
+                    ((MotIndex)c.target!).MotFile = (MotFileBase)v!;
+                    c.parent?.ClearChildren();
+                }, handler: new InstancePickerHandler<MotFileBase>(true, (ctx, forceRefresh) => {
+                    if (forceRefresh) motlist = ctx.FindHandlerInParents<MotlistEditor>()!.File;
+                    return motlist.MotFiles;
+                }, (ctx, mf) => {
+                    UndoRedo.RecordSet(ctx, mf);
+                }));
             }
 
             context.AddChild("Mot File", mot, getter: (c) => ((MotIndex)c.target!).MotFile, handler: new MotFileBaseHandler(), setter: (ctx, newMot) => {
@@ -135,10 +138,10 @@ public class MotFileHandler : IObjectUIHandler
             context.AddChild<MotFile, string>("Joint Map", instance, getter: (m) => m!.Header.jointMapPath, setter: (m, v) => m!.Header.jointMapPath = v ?? string.Empty, handler: new ResourcePathPicker(ws, KnownFileFormats.JointMap));
 
             context.AddChild<MotFile, ushort>("UknShort", instance, getter: (m) => m!.Header.uknShort, setter: (m, v) => m!.Header.uknShort = v).AddDefaultHandler<ushort>();
-            context.AddChild<MotFile, float>("uknFloat1", instance, getter: (m) => m!.Header.uknFloat1, setter: (m, v) => m!.Header.uknFloat1 = v).AddDefaultHandler<float>();
-            context.AddChild<MotFile, float>("uknFloat2", instance, getter: (m) => m!.Header.uknFloat2, setter: (m, v) => m!.Header.uknFloat2 = v).AddDefaultHandler<float>();
+            context.AddChild<MotFile, float>("Start Frame", instance, getter: (m) => m!.Header.startFrame, setter: (m, v) => m!.Header.startFrame = v).AddDefaultHandler<float>();
+            context.AddChild<MotFile, float>("End Frame", instance, getter: (m) => m!.Header.endFrame, setter: (m, v) => m!.Header.endFrame = v).AddDefaultHandler<float>();
 
-            context.AddChild<MotFile, List<BoneHeader>>("Bones", instance, getter: (m) => m!.BoneHeaders, setter: (m, v) => m.BoneHeaders = v, handler: new ListHandler(typeof(BoneHeader), typeof(List<BoneHeader>)) { CanCreateNewElements = true });
+            context.AddChild<MotFile, List<MotBone>>("Bones", instance, getter: (m) => m!.RootBones, handler: new ListHandler(typeof(MotBone), typeof(List<MotBone>)) { CanCreateNewElements = true });
             context.AddChild<MotFile, List<BoneMotionClip>>("Bone Clips", instance, getter: (m) => m!.BoneClips).AddDefaultHandler();
             context.AddChild<MotFile, List<MotClip>>("Clips", instance, getter: (m) => m!.Clips).AddDefaultHandler();
         }
@@ -147,23 +150,50 @@ public class MotFileHandler : IObjectUIHandler
     }
 }
 
-[ObjectImguiHandler(typeof(Bone))]
+[ObjectImguiHandler(typeof(MotBone))]
 public class MotBoneHandler : IObjectUIHandler
 {
     private static MemberInfo[] DisplayedFields = [
-        typeof(Bone).GetField(nameof(BoneHeader.boneName))!,
-        typeof(MotIndex).GetField(nameof(MotIndex.Switch))!,
+        typeof(MotBone).GetProperty(nameof(MotBone.Header))!,
+        typeof(MotBone).GetProperty(nameof(MotBone.Children))!,
     ];
 
     public void OnIMGUI(UIContext context)
     {
-        var instance = context.Get<Bone>();
+        var instance = context.Get<MotBone>();
         if (context.children.Count == 0) {
             var ws = context.GetWorkspace();
-            context.AddChild<Bone, string>("Name", instance, getter: (m) => m!.Header.boneName, setter: (m, v) => m!.Header.boneName = v ?? string.Empty).AddDefaultHandler<string>();
-            context.AddChild<Bone, uint>("Name hash", instance, getter: (m) => m!.Header.boneHash, handler: new ReadOnlyWrapperHandler(new NumericFieldHandler<int>(ImGuiDataType.U32)));
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(BoneHeader), false, DisplayedFields);
         }
 
         context.ShowChildrenUI();
+    }
+}
+
+[ObjectImguiHandler(typeof(BoneHeader))]
+public class MotBoneHeaderHandler : IObjectUIHandler
+{
+    private static MemberInfo[] DisplayedFields = [
+        typeof(BoneHeader).GetField(nameof(BoneHeader.boneName))!,
+        typeof(BoneHeader).GetField(nameof(BoneHeader.Index))!,
+        typeof(BoneHeader).GetField(nameof(BoneHeader.translation))!,
+        typeof(BoneHeader).GetField(nameof(BoneHeader.quaternion))!,
+    ];
+
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<BoneHeader>();
+        if (context.children.Count == 0) {
+            var ws = context.GetWorkspace();
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(BoneHeader), false, DisplayedFields);
+        }
+
+        var show = ImguiHelpers.TreeNodeSuffix("Bone", instance.ToString());
+        if (show) {
+            context.ShowChildrenUI();
+            ImGui.TreePop();
+        } else {
+            ImGui.SameLine();
+        }
     }
 }
