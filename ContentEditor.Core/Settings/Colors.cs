@@ -20,6 +20,9 @@ public static class Colors
 
     public static Vector4 GameObject => Current.GameObject;
     public static Vector4 Folder => Current.Folder;
+
+    public static Vector4 Colliders => new Vector4(0, 1, 0, 0.8f);
+    public static Vector4 RequestSetColliders => new Vector4(1, 0.4f, 0.1f, 0.8f);
 }
 
 public sealed class AppColors

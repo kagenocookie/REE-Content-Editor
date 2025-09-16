@@ -332,4 +332,7 @@ public interface IUIContextEventHandler
 /// </summary>
 /// <param name="type">The event type that was triggered.</param>
 /// <param name="origin">The UIContext instance from which the event originates.</param>
-public readonly record struct EditorUIEvent(UIContextEvent type, UIContext origin);
+public readonly record struct EditorUIEvent(UIContextEvent type, UIContext origin)
+{
+    public bool IsChangeFromChild => type is UIContextEvent.Changed or UIContextEvent.Reverted or UIContextEvent.Updated;
+}

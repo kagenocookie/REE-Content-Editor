@@ -254,12 +254,12 @@ public static partial class RszFieldCache
     private static RszFieldAccessorFieldList<T> FromList<T>(Func<IEnumerable<(RszField field, int index)>, int> conditions, [CallerMemberName] string name = "")
         => new RszFieldAccessorFieldList<T>(conditions, name);
 
-    public static void InitializeFieldOverrides(RszParser parser)
+    public static void InitializeFieldOverrides(string gameName, RszParser parser)
     {
-        InitializeFieldOverrides(parser, typeof(RszFieldCache));
+        InitializeFieldOverrides(gameName, parser, typeof(RszFieldCache));
     }
 
-    private static void InitializeFieldOverrides(RszParser parser, Type type)
+    private static void InitializeFieldOverrides(string gameName, RszParser parser, Type type)
     {
         var fields = type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
         var classTargets = type.GetCustomAttributes<RszAccessorAttribute>();
@@ -273,6 +273,10 @@ public static partial class RszFieldCache
             if (accessor.Override == null) continue;
 
             foreach (var attr in targets) {
+                if (attr.Games.Length != 0 && attr.GamesExclude == attr.Games.Contains(gameName)) {
+                    continue;
+                }
+
                 var cls = parser.GetRSZClass(attr.Classname);
                 if (cls == null) continue;
 
@@ -295,7 +299,7 @@ public static partial class RszFieldCache
 
         var nested = type.GetNestedTypes(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
         foreach (var sub in nested) {
-            InitializeFieldOverrides(parser, sub);
+            InitializeFieldOverrides(gameName, parser, sub);
         }
     }
 }

@@ -98,11 +98,6 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
         TextureRefs.Dispose();
     }
 
-    public TResourceType? LoadResource<TResourceType>(string path) where TResourceType : class, IResourceFile
-    {
-        return LoadResource(path) as TResourceType;
-    }
-
     private IResourceFile? LoadResource(string path)
     {
         if (!ResourceManager.TryResolveFile(path, out var fileHandle)) {
@@ -157,7 +152,10 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
             resource = handleRef.Resource;
         } else {
             resource = LoadMeshResource(file)!;
-            if (resource == null) return null;
+            if (resource == null) {
+                // assume the caller knows what they're doing - might be a custom mesh-like file (rcol)
+                resource = new MeshResourceHandle(MeshRefs.NextInstanceID);
+            }
             MeshRefs.Add(file, resource);
         }
 

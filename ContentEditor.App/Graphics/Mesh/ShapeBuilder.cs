@@ -1,5 +1,7 @@
 using System.Numerics;
+using ReeLib.Rcol;
 using ReeLib.via;
+using Silk.NET.Maths;
 
 namespace ContentEditor.App.Graphics;
 
@@ -35,7 +37,7 @@ public class ShapeBuilder
     public bool Wire = true;
 
     #region Calculation helper methods
-    private static int CalculateSemicirclePointCount(float radius) => (int)Math.Clamp((radius + 0.01f) * 6f, 6, 32);
+    private static int CalculateSemicirclePointCount(float radius) => (int)Math.Clamp((radius + 1.5f) * 4f, 8, 40);
     private static int CalculateSemicircleVertCount(float radius) => (CalculateSemicirclePointCount(radius) - 1) * 6;
     private static readonly int BoxVertCount = BoxTrianglePoints.Length;
     #endregion
@@ -170,45 +172,69 @@ public class ShapeBuilder
 
     public void InsertCapsule(ref int index, Capsule capsule)
     {
-        StoreWireSemiCircle(ref index, capsule.R, capsule.p1, new Vector3(0, 0, 1), new Vector3(0, 0, 0));
-        StoreWireSemiCircle(ref index, capsule.R, capsule.p1, new Vector3(1, 0, 0), new Vector3(0.5f, 0, 0));
-        StoreWireSemiCircle(ref index, capsule.R, capsule.p1, new Vector3(0, 1, 0), new Vector3(0.5f, 0.5f, 0));
-        StoreWireSemiCircle(ref index, capsule.R, capsule.p1, new Vector3(0, 1, 0), new Vector3(0.5f, -0.5f, 0));
-
-        StoreWireSemiCircle(ref index, capsule.R, capsule.p0, new Vector3(0, 0, 1), new Vector3(0, 1, 0));
-        StoreWireSemiCircle(ref index, capsule.R, capsule.p0, new Vector3(1, 0, 0), new Vector3(0.5f, 1, 0));
-        StoreWireSemiCircle(ref index, capsule.R, capsule.p0, new Vector3(0, 1, 0), new Vector3(0.5f, 0.5f, 0));
-        StoreWireSemiCircle(ref index, capsule.R, capsule.p0, new Vector3(0, 1, 0), new Vector3(0.5f, -0.5f, 0));
-
         var up = (capsule.p1 - capsule.p0);
-        var side1 = capsule.R * Vector3.Normalize(Vector3.Cross(up, Vector3.Dot(up, Vector3.UnitY) >= 0.9999f ? Vector3.UnitX : Vector3.UnitY));
-        var side2 = capsule.R * Vector3.Normalize(Vector3.Cross(up, side1));
-        var sideOff1 = Vector3.Normalize(Vector3.Cross(side1, up)) * 0.01f;
-        var sideOff2 = Vector3.Normalize(Vector3.Cross(side2, up)) * 0.01f;
-        InsertQuad(ref index, capsule.p0 + side1 + sideOff1, capsule.p0 + side1 - sideOff1, capsule.p1 + side1 - sideOff1, capsule.p1 + side1 + sideOff1);
-        InsertQuad(ref index, capsule.p0 - side1 + sideOff1, capsule.p0 - side1 - sideOff1, capsule.p1 - side1 - sideOff1, capsule.p1 - side1 + sideOff1);
-        InsertQuad(ref index, capsule.p0 + side2 + sideOff2, capsule.p0 + side2 - sideOff2, capsule.p1 + side2 - sideOff2, capsule.p1 + side2 + sideOff2);
-        InsertQuad(ref index, capsule.p0 - side2 + sideOff2, capsule.p0 - side2 - sideOff2, capsule.p1 - side2 - sideOff2, capsule.p1 - side2 + sideOff2);
+        var center = (capsule.p1 + capsule.p0) * 0.5f;
+        var alignedUp = Vector3.UnitY * (up.Length() * 0.5f);
+        var startIndex = index;
+        StoreWireSemiCircle(ref index, capsule.R, alignedUp, new Vector3(0, 0, 1), new Vector3(0, 0, 0));
+        StoreWireSemiCircle(ref index, capsule.R, alignedUp, new Vector3(1, 0, 0), new Vector3(0.5f, 0, 0));
+        StoreWireSemiCircle(ref index, capsule.R, alignedUp, new Vector3(0, 1, 0), new Vector3(0.5f, 0.5f, 0));
+        StoreWireSemiCircle(ref index, capsule.R, alignedUp, new Vector3(0, 1, 0), new Vector3(0.5f, -0.5f, 0));
+
+        StoreWireSemiCircle(ref index, capsule.R, -alignedUp, new Vector3(0, 0, 1), new Vector3(0, 1, 0));
+        StoreWireSemiCircle(ref index, capsule.R, -alignedUp, new Vector3(1, 0, 0), new Vector3(0.5f, 1, 0));
+        StoreWireSemiCircle(ref index, capsule.R, -alignedUp, new Vector3(0, 1, 0), new Vector3(0.5f, 0.5f, 0));
+        StoreWireSemiCircle(ref index, capsule.R, -alignedUp, new Vector3(0, 1, 0), new Vector3(0.5f, -0.5f, 0));
+
+        var side1 = capsule.R * Vector3.Cross(Vector3.UnitY, Vector3.UnitX);
+        var side2 = capsule.R * Vector3.Cross(Vector3.UnitY, Vector3.UnitZ);
+        var sideOff1 = Vector3.Normalize(Vector3.Cross(side1, Vector3.UnitY)) * 0.01f;
+        var sideOff2 = Vector3.Normalize(Vector3.Cross(side2, Vector3.UnitY)) * 0.01f;
+        InsertQuad(ref index, -alignedUp + side1 + sideOff1, -alignedUp + side1 - sideOff1, alignedUp + side1 - sideOff1, alignedUp + side1 + sideOff1);
+        InsertQuad(ref index, -alignedUp - side1 + sideOff1, -alignedUp - side1 - sideOff1, alignedUp - side1 - sideOff1, alignedUp - side1 + sideOff1);
+        InsertQuad(ref index, -alignedUp + side2 + sideOff2, -alignedUp + side2 - sideOff2, alignedUp + side2 - sideOff2, alignedUp + side2 + sideOff2);
+        InsertQuad(ref index, -alignedUp - side2 + sideOff2, -alignedUp - side2 - sideOff2, alignedUp - side2 - sideOff2, alignedUp - side2 + sideOff2);
+
+        var rotation = Quaternion<float>.Normalize(TransformExtensions.CreateFromToQuaternion(Vector3.Normalize(alignedUp), Vector3.Normalize(up))).ToSystem();
+        TransformVertices(startIndex, index, rotation, center);
     }
 
     public void InsertCylinder(ref int index, Cylinder cylinder)
     {
-        // mostly identical to capsule, except without the two spherical caps on both sides
-        StoreWireSemiCircle(ref index, cylinder.r, cylinder.p1, new Vector3(0, 1, 0), new Vector3(0.5f, 0.5f, 0));
-        StoreWireSemiCircle(ref index, cylinder.r, cylinder.p1, new Vector3(0, 1, 0), new Vector3(0.5f, -0.5f, 0));
-
-        StoreWireSemiCircle(ref index, cylinder.r, cylinder.p0, new Vector3(0, 1, 0), new Vector3(0.5f, 0.5f, 0));
-        StoreWireSemiCircle(ref index, cylinder.r, cylinder.p0, new Vector3(0, 1, 0), new Vector3(0.5f, -0.5f, 0));
-
         var up = (cylinder.p1 - cylinder.p0);
-        var side1 = cylinder.r * Vector3.Normalize(Vector3.Cross(up, Vector3.Dot(up, Vector3.UnitY) >= 0.9999f ? Vector3.UnitX : Vector3.UnitY));
-        var side2 = cylinder.r * Vector3.Normalize(Vector3.Cross(up, side1));
-        var sideOff1 = Vector3.Normalize(Vector3.Cross(side1, up)) * 0.01f;
-        var sideOff2 = Vector3.Normalize(Vector3.Cross(side2, up)) * 0.01f;
+        var center = (cylinder.p1 + cylinder.p0) * 0.5f;
+        var alignedUp = Vector3.UnitY * (up.Length() * 0.5f);
+        var startIndex = index;
+        // mostly identical to capsule, except without the two spherical caps on both sides
+        StoreWireSemiCircle(ref index, cylinder.r, alignedUp, new Vector3(0, 1, 0), new Vector3(0.5f, 0.5f, 0));
+        StoreWireSemiCircle(ref index, cylinder.r, alignedUp, new Vector3(0, 1, 0), new Vector3(0.5f, -0.5f, 0));
+
+        StoreWireSemiCircle(ref index, cylinder.r, -alignedUp, new Vector3(0, 1, 0), new Vector3(0.5f, 0.5f, 0));
+        StoreWireSemiCircle(ref index, cylinder.r, -alignedUp, new Vector3(0, 1, 0), new Vector3(0.5f, -0.5f, 0));
+
+        var side1 = cylinder.r * Vector3.Cross(Vector3.UnitY, Vector3.UnitX);
+        var side2 = cylinder.r * Vector3.Cross(Vector3.UnitY, Vector3.UnitZ);
+        var sideOff1 = Vector3.Normalize(Vector3.Cross(side1, Vector3.UnitY)) * 0.01f;
+        var sideOff2 = Vector3.Normalize(Vector3.Cross(side2, Vector3.UnitY)) * 0.01f;
         InsertQuad(ref index, cylinder.p0 + side1 + sideOff1, cylinder.p0 + side1 - sideOff1, cylinder.p1 + side1 - sideOff1, cylinder.p1 + side1 + sideOff1);
         InsertQuad(ref index, cylinder.p0 - side1 + sideOff1, cylinder.p0 - side1 - sideOff1, cylinder.p1 - side1 - sideOff1, cylinder.p1 - side1 + sideOff1);
         InsertQuad(ref index, cylinder.p0 + side2 + sideOff2, cylinder.p0 + side2 - sideOff2, cylinder.p1 + side2 - sideOff2, cylinder.p1 + side2 + sideOff2);
         InsertQuad(ref index, cylinder.p0 - side2 + sideOff2, cylinder.p0 - side2 - sideOff2, cylinder.p1 - side2 - sideOff2, cylinder.p1 - side2 + sideOff2);
+
+        var rotation = Quaternion<float>.Normalize(TransformExtensions.CreateFromToQuaternion(Vector3.Normalize(alignedUp), Vector3.Normalize(up))).ToSystem();
+        TransformVertices(startIndex, index, rotation, center);
+    }
+
+    private void TransformVertices(int start, int end, Quaternion rotation, Vector3 offset)
+    {
+        for (int i = start; i < end; ++i) {
+            var point = new Vector3(VertexData![i * VertexAttributeCount + 0], VertexData[i * VertexAttributeCount + 1], VertexData[i * VertexAttributeCount + 2]);
+            point = Vector3.Transform(point, rotation) + offset;
+
+            VertexData[i * VertexAttributeCount + 0] = point.X;
+            VertexData[i * VertexAttributeCount + 1] = point.Y;
+            VertexData[i * VertexAttributeCount + 2] = point.Z;
+        }
     }
 
     private void AddBoxUVAttributes(int index, int vertex)
@@ -228,7 +254,6 @@ public class ShapeBuilder
     private void StoreWireSemiCircle(ref int index, float radius, Vector3 center, Vector3 left, Vector3 rotEuler)
     {
         // in case it's not obvious, I'm not really sure what I'm doing here; it works, but could be improved
-        // non-vertical capsule caps aren't rotated properly with the current method
         var segments = CalculateSemicirclePointCount(radius) - 1;
         var segMult = 1f / segments * MathF.PI;
         var leftNorm = Vector3.Normalize(left) * 0.008f; // should probably already be normalized but just in case
@@ -268,5 +293,22 @@ public class ShapeBuilder
         Indices![index] = index;
         index++;
         Bounds = Bounds.Extend(vec);
+    }
+
+    /// <summary>
+    /// Attempt to add an unknown shape type.
+    /// </summary>
+    public void AddBoxed(object shape)
+    {
+        switch (shape) {
+            case AABB obj: Add(obj); return;
+            case OBB obj: Add(obj); return;
+            case Sphere obj: Add(obj); return;
+            case Capsule obj: Add(obj); return;
+            case Cylinder obj: Add(obj); return;
+            default:
+                Logger.Error("Unsupported shape type " + (shape?.GetType().Name ?? "NULL"));
+                break;
+        }
     }
 }

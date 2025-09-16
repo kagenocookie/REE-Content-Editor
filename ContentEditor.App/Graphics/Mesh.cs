@@ -24,6 +24,8 @@ public abstract class Mesh : IDisposable
     public AABB BoundingBox { get; protected set; }
     public int MeshGroup { get; set; }
 
+    public PrimitiveType MeshType { get; init; } = PrimitiveType.Triangles;
+
     protected Mesh(GL gl)
     {
         GL = gl;

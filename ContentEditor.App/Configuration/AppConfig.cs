@@ -34,8 +34,10 @@ public class AppConfig : Singleton<AppConfig>
         public const string AutoExpandFieldsCount = "auto_expand_fields_count";
         public const string UsePakFilePreviewWindow = "use_pak_preview_window";
 
+        public const string RenderAxis = "render_axis";
         public const string RenderMeshes = "render_meshes";
         public const string RenderColliders = "render_colliders";
+        public const string RenderRequestSetColliders = "render_rcol";
 
         public const string Key_Undo = "key_undo";
         public const string Key_Redo = "key_redo";
@@ -130,8 +132,10 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
     public readonly ClassSettingWrapper<string> LatestVersion = new ClassSettingWrapper<string>(Keys.LatestVersion, _lock);
 
+    public readonly SettingWrapper<bool> RenderAxis = new SettingWrapper<bool>(Keys.RenderAxis, _lock, true);
     public readonly SettingWrapper<bool> RenderMeshes = new SettingWrapper<bool>(Keys.RenderMeshes, _lock, true);
     public readonly SettingWrapper<bool> RenderColliders = new SettingWrapper<bool>(Keys.RenderColliders, _lock, true);
+    public readonly SettingWrapper<bool> RenderRequestSetColliders = new SettingWrapper<bool>(Keys.RenderRequestSetColliders, _lock, true);
 
     public readonly ClassSettingWrapper<string[]> RecentFiles = new ClassSettingWrapper<string[]>(Keys.RecentFiles, _lock, () => []);
 
@@ -243,8 +247,10 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.PrettyLabels, instance.PrettyFieldLabels.value.ToString(), null),
             (Keys.RecentFiles, string.Join("|", instance.RecentFiles.value ?? Array.Empty<string>()), null),
 
+            (Keys.RenderAxis, instance.RenderAxis.value.ToString(), null),
             (Keys.RenderMeshes, instance.RenderMeshes.value.ToString(), null),
             (Keys.RenderColliders, instance.RenderColliders.value.ToString(), null),
+            (Keys.RenderRequestSetColliders, instance.RenderRequestSetColliders.value.ToString(), null),
 
             (Keys.Key_Undo, instance.Key_Undo.value.ToString(), "Keys"),
             (Keys.Key_Redo, instance.Key_Redo.value.ToString(), "Keys"),
@@ -344,11 +350,17 @@ public class AppConfig : Singleton<AppConfig>
                             instance.LatestVersion.value = ReadString(value);
                             break;
 
+                        case Keys.RenderAxis:
+                            instance.RenderAxis.value = ReadBool(value);
+                            break;
                         case Keys.RenderMeshes:
                             instance.RenderMeshes.value = ReadBool(value);
                             break;
                         case Keys.RenderColliders:
                             instance.RenderColliders.value = ReadBool(value);
+                            break;
+                        case Keys.RenderRequestSetColliders:
+                            instance.RenderRequestSetColliders.value = ReadBool(value);
                             break;
                     }
                 } else if (group == "Keys") {

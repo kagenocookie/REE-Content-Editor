@@ -8,6 +8,7 @@ sealed class RszAccessorAttribute : System.Attribute
 {
     public string Classname { get; }
     public string[] Games { get; }
+    public bool GamesExclude { get; init; } = false;
 
     public RszAccessorAttribute(string classname, params string[] games)
     {

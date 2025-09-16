@@ -12,7 +12,7 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
 
     public string Filename => Handle.Filepath;
     public ScnFile File => Handle.GetFile<ScnFile>();
-    public RawScene SourceScene => Handle.GetCustomContent<RawScene>();
+    public RawScene SourceScene => Handle.GetCustomContent<RawScene>()!;
 
     public ContentWorkspace Workspace { get; }
     public SceneEditor? ParentEditor { get; }

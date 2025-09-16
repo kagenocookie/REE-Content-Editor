@@ -34,7 +34,7 @@ public sealed class ContentWorkspace : IDisposable
             var valid = false;
             try {
                 var parser = env.RszParser;
-                RszFieldCache.InitializeFieldOverrides(parser);
+                RszFieldCache.InitializeFieldOverrides(env.Config.Game.name, parser);
                 valid = true;
             } catch (Exception e) {
                 Logger.Error("RSZ files are not supported at the moment, the RSZ template json is either unconfigured or invalid. Error: " + e.Message);

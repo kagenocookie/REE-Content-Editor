@@ -22,7 +22,7 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
 
     public string Filename => Handle.Filepath;
     public PfbFile File => Handle.GetFile<PfbFile>();
-    public Prefab Prefab => Handle.GetCustomContent<Prefab>();
+    public Prefab Prefab => Handle.GetCustomContent<Prefab>()!;
 
     public ContentWorkspace Workspace { get; }
 

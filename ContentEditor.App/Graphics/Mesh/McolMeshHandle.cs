@@ -35,10 +35,7 @@ public class McolMeshHandle : MeshHandle
             }
         }
 
-        for (int i = Handle.Meshes.Count - 1; i >= (bvh.triangles.Count == 0 ? 0 : 1); i--) {
-            Handle.Meshes[i].Dispose();
-            Handle.Meshes.RemoveAt(i);
-        }
+        Handle.RemoveMeshes(bvh.triangles.Count == 0 ? 0 : 1);
         var builder = new ShapeBuilder();
 
         foreach (var shape in bvh.spheres) builder.Add(shape.sphere);

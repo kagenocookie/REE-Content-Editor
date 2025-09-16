@@ -41,8 +41,7 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
         ?? (Loader as IFileHandleContentProvider<T>)?.GetFile(this)
         ?? throw new NotImplementedException();
 
-    public T GetCustomContent<T>() where T : class => (Loader as IFileHandleContentProvider<T>)?.GetFile(this)
-        ?? throw new NotImplementedException();
+    public T? GetCustomContent<T>() where T : class => (Loader as IFileHandleContentProvider<T>)?.GetFile(this);
 
     public static FileHandle CreateEmbedded(IFileLoader loader, IResourceFile file, string filepath = "")
     {

@@ -81,6 +81,14 @@ public sealed class MeshResourceHandle : IDisposable
     public int HandleID { get; }
     internal List<Mesh> Meshes { get; } = new();
 
+    internal void RemoveMeshes(int startingFromIndex = 0)
+    {
+        for (int i = Meshes.Count - 1; i >= startingFromIndex; i--) {
+            Meshes[i].Dispose();
+            Meshes.RemoveAt(i);
+        }
+    }
+
     public IEnumerable<Mesh> Submeshes => Meshes.AsReadOnly();
     private readonly Dictionary<int, string> materialNames = new();
 
