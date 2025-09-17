@@ -183,10 +183,7 @@ public class TrackHandler : IObjectUIHandler
         typeof(Track).GetField(nameof(Track.maxFrame))!,
         typeof(Track).GetProperty(nameof(Track.FrameIndexType))!,
         typeof(Track).GetProperty(nameof(Track.UnkFlag))!,
-        typeof(Track).GetProperty(nameof(Track.Compression))!,
-        typeof(Track).GetProperty(nameof(Track.TrackType))!,
     ];
-    private int compressionChildIndex;
 
     public void OnIMGUI(UIContext context)
     {
@@ -220,13 +217,13 @@ public class TrackHandler : IObjectUIHandler
 
         if (context.children.Count == 0) {
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(Track), false, DisplayedFields);
-            compressionChildIndex = Array.IndexOf(DisplayedFields, typeof(Track).GetProperty(nameof(Track.Compression)));
             // the track flag enum type is shared between the clip header and the individual track
             // tracks are required to only have one exact type, and we'll be automatically handling them
-            context.children[compressionChildIndex + 1].uiHandler = new ReadOnlyWrapperHandler(new CsharpEnumHandler(typeof(TrackFlag)));
             if (instance.TrackType == TrackFlag.Rotation) {
+                context.AddChild<Track, QuaternionDecompression>(nameof(Track.Compression), instance, getter: (t) => t!.RotationCompressionType, setter: (t, v) => t.RotationCompressionType = v).AddDefaultHandler();
                 context.AddChild<Track, Quaternion[]>(nameof(Track.rotations), instance, new ResizableArrayHandler(typeof(Quaternion)), (t) => t!.rotations, (t, v) => t.rotations = v);
             } else {
+                context.AddChild<Track, Vector3Decompression>(nameof(Track.Compression), instance, getter: (t) => t!.TranslationCompressionType, setter: (t, v) => t.TranslationCompressionType = v).AddDefaultHandler();
                 context.AddChild<Track, Vector3[]>(nameof(Track.translations), instance, new ResizableArrayHandler(typeof(Vector3)), (t) => t!.translations, (t, v) => t.translations = v);
             }
             context.AddChild<Track, int[]>(nameof(Track.frameIndexes), instance, new ResizableArrayHandler(typeof(int)), (t) => t!.frameIndexes, (t, v) => t.frameIndexes = v);
@@ -235,9 +232,6 @@ public class TrackHandler : IObjectUIHandler
         if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString()!)) {
             for (int i = 0; i < context.children.Count; ++i) {
                 context.children[i].ShowUI();
-                if (compressionChildIndex == i) {
-                    if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("");
-                }
             }
             ImGui.TreePop();
         }
