@@ -12,13 +12,15 @@ public class BaseListHandler : IObjectUIHandler
     public BaseListHandler() {}
     public BaseListHandler(Type? containerType) { this.containerType = containerType; }
 
+    protected virtual object? CreateNewListInstance() => containerType == null ? null : Activator.CreateInstance(containerType);
+
     public void OnIMGUI(UIContext context)
     {
         var list = context.Get<IList>();
         if (list == null) {
             ImGui.Text(context.label + ": NULL");
             if (containerType != null && ImguiHelpers.SameLine() && ImGui.Button("Create")) {
-                context.Set(Activator.CreateInstance(containerType));
+                context.Set(CreateNewListInstance());
             }
             return;
         }
@@ -57,12 +59,14 @@ public class BaseListHandler : IObjectUIHandler
                 ImGui.PopID();
             }
             if (CanCreateNewElements && ImGui.Button("Add")) {
-                var newInstance = CreateNewElement(context);
-                if (newInstance == null) {
-                    Logger.Error("Failed to create new array element");
-                } else {
-                    ExpandList(context, list, newInstance);
-                    list = context.Get<IList>();
+                try {
+                    var newInstance = CreateNewElement(context);
+                    if (newInstance != null) {
+                        ExpandList(context, list, newInstance);
+                        list = context.Get<IList>();
+                    }
+                } catch (Exception e) {
+                    Logger.Error("Failed to create new array element: " + e.Message);
                 }
             }
             ImGui.TreePop();
@@ -89,8 +93,16 @@ public class BaseListHandler : IObjectUIHandler
     protected virtual object? CreateNewElement(UIContext context)
     {
         var list = context.Get<IList>();
-        if (list.Count == 0 || list[0] == null) return null;
-        return Activator.CreateInstance(list[0]!.GetType());
+        Type elementType;
+        if (list.GetType().IsArray) {
+            elementType = list.GetType().GetElementType()!;
+        } else if (list.Count == 0 || list[0] == null) {
+            throw new Exception("Unknown list element type");
+        } else {
+            elementType = list[0]!.GetType();
+        }
+
+        return Activator.CreateInstance(elementType);
     }
 }
 
@@ -101,6 +113,7 @@ public class ListHandler : BaseListHandler
     public ListHandler(Type elementType, Type? containerType = null) : base(containerType)
     {
         this.elementType = elementType;
+        CanCreateNewElements = !elementType.IsAbstract;
     }
 
     protected override UIContext CreateElementContext(UIContext context, IList list, int elementIndex)
@@ -110,9 +123,11 @@ public class ListHandler : BaseListHandler
         return ctx;
     }
 
-    protected override object CreateNewElement(UIContext context)
+    protected override object? CreateNewElement(UIContext context)
     {
-        return elementType == typeof(string) ? string.Empty : Activator.CreateInstance(elementType)!;
+        if (elementType == typeof(string)) return string.Empty;
+        if (elementType.IsAbstract) throw new Exception($"Type {elementType.Name} is abstract");
+        return Activator.CreateInstance(elementType)!;
     }
 }
 
@@ -125,7 +140,7 @@ public class ListHandler<T> : ListHandler where T : class
         base.CanCreateNewElements = instantiator != null;
     }
 
-    protected override object CreateNewElement(UIContext context) => Instantiator?.Invoke() ?? base.CreateNewElement(context);
+    protected override object? CreateNewElement(UIContext context) => Instantiator?.Invoke() ?? base.CreateNewElement(context);
 }
 
 public class ArrayHandler : BaseListHandler
@@ -150,10 +165,15 @@ public class ResizableArrayHandler : BaseListHandler
 {
     private readonly Type elementType;
 
-    public ResizableArrayHandler(Type elementType)
+    public ResizableArrayHandler(Type elementType) : base(elementType.MakeArrayType())
     {
         this.elementType = elementType;
         CanCreateNewElements = true;
+    }
+
+    protected override object? CreateNewListInstance()
+    {
+        return Array.CreateInstance(elementType, 0);
     }
 
     protected override UIContext CreateElementContext(UIContext context, IList list, int elementIndex)

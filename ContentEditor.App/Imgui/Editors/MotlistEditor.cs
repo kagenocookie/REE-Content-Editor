@@ -1,8 +1,12 @@
+using System.Collections;
+using System.Numerics;
 using System.Reflection;
 using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
+using ReeLib.Clip;
+using ReeLib.Common;
 using ReeLib.Mot;
 using ReeLib.Motlist;
 
@@ -28,7 +32,8 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     protected override void DrawFileContents()
     {
         if (context.children.Count == 0) {
-            context.AddChild<MotlistFile, List<MotFileBase>>("Motion files", File, getter: (m) => m!.MotFiles).AddDefaultHandler<List<MotFileBase>>();
+            context.AddChild<MotlistFile, string>("Motlist Name", File, getter: (m) => m!.Header.MotListName, setter: (m, n) => m.Header.MotListName = n ?? string.Empty).AddDefaultHandler<string>();
+            context.AddChild<MotlistFile, List<MotFileBase>>("Motion Files", File, getter: (m) => m!.MotFiles).AddDefaultHandler<List<MotFileBase>>();
             context.AddChild<MotlistFile, List<MotIndex>>("Motions", File, getter: (m) => m!.Motions).AddDefaultHandler<List<MotIndex>>();
         }
         context.ShowChildrenUI();
@@ -141,7 +146,7 @@ public class MotFileHandler : IObjectUIHandler
             context.AddChild<MotFile, float>("Start Frame", instance, getter: (m) => m!.Header.startFrame, setter: (m, v) => m!.Header.startFrame = v).AddDefaultHandler<float>();
             context.AddChild<MotFile, float>("End Frame", instance, getter: (m) => m!.Header.endFrame, setter: (m, v) => m!.Header.endFrame = v).AddDefaultHandler<float>();
 
-            context.AddChild<MotFile, List<MotBone>>("Bones", instance, getter: (m) => m!.RootBones, handler: new ListHandler(typeof(MotBone), typeof(List<MotBone>)) { CanCreateNewElements = true });
+            context.AddChild<MotFile, List<MotBone>>("Bones", instance, getter: (m) => m!.RootBones).AddDefaultHandler();
             context.AddChild<MotFile, List<BoneMotionClip>>("Bone Clips", instance, getter: (m) => m!.BoneClips).AddDefaultHandler();
             context.AddChild<MotFile, List<MotClip>>("Clips", instance, getter: (m) => m!.Clips).AddDefaultHandler();
         }
@@ -170,6 +175,119 @@ public class MotBoneHandler : IObjectUIHandler
     }
 }
 
+[ObjectImguiHandler(typeof(Track))]
+public class TrackHandler : IObjectUIHandler
+{
+    private static MemberInfo[] DisplayedFields = [
+        typeof(Track).GetField(nameof(Track.frameRate))!,
+        typeof(Track).GetField(nameof(Track.maxFrame))!,
+        typeof(Track).GetProperty(nameof(Track.FrameIndexType))!,
+        typeof(Track).GetProperty(nameof(Track.UnkFlag))!,
+        typeof(Track).GetProperty(nameof(Track.Compression))!,
+        typeof(Track).GetProperty(nameof(Track.TrackType))!,
+    ];
+    private int compressionChildIndex;
+
+    public void OnIMGUI(UIContext context)
+    {
+        using var _ = ImguiHelpers.ScopedID(context.label);
+        var instance = context.Get<Track>();
+        if (instance == null) {
+            ImGui.Text(context.label);
+            ImGui.SameLine();
+            if (ImGui.Button("Create")) {
+                var editor = context.FindHandlerInParents<MotlistEditor>();
+                if (editor == null) {
+                    Logger.Error("Could not found motlist editor context");
+                    return;
+                }
+                var trackHandlers = context.parent?.children.Where(c => c.uiHandler?.GetType() == typeof(TrackHandler)).Select(c => c.uiHandler).ToList();
+                if (trackHandlers == null) {
+                    Logger.Error("Could not determine track type");
+                } else {
+                    var type = trackHandlers.IndexOf(this) switch {
+                        0 => TrackFlag.Translation,
+                        1 => TrackFlag.Rotation,
+                        2 => TrackFlag.Scale,
+                        _ => TrackFlag.Translation,
+                    };
+                    instance = new Track(editor.File.Header.Version.GetMotVersion(), type);
+                    UndoRedo.RecordSet(context, instance);
+                }
+            }
+            return;
+        }
+
+        if (context.children.Count == 0) {
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(Track), false, DisplayedFields);
+            compressionChildIndex = Array.IndexOf(DisplayedFields, typeof(Track).GetProperty(nameof(Track.Compression)));
+            // the track flag enum type is shared between the clip header and the individual track
+            // tracks are required to only have one exact type, and we'll be automatically handling them
+            context.children[compressionChildIndex + 1].uiHandler = new ReadOnlyWrapperHandler(new CsharpEnumHandler(typeof(TrackFlag)));
+            if (instance.TrackType == TrackFlag.Rotation) {
+                context.AddChild<Track, Quaternion[]>(nameof(Track.rotations), instance, new ResizableArrayHandler(typeof(Quaternion)), (t) => t!.rotations, (t, v) => t.rotations = v);
+            } else {
+                context.AddChild<Track, Vector3[]>(nameof(Track.translations), instance, new ResizableArrayHandler(typeof(Vector3)), (t) => t!.translations, (t, v) => t.translations = v);
+            }
+            context.AddChild<Track, int[]>(nameof(Track.frameIndexes), instance, new ResizableArrayHandler(typeof(int)), (t) => t!.frameIndexes, (t, v) => t.frameIndexes = v);
+        }
+
+        if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString()!)) {
+            for (int i = 0; i < context.children.Count; ++i) {
+                context.children[i].ShowUI();
+                if (compressionChildIndex == i) {
+                    if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("");
+                }
+            }
+            ImGui.TreePop();
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(BoneMotionClip))]
+public class BoneMotionClipHandler : IObjectUIHandler
+{
+    private static MemberInfo[] DisplayedFields = [
+        typeof(BoneMotionClip).GetProperty(nameof(BoneMotionClip.ClipHeader))!,
+    ];
+
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<BoneMotionClip>();
+        if (context.children.Count == 0) {
+            context.AddChild<BoneMotionClip, BoneClipHeader>(nameof(BoneMotionClip.ClipHeader), instance, getter: m => m!.ClipHeader).AddDefaultHandler();
+            context.AddChild<BoneMotionClip, Track>(nameof(BoneMotionClip.Translation), instance, new TrackHandler(), m => m!.Translation, (m, v) => m.Translation = v);
+            context.AddChild<BoneMotionClip, Track>(nameof(BoneMotionClip.Rotation), instance, new TrackHandler(), m => m!.Rotation, (m, v) => m.Rotation = v);
+            context.AddChild<BoneMotionClip, Track>(nameof(BoneMotionClip.Scale), instance, new TrackHandler(), m => m!.Scale, (m, v) => m.Scale = v);
+        }
+
+        if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString())) {
+            context.ShowChildrenUI();
+            ImGui.TreePop();
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(List<BoneMotionClip>))]
+public class BoneMotionClipListHandler : ListHandler
+{
+    public BoneMotionClipListHandler() : base(typeof(BoneMotionClip), typeof(List<BoneMotionClip>))
+    {
+        CanCreateNewElements = true;
+    }
+
+    protected override object? CreateNewElement(UIContext context)
+    {
+        var editor = context.FindHandlerInParents<MotlistEditor>();
+        if (editor == null) {
+            Logger.Error("Could not found motlist editor context");
+            return null;
+        }
+        var clip = new BoneMotionClip(new BoneClipHeader(editor.File.Header.Version.GetMotVersion()));
+        return clip;
+    }
+}
+
 [ObjectImguiHandler(typeof(BoneHeader))]
 public class MotBoneHeaderHandler : IObjectUIHandler
 {
@@ -195,5 +313,130 @@ public class MotBoneHeaderHandler : IObjectUIHandler
         } else {
             ImGui.SameLine();
         }
+    }
+}
+
+[ObjectImguiHandler(typeof(ClipHeader))]
+public class MotClipHeaderHandler : IObjectUIHandler
+{
+    private static MemberInfo[] DisplayedFields = [
+        typeof(ClipHeader).GetField(nameof(ClipHeader.numFrames))!,
+        typeof(ClipHeader).GetField(nameof(ClipHeader.guid))!,
+    ];
+
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<ClipHeader>();
+        if (context.children.Count == 0) {
+            var ws = context.GetWorkspace();
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(ClipHeader), false, DisplayedFields);
+        }
+
+        context.ShowChildrenUI();
+    }
+}
+
+[ObjectImguiHandler(typeof(BoneClipHeader))]
+public class MotBoneClipHeaderHandler : IObjectUIHandler
+{
+    private static MemberInfo[] DisplayedFields = [
+        typeof(BoneClipHeader).GetField(nameof(BoneClipHeader.boneIndex))!,
+        typeof(BoneClipHeader).GetField(nameof(BoneClipHeader.boneName))!,
+        typeof(BoneClipHeader).GetField(nameof(BoneClipHeader.boneHash))!,
+        typeof(BoneClipHeader).GetField(nameof(BoneClipHeader.trackFlags))!,
+        typeof(BoneClipHeader).GetField(nameof(BoneClipHeader.uknFloat))!,
+    ];
+
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<BoneClipHeader>();
+        if (context.children.Count == 0) {
+            var ws = context.GetWorkspace();
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(BoneClipHeader), false, DisplayedFields);
+        }
+
+        context.ShowChildrenUI();
+    }
+}
+
+[ObjectImguiHandler(typeof(List<MotFileBase>))]
+public class MotFileListHandler : ListHandler
+{
+    public MotFileListHandler() : base(typeof(MotFileBase), typeof(List<MotFileBase>))
+    {
+        CanCreateNewElements = true;
+    }
+
+    protected override object? CreateNewElement(UIContext context)
+    {
+        var editor = context.FindHandlerInParents<MotlistEditor>();
+        if (editor == null) {
+            Logger.Error("Could not found motlist editor context");
+            return null;
+        }
+        var mot = new MotFile(editor.File.FileHandler);
+        var boneSource = editor.File.MotFiles.FirstOrDefault() as MotFile;
+        if (boneSource != null) mot.CopyBones(boneSource);
+
+        return mot;
+    }
+}
+
+[ObjectImguiHandler(typeof(List<MotBone>))]
+public class MotBoneListHandler : ListHandler
+{
+    public MotBoneListHandler() : base(typeof(MotBone), typeof(List<MotBone>))
+    {
+        CanCreateNewElements = true;
+    }
+
+    protected override object? CreateNewElement(UIContext context)
+    {
+        var editor = context.FindHandlerInParents<MotlistEditor>();
+        if (editor == null) {
+            Logger.Error("Could not found motlist editor context");
+            return null;
+        }
+        var mot = context.FindValueInParentValues<MotFile>();
+        var newIndex = mot == null || mot.Bones.Count == 0 ? 0 : (mot.Bones.Max(b => b.Index) + 1);
+        var bone = new MotBone(new BoneHeader() {
+            boneName = "New_bone".GetUniqueName((n) => true == mot?.Bones.Any(b => b.Name == n)),
+            Index = newIndex,
+            quaternion = Quaternion.Identity,
+        });
+
+        bone.Parent = context.FindValueInParentValues<MotBone>();
+        if (mot == null) return bone;
+
+        UndoRedo.RecordCallback(context, DoAdd(context, mot, bone), DoRemove(context, mot, bone));
+        return null;
+    }
+
+    protected override void RemoveFromList(UIContext context, IList list, int i)
+    {
+        var mot = context.FindValueInParentValues<MotFile>();
+        if (mot == null) {
+            base.RemoveFromList(context, list, i);
+            return;
+        }
+
+        var bone = (MotBone)list[i]!;
+        UndoRedo.RecordCallback(context, DoRemove(context, mot, bone), DoAdd(context, mot, bone));
+    }
+
+    private static Action DoAdd(UIContext context, MotFile mot, MotBone bone)
+    {
+        return () => {
+            context.ClearChildren();
+            mot.AddBone(bone);
+        };
+    }
+
+    private static Action DoRemove(UIContext context, MotFile mot, MotBone bone)
+    {
+        return () => {
+            context.ClearChildren();
+            mot.RemoveBone(bone);
+        };
     }
 }

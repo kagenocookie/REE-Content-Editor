@@ -346,6 +346,26 @@ public static class ImguiHelpers
         }
     }
 
+    public static DisposableImguiID ScopedID(int id)
+    {
+        ImGui.PushID(id);
+        return new DisposableImguiID();
+    }
+
+    public static DisposableImguiID ScopedID(string id)
+    {
+        ImGui.PushID(id);
+        return new DisposableImguiID();
+    }
+
+    public struct DisposableImguiID : IDisposable
+    {
+        public void Dispose()
+        {
+            ImGui.PopID();
+        }
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool SameLine()
     {
