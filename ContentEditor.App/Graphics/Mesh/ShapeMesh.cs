@@ -11,7 +11,6 @@ public class ShapeMesh : Mesh
 
     public ShapeMesh(GL gl) : base(gl)
     {
-        SetAttributesNoTangents();
     }
 
     public void SetShape(AABB aabb)

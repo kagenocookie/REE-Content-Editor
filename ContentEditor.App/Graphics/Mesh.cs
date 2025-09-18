@@ -7,14 +7,21 @@ namespace ContentEditor.App.Graphics;
 
 #pragma warning disable CS8618
 
+[Flags]
+public enum MeshFlags
+{
+    None = 0,
+    HasTangents = 1,
+    HasBones = 2,
+}
+
 public abstract class Mesh : IDisposable
 {
     protected readonly GL GL;
 
-    protected uint attributeNumberCount;
-    protected VertAttribute[] attributes;
+    protected VertAttribute[] attributes = DefaultAttributes;
 
-    protected record struct VertAttribute(int Count, int Offset);
+    protected record struct VertAttribute(int Offset, int Count, uint Index);
 
     public float[] VertexData { get; protected set; }
     public int[] Indices { get; protected set; }
@@ -24,7 +31,58 @@ public abstract class Mesh : IDisposable
     public AABB BoundingBox { get; protected set; }
     public int MeshGroup { get; set; }
 
+    private MeshFlags _flags;
+    public MeshFlags Flags {
+        get => _flags;
+        set {
+            if (_flags == value) return;
+            _flags = value;
+            UpdateAttributes();
+        }
+    }
+
+    public bool HasTangents => (Flags & MeshFlags.HasTangents) != 0;
+    public bool HasBones => (Flags & MeshFlags.HasBones) != 0;
+
+    private const int MinAttributeCount = 9;
+    protected int AttributeCount => MinAttributeCount
+        + (HasTangents ? 3 : 0)
+        + (HasBones ? 8 : 0);
+
+    protected const int TangentAttributeOffset = 9;
+    protected int BonesAttributeOffset => HasTangents ? 12 : 9;
+
     public PrimitiveType MeshType { get; init; } = PrimitiveType.Triangles;
+
+    private const int Index_Position = 0;
+    private const int Index_UV = 1;
+    private const int Index_Normal = 2;
+    private const int Index_Index = 3;
+    private const int Index_Tangent = 4;
+    private const int Index_BoneIndex = 5;
+    private const int Index_BoneWeight = 6;
+
+    private static readonly VertAttribute[] DefaultAttributes = [
+        new VertAttribute(0, 3, Index_Position),
+        new VertAttribute(3, 2, Index_UV),
+        new VertAttribute(5, 3, Index_Normal),
+        new VertAttribute(8, 1, Index_Index),
+    ];
+
+    private static readonly VertAttribute[] AttributesBones = DefaultAttributes.Concat([
+        new VertAttribute(9, 4, Index_BoneIndex),
+        new VertAttribute(13, 4, Index_BoneWeight),
+    ]).ToArray();
+
+    private static readonly VertAttribute[] AttributesTangents = DefaultAttributes.Concat([
+        new VertAttribute(9, 3, Index_Tangent),
+    ]).ToArray();
+
+    private static readonly VertAttribute[] AttributesTangentsBones = DefaultAttributes.Concat([
+        new VertAttribute(9, 3, Index_Tangent),
+        new VertAttribute(12, 4, Index_BoneIndex),
+        new VertAttribute(16, 4, Index_BoneWeight),
+    ]).ToArray();
 
     protected Mesh(GL gl)
     {
@@ -40,36 +98,28 @@ public abstract class Mesh : IDisposable
         ApplyVertexAttributes();
     }
 
-    protected void SetAttributesNoTangents()
+    private void UpdateAttributes()
     {
-        if (attributeNumberCount == 9) return;
-        attributeNumberCount = 9;
-        attributes = [
-            new VertAttribute(3, 0), // position
-            new VertAttribute(2, 3), // uv
-            new VertAttribute(3, 5), // normal
-            new VertAttribute(1, 8), // index
-        ];
-    }
-
-    protected void SetAttributesWithTangents()
-    {
-        if (attributeNumberCount == 12) return;
-        attributeNumberCount = 12;
-        attributes = [
-            new VertAttribute(3, 0), // position
-            new VertAttribute(2, 3), // uv
-            new VertAttribute(3, 5), // normal
-            new VertAttribute(1, 8), // index
-            new VertAttribute(3, 9), // tangent
-        ];
+        if (Flags == (MeshFlags.HasBones|MeshFlags.HasTangents)) {
+            attributes = AttributesTangentsBones;
+        } else if (Flags == MeshFlags.HasBones) {
+            attributes = AttributesBones;
+        } else if (Flags == MeshFlags.HasTangents) {
+            attributes = AttributesTangents;
+        } else {
+            attributes = DefaultAttributes;
+        }
     }
 
     protected void ApplyVertexAttributes()
     {
-        for (uint i = 0; i < attributes.Length; ++i) {
-            var va = attributes[i];
-            VAO.VertexAttributePointer(i, va.Count, VertexAttribPointerType.Float, attributeNumberCount, va.Offset);
+        var count = (uint)AttributeCount;
+        foreach (var va in attributes) {
+            if (va.Index == Index_BoneIndex) {
+                VAO.VertexAttributePointer(va.Index, va.Count, VertexAttribPointerType.Int, count, va.Offset);
+            } else {
+                VAO.VertexAttributePointer(va.Index, va.Count, VertexAttribPointerType.Float, count, va.Offset);
+            }
         }
     }
 

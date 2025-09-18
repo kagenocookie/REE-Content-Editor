@@ -82,7 +82,7 @@ public class OverlaysWindow : IWindowHandler
             var meshIcon = AppIcons.Mesh.ToString();
 
             // axis/grid display toggle
-            ImGui.PushStyleColor(ImGuiCol.Text, Colors.Info with { W = AppConfig.Instance.RenderColliders.Get() ? 1 : 0.6f });
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.Info with { W = AppConfig.Instance.RenderAxis.Get() ? 1 : 0.6f });
             if (ImGui.Button(meshIcon + "##axis")) {
                 AppConfig.Instance.RenderAxis.Set(!AppConfig.Instance.RenderAxis);
             }

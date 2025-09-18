@@ -17,7 +17,7 @@ out vec2 fUv;
 void main()
 {
 #ifdef ENABLE_SKINNING
-#include "includes/skinned_mesh.glsl";
+#include "includes/anim_vert.glsl";
 #endif
     gl_Position = uProjectionView * uModel * vec4(vPos, 1.0);
     fUv = vUv;

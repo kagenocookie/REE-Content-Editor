@@ -95,13 +95,14 @@ public partial class MeshLoader : IFileLoader
                                 aiMesh.Bones.Add(bone);
                             }
 
-                            foreach (var vd in sub.Weights) {
+                            for (int boneIndex = 0; boneIndex < sub.Weights.Length; ++boneIndex) {
+                                var vd = sub.Weights[boneIndex];
                                 for (int i = 0; i < vd.boneIndices.Length; ++i) {
                                     var weight = vd.boneWeights[i];
                                     if (weight > 0) {
                                         var srcBone = file.DeformBones[vd.boneIndices[i]];
                                         var bone = aiMesh.Bones[srcBone.index];
-                                        bone.VertexWeights.Add(new VertexWeight(vd.boneIndices[i], weight));
+                                        bone.VertexWeights.Add(new VertexWeight(boneIndex, weight));
                                     }
                                 }
                             }
