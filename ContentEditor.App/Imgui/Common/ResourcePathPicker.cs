@@ -52,7 +52,7 @@ public class ResourcePathPicker : IObjectUIHandler
 
         if (ImGui.BeginPopupContextItem()) {
             var ws = context.GetWorkspace();
-            if (ImGui.Button("Open file")) {
+            if (!string.IsNullOrWhiteSpace(newPath ?? currentPath) && ImGui.Button("Open file")) {
                 ImGui.CloseCurrentPopup();
                 if (ws != null) {
                     var resolvedPath = ws.Env.ResolveFilepath(currentPath);
@@ -67,7 +67,7 @@ public class ResourcePathPicker : IObjectUIHandler
                     }
                 }
             }
-            if (ImGui.Button("Extract file ...")) {
+            if (!string.IsNullOrWhiteSpace(newPath ?? currentPath) && ImGui.Button("Extract file ...")) {
                 ImGui.CloseCurrentPopup();
                 if (ws != null) {
                     var resolvedPath = ws.Env.ResolveFilepath(currentPath);
@@ -104,7 +104,7 @@ public class ResourcePathPicker : IObjectUIHandler
             if (ImGui.Button("Find files ...")) {
                 var exts = FileExtensionFilter?.Split('|').Where((x, i) => i % 2 == 1).Select(x => x.Replace("*.", "").Replace(".*", "")).ToArray() ?? [];
                 var extRegex = string.Join("|", exts);
-                if (exts.Length == 0) {
+                if (exts.Length == 0 || exts.Length == 1 && exts[0] == "*") {
                     EditorWindow.CurrentWindow!.AddSubwindow(new PakBrowser(ws!.Env, null));
                 } else {
                     if (exts.Length > 1) {
