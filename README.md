@@ -48,10 +48,10 @@ Some files may not fully work for other RE ENGINE games.
 | .efx      | ☑️ read/write
 | .tex, .dds  | view, convert  | Convert to TGA/PNG
 | .mesh     | read-only 3D display
-| .rcol     | read/write
+| .rcol     | read/write | 3D shape preview
 | .motbank  | read/write
 | .mcol     | ☑️ read/write | .glb import/export for collision mesh
-| .motlist  | partial read, incomplete
+| .motlist  | read/write
 | .ainvm    | raw data read
 | .cdef, .def | ☑️ read/write
 | common image formats | view only
@@ -66,6 +66,12 @@ Accessible under the Windows > Entities menu option for supported games, these a
 ### Dragon's Dogma 2
 - Shop modifications
 - Custom basic items and weapons (TODO: armors)
+- Weather parameters
+- NPC appearance and costume parameters
+- Events
+- Quest data (partial)
+- Job and skill metadata
+- For any spawn related data editing, my [anatomically accurate map](https://kagenocookie.github.io/dd2map/) can be used as a reference for grid cells and positions
 
 ### Resident Evil 2 (RT), 3 (RT), 4, 8
 - Basic weapon data

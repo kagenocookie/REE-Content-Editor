@@ -1,0 +1,47 @@
+entities:
+  jobs.job_data:
+    enums:
+    - name: app.Character.JobEnum
+      primary: true
+    to_string: "{id:enum(app.Character.JobEnum)}"
+    fields:
+      job_info:
+        type: object
+        label: Data
+        required: true
+        param:
+          classname: app.JobInformationParam
+          nested: false
+      custom_skills:
+        type: object
+        label: Data
+        required: true
+        param:
+          classname: app.CustomSkillSet
+      normal_skills:
+        type: object
+        label: Data
+        required: true
+        param:
+          classname: app.NormalSkillSet
+
+classes:
+  app.JobInformationParam:
+    id: [_JobID]
+    patcher:
+      type: array-file
+      file: natives/stm/appsystem/gui/jobmenu/jobinformationdata.user.2
+  app.CustomSkillSet:
+    id: [_Job]
+    patcher:
+      type: array-file
+      file: natives/stm/appsystem/gui/jobmenu/customskillinformationdata.user.2
+  app.NormalSkillSet:
+    id: [_Job]
+    patcher:
+      type: array-file
+      file: natives/stm/appsystem/gui/jobmenu/normalskillinformationdata.user.2
+  app.CustomSkillInformationParam:
+    to_string: "{_SkillID:enum(app.HumanCustomSkillID)} : {_SkillName:translate()}"
+  app.NormalSkillInformationParam:
+    to_string: "{_ActionID:enum(app.NormalActionID)} ({_SkillID:enum(app.HumanNormalSkillID)}) : {_SkillName:translate()}"

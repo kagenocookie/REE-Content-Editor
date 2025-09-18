@@ -1,7 +1,0 @@
-classes:
-  app.JobInformationParam:
-    id: [_JobID]
-    group: skills
-    patcher:
-      type: array-file
-      file: natives/stm/appsystem/gui/jobmenu/jobinformationdata.user.2

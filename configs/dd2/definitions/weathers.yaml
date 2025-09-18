@@ -12,6 +12,7 @@ entities:
       data:
         type: object
         label: Data
+        required: true
         param:
           classname: app.WeatherUserData.WeatherData
           nested: false
