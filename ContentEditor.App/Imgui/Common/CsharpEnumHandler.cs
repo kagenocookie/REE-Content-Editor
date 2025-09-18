@@ -84,6 +84,8 @@ public class CsharpFlagsEnumFieldHandler<T, TUnderlying>() : IObjectUIHandler
         if (type == typeof(uint)) return ImGuiDataType.U32;
         if (type == typeof(long)) return ImGuiDataType.S64;
         if (type == typeof(ulong)) return ImGuiDataType.U64;
+        if (type == typeof(byte)) return ImGuiDataType.U8;
+        if (type == typeof(sbyte)) return ImGuiDataType.S8;
         throw new NotImplementedException($"Unsupported flag enum backing type {type}");
     }
 

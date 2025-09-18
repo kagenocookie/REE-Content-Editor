@@ -330,6 +330,7 @@ public class MotBoneClipHeaderHandler : IObjectUIHandler
         typeof(BoneClipHeader).GetField(nameof(BoneClipHeader.boneName))!,
         typeof(BoneClipHeader).GetField(nameof(BoneClipHeader.boneHash))!,
         typeof(BoneClipHeader).GetField(nameof(BoneClipHeader.trackFlags))!,
+        typeof(BoneClipHeader).GetField(nameof(BoneClipHeader.uknIndex))!,
         typeof(BoneClipHeader).GetField(nameof(BoneClipHeader.uknFloat))!,
     ];
 
