@@ -182,7 +182,6 @@ public class TrackHandler : IObjectUIHandler
         typeof(Track).GetField(nameof(Track.frameRate))!,
         typeof(Track).GetField(nameof(Track.maxFrame))!,
         typeof(Track).GetProperty(nameof(Track.FrameIndexType))!,
-        typeof(Track).GetProperty(nameof(Track.UnkFlag))!,
     ];
 
     public void OnIMGUI(UIContext context)
@@ -202,12 +201,7 @@ public class TrackHandler : IObjectUIHandler
                 if (trackHandlers == null) {
                     Logger.Error("Could not determine track type");
                 } else {
-                    var type = trackHandlers.IndexOf(this) switch {
-                        0 => TrackFlag.Translation,
-                        1 => TrackFlag.Rotation,
-                        2 => TrackFlag.Scale,
-                        _ => TrackFlag.Translation,
-                    };
+                    var type = trackHandlers.IndexOf(this) == 1 ? TrackValueType.Quaternion : TrackValueType.Vector3;
                     instance = new Track(editor.File.Header.Version.GetMotVersion(), type);
                     UndoRedo.RecordSet(context, instance);
                 }
@@ -217,9 +211,7 @@ public class TrackHandler : IObjectUIHandler
 
         if (context.children.Count == 0) {
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(Track), false, DisplayedFields);
-            // the track flag enum type is shared between the clip header and the individual track
-            // tracks are required to only have one exact type, and we'll be automatically handling them
-            if (instance.TrackType == TrackFlag.Rotation) {
+            if (instance.TrackType == TrackValueType.Quaternion) {
                 context.AddChild<Track, QuaternionDecompression>(nameof(Track.Compression), instance, getter: (t) => t!.RotationCompressionType, setter: (t, v) => t.RotationCompressionType = v).AddDefaultHandler();
                 context.AddChild<Track, Quaternion[]>(nameof(Track.rotations), instance, new ResizableArrayHandler(typeof(Quaternion)), (t) => t!.rotations, (t, v) => t.rotations = v);
             } else {
