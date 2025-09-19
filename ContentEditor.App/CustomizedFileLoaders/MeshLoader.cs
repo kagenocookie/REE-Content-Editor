@@ -22,6 +22,7 @@ public partial class MeshLoader : IFileLoader
 
     public IResourceFile? Load(ContentWorkspace workspace, FileHandle handle)
     {
+        var name = PathUtils.GetFilepathWithoutExtensionOrVersion(handle.Filename).ToString();
         Assimp.Scene importedScene;
         if (handle.Format.format == KnownFileFormats.Mesh) {
             var fileHandler = new FileHandler(handle.Stream, handle.Filepath);
@@ -33,96 +34,9 @@ public partial class MeshLoader : IFileLoader
                 return null;
             }
 
-            importedScene = new Assimp.Scene();
-            importedScene.RootNode = new Node(PathUtils.GetFilepathWithoutExtensionOrVersion(handle.Filename).ToString());
-            foreach (var name in file.MaterialNames) {
-                var aiMat = new Material();
-                aiMat.Name = name;
-                importedScene.Materials.Add(aiMat);
-            }
-
-            var boneDict = new Dictionary<int, Node>();
-            if (file.Bones.Count > 0 && file.MeshBuffer.Weights.Length > 0) {
-                foreach (var srcBone in file.Bones) {
-                    var boneNode = new Node(srcBone.name, srcBone.parentIndex == -1 ? null : boneDict[srcBone.parentIndex]);
-                    boneDict[srcBone.index] = boneNode;
-                    if (srcBone.Parent == null) {
-                        importedScene.RootNode.Children.Add(boneNode);
-                    } else {
-                        boneNode.Transform = srcBone.localTransform.ToSystem();
-                        boneNode.Metadata.Add("remap_index", new Metadata.Entry(MetaDataType.Int32, srcBone.remapIndex));
-                        boneDict[srcBone.parentIndex].Children.Add(boneNode);
-                    }
-                }
-            }
-
-            foreach (var meshData in file.Meshes) {
-                foreach (var mesh in meshData.LODs[0].MeshGroups) {
-                    foreach (var sub in mesh.Submeshes) {
-                        var aiMesh = new Mesh(PrimitiveType.Triangle);
-                        aiMesh.MaterialIndex = sub.materialIndex;
-
-                        aiMesh.Vertices.AddRange(sub.Positions);
-                        aiMesh.BoundingBox = new BoundingBox(meshData.boundingBox.minpos, meshData.boundingBox.maxpos);
-                        if (file.MeshBuffer.UV0 != null) {
-                            var uvOut = aiMesh.TextureCoordinateChannels[0];
-                            uvOut.EnsureCapacity(sub.UV0.Length);
-                            foreach (var uv in sub.UV0) uvOut.Add(new System.Numerics.Vector3(uv.X, uv.Y, 0));
-                        }
-                        if (file.MeshBuffer.UV1.Length > 0) {
-                            var uvOut = aiMesh.TextureCoordinateChannels[1];
-                            uvOut.EnsureCapacity(sub.UV1.Length);
-                            foreach (var uv in sub.UV1) uvOut.Add(new System.Numerics.Vector3(uv.X, uv.Y, 0));
-                        }
-                        if (file.MeshBuffer.Normals != null) {
-                            aiMesh.Normals.AddRange(sub.Normals);
-                        }
-                        if (file.MeshBuffer.Tangents != null) {
-                            aiMesh.Tangents.AddRange(sub.Tangents);
-                        }
-                        if (file.MeshBuffer.Colors.Length > 0) {
-                            var colOut = aiMesh.VertexColorChannels[0];
-                            colOut.EnsureCapacity(sub.Colors.Length);
-                            foreach (var col in sub.Colors) colOut.Add(col.ToVector4());
-                        }
-                        if (file.Bones.Count > 0 && file.MeshBuffer.Weights.Length > 0) {
-                            // should we only be grabbing SkinBones here?
-                            foreach (var srcBone in file.Bones) {
-                                var bone = new Bone();
-                                bone.Name = srcBone.name;
-                                // or should it be globalTransform here?
-                                bone.OffsetMatrix = srcBone.localTransform.ToSystem();
-                                aiMesh.Bones.Add(bone);
-                            }
-
-                            for (int boneIndex = 0; boneIndex < sub.Weights.Length; ++boneIndex) {
-                                var vd = sub.Weights[boneIndex];
-                                for (int i = 0; i < vd.boneIndices.Length; ++i) {
-                                    var weight = vd.boneWeights[i];
-                                    if (weight > 0) {
-                                        var srcBone = file.DeformBones[vd.boneIndices[i]];
-                                        var bone = aiMesh.Bones[srcBone.index];
-                                        bone.VertexWeights.Add(new VertexWeight(boneIndex, weight));
-                                    }
-                                }
-                            }
-                        }
-                        var faces = sub.Indices.Length / 3;
-                        aiMesh.Faces.EnsureCapacity(faces);
-                        for (int i = 0; i < faces; ++i) {
-                            var f = new Face();
-                            f.Indices.Add(sub.Indices[i * 3 + 0]);
-                            f.Indices.Add(sub.Indices[i * 3 + 1]);
-                            f.Indices.Add(sub.Indices[i * 3 + 2]);
-                            aiMesh.Faces.Add(f);
-                        }
-                        aiMesh.Name = $"Group_{mesh.groupId.ToString(CultureInfo.InvariantCulture)}";
-
-                        importedScene.Meshes.Add(aiMesh);
-                    }
-                }
-            }
-
+            return new AssimpMeshResource(name) {
+                NativeMesh = file,
+            };
         } else {
             using AssimpContext importer = new AssimpContext();
             importedScene = importer.ImportFileFromStream(
@@ -137,9 +51,12 @@ public partial class MeshLoader : IFileLoader
                 Logger.Error("No meshes found in file " + handle.Filepath);
                 return null;
             }
+
+            return new AssimpMeshResource(name) {
+                Scene = importedScene,
+            };
         }
 
-        return new AssimpMeshResource(importedScene);
     }
 
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
@@ -164,9 +81,25 @@ public partial class MeshLoader : IFileLoader
     }
 }
 
-public class AssimpMeshResource(Assimp.Scene importedScene) : IResourceFile
+public class AssimpMeshResource(string Name) : IResourceFile
 {
-    public Assimp.Scene Scene { get; } = importedScene;
+    private Assimp.Scene? _scene;
+    private MeshFile? _mesh;
+
+    public Assimp.Scene Scene
+    {
+        get => _scene ??= (NativeMesh != null ? ConvertMeshToAssimpScene(NativeMesh, Name) : null!);
+        set => _scene = value;
+    }
+
+    public MeshFile? NativeMesh
+    {
+        get => _mesh;
+        set => _mesh = value;
+    }
+
+    public bool HasNativeMesh => _mesh != null;
+    public bool HasAssimpScene => _scene != null;
 
     public void WriteTo(string filepath)
     {
@@ -187,5 +120,102 @@ public class AssimpMeshResource(Assimp.Scene importedScene) : IResourceFile
         var scn = new Assimp.Scene();
         scn.Meshes.AddRange(Scene.Meshes);
         importer.ExportFile(scn, filepath, exportFormat);
+    }
+
+    private static Assimp.Scene ConvertMeshToAssimpScene(MeshFile file, string rootName)
+    {
+        var importedScene = new Assimp.Scene();
+        importedScene.RootNode = new Node(rootName);
+        foreach (var name in file.MaterialNames) {
+            var aiMat = new Material();
+            aiMat.Name = name;
+            importedScene.Materials.Add(aiMat);
+        }
+
+        var boneDict = new Dictionary<int, Node>();
+        if (file.Bones.Count > 0 && file.MeshBuffer!.Weights.Length > 0) {
+            foreach (var srcBone in file.Bones) {
+                var boneNode = new Node(srcBone.name, srcBone.parentIndex == -1 ? null : boneDict[srcBone.parentIndex]);
+                boneDict[srcBone.index] = boneNode;
+                if (srcBone.Parent == null) {
+                    importedScene.RootNode.Children.Add(boneNode);
+                } else {
+                    boneNode.Transform = srcBone.localTransform.ToSystem();
+                    boneNode.Metadata.Add("remap_index", new Metadata.Entry(MetaDataType.Int32, srcBone.remapIndex));
+                    boneDict[srcBone.parentIndex].Children.Add(boneNode);
+                }
+            }
+        }
+
+        foreach (var meshData in file.Meshes) {
+            foreach (var mesh in meshData.LODs[0].MeshGroups) {
+                foreach (var sub in mesh.Submeshes) {
+                    var aiMesh = new Mesh(PrimitiveType.Triangle);
+                    aiMesh.MaterialIndex = sub.materialIndex;
+
+                    aiMesh.Vertices.AddRange(sub.Positions);
+                    aiMesh.BoundingBox = new BoundingBox(meshData.boundingBox.minpos, meshData.boundingBox.maxpos);
+                    if (file.MeshBuffer!.UV0 != null) {
+                        var uvOut = aiMesh.TextureCoordinateChannels[0];
+                        uvOut.EnsureCapacity(sub.UV0.Length);
+                        foreach (var uv in sub.UV0) uvOut.Add(new System.Numerics.Vector3(uv.X, uv.Y, 0));
+                    }
+                    if (file.MeshBuffer.UV1.Length > 0) {
+                        var uvOut = aiMesh.TextureCoordinateChannels[1];
+                        uvOut.EnsureCapacity(sub.UV1.Length);
+                        foreach (var uv in sub.UV1) uvOut.Add(new System.Numerics.Vector3(uv.X, uv.Y, 0));
+                    }
+                    if (file.MeshBuffer.Normals != null) {
+                        aiMesh.Normals.AddRange(sub.Normals);
+                    }
+                    if (file.MeshBuffer.Tangents != null) {
+                        aiMesh.Tangents.AddRange(sub.Tangents);
+                    }
+                    if (file.MeshBuffer.Colors.Length > 0) {
+                        var colOut = aiMesh.VertexColorChannels[0];
+                        colOut.EnsureCapacity(sub.Colors.Length);
+                        foreach (var col in sub.Colors) colOut.Add(col.ToVector4());
+                    }
+                    var weightedVerts = new HashSet<int>();
+                    if (file.Bones.Count > 0 && file.MeshBuffer.Weights.Length > 0) {
+                        // should we only be grabbing SkinBones here?
+                        foreach (var srcBone in file.Bones) {
+                            var bone = new Bone();
+                            bone.Name = srcBone.name;
+                            // or should it be globalTransform here?
+                            bone.OffsetMatrix = srcBone.localTransform.ToSystem();
+                            aiMesh.Bones.Add(bone);
+                        }
+
+                        for (int vertId = 0; vertId < sub.Weights.Length; ++vertId) {
+                            var vd = sub.Weights[vertId];
+                            for (int i = 0; i < vd.boneIndices.Length; ++i) {
+                                var weight = vd.boneWeights[i];
+                                if (weight > 0) {
+                                    var srcBone = file.DeformBones[vd.boneIndices[i]];
+                                    var bone = aiMesh.Bones[srcBone.index];
+                                    weightedVerts.Add(vertId);
+                                    bone.VertexWeights.Add(new VertexWeight(vertId, weight));
+                                }
+                            }
+                        }
+                    }
+                    var faces = sub.Indices.Length / 3;
+                    aiMesh.Faces.EnsureCapacity(faces);
+                    for (int i = 0; i < faces; ++i) {
+                        var f = new Face();
+                        f.Indices.Add(sub.Indices[i * 3 + 0]);
+                        f.Indices.Add(sub.Indices[i * 3 + 1]);
+                        f.Indices.Add(sub.Indices[i * 3 + 2]);
+                        aiMesh.Faces.Add(f);
+                    }
+                    aiMesh.Name = $"Group_{mesh.groupId.ToString(CultureInfo.InvariantCulture)}";
+
+                    importedScene.Meshes.Add(aiMesh);
+                }
+            }
+        }
+
+        return importedScene;
     }
 }

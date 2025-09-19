@@ -4,16 +4,7 @@ using ReeLib.via;
 using Silk.NET.OpenGL;
 
 namespace ContentEditor.App.Graphics;
-
 #pragma warning disable CS8618
-
-[Flags]
-public enum MeshFlags
-{
-    None = 0,
-    HasTangents = 1,
-    HasBones = 2,
-}
 
 public abstract class Mesh : IDisposable
 {
@@ -34,7 +25,7 @@ public abstract class Mesh : IDisposable
     private MeshFlags _flags;
     public MeshFlags Flags {
         get => _flags;
-        set {
+        protected set {
             if (_flags == value) return;
             _flags = value;
             UpdateAttributes();
