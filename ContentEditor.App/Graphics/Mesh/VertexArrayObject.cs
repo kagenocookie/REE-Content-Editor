@@ -16,9 +16,15 @@ public sealed class VertexArrayObject<TVertexType, TIndexType> : IDisposable
         _handle = _gl.GenVertexArray();
     }
 
-    public unsafe void VertexAttributePointer(uint index, int count, VertexAttribPointerType type, uint vertexSize, int offset)
+    public unsafe void VertexAttributePointerFloat(uint index, int count, VertexAttribPointerType type, uint vertexSize, int offset)
     {
         _gl.VertexAttribPointer(index, count, type, false, vertexSize * (uint)sizeof(TVertexType), (void*)(offset * sizeof(TVertexType)));
+        _gl.EnableVertexAttribArray(index);
+    }
+
+    public unsafe void VertexAttributePointerInt(uint index, int count, VertexAttribIType type, uint vertexSize, int offset)
+    {
+        _gl.VertexAttribIPointer(index, count, type, vertexSize * (uint)sizeof(TVertexType), (void*)(offset * sizeof(TVertexType)));
         _gl.EnableVertexAttribArray(index);
     }
 

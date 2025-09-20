@@ -106,10 +106,10 @@ public abstract class Mesh : IDisposable
     {
         var count = (uint)AttributeCount;
         foreach (var va in attributes) {
-            if (va.Index == Index_BoneIndex) {
-                VAO.VertexAttributePointer(va.Index, va.Count, VertexAttribPointerType.Int, count, va.Offset);
+            if (va.Index == Index_BoneIndex || va.Index == Index_Index) {
+                VAO.VertexAttributePointerInt(va.Index, va.Count, VertexAttribIType.Int, count, va.Offset);
             } else {
-                VAO.VertexAttributePointer(va.Index, va.Count, VertexAttribPointerType.Float, count, va.Offset);
+                VAO.VertexAttributePointerFloat(va.Index, va.Count, VertexAttribPointerType.Float, count, va.Offset);
             }
         }
     }

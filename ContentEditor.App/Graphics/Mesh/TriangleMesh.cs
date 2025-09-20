@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
+using Assimp;
 using ReeLib;
 using ReeLib.Common;
 using ReeLib.via;
@@ -31,7 +32,7 @@ public class TriangleMesh : Mesh
         }
 
         Flags = (sourceMesh.MeshBuffer.Tangents.Length != 0 ? MeshFlags.HasTangents : MeshFlags.None)
-            | (sourceMesh.Bones.Count != 0 ? MeshFlags.HasBones : MeshFlags.None);
+            | (sourceMesh.BoneData?.Bones.Count > 0 ? MeshFlags.HasBones : MeshFlags.None);
 
         var attrs = AttributeCount;
         Indices = new int[submesh.Indices.Length];
@@ -56,7 +57,7 @@ public class TriangleMesh : Mesh
             VertexData[vertOffset + 5] = norm.X;
             VertexData[vertOffset + 6] = norm.Y;
             VertexData[vertOffset + 7] = norm.Z;
-            VertexData[vertOffset + 8] = (float)index;
+            VertexData[vertOffset + 8] = BitConverter.Int32BitsToSingle(index);
             if (HasTangents) {
                 var tan = submesh.Tangents[vert];
                 VertexData[vertOffset + tangentsOffset + 0] = tan.X;
@@ -66,10 +67,10 @@ public class TriangleMesh : Mesh
             if (HasBones) {
                 var vertWeight = submesh.Weights[vert];
 
-                VertexData[vertOffset + boneIndsOffset + 0] = vertWeight.boneIndices[0];
-                VertexData[vertOffset + boneIndsOffset + 1] = vertWeight.boneIndices[1];
-                VertexData[vertOffset + boneIndsOffset + 2] = vertWeight.boneIndices[2];
-                VertexData[vertOffset + boneIndsOffset + 3] = vertWeight.boneIndices[3];
+                VertexData[vertOffset + boneIndsOffset + 0] = BitConverter.Int32BitsToSingle(vertWeight.boneIndices[0]);
+                VertexData[vertOffset + boneIndsOffset + 1] = BitConverter.Int32BitsToSingle(vertWeight.boneIndices[1]);
+                VertexData[vertOffset + boneIndsOffset + 2] = BitConverter.Int32BitsToSingle(vertWeight.boneIndices[2]);
+                VertexData[vertOffset + boneIndsOffset + 3] = BitConverter.Int32BitsToSingle(vertWeight.boneIndices[3]);
 
                 VertexData[vertOffset + boneWeightsOffset + 0] = vertWeight.boneWeights[0];
                 VertexData[vertOffset + boneWeightsOffset + 1] = vertWeight.boneWeights[1];

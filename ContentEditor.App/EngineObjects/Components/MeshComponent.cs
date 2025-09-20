@@ -15,6 +15,8 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
     private MeshHandle? mesh;
     private MaterialGroup? material;
 
+    public MeshHandle? MeshHandle => mesh;
+
     public override AABB LocalBounds => mesh?.BoundingBox ?? default;
 
     public bool HasMesh => mesh?.Meshes.Any() == true;
@@ -58,11 +60,12 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
     {
         invalidMesh = false;
         UnloadMesh();
+        mesh = Scene!.RenderContext.LoadMesh(meshFilepath);
         // note - when loading material groups from the mesh file, we receive a placeholder material with just a default shader and white texture
+        var shaderFlags = mesh?.HasArmature == true ? ShaderFlags.EnableSkinning : ShaderFlags.None;
         material = string.IsNullOrEmpty(materialFilepath)
-            ? Scene!.RenderContext.LoadMaterialGroup(meshFilepath)
-            : Scene!.RenderContext.LoadMaterialGroup(materialFilepath);
-        mesh = Scene.RenderContext.LoadMesh(meshFilepath);
+            ? Scene.RenderContext.LoadMaterialGroup(meshFilepath, shaderFlags)
+            : Scene.RenderContext.LoadMaterialGroup(materialFilepath, shaderFlags);
         if (mesh != null && material != null) {
             Scene.RenderContext.SetMeshMaterial(mesh, material);
         }
@@ -76,18 +79,20 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
                 mesh.SetMeshPartEnabled(i, enabled);
             }
         }
+        mesh?.Update();
     }
 
     public void SetMesh(FileHandle meshFile, FileHandle? materialFile)
     {
         UnloadMesh();
-        material = Scene!.RenderContext.LoadMaterialGroup(materialFile ?? meshFile);
-        mesh = Scene.RenderContext.LoadMesh(meshFile);
+        mesh = Scene!.RenderContext.LoadMesh(meshFile);
+        material = Scene.RenderContext.LoadMaterialGroup(materialFile ?? meshFile, mesh?.HasArmature == true ? ShaderFlags.EnableSkinning : ShaderFlags.None);
         if (mesh != null) {
             Scene.RenderContext.SetMeshMaterial(mesh, material);
         }
         RszFieldCache.Mesh.Resource.Set(Data, meshFile.InternalPath ?? meshFile.Filepath ?? string.Empty);
         RszFieldCache.Mesh.Material.Set(Data, materialFile?.InternalPath ?? materialFile?.Filepath ?? string.Empty);
+        mesh?.Update();
     }
 
     private void UnloadMesh()

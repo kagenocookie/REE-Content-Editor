@@ -87,12 +87,7 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
 
     public static Matrix4X4<float> GetMatrixFromTransforms(Vector3D<float> pos, Quaternion<float> rot, Vector3D<float> scale)
     {
-        Matrix4X4<float> mat = Matrix4X4.CreateScale<float>(scale);
-
-        if (!rot.IsIdentity) {
-            mat = mat * Matrix4X4.CreateFromQuaternion(rot);
-        }
-        return mat * Matrix4X4.CreateTranslation(pos);
+        return Matrix4X4.CreateScale<float>(scale) * Matrix4X4.CreateFromQuaternion(rot) * Matrix4X4.CreateTranslation(pos);
     }
 
     public void Translate(Vector3 offset)

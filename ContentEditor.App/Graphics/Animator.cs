@@ -1,0 +1,193 @@
+using System.Numerics;
+using ContentEditor.Core;
+using ContentPatcher;
+using ReeLib;
+using ReeLib.Common;
+using ReeLib.Mesh;
+using ReeLib.Mot;
+using Silk.NET.Maths;
+
+namespace ContentEditor.App.Graphics;
+
+public class Animator(ContentWorkspace Workspace)
+{
+    private FileHandle? animationFile;
+    private readonly Dictionary<string, MotFileBase> motions = new();
+    public MotFile? ActiveMotion { get; private set; }
+    private float currentTime;
+    private float clipFramerate;
+    private float clipDuration;
+
+    private AnimatedMeshHandle? mesh;
+    public AnimatedMeshHandle? Mesh => mesh;
+
+    public bool IsPlaying { get; private set; }
+
+    public int AnimationCount => motions.Count;
+    public IEnumerable<string> AnimationNames => motions.Keys;
+    public IEnumerable<KeyValuePair<string, MotFileBase>> Animations => motions.OrderBy(k => k.Key);
+
+    public float CurrentTime => currentTime;
+    public float TotalTime => clipDuration;
+
+    public void Play()
+    {
+        IsPlaying = true;
+    }
+
+    public void Pause()
+    {
+        IsPlaying = false;
+    }
+
+    public void Stop()
+    {
+        IsPlaying = false;
+        currentTime = 0;
+    }
+
+    public void Restart()
+    {
+        currentTime = 0;
+    }
+
+    public static float GetInterpolation<TValue>(TValue[] array1, TValue[] array2, int frame, float time)
+    {
+        return 0;
+    }
+
+    public void SetMesh(AnimatedMeshHandle mesh)
+    {
+        this.mesh = mesh;
+    }
+
+    public void SetActiveMotion(MotFileBase mot)
+    {
+        ActiveMotion = (MotFile)mot;
+
+        clipFramerate = ActiveMotion.Header.FrameRate > 0 ? ActiveMotion.Header.FrameRate * 60f : 60f;
+        clipDuration = ActiveMotion.Header.frameCount / clipFramerate;
+        currentTime = 0;
+    }
+
+    private static void ComputeBoneTransforms(List<MeshBone> bones, Dictionary<int, Matrix4X4<float>> dict, in Matrix4X4<float> parentMat)
+    {
+        foreach (var bone in bones) {
+            var mat = Matrix4X4.Multiply(parentMat, bone.localTransform.ToSystem().ToGeneric());
+            dict[bone.index] = mat;
+            ComputeBoneTransforms(bone.Children, dict, mat);
+        }
+    }
+
+    private Matrix4X4<float>[] transformCache = [];
+    public void Update(float deltaTime)
+    {
+        if (!IsPlaying || mesh == null || ActiveMotion == null) return;
+
+        if (IsPlaying) {
+            if (mesh is AnimatedMeshHandle animMesh && animMesh.Bones != null) {
+                if (animMesh.BoneMatrices.Length != animMesh.Bones.DeformBones.Count) {
+                    animMesh.BoneMatrices = new Matrix4X4<float>[animMesh.Bones.DeformBones.Count];
+                }
+                if (transformCache.Length != animMesh.Bones.Bones.Count) {
+                    transformCache = new Matrix4X4<float>[animMesh.Bones.Bones.Count];
+                }
+
+                currentTime += Time.Delta;
+                if (currentTime >= clipDuration) {
+                    currentTime -= clipDuration;
+                }
+                var frame = (currentTime * clipFramerate);
+                foreach (var bone in animMesh.Bones.Bones) {
+                    var clip = ActiveMotion.BoneClips.FirstOrDefault(bc => bc.ClipHeader.boneHash == MurMur3HashUtils.GetHash(bone.name ?? ""));
+                    Matrix4X4.Decompose<float>(bone.localTransform.ToSystem().ToGeneric(), out var localScale, out var localRot, out var localPos);
+
+                    var clipbone = ActiveMotion.BoneHeaders?.FirstOrDefault(bh => bh.boneHash == clip?.ClipHeader.boneHash);
+
+                    if (clipbone != null) {
+                        if (clip == null) {
+                            // can this even happen?
+                            transformCache[bone.index] = Matrix4X4<float>.Identity;
+                            continue;
+                        }
+                        localPos = clipbone.translation.ToSilkNetVec3();
+                        localRot = clipbone.quaternion.ToGeneric();
+                    }
+
+                    if (clip?.HasTranslation == true && clip.Translation!.frameIndexes != null) {
+                        var (t1, t2, interp) = FindFrames(clip.Translation, frame);
+                        if (t1 >= 0) {
+                            localPos = Vector3D.Lerp(clip.Translation.translations![t1].ToGeneric(), clip.Translation.translations![t2].ToGeneric(), interp);
+                        }
+                    }
+
+                    if (clip?.HasRotation == true && clip.Rotation!.frameIndexes != null) {
+                        var (t1, t2, interp) = FindFrames(clip.Rotation, frame);
+                        if (t1 >= 0) {
+                            localRot = Quaternion<float>.Lerp(clip.Rotation.rotations![t1].ToGeneric(), clip.Rotation.rotations![t2].ToGeneric(), interp);
+                        }
+                    }
+
+                    if (clip?.HasScale == true && clip.Scale!.frameIndexes != null) {
+                        var (t1, t2, interp) = FindFrames(clip.Scale, frame);
+                        if (t1 >= 0) {
+                            localScale = Vector3D.Lerp(clip.Scale.translations![t1].ToGeneric(), clip.Scale.translations![t2].ToGeneric(), interp);
+                        }
+                    }
+
+                    var localTransform = Matrix4X4.CreateScale<float>(localScale) * Matrix4X4.CreateFromQuaternion<float>(localRot) * Matrix4X4.CreateTranslation<float>(localPos);
+
+                    var parentsMat = bone.Parent == null ? Matrix4X4<float>.Identity : transformCache[bone.Parent.index];
+                    var worldMat = localTransform * parentsMat;
+                    transformCache[bone.index] = worldMat;
+
+                    if (bone.remapIndex != -1) {
+                        animMesh.BoneMatrices[bone.remapIndex] = bone.inverseGlobalTransform.ToSystem().ToGeneric() * worldMat;
+                    }
+                }
+            }
+        }
+    }
+
+    public void LoadAnimationList(string fileSource)
+    {
+        if (animationFile != null) {
+            // do we wanna unload here?
+            animationFile = null;
+        }
+
+        motions.Clear();
+        if (Workspace.ResourceManager.TryResolveFile(fileSource, out var file)) {
+            animationFile = file;
+            if (file.Resource is BaseFileResource<MotlistFile> motlist) {
+                foreach (var submot in motlist.File.MotFiles) {
+                    if (submot is MotFile mmo) {
+                        motions.Add(mmo.Header.motName, mmo);
+                    }
+                }
+            } else if (file.Resource is BaseFileResource<MotFile> mot) {
+                motions.Add(file.Filename.ToString(), mot.File);
+            } else {
+                Logger.Error("Unsupported animation source file " + fileSource);
+            }
+        } else {
+            Logger.Error("Could not resolve file " + fileSource);
+        }
+    }
+
+    public static (int first, int second, float interpolation) FindFrames(Track track, float frame)
+    {
+        var len = track.frameIndexes!.Length;
+        var t2 = Array.FindIndex(track.frameIndexes!, ind => ind > frame);
+        if (t2 == 0) return (0, 0, 0);
+        if (t2 == -1 && len == 0) return (-1, -1, 0);
+
+        var t1 = t2 - 1;
+
+        var f1 = track.frameIndexes[t1];
+        var f2 = track.frameIndexes[t2];
+        var w = (frame - f1) / (f2 - f1);
+
+        return (t1, t2, w);
+    }
+}

@@ -98,6 +98,11 @@ public class AssimpMeshResource(string Name) : IResourceFile
         set => _mesh = value;
     }
 
+    public IEnumerable<int> GroupIDs =>
+        _mesh?.Meshes.SelectMany(m => m.LODs[0].MeshGroups.Select(g => (int)g.groupId)).Distinct()
+        ?? _scene?.Meshes.Select(m => string.IsNullOrEmpty(m.Name) ? 0 : MeshLoader.GetMeshGroupFromName(m.Name)).Distinct()
+        ?? [];
+
     public bool HasNativeMesh => _mesh != null;
     public bool HasAssimpScene => _scene != null;
 
@@ -133,8 +138,9 @@ public class AssimpMeshResource(string Name) : IResourceFile
         }
 
         var boneDict = new Dictionary<int, Node>();
-        if (file.Bones.Count > 0 && file.MeshBuffer!.Weights.Length > 0) {
-            foreach (var srcBone in file.Bones) {
+        var bones = file.BoneData?.Bones;
+        if (bones?.Count > 0 && file.MeshBuffer!.Weights.Length > 0) {
+            foreach (var srcBone in bones) {
                 var boneNode = new Node(srcBone.name, srcBone.parentIndex == -1 ? null : boneDict[srcBone.parentIndex]);
                 boneDict[srcBone.index] = boneNode;
                 if (srcBone.Parent == null) {
@@ -177,9 +183,9 @@ public class AssimpMeshResource(string Name) : IResourceFile
                         foreach (var col in sub.Colors) colOut.Add(col.ToVector4());
                     }
                     var weightedVerts = new HashSet<int>();
-                    if (file.Bones.Count > 0 && file.MeshBuffer.Weights.Length > 0) {
+                    if (bones?.Count > 0 && file.MeshBuffer.Weights.Length > 0) {
                         // should we only be grabbing SkinBones here?
-                        foreach (var srcBone in file.Bones) {
+                        foreach (var srcBone in bones) {
                             var bone = new Bone();
                             bone.Name = srcBone.name;
                             // or should it be globalTransform here?
@@ -192,7 +198,7 @@ public class AssimpMeshResource(string Name) : IResourceFile
                             for (int i = 0; i < vd.boneIndices.Length; ++i) {
                                 var weight = vd.boneWeights[i];
                                 if (weight > 0) {
-                                    var srcBone = file.DeformBones[vd.boneIndices[i]];
+                                    var srcBone = file.BoneData!.DeformBones[vd.boneIndices[i]];
                                     var bone = aiMesh.Bones[srcBone.index];
                                     weightedVerts.Add(vertId);
                                     bone.VertexWeights.Add(new VertexWeight(vertId, weight));

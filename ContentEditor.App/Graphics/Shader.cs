@@ -10,6 +10,14 @@ public sealed class Shader : IDisposable
     public uint Handle => _handle;
     private GL _gl;
     public string Name { get; private set; }
+    public ShaderFlags Flags { get; }
+
+    private static readonly Dictionary<ShaderFlags, string[]> FlagDefines = new() {
+        { ShaderFlags.None, [] },
+        { ShaderFlags.EnableSkinning, ["ENABLE_SKINNING"] },
+    };
+
+    public const int MaxBoneCount = 250;
 
     internal Shader(GL gl)
     {
@@ -17,16 +25,17 @@ public sealed class Shader : IDisposable
         Name = string.Empty;
     }
 
-    public Shader(GL gl, string shaderPath, string[]? defines = null, int version = 330)
+    public Shader(GL gl, string shaderPath, ShaderFlags flags = ShaderFlags.None, int version = 330)
     {
         _gl = gl;
-
-        LoadFromCombinedShaderFile(shaderPath, defines, version);
+        Flags = flags;
+        LoadFromCombinedShaderFile(shaderPath, flags, version);
         Name = Path.GetFileNameWithoutExtension(shaderPath);
     }
 
-    public bool LoadFromCombinedShaderFile(string shaderPath, string[]? defines = null, int version = 330)
+    public bool LoadFromCombinedShaderFile(string shaderPath, ShaderFlags flags = ShaderFlags.None, int version = 330)
     {
+        var defines = FlagDefines[flags];
         var (vertex, fragment, geometry) = LoadCombinedShader(shaderPath, defines, version);
         CreateProgram(vertex, fragment, geometry);
         return true;
@@ -90,7 +99,7 @@ public sealed class Shader : IDisposable
             Logger.Error($"{name} uniform not found on shader.");
             return;
         }
-        _gl.UniformMatrix4(location, 1, false, (float*) &value);
+        _gl.UniformMatrix4(location, 1, true, (float*) &value);
     }
 
     public void SetUniform(string name, Texture texture)
@@ -176,6 +185,10 @@ public sealed class Shader : IDisposable
 
                 if (!shaderLines[1].StartsWith("#define " + typeDefine)) {
                     shaderLines.Insert(1, "#define " + typeDefine);
+                }
+
+                foreach (var define in defines) {
+                    shaderLines.Insert(1, "#define " + define);
                 }
             }
             for (int i = 0; i < shaderLines.Count; i++) {
