@@ -1,3 +1,18 @@
 classes:
   app.GenerateRowData:
     to_string: "GenerateRowData Character={_CharaID:enum(app.CharacterID)} Gimmick={_GimmickID:enum(app.GimmickID)}"
+  # natives/stm/appsystem/ch/common/userdata/defaultcharacterstatusparametertable.user.2
+  app.HumanEnemyCombatParameterData:
+    to_string: "HumanEnemyCombatParameterData {_TemplateID:enum(app.HumanEnemyParameterBase.HumanEnemyCombatParamTemplate)} Job={_SkillSetId:enum(app.HumanEnemyParameterBase.HumanEnemySkillSetID)}"
+  app.NPCCombatParameterData:
+    to_string: "NPCCombatParameterData {_TemplateID:enum(app.HumanEnemyParameterBase.NPCCombatParamTemplate)} Job={_SkillSetId:enum(app.HumanEnemyParameterBase.HumanEnemySkillSetID)}"
+  # natives/stm/appsystem/ch/common/userdata/characterexperiencepointstable.user.2
+  app.CharacterExperienceTableRow:
+    to_string: "{CharaID:enum(app.CharacterID)}"
+  app.CharacterExperiencePointsTable.LevelDifferenceAdjustment:
+    to_string: "CharacteLevelDifferenceAdjustment Difference {LevelDifference} = {AdjustValue}"
+  # natives/stm/appsystem/ch/common/human/userdata/parameter/lvupparameteruserdata.user.2
+  app.LVupParam:
+    to_string: "LVupParam {Level}"
+  app.JobStatusParam:
+    to_string: "Job {Job:enum(app.Character.JobEnum)}"

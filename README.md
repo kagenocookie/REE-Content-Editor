@@ -48,10 +48,10 @@ Some files may not fully work for other RE ENGINE games.
 | .efx      | ☑️ read/write
 | .tex, .dds  | view, convert  | Convert to TGA/PNG
 | .mesh     | read-only 3D display
+| .motlist  | read/write | Animation preview
 | .rcol     | read/write | 3D shape preview
 | .motbank  | read/write
 | .mcol     | ☑️ read/write | .glb import/export for collision mesh
-| .motlist  | read/write
 | .ainvm    | raw data read
 | .cdef, .def | ☑️ read/write
 | common image formats | view only
