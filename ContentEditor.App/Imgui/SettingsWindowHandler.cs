@@ -89,17 +89,8 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                 ImGui.TextColored(Colors.Warning, "Window transparency change will only be applied after restarting the app");
             }
 
-            var prettyLabels = config.PrettyFieldLabels.Get();
-            if (ImGui.Checkbox("Simplify field labels", ref prettyLabels)) {
-                config.PrettyFieldLabels.Set(prettyLabels);
-            }
-            if (ImGui.IsItemHovered()) ImGui.SetTooltip("Whether to simplify field labels instead of showing the raw field names (e.g. \"Target Object\" instead of \"_TargetObject\").");
-
-            var doUpdateCheck = config.EnableUpdateCheck.Get();
-            if (ImGui.Checkbox("Automatically check for updates", ref doUpdateCheck)) {
-                config.EnableUpdateCheck.Set(doUpdateCheck);
-            }
-            if (ImGui.IsItemHovered()) ImGui.SetTooltip("Will occasionally check GitHub for new releases.");
+            ShowSetting(config.PrettyFieldLabels, "Simplify field labels", "Whether to simplify field labels instead of showing the raw field names (e.g. \"Target Object\" instead of \"_TargetObject\").");
+            ShowSetting(config.EnableUpdateCheck, "Automatically check for updates", "Will occasionally check GitHub for new releases.");
 
             var maxUndo = config.MaxUndoSteps.Get();
             if (ImGui.DragInt("Max undo steps", ref maxUndo, 0.25f, 0)) {
@@ -107,46 +98,18 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             }
 
             ImGui.SeparatorText("Advanced");
-            var remoteSource = config.RemoteDataSource.Get() ?? "";
-            if (ImGui.InputText("Resource data source", ref remoteSource, 280)) {
-                config.RemoteDataSource.Set(remoteSource);
-            }
-            if (ImGui.IsItemHovered()) ImGui.SetTooltip("The source from which to check for updates and download game-specific resource cache files.\nWill use the default GitHub repository if unspecified.");
-
-            var unpackThreads = config.UnpackMaxThreads.Get();
-            if (ImGui.SliderInt("Max unpack threads", ref unpackThreads, 1, 64)) {
-                config.UnpackMaxThreads.Set(unpackThreads);
-            }
-            if (ImGui.IsItemHovered()) ImGui.SetTooltip("The maximum number of threads to be used when unpacking.\nThe actual thread count is determined automatically by the .NET runtime.");
-
-            var expandFields = config.AutoExpandFieldsCount.Get();
-            if (ImGui.SliderInt("Auto-expand field count", ref expandFields, 0, 16)) {
-                config.AutoExpandFieldsCount.Set(expandFields);
-            }
-            if (ImGui.IsItemHovered()) ImGui.SetTooltip("The number of fields below which an RSZ object tree node should auto-expand.");
+            ShowSetting(config.RemoteDataSource, "Resource data source", "The source from which to check for updates and download game-specific resource cache files.\nWill use the default GitHub repository if unspecified.");
+            ShowSlider(config.UnpackMaxThreads, "Max unpack threads", 1, 64, "The maximum number of threads to be used when unpacking.\nThe actual thread count is determined automatically by the .NET runtime.");
+            ShowSlider(config.AutoExpandFieldsCount, "Auto-expand field count", 0, 16, "The number of fields below which an RSZ object tree node should auto-expand.");
 
             var logLevel = config.LogLevel.Get();
             if (ImGui.Combo("Minimum logging level", ref logLevel, LogLevels, LogLevels.Length)) {
                 config.LogLevel.Set(logLevel);
             }
 
-            var logToFile = config.LogToFile.Get();
-            if (ImGui.Checkbox("Output logs to file", ref logToFile)) {
-                config.LogToFile.Set(logToFile);
-            }
-            if (ImGui.IsItemHovered()) ImGui.SetTooltip($"If checked, any logging will also be output to file {FileLogger.DefaultLogFilePath}.\nChanging this setting requires a restart of the app.");
-
-            var maxFps = config.MaxFps.Get();
-            if (ImGui.SliderInt("Max FPS", ref maxFps, 10, 240)) {
-                config.MaxFps.Set(maxFps);
-            }
-            if (ImGui.IsItemHovered()) ImGui.SetTooltip("The maximum FPS for rendering.");
-
-            var inactiveMaxFps = config.BackgroundMaxFps.Get();
-            if (ImGui.SliderInt("Max FPS in background", ref inactiveMaxFps, 5, maxFps)) {
-                config.BackgroundMaxFps.Set(inactiveMaxFps);
-            }
-            if (ImGui.IsItemHovered()) ImGui.SetTooltip("The maximum FPS when the editor window is not focused.");
+            ShowSetting(config.LogToFile, "Output logs to file", $"If checked, any logging will also be output to file {FileLogger.DefaultLogFilePath}.\nChanging this setting requires a restart of the app.");
+            ShowSlider(config.MaxFps, "Max FPS", 10, 240, "The maximum FPS for rendering.");
+            ShowSlider(config.BackgroundMaxFps, "Max FPS in background", 5, config.MaxFps.Get(), "The maximum FPS when the editor window is not focused.");
 
             var showFps = config.ShowFps.Get();
             if (ImGui.Checkbox("Show FPS", ref showFps)) {
@@ -235,6 +198,37 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         changed = ImguiHelpers.FilterableCSharpEnumCombo<ImGuiKey>(label, ref binding.Key, ref filter) || changed;
         ImGui.PopID();
         return changed;
+    }
+
+    private static void ShowSetting(AppConfig.ClassSettingWrapper<string> setting, string label, string? tooltip)
+    {
+        var remoteSource = setting.Get() ?? "";
+        if (ImGui.InputText(label, ref remoteSource, 280)) {
+            setting.Set(remoteSource);
+        }
+        if (ImGui.IsItemHovered()) ImGui.SetTooltip(tooltip);
+    }
+
+    private static void ShowSetting(AppConfig.SettingWrapper<bool> setting, string label, string? tooltip)
+    {
+        var value = setting.Get();
+        if (ImGui.Checkbox(label, ref value)) {
+            setting.Set(value);
+        }
+        if (tooltip != null && ImGui.IsItemHovered()) {
+            ImGui.SetItemTooltip(tooltip);
+        }
+    }
+
+    private static void ShowSlider(AppConfig.SettingWrapper<int> setting, string label, int min, int max, string? tooltip)
+    {
+        var value = setting.Get();
+        if (ImGui.SliderInt(label, ref value, min, max)) {
+            setting.Set(value);
+        }
+        if (tooltip != null && ImGui.IsItemHovered()) {
+            ImGui.SetItemTooltip(tooltip);
+        }
     }
 
     public bool RequestClose()
