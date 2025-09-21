@@ -98,13 +98,33 @@ public class AssimpMeshResource(string Name) : IResourceFile
         set => _mesh = value;
     }
 
+    public bool HasNativeMesh => _mesh != null;
+    public bool HasAssimpScene => _scene != null;
+
     public IEnumerable<int> GroupIDs =>
         _mesh?.Meshes.SelectMany(m => m.LODs[0].MeshGroups.Select(g => (int)g.groupId)).Distinct()
         ?? _scene?.Meshes.Select(m => string.IsNullOrEmpty(m.Name) ? 0 : MeshLoader.GetMeshGroupFromName(m.Name)).Distinct()
         ?? [];
 
-    public bool HasNativeMesh => _mesh != null;
-    public bool HasAssimpScene => _scene != null;
+    public int VertexCount => _mesh?.MeshBuffer?.Positions.Length
+        ?? _scene?.Meshes.Sum(m => m.VertexCount)
+        ?? -1;
+
+    public int PolyCount => _mesh?.MeshBuffer?.Faces.Length
+        ?? _scene?.Meshes.Sum(m => m.FaceCount)
+        ?? -1;
+
+    public int MaterialCount => _mesh?.MaterialNames.Count
+        ?? _scene?.MaterialCount
+        ?? -1;
+
+    public int BoneCount => _mesh?.BoneData?.Bones.Count
+        ?? _scene?.Meshes[0].BoneCount
+        ?? -1;
+
+    public int MeshCount => _mesh?.Meshes.Sum(mm => mm.totalMeshCount)
+        ?? _scene?.MeshCount
+        ?? -1;
 
     public void WriteTo(string filepath)
     {

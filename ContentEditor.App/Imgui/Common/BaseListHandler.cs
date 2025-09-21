@@ -7,12 +7,20 @@ namespace ContentEditor.App.ImguiHandling;
 public class BaseListHandler : IObjectUIHandler
 {
     public bool CanCreateNewElements { get; set; }
+    public bool Filterable { get; set; }
+
     private readonly Type? containerType;
 
     public BaseListHandler() {}
     public BaseListHandler(Type? containerType) { this.containerType = containerType; }
 
     protected virtual object? CreateNewListInstance() => containerType == null ? null : Activator.CreateInstance(containerType);
+
+    protected virtual bool MatchesFilter(object? obj, string filter)
+    {
+        Logger.Debug("Missing list filter implementation");
+        return true;
+    }
 
     public void OnIMGUI(UIContext context)
     {
@@ -36,7 +44,15 @@ public class BaseListHandler : IObjectUIHandler
             list = context.Get<IList>();
         }
         if (show) {
+            if (Filterable) {
+                context.state ??= "";
+                ImGui.InputText("Filter", ref context.state, 200);
+            }
             for (int i = 0; i < list.Count; ++i) {
+                if (Filterable && !string.IsNullOrEmpty(context.state) && !MatchesFilter(list[i], context.state)) {
+                    continue;
+                }
+
                 ImGui.PushID(i);
                 while (i >= context.children.Count) {
                     var nextIndex = context.children.Count;

@@ -89,6 +89,15 @@ public class ShapeBuilder
         Bounds = AABB.MaxMin;
     }
 
+    // public TriangleMesh Create(GL gl)
+    // {
+    //     float[] vert = [];
+    //     int[] inds = [];
+    //     AABB bounds = AABB.MaxMin;
+    //     UpdateMesh(ref vert, ref inds, ref bounds);
+    //     return new TriangleMesh(gl, vert, inds, bounds);
+    // }
+
     public static void CreateSingle(AABB shape, ref float[] vertices, ref int[] indices, ref AABB bound)
     {
         // could be optimized to not need a concrete shape builder instance but probably not a meaningful difference
