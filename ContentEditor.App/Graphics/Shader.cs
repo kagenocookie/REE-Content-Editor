@@ -99,7 +99,7 @@ public sealed class Shader : IDisposable
             Logger.Error($"{name} uniform not found on shader.");
             return;
         }
-        _gl.UniformMatrix4(location, 1, true, (float*) &value);
+        _gl.UniformMatrix4(location, 1, false, (float*) &value);
     }
 
     public void SetUniform(string name, Texture texture)

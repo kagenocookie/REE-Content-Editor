@@ -23,8 +23,6 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     private Texture? _missingTexture;
     private Texture? _defaultTexture;
 
-    private bool _wasBlend, _wasDisableDepth;
-
     private readonly Dictionary<(string, ShaderFlags), Shader> shaders = new();
     private readonly Dictionary<(BuiltInMaterials, ShaderFlags), Material> builtInMaterials = new();
 
@@ -69,8 +67,8 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
     private Material CreateWireMaterial(ShaderFlags flags)
     {
-        if (!builtInMaterials.TryGetValue((BuiltInMaterials.ViewShaded, flags), out var material)) {
-            material = new(GL, GetShader("Shaders/GLSL/viewShaded.glsl", flags));
+        if (!builtInMaterials.TryGetValue((BuiltInMaterials.Wireframe, flags), out var material)) {
+            material = new(GL, GetShader("Shaders/GLSL/wireframe.glsl", flags));
             material.SetParameter("_OuterColor", new Color(0, 0, 0, 5));
             material.SetParameter("_InnerColor", new Color(0, 255, 0, 200));
             material.name = "wire";
@@ -176,7 +174,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             return new McolMeshHandle(GL, resource, file.GetFile<McolFile>());
         } else if (file.Loader is RcolFileLoader) {
             return new RcolMeshHandle(GL, resource, file.GetFile<RcolFile>());
-        } else if (resource.HasArmature) {
+        } else if (resource.Animatable) {
             return new AnimatedMeshHandle(GL, resource);
         } else {
             return new MeshHandle(resource);
@@ -304,25 +302,16 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     {
         var blend = material.BlendMode;
         if (blend.Blend) {
-            if (!_wasBlend) {
-                GL.Enable(EnableCap.Blend);
-                _wasBlend = true;
-            }
-
+            GL.Enable(EnableCap.Blend);
             GL.BlendFunc(blend.BlendModeSrc, blend.BlendModeDest);
-        } else if (_wasBlend) {
+        } else  {
             GL.Disable(EnableCap.Blend);
-            _wasBlend = false;
         }
 
         if (material.DisableDepth) {
-            if (!_wasDisableDepth) {
-                GL.Disable(EnableCap.DepthTest);
-                _wasDisableDepth = true;
-            }
-        } else if (_wasDisableDepth) {
+            GL.Disable(EnableCap.DepthTest);
+        } else {
             GL.Enable(EnableCap.DepthTest);
-            _wasDisableDepth = false;
         }
     }
 
@@ -331,10 +320,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         lastMaterial = null;
         lastInstancedMesh = null;
 
-        _wasDisableDepth = false;
-        _wasBlend = false;
-        GL.Enable(EnableCap.DepthTest);
-        GL.Disable(EnableCap.Blend);
+        ResetBlendingSettings();
 
         axisMesh ??= CreateAxis();
         gridMesh ??= CreateGrid();
@@ -357,7 +343,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
             Vector3D<float> campos;
             if (Matrix4X4.Invert(ViewMatrix, out var inverted)) {
-                campos = inverted.Row4.ToSystem().ToVec3().ToGeneric() with { Y = 0 };
+                campos = inverted.Column4.ToSystem().ToVec3().ToGeneric() with { Y = 0 };
             } else {
                 campos = new();
             }
@@ -373,8 +359,6 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     {
         GL.Enable(EnableCap.DepthTest);
         GL.Disable(EnableCap.Blend);
-        _wasBlend = false;
-        _wasDisableDepth = false;
     }
 
     internal override void AfterRender()

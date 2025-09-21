@@ -7,9 +7,7 @@
 uniform mat4 uModel;
 
 #ifdef ENABLE_SKINNING
-const int MAX_BONES = 250;
-const int MAX_BONE_INFLUENCE = 4;
-uniform mat4 finalBonesMatrices[MAX_BONES];
+#include "includes/anim_headers.glsl";
 #endif
 
 out vec2 fUv;
@@ -17,13 +15,11 @@ out vec3 fNorm;
 
 void main()
 {
-#ifdef ENABLE_SKINNING
 #include "includes/anim_vert.glsl";
-#endif
-    gl_Position = uProjectionView * uModel * vec4(vPos, 1.0);
+
+    gl_Position = uProjectionView * uModel * finalPosition;
+    fNorm = finalNorm;
     fUv = vUv;
-    mat3 normalMatrix = transpose(inverse(mat3(uModel)));
-    fNorm = normalize(normalMatrix * vNorm);
 }
 #endif
 

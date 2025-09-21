@@ -14,6 +14,7 @@ public sealed class MeshResourceHandle : IDisposable
     public MeshBoneHierarchy? Bones { get; set; }
 
     public bool HasArmature => Bones != null;
+    public bool Animatable => Bones != null && Meshes.Any(m => m.HasBones);
 
     public IEnumerable<Mesh> Submeshes => Meshes.AsReadOnly();
     private readonly Dictionary<int, string> materialNames = new();
