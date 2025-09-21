@@ -1,6 +1,9 @@
 using System.Collections;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text.Json.Serialization;
+using ContentEditor.App.Widgets;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -115,7 +118,7 @@ public class MotFileBaseHandler : IObjectUIHandler
             if (instance != null) {
                 var dataChild = context.AddChild(context.label, instance);
                 dataChild.AddDefaultHandler();
-                dataChild.uiHandler = new MotFileTooltipHandler(dataChild.uiHandler!);
+                dataChild.uiHandler = new MotFileActionHandler(dataChild.uiHandler!);
             }
         }
 
@@ -126,84 +129,6 @@ public class MotFileBaseHandler : IObjectUIHandler
         }
         ImguiHelpers.EndRect(4);
         ImGui.Spacing();
-    }
-
-    private class MotFileTooltipHandler(IObjectUIHandler inner) : IObjectUIHandler
-    {
-        public void OnIMGUI(UIContext context)
-        {
-            var show = ImguiHelpers.TreeNodeSuffix(context.label, context.GetRaw()?.ToString() ?? string.Empty);
-            if (ImGui.BeginPopupContextItem(context.label)) {
-                if (ShowContextMenuItems(context)) {
-                    ImGui.CloseCurrentPopup();
-                }
-                ImGui.EndPopup();
-            }
-            if (show) {
-                inner.OnIMGUI(context);
-                ImGui.TreePop();
-            }
-        }
-
-        public bool ShowContextMenuItems(UIContext context)
-        {
-            if (ImGui.Selectable("Copy motion data")) {
-                var mot = context.Get<MotFileBase>();
-                MotionDataResource motData;
-                if (mot is MotFile mf) {
-                    motData = new MotionDataResource(mf);
-                } else {
-                    Logger.Error("Unsupported mot type");
-                    return true;
-                }
-
-                var ws = context.GetWorkspace();
-                if (Logger.ErrorIf(ws == null)) return true;
-                EditorWindow.CurrentWindow?.CopyToClipboard(motData.ToJsonString(ws.Env), "Copied motion " + motData.MotName);
-                return true;
-            }
-
-            var clipData = EditorWindow.CurrentWindow?.GetClipboard();
-            if (!string.IsNullOrEmpty(clipData) && ImGui.Selectable("Paste motion data")) {
-                if (MotionDataResource.TryDeserialize(clipData, out var motData, out var error)) {
-                    var prevMot = context.Get<MotFileBase>();
-                    var newMot = motData.ToMotFile();
-                    if (newMot == null) return true;
-
-                    if (prevMot.GetType() != newMot.GetType()) {
-                        // fully replace instance
-                        var motlist = context.FindHandlerInParents<MotlistEditor>()?.File;
-                        if (Logger.ErrorIf(motlist == null, "Could not find parent motlist")) return true;
-
-                        var motIndex = motlist.MotFiles.IndexOf(prevMot);
-                        if (Logger.ErrorIf(motIndex == -1, "Mot not found in motlist")) return true;
-
-                        motlist.MotFiles[motIndex] = newMot;
-                        foreach (var mots in motlist.Motions) {
-                            if (mots.MotFile == prevMot) {
-                                mots.MotFile = newMot;
-                            }
-                        }
-                        return true;
-                    } else if (newMot is MotFile motSrc && prevMot is MotFile motTarget) {
-                        // replace values, keep instance
-                        motTarget.CopyValuesFrom(motSrc);
-                        var motlist = context.FindHandlerInParents<MotlistEditor>()?.File;
-                        if (motlist != null) {
-                            // ensure unique name
-                            motTarget.Header.motName = motTarget.Header.motName
-                                .GetUniqueName((newName) => motlist.MotFiles.Any(m => m != motTarget && m is MotFile mm && mm.Header.motName == newName));
-                        }
-                    } else {
-                        Logger.Error("Unsupported mot type");
-                    }
-                } else {
-                    Logger.Error("Failed to deserialize motion data: " + error);
-                }
-                return true;
-            }
-            return false;
-        }
     }
 }
 

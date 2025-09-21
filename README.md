@@ -123,5 +123,9 @@ One bundle modifying the same file as a direct file and through entities at the 
 ## Contributing
 Pull requests are welcome. There are several open issues for bigger features for anyone interested in helping, but if you feel like anything else could be improved upon, feel free to make a feature request or contribute yourself. I'm willing to assist with pointers regarding implementation details.
 
+## Credits
+- Everyone who contributed to or was acknowledged in (RE-Engine-Lib)[https://github.com/kagenocookie/RE-Engine-Lib]
+- alphaZomega: mot bone remapping configs
+
 ## Disclaimer
 This project is in no way affiliated with, endorsed by, or connected to RE ENGINE, Capcom, or any of their affiliates. All trademarks are the property of their respective owners.
