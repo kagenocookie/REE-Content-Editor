@@ -26,6 +26,10 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     private Scene? scene;
     private GameObject? previewGameobject;
 
+    private string? loadedMdf;
+    private string? mdfSource;
+    private UIContext? mdfPickerContext;
+
     private UIContext? animationPickerContext;
     private string animationSourceFile = "";
     private Animator? animator;
@@ -54,6 +58,19 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         Workspace = workspace;
         fileHandle = file;
         mesh = file.GetResource<AssimpMeshResource>();
+        TryGuessMdfFilepath();
+    }
+
+    private void TryGuessMdfFilepath()
+    {
+        if (!Workspace.Env.TryGetFileExtensionVersion("mdf2", out var mdfVersion)) {
+            mdfVersion = -1;
+        }
+
+        var meshBasePath = PathUtils.GetFilepathWithoutExtensionOrVersion(fileHandle.Filepath);
+        var mdfPath = meshBasePath.ToString() + ".mdf2";
+        if (mdfVersion != -1) mdfPath += "." + mdfVersion;
+        this.mdfSource = mdfPath;
     }
 
     public void Focus()
@@ -167,6 +184,16 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Hold Left Shift to move 10x faster.");
             ImGui.SliderFloat("Rotate Speed", ref rotateSpeed, 0.1f, 10.0f);
             ImGui.SliderFloat("Zoom Speed", ref zoomSpeed, 0.01f, 1.0f);
+            if (mdfPickerContext == null) {
+                mdfPickerContext = context.AddChild<MeshViewer, string>(
+                    "MDF2 Material",
+                    this,
+                    new ResourcePathPicker(Workspace, Workspace.Env.TypeCache.GetResourceSubtypes(KnownFileFormats.MaterialDefinition)) { SaveWithNativePath = true },
+                    (v) => v!.mdfSource,
+                    (v, p) => v.mdfSource = p ?? "");
+            }
+            mdfPickerContext.ShowUI();
+            UpdateMaterial(meshComponent);
             if (ImGui.TreeNode("Mesh Info")) {
                 ImGui.TextWrapped($"Path: {fileHandle.Filepath}");
                 if (ImGui.BeginPopupContextItem("##filepath")) {
@@ -301,6 +328,22 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 if (ImGui.RadioButton(name, animator.ActiveMotion == mot)) {
                     animator.SetActiveMotion(mot);
                 }
+            }
+        }
+    }
+
+    private void UpdateMaterial(MeshComponent meshComponent)
+    {
+        var mesh = meshComponent.MeshHandle;
+        if (loadedMdf != mdfSource) {
+            loadedMdf = mdfSource;
+            if (string.IsNullOrEmpty(mdfSource)) {
+                meshComponent.SetMesh(fileHandle, fileHandle);
+            } else if (Workspace.ResourceManager.TryResolveFile(mdfSource, out var mdfHandle)) {
+                meshComponent.SetMesh(fileHandle, mdfHandle);
+            } else {
+                meshComponent.SetMesh(fileHandle, fileHandle);
+                Logger.Error("Could not locate mdf2 file " + mdfSource);
             }
         }
     }

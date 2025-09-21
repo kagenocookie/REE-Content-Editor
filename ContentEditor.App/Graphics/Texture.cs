@@ -128,7 +128,7 @@ public class Texture : IDisposable
         return this;
     }
 
-    public unsafe Texture LoadFromTex(Stream stream, string filename)
+    public Texture LoadFromTex(Stream stream, string filename)
     {
         var tex = new TexFile(new FileHandler(stream, filename));
         if (!tex.Read()) {
