@@ -20,6 +20,6 @@ public class McolSceneLoader : McolFileLoader,
         if (scene == null) {
             scene = new Assimp.Scene();
         }
-        return new AssimpMeshResource(scene);
+        return new AssimpMeshResource(PathUtils.GetFilepathWithoutExtensionOrVersion(handle.Filename).ToString()) { Scene = scene };
     }
 }

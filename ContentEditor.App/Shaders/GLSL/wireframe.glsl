@@ -11,7 +11,7 @@ out vec3 barys;
 void main()
 {
     gl_Position = uProjectionView * uModel * vec4(vPos, 1.0);
-    switch (int(vVertID) % 3) {
+    switch (vVertID % 3) {
         case 0: barys = vec3(1.0, 0.0, 0.0); break;
         case 1: barys = vec3(0.0, 1.0, 0.0); break;
         case 2: barys = vec3(0.0, 0.0, 1.0); break;

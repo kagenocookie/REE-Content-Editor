@@ -1,3 +1,4 @@
+using ReeLib.Mesh;
 using ReeLib.via;
 
 namespace ContentEditor.App.Graphics;
@@ -10,6 +11,10 @@ public class MeshHandle
 {
     internal MeshResourceHandle Handle { get; }
     internal MaterialGroup Material { get; private set; } = new();
+
+    public MeshBoneHierarchy? Bones => Handle.Bones;
+
+    public bool HasArmature => Handle.Meshes.Any(m => m.HasBones);
 
     /// <summary>
     /// Remapping table for submesh index to material, so we can have material groups with different material ordering correctly apply to the same mesh resource.
@@ -71,4 +76,6 @@ public class MeshHandle
         MaterialIndicesRemap.Clear();
         MaterialIndicesRemap.AddRange(meshRemapIndices);
     }
+
+    public virtual void BindForRender(Material material, int meshIndex) { }
 }

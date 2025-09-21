@@ -352,6 +352,12 @@ public class MotFileListHandler : ListHandler
     public MotFileListHandler() : base(typeof(MotFileBase), typeof(List<MotFileBase>))
     {
         CanCreateNewElements = true;
+        Filterable = true;
+    }
+
+    protected override bool MatchesFilter(object? obj, string filter)
+    {
+        return obj is MotFile mot && mot.Header.motName.Contains(filter, StringComparison.InvariantCultureIgnoreCase);
     }
 
     protected override object? CreateNewElement(UIContext context)

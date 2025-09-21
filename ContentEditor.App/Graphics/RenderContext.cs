@@ -27,7 +27,7 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
 
     protected readonly ResourceRefCounter<string, Texture> TextureRefs = new();
     protected readonly ResourceRefCounter<FileHandle, MeshResourceHandle> MeshRefs = new();
-    protected readonly ResourceRefCounter<FileHandle, MaterialGroup> MaterialRefs = new();
+    protected readonly ResourceRefCounter<(FileHandle, ShaderFlags), MaterialGroup> MaterialRefs = new();
 
     protected ResourceManager _resourceManager = null!;
     internal ResourceManager ResourceManager {
@@ -73,7 +73,7 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
     public abstract void RenderSimple(MeshHandle mesh, in Matrix4X4<float> transform);
     public abstract void RenderInstanced(MeshHandle mesh, int instanceIndex, int instanceCount, in Matrix4X4<float> transform);
 
-    public abstract MaterialGroup LoadMaterialGroup(FileHandle file);
+    public abstract MaterialGroup LoadMaterialGroup(FileHandle file, ShaderFlags flags = ShaderFlags.None);
     public abstract IEnumerable<Material> GetPresetMaterials(EditorPresetMaterials preset);
 
     public abstract (MeshHandle, ShapeMesh) CreateShapeMesh();
@@ -171,10 +171,10 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
         MeshRefs.Dereference(handle.Handle);
     }
 
-    public MaterialGroup? LoadMaterialGroup(string materialPath)
+    public MaterialGroup? LoadMaterialGroup(string materialPath, ShaderFlags flags = ShaderFlags.None)
     {
         if (ResourceManager.TryResolveFile(materialPath, out var handle)) {
-            return LoadMaterialGroup(handle);
+            return LoadMaterialGroup(handle, flags);
         }
         return null;
     }

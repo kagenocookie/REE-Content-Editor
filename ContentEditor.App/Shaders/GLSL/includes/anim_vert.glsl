@@ -1,14 +1,26 @@
-vec4 animatedPosition = vec4(0.0f);
+#ifdef ENABLE_SKINNING
+vec4 finalPosition = vec4(0.0f);
+vec3 finalNorm = vec3(0.0f);
 
 for (int i = 0; i < MAX_BONE_PER_VERTEX; i++)
 {
-    if (boneIds[i] == -1) continue;
-    if (boneIds[i] >= MAX_BONES) {
-        animatedPosition = vec4(pos,1.0f);
+    if (vBoneIDs[i] == -1) continue;
+    if (vBoneIDs[i] >= MAX_BONES) {
+        finalPosition = vec4(vPos, 1.0f);
         break;
     }
 
-    vec4 localPosition = finalBonesMatrices[boneIds[i]] * vec4(pos,1.0f);
-    animatedPosition += localPosition * weights[i];
-    vec3 localNormal = mat3(finalBonesMatrices[boneIds[i]]) * norm;
+    mat4 boneMat = boneMatrices[vBoneIDs[i]];
+    vec4 localPosition = boneMat * vec4(vPos, 1.0f);
+    finalPosition += localPosition * vWeights[i];
+    finalNorm += (mat3(boneMat) * vNorm) * vWeights[i];
 }
+
+finalNorm = normalize(finalNorm);
+#else
+
+vec4 finalPosition = vec4(vPos, 1.0);
+mat3 normalMatrix = transpose(inverse(mat3(uModel)));
+vec3 finalNorm = normalize(normalMatrix * vNorm);
+
+#endif

@@ -29,7 +29,7 @@ public class ResourcePathPicker : IObjectUIHandler
         FileFormats = isKnownFormats ? allowedFormats : [];
         if (ws != null && isKnownFormats) {
             FileExtensionFilter = string.Join(
-                ",",
+                "|",
                 allowedFormats.SelectMany(format => ws.Env
                     .GetFileExtensionsForFormat(format)
                     .Select(ext => $"{format} .{ext}|*.{ext}.*")));

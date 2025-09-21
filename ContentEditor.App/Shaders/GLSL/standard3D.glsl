@@ -7,19 +7,18 @@
 uniform mat4 uModel;
 
 #ifdef ENABLE_SKINNING
-const int MAX_BONES = 250;
-const int MAX_BONE_INFLUENCE = 4;
-uniform mat4 finalBonesMatrices[MAX_BONES];
+#include "includes/anim_headers.glsl";
 #endif
 
 out vec2 fUv;
+out vec3 fNorm;
 
 void main()
 {
-#ifdef ENABLE_SKINNING
 #include "includes/anim_vert.glsl";
-#endif
-    gl_Position = uProjectionView * uModel * vec4(vPos, 1.0);
+
+    gl_Position = uProjectionView * uModel * finalPosition;
+    fNorm = finalNorm;
     fUv = vUv;
 }
 #endif
@@ -27,6 +26,7 @@ void main()
 #ifdef FRAGMENT_PROGRAM
 
 in vec2 fUv;
+in vec3 fNorm;
 
 uniform sampler2D _MainTexture;
 uniform vec4 _MainColor;
@@ -35,6 +35,7 @@ layout(location = 0) out vec4 FragColor;
 
 void main()
 {
+    vec3 normal = normalize(fNorm);
     FragColor = texture(_MainTexture, fUv);
 }
 

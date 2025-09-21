@@ -3,9 +3,11 @@ using System.Runtime.CompilerServices;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Mesh;
 using ReeLib.via;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
+using VYaml.Serialization;
 
 namespace ContentEditor.App.Graphics;
 
@@ -21,15 +23,8 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     private Texture? _missingTexture;
     private Texture? _defaultTexture;
 
-    private bool _wasBlend, _wasDisableDepth;
-
-    private readonly Dictionary<string, Shader> shaders = new();
-
-    private Shader StandardShader => GetShader("Shaders/GLSL/standard3D.glsl");
-    private Shader ViewShadedShader => GetShader("Shaders/GLSL/viewShaded.glsl");
-    private Shader WireShader => GetShader("Shaders/GLSL/wireframe.glsl");
-    private Shader MonoShader => GetShader("Shaders/GLSL/unshaded-color.glsl");
-    private Shader FilledWireShader => GetShader("Shaders/GLSL/wireframe-uv.glsl");
+    private readonly Dictionary<(string, ShaderFlags), Shader> shaders = new();
+    private readonly Dictionary<(BuiltInMaterials, ShaderFlags), Material> builtInMaterials = new();
 
     private MeshHandle? axisMesh;
     private MeshHandle? gridMesh;
@@ -40,55 +35,56 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     {
         switch (preset) {
             case EditorPresetMaterials.Wireframe:
-                yield return CreateFilledWireMaterial();
-                yield return CreateWireMaterial();
+                yield return CreateFilledWireMaterial(ShaderFlags.None);
+                yield return CreateWireMaterial(ShaderFlags.None);
                 yield break;
             case EditorPresetMaterials.Default:
             default:
-                yield return CreateViewShadedMaterial();
+                yield return CreateViewShadedMaterial(ShaderFlags.None);
                 yield break;
         }
     }
 
-    private Material? _standardMaterial;
-    private Material CreateStandardMaterial()
+    private Material CreateStandardMaterial(ShaderFlags flags)
     {
-        if (_standardMaterial != null) return _standardMaterial.Clone();
-        _standardMaterial = new(GL, StandardShader);
-        _standardMaterial.AddTextureParameter("_MainTexture", TextureUnit.Texture0);
-        _standardMaterial.name = "default";
-        return _standardMaterial.Clone();
+        if (!builtInMaterials.TryGetValue((BuiltInMaterials.Standard, flags), out var material)) {
+            material = new(GL, GetShader("Shaders/GLSL/viewShaded.glsl", flags));
+            material.AddTextureParameter("_MainTexture", TextureUnit.Texture0);
+            material.name = "default";
+        }
+        return material.Clone();
     }
 
-    private Material? _viewShadedMaterial;
-    private Material CreateViewShadedMaterial()
+    private Material CreateViewShadedMaterial(ShaderFlags flags)
     {
-        if (_viewShadedMaterial != null) return _viewShadedMaterial.Clone();
-        _viewShadedMaterial = new(GL, ViewShadedShader);
-        _viewShadedMaterial.AddTextureParameter("_MainTexture", TextureUnit.Texture0);
-        _viewShadedMaterial.name = "default";
-        return _viewShadedMaterial.Clone();
+        if (!builtInMaterials.TryGetValue((BuiltInMaterials.ViewShaded, flags), out var material)) {
+            material = new(GL, GetShader("Shaders/GLSL/viewShaded.glsl", flags));
+            material.AddTextureParameter("_MainTexture", TextureUnit.Texture0);
+            material.name = "default";
+        }
+        return material.Clone();
     }
 
-    private Material? _wireMaterial;
-    private Material CreateWireMaterial()
+    private Material CreateWireMaterial(ShaderFlags flags)
     {
-        if (_wireMaterial != null) return _wireMaterial.Clone();
-        _wireMaterial = new(GL, WireShader);
-        _wireMaterial.SetParameter("_OuterColor", new Color(0, 0, 0, 5));
-        _wireMaterial.SetParameter("_InnerColor", new Color(0, 255, 0, 200));
-        _wireMaterial.name = "wire";
-        return _wireMaterial.Clone();
+        if (!builtInMaterials.TryGetValue((BuiltInMaterials.Wireframe, flags), out var material)) {
+            material = new(GL, GetShader("Shaders/GLSL/wireframe.glsl", flags));
+            material.SetParameter("_OuterColor", new Color(0, 0, 0, 5));
+            material.SetParameter("_InnerColor", new Color(0, 255, 0, 200));
+            material.name = "wire";
+        }
+        return material.Clone();
     }
-    private Material? _filledWireMaterial;
-    private Material CreateFilledWireMaterial()
+
+    private Material CreateFilledWireMaterial(ShaderFlags flags)
     {
-        if (_filledWireMaterial != null) return _filledWireMaterial.Clone();
-        _filledWireMaterial = new(GL, FilledWireShader);
-        _filledWireMaterial.SetParameter("_OuterColor", new Color(0, 0, 0, 5));
-        _filledWireMaterial.SetParameter("_InnerColor", new Color(0, 255, 0, 200));
-        _filledWireMaterial.name = "wireFilled";
-        return _filledWireMaterial.Clone();
+        if (!builtInMaterials.TryGetValue((BuiltInMaterials.ViewShaded, flags), out var material)) {
+            material = new(GL, GetShader("Shaders/GLSL/wireframe-uv.glsl", flags));
+            material.SetParameter("_OuterColor", new Color(0, 0, 0, 5));
+            material.SetParameter("_InnerColor", new Color(0, 255, 0, 200));
+            material.name = "wireFilled";
+        }
+        return material.Clone();
     }
 
     private unsafe void ApplyGlobalUniforms()
@@ -113,13 +109,13 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         GL.BufferSubData(BufferTargetARB.UniformBuffer, (nint)offset, (uint)size, (float*)&value);
     }
 
-    private Shader GetShader(string path)
+    private Shader GetShader(string path, ShaderFlags flags)
     {
-        if (shaders.TryGetValue(path, out var shader)) {
+        if (shaders.TryGetValue((path, flags), out var shader)) {
             return shader;
         }
 
-        return shaders[path] = shader = new Shader(GL, Path.Combine(AppContext.BaseDirectory, path));
+        return shaders[(path, flags)] = shader = new Shader(GL, Path.Combine(AppContext.BaseDirectory, path), flags);
     }
 
     public override (MeshHandle, ShapeMesh) CreateShapeMesh()
@@ -137,19 +133,36 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         if (meshResource == null) return null;
 
         var handle = new MeshResourceHandle(MeshRefs.NextInstanceID);
-        var meshScene = meshResource.Scene;
-
-        var matDict = new Dictionary<string, int>(meshScene.Meshes.Count);
-        foreach (var srcMesh in meshScene.Meshes) {
-            var newMesh = new TriangleMesh(GL, srcMesh);
-            newMesh.MeshGroup = MeshLoader.GetMeshGroupFromName(srcMesh.Name);
-            if (meshScene.HasMaterials) {
-                var matname = meshScene.Materials[srcMesh.MaterialIndex].Name;
-                handle.SetMaterialName(handle.Meshes.Count, matname);
-            } else {
-                handle.SetMaterialName(handle.Meshes.Count, "");
+        if (meshResource.HasNativeMesh) {
+            var meshFile = meshResource.NativeMesh!;
+            MeshBoneHierarchy? boneList = null;
+            if (meshFile.BoneData?.Bones.Count > 0) {
+                boneList = meshFile.BoneData;
             }
-            handle.Meshes.Add(newMesh);
+            foreach (var mesh in meshFile.Meshes) {
+                foreach (var group in mesh.LODs[0].MeshGroups) {
+                    foreach (var sub in group.Submeshes) {
+                        var newMesh = new TriangleMesh(GL, meshFile, sub);
+                        newMesh.MeshGroup = group.groupId;
+                        handle.SetMaterialName(handle.Meshes.Count, meshFile.MaterialNames[sub.materialIndex]);
+                        handle.Bones = boneList;
+                        handle.Meshes.Add(newMesh);
+                    }
+                }
+            }
+        } else {
+            var meshScene = meshResource.Scene;
+            foreach (var srcMesh in meshScene.Meshes) {
+                var newMesh = new TriangleMesh(GL, srcMesh);
+                newMesh.MeshGroup = MeshLoader.GetMeshGroupFromName(srcMesh.Name);
+                if (meshScene.HasMaterials) {
+                    var matname = meshScene.Materials[srcMesh.MaterialIndex].Name;
+                    handle.SetMaterialName(handle.Meshes.Count, matname);
+                } else {
+                    handle.SetMaterialName(handle.Meshes.Count, "");
+                }
+                handle.Meshes.Add(newMesh);
+            }
         }
 
         return handle;
@@ -161,8 +174,8 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             return new McolMeshHandle(GL, resource, file.GetFile<McolFile>());
         } else if (file.Loader is RcolFileLoader) {
             return new RcolMeshHandle(GL, resource, file.GetFile<RcolFile>());
-        } else if (resource.HasArmature) {
-            return new AnimatedMeshHandle(resource);
+        } else if (resource.Animatable) {
+            return new AnimatedMeshHandle(GL, resource);
         } else {
             return new MeshHandle(resource);
         }
@@ -198,27 +211,27 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         }
     }
 
-    public override MaterialGroup LoadMaterialGroup(FileHandle file)
+    public override MaterialGroup LoadMaterialGroup(FileHandle file, ShaderFlags flags = ShaderFlags.None)
     {
-        if (MaterialRefs.TryAddReference(file, out var groupRef)) {
+        if (MaterialRefs.TryAddReference((file, flags), out var groupRef)) {
             AddMaterialTextureReferences(groupRef.Resource);
             return groupRef.Resource;
         }
 
+        var group = new MaterialGroup() { Flags = flags };
         var scene = (file.Resource as AssimpMaterialResource)?.Scene ?? (file.Resource as AssimpMeshResource)?.Scene;
         if (scene == null) {
             Logger.Error("Failed to load material group - invalid resource type " + file.Filepath);
-            return new MaterialGroup();
+            return group;
         }
 
-        var group = new MaterialGroup();
         foreach (var mat in scene.Materials) {
             if (!mat.HasName) {
                 Logger.Debug("Material " + scene.Materials.IndexOf(mat) + " has no name");
                 continue;
             }
 
-            var material = CreateViewShadedMaterial();
+            var material = CreateViewShadedMaterial(flags);
             // var material = CreateWireMaterial();
             material.name = mat.Name;
             if (material.HasTextureParameter(TextureUnit.Texture0)) {
@@ -232,7 +245,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             group.Add(material);
         }
 
-        MaterialRefs.Add(file, group);
+        MaterialRefs.Add((file, flags), group);
         return group;
     }
 
@@ -256,6 +269,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
                 BindMaterialFlags(material);
             }
             material.Shader.SetUniform("uModel", transform);
+            handle.BindForRender(material, i);
 
             GL.DrawArrays(mesh.MeshType, 0, (uint)mesh.Indices.Length);
         }
@@ -288,25 +302,16 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     {
         var blend = material.BlendMode;
         if (blend.Blend) {
-            if (!_wasBlend) {
-                GL.Enable(EnableCap.Blend);
-                _wasBlend = true;
-            }
-
+            GL.Enable(EnableCap.Blend);
             GL.BlendFunc(blend.BlendModeSrc, blend.BlendModeDest);
-        } else if (_wasBlend) {
+        } else  {
             GL.Disable(EnableCap.Blend);
-            _wasBlend = false;
         }
 
         if (material.DisableDepth) {
-            if (!_wasDisableDepth) {
-                GL.Disable(EnableCap.DepthTest);
-                _wasDisableDepth = true;
-            }
-        } else if (_wasDisableDepth) {
+            GL.Disable(EnableCap.DepthTest);
+        } else {
             GL.Enable(EnableCap.DepthTest);
-            _wasDisableDepth = false;
         }
     }
 
@@ -315,10 +320,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         lastMaterial = null;
         lastInstancedMesh = null;
 
-        _wasDisableDepth = false;
-        _wasBlend = false;
-        GL.Enable(EnableCap.DepthTest);
-        GL.Disable(EnableCap.Blend);
+        ResetBlendingSettings();
 
         axisMesh ??= CreateAxis();
         gridMesh ??= CreateGrid();
@@ -341,7 +343,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
             Vector3D<float> campos;
             if (Matrix4X4.Invert(ViewMatrix, out var inverted)) {
-                campos = inverted.Row4.ToSystem().ToVec3().ToGeneric() with { Y = 0 };
+                campos = inverted.Column4.ToSystem().ToVec3().ToGeneric() with { Y = 0 };
             } else {
                 campos = new();
             }
@@ -357,8 +359,6 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     {
         GL.Enable(EnableCap.DepthTest);
         GL.Disable(EnableCap.Blend);
-        _wasBlend = false;
-        _wasDisableDepth = false;
     }
 
     internal override void AfterRender()
@@ -443,23 +443,27 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
     private Texture GetMissingTexture()
     {
-        if (_missingTexture != null) return _missingTexture;
+        if (_missingTexture == null) {
+            _missingTexture = new Texture(GL);
+            _missingTexture.LoadFromRawData(DefaultPink, 4, 4);
+            _missingTexture.Path = "__missing";
+        }
 
-        _missingTexture = new Texture(GL);
-        _missingTexture.LoadFromRawData(DefaultPink, 4, 4);
-        _missingTexture.Path = "__missing";
         return _missingTexture;
     }
 
     private Texture GetDefaultTexture()
     {
-        if (_defaultTexture != null) return _defaultTexture;
+        if (_defaultTexture == null) {
+            _defaultTexture = new Texture(GL);
+            _defaultTexture.LoadFromRawData(DefaultWhite, 4, 4);
+            _defaultTexture.Path = "__default";
+        }
 
-        _defaultTexture = new Texture(GL);
-        _defaultTexture.LoadFromRawData(DefaultWhite, 4, 4);
-        _defaultTexture.Path = "__default";
         return _defaultTexture;
     }
+
+    private Shader MonoShader => GetShader("Shaders/GLSL/unshaded-color.glsl", ShaderFlags.None);
 
     private MeshHandle CreateAxis()
     {

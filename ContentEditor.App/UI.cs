@@ -115,6 +115,13 @@ public static class AppIcons
     public static readonly char Bookmarks = '\ue9d3';
     public static readonly char StarEmpty = '\ue9d7';
     public static readonly char Star = '\ue9d9';
+    public static readonly char Play = '\uea1c';
+    public static readonly char Pause = '\uea1d';
+    public static readonly char Stop = '\uea1e';
+    public static readonly char SeekStart = '\uea21';
+    public static readonly char Loop = '\uea2d';
+
+    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)Loop, 0];
 
     public static string PrependIcon(this string text, object target)
     {
@@ -147,6 +154,4 @@ public static class AppIcons
         EFXEntry => EfxEntry,
         _ => '\0',
     };
-
-    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)Star, 0];
 }

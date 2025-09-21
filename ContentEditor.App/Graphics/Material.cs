@@ -1,5 +1,6 @@
 using System.Numerics;
 using ReeLib.via;
+using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
 namespace ContentEditor.App.Graphics;
@@ -14,6 +15,7 @@ public class Material
     private readonly List<MaterialParameter<Vector4>> vec4Parameters = new();
     private readonly List<MaterialParameter<float>> floatParameters = new();
     private readonly List<(string name, TextureUnit slot, Texture? tex)> textureParameters = new();
+    private MaterialParameter<Matrix4X4<float>>? boneMatricesParameter;
 
     public string name = string.Empty;
     public MaterialBlendMode BlendMode = new();
@@ -94,6 +96,23 @@ public class Material
         }
     }
 
+    public unsafe void BindBoneMatrices(Span<Matrix4X4<float>> matrices)
+    {
+        if (boneMatricesParameter == null) {
+            var loc = _gl.GetUniformLocation(shader.Handle, "boneMatrices[0]");
+            if (loc == -1) {
+                Logger.Error($"Uniform boneMatrices not found in shader.");
+                return;
+            }
+            boneMatricesParameter = new MaterialParameter<Matrix4X4<float>>(Matrix4X4<float>.Identity, loc);
+        }
+
+        for (int i = 0; i < matrices.Length; ++i) {
+            var value = matrices[i];
+            _gl.UniformMatrix4(boneMatricesParameter._location + i, 1, false, (float*) &value);
+        }
+    }
+
     public Material Clone()
     {
         var mat = new Material(_gl, shader);
@@ -126,4 +145,13 @@ public enum EditorPresetMaterials
 {
     Default,
     Wireframe,
+}
+
+public enum BuiltInMaterials
+{
+    ViewShaded,
+    MonoColor,
+    Wireframe,
+    FilledWireframe,
+    Standard,
 }

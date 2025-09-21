@@ -1,3 +1,4 @@
+using ReeLib.Mesh;
 using ReeLib.via;
 
 namespace ContentEditor.App.Graphics;
@@ -10,15 +11,10 @@ public sealed class MeshResourceHandle : IDisposable
     public int HandleID { get; }
     internal List<Mesh> Meshes { get; } = new();
 
-    public bool HasArmature => Meshes.Any(m => m.HasBones);
+    public MeshBoneHierarchy? Bones { get; set; }
 
-    internal void RemoveMeshes(int startingFromIndex = 0)
-    {
-        for (int i = Meshes.Count - 1; i >= startingFromIndex; i--) {
-            Meshes[i].Dispose();
-            Meshes.RemoveAt(i);
-        }
-    }
+    public bool HasArmature => Bones != null;
+    public bool Animatable => Bones != null && Meshes.Any(m => m.HasBones);
 
     public IEnumerable<Mesh> Submeshes => Meshes.AsReadOnly();
     private readonly Dictionary<int, string> materialNames = new();
@@ -31,6 +27,14 @@ public sealed class MeshResourceHandle : IDisposable
     internal MeshResourceHandle(int handleId)
     {
         HandleID = handleId;
+    }
+
+    internal void RemoveMeshes(int startingFromIndex = 0)
+    {
+        for (int i = Meshes.Count - 1; i >= startingFromIndex; i--) {
+            Meshes[i].Dispose();
+            Meshes.RemoveAt(i);
+        }
     }
 
     public string GetMaterialName(int index) => materialNames.GetValueOrDefault(index) ?? "";

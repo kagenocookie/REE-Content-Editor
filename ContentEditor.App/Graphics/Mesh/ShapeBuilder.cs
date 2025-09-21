@@ -1,5 +1,4 @@
 using System.Numerics;
-using ReeLib.Rcol;
 using ReeLib.via;
 using Silk.NET.Maths;
 
@@ -89,6 +88,15 @@ public class ShapeBuilder
         Indices = null;
         Bounds = AABB.MaxMin;
     }
+
+    // public TriangleMesh Create(GL gl)
+    // {
+    //     float[] vert = [];
+    //     int[] inds = [];
+    //     AABB bounds = AABB.MaxMin;
+    //     UpdateMesh(ref vert, ref inds, ref bounds);
+    //     return new TriangleMesh(gl, vert, inds, bounds);
+    // }
 
     public static void CreateSingle(AABB shape, ref float[] vertices, ref int[] indices, ref AABB bound)
     {

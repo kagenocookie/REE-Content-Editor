@@ -1,12 +1,10 @@
-using System.Numerics;
-using ReeLib.via;
-using Silk.NET.OpenGL;
-
 namespace ContentEditor.App.Graphics;
 
 public sealed class MaterialGroup
 {
     public List<Material> Materials { get; } = new();
+
+    public ShaderFlags Flags { get; init; }
 
     public MaterialGroup()
     {
