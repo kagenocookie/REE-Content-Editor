@@ -20,7 +20,6 @@ finalNorm = normalize(finalNorm);
 #else
 
 vec4 finalPosition = vec4(vPos, 1.0);
-mat3 normalMatrix = transpose(inverse(mat3(uModel)));
-vec3 finalNorm = normalize(normalMatrix * vNorm);
+vec3 finalNorm = vNorm;
 
 #endif

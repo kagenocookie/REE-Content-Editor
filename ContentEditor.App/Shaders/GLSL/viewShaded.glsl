@@ -18,8 +18,9 @@ void main()
 #include "includes/anim_vert.glsl";
 
     gl_Position = uProjectionView * uModel * finalPosition;
-    fNorm = finalNorm;
     fUv = vUv;
+    mat3 normalMatrix = transpose(inverse(mat3(uModel)));
+    fNorm = normalize(normalMatrix * finalNorm);
 }
 #endif
 
