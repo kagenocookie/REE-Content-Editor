@@ -39,6 +39,14 @@ public class BaseListHandler : IObjectUIHandler
         }
 
         var show = ImguiHelpers.TreeNodeSuffix(context.label, $"({count})");
+        if (this is IContextMenuHandler ctxm && ctxm.AllowContextMenu) {
+            if (ImGui.BeginPopupContextItem(context.label)) {
+                if (ctxm.ShowContextMenuItems(context)) {
+                    ImGui.CloseCurrentPopup();
+                }
+                ImGui.EndPopup();
+            }
+        }
         if (true == (this as ITooltipHandler)?.HandleTooltip(context)) {
             // re-fetch the list in case the instance got changed
             list = context.Get<IList>();

@@ -288,6 +288,12 @@ public interface ITooltipHandler
     bool HandleTooltip(UIContext context);
 }
 
+public interface IContextMenuHandler
+{
+    bool AllowContextMenu => true;
+    bool ShowContextMenuItems(UIContext context);
+}
+
 public enum UIContextEvent
 {
     /// <summary>

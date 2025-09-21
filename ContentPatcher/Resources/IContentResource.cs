@@ -6,7 +6,7 @@ namespace ContentPatcher;
 public interface IContentResource
 {
     /// <summary>
-    /// The unique type identifier of this resource.
+    /// The unique type identifier of this resource. For most resources this would be a constant type value or empty.
     /// </summary>
     string ResourceIdentifier { get; }
     /// <summary>
