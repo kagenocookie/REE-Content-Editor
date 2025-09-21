@@ -189,7 +189,7 @@ public class ResizableArrayHandler : BaseListHandler
 {
     private readonly Type elementType;
 
-    public ResizableArrayHandler(Type elementType) : base(elementType.MakeArrayType())
+    public ResizableArrayHandler(Type elementType, Type? arrayType = null) : base(arrayType ?? elementType.MakeArrayType())
     {
         this.elementType = elementType;
         CanCreateNewElements = true;

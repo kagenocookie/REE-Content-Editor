@@ -425,6 +425,45 @@ public class MotBoneClipHeaderHandler : IObjectUIHandler
     }
 }
 
+[ObjectImguiHandler(typeof(MotClip))]
+public class MotClipHandler : IObjectUIHandler
+{
+    private static MemberInfo[] DisplayedFields = [
+        typeof(MotClip).GetField(nameof(MotClip.uknIntA))!,
+        typeof(MotClip).GetField(nameof(MotClip.uknIntB))!,
+        typeof(MotClip).GetField(nameof(MotClip.uknBytes1C))!,
+        typeof(MotClip).GetProperty(nameof(MotClip.ClipEntry))!,
+        typeof(MotClip).GetProperty(nameof(MotClip.EndClipStructs))!,
+    ];
+
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<MotClip>();
+        if (context.children.Count == 0) {
+            var ws = context.GetWorkspace();
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(MotClip), false, DisplayedFields);
+        }
+
+        context.ShowChildrenUI();
+    }
+}
+
+[ObjectImguiHandler(typeof(List<MotIndex>))]
+public class MotIndexListHandler : ListHandler
+{
+    public MotIndexListHandler() : base(typeof(MotIndex), typeof(List<MotIndex>))
+    {
+    }
+
+    protected override object? CreateNewElement(UIContext context)
+    {
+        var version = context.FindHandlerInParents<MotlistEditor>()?.File.Header.Version
+            ?? (context.GetWorkspace()?.Env.TryGetFileExtensionVersion("motlist", out var v) == true ? (MotlistVersion)v : MotlistVersion.DD2);
+
+        return new MotIndex(version);
+    }
+}
+
 [ObjectImguiHandler(typeof(List<MotFileBase>))]
 public class MotFileListHandler : ListHandler
 {

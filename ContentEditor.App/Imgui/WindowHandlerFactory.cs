@@ -352,7 +352,7 @@ public static partial class WindowHandlerFactory
             if (value != null) {
                 return CreateUIHandler(value, value.GetType());
             } else {
-                return new LazyPlainObjectHandler(fieldType);
+                return fieldType.IsArray ? new ResizableArrayHandler(fieldType.GetElementType()!, fieldType) : new LazyPlainObjectHandler(fieldType);
             }
         }
         return CreateUIHandler(context.GetRaw(), fieldType);
