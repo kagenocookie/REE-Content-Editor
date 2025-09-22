@@ -42,6 +42,8 @@ public class RszDataFinder : IWindowHandler
     private Variable.TypeKind uvarKind;
     private string uvarSearch = "";
 
+    private string motSearch = "";
+
     private CancellationTokenSource? cancellationTokenSource;
     private int searchedFiles;
     private bool SearchInProgress => cancellationTokenSource != null;
@@ -57,7 +59,7 @@ public class RszDataFinder : IWindowHandler
     private int findType;
 
     private string[]? classNames;
-    private static readonly string[] FindTypes = ["RSZ Data", "Messages", "EFX", "Uvar"];
+    private static readonly string[] FindTypes = ["RSZ Data", "Messages", "EFX", "Uvar", "Mot"];
 
     public void Init(UIContext context)
     {
@@ -99,6 +101,9 @@ public class RszDataFinder : IWindowHandler
                 break;
             case 3:
                 ShowUvarFind(workspace.Env);
+                break;
+            case 4:
+                ShowMotFind(workspace.Env);
                 break;
         }
         if (searching) {
@@ -352,6 +357,7 @@ public class RszDataFinder : IWindowHandler
             cancellationTokenSource = new();
             var (user, pfb, scn) = (searchUserFiles, searchPfb, searchScn);
             var token = cancellationTokenSource.Token;
+            searchedFiles = 0;
             Task.Run(() => {
                 foreach (var ee in GetWorkspaces(env)) {
                     InvokeSearchMsg(CreateContext(ee, env), msgSearch);
@@ -375,6 +381,7 @@ public class RszDataFinder : IWindowHandler
             cancellationTokenSource = new();
             var (user, pfb, scn) = (searchUserFiles, searchPfb, searchScn);
             var token = cancellationTokenSource.Token;
+            searchedFiles = 0;
             Task.Run(() => {
                 foreach (var ee in GetWorkspaces(env)) {
                     InvokeSearchEfx(CreateContext(ee, env), efxAttrType, efxSearch);
@@ -397,9 +404,31 @@ public class RszDataFinder : IWindowHandler
             cancellationTokenSource = new();
             var (user, pfb, scn) = (searchUserFiles, searchPfb, searchScn);
             var token = cancellationTokenSource.Token;
+            searchedFiles = 0;
             Task.Run(() => {
                 foreach (var ee in GetWorkspaces(env)) {
                     InvokeSearchUvar(CreateContext(ee, env), uvarKind, uvarSearch);
+                }
+                cancellationTokenSource?.Cancel();
+                cancellationTokenSource = null;
+            });
+        }
+    }
+
+    private void ShowMotFind(Workspace env)
+    {
+        ImGui.InputText("Query", ref motSearch, 100);
+
+        if (string.IsNullOrEmpty(motSearch)) return;
+
+        if (ImGui.Button("Search")) {
+            matches.Clear();
+            cancellationTokenSource = new();
+            var token = cancellationTokenSource.Token;
+            searchedFiles = 0;
+            Task.Run(() => {
+                foreach (var ee in GetWorkspaces(env)) {
+                    InvokeSearchMot(CreateContext(ee, env), motSearch);
                 }
                 cancellationTokenSource?.Cancel();
                 cancellationTokenSource = null;
@@ -730,6 +759,55 @@ public class RszDataFinder : IWindowHandler
                         AddMatch(context, desc, path);
                     }
                 }
+            } catch (Exception e) {
+                context.Window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
+            }
+        }
+    }
+
+    private void InvokeSearchMot(SearchContext context, string query)
+    {
+        // var formats = context.Env.TypeCache.GetResourceSubtypes(KnownFileFormats.Motion).Except([KnownFileFormats.MotionTree]);
+        // var motExts = formats.SelectMany(fmt => context.Env.GetFileExtensionsForFormat(fmt));
+        foreach (var (path, stream) in context.Env.GetFilesWithExtension("motlist", context.Token)) {
+            try {
+                if (context.Token.IsCancellationRequested) return;
+
+                Interlocked.Increment(ref searchedFiles);
+                var file = new MotlistFile(new FileHandler(stream, path));
+                file.Read();
+
+                foreach (var motBase in file.MotFiles) {
+                    if (motBase is MotFile mot) {
+                        if (!string.IsNullOrEmpty(query) && !mot.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) continue;
+
+                        var desc = $"{mot.Name}";
+                        AddMatch(context, desc, path);
+                    }
+                }
+            } catch (NotSupportedException e) {
+                context.Window.InvokeFromUIThread(() => Logger.Error("File read failed " + path + ": " + e.Message));
+            } catch (Exception e) {
+                context.Window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
+            }
+        }
+
+        foreach (var (path, stream) in context.Env.GetFilesWithExtension("mot", context.Token)) {
+            try {
+                if (context.Token.IsCancellationRequested) return;
+
+                Interlocked.Increment(ref searchedFiles);
+                var mot = new MotFile(new FileHandler(stream, path));
+                if (!mot.Read()) {
+                    context.Window.InvokeFromUIThread(() => Logger.Error("File read failed " + path));
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(query) && !mot.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) continue;
+
+                var desc = $"{mot.Name}";
+                AddMatch(context, desc, path);
+
             } catch (Exception e) {
                 context.Window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
             }

@@ -783,6 +783,9 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                 Logger.Error($"Failed to load file {filepath}");
                 return null;
             }
+        } catch (NotSupportedException e) {
+            Logger.Error($"Unsupported file {filepath}: {e.Message}");
+            return null;
         } catch (Exception e) {
             Logger.Error(e, $"Failed to load file {filepath}");
             return null;

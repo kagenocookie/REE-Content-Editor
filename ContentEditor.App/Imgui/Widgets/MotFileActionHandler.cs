@@ -46,14 +46,14 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
 
             var ws = context.GetWorkspace();
             if (Logger.ErrorIf(ws == null)) return true;
-            EditorWindow.CurrentWindow?.CopyToClipboard(motData.ToJsonString(ws.Env), "Copied motion " + motData.MotName);
+            EditorWindow.CurrentWindow?.CopyToClipboard(motData.ToJsonString(ws.Env), "Copied motion " + motData.MotName + " to clipboard (JSON)");
             return true;
         }
 
         var clipData = EditorWindow.CurrentWindow?.GetClipboard();
         if (!string.IsNullOrEmpty(clipData)) {
             var paste = ImGui.Selectable("Paste motion data");
-            var pasteRetarget = ImGui.Selectable("Paste motion data (Retargeting ...)");
+            var pasteRetarget = ImGui.Selectable("Paste motion data (Retargeting) ...");
             paste = paste || pasteRetarget;
             if (paste) {
                 if (MotionDataResource.TryDeserialize(clipData, out var motData, out var error)) {
@@ -157,10 +157,17 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
         // private string parentRemapType = "";
         private bool mapToBone1;
 
+        private static string? lastSelectedType;
+        private static string? lastSelectedSource;
+        private static string? lastSelectedTarget;
+
         private void LoadConfigs()
         {
             var path = Path.Combine(AppContext.BaseDirectory, "configs/mot_retargeting");
             configs = new();
+            selectedArmatureType = lastSelectedType ?? "";
+            sourceType = lastSelectedSource ?? "";
+            targetRenameConfig = lastSelectedTarget ?? "";
             foreach (var file in Directory.EnumerateFiles(path, "*.json")) {
                 if (file.TryDeserializeJsonFile<MotRetargetConfig>(out var config, out var error)) {
                     foreach (var cfg in config.Renames) {
@@ -202,7 +209,9 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                 ImGui.Spacing();
                 ImGui.Spacing();
                 ImGui.Spacing();
-                ImguiHelpers.ValueCombo("Armature Type", MapTypes, MapTypes, ref selectedArmatureType);
+                if (ImguiHelpers.ValueCombo("Armature Type", MapTypes, MapTypes, ref selectedArmatureType)) {
+                    lastSelectedType = selectedArmatureType;
+                }
 
                 if (!string.IsNullOrEmpty(selectedArmatureType) && configs.TryGetValue(selectedArmatureType, out var config)) {
                     var renameSourceGames = config.Renames.SelectMany(r => r.Version1).Concat(config.Renames.SelectMany(r => r.Version2)).Distinct().ToArray();
@@ -210,7 +219,10 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                         ImGui.TextColored(Colors.Info, "No rename configs available for selected armature type");
                     } else {
                         ImGui.SeparatorText("Bone name remapping");
-                        ImguiHelpers.ValueCombo("Source", renameSourceGames, renameSourceGames, ref sourceType);
+                        if (ImguiHelpers.ValueCombo("Source", renameSourceGames, renameSourceGames, ref sourceType)) {
+                            lastSelectedSource = sourceType;
+                        }
+                        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Select the game from which the clip was copied from");
                         if (!string.IsNullOrEmpty(sourceType)) {
                             var targets = new List<string>();
                             foreach (var c in config.Renames) {
@@ -218,7 +230,9 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                             }
 
                             var targetsArray = targets.Distinct().ToArray();
-                            ImguiHelpers.ValueCombo("Remap Config", targetsArray, targetsArray, ref targetRenameConfig);
+                            if (ImguiHelpers.ValueCombo("Remap Config", targetsArray, targetsArray, ref targetRenameConfig)) {
+                                lastSelectedTarget = targetRenameConfig;
+                            }
 
                             var remapConfig = config.Renames.FirstOrDefault(r => r.Name == targetRenameConfig);
                             if (remapConfig?.Version1.Contains(sourceType) == true && remapConfig?.Version2.Contains(sourceType) == true) {
@@ -256,6 +270,18 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                         keepShowing = false;
                     }
                 } else {
+                    if (motPreviewContext == null) {
+                        motPreviewContext = UIContext.CreateRootContext("File preview", newFile);
+                        motPreviewContext.uiHandler = new MotFileHandler();
+                    }
+                    if (ImGui.TreeNode("MOT preview")) {
+                        motPreviewContext.ShowUI();
+                        ImGui.TreePop();
+                    }
+                    ImGui.Spacing();
+                    ImGui.Separator();
+                    ImGui.Spacing();
+
                     if (ImGui.Button("Confirm Replace", new Vector2(170, 0))) {
                         if (replacedFile != newFile) {
                             ConfirmPaste(motlist, replacedFile, newFile, editor);
@@ -274,6 +300,8 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
             ImGui.PopStyleColor();
             return keepShowing;
         }
+
+        private UIContext? motPreviewContext;
 
         private void ExecuteRename(MotRetargetNamesConfig remapConfig, string source, bool directionTieBreaker)
         {
@@ -314,6 +342,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
             }
 
             Logger.Info($"Renamed {renames.Count} bones:\n" + string.Join("\n", renames));
+            motPreviewContext = null;
         }
 
         private void ExecuteRemapParents(MotRetargetParentsConfig remapConfig)
@@ -355,7 +384,10 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
         if (prevMot.GetType() != newMot.GetType()) {
             // fully replace instance
             motlist.ReplaceMotFile(prevMot, newMot);
-            if (editor != null) editor.Handle.Modified = true;
+            if (editor != null) {
+                editor.Handle.Modified = true;
+                editor.RefreshUI();
+            }
         } else if (newMot is MotFile motSrc && prevMot is MotFile motTarget) {
             // replace values, keep instance
             motTarget.CopyValuesFrom(motSrc);
@@ -364,7 +396,10 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                 motTarget.Header.motName = motTarget.Header.motName
                     .GetUniqueName((newName) => motlist.MotFiles.Any(m => m != motTarget && m is MotFile mm && mm.Header.motName == newName));
             }
-            if (editor != null) editor.Handle.Modified = true;
+            if (editor != null) {
+                editor.Handle.Modified = true;
+                editor.RefreshUI();
+            }
         } else {
             Logger.Error("Unsupported mot type");
         }

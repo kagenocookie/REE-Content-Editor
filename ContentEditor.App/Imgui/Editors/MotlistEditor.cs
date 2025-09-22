@@ -47,6 +47,11 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     {
         OnIMGUI();
     }
+
+    internal void RefreshUI()
+    {
+        context.ClearChildren();
+    }
 }
 
 [ObjectImguiHandler(typeof(MotIndex))]
@@ -369,7 +374,10 @@ public class MotClipHandler : IObjectUIHandler
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(MotClip), false, DisplayedFields);
         }
 
-        context.ShowChildrenUI();
+        if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString())) {
+            context.ShowChildrenUI();
+            ImGui.TreePop();
+        }
     }
 }
 

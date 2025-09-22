@@ -42,6 +42,7 @@ public class LoadOrderUI : IWindowHandler
 
             if (ImGui.Checkbox(bundle.Name, ref active)) {
                 bundleManager.SetBundleActive(bundle, active);
+                bundleManager.SaveSettings();
             }
 
             if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.PayloadNoCrossContext|ImGuiDragDropFlags.PayloadNoCrossProcess)) {
@@ -54,6 +55,7 @@ public class LoadOrderUI : IWindowHandler
             if (draggedBundle != null && ImGui.BeginDragDropTarget()) {
                 if (draggedBundle != bundle) {
                     bundleManager.SwapBundleOrders(draggedBundle, bundle);
+                    bundleManager.SaveSettings();
                 }
 
                 ImGui.EndDragDropTarget();

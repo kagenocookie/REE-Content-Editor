@@ -82,6 +82,8 @@ public class Patcher : IDisposable
         // 6. write patched files to natives
         sw.Restart();
         var patch = ApplyPatches();
+        if (patch == null) return false;
+
         Logger.Info($"Applied patches in {sw.Elapsed.TotalSeconds}s");
         patch.PatchTimeUtc = DateTime.UtcNow;
         // 7. dump metadata
@@ -114,7 +116,7 @@ public class Patcher : IDisposable
         }
     }
 
-    private PatchInfo ApplyPatches()
+    private PatchInfo? ApplyPatches()
     {
         var patch = new PatchInfo();
         workspace!.SetBundle(null);
@@ -145,6 +147,12 @@ public class Patcher : IDisposable
             };
         }
         if (isPak) {
+            if (!Directory.Exists(outputDir))
+            {
+                Logger.Error("No files have been modified by the active bundles");
+                return null;
+            }
+
             var writer = new PakWriter();
             writer.AddFilesFromDirectory(outputDir, true);
             if (IsPublishingMod && workspace.BundleManager.ActiveBundles.LastOrDefault() != null) {

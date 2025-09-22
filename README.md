@@ -48,7 +48,7 @@ Some files may not fully work for other RE ENGINE games.
 | .efx      | ☑️ read/write
 | .tex, .dds  | view, convert  | Convert to TGA/PNG
 | .mesh     | read-only 3D display
-| .motlist  | read/write | Animation preview
+| .motlist  | read/write | Animation preview, mot copy/paste/retargeting
 | .rcol     | read/write | 3D shape preview
 | .motbank  | read/write
 | .mcol     | ☑️ read/write | .glb import/export for collision mesh
@@ -124,7 +124,7 @@ One bundle modifying the same file as a direct file and through entities at the 
 Pull requests are welcome. There are several open issues for bigger features for anyone interested in helping, but if you feel like anything else could be improved upon, feel free to make a feature request or contribute yourself. I'm willing to assist with pointers regarding implementation details.
 
 ## Credits
-- Everyone who contributed to or was acknowledged in (RE-Engine-Lib)[https://github.com/kagenocookie/RE-Engine-Lib]
+- Everyone who contributed to or was acknowledged in [RE-Engine-Lib](https://github.com/kagenocookie/RE-Engine-Lib)
 - alphaZomega: mot bone remapping configs
 
 ## Disclaimer
