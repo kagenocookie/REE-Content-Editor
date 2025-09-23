@@ -297,7 +297,7 @@ public class ShapeBuilder
         VertexData[index * VertexAttributeCount + 1] = vec.Y;
         VertexData[index * VertexAttributeCount + 2] = vec.Z;
         VertexData[index * VertexAttributeCount + 6] = 1; // default normal = (0, 1, 0)
-        VertexData[index * VertexAttributeCount + 8] = (float)index;
+        VertexData[index * VertexAttributeCount + 8] = BitConverter.Int32BitsToSingle(index);
         Indices![index] = index;
         index++;
         Bounds = Bounds.Extend(vec);

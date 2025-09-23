@@ -113,7 +113,7 @@ public class TriangleMesh : Mesh
             VertexData[index * attrs + 5] = !hasNormals ? 0 : sourceMesh.Normals[vert].X;
             VertexData[index * attrs + 6] = !hasNormals ? 0 : sourceMesh.Normals[vert].Y;
             VertexData[index * attrs + 7] = !hasNormals ? 1 : sourceMesh.Normals[vert].Z;
-            VertexData[index * attrs + 8] = (float)index;
+            VertexData[index * attrs + 8] = BitConverter.Int32BitsToSingle(index);
             if (HasTangents) {
                 VertexData[index * attrs + tangentsOffset + 0] = sourceMesh.Tangents[vert].X;
                 VertexData[index * attrs + tangentsOffset + 1] = sourceMesh.Tangents[vert].Y;

@@ -78,7 +78,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
     private Material CreateFilledWireMaterial(ShaderFlags flags)
     {
-        if (!builtInMaterials.TryGetValue((BuiltInMaterials.ViewShaded, flags), out var material)) {
+        if (!builtInMaterials.TryGetValue((BuiltInMaterials.FilledWireframe, flags), out var material)) {
             material = new(GL, GetShader("Shaders/GLSL/wireframe-uv.glsl", flags));
             material.SetParameter("_OuterColor", new Color(0, 0, 0, 5));
             material.SetParameter("_InnerColor", new Color(0, 255, 0, 200));
