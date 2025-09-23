@@ -166,24 +166,21 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                 }
 
                 if (ImGui.BeginPopupModal("Confirm Action", ImGuiWindowFlags.AlwaysAutoResize)) {
-                    ImGui.Text("Are you sure you want to delete all custom bookmarks?");
+                    ImGui.Text($"Are you sure you want to delete all custom bookmarks for {Workspace.Config.Game.name}?");
                     ImGui.Separator();
 
-                    if (ImGui.Button("Yes", new Vector2(170, 0))) {
+                    if (ImGui.Button("Yes", new Vector2(200, 0))) {
                         _bookmarkManager.ClearBookmarks(Workspace.Config.Game.name);
                         Logger.Info($"Cleared custom bookmarks for {Workspace.Config.Game.name}");
                         ImGui.CloseCurrentPopup();
                     }
                     ImGui.SameLine();
-                    if (ImGui.Button("No", new Vector2(170, 0))) {
+                    if (ImGui.Button("No", new Vector2(200, 0))) {
                         ImGui.CloseCurrentPopup();
                     }
-
                     ImGui.EndPopup();
                 }
             }
-
-
 
             if (defaults.Count > 0) {
                 if (_activeTagFilter.Count > 0) {
@@ -288,7 +285,6 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
 
                         if (ImGui.BeginPopupContextItem(bm.Path)) {
                             if (ImGui.Selectable("Jump to...")) {
-
                                 CurrentDir = bm.Path;
                             }
                             if (ImGui.Selectable("Copy Path")) {
