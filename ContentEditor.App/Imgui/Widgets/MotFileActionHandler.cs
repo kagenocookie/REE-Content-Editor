@@ -391,6 +391,12 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
             }
         } else if (newMot is MotFile motSrc && prevMot is MotFile motTarget) {
             // replace values, keep instance
+            foreach (var clip in motTarget.BoneClips) {
+                // ensure that for any names that were manually modified, the hashes also update to match
+                if (!string.IsNullOrEmpty(clip.ClipHeader.boneName) && clip.ClipHeader.boneName != clip.ClipHeader.OriginalName) {
+                    clip.ClipHeader.boneHash = MurMur3HashUtils.GetHash(clip.ClipHeader.boneName);
+                }
+            }
             motTarget.CopyValuesFrom(motSrc);
             if (motlist != null) {
                 // ensure unique name
