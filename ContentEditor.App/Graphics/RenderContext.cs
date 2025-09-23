@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using ContentEditor.Editor;
 using ContentPatcher;
+using ReeLib;
 using Silk.NET.Maths;
 
 namespace ContentEditor.App.Graphics;
@@ -25,7 +26,7 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
 
     protected Material? defaultMaterial;
 
-    protected readonly ResourceRefCounter<string, Texture> TextureRefs = new();
+    protected readonly ResourceRefCounter<ulong, Texture> TextureRefs = new();
     protected readonly ResourceRefCounter<FileHandle, MeshResourceHandle> MeshRefs = new();
     protected readonly ResourceRefCounter<(FileHandle, ShaderFlags), MaterialGroup> MaterialRefs = new();
 
@@ -234,7 +235,7 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
             if (string.IsNullOrEmpty(tex.Path)) {
                 TextureRefs.AddUnnamed(tex);
             } else {
-                TextureRefs.Add(tex.Path, tex);
+                TextureRefs.Add(PakUtils.GetFilepathHash(tex.Path), tex);
             }
         }
     }

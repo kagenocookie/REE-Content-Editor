@@ -199,16 +199,27 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
                 TextureRefs.AddUnnamed(tex);
                 return tex;
             }
+
             if (flags.HasFlag(ShaderFlags.EnableStreamingTex)) {
                 string streamingPath = Path.Combine("streaming/", texture.FilePath);
+                var streamingHash = PakUtils.GetFilepathHash(streamingPath);
+                if (TextureRefs.TryAddReference(streamingHash, out var streamingHandle)) {
+                    return streamingHandle.Resource;
+                }
+
                 if (ResourceManager.TryResolveFile(streamingPath, out var texHandle)) {
-                    texture.FilePath = streamingPath;
+                    var tex = new Texture(GL).LoadFromFile(texHandle);
+                    TextureRefs.Add(streamingHash, tex);
+                    return tex;
                 }
             }
-            if (TextureRefs.TryAddReference(texture.FilePath, out var handle)) {
+
+            var filehash = PakUtils.GetFilepathHash(texture.FilePath);
+            if (TextureRefs.TryAddReference(filehash, out var handle)) {
                 return handle.Resource;
             } else if (ResourceManager.TryResolveFile(texture.FilePath, out var texHandle)) {
                 var tex = new Texture(GL).LoadFromFile(texHandle);
+                TextureRefs.Add(filehash, tex);
                 return tex;
             } else {
                 return GetMissingTexture();
@@ -456,6 +467,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             _missingTexture = new Texture(GL);
             _missingTexture.LoadFromRawData(DefaultPink, 4, 4);
             _missingTexture.Path = "__missing";
+            TextureRefs.Add(PakUtils.GetFilepathHash(_missingTexture.Path), _missingTexture);
         }
 
         return _missingTexture;
@@ -467,6 +479,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             _defaultTexture = new Texture(GL);
             _defaultTexture.LoadFromRawData(DefaultWhite, 4, 4);
             _defaultTexture.Path = "__default";
+            TextureRefs.Add(PakUtils.GetFilepathHash(_defaultTexture.Path), _defaultTexture);
         }
 
         return _defaultTexture;
