@@ -111,6 +111,8 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
     private Shader GetShader(string path, ShaderFlags flags)
     {
+        // ignore streaming tex flag here as it does not actually affect the shaders, only the materials
+        flags = flags & (~ShaderFlags.EnableStreamingTex);
         if (shaders.TryGetValue((path, flags), out var shader)) {
             return shader;
         }
