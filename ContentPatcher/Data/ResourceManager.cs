@@ -629,7 +629,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     }
 
     /// <summary>
-    /// Attempt to find and load a file based on an internal or native filepath. Checks base files with fallback to the active bundle.
+    /// Attempt to find and load a file based on an internal or native filepath. Checks the active bundle and base game files and returns the first result.
     /// </summary>
     public bool TryResolveFile(string filename, [MaybeNullWhen(false)] out FileHandle file)
     {

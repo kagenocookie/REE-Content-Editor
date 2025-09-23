@@ -280,8 +280,9 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                     }
                     ImGui.Spacing();
                     ImGui.Separator();
-                    ImGui.Spacing();
+                    ImguiHelpers.TextColoredWrapped(Colors.Note, "Mot replacement does not support undo/redo. If you need to revert applied changes, reopen the file or restore it from a backup.");
 
+                    ImGui.Spacing();
                     if (ImGui.Button("Confirm Replace", new Vector2(170, 0))) {
                         if (replacedFile != newFile) {
                             ConfirmPaste(motlist, replacedFile, newFile, editor);

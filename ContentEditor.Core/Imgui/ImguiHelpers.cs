@@ -299,6 +299,13 @@ public static class ImguiHelpers
         return false;
     }
 
+    public static void TextColoredWrapped(Vector4 color, ReadOnlySpan<char> text)
+    {
+        ImGui.PushStyleColor(ImGuiCol.Text, color);
+        ImGui.TextWrapped(text);
+        ImGui.PopStyleColor();
+    }
+
     public static DisposableColorOverride OverrideStyleCol(ImGuiCol style, uint color)
     {
         ImGui.PushStyleColor(style, color);
