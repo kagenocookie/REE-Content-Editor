@@ -463,27 +463,31 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         0xff, 0xff, 0xff, 0xff,
     ];
 
+    private static readonly ulong MissingTextureHash = PakUtils.GetFilepathHash("__missing");
     private Texture GetMissingTexture()
     {
         if (_missingTexture == null) {
             _missingTexture = new Texture(GL);
             _missingTexture.LoadFromRawData(DefaultPink, 4, 4);
             _missingTexture.Path = "__missing";
-            TextureRefs.Add(PakUtils.GetFilepathHash(_missingTexture.Path), _missingTexture);
+            TextureRefs.Add(MissingTextureHash, _missingTexture);
         }
 
+        TextureRefs.TryAddReference(MissingTextureHash, out _);
         return _missingTexture;
     }
 
+    private static readonly ulong DefaultTextureHash = PakUtils.GetFilepathHash("__default");
     private Texture GetDefaultTexture()
     {
         if (_defaultTexture == null) {
             _defaultTexture = new Texture(GL);
             _defaultTexture.LoadFromRawData(DefaultWhite, 4, 4);
             _defaultTexture.Path = "__default";
-            TextureRefs.Add(PakUtils.GetFilepathHash(_defaultTexture.Path), _defaultTexture);
+            TextureRefs.Add(DefaultTextureHash, _defaultTexture);
         }
 
+        TextureRefs.TryAddReference(DefaultTextureHash, out _);
         return _defaultTexture;
     }
 
