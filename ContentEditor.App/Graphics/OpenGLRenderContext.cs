@@ -202,31 +202,33 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
             if (flags.HasFlag(ShaderFlags.EnableStreamingTex)) {
                 string streamingPath = Path.Combine("streaming/", texture.FilePath);
-                var streamingHash = PakUtils.GetFilepathHash(streamingPath);
-                if (TextureRefs.TryAddReference(streamingHash, out var streamingHandle)) {
-                    return streamingHandle.Resource;
-                }
-
-                if (ResourceManager.TryResolveFile(streamingPath, out var texHandle)) {
-                    var tex = new Texture(GL).LoadFromFile(texHandle);
-                    TextureRefs.Add(streamingHash, tex);
-                    return tex;
-                }
+                var streamingTex = LoadTextureInternal(streamingPath);
+                if (streamingTex != null) return streamingTex;
             }
 
-            var filehash = PakUtils.GetFilepathHash(texture.FilePath);
-            if (TextureRefs.TryAddReference(filehash, out var handle)) {
-                return handle.Resource;
-            } else if (ResourceManager.TryResolveFile(texture.FilePath, out var texHandle)) {
-                var tex = new Texture(GL).LoadFromFile(texHandle);
-                TextureRefs.Add(filehash, tex);
-                return tex;
-            } else {
-                return GetMissingTexture();
-            }
+            return LoadTextureInternal(texture.FilePath) ?? GetMissingTexture();;
         } catch (Exception e) {
             Logger.Error("Failed to load texture " + texture.FilePath + ": " + e.Message);
             return GetMissingTexture();
+        }
+    }
+
+    private Texture? LoadTextureInternal(string filepath)
+    {
+        var filehash = PakUtils.GetFilepathHash(filepath);
+        if (TextureRefs.TryAddReference(filehash, out var handle)) {
+            return handle.Resource;
+        } else if (ResourceManager.TryResolveFile(filepath, out var texHandle)) {
+            var tex = new Texture(GL).LoadFromFile(texHandle);
+            if (texHandle.Filepath != filepath) {
+                var srcHash = filehash;
+                filehash = PakUtils.GetFilepathHash(texHandle.Filepath);
+                TextureRefs.AddKeyRemap(srcHash, filehash);
+            }
+            TextureRefs.Add(filehash, tex);
+            return tex;
+        } else {
+            return null;
         }
     }
 

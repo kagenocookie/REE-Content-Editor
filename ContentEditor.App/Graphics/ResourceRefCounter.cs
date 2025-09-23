@@ -8,19 +8,21 @@ public sealed class ResourceRefCounter<TKey, TResource> : IDisposable
 {
     private readonly Dictionary<TKey, RefCountedResource> keyedResources = new();
     private readonly Dictionary<TResource, RefCountedResource> instances = new();
+    private readonly Dictionary<TKey, TKey> resourceRemaps = new();
     private int _nextInstanceID = 1;
     public int NextInstanceID => _nextInstanceID;
 
-    public RefCountedResource Add(TKey path, TResource resource)
+    public RefCountedResource Add(TKey resourceKey, TResource resource)
     {
-        if (keyedResources.TryGetValue(path, out var refs)) {
+        if (resourceRemaps.TryGetValue(resourceKey, out var remappedKey)) resourceKey = remappedKey;
+        if (keyedResources.TryGetValue(resourceKey, out var refs)) {
             refs.References++;
             return refs;
         }
 
         var id = _nextInstanceID++;
-        instances[resource] = refs = new RefCountedResource(path, resource, 1, id);
-        return keyedResources[path] = refs;
+        instances[resource] = refs = new RefCountedResource(resourceKey, resource, 1, id);
+        return keyedResources[resourceKey] = refs;
     }
 
     public RefCountedResource AddUnnamed(TResource resource)
@@ -34,13 +36,19 @@ public sealed class ResourceRefCounter<TKey, TResource> : IDisposable
         return refs;
     }
 
-    public bool TryAddReference(TKey filePath, [MaybeNullWhen(false)] out RefCountedResource resource)
+    public bool TryAddReference(TKey resourceKey, [MaybeNullWhen(false)] out RefCountedResource resource)
     {
-        if (keyedResources.TryGetValue(filePath, out resource)) {
+        if (resourceRemaps.TryGetValue(resourceKey, out var remappedKey)) resourceKey = remappedKey;
+        if (keyedResources.TryGetValue(resourceKey, out resource)) {
             resource.References++;
             return true;
         }
         return false;
+    }
+
+    public void AddKeyRemap(TKey remapKey, TKey targetKey)
+    {
+        resourceRemaps[remapKey] = targetKey;
     }
 
     public void Dereference(RefCountedResource resource)
