@@ -28,6 +28,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
     private string? loadedMdf;
     private string? mdfSource;
+    private string? originalMDF;
     private UIContext? mdfPickerContext;
 
     private UIContext? animationPickerContext;
@@ -51,6 +52,13 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     private float zoomSpeed = 0.1f;
     private float yaw, pitch;
     private const float pitchLimit = MathF.PI / 2 - 0.01f;
+    private enum TextureMode
+    {
+        HighRes,
+        LowRes
+    }
+    private bool isMDFUpdateRequest = false;
+    private TextureMode textureMode = TextureMode.HighRes;
     public MeshViewer(ContentWorkspace workspace, FileHandle file)
     {
         meshPath = file.Filepath;
@@ -71,6 +79,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         var mdfPath = meshBasePath.ToString() + ".mdf2";
         if (mdfVersion != -1) mdfPath += "." + mdfVersion;
         this.mdfSource = mdfPath;
+        this.originalMDF = mdfPath;
     }
 
     public void Focus()
@@ -122,6 +131,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         }
 
         if (!meshComponent.HasMesh) {
+            meshComponent.IsStreamingTex = true;
             meshComponent.SetMesh(fileHandle, fileHandle);
             scene.RenderContext.ProjectionMode = RenderContext.CameraProjection.Orthographic;
             CenterCameraToSceneObject();
@@ -184,6 +194,20 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Hold Left Shift to move 10x faster.");
             ImGui.SliderFloat("Rotate Speed", ref rotateSpeed, 0.1f, 10.0f);
             ImGui.SliderFloat("Zoom Speed", ref zoomSpeed, 0.01f, 1.0f);
+            ImGui.SeparatorText("Material:");
+            bool useHighRes = textureMode == TextureMode.HighRes;
+            if (ImGui.Checkbox("Textures: " + (useHighRes ? "Hi-Res" : "Low-Res"), ref useHighRes)) {
+                textureMode = useHighRes ? TextureMode.HighRes : TextureMode.LowRes;
+                isMDFUpdateRequest = true;
+                meshComponent.IsStreamingTex = useHighRes;
+                UpdateMaterial(meshComponent);
+            }
+
+            ImGui.SameLine();
+            if (ImGui.Button("Reset MDF")) {
+                mdfSource = originalMDF;
+                UpdateMaterial(meshComponent);
+            }
             if (mdfPickerContext == null) {
                 mdfPickerContext = context.AddChild<MeshViewer, string>(
                     "MDF2 Material",
@@ -335,8 +359,9 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     private void UpdateMaterial(MeshComponent meshComponent)
     {
         var mesh = meshComponent.MeshHandle;
-        if (loadedMdf != mdfSource) {
+        if (loadedMdf != mdfSource || isMDFUpdateRequest) {
             loadedMdf = mdfSource;
+            isMDFUpdateRequest = false;
             if (string.IsNullOrEmpty(mdfSource)) {
                 meshComponent.SetMesh(fileHandle, fileHandle);
             } else if (Workspace.ResourceManager.TryResolveFile(mdfSource, out var mdfHandle)) {
@@ -373,7 +398,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         var windowSize = ImGui.GetWindowSize();
         var timestamp = animator.CurrentTime.ToString("0.00") + " / " + animator.TotalTime.ToString("0.00");
         var timestampSize = ImGui.CalcTextSize(timestamp) + new Vector2(148, 0);
-        ImGui.SetCursorPos(new Vector2(windowSize.X - timestampSize.X - ImGui.GetStyle().WindowPadding.X * 2, 54));
+        ImGui.SetCursorPos(new Vector2(windowSize.X - timestampSize.X - ImGui.GetStyle().WindowPadding.X * 2, 75));
         ImGui.PushStyleColor(ImGuiCol.ChildBg, ImguiHelpers.GetColor(ImGuiCol.WindowBg) with { W = 0.5f });
         ImGui.BeginChild("PlaybackControls", new Vector2(timestampSize.X, 46), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
 

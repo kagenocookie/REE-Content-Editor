@@ -25,7 +25,6 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
     private string? texturePath;
     private FileHandle? fileHandle;
     private TextureChannel currentChannel = TextureChannel.RGBA;
-
     private static readonly HashSet<string> StandardImageFileExtensions = [".png", ".bmp", ".gif", ".jpg", ".jpeg", ".webp", ".tga", ".tiff", ".qoi", ".dds"];
 
     private WindowData data = null!;
@@ -194,6 +193,20 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                 texture.SetChannel(currentChannel);
             }
             ImGui.PopStyleColor(3);
+            ImGui.SameLine();
+            if (texture.Path != null) {
+                string suffix = GetTextureTypeSuffix(texture.Path);
+                bool isKnownTextureType = ShowTextureTypeUI(suffix, previewOnly: true);
+                using (var _ = ImguiHelpers.Disabled(!isKnownTextureType)) {
+                    if (ImGui.Button("Channel Breakdown")) {
+                        ImGui.OpenPopup("ChannelBreakdownPopup");
+                    }
+                }
+                if (isKnownTextureType && ImGui.BeginPopup("ChannelBreakdownPopup")) {
+                    ShowTextureTypeUI(suffix, previewOnly: false);
+                    ImGui.EndPopup();
+                }
+            }
             ImGui.Separator();
             ImGui.Spacing();
 
@@ -211,6 +224,57 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
             ImGui.Image((nint)texture.Handle, size);
         }
         
+    }
+    private static string GetTextureTypeSuffix(string path)
+    {
+        int lastUnderscoreIDX = path.LastIndexOf('_');
+        int firstDotIDX = path.IndexOf('.', lastUnderscoreIDX);
+        path = path.Substring(lastUnderscoreIDX + 1, firstDotIDX - lastUnderscoreIDX - 1);
+        return path;
+    }
+    private static bool ShowTextureTypeUI(string path, bool previewOnly = false)
+    {
+        var mapping = path switch {
+            "albd" => ("ALBD - AlbedoDielectric", new[] { "Albedo R", "Albedo G", "Albedo B", "Dielectric" }),
+            "albm" => ("ALBM - AlbedoMetallic", new[] { "Albedo R", "Albedo G", "Albedo B", "Metallic" }),
+            "atoc" => ("ATOC - AlphaTranslucentOcclusionCavity", new[] { "Alpha", "Translucency", "Ambient Occlusion", "Cavity" }),
+            "atod" => ("ATOD - AlphaTranslucentOcclusionDirtmask", new[] { "Alpha", "Translucency", "Ambient Occlusion", "Dirt Mask" }),
+            "atos" => ("ATOS - AlphaTranslucentOcclusionSubsurfaceScattering", new[] { "Alpha", "Translucency", "Ambient Occlusion", "Subsurface Scattering" }),
+            "nrmr" => ("NRMR - NormalRoughness", new[] { "Normal X", "Normal Y", "N/A", "Roughness" }),
+            "nrra" => ("NRRA - NormalRoughnessAlpha", new[] { "Roughness", "Normal Y", "Alpha", "Normal X" }),
+            "nrrc" => ("NRRC - NormalRoughnessCavity", new[] { "Roughness", "Normal Y", "Cavity", "Normal X" }),
+            "nrro" => ("NRRO - NormalRoughnessOcclusion", new[] { "Roughness", "Normal Y", "Ambient Occlusion", "Normal X" }),
+            "nrrt" => ("NRRT - NormalRoughnessTranslucent", new[] { "Roughness", "Normal Y", "Translucency", "Normal X" }),
+            "ocsd" => ("OCSD - OcclusionCavitySubsurfaceScatteringDetail", new[] { "Ambient Occlusion", "Cavity", "Subsurface Scattering", "Detail Mask" }),
+            "octd" => ("OCTD - OcclusionCavityTranslucentDetail", new[] { "Ambient Occlusion", "Cavity", "Translucency", "Detail Mask" }),
+            _ => (null, null)
+        };
+
+        if (mapping.Item1 == null || mapping.Item2 == null) {
+            return false;
+        }
+
+        if (previewOnly) {
+            return true;
+        }
+
+        ImGui.SeparatorText(mapping.Item1);
+        if (ImGui.BeginTable("textureChannelBreakdown", 2, ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.BordersOuterV)) {
+            ImGui.TableSetupColumn("Channel", ImGuiTableColumnFlags.WidthFixed, 100);
+            ImGui.TableSetupColumn("Texture", ImGuiTableColumnFlags.WidthStretch);
+            ImGui.TableHeadersRow();
+
+            string[] column1 = { "Red", "Green", "Blue", "Alpha" };
+            for (int i = 0; i < column1.Length; i++) {
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.Text(column1[i]);
+                ImGui.TableNextColumn();
+                ImGui.Text(mapping.Item2[i]);
+            }
+            ImGui.EndTable();
+        }
+        return true;
     }
 
     public static bool IsSupportedFileExtension(string filepathOrExtension)

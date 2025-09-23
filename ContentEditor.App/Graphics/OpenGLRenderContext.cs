@@ -181,7 +181,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         }
     }
 
-    private Texture LoadTexture(Assimp.Scene scene, Assimp.TextureSlot texture)
+    private Texture LoadTexture(Assimp.Scene scene, Assimp.TextureSlot texture, ShaderFlags flags)
     {
         try {
             if (texture.FilePath.StartsWith('*')) {
@@ -191,13 +191,19 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
                     var stream = new MemoryStream(texData.CompressedData);
                     tex.LoadFromStream(stream);
                 } else {
-                    // untested
                     var bytes = Unsafe.As<byte[]>(texData.NonCompressedData);
                     tex.LoadFromRawData(bytes, (uint)texData.Width, (uint)texData.Height);
                 }
                 TextureRefs.AddUnnamed(tex);
                 return tex;
-            } else if (TextureRefs.TryAddReference(texture.FilePath, out var handle)) {
+            }
+            if (flags.HasFlag(ShaderFlags.EnableStreamingTex)) {
+                string streamingPath = Path.Combine("streaming/", texture.FilePath);
+                if (ResourceManager.TryResolveFile(streamingPath, out var texHandle)) {
+                    texture.FilePath = streamingPath;
+                }
+            }
+            if (TextureRefs.TryAddReference(texture.FilePath, out var handle)) {
                 return handle.Resource;
             } else if (ResourceManager.TryResolveFile(texture.FilePath, out var texHandle)) {
                 var tex = new Texture(GL).LoadFromFile(texHandle);
@@ -232,11 +238,11 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             }
 
             var material = CreateViewShadedMaterial(flags);
-            // var material = CreateWireMaterial();
+            //var material = CreateWireMaterial(flags);
             material.name = mat.Name;
             if (material.HasTextureParameter(TextureUnit.Texture0)) {
                 if (mat.HasTextureDiffuse) {
-                    var tex = LoadTexture(scene, mat.TextureDiffuse);
+                    var tex = LoadTexture(scene, mat.TextureDiffuse, flags);
                     material.SetParameter(TextureUnit.Texture0, tex);
                 } else {
                     material.SetParameter(TextureUnit.Texture0, GetDefaultTexture());
@@ -248,6 +254,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         MaterialRefs.Add((file, flags), group);
         return group;
     }
+
 
     private MeshHandle? lastInstancedMesh;
     private Material? lastMaterial;

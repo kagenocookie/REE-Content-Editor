@@ -15,6 +15,7 @@ public sealed class Shader : IDisposable
     private static readonly Dictionary<ShaderFlags, string[]> FlagDefines = new() {
         { ShaderFlags.None, [] },
         { ShaderFlags.EnableSkinning, ["ENABLE_SKINNING"] },
+        { ShaderFlags.EnableStreamingTex, ["ENABLE_STREAMING_TEX"] },
     };
 
     public const int MaxBoneCount = 250;
@@ -32,10 +33,19 @@ public sealed class Shader : IDisposable
         LoadFromCombinedShaderFile(shaderPath, flags, version);
         Name = Path.GetFileNameWithoutExtension(shaderPath);
     }
-
+    private static string[] GetFlagDefines(ShaderFlags flags)
+    {
+        var defines = new List<string>();
+        foreach (var kv in FlagDefines) {
+            if (kv.Key != ShaderFlags.None && flags.HasFlag(kv.Key)) {
+                defines.AddRange(kv.Value);
+            }
+        }
+        return defines.ToArray();
+    }
     public bool LoadFromCombinedShaderFile(string shaderPath, ShaderFlags flags = ShaderFlags.None, int version = 330)
     {
-        var defines = FlagDefines[flags];
+        var defines = GetFlagDefines(flags);
         var (vertex, fragment, geometry) = LoadCombinedShader(shaderPath, defines, version);
         CreateProgram(vertex, fragment, geometry);
         return true;
