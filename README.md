@@ -31,6 +31,7 @@ Some files may not fully work for other RE ENGINE games.
 - Data search tool for easily finding things you might need for mod development: find messages by their guids or content, or arbitrary fields by their value
 - Partial patching of files in case multiple mods would need to modify the same shared file (e.g. content catalog files)
 - Streamlined editors for game-specific content (these need to be researched and set up per game so the feature may not be available for all games - mostly configurable through yaml files)
+- Preview any 3D animation through the mesh viewer
 
 ### File support table
 <div align="center">

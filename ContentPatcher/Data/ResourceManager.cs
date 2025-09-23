@@ -750,7 +750,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         if (format.version != -1) {
             var ext = PathUtils.GetFilenameExtensionWithoutSuffixes(filepath);
             if (workspace.Env.TryGetFileExtensionVersion(ext.ToString(), out var expectedVersion) && expectedVersion != format.version) {
-                Logger.Error($"Unexpected {workspace.Game} file version .{ext}.{format.version} for type {format.format}. Expected version {expectedVersion}. File may not work correctly.");
+                Logger.Warn($"Unexpected file version .{ext}.{format.version} for type {format.format}. Game {workspace.Game} expects version {expectedVersion}. File may not work correctly.");
             }
         }
         FileHandleType handleType;
