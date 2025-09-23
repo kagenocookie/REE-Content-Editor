@@ -205,19 +205,34 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                     moveSpeedMultiplier = ImGui.IsKeyDown(ImGuiKey.LeftShift) ? 10.0f : 1.0f;
                     float cameraMoveSpeed = moveSpeed * moveSpeedMultiplier;
                     if (ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
-                        scene.Camera.GameObject.Transform.TranslateForwardAligned(new Vector3(moveDelta.X, 0, -moveDelta.Y) * cameraMoveSpeed * scene.RenderContext.DeltaTime);
+                        scene.Camera.Transform.TranslateForwardAligned(new Vector3(moveDelta.X, 0, -moveDelta.Y) * cameraMoveSpeed * scene.RenderContext.DeltaTime);
                     } else {
-                        scene.Camera.GameObject.Transform.TranslateForwardAligned(new Vector3(-moveDelta.X, moveDelta.Y, 0) * cameraMoveSpeed * scene.RenderContext.DeltaTime);
+                        scene.Camera.Transform.TranslateForwardAligned(new Vector3(-moveDelta.X, moveDelta.Y, 0) * cameraMoveSpeed * scene.RenderContext.DeltaTime);
                     }
                 } else if (ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
                     yaw += moveDelta.X * rotateSpeed;
                     pitch += moveDelta.Y * rotateSpeed;
                     if (scene.RenderContext.ProjectionMode == RenderContext.CameraProjection.Perspective) {
-                        scene.Camera.GameObject.Transform.LocalRotation = Quaternion<float>.CreateFromYawPitchRoll(yaw, pitch, 0).ToSystem();
+                        scene.Camera.Transform.LocalRotation = Quaternion<float>.CreateFromYawPitchRoll(yaw, pitch, 0).ToSystem();
                     } else {
                         pitch = Math.Clamp(pitch, -pitchLimit, pitchLimit);
-                        scene.Camera.GameObject.Transform.LocalRotation = Quaternion<float>.CreateFromYawPitchRoll(yaw, pitch, 0).ToSystem();
+                        scene.Camera.Transform.LocalRotation = Quaternion<float>.CreateFromYawPitchRoll(yaw, pitch, 0).ToSystem();
                     }
+                }
+            }
+
+            if (ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
+                var moveVec = Vector3.Zero;
+                if (ImGui.IsKeyDown(ImGuiKey.W)) moveVec.Z--;
+                if (ImGui.IsKeyDown(ImGuiKey.S)) moveVec.Z++;
+                if (ImGui.IsKeyDown(ImGuiKey.A)) moveVec.X--;
+                if (ImGui.IsKeyDown(ImGuiKey.D)) moveVec.X++;
+                if (ImGui.IsKeyDown(ImGuiKey.Q)) moveVec.Y--;
+                if (ImGui.IsKeyDown(ImGuiKey.E)) moveVec.Y++;
+
+                if (moveVec != Vector3.Zero) {
+                    var multiplier = Time.Delta * moveSpeed * (ImGui.IsKeyDown(ImGuiKey.LeftShift) ? 0.5f : 0.075f);
+                    scene.Camera.Transform.TranslateForwardAligned(multiplier * moveVec);
                 }
             }
         }
