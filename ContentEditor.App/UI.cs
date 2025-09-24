@@ -51,6 +51,9 @@ public static class UI
         fixed (ushort* ranges = AppIcons.Range) {
             fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/appicons.ttf"), (float)FontSize, custom_icons, (nint)ranges);
         }
+        fixed (ushort* ranges = AppIcons.Range) {
+            fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/silver_icons.ttf"), (float)FontSize, custom_icons, (nint)ranges);
+        }
 
         fonts.Build();
         ImGuiNative.ImFontConfig_destroy(fontCfg);
@@ -120,8 +123,21 @@ public static class AppIcons
     public static readonly char Stop = '\uea1e';
     public static readonly char SeekStart = '\uea21';
     public static readonly char Loop = '\uea2d';
+    public static readonly char SI_File = '\ued00';
+    public static readonly char SI_FileNew = '\ued01';
+    public static readonly char SI_FileRead = '\ued02';
+    public static readonly char SI_FileExtractTo = '\ued03';
+    public static readonly char SI_GenericWarning = '\ued04';
+    public static readonly char SI_GenericError = '\ued05';
+    public static readonly char SI_GenericInfo = '\ued06';
+    public static readonly char SI_GenericQmark = '\ued07';
+    public static readonly char SI_ArchiveExtractTo = '\ued08';
+    public static readonly char SI_GenericTag = '\ued09';
+    public static readonly char SI_GenericBookmark = '\ued10';
+    public static readonly char SI_GenericBookmarkAdd = '\ued11';
+    public static readonly char SI_GenericBookmarkRemove = '\ued12';
 
-    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)Loop, 0];
+    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_GenericBookmarkRemove, 0];
 
     public static string PrependIcon(this string text, object target)
     {

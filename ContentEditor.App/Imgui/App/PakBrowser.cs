@@ -138,7 +138,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         if (hasInvalidatedPaks) {
             ImGui.SameLine();
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.Warning);
-            ImGui.Button("!", new Vector2(UI.FontSize + ImGui.GetStyle().FramePadding.Y * 2));
+            ImGui.Button($"{AppIcons.SI_GenericWarning}");
             ImGui.PopStyleColor();
             if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Invalidated PAK entries have been detected (most likely from Fluffy Mod Manager).\nYou may be unable to open some files.");
         }
@@ -290,10 +290,12 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                             if (ImGui.Selectable("Copy Path")) {
                                 EditorWindow.CurrentWindow?.CopyToClipboard(bm.Path);
                             }
-                            if (ImGui.Selectable("Remove from Bookmarks")) {
+                            ImGui.Spacing();
+                            if (ImGui.Selectable($"{AppIcons.SI_GenericBookmarkRemove} | Remove from Bookmarks")) {
                                 _bookmarkManager.RemoveBookmark(Workspace.Config.Game.name, bm.Path);
                             }
-                            if (ImGui.BeginMenu("Tags")) {
+                            ImGui.Spacing();
+                            if (ImGui.BeginMenu($"{AppIcons.SI_GenericTag} | Tags")) {
                                 foreach (var tag in BookmarkManager.TagColors.Keys) {
                                     bool hasTag = bm.Tags.Contains(tag);
                                     if (ImGui.MenuItem(tag, "", hasTag)) {
@@ -402,9 +404,10 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             var w = ImGui.GetWindowSize().X - ImGui.GetCursorPos().X - style.WindowPadding.X;
             var total = unpackExpectedFiles;
             ImGui.ProgressBar((float)unpackedFiles.Value / total, new Vector2(w, UI.FontSize + style.FramePadding.Y * 2), $"{unpackedFiles.Value}/{total}");
-        } else if (ImGui.Button("Extract to...")) {
+        } else if (ImGui.Button($"{AppIcons.SI_ArchiveExtractTo}")) {
             PlatformUtils.ShowFolderDialog(ExtractCurrentList, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
         }
+        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Extract To...");
         DrawContents(matchedList!);
     }
 
@@ -503,7 +506,8 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                             EditorWindow.CurrentWindow?.CopyToClipboard(file);
                             ImGui.CloseCurrentPopup();
                         }
-                        if (ImGui.Selectable("Extract File to ...")) {
+                        ImGui.Spacing();
+                        if (ImGui.Selectable($"{AppIcons.SI_FileExtractTo} | Extract File to ...")) {
                             var nativePath = file;
                             PlatformUtils.ShowSaveFileDialog((savePath) => {
                                 var stream = reader.GetFile(nativePath);
@@ -517,13 +521,13 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                             }, Path.GetFileName(nativePath));
                             ImGui.CloseCurrentPopup();
                         }
-
+                        ImGui.Spacing();
                         if (isBookmarked) {
-                            if (ImGui.Selectable("Remove from Bookmarks")) {
+                            if (ImGui.Selectable($"{AppIcons.SI_GenericBookmarkRemove} | Remove from Bookmarks")) {
                                 _bookmarkManager.RemoveBookmark(Workspace.Config.Game.name, file);
                             }
                         } else {
-                            if (ImGui.Selectable("Add to Bookmarks")) {
+                            if (ImGui.Selectable($"{AppIcons.SI_GenericBookmarkAdd} | Add to Bookmarks")) {
                                 _bookmarkManager.AddBookmark(Workspace.Config.Game.name, file);
                             }
                         }
