@@ -183,11 +183,13 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         }
     }
 
-    private Texture LoadTexture(Assimp.Scene scene, Assimp.TextureSlot texture, ShaderFlags flags)
+    private Texture LoadTexture(Assimp.Scene? scene, Assimp.TextureSlot texture, ShaderFlags flags)
     {
         try {
             if (texture.FilePath.StartsWith('*')) {
-                var texData = scene.GetEmbeddedTexture(texture.FilePath);
+                var texData = scene?.GetEmbeddedTexture(texture.FilePath);
+                if (texData == null) return GetDefaultTexture();
+
                 var tex = new Texture(GL);
                 if (texData.HasCompressedData) {
                     var stream = new MemoryStream(texData.CompressedData);
@@ -240,15 +242,16 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         }
 
         var group = new MaterialGroup() { Flags = flags };
-        var scene = (file.Resource as AssimpMaterialResource)?.Scene ?? (file.Resource as AssimpMeshResource)?.Scene;
-        if (scene == null) {
+        var scene = (file.Resource as AssimpMaterialResource)?.Scene;
+        var materials = scene?.Materials ?? (file.Resource as AssimpMeshResource)?.MaterialList;
+        if (materials == null) {
             Logger.Error("Failed to load material group - invalid resource type " + file.Filepath);
             return group;
         }
 
-        foreach (var mat in scene.Materials) {
+        foreach (var mat in materials) {
             if (!mat.HasName) {
-                Logger.Debug("Material " + scene.Materials.IndexOf(mat) + " has no name");
+                Logger.Debug("Material " + materials.IndexOf(mat) + " has no name");
                 continue;
             }
 

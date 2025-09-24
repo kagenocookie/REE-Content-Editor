@@ -16,7 +16,7 @@ public class ResourcePathPicker : IObjectUIHandler
     /// When true, path is expected to be an internal path (appsystem/stm/texture.tex).
     /// When false, path is expected to be a natives path (natives/stm/appsystem/stm/texture.tex.71567213).
     /// </summary>
-    public bool SaveWithNativePath { get; init; }
+    public bool UseNativesPath { get; init; }
 
     public ResourcePathPicker()
     {
@@ -129,7 +129,7 @@ public class ResourcePathPicker : IObjectUIHandler
         }
 
         // validate the filepath
-        if (SaveWithNativePath) {
+        if (UseNativesPath) {
             // native path
             if (context.state != null && (Path.IsPathFullyQualified(context.state) || !context.state.StartsWith("natives/") || PathUtils.ParseFileFormat(context.state).version == -1)) {
                 ImGui.TextColored(Colors.Warning, "The given file path may not resolve properly ingame.\nEnsure it's a native path (including the natives/stm/ part and with file extension version)");
@@ -153,8 +153,14 @@ public class ResourcePathPicker : IObjectUIHandler
 
     private void ApplyPathChange(UIContext context, string newPath, WindowBase? window = null)
     {
+        if (UseNativesPath) {
+            UndoRedo.RecordSet(context, newPath, window);
+            context.state = newPath;
+            return;
+        }
+
         newPath = PathUtils.GetNativeFromFullFilepath(newPath) ?? newPath;
-        if (SaveWithNativePath) {
+        if (UseNativesPath) {
             newPath = PathUtils.GetInternalFromNativePath(newPath);
         } else {
             newPath = PathUtils.RemoveNativesFolder(newPath);

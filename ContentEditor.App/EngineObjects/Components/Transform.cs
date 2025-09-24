@@ -121,6 +121,13 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
     {
         LocalRotation = LocalPosition.CreateLookAtQuaternion(target, up).ToSystem();
     }
+
+    public void CopyFrom(Transform transform)
+    {
+        LocalPosition = transform.LocalPosition;
+        LocalRotation = transform.LocalRotation;
+        LocalScale = transform.LocalScale;
+    }
 }
 
 public static class TransformExtensions

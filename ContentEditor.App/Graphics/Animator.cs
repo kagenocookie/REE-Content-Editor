@@ -59,6 +59,16 @@ public class Animator(ContentWorkspace Workspace)
         Update(0);
     }
 
+    public void Seek(float time)
+    {
+        currentTime = time;
+    }
+
+    public void SeekPercentage(float time)
+    {
+        currentTime = time / TotalTime;
+    }
+
     public static float GetInterpolation<TValue>(TValue[] array1, TValue[] array2, int frame, float time)
     {
         return 0;
@@ -67,6 +77,15 @@ public class Animator(ContentWorkspace Workspace)
     public void SetMesh(AnimatedMeshHandle mesh)
     {
         this.mesh = mesh;
+    }
+
+    public bool SetActiveMotion(string name)
+    {
+        if (motions.TryGetValue(name, out var mot)) {
+            SetActiveMotion(mot);
+            return true;
+        }
+        return false;
     }
 
     public void SetActiveMotion(MotFileBase mot)

@@ -96,53 +96,6 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
         return false;
     }
 
-
-
-    private class MotRetargetConfig
-    {
-        [JsonPropertyName("renames")]
-        public List<MotRetargetNamesConfig> Renames { get; set; } = [];
-
-        [JsonPropertyName("reparenting")]
-        public List<MotRetargetParentsConfig> Parents { get; set; } = [];
-    }
-
-    private class MotRetargetNamesConfig
-    {
-        [JsonPropertyName("type")]
-        public string Type { get; set; } = "";
-        [JsonPropertyName("name")]
-        public string Name { get; set; } = "";
-        [JsonPropertyName("version1")]
-        public string[] Version1 { get; set; } = [];
-        [JsonPropertyName("version2")]
-        public string[] Version2 { get; set; } = [];
-        [JsonPropertyName("maps")]
-        public List<MotRetargetNameMap> Maps { get; set; } = [];
-    }
-
-    public class MotRetargetNameMap
-    {
-        [JsonPropertyName("bone1")]
-        public string Bone1 { get; set; } = "";
-        [JsonPropertyName("bone2")]
-        public string Bone2 { get; set; } = "";
-
-        public override string ToString() => $"{Bone1} => {Bone2}";
-    }
-
-    private class MotRetargetParentsConfig
-    {
-        [JsonPropertyName("type")]
-        public string Type { get; set; } = "";
-        [JsonPropertyName("name")]
-        public string Name { get; set; } = "";
-        [JsonPropertyName("versions")]
-        public string[] Versions { get; set; } = [];
-        [JsonPropertyName("parents")]
-        public Dictionary<string, string> Parents = new();
-    }
-
     private class MotlistRetargetWindow(MotlistFile motlist, MotFileBase replacedFile, MotFileBase newFile, MotlistEditor? editor)
     {
         public static readonly string WindowName = "Motion Retargeting";
@@ -164,29 +117,10 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
         private void LoadConfigs()
         {
             var path = Path.Combine(AppContext.BaseDirectory, "configs/mot_retargeting");
-            configs = new();
+            configs = RetargetDesigner.LoadRetargetingConfigs();
             selectedArmatureType = lastSelectedType ?? "";
             sourceType = lastSelectedSource ?? "";
             targetRenameConfig = lastSelectedTarget ?? "";
-            foreach (var file in Directory.EnumerateFiles(path, "*.json")) {
-                if (file.TryDeserializeJsonFile<MotRetargetConfig>(out var config, out var error)) {
-                    foreach (var cfg in config.Renames) {
-                        if (!configs.TryGetValue(cfg.Type, out var stored)) {
-                            configs[cfg.Type] = stored = new MotRetargetConfig();
-                        }
-                        stored.Renames.Add(cfg);
-                    }
-                    foreach (var cfg in config.Parents) {
-                        if (!configs.TryGetValue(cfg.Type, out var stored)) {
-                            configs[cfg.Type] = stored = new MotRetargetConfig();
-                        }
-
-                        stored.Parents.Add(cfg);
-                    }
-                } else {
-                    Logger.Error("Could not load retargeting config " + file);
-                }
-            }
             MapTypes = configs.Select(c => c.Key).Distinct().ToArray();
         }
 
@@ -306,44 +240,11 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
 
         private void ExecuteRename(MotRetargetNamesConfig remapConfig, string source, bool directionTieBreaker)
         {
-            // TODO do we need to worry about bone indices?
-            // NOTE: we're not modifying the mot.Bones/mot.RootBones - most motlist versions only have the list on mot 1
-            var mapToBone1 = remapConfig.Version2.Contains(source);
-            Dictionary<string, string> bonemap;
-            if (remapConfig.Version2.Contains(source) && (!remapConfig.Version1.Contains(source) || !directionTieBreaker)) {
-                bonemap = remapConfig.Maps.ToDictionary(kv => kv.Bone2, kv => kv.Bone1);
-            } else {
-                bonemap = remapConfig.Maps.ToDictionary(kv => kv.Bone1, kv => kv.Bone2);
-            }
-
-            var boneHashes = bonemap.ToDictionary(kv => MurMur3HashUtils.GetHash(kv.Key), kv => kv.Value);
-            var renames = new List<string>();
-
             if (newFile is MotFile mot) {
-                if (mot.BoneHeaders == null) {
-                    Logger.Error("Mot file contains no bone data");
-                    return;
-                }
-
-                foreach (var bone in mot.BoneHeaders) {
-                    if (bonemap.TryGetValue(bone.boneName, out var newName) || boneHashes.TryGetValue(bone.boneHash, out newName)) {
-                        renames.Add((bone.boneName ?? bone.boneHash.ToString()) + " => " + newName);
-                        bone.boneName = newName;
-                        bone.boneHash = MurMur3HashUtils.GetHash(newName);
-                    }
-                }
-
-                foreach (var clip in mot.BoneClips) {
-                    if (clip.ClipHeader.boneName != null && bonemap.TryGetValue(clip.ClipHeader.boneName, out var newName) || boneHashes.TryGetValue(clip.ClipHeader.boneHash, out newName)) {
-                        renames.Add((clip.ClipHeader.boneName ?? clip.ClipHeader.boneHash.ToString()) + " => " + newName);
-                        clip.ClipHeader.boneName = newName;
-                        clip.ClipHeader.boneHash = MurMur3HashUtils.GetHash(newName);
-                    }
-                }
+                var renames = RetargetDesigner.ExecuteRemap(mot, remapConfig, source, directionTieBreaker);
+                Logger.Info($"Renamed {renames.Count} bones:\n" + string.Join("\n", renames));
+                motPreviewContext = null;
             }
-
-            Logger.Info($"Renamed {renames.Count} bones:\n" + string.Join("\n", renames));
-            motPreviewContext = null;
         }
 
         private void ExecuteRemapParents(MotRetargetParentsConfig remapConfig)

@@ -51,4 +51,13 @@ public static class FileLoaderExtensions
             return file.WriteTo(handler);
         }
     }
+
+    public static FileHandler CloneRewrite<TFile>(this TFile file) where TFile : BaseFile
+    {
+        var stream = new MemoryStream();
+        var handler = new FileHandler(stream);
+        file.WriteTo(handler, false);
+        handler.Seek(0);
+        return handler;
+    }
 }

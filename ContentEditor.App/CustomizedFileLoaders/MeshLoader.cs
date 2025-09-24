@@ -98,6 +98,17 @@ public class AssimpMeshResource(string Name) : IResourceFile
         set => _mesh = value;
     }
 
+    public List<Material>? MaterialList
+    {
+        get {
+            if (_scene != null) return _scene.Materials;
+            if (_mesh != null) {
+                return _mesh.MaterialNames.Select(name => new Material() { Name = name }).ToList();
+            }
+            return null;
+        }
+    }
+
     public bool HasNativeMesh => _mesh != null;
     public bool HasAssimpScene => _scene != null;
 

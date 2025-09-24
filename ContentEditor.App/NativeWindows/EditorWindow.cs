@@ -596,6 +596,10 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 AddUniqueSubwindow(new ThemeEditor());
             }
             ImGui.Separator();
+            if (ImGui.MenuItem("Retarget Designer")) {
+                AddUniqueSubwindow(new RetargetDesigner());
+            }
+            ImGui.Separator();
             if (workspace != null && ImGui.MenuItem("Check for updated game data cache")) {
                 if (RequestCloseAllSubwindows()) {
                     ResourceRepository.ResetCache(workspace.Game);
