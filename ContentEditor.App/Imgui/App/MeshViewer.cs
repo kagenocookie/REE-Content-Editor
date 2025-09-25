@@ -340,7 +340,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             mdfPickerContext = context.AddChild<MeshViewer, string>(
                 "MDF2 Material",
                 this,
-                new ResourcePathPicker(Workspace, Workspace.Env.TypeCache.GetResourceSubtypes(KnownFileFormats.MaterialDefinition)) { UseNativesPath = true },
+                new ResourcePathPicker(Workspace, Workspace.Env.TypeCache.GetResourceSubtypes(KnownFileFormats.MaterialDefinition)) { UseNativesPath = true, IsPathForIngame = false },
                 (v) => v!.mdfSource,
                 (v, p) => v.mdfSource = p ?? "");
         }
@@ -397,7 +397,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             animationPickerContext = context.AddChild<MeshViewer, string>(
                 "Source File",
                 this,
-                new ResourcePathPicker(Workspace, Workspace.Env.TypeCache.GetResourceSubtypes(KnownFileFormats.MotionBase)) { UseNativesPath = true },
+                new ResourcePathPicker(Workspace, Workspace.Env.TypeCache.GetResourceSubtypes(KnownFileFormats.MotionBase)) { UseNativesPath = true, IsPathForIngame = false },
                 (v) => v!.animationSourceFile,
                 (v, p) => v.animationSourceFile = p ?? "");
         }

@@ -17,6 +17,7 @@ public class ResourcePathPicker : IObjectUIHandler
     /// When false, path is expected to be a natives path (natives/stm/appsystem/stm/texture.tex.71567213).
     /// </summary>
     public bool UseNativesPath { get; init; }
+    public bool IsPathForIngame { get; init; } = true;
 
     public ResourcePathPicker()
     {
@@ -129,12 +130,12 @@ public class ResourcePathPicker : IObjectUIHandler
         }
 
         // validate the filepath
-        if (UseNativesPath) {
+        if (IsPathForIngame && UseNativesPath) {
             // native path
             if (context.state != null && (Path.IsPathFullyQualified(context.state) || !context.state.StartsWith("natives/") || PathUtils.ParseFileFormat(context.state).version == -1)) {
                 ImGui.TextColored(Colors.Warning, "The given file path may not resolve properly ingame.\nEnsure it's a native path (including the natives/stm/ part and with file extension version)");
             }
-        } else {
+        } else if (IsPathForIngame) {
             // internal path
             if (context.state != null && (Path.IsPathFullyQualified(context.state) || PathUtils.ParseFileFormat(context.state).version != -1 || context.state.Contains("natives/"))) {
                 ImGui.TextColored(Colors.Warning, "The given file path may not resolve properly ingame.\nEnsure it's an internal path (without the natives/stm/ part and no file extension version)");
