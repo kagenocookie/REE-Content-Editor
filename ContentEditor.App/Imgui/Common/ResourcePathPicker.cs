@@ -154,7 +154,7 @@ public class ResourcePathPicker : IObjectUIHandler
 
     private void ApplyPathChange(UIContext context, string newPath, WindowBase? window = null)
     {
-        if (UseNativesPath) {
+        if (!IsPathForIngame) {
             UndoRedo.RecordSet(context, newPath, window);
             context.state = newPath;
             return;
