@@ -158,7 +158,9 @@ public class MotFileHandler : IObjectUIHandler
 
             context.AddChild<MotFile, List<MotBone>>("Bones", instance, getter: (m) => m!.RootBones).AddDefaultHandler();
             context.AddChild<MotFile, List<BoneMotionClip>>("Bone Clips", instance, getter: (m) => m!.BoneClips).AddDefaultHandler();
-            context.AddChild<MotFile, List<MotClip>>("Clips", instance, getter: (m) => m!.Clips).AddDefaultHandler();
+            context.AddChild<MotFile, List<MotClip>>("Behavior Clips", instance, getter: (m) => m!.Clips).AddDefaultHandler();
+            context.AddChild<MotFile, List<MotPropertyTrack>>("Mot Properties", instance, getter: (m) => m!.MotPropertyTracks).AddDefaultHandler();
+            context.AddChild<MotFile, MotPropertyTree>("Property Tree", instance, new LazyPlainObjectHandler(typeof(MotPropertyTree)), (m) => m!.PropertyTree, (m, v) => m.PropertyTree = v);
         }
 
         context.ShowChildrenUI();
@@ -207,13 +209,18 @@ public class TrackHandler : IObjectUIHandler
                     Logger.Error("Could not found motlist editor context");
                     return;
                 }
-                var trackHandlers = context.parent?.children.Where(c => c.uiHandler?.GetType() == typeof(TrackHandler)).Select(c => c.uiHandler).ToList();
-                if (trackHandlers == null) {
-                    Logger.Error("Could not determine track type");
-                } else {
-                    var type = trackHandlers.IndexOf(this) == 1 ? TrackValueType.Quaternion : TrackValueType.Vector3;
-                    instance = new Track(editor.File.Header.Version.GetMotVersion(), type);
+                if (context.parent?.target is MotPropertyTrack motTrack) {
+                    instance = new Track(editor.File.Header.Version.GetMotVersion(), TrackValueType.Float);
                     UndoRedo.RecordSet(context, instance);
+                } else {
+                    var trackHandlers = context.parent?.children.Where(c => c.uiHandler?.GetType() == typeof(TrackHandler)).Select(c => c.uiHandler).ToList();
+                    if (trackHandlers == null) {
+                        Logger.Error("Could not determine track type");
+                    } else {
+                        var type = trackHandlers.IndexOf(this) == 1 ? TrackValueType.Quaternion : TrackValueType.Vector3;
+                        instance = new Track(editor.File.Header.Version.GetMotVersion(), type);
+                        UndoRedo.RecordSet(context, instance);
+                    }
                 }
             }
             return;
@@ -224,9 +231,12 @@ public class TrackHandler : IObjectUIHandler
             if (instance.TrackType == TrackValueType.Quaternion) {
                 context.AddChild<Track, QuaternionDecompression>(nameof(Track.Compression), instance, getter: (t) => t!.RotationCompressionType, setter: (t, v) => t.RotationCompressionType = v).AddDefaultHandler();
                 context.AddChild<Track, Quaternion[]>(nameof(Track.rotations), instance, new ResizableArrayHandler(typeof(Quaternion)), (t) => t!.rotations, (t, v) => t.rotations = v);
-            } else {
+            } else if (instance.TrackType == TrackValueType.Vector3) {
                 context.AddChild<Track, Vector3Decompression>(nameof(Track.Compression), instance, getter: (t) => t!.TranslationCompressionType, setter: (t, v) => t.TranslationCompressionType = v).AddDefaultHandler();
                 context.AddChild<Track, Vector3[]>(nameof(Track.translations), instance, new ResizableArrayHandler(typeof(Vector3)), (t) => t!.translations, (t, v) => t.translations = v);
+            } else if (instance.TrackType == TrackValueType.Float) {
+                context.AddChild<Track, FloatDecompression>(nameof(Track.Compression), instance, getter: (t) => t!.FloatCompressionType, setter: (t, v) => t.FloatCompressionType = v).AddDefaultHandler();
+                context.AddChild<Track, float[]>(nameof(Track.floats), instance, new ResizableArrayHandler(typeof(float)), (t) => t!.floats, (t, v) => t.floats = v);
             }
             context.AddChild<Track, int[]>(nameof(Track.frameIndexes), instance, new ResizableArrayHandler(typeof(int)), (t) => t!.frameIndexes, (t, v) => t.frameIndexes = v);
         }
@@ -292,6 +302,8 @@ public class MotBoneHeaderHandler : IObjectUIHandler
         typeof(BoneHeader).GetField(nameof(BoneHeader.Index))!,
         typeof(BoneHeader).GetField(nameof(BoneHeader.translation))!,
         typeof(BoneHeader).GetField(nameof(BoneHeader.quaternion))!,
+        typeof(BoneHeader).GetField(nameof(BoneHeader.uknValue1))!,
+        typeof(BoneHeader).GetField(nameof(BoneHeader.uknValue2))!,
     ];
 
     public void OnIMGUI(UIContext context)

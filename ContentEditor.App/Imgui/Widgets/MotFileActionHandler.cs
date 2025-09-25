@@ -298,7 +298,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                     clip.ClipHeader.boneHash = MurMur3HashUtils.GetHash(clip.ClipHeader.boneName);
                 }
             }
-            motTarget.CopyValuesFrom(motSrc);
+            motTarget.CopyValuesFrom(motSrc, motSrc.Header.version == motTarget.Header.version);
             if (motlist != null) {
                 // ensure unique name
                 motTarget.Header.motName = motTarget.Header.motName
