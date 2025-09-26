@@ -21,6 +21,28 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     public ContentWorkspace Workspace { get; }
     public MotlistFile File { get; }
 
+    static MotlistEditor()
+    {
+        WindowHandlerFactory.DefineInstantiator<EndClipStruct>((ctx) => new EndClipStruct() { Version = ctx.FindValueInParentValues<ClipEntry>()?.Version ?? ClipVersion.MHWilds });
+        WindowHandlerFactory.DefineInstantiator<CTrack>((ctx) => new CTrack(ctx.FindValueInParentValues<ClipEntry>()?.Version ?? ClipVersion.MHWilds));
+        WindowHandlerFactory.DefineInstantiator<Property>((ctx) => new Property(ctx.FindValueInParentValues<ClipEntry>()?.Version ?? ClipVersion.MHWilds));
+        WindowHandlerFactory.DefineInstantiator<Key>((ctx) => new Key(ctx.FindValueInParentValues<ClipEntry>()!));
+        WindowHandlerFactory.DefineInstantiator<MotIndex>((ctx) => new MotIndex(
+            ctx.FindHandlerInParents<MotlistEditor>()?.File.Header.Version
+            ?? (ctx.GetWorkspace()?.Env.TryGetFileExtensionVersion("motlist", out var v) == true ? (MotlistVersion)v : MotlistVersion.DD2)));
+        WindowHandlerFactory.DefineInstantiator<MotPropertyTrack>((ctx) => {
+            var editor = ctx.FindHandlerInParents<MotlistEditor>();
+            if (editor == null) {
+                Logger.Error("Could not found motlist editor context");
+                return new MotPropertyTrack() {
+                    Version = (ctx.GetWorkspace()?.Env.TryGetFileExtensionVersion("mot", out var vv) == true ? (MotVersion)vv : MotVersion.MHWILDS)
+                };
+            }
+
+            return new MotPropertyTrack() { Version = editor.File.Header.Version.GetMotVersion() };
+        });
+    }
+
     public MotlistEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
         Workspace = env;
@@ -156,9 +178,9 @@ public class MotFileHandler : IObjectUIHandler
             context.AddChild<MotFile, float>("End Frame", instance, getter: (m) => m!.Header.endFrame, setter: (m, v) => m!.Header.endFrame = v).AddDefaultHandler<float>();
 
             context.AddChild<MotFile, List<MotBone>>("Bones", instance, getter: (m) => m!.RootBones).AddDefaultHandler();
-            context.AddChild<MotFile, List<BoneMotionClip>>("Bone Clips", instance, getter: (m) => m!.BoneClips).AddDefaultHandler();
+            context.AddChild<MotFile, List<BoneMotionClip>>("Animation Clips", instance, getter: (m) => m!.BoneClips).AddDefaultHandler();
             context.AddChild<MotFile, List<MotClip>>("Behavior Clips", instance, getter: (m) => m!.Clips).AddDefaultHandler();
-            context.AddChild<MotFile, List<MotPropertyTrack>>("Mot Properties", instance, getter: (m) => m!.MotPropertyTracks).AddDefaultHandler();
+            context.AddChild<MotFile, List<MotPropertyTrack>>("Animated Properties", instance, getter: (m) => m!.MotPropertyTracks).AddDefaultHandler();
             context.AddChild<MotFile, MotPropertyTree>("Property Tree", instance, new LazyPlainObjectHandler(typeof(MotPropertyTree)), (m) => m!.PropertyTree, (m, v) => m.PropertyTree = v);
         }
 
@@ -186,7 +208,7 @@ public class MotBoneHandler : IObjectUIHandler
     }
 }
 
-[ObjectImguiHandler(typeof(Track))]
+[ObjectImguiHandler(typeof(Track), Stateless = true)]
 public class TrackHandler : IObjectUIHandler
 {
     private static MemberInfo[] DisplayedFields = [
@@ -194,6 +216,8 @@ public class TrackHandler : IObjectUIHandler
         typeof(Track).GetField(nameof(Track.maxFrame))!,
         typeof(Track).GetProperty(nameof(Track.FrameIndexType))!,
     ];
+
+    public static readonly TrackHandler Instance = new();
 
     public void OnIMGUI(UIContext context)
     {
@@ -208,8 +232,8 @@ public class TrackHandler : IObjectUIHandler
                     Logger.Error("Could not found motlist editor context");
                     return;
                 }
-                if (context.parent?.target is MotPropertyTrack motTrack) {
-                    instance = new Track(editor.File.Header.Version.GetMotVersion(), TrackValueType.Float);
+                if (context.target is MotPropertyTrack motTrack) {
+                    instance = new Track(motTrack.Version, TrackValueType.Float);
                     UndoRedo.RecordSet(context, instance);
                 } else {
                     var trackHandlers = context.parent?.children.Where(c => c.uiHandler?.GetType() == typeof(TrackHandler)).Select(c => c.uiHandler).ToList();
@@ -264,6 +288,29 @@ public class BoneMotionClipHandler : IObjectUIHandler
             context.AddChild<BoneMotionClip, Track>(nameof(BoneMotionClip.Translation), instance, new TrackHandler(), m => m!.Translation, (m, v) => m.Translation = v);
             context.AddChild<BoneMotionClip, Track>(nameof(BoneMotionClip.Rotation), instance, new TrackHandler(), m => m!.Rotation, (m, v) => m.Rotation = v);
             context.AddChild<BoneMotionClip, Track>(nameof(BoneMotionClip.Scale), instance, new TrackHandler(), m => m!.Scale, (m, v) => m.Scale = v);
+        }
+
+        if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString())) {
+            context.ShowChildrenUI();
+            ImGui.TreePop();
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(MotPropertyTrack))]
+public class MotPropertyTrackHandler : IObjectUIHandler
+{
+    private static MemberInfo[] DisplayedFields = [
+        typeof(MotPropertyTrack).GetField(nameof(MotPropertyTrack.propertyHash))!,
+    ];
+
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<MotPropertyTrack>();
+        if (context.children.Count == 0) {
+            var ws = context.GetWorkspace();
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(MotPropertyTrack), false, DisplayedFields);
+            context.AddChild<MotPropertyTrack, Track>("Track", instance, TrackHandler.Instance, (m) => m!.Track, (m, v) => m.Track = v);
         }
 
         if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString())) {
@@ -390,22 +437,6 @@ public class MotClipHandler : IObjectUIHandler
             context.ShowChildrenUI();
             ImGui.TreePop();
         }
-    }
-}
-
-[ObjectImguiHandler(typeof(List<MotIndex>))]
-public class MotIndexListHandler : ListHandler
-{
-    public MotIndexListHandler() : base(typeof(MotIndex), typeof(List<MotIndex>))
-    {
-    }
-
-    protected override object? CreateNewElement(UIContext context)
-    {
-        var version = context.FindHandlerInParents<MotlistEditor>()?.File.Header.Version
-            ?? (context.GetWorkspace()?.Env.TryGetFileExtensionVersion("motlist", out var v) == true ? (MotlistVersion)v : MotlistVersion.DD2);
-
-        return new MotIndex(version);
     }
 }
 

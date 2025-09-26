@@ -126,7 +126,7 @@ public class BaseListHandler : IObjectUIHandler
             elementType = list[0]!.GetType();
         }
 
-        return Activator.CreateInstance(elementType);
+        return WindowHandlerFactory.Instantiate(context, elementType);
     }
 }
 
@@ -151,8 +151,13 @@ public class ListHandler : BaseListHandler
     {
         if (elementType == typeof(string)) return string.Empty;
         if (elementType.IsAbstract) throw new Exception($"Type {elementType.Name} is abstract");
-        return Activator.CreateInstance(elementType)!;
+        return WindowHandlerFactory.Instantiate(context, elementType)!;
     }
+}
+
+public class ListHandlerTyped<T> : ListHandler where T : class
+{
+    public ListHandlerTyped() : base(typeof(T), typeof(List<T>)) { }
 }
 
 public class ListHandler<T> : ListHandler where T : class

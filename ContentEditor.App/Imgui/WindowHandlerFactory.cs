@@ -93,6 +93,7 @@ public static partial class WindowHandlerFactory
     private static readonly HashSet<GameIdentifier> setupGames = new();
     private static readonly Dictionary<RszClass, List<Func<UIContext, bool>>> classActions = new();
     private static readonly Dictionary<RszClass, Func<IObjectUIHandler>> classHandlers = new();
+    private static readonly Dictionary<Type, Func<UIContext, object>> instantiators = new();
 
     static WindowHandlerFactory()
     {
@@ -137,6 +138,11 @@ public static partial class WindowHandlerFactory
         foreach (var (type, data) in dict) {
             csharpTypeHandlers.TryAdd(type, data.fact);
         }
+    }
+
+    public static void DefineInstantiator<T>(Func<UIContext, object> instantiator)
+    {
+        instantiators[typeof(T)] = instantiator;
     }
 
     public static void SetupTypesForGame(GameIdentifier game, Workspace env)
@@ -201,6 +207,14 @@ public static partial class WindowHandlerFactory
     public static void SetClassFormatter(RszClass cls, StringFormatter formatter)
     {
         classFormatters[cls] = formatter;
+    }
+
+    public static object Instantiate(UIContext context, Type type)
+    {
+        if (instantiators.TryGetValue(type, out var func)) {
+            return func.Invoke(context);
+        }
+        return type.IsArray ? Array.CreateInstance(type, 0) : Activator.CreateInstance(type)!;
     }
 
     public static IWindowHandler? CreateFileResourceHandler(ContentWorkspace env, FileHandle file)
