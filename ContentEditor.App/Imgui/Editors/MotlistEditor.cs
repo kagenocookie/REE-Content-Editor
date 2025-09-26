@@ -152,7 +152,6 @@ public class MotFileHandler : IObjectUIHandler
             context.AddChild<MotFile, float>("Blending", instance, getter: (m) => m!.Header.blending, setter: (m, v) => m!.Header.blending = v).AddDefaultHandler<float>();
             context.AddChild<MotFile, string>("Joint Map", instance, getter: (m) => m!.Header.jointMapPath, setter: (m, v) => m!.Header.jointMapPath = v ?? string.Empty, handler: new ResourcePathPicker(ws, KnownFileFormats.JointMap));
 
-            context.AddChild<MotFile, ushort>("UknShort", instance, getter: (m) => m!.Header.uknShort, setter: (m, v) => m!.Header.uknShort = v).AddDefaultHandler<ushort>();
             context.AddChild<MotFile, float>("Start Frame", instance, getter: (m) => m!.Header.startFrame, setter: (m, v) => m!.Header.startFrame = v).AddDefaultHandler<float>();
             context.AddChild<MotFile, float>("End Frame", instance, getter: (m) => m!.Header.endFrame, setter: (m, v) => m!.Header.endFrame = v).AddDefaultHandler<float>();
 
@@ -374,7 +373,7 @@ public class MotClipHandler : IObjectUIHandler
     private static MemberInfo[] DisplayedFields = [
         typeof(MotClip).GetField(nameof(MotClip.uknIntA))!,
         typeof(MotClip).GetField(nameof(MotClip.uknIntB))!,
-        typeof(MotClip).GetField(nameof(MotClip.uknBytes1C))!,
+        typeof(MotClip).GetField(nameof(MotClip.uknBytes28))!,
         typeof(MotClip).GetProperty(nameof(MotClip.ClipEntry))!,
         typeof(MotClip).GetProperty(nameof(MotClip.EndClipStructs))!,
     ];
