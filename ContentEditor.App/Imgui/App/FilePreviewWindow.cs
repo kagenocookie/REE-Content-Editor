@@ -1,5 +1,6 @@
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
+using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
 
@@ -37,9 +38,15 @@ public class FilePreviewWindow : IWindowHandler, IObjectUIHandler, IDisposable
             return;
         }
 
-        if (file != null && ImGui.Button("Open in new window")) {
-            // no point in showing any file info here, every editor should include it already
-            EditorWindow.CurrentWindow?.AddFileEditor(file);
+        // SILVER: Force this button to the right side of the tab because it clips with some editor UIs.
+        if (file != null) {
+            float buttonW = ImGui.CalcTextSize($"{AppIcons.SI_WindowOpenNew}").X + ImGui.GetStyle().FramePadding.X * 2;
+
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X - buttonW);
+            if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
+                EditorWindow.CurrentWindow?.AddFileEditor(file);
+            }
+            ImguiHelpers.Tooltip("Open in New Window");
         }
         ImGui.Separator();
         ImGui.BeginGroup();
