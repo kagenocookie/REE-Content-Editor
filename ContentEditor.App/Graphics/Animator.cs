@@ -27,6 +27,8 @@ public class Animator(ContentWorkspace Workspace)
     public bool IsActive { get; private set; }
     public bool IsPlaying { get; private set; }
 
+    public bool IgnoreRootMotion { get; set; } = true;
+
     public int AnimationCount => motions.Count;
     public IEnumerable<string> AnimationNames => motions.Keys;
     public IEnumerable<KeyValuePair<string, MotFileBase>> Animations => motions.OrderBy(k => k.Key);
@@ -162,6 +164,11 @@ public class Animator(ContentWorkspace Workspace)
             foreach (var bone in animMesh.Bones.Bones) {
                 var clip = ActiveMotion.BoneClips.FirstOrDefault(bc => bc.ClipHeader.boneHash == MurMur3HashUtils.GetHash(bone.name ?? ""));
                 Matrix4X4.Decompose<float>(bone.localTransform.ToSystem().ToGeneric(), out var localScale, out var localRot, out var localPos);
+
+                if (IgnoreRootMotion && bone.parentIndex == -1) {
+                    transformCache[bone.index] = Matrix4X4<float>.Identity;
+                    continue;
+                }
 
                 var clipbone = ActiveMotion.BoneHeaders?.FirstOrDefault(bh => bh.boneHash == clip?.ClipHeader.boneHash);
 

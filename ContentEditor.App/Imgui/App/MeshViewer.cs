@@ -413,6 +413,11 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         }
 
         if (animator?.AnimationCount > 0) {
+            var ignoreRoot = animator.IgnoreRootMotion;
+            if (ImGui.Checkbox("Ignore Root Motion", ref ignoreRoot)) {
+                animator.IgnoreRootMotion = ignoreRoot;
+            }
+
             ImGui.InputText("Filter", ref motFilter, 200);
             foreach (var (name, mot) in animator.Animations) {
                 if (!string.IsNullOrEmpty(motFilter) && !name.Contains(motFilter, StringComparison.InvariantCultureIgnoreCase)) continue;
