@@ -657,12 +657,13 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
 
         ImguiHelpers.BeginRect();
         if (ImguiHelpers.TreeNodeSuffix(context.label, context.state ?? instance.RSZUserData.ClassName!)) {
-            if (ImGui.Button("Open in new window")) {
+            if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
                 if (context.children.Count > 0) {
                     var editor = context.GetChildHandler<UserDataFileEditor>()!;
                     EditorWindow.CurrentWindow!.AddFileEditor(editor.Handle);
                 }
             }
+            ImguiHelpers.Tooltip("Open in New Window");
             ImGui.SameLine();
             HandleLinkedUserdata(context, instance, ws);
             ImGui.TreePop();
