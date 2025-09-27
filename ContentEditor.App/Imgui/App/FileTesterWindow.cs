@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
@@ -169,10 +170,12 @@ public class FileTesterWindow : IWindowHandler
         cancellationTokenSource?.Cancel();
         cancellationTokenSource ??= new();
         // if (!workspace.ResourceManager.CanLoadFile()) return false;
+        var wnd = EditorWindow.CurrentWindow!;
         Task.Run(async () => {
             try {
                 var tasks = new List<Task>();
                 var token = cancellationTokenSource.Token;
+                var timer = Stopwatch.StartNew();
                 foreach (var env in GetWorkspaces(workspace, allVersions)) {
                     if (token.IsCancellationRequested) break;
                     while (tasks.Count >= 4) {
@@ -208,6 +211,7 @@ public class FileTesterWindow : IWindowHandler
                 while (tasks.Any(t => !t.IsCompleted)) {
                     await Task.Delay(500);
                 }
+                wnd.InvokeFromUIThread(() => Logger.Info("Test finished in: " + timer.ElapsedMilliseconds + " ms"));
             } catch (Exception e) {
                 Logger.Error(e, "Unexpected error during file test");
             } finally {

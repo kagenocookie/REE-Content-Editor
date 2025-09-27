@@ -13,6 +13,7 @@ using ReeLib.Clip;
 using ReeLib.Common;
 using ReeLib.Mot;
 using ReeLib.Motlist;
+using ReeLib.MotTree;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -182,6 +183,27 @@ public class MotFileHandler : IObjectUIHandler
             context.AddChild<MotFile, List<MotClip>>("Behavior Clips", instance, getter: (m) => m!.Clips).AddDefaultHandler();
             context.AddChild<MotFile, List<MotPropertyTrack>>("Animated Properties", instance, getter: (m) => m!.MotPropertyTracks).AddDefaultHandler();
             context.AddChild<MotFile, MotPropertyTree>("Property Tree", instance, new LazyPlainObjectHandler(typeof(MotPropertyTree)), (m) => m!.PropertyTree, (m, v) => m.PropertyTree = v);
+        }
+
+        context.ShowChildrenUI();
+    }
+}
+
+[ObjectImguiHandler(typeof(MotTreeFile))]
+public class MotTreeFileHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<MotTreeFile>();
+        if (context.children.Count == 0) {
+            var ws = context.GetWorkspace();
+            context.AddChild<MotTreeFile, string>("Name", instance, getter: (m) => m!.Name, setter: (m, v) => m!.Name = v ?? string.Empty).AddDefaultHandler<string>();
+            context.AddChild<MotTreeFile, string>("User Variables Path", instance, new ResourcePathPicker(ws, KnownFileFormats.UserVariables), (m) => m!.UvarPath, (m, v) => m!.UvarPath = v ?? string.Empty);
+            context.AddChild<MotTreeFile, string>("Resource Path", instance, getter: (m) => m!.ResourcePath, setter: (m, v) => m!.ResourcePath = v ?? string.Empty).AddDefaultHandler<string>();
+            context.AddChild<MotTreeFile, List<TreeIndexPair>>("Indices", instance, getter: (m) => m!.Indices).AddDefaultHandler();
+            context.AddChild<MotTreeFile, List<TreeIndexPair>>("Motion ID Remapping Table", instance, getter: (m) => m!.MotionIDRemaps).AddDefaultHandler();
+            context.AddChild<MotTreeFile, List<MotionTreeNode>>("Nodes", instance, getter: (m) => m!.Nodes).AddDefaultHandler();
+            context.AddChild<MotTreeFile, List<MotionTreeLink>>("Links", instance, getter: (m) => m!.Links).AddDefaultHandler();
         }
 
         context.ShowChildrenUI();
@@ -451,7 +473,7 @@ public class MotFileListHandler : ListHandler
 
     protected override bool MatchesFilter(object? obj, string filter)
     {
-        return obj is MotFile mot && mot.Header.motName.Contains(filter, StringComparison.InvariantCultureIgnoreCase);
+        return obj is MotFileBase mot && mot.Name.Contains(filter, StringComparison.InvariantCultureIgnoreCase);
     }
 
     protected override object? CreateNewElement(UIContext context)
