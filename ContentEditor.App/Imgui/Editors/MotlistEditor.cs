@@ -1,10 +1,7 @@
 using System.Collections;
 using System.Numerics;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text.Json.Serialization;
 using ContentEditor.App.Widgets;
-using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
@@ -557,9 +554,7 @@ public class ClipEntryHandler : IObjectUIHandler
         typeof(ClipEntry).GetField(nameof(ClipEntry.ExtraPropertyData))!,
         typeof(ClipEntry).GetProperty(nameof(ClipEntry.FrameCount))!,
         typeof(ClipEntry).GetProperty(nameof(ClipEntry.Guid))!,
-        typeof(ClipEntry).GetProperty(nameof(ClipEntry.CTrackList))!,
-        typeof(ClipEntry).GetProperty(nameof(ClipEntry.Properties))!,
-        typeof(ClipEntry).GetProperty(nameof(ClipEntry.ClipKeys))!,
+        typeof(ClipEntry).GetProperty(nameof(ClipEntry.Tracks))!,
         typeof(ClipEntry).GetProperty(nameof(ClipEntry.HermiteData))!,
         typeof(ClipEntry).GetProperty(nameof(ClipEntry.UnknownData))!,
     ];
@@ -583,7 +578,7 @@ public class CTrackHandler : IObjectUIHandler
         typeof(CTrack).GetProperty(nameof(CTrack.Name))!,
         typeof(CTrack).GetField(nameof(CTrack.nameHash))!,
         typeof(CTrack).GetField(nameof(CTrack.nodeCount))!,
-        typeof(CTrack).GetField(nameof(CTrack.propCount))!,
+        typeof(CTrack).GetProperty(nameof(CTrack.Properties))!,
         typeof(CTrack).GetField(nameof(CTrack.Start_Frame))!,
         typeof(CTrack).GetField(nameof(CTrack.End_Frame))!,
         typeof(CTrack).GetField(nameof(CTrack.guid1))!,
@@ -628,6 +623,36 @@ public class KeyHandler : IObjectUIHandler
         }
 
         if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString())) {
+            context.ShowChildrenUI();
+            ImGui.TreePop();
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(ReeLib.Clip.PropertyInfo))]
+public class PropertyInfoHandler : IObjectUIHandler
+{
+    private static MemberInfo[] DisplayedFields = [
+        typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.startFrame))!,
+        typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.endFrame))!,
+        typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.DataType))!,
+        typeof(ReeLib.Clip.PropertyInfo).GetProperty(nameof(ReeLib.Clip.PropertyInfo.FunctionName))!,
+        typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.nameCombineHash))!,
+        typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.arrayIndex))!,
+        typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.speedPointNum))!,
+        typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.uknCount))!,
+        typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.RE3hash))!,
+    ];
+
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<ReeLib.Clip.PropertyInfo>();
+        if (context.children.Count == 0) {
+            var ws = context.GetWorkspace();
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(ReeLib.Clip.PropertyInfo), false, DisplayedFields);
+        }
+
+        if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString()!)) {
             context.ShowChildrenUI();
             ImGui.TreePop();
         }
