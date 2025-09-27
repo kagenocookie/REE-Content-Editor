@@ -463,8 +463,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         if (!UpdateAnimatorMesh(meshComponent)) return;
 
         var windowSize = ImGui.GetWindowSize();
-        var timestamp = animator.CurrentTime.ToString("0.00") + " / " + animator.TotalTime.ToString("0.00");
-        var timestampSize = ImGui.CalcTextSize(timestamp) + new Vector2(148, 0);
+        var timestamp = $"{animator.CurrentTime:0.00} / {animator.TotalTime:0.00} ({animator.CurrentFrame:000} / {animator.TotalFrames:000})";
+        var timestampSize = ImGui.CalcTextSize(timestamp) + new Vector2(5 * 48, 0);
         ImGui.SetCursorPos(new Vector2(windowSize.X - timestampSize.X - ImGui.GetStyle().WindowPadding.X * 2, TopMargin));
         ImGui.PushStyleColor(ImGuiCol.ChildBg, ImguiHelpers.GetColor(ImGuiCol.WindowBg) with { W = 0.5f });
         ImGui.BeginChild("PlaybackControls", new Vector2(timestampSize.X, 46), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
@@ -492,6 +492,24 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         using (var _ = ImguiHelpers.Disabled(!animator.IsPlaying && !animator.IsActive)) {
             if (ImGui.Button(AppIcons.Stop.ToString(), btnHeight)) {
                 animator.Stop();
+            }
+        }
+
+        ImGui.SameLine();
+        using (var _ = ImguiHelpers.Disabled(!animator.IsActive)) {
+            if (ImGui.Button(AppIcons.Previous.ToString(), btnHeight)) {
+                animator.Pause();
+                animator.Seek((animator.CurrentFrame - 1) * animator.FrameDuration);
+                animator.Update(0);
+            }
+        }
+
+        ImGui.SameLine();
+        using (var _ = ImguiHelpers.Disabled(!animator.IsActive)) {
+            if (ImGui.Button(AppIcons.Next.ToString(), btnHeight)) {
+                animator.Pause();
+                animator.Seek((animator.CurrentFrame + 1) * animator.FrameDuration);
+                animator.Update(0);
             }
         }
 

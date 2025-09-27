@@ -33,6 +33,10 @@ public class Animator(ContentWorkspace Workspace)
 
     public float CurrentTime => currentTime;
     public float TotalTime => clipDuration;
+    public int TotalFrames => (int)(ActiveMotion?.Header.frameCount ?? 0);
+    public int CurrentFrame => (int)Math.Round(currentTime * clipFramerate);
+    public float FrameRate => clipFramerate;
+    public float FrameDuration => 1 / clipFramerate;
 
     private Matrix4X4<float>[] transformCache = [];
 
@@ -61,12 +65,12 @@ public class Animator(ContentWorkspace Workspace)
 
     public void Seek(float time)
     {
-        currentTime = time;
+        currentTime = Math.Clamp(time, 0, clipDuration);
     }
 
     public void SeekPercentage(float time)
     {
-        currentTime = time / TotalTime;
+        currentTime = Math.Clamp(time / TotalTime, 0, clipDuration);
     }
 
     public static float GetInterpolation<TValue>(TValue[] array1, TValue[] array2, int frame, float time)
@@ -151,7 +155,7 @@ public class Animator(ContentWorkspace Workspace)
             }
 
             currentTime += deltaTime;
-            if (currentTime >= clipDuration) {
+            if (currentTime > clipDuration) {
                 currentTime -= clipDuration;
             }
             var frame = (currentTime * clipFramerate);

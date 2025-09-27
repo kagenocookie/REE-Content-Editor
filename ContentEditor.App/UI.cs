@@ -122,6 +122,8 @@ public static class AppIcons
     public static readonly char Pause = '\uea1d';
     public static readonly char Stop = '\uea1e';
     public static readonly char SeekStart = '\uea21';
+    public static readonly char Previous = '\uea23';
+    public static readonly char Next = '\uea24';
     public static readonly char Loop = '\uea2d';
     public static readonly char SI_File = '\ued00';
     public static readonly char SI_FileNew = '\ued01';
