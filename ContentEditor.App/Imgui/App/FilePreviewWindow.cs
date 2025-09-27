@@ -44,6 +44,7 @@ public class FilePreviewWindow : IWindowHandler, IObjectUIHandler, IDisposable
 
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X - buttonW);
             if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
+                // no point in showing any file info here, every editor should include it already
                 EditorWindow.CurrentWindow?.AddFileEditor(file);
             }
             ImguiHelpers.Tooltip("Open in New Window");
