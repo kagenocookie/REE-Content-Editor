@@ -135,11 +135,23 @@ public static class AppIcons
     public static readonly char SI_GenericQmark = '\ued07';
     public static readonly char SI_ArchiveExtractTo = '\ued08';
     public static readonly char SI_GenericTag = '\ued09';
-    public static readonly char SI_GenericBookmark = '\ued10';
-    public static readonly char SI_GenericBookmarkAdd = '\ued11';
-    public static readonly char SI_GenericBookmarkRemove = '\ued12';
+    public static readonly char SI_Bookmark = '\ued0a';
+    public static readonly char SI_BookmarkAdd = '\ued0b';
+    public static readonly char SI_BookmarkRemove = '\ued0c';
+    public static readonly char SI_Bookmarks = '\ued0d';
+    public static readonly char SI_BookmarkClear = '\ued0e';
+    public static readonly char SI_Reset = '\ued0f';
+    public static readonly char SI_ResetCamera = '\ued10';
+    public static readonly char SI_ResetMaterial = '\ued11';
+    public static readonly char SI_ObjectMove = '\ued12';
+    public static readonly char SI_ObjectScale = '\ued13';
+    public static readonly char SI_ObjectRotate = '\ued14';
+    public static readonly char SI_FileJumpTo = '\ued15';
+    public static readonly char SI_WindowOpenNew = '\ued16';
+    public static readonly char SI_FileCopyPath = '\ued17';
+    public static readonly char SI_BookmarkHide = '\ued18';
 
-    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_GenericBookmarkRemove, 0];
+    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_BookmarkHide, 0];
 
     public static string PrependIcon(this string text, object target)
     {

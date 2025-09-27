@@ -90,7 +90,6 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             Logger.Error(e, "Extraction failed.");
         }
     }
-
     public void OnIMGUI()
     {
         var list = Workspace.ListFile;
@@ -153,17 +152,18 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         bool isHideDefaults = _bookmarkManagerDefaults.IsHideDefaults;
         bool isBookmarked = _bookmarkManager.IsBookmarked(Workspace.Config.Game.name, CurrentDir);
         bool isDefaultBookmark = !isHideDefaults && _bookmarkManagerDefaults.IsBookmarked(Workspace.Config.Game.name, CurrentDir);
-        if (ImGui.TreeNode($"{AppIcons.Bookmarks} Bookmarks")) {
+        if (ImGui.TreeNode($"{AppIcons.SI_Bookmarks} Bookmarks")) {
             ImGui.Spacing();
             ImGui.Separator();
-            if (ImGui.Checkbox("Hide Default Bookmarks", ref isHideDefaults)) {
-                _bookmarkManagerDefaults.IsHideDefaults = isHideDefaults;
-            }
+            ImguiHelpers.ToggleButton($"{AppIcons.SI_BookmarkHide}", ref isHideDefaults, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
+            ImguiHelpers.Tooltip("Hide Default Bookmarks");
+            _bookmarkManagerDefaults.IsHideDefaults = isHideDefaults;
             if (bookmarks.Count > 0) {
                 ImGui.SameLine();
-                if (ImGui.Button("Clear Custom Bookmarks")) {
+                if (ImGui.Button($"{AppIcons.SI_BookmarkClear}")) {
                     ImGui.OpenPopup("Confirm Action");
                 }
+                ImguiHelpers.Tooltip("Clear Custom Bookmarks");
 
                 if (ImGui.BeginPopupModal("Confirm Action", ImGuiWindowFlags.AlwaysAutoResize)) {
                     ImGui.Text($"Are you sure you want to delete all custom bookmarks for {Workspace.Config.Game.name}?");
@@ -284,14 +284,14 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                         }
 
                         if (ImGui.BeginPopupContextItem(bm.Path)) {
-                            if (ImGui.Selectable("Jump to...")) {
+                            if (ImGui.Selectable($"{AppIcons.SI_FileJumpTo} | Jump to...")) {
                                 CurrentDir = bm.Path;
                             }
-                            if (ImGui.Selectable("Copy Path")) {
+                            if (ImGui.Selectable($"{AppIcons.SI_FileCopyPath} | Copy Path")) {
                                 EditorWindow.CurrentWindow?.CopyToClipboard(bm.Path);
                             }
                             ImGui.Spacing();
-                            if (ImGui.Selectable($"{AppIcons.SI_GenericBookmarkRemove} | Remove from Bookmarks")) {
+                            if (ImGui.Selectable($"{AppIcons.SI_BookmarkRemove} | Remove from Bookmarks")) {
                                 _bookmarkManager.RemoveBookmark(Workspace.Config.Game.name, bm.Path);
                             }
                             ImGui.Spacing();
@@ -502,7 +502,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                     }
                     ImGui.PopStyleColor();
                     if (ImGui.BeginPopupContextItem()) {
-                        if (ImGui.Selectable("Copy Path")) {
+                        if (ImGui.Selectable($"{AppIcons.SI_FileCopyPath} | Copy Path")) {
                             EditorWindow.CurrentWindow?.CopyToClipboard(file);
                             ImGui.CloseCurrentPopup();
                         }
@@ -523,11 +523,11 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                         }
                         ImGui.Spacing();
                         if (isBookmarked) {
-                            if (ImGui.Selectable($"{AppIcons.SI_GenericBookmarkRemove} | Remove from Bookmarks")) {
+                            if (ImGui.Selectable($"{AppIcons.SI_BookmarkRemove} | Remove from Bookmarks")) {
                                 _bookmarkManager.RemoveBookmark(Workspace.Config.Game.name, file);
                             }
                         } else {
-                            if (ImGui.Selectable($"{AppIcons.SI_GenericBookmarkAdd} | Add to Bookmarks")) {
+                            if (ImGui.Selectable($"{AppIcons.SI_BookmarkAdd} | Add to Bookmarks")) {
                                 _bookmarkManager.AddBookmark(Workspace.Config.Game.name, file);
                             }
                         }
