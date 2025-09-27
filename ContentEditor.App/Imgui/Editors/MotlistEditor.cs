@@ -418,8 +418,8 @@ public class MotBoneClipHeaderHandler : IObjectUIHandler
 public class MotClipHandler : IObjectUIHandler
 {
     private static MemberInfo[] DisplayedFields = [
-        typeof(MotClip).GetField(nameof(MotClip.uknIntA))!,
-        typeof(MotClip).GetField(nameof(MotClip.uknIntB))!,
+        typeof(MotClip).GetField(nameof(MotClip.mainTrackIndex))!,
+        typeof(MotClip).GetField(nameof(MotClip.lastTrackIndex))!,
         typeof(MotClip).GetField(nameof(MotClip.uknBytes28))!,
         typeof(MotClip).GetProperty(nameof(MotClip.ClipEntry))!,
         typeof(MotClip).GetProperty(nameof(MotClip.EndClipStructs))!,
@@ -525,5 +525,89 @@ public class MotBoneListHandler : ListHandler
             context.ClearChildren();
             mot.RemoveBone(bone);
         };
+    }
+}
+
+[ObjectImguiHandler(typeof(ClipEntry))]
+public class ClipEntryHandler : IObjectUIHandler
+{
+    private static MemberInfo[] DisplayedFields = [
+        typeof(ClipEntry).GetField(nameof(ClipEntry.ExtraPropertyData))!,
+        typeof(ClipEntry).GetProperty(nameof(ClipEntry.FrameCount))!,
+        typeof(ClipEntry).GetProperty(nameof(ClipEntry.Guid))!,
+        typeof(ClipEntry).GetProperty(nameof(ClipEntry.CTrackList))!,
+        typeof(ClipEntry).GetProperty(nameof(ClipEntry.Properties))!,
+        typeof(ClipEntry).GetProperty(nameof(ClipEntry.ClipKeys))!,
+        typeof(ClipEntry).GetProperty(nameof(ClipEntry.HermiteData))!,
+        typeof(ClipEntry).GetProperty(nameof(ClipEntry.UnknownData))!,
+    ];
+
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<ClipEntry>();
+        if (context.children.Count == 0) {
+            var ws = context.GetWorkspace();
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(ClipEntry), false, DisplayedFields);
+        }
+
+        context.ShowChildrenUI();
+    }
+}
+
+[ObjectImguiHandler(typeof(CTrack))]
+public class CTrackHandler : IObjectUIHandler
+{
+    private static MemberInfo[] DisplayedFields = [
+        typeof(CTrack).GetProperty(nameof(CTrack.Name))!,
+        typeof(CTrack).GetField(nameof(CTrack.nameHash))!,
+        typeof(CTrack).GetField(nameof(CTrack.nodeCount))!,
+        typeof(CTrack).GetField(nameof(CTrack.propCount))!,
+        typeof(CTrack).GetField(nameof(CTrack.Start_Frame))!,
+        typeof(CTrack).GetField(nameof(CTrack.End_Frame))!,
+        typeof(CTrack).GetField(nameof(CTrack.guid1))!,
+        typeof(CTrack).GetField(nameof(CTrack.guid2))!,
+        typeof(CTrack).GetField(nameof(CTrack.nodeType))!,
+    ];
+
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<CTrack>();
+        if (context.children.Count == 0) {
+            var ws = context.GetWorkspace();
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(CTrack), false, DisplayedFields);
+        }
+
+        if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString())) {
+            context.ShowChildrenUI();
+            ImGui.TreePop();
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(Key))]
+public class KeyHandler : IObjectUIHandler
+{
+    private static MemberInfo[] DisplayedFields = [
+        typeof(Key).GetProperty(nameof(Key.Value))!,
+        typeof(Key).GetProperty(nameof(Key.PropertyType))!,
+        typeof(Key).GetField(nameof(Key.frame))!,
+        typeof(Key).GetField(nameof(Key.rate))!,
+        typeof(Key).GetField(nameof(Key.interpolation))!,
+        typeof(Key).GetField(nameof(Key.instanceValue))!,
+        typeof(Key).GetField(nameof(Key.unknown))!,
+    ];
+
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<Key>();
+        if (context.children.Count == 0) {
+            var ws = context.GetWorkspace();
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(Key), false, DisplayedFields);
+        }
+
+        if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString())) {
+            context.ShowChildrenUI();
+            ImGui.TreePop();
+        }
     }
 }
