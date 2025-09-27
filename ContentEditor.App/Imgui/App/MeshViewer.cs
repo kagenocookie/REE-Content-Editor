@@ -303,10 +303,11 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             lastDragPos = new();
         }
         ImGui.SameLine();
-        if (ImGui.Button("Reset View")) {
+        if (ImGui.Button($"{AppIcons.SI_ResetCamera}")) {
             CenterCameraToSceneObject();
             lastDragPos = new();
         }
+        ImguiHelpers.Tooltip("Reset View Camera");
         if (scene.RenderContext.ProjectionMode == RenderContext.CameraProjection.Perspective) {
             float fov = scene.RenderContext.FieldOfView;
             if (ImGui.SliderAngle("Field of View", ref fov, 10.0f, 120.0f)) {
@@ -319,7 +320,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             }
         }
         ImGui.SliderFloat("Move Speed", ref moveSpeed, 1.0f, 50.0f);
-        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Hold Left Shift to move 10x faster.");
+        ImguiHelpers.Tooltip("[Hold] Left Shift to move 10x faster.");
         ImGui.SliderFloat("Rotate Speed", ref rotateSpeed, 0.1f, 10.0f);
         ImGui.SliderFloat("Zoom Speed", ref zoomSpeed, 0.01f, 1.0f);
         ImGui.SeparatorText("Material");
@@ -330,12 +331,12 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             meshComponent.IsStreamingTex = useHighRes;
             UpdateMaterial(meshComponent);
         }
-
         ImGui.SameLine();
-        if (ImGui.Button("Reset MDF")) {
+        if (ImGui.Button($"{AppIcons.SI_ResetMaterial}")) {
             mdfSource = originalMDF;
             UpdateMaterial(meshComponent);
         }
+        ImguiHelpers.Tooltip("Reset MDF");
         if (mdfPickerContext == null) {
             mdfPickerContext = context.AddChild<MeshViewer, string>(
                 "MDF2 Material",
@@ -566,7 +567,6 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         }
         mesh = null;
     }
-
     public void SyncFromScene(MeshViewer other, bool ignoreMotionClip)
     {
         if (scene == null || other.scene == null) return;
