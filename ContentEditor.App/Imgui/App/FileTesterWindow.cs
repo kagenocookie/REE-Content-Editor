@@ -169,26 +169,44 @@ public class FileTesterWindow : IWindowHandler
         cancellationTokenSource?.Cancel();
         cancellationTokenSource ??= new();
         // if (!workspace.ResourceManager.CanLoadFile()) return false;
-        Task.Run(() => {
+        Task.Run(async () => {
             try {
+                var tasks = new List<Task>();
                 var token = cancellationTokenSource.Token;
                 foreach (var env in GetWorkspaces(workspace, allVersions)) {
-                    var rm = new ResourceManager(new PatchDataContainer("!"));
-                    var success = 0;
-                    var fails = new ConcurrentBag<string>();
-                    results[env.Game] = (success, fails);
-
-                    foreach (var (path, stream) in GetFileList(env, format)) {
-                        if (token.IsCancellationRequested) return;
-                        if (TryLoadFile(env, format, path, stream)) {
-                            success++;
-                            results[env.Game] = (success, fails);
-                        } else {
-                            fails.Add(path);
+                    if (token.IsCancellationRequested) break;
+                    while (tasks.Count >= 4) {
+                        foreach (var subtask in tasks) {
+                            if (subtask.IsCompleted) {
+                                tasks.Remove(subtask);
+                                break;
+                            }
                         }
+                        await Task.Delay(250);
                     }
 
-                    Logger.Info($"Finished {env.Game} {format} test: {success}/{success + fails.Count} files suceeded.");
+                    tasks.Add(Task.Run(() => {
+                        var rm = new ResourceManager(new PatchDataContainer("!"));
+                        var success = 0;
+                        var fails = new ConcurrentBag<string>();
+                        results[env.Game] = (success, fails);
+
+                        foreach (var (path, stream) in GetFileList(env, format)) {
+                            if (token.IsCancellationRequested) return;
+                            if (TryLoadFile(env, format, path, stream)) {
+                                success++;
+                                results[env.Game] = (success, fails);
+                            } else {
+                                fails.Add(path);
+                            }
+                        }
+
+                        Logger.Info($"Finished {env.Game} {format} test: {success}/{success + fails.Count} files suceeded.");
+                    }));
+                }
+
+                while (tasks.Any(t => !t.IsCompleted)) {
+                    await Task.Delay(500);
                 }
             } catch (Exception e) {
                 Logger.Error(e, "Unexpected error during file test");
