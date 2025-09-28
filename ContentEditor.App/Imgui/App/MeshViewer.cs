@@ -28,7 +28,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
     public Scene? Scene => scene;
 
-    private const float TopMargin = 30;
+    private const float TopMargin = 42;
+    private const string MeshExportExtensionsFilter = "GLB (*.glb)|*.glb|GLTF (*.gltf)|*.gltf|FBX (*.fbx)|*.fbx";
 
     private string? loadedMdf;
     private string? mdfSource;
@@ -360,7 +361,6 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             ImGui.Text("Total Polygons: " + mesh.PolyCount);
             ImGui.Text("Sub Meshes: " + mesh.MeshCount);
             ImGui.Text("Materials: " + mesh.MaterialCount);
-            // there can't be more than one skeleton per .mesh file, so any one mesh will do here for the count
             ImGui.Text("Bones: " + mesh.BoneCount);
             ImGui.TreePop();
         }
@@ -381,9 +381,31 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 ImGui.TreePop();
             }
         }
+        if (ImGui.TreeNode("Import / Export")) {
+            ShowImportExportMenu();
+            ImGui.TreePop();
+        }
         if (ImGui.TreeNode("Animations")) {
             ShowAnimationMenu(meshComponent);
             ImGui.TreePop();
+        }
+    }
+
+    private void ShowImportExportMenu()
+    {
+        if (mesh == null) return;
+
+        if (ImGui.Button("Export Mesh ...")) {
+            // potential export enhancements:
+            // - include (embed) textures
+            // - include animations (from current motlist)
+            if (fileHandle.Resource is AssimpMeshResource assmesh) {
+                PlatformUtils.ShowSaveFileDialog((exportPath) => {
+                    assmesh.WriteTo(exportPath);
+                }, PathUtils.GetFilenameWithoutExtensionOrVersion(fileHandle.Filename).ToString() + ".glb", MeshExportExtensionsFilter);
+            } else {
+                throw new NotImplementedException();
+            }
         }
     }
 

@@ -1,9 +1,11 @@
 using System.Globalization;
+using System.Numerics;
 using System.Text.RegularExpressions;
 using Assimp;
 using ContentEditor;
 using ContentEditor.App;
 using ReeLib;
+using ReeLib.Mesh;
 
 namespace ContentPatcher;
 
@@ -45,7 +47,8 @@ public partial class MeshLoader : IFileLoader
                 PostProcessSteps.Triangulate |
                 PostProcessSteps.FlipUVs |
                 PostProcessSteps.GenerateBoundingBoxes |
-                PostProcessSteps.GenerateNormals,
+                PostProcessSteps.GenerateNormals |
+                PostProcessSteps.GenerateUVCoords,
                 Path.GetExtension(handle.Filepath));
             if (!importedScene.HasMeshes) {
                 Logger.Error("No meshes found in file " + handle.Filepath);
@@ -141,7 +144,7 @@ public class AssimpMeshResource(string Name) : IResourceFile
     {
         using AssimpContext importer = new AssimpContext();
 
-        var ext = Path.GetExtension(filepath);
+        var ext = PathUtils.GetExtensionWithoutPeriod(filepath);
         string? exportFormat = null;
         foreach (var fmt in importer.GetSupportedExportFormats()) {
             if (fmt.FileExtension == ext) {
@@ -153,39 +156,52 @@ public class AssimpMeshResource(string Name) : IResourceFile
             throw new NotImplementedException("Unsupported export format " + ext);
         }
 
-        var scn = new Assimp.Scene();
-        scn.Meshes.AddRange(Scene.Meshes);
-        importer.ExportFile(scn, filepath, exportFormat);
+        var scene = Scene;
+        importer.ExportFile(scene, filepath, exportFormat);
     }
 
     private static Assimp.Scene ConvertMeshToAssimpScene(MeshFile file, string rootName)
     {
-        var importedScene = new Assimp.Scene();
-        importedScene.RootNode = new Node(rootName);
+        var scene = new Assimp.Scene();
+        scene.RootNode = new Node(rootName);
         foreach (var name in file.MaterialNames) {
             var aiMat = new Material();
             aiMat.Name = name;
-            importedScene.Materials.Add(aiMat);
+            scene.Materials.Add(aiMat);
         }
 
         var boneDict = new Dictionary<int, Node>();
         var bones = file.BoneData?.Bones;
+
         if (bones?.Count > 0 && file.MeshBuffer!.Weights.Length > 0) {
+            // insert root bones first to ensure all parents exist
             foreach (var srcBone in bones) {
-                var boneNode = new Node(srcBone.name, srcBone.parentIndex == -1 ? null : boneDict[srcBone.parentIndex]);
-                boneDict[srcBone.index] = boneNode;
-                if (srcBone.Parent == null) {
-                    importedScene.RootNode.Children.Add(boneNode);
-                } else {
-                    boneNode.Transform = srcBone.localTransform.ToSystem();
-                    boneNode.Metadata.Add("remap_index", new Metadata.Entry(MetaDataType.Int32, srcBone.remapIndex));
-                    boneDict[srcBone.parentIndex].Children.Add(boneNode);
+                if (srcBone.parentIndex == -1) {
+                    var boneNode = new Node(srcBone.name, scene.RootNode);
+                    boneDict[srcBone.index] = boneNode;
+                    boneNode.Transform = Matrix4x4.Transpose(srcBone.localTransform.ToSystem());
+                    scene.RootNode.Children.Add(boneNode);
                 }
+            }
+
+            // insert bones by queue and requeue them if we don't have their parent yet
+            var pendingBones = new Queue<MeshBone>(bones.Where(b => b.parentIndex != -1));
+            while (pendingBones.TryDequeue(out var srcBone)) {
+                if (!boneDict.TryGetValue(srcBone.parentIndex, out var parentBone)) {
+                    pendingBones.Enqueue(srcBone);
+                    continue;
+                }
+                var boneNode = new Node(srcBone.name, parentBone);
+                boneDict[srcBone.index] = boneNode;
+                boneNode.Transform = Matrix4x4.Transpose(srcBone.localTransform.ToSystem());
+                parentBone.Children.Add(boneNode);
             }
         }
 
+        int meshId = 0;
         foreach (var meshData in file.Meshes) {
             foreach (var mesh in meshData.LODs[0].MeshGroups) {
+                int subId = 0;
                 foreach (var sub in mesh.Submeshes) {
                     var aiMesh = new Mesh(PrimitiveType.Triangle);
                     aiMesh.MaterialIndex = sub.materialIndex;
@@ -196,11 +212,13 @@ public class AssimpMeshResource(string Name) : IResourceFile
                         var uvOut = aiMesh.TextureCoordinateChannels[0];
                         uvOut.EnsureCapacity(sub.UV0.Length);
                         foreach (var uv in sub.UV0) uvOut.Add(new System.Numerics.Vector3(uv.X, uv.Y, 0));
+                        aiMesh.UVComponentCount[0] = 2;
                     }
                     if (file.MeshBuffer.UV1.Length > 0) {
                         var uvOut = aiMesh.TextureCoordinateChannels[1];
                         uvOut.EnsureCapacity(sub.UV1.Length);
                         foreach (var uv in sub.UV1) uvOut.Add(new System.Numerics.Vector3(uv.X, uv.Y, 0));
+                        aiMesh.UVComponentCount[1] = 2;
                     }
                     if (file.MeshBuffer.Normals != null) {
                         aiMesh.Normals.AddRange(sub.Normals);
@@ -219,8 +237,7 @@ public class AssimpMeshResource(string Name) : IResourceFile
                         foreach (var srcBone in bones) {
                             var bone = new Bone();
                             bone.Name = srcBone.name;
-                            // or should it be globalTransform here?
-                            bone.OffsetMatrix = srcBone.localTransform.ToSystem();
+                            bone.OffsetMatrix = Matrix4x4.Transpose(srcBone.inverseGlobalTransform.ToSystem());
                             aiMesh.Bones.Add(bone);
                         }
 
@@ -246,13 +263,15 @@ public class AssimpMeshResource(string Name) : IResourceFile
                         f.Indices.Add(sub.Indices[i * 3 + 2]);
                         aiMesh.Faces.Add(f);
                     }
-                    aiMesh.Name = $"Group_{mesh.groupId.ToString(CultureInfo.InvariantCulture)}";
+                    aiMesh.Name = $"Group_{mesh.groupId.ToString(CultureInfo.InvariantCulture)}_mesh{meshId}_sub{subId++}";
 
-                    importedScene.Meshes.Add(aiMesh);
+                    scene.RootNode.MeshIndices.Add(scene.Meshes.Count);
+                    scene.Meshes.Add(aiMesh);
                 }
             }
+            meshId++;
         }
 
-        return importedScene;
+        return scene;
     }
 }
