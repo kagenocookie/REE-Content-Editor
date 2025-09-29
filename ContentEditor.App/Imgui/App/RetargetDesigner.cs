@@ -194,7 +194,7 @@ public class RetargetDesigner : BaseWindowHandler
 
     private bool ShowRetargetList(MotRetargetNamesConfig? selectedRemap, AssimpMeshResource? mesh1, AssimpMeshResource? mesh2)
     {
-        if (selectedRemap == null || mesh1?.NativeMesh?.BoneData == null || mesh2?.NativeMesh?.BoneData == null) return false;
+        if (selectedRemap == null || mesh1?.NativeMesh.BoneData == null || mesh2?.NativeMesh.BoneData == null) return false;
 
         if (ImGui.Button("Force refresh")) {
             forceRefreshConfig = true;
@@ -351,9 +351,9 @@ public class RetargetDesigner : BaseWindowHandler
                 if (direction == 1) {
                     bone.boneName = newName.Bone1;
                     bone.boneHash = MurMur3HashUtils.GetHash(newName.Bone1);
-                    bone.translation -= newName.translation.ToVec4();
+                    bone.translation -= newName.translation;
                     if (newName.baseRotation != Quaternion.Zero) {
-                        bone.translation = Vector3.Transform(bone.translation.ToVec3(), newName.baseRotation).ToVec4();
+                        bone.translation = Vector3.Transform(bone.translation, newName.baseRotation);
                     }
                     if (newName.rotation != Quaternion.Zero) {
                         bone.quaternion = Quaternion.Inverse(newName.rotation) * bone.quaternion;
@@ -361,9 +361,9 @@ public class RetargetDesigner : BaseWindowHandler
                 } else {
                     bone.boneName = newName.Bone2;
                     bone.boneHash = MurMur3HashUtils.GetHash(newName.Bone2);
-                    bone.translation += newName.translation.ToVec4();
+                    bone.translation += newName.translation;
                     if (newName.baseRotation != Quaternion.Zero) {
-                        bone.translation = Vector3.Transform(bone.translation.ToVec3(), newName.baseRotation).ToVec4();
+                        bone.translation = Vector3.Transform(bone.translation, newName.baseRotation);
                     }
                     if (newName.rotation != Quaternion.Zero) {
                         bone.quaternion = newName.rotation * bone.quaternion;

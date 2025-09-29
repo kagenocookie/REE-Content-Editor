@@ -98,7 +98,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         DrawFileContents();
     }
 
-    protected void DrawFileControls(WindowData data)
+    protected virtual void DrawFileControls(WindowData data)
     {
         if (failedToReadfile) return;
 
