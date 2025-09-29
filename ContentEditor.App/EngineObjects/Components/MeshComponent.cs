@@ -19,7 +19,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
 
     public override AABB LocalBounds => mesh?.BoundingBox ?? default;
 
-    public bool HasMesh => mesh?.Meshes.Any() == true;
+    public bool HasMesh => mesh != null;
     public bool IsStreamingTex = false;
     private bool invalidMesh;
 
