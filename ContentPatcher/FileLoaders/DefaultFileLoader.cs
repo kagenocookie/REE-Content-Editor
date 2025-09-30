@@ -43,7 +43,7 @@ public class DefaultFileLoader<TFileType> : IFileLoader, IFileHandleContentProvi
 
     public TFileType GetFile(FileHandle handle) => ((BaseFileResource<TFileType>)handle.Resource).File;
 
-    public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
+    public virtual bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
         if (SaveRawStream) {
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
