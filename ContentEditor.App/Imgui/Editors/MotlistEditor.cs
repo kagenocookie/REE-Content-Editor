@@ -62,17 +62,20 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
                 Workspace.Env.TryGetFileExtensionVersion("motlist", out var version);
                 var ext = ".motlist." + version;
                 PlatformUtils.ShowSaveFileDialog((path) => {
+                    if (path.EndsWith(ext + ext)) path = path.Replace(ext + ext, ext);
                     mesh.Motlist.WriteTo(path);
                 }, Path.GetFileNameWithoutExtension(Handle.Filename.ToString()), $"MOTLIST ({ext})|*{ext}");
             }
-            ImGui.SameLine();
-            if (ImGui.Button("Save Motlist To Bundle ...")) {
-                Workspace.Env.TryGetFileExtensionVersion("motlist", out var version);
-                var ext = ".motlist." + version;
-                var tempHandle = FileHandle.CreateEmbedded(new MotListFileLoader(), new BaseFileResource<MotlistFile>(mesh.Motlist), Path.ChangeExtension(Handle.Filename.ToString(), ext));
-                ResourcePathPicker.SaveFileToBundle(Workspace, tempHandle, (bundle, savePath, localPath, nativePath) => {
-                    tempHandle.Save(Workspace, savePath);
-                });
+            if (Workspace.CurrentBundle != null) {
+                ImGui.SameLine();
+                if (ImGui.Button("Save Motlist To Bundle ...")) {
+                    Workspace.Env.TryGetFileExtensionVersion("motlist", out var version);
+                    var ext = ".motlist." + version;
+                    var tempHandle = FileHandle.CreateEmbedded(new MotListFileLoader(), new BaseFileResource<MotlistFile>(mesh.Motlist), Path.ChangeExtension(Handle.Filename.ToString(), ext));
+                    ResourcePathPicker.SaveFileToBundle(Workspace, tempHandle, (bundle, savePath, localPath, nativePath) => {
+                        tempHandle.Save(Workspace, savePath);
+                    });
+                }
             }
         } else {
             base.DrawFileControls(data);
