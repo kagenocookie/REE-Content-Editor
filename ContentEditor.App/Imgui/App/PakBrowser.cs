@@ -34,6 +34,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
 
     private bool hasInvalidatedPaks;
     private bool isShowBookmarks = false;
+    private bool isShortPaths = false;
     private int page;
     private int rowsPerPage = 1000;
     private int selectedRow = -1;
@@ -145,6 +146,9 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         var usePreviewWindow = AppConfig.Instance.UsePakFilePreviewWindow.Get();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_FileOpenPreview}", ref usePreviewWindow, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
         ImguiHelpers.Tooltip("Open files in Preview Window");
+        ImGui.SameLine();
+        // SILVER: Maybe this should be saved like the Preview Window toggle? Icon is WIP
+        ImGui.Checkbox("Short Paths", ref isShortPaths);
         AppConfig.Instance.UsePakFilePreviewWindow.Set(usePreviewWindow);
         ImGui.SameLine();
         var bookmarks = _bookmarkManager.GetBookmarks(Workspace.Config.Game.name);
@@ -457,12 +461,13 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             foreach (var file in sortedEntries.Skip(rowsPerPage * page).Take(rowsPerPage)) {
                 ImGui.PushID(i);
                 i++;
+                var displayName = isShortPaths ? ShortenPath(file) : file;
                 if (isCtrl) {
-                    if (ImGui.Selectable(file, i == selectedRow, ImGuiSelectableFlags.SpanAllColumns)) {
+                    if (ImGui.Selectable(displayName, i == selectedRow, ImGuiSelectableFlags.SpanAllColumns)) {
                         selectedRow = i;
                     }
                 } else if (isShift) {
-                    if (ImGui.Selectable(file, i == selectedRow, ImGuiSelectableFlags.SpanAllColumns)) {
+                    if (ImGui.Selectable(displayName, i == selectedRow, ImGuiSelectableFlags.SpanAllColumns)) {
                         selectedRow = i;
                     }
                 } else {
@@ -474,7 +479,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                     } else {
                         ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.Text]);
                     }
-                    if (ImGui.Selectable(file, false, ImGuiSelectableFlags.SpanAllColumns)) {
+                    if (ImGui.Selectable(displayName, false, ImGuiSelectableFlags.SpanAllColumns)) {
                         if (!baseList.FileExists(file)) {
                             // if it's not a full list file match then it's a folder, navigate to it
                             ImGui.PopStyleColor();
@@ -586,7 +591,13 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         ImGui.Text($"Total matches: {sortedEntries?.Length} | Displaying: {page * rowsPerPage + Math.Sign(i)}-{page * rowsPerPage + i}");
         ImGui.EndChild();
     }
+    private static string ShortenPath(string path)
+    {
+        var parts = path.Replace('\\', '/').Split('/');
+        if (parts.Length <= 2) return path;
 
+        return ".../" + parts[^1];
+    }
     public bool RequestClose()
     {
         return false;
