@@ -1,9 +1,12 @@
 using System.Globalization;
 using System.Numerics;
 using Assimp;
+using ContentEditor;
+using ContentEditor.App;
 using ReeLib;
 using ReeLib.Common;
 using ReeLib.Mesh;
+using Silk.NET.Maths;
 
 namespace ContentPatcher;
 
@@ -26,7 +29,29 @@ public partial class AssimpMeshResource : IResourceFile
         foreach (var clip in mot.BoneClips) {
             var header = clip.ClipHeader;
             var channel = new NodeAnimationChannel();
-            channel.NodeName = header.boneName ?? header.OriginalName ?? FlatNodes(scene.RootNode).FirstOrDefault(n => MurMur3HashUtils.GetHash(n.Name) == header.boneHash)?.Name ?? $"hash{header.boneHash}";
+            channel.NodeName = header.boneName
+                ?? header.OriginalName
+                ?? mot.GetBoneByHash(header.boneHash)?.Name
+                ?? FlatNodes(scene.RootNode).FirstOrDefault(n => MurMur3HashUtils.GetHash(n.Name) == header.boneHash)?.Name;
+            if (channel.NodeName == null) {
+                // not a known bone for our mesh - add placeholder bone nodes and hope they fit
+                channel.NodeName = $"_hash{header.boneHash}";
+                var motBone = mot.GetBoneByHash(header.boneHash);
+                var rootNode = FlatNodes(scene.RootNode).FirstOrDefault(node => MurMur3HashUtils.GetHash(node.Name) == mot.RootBones.First().Header.boneHash);
+                if (rootNode != null) {
+                    Logger.Warn($"Animation {mot.Name} contains an unnamed bone {header.boneHash} that the mesh or the motlist file does not specify. It will get exported as placeholder 'hash{header.boneHash}' and may not be fully correct.");
+                    rootNode.Children.Add(new Node(channel.NodeName, rootNode) {
+                        Transform = Matrix4x4.Transpose(Transform.GetMatrixFromTransforms(
+                            motBone?.Translation.ToGeneric() ?? Vector3D<float>.Zero,
+                            motBone?.Quaternion.ToGeneric() ?? Quaternion<float>.Identity,
+                            Vector3D<float>.One).ToSystem())
+                    });
+                    foreach (var mesh in scene.Meshes) {
+                        if (mesh.Bones.Count == 0) continue;
+                        mesh.Bones.Add(new Bone(channel.NodeName, Matrix4x4.Identity, []));
+                    }
+                }
+            }
             if (clip.HasTranslation) {
                 if (clip.Translation!.frameIndexes == null) {
                     if (clip.Translation.translations?.Length > 0) channel.PositionKeys.Add(new VectorKey(0, clip.Translation.translations[0]));

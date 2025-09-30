@@ -1,13 +1,6 @@
-using System.Globalization;
-using System.Numerics;
 using Assimp;
 using ContentEditor;
 using ReeLib;
-using ReeLib.Common;
-using ReeLib.Mesh;
-using ReeLib.Mot;
-using ReeLib.Motlist;
-using ReeLib.via;
 
 namespace ContentPatcher;
 
@@ -97,7 +90,7 @@ public partial class AssimpMeshResource(string Name, Workspace workspace) : IRes
         importer.ExportFile(scene, filepath, exportFormat);
     }
 
-    public void ExportToFile(string filepath, MotlistFile? motlist)
+    public void ExportToFile(string filepath, MotlistFile? motlist = null, MotFile? singleMot = null)
     {
         using AssimpContext importer = new AssimpContext();
 
@@ -112,7 +105,7 @@ public partial class AssimpMeshResource(string Name, Workspace workspace) : IRes
         if (exportFormat == null) {
             throw new NotImplementedException("Unsupported export format " + ext);
         }
-        if (motlist == null) {
+        if (motlist == null && singleMot == null) {
             importer.ExportFile(Scene, filepath, exportFormat);
             return;
         }
@@ -122,7 +115,7 @@ public partial class AssimpMeshResource(string Name, Workspace workspace) : IRes
             return;
         }
 
-        var scene = ExportWithAnimations(_mesh, motlist);
+        var scene = motlist != null ? ExportWithAnimations(_mesh, motlist) : ExportWithAnimations(_mesh, singleMot!);
         importer.ExportFile(scene, filepath, exportFormat);
     }
 

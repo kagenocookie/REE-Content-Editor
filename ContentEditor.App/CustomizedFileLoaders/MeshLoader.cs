@@ -118,6 +118,7 @@ public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<Motlis
             return mr.Motlist;
         }
 
-        throw new NotSupportedException("Mesh does not contain animations");
+        Logger.Error("Mesh does not contain animations: " + handle.Filepath);
+        return new MotlistFile(new FileHandler());
     }
 }

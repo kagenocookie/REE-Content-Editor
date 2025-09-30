@@ -37,6 +37,21 @@ public class ResourcePathPicker : IObjectUIHandler
         }
     }
 
+    public ResourcePathPicker(ContentWorkspace? ws, string additionalFilter, params KnownFileFormats[] allowedFormats)
+    {
+        var isKnownFormats = (allowedFormats.Length > 1 || allowedFormats.Length == 1 && allowedFormats[0] != KnownFileFormats.Unknown);
+        FileFormats = isKnownFormats ? allowedFormats : [];
+        if (ws != null && isKnownFormats) {
+            FileExtensionFilter = string.Join(
+                "|",
+                allowedFormats.SelectMany(format => ws.Env
+                    .GetFileExtensionsForFormat(format)
+                    .Select(ext => $"{format} .{ext}|*.{ext}.*"))) + "|" + additionalFilter;
+        } else {
+            FileExtensionFilter = additionalFilter;
+        }
+    }
+
     public ResourcePathPicker(ContentWorkspace? ws, RszField field)
         : this(ws, [TypeCache.GetResourceFormat(field.original_type)])
     {

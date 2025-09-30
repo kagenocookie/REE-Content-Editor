@@ -29,7 +29,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     public Scene? Scene => scene;
 
     private const float TopMargin = 42;
-    private const string MeshExportExtensionsFilter = "GLB (*.glb)|*.glb|GLTF (*.gltf)|*.gltf|FBX (*.fbx)|*.fbx";
+    private const string MeshFilesFilter = "GLB (*.glb)|*.glb|GLTF (*.gltf)|*.gltf|FBX (*.fbx)|*.fbx";
 
     private string? loadedMdf;
     private string? mdfSource;
@@ -71,7 +71,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     private bool expandMenu = true;
     private bool isSynced;
 
-    private bool includeAnimations;
+    private bool exportAnimations = true;
+    private bool exportCurrentAnimationOnly;
     private bool exportInProgress;
 
     public MeshViewer(ContentWorkspace workspace, FileHandle file)
@@ -135,6 +136,9 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         var meshComponent = previewGameobject?.GetComponent<MeshComponent>();
         if (meshComponent != null) {
             meshComponent.SetMesh(fileHandle, fileHandle);
+        }
+        if (mesh.HasAnimations && string.IsNullOrEmpty(animationSourceFile)) {
+            animationSourceFile = newFile.Filepath;
         }
     }
 
@@ -400,24 +404,35 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
         using var _ = ImguiHelpers.Disabled(exportInProgress);
         if (ImGui.Button("Export Mesh ...")) {
-            // potential export enhancements:
-            // - include (embed) textures
-            if (animator?.File != null && ImguiHelpers.SameLine()) ImGui.Checkbox("Include animations", ref includeAnimations);
+            // potential export enhancement: include (embed) textures
             if (fileHandle.Resource is AssimpMeshResource assmesh) {
                 PlatformUtils.ShowSaveFileDialog((exportPath) => {
                     exportInProgress = true;
                     try {
-                        assmesh.ExportToFile(exportPath, includeAnimations ? animator?.File?.GetFile<MotlistFile>() : null);
+                        if (!exportAnimations) {
+                            assmesh.ExportToFile(exportPath);
+                        } else if (exportCurrentAnimationOnly) {
+                            assmesh.ExportToFile(exportPath, singleMot: animator?.ActiveMotion);
+                        } else {
+                            assmesh.ExportToFile(exportPath, motlist: animator?.File?.GetFile<MotlistFile>());
+                        }
                     } catch (Exception e) {
                         Logger.Error(e, "Mesh export failed");
                     } finally {
                         exportInProgress = false;
                     }
-                }, PathUtils.GetFilenameWithoutExtensionOrVersion(fileHandle.Filename).ToString() + ".glb", MeshExportExtensionsFilter);
+                }, PathUtils.GetFilenameWithoutExtensionOrVersion(fileHandle.Filename).ToString() + ".glb", MeshFilesFilter);
             } else {
                 throw new NotImplementedException();
             }
         }
+        if (exportInProgress) {
+            ImGui.SameLine();
+            // we have no way of showing any progress from assimp's side (which is 99% of the export duration) so this is the best we can do
+            ImGui.TextWrapped($"Exporting in progress. This may take a while for large files and for many animations...");
+        }
+        if (animator?.File != null) ImGui.Checkbox("Include animations", ref exportAnimations);
+        if (animator?.File != null && exportAnimations && ImguiHelpers.SameLine()) ImGui.Checkbox("Selected animation only", ref exportCurrentAnimationOnly);
     }
 
     private void ShowAnimationMenu(MeshComponent meshComponent)
@@ -431,7 +446,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             animationPickerContext = context.AddChild<MeshViewer, string>(
                 "Source File",
                 this,
-                new ResourcePathPicker(Workspace, Workspace.Env.TypeCache.GetResourceSubtypes(KnownFileFormats.MotionBase)) { UseNativesPath = true, IsPathForIngame = false },
+                new ResourcePathPicker(Workspace, MeshFilesFilter, KnownFileFormats.MotionList, KnownFileFormats.Motion) { UseNativesPath = true, IsPathForIngame = false },
                 (v) => v!.animationSourceFile,
                 (v, p) => v.animationSourceFile = p ?? "");
         }
@@ -463,6 +478,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                     animator.SetActiveMotion(mot);
                 }
             }
+        } else if (animator?.File != null) {
+            ImGui.TextColored(Colors.Note, "Selected file contains no playable animations");
         }
     }
 
