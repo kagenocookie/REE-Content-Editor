@@ -34,7 +34,6 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
 
     private bool hasInvalidatedPaks;
     private bool isShowBookmarks = false;
-    private bool isShortPaths = false;
     private int page;
     private int rowsPerPage = 1000;
     private int selectedRow = -1;
@@ -146,10 +145,12 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         var usePreviewWindow = AppConfig.Instance.UsePakFilePreviewWindow.Get();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_FileOpenPreview}", ref usePreviewWindow, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
         ImguiHelpers.Tooltip("Open files in Preview Window");
-        ImGui.SameLine();
-        // SILVER: Maybe this should be saved like the Preview Window toggle? Icon is WIP
-        ImGui.Checkbox("Short Paths", ref isShortPaths);
         AppConfig.Instance.UsePakFilePreviewWindow.Set(usePreviewWindow);
+        ImGui.SameLine();
+        var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
+        ImguiHelpers.ToggleButton($"{AppIcons.SI_PathShort}", ref useCompactFilePaths, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
+        ImguiHelpers.Tooltip("Use compact file paths");
+        AppConfig.Instance.UsePakCompactFilePaths.Set(useCompactFilePaths);
         ImGui.SameLine();
         var bookmarks = _bookmarkManager.GetBookmarks(Workspace.Config.Game.name);
         var defaults = _bookmarkManagerDefaults.GetBookmarks(Workspace.Config.Game.name);
@@ -439,6 +440,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         var isShift = ImGui.IsKeyDown(ImGuiKey.ModShift);
         int maxPage = 0;
         string[]? sortedEntries = null;
+        var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
         var remainingHeight = ImGui.GetWindowSize().Y - ImGui.GetCursorPosY() - ImGui.GetStyle().WindowPadding.Y - UI.FontSize - ImGui.GetStyle().FramePadding.Y;
         if (ImGui.BeginTable("List", 2, ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingStretchProp | ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.Sortable, new Vector2(0, remainingHeight))) {
             ImGui.TableSetupColumn(" Path ", ImGuiTableColumnFlags.WidthStretch, 0.9f);
@@ -461,7 +463,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             foreach (var file in sortedEntries.Skip(rowsPerPage * page).Take(rowsPerPage)) {
                 ImGui.PushID(i);
                 i++;
-                var displayName = isShortPaths ? ShortenPath(file) : file;
+                var displayName = useCompactFilePaths ? CompactFilePath(file) : file;
                 if (isCtrl) {
                     if (ImGui.Selectable(displayName, i == selectedRow, ImGuiSelectableFlags.SpanAllColumns)) {
                         selectedRow = i;
@@ -591,7 +593,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         ImGui.Text($"Total matches: {sortedEntries?.Length} | Displaying: {page * rowsPerPage + Math.Sign(i)}-{page * rowsPerPage + i}");
         ImGui.EndChild();
     }
-    private static string ShortenPath(string path)
+    private static string CompactFilePath(string path)
     {
         var parts = path.Replace('\\', '/').Split('/');
         if (parts.Length <= 2) return path;
