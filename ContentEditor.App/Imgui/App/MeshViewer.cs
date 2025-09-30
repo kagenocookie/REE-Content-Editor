@@ -137,6 +137,9 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         if (meshComponent != null) {
             meshComponent.SetMesh(fileHandle, fileHandle);
         }
+        if (mesh.HasAnimations && string.IsNullOrEmpty(animationSourceFile)) {
+            animationSourceFile = newFile.Filepath;
+        }
     }
 
     public void OnWindow()
