@@ -143,7 +143,7 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
             mat.Name = LayerToMaterialName(i, bvh.stringTable[i].main);
             mat.ColorDiffuse = ImGui.ColorConvertU32ToFloat4((uint)LayerColors[i].ToArgb());
 
-            var mesh = new Assimp.Mesh("mesh" + i, PrimitiveType.Triangle);
+            var mesh = new Assimp.Mesh("mesh_layer" + i, PrimitiveType.Triangle);
             mesh.MaterialIndex = i;
             var uv0 = mesh.TextureCoordinateChannels[0];
             mesh.UVComponentCount[0] = 2;

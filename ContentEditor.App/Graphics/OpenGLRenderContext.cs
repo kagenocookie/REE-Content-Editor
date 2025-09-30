@@ -135,35 +135,20 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         if (meshResource == null) return null;
 
         var handle = new MeshResourceHandle(MeshRefs.NextInstanceID);
-        if (meshResource.HasNativeMesh) {
-            var meshFile = meshResource.NativeMesh!;
-            MeshBoneHierarchy? boneList = null;
-            if (meshFile.BoneData?.Bones.Count > 0) {
-                boneList = meshFile.BoneData;
-            }
-            foreach (var mesh in meshFile.Meshes) {
-                foreach (var group in mesh.LODs[0].MeshGroups) {
-                    foreach (var sub in group.Submeshes) {
-                        var newMesh = new TriangleMesh(GL, meshFile, sub);
-                        newMesh.MeshGroup = group.groupId;
-                        handle.SetMaterialName(handle.Meshes.Count, meshFile.MaterialNames[sub.materialIndex]);
-                        handle.Bones = boneList;
-                        handle.Meshes.Add(newMesh);
-                    }
+        var meshFile = meshResource.NativeMesh;
+        MeshBoneHierarchy? boneList = null;
+        if (meshFile.BoneData?.Bones.Count > 0) {
+            boneList = meshFile.BoneData;
+        }
+        foreach (var mesh in meshFile.Meshes) {
+            foreach (var group in mesh.LODs[0].MeshGroups) {
+                foreach (var sub in group.Submeshes) {
+                    var newMesh = new TriangleMesh(GL, meshFile, sub);
+                    newMesh.MeshGroup = group.groupId;
+                    handle.SetMaterialName(handle.Meshes.Count, meshFile.MaterialNames[sub.materialIndex]);
+                    handle.Bones = boneList;
+                    handle.Meshes.Add(newMesh);
                 }
-            }
-        } else {
-            var meshScene = meshResource.Scene;
-            foreach (var srcMesh in meshScene.Meshes) {
-                var newMesh = new TriangleMesh(GL, srcMesh);
-                newMesh.MeshGroup = MeshLoader.GetMeshGroupFromName(srcMesh.Name);
-                if (meshScene.HasMaterials) {
-                    var matname = meshScene.Materials[srcMesh.MaterialIndex].Name;
-                    handle.SetMaterialName(handle.Meshes.Count, matname);
-                } else {
-                    handle.SetMaterialName(handle.Meshes.Count, "");
-                }
-                handle.Meshes.Add(newMesh);
             }
         }
 

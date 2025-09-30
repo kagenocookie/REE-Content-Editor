@@ -71,6 +71,9 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     private bool expandMenu = true;
     private bool isSynced;
 
+    private bool includeAnimations;
+    private bool exportInProgress;
+
     public MeshViewer(ContentWorkspace workspace, FileHandle file)
     {
         Workspace = workspace;
@@ -395,13 +398,21 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     {
         if (mesh == null) return;
 
+        using var _ = ImguiHelpers.Disabled(exportInProgress);
         if (ImGui.Button("Export Mesh ...")) {
             // potential export enhancements:
             // - include (embed) textures
-            // - include animations (from current motlist)
+            if (animator?.File != null && ImguiHelpers.SameLine()) ImGui.Checkbox("Include animations", ref includeAnimations);
             if (fileHandle.Resource is AssimpMeshResource assmesh) {
                 PlatformUtils.ShowSaveFileDialog((exportPath) => {
-                    assmesh.WriteTo(exportPath);
+                    exportInProgress = true;
+                    try {
+                        assmesh.ExportToFile(exportPath, includeAnimations ? animator?.File?.GetFile<MotlistFile>() : null);
+                    } catch (Exception e) {
+                        Logger.Error(e, "Mesh export failed");
+                    } finally {
+                        exportInProgress = false;
+                    }
                 }, PathUtils.GetFilenameWithoutExtensionOrVersion(fileHandle.Filename).ToString() + ".glb", MeshExportExtensionsFilter);
             } else {
                 throw new NotImplementedException();
@@ -436,6 +447,10 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
         if (animator?.AnimationCount > 0) {
             var ignoreRoot = animator.IgnoreRootMotion;
+            if (ImGui.Button("View Data")) {
+                EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, animator.File!));
+            }
+            ImGui.SameLine();
             if (ImGui.Checkbox("Ignore Root Motion", ref ignoreRoot)) {
                 animator.IgnoreRootMotion = ignoreRoot;
             }

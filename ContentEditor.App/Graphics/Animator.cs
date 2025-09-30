@@ -21,6 +21,8 @@ public class Animator(ContentWorkspace Workspace)
     private AnimatedMeshHandle? mesh;
     public AnimatedMeshHandle? Mesh => mesh;
 
+    public FileHandle? File => animationFile;
+
     /// <summary>
     /// Whether there is an animation currently active. Should be true at any time the mesh is not in its default mesh pose, whether currently playing or not.
     /// </summary>
@@ -135,6 +137,12 @@ public class Animator(ContentWorkspace Workspace)
                 }
             } else if (file.Resource is BaseFileResource<MotFile> mot) {
                 motions.Add(file.Filename.ToString(), mot.File);
+            } else if (file.GetFile<MotlistFile>() is MotlistFile customMotlist) {
+                foreach (var submot in customMotlist.MotFiles) {
+                    if (submot is MotFile mmo) {
+                        motions.Add(mmo.Header.motName, mmo);
+                    }
+                }
             } else {
                 Logger.Error("Unsupported animation source file " + fileSource);
             }
@@ -162,7 +170,8 @@ public class Animator(ContentWorkspace Workspace)
             }
             var frame = (currentTime * clipFramerate);
             foreach (var bone in animMesh.Bones.Bones) {
-                var clip = ActiveMotion.BoneClips.FirstOrDefault(bc => bc.ClipHeader.boneHash == MurMur3HashUtils.GetHash(bone.name ?? ""));
+                var boneHash = MurMur3HashUtils.GetHash(bone.name);
+                var clip = ActiveMotion.BoneClips.FirstOrDefault(bc => bc.ClipHeader.boneHash == boneHash);
                 Matrix4X4.Decompose<float>(bone.localTransform.ToSystem().ToGeneric(), out var localScale, out var localRot, out var localPos);
 
                 if (IgnoreRootMotion && bone.parentIndex == -1) {
@@ -170,7 +179,7 @@ public class Animator(ContentWorkspace Workspace)
                     continue;
                 }
 
-                var clipbone = ActiveMotion.BoneHeaders?.FirstOrDefault(bh => bh.boneHash == clip?.ClipHeader.boneHash);
+                var clipbone = ActiveMotion.BoneHeaders?.FirstOrDefault(bh => bh.boneHash == boneHash);
 
                 if (clipbone != null) {
                     if (clip == null) {
@@ -178,7 +187,7 @@ public class Animator(ContentWorkspace Workspace)
                         transformCache[bone.index] = Matrix4X4<float>.Identity;
                         continue;
                     }
-                    localPos = clipbone.translation.ToSilkNetVec3();
+                    localPos = clipbone.translation.ToGeneric();
                     localRot = clipbone.quaternion.ToGeneric();
                 }
 
@@ -205,8 +214,7 @@ public class Animator(ContentWorkspace Workspace)
 
                 var localTransform = Matrix4X4.CreateScale<float>(localScale) * Matrix4X4.CreateFromQuaternion<float>(localRot) * Matrix4X4.CreateTranslation<float>(localPos);
 
-                var parentsMat = bone.Parent == null ? Matrix4X4<float>.Identity : transformCache[bone.Parent.index];
-                var worldMat = localTransform * parentsMat;
+                var worldMat = bone.Parent == null ? localTransform : localTransform * transformCache[bone.Parent.index];
                 transformCache[bone.index] = worldMat;
 
                 if (bone.remapIndex != -1) {

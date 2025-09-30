@@ -19,6 +19,8 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     public ContentWorkspace Workspace { get; }
     public MotlistFile File { get; }
 
+    public override string HandlerName => "Motlist";
+
     static MotlistEditor()
     {
         WindowHandlerFactory.DefineInstantiator<EndClipStruct>((ctx) => new EndClipStruct() { Version = ctx.FindValueInParentValues<ClipEntry>()?.Version ?? ClipVersion.MHWilds });
@@ -26,7 +28,7 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         WindowHandlerFactory.DefineInstantiator<Property>((ctx) => new Property(ctx.FindValueInParentValues<ClipEntry>()?.Version ?? ClipVersion.MHWilds));
         WindowHandlerFactory.DefineInstantiator<Key>((ctx) => new Key(ctx.FindValueInParentValues<ClipEntry>()!));
         WindowHandlerFactory.DefineInstantiator<MotIndex>((ctx) => new MotIndex(
-            ctx.FindHandlerInParents<MotlistEditor>()?.File.Header.Version
+            ctx.FindHandlerInParents<MotlistEditor>()?.File.Header.version
             ?? (ctx.GetWorkspace()?.Env.TryGetFileExtensionVersion("motlist", out var v) == true ? (MotlistVersion)v : MotlistVersion.DD2)));
         WindowHandlerFactory.DefineInstantiator<MotPropertyTrack>((ctx) => {
             var editor = ctx.FindHandlerInParents<MotlistEditor>();
@@ -37,7 +39,7 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
                 };
             }
 
-            return new MotPropertyTrack() { Version = editor.File.Header.Version.GetMotVersion() };
+            return new MotPropertyTrack() { Version = editor.File.Header.version.GetMotVersion() };
         });
     }
 
@@ -51,6 +53,30 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     {
         base.OnFileReverted();
         context.ClearChildren();
+    }
+
+    protected override void DrawFileControls(WindowData data)
+    {
+        if (Handle.Resource is AssimpMeshResource mesh) {
+            if (ImGui.Button("Save As Motlist ...")) {
+                Workspace.Env.TryGetFileExtensionVersion("motlist", out var version);
+                var ext = ".motlist." + version;
+                PlatformUtils.ShowSaveFileDialog((path) => {
+                    mesh.Motlist.WriteTo(path);
+                }, Path.GetFileNameWithoutExtension(Handle.Filename.ToString()), $"MOTLIST ({ext})|*{ext}");
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Save Motlist To Bundle ...")) {
+                Workspace.Env.TryGetFileExtensionVersion("motlist", out var version);
+                var ext = ".motlist." + version;
+                var tempHandle = FileHandle.CreateEmbedded(new MotListFileLoader(), new BaseFileResource<MotlistFile>(mesh.Motlist), Path.ChangeExtension(Handle.Filename.ToString(), ext));
+                ResourcePathPicker.SaveFileToBundle(Workspace, tempHandle, (bundle, savePath, localPath, nativePath) => {
+                    tempHandle.Save(Workspace, savePath);
+                });
+            }
+        } else {
+            base.DrawFileControls(data);
+        }
     }
 
     protected override void DrawFileContents()
@@ -114,7 +140,7 @@ public class MotIndexImguiHandler : IObjectUIHandler
                 ctx.ClearChildren();
             });
 
-            WindowHandlerFactory.SetupObjectUIContext(context, typeof(MotIndex), members: [typeof(MotIndex).GetProperty(nameof(MotIndex.MotClip))!]);
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(MotIndex), members: [typeof(MotIndex).GetProperty(nameof(MotIndex.MotClips))!]);
         }
 
         if (ImguiHelpers.TreeNodeSuffix(context.label, mot.ToString())) {
@@ -260,7 +286,7 @@ public class TrackHandler : IObjectUIHandler
                         Logger.Error("Could not determine track type");
                     } else {
                         var type = trackHandlers.IndexOf(this) == 1 ? TrackValueType.Quaternion : TrackValueType.Vector3;
-                        instance = new Track(editor.File.Header.Version.GetMotVersion(), type);
+                        instance = new Track(editor.File.Header.version.GetMotVersion(), type);
                         UndoRedo.RecordSet(context, instance);
                     }
                 }
@@ -354,7 +380,7 @@ public class BoneMotionClipListHandler : ListHandler
             Logger.Error("Could not found motlist editor context");
             return null;
         }
-        var clip = new BoneMotionClip(new BoneClipHeader(editor.File.Header.Version.GetMotVersion()));
+        var clip = new BoneMotionClip(new BoneClipHeader(editor.File.Header.version.GetMotVersion()));
         return clip;
     }
 }
