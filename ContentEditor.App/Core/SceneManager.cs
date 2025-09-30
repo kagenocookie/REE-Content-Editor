@@ -1,3 +1,4 @@
+using ContentEditor.App.ImguiHandling;
 using ContentEditor.Editor;
 using ContentPatcher;
 using ReeLib;
@@ -7,7 +8,7 @@ namespace ContentEditor.App;
 public sealed class SceneManager(IRectWindow window) : IDisposable
 {
     private readonly List<Scene> scenes = new();
-    private ContentWorkspace? env;
+    private ContentWorkspace? env = (window as IWorkspaceContainer)?.Workspace;
 
     public IRectWindow Window { get; } = window;
 
