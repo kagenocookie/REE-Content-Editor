@@ -140,7 +140,7 @@ public class MotIndexImguiHandler : IObjectUIHandler
                 ctx.ClearChildren();
             });
 
-            WindowHandlerFactory.SetupObjectUIContext(context, typeof(MotIndex), members: [typeof(MotIndex).GetProperty(nameof(MotIndex.MotClip))!]);
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(MotIndex), members: [typeof(MotIndex).GetProperty(nameof(MotIndex.MotClips))!]);
         }
 
         if (ImguiHelpers.TreeNodeSuffix(context.label, mot.ToString())) {

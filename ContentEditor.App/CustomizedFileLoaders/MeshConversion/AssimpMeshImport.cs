@@ -266,10 +266,6 @@ public partial class AssimpMeshResource : IResourceFile
             var motIndex = new MotIndex(motlist.Header.version) { MotFile = mot, motNumber = (ushort)motlist.MotFiles.Count };
             motlist.Motions.Add(motIndex);
 
-            if (motIndex.data.Length >= 3) {
-                motIndex.data[2] = 1; // dunno
-            }
-
             var timeScale = targetFps / sourceFps;
 
             // TODO determine best compression types
