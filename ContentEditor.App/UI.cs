@@ -150,8 +150,14 @@ public static class AppIcons
     public static readonly char SI_WindowOpenNew = '\ued16';
     public static readonly char SI_FileCopyPath = '\ued17';
     public static readonly char SI_BookmarkHide = '\ued18';
+    public static readonly char SI_Filter = '\ued19';
+    public static readonly char SI_FilterClear = '\ued1a';
+    public static readonly char SI_FileOpenPreview = '\ued1b';
+    public static readonly char SI_ViewEnabled = '\ued1c';
+    public static readonly char SI_ViewDisabled = '\ued1d';
+    public static readonly char SI_PathShort = '\ued1e';
 
-    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_BookmarkHide, 0];
+    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_PathShort, 0];
 
     public static string PrependIcon(this string text, object target)
     {
