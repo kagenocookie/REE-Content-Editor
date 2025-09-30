@@ -97,7 +97,7 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 
     internal void RefreshUI()
     {
-        context.ClearChildren();
+        context.GetChildByValue<List<MotFileBase>>()?.ClearChildren();
     }
 }
 

@@ -273,10 +273,17 @@ public partial class AssimpMeshResource : IResourceFile
                 var clipHeader = new BoneClipHeader(motver);
                 var clip = new BoneMotionClip(clipHeader);
 
-                clipHeader.boneName = channel.NodeName;
-                clipHeader.boneHash = MurMur3HashUtils.GetHash(channel.NodeName);
-                var bone = mot.GetBoneByHash(clipHeader.boneHash);
-                clipHeader.boneIndex = (ushort)(bone?.Index ?? 0); // would we need these to be remap index?
+                MotBone? bone = null;
+                if (channel.NodeName.StartsWith("_hash")) {
+                    // not much else we can do about these
+                    clipHeader.boneName = null;
+                    clipHeader.boneHash = uint.TryParse(channel.NodeName.AsSpan().Slice("_hash".Length), out var hash) ? hash : 0;
+                } else {
+                    clipHeader.boneName = channel.NodeName;
+                    clipHeader.boneHash = MurMur3HashUtils.GetHash(channel.NodeName);
+                    bone = mot.GetBoneByHash(clipHeader.boneHash);
+                    clipHeader.boneIndex = (ushort)(bone?.Index ?? 0); // would we need these to be remap index?
+                }
                 if (channel.HasPositionKeys && (bone == null || channel.PositionKeys.Any(k => Vector3.DistanceSquared(k.Value, bone.Translation) > 0.000001f))) {
                     clipHeader.trackFlags |= TrackFlag.Translation;
                     var track = clip.Translation = new Track(motver, TrackValueType.Vector3);
