@@ -132,12 +132,6 @@ public partial class AssimpMeshResource : IResourceFile
         foreach (var meshData in file.Meshes) {
             foreach (var mesh in meshData.LODs[0].MeshGroups) {
                 int subId = 0;
-                // separate meshes by mesh group so they don't get merged together
-                if (!meshes.TryGetValue((meshId, mesh.groupId), out var meshNode)) {
-                    meshes[(meshId, mesh.groupId)] = meshNode = new Node($"Group_{mesh.groupId.ToString(CultureInfo.InvariantCulture)}_mesh{meshId}", scene.RootNode);
-                    scene.RootNode.Children.Add(meshNode);
-                }
-
                 foreach (var sub in mesh.Submeshes) {
                     var aiMesh = new Mesh(PrimitiveType.Triangle);
                     aiMesh.MaterialIndex = sub.materialIndex;
@@ -199,8 +193,11 @@ public partial class AssimpMeshResource : IResourceFile
                         f.Indices.Add(sub.Indices[i * 3 + 2]);
                         aiMesh.Faces.Add(f);
                     }
-                    aiMesh.Name = $"Group_{mesh.groupId.ToString(CultureInfo.InvariantCulture)}_mesh{meshId}_sub{subId++}";
 
+                    // each submesh needs to have a unique node so they don't get merged together
+                    var meshNode = new Node($"Group_{mesh.groupId.ToString(CultureInfo.InvariantCulture)}_mesh{meshId}_sub{subId++}", scene.RootNode);
+                    scene.RootNode.Children.Add(meshNode);
+                    aiMesh.Name = meshNode.Name;
                     meshNode.MeshIndices.Add(scene.Meshes.Count);
                     scene.Meshes.Add(aiMesh);
                 }

@@ -421,7 +421,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                     } finally {
                         exportInProgress = false;
                     }
-                }, PathUtils.GetFilenameWithoutExtensionOrVersion(fileHandle.Filename).ToString() + ".glb", MeshFilesFilter);
+                }, PathUtils.GetFilenameWithoutExtensionOrVersion(fileHandle.Filename).ToString(), MeshFilesFilter);
             } else {
                 throw new NotImplementedException();
             }
