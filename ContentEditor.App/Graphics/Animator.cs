@@ -179,11 +179,11 @@ public class Animator(ContentWorkspace Workspace)
                 var boneHash = MurMur3HashUtils.GetHash(bone.name);
                 var clip = ActiveMotion.BoneClips.FirstOrDefault(bc => bc.ClipHeader.boneHash == boneHash);
                 Matrix4X4.Decompose<float>(bone.localTransform.ToSystem().ToGeneric(), out var localScale, out var localRot, out var localPos);
-                var clipbone = ActiveMotion.BoneHeaders?.FirstOrDefault(bh => bh.boneHash == boneHash);
+                var motBone = ActiveMotion.BoneHeaders?.FirstOrDefault(bh => bh.boneHash == boneHash);
 
-                if (clipbone != null) {
-                    localPos = clipbone.translation.ToGeneric();
-                    localRot = clipbone.quaternion.ToGeneric();
+                if (motBone != null) {
+                    localPos = motBone.translation.ToGeneric();
+                    localRot = motBone.quaternion.ToGeneric();
                 }
 
                 if (clip?.HasTranslation == true && clip.Translation!.frameIndexes != null) {

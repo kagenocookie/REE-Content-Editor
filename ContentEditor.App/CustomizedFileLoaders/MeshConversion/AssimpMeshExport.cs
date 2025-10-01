@@ -26,31 +26,54 @@ public partial class AssimpMeshResource : IResourceFile
         anim.Name = mot.Name;
         anim.TicksPerSecond = mot.Header.FrameRate;
         anim.DurationInTicks = mot.Header.endFrame;
+        var nodeDict = FlatNodes(scene.RootNode).ToDictionary(n => MurMur3HashUtils.GetHash(n.Name));
         foreach (var clip in mot.BoneClips) {
             var header = clip.ClipHeader;
             var channel = new NodeAnimationChannel();
+            var boneNode = nodeDict.GetValueOrDefault(header.boneHash);
             channel.NodeName = header.boneName
                 ?? header.OriginalName
                 ?? mot.GetBoneByHash(header.boneHash)?.Name
-                ?? FlatNodes(scene.RootNode).FirstOrDefault(n => MurMur3HashUtils.GetHash(n.Name) == header.boneHash)?.Name;
-            if (channel.NodeName == null) {
+                ?? boneNode?.Name;
+
+            if (boneNode == null || channel.NodeName == null) {
                 // not a known bone for our mesh - add placeholder bone nodes and hope they fit
-                channel.NodeName = $"_hash{header.boneHash}";
+                boneNode ??= new Node(header.boneName ?? $"_hash{header.boneHash}");
+                channel.NodeName = boneNode.Name;
+
                 var motBone = mot.GetBoneByHash(header.boneHash);
-                var rootNode = FlatNodes(scene.RootNode).FirstOrDefault(node => MurMur3HashUtils.GetHash(node.Name) == mot.RootBones.First().Header.boneHash);
-                if (rootNode != null) {
-                    Logger.Warn($"Animation {mot.Name} contains an unnamed bone {header.boneHash} that the mesh or the motlist file does not specify. It will get exported as placeholder 'hash{header.boneHash}' and may not be fully correct.");
-                    rootNode.Children.Add(new Node(channel.NodeName, rootNode) {
-                        Transform = Matrix4x4.Transpose(Transform.GetMatrixFromTransforms(
-                            motBone?.Translation.ToGeneric() ?? Vector3D<float>.Zero,
-                            motBone?.Quaternion.ToGeneric() ?? Quaternion<float>.Identity,
-                            Vector3D<float>.One).ToSystem())
-                    });
-                    foreach (var mesh in scene.Meshes) {
-                        if (mesh.Bones.Count == 0) continue;
-                        mesh.Bones.Add(new Bone(channel.NodeName, Matrix4x4.Identity, []));
+                Node? targetNode = null;
+                if (motBone != null) {
+                    // try and match the closest parent bone
+                    var parent = motBone;
+                    while (parent != null) {
+                        targetNode = nodeDict.GetValueOrDefault(parent.Header.boneHash);
+                        if (targetNode != null) break;
+                        parent = parent.Parent;
                     }
                 }
+
+                var rootNode = targetNode
+                    ?? nodeDict.GetValueOrDefault(mot.RootBones.First().Header.boneHash)
+                    ?? scene.RootNode.Children.FirstOrDefault(n => n.Name.Equals("root", StringComparison.InvariantCultureIgnoreCase));
+                if (rootNode == null) {
+                    Logger.Error($"Animation {mot.Name} contains an unnamed bone {header.boneHash} and a viable root bone was not found.");
+                    continue;
+                }
+
+                Logger.Warn($"Animation {mot.Name} contains an unnamed bone {header.boneHash} that the mesh or the motlist file does not specify. It will get exported as placeholder 'hash{header.boneHash}' and may not be fully correct.");
+                rootNode.Children.Add(new Node(channel.NodeName, rootNode) {
+                    Transform = Matrix4x4.Transpose(Transform.GetMatrixFromTransforms(
+                        motBone?.Translation.ToGeneric() ?? Vector3D<float>.Zero,
+                        motBone?.Quaternion.ToGeneric() ?? Quaternion<float>.Identity,
+                        Vector3D<float>.One).ToSystem())
+                });
+                foreach (var mesh in scene.Meshes) {
+                    if (mesh.Bones.Count == 0) continue;
+                    mesh.Bones.Add(new Bone(channel.NodeName, Matrix4x4.Identity, []));
+                }
+
+                continue;
             }
             if (clip.HasTranslation) {
                 if (clip.Translation!.frameIndexes == null) {

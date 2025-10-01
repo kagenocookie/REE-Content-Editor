@@ -17,7 +17,7 @@ namespace ContentEditor.App.ImguiHandling;
 public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 {
     public ContentWorkspace Workspace { get; }
-    public MotlistFile File { get; }
+    public MotlistFile File { get; private set; }
 
     public override string HandlerName => "Motlist";
 
@@ -53,6 +53,7 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     {
         base.OnFileReverted();
         context.ClearChildren();
+        File = Handle.GetFile<MotlistFile>();
     }
 
     protected override void DrawFileControls(WindowData data)
