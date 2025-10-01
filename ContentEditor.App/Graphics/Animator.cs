@@ -170,23 +170,18 @@ public class Animator(ContentWorkspace Workspace)
             }
             var frame = (currentTime * clipFramerate);
             foreach (var bone in animMesh.Bones.Bones) {
-                var boneHash = MurMur3HashUtils.GetHash(bone.name);
-                var clip = ActiveMotion.BoneClips.FirstOrDefault(bc => bc.ClipHeader.boneHash == boneHash);
-                Matrix4X4.Decompose<float>(bone.localTransform.ToSystem().ToGeneric(), out var localScale, out var localRot, out var localPos);
 
                 if (IgnoreRootMotion && bone.parentIndex == -1) {
                     transformCache[bone.index] = Matrix4X4<float>.Identity;
                     continue;
                 }
 
+                var boneHash = MurMur3HashUtils.GetHash(bone.name);
+                var clip = ActiveMotion.BoneClips.FirstOrDefault(bc => bc.ClipHeader.boneHash == boneHash);
+                Matrix4X4.Decompose<float>(bone.localTransform.ToSystem().ToGeneric(), out var localScale, out var localRot, out var localPos);
                 var clipbone = ActiveMotion.BoneHeaders?.FirstOrDefault(bh => bh.boneHash == boneHash);
 
                 if (clipbone != null) {
-                    if (clip == null) {
-                        // can this even happen?
-                        transformCache[bone.index] = Matrix4X4<float>.Identity;
-                        continue;
-                    }
                     localPos = clipbone.translation.ToGeneric();
                     localRot = clipbone.quaternion.ToGeneric();
                 }
