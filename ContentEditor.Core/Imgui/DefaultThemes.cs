@@ -8,7 +8,7 @@ namespace ContentEditor.Themes;
 public class DefaultThemes
 {
     public static readonly Dictionary<string, Action> Themes = new() {
-        { "default", SetupRoundedVS },
+        { "default", SetupDefaultDark },
         { "cherry", SetupCherry },
         { "darkCyan", SetupComfortableDarkCyan },
         { "light", SetupDefaultLight },
@@ -354,7 +354,7 @@ public class DefaultThemes
         style.Colors[(int)ImGuiCol.ModalWindowDimBg] = new Vector4(0.2000000029802322f, 0.2000000029802322f, 0.2000000029802322f, 0.3499999940395355f);
     }
 
-    public static void SetupRoundedVS()
+    public static void SetupDefaultDark()
     {
         Colors.Current = AppColors.GetDarkThemeColors();
         // Rounded Visual Studio styleRedNicStone from ImThemes
@@ -413,10 +413,10 @@ public class DefaultThemes
         style.Colors[(int)ImGuiCol.SliderGrab] = new Vector4(0.1137254908680916f, 0.5921568870544434f, 0.8254902005195618f, 1.0f);
         style.Colors[(int)ImGuiCol.SliderGrabActive] = new Vector4(0.0f, 0.4666666686534882f, 0.9843137383460999f, 1.0f);
         style.Colors[(int)ImGuiCol.Button] = new Vector4(0.2000000029802322f, 0.2000000029802322f, 0.2156862765550613f, 1.0f);
-        style.Colors[(int)ImGuiCol.ButtonHovered] = new Vector4(0.1137254908680916f, 0.5921568870544434f, 0.9254902005195618f, 1.0f);
+        style.Colors[(int)ImGuiCol.ButtonHovered] = new Vector4(0.272f, 0.315f, 0.610f, 1.000f);
         style.Colors[(int)ImGuiCol.ButtonActive] = new Vector4(0.1137254908680916f, 0.5921568870544434f, 0.9254902005195618f, 1.0f);
         style.Colors[(int)ImGuiCol.Header] = new Vector4(0.2000000029802322f, 0.2000000029802322f, 0.2156862765550613f, 1.0f);
-        style.Colors[(int)ImGuiCol.HeaderHovered] = new Vector4(0.1137254908680916f, 0.5921568870544434f, 0.9254902005195618f, 1.0f);
+        style.Colors[(int)ImGuiCol.HeaderHovered] = new Vector4(0.207f, 0.323f, 0.546f, 1.000f);
         style.Colors[(int)ImGuiCol.HeaderActive] = new Vector4(0.0f, 0.4666666686534882f, 0.7843137383460999f, 1.0f);
         style.Colors[(int)ImGuiCol.Separator] = new Vector4(0.3058823645114899f, 0.3058823645114899f, 0.3058823645114899f, 1.0f);
         style.Colors[(int)ImGuiCol.SeparatorHovered] = new Vector4(0.3058823645114899f, 0.3058823645114899f, 0.3058823645114899f, 1.0f);
@@ -426,7 +426,7 @@ public class DefaultThemes
         style.Colors[(int)ImGuiCol.ResizeGripActive] = new Vector4(0.321568638086319f, 0.321568638086319f, 0.3333333432674408f, 1.0f);
         style.Colors[(int)ImGuiCol.Tab] = new Vector4(0.1450980454683304f, 0.1450980454683304f, 0.1490196138620377f, 1.0f);
         style.Colors[(int)ImGuiCol.TabHovered] = new Vector4(0.1137254908680916f, 0.5921568870544434f, 0.9254902005195618f, 1.0f);
-        style.Colors[(int)ImGuiCol.TabSelected] = new Vector4(0.0f, 0.4666666686534882f, 0.7843137383460999f, 1.0f);
+        style.Colors[(int)ImGuiCol.TabSelected] = new Vector4(0.145f, 0.466f, 0.685f, 1.000f);
         style.Colors[(int)ImGuiCol.TabDimmed] = new Vector4(0.1450980454683304f, 0.1450980454683304f, 0.1490196138620377f, 1.0f);
         style.Colors[(int)ImGuiCol.TabDimmedSelected] = new Vector4(0.0f, 0.4666666686534882f, 0.7843137383460999f, 1.0f);
         style.Colors[(int)ImGuiCol.PlotLines] = new Vector4(0.0f, 0.4666666686534882f, 0.7843137383460999f, 1.0f);
