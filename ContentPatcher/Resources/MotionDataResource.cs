@@ -77,6 +77,19 @@ public class MotionDataResource : IContentResource
         return json.TryDeserializeJson(out data, out error, jsonOptions);
     }
 
+    public static bool TryDeserialize(JsonNode json, [MaybeNullWhen(false)] out MotionDataResource data, out string? error)
+    {
+        try {
+            data = json.Deserialize<MotionDataResource>(jsonOptions);
+            error = null;
+            return data != null;
+        } catch (Exception e) {
+            data = null;
+            error = e.Message;
+            return false;
+        }
+    }
+
     public MotFileBase? ToMotFile()
     {
         if (MotType != KnownFileFormats.Motion) {
