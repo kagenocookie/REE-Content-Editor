@@ -30,7 +30,11 @@ public class DefaultFileLoader<TFileType> : IFileLoader, IFileHandleContentProvi
     public IResourceFile? Load(ContentWorkspace workspace, FileHandle handle)
     {
         if (handle.Resource != null) {
-            return ((BaseFileResource<TFileType>)handle.Resource).File.Read() ? handle.Resource : null;
+            var resource = (BaseFileResource<TFileType>)handle.Resource;
+            if (resource.File.FileHandler.FileSize() == 0 && File.Exists(resource.File.FileHandler.FilePath)) {
+                resource.File.FileHandler = new FileHandler(resource.File.FileHandler.FilePath);
+            }
+            return resource.File.Read() ? handle.Resource : null;
         }
 
         var file = fileFactory.Invoke(workspace, new FileHandler(handle.Stream, handle.Filepath));
