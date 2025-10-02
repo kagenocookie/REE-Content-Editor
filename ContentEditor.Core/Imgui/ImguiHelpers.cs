@@ -419,4 +419,21 @@ public static class ImguiHelpers
     {
         if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(text);
     }
+
+    /// <summary>
+    /// Draws a highlight over the last drawn menu bar item.
+    /// </summary>
+    public static void HighlightMenuItem(string text, Vector4? color = null)
+    {
+        color ??= ImguiHelpers.GetColor(ImGuiCol.TabSelected) with { W = 0.25f };
+        var padding = ImGui.GetStyle().FramePadding;
+        var spacing = ImGui.GetStyle().ItemSpacing;
+        var size = ImGui.CalcTextSize(text) + new Vector2(spacing.X * 2, padding.Y * 2);
+        var pos = ImGui.GetCursorScreenPos();
+        ImGui.GetWindowDrawList().AddRectFilled(
+            pos + new Vector2(-padding.X - size.X + 1, 0),
+            pos + new Vector2(-padding.X, size.Y),
+            ImGui.ColorConvertFloat4ToU32(color.Value)
+        );
+    }
 }

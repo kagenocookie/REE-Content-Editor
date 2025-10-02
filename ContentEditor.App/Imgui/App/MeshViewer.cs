@@ -28,7 +28,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
     public Scene? Scene => scene;
 
-    private const float TopMargin = 42;
+    private const float TopMargin = 64;
     private const string MeshFilesFilter = "GLB (*.glb)|*.glb|GLTF (*.gltf)|*.gltf|FBX (*.fbx)|*.fbx";
 
     private string? loadedMdf;
@@ -68,7 +68,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     private bool isMDFUpdateRequest = false;
     private TextureMode textureMode = TextureMode.HighRes;
 
-    private bool expandMenu = true;
+    private bool showAnimationsMenu = false;
     private bool isSynced;
 
     private bool exportAnimations = true;
@@ -144,7 +144,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
     public void OnWindow()
     {
-        if (!ImguiHelpers.BeginWindow(data)) {
+        if (!ImguiHelpers.BeginWindow(data, flags: ImGuiWindowFlags.MenuBar)) {
             WindowManager.Instance.CloseWindow(data);
             return;
         }
@@ -164,6 +164,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         if (scene == null) {
             scene = EditorWindow.CurrentWindow!.SceneManager.CreateScene(fileHandle, true);
         }
+
         MeshComponent meshComponent;
         if (previewGameobject == null) {
             scene.Add(previewGameobject = new GameObject("_preview", Workspace.Env, null, scene));
@@ -184,6 +185,10 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             return;
         }
 
+        Vector2? embeddedMenuPos = null;
+        if (!ShowMenu(meshComponent) && !isSynced) {
+            embeddedMenuPos = ImGui.GetCursorPos();
+        }
         var expectedSize = ImGui.GetWindowSize() - ImGui.GetCursorPos() - ImGui.GetStyle().WindowPadding;
         expectedSize.X = Math.Max(expectedSize.X, 4);
         expectedSize.Y = Math.Max(expectedSize.Y, 4);
@@ -196,6 +201,10 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
         var c = ImGui.GetCursorPos();
         ImGui.Image((nint)scene.RenderContext.RenderTargetTextureHandle, expectedSize, new System.Numerics.Vector2(0, 1), new System.Numerics.Vector2(1, 0));
+        if (embeddedMenuPos != null) {
+            ImGui.SetCursorPos(embeddedMenuPos.Value);
+            ShowEmbeddedMenu(meshComponent);
+        }
         ImGui.SetCursorPos(c);
         ImGui.InvisibleButton("##image", expectedSize, ImGuiButtonFlags.MouseButtonLeft | ImGuiButtonFlags.MouseButtonRight);
         // need to store the click/hover events for after so we can handle clicks on the empty area below the info window same as a mesh image click event
@@ -204,22 +213,17 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
         if (isSynced) {
             isSynced = false;
-        } else {
+        }
+
+        if (showAnimationsMenu) {
             ImGui.SetCursorPos(new Vector2(17, TopMargin));
             ImGui.PushStyleColor(ImGuiCol.ChildBg, 0);
             ImGui.BeginChild("OverlayControlsContainer", new Vector2(480, ImGui.GetContentRegionAvail().Y - ImGui.GetStyle().WindowPadding.Y), 0, ImGuiWindowFlags.NoMove);
             ImGui.PushStyleColor(ImGuiCol.ChildBg, ImguiHelpers.GetColor(ImGuiCol.WindowBg) with { W = 0.5f });
             ImGui.BeginChild("OverlayControls", new Vector2(480, 0), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
 
-            if (ImGui.ArrowButton("##expand", expandMenu ? ImGuiDir.Down : ImGuiDir.Right)) {
-                expandMenu = !expandMenu;
-            }
             ImGui.SameLine();
-
-            ImGui.SeparatorText("Controls");
-            if (expandMenu) {
-                ShowMenu(meshComponent);
-            }
+            ShowAnimationMenu(meshComponent);
 
             ImGui.PopStyleColor(2);
             ImGui.EndChild();
@@ -297,7 +301,123 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         }
     }
 
-    private void ShowMenu(MeshComponent meshComponent)
+    private void ShowEmbeddedMenu(MeshComponent meshComponent)
+    {
+        ImGui.SetCursorPos(ImGui.GetCursorPos() + new Vector2(6, 6));
+        if (ImGui.Button($"{AppIcons.GameObject}")) ImGui.OpenPopup("CameraSettings");
+        if (ImGui.BeginPopup("CameraSettings")) {
+            ShowCameraSettings();
+            ImGui.EndPopup();
+        }
+    }
+
+    private bool ShowMenu(MeshComponent meshComponent)
+    {
+        if (ImGui.BeginMenuBar()) {
+            if (ImGui.MenuItem($"{AppIcons.GameObject} Controls")) ImGui.OpenPopup("CameraSettings");
+            if (ImGui.BeginPopup("CameraSettings")) {
+                ShowCameraSettings();
+                ImGui.EndPopup();
+            }
+
+            if (!isSynced) {
+                if (ImGui.MenuItem($"{AppIcons.SI_GenericInfo} Mesh Info")) ImGui.OpenPopup("MeshInfo");
+                if (ImGui.MenuItem($"{AppIcons.Eye} Mesh Groups")) ImGui.OpenPopup("MeshGroups");
+                if (ImGui.MenuItem($"{AppIcons.EfxEntry} Material")) ImGui.OpenPopup("Material"); // placeholder icon
+                if (ImGui.MenuItem($"{AppIcons.SI_FileExtractTo} Export")) ImGui.OpenPopup("Export");
+                if (ImGui.MenuItem($"{AppIcons.Play} Animations")) showAnimationsMenu = !showAnimationsMenu;
+                if (showAnimationsMenu) ImguiHelpers.HighlightMenuItem($"{AppIcons.Play} Animations");
+
+                if (ImGui.BeginPopup("MeshInfo")) {
+                    ShowMeshInfo();
+                    ImGui.EndPopup();
+                }
+                if (ImGui.BeginPopup("Material")) {
+                    ShowMaterialSettings(meshComponent);
+                    ImGui.EndPopup();
+                }
+                if (ImGui.BeginPopup("MeshGroups")) {
+                    ShowMeshGroupSettings(meshComponent);
+                    ImGui.EndPopup();
+                }
+                if (ImGui.BeginPopup("Export")) {
+                    ShowImportExportMenu();
+                    ImGui.EndPopup();
+                }
+                if (ImGui.BeginPopup("Animations")) {
+                    ShowAnimationMenu(meshComponent);
+                    ImGui.EndPopup();
+                }
+            }
+            ImGui.EndMenuBar();
+            UpdateMaterial(meshComponent);
+            return true;
+        } else {
+            UpdateMaterial(meshComponent);
+            return false;
+        }
+
+    }
+
+    private void ShowMeshGroupSettings(MeshComponent meshComponent)
+    {
+        var meshGroupIds = mesh!.GroupIDs.ToList();
+        var parts = RszFieldCache.Mesh.PartsEnable.Get(meshComponent.Data);
+        foreach (var group in meshGroupIds) {
+            if (group < 0 || group >= parts.Count) continue;
+
+            var enabled = (bool)parts[group];
+            if (ImGui.Checkbox(group.ToString(), ref enabled)) {
+                parts[group] = (object)enabled;
+                meshComponent.RefreshIfActive();
+            }
+        }
+    }
+
+    private void ShowMeshInfo()
+    {
+        ImGui.Text($"Path: {fileHandle.Filepath}");
+        if (ImGui.BeginPopupContextItem("##filepath")) {
+            if (ImGui.Selectable("Copy path")) {
+                EditorWindow.CurrentWindow?.CopyToClipboard(fileHandle.Filepath);
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
+        ImGui.Text("Total Vertices: " + mesh!.VertexCount);
+        ImGui.Text("Total Polygons: " + mesh.PolyCount);
+        ImGui.Text("Sub Meshes: " + mesh.MeshCount);
+        ImGui.Text("Materials: " + mesh.MaterialCount);
+        ImGui.Text("Bones: " + mesh.BoneCount);
+    }
+
+    private void ShowMaterialSettings(MeshComponent meshComponent)
+    {
+        bool useHighRes = textureMode == TextureMode.HighRes;
+        if (ImGui.Checkbox("Textures: " + (useHighRes ? "Hi-Res" : "Low-Res"), ref useHighRes)) {
+            textureMode = useHighRes ? TextureMode.HighRes : TextureMode.LowRes;
+            isMDFUpdateRequest = true;
+            meshComponent.IsStreamingTex = useHighRes;
+            UpdateMaterial(meshComponent);
+        }
+        ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_ResetMaterial}")) {
+            mdfSource = originalMDF;
+            UpdateMaterial(meshComponent);
+        }
+        ImguiHelpers.Tooltip("Reset MDF");
+        if (mdfPickerContext == null) {
+            mdfPickerContext = context.AddChild<MeshViewer, string>(
+                "MDF2 Material",
+                this,
+                new ResourcePathPicker(Workspace, Workspace.Env.TypeCache.GetResourceSubtypes(KnownFileFormats.MaterialDefinition)) { UseNativesPath = true, IsPathForIngame = false },
+                (v) => v!.mdfSource,
+                (v, p) => v.mdfSource = p ?? "");
+        }
+        mdfPickerContext.ShowUI();
+    }
+
+    private void ShowCameraSettings()
     {
         if (ImGui.RadioButton("Orthographic", scene!.RenderContext.ProjectionMode == RenderContext.CameraProjection.Orthographic)) {
             scene.RenderContext.ProjectionMode = RenderContext.CameraProjection.Orthographic;
@@ -331,71 +451,6 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         ImguiHelpers.Tooltip("[Hold] Left Shift to move 10x faster.");
         ImGui.SliderFloat("Rotate Speed", ref rotateSpeed, 0.1f, 10.0f);
         ImGui.SliderFloat("Zoom Speed", ref zoomSpeed, 0.01f, 1.0f);
-        ImGui.SeparatorText("Material");
-        bool useHighRes = textureMode == TextureMode.HighRes;
-        if (ImGui.Checkbox("Textures: " + (useHighRes ? "Hi-Res" : "Low-Res"), ref useHighRes)) {
-            textureMode = useHighRes ? TextureMode.HighRes : TextureMode.LowRes;
-            isMDFUpdateRequest = true;
-            meshComponent.IsStreamingTex = useHighRes;
-            UpdateMaterial(meshComponent);
-        }
-        ImGui.SameLine();
-        if (ImGui.Button($"{AppIcons.SI_ResetMaterial}")) {
-            mdfSource = originalMDF;
-            UpdateMaterial(meshComponent);
-        }
-        ImguiHelpers.Tooltip("Reset MDF");
-        if (mdfPickerContext == null) {
-            mdfPickerContext = context.AddChild<MeshViewer, string>(
-                "MDF2 Material",
-                this,
-                new ResourcePathPicker(Workspace, Workspace.Env.TypeCache.GetResourceSubtypes(KnownFileFormats.MaterialDefinition)) { UseNativesPath = true, IsPathForIngame = false },
-                (v) => v!.mdfSource,
-                (v, p) => v.mdfSource = p ?? "");
-        }
-        mdfPickerContext.ShowUI();
-        UpdateMaterial(meshComponent);
-        if (ImGui.TreeNode("Mesh Info")) {
-            ImGui.TextWrapped($"Path: {fileHandle.Filepath}");
-            if (ImGui.BeginPopupContextItem("##filepath")) {
-                if (ImGui.Selectable("Copy path")) {
-                    EditorWindow.CurrentWindow?.CopyToClipboard(fileHandle.Filepath);
-                    ImGui.CloseCurrentPopup();
-                }
-                ImGui.EndPopup();
-            }
-            ImGui.Text("Total Vertices: " + mesh!.VertexCount);
-            ImGui.Text("Total Polygons: " + mesh.PolyCount);
-            ImGui.Text("Sub Meshes: " + mesh.MeshCount);
-            ImGui.Text("Materials: " + mesh.MaterialCount);
-            ImGui.Text("Bones: " + mesh.BoneCount);
-            ImGui.TreePop();
-        }
-
-        var meshGroupIds = mesh!.GroupIDs.ToList();
-        if (meshGroupIds.Count > 1) {
-            if (ImGui.TreeNode($"Mesh Groups ({meshGroupIds.Count})")) {
-                var parts = RszFieldCache.Mesh.PartsEnable.Get(meshComponent.Data);
-                foreach (var group in meshGroupIds) {
-                    if (group < 0 || group >= parts.Count) continue;
-
-                    var enabled = (bool)parts[group];
-                    if (ImGui.Checkbox(group.ToString(), ref enabled)) {
-                        parts[group] = (object)enabled;
-                        meshComponent.RefreshIfActive();
-                    }
-                }
-                ImGui.TreePop();
-            }
-        }
-        if (ImGui.TreeNode("Import / Export")) {
-            ShowImportExportMenu();
-            ImGui.TreePop();
-        }
-        if (ImGui.TreeNode("Animations")) {
-            ShowAnimationMenu(meshComponent);
-            ImGui.TreePop();
-        }
     }
 
     private void ShowImportExportMenu()
@@ -432,11 +487,12 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             ImGui.TextWrapped($"Exporting in progress. This may take a while for large files and for many animations...");
         }
         if (animator?.File != null) ImGui.Checkbox("Include animations", ref exportAnimations);
-        if (animator?.File != null && exportAnimations && ImguiHelpers.SameLine()) ImGui.Checkbox("Selected animation only", ref exportCurrentAnimationOnly);
+        if (animator?.File != null && exportAnimations) ImGui.Checkbox("Selected animation only", ref exportCurrentAnimationOnly);
     }
 
     private void ShowAnimationMenu(MeshComponent meshComponent)
     {
+        ImGui.SeparatorText("Animations");
         if (animator == null) {
             animator = new (Workspace);
         }
