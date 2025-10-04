@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using Assimp;
 using ContentEditor;
+using ContentEditor.App.Graphics;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Common;
@@ -24,11 +25,14 @@ public partial class AssimpMeshResource : IResourceFile
         var totalTriCount = totalFaceCount * 3;
         var paddedTriCount = totalTriCount + srcMeshes.Count(m => (m.FaceCount * 3) % 2 != 0);
 
+        mesh.Header.BufferCount = 1;
+
         var buffer = new MeshBuffer();
         var meshData = mesh.MeshData = new MeshData(new MeshBuffer());
         mesh.MeshBuffer = buffer;
 
         buffer.Positions = new Vector3[totalVertCount];
+        mesh.Header.flags |= ContentFlags.EnableRebraiding2;
         if (srcMeshes.All(m => m.HasNormals && m.HasTangentBasis)) {
             buffer.Normals = new Vector3[totalVertCount];
             buffer.Tangents = new Vector3[totalVertCount];
@@ -38,6 +42,11 @@ public partial class AssimpMeshResource : IResourceFile
         if (srcMeshes.All(m => m.HasTextureCoords(1))) buffer.UV1 = new Vector2[totalVertCount];
         if (srcMeshes.All(m => m.Bones.Count > 0 && m.Bones.All(b => b.HasVertexWeights))) {
             buffer.Weights = new VertexBoneWeights[totalVertCount];
+            mesh.Header.flags |= ContentFlags.IsSkinning|ContentFlags.HasJoint;
+        }
+        if (srcMeshes.All(m => m.HasVertexColors(0))) {
+            buffer.Colors = new Color[totalVertCount];
+            mesh.Header.flags |= ContentFlags.HasVertexColor;
         }
 
         buffer.Faces = new ushort[paddedTriCount];
@@ -145,6 +154,11 @@ public partial class AssimpMeshResource : IResourceFile
                 for (int i = 0; i < vertCount; ++i) buffer.UV1[vertOffset + i] = new Vector2(uv[i].X, uv[i].Y);
             }
 
+            if (buffer.Colors.Length > 0) {
+                var colors = aiMesh.VertexColorChannels[0];
+                for (int i = 0; i < vertCount; ++i) buffer.Colors[vertOffset + i] = Color.FromVector4(colors[i]);
+            }
+
             for (int i = 0; i < faceCount; ++i) {
                 var face = aiMesh.Faces[i];
                 // note: assimp should've forced triangulation already, therefore always assume 3 indices
@@ -205,8 +219,8 @@ public partial class AssimpMeshResource : IResourceFile
             }
         }
 
-        mesh.ShadowMesh = new ShadowMesh(buffer);
-        mesh.ShadowMesh.LODs.AddRange(mesh.MeshData.LODs);
+        // mesh.ShadowMesh = new ShadowMesh(buffer);
+        // mesh.ShadowMesh.LODs.AddRange(mesh.MeshData.LODs);
 
         mesh.ChangeVersion(versionConfig);
 
