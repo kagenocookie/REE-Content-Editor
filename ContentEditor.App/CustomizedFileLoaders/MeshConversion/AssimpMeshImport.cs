@@ -14,8 +14,9 @@ namespace ContentEditor.App.FileLoaders;
 
 public partial class AssimpMeshResource : IResourceFile
 {
-    private static MeshFile ImportMeshFromAssimp(Assimp.Scene scene, string exportConfig)
+    private static MeshFile ImportMeshFromAssimp(Assimp.Scene scene, string versionConfig)
     {
+        var serializerVersion = MeshFile.GetSerializerVersion(versionConfig);
         var mesh = new MeshFile(new FileHandler());
         var srcMeshes = scene.Meshes;
         var totalVertCount = srcMeshes.Sum(m => m.VertexCount);
@@ -31,6 +32,7 @@ public partial class AssimpMeshResource : IResourceFile
         if (srcMeshes.All(m => m.HasNormals && m.HasTangentBasis)) {
             buffer.Normals = new Vector3[totalVertCount];
             buffer.Tangents = new Vector3[totalVertCount];
+            buffer.BiTangentSigns = new sbyte[totalVertCount];
         }
         if (srcMeshes.All(m => m.HasTextureCoords(0))) buffer.UV0 = new Vector2[totalVertCount];
         if (srcMeshes.All(m => m.HasTextureCoords(1))) buffer.UV1 = new Vector2[totalVertCount];
@@ -129,6 +131,7 @@ public partial class AssimpMeshResource : IResourceFile
                 for (int i = 0; i < vertCount; ++i) {
                     buffer.Normals[vertOffset + i] = aiMesh.Normals[i];
                     buffer.Tangents[vertOffset + i] = aiMesh.Tangents[i];
+                    buffer.BiTangentSigns[i] = Vector3.Dot(aiMesh.BiTangents[i], Vector3.Cross(aiMesh.Normals[i], aiMesh.Tangents[i])) > 0 ? sbyte.MaxValue : sbyte.MinValue;
                 }
             }
 
@@ -159,7 +162,7 @@ public partial class AssimpMeshResource : IResourceFile
                     foreach (var entry in bone.VertexWeights) {
                         if (entry.Weight == 0) continue;
 
-                        var outWeight = (buffer.Weights[vertOffset + entry.VertexID] ??= new(MeshFile.GetSerializerVersion(exportConfig)));
+                        var outWeight = (buffer.Weights[vertOffset + entry.VertexID] ??= new(serializerVersion));
                         var weightIndex = Array.FindIndex(outWeight.boneWeights, bb => bb == 0);
                         if (weightIndex == -1) {
                             throw new Exception("Too many weights for bone " + bone.Name);
@@ -204,6 +207,8 @@ public partial class AssimpMeshResource : IResourceFile
 
         mesh.ShadowMesh = new ShadowMesh(buffer);
         mesh.ShadowMesh.LODs.AddRange(mesh.MeshData.LODs);
+
+        mesh.ChangeVersion(versionConfig);
 
         return mesh;
     }

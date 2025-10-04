@@ -152,7 +152,6 @@ public partial class AssimpMeshResource : IResourceFile
         }
 
         var meshes = new Dictionary<(int meshIndex, int meshGroup), Node>();
-        int meshId = 0;
         if (file.MeshData == null) return scene;
 
         foreach (var mesh in file.MeshData.LODs[0].MeshGroups) {
@@ -181,6 +180,9 @@ public partial class AssimpMeshResource : IResourceFile
                 }
                 if (file.MeshBuffer.Tangents != null) {
                     aiMesh.Tangents.AddRange(sub.Tangents);
+                    for (int i = 0; i < sub.BiTangents.Length; ++i) {
+                        aiMesh.BiTangents.Add(sub.GetBiTangent(i));
+                    }
                 }
                 if (file.MeshBuffer.Colors.Length > 0) {
                     var colOut = aiMesh.VertexColorChannels[0];
