@@ -148,7 +148,16 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         }
 
         var warnedStreaming = false;
-        foreach (var group in meshFile.MeshData.LODs[0].MeshGroups) {
+        var mainLod = meshFile.MeshData.LODs.FirstOrDefault(lod => lod.MeshGroups.Any(mg => mg.Submeshes.Any(ss => ss.bufferIndex == 0)));
+        if (mainLod != meshFile.MeshData.LODs[0]) {
+            if (mainLod == null) {
+                Logger.Error($"Mesh {fileHandle.Filepath} is a fully streaming mesh and currently can't be loaded");
+                return handle;
+            }
+            Logger.Warn($"Mesh {fileHandle.Filepath} is a streaming mesh and LOD0 is not part of the main mesh file. Loading lower quality mesh (LOD{meshFile.MeshData.LODs.IndexOf(mainLod)}).");
+        }
+
+        foreach (var group in mainLod.MeshGroups) {
             foreach (var sub in group.Submeshes) {
                 if (sub.bufferIndex > 0) {
                     if (!warnedStreaming) {
