@@ -3,6 +3,7 @@ namespace ContentEditor.App.Windowing;
 using System;
 using System.Diagnostics;
 using System.Numerics;
+using ContentEditor.App.FileLoaders;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.Core;
 using ContentPatcher;

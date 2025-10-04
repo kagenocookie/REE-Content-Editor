@@ -5,9 +5,10 @@ using Assimp.Configs;
 using Assimp.Unmanaged;
 using ContentEditor;
 using ContentEditor.App;
+using ContentPatcher;
 using ReeLib;
 
-namespace ContentPatcher;
+namespace ContentEditor.App.FileLoaders;
 
 public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<MotlistFile>
 {

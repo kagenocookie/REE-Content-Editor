@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Numerics;
 using Assimp;
 using ContentEditor;
+using ContentPatcher;
 using ReeLib;
 using ReeLib.Common;
 using ReeLib.Mesh;
@@ -9,7 +10,7 @@ using ReeLib.Mot;
 using ReeLib.Motlist;
 using ReeLib.via;
 
-namespace ContentPatcher;
+namespace ContentEditor.App.FileLoaders;
 
 public partial class AssimpMeshResource : IResourceFile
 {

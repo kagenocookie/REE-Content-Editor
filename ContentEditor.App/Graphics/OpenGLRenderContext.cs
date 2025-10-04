@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using ContentEditor.App.FileLoaders;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;

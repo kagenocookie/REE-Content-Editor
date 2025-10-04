@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using ContentEditor.Core;
 using ContentEditor.Editor;
 using ImGuiNET;
 
@@ -255,6 +256,16 @@ public class UIContext
     {
         for (int i = 0; i < children.Count; i++) {
             children[i].ShowUI();
+        }
+    }
+
+    public void ShowChildrenNestedUI()
+    {
+        if (ImguiHelpers.TreeNodeSuffix(label, GetRaw()?.ToString() ?? "")) {
+            for (int i = 0; i < children.Count; i++) {
+                children[i].ShowUI();
+            }
+            ImGui.TreePop();
         }
     }
 

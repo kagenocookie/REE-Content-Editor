@@ -1,8 +1,9 @@
 using Assimp;
 using ContentEditor;
+using ContentPatcher;
 using ReeLib;
 
-namespace ContentPatcher;
+namespace ContentEditor.App.FileLoaders;
 
 public partial class AssimpMeshResource(string Name, Workspace workspace) : IResourceFile
 {
@@ -20,7 +21,7 @@ public partial class AssimpMeshResource(string Name, Workspace workspace) : IRes
 
     public MeshFile NativeMesh
     {
-        get => _mesh ??= (ImportMeshFromAssimp(_scene!, MeshFile.GetGameMeshVersions(GameVersion)[0]));
+        get => _mesh ??= (ImportMeshFromAssimp(_scene!, MeshFile.GetGameVersionConfigs(GameVersion)[0]));
         set => _mesh = value;
     }
 
@@ -46,7 +47,7 @@ public partial class AssimpMeshResource(string Name, Workspace workspace) : IRes
     public bool HasAnimations => _scene?.HasAnimations == true;
 
     public IEnumerable<int> GroupIDs =>
-        _mesh?.Meshes.SelectMany(m => m.LODs[0].MeshGroups.Select(g => (int)g.groupId)).Distinct()
+        _mesh?.MeshData?.LODs[0].MeshGroups.Select(g => (int)g.groupId).Distinct()
         ?? _scene?.Meshes.Select(m => string.IsNullOrEmpty(m.Name) ? 0 : MeshLoader.GetMeshGroupFromName(m.Name)).Distinct()
         ?? [];
 
@@ -66,7 +67,7 @@ public partial class AssimpMeshResource(string Name, Workspace workspace) : IRes
         ?? _scene?.Meshes[0].BoneCount
         ?? -1;
 
-    public int MeshCount => _mesh?.Meshes.Sum(mm => mm.totalMeshCount)
+    public int MeshCount => _mesh?.MeshData?.totalMeshCount
         ?? _scene?.MeshCount
         ?? -1;
 

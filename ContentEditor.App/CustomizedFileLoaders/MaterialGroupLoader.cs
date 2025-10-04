@@ -5,9 +5,10 @@ using Assimp.Unmanaged;
 using ContentEditor;
 using ContentEditor.App;
 using ContentEditor.App.Graphics;
+using ContentPatcher;
 using ReeLib;
 
-namespace ContentPatcher;
+namespace ContentEditor.App.FileLoaders;
 
 public class MaterialGroupLoader : IFileLoader,
     IFileHandleContentProvider<Assimp.Scene>

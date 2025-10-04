@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using ContentEditor.App.FileLoaders;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
@@ -283,6 +284,7 @@ public class FileTesterWindow : IWindowHandler
             ContentWorkspace? cw = null;
             try {
                 cw = new ContentWorkspace(env, new PatchDataContainer("!"));
+                cw.ResourceManager.SetupFileLoaders(typeof(MeshLoader).Assembly);
                 Logger.Info("Starting search for game " + env.Config.Game);
                 cw.Env.PakReader.EnableConsoleLogging = false;
                 yield return cw;

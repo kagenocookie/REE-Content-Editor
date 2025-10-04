@@ -3,12 +3,13 @@ using System.Numerics;
 using Assimp;
 using ContentEditor;
 using ContentEditor.App;
+using ContentPatcher;
 using ReeLib;
 using ReeLib.Common;
 using ReeLib.Mesh;
 using Silk.NET.Maths;
 
-namespace ContentPatcher;
+namespace ContentEditor.App.FileLoaders;
 
 public partial class AssimpMeshResource : IResourceFile
 {
@@ -152,80 +153,79 @@ public partial class AssimpMeshResource : IResourceFile
 
         var meshes = new Dictionary<(int meshIndex, int meshGroup), Node>();
         int meshId = 0;
-        foreach (var meshData in file.Meshes) {
-            foreach (var mesh in meshData.LODs[0].MeshGroups) {
-                int subId = 0;
-                foreach (var sub in mesh.Submeshes) {
-                    var aiMesh = new Mesh(PrimitiveType.Triangle);
-                    aiMesh.MaterialIndex = sub.materialIndex;
+        if (file.MeshData == null) return scene;
 
-                    // aiMesh.Vertices.AddRange(sub.Positions);
-                    foreach (var pos in sub.Positions) aiMesh.Vertices.Add(pos);
-                    aiMesh.BoundingBox = new BoundingBox(meshData.boundingBox.minpos, meshData.boundingBox.maxpos);
-                    if (file.MeshBuffer!.UV0 != null) {
-                        var uvOut = aiMesh.TextureCoordinateChannels[0];
-                        uvOut.EnsureCapacity(sub.UV0.Length);
-                        foreach (var uv in sub.UV0) uvOut.Add(new System.Numerics.Vector3(uv.X, uv.Y, 0));
-                        aiMesh.UVComponentCount[0] = 2;
-                    }
-                    if (file.MeshBuffer.UV1.Length > 0) {
-                        var uvOut = aiMesh.TextureCoordinateChannels[1];
-                        uvOut.EnsureCapacity(sub.UV1.Length);
-                        foreach (var uv in sub.UV1) uvOut.Add(new System.Numerics.Vector3(uv.X, uv.Y, 0));
-                        aiMesh.UVComponentCount[1] = 2;
-                    }
-                    if (file.MeshBuffer.Normals != null) {
-                        aiMesh.Normals.AddRange(sub.Normals);
-                    }
-                    if (file.MeshBuffer.Tangents != null) {
-                        aiMesh.Tangents.AddRange(sub.Tangents);
-                    }
-                    if (file.MeshBuffer.Colors.Length > 0) {
-                        var colOut = aiMesh.VertexColorChannels[0];
-                        colOut.EnsureCapacity(sub.Colors.Length);
-                        foreach (var col in sub.Colors) colOut.Add(col.ToVector4());
-                    }
-                    var weightedVerts = new HashSet<int>();
-                    if (bones?.Count > 0 && file.MeshBuffer.Weights.Length > 0) {
-                        foreach (var srcBone in bones) {
-                            var bone = new Bone();
-                            bone.Name = srcBone.name;
-                            bone.OffsetMatrix = Matrix4x4.Transpose(srcBone.inverseGlobalTransform.ToSystem());
-                            aiMesh.Bones.Add(bone);
-                        }
+        foreach (var mesh in file.MeshData.LODs[0].MeshGroups) {
+            int subId = 0;
+            foreach (var sub in mesh.Submeshes) {
+                var aiMesh = new Mesh(PrimitiveType.Triangle);
+                aiMesh.MaterialIndex = sub.materialIndex;
 
-                        for (int vertId = 0; vertId < sub.Weights.Length; ++vertId) {
-                            var vd = sub.Weights[vertId];
-                            for (int i = 0; i < vd.boneIndices.Length; ++i) {
-                                var weight = vd.boneWeights[i];
-                                if (weight > 0) {
-                                    var srcBone = file.BoneData!.DeformBones[vd.boneIndices[i]];
-                                    var bone = aiMesh.Bones[srcBone.index];
-                                    weightedVerts.Add(vertId);
-                                    bone.VertexWeights.Add(new VertexWeight(vertId, weight));
-                                }
+                // aiMesh.Vertices.AddRange(sub.Positions);
+                foreach (var pos in sub.Positions) aiMesh.Vertices.Add(pos);
+                aiMesh.BoundingBox = new BoundingBox(file.MeshData.boundingBox.minpos, file.MeshData.boundingBox.maxpos);
+                if (file.MeshBuffer!.UV0 != null) {
+                    var uvOut = aiMesh.TextureCoordinateChannels[0];
+                    uvOut.EnsureCapacity(sub.UV0.Length);
+                    foreach (var uv in sub.UV0) uvOut.Add(new System.Numerics.Vector3(uv.X, uv.Y, 0));
+                    aiMesh.UVComponentCount[0] = 2;
+                }
+                if (file.MeshBuffer.UV1.Length > 0) {
+                    var uvOut = aiMesh.TextureCoordinateChannels[1];
+                    uvOut.EnsureCapacity(sub.UV1.Length);
+                    foreach (var uv in sub.UV1) uvOut.Add(new System.Numerics.Vector3(uv.X, uv.Y, 0));
+                    aiMesh.UVComponentCount[1] = 2;
+                }
+                if (file.MeshBuffer.Normals != null) {
+                    aiMesh.Normals.AddRange(sub.Normals);
+                }
+                if (file.MeshBuffer.Tangents != null) {
+                    aiMesh.Tangents.AddRange(sub.Tangents);
+                }
+                if (file.MeshBuffer.Colors.Length > 0) {
+                    var colOut = aiMesh.VertexColorChannels[0];
+                    colOut.EnsureCapacity(sub.Colors.Length);
+                    foreach (var col in sub.Colors) colOut.Add(col.ToVector4());
+                }
+                var weightedVerts = new HashSet<int>();
+                if (bones?.Count > 0 && file.MeshBuffer.Weights.Length > 0) {
+                    foreach (var srcBone in bones) {
+                        var bone = new Bone();
+                        bone.Name = srcBone.name;
+                        bone.OffsetMatrix = Matrix4x4.Transpose(srcBone.inverseGlobalTransform.ToSystem());
+                        aiMesh.Bones.Add(bone);
+                    }
+
+                    for (int vertId = 0; vertId < sub.Weights.Length; ++vertId) {
+                        var vd = sub.Weights[vertId];
+                        for (int i = 0; i < vd.boneIndices.Length; ++i) {
+                            var weight = vd.boneWeights[i];
+                            if (weight > 0) {
+                                var srcBone = file.BoneData!.DeformBones[vd.boneIndices[i]];
+                                var bone = aiMesh.Bones[srcBone.index];
+                                weightedVerts.Add(vertId);
+                                bone.VertexWeights.Add(new VertexWeight(vertId, weight));
                             }
                         }
                     }
-                    var faces = sub.Indices.Length / 3;
-                    aiMesh.Faces.EnsureCapacity(faces);
-                    for (int i = 0; i < faces; ++i) {
-                        var f = new Face();
-                        f.Indices.Add(sub.Indices[i * 3 + 0]);
-                        f.Indices.Add(sub.Indices[i * 3 + 1]);
-                        f.Indices.Add(sub.Indices[i * 3 + 2]);
-                        aiMesh.Faces.Add(f);
-                    }
-
-                    // each submesh needs to have a unique node so they don't get merged together
-                    var meshNode = new Node($"Group_{mesh.groupId.ToString(CultureInfo.InvariantCulture)}_mesh{meshId}_sub{subId++}", scene.RootNode);
-                    scene.RootNode.Children.Add(meshNode);
-                    aiMesh.Name = meshNode.Name;
-                    meshNode.MeshIndices.Add(scene.Meshes.Count);
-                    scene.Meshes.Add(aiMesh);
                 }
+                var faces = sub.Indices.Length / 3;
+                aiMesh.Faces.EnsureCapacity(faces);
+                for (int i = 0; i < faces; ++i) {
+                    var f = new Face();
+                    f.Indices.Add(sub.Indices[i * 3 + 0]);
+                    f.Indices.Add(sub.Indices[i * 3 + 1]);
+                    f.Indices.Add(sub.Indices[i * 3 + 2]);
+                    aiMesh.Faces.Add(f);
+                }
+
+                // each submesh needs to have a unique node so they don't get merged together
+                var meshNode = new Node($"Group_{mesh.groupId.ToString(CultureInfo.InvariantCulture)}_sub{subId++}", scene.RootNode);
+                scene.RootNode.Children.Add(meshNode);
+                aiMesh.Name = meshNode.Name;
+                meshNode.MeshIndices.Add(scene.Meshes.Count);
+                scene.Meshes.Add(aiMesh);
             }
-            meshId++;
         }
 
         return scene;

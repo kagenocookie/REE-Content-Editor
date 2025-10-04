@@ -1,10 +1,11 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using ContentEditor.App;
+using ContentPatcher;
 using ReeLib;
 using ReeLib.Scn;
 
-namespace ContentPatcher;
+namespace ContentEditor.App.FileLoaders;
 
 public class SceneLoader : IFileLoader,
     IFileHandleContentProvider<ScnFile>,

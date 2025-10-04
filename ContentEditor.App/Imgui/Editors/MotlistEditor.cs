@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Numerics;
 using System.Reflection;
+using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Widgets;
 using ContentEditor.Core;
 using ContentPatcher;

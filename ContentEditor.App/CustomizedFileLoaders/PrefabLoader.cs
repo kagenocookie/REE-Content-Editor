@@ -2,10 +2,11 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using ContentEditor.App;
 using ContentEditor.Core;
+using ContentPatcher;
 using ReeLib;
 using ReeLib.Pfb;
 
-namespace ContentPatcher;
+namespace ContentEditor.App.FileLoaders;
 
 public class PrefabLoader : IFileLoader,
     IFileHandleContentProvider<PfbFile>,

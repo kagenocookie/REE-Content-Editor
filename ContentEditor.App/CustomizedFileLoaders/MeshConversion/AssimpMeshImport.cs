@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using Assimp;
 using ContentEditor;
+using ContentPatcher;
 using ReeLib;
 using ReeLib.Common;
 using ReeLib.Mesh;
@@ -9,7 +10,7 @@ using ReeLib.Mot;
 using ReeLib.Motlist;
 using ReeLib.via;
 
-namespace ContentPatcher;
+namespace ContentEditor.App.FileLoaders;
 
 public partial class AssimpMeshResource : IResourceFile
 {
@@ -23,8 +24,7 @@ public partial class AssimpMeshResource : IResourceFile
         var paddedTriCount = totalTriCount + srcMeshes.Count(m => (m.FaceCount * 3) % 2 != 0);
 
         var buffer = new MeshBuffer();
-        var meshData = new MeshData(new MeshBuffer());
-        mesh.Meshes.Add(meshData);
+        var meshData = mesh.MeshData = new MeshData(new MeshBuffer());
         mesh.MeshBuffer = buffer;
 
         buffer.Positions = new Vector3[totalVertCount];
@@ -79,6 +79,7 @@ public partial class AssimpMeshResource : IResourceFile
                             }
                             parentBone.Children.Add(bone);
                         }
+                        // TODO try find symmetry bone
                         bone.inverseGlobalTransform = Matrix4x4.Invert(bone.globalTransform.ToSystem(), out var inverse) ? inverse : throw new Exception("Failed to calculate inverse bone matrix " + bone.name);
                         AddRecursiveBones(file, node.Children, boneNames, bone);
                     } else if (node.Children.Count > 0) {

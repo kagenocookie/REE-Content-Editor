@@ -2,10 +2,11 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using ContentEditor.App;
 using ContentEditor.App.ImguiHandling;
+using ContentPatcher;
 using ReeLib;
 using ReeLib.Scn;
 
-namespace ContentPatcher;
+namespace ContentEditor.App.FileLoaders;
 
 public class McolSceneLoader : McolFileLoader,
     IFileLoader,
