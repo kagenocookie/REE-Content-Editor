@@ -49,6 +49,7 @@ public class PlatformUtils
                 InitialDirectory = !string.IsNullOrEmpty(initialFile) ? Path.GetDirectoryName(initialFile) : Environment.CurrentDirectory,
                 FileName = Path.GetFileName(initialFile),
                 Filter = filter,
+                SupportMultiDottedExtensions = true,
             };
             var result = dlg.ShowDialog();
             if (result == DialogResult.OK && dlg.FileName != null) {

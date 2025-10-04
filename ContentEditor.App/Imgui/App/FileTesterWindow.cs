@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using ContentEditor.App.FileLoaders;
@@ -8,6 +9,8 @@ using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
 using ReeLib.Common;
+using ReeLib.Mesh;
+using ReeLib.Motlist;
 
 namespace ContentEditor.App;
 
@@ -20,6 +23,10 @@ public class FileTesterWindow : IWindowHandler
     private KnownFileFormats format;
     private string? formatFilter;
     private bool allVersions;
+    private bool testRewrite;
+    private bool smokeTest;
+
+    private const int SmokeTestFileLimit = 25;
 
     private string? hashTest;
     private uint testedHash;
@@ -113,10 +120,18 @@ public class FileTesterWindow : IWindowHandler
         if (exec) ImGui.BeginDisabled();
         ImguiHelpers.FilterableCSharpEnumCombo("File type", ref format, ref formatFilter);
         ImGui.Checkbox("Try all configured games", ref allVersions);
+        ImGui.SameLine();
+        ImGui.Checkbox("Execute read/write test", ref testRewrite);
+        ImGui.SameLine();
+        ImGui.Checkbox("Smoke test", ref smokeTest);
 
         if (format != KnownFileFormats.Unknown) {
             if (ImGui.Button("Execute")) {
-                Execute(format, allVersions);
+                if (testRewrite) {
+                    ExecuteWriteTest(format, allVersions);
+                } else {
+                    Execute(format, allVersions);
+                }
             }
         }
         if (exec) ImGui.EndDisabled();
@@ -154,6 +169,68 @@ public class FileTesterWindow : IWindowHandler
         }
     }
 
+    internal void ExecuteWriteTest(KnownFileFormats format, bool allVersions)
+    {
+        results.Clear();
+        var workspace = (data.ParentWindow as IWorkspaceContainer)?.Workspace;
+        if (workspace == null) {
+            ImGui.TextColored(Colors.Error, "Workspace not configured");
+            return;
+        }
+        var isLoadable = workspace.Env.GetFileExtensionsForFormat(format).Any(ext => workspace.ResourceManager.CanLoadFile("." + ext));
+        if (!isLoadable) {
+            Logger.Error("File format " + format + " is not supported");
+            return;
+        }
+
+        cancellationTokenSource?.Cancel();
+        cancellationTokenSource ??= new();
+
+        var wnd = EditorWindow.CurrentWindow!;
+        Task.Run(() => {
+            try {
+                var token = cancellationTokenSource.Token;
+                var timer = Stopwatch.StartNew();
+                foreach (var env in GetWorkspaces(workspace, allVersions)) {
+                    if (token.IsCancellationRequested) break;
+
+                    var success = 0;
+                    var fails = new ConcurrentBag<string>();
+                    results[env.Game] = (success, fails);
+
+                    foreach (var (path, stream) in GetFileList(env, format)) {
+                        if (token.IsCancellationRequested) return;
+                        FileHandle? file = null;
+                        try {
+                            file = env.ResourceManager.CreateFileHandle(path, path, stream, allowDispose: false, keepFileReference: false);
+                            var diffDesc = ExecuteRewriteTest(env, format, file);
+                            if (diffDesc == null) {
+                                success++;
+                                results[env.Game] = (success, fails);
+                            } else {
+                                Logger.Error("Rewrite mismatch: " + path + " - " + diffDesc);
+                                fails.Add(path);
+                            }
+                        } catch (Exception) {
+                            fails.Add(path);
+                        } finally {
+                            if (file != null) env.ResourceManager.CloseFile(file);
+                        }
+                        if (smokeTest && success + fails.Count >= SmokeTestFileLimit) break;
+                    }
+
+                    Logger.Info($"Finished {env.Game} {format} test: {success}/{success + fails.Count} files suceeded.");
+                }
+
+                wnd.InvokeFromUIThread(() => Logger.Info("Test finished in: " + timer.ElapsedMilliseconds + " ms"));
+            } catch (Exception e) {
+                Logger.Error(e, "Unexpected error during file test");
+            } finally {
+                cancellationTokenSource?.Cancel();
+                cancellationTokenSource = null;
+            }
+        });
+    }
     internal void Execute(KnownFileFormats format, bool allVersions)
     {
         results.Clear();
@@ -190,7 +267,6 @@ public class FileTesterWindow : IWindowHandler
                     }
 
                     tasks.Add(Task.Run(() => {
-                        var rm = new ResourceManager(new PatchDataContainer("!"));
                         var success = 0;
                         var fails = new ConcurrentBag<string>();
                         results[env.Game] = (success, fails);
@@ -202,6 +278,11 @@ public class FileTesterWindow : IWindowHandler
                                 results[env.Game] = (success, fails);
                             } else {
                                 fails.Add(path);
+                            }
+
+                            if (smokeTest && success + fails.Count >= SmokeTestFileLimit)
+                            {
+                                break;
                             }
                         }
 
@@ -225,36 +306,36 @@ public class FileTesterWindow : IWindowHandler
     private static IEnumerable<(string path, MemoryStream stream)> GetFileList(ContentWorkspace env, KnownFileFormats format)
     {
         var exts = env.Env.GetFileExtensionsForFormat(format);
-        if (PakUtils.ScanPakFiles(env.Env.Config.GamePath).Count == 0) {
-            var extractPath = AppConfig.Instance.GetGameExtractPath(env.Game);
-            if (string.IsNullOrEmpty(extractPath) || !Directory.Exists(extractPath)) {
-                return [];
-            }
-
-            IEnumerable<(string path, MemoryStream stream)> Iterate() {
-                foreach (var ext in exts) {
-                    if (!env.Env.TryGetFileExtensionVersion(ext, out var version)) {
-                        Logger.Info($"Unknown version for {format} file .{ext}");
-                        continue;
-                    }
-
-                    var memstream = new MemoryStream();
-                    foreach (var f in Directory.EnumerateFiles(extractPath, "*." + ext + "." + version, SearchOption.AllDirectories)) {
-                        using var fs = File.OpenRead(f);
-                        memstream.Seek(0, SeekOrigin.Begin);
-                        memstream.SetLength(0);
-                        fs.CopyTo(memstream);
-                        fs.Close();
-                        memstream.Seek(0, SeekOrigin.Begin);
-                        yield return (Path.GetRelativePath(extractPath, f), memstream);
-                    }
-                }
-            }
-
-            return Iterate();
-        } else {
+        if (PakUtils.ScanPakFiles(env.Env.Config.GamePath).Count > 0) {
             return exts.SelectMany(ext => env.Env.GetFilesWithExtension(ext));
         }
+
+        var extractPath = AppConfig.Instance.GetGameExtractPath(env.Game);
+        if (string.IsNullOrEmpty(extractPath) || !Directory.Exists(extractPath)) {
+            return [];
+        }
+
+        IEnumerable<(string path, MemoryStream stream)> Iterate() {
+            foreach (var ext in exts) {
+                if (!env.Env.TryGetFileExtensionVersion(ext, out var version)) {
+                    Logger.Info($"Unknown version for {format} file .{ext}");
+                    continue;
+                }
+
+                var memstream = new MemoryStream();
+                foreach (var f in Directory.EnumerateFiles(extractPath, "*." + ext + "." + version, SearchOption.AllDirectories)) {
+                    using var fs = File.OpenRead(f);
+                    memstream.Seek(0, SeekOrigin.Begin);
+                    memstream.SetLength(0);
+                    fs.CopyTo(memstream);
+                    fs.Close();
+                    memstream.Seek(0, SeekOrigin.Begin);
+                    yield return (Path.GetRelativePath(extractPath, f), memstream);
+                }
+            }
+        }
+
+        return Iterate();
     }
 
     private static bool TryLoadFile(ContentWorkspace env, KnownFileFormats format, string path, Stream stream)
@@ -300,5 +381,107 @@ public class FileTesterWindow : IWindowHandler
     public bool RequestClose()
     {
         return false;
+    }
+
+    private static string? ExecuteRewriteTest(ContentWorkspace env, KnownFileFormats format, FileHandle source)
+    {
+        switch (format) {
+            case KnownFileFormats.MotionList: return VerifyRewriteEquality<MotlistFile>(source.GetFile<MotlistFile>(), env);
+            case KnownFileFormats.Mesh: return VerifyRewriteEquality<MeshFile>(source.GetResource<AssimpMeshResource>().NativeMesh, env);
+            default: return null;
+        }
+    }
+
+    private static string? VerifyRewriteEquality<TFile>(TFile file, ContentWorkspace workspace) where TFile : BaseFile
+    {
+        var newfile = file.RewriteClone(workspace);
+        if (!newfile.Read()) return "read/write error";
+
+        return CompareValues(file, newfile);
+    }
+
+    private static string? CompareValues(object originalValue, object newValue)
+    {
+        var type = originalValue.GetType();
+        if (type != newValue.GetType())
+        {
+            return "type mismatch " + type + " and " + newValue.GetType();
+        }
+
+        if (type.IsValueType) {
+            if (type.GetInterface(nameof(IComparable)) != null) {
+                return ((IComparable)originalValue).CompareTo(newValue) == 0 ? null : "Values are not equal: " + originalValue + " => " + newValue;
+            }
+        }
+        if (type == typeof(string)) {
+            return (string)originalValue == (string)newValue ? null : "string changed " + originalValue + " => " + newValue;
+        }
+        if (type == typeof(float)) {
+            return (MathF.Abs((float)originalValue - (float)newValue) > 0.0001f) ? null : "float changed " + originalValue + " => " + newValue;
+        }
+
+        if (!comparedValueMappers.TryGetValue(type, out var mapper)) {
+            if (originalValue is IList) {
+                comparedValueMappers[type] = mapper = (obj) => ((IList)obj).Cast<object?>();
+            } else {
+                var fields = type.GetFields(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance);
+                var props = type.GetProperties(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance).Where(p => p.CanRead && p.GetMethod!.GetParameters().Length == 0);
+                comparedValueMappers[type] = mapper = (obj) => fields.Select(f => f.GetValue(obj)).Concat(props.Select(p => p.GetValue(obj)));
+            }
+        }
+
+        int index = 0;
+        var list1 = mapper.Invoke(originalValue);
+        using var list2 = mapper.Invoke(newValue).GetEnumerator();
+        foreach (var org in list1)
+        {
+            if (!list2.MoveNext()) return "missing values after index " + index;
+
+            var newVal = list2.Current;
+            if ((org == null) != (newVal == null)) {
+                return $"{type.Name}[{index}].{(newVal == null ? "NULL" : "NOT NULL")}";
+            }
+            if (org == null || newVal == null) continue;
+
+            var comparison = CompareValues(org, newVal);
+            if (comparison != null) {
+                return $"{type.Name}[{index}].{comparison}";
+            }
+            index++;
+        }
+        if (list2.MoveNext()) return "too many values after index " + index;
+
+        return null;
+    }
+
+    static FileTesterWindow()
+    {
+        AddCompareMapper<MeshFile>((m) => [
+            // 0-9
+            m.Header.flags, m.Header.nameCount, m.Header.uknCount, m.Header.ukn, m.Header.ukn1, m.Header.wilds_unkn1, m.Header.wilds_unkn2, m.Header.wilds_unkn3, m.Header.wilds_unkn4, m.Header.wilds_unkn5,
+            // 10+
+            m.BoneData, m.MeshBuffer, m.MaterialNames, m.StreamingInfo, m.MeshData, m.ShadowMesh, m.OccluderMesh
+        ]);
+        AddCompareMapper<MeshBone>((m) => [m.boundingBox, m.index, m.childIndex, m.nextSibling, m.symmetryIndex, m.remapIndex]);
+        AddCompareMapper<MeshBuffer>((m) => [
+            m.Positions.Length, m.Normals.Length, m.Tangents.Length, m.UV0.Length, m.UV1.Length, m.Weights.Length, m.Colors.Length, m.Faces.Length,
+            m.elementCount, m.elementCount2, m.BufferHeaders, m.ukn1, m.ukn2]);
+        AddCompareMapper<MeshData>((m) => [m.uvCount, m.skinWeightCount, m.totalMeshCount, m.lodCount, m.materialCount, m.boundingBox, m.boundingSphere, m.LODs]);
+        AddCompareMapper<ShadowMesh>((m) => [m.uvCount, m.skinWeightCount, m.totalMeshCount, m.lodCount, m.materialCount, m.LODs]);
+        AddCompareMapper<MeshLOD>((m) => [m.VertexCount, m.IndexCount, m.PaddedIndexCount, m.MeshGroups, m.lodFactor, m.vertexFormat]);
+        AddCompareMapper<MeshGroup>((m) => [m.groupId, m.indicesCount, m.submeshCount, m.vertexCount, m.Submeshes]);
+        AddCompareMapper<Submesh>((m) => [m.materialIndex, m.bufferIndex, m.ukn2, m.indicesCount]);
+        AddCompareMapper<MeshStreamingInfo>((m) => [m.Entries]);
+
+        AddCompareMapper<MotlistFile>((m) => [m.Header.MotListName, m.Header.BaseMotListPath, m.MotFiles, m.Motions]);
+        AddCompareMapper<MotFile>((m) => [m.Name]);
+        AddCompareMapper<MotTreeFile>((m) => [m.Name, m.MotionIDRemaps, m.expandedMotionsCount, m.uknCount1, m.uknCount2]);
+        AddCompareMapper<MotIndex>((m) => m.data.Cast<object>().Concat(new object[] { m.extraClipCount, m.motNumber }));
+    }
+
+    private static Dictionary<Type, Func<object, IEnumerable<object?>>> comparedValueMappers = new();
+    private static void AddCompareMapper<T>(Func<T, IEnumerable<object?>> mapper)
+    {
+        comparedValueMappers[typeof(T)] = (o) => mapper.Invoke((T)o);
     }
 }

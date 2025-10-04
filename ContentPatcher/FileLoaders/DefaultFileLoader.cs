@@ -14,13 +14,24 @@ public class DefaultFileLoader<TFileType> : IFileLoader, IFileHandleContentProvi
     {
         this.supportedFormat = format;
         this.diffHandler = diffHandler;
-        var nonRszConstructor = typeof(TFileType).GetConstructor([typeof(FileHandler)]);
+        fileFactory = GetFileConstructor();
+    }
+
+    public static Func<ContentWorkspace, FileHandler, TFileType> GetFileConstructor()
+    {
+        var cons = GetFileConstructor(typeof(TFileType));
+        return (w, fh) => (TFileType)cons(w, fh);
+    }
+
+    public static Func<ContentWorkspace, FileHandler, BaseFile> GetFileConstructor(Type type)
+    {
+        var nonRszConstructor = type.GetConstructor([typeof(FileHandler)]);
         if (nonRszConstructor != null) {
-            fileFactory = (ContentWorkspace ws, FileHandler fh) => (TFileType)nonRszConstructor.Invoke([fh])!;
+            return (ContentWorkspace ws, FileHandler fh) => (BaseFile)nonRszConstructor.Invoke([fh])!;
         } else {
-            var rszConstructor = typeof(TFileType).GetConstructor([typeof(RszFileOption), typeof(FileHandler)]);
+            var rszConstructor = type.GetConstructor([typeof(RszFileOption), typeof(FileHandler)]);
             if (rszConstructor != null) {
-                fileFactory = (ContentWorkspace ws, FileHandler fh) => (TFileType)rszConstructor.Invoke([ws.Env.RszFileOption, fh])!;
+                return (ContentWorkspace ws, FileHandler fh) => (BaseFile)rszConstructor.Invoke([ws.Env.RszFileOption, fh])!;
             } else {
                 throw new NotImplementedException("Unsupported ReeLib base file constructor");
             }

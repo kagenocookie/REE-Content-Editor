@@ -2,6 +2,7 @@ using System.Numerics;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.ImguiHandling;
+using ContentEditor.App.ImguiHandling.Mesh;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Editor;
@@ -44,6 +45,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     private string? loadedAnimationSource;
     public Animator? Animator => animator;
 
+    private string exportTemplate;
+
     private AssimpMeshResource? mesh;
     private string? meshPath;
     private FileHandle fileHandle;
@@ -80,6 +83,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     {
         Workspace = workspace;
         ChangeMesh(fileHandle = file);
+
+        exportTemplate = mesh?.NativeMesh.CurrentVersionConfig ?? MeshFile.AllVersionConfigs.Last();
     }
 
     private void TryGuessMdfFilepath()
@@ -390,6 +395,14 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         ImGui.Text("Sub Meshes: " + mesh.MeshCount);
         ImGui.Text("Materials: " + mesh.MaterialCount);
         ImGui.Text("Bones: " + mesh.BoneCount);
+        if (ImGui.TreeNode("Raw Data")) {
+            var meshCtx = context.GetChild<MeshFileHandler>();
+            if (meshCtx == null) {
+                meshCtx = context.AddChild("Raw Mesh Data", mesh.NativeMesh, new MeshFileHandler());
+            }
+            meshCtx.ShowUI();
+            ImGui.TreePop();
+        }
     }
 
     private void ShowMaterialSettings(MeshComponent meshComponent)
@@ -489,6 +502,18 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         }
         if (animator?.File != null) ImGui.Checkbox("Include animations", ref exportAnimations);
         if (animator?.File != null && exportAnimations) ImGui.Checkbox("Selected animation only", ref exportCurrentAnimationOnly);
+        ImGui.SeparatorText("Convert Mesh");
+        ImguiHelpers.ValueCombo("Mesh Version", MeshFile.AllVersionConfigsWithExtension, MeshFile.AllVersionConfigs, ref exportTemplate);
+        if (ImGui.Button("Convert ...")) {
+            var exportMesh = mesh.NativeMesh.RewriteClone(Workspace);
+            exportMesh.ChangeVersion(exportTemplate);
+            var ver = MeshFile.GetFileExtension(exportTemplate);
+            var ext = $".mesh.{ver}";
+            var defaultFilename = PathUtils.GetFilenameWithoutExtensionOrVersion(fileHandle.Filepath).ToString() + ext;
+            PlatformUtils.ShowSaveFileDialog((path) => {
+                exportMesh.SaveAs(path);
+            }, defaultFilename);
+        }
     }
 
     private void ShowAnimationMenu(MeshComponent meshComponent)

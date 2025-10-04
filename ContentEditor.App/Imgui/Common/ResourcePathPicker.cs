@@ -1,3 +1,4 @@
+using System.Collections;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -230,5 +231,24 @@ public class ResourcePathPicker : IObjectUIHandler
             saveCallback.Invoke(bundle, path, localFilepath, nativeFilepath);
             workspace.BundleManager.SaveBundle(bundle);
         }, suggestedSavePath);
+    }
+}
+
+public class ResourceListPathPicker : ListHandlerTyped<string>
+{
+    private ContentWorkspace? ws;
+    private KnownFileFormats[] allowedFormats;
+
+    public ResourceListPathPicker(ContentWorkspace? ws, params KnownFileFormats[] allowedFormats)
+    {
+        this.ws = ws;
+        this.allowedFormats = allowedFormats;
+    }
+
+    protected override UIContext CreateElementContext(UIContext context, IList list, int elementIndex)
+    {
+        var ctx = WindowHandlerFactory.CreateListElementContext(context, elementIndex);
+        ctx.uiHandler = new ResourcePathPicker(ws, allowedFormats);
+        return ctx;
     }
 }

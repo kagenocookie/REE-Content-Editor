@@ -137,19 +137,32 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
         var handle = new MeshResourceHandle(MeshRefs.NextInstanceID);
         var meshFile = meshResource.NativeMesh;
+        if (meshFile.MeshData == null) {
+            // TODO occluder meshes
+            return handle;
+        }
+
         MeshBoneHierarchy? boneList = null;
         if (meshFile.BoneData?.Bones.Count > 0) {
             boneList = meshFile.BoneData;
         }
-        foreach (var mesh in meshFile.Meshes) {
-            foreach (var group in mesh.LODs[0].MeshGroups) {
-                foreach (var sub in group.Submeshes) {
-                    var newMesh = new TriangleMesh(GL, meshFile, sub);
-                    newMesh.MeshGroup = group.groupId;
-                    handle.SetMaterialName(handle.Meshes.Count, meshFile.MaterialNames[sub.materialIndex]);
-                    handle.Bones = boneList;
-                    handle.Meshes.Add(newMesh);
+
+        var warnedStreaming = false;
+        foreach (var group in meshFile.MeshData.LODs[0].MeshGroups) {
+            foreach (var sub in group.Submeshes) {
+                if (sub.bufferIndex > 0) {
+                    if (!warnedStreaming) {
+                        Logger.Warn($"Mesh {fileHandle.Filepath} contains additional streamed data. It won't not be fully loaded.");
+                        warnedStreaming = true;
+                    }
+                    continue;
                 }
+
+                var newMesh = new TriangleMesh(GL, meshFile, sub);
+                newMesh.MeshGroup = group.groupId;
+                handle.SetMaterialName(handle.Meshes.Count, meshFile.MaterialNames[sub.materialIndex]);
+                handle.Bones = boneList;
+                handle.Meshes.Add(newMesh);
             }
         }
 

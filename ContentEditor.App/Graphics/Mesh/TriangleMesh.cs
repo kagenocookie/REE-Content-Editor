@@ -87,7 +87,7 @@ public class TriangleMesh : Mesh
             index++;
         }
 
-        BoundingBox = sourceMesh.Meshes[0].boundingBox;
+        BoundingBox = sourceMesh.MeshData?.boundingBox ?? default;
         UpdateBuffers();
     }
 

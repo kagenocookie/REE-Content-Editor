@@ -202,6 +202,9 @@ public partial class AssimpMeshResource : IResourceFile
             }
         }
 
+        mesh.ShadowMesh = new ShadowMesh(buffer);
+        mesh.ShadowMesh.LODs.AddRange(mesh.MeshData.LODs);
+
         return mesh;
     }
 

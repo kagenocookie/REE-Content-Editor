@@ -177,9 +177,7 @@ public class RetargetDesigner : BaseWindowHandler
                 selectedMotion = meshViewer1.Animator.ActiveMotion;
                 retargetedMotion?.Dispose();
                 retargetedMotion = null;
-                var cloneHandler = selectedMotion.CloneRewrite();
-                retargetedMotion = new MotFile(cloneHandler);
-                retargetedMotion.Read();
+                retargetedMotion = selectedMotion.RewriteClone(workspace);
                 if (selectedRemap != null) {
                     ExecuteRemap(retargetedMotion, selectedRemap, selectedRemap.Version1.First(), false);
                 }

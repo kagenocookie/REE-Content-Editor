@@ -80,6 +80,11 @@ public class ReadOnlyWrapperHandler : IObjectUIHandler
 {
     public IObjectUIHandler next;
 
+    public static readonly ReadOnlyWrapperHandler Bool = new ReadOnlyWrapperHandler(BoolFieldHandler.Instance);
+    public static readonly ReadOnlyWrapperHandler Integer = new ReadOnlyWrapperHandler(new NumericFieldHandler<int>(ImGuiDataType.S32));
+    public static readonly ReadOnlyWrapperHandler Short = new ReadOnlyWrapperHandler(new NumericFieldHandler<short>(ImGuiDataType.S16));
+    public static readonly ReadOnlyWrapperHandler UShort = new ReadOnlyWrapperHandler(new NumericFieldHandler<ushort>(ImGuiDataType.U16));
+
     public ReadOnlyWrapperHandler(IObjectUIHandler next)
     {
         this.next = next;
