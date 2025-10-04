@@ -505,13 +505,16 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         ImGui.SeparatorText("Convert Mesh");
         ImguiHelpers.ValueCombo("Mesh Version", MeshFile.AllVersionConfigsWithExtension, MeshFile.AllVersionConfigs, ref exportTemplate);
         if (ImGui.Button("Convert ...")) {
-            if (mesh.NativeMesh.Header.version == 0) {
-                mesh.NativeMesh.ChangeVersion(exportTemplate);
-            }
             var ver = MeshFile.GetFileExtension(exportTemplate);
             var ext = $".mesh.{ver}";
             var defaultFilename = PathUtils.GetFilenameWithoutExtensionOrVersion(fileHandle.Filepath).ToString() + ext;
-            var exportMesh = mesh.NativeMesh.RewriteClone(Workspace, defaultFilename);
+            MeshFile exportMesh;
+            if (mesh.NativeMesh.Header.version == 0) {
+                mesh.NativeMesh.ChangeVersion(exportTemplate);
+                exportMesh = mesh.NativeMesh.RewriteClone(Workspace, defaultFilename);
+            } else {
+                exportMesh = mesh.NativeMesh.RewriteClone(Workspace);
+            }
             exportMesh.ChangeVersion(exportTemplate);
             PlatformUtils.ShowSaveFileDialog((path) => {
                 exportMesh.SaveAs(path);
