@@ -179,7 +179,7 @@ public class RetargetDesigner : BaseWindowHandler
                 retargetedMotion = null;
                 retargetedMotion = selectedMotion.RewriteClone(workspace);
                 if (selectedRemap != null) {
-                    ExecuteRemap(retargetedMotion, selectedRemap, selectedRemap.Version1.First(), false);
+                    ExecuteRemap(retargetedMotion, selectedRemap, selectedRemap.Version1.First(), 2);
                 }
                 forceRefreshConfig = false;
                 var time = meshViewer2.Animator.CurrentTime;
@@ -321,14 +321,14 @@ public class RetargetDesigner : BaseWindowHandler
         return configs;
     }
 
-    public static List<string> ExecuteRemap(MotFile mot, MotRetargetNamesConfig remapConfig, string source, bool directionTieBreaker)
+    public static List<string> ExecuteRemap(MotFile mot, MotRetargetNamesConfig remapConfig, string source, int directionTieBreaker)
     {
         // TODO do we need to worry about bone indices?
         // NOTE: we're not modifying the mot.Bones/mot.RootBones - most motlist versions only have the list on mot 1
         var mapToBone1 = remapConfig.Version2.Contains(source);
         Dictionary<string, MotRetargetNameMap> bonemap;
         int direction;
-        if (remapConfig.Version2.Contains(source) && (!remapConfig.Version1.Contains(source) || !directionTieBreaker)) {
+        if (remapConfig.Version2.Contains(source) && (!remapConfig.Version1.Contains(source) || directionTieBreaker == 1)) {
             bonemap = remapConfig.Maps.ToDictionary(kv => kv.Bone2, kv => kv);
             direction = 1;
         } else {

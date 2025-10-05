@@ -176,7 +176,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                                 mapToBone1 = false;
                             }
                             if (!string.IsNullOrEmpty(targetRenameConfig) && targetsArray.Contains(targetRenameConfig) && remapConfig != null && ImGui.Button("Execute Rename")) {
-                                ExecuteRename(remapConfig, sourceType, mapToBone1);
+                                ExecuteRename(remapConfig, sourceType, mapToBone1 ? 1 : 2);
                             }
                         }
                     }
@@ -238,7 +238,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
 
         private UIContext? motPreviewContext;
 
-        private void ExecuteRename(MotRetargetNamesConfig remapConfig, string source, bool directionTieBreaker)
+        private void ExecuteRename(MotRetargetNamesConfig remapConfig, string source, int directionTieBreaker)
         {
             if (newFile is MotFile mot) {
                 var renames = RetargetDesigner.ExecuteRemap(mot, remapConfig, source, directionTieBreaker);
