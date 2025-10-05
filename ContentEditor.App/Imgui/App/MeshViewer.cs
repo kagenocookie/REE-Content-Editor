@@ -79,6 +79,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     private bool exportCurrentAnimationOnly;
     private bool exportInProgress;
 
+    private string? lastImportSourcePath;
+
     public MeshViewer(ContentWorkspace workspace, FileHandle file)
     {
         Workspace = workspace;
@@ -101,8 +103,12 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         //     if (mdfVersion != -1) mdfPath += "." + mdfVersion;
         // }
         if (mdfVersion != -1) mdfPath += "." + mdfVersion;
+        if (!File.Exists(mdfPath) && fileHandle.NativePath != null) {
+            mdfPath = PathUtils.GetFilepathWithoutExtensionOrVersion(fileHandle.NativePath).ToString() + ".mdf2" + (mdfVersion == -1 ? "" : "." + mdfVersion);
+        }
         this.mdfSource = mdfPath;
         this.originalMDF = mdfPath;
+        loadedMdf = null;
     }
 
     public void Focus()
@@ -330,7 +336,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 if (ImGui.MenuItem($"{AppIcons.SI_GenericInfo} Mesh Info")) ImGui.OpenPopup("MeshInfo");
                 if (ImGui.MenuItem($"{AppIcons.Eye} Mesh Groups")) ImGui.OpenPopup("MeshGroups");
                 if (ImGui.MenuItem($"{AppIcons.EfxEntry} Material")) ImGui.OpenPopup("Material"); // placeholder icon
-                if (ImGui.MenuItem($"{AppIcons.SI_FileExtractTo} Export")) ImGui.OpenPopup("Export");
+                if (ImGui.MenuItem($"{AppIcons.SI_FileExtractTo} Import / Export")) ImGui.OpenPopup("Export");
                 if (ImGui.MenuItem($"{AppIcons.Play} Animations")) showAnimationsMenu = !showAnimationsMenu;
                 if (showAnimationsMenu) ImguiHelpers.HighlightMenuItem($"{AppIcons.Play} Animations");
 
@@ -382,7 +388,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
     private void ShowMeshInfo()
     {
-        ImGui.Text($"Path: {fileHandle.Filepath}");
+        ImGui.Text($"Path: {fileHandle.Filepath} ({fileHandle.HandleType})");
         if (ImGui.BeginPopupContextItem("##filepath")) {
             if (ImGui.Selectable("Copy path")) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(fileHandle.Filepath);
@@ -495,6 +501,26 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 throw new NotImplementedException();
             }
         }
+        if (fileHandle.HandleType is FileHandleType.Bundle or FileHandleType.Disk && File.Exists(fileHandle.Filepath) && fileHandle.Format.format == KnownFileFormats.Mesh) {
+            ImGui.SameLine();
+            if (ImGui.Button("Import From File...")) {
+                var window = EditorWindow.CurrentWindow!;
+                PlatformUtils.ShowFileDialog((files) => {
+                    window.InvokeFromUIThread(() => {
+                        lastImportSourcePath = files[0];
+                        if (Workspace.ResourceManager.TryLoadUniqueFile(lastImportSourcePath, out var importedFile)) {
+                            var importAsset = importedFile.GetResource<AssimpMeshResource>();
+                            var tmpHandler = new FileHandler(new MemoryStream(), fileHandle.Filepath);
+                            importAsset.NativeMesh.WriteTo(tmpHandler);
+                            fileHandle.Stream = tmpHandler.Stream.ToMemoryStream(disposeStream: false, forceCopy: true);
+                            fileHandle.Revert(Workspace);
+                            ChangeMesh(fileHandle);
+                            importedFile.Dispose();
+                        }
+                    });
+                }, lastImportSourcePath, fileExtension: MeshFilesFilter);
+            }
+        }
         if (exportInProgress) {
             ImGui.SameLine();
             // we have no way of showing any progress from assimp's side (which is 99% of the export duration) so this is the best we can do
@@ -504,7 +530,9 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         if (animator?.File != null && exportAnimations) ImGui.Checkbox("Selected animation only", ref exportCurrentAnimationOnly);
         ImGui.SeparatorText("Convert Mesh");
         ImguiHelpers.ValueCombo("Mesh Version", MeshFile.AllVersionConfigsWithExtension, MeshFile.AllVersionConfigs, ref exportTemplate);
-        if (ImGui.Button("Convert ...")) {
+        var conv1 = ImGui.Button("Convert ...");
+        var bundleConvert = Workspace.CurrentBundle != null && ImguiHelpers.SameLine() && ImGui.Button("Save to bundle ...");
+        if (conv1 || bundleConvert) {
             var ver = MeshFile.GetFileExtension(exportTemplate);
             var ext = $".mesh.{ver}";
             var defaultFilename = PathUtils.GetFilenameWithoutExtensionOrVersion(fileHandle.Filepath).ToString() + ext;
@@ -516,9 +544,12 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 exportMesh = mesh.NativeMesh.RewriteClone(Workspace);
             }
             exportMesh.ChangeVersion(exportTemplate);
-            PlatformUtils.ShowSaveFileDialog((path) => {
-                exportMesh.SaveAs(path);
-            }, defaultFilename);
+            if (bundleConvert) {
+                var tempres = new AssimpMeshResource(defaultFilename, Workspace.Env) { NativeMesh = exportMesh };
+                ResourcePathPicker.ShowSaveToBundle(fileHandle.Loader, tempres, Workspace, defaultFilename, fileHandle.NativePath);
+            } else {
+                PlatformUtils.ShowSaveFileDialog((path) => exportMesh.SaveAs(path), defaultFilename);
+            }
         }
     }
 

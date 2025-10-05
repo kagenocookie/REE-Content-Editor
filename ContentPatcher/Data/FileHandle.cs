@@ -43,9 +43,9 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
 
     public T? GetCustomContent<T>() where T : class => (Loader as IFileHandleContentProvider<T>)?.GetFile(this);
 
-    public static FileHandle CreateEmbedded(IFileLoader loader, IResourceFile file, string filepath = "")
+    public static FileHandle CreateEmbedded(IFileLoader loader, IResourceFile file, string filepath = "", string? nativePath = null)
     {
-        var handle = new FileHandle(filepath, new MemoryStream(0), FileHandleType.Embedded, loader);
+        var handle = new FileHandle(filepath, new MemoryStream(0), FileHandleType.Embedded, loader) { NativePath = nativePath };
         handle.Resource = file;
         return handle;
     }

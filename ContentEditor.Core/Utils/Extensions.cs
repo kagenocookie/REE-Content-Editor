@@ -19,6 +19,7 @@ public static class Extensions
         if (stream is MemoryStream resultStream && !forceCopy) return resultStream;
 
         resultStream = new MemoryStream((int)stream.Length);
+        stream.Seek(0, SeekOrigin.Begin);
         stream.CopyTo(resultStream);
         if (disposeStream) stream.Dispose();
         resultStream.Seek(0, SeekOrigin.Begin);

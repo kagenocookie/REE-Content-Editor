@@ -73,10 +73,7 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
                 if (ImGui.Button("Save Motlist To Bundle ...")) {
                     Workspace.Env.TryGetFileExtensionVersion("motlist", out var version);
                     var ext = ".motlist." + version;
-                    var tempHandle = FileHandle.CreateEmbedded(new MotListFileLoader(), new BaseFileResource<MotlistFile>(mesh.Motlist), Path.ChangeExtension(Handle.Filename.ToString(), ext));
-                    ResourcePathPicker.SaveFileToBundle(Workspace, tempHandle, (bundle, savePath, localPath, nativePath) => {
-                        tempHandle.Save(Workspace, savePath);
-                    });
+                    ResourcePathPicker.ShowSaveToBundle(new MotListFileLoader(), new BaseFileResource<MotlistFile>(mesh.Motlist), Workspace, Path.ChangeExtension(Handle.Filename.ToString(), ext));
                 }
             }
         } else {

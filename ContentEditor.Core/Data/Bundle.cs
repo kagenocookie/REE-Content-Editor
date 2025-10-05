@@ -110,6 +110,7 @@ public class Bundle
     public void AddResource(string localFilepath, string nativeFilepath)
     {
         ResourceListing ??= new();
+        nativeFilepath = nativeFilepath.Replace('\\', '/').ToLowerInvariant();
         if (TryFindResourceByNativePath(nativeFilepath, out var prevLocal)) {
             Logger.Error("Bundle already contains the file " + nativeFilepath + "\nBundle local filepath: " + prevLocal);
             return;

@@ -69,11 +69,8 @@ public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<Motlis
 
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
-        using var fs = File.Create(outputPath);
-        if (handle.Stream.CanSeek) handle.Stream.Seek(0, SeekOrigin.Begin);
-        handle.Stream.CopyTo(fs);
-        return true;
+        var mesh = handle.GetResource<AssimpMeshResource>();
+        return mesh.NativeMesh.SaveOrWriteTo(handle, outputPath);
     }
 
     [GeneratedRegex("Group_([\\d]+)")]

@@ -10,6 +10,7 @@ using ReeLib.Mesh;
 using ReeLib.Mot;
 using ReeLib.Motlist;
 using ReeLib.via;
+using Silk.NET.Maths;
 
 namespace ContentEditor.App.FileLoaders;
 
@@ -28,7 +29,7 @@ public partial class AssimpMeshResource : IResourceFile
         mesh.Header.BufferCount = 1;
 
         var buffer = new MeshBuffer();
-        var meshData = mesh.MeshData = new MeshData(new MeshBuffer());
+        var meshData = mesh.MeshData = new MeshData(buffer);
         mesh.MeshBuffer = buffer;
 
         buffer.Positions = new Vector3[totalVertCount];
@@ -75,7 +76,14 @@ public partial class AssimpMeshResource : IResourceFile
                 foreach (var node in children) {
                     if (boneNames.Contains(node.Name)) {
                         file.BoneData ??= new();
-                        var bone = new MeshBone() { name = node.Name, index = file.BoneData.Bones.Count, localTransform = Matrix4x4.Transpose(node.Transform) };
+                        var bone = new MeshBone() {
+                            name = node.Name,
+                            index = file.BoneData.Bones.Count,
+                            localTransform = Matrix4x4.Transpose(node.Transform),
+                            childIndex = -1,
+                            nextSibling = -1,
+                            symmetryIndex = file.BoneData.Bones.Count,
+                        };
                         file.BoneData.Bones.Add(bone);
                         if (parentBone == null) {
                             bone.globalTransform = bone.localTransform;
@@ -87,10 +95,11 @@ public partial class AssimpMeshResource : IResourceFile
                             bone.parentIndex = parentBone.index;
                             if (parentBone.Children.Count == 0) {
                                 parentBone.childIndex = bone.index;
+                            } else {
+                                parentBone.Children[^1].nextSibling = bone.index;
                             }
                             parentBone.Children.Add(bone);
                         }
-                        // TODO try find symmetry bone
                         bone.inverseGlobalTransform = Matrix4x4.Invert(bone.globalTransform.ToSystem(), out var inverse) ? inverse : throw new Exception("Failed to calculate inverse bone matrix " + bone.name);
                         AddRecursiveBones(file, node.Children, boneNames, bone);
                     } else if (node.Children.Count > 0) {
@@ -100,6 +109,21 @@ public partial class AssimpMeshResource : IResourceFile
                 }
             }
             AddRecursiveBones(mesh, scene.RootNode.Children, boneNames, null);
+            // handle symmetry bones
+            foreach (var bone in mesh.BoneData!.Bones) {
+                if (bone.name.StartsWith("l_", StringComparison.InvariantCultureIgnoreCase)) {
+                    var rightName = string.Concat("r_", bone.name.AsSpan(2));
+                    var right = mesh.BoneData!.Bones.FirstOrDefault(b => b.name.Equals(rightName, StringComparison.InvariantCultureIgnoreCase));
+                    if (right == null) {
+                        Logger.Warn("Found left bone without corresponding right bone: " + bone.name);
+                    } else {
+                        bone.Symmetry = right;
+                        bone.symmetryIndex = right.index;
+                        right.Symmetry = bone;
+                        right.symmetryIndex = bone.index;
+                    }
+                }
+            }
             boneIndexMap = mesh.BoneData!.Bones.ToDictionary(b => b.name, b => b.index);
         }
 
@@ -170,22 +194,25 @@ public partial class AssimpMeshResource : IResourceFile
 
             if (buffer.Weights.Length > 0) {
                 for (int i = 0; i < aiMesh.Bones.Count; i++) {
-                    Bone? bone = aiMesh.Bones[i];
-                    var boneIndex = boneIndexMap[bone.Name];
+                    var aiBone = aiMesh.Bones[i];
+                    var boneIndex = boneIndexMap[aiBone.Name];
                     var hasWeight = false;
-                    foreach (var entry in bone.VertexWeights) {
+                    var targetBone = mesh.BoneData!.Bones[boneIndex];
+                    foreach (var entry in aiBone.VertexWeights) {
                         if (entry.Weight == 0) continue;
 
                         var outWeight = (buffer.Weights[vertOffset + entry.VertexID] ??= new(serializerVersion));
                         var weightIndex = Array.FindIndex(outWeight.boneWeights, bb => bb == 0);
                         if (weightIndex == -1) {
-                            throw new Exception("Too many weights for bone " + bone.Name);
+                            throw new Exception("Too many weights for bone " + aiBone.Name);
                         }
                         outWeight.boneIndices[weightIndex] = boneIndex;
                         outWeight.boneWeights[weightIndex] = entry.Weight;
+                        if (targetBone.boundingBox.IsEmpty) targetBone.boundingBox = AABB.MaxMin;
+                        targetBone.boundingBox = targetBone.boundingBox.AsAABB.Extend(Vector3.Transform(buffer.Positions[vertOffset + entry.VertexID], targetBone.inverseGlobalTransform.ToSystem()));
                         hasWeight = true;
                     }
-                    if (hasWeight) deformBones.TryAdd(boneIndex, mesh.BoneData!.Bones[boneIndex]);
+                    if (hasWeight) deformBones.TryAdd(boneIndex, targetBone);
                 }
 
                 var hasLooseVerts = Array.IndexOf(buffer.Weights, null, vertOffset, vertCount) != -1;
