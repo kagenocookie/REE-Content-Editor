@@ -16,6 +16,8 @@ namespace ContentEditor.App.FileLoaders;
 
 public partial class AssimpMeshResource : IResourceFile
 {
+    private const string ShapekeyPrefix = "SHAPEKEY_";
+
     private static MeshFile ImportMeshFromAssimp(Assimp.Scene scene, string versionConfig)
     {
         var serializerVersion = MeshFile.GetSerializerVersion(versionConfig);
@@ -41,9 +43,13 @@ public partial class AssimpMeshResource : IResourceFile
         }
         if (srcMeshes.All(m => m.HasTextureCoords(0))) buffer.UV0 = new Vector2[totalVertCount];
         if (srcMeshes.All(m => m.HasTextureCoords(1))) buffer.UV1 = new Vector2[totalVertCount];
-        if (srcMeshes.All(m => m.Bones.Count > 0 && m.Bones.All(b => b.HasVertexWeights))) {
+        if (srcMeshes.All(m => m.Bones.Count > 0 && m.Bones.Any(b => b.HasVertexWeights))) {
             buffer.Weights = new VertexBoneWeights[totalVertCount];
             mesh.Header.flags |= ContentFlags.IsSkinning|ContentFlags.HasJoint;
+        }
+        if (srcMeshes.Any(m => m.Bones.Any(b => b.Name.StartsWith(ShapekeyPrefix)))) {
+            buffer.ShapeKeyWeights = new VertexBoneWeights[totalVertCount];
+            mesh.Header.flags |= ContentFlags.HasVertexGroup;
         }
         if (srcMeshes.All(m => m.HasVertexColors(0))) {
             buffer.Colors = new Color[totalVertCount];
@@ -74,6 +80,8 @@ public partial class AssimpMeshResource : IResourceFile
             static void AddRecursiveBones(MeshFile file, NodeCollection children, HashSet<string> boneNames, MeshBone? parentBone)
             {
                 foreach (var node in children) {
+                    if (node.Name.StartsWith(ShapekeyPrefix)) continue;
+
                     if (boneNames.Contains(node.Name)) {
                         file.BoneData ??= new();
                         var bone = new MeshBone() {
@@ -195,13 +203,20 @@ public partial class AssimpMeshResource : IResourceFile
             if (buffer.Weights.Length > 0) {
                 for (int i = 0; i < aiMesh.Bones.Count; i++) {
                     var aiBone = aiMesh.Bones[i];
-                    var boneIndex = boneIndexMap[aiBone.Name];
+                    var isShapeKey = aiBone.Name.StartsWith(ShapekeyPrefix);
+                    int boneIndex;
+                    if (isShapeKey) {
+                        boneIndex = boneIndexMap[aiBone.Name.Replace(ShapekeyPrefix, "")];
+                    } else {
+                        boneIndex = boneIndexMap[aiBone.Name];
+                    }
                     var hasWeight = false;
                     var targetBone = mesh.BoneData!.Bones[boneIndex];
+                    var weightBuffer = isShapeKey ? buffer.ShapeKeyWeights : buffer.Weights;
                     foreach (var entry in aiBone.VertexWeights) {
                         if (entry.Weight == 0) continue;
 
-                        var outWeight = (buffer.Weights[vertOffset + entry.VertexID] ??= new(serializerVersion));
+                        var outWeight = (weightBuffer[vertOffset + entry.VertexID] ??= new(serializerVersion));
                         var weightIndex = Array.FindIndex(outWeight.boneWeights, bb => bb == 0);
                         if (weightIndex == -1) {
                             throw new Exception("Too many weights for bone " + aiBone.Name);
@@ -224,7 +239,7 @@ public partial class AssimpMeshResource : IResourceFile
                 }
             }
 
-            if ((indicesCount % 2) != 0) indicesOffset++; // handle padding TODO test correctness
+            if ((indicesCount % 2) != 0) indicesOffset++; // handle padding
             vertOffset += vertCount;
             indicesOffset += indicesCount;
         }

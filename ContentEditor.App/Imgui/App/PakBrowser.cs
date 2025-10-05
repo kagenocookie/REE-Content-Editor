@@ -59,12 +59,12 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
 
         try {
             string[] files;
-            if (CurrentDir.Contains('*')) {
+            if (CurrentDir.Contains('*') || CurrentDir.Contains('+')) {
                 files = matchedList!.FilterAllFiles(CurrentDir);
             } else if (reader.FileExists(CurrentDir)) {
                 files = [CurrentDir];
             } else {
-                files = matchedList!.FilterAllFiles(CurrentDir + ".*");
+                files = matchedList!.FilterAllFiles(CurrentDir.Replace('\\', '/') + ".*");
             }
 
             unpackExpectedFiles = files.Length;

@@ -47,6 +47,7 @@ public class MeshBufferHandler : IObjectUIHandler
             context.AddChild<MeshBuffer, bool>("UV1", instance, ReadOnlyWrapperHandler.Bool, getter: v => v!.UV1.Length > 0);
             context.AddChild<MeshBuffer, bool>("Colors", instance, ReadOnlyWrapperHandler.Bool, getter: v => v!.Colors.Length > 0);
             context.AddChild<MeshBuffer, bool>("Weights", instance, ReadOnlyWrapperHandler.Bool, getter: v => v!.Weights.Length > 0);
+            context.AddChild<MeshBuffer, bool>("Shapekey Weights", instance, ReadOnlyWrapperHandler.Bool, getter: v => v!.ShapeKeyWeights.Length > 0);
         }
 
         context.ShowChildrenNestedUI();

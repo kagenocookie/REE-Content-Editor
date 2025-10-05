@@ -536,13 +536,10 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             var ver = MeshFile.GetFileExtension(exportTemplate);
             var ext = $".mesh.{ver}";
             var defaultFilename = PathUtils.GetFilenameWithoutExtensionOrVersion(fileHandle.Filepath).ToString() + ext;
-            MeshFile exportMesh;
             if (mesh.NativeMesh.Header.version == 0) {
                 mesh.NativeMesh.ChangeVersion(exportTemplate);
-                exportMesh = mesh.NativeMesh.RewriteClone(Workspace, defaultFilename);
-            } else {
-                exportMesh = mesh.NativeMesh.RewriteClone(Workspace);
             }
+            var exportMesh = mesh.NativeMesh.RewriteClone(Workspace);
             exportMesh.ChangeVersion(exportTemplate);
             if (bundleConvert) {
                 var tempres = new AssimpMeshResource(defaultFilename, Workspace.Env) { NativeMesh = exportMesh };

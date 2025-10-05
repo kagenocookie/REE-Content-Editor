@@ -56,10 +56,10 @@ public static class FileLoaderExtensions
     /// Executes a write of the given file into a new memory stream and re-reads the file from it, returning the new file. Effectively does a full binary clone of the data.
     /// </summary>
     /// <returns>The cloned file.</returns>
-    public static TFile RewriteClone<TFile>(this TFile file, ContentWorkspace workspace, string? filenameOverride = null) where TFile : BaseFile
+    public static TFile RewriteClone<TFile>(this TFile file, ContentWorkspace workspace) where TFile : BaseFile
     {
         var stream = new MemoryStream();
-        var handler = new FileHandler(stream, filenameOverride ?? file.FileHandler.FilePath);
+        var handler = new FileHandler(stream) { FileVersion = file.FileHandler.FileVersion };
         file.WriteTo(handler, false);
         handler.Seek(0);
         var newFile = DefaultFileLoader<TFile>.GetFileConstructor().Invoke(workspace, handler);

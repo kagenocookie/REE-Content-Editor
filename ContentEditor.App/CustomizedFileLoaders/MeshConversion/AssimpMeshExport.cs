@@ -21,6 +21,15 @@ public partial class AssimpMeshResource : IResourceFile
         }
     }
 
+    private static void AddMotlistToScene(Assimp.Scene scene, MotlistFile motlist)
+    {
+        foreach (var file in motlist.MotFiles) {
+            if (file is MotFile mot) {
+                AddMotToScene(scene, mot);
+            }
+        }
+    }
+
     private static void AddMotToScene(Assimp.Scene scene, MotFile mot)
     {
         var anim = new Assimp.Animation();
@@ -108,10 +117,12 @@ public partial class AssimpMeshResource : IResourceFile
         scene.Animations.Add(anim);
     }
 
-    private static Assimp.Scene ConvertMeshToAssimpScene(MeshFile file, string rootName)
+    private static Assimp.Scene ConvertMeshToAssimpScene(MeshFile file, string rootName, bool isGltf)
     {
         // NOTE: every matrix needs to be transposed, assimp expects them transposed compared to default System.Numeric.Matrix4x4 for some shit ass reason
         // NOTE2: assimp currently forces vert deduplication for gltf export so we may lose some vertices (https://github.com/assimp/assimp/issues/6349)
+        // NOTE3: weights > 4 will get get lost for gltf because we can't tell it to write more weights (AI_CONFIG_EXPORT_GLTF_UNLIMITED_SKINNING_BONES_PER_VERTEX)
+        // we'd either need access to assim's Exporter class directly, or have the ExportFile method modified on the assimp side
         // TODO: export extra dummy nodes to ensure materials with no meshes (possibly used by LODs only) don't get dropped? (see dd2 ch20_000.mesh.240423143)
         // also: lods read and export?
 
@@ -126,14 +137,23 @@ public partial class AssimpMeshResource : IResourceFile
         var boneDict = new Dictionary<int, Node>();
         var bones = file.BoneData?.Bones;
 
+        var includeShapeKeys = false;
         if (bones?.Count > 0 && file.MeshBuffer!.Weights.Length > 0) {
             // insert root bones first to ensure all parents exist
+            Node boneRoot = scene.RootNode;
+            if (file.MeshBuffer.ShapeKeyWeights.Length > 0) {
+                if (isGltf) {
+                    Logger.Warn($"GLTF exporter does not support enough bones to include shape keys. Mesh will not behave correctly when re-imported. Consider using a different file format.");
+                } else {
+                    includeShapeKeys = true;
+                }
+            }
             foreach (var srcBone in bones) {
                 if (srcBone.parentIndex == -1) {
-                    var boneNode = new Node(srcBone.name, scene.RootNode);
+                    var boneNode = new Node(srcBone.name, boneRoot);
                     boneDict[srcBone.index] = boneNode;
                     boneNode.Transform = Matrix4x4.Transpose(srcBone.localTransform.ToSystem());
-                    scene.RootNode.Children.Add(boneNode);
+                    boneRoot.Children.Add(boneNode);
                 }
             }
 
@@ -148,6 +168,31 @@ public partial class AssimpMeshResource : IResourceFile
                 boneDict[srcBone.index] = boneNode;
                 boneNode.Transform = Matrix4x4.Transpose(srcBone.localTransform.ToSystem());
                 parentBone.Children.Add(boneNode);
+            }
+
+            if (includeShapeKeys) {
+                if (isGltf) {
+                    Logger.Warn($"GLTF exporter does not support enough bones to include shape keys. Mesh will not behave correctly when re-imported. Consider using a different file format.");
+                } else {
+                    // add shape key specific bone nodes
+                    var boneNames = bones.Select(b => b.name).ToHashSet();
+                    var deformBones = file.BoneData!.DeformBones.Select(b => b.name).ToHashSet();
+                    static void RecursiveDuplicateShapeBones(Node parent, HashSet<string> boneNames, HashSet<string> deformBones) {
+                        foreach (var child in parent.Children.ToArray()) {
+                            if (boneNames.Contains(child.Name)) {
+                                if (deformBones.Contains(child.Name)) {
+                                    var shapeChild = new Node() { Name = ShapekeyPrefix + child.Name };
+                                    child.Children.Add(shapeChild);
+                                    RecursiveDuplicateShapeBones(child, boneNames, deformBones);
+                                } else {
+                                    RecursiveDuplicateShapeBones(child, boneNames, deformBones);
+                                }
+                            }
+                        }
+                    }
+
+                    RecursiveDuplicateShapeBones(boneRoot, boneNames, deformBones);
+                }
             }
         }
 
@@ -189,7 +234,6 @@ public partial class AssimpMeshResource : IResourceFile
                     colOut.EnsureCapacity(sub.Colors.Length);
                     foreach (var col in sub.Colors) colOut.Add(col.ToVector4());
                 }
-                var weightedVerts = new HashSet<int>();
                 if (bones?.Count > 0 && file.MeshBuffer.Weights.Length > 0) {
                     foreach (var srcBone in bones) {
                         var bone = new Bone();
@@ -205,8 +249,30 @@ public partial class AssimpMeshResource : IResourceFile
                             if (weight > 0) {
                                 var srcBone = file.BoneData!.DeformBones[vd.boneIndices[i]];
                                 var bone = aiMesh.Bones[srcBone.index];
-                                weightedVerts.Add(vertId);
                                 bone.VertexWeights.Add(new VertexWeight(vertId, weight));
+                                if (isGltf && i > 4) {
+                                    isGltf = false;
+                                    Logger.Warn($"GLTF exporter does not support more than 4 vertex bone weights. Mesh will not behave correctly when re-imported. Consider using a different file format.");
+                                }
+                            }
+                        }
+                    }
+
+                    if (includeShapeKeys) {
+                        aiMesh.MorphMethod = MeshMorphingMethod.VertexBlend;
+                        var dict = new Dictionary<int, Bone>();
+                        foreach (var bone in file.BoneData!.DeformBones) {
+                            var attach = dict[bone.remapIndex] = new Bone() { Name = ShapekeyPrefix + bone.name };
+                            aiMesh.Bones.Add(attach);
+                        }
+                        for (int vertId = 0; vertId < sub.ShapeKeyWeights.Length; ++vertId) {
+                            var vd = sub.ShapeKeyWeights[vertId];
+                            for (int i = 0; i < vd.boneIndices.Length; ++i) {
+                                var weight = vd.boneWeights[i];
+                                if (weight > 0) {
+                                    var bone = dict[vd.boneIndices[i]];
+                                    bone.VertexWeights.Add(new VertexWeight(vertId, weight));
+                                }
                             }
                         }
                     }

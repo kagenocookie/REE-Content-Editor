@@ -1,4 +1,6 @@
 using Assimp;
+using Assimp.Configs;
+using Assimp.Unmanaged;
 using ContentEditor;
 using ContentPatcher;
 using ReeLib;
@@ -15,7 +17,7 @@ public partial class AssimpMeshResource(string Name, Workspace workspace) : IRes
 
     public Assimp.Scene Scene
     {
-        get => _scene ??= ConvertMeshToAssimpScene(NativeMesh, Name);
+        get => _scene ??= ConvertMeshToAssimpScene(NativeMesh, Name, false);
         set => _scene = value;
     }
 
@@ -73,11 +75,11 @@ public partial class AssimpMeshResource(string Name, Workspace workspace) : IRes
 
     public void WriteTo(string filepath)
     {
-        using AssimpContext importer = new AssimpContext();
+        using AssimpContext context = new AssimpContext();
 
         var ext = PathUtils.GetExtensionWithoutPeriod(filepath);
         string? exportFormat = null;
-        foreach (var fmt in importer.GetSupportedExportFormats()) {
+        foreach (var fmt in context.GetSupportedExportFormats()) {
             if (fmt.FileExtension == ext) {
                 exportFormat = fmt.FormatId;
                 break;
@@ -87,17 +89,17 @@ public partial class AssimpMeshResource(string Name, Workspace workspace) : IRes
             throw new NotImplementedException("Unsupported export format " + ext);
         }
 
-        var scene = Scene;
-        importer.ExportFile(scene, filepath, exportFormat);
+        var scene = GetSceneForExport(ext, true);
+        context.ExportFile(scene, filepath, exportFormat);
     }
 
     public void ExportToFile(string filepath, MotlistFile? motlist = null, MotFile? singleMot = null)
     {
-        using AssimpContext importer = new AssimpContext();
+        using AssimpContext context = new AssimpContext();
 
         var ext = PathUtils.GetExtensionWithoutPeriod(filepath);
         string? exportFormat = null;
-        foreach (var fmt in importer.GetSupportedExportFormats()) {
+        foreach (var fmt in context.GetSupportedExportFormats()) {
             if (fmt.FileExtension == ext) {
                 exportFormat = fmt.FormatId;
                 break;
@@ -106,8 +108,9 @@ public partial class AssimpMeshResource(string Name, Workspace workspace) : IRes
         if (exportFormat == null) {
             throw new NotImplementedException("Unsupported export format " + ext);
         }
+        var scene = GetSceneForExport(ext, false);
         if (motlist == null && singleMot == null) {
-            importer.ExportFile(Scene, filepath, exportFormat);
+            context.ExportFile(scene, filepath, exportFormat);
             return;
         }
 
@@ -116,26 +119,18 @@ public partial class AssimpMeshResource(string Name, Workspace workspace) : IRes
             return;
         }
 
-        var scene = motlist != null ? ExportWithAnimations(_mesh, motlist) : ExportWithAnimations(_mesh, singleMot!);
-        importer.ExportFile(scene, filepath, exportFormat);
+        if (singleMot != null) AddMotToScene(scene, singleMot);
+        if (motlist != null) AddMotlistToScene(scene, motlist);
+        context.ExportFile(scene, filepath, exportFormat);
     }
 
-    public Assimp.Scene ExportWithAnimations(MeshFile mesh, MotlistFile motlist)
+    private Assimp.Scene GetSceneForExport(string targetFileExtension, bool allowCache)
     {
-        var scene = ConvertMeshToAssimpScene(mesh, Name);
-        foreach (var file in motlist.MotFiles) {
-            if (file is MotFile mot) {
-                AddMotToScene(scene, mot);
-            }
-        }
+        var isGltf = targetFileExtension == "glb" || targetFileExtension == "gltf";
+        if (allowCache && _scene != null && !isGltf) return _scene;
 
-        return scene;
-    }
-
-    public Assimp.Scene ExportWithAnimations(MeshFile mesh, MotFile mot)
-    {
-        var scene = ConvertMeshToAssimpScene(mesh, Name);
-        AddMotToScene(scene, mot);
+        Assimp.Scene scene = ConvertMeshToAssimpScene(NativeMesh, Name, isGltf);
+        if (allowCache) _scene = scene;
         return scene;
     }
 }

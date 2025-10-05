@@ -43,7 +43,9 @@ public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<Motlis
             };
         } else {
             using AssimpContext importer = new AssimpContext();
-            importer.SetConfig(new IntegerPropertyConfig(AiConfigs.AI_CONFIG_PP_SLM_VERTEX_LIMIT, ushort.MaxValue));
+            importer.SetConfig(new MeshVertexLimitConfig(ushort.MaxValue));
+            importer.SetConfig(new VertexBoneWeightLimitConfig(16));
+            importer.SetConfig(new BooleanPropertyConfig("USE_UNLIMITED_BONES_PER VERTEX", true));
             importedScene = importer.ImportFileFromStream(
                 handle.Stream,
                 PostProcessSteps.Triangulate |
