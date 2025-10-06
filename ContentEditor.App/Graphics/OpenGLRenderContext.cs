@@ -147,8 +147,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             boneList = meshFile.BoneData;
         }
 
-        var warnedStreaming = false;
-        var mainLod = meshFile.MeshData.LODs.FirstOrDefault(lod => lod.MeshGroups.Any(mg => mg.Submeshes.Any(ss => ss.bufferIndex == 0)));
+        var mainLod = meshFile.MeshData.LODs.FirstOrDefault(lod => lod.MeshGroups.Any(mg => mg.Submeshes.All(ss => ss.Buffer.bufferIndex == ss.bufferIndex)));
         if (mainLod != meshFile.MeshData.LODs[0]) {
             if (mainLod == null) {
                 Logger.Error($"Mesh {fileHandle.Filepath} is a fully streaming mesh and currently can't be loaded");
@@ -159,14 +158,6 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
         foreach (var group in mainLod.MeshGroups) {
             foreach (var sub in group.Submeshes) {
-                if (sub.bufferIndex > 0) {
-                    if (!warnedStreaming) {
-                        Logger.Warn($"Mesh {fileHandle.Filepath} contains additional streamed data. It won't not be fully loaded.");
-                        warnedStreaming = true;
-                    }
-                    continue;
-                }
-
                 var newMesh = new TriangleMesh(GL, meshFile, sub);
                 newMesh.MeshGroup = group.groupId;
                 handle.SetMaterialName(handle.Meshes.Count, meshFile.MaterialNames[sub.materialIndex]);

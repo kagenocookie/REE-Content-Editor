@@ -200,6 +200,8 @@ public class FileTesterWindow : IWindowHandler
 
                     foreach (var (path, stream) in GetFileList(env, format)) {
                         if (token.IsCancellationRequested) return;
+                        if (format == KnownFileFormats.Mesh && path.StartsWith("natives/stm/streaming")) continue;
+
                         FileHandle? file = null;
                         try {
                             file = env.ResourceManager.CreateFileHandle(path, path, stream, allowDispose: false, keepFileReference: false);
@@ -273,6 +275,8 @@ public class FileTesterWindow : IWindowHandler
 
                         foreach (var (path, stream) in GetFileList(env, format)) {
                             if (token.IsCancellationRequested) return;
+                            if (format == KnownFileFormats.Mesh && path.StartsWith("natives/stm/streaming")) continue;
+
                             if (TryLoadFile(env, format, path, stream)) {
                                 success++;
                                 results[env.Game] = (success, fails);
@@ -460,12 +464,12 @@ public class FileTesterWindow : IWindowHandler
             // 0-9
             m.Header.flags, m.Header.nameCount, m.Header.uknCount, m.Header.ukn, m.Header.ukn1, m.Header.wilds_unkn1, m.Header.wilds_unkn2, m.Header.wilds_unkn3, m.Header.wilds_unkn4, m.Header.wilds_unkn5,
             // 10+
-            m.BoneData, m.MeshBuffer, m.MaterialNames, m.StreamingInfo, m.MeshData, m.ShadowMesh, m.OccluderMesh
+            m.BoneData, m.MeshBuffer, m.MaterialNames, m.StreamingInfo, m.MeshData, m.ShadowMesh, m.OccluderMesh, m.BlendShapes, m.FloatData, m.StreamingBuffers
         ]);
         AddCompareMapper<MeshBone>((m) => [m.boundingBox, m.index, m.childIndex, m.nextSibling, m.symmetryIndex, m.remapIndex]);
         AddCompareMapper<MeshBuffer>((m) => [
             m.Positions.Length, m.Normals.Length, m.Tangents.Length, m.UV0.Length, m.UV1.Length, m.Weights.Length, m.Colors.Length, m.Faces.Length,
-            m.elementCount, m.elementCount2, m.BufferHeaders, m.uknSize1, m.uknSize2]);
+            m.elementCount, m.elementCount2, m.Headers, m.uknSize1, m.uknSize2]);
         AddCompareMapper<MeshData>((m) => [m.uvCount, m.skinWeightCount, m.totalMeshCount, m.lodCount, m.materialCount, m.boundingBox, m.boundingSphere, m.LODs]);
         AddCompareMapper<ShadowMesh>((m) => [m.uvCount, m.skinWeightCount, m.totalMeshCount, m.lodCount, m.materialCount, m.LODs]);
         AddCompareMapper<MeshLOD>((m) => [m.VertexCount, m.IndexCount, m.PaddedIndexCount, m.MeshGroups, m.lodFactor, m.vertexFormat]);

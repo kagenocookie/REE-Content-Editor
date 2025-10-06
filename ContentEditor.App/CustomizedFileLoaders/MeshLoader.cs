@@ -7,6 +7,7 @@ using ContentEditor;
 using ContentEditor.App;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Common;
 
 namespace ContentEditor.App.FileLoaders;
 
@@ -29,18 +30,39 @@ public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<Motlis
         Assimp.Scene importedScene;
         if (handle.Format.format == KnownFileFormats.Mesh) {
             var fileHandler = new FileHandler(handle.Stream, handle.Filepath);
-            var file = new MeshFile(fileHandler);
-            if (!file.Read()) return null;
+            uint magic = 0;
+            handle.Stream.Seek(0, SeekOrigin.Begin);
+            handle.Stream.Read(MemoryUtils.StructureAsBytes(ref magic));
+            handle.Stream.Seek(0, SeekOrigin.Begin);
+            if (magic == MeshFile.Magic) {
+                var file = new MeshFile(fileHandler);
+                if (!file.Read()) return null;
 
-            if (file.MeshBuffer?.Positions == null) {
-                Logger.Error("Mesh has no vertices");
-                return null;
+                if (file.MeshBuffer?.Positions == null) {
+                    Logger.Error("Mesh has no vertices");
+                    return null;
+                }
+
+                if (file.RequiresStreamingData) {
+                    if (workspace.ResourceManager.TryResolveStreamingBufferFile(handle, out var bufferFile)) {
+                        file.LoadStreamingData(new FileHandler(bufferFile.Stream, bufferFile.NativePath));
+                    } else {
+                        Logger.Warn("Could not resolve streaming buffer for streaming mesh file " + handle.Filepath);
+                    }
+                }
+
+                return new AssimpMeshResource(name, workspace.Env) {
+                    NativeMesh = file,
+                    GameVersion = workspace.Env.Config.Game.GameEnum,
+                };
+            } else if (magic == MplyMeshFile.Magic) {
+                var mesh = new MplyMeshFile(fileHandler);
+                if (!mesh.Read()) return null;
+
+				throw new NotSupportedException("MPLY meshes not yet supported");
+            } else {
+				throw new NotSupportedException("Unknown mesh type " + magic.ToString("X"));
             }
-
-            return new AssimpMeshResource(name, workspace.Env) {
-                NativeMesh = file,
-                GameVersion = workspace.Env.Config.Game.GameEnum,
-            };
         } else {
             using AssimpContext importer = new AssimpContext();
             importer.SetConfig(new MeshVertexLimitConfig(ushort.MaxValue));

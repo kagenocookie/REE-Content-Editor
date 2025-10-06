@@ -143,6 +143,12 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         meshPath = fileHandle.Filepath;
         fileHandle.References.Add(this);
         mesh = fileHandle.GetResource<AssimpMeshResource>();
+        if (mesh == null) {
+            if (fileHandle.Filepath.Contains("streaming/")) {
+                Logger.Error("Can't directly open streaming meshes. Open the non-streaming file instead.");
+            }
+            return;
+        }
         TryGuessMdfFilepath();
 
         var meshComponent = previewGameobject?.GetComponent<MeshComponent>();
