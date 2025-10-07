@@ -24,7 +24,12 @@ public class MeshFileHandler : IObjectUIHandler
             context.AddChild<MeshFile, List<string>>("Materials", instance, getter: v => v!.MaterialNames).AddDefaultHandler();
             context.AddChild<MeshFile, MeshData>("Mesh", instance, getter: v => v!.MeshData).AddDefaultHandler<MeshData>();
             context.AddChild<MeshFile, ShadowMesh>("Shadow Mesh", instance, getter: v => v!.ShadowMesh).AddDefaultHandler<ShadowMesh>();
-            context.AddChild<MeshFile, MeshBuffer>("Data Buffer", instance, getter: v => v!.MeshBuffer).AddDefaultHandler();
+            context.AddChild<MeshFile, OccluderMesh>("Occluder Mesh", instance, getter: v => v!.OccluderMesh).AddDefaultHandler<OccluderMesh>();
+            context.AddChild<MeshFile, MeshBuffer>("Data Buffer", instance, getter: v => v!.MeshBuffer).AddDefaultHandler<MeshBuffer>();
+            context.AddChild<MeshFile, BlendShapeData>("Blend Shapes", instance, getter: v => v!.BlendShapes).AddDefaultHandler<BlendShapeData>();
+            context.AddChild<MeshFile, NormalRecalcData>("Normal Recalc", instance, getter: v => v!.NormalRecalcData).AddDefaultHandler<NormalRecalcData>();
+            context.AddChild<MeshFile, List<uint>>("Hashes", instance, getter: v => v!.Hashes).AddDefaultHandler<List<uint>>();
+            context.AddChild<MeshFile, List<Vector3>>("FloatData", instance, getter: v => v!.FloatData).AddDefaultHandler<List<Vector3>>();
         }
 
         context.ShowChildrenUI();
