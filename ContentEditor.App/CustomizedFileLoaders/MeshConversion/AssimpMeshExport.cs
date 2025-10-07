@@ -1,8 +1,6 @@
 using System.Globalization;
 using System.Numerics;
 using Assimp;
-using ContentEditor;
-using ContentEditor.App;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Common;
@@ -199,7 +197,8 @@ public partial class AssimpMeshResource : IResourceFile
         var meshes = new Dictionary<(int meshIndex, int meshGroup), Node>();
         if (file.MeshData == null) return scene;
 
-        foreach (var mesh in file.MeshData.LODs[0].MeshGroups) {
+        var lod = 0;
+        foreach (var mesh in file.MeshData.LODs[lod].MeshGroups) {
             int subId = 0;
             foreach (var sub in mesh.Submeshes) {
                 var aiMesh = new Mesh(PrimitiveType.Triangle);
@@ -259,7 +258,6 @@ public partial class AssimpMeshResource : IResourceFile
                     }
 
                     if (includeShapeKeys) {
-                        aiMesh.MorphMethod = MeshMorphingMethod.VertexBlend;
                         var dict = new Dictionary<int, Bone>();
                         foreach (var bone in file.BoneData!.DeformBones) {
                             var attach = dict[bone.remapIndex] = new Bone() { Name = ShapekeyPrefix + bone.name };
@@ -276,6 +274,29 @@ public partial class AssimpMeshResource : IResourceFile
                             }
                         }
                     }
+
+                    // blend shape export disabled for now, crashes - probably missing something stupid
+
+                    // if (file.BlendShapes != null && file.BlendShapes.Shapes.Count > lod)
+                    // {
+                    //     var shape = file.BlendShapes.Shapes[lod];
+                    //     // aiMesh.MorphMethod = MeshMorphingMethod.VertexBlend;
+                    //     // var attach = new MeshAnimationAttachment() { Name = shape };
+
+                    //     for (int i = 0; i < shape.Targets.Count; i++) {
+                    //         var target = shape.Targets[i];
+                    //         var attach = new MeshAnimationAttachment() { Name = target.name };
+                    //         aiMesh.MeshAnimationAttachments.Add(attach);
+                    //         attach.Vertices.AddRange(sub.Positions);
+                    //         attach.Normals.AddRange(sub.Normals);
+                    //         attach.Weight = 1;
+
+                    //         foreach (var blendSub in target.Submeshes) {
+                    //             var span = sub.GetBlendShapeRange(blendSub);
+                    //             span.Span.CopyTo(CollectionsMarshal.AsSpan(attach.Vertices).Slice(span.StartIndex));
+                    //         }
+                    //     }
+                    // }
                 }
                 var faces = sub.Indices.Length / 3;
                 aiMesh.Faces.EnsureCapacity(faces);
