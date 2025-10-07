@@ -137,7 +137,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
         var handle = new MeshResourceHandle(MeshRefs.NextInstanceID);
         var meshFile = meshResource.NativeMesh;
-        if (meshFile.MeshData == null) {
+        if (meshFile.MeshData == null || !(meshFile.MeshBuffer?.Positions.Length > 0)) {
             // TODO occluder meshes
             return handle;
         }
