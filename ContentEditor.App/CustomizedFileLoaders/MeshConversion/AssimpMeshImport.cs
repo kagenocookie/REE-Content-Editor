@@ -17,6 +17,7 @@ namespace ContentEditor.App.FileLoaders;
 public partial class AssimpMeshResource : IResourceFile
 {
     private const string ShapekeyPrefix = "SHAPEKEY_";
+    private const string SecondaryWeightDummyBonePrefix = "WEIGHT2_DUMMY_";
 
     private static MeshFile ImportMeshFromAssimp(Assimp.Scene scene, string versionConfig)
     {
@@ -80,7 +81,7 @@ public partial class AssimpMeshResource : IResourceFile
             static void AddRecursiveBones(MeshFile file, NodeCollection children, HashSet<string> boneNames, MeshBone? parentBone)
             {
                 foreach (var node in children) {
-                    if (node.Name.StartsWith(ShapekeyPrefix)) continue;
+                    if (node.Name.StartsWith(ShapekeyPrefix) || node.Name.StartsWith(SecondaryWeightDummyBonePrefix)) continue;
 
                     if (boneNames.Contains(node.Name)) {
                         file.BoneData ??= new();
@@ -93,6 +94,7 @@ public partial class AssimpMeshResource : IResourceFile
                             symmetryIndex = file.BoneData.Bones.Count,
                         };
                         file.BoneData.Bones.Add(bone);
+                        bone.useSecondaryWeight = node.Children.Any(ch => ch.Name.StartsWith(SecondaryWeightDummyBonePrefix));
                         if (parentBone == null) {
                             bone.globalTransform = bone.localTransform;
                             bone.parentIndex = -1;
@@ -203,6 +205,8 @@ public partial class AssimpMeshResource : IResourceFile
             if (buffer.Weights.Length > 0) {
                 for (int i = 0; i < aiMesh.Bones.Count; i++) {
                     var aiBone = aiMesh.Bones[i];
+                    if (aiBone.Name.StartsWith(SecondaryWeightDummyBonePrefix)) continue;
+
                     var isShapeKey = aiBone.Name.StartsWith(ShapekeyPrefix);
                     int boneIndex;
                     if (isShapeKey) {

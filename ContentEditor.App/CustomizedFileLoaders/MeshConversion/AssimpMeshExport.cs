@@ -165,6 +165,9 @@ public partial class AssimpMeshResource : IResourceFile
                 var boneNode = new Node(srcBone.name, parentBone);
                 boneDict[srcBone.index] = boneNode;
                 boneNode.Transform = Matrix4x4.Transpose(srcBone.localTransform.ToSystem());
+                if (srcBone.useSecondaryWeight) {
+                    boneNode.Children.Add(new Node(SecondaryWeightDummyBonePrefix + srcBone.name, boneNode));
+                }
                 parentBone.Children.Add(boneNode);
             }
 
@@ -239,6 +242,11 @@ public partial class AssimpMeshResource : IResourceFile
                         bone.Name = srcBone.name;
                         bone.OffsetMatrix = Matrix4x4.Transpose(srcBone.inverseGlobalTransform.ToSystem());
                         aiMesh.Bones.Add(bone);
+                    }
+                    foreach (var srcBone in bones) {
+                        if (srcBone.useSecondaryWeight) {
+                            aiMesh.Bones.Add(new Bone() { Name = SecondaryWeightDummyBonePrefix + srcBone.name, OffsetMatrix = Matrix4x4.Identity });
+                        }
                     }
 
                     for (int vertId = 0; vertId < sub.Weights.Length; ++vertId) {
