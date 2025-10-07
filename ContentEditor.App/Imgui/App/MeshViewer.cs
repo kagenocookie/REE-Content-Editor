@@ -31,7 +31,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     public Scene? Scene => scene;
 
     private const float TopMargin = 64;
-    private const string MeshFilesFilter = "GLB (*.glb)|*.glb|GLTF (*.gltf)|*.gltf|FBX (*.fbx)|*.fbx";
+    private const string MeshFilesFilter = "FBX (*.fbx)|*.fbx|GLB (*.glb)|*.glb|GLTF (*.gltf)|*.gltf";
 
     private string? loadedMdf;
     private string? mdfSource;
