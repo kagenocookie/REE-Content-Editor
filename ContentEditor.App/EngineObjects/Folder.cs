@@ -145,10 +145,7 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
     {
         if (string.IsNullOrEmpty(ScenePath)) return;
 
-        Scene?.DeferAction(() => {
-            Scene.RequestLoadScene(this);
-            ChildScene = Scene.GetChildScene(ScenePath);
-        });
+        Scene?.RequestLoadChildScene(this);
     }
 
     private GameObject? FindGameObjectByName(ReadOnlySpan<char> name)

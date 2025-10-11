@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.Json.Nodes;
@@ -11,12 +12,24 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 {
     private readonly Dictionary<string, ResourceData> resources = new();
     private readonly Dictionary<string, EntityData> entities = new();
-    private readonly Dictionary<string, FileHandle> openFiles = new();
+    private readonly ConcurrentDictionary<string, FileHandle> openFiles = new();
     private BundleManager? bundles;
     private ContentWorkspace workspace = null!;
     private Bundle? activeBundle;
 
     private readonly List<IFileLoader> FileLoaders = new();
+
+    private readonly ConcurrentQueue<(string filename, IAsyncResourceReceiver receiver, Action<FileHandle> callback)> backgroundQueue = new();
+
+    private static readonly HashSet<KnownFileFormats> PreloadFormats = [
+        KnownFileFormats.Scene,
+        KnownFileFormats.Prefab,
+        KnownFileFormats.Mesh,
+        KnownFileFormats.CollisionMesh,
+        KnownFileFormats.RequestSetCollider,
+        KnownFileFormats.Texture,
+        KnownFileFormats.MaterialDefinition,
+    ];
 
     public bool HasAnyActivatedEntities => entities.Values.Any(entityData => entityData.activatedInstances.Count != 0);
 
@@ -648,6 +661,48 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         return false;
     }
 
+    private void RunBackgroundLoadQueue()
+    {
+        var linkedResourceQueue = new Queue<string>();
+        while (backgroundQueue.TryDequeue(out var item)) {
+            if (!TryResolveFile(item.filename, out var mainRes)) continue;
+            linkedResourceQueue.Enqueue(item.filename);
+
+            var preloadedResources = 0;
+            while (linkedResourceQueue.Count != 0) {
+                var next = linkedResourceQueue.Dequeue();
+                var fmt = PathUtils.ParseFileFormat(next);
+                if (PreloadFormats.Contains(fmt.format)) {
+                    if (!TryResolveFile(next, out var linked)) continue;
+                    preloadedResources++;
+
+                    if (fmt.format == KnownFileFormats.Scene) {
+                        var linkscn = linked.GetFile<ScnFile>();
+                        foreach (var resource in linkscn.ResourceInfoList) {
+                            linkedResourceQueue.Enqueue(resource.Path);
+                        }
+                    }
+                }
+            }
+
+            item.receiver.ReceiveResource(mainRes, item.callback);
+            // Logger.Debug($"Preloaded {preloadedResources} resources for {item.filename}");
+        }
+    }
+
+    /// <summary>
+    /// Attempt to find and load a file based on an internal or native filepath. Checks the active bundle and base game files and returns the first result.
+    /// </summary>
+    public void TryResolveFileInBackground(string filename, IAsyncResourceReceiver receiver, Action<FileHandle> callback)
+    {
+        if (backgroundQueue.IsEmpty) {
+            backgroundQueue.Enqueue((filename, receiver, callback));
+            Task.Run(RunBackgroundLoadQueue);
+        } else {
+            backgroundQueue.Enqueue((filename, receiver, callback));
+        }
+    }
+
     /// <summary>
     /// Attemps to resolve and load a streaming buffer file for the given file. Automatically attempts to prepend the streaming/ prefix at the correct position of the file path.
     /// </summary>
@@ -738,7 +793,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         }
 
         if (handle == null) return null;
-        openFiles.Add(handle.NativePath ?? handle.Filepath, handle);
+        openFiles.TryAdd(handle.NativePath ?? handle.Filepath, handle);
         return handle;
     }
 
@@ -883,7 +938,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         if (keepFileReference && !openFiles.TryAdd(filekey, handle)) {
             var prev = openFiles[filekey];
             CloseFile(prev);
-            openFiles.Add(filekey, handle);
+            openFiles.TryAdd(filekey, handle);
         }
         return handle;
     }
@@ -960,8 +1015,8 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
     public void CloseFile(FileHandle file)
     {
-        if (!openFiles.Remove(file.Filepath) && file.NativePath != null) {
-            openFiles.Remove(file.NativePath);
+        if (!openFiles.Remove(file.Filepath, out _) && file.NativePath != null) {
+            openFiles.Remove(file.NativePath, out _);
         }
         foreach (var rf in file.References) {
             rf.Close();

@@ -9,7 +9,7 @@ using Silk.NET.OpenGL;
 
 namespace ContentEditor.App;
 
-public sealed class Scene : NodeTreeContainer, IDisposable
+public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiver
 {
     public readonly Folder RootFolder;
     public IEnumerable<Folder> Folders => RootFolder.Children;
@@ -70,22 +70,22 @@ public sealed class Scene : NodeTreeContainer, IDisposable
         return null;
     }
 
-    public void RequestLoadScene(Folder folder)
+    public void RequestLoadChildScene(Folder childFolder)
     {
-        if (folder.Scene != this || string.IsNullOrEmpty(folder.ScenePath)) return;
-        if (!_requestedScenes.Add(folder.ScenePath)) return;
-        if (GetChildScene(folder.ScenePath) != null) return;
+        if (childFolder.Scene != this || string.IsNullOrEmpty(childFolder.ScenePath)) return;
+        if (GetChildScene(childFolder.ScenePath) != null) return;
+        if (!_requestedScenes.Add(childFolder.ScenePath)) return;
 
-        if (Workspace.ResourceManager.TryResolveFile(folder.ScenePath, out var envScene)) {
+        Workspace.ResourceManager.TryResolveFileInBackground(childFolder.ScenePath, this, (envScene) => {
             var scene = envScene.GetCustomContent<RawScene>();
             if (scene == null) return;
 
             var childSceneRoot = scene.GetSharedInstance(Workspace.Env);
             var childScene = childSceneRoot.Scene;
             if (childScene == null) {
-                SceneManager.CreateScene(envScene, IsActive, this, childSceneRoot);
+                childFolder.ChildScene = SceneManager.CreateScene(envScene, IsActive, this, childSceneRoot);
             }
-        }
+        });
     }
 
     public GameObject? Find(Guid guid)
@@ -224,4 +224,9 @@ public sealed class Scene : NodeTreeContainer, IDisposable
     }
 
     public override string ToString() => Name;
+
+    public void ReceiveResource(FileHandle file, Action<FileHandle> callback)
+    {
+        DeferAction(() => callback.Invoke(file));
+    }
 }
