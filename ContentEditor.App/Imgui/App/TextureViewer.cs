@@ -29,7 +29,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
 
     private WindowData data = null!;
     protected UIContext context = null!;
-    
+
     public TextureViewer(string path)
     {
         texturePath = path;
@@ -215,7 +215,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
             Vector2 size;
             float tabSpace = tabSize.X / tabSize.Y;
             float texSize = (float)texture.Width / texture.Height;
-       
+
             if (texSize > tabSpace) {
                 size = new Vector2(tabSize.X, tabSize.X / texSize);
             } else {
@@ -223,12 +223,15 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
             }
             ImGui.Image((nint)texture.Handle, size);
         }
-        
     }
     private static string GetTextureTypeSuffix(string path)
     {
         int lastUnderscoreIDX = path.LastIndexOf('_');
+        if (lastUnderscoreIDX == -1) return "";
+
         int firstDotIDX = path.IndexOf('.', lastUnderscoreIDX);
+        if (firstDotIDX == -1) return "";
+
         path = path.Substring(lastUnderscoreIDX + 1, firstDotIDX - lastUnderscoreIDX - 1);
         return path;
     }
