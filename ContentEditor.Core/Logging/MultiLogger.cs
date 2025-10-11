@@ -7,6 +7,7 @@ public class MultiLogger(params ILogger[] loggers) : ILogger
     {
         get => _loggingLevel;
         set {
+            this._loggingLevel = value;
             foreach (var log in loggers) log.LoggingLevel = value;
         }
     }

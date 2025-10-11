@@ -31,6 +31,7 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
     private RszInstance instance;
 
     public SceneFlags SceneFlags { get; set; } = SceneFlags.All;
+    public Scene? ChildScene { get; set; }
 
     public bool ShouldDraw => (SceneFlags & SceneFlags.Draw) != 0 && Parent?.ShouldDraw != false;
     public bool ShouldDrawSelf
@@ -138,6 +139,16 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
         foreach (var go in GameObjects) {
             go.SetActive(active);
         }
+    }
+
+    public void RequestLoad()
+    {
+        if (string.IsNullOrEmpty(ScenePath)) return;
+
+        Scene?.DeferAction(() => {
+            Scene.RequestLoadScene(this);
+            ChildScene = Scene.GetChildScene(ScenePath);
+        });
     }
 
     private GameObject? FindGameObjectByName(ReadOnlySpan<char> name)

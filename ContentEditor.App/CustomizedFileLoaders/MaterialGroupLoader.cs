@@ -1,10 +1,4 @@
-using System.Reflection.Metadata;
 using Assimp;
-using Assimp.Configs;
-using Assimp.Unmanaged;
-using ContentEditor;
-using ContentEditor.App;
-using ContentEditor.App.Graphics;
 using ContentPatcher;
 using ReeLib;
 
@@ -22,7 +16,7 @@ public class MaterialGroupLoader : IFileLoader,
 
     public IResourceFilePatcher? CreateDiffHandler() => null;
 
-    private static HashSet<string> AlbedoTextures = ["BaseDielectricMap", "ALBD", "ALBDmap", "BackMap", "BaseMetalMap", "BaseDielectricMapBase", "BaseAlphaMap"];
+    private static readonly HashSet<string> AlbedoTextures = ["BaseDielectricMap", "ALBD", "ALBDmap", "BackMap", "BaseMetalMap", "BaseDielectricMapBase", "BaseAlphaMap"];
 
     public IResourceFile? Load(ContentWorkspace workspace, FileHandle handle)
     {
@@ -34,7 +28,9 @@ public class MaterialGroupLoader : IFileLoader,
         foreach (var srcMat in mdf.Materials) {
             var newMat = new Assimp.Material();
             newMat.Name = srcMat.Header.matName;
-            var diffuse = srcMat.Textures.FirstOrDefault(tex => AlbedoTextures.Contains(tex.texType));
+            var diffuseCandidates = srcMat.Textures.Where(tex => AlbedoTextures.Contains(tex.texType));
+            var diffuse = diffuseCandidates.FirstOrDefault(tex => tex.texPath?.Contains("null", StringComparison.InvariantCultureIgnoreCase) == false)
+                ?? diffuseCandidates.FirstOrDefault();
             if (diffuse != null) {
                 newMat.TextureDiffuse = new TextureSlot(diffuse.texPath, TextureType.Diffuse, 0, TextureMapping.FromUV, 0, 1, TextureOperation.Multiply, TextureWrapMode.Wrap, TextureWrapMode.Wrap, 0);
             }

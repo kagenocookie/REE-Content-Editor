@@ -35,7 +35,7 @@ public static partial class RszFieldCache
     /// <summary>
     /// via.render.CompositeMesh
     /// </summary>
-    [RszAccessor("via.render.CompositeMesh")]
+    [RszAccessor("via.render.CompositeMesh", [nameof(GameName.re7), nameof(GameName.re2), nameof(GameName.dmc5), nameof(GameName.re3), nameof(GameName.re8)], GamesExclude = true)]
     public static class CompositeMesh
     {
         /// <summary>
@@ -67,8 +67,8 @@ public static partial class RszFieldCache
             /// <summary>
             /// Instance transforms
             /// </summary>
-            public static readonly RszFieldAccessorFirstFallbacks<List<object>> Transforms =
-                First<List<object>>([
+            public static readonly RszFieldAccessorLastFallbacks<List<object>> Transforms =
+                Last<List<object>>([
                     fi => fi.array && fi.type == RszFieldType.Object,
                     fi => fi.array && fi.size == 4
                 ])

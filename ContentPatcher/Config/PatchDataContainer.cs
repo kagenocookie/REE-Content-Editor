@@ -2,6 +2,7 @@ namespace ContentPatcher;
 
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using ContentEditor;
 using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher.StringFormatting;
@@ -123,7 +124,8 @@ public class PatchDataContainer(string filepath)
             if (newDict.Classes != null) foreach (var (cls, config) in newDict.Classes) {
                 var rszClass = workspace.Env.RszParser.GetRSZClass(cls);
                 if (rszClass == null) {
-                    throw new Exception($"Unknown RSZ class {cls}");
+                    Logger.Debug($"Unknown RSZ class {cls} for game {workspace.Env.Config.Game}");
+                    continue;
                 }
 
                 if (!configs.TryGetValue(cls, out var runtimeConfig)) {

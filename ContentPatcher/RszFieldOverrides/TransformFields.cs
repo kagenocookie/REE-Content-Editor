@@ -16,5 +16,6 @@ public static partial class RszFieldCache
         public static readonly RszFieldAccessorFixedIndex<Vector3> LocalPosition = Index<Vector3>(0).Type(RszFieldType.Vec3);
         public static readonly RszFieldAccessorFixedIndex<Quaternion> LocalRotation = Index<Quaternion>(1).Type(RszFieldType.Quaternion);
         public static readonly RszFieldAccessorFixedIndex<Vector3> LocalScale = Index<Vector3>(2).Type(RszFieldType.Vec3);
+        public static readonly RszFieldAccessorName<bool> AbsoluteScaling = Name<bool>(nameof(AbsoluteScaling)).Type(RszFieldType.Bool).Optional();
     }
 }

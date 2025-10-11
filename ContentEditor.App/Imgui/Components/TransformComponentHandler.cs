@@ -6,7 +6,7 @@ using ImGuiNET;
 namespace ContentEditor.App.ImguiHandling;
 
 [ObjectImguiHandler(typeof(Transform), Stateless = true, Priority = 0)]
-public class TransformComponentHandler : IObjectUIHandler
+public class TransformComponentHandler : IObjectUIHandler, IUIContextEventHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -33,8 +33,8 @@ public class TransformComponentHandler : IObjectUIHandler
             ImGui.SetNextItemWidth(w * 0.25f - ImGui.GetStyle().FramePadding.X * 2);
             ImGui.LabelText("Local Position", "##labelP");
             if (ImGui.DragFloat4("Local Rotation", ref localrot, 0.002f)) {
-                localrot = Quaternion.Normalize(localrot.ToQuaternion()).ToVector4();
-                UndoRedo.RecordCallbackSetter(context, instance, (Quaternion)data.Values[1], localrot.ToQuaternion(), static (inst, value) => {
+                var newQ = Quaternion.Normalize(localrot.ToQuaternion());
+                UndoRedo.RecordCallbackSetter(context, instance, (Quaternion)data.Values[1], newQ, static (inst, value) => {
                     inst.Data.Values[1] = value;
                     inst.InvalidateTransform();
                 }, $"{instance.GetHashCode()} LocalRot");
@@ -60,5 +60,14 @@ public class TransformComponentHandler : IObjectUIHandler
             context.ShowChildrenUI();
             ImGui.TreePop();
         }
+    }
+
+    public bool HandleEvent(UIContext context, EditorUIEvent eventData)
+    {
+        if (eventData.type is UIContextEvent.Updated or UIContextEvent.Changed or UIContextEvent.Reverted) {
+            var inst = context.Get<Transform>();
+            inst.InvalidateTransform();
+        }
+        return true;
     }
 }

@@ -2,9 +2,6 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using Assimp;
 using Assimp.Configs;
-using Assimp.Unmanaged;
-using ContentEditor;
-using ContentEditor.App;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Common;
@@ -56,10 +53,21 @@ public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<Motlis
                     GameVersion = workspace.Env.Config.Game.GameEnum,
                 };
             } else if (magic == MplyMeshFile.Magic) {
-                var mesh = new MplyMeshFile(fileHandler);
-                if (!mesh.Read()) return null;
+                var mply = new MplyMeshFile(fileHandler);
+                if (!mply.Read()) return null;
 
-				throw new NotSupportedException("MPLY meshes not yet supported");
+                // if (workspace.ResourceManager.TryResolveStreamingBufferFile(handle, out var bufferFile)) {
+                //     mesh.LoadStreamingData(new FileHandler(bufferFile.Stream, bufferFile.NativePath));
+                // } else {
+                //     Logger.Warn("Could not resolve streaming buffer for streaming mesh file " + handle.Filepath);
+                // }
+
+                var mesh = mply.ConvertToMergedClassicMesh();
+
+                return new AssimpMeshResource(name, workspace.Env) {
+                    NativeMesh = mesh,
+                    GameVersion = workspace.Env.Config.Game.GameEnum,
+                };
             } else {
 				throw new NotSupportedException("Unknown mesh type " + magic.ToString("X"));
             }

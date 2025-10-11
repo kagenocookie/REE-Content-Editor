@@ -113,6 +113,11 @@ public class RszFieldArrayStringFormatterSource : ISource
             return true;
         }
 
+        if (selectorInfo.SelectorText == "Count") {
+            selectorInfo.Result = instances.Count;
+            return true;
+        }
+
         throw new Exception($"Invalid field {selectorInfo.SelectorText} index {index} for string format {selectorInfo.Placeholder}");
     }
 }

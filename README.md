@@ -48,7 +48,7 @@ Some files may not fully work for other RE ENGINE games.
 | .mdf2     | ☑️ read/write
 | .efx      | ☑️ read/write
 | .tex, .dds  | view, convert  | Convert to TGA/PNG
-| .mesh     | 3D display | GLTF export
+| .mesh     | ☑️ 3D & data display | FBX & GLTF export/import<br>Format conversion across games
 | .motlist  | ☑️ read/write | Animation preview<br>GLTF import/export<br>Mot copy/paste/retargeting ([info](https://github.com/kagenocookie/REE-Content-Editor/wiki/Animation-tools))
 | .rcol     | read/write | 3D shape preview
 | .motbank  | read/write
@@ -56,7 +56,7 @@ Some files may not fully work for other RE ENGINE games.
 | .ainvm    | raw data read
 | .cdef, .def | ☑️ read/write
 | common image formats | view only
-| common mesh formats | 3D display
+| common mesh formats | ☑️ 3D display | Convert to RE mesh
 | many other misc files | raw data read/write
 
 </div>

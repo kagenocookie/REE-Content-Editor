@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
+using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
-using ContentEditor.Editor;
 using ContentPatcher;
 using ReeLib;
 using Silk.NET.Maths;
@@ -24,8 +24,10 @@ public sealed class Scene : NodeTreeContainer, IDisposable
     public string InternalPath { get; }
     public ContentWorkspace Workspace { get; }
     public bool IsActive { get; set; }
+    public SceneManager SceneManager { get; internal set; } = null!;
 
     private List<RenderableComponent> renderComponents = new();
+    private List<IUpdateable> updateComponents = new();
 
     private GL _gl;
 
@@ -37,8 +39,9 @@ public sealed class Scene : NodeTreeContainer, IDisposable
     public Camera ActiveCamera => RootScene.Camera;
 
     private bool wasActivatedBefore;
+    private HashSet<string> _requestedScenes = new(0);
 
-    public Scene(string name, string internalPath, ContentWorkspace workspace, Scene? parentScene = null, Folder? rootFolder = null, GL? gl = null)
+    internal Scene(string name, string internalPath, ContentWorkspace workspace, Scene? parentScene = null, Folder? rootFolder = null, GL? gl = null)
     {
         Name = name;
         InternalPath = internalPath;
@@ -54,15 +57,35 @@ public sealed class Scene : NodeTreeContainer, IDisposable
 
     public GameObject? Find(ReadOnlySpan<char> path) => RootFolder.Find(path);
 
-    public Scene? GetChildScene(string nameOrPath)
+    public Scene? GetChildScene(string? nameOrPath)
     {
         foreach (var child in childScenes) {
-            if (child.Name.Equals(nameOrPath, StringComparison.InvariantCultureIgnoreCase) || child.InternalPath.Equals(nameOrPath, StringComparison.InvariantCultureIgnoreCase)) {
+            if (child.Name.Equals(nameOrPath, StringComparison.InvariantCultureIgnoreCase) ||
+                child.InternalPath.Equals(nameOrPath, StringComparison.InvariantCultureIgnoreCase) ||
+                child.RootFolder.Name.Equals(nameOrPath, StringComparison.InvariantCultureIgnoreCase)) {
                 return child;
             }
         }
 
         return null;
+    }
+
+    public void RequestLoadScene(Folder folder)
+    {
+        if (folder.Scene != this || string.IsNullOrEmpty(folder.ScenePath)) return;
+        if (!_requestedScenes.Add(folder.ScenePath)) return;
+        if (GetChildScene(folder.ScenePath) != null) return;
+
+        if (Workspace.ResourceManager.TryResolveFile(folder.ScenePath, out var envScene)) {
+            var scene = envScene.GetCustomContent<RawScene>();
+            if (scene == null) return;
+
+            var childSceneRoot = scene.GetSharedInstance(Workspace.Env);
+            var childScene = childSceneRoot.Scene;
+            if (childScene == null) {
+                SceneManager.CreateScene(envScene, IsActive, this, childSceneRoot);
+            }
+        }
     }
 
     public GameObject? Find(Guid guid)
@@ -72,6 +95,17 @@ public sealed class Scene : NodeTreeContainer, IDisposable
                 return go;
             }
         }
+        return null;
+    }
+
+    public Folder? FindFolder(string name)
+    {
+        foreach (var folder in Folders) {
+            if (folder.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase)) {
+                return folder;
+            }
+        }
+
         return null;
     }
 
@@ -111,6 +145,13 @@ public sealed class Scene : NodeTreeContainer, IDisposable
         return null;
     }
 
+    internal void Update(float deltaTime)
+    {
+        foreach (var comp in updateComponents) {
+            comp.Update(deltaTime);
+        }
+    }
+
     internal void Render(float deltaTime)
     {
         if (renderComponents.Count == 0) return;
@@ -134,6 +175,8 @@ public sealed class Scene : NodeTreeContainer, IDisposable
     {
         if (active == IsActive) return;
 
+        if (active) Logger.Debug("Loading scene " + Name);
+        else Logger.Debug("Unloading scene " + Name);
         IsActive = active;
         RootFolder.SetActive(active);
         if (!wasActivatedBefore && active && RootScene == this) {
@@ -158,6 +201,16 @@ public sealed class Scene : NodeTreeContainer, IDisposable
             childScenes.Last().Dispose();
         }
         ParentScene?.childScenes.Remove(this);
+    }
+
+    internal void AddUpdateComponent<TComponent>(TComponent component) where TComponent : Component, IUpdateable
+    {
+        updateComponents.Add(component);
+    }
+
+    internal void RemoveUpdateComponent<TComponent>(TComponent component) where TComponent : Component, IUpdateable
+    {
+        updateComponents.Remove(component);
     }
 
     internal void AddRenderComponent(RenderableComponent renderComponent)

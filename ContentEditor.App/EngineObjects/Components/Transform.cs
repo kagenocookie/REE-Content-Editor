@@ -45,7 +45,7 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
         }
     }
 
-    public Vector3 Position => WorldTransform.Column4.ToSystem().ToVec3();
+    public Vector3 Position => WorldTransform.Row4.ToSystem().ToVec3();
 
     public Vector3D<float> SilkLocalPosition => ((Vector3)Data.Values[0]).ToGeneric();
     public Quaternion<float> SilkLocalRotation => ((Quaternion)Data.Values[1]).ToGeneric();
@@ -61,7 +61,15 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
             if (_worldTransformValid) return ref _cachedWorldTransform;
 
             if (GameObject.Parent != null) {
-                _cachedWorldTransform = ComputeLocalTransformMatrix() * GameObject.Parent.WorldTransform;
+                var absoluteScale = RszFieldCache.Transform.AbsoluteScaling.Get(Data);
+                if (absoluteScale) {
+                    // if true, parent scale does not affect self scale (position/rotation still affected) (see DD2 Env_1557 ladder)
+                    _cachedWorldTransform = ComputeLocalTransformMatrix() * GameObject.Parent.WorldTransform;
+                    Matrix4X4.Decompose(_cachedWorldTransform, out _, out var rot, out var pos);
+                    _cachedWorldTransform = Matrix4X4.CreateScale<float>(SilkLocalScale) * Matrix4X4.CreateFromQuaternion(rot) * Matrix4X4.CreateTranslation(pos);
+                } else {
+                    _cachedWorldTransform = ComputeLocalTransformMatrix() * GameObject.Parent.WorldTransform;
+                }
             } else if (GameObject.Folder != null) {
                 _cachedWorldTransform = ComputeLocalTransformMatrix() * Matrix4X4.CreateTranslation<float>(GameObject.Folder.OffsetSilk);
             } else {

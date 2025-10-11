@@ -222,10 +222,10 @@ public partial class AssimpMeshResource : IResourceFile
                     foreach (var uv in sub.UV1) uvOut.Add(new System.Numerics.Vector3(uv.X, uv.Y, 0));
                     aiMesh.UVComponentCount[1] = 2;
                 }
-                if (file.MeshBuffer.Normals != null) {
+                if (file.MeshBuffer.Normals.Length > 0) {
                     aiMesh.Normals.AddRange(sub.Normals);
                 }
-                if (file.MeshBuffer.Tangents != null) {
+                if (file.MeshBuffer.Tangents.Length > 0) {
                     aiMesh.Tangents.AddRange(sub.Tangents);
                     for (int i = 0; i < sub.BiTangents.Length; ++i) {
                         aiMesh.BiTangents.Add(sub.GetBiTangent(i));

@@ -1,4 +1,4 @@
-namespace ContentPatcher;
+namespace ContentEditor.App;
 
 [System.AttributeUsage(AttributeTargets.Method|AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
 sealed class RszComponentClassAttribute : Attribute

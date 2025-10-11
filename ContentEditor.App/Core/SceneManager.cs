@@ -27,9 +27,10 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
 
         // convert in case we received a native and not internal path
         internalPath = PathUtils.GetInternalFromNativePath(internalPath);
-        var scene = new Scene(name, internalPath, env, parentScene, rootFolder) { IsActive = render };
+        var scene = new Scene(name, internalPath, env, parentScene, rootFolder) { IsActive = render, SceneManager = this };
         scene.RenderContext.ResourceManager = env.ResourceManager;
         scenes.Add(scene);
+        if (render) Logger.Debug("Loading scene " + rootFolder?.Name ?? internalPath);
         rootFolder?.MoveToScene(scene);
         return scene;
     }
@@ -56,11 +57,14 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
 
     public void Update(float deltaTime)
     {
-        foreach (var scene in scenes) {
+        for (int i = 0; i < scenes.Count; i++) {
+            Scene? scene = scenes[i];
             scene.ExecuteDeferredActions();
         }
 
-        // TODO invoke all object updates once we have some behaviors
+        foreach (var scene in scenes) {
+            scene.Update(deltaTime);
+        }
     }
 
     public void Render(float deltaTime)
