@@ -367,7 +367,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
             Vector3D<float> campos;
             if (Matrix4X4.Invert(ViewMatrix, out var inverted)) {
-                campos = inverted.Column4.ToSystem().ToVec3().ToGeneric() with { Y = 0 };
+                campos = inverted.Row4.ToSystem().ToVec3().ToGeneric() with { Y = 0 };
             } else {
                 campos = new();
             }
