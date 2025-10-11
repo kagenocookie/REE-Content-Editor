@@ -147,15 +147,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             boneList = meshFile.BoneData;
         }
 
-        var mainLod = meshFile.MeshData.LODs.FirstOrDefault(lod => lod.MeshGroups.Any(mg => mg.Submeshes.All(ss => ss.Buffer.bufferIndex == ss.bufferIndex)));
-        if (mainLod != meshFile.MeshData.LODs[0]) {
-            if (mainLod == null) {
-                Logger.Error($"Mesh {fileHandle.Filepath} is a fully streaming mesh and currently can't be loaded");
-                return handle;
-            }
-            Logger.Warn($"Mesh {fileHandle.Filepath} is a streaming mesh and LOD0 is not part of the main mesh file. Loading lower quality mesh (LOD{meshFile.MeshData.LODs.IndexOf(mainLod)}).");
-        }
-
+        var mainLod = meshFile.MeshData.LODs[0];
         foreach (var group in mainLod.MeshGroups) {
             foreach (var sub in group.Submeshes) {
                 var newMesh = new TriangleMesh(GL, meshFile, sub);
@@ -209,7 +201,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
                 if (streamingTex != null) return streamingTex;
             }
 
-            return LoadTextureInternal(texture.FilePath) ?? GetMissingTexture();;
+            return LoadTextureInternal(texture.FilePath) ?? GetMissingTexture();
         } catch (Exception e) {
             Logger.Error("Failed to load texture " + texture.FilePath + ": " + e.Message);
             return GetMissingTexture();

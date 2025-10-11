@@ -197,6 +197,7 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
         foreach (var mat in mats) {
             grp.Add(mat);
         }
+        MaterialRefs.AddUnnamed(grp);
         return grp;
     }
 

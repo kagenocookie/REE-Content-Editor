@@ -86,7 +86,6 @@ public abstract class Mesh : IDisposable
         VAO.Bind();
         VBO.Bind();
         EBO.Bind();
-        ApplyVertexAttributes();
     }
 
     private void UpdateAttributes()
@@ -125,6 +124,8 @@ public abstract class Mesh : IDisposable
     {
         VBO.UpdateBuffer(VertexData);
         EBO.UpdateBuffer(Indices);
+        Bind();
+        ApplyVertexAttributes();
     }
 
     public void Dispose()

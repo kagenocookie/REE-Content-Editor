@@ -26,28 +26,48 @@ public class TriangleMesh : Mesh
 
     public TriangleMesh(GL gl, MeshFile sourceMesh, ReeLib.Mesh.Submesh submesh) : base(gl)
     {
+        PrepareMeshVertexBufferData(sourceMesh, submesh);
+        UpdateBuffers();
+    }
+
+    public TriangleMesh(MeshFile sourceMesh, ReeLib.Mesh.Submesh submesh)
+    {
+        PrepareMeshVertexBufferData(sourceMesh, submesh);
+    }
+
+    private void PrepareMeshVertexBufferData(MeshFile sourceMesh, ReeLib.Mesh.Submesh submesh)
+    {
         if (sourceMesh.MeshBuffer == null)
         {
             return;
         }
 
-        Flags = (sourceMesh.MeshBuffer.Tangents.Length != 0 ? MeshFlags.HasTangents : MeshFlags.None)
-            | (sourceMesh.BoneData?.Bones.Count > 0 ? MeshFlags.HasBones : MeshFlags.None);
+        var hasTan = sourceMesh.MeshBuffer.Tangents.Length != 0;
+        var hasWeights = sourceMesh.BoneData?.Bones.Count > 0;
+        var hasNormals = sourceMesh.MeshBuffer.Normals.Length > 0;
+        Flags = (hasTan ? MeshFlags.HasTangents : MeshFlags.None)
+            | (hasWeights ? MeshFlags.HasBones : MeshFlags.None);
+
+        var meshVerts = submesh.Positions;
+        var meshUV = submesh.UV0;
+        var meshIndices = submesh.Indices;
+        var meshNormals = hasNormals ? submesh.Normals : default;
+        var meshTangents = hasTan ? submesh.Tangents : default;
+        var meshWeights = hasWeights ? submesh.Weights : default;
 
         var attrs = AttributeCount;
-        Indices = new int[submesh.Indices.Length];
-        VertexData = new float[submesh.Indices.Length * attrs];
-        var hasNormals = sourceMesh.MeshBuffer.Normals.Length > 0;
+        Indices = new int[meshIndices.Length];
+        VertexData = new float[meshIndices.Length * attrs];
         var tangentsOffset = TangentAttributeOffset;
         var boneIndsOffset = BonesAttributeOffset;
         var boneWeightsOffset = BonesAttributeOffset + 4;
 
         int index = 0;
-        foreach (var vert in submesh.Indices) {
+        foreach (var vert in meshIndices) {
             Indices[index] = vert;
-            var pos = submesh.Positions[vert];
-            var uv = submesh.UV0[vert];
-            var norm = hasNormals ? submesh.Normals[vert] : Vector3.UnitX;
+            var pos = meshVerts[vert];
+            var uv = meshUV[vert];
+            var norm = hasNormals ? meshNormals[vert] : Vector3.UnitX;
             var vertOffset = index * attrs;
             VertexData[vertOffset + 0] = pos.X;
             VertexData[vertOffset + 1] = pos.Y;
@@ -58,14 +78,14 @@ public class TriangleMesh : Mesh
             VertexData[vertOffset + 6] = norm.Y;
             VertexData[vertOffset + 7] = norm.Z;
             VertexData[vertOffset + 8] = BitConverter.Int32BitsToSingle(index);
-            if (HasTangents) {
-                var tan = submesh.Tangents[vert];
+            if (hasTan) {
+                var tan = meshTangents[vert];
                 VertexData[vertOffset + tangentsOffset + 0] = tan.X;
                 VertexData[vertOffset + tangentsOffset + 1] = tan.Y;
                 VertexData[vertOffset + tangentsOffset + 2] = tan.Z;
             }
             if (HasBones) {
-                var vertWeight = submesh.Weights[vert];
+                var vertWeight = meshWeights[vert];
 
                 VertexData[vertOffset + boneIndsOffset + 0] = BitConverter.Int32BitsToSingle(vertWeight.boneIndices[0]);
                 VertexData[vertOffset + boneIndsOffset + 1] = BitConverter.Int32BitsToSingle(vertWeight.boneIndices[1]);
@@ -88,41 +108,6 @@ public class TriangleMesh : Mesh
         }
 
         BoundingBox = sourceMesh.MeshData?.boundingBox ?? default;
-        UpdateBuffers();
-    }
-
-    public TriangleMesh(GL gl, Assimp.Mesh sourceMesh) : base(gl)
-    {
-        Flags = (sourceMesh.HasTangentBasis ? MeshFlags.HasTangents : MeshFlags.None);
-        // note: ignoring bones and animations for Assimp meshes - the bone weight structure is horrifyingly annoying
-
-        Indices = sourceMesh.GetIndices().ToArray();
-
-        var attrs = AttributeCount;
-        VertexData = new float[Indices.Length * attrs];
-        var uv0 = sourceMesh.TextureCoordinateChannels[0];
-        var hasNormals = sourceMesh.HasNormals;
-        var tangentsOffset = TangentAttributeOffset;
-        for (int index = 0; index < Indices.Length; ++index) {
-            var vert = (int)Indices[index];
-            VertexData[index * attrs + 0] = sourceMesh.Vertices[vert].X;
-            VertexData[index * attrs + 1] = sourceMesh.Vertices[vert].Y;
-            VertexData[index * attrs + 2] = sourceMesh.Vertices[vert].Z;
-            VertexData[index * attrs + 3] = uv0[vert].X;
-            VertexData[index * attrs + 4] = uv0[vert].Y;
-            VertexData[index * attrs + 5] = !hasNormals ? 0 : sourceMesh.Normals[vert].X;
-            VertexData[index * attrs + 6] = !hasNormals ? 0 : sourceMesh.Normals[vert].Y;
-            VertexData[index * attrs + 7] = !hasNormals ? 1 : sourceMesh.Normals[vert].Z;
-            VertexData[index * attrs + 8] = BitConverter.Int32BitsToSingle(index);
-            if (HasTangents) {
-                VertexData[index * attrs + tangentsOffset + 0] = sourceMesh.Tangents[vert].X;
-                VertexData[index * attrs + tangentsOffset + 1] = sourceMesh.Tangents[vert].Y;
-                VertexData[index * attrs + tangentsOffset + 2] = sourceMesh.Tangents[vert].Z;
-            }
-        }
-
-        BoundingBox = new AABB(sourceMesh.BoundingBox.Min, sourceMesh.BoundingBox.Max);
-        UpdateBuffers();
     }
 
     public override string ToString() => $"{VAO} {VBO} indices: {Indices.Length}";

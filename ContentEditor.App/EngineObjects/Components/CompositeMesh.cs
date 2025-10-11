@@ -85,6 +85,8 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
 
                 meshes.Add(mesh);
                 materials.Add(mesh.Material);
+            } else if (mat != null) {
+                materials.Add(mat);
             }
         }
     }

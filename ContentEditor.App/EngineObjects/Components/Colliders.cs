@@ -37,6 +37,7 @@ public class Colliders(GameObject gameObject, RszInstance data) : RenderableComp
         UnloadMeshes();
         if (material != null) {
             Scene?.RenderContext.UnloadMaterialGroup(material);
+            material = null;
         }
     }
 

@@ -32,7 +32,8 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     private GL _gl;
 
     private RenderContext renderContext;
-    public RenderContext RenderContext => renderContext;
+    public RenderContext RenderContext => RootScene.renderContext;
+    public RenderContext OwnRenderContext => renderContext;
 
     private Camera camera;
     public Camera Camera => camera;
@@ -40,6 +41,8 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
 
     private bool wasActivatedBefore;
     private HashSet<string> _requestedScenes = new(0);
+
+    private bool HasRenderables => renderComponents.Count > 0 || childScenes.Any(ch => ch.HasRenderables);
 
     internal Scene(string name, string internalPath, ContentWorkspace workspace, Scene? parentScene = null, Folder? rootFolder = null, GL? gl = null)
     {
@@ -154,21 +157,31 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
 
     internal void Render(float deltaTime)
     {
-        if (renderComponents.Count == 0) return;
+        if (!HasRenderables) return;
 
-        renderContext.DeltaTime = deltaTime;
-        if (Matrix4X4.Invert(ActiveCamera.GameObject.WorldTransform, out var inverted)) {
-            renderContext.ViewMatrix = inverted;
-        } else {
-            renderContext.ViewMatrix = Matrix4X4<float>.Identity;
+        var rctx = RenderContext;
+        if (rctx != this.renderContext) {
+            foreach (var render in renderComponents) {
+                if (!render.GameObject.ShouldDraw) continue;
+
+                render.Render(rctx);
+            }
+            return;
         }
-        renderContext.BeforeRender();
+
+        rctx.DeltaTime = deltaTime;
+        if (Matrix4X4.Invert(ActiveCamera.GameObject.WorldTransform, out var inverted)) {
+            rctx.ViewMatrix = inverted;
+        } else {
+            rctx.ViewMatrix = Matrix4X4<float>.Identity;
+        }
+        rctx.BeforeRender();
         foreach (var render in renderComponents) {
             if (!render.GameObject.ShouldDraw) continue;
 
-            render.Render(renderContext);
+            render.Render(rctx);
         }
-        renderContext.AfterRender();
+        rctx.AfterRender();
     }
 
     public void SetActive(bool active)

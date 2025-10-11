@@ -1,6 +1,4 @@
-using System.Numerics;
 using ReeLib;
-using ReeLib.Rcol;
 using ReeLib.via;
 using Silk.NET.OpenGL;
 

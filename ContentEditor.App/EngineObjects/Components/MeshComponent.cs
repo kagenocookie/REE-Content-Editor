@@ -116,7 +116,6 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         if (mesh == null || Scene == null) return;
 
         if (mesh != null) {
-            // TODO: would we rather just store the render context inside mesh refs / material groups, and have them be IDispoable?
             Scene.RenderContext.UnloadMesh(mesh);
             mesh = null;
         }

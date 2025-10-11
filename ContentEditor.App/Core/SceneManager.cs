@@ -12,7 +12,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
 
     public IRectWindow Window { get; } = window;
 
-    public IEnumerable<Scene> RootMasterScenes => scenes.Where(scene => scene.RenderContext.RenderTargetTextureHandle == 0 && scene.ParentScene == null);
+    public IEnumerable<Scene> RootMasterScenes => scenes.Where(scene => scene.OwnRenderContext.RenderTargetTextureHandle == 0 && scene.ParentScene == null);
     public bool HasActiveMasterScene => RootMasterScenes.Where(sc => sc.IsActive).Any();
     public Scene? ActiveMasterScene => RootMasterScenes.FirstOrDefault(sc => sc.IsActive);
 
@@ -28,7 +28,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
         // convert in case we received a native and not internal path
         internalPath = PathUtils.GetInternalFromNativePath(internalPath);
         var scene = new Scene(name, internalPath, env, parentScene, rootFolder) { IsActive = render, SceneManager = this };
-        scene.RenderContext.ResourceManager = env.ResourceManager;
+        scene.OwnRenderContext.ResourceManager = env.ResourceManager;
         scenes.Add(scene);
         if (render) Logger.Debug("Loading scene " + rootFolder?.Name ?? internalPath);
         rootFolder?.MoveToScene(scene);
@@ -71,7 +71,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
     {
         // should we sort scenes with render buffers first and then the main viewport scenes to minimize viewport switching?
         foreach (var scene in scenes) {
-            scene.RenderContext.ViewportSize = Window.Size;
+            scene.OwnRenderContext.ViewportSize = Window.Size;
             scene.Render(deltaTime);
             // if (scene.RenderTargetTextureHandle != 0) {
             //     scene.OpenGL.Viewport(new System.Drawing.Size((int)Window.Size.X, (int)Window.Size.Y));

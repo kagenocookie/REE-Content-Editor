@@ -86,6 +86,6 @@ public sealed class ResourceRefCounter<TKey, TResource> : IDisposable
         public TResource Resource { get; } = resource;
         public int References { get; set; } = references;
 
-        public override string ToString() => $"[{InstanceID} ({References})] {Key} => {Resource}";
+        public override string ToString() => $"[{InstanceID} ({References} refs)] {Key} => {Resource}";
     }
 }
