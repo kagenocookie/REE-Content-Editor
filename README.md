@@ -64,7 +64,15 @@ Some files may not fully work for other RE ENGINE games.
 ## Custom entity support
 Accessible under the Windows > Entities menu option for supported games, these are streamlined editors for game-specific data. They can be used to more easily modify or add custom items and other game content related objects.
 
+## Game-specific additional support
+
 ### Dragon's Dogma 2
+
+Field scene streaming is supported through the `natives/stm/appdata/maincontents.scn.20` file while the `Field` folder is active. The open world scenes should load and unload based on the camera position.
+
+For any spawn related data editing, my [anatomically accurate map](https://kagenocookie.github.io/dd2map/) can be used as a reference for grid cells and positions
+
+#### Custom entities:
 - Shop modifications
 - Custom basic items and weapons (TODO: armors)
 - Weather parameters
@@ -72,10 +80,9 @@ Accessible under the Windows > Entities menu option for supported games, these a
 - Events
 - Quest data (partial)
 - Job and skill metadata
-- For any spawn related data editing, my [anatomically accurate map](https://kagenocookie.github.io/dd2map/) can be used as a reference for grid cells and positions
 
 ### Resident Evil 2 (RT), 3 (RT), 4, 8
-- Basic weapon data
+- Basic weapon data entities
 
 ## Structure
 The project consists of several individual modules.
