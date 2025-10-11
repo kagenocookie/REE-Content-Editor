@@ -302,18 +302,9 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
     public override void RenderInstanced(MeshHandle mesh, int instanceIndex, int instanceCount, in Matrix4X4<float> transform)
     {
-        var actMesh = mesh.GetMesh(0);
-        if (lastInstancedMesh != mesh) {
-            mesh.GetMaterial(0).Bind();
-            lastInstancedMesh = mesh;
-        }
-
-        actMesh.Bind();
-        mesh.GetMaterial(0).Shader.SetUniform("uModel", transform);
-        GL.DrawArrays(PrimitiveType.Triangles, 0, (uint)actMesh.Indices.Length);
-
         // TODO actually do instanced drawing
         // GL.DrawArraysInstanced(PrimitiveType.Triangles, 0, (uint)actMesh.Indices.Length, instanceCount);
+        RenderSimple(mesh, transform);
     }
 
     private void BindMaterial(Material material)
