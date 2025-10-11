@@ -67,6 +67,8 @@ public sealed class ResourceRefCounter<TKey, TResource> : IDisposable
     {
         if (instances.TryGetValue(resource, out var refs)) {
             Dereference(refs);
+        } else {
+            Logger.Error($"Invalid dereference of resource {resource}");
         }
     }
 

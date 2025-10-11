@@ -142,16 +142,29 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             return handle;
         }
 
+        var mainLod = meshFile.MeshData.LODs[0];
         MeshBoneHierarchy? boneList = null;
         if (meshFile.BoneData?.Bones.Count > 0) {
             boneList = meshFile.BoneData;
         }
 
-        var mainLod = meshFile.MeshData.LODs[0];
+        var meshlist = meshResource.PreloadedMeshes;
+        if (meshlist == null) {
+            meshlist = new();
+            foreach (var group in mainLod.MeshGroups) {
+                foreach (var sub in group.Submeshes) {
+                    var newMesh = new TriangleMesh(GL, meshFile, sub);
+                    newMesh.MeshGroup = group.groupId;
+                    meshlist.Add(newMesh);
+                }
+            }
+        }
+
+        int meshIdx = 0;
         foreach (var group in mainLod.MeshGroups) {
             foreach (var sub in group.Submeshes) {
-                var newMesh = new TriangleMesh(GL, meshFile, sub);
-                newMesh.MeshGroup = group.groupId;
+                var newMesh = meshlist[meshIdx++];
+                newMesh.Initialize(GL);
                 handle.SetMaterialName(handle.Meshes.Count, meshFile.MaterialNames[sub.materialIndex]);
                 handle.Bones = boneList;
                 handle.Meshes.Add(newMesh);
@@ -267,7 +280,6 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     }
 
 
-    private MeshHandle? lastInstancedMesh;
     private Material? lastMaterial;
     public override unsafe void RenderSimple(MeshHandle handle, in Matrix4X4<float> transform)
     {
@@ -291,7 +303,6 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
             GL.DrawArrays(mesh.MeshType, 0, (uint)mesh.Indices.Length);
         }
-        lastInstancedMesh = null;
     }
 
     public override void RenderInstanced(MeshHandle mesh, int instanceIndex, int instanceCount, in Matrix4X4<float> transform)
@@ -327,7 +338,6 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     internal override void BeforeRender()
     {
         lastMaterial = null;
-        lastInstancedMesh = null;
 
         ResetBlendingSettings();
 

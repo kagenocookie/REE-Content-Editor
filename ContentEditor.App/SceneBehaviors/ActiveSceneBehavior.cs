@@ -61,7 +61,7 @@ public class ActiveSceneBehavior
             if (Keyboard.IsKeyPressed(Key.D)) moveVec.X += 1;
             if (Keyboard.IsKeyPressed(Key.E)) moveVec.Y += 1;
             if (Keyboard.IsKeyPressed(Key.Q)) moveVec.Y -= 1;
-            if (Keyboard.IsKeyPressed(Key.ShiftLeft)) moveVec *= 5;
+            if (Keyboard.IsKeyPressed(Key.ShiftLeft)) moveVec *= 10;
 
             Scene.ActiveCamera.GameObject.Transform.TranslateForwardAligned(moveVec * deltaTime * 10);
         }

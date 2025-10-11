@@ -8,7 +8,7 @@ namespace ContentEditor.App.Graphics;
 
 public abstract class Mesh : IDisposable
 {
-    protected readonly GL GL;
+    protected GL GL;
 
     protected VertAttribute[] attributes = DefaultAttributes;
 
@@ -75,10 +75,21 @@ public abstract class Mesh : IDisposable
         new VertAttribute(16, 4, Index_BoneWeight),
     ]).ToArray();
 
+    protected Mesh()
+    {
+    }
+
     protected Mesh(GL gl)
     {
         GL = gl;
         CreateBuffers();
+    }
+
+    internal void Initialize(GL gl)
+    {
+        GL = gl;
+        CreateBuffers();
+        UpdateBuffers();
     }
 
     public virtual void Bind()

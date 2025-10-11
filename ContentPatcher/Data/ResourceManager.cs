@@ -1006,9 +1006,9 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
     public IEnumerable<FileHandle> GetModifiedResourceFiles()
     {
-        foreach (var file in openFiles.Values) {
-            if (file.Modified) {
-                yield return file;
+        foreach (var file in openFiles) {
+            if (file.Value.Modified) {
+                yield return file.Value;
             }
         }
     }

@@ -2,8 +2,10 @@ using Assimp;
 using Assimp.Configs;
 using Assimp.Unmanaged;
 using ContentEditor;
+using ContentEditor.App.Graphics;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Mesh;
 
 namespace ContentEditor.App.FileLoaders;
 
@@ -12,6 +14,8 @@ public partial class AssimpMeshResource(string Name, Workspace workspace) : IRes
     private Assimp.Scene? _scene;
     private MeshFile? _mesh;
     private MotlistFile? _motlist;
+
+    public List<Graphics.Mesh>? PreloadedMeshes { get; set; }
 
     public GameName GameVersion = GameName.dd2;
 
@@ -33,12 +37,12 @@ public partial class AssimpMeshResource(string Name, Workspace workspace) : IRes
         set => _motlist = value;
     }
 
-    public List<Material>? MaterialList
+    public List<Assimp.Material>? MaterialList
     {
         get {
             if (_scene != null) return _scene.Materials;
             if (_mesh != null) {
-                return _mesh.MaterialNames.Select(name => new Material() { Name = name }).ToList();
+                return _mesh.MaterialNames.Select(name => new Assimp.Material() { Name = name }).ToList();
             }
             return null;
         }
@@ -104,6 +108,23 @@ public partial class AssimpMeshResource(string Name, Workspace workspace) : IRes
         if (singleMot != null) AddMotToScene(scene, singleMot);
         if (motlist != null) AddMotlistToScene(scene, motlist);
         context.ExportFile(scene, filepath, exportFormat);
+    }
+
+    internal void PreloadMeshBuffers()
+    {
+        if (PreloadedMeshes != null) return;
+
+        PreloadedMeshes = new();
+        var mesh = NativeMesh;
+
+        var mainLod = mesh.MeshData!.LODs[0];
+        foreach (var group in mainLod.MeshGroups) {
+            foreach (var sub in group.Submeshes) {
+                var newMesh = new TriangleMesh(mesh, sub);
+                newMesh.MeshGroup = group.groupId;
+                PreloadedMeshes.Add(newMesh);
+            }
+        }
     }
 
     private Assimp.Scene GetSceneForExport(string targetFileExtension, bool allowCache)

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using Assimp;
 using Assimp.Configs;
+using ContentEditor.App.Graphics;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Common;
@@ -48,10 +49,12 @@ public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<Motlis
                     }
                 }
 
-                return new AssimpMeshResource(name, workspace.Env) {
+                var resource = new AssimpMeshResource(name, workspace.Env) {
                     NativeMesh = file,
                     GameVersion = workspace.Env.Config.Game.GameEnum,
                 };
+                resource.PreloadMeshBuffers();
+                return resource;
             } else if (magic == MplyMeshFile.Magic) {
                 var mply = new MplyMeshFile(fileHandler);
                 if (!mply.Read()) return null;
@@ -64,10 +67,12 @@ public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<Motlis
 
                 var mesh = mply.ConvertToMergedClassicMesh();
 
-                return new AssimpMeshResource(name, workspace.Env) {
+                var resource = new AssimpMeshResource(name, workspace.Env) {
                     NativeMesh = mesh,
                     GameVersion = workspace.Env.Config.Game.GameEnum,
                 };
+                resource.PreloadMeshBuffers();
+                return resource;
             } else {
 				throw new NotSupportedException("Unknown mesh type " + magic.ToString("X"));
             }
@@ -91,12 +96,16 @@ public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<Motlis
                 return null;
             }
 
-            return new AssimpMeshResource(name, workspace.Env) {
+            var resource = new AssimpMeshResource(name, workspace.Env) {
                 Scene = importedScene,
                 GameVersion = workspace.Env.Config.Game.GameEnum,
             };
-        }
 
+            var mesh = resource.NativeMesh;
+            resource.PreloadMeshBuffers();
+
+            return resource;
+        }
     }
 
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)

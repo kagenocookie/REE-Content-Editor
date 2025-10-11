@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using ReeLib.Mesh;
 using ReeLib.via;
 
@@ -45,6 +46,7 @@ public class MeshHandle
         return Material.Materials[0];
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool GetMeshPartEnabled(int index) => !DisabledParts.Contains(index);
     public void SetMeshPartEnabled(int index, bool enabled)
     {
