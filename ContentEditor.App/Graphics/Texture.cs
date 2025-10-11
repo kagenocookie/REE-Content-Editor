@@ -141,19 +141,14 @@ public class Texture : IDisposable
     public unsafe Texture LoadFromTex(TexFile tex)
     {
         Path = tex.FileHandler.FilePath;
-        if (!tex.Header.IsPowerOfTwo && tex.Header.format.IsBlockCompressedFormat()) {
-            var it = tex.CreateNonPo2Iterator();
+        var isCompressed = tex.Header.format.IsBlockCompressedFormat();
+        var it = tex.CreateIterator();
+        if (isCompressed) {
             LoadCompressedTexMipMaps(ref it, tex.Header.format);
-            it.Dispose();
         } else {
-            var it = tex.CreateMipMapIterator();
-            if (it.isCompressed) {
-                LoadCompressedDDSMipMaps(ref it, tex.Header.format);
-            } else {
-                LoadUncompressedDDSMipMaps(ref it, tex.Header.format);
-            }
-            it.Dispose();
+            LoadUncompressedTexMipMaps(ref it, tex.Header.format);
         }
+        it.Dispose();
         Width = tex.Header.width;
         Height = tex.Header.height;
         Format = tex.Header.format.ToString();
@@ -199,6 +194,18 @@ public class Texture : IDisposable
         while (iterator.Next(ref data)) {
             fixed (byte* bytes = data.data) {
                 _gl.CompressedTexImage2D(TextureTarget.Texture2D, mips++, intFormat, data.width, data.height, 0, (uint)data.data.Length, bytes);
+            }
+        }
+        _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, mips - 1);
+    }
+    private unsafe void LoadUncompressedTexMipMaps(ref TexFile.TexMipMapIterator iterator, DxgiFormat compressedFormat)
+    {
+        var data = new DDSFile.MipMapLevelData();
+        var fmt = GetFormatInfo(compressedFormat);
+        var mips = 0;
+        while (iterator.Next(ref data)) {
+            fixed (byte* bytes = data.data) {
+                _gl.TexImage2D(TextureTarget.Texture2D, mips++, fmt.internalFormat, data.width, data.height, 0, fmt.pixelFormat, fmt.pixelType, bytes);
             }
         }
         _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, mips - 1);
