@@ -64,7 +64,7 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
             PlatformUtils.ShowSaveFileDialog((fn) => {
                 lastFilepath = fn;
                 window.InvokeFromUIThread(() => {
-                    ExportMcolToGlb(File, fn);
+                    ExportMcolToGlb(File.bvh, fn);
                 });
             }, lastFilepath ?? Handle.Filename.ToString(), "GLB (*.glb)|*.glb");
         }
@@ -107,32 +107,33 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 
     private const float MaxPartId = 256;
 
-    public static void ExportMcolToGlb(McolFile file, string outputFilepath)
+    public static void ExportMcolToGlb(BvhData? bvh, string outputFilepath)
     {
-        var scene = GetMeshScene(file);
+        var scene = GetMeshScene(bvh);
         if (scene == null) {
-            Logger.Error("Selected .mcol file has no triangles, can't export.");
+            Logger.Error("Selected file has no triangles, can't export.");
             return;
         }
 
         using var ctx = new AssimpContext();
-        ctx.ExportFile(scene, outputFilepath, "glb2");
+        var ext = PathUtils.GetExtensionWithoutPeriod(outputFilepath);
+        string exportFormat = ctx.GetFormatIDFromExtension(ext);
+        ctx.ExportFile(scene, outputFilepath, exportFormat);
     }
 
     public static bool ImportGlbIntoMcol(McolFile file, string meshFilepath)
     {
         using var ctx = new AssimpContext();
         var scene = ctx.ImportFile(meshFilepath);
-        return LoadTrianglesFromScene(file, scene);
+        file.bvh ??= new(file.FileHandler);
+        return LoadTrianglesFromScene(file.bvh, scene, PathUtils.ParseFileFormat(file.FileHandler.FilePath));
     }
 
-    public static Assimp.Scene? GetMeshScene(McolFile file)
+    public static Assimp.Scene? GetMeshScene(BvhData? bvh)
     {
-        if (!(file.bvh?.vertices.Count > 0)) {
+        if (bvh == null || bvh.vertices.Count == 0) {
             return null;
         }
-
-        var bvh = file.bvh;
 
         var scene = new Assimp.Scene();
         scene.RootNode = new Node() { Transform = Matrix4x4.Identity };
@@ -141,7 +142,7 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
             var mat = new Material();
             scene.Materials.Add(mat);
             mat.Name = LayerToMaterialName(i, bvh.stringTable[i].main);
-            mat.ColorDiffuse = ImGui.ColorConvertU32ToFloat4((uint)LayerColors[i].ToArgb());
+            mat.ColorDiffuse = ImGui.ColorConvertU32ToFloat4((uint)LayerColors[i % LayerColors.Length].ToArgb());
 
             var mesh = new Assimp.Mesh("mesh_layer" + i, PrimitiveType.Triangle);
             mesh.MaterialIndex = i;
@@ -174,22 +175,30 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
             // don't add empty meshes
             if (index == 0) continue;
 
+            var node = new Node(mesh.Name, scene.RootNode);
+            scene.RootNode.Children.Add(node);
+            node.MeshIndices.Add(scene.Meshes.Count);
             scene.Meshes.Add(mesh);
-            scene.RootNode.MeshIndices.Add(scene.Meshes.Count - 1);
         }
 
         return scene;
     }
 
-    public static bool LoadTrianglesFromScene(McolFile file, Assimp.Scene scene)
+    public static bool LoadTrianglesFromScene(BvhData bvh, Assimp.Scene scene, REFileFormat format)
     {
-        var bvh = file.bvh!;
         bvh.tree ??= new BvhTree();
         var tree = bvh.tree;
         bvh.triangles.Clear();
         bvh.vertices.Clear();
 
-        var unsetEdgeIndex = file.FileHandler.FileVersion <= 3017 ? 0 : -1;
+        int unsetEdgeIndex;
+        if (format.format == KnownFileFormats.CollisionMesh) {
+            unsetEdgeIndex = format.version <= 3017 ? 0 : -1;
+        } else if (format.format == KnownFileFormats.Terrain) {
+            unsetEdgeIndex = format.version <= 3017 ? 0 : -1; // TODO verify which version
+        } else {
+            unsetEdgeIndex = -1;
+        }
 
         foreach (var mesh in scene.Meshes) {
             if (mesh.Vertices.Count == 0 || mesh.FaceCount == 0) continue;

@@ -1,14 +1,10 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using ContentEditor.App;
 using ContentEditor.App.ImguiHandling;
 using ContentPatcher;
 using ReeLib;
-using ReeLib.Scn;
 
 namespace ContentEditor.App.FileLoaders;
 
-public class McolSceneLoader : McolFileLoader,
+public class TerrainSceneLoader : TerrFileLoader,
     IFileLoader,
     IFileHandleContentProvider<AssimpMeshResource>
 {
@@ -16,8 +12,8 @@ public class McolSceneLoader : McolFileLoader,
 
     AssimpMeshResource IFileHandleContentProvider<AssimpMeshResource>.GetFile(FileHandle handle)
     {
-        var mcol = handle.GetFile<McolFile>();
-        var scene = McolEditor.GetMeshScene(mcol.bvh);
+        var terr = handle.GetFile<TerrFile>();
+        var scene = McolEditor.GetMeshScene(terr.bvh);
         if (scene == null) {
             scene = new Assimp.Scene();
         }

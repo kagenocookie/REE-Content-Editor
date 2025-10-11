@@ -78,16 +78,7 @@ public partial class AssimpMeshResource(string Name, Workspace workspace) : IRes
         using AssimpContext context = new AssimpContext();
 
         var ext = PathUtils.GetExtensionWithoutPeriod(filepath);
-        string? exportFormat = null;
-        foreach (var fmt in context.GetSupportedExportFormats()) {
-            if (fmt.FileExtension == ext) {
-                exportFormat = fmt.FormatId;
-                break;
-            }
-        }
-        if (exportFormat == null) {
-            throw new NotImplementedException("Unsupported export format " + ext);
-        }
+        var exportFormat = context.GetFormatIDFromExtension(ext);
 
         var scene = GetSceneForExport(ext, true);
         context.ExportFile(scene, filepath, exportFormat);
@@ -98,16 +89,7 @@ public partial class AssimpMeshResource(string Name, Workspace workspace) : IRes
         using AssimpContext context = new AssimpContext();
 
         var ext = PathUtils.GetExtensionWithoutPeriod(filepath);
-        string? exportFormat = null;
-        foreach (var fmt in context.GetSupportedExportFormats()) {
-            if (fmt.FileExtension == ext) {
-                exportFormat = fmt.FormatId;
-                break;
-            }
-        }
-        if (exportFormat == null) {
-            throw new NotImplementedException("Unsupported export format " + ext);
-        }
+        string exportFormat = context.GetFormatIDFromExtension(ext);
         var scene = GetSceneForExport(ext, false);
         if (motlist == null && singleMot == null) {
             context.ExportFile(scene, filepath, exportFormat);

@@ -248,6 +248,8 @@ public static partial class WindowHandlerFactory
                 return new CfilEditor(env, file);
             case KnownFileFormats.CollisionMesh:
                 return new McolEditor(env, file);
+            case KnownFileFormats.Terrain:
+                return new TerrainEditor(env, file);
             case KnownFileFormats.Mesh:
                 return new MeshViewer(env, file);
         }

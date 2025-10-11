@@ -8,20 +8,26 @@ namespace ContentEditor.App.Graphics;
 
 public class McolMeshHandle : MeshHandle
 {
-    public McolFile Mcol { get; }
+    public BvhData? BVH { get; }
     private GL GL { get; }
 
     internal McolMeshHandle(GL gl, MeshResourceHandle mesh, McolFile mcol) : base(mesh)
     {
-        Mcol = mcol;
+        BVH = mcol.bvh;
+        GL = gl;
+    }
+
+    internal McolMeshHandle(GL gl, MeshResourceHandle mesh, TerrFile terr) : base(mesh)
+    {
+        BVH = terr.bvh;
         GL = gl;
     }
 
     public override void Update()
     {
-        if (Mcol.bvh == null) return;
+        if (BVH == null) return;
 
-        var bvh = Mcol.bvh;
+        var bvh = BVH;
         var first = Handle.Meshes.FirstOrDefault();
         if (bvh.triangles.Count == 0) {
             if (first is TriangleMesh) {
