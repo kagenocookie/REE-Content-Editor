@@ -252,6 +252,12 @@ public static partial class WindowHandlerFactory
                 return new TerrainEditor(env, file);
             case KnownFileFormats.Mesh:
                 return new MeshViewer(env, file);
+            case KnownFileFormats.Ground:
+                return new GroundEditor(file);
+            case KnownFileFormats.GroundTextureList:
+                return new GroundTextureEditor(file);
+            case KnownFileFormats.GroundMaterialList:
+                return new GroundMaterialEditor(file);
         }
 
         if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {
