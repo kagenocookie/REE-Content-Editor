@@ -188,8 +188,6 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     {
         if (active == IsActive) return;
 
-        if (active) Logger.Debug("Loading scene " + Name);
-        else Logger.Debug("Unloading scene " + Name);
         IsActive = active;
         RootFolder.SetActive(active);
         if (!wasActivatedBefore && active && RootScene == this) {

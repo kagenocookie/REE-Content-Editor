@@ -30,7 +30,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
         var scene = new Scene(name, internalPath, env, parentScene, rootFolder) { IsActive = render, SceneManager = this };
         scene.OwnRenderContext.ResourceManager = env.ResourceManager;
         scenes.Add(scene);
-        if (render) Logger.Debug("Loading scene " + rootFolder?.Name ?? internalPath);
+        // if (render) Logger.Debug("Loading scene " + rootFolder?.Name ?? internalPath);
         rootFolder?.MoveToScene(scene);
         return scene;
     }

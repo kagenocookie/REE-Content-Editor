@@ -8,26 +8,33 @@ public class ContentsEnvironmentController(GameObject gameObject, RszInstance da
 {
     private Dictionary<int, Folder> envFolders = new();
 
+    private Folder? envFolder;
     internal override void OnActivate()
     {
         base.OnActivate();
 
-        foreach (var folder in Scene!.Folders) {
-            if (int.TryParse(folder.Name.Replace("Env_", ""), out var envId)) {
-                envFolders[envId] = folder;
-            }
-        }
-        Scene.FindFolder("Environment")?.RequestLoad();
+        envFolder = Scene!.FindFolder("Environment");
+        envFolder?.RequestLoad();
         Scene.FindFolder("FarEnvironment")?.RequestLoad();
     }
 
     public override void Update(float deltaTime)
     {
-        var activeEnvs = WorldEnvironmentController.Instance?.ActiveEnvIDs;
-        if (activeEnvs == null) return;
+        var wec = WorldEnvironmentController.Instance;
+        if (wec == null) return;
+
+        if (envFolder?.ChildScene == null) return;
+
+        if (envFolders.Count == 0) {
+            foreach (var folder in envFolder.ChildScene.Folders) {
+                if (int.TryParse(folder.Name.Replace("Env_", ""), out var envId)) {
+                    envFolders[envId] = folder;
+                }
+            }
+        }
 
         foreach (var (id, folder) in envFolders) {
-            if (activeEnvs.Contains(id)) {
+            if (wec.ActiveSubEnvIDs.Contains(id)) {
                 if (folder.ChildScene == null) {
                     folder.RequestLoad();
                     continue;

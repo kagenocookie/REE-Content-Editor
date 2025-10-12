@@ -19,6 +19,7 @@ public class WorldEnvironmentController(GameObject gameObject, RszInstance data)
 
     private const int FieldCount = 8;
     private const int EnvCount = 64;
+    private const int SubEnvCount = 128;
     private const int CellsPerEnvCount = 16;
 
     private const float FieldSizeX = (MaxX - MinX) / FieldCount;
@@ -27,16 +28,21 @@ public class WorldEnvironmentController(GameObject gameObject, RszInstance data)
     private static readonly Vector3 EnvCellSize = new Vector3((MaxX - MinX) / EnvCount, 0, (MaxY - MinY) / EnvCount);
 
     public int CurrentEnvID { get; private set; }
+    public int CurrentSubEnvID { get; private set; }
     public int CurrentFieldID { get; private set; }
 
     public float CurrentEnvX { get; private set; }
     public float CurrentEnvY { get; private set; }
+
+    public float CurrentSubEnvX { get; private set; }
+    public float CurrentSubEnvY { get; private set; }
 
     public float CurrentFieldX { get; private set; }
     public float CurrentFieldY { get; private set; }
 
     public HashSet<int> ActiveFieldIDs { get; } = new();
     public HashSet<int> ActiveEnvIDs { get; } = new();
+    public HashSet<int> ActiveSubEnvIDs { get; } = new();
 
     public static WorldEnvironmentController? Instance { get; private set; }
 
@@ -82,6 +88,7 @@ public class WorldEnvironmentController(GameObject gameObject, RszInstance data)
 
         (CurrentFieldX, CurrentFieldY, CurrentFieldID) = CalculateCell(MinX, MinY, MaxY, MaxY, worldPos, FieldCount);
         (CurrentEnvX, CurrentEnvY, CurrentEnvID) = CalculateCell(MinX, MinY, MaxY, MaxY, worldPos, EnvCount);
+        (CurrentSubEnvX, CurrentSubEnvY, CurrentSubEnvID) = CalculateCell(MinX, MinY, MaxY, MaxY, worldPos, SubEnvCount);
 
         ActiveEnvIDs.Clear();
         ActiveEnvIDs.Add(CurrentEnvID);
@@ -108,6 +115,19 @@ public class WorldEnvironmentController(GameObject gameObject, RszInstance data)
         ActiveFieldIDs.Add(CalculateCellID(MinX, MinY, MaxY, MaxY, worldPos + new Vector3(-FieldSizeX, 0, FieldSizeY), FieldCount));
         ActiveFieldIDs.Add(CalculateCellID(MinX, MinY, MaxY, MaxY, worldPos + new Vector3(FieldSizeX,  0, -FieldSizeY), FieldCount));
         ActiveFieldIDs.Add(CalculateCellID(MinX, MinY, MaxY, MaxY, worldPos + new Vector3(-FieldSizeX, 0, -FieldSizeY), FieldCount));
+
+        ActiveSubEnvIDs.Clear();
+        ActiveSubEnvIDs.Add(CurrentSubEnvID);
+
+        ActiveSubEnvIDs.Add(FlattenToCellID(CurrentSubEnvX + 1, CurrentSubEnvY, SubEnvCount));
+        ActiveSubEnvIDs.Add(FlattenToCellID(CurrentSubEnvX - 1, CurrentSubEnvY, SubEnvCount));
+        ActiveSubEnvIDs.Add(FlattenToCellID(CurrentSubEnvX, CurrentSubEnvY + 1, SubEnvCount));
+        ActiveSubEnvIDs.Add(FlattenToCellID(CurrentSubEnvX, CurrentSubEnvY - 1, SubEnvCount));
+
+        ActiveSubEnvIDs.Add(FlattenToCellID(CurrentSubEnvX + 1, CurrentSubEnvY + 1, SubEnvCount));
+        ActiveSubEnvIDs.Add(FlattenToCellID(CurrentSubEnvX - 1, CurrentSubEnvY + 1, SubEnvCount));
+        ActiveSubEnvIDs.Add(FlattenToCellID(CurrentSubEnvX + 1, CurrentSubEnvY - 1, SubEnvCount));
+        ActiveSubEnvIDs.Add(FlattenToCellID(CurrentSubEnvX - 1, CurrentSubEnvY - 1, SubEnvCount));
 
         var envRoot = Scene.GetChildScene("Env");
         if (envRoot == null) {
