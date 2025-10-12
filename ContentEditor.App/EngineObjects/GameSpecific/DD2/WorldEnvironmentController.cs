@@ -9,6 +9,71 @@ using Silk.NET.Maths;
 
 namespace ContentEditor.App.DD2;
 
+public record class GridSplitter(Vector2 min, Vector2 max, int countPerLine, int activeSurroundingCellRadius)
+{
+    public HashSet<int> ActiveIDs { get; } = new();
+    public int CurrentX { get; private set; }
+    public int CurrentY { get; private set; }
+    public int CurrentID { get; private set; }
+
+    public Vector2 CellSize => (max - min) / countPerLine;
+
+    public void Update(Vector3 origin)
+    {
+        ActiveIDs.Clear();
+        (CurrentX, CurrentY, CurrentID) = CalculateCell(origin);
+        ActiveIDs.Add(CurrentID);
+
+        if (activeSurroundingCellRadius == 0) return;
+
+        var endX = (int)Math.Min(countPerLine - 1, CurrentX + activeSurroundingCellRadius);
+        var endY = (int)Math.Min(countPerLine - 1, CurrentY + activeSurroundingCellRadius);
+        for (int x = (int)Math.Max(CurrentX - activeSurroundingCellRadius, 0); x <= endX; ++x) {
+            for (int y = (int)Math.Max(CurrentY - activeSurroundingCellRadius, 0); y <= endY; ++y) {
+                ActiveIDs.Add(x + y * countPerLine);
+            }
+        }
+    }
+
+    public (int x, int y, int id) CalculateCell(Vector3 point)
+    {
+        var x = (int)MathF.Floor((point.X - min.X) / (max.X - min.X) * countPerLine);
+        var y = (int)MathF.Floor((point.Z - min.Y) / (max.Y - min.Y) * countPerLine);
+        return (x, y, x + y * countPerLine);
+    }
+
+    public int CalculateCellID(Vector3 point)
+    {
+        return CalculateCell(point).id;
+    }
+
+    public (int x, int z) GetXZ(int id)
+    {
+        var x = id % countPerLine;
+        var z = (id / countPerLine);
+        return (x, z);
+    }
+
+    public Vector3 GetPosition(int id)
+    {
+        var x = id % countPerLine;
+        var z = (id / countPerLine);
+
+        return new Vector3(
+            min.X + (max.X - min.X) / countPerLine * x,
+            0,
+            min.Y + (max.Y - min.Y) / countPerLine * z
+        );
+    }
+
+    public static int FlattenToCellID(float x, float y, int cellCount)
+    {
+        var xx = (int)Math.Floor(Math.Clamp(x, 0, cellCount));
+        var yy = (int)Math.Floor(Math.Clamp(y, 0, cellCount));
+        return xx + yy * cellCount;
+    }
+}
+
 [RszComponentClass("app.WorldEnvironmentController", nameof(GameIdentifier.dd2))]
 public class WorldEnvironmentController(GameObject gameObject, RszInstance data) : UpdateComponent(gameObject, data)
 {
@@ -18,9 +83,15 @@ public class WorldEnvironmentController(GameObject gameObject, RszInstance data)
     private const float MaxY = 4096;
 
     private const int FieldCount = 8;
+    private const int GroundFieldCount = 16;
     private const int EnvCount = 64;
     private const int SubEnvCount = 128;
     private const int CellsPerEnvCount = 16;
+
+    public GridSplitter Fields = new GridSplitter(new Vector2(MinX, MinY), new Vector2(MaxX, MaxY), FieldCount, 0);
+    public GridSplitter GroundFields = new GridSplitter(new Vector2(MinX, MinY), new Vector2(MaxX, MaxY), GroundFieldCount, 1);
+    public GridSplitter Env = new GridSplitter(new Vector2(MinX, MinY), new Vector2(MaxX, MaxY), EnvCount, 1);
+    public GridSplitter SubEnv = new GridSplitter(new Vector2(MinX, MinY), new Vector2(MaxX, MaxY), SubEnvCount, 1);
 
     private const float FieldSizeX = (MaxX - MinX) / FieldCount;
     private const float FieldSizeY = (MaxY - MinY) / FieldCount;
@@ -31,18 +102,9 @@ public class WorldEnvironmentController(GameObject gameObject, RszInstance data)
     public int CurrentSubEnvID { get; private set; }
     public int CurrentFieldID { get; private set; }
 
-    public float CurrentEnvX { get; private set; }
-    public float CurrentEnvY { get; private set; }
-
-    public float CurrentSubEnvX { get; private set; }
-    public float CurrentSubEnvY { get; private set; }
-
-    public float CurrentFieldX { get; private set; }
-    public float CurrentFieldY { get; private set; }
-
-    public HashSet<int> ActiveFieldIDs { get; } = new();
-    public HashSet<int> ActiveEnvIDs { get; } = new();
-    public HashSet<int> ActiveSubEnvIDs { get; } = new();
+    public HashSet<int> ActiveFieldIDs => Fields.ActiveIDs;
+    public HashSet<int> ActiveEnvIDs => Env.ActiveIDs;
+    public HashSet<int> ActiveSubEnvIDs => SubEnv.ActiveIDs;
 
     public static WorldEnvironmentController? Instance { get; private set; }
 
@@ -86,48 +148,20 @@ public class WorldEnvironmentController(GameObject gameObject, RszInstance data)
         // TODO add enable-world-control setting?
         var worldPos = Scene.ActiveCamera.Transform.Position;
 
-        (CurrentFieldX, CurrentFieldY, CurrentFieldID) = CalculateCell(MinX, MinY, MaxY, MaxY, worldPos, FieldCount);
-        (CurrentEnvX, CurrentEnvY, CurrentEnvID) = CalculateCell(MinX, MinY, MaxY, MaxY, worldPos, EnvCount);
-        (CurrentSubEnvX, CurrentSubEnvY, CurrentSubEnvID) = CalculateCell(MinX, MinY, MaxY, MaxY, worldPos, SubEnvCount);
+        Fields.Update(worldPos);
+        GroundFields.Update(worldPos);
+        Env.Update(worldPos);
+        SubEnv.Update(worldPos);
 
-        ActiveEnvIDs.Clear();
-        ActiveEnvIDs.Add(CurrentEnvID);
+        Fields.ActiveIDs.Add(Fields.CalculateCellID(worldPos + new Vector3(FieldSizeX,  0, 0)));
+        Fields.ActiveIDs.Add(Fields.CalculateCellID(worldPos + new Vector3(-FieldSizeX, 0, 0)));
+        Fields.ActiveIDs.Add(Fields.CalculateCellID(worldPos + new Vector3(0, 0,  FieldSizeY)));
+        Fields.ActiveIDs.Add(Fields.CalculateCellID(worldPos + new Vector3(0, 0, -FieldSizeY)));
 
-        ActiveEnvIDs.Add(FlattenToCellID(CurrentEnvX + 1, CurrentEnvY, EnvCount));
-        ActiveEnvIDs.Add(FlattenToCellID(CurrentEnvX - 1, CurrentEnvY, EnvCount));
-        ActiveEnvIDs.Add(FlattenToCellID(CurrentEnvX, CurrentEnvY + 1, EnvCount));
-        ActiveEnvIDs.Add(FlattenToCellID(CurrentEnvX, CurrentEnvY - 1, EnvCount));
-
-        ActiveEnvIDs.Add(FlattenToCellID(CurrentEnvX + 1, CurrentEnvY + 1, EnvCount));
-        ActiveEnvIDs.Add(FlattenToCellID(CurrentEnvX - 1, CurrentEnvY + 1, EnvCount));
-        ActiveEnvIDs.Add(FlattenToCellID(CurrentEnvX + 1, CurrentEnvY - 1, EnvCount));
-        ActiveEnvIDs.Add(FlattenToCellID(CurrentEnvX - 1, CurrentEnvY - 1, EnvCount));
-
-        ActiveFieldIDs.Clear();
-        ActiveFieldIDs.Add(CurrentFieldID);
-
-        ActiveFieldIDs.Add(CalculateCellID(MinX, MinY, MaxY, MaxY, worldPos + new Vector3(FieldSizeX,  0, 0), FieldCount));
-        ActiveFieldIDs.Add(CalculateCellID(MinX, MinY, MaxY, MaxY, worldPos + new Vector3(-FieldSizeX, 0, 0), FieldCount));
-        ActiveFieldIDs.Add(CalculateCellID(MinX, MinY, MaxY, MaxY, worldPos + new Vector3(0, 0,  FieldSizeY), FieldCount));
-        ActiveFieldIDs.Add(CalculateCellID(MinX, MinY, MaxY, MaxY, worldPos + new Vector3(0, 0, -FieldSizeY), FieldCount));
-
-        ActiveFieldIDs.Add(CalculateCellID(MinX, MinY, MaxY, MaxY, worldPos + new Vector3(FieldSizeX,  0, FieldSizeY), FieldCount));
-        ActiveFieldIDs.Add(CalculateCellID(MinX, MinY, MaxY, MaxY, worldPos + new Vector3(-FieldSizeX, 0, FieldSizeY), FieldCount));
-        ActiveFieldIDs.Add(CalculateCellID(MinX, MinY, MaxY, MaxY, worldPos + new Vector3(FieldSizeX,  0, -FieldSizeY), FieldCount));
-        ActiveFieldIDs.Add(CalculateCellID(MinX, MinY, MaxY, MaxY, worldPos + new Vector3(-FieldSizeX, 0, -FieldSizeY), FieldCount));
-
-        ActiveSubEnvIDs.Clear();
-        ActiveSubEnvIDs.Add(CurrentSubEnvID);
-
-        ActiveSubEnvIDs.Add(FlattenToCellID(CurrentSubEnvX + 1, CurrentSubEnvY, SubEnvCount));
-        ActiveSubEnvIDs.Add(FlattenToCellID(CurrentSubEnvX - 1, CurrentSubEnvY, SubEnvCount));
-        ActiveSubEnvIDs.Add(FlattenToCellID(CurrentSubEnvX, CurrentSubEnvY + 1, SubEnvCount));
-        ActiveSubEnvIDs.Add(FlattenToCellID(CurrentSubEnvX, CurrentSubEnvY - 1, SubEnvCount));
-
-        ActiveSubEnvIDs.Add(FlattenToCellID(CurrentSubEnvX + 1, CurrentSubEnvY + 1, SubEnvCount));
-        ActiveSubEnvIDs.Add(FlattenToCellID(CurrentSubEnvX - 1, CurrentSubEnvY + 1, SubEnvCount));
-        ActiveSubEnvIDs.Add(FlattenToCellID(CurrentSubEnvX + 1, CurrentSubEnvY - 1, SubEnvCount));
-        ActiveSubEnvIDs.Add(FlattenToCellID(CurrentSubEnvX - 1, CurrentSubEnvY - 1, SubEnvCount));
+        Fields.ActiveIDs.Add(Fields.CalculateCellID(worldPos + new Vector3(FieldSizeX,  0, FieldSizeY)));
+        Fields.ActiveIDs.Add(Fields.CalculateCellID(worldPos + new Vector3(-FieldSizeX, 0, FieldSizeY)));
+        Fields.ActiveIDs.Add(Fields.CalculateCellID(worldPos + new Vector3(FieldSizeX,  0, -FieldSizeY)));
+        Fields.ActiveIDs.Add(Fields.CalculateCellID(worldPos + new Vector3(-FieldSizeX, 0, -FieldSizeY)));
 
         var envRoot = Scene.GetChildScene("Env");
         if (envRoot == null) {

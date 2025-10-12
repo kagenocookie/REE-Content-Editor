@@ -191,7 +191,7 @@ public class RetargetDesigner : BaseWindowHandler
         }
     }
 
-    private bool ShowRetargetList(MotRetargetNamesConfig? selectedRemap, AssimpMeshResource? mesh1, AssimpMeshResource? mesh2)
+    private bool ShowRetargetList(MotRetargetNamesConfig? selectedRemap, CommonMeshResource? mesh1, CommonMeshResource? mesh2)
     {
         if (selectedRemap == null || mesh1?.NativeMesh.BoneData == null || mesh2?.NativeMesh.BoneData == null) return false;
 

@@ -47,11 +47,11 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
     private string exportTemplate;
 
-    private AssimpMeshResource? mesh;
+    private CommonMeshResource? mesh;
     private string? meshPath;
     private FileHandle fileHandle;
 
-    public AssimpMeshResource? Mesh => mesh;
+    public CommonMeshResource? Mesh => mesh;
 
     private WindowData data = null!;
     protected UIContext context = null!;
@@ -142,7 +142,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         fileHandle = newFile;
         meshPath = fileHandle.Filepath;
         fileHandle.References.Add(this);
-        mesh = fileHandle.GetResource<AssimpMeshResource>();
+        mesh = fileHandle.GetResource<CommonMeshResource>();
         if (mesh == null) {
             if (fileHandle.Filepath.Contains("streaming/")) {
                 Logger.Error("Can't directly open streaming meshes. Open the non-streaming file instead.");
@@ -486,7 +486,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         using var _ = ImguiHelpers.Disabled(exportInProgress);
         if (ImGui.Button("Export Mesh ...")) {
             // potential export enhancement: include (embed) textures
-            if (fileHandle.Resource is AssimpMeshResource assmesh) {
+            if (fileHandle.Resource is CommonMeshResource assmesh) {
                 PlatformUtils.ShowSaveFileDialog((exportPath) => {
                     exportInProgress = true;
                     try {
@@ -515,7 +515,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                     window.InvokeFromUIThread(() => {
                         lastImportSourcePath = files[0];
                         if (Workspace.ResourceManager.TryLoadUniqueFile(lastImportSourcePath, out var importedFile)) {
-                            var importAsset = importedFile.GetResource<AssimpMeshResource>();
+                            var importAsset = importedFile.GetResource<CommonMeshResource>();
                             var tmpHandler = new FileHandler(new MemoryStream(), fileHandle.Filepath);
                             importAsset.NativeMesh.WriteTo(tmpHandler);
                             fileHandle.Stream = tmpHandler.Stream.ToMemoryStream(disposeStream: false, forceCopy: true);
@@ -548,7 +548,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             var exportMesh = mesh.NativeMesh.RewriteClone(Workspace);
             exportMesh.ChangeVersion(exportTemplate);
             if (bundleConvert) {
-                var tempres = new AssimpMeshResource(defaultFilename, Workspace.Env) { NativeMesh = exportMesh };
+                var tempres = new CommonMeshResource(defaultFilename, Workspace.Env) { NativeMesh = exportMesh };
                 ResourcePathPicker.ShowSaveToBundle(fileHandle.Loader, tempres, Workspace, defaultFilename, fileHandle.NativePath);
             } else {
                 PlatformUtils.ShowSaveFileDialog((path) => exportMesh.SaveAs(path), defaultFilename);

@@ -9,7 +9,7 @@ using Silk.NET.Maths;
 
 namespace ContentEditor.App.FileLoaders;
 
-public partial class AssimpMeshResource : IResourceFile
+public partial class CommonMeshResource : IResourceFile
 {
     private static IEnumerable<Node> FlatNodes(Node node)
     {

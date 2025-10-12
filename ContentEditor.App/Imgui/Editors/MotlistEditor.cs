@@ -59,7 +59,7 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 
     protected override void DrawFileControls(WindowData data)
     {
-        if (Handle.Resource is AssimpMeshResource mesh) {
+        if (Handle.Resource is CommonMeshResource mesh) {
             if (ImGui.Button("Save As Motlist ...")) {
                 Workspace.Env.TryGetFileExtensionVersion("motlist", out var version);
                 var ext = ".motlist." + version;

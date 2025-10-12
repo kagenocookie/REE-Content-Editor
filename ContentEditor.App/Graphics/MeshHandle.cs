@@ -73,6 +73,13 @@ public class MeshHandle
         UpdateMaterials(meshRemapIndices);
     }
 
+    internal void SetMaterials(MaterialGroup material)
+    {
+        Material = material;
+        MaterialIndicesRemap.Clear();
+        MaterialIndicesRemap.AddRange(Enumerable.Range(0, material.Materials.Count));
+    }
+
     internal void UpdateMaterials(IEnumerable<int> meshRemapIndices)
     {
         MaterialIndicesRemap.Clear();

@@ -49,7 +49,7 @@ public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<Motlis
                     }
                 }
 
-                var resource = new AssimpMeshResource(name, workspace.Env) {
+                var resource = new CommonMeshResource(name, workspace.Env) {
                     NativeMesh = file,
                     GameVersion = workspace.Env.Config.Game.GameEnum,
                 };
@@ -67,7 +67,7 @@ public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<Motlis
 
                 var mesh = mply.ConvertToMergedClassicMesh();
 
-                var resource = new AssimpMeshResource(name, workspace.Env) {
+                var resource = new CommonMeshResource(name, workspace.Env) {
                     NativeMesh = mesh,
                     GameVersion = workspace.Env.Config.Game.GameEnum,
                 };
@@ -96,7 +96,7 @@ public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<Motlis
                 return null;
             }
 
-            var resource = new AssimpMeshResource(name, workspace.Env) {
+            var resource = new CommonMeshResource(name, workspace.Env) {
                 Scene = importedScene,
                 GameVersion = workspace.Env.Config.Game.GameEnum,
             };
@@ -110,7 +110,7 @@ public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<Motlis
 
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
-        var mesh = handle.GetResource<AssimpMeshResource>();
+        var mesh = handle.GetResource<CommonMeshResource>();
         return mesh.NativeMesh.SaveOrWriteTo(handle, outputPath);
     }
 
@@ -152,7 +152,7 @@ public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<Motlis
 
     public MotlistFile GetFile(FileHandle handle)
     {
-        var mr = handle.GetResource<AssimpMeshResource>();
+        var mr = handle.GetResource<CommonMeshResource>();
         if (mr.HasAnimations) {
             return mr.Motlist;
         }

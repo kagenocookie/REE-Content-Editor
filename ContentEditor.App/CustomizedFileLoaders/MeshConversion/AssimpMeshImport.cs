@@ -14,7 +14,7 @@ using Silk.NET.Maths;
 
 namespace ContentEditor.App.FileLoaders;
 
-public partial class AssimpMeshResource : IResourceFile
+public partial class CommonMeshResource : IResourceFile
 {
     private const string ShapekeyPrefix = "SHAPEKEY_";
     private const string SecondaryWeightDummyBonePrefix = "WEIGHT2_DUMMY_";

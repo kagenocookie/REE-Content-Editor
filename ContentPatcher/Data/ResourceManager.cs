@@ -958,6 +958,17 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         return file;
     }
 
+    public bool TryResolveResourceFile<TFileType>(string filename, [MaybeNullWhen(false)] out TFileType file) where TFileType : BaseFile
+    {
+        if (!TryResolveFile(filename, out var handle)) {
+            file = null;
+            return false;
+        }
+
+        file = handle.GetFile<TFileType>();
+        return true;
+    }
+
     /// <summary>
     /// Loads a file from its base state (directly from PAK / loose file), ignoring existing open files.
     /// </summary>

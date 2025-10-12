@@ -10,17 +10,17 @@ namespace ContentEditor.App.FileLoaders;
 
 public class McolSceneLoader : McolFileLoader,
     IFileLoader,
-    IFileHandleContentProvider<AssimpMeshResource>
+    IFileHandleContentProvider<CommonMeshResource>
 {
     int IFileLoader.Priority => 30;
 
-    AssimpMeshResource IFileHandleContentProvider<AssimpMeshResource>.GetFile(FileHandle handle)
+    CommonMeshResource IFileHandleContentProvider<CommonMeshResource>.GetFile(FileHandle handle)
     {
         var mcol = handle.GetFile<McolFile>();
         var scene = McolEditor.GetMeshScene(mcol.bvh);
         if (scene == null) {
             scene = new Assimp.Scene();
         }
-        return new AssimpMeshResource(PathUtils.GetFilepathWithoutExtensionOrVersion(handle.Filename).ToString(), null!) { Scene = scene };
+        return new CommonMeshResource(PathUtils.GetFilepathWithoutExtensionOrVersion(handle.Filename).ToString(), null!) { Scene = scene };
     }
 }

@@ -132,12 +132,12 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
     protected override MeshResourceHandle? LoadMeshResource(FileHandle fileHandle)
     {
-        var meshResource = fileHandle.Resource as AssimpMeshResource ?? fileHandle.GetCustomContent<AssimpMeshResource>();
+        var meshResource = fileHandle.Resource as CommonMeshResource ?? fileHandle.GetCustomContent<CommonMeshResource>();
         if (meshResource == null) return null;
 
         var handle = new MeshResourceHandle(MeshRefs.NextInstanceID);
         var meshFile = meshResource.NativeMesh;
-        if (meshFile.MeshData == null || !(meshFile.MeshBuffer?.Positions.Length > 0)) {
+        if (meshFile.MeshData == null || meshResource.PreloadedMeshes == null && !(meshFile.MeshBuffer?.Positions.Length > 0)) {
             // TODO occluder meshes
             return handle;
         }
@@ -249,7 +249,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
         var group = new MaterialGroup() { Flags = flags };
         var scene = (file.Resource as AssimpMaterialResource)?.Scene;
-        var materials = scene?.Materials ?? (file.Resource as AssimpMeshResource)?.MaterialList;
+        var materials = scene?.Materials ?? (file.GetCustomContent<CommonMeshResource>())?.MaterialList;
         if (materials == null) {
             Logger.Error("Failed to load material group - invalid resource type " + file.Filepath);
             return group;

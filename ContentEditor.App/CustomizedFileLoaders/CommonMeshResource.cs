@@ -9,7 +9,7 @@ using ReeLib.Mesh;
 
 namespace ContentEditor.App.FileLoaders;
 
-public partial class AssimpMeshResource(string Name, Workspace workspace) : IResourceFile
+public partial class CommonMeshResource(string Name, Workspace workspace) : IResourceFile
 {
     private Assimp.Scene? _scene;
     private MeshFile? _mesh;
