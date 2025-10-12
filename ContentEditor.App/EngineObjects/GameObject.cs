@@ -335,7 +335,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
     {
         ExportInstanceFields();
         var newObj = new GameObject(instance.Clone(), Transform.Data.Clone()) {
-            Scene = parent?.Scene ?? Scene,
+            Scene = parent?.Scene,
             _parent = parent,
         };
         foreach (var comp in Components) {
@@ -355,6 +355,9 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
 
     protected override void OnParentChanged()
     {
+        if (Parent != null) {
+            Folder = Parent.Folder;
+        }
         if (Parent == null && Folder == null) {
             DeactivateComponents();
         } else {
