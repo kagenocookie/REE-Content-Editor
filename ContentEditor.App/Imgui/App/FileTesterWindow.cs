@@ -397,7 +397,7 @@ public class FileTesterWindow : IWindowHandler
     {
         switch (format) {
             case KnownFileFormats.MotionList: return VerifyRewriteEquality<MotlistFile>(source.GetFile<MotlistFile>(), env);
-            case KnownFileFormats.Mesh: return VerifyRewriteEquality<MeshFile>(source.GetResource<AssimpMeshResource>().NativeMesh, env);
+            case KnownFileFormats.Mesh: return VerifyRewriteEquality<MeshFile>(source.GetResource<CommonMeshResource>().NativeMesh, env);
             default: return null;
         }
     }
