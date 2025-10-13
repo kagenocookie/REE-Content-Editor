@@ -361,6 +361,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         var newObj = new GameObject(instance.Clone(), Transform.Data.Clone()) {
             Scene = parent?.Scene,
             _parent = parent,
+            PrefabPath = PrefabPath,
         };
         foreach (var comp in Components) {
             if (comp is Transform) continue;
@@ -372,6 +373,9 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         }
         if (parent != null) {
             parent._BaseChildren.Add(newObj);
+        }
+        if (guid != Guid.Empty) {
+            newObj.guid = Guid.NewGuid();
         }
 
         return newObj;
