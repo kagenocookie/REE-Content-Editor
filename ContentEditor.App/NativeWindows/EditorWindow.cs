@@ -89,6 +89,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         workspace.SetBundle(bundle);
         GameChanged?.Invoke();
         SceneManager.ChangeWorkspace(workspace);
+        if (bundle != null && workspace.CurrentBundle != null) {
+            AppConfig.Instance.AddRecentBundle(bundle);
+        }
     }
 
     private static void SetupTypes(ContentWorkspace workspace)
@@ -338,7 +341,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     if (workspace.CurrentBundle != null && ImGui.MenuItem("Unload current bundle")) {
                         SetWorkspace(workspace.Env.Config.Game, null);
                     }
-                    foreach (var b in workspace.BundleManager.AllBundles) {
+                    var foundUnusedBundle = false;
+                    foreach (var b in workspace.BundleManager.AllBundles.OrderBy(bb => (uint)AppConfig.Settings.RecentBundles.IndexOf(bb.Name))) {
+                        if (!foundUnusedBundle && AppConfig.Settings.RecentBundles.IndexOf(b.Name) == -1) {
+                            foundUnusedBundle = true;
+                            ImGui.Separator();
+                        }
                         if (ImGui.MenuItem(b.Name)) {
                             SetWorkspace(workspace.Env.Config.Game, b.Name);
                         }
@@ -498,13 +506,14 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     ImGui.EndMenu();
                 }
                 if (ImGui.BeginMenu("Recent files")) {
-                    var recents = AppConfig.Instance.RecentFiles.Get();
-                    if (recents == null || recents.Length == 0) {
+                    var recents = AppConfig.Settings.RecentFiles;
+                    if (recents == null || recents.Count == 0) {
                         ImGui.MenuItem("No recent files", false);
                     } else {
                         foreach (var file in recents) {
                             if (ImGui.MenuItem(file)) {
                                 this.OnFileDrop([file], new Vector2D<int>());
+                                break;
                             }
                         }
                     }

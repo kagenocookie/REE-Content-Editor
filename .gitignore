@@ -16,6 +16,7 @@ build/*
 
 imgui.ini
 ce_config.ini
+ce_config.json
 /ContentEditor.App/resources
 crashlog.txt
 configs/user

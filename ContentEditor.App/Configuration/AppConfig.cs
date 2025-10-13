@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
+using System.Text.Json;
+using ContentEditor.Core;
 using ContentPatcher;
 using ContentPatcher.FileFormats;
 using ImGuiNET;
@@ -34,7 +36,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string AutoExpandFieldsCount = "auto_expand_fields_count";
         public const string UsePakFilePreviewWindow = "use_pak_preview_window";
         public const string UsePakCompactFilePaths = "use_pak_compact_file_paths";
-        
+
         public const string RenderAxis = "render_axis";
         public const string RenderMeshes = "render_meshes";
         public const string RenderColliders = "render_colliders";
@@ -62,9 +64,11 @@ public class AppConfig : Singleton<AppConfig>
     private static readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
 
     private const string IniFilepath = "ce_config.ini";
+    private const string JsonFilepath = "ce_config.json";
 
     public static readonly string Version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion ?? "";
     public static bool IsOutdatedVersion { get; internal set; }
+    public static AppJsonSettings Settings => Instance.JsonSettings;
 
     public sealed class SettingWrapper<T>(string settingKey, ReaderWriterLockSlim _lock, T initial) where T : struct, IEquatable<T>
     {
@@ -139,13 +143,13 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<bool> RenderColliders = new SettingWrapper<bool>(Keys.RenderColliders, _lock, true);
     public readonly SettingWrapper<bool> RenderRequestSetColliders = new SettingWrapper<bool>(Keys.RenderRequestSetColliders, _lock, true);
 
-    public readonly ClassSettingWrapper<string[]> RecentFiles = new ClassSettingWrapper<string[]>(Keys.RecentFiles, _lock, () => []);
-
     public readonly SettingWrapper<KeyBinding> Key_Undo = new SettingWrapper<KeyBinding>(Keys.Key_Undo, _lock, new KeyBinding(ImGuiKey.Z, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_Redo = new SettingWrapper<KeyBinding>(Keys.Key_Redo, _lock, new KeyBinding(ImGuiKey.Y, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_Save = new SettingWrapper<KeyBinding>(Keys.Key_Save, _lock, new KeyBinding(ImGuiKey.S, ctrl: true));
 
     public string ConfigBasePath => GameConfigBaseFilepath.Get() ?? "configs";
+
+    public AppJsonSettings JsonSettings { get; private set; } = new();
 
     public string? GetGamePath(GameIdentifier game) => _lock.Read(() => gameConfigs.GetValueOrDefault(game.name)?.gamepath);
     public void SetGamePath(GameIdentifier game, string path) => SetForGameAndSave(game.name, path, (cfg, val) => cfg.gamepath = val);
@@ -158,33 +162,23 @@ public class AppConfig : Singleton<AppConfig>
     public bool HasAnyGameConfigured => _lock.Read(() => gameConfigs.Any(g => !string.IsNullOrEmpty(g.Value?.gamepath)));
     public IEnumerable<string> ConfiguredGames => _lock.Read(() => gameConfigs.Where(kv => !string.IsNullOrEmpty(kv.Value.gamepath)).Select(kv => kv.Key));
 
-    private const int MaxRecentFileCount = 25;
-    public void AddRecentFile(string file)
+    public void AddRecentFile(string file) => AddRecentString(file, JsonSettings.RecentFiles, 25);
+    public void AddRecentBundle(string file) => AddRecentString(file, JsonSettings.RecentBundles, 25);
+    private void AddRecentString(string file, List<string> list, int maxEntries)
     {
-        _lock.EnterWriteLock();
-        try {
-            if (RecentFiles.value == null || RecentFiles.value.Length == 0) {
-                RecentFiles.value = [file];
-                return;
-            }
+        var prevIndex = list.IndexOf(file);
+        if (prevIndex == 0) return;
 
-            var arr = RecentFiles.value;
-            var prevIndex = Array.IndexOf(arr, file);
-            if (prevIndex == 0) return;
-            if (prevIndex != -1) {
-                Array.Copy(arr, 0, arr, 1, prevIndex);
-                arr[0] = file;
-            } else if (arr.Length < MaxRecentFileCount) {
-                RecentFiles.value = new string[] { file }.Concat(arr).ToArray();
-            } else {
-                RecentFiles.value = new string[MaxRecentFileCount];
-                RecentFiles.value[0] = file;
-                Array.Copy(arr, 0, RecentFiles.value, 1, MaxRecentFileCount - 1);
+        if (prevIndex != -1) {
+            list.RemoveAt(prevIndex);
+            list.Insert(0, file);
+        } else {
+            list.Add(file);
+            if (list.Count > maxEntries) {
+                list.RemoveAt(list.Count - 1);
             }
-        } finally {
-            _lock.ExitWriteLock();
         }
-        _lock.ReadCallback(SaveConfigToIni);
+        SaveJsonConfig();
     }
 
     public List<(string name, bool supported)> GetGamelist()
@@ -223,6 +217,26 @@ public class AppConfig : Singleton<AppConfig>
         _lock.ReadCallback(SaveConfigToIni);
     }
 
+    public void SaveJsonConfig()
+    {
+        using var fs = File.Create(JsonFilepath);
+        JsonSerializer.Serialize(fs, JsonSettings, JsonConfig.configJsonOptions);
+    }
+
+    public void LoadJsonConfig()
+    {
+        if (!File.Exists(JsonFilepath)) return;
+
+        using var fs = File.OpenRead(JsonFilepath);
+        try {
+            var settings = JsonSerializer.Deserialize<AppJsonSettings>(fs, JsonConfig.configJsonOptions);
+            if (settings == null) throw new Exception("Null settings");
+            JsonSettings = settings;
+        } catch (Exception e) {
+            Logger.Error("Failed to load app settings from JSON: " + e.Message);
+        }
+    }
+
     public static void SaveConfigToIni()
     {
         var instance = Instance;
@@ -248,7 +262,6 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.UsePakFilePreviewWindow, instance.UsePakFilePreviewWindow.value.ToString(), null),
             (Keys.UsePakCompactFilePaths, instance.UsePakCompactFilePaths.value.ToString(), null),
             (Keys.PrettyLabels, instance.PrettyFieldLabels.value.ToString(), null),
-            (Keys.RecentFiles, string.Join("|", instance.RecentFiles.value ?? Array.Empty<string>()), null),
 
             (Keys.RenderAxis, instance.RenderAxis.value.ToString(), null),
             (Keys.RenderMeshes, instance.RenderMeshes.value.ToString(), null),
@@ -276,115 +289,118 @@ public class AppConfig : Singleton<AppConfig>
         IniFile.WriteToFile(IniFilepath, items);
     }
 
-    public static void LoadConfigs() => LoadConfigs(IniFile.ReadFile(IniFilepath));
+    public static void LoadConfigs()
+    {
+        Instance.LoadConfigs(IniFile.ReadFile(IniFilepath));
+        Instance.LoadJsonConfig();
+    }
 
-    private static void LoadConfigs(IEnumerable<(string key, string value, string? group)> values)
+    private void LoadConfigs(IEnumerable<(string key, string value, string? group)> values)
     {
         static bool ReadBool(string str) => str.Equals("true", StringComparison.OrdinalIgnoreCase) || str.Equals("yes", StringComparison.OrdinalIgnoreCase) || str == "1";
         static string? ReadString(string str) => string.IsNullOrEmpty(str) ? null : str;
 
         _lock.EnterWriteLock();
-        var instance = Instance;
         try {
             foreach (var (key, value, group) in values) {
                 if (group == null) {
                     switch (key) {
                         case Keys.MaxFps:
-                            instance.MaxFps.value = Math.Max(int.Parse(value), 10);
+                            MaxFps.value = Math.Max(int.Parse(value), 10);
                             break;
                         case Keys.BackgroundMaxFps:
-                            instance.BackgroundMaxFps.value = Math.Clamp(int.Parse(value), 5, instance.MaxFps.value);
+                            BackgroundMaxFps.value = Math.Clamp(int.Parse(value), 5, MaxFps.value);
                             break;
                         case Keys.ShowFps:
-                            instance.ShowFps.value = ReadBool(value);
+                            ShowFps.value = ReadBool(value);
                             break;
                         case Keys.LogToFile:
-                            instance.LogToFile.value = ReadBool(value);
+                            LogToFile.value = ReadBool(value);
                             break;
                         case Keys.MainWindowGame:
-                            instance.MainSelectedGame.value = ReadString(value);
+                            MainSelectedGame.value = ReadString(value);
                             break;
                         case Keys.MainActiveBundle:
-                            instance.MainActiveBundle.value = ReadString(value);
+                            MainActiveBundle.value = ReadString(value);
                             break;
                         case Keys.BlenderPath:
-                            instance.BlenderPath.value = ReadString(value);
+                            BlenderPath.value = ReadString(value);
                             break;
                         case Keys.RemoteDataSource:
-                            instance.RemoteDataSource.value = ReadString(value);
+                            RemoteDataSource.value = ReadString(value);
                             break;
                         case Keys.GameConfigBaseFilepath:
-                            instance.GameConfigBaseFilepath.value = ReadString(value);
+                            GameConfigBaseFilepath.value = ReadString(value);
                             break;
                         case Keys.Theme:
-                            instance.Theme.value = string.IsNullOrEmpty(value) ? "default" : value;
+                            Theme.value = string.IsNullOrEmpty(value) ? "default" : value;
                             break;
                         case Keys.UnpackMaxThreads:
-                            if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)) instance.UnpackMaxThreads.value = Math.Clamp(parsed, 1, 64);
+                            if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)) UnpackMaxThreads.value = Math.Clamp(parsed, 1, 64);
                             break;
                         case Keys.BackgroundColor:
-                            if (ReeLib.via.Color.TryParse(value, out var _col)) instance.BackgroundColor.value =  _col;
+                            if (ReeLib.via.Color.TryParse(value, out var _col)) BackgroundColor.value =  _col;
                             break;
                         case Keys.LogLevel:
-                            if (int.TryParse(value, out var _intvalue)) instance.LogLevel.value =  _intvalue;
+                            if (int.TryParse(value, out var _intvalue)) LogLevel.value =  _intvalue;
                             break;
                         case Keys.MaxUndoSteps:
-                            if (int.TryParse(value, out _intvalue)) instance.MaxUndoSteps.value = Math.Max(_intvalue, 0);
+                            if (int.TryParse(value, out _intvalue)) MaxUndoSteps.value = Math.Max(_intvalue, 0);
                             break;
                         case Keys.AutoExpandFieldsCount:
-                            if (int.TryParse(value, out _intvalue)) instance.AutoExpandFieldsCount.value = Math.Max(_intvalue, 0);
+                            if (int.TryParse(value, out _intvalue)) AutoExpandFieldsCount.value = Math.Max(_intvalue, 0);
                             break;
                         case Keys.PrettyLabels:
-                            instance.PrettyFieldLabels.value = ReadBool(value);
+                            PrettyFieldLabels.value = ReadBool(value);
                             break;
                         case Keys.RecentFiles:
-                            instance.RecentFiles.value = value.Split('|', StringSplitOptions.RemoveEmptyEntries);
+                            JsonSettings.RecentFiles.AddRange(value.Split('|', StringSplitOptions.RemoveEmptyEntries));
                             break;
                         case Keys.EnableUpdateCheck:
-                            instance.EnableUpdateCheck.value = ReadBool(value);
+                            EnableUpdateCheck.value = ReadBool(value);
                             break;
                         case Keys.UsePakFilePreviewWindow:
-                            instance.UsePakFilePreviewWindow.value = ReadBool(value);
+                            UsePakFilePreviewWindow.value = ReadBool(value);
                             break;
                         case Keys.UsePakCompactFilePaths:
-                            instance.UsePakCompactFilePaths.value = ReadBool(value);
+                            UsePakCompactFilePaths.value = ReadBool(value);
                             break;
                         case Keys.LastUpdateCheck:
-                            if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var _updateCheck)) instance.LastUpdateCheck.value = _updateCheck;
+                            if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var _updateCheck)) LastUpdateCheck.value = _updateCheck;
                             break;
                         case Keys.LatestVersion:
-                            instance.LatestVersion.value = ReadString(value);
+                            LatestVersion.value = ReadString(value);
                             break;
 
                         case Keys.RenderAxis:
-                            instance.RenderAxis.value = ReadBool(value);
+                            RenderAxis.value = ReadBool(value);
                             break;
                         case Keys.RenderMeshes:
-                            instance.RenderMeshes.value = ReadBool(value);
+                            RenderMeshes.value = ReadBool(value);
                             break;
                         case Keys.RenderColliders:
-                            instance.RenderColliders.value = ReadBool(value);
+                            RenderColliders.value = ReadBool(value);
                             break;
                         case Keys.RenderRequestSetColliders:
-                            instance.RenderRequestSetColliders.value = ReadBool(value);
+                            RenderRequestSetColliders.value = ReadBool(value);
                             break;
                     }
                 } else if (group == "Keys") {
                     switch (key) {
                         case Keys.Key_Undo:
-                            if (KeyBinding.TryParse(value, out var _key)) instance.Key_Undo.value = _key;
+                            if (KeyBinding.TryParse(value, out var _key)) Key_Undo.value = _key;
                             break;
                         case Keys.Key_Redo:
-                            if (KeyBinding.TryParse(value, out _key)) instance.Key_Redo.value = _key;
+                            if (KeyBinding.TryParse(value, out _key)) Key_Redo.value = _key;
                             break;
                         case Keys.Key_Save:
-                            if (KeyBinding.TryParse(value, out _key)) instance.Key_Save.value = _key;
+                            if (KeyBinding.TryParse(value, out _key)) Key_Save.value = _key;
                             break;
                     }
                 } else {
-                    var config = instance.gameConfigs.GetValueOrDefault(group);
+                    var config = gameConfigs.GetValueOrDefault(group);
                     if (config == null) {
-                        instance.gameConfigs[group] = config = new AppGameConfig();
+                        gameConfigs[group] = config = new AppGameConfig();
                     }
 
                     switch (key) {
@@ -457,4 +473,12 @@ public struct KeyBinding : IEquatable<KeyBinding>
     public bool Equals(KeyBinding other) => other.Key == Key && other.ctrl == ctrl && other.shift == shift && other.alt == alt;
 
     public override string ToString() => ctrl || shift || alt ? $"{Key}+{(ctrl ? "C" : "")}{(shift ? "S" : "")}{(alt ? "A" : "")}" : Key.ToString();
+}
+
+public class AppJsonSettings
+{
+    public List<string> RecentBundles { get; init; } = new();
+    public List<string> RecentFiles { get; init; } = new();
+
+    public void Save() => AppConfig.Instance.SaveJsonConfig();
 }

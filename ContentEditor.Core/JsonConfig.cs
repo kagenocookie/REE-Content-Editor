@@ -14,6 +14,13 @@ public static class JsonConfig
         IncludeFields = true,
     };
 
+    public static readonly JsonSerializerOptions configJsonOptions = new() {
+        WriteIndented = true,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never,
+        IgnoreReadOnlyProperties = false,
+    };
+
     public static readonly JsonSerializerOptions luaJsonOptions = new() {
         WriteIndented = true,
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
