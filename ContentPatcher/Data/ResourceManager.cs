@@ -924,7 +924,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             handleType = FileHandleType.Memory;
             fileSource = "PAK file";
         } else {
-            var bundleRoot = workspace.BundleManager.BundlePath;
+            var bundleRoot = workspace.BundleManager.AppBundlePath;
             if (filepath.StartsWith(bundleRoot)) {
                 handleType = FileHandleType.Bundle;
                 fileSource = Path.GetRelativePath(bundleRoot, filepath).Replace('\\', '/');

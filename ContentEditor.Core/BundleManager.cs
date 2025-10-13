@@ -26,7 +26,8 @@ public class BundleManager
     public string? GamePath { get; set; }
     public string? VersionHash { get; set; }
 
-    public string BundlePath => Path.Combine(GamePath ?? string.Empty, "reframework/data/usercontent/bundles/").Replace('\\', '/');
+    public string AppBundlePath => Path.Combine(GamePath ?? string.Empty, "content/bundles/").Replace('\\', '/');
+    public string RuntimeBundlePath => Path.Combine(GamePath ?? string.Empty, "reframework/data/usercontent/bundles/").Replace('\\', '/');
     public string EnumsPath => Path.Combine(GamePath ?? string.Empty, "reframework/data/usercontent/enums/").Replace('\\', '/');
     public string SettingsPath => Path.Combine(GamePath ?? string.Empty, "reframework/data/usercontent/editor_settings.json").Replace('\\', '/');
     public string ResourcePatchLogPath => Path.Combine(GamePath ?? string.Empty, "reframework/content_patch_metadata.json").Replace('\\', '/');
@@ -67,26 +68,17 @@ public class BundleManager
         var orderedBundles = new SortedList<int, Bundle>();
         var unorderedBundles = new List<Bundle>();
         var bundleImports = new ImportSummary(new (), new());
-        Directory.CreateDirectory(BundlePath);
+        Directory.CreateDirectory(AppBundlePath);
+        Directory.CreateDirectory(RuntimeBundlePath);
         UninitializedBundleFolders.Clear();
-        foreach (var entry in Directory.EnumerateFileSystemEntries(BundlePath)) {
-            var finfo = new FileInfo(entry);
-            var isFolder = (finfo.Attributes & FileAttributes.Directory) != 0;
-            string bundleJsonFile;
-            if (isFolder) {
-                // CE.NET+ bundle
-                bundleJsonFile = Path.Combine(entry, "bundle.json");
-                // maybe handle folders with no bundle as a raw "resource-only" bundle instead? (and autogenerate the json)
-                if (!File.Exists(bundleJsonFile)) {
-                    if (Directory.EnumerateFiles(entry).Any()) {
-                        UninitializedBundleFolders.Add(entry);
-                    }
-                    continue;
+
+        // CE.NET+ bundles
+        foreach (var entry in Directory.EnumerateDirectories(AppBundlePath)) {
+            string bundleJsonFile = Path.Combine(entry, "bundle.json");
+            if (!File.Exists(bundleJsonFile)) {
+                if (Directory.EnumerateFiles(entry).Any()) {
+                    UninitializedBundleFolders.Add(entry);
                 }
-            } else if (entry.EndsWith(".json")) {
-                bundleJsonFile = entry;
-            } else {
-                // not a bundle
                 continue;
             }
 
@@ -99,6 +91,29 @@ public class BundleManager
                 continue;
             }
             bundle.SaveFilepath = Path.GetFileNameWithoutExtension(entry);
+
+            var idx = settings.BundleOrder.IndexOf(bundle.Name);
+            if (idx != -1) {
+                orderedBundles.Add(idx, bundle);
+            } else {
+                unorderedBundles.Add(bundle);
+            }
+        }
+
+        // legacy & runtime-only light bundles
+        foreach (var entry in Directory.EnumerateFileSystemEntries(RuntimeBundlePath, "*.json")) {
+            if (!TryDeserialize<Bundle>(entry, out var bundle)) {
+                Logger.Error("Failed to open bundle " + entry);
+                continue;
+            }
+            if (string.IsNullOrEmpty(bundle.Name)) {
+                Logger.Error("Found invalid, unnamed bundle " + entry);
+                continue;
+            }
+            bundle.SaveFilepath = Path.GetFileNameWithoutExtension(entry);
+
+            // TODO figure out app/runtime bundle link
+            if (orderedBundles.Any(bb => bb.Value.Name == bundle.Name) || unorderedBundles.Any(bb => bb.Name == bundle.Name)) continue;
 
             var idx = settings.BundleOrder.IndexOf(bundle.Name);
             if (idx != -1) {
@@ -179,7 +194,7 @@ public class BundleManager
 
     public string GetBundleFolder(string name)
     {
-        return Path.Combine(BundlePath, name).Replace('\\', '/');
+        return Path.Combine(AppBundlePath, name).Replace('\\', '/');
     }
 
     public string? GetBundleResourcePath(Bundle bundle, string filepath)
@@ -194,7 +209,7 @@ public class BundleManager
 
     public string ResolveBundleLocalPath(Bundle bundle, string localPath)
     {
-        return Path.Combine(BundlePath, bundle.Name, localPath);
+        return Path.Combine(AppBundlePath, bundle.Name, localPath);
     }
 
     public bool IsBundleActive(Bundle bundle)
@@ -291,7 +306,7 @@ public class BundleManager
     {
         bundle.Touch();
         bundle.SaveFilepath ??= bundle.Name;
-        var outfilepath = Path.Combine(BundlePath, bundle.SaveFilepath, "bundle.json");
+        var outfilepath = Path.Combine(AppBundlePath, bundle.SaveFilepath, "bundle.json");
         Directory.CreateDirectory(Path.GetDirectoryName(outfilepath)!);
         using var fs = File.Create(outfilepath);
         JsonSerializer.Serialize(fs, bundle, JsonConfig.luaJsonOptions);
