@@ -123,12 +123,31 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                     EditorWindow.CurrentWindow?.AddSubwindow(new JsonViewer(diff, Handle.Filepath, Handle));
                 }
             }
-            if (workspace.CurrentBundle != null && !Handle.IsInBundle(workspace, workspace.CurrentBundle)) {
-                ImGui.SameLine();
-                if (ImGui.Button("Save to bundle")) {
-                    ResourcePathPicker.SaveFileToBundle(workspace, Handle, (bundle, savePath, localPath, nativePath) => {
-                        SaveTo(savePath, true, () => bundle.AddResource(localPath, nativePath));
-                    });
+            if (workspace.CurrentBundle != null) {
+                if (!Handle.IsInBundle(workspace, workspace.CurrentBundle)) {
+                    ImGui.SameLine();
+                    if (ImGui.Button("Save to bundle")) {
+                        ResourcePathPicker.SaveFileToBundle(workspace, Handle, (bundle, savePath, localPath, nativePath) => {
+                            SaveTo(savePath, true, () => bundle.AddResource(localPath, nativePath, Handle.Format.format.IsDefaultReplacedBundleResource()));
+                        });
+                    }
+                } else if (workspace.CurrentBundle.ResourceListing == null || !workspace.CurrentBundle.TryFindResourceListing(Handle.NativePath ?? "", out var resourceListing)) {
+                    if (Handle.NativePath != null) {
+                        if (ImGui.Button("Store in bundle")) {
+                            workspace.CurrentBundle.ResourceListing ??= new();
+                            var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle), Handle.Filepath);
+                            workspace.CurrentBundle.AddResource(localPath, Handle.NativePath, Handle.Format.format.IsDefaultReplacedBundleResource());
+                        }
+                        ImguiHelpers.Tooltip("File is located in the bundle folder but is not marked as part of the bundle. This will store it into the bundle json.");
+                    }
+                } else if (Handle.DiffHandler != null) {
+                    ImGui.SameLine();
+                    var replace = resourceListing.Replace;
+                    if (ImGui.Checkbox("Replace File", ref replace)) {
+                        resourceListing.Replace = replace;
+                        Handle.Modified = true;
+                    }
+                    ImguiHelpers.Tooltip("When true, the file is treated as a full replacement and not partially patched.\nThis is required if you need to remove anything from the base file.\n\nWhen false, the file will be partially patched.\nThis is useful to allow multiple mods to affect a small part of a shared file, but may cause issues in specific cases like removed or reordered items.");
                 }
             }
         }

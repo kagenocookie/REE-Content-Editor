@@ -107,7 +107,7 @@ public class ResourcePathPicker : IObjectUIHandler
                     var wnd = EditorWindow.CurrentWindow!;
                     SaveFileToBundle(ws, file, (bundle, savePath, localPath, nativePath) => {
                         file.Save(ws, savePath);
-                        bundle.AddResource(localPath, nativePath);
+                        bundle.AddResource(localPath, nativePath, file.Format.format.IsDefaultReplacedBundleResource());
                         Logger.Info("File saved to " + savePath);
                         wnd.InvokeFromUIThread(() => {
                             ApplyPathChange(context, nativePath, wnd);
@@ -201,7 +201,7 @@ public class ResourcePathPicker : IObjectUIHandler
         ResourcePathPicker.SaveFileToBundle(workspace, tempHandle, (bundle, savePath, localPath, nativePath) => {
             if (tempHandle.Save(workspace, savePath)) {
                 if (!bundle.TryFindResourceByNativePath(nativePath, out _)) {
-                    bundle.AddResource(localPath, nativePath);
+                    bundle.AddResource(localPath, nativePath, tempHandle.Format.format.IsDefaultReplacedBundleResource());
                 }
             }
         });

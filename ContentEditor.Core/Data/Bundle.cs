@@ -107,7 +107,7 @@ public class Bundle
         return null;
     }
 
-    public void AddResource(string localFilepath, string nativeFilepath)
+    public void AddResource(string localFilepath, string nativeFilepath, bool replace = false)
     {
         ResourceListing ??= new();
         nativeFilepath = nativeFilepath.Replace('\\', '/').ToLowerInvariant();
@@ -115,7 +115,7 @@ public class Bundle
             Logger.Error("Bundle already contains the file " + nativeFilepath + "\nBundle local filepath: " + prevLocal);
             return;
         }
-        ResourceListing[localFilepath] = new ResourceListItem() { Target = nativeFilepath };
+        ResourceListing[localFilepath] = new ResourceListItem() { Target = nativeFilepath, Replace = replace };
         if (_nativeToLocalResourcePathCache != null) {
             _nativeToLocalResourcePathCache[nativeFilepath] = localFilepath;
         }
@@ -130,6 +130,18 @@ public class Bundle
         }
 
         return _nativeToLocalResourcePathCache.TryGetValue(nativePath, out localPath);
+    }
+
+    public bool TryFindResourceListing(string nativePath, [MaybeNullWhen(false)] out ResourceListItem resourceListing)
+    {
+        if (_nativeToLocalResourcePathCache == null) {
+            _nativeToLocalResourcePathCache = ResourceListing?
+                .GroupBy(k => k.Value.Target)
+                .ToDictionary(k => k.First().Value.Target, k => k.First().Key) ?? new(0);
+        }
+
+        resourceListing = _nativeToLocalResourcePathCache.TryGetValue(nativePath, out var localPath) ? ResourceListing![localPath] : null;
+        return resourceListing != null;
     }
 
     public string ToModConfigIni()
