@@ -386,12 +386,11 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         if (Parent != null) {
             Folder = Parent.Folder;
         }
-        if (Parent == null && Folder == null) {
+        if (Parent == null && (Folder == null || !Folder.GameObjects.Contains(this))) {
+            Folder = null;
             DeactivateComponents();
-        } else {
-            if (Scene?.IsActive == true) {
-                ActivateComponents();
-            }
+        } else if (Scene?.IsActive == true) {
+            ActivateComponents();
         }
     }
 
