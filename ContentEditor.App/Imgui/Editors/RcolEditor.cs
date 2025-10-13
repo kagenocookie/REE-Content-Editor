@@ -1,17 +1,10 @@
-using System.Collections;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
-using ReeLib.Common;
-using ReeLib.Efx;
-using ReeLib.Efx.Structs.Basic;
-using ReeLib.Efx.Structs.Common;
 using ReeLib.Rcol;
-using SmartFormat.Core.Parsing;
 
 namespace ContentEditor.App.ImguiHandling.Rcol;
 

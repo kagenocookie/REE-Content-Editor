@@ -35,6 +35,10 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
         Workspace = env;
         ParentEditor = parent;
         primaryInspector = parent?.primaryInspector;
+        if (primaryInspector != null) {
+            var inspector = primaryInspector;
+            primaryInspector.Closed += () => OnInspectorClosed(inspector);
+        }
     }
 
     public RSZFile GetRSZFile() => File.RSZ;
