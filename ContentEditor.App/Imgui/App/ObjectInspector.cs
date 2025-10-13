@@ -22,6 +22,7 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
 
     private object? _target;
     private IWindowHandler parentWindow;
+    public IWindowHandler ParentWindow => parentWindow;
 
     public ObjectInspector(IWindowHandler parentWindow)
     {

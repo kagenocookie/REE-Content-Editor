@@ -39,10 +39,16 @@ public class Material
                 Logger.Error($"uniform {name} not found in shader.");
                 return;
             }
-            list.Add(new MaterialParameter<TValue>(vec, loc));
+            list.Add(new MaterialParameter<TValue>(vec, loc) { name = name });
         } else {
             param.Value = vec;
         }
+    }
+
+    private static TValue GetParameter<TValue>(List<MaterialParameter<TValue>> list, string name)
+    {
+        var param = list.FirstOrDefault(v => v.name == name);
+        return param == null ? default! : (TValue)param.Value;
     }
 
     public void AddTextureParameter(string name, TextureUnit slot)
@@ -51,6 +57,7 @@ public class Material
     }
     public bool HasTextureParameter(TextureUnit slot) => textureParameters.FindIndex(a => a.slot == slot) != -1;
 
+    public Color GetColor(string name) => Color.FromVector4(GetParameter<Vector4>(vec4Parameters, name));
     public void SetParameter(string name, Vector4 vec) => SetParameter(vec4Parameters, name, vec);
     public void SetParameter(string name, float vec) => SetParameter(floatParameters, name, vec);
     public void SetParameter(string name, Color col) => SetParameter(vec4Parameters, name, col.ToVector4());
@@ -133,6 +140,8 @@ public sealed class MaterialParameter<TValue>(TValue value, int location) // whe
     public string name = string.Empty;
     public int _location { get; } = location;
     public TValue Value { get; set; } = value;
+
+    public override string ToString() => $"{name} = {Value}";
 }
 
 public record MaterialBlendMode(

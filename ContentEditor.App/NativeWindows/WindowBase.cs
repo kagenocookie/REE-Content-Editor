@@ -30,6 +30,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     protected readonly List<WindowData> subwindows = new();
     private readonly List<WindowData> removeSubwindows = new();
+    public IReadOnlyList<WindowData> ActiveImguiWindows => subwindows.AsReadOnly();
 
     private readonly ManualResetEventSlim isClosing = new(false);
     public bool IsClosing => isClosing.IsSet;

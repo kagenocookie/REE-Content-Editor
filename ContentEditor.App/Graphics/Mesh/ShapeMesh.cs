@@ -65,5 +65,16 @@ public class ShapeMesh : Mesh
         UpdateBuffers();
     }
 
+    public void Build(ShapeBuilder builder)
+    {
+        var (v, i, b) = (VertexData, Indices, BoundingBox);
+        builder.UpdateMesh(ref v, ref i, ref b);
+        (VertexData, Indices, BoundingBox) = (v, i, b);
+        if (builder.GeoType == ShapeBuilder.GeometryType.Line) {
+            MeshType = PrimitiveType.Lines;
+        }
+        UpdateBuffers();
+    }
+
     public override string ToString() => $"{VAO} {VBO} indices: {Indices.Length}";
 }

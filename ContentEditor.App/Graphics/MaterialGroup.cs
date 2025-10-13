@@ -10,6 +10,11 @@ public sealed class MaterialGroup
     {
     }
 
+    public MaterialGroup(params Material[] materials)
+    {
+        Materials.AddRange(materials);
+    }
+
     public void Add(Material material)
     {
         Materials.Add(material);

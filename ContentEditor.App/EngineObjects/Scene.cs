@@ -166,6 +166,9 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
 
                 render.Render(rctx);
             }
+            foreach (var child in childScenes) {
+                child.Render(deltaTime);
+            }
             return;
         }
 
@@ -180,6 +183,9 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
             if (!render.GameObject.ShouldDraw) continue;
 
             render.Render(rctx);
+        }
+        foreach (var child in childScenes) {
+            child.Render(deltaTime);
         }
         rctx.AfterRender();
     }

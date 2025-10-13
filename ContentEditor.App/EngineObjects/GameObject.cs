@@ -1,8 +1,10 @@
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Pfb;
 using ReeLib.Scn;
+using ReeLib.via;
 using Silk.NET.Maths;
 
 namespace ContentEditor.App;
@@ -161,6 +163,28 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         var transform = new Transform(this, RszInstance.CreateInstance(workspace.Env.RszParser, workspace.Env.Classes.Transform));
         Components.Insert(0, transform);
         return transform;
+    }
+
+    public AABB GetWorldSpaceBounds()
+    {
+        var renderComp = Components.OfType<RenderableComponent>().FirstOrDefault();
+        if (renderComp != null) {
+            var bounds = renderComp.LocalBounds;
+
+            var min = Vector3.Transform(bounds.minpos, WorldTransform.ToSystem());
+            var max = Vector3.Transform(bounds.maxpos, WorldTransform.ToSystem());
+            return new AABB(min, max);
+        }
+
+        var childAabb = AABB.MaxMin;
+        foreach (var child in Children) {
+            var aabb = child.GetWorldSpaceBounds();
+            if (aabb.minpos == Vector3.Zero && aabb.maxpos == Vector3.Zero) continue;
+
+            childAabb = childAabb.Extend(aabb);
+        }
+        if (childAabb.minpos.X > 100000000) return default;
+        return childAabb;
     }
 
     public bool HasComponent<TComponent>() where TComponent : Component

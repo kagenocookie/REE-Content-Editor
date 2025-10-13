@@ -20,8 +20,17 @@ public class ShapeBuilder
         new(-1, 1, -1),     new(1, 1, -1),      new(1, -1, -1),
         new(-1, 1, -1),     new(1, -1, -1),     new(-1, -1, -1),
     ];
+    private static readonly Vector3[] BoxLinePoints = [
+        new(-1, -1, -1),    new(1, -1, -1),     new(1, -1, 1),  new (-1, -1, 1),
+        new(-1, 1, 1),      new(-1, -1, 1),     new(1, -1, 1), new(1, 1, 1),
+        new(1, 1, 1),       new(1, -1, 1),      new(1, -1, -1), new(1, 1, -1),
+        new(-1, 1, -1),     new(-1, 1, 1),      new(1, 1, 1), new(1, 1, -1),
+        new(-1, 1, -1),     new(-1, -1, -1),    new(-1, -1, 1), new(-1, 1, 1),
+        new(-1, 1, -1),     new(1, 1, -1),      new(1, -1, -1), new(-1, -1, -1),
+    ];
     private static readonly int[] BoxIndices = Enumerable.Range(0, 36).ToArray();
 
+    private List<LineSegment>? lines;
     private List<AABB>? bounds;
     private List<OBB>? boxes;
     private List<Sphere>? spheres;
@@ -33,21 +42,31 @@ public class ShapeBuilder
     private int[]? Indices;
     public int VertexAttributeCount = 9;
 
-    public bool Wire = true;
+    public GeometryType GeoType = GeometryType.FakeWire;
+
+    public enum GeometryType
+    {
+        FakeWire,
+        Line,
+    }
 
     #region Calculation helper methods
     private static int CalculateSemicirclePointCount(float radius) => (int)Math.Clamp((radius + 1.5f) * 4f, 8, 40);
     private static int CalculateSemicircleVertCount(float radius) => (CalculateSemicirclePointCount(radius) - 1) * 6;
     private static readonly int BoxVertCount = BoxTrianglePoints.Length;
+    private static readonly int LineBoxVertCount = 6 * 8;
     #endregion
+
 
     private void AllocateArray()
     {
-        if (!Wire) {
-            throw new NotImplementedException("Only wire shapes currently supported");
+        int count;
+        if (GeoType == GeometryType.FakeWire) {
+            count = GetTotalExpectedVertCount();
+        } else { // line
+            count = GetTotalExpectedLineVertCount();
         }
 
-        var count = GetTotalExpectedVertCount();
         if (VertexData?.Length == count && Indices?.Length == count)  return;
 
         VertexData = new float[count * VertexAttributeCount];
@@ -63,6 +82,16 @@ public class ShapeBuilder
         return count;
     }
 
+    private int GetTotalExpectedLineVertCount()
+    {
+        var count = ((bounds?.Count ?? 0) + (boxes?.Count ?? 0)) * LineBoxVertCount;
+        if (spheres != null) throw new NotImplementedException();
+        if (capsules != null) throw new NotImplementedException();
+        if (cylinders != null) throw new NotImplementedException();
+        return count;
+    }
+
+    public void Add(LineSegment shape) => (lines ??= new()).Add(shape);
     public void Add(AABB shape) => (bounds ??= new()).Add(shape);
     public void Add(OBB shape) => (boxes ??= new()).Add(shape);
     public void Add(Sphere shape) => (spheres ??= new()).Add(shape);
@@ -80,6 +109,7 @@ public class ShapeBuilder
         if (spheres != null) foreach (var obj in spheres) InsertSphere(ref index, obj);
         if (capsules != null) foreach (var obj in capsules) InsertCapsule(ref index, obj);
         if (cylinders != null) foreach (var obj in cylinders) InsertCylinder(ref index, obj);
+        if (lines != null) foreach (var obj in lines) InsertLine(ref index, obj.start, obj.end);
         vertices = VertexData!;
         indices = Indices!;
         bound = Bounds;
@@ -148,9 +178,18 @@ public class ShapeBuilder
     {
         var center = aabb.Center;
         var extent = aabb.Size / 2;
-        for (int i = 0; i < BoxTrianglePoints.Length; ++i) {
-            AddBoxUVAttributes(index, i);
-            InsertVertex(ref index, center + BoxTrianglePoints[i] * extent);
+        if (GeoType == GeometryType.FakeWire) {
+            for (int i = 0; i < BoxTrianglePoints.Length; ++i) {
+                AddBoxUVAttributes(index, i);
+                InsertVertex(ref index, center + BoxTrianglePoints[i] * extent);
+            }
+        } else {
+            for (int i = 0; i < BoxLinePoints.Length; ++i) {
+                InsertVertex(ref index, center + BoxLinePoints[i] * extent);
+                if (i % 4 is 1 or 2) {
+                    InsertVertex(ref index, center + BoxLinePoints[i] * extent);
+                }
+            }
         }
     }
 
@@ -289,6 +328,12 @@ public class ShapeBuilder
         InsertVertex(ref index, vec1);
         InsertVertex(ref index, vec3);
         InsertVertex(ref index, vec4);
+    }
+
+    private void InsertLine(ref int index, Vector3 from, Vector3 to)
+    {
+        InsertVertex(ref index, from);
+        InsertVertex(ref index, to);
     }
 
     private void InsertVertex(ref int index, Vector3 vec)

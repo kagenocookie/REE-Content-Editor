@@ -30,6 +30,8 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
     protected readonly ResourceRefCounter<FileHandle, MeshResourceHandle> MeshRefs = new();
     protected readonly ResourceRefCounter<(FileHandle, ShaderFlags), MaterialGroup> MaterialRefs = new();
 
+    protected readonly List<Gizmo> Gizmos = new();
+
     protected ResourceManager _resourceManager = null!;
     internal ResourceManager ResourceManager {
         get => _resourceManager;
@@ -75,8 +77,10 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
     public abstract void RenderInstanced(MeshHandle mesh, int instanceIndex, int instanceCount, in Matrix4X4<float> transform);
 
     public abstract MaterialGroup LoadMaterialGroup(FileHandle file, ShaderFlags flags = ShaderFlags.None);
+    public abstract Material GetBuiltInMaterial(BuiltInMaterials material, ShaderFlags flags = ShaderFlags.None);
     public abstract IEnumerable<Material> GetPresetMaterials(EditorPresetMaterials preset);
 
+    public abstract MeshHandle CreateBlankMesh();
     public abstract (MeshHandle, ShapeMesh) CreateShapeMesh();
     protected abstract MeshResourceHandle? LoadMeshResource(FileHandle fileHandle);
 

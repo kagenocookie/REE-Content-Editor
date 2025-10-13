@@ -72,10 +72,8 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
         // should we sort scenes with render buffers first and then the main viewport scenes to minimize viewport switching?
         foreach (var scene in scenes) {
             scene.OwnRenderContext.ViewportSize = Window.Size;
+            if (scene.ParentScene != null) continue;
             scene.Render(deltaTime);
-            // if (scene.RenderTargetTextureHandle != 0) {
-            //     scene.OpenGL.Viewport(new System.Drawing.Size((int)Window.Size.X, (int)Window.Size.Y));
-            // }
         }
     }
 

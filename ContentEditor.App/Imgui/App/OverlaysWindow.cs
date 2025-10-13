@@ -87,7 +87,7 @@ public class OverlaysWindow : IWindowHandler
                 AppConfig.Instance.RenderAxis.Set(!AppConfig.Instance.RenderAxis);
             }
             ImGui.PopStyleColor();
-            if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Show Axis / Grid");
+            if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Show Gizmos");
 
             // meshes
             ImGui.SameLine();

@@ -1,14 +1,11 @@
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using ContentEditor.App.FileLoaders;
-using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Mesh;
 using ReeLib.via;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
-using VYaml.Serialization;
 
 namespace ContentEditor.App.Graphics;
 
@@ -26,9 +23,6 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
     private readonly Dictionary<(string, ShaderFlags), Shader> shaders = new();
     private readonly Dictionary<(BuiltInMaterials, ShaderFlags), Material> builtInMaterials = new();
-
-    private MeshHandle? axisMesh;
-    private MeshHandle? gridMesh;
 
     private const float GridCellSpacing = 5f;
 
@@ -88,6 +82,30 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         return material.Clone();
     }
 
+    private Material CreateMonoMaterial(ShaderFlags flags)
+    {
+        if (!builtInMaterials.TryGetValue((BuiltInMaterials.MonoColor, flags), out var material)) {
+            material = new(GL, GetShader("Shaders/GLSL/unshaded-color.glsl", flags));
+            material.SetParameter("_MainColor", new Color(255, 255, 255, 255));
+            material.name = "color";
+        }
+        return material.Clone();
+    }
+
+    public override Material GetBuiltInMaterial(BuiltInMaterials material, ShaderFlags flags = ShaderFlags.None)
+    {
+        // TODO figure out better, non-hardcoded parametrization for shaders
+        return material switch
+        {
+            BuiltInMaterials.FilledWireframe => CreateFilledWireMaterial(flags),
+            BuiltInMaterials.Wireframe => CreateWireMaterial(flags),
+            BuiltInMaterials.MonoColor => CreateMonoMaterial(flags),
+            BuiltInMaterials.ViewShaded => CreateViewShadedMaterial(flags),
+            BuiltInMaterials.Standard => CreateStandardMaterial(flags),
+            _ => throw new NotImplementedException("Unsupported material " + material),
+        };
+    }
+
     private unsafe void ApplyGlobalUniforms()
     {
         if (_globalUniformBuffer == 0) {
@@ -121,6 +139,13 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         return shaders[(path, flags)] = shader = new Shader(GL, Path.Combine(AppContext.BaseDirectory, path), flags);
     }
 
+    public override MeshHandle CreateBlankMesh()
+    {
+        var innerHandle = new MeshResourceHandle(MeshRefs.NextInstanceID);
+        var handle = new MeshHandle(innerHandle);
+        MeshRefs.AddUnnamed(innerHandle);
+        return handle;
+    }
     public override (MeshHandle, ShapeMesh) CreateShapeMesh()
     {
         var mesh = new ShapeMesh(GL);
@@ -341,9 +366,6 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
         ResetBlendingSettings();
 
-        axisMesh ??= CreateAxis();
-        gridMesh ??= CreateGrid();
-
         if (_renderTargetTextureSizeOutdated) {
             UpdateRenderTarget();
         }
@@ -357,20 +379,6 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         base.BeforeRender();
         ApplyGlobalUniforms();
 
-        if (AppConfig.Instance.RenderAxis.Get()) {
-            RenderSimple(axisMesh, Matrix4X4<float>.Identity);
-
-            Vector3D<float> campos;
-            if (Matrix4X4.Invert(ViewMatrix, out var inverted)) {
-                campos = inverted.Row4.ToSystem().ToVec3().ToGeneric() with { Y = 0 };
-            } else {
-                campos = new();
-            }
-            campos.X = MathF.Round(campos.X / GridCellSpacing) * GridCellSpacing;
-            campos.Z = MathF.Round(campos.Z / GridCellSpacing) * GridCellSpacing;
-            var gridMatrix = Matrix4X4.CreateTranslation<float>(campos);
-            RenderSimple(gridMesh, gridMatrix);
-        }
         ResetBlendingSettings();
     }
 
@@ -382,9 +390,32 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
     internal override void AfterRender()
     {
+        RenderGizmos();
         if (_outputBuffer != 0) {
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.Viewport(new System.Drawing.Size((int)ViewportSize.X, (int)ViewportSize.Y));
+        }
+    }
+
+    private void InitGizmos()
+    {
+        Gizmos.Add(new GridGizmo(GL));
+        Gizmos.Add(new AxisGizmo(GL));
+        Gizmos.Add(new SelectionBoundsGizmo(GL));
+
+        foreach (var gizmo in Gizmos) gizmo.Init(this);
+    }
+
+    private void RenderGizmos()
+    {
+        if (AppConfig.Instance.RenderAxis.Get()) {
+            if (Gizmos.Count == 0) {
+                InitGizmos();
+            }
+            foreach (var gizmo in Gizmos) {
+                gizmo.Update(this, 0);
+            }
+            foreach (var gizmo in Gizmos) gizmo.Render(this);
         }
     }
 
@@ -486,67 +517,6 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
         TextureRefs.TryAddReference(DefaultTextureHash, out _);
         return _defaultTexture;
-    }
-
-    private Shader MonoShader => GetShader("Shaders/GLSL/unshaded-color.glsl", ShaderFlags.None);
-
-    private MeshHandle CreateAxis()
-    {
-        var matGroup = new MaterialGroup();
-        var mat = new Material(GL, MonoShader, "x");
-        mat.SetParameter("_MainColor", new Color(255, 0, 0, 128));
-        mat.BlendMode = new MaterialBlendMode(true, BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-        matGroup.Add(mat);
-
-        mat = new Material(GL, MonoShader, "y");
-        mat.SetParameter("_MainColor", new Color(0, 255, 0, 128));
-        mat.BlendMode = new MaterialBlendMode(true, BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-        matGroup.Add(mat);
-
-        mat = new Material(GL, MonoShader, "z");
-        mat.SetParameter("_MainColor", new Color(0, 0, 255, 128));
-        mat.BlendMode = new MaterialBlendMode(true, BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-        matGroup.Add(mat);
-
-        var handle = new MeshResourceHandle(MeshRefs.NextInstanceID);
-        axisMesh = new MeshHandle(handle);
-        handle.Meshes.Add(new LineMesh(GL, new System.Numerics.Vector3(-10000, 0, 0), new Vector3(10000, 0, 0)) { MeshType = PrimitiveType.Lines });
-        handle.Meshes.Add(new LineMesh(GL, new System.Numerics.Vector3(0, -10000, 0), new Vector3(0, 10000, 0)) { MeshType = PrimitiveType.Lines });
-        handle.Meshes.Add(new LineMesh(GL, new System.Numerics.Vector3(0, 0, -10000), new Vector3(0, 0, 10000)) { MeshType = PrimitiveType.Lines });
-        axisMesh.SetMaterials(matGroup, [0, 1, 2]);
-
-        MaterialRefs.AddUnnamed(matGroup);
-        MeshRefs.AddUnnamed(handle);
-        return axisMesh;
-    }
-
-    private MeshHandle CreateGrid()
-    {
-        var matGroup = new MaterialGroup();
-        var mat = new Material(GL, MonoShader, "gray");
-        mat.SetParameter("_MainColor", new Color(100, 100, 100, 64));
-        mat.BlendMode = new MaterialBlendMode(true, BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-        matGroup.Add(mat);
-
-        var handle = new MeshResourceHandle(MeshRefs.NextInstanceID);
-        gridMesh = new MeshHandle(handle);
-        var lineCount = 100;
-        var gridSpan = lineCount * GridCellSpacing;
-        var lines = new List<Vector3>((lineCount + 1) * 2 * 2);
-        for (int x = -lineCount; x <= lineCount; x++) {
-            lines.Add(new Vector3(x * GridCellSpacing, 0, -gridSpan));
-            lines.Add(new Vector3(x * GridCellSpacing, 0, gridSpan));
-        }
-        for (int z = -lineCount; z <= lineCount; z++) {
-            lines.Add(new Vector3(-gridSpan, 0, z * GridCellSpacing));
-            lines.Add(new Vector3(gridSpan, 0, z * GridCellSpacing));
-        }
-        handle.Meshes.Add(new LineMesh(GL, lines.ToArray()) { MeshType = PrimitiveType.Lines });
-        gridMesh.SetMaterials(matGroup, [0]);
-
-        MaterialRefs.AddUnnamed(matGroup);
-        MeshRefs.AddUnnamed(handle);
-        return gridMesh;
     }
 
     protected override void Dispose(bool disposing)

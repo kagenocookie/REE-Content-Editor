@@ -1,6 +1,7 @@
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Scn;
+using ReeLib.via;
 using Silk.NET.Maths;
 
 namespace ContentEditor.App;
@@ -178,6 +179,44 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
         RszFieldCache.Folder.Standby.Set(instance, Standby);
         RszFieldCache.Folder.ScenePath.Set(instance, ScenePath ?? string.Empty);
         RszFieldCache.Folder.UniversalOffset.Set(instance, _offset);
+    }
+
+    public AABB GetWorldSpaceBounds()
+    {
+        var bounds = AABB.MaxMin;
+        foreach (var child in GameObjects) {
+            var aabb = child.GetWorldSpaceBounds();
+            if (aabb.IsEmpty) continue;
+
+            bounds = bounds.Extend(aabb);
+        }
+
+        foreach (var folder in Children) {
+            var aabb = folder.GetWorldSpaceBounds();
+            if (aabb.IsEmpty) continue;
+
+            bounds = bounds.Extend(aabb);
+        }
+
+        if (!bounds.IsEmpty && bounds.minpos.X < 1000000) {
+            return bounds;
+        }
+
+        if (Scene?.RootFolder == this) {
+            // fetch any child scene AABB if we're a root folder already with nothing else
+            foreach (var child in Scene.ChildScenes) {
+                foreach (var chgo in child.GameObjects) {
+                    var aabb = chgo.GetWorldSpaceBounds();
+                    if (aabb.IsEmpty) continue;
+
+                    return aabb;
+                }
+            }
+        } else if (ChildScene != null) {
+            return ChildScene.RootFolder.GetWorldSpaceBounds();
+        }
+
+        return new AABB();
     }
 
     public ScnFolderData ToScnFolder(List<ScnPrefabInfo>? prefabInfos)

@@ -43,7 +43,7 @@ public abstract class Mesh : IDisposable
     protected const int TangentAttributeOffset = 9;
     protected int BonesAttributeOffset => HasTangents ? 12 : 9;
 
-    public PrimitiveType MeshType { get; init; } = PrimitiveType.Triangles;
+    public PrimitiveType MeshType { get; set; } = PrimitiveType.Triangles;
 
     private const int Index_Position = 0;
     private const int Index_UV = 1;
@@ -124,14 +124,14 @@ public abstract class Mesh : IDisposable
         }
     }
 
-    protected unsafe void CreateBuffers()
+    protected void CreateBuffers()
     {
         VBO = new BufferObject<float>(GL, BufferTargetARB.ArrayBuffer);
         EBO = new BufferObject<int>(GL, BufferTargetARB.ElementArrayBuffer);
         VAO = new VertexArrayObject<float, int>(GL);
     }
 
-    protected unsafe void UpdateBuffers()
+    protected void UpdateBuffers()
     {
         VBO.UpdateBuffer(VertexData);
         EBO.UpdateBuffer(Indices);
