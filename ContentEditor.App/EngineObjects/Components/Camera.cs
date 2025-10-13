@@ -19,21 +19,23 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
     {
     }
 
+    public void LookAt(Folder target, bool resetPosition)
+    {
+        LookAt(target.GetWorldSpaceBounds(), resetPosition);
+    }
     public void LookAt(GameObject target, bool resetPosition)
     {
-        var renderable = target.Components.OfType<RenderableComponent>().FirstOrDefault();
+        LookAt(target.GetWorldSpaceBounds(), resetPosition);
+    }
+
+    public void LookAt(AABB bounds, bool resetPosition)
+    {
         Vector3 offset;
-        var targetCenter = target.Transform.Position;
-        if (renderable != null) {
-            var bounds = renderable.LocalBounds;
-            if (bounds.minpos == bounds.maxpos || bounds.Size.LengthSquared() > 10000*10000) {
-                bounds.minpos = new Vector3(-1, -1, -1);
-                bounds.maxpos = new Vector3(1, 1, 1);
-            }
-            offset = Vector3.One * (bounds.Size.Length() * 0.35f);
-            targetCenter = Vector3D.Transform(renderable.LocalBounds.Center.ToGeneric(), renderable.Transform.WorldTransform).ToSystem();
-        } else {
+        var targetCenter = bounds.Center;
+        if (bounds.IsEmpty) {
             offset = new Vector3(3, 3, 3);
+        } else {
+            offset = Vector3.One * (bounds.Size.Length() * 0.35f);
         }
 
         if (!resetPosition) {
@@ -41,8 +43,8 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
             var selfpos = Transform.Position;
             if (selfpos == targetCenter) {
                 offset = Vector3.Normalize(offset) * optimalDistance;
-            } else{
-                offset = Vector3.Normalize(targetCenter - selfpos) * optimalDistance;
+            } else {
+                offset = Vector3.Normalize(selfpos - targetCenter) * optimalDistance;
             }
         } else {
             offset.X *= 0.4f;

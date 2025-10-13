@@ -228,7 +228,7 @@ public class FolderNodeEditor : IObjectUIHandler
         }
         ImGui.PopStyleColor();
         if (context.children.Count == 0 && showChildren) {
-            OpenLinkedScene(context, folder, folder.ScenePath!);
+            OpenLinkedScene(context, folder);
         }
 
         var indent = folder.Parent == null ? 2 : ImGui.GetStyle().IndentSpacing;
@@ -241,8 +241,9 @@ public class FolderNodeEditor : IObjectUIHandler
         ImGui.Spacing();
     }
 
-    private static void OpenLinkedScene(UIContext context, Folder folder, string path)
+    private static void OpenLinkedScene(UIContext context, Folder folder)
     {
+        if (string.IsNullOrEmpty(folder.ScenePath)) return;
         var ws = context.GetWorkspace();
         if (ws == null) {
             Logger.Error("No active workspace for opening linked scene");
@@ -250,16 +251,18 @@ public class FolderNodeEditor : IObjectUIHandler
             return;
         }
 
-        if (null == ws.Env.FindSingleFile(path, out var resolvedPath)) {
-            ImGui.TextColored(Colors.Error, "Linked scene file not found: " + path);
-            return;
-        }
-        try {
-            var file = ws.ResourceManager.GetFileHandle(resolvedPath!);
+        // note: folder.ChildScene can stay null for a few frames (at least 1), which is why we need to display a status until it's fully loaded
+        if (ws.ResourceManager.TryResolveFile(folder.ScenePath, out var file)) {
+            if (folder.ChildScene == null) {
+                folder.RequestLoad();
+                ImGui.TextColored(Colors.Info, $"Loading linked scene {folder.ScenePath}...");
+                return;
+            }
+
             var parentSceneEditor = context.FindHandlerInParents<SceneEditor>();
             WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, new SceneEditor(ws, file, parentSceneEditor), "LinkedScene");
-        } catch (Exception e) {
-            Logger.Error(e, "Failed to load linked scene");
+        } else {
+            ImGui.TextColored(Colors.Error, "Linked scene file not found: " + folder.ScenePath);
         }
     }
 
@@ -300,6 +303,12 @@ public class FolderNodeEditor : IObjectUIHandler
 
     private static void HandleContextMenu(Folder node, UIContext context)
     {
+        if (node.Scene?.IsActive == true && (node.ChildScene != null || string.IsNullOrEmpty(node.ScenePath)) && ImGui.Button("Focus in 3D view")) {
+            var focusFolder = node.ChildScene?.RootFolder ?? node;
+            node.Scene.ActiveCamera.LookAt(focusFolder, false);
+            ImGui.CloseCurrentPopup();
+        }
+
         if (ImGui.Button("New GameObject")) {
             var ws = context.GetWorkspace();
             var newgo = new GameObject("New_GameObject", ws!.Env, node, node.Scene);
