@@ -98,8 +98,6 @@ public sealed class ContentWorkspace : IDisposable
             WindowManager.Instance.ShowError($"Bundle '{Data.ContentBundle}' not found!");
             return;
         }
-        var didAllowLoose = Env.AllowUseLooseFiles;
-        Env.AllowUseLooseFiles = false;
         if (bundle.ResourceListing != null) {
             // update the diffs for all open bundle resource files that are part of the bundle
             // we don't check for file.Modified because it can be marked as false but still be different from the current diff
@@ -159,7 +157,6 @@ public sealed class ContentWorkspace : IDisposable
             bundle.Entities.RemoveAt(del);
         }
         bundle.GameVersion = VersionHash;
-        Env.AllowUseLooseFiles = didAllowLoose;
 
         (EditedBundleManager ?? BundleManager).SaveBundle(bundle);
     }

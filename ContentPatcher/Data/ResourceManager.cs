@@ -176,8 +176,8 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         var fullLocalFilepath = Path.Combine(bundleBasepath, localFile);
         if (resourceEntry.Replace) {
             if (File.Exists(fullLocalFilepath)) {
-                var local = ReadOrGetFileResource(fullLocalFilepath, resourceEntry.Target);
-                if (local != null) {
+                if (TryLoadUniqueFile(fullLocalFilepath, out var local, resourceEntry.Target)) {
+                    local.Modified = true;
                     openFiles[resourceEntry.Target] = local;
                     return true;
                 }
@@ -628,11 +628,11 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     /// Loads a disk file fully ignoring any in-memory, PAK or bundle changes, and does not store the file in the resource manager.
     /// The caller must take care of disposing the file handle.
     /// </summary>
-    public bool TryLoadUniqueFile(string filepath, [MaybeNullWhen(false)] out FileHandle fileHandle)
+    public bool TryLoadUniqueFile(string filepath, [MaybeNullWhen(false)] out FileHandle fileHandle, string? nativePathOverride = null)
     {
         try {
             using var fs = File.OpenRead(filepath);
-            fileHandle = CreateFileHandleInternal(filepath, null, fs, true);
+            fileHandle = CreateFileHandleInternal(filepath, nativePathOverride, fs, true);
             return fileHandle != null;
         } catch (Exception e) {
             Logger.Error("Failed to load file: " + e.Message);
@@ -789,7 +789,23 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         }
 
         if (includeActiveBundle) {
-            AttemptResolveBundleFile(ref handle, filepath, nativePath, resolvedFilename);
+            if (!AttemptResolveBundleFile(ref handle, filepath, nativePath, resolvedFilename)) {
+                // try loose file as fallback only
+                var looseStream = workspace.Env.FindSingleFile(resolvedFilename ?? filepath, out resolvedFilename, Workspace.FileSourceType.Loose);
+                if (looseStream != null) {
+                    var useRawHandler = handle?.Loader is UnknownStreamFileLoader;
+                    var loosePath = Path.Combine(workspace.Env.Config.GamePath, resolvedFilename!);
+                    var looseHandle = useRawHandler ? CreateRawStreamFileHandle(loosePath, resolvedFilename, looseStream) : CreateFileHandleInternal(loosePath, resolvedFilename, looseStream)!;
+                    if (looseHandle != null) {
+                        if (handle == null) {
+                            handle = looseHandle;
+                        } else {
+                            looseHandle.DiffHandler = handle.DiffHandler ?? looseHandle.DiffHandler;
+                            handle = looseHandle;
+                        }
+                    }
+                }
+            }
         }
 
         if (handle == null) return null;
@@ -797,7 +813,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         return handle;
     }
 
-    private void AttemptResolveBundleFile([NotNullIfNotNull(nameof(handle))] ref FileHandle? handle, string filepath, string? nativePath, string? resolvedFilename)
+    private bool AttemptResolveBundleFile([NotNullIfNotNull(nameof(handle))] ref FileHandle? handle, string filepath, string? nativePath, string? resolvedFilename)
     {
         // TODO should include dependency bundles as well here
         if (activeBundle?.ResourceListing != null && activeBundle.TryFindResourceByNativePath(filepath, out var bundleLocalResource)) {
@@ -839,8 +855,10 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                 if (handle != null) {
                     handle.FileSource = activeBundle.Name;
                 }
+                return activeHandle != null;
             }
         }
+        return false;
     }
 
     public bool CanLoadFile(string filepath)
