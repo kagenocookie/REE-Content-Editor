@@ -173,7 +173,7 @@ public class AppConfig : Singleton<AppConfig>
             list.RemoveAt(prevIndex);
             list.Insert(0, file);
         } else {
-            list.Add(file);
+            list.Insert(0, file);
             if (list.Count > maxEntries) {
                 list.RemoveAt(list.Count - 1);
             }
