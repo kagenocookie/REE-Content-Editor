@@ -1,4 +1,4 @@
-using System.Numerics;
+using ReeLib.Common;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
@@ -11,6 +11,11 @@ public sealed class Shader : IDisposable
     private GL _gl;
     public string Name { get; private set; }
     public ShaderFlags Flags { get; }
+
+    /// <summary>
+    /// 16-bit shader ID (8bit mmh3 hash of filepath + 8bit ShaderFlags)
+    /// </summary>
+    public readonly uint ID;
 
     private static readonly Dictionary<ShaderFlags, string[]> FlagDefines = new() {
         { ShaderFlags.None, [] },
@@ -33,16 +38,15 @@ public sealed class Shader : IDisposable
 
     public const int MaxBoneCount = 250;
 
-    internal Shader(GL gl)
-    {
-        _gl = gl;
-        Name = string.Empty;
-    }
-
     public Shader(GL gl, string shaderPath, ShaderFlags flags = ShaderFlags.None, int version = 330)
     {
         _gl = gl;
         Flags = flags;
+        // using just part of the hash here: 8 bits for path hash + 8 bits for the flags
+        // should be good enough since we probably won't have more than maybe 20 unique shaders
+        var shaderId = MurMur3HashUtils.GetHash(shaderPath);
+        ID = (uint)(shaderId & 0x0000ff00) + (uint)flags;
+
         LoadFromCombinedShaderFile(shaderPath, flags, version);
         Name = Path.GetFileNameWithoutExtension(shaderPath);
     }
@@ -106,13 +110,17 @@ public sealed class Shader : IDisposable
 
     public unsafe void SetUniform(string name, Matrix4X4<float> value)
     {
-        //A new overload has been created for setting a uniform so we can use the transform in our shader.
         int location = _gl.GetUniformLocation(_handle, name);
         if (location == -1)
         {
             Logger.Error($"{name} uniform not found on shader.");
             return;
         }
+        _gl.UniformMatrix4(location, 1, false, (float*) &value);
+    }
+
+    public unsafe void SetUniform(int location, Matrix4X4<float> value)
+    {
         _gl.UniformMatrix4(location, 1, false, (float*) &value);
     }
 

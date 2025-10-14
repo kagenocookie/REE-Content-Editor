@@ -16,15 +16,15 @@ public abstract class Gizmo
         GL = gL;
     }
 
-    public virtual void Init(RenderContext context)
+    public virtual void Init(OpenGLRenderContext context)
     {
 
     }
 
-    public virtual void Update(RenderContext context, float deltaTime)
+    public virtual void Update(OpenGLRenderContext context, float deltaTime)
     {
 
     }
 
-    public abstract void Render(RenderContext context);
+    public abstract void Render(OpenGLRenderContext context);
 }

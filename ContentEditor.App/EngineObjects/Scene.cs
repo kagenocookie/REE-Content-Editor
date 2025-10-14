@@ -187,6 +187,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         foreach (var child in childScenes) {
             child.Render(deltaTime);
         }
+        rctx.ExecuteRender();
         rctx.AfterRender();
     }
 

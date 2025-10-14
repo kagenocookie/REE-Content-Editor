@@ -306,4 +306,6 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
     }
 
     void IFileHandleReferenceHolder.Close() { }
+
+    public abstract void ExecuteRender();
 }

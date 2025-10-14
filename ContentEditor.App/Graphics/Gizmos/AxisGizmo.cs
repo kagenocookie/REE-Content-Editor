@@ -11,7 +11,7 @@ public class AxisGizmo : Gizmo
     {
     }
 
-    public override void Init(RenderContext context)
+    public override void Init(OpenGLRenderContext context)
     {
         var mesh = context.CreateBlankMesh();
         mesh.Handle.Meshes.Add(new LineMesh(GL, new Vector3(-100000, 0, 0), new Vector3(100000, 0, 0)) { MeshType = PrimitiveType.Lines });
@@ -37,24 +37,26 @@ public class AxisGizmo : Gizmo
         mat.BlendMode = new MaterialBlendMode(true, BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         matGroup.Add(mat);
 
+        mat = matGroup.Materials[0].Clone("xx");
+        mat.SetParameter("_MainColor", new Color(255, 0, 0, 48));
+        matGroup.Add(mat);
+
+        mat = matGroup.Materials[1].Clone("yy");
+        mat.SetParameter("_MainColor", new Color(0, 255, 0, 48));
+        matGroup.Add(mat);
+
+        mat = matGroup.Materials[2].Clone("zz");
+        mat.SetParameter("_MainColor", new Color(0, 0, 255, 48));
+        matGroup.Add(mat);
+
         mesh.SetMaterials(matGroup, [0, 1, 2]);
         Meshes.Add(mesh);
     }
 
-    public override void Render(RenderContext context)
+    public override void Render(OpenGLRenderContext context)
     {
-        context.RenderSimple(Meshes[0], Matrix4X4<float>.Identity);
-
-        foreach (var mat in Meshes[0].Material.Materials) {
-            mat.SetParameter("_MainColor", mat.GetColor("_MainColor") with { A = 48 });
-        }
-
-        GL.DepthFunc(DepthFunction.Greater);
-        context.RenderSimple(Meshes[0], Matrix4X4<float>.Identity);
-        GL.DepthFunc(DepthFunction.Less);
-
-        foreach (var mat in Meshes[0].Material.Materials) {
-            mat.SetParameter("_MainColor", mat.GetColor("_MainColor") with { A = 150 });
+        for (int i = 0; i < 3; i++) {
+            context.Batch.Gizmo.Add(new GizmoRenderBatchItem(Meshes[0].GetMaterial(i), Meshes[0].GetMesh(i), Matrix4X4<float>.Identity, Meshes[0].GetMaterial(i + 3)));
         }
     }
 }

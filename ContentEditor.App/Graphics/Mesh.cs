@@ -22,6 +22,8 @@ public abstract class Mesh : IDisposable
     public AABB BoundingBox { get; protected set; }
     public int MeshGroup { get; set; }
 
+    public uint ID => VBO.Handle;
+
     private MeshFlags _flags;
     public MeshFlags Flags {
         get => _flags;

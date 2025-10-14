@@ -53,7 +53,7 @@ public class AnimatedMeshHandle : MeshHandle
         // }
     }
 
-    public override void BindForRender(Material material, int meshIndex)
+    public override void BindForRender(Material material)
     {
         BindBones(material);
     }

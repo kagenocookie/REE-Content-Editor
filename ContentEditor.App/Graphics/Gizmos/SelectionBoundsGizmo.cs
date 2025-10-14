@@ -17,7 +17,7 @@ public class SelectionBoundsGizmo : Gizmo
     {
     }
 
-    public override void Init(RenderContext context)
+    public override void Init(OpenGLRenderContext context)
     {
         (mesh, shape) = context.CreateShapeMesh();
         Meshes.Add(mesh);
@@ -28,25 +28,19 @@ public class SelectionBoundsGizmo : Gizmo
         var mat = context.GetBuiltInMaterial(BuiltInMaterials.MonoColor);
         mat.name = "white";
         mat.SetParameter("_MainColor", new Color(255, 255, 255, 255));
-        mesh.SetMaterials(new MaterialGroup(mat), [0]);
+        var mat2 = mat.Clone("back");
+        mat2.SetParameter("_MainColor", new Color(136, 136, 136, 255));
+        mesh.SetMaterials(new MaterialGroup(mat, mat2), [0]);
     }
 
-    public override void Render(RenderContext context)
+    public override void Render(OpenGLRenderContext context)
     {
         if (!shouldRenderNext) return;
 
-        context.RenderSimple(Meshes[0], Matrix4X4<float>.Identity);
-
-        var mat = Meshes[0].GetMaterial(0);
-        mat.SetParameter("_MainColor", new Color(136, 136, 136, 255));
-        GL.DepthFunc(DepthFunction.Greater);
-        mat.Bind(); // force a material re-bind
-        context.RenderSimple(Meshes[0], Matrix4X4<float>.Identity);
-        GL.DepthFunc(DepthFunction.Less);
-        mat.SetParameter("_MainColor", new Color(255, 255, 255, 255));
+        context.Batch.Gizmo.Add(new GizmoRenderBatchItem(Meshes[0].GetMaterial(0), Meshes[0].GetMesh(0), Matrix4X4<float>.Identity, Meshes[0].GetMaterial(1)));
     }
 
-    public override void Update(RenderContext context, float deltaTime)
+    public override void Update(OpenGLRenderContext context, float deltaTime)
     {
         shouldRenderNext = false;
         var wnd = EditorWindow.CurrentWindow;

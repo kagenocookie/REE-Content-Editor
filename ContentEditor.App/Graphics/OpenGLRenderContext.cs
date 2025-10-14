@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using ContentEditor.App.FileLoaders;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Common;
 using ReeLib.Mesh;
 using ReeLib.via;
 using Silk.NET.Maths;
@@ -23,6 +24,8 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
     private readonly Dictionary<(string, ShaderFlags), Shader> shaders = new();
     private readonly Dictionary<(BuiltInMaterials, ShaderFlags), Material> builtInMaterials = new();
+
+    public readonly RenderBatch Batch = new RenderBatch(gl);
 
     private const float GridCellSpacing = 5f;
 
@@ -304,8 +307,6 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         return group;
     }
 
-
-    private Material? lastMaterial;
     public override unsafe void RenderSimple(MeshHandle handle, in Matrix4X4<float> transform)
     {
         for (int i = 0; i < handle.Handle.Meshes.Count; i++) {
@@ -317,17 +318,14 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             // TODO frustum culling
             // var bounds = sub.mesh.BoundingBox;
 
-            mesh.Bind();
-            if (lastMaterial != material) {
-                lastMaterial = material;
-                material.Bind();
-                BindMaterialFlags(material);
-            }
-            material.Shader.SetUniform("uModel", transform);
-            handle.BindForRender(material, i);
-
-            GL.DrawArrays(mesh.MeshType, 0, (uint)mesh.Indices.Length);
+            Batch.Simple.Add(new SimpleRenderBatchItem(material, mesh, transform, handle));
         }
+    }
+
+    public override void ExecuteRender()
+    {
+        Batch.Simple.Render(this);
+        Batch.Gizmo.Render(this);
     }
 
     public override void RenderInstanced(MeshHandle mesh, int instanceIndex, int instanceCount, in Matrix4X4<float> transform)
@@ -362,8 +360,6 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
     internal override void BeforeRender()
     {
-        lastMaterial = null;
-
         ResetBlendingSettings();
 
         if (_renderTargetTextureSizeOutdated) {
@@ -416,6 +412,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
                 gizmo.Update(this, 0);
             }
             foreach (var gizmo in Gizmos) gizmo.Render(this);
+            Batch.Gizmo.Render(this);
         }
     }
 

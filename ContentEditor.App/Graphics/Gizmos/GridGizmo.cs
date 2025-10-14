@@ -9,11 +9,13 @@ public class GridGizmo : Gizmo
 {
     private const float GridCellSpacing = 5f;
 
+    private Matrix4X4<float> position;
+
     public GridGizmo(GL gl) : base(gl)
     {
     }
 
-    public override void Init(RenderContext context)
+    public override void Init(OpenGLRenderContext context)
     {
         var mesh = context.CreateBlankMesh();
 
@@ -40,9 +42,7 @@ public class GridGizmo : Gizmo
         Meshes.Add(mesh);
     }
 
-    private Matrix4X4<float> position;
-
-    public override void Update(RenderContext context, float deltaTime)
+    public override void Update(OpenGLRenderContext context, float deltaTime)
     {
         Vector3D<float> campos;
         if (Matrix4X4.Invert(context.ViewMatrix, out var inverted)) {
@@ -55,7 +55,7 @@ public class GridGizmo : Gizmo
         position = Matrix4X4.CreateTranslation<float>(campos);
     }
 
-    public override void Render(RenderContext context)
+    public override void Render(OpenGLRenderContext context)
     {
         context.RenderSimple(Meshes[0], position);
     }

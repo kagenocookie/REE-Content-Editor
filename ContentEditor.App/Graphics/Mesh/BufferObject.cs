@@ -6,6 +6,7 @@ public sealed class BufferObject<TDataType> : IDisposable
     where TDataType : unmanaged
 {
     private uint _handle;
+    public uint Handle => _handle;
     private BufferTargetARB _bufferType;
     private GL _gl;
 

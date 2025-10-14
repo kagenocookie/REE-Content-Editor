@@ -86,5 +86,5 @@ public class MeshHandle
         MaterialIndicesRemap.AddRange(meshRemapIndices);
     }
 
-    public virtual void BindForRender(Material material, int meshIndex) { }
+    public virtual void BindForRender(Material material) { }
 }
