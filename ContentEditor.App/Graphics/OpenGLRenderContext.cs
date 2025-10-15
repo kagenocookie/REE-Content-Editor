@@ -323,7 +323,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             // TODO frustum culling
             // var bounds = sub.mesh.BoundingBox;
 
-            Batch.Simple.Add(new SimpleRenderBatchItem(material, mesh, transform, handle));
+            Batch.Simple.Add(new NormalRenderBatchItem(material, mesh, transform, handle));
         }
     }
 
