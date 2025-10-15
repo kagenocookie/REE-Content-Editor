@@ -16,7 +16,29 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
     private readonly List<MeshHandle> meshes = new();
     private readonly List<MaterialGroup> materials = new();
 
-    public override AABB LocalBounds => !meshes.Any(m => m != null) ? default : AABB.Combine(meshes.Where(m => m != null).Select(m => m!.BoundingBox));
+    public override AABB LocalBounds {
+        get {
+            if (!meshes.Any(m => m != null)) return default;
+
+            var bounds = AABB.MaxMin;
+            ref readonly var transform = ref GameObject.Transform.WorldTransform;
+            for (int i = 0; i < meshes.Count; i++) {
+                var mesh = meshes[i];
+                if (!mesh.Meshes.Any()) continue;
+                var meshBounds = mesh.BoundingBox;
+                var group = file?.InstanceGroups?[i];
+                if (group == null) continue;
+
+                foreach (var inst in group.transforms!) {
+                    var instanceMat = ContentEditor.App.Transform.GetMatrixFromTransforms(inst.pos.ToGeneric(), inst.rot.ToGeneric(), inst.scale.ToGeneric());
+                    bounds = bounds
+                        .Extend(Vector3D.Transform(meshBounds.minpos.ToGeneric(), instanceMat).ToSystem())
+                        .Extend(Vector3D.Transform(meshBounds.maxpos.ToGeneric(), instanceMat).ToSystem());
+                }
+            }
+            return bounds;
+        }
+    }
 
     public bool HasMesh => meshes.Count != 0;
 
