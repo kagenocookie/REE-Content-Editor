@@ -22,6 +22,10 @@ public record class GridSplitter(Vector2 min, Vector2 max, int countPerLine, int
     {
         ActiveIDs.Clear();
         (CurrentX, CurrentY, CurrentID) = CalculateCell(origin);
+        if (CurrentX < 0 || CurrentX >= countPerLine || CurrentY < 0 || CurrentY >= countPerLine) {
+            return;
+        }
+
         ActiveIDs.Add(CurrentID);
 
         if (activeSurroundingCellRadius == 0) return;
@@ -39,7 +43,7 @@ public record class GridSplitter(Vector2 min, Vector2 max, int countPerLine, int
     {
         var x = (int)MathF.Floor((point.X - min.X) / (max.X - min.X) * countPerLine);
         var y = (int)MathF.Floor((point.Z - min.Y) / (max.Y - min.Y) * countPerLine);
-        return (x, y, x + y * countPerLine);
+        return (x, y, Math.Clamp(x + y * countPerLine, 0, countPerLine * countPerLine));
     }
 
     public int CalculateCellID(Vector3 point)

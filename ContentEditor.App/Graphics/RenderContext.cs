@@ -13,16 +13,6 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
     internal Matrix4X4<float> ViewMatrix { get; set; } = Matrix4X4<float>.Identity;
     internal Matrix4X4<float> ProjectionMatrix { get; set; } = Matrix4X4<float>.Identity;
     internal Matrix4X4<float> ViewProjectionMatrix { get; set; } = Matrix4X4<float>.Identity;
-    public enum CameraProjection
-    {
-        Perspective,
-        Orthographic
-    }
-    public CameraProjection ProjectionMode { get; set; } = CameraProjection.Perspective;
-    public float FieldOfView { get; set; } = 80.0f * MathF.PI / 180.0f;
-    public float OrthoSize { get; set; } = 0.5f;
-    public float NearPlane { get; set; } = 0.1f;
-    public float FarPlane { get; set; } = 8096.0f;
 
     protected Material? defaultMaterial;
 
@@ -54,16 +44,6 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
 
     internal virtual void BeforeRender()
     {
-        var size = RenderOutputSize;
-
-        if (ProjectionMode == CameraProjection.Perspective) {
-            ProjectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView(FieldOfView, size.X / size.Y, NearPlane, FarPlane);
-        } else {
-            float halfW = OrthoSize * size.X / size.Y * 0.5f;
-            float halfH = OrthoSize * 0.5f;
-            ProjectionMatrix = Matrix4X4.CreateOrthographicOffCenter(-halfW, halfW, -halfH, halfH, NearPlane, FarPlane);
-        }
-        ViewProjectionMatrix = ViewMatrix * ProjectionMatrix;
     }
 
     internal virtual void AfterRender()

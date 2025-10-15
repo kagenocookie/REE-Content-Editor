@@ -194,7 +194,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         if (!meshComponent.HasMesh) {
             meshComponent.IsStreamingTex = true;
             meshComponent.SetMesh(fileHandle, fileHandle);
-            scene.RenderContext.ProjectionMode = RenderContext.CameraProjection.Orthographic;
+            scene.ActiveCamera.ProjectionMode = CameraProjection.Orthographic;
             CenterCameraToSceneObject();
         }
 
@@ -212,7 +212,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         expectedSize.Y = Math.Max(expectedSize.Y, 4);
         var nativeSize = data.ParentWindow.Size;
         float meshSize = meshComponent.LocalBounds.Size.Length();
-        scene.RenderContext.FarPlane = meshSize + 100.0f;
+        scene.ActiveCamera.FarPlane = meshSize + 100.0f;
         scene.RenderContext.SetRenderToTexture(expectedSize);
 
         if (scene.RenderContext.RenderTargetTextureHandle == 0) return;
@@ -278,7 +278,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 } else if (ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
                     yaw += moveDelta.X * rotateSpeed;
                     pitch += moveDelta.Y * rotateSpeed;
-                    if (scene.RenderContext.ProjectionMode == RenderContext.CameraProjection.Perspective) {
+                    if (scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective) {
                         scene.Camera.Transform.LocalRotation = Quaternion<float>.CreateFromYawPitchRoll(yaw, pitch, 0).ToSystem();
                     } else {
                         pitch = Math.Clamp(pitch, -pitchLimit, pitchLimit);
@@ -306,14 +306,14 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         if (hoveredMesh) {
             float wheel = ImGui.GetIO().MouseWheel;
             if (Math.Abs(wheel) > float.Epsilon) {
-                if (scene.RenderContext.ProjectionMode == RenderContext.CameraProjection.Perspective) {
+                if (scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective) {
                     var zoom = scene.Camera.GameObject.Transform.LocalForward * (wheel * zoomSpeed) * -1.0f;
                     scene.Camera.GameObject.Transform.LocalPosition += zoom;
                 } else {
-                    float ortho = scene.RenderContext.OrthoSize;
+                    float ortho = scene.ActiveCamera.OrthoSize;
                     ortho *= (1.0f - wheel * zoomSpeed);
                     ortho = Math.Clamp(ortho, 0.01f, 100.0f);
-                    scene.RenderContext.OrthoSize = ortho;
+                    scene.ActiveCamera.OrthoSize = ortho;
                 }
             }
         }
@@ -445,14 +445,14 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
     private void ShowCameraSettings()
     {
-        if (ImGui.RadioButton("Orthographic", scene!.RenderContext.ProjectionMode == RenderContext.CameraProjection.Orthographic)) {
-            scene.RenderContext.ProjectionMode = RenderContext.CameraProjection.Orthographic;
+        if (ImGui.RadioButton("Orthographic", scene!.ActiveCamera.ProjectionMode == CameraProjection.Orthographic)) {
+            scene.ActiveCamera.ProjectionMode = CameraProjection.Orthographic;
             CenterCameraToSceneObject();
             lastDragPos = new();
         }
         ImGui.SameLine();
-        if (ImGui.RadioButton("Perspective", scene.RenderContext.ProjectionMode == RenderContext.CameraProjection.Perspective)) {
-            scene.RenderContext.ProjectionMode = RenderContext.CameraProjection.Perspective;
+        if (ImGui.RadioButton("Perspective", scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective)) {
+            scene.ActiveCamera.ProjectionMode = CameraProjection.Perspective;
             CenterCameraToSceneObject();
             lastDragPos = new();
         }
@@ -462,15 +462,15 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             lastDragPos = new();
         }
         ImguiHelpers.Tooltip("Reset View Camera");
-        if (scene.RenderContext.ProjectionMode == RenderContext.CameraProjection.Perspective) {
-            float fov = scene.RenderContext.FieldOfView;
+        if (scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective) {
+            float fov = scene.ActiveCamera.FieldOfView;
             if (ImGui.SliderAngle("Field of View", ref fov, 10.0f, 120.0f)) {
-                scene.RenderContext.FieldOfView = fov;
+                scene.ActiveCamera.FieldOfView = fov;
             }
         } else {
-            float ortho = scene.RenderContext.OrthoSize;
+            float ortho = scene.ActiveCamera.OrthoSize;
             if (ImGui.SliderFloat("Field of View", ref ortho, 0.1f, 10.0f)) {
-                scene.RenderContext.OrthoSize = ortho;
+                scene.ActiveCamera.OrthoSize = ortho;
             }
         }
         ImGui.SliderFloat("Move Speed", ref moveSpeed, 1.0f, 50.0f);
@@ -753,11 +753,11 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         if (scene == null || other.scene == null) return;
 
         scene.ActiveCamera.Transform.CopyFrom(other.scene.ActiveCamera.Transform);
-        scene.RenderContext.ProjectionMode = other.scene.RenderContext.ProjectionMode;
-        scene.RenderContext.NearPlane = other.scene.RenderContext.NearPlane;
-        scene.RenderContext.FarPlane = other.scene.RenderContext.FarPlane;
-        scene.RenderContext.FieldOfView = other.scene.RenderContext.FieldOfView;
-        scene.RenderContext.OrthoSize = other.scene.RenderContext.OrthoSize;
+        scene.ActiveCamera.ProjectionMode = other.scene.ActiveCamera.ProjectionMode;
+        scene.ActiveCamera.NearPlane = other.scene.ActiveCamera.NearPlane;
+        scene.ActiveCamera.FarPlane = other.scene.ActiveCamera.FarPlane;
+        scene.ActiveCamera.FieldOfView = other.scene.ActiveCamera.FieldOfView;
+        scene.ActiveCamera.OrthoSize = other.scene.ActiveCamera.OrthoSize;
 
         if (other.animator != null) {
             if (animator == null) {

@@ -86,6 +86,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
             }
         }
         mesh?.Update();
+        IsStatic = mesh == null || !mesh.HasArmature;
     }
 
 
@@ -108,6 +109,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         RszFieldCache.Mesh.Resource.Set(Data, meshFile.InternalPath ?? meshFile.Filepath ?? string.Empty);
         RszFieldCache.Mesh.Material.Set(Data, materialFile?.InternalPath ?? materialFile?.Filepath ?? string.Empty);
         mesh?.Update();
+        IsStatic = mesh == null || !mesh.HasArmature;
     }
 
 
@@ -123,6 +125,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
             Scene.RenderContext.UnloadMaterialGroup(material);
             material = null;
         }
+        IsStatic = true;
     }
 
     internal override unsafe void Render(RenderContext context)

@@ -20,7 +20,7 @@ public class Ground(GameObject gameObject, RszInstance data) : RenderableCompone
     private GrndFile? groundResource;
     private FileHandle? groundMaterialResource;
 
-    public override AABB LocalBounds => default;
+    public override AABB LocalBounds => groundResource == null ? default : new AABB(groundResource.Header.Min, groundResource.Header.Max);
 
     public bool HasMesh => meshes.Count != 0;
 

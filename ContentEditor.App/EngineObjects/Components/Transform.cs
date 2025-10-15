@@ -76,6 +76,9 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
                 _cachedWorldTransform = ComputeLocalTransformMatrix();
             }
             _worldTransformValid = true;
+            foreach (var comp in GameObject.Components) {
+                (comp as RenderableComponent)?.RecomputeWorldAABB();
+            }
             return ref _cachedWorldTransform;
         }
     }

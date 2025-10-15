@@ -4,7 +4,6 @@ using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
 using ContentPatcher;
 using ReeLib;
-using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
 namespace ContentEditor.App;
@@ -159,10 +158,12 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     {
         if (!HasRenderables) return;
 
+        var cam = ActiveCamera;
         var rctx = RenderContext;
         if (rctx != this.renderContext) {
             foreach (var render in renderComponents) {
                 if (!render.GameObject.ShouldDraw) continue;
+                if (!cam.IsVisible(render)) continue;
 
                 render.Render(rctx);
             }
@@ -172,15 +173,16 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
             return;
         }
 
+        cam.Update(rctx.RenderOutputSize);
+        rctx.ViewMatrix = cam.ViewMatrix;
+        rctx.ProjectionMatrix = cam.ProjectionMatrix;
+        rctx.ViewProjectionMatrix = cam.ViewProjectionMatrix;
+
         rctx.DeltaTime = deltaTime;
-        if (Matrix4X4.Invert(ActiveCamera.GameObject.WorldTransform, out var inverted)) {
-            rctx.ViewMatrix = inverted;
-        } else {
-            rctx.ViewMatrix = Matrix4X4<float>.Identity;
-        }
         rctx.BeforeRender();
         foreach (var render in renderComponents) {
             if (!render.GameObject.ShouldDraw) continue;
+            if (!cam.IsVisible(render)) continue;
 
             render.Render(rctx);
         }

@@ -169,11 +169,9 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
     {
         var renderComp = Components.OfType<RenderableComponent>().FirstOrDefault();
         if (renderComp != null) {
-            var bounds = renderComp.LocalBounds;
-
-            var min = Vector3.Transform(bounds.minpos, WorldTransform.ToSystem());
-            var max = Vector3.Transform(bounds.maxpos, WorldTransform.ToSystem());
-            return new AABB(min, max);
+            // note: we're only taking the first render component
+            // if there's multiple, we might want to combine them
+            return renderComp.WorldSpaceBounds;
         }
 
         var childAabb = AABB.MaxMin;
