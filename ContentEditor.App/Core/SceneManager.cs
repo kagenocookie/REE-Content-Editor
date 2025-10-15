@@ -8,11 +8,12 @@ namespace ContentEditor.App;
 public sealed class SceneManager(IRectWindow window) : IDisposable
 {
     private readonly List<Scene> scenes = new();
+    private readonly List<Scene> rootScenes = new();
     private ContentWorkspace? env = (window as IWorkspaceContainer)?.Workspace;
 
     public IRectWindow Window { get; } = window;
 
-    public IEnumerable<Scene> RootMasterScenes => scenes.Where(scene => scene.OwnRenderContext.RenderTargetTextureHandle == 0 && scene.ParentScene == null);
+    public IEnumerable<Scene> RootMasterScenes => rootScenes.Where(scene => scene.OwnRenderContext.RenderTargetTextureHandle == 0 && scene.ParentScene == null);
     public bool HasActiveMasterScene => RootMasterScenes.Where(sc => sc.IsActive).Any();
     public Scene? ActiveMasterScene => RootMasterScenes.FirstOrDefault(sc => sc.IsActive);
 
@@ -32,12 +33,14 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
         scenes.Add(scene);
         // if (render) Logger.Debug("Loading scene " + rootFolder?.Name ?? internalPath);
         rootFolder?.MoveToScene(scene);
+        if (parentScene == null) rootScenes.Add(scene);
         return scene;
     }
 
     private void RemoveScene(Scene scene)
     {
         scenes.Remove(scene);
+        rootScenes.Remove(scene);
         foreach (var sub in scene.ChildScenes) RemoveScene(sub);
     }
 
@@ -70,9 +73,8 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
     public void Render(float deltaTime)
     {
         // should we sort scenes with render buffers first and then the main viewport scenes to minimize viewport switching?
-        foreach (var scene in scenes) {
+        foreach (var scene in rootScenes) {
             scene.OwnRenderContext.ViewportSize = Window.Size;
-            if (scene.ParentScene != null) continue;
             scene.Render(deltaTime);
         }
     }
@@ -94,6 +96,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
         foreach (var scene in scenes) {
             scene.Dispose();
         }
+        rootScenes.Clear();
         scenes.Clear();
     }
 

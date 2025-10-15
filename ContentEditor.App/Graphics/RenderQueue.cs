@@ -124,7 +124,7 @@ public abstract class RenderQueue<T> where T : struct, RenderQueueItem
 
 public class SimpleRenderQueue(GL gl) : RenderQueue<SimpleRenderBatchItem>
 {
-    public unsafe override void Render(RenderContext context)
+    public override void Render(RenderContext context)
     {
         var itemspan = CollectionsMarshal.AsSpan(Items);
         var count = itemspan.Length;

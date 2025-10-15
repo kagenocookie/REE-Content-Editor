@@ -118,18 +118,18 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
         ref readonly var transform = ref GameObject.Transform.WorldTransform;
         var instances = RszFieldCache.CompositeMesh.InstanceGroups.Get(Data);
         for (int i = 0; i < meshes.Count; i++) {
-            var coll = meshes[i];
             var group = instances[i] as RszInstance;
             if (group != null) {
                 var transforms = RszFieldCache.CompositeMesh.InstanceGroup.Transforms.Get(group);
                 foreach (var inst in transforms.Cast<RszInstance>()) {
                     if (!RszFieldCache.CompositeMesh.TransformController.Enabled.Get(inst)) continue;
+                    var mesh = meshes[i];
 
                     var pos = RszFieldCache.CompositeMesh.TransformController.LocalPosition.Get(inst).ToGeneric();
                     var rot = RszFieldCache.CompositeMesh.TransformController.LocalRotation.Get(inst).ToGeneric();
                     var scl = RszFieldCache.CompositeMesh.TransformController.LocalScale.Get(inst).ToGeneric();
                     var instanceMat = ContentEditor.App.Transform.GetMatrixFromTransforms(pos, rot, scl);
-                    context.RenderInstanced(coll, i, transforms.Count, instanceMat);
+                    context.RenderInstanced(mesh, i, transforms.Count, instanceMat);
                 }
             }
         }

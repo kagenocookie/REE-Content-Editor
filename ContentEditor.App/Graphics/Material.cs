@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using ReeLib.Common;
 using ReeLib.via;
 using Silk.NET.Maths;
@@ -141,6 +142,7 @@ public class Material
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe void BindModel(in Matrix4X4<float> mat)
     {
         Shader.SetUniform(modelMatrixParam!._location, mat);
