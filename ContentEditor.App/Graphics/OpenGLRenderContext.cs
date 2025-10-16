@@ -326,23 +326,20 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
     public override void RenderInstanced(MeshHandle handle, List<Matrix4X4<float>> transforms)
     {
-        foreach (var trans in transforms) RenderSimple(handle, trans);
-        // TODO instancing is currently broken and/or slower, fix it eventually
-        // for (int i = 0; i < handle.Handle.Meshes.Count; i++) {
-        //     var mesh = handle.Handle.Meshes[i];
-        //     if (!handle.GetMeshPartEnabled(mesh.MeshGroup)) continue;
+        // TODO instancing is currently broken and/or slower than normal rendering, fix it eventually
+        for (int i = 0; i < handle.Handle.Meshes.Count; i++) {
+            var mesh = handle.Handle.Meshes[i];
+            if (!handle.GetMeshPartEnabled(mesh.MeshGroup)) continue;
 
-        //     var material = handle.GetMaterial(i);
+            var material = handle.GetMaterial(i);
 
-        //     Batch.Instanced.Add(new InstancedRenderBatchItem(material, mesh, transforms));
-        // }
+            Batch.Instanced.Add(new InstancedRenderBatchItem(material, mesh, transforms));
+        }
     }
 
     public override void ExecuteRender()
     {
-        Batch.Simple.Render(this);
-        Batch.Instanced.Render(this);
-        Batch.Gizmo.Render(this);
+        Batch.Render(this);
     }
 
 

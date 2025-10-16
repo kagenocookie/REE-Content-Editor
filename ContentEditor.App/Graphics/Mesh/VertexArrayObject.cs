@@ -11,6 +11,9 @@ public sealed class VertexArrayObject<TVertexType, TIndexType> : IDisposable
     private GL _gl;
     public uint Handle => _handle;
 
+    private const uint VERTEX_BINDING_INDEX = 0;
+    private const uint INSTANCE_BINDING_INDEX = 1;
+
     public VertexArrayObject(GL gl)
     {
         _gl = gl;
@@ -18,28 +21,33 @@ public sealed class VertexArrayObject<TVertexType, TIndexType> : IDisposable
         _handle = _gl.GenVertexArray();
     }
 
-    public unsafe void VertexAttributePointerFloat(uint index, int count, VertexAttribPointerType type, uint vertexSize, int offset)
+    public unsafe void VertexAttributePointerFloat(uint index, int count, VertexAttribType type, int offset)
     {
-        _gl.VertexAttribPointer(index, count, type, false, vertexSize * (uint)sizeof(TVertexType), (void*)(offset * sizeof(TVertexType)));
         _gl.EnableVertexAttribArray(index);
+        _gl.VertexAttribFormat(index, count, type, false, (uint)(offset * sizeof(TVertexType)));
+        _gl.VertexAttribBinding(index, VERTEX_BINDING_INDEX);
     }
 
-    public unsafe void VertexAttributePointerInt(uint index, int count, VertexAttribIType type, uint vertexSize, int offset)
+    public unsafe void VertexAttributePointerInt(uint index, int count, VertexAttribIType type, int offset)
     {
-        _gl.VertexAttribIPointer(index, count, type, vertexSize * (uint)sizeof(TVertexType), (void*)(offset * sizeof(TVertexType)));
         _gl.EnableVertexAttribArray(index);
+        _gl.VertexAttribIFormat(index, count, type, 0);
+        _gl.VertexAttribBinding(index, VERTEX_BINDING_INDEX);
     }
 
-    private const uint INSTANCE_BINDING_INDEX = 10;
+    public unsafe void BindVertexBuffer(uint buffer, uint vertexValueCount)
+    {
+        _gl.BindVertexBuffer(VERTEX_BINDING_INDEX, buffer, 0, vertexValueCount * (uint)sizeof(TVertexType));
+    }
+
     public unsafe void EnableInstancedMatrix(uint index)
     {
         for (uint i = 0; i < 4; ++i) {
             _gl.EnableVertexAttribArray(index + i);
-            // _gl.VertexAttribPointer(index + i, 4, VertexAttribPointerType.Float, false, (uint)sizeof(Matrix4x4), (void*)(i * sizeof(Vector4)));
-            _gl.VertexAttribBinding(index + i, INSTANCE_BINDING_INDEX);
             _gl.VertexAttribFormat(index + i, 4, VertexAttribType.Float, false, (uint)(i * sizeof(Vector4)));
-            _gl.VertexAttribDivisor(index + i, 1);
+            _gl.VertexAttribBinding(index + i, INSTANCE_BINDING_INDEX);
         }
+        _gl.VertexBindingDivisor(INSTANCE_BINDING_INDEX, 1);
     }
 
     public unsafe void UpdateInstancedMatrixBuffer(uint buffer, uint byteOffset)

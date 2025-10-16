@@ -90,6 +90,13 @@ public sealed class RenderBatch(GL gl) : IDisposable
     public InstancedRenderQueue Instanced { get; } = new(gl);
     public GizmoRenderQueue Gizmo { get; } = new(gl);
 
+    public void Render(RenderContext context)
+    {
+        Instanced.Render(context);
+        Simple.Render(context);
+        Gizmo.Render(context);
+    }
+
     public void Dispose()
     {
         Instanced.Dispose();

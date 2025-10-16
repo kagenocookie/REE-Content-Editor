@@ -78,8 +78,8 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
             var meshPath = RszFieldCache.CompositeMesh.InstanceGroup.Mesh.Get(group);
             var matPath = RszFieldCache.CompositeMesh.InstanceGroup.Material.Get(group);
 
-            // var mat = ctx.LoadMaterialGroup(matPath, ShaderFlags.EnableInstancing);
-            var mat = ctx.LoadMaterialGroup(matPath);
+            // var mat = ctx.LoadMaterialGroup(matPath);
+            var mat = ctx.LoadMaterialGroup(matPath, ShaderFlags.EnableInstancing);
             var mesh = ctx.LoadMesh(meshPath);
             if (mesh != null) {
                 if (mat != null) {
@@ -167,6 +167,7 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
             var cache = _transformsCache[i];
             var mesh = meshes[i];
             context.RenderInstanced(mesh, cache);
+            // foreach (var trans in cache) context.RenderSimple(mesh, trans);
         }
     }
 }

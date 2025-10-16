@@ -1,5 +1,5 @@
 using System.Numerics;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Runtime.CompilerServices;
 using ReeLib.via;
 using Silk.NET.OpenGL;
 
@@ -11,8 +11,6 @@ public abstract class Mesh : IDisposable
     protected GL GL;
 
     protected VertAttribute[] attributes = DefaultAttributes;
-
-    private bool isInstanced;
 
     protected record struct VertAttribute(int Offset, int Count, uint Index);
 
@@ -120,19 +118,21 @@ public abstract class Mesh : IDisposable
         var count = (uint)AttributeCount;
         foreach (var va in attributes) {
             if (va.Index == Index_BoneIndex || va.Index == Index_Index) {
-                VAO.VertexAttributePointerInt(va.Index, va.Count, VertexAttribIType.Int, count, va.Offset);
+                VAO.VertexAttributePointerInt(va.Index, va.Count, VertexAttribIType.Int, va.Offset);
             } else {
-                VAO.VertexAttributePointerFloat(va.Index, va.Count, VertexAttribPointerType.Float, count, va.Offset);
+                VAO.VertexAttributePointerFloat(va.Index, va.Count, VertexAttribType.Float, va.Offset);
             }
         }
+        VAO.BindVertexBuffer(VBO.Handle, count);
+
+        // this is only needed for instanced meshes, not for normally drawn ones.
+        // But it doesn't seem to break normal meshes either so it's "fine"
+        VAO.EnableInstancedMatrix(Index_InstancesMatrix);
     }
 
-    public void ApplyInstancing(uint vboHandle, uint byteOffset)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void UpdateInstancedMatrixBuffer(uint vboHandle, uint byteOffset)
     {
-        if (!isInstanced) {
-            VAO.EnableInstancedMatrix(Index_InstancesMatrix);
-            isInstanced = true;
-        }
         VAO.UpdateInstancedMatrixBuffer(vboHandle, byteOffset);
     }
 
@@ -148,7 +148,6 @@ public abstract class Mesh : IDisposable
         VBO.UpdateBuffer(VertexData);
         EBO.UpdateBuffer(Indices);
         VAO.Bind();
-        VBO.Bind();
         EBO.Bind();
         ApplyVertexAttributes();
     }

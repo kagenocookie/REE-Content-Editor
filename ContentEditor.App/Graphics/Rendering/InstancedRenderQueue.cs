@@ -7,17 +7,20 @@ namespace ContentEditor.App.Graphics;
 
 public sealed class InstancedRenderQueue(GL gl) : RenderQueue<InstancedRenderBatchItem>, IDisposable
 {
-    private const int MaxBatchSize = 2048;
     private const int MatrixSize = 16 * sizeof(float);
-    private const int GpuBufferMatrixCount = 16384;
-    private const int GpuBufferSize = GpuBufferMatrixCount * MatrixSize;
+    private const int BufferMatrixCount = 16384;
+    private const int BufferSize = BufferMatrixCount * MatrixSize;
 
-    private readonly Matrix4X4<float>[] matrixBatch = new Matrix4X4<float>[MaxBatchSize];
+    private readonly Matrix4X4<float>[] matrixBatch = new Matrix4X4<float>[BufferMatrixCount];
+
+    private readonly List<DrawArraysIndirectCommand> drawCommands = new();
 
     private int batchInstanceCount = 0;
     private int curBufferId;
     private uint[] TransformBuffers = [];
     private Mesh? lastMesh;
+
+    private record struct DrawArraysIndirectCommand(uint count, uint instanceCount, uint first, uint baseInstance);
 
     private unsafe void CreateAdditionalVBO()
     {
@@ -25,7 +28,7 @@ public sealed class InstancedRenderQueue(GL gl) : RenderQueue<InstancedRenderBat
         Array.Resize(ref TransformBuffers, newIndex + 1);
         var newBuffer = gl.GenBuffer();
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, newBuffer);
-        gl.BufferData(BufferTargetARB.ArrayBuffer, GpuBufferSize, null, BufferUsageARB.DynamicDraw);
+        gl.BufferData(BufferTargetARB.ArrayBuffer, BufferSize, null, BufferUsageARB.DynamicDraw);
         TransformBuffers[newIndex] = newBuffer;
     }
 
@@ -42,8 +45,21 @@ public sealed class InstancedRenderQueue(GL gl) : RenderQueue<InstancedRenderBat
         curBufferId = 0;
         int bufferIndexOffset = 0;
 
-        gl.BindBuffer(BufferTargetARB.ArrayBuffer, TransformBuffers[curBufferId]);
+        // handle dumping all matrices first because doing that one by one is too slow
+        for (int i = 0; i < count; ++i) {
+            ref readonly var item = ref itemspan[sortedIndices![i]];
+            foreach (ref readonly var mat in CollectionsMarshal.AsSpan(item.matrices)) {
+                if (bufferIndexOffset + batchInstanceCount >= BufferMatrixCount) {
+                    DumpBatchMatrixBuffer();
+                    if (curBufferId >= TransformBuffers.Length) CreateAdditionalVBO();
+                }
+                matrixBatch[batchInstanceCount++] = mat;
+            }
+        }
+        DumpBatchMatrixBuffer();
+        curBufferId = 0;
 
+        gl.BindBuffer(BufferTargetARB.ArrayBuffer, TransformBuffers[curBufferId]);
         uint lastShaderId = uint.MaxValue;
         uint lastMaterialHash = uint.MaxValue;
         for (int i = 0; i < count; ++i) {
@@ -51,7 +67,6 @@ public sealed class InstancedRenderQueue(GL gl) : RenderQueue<InstancedRenderBat
             if (lastMesh != item.mesh) {
                 RenderBatch(ref bufferIndexOffset);
                 item.mesh.VAO.Bind();
-                item.mesh.ApplyInstancing(TransformBuffers[curBufferId], (uint)(bufferIndexOffset * MatrixSize));
                 lastMesh = item.mesh;
             }
 
@@ -68,21 +83,15 @@ public sealed class InstancedRenderQueue(GL gl) : RenderQueue<InstancedRenderBat
             }
 
             foreach (ref readonly var mat in CollectionsMarshal.AsSpan(item.matrices)) {
-                if (bufferIndexOffset + batchInstanceCount >= GpuBufferMatrixCount) {
+                if (bufferIndexOffset + batchInstanceCount >= BufferMatrixCount) {
                     RenderBatch(ref bufferIndexOffset);
                     curBufferId++;
-                    if (curBufferId >= TransformBuffers.Length) {
-                        CreateAdditionalVBO();
-                    }
+                    // note: the matrix pre-pass would've created all the buffers we need, we can just assume it's there now
                     gl.BindBuffer(BufferTargetARB.ArrayBuffer, TransformBuffers[curBufferId]);
-                    item.mesh.ApplyInstancing(TransformBuffers[curBufferId], (uint)(bufferIndexOffset * MatrixSize));
                     bufferIndexOffset = 0;
                     batchInstanceCount = 0;
-                } else if (batchInstanceCount >= MaxBatchSize) {
-                    RenderBatch(ref bufferIndexOffset);
                 }
-                matrixBatch[batchInstanceCount++] = mat;
-                // matrixBatch[batchInstanceCount++] = Matrix4X4.Transpose(mat);
+                batchInstanceCount++;
             }
         }
         RenderBatch(ref bufferIndexOffset);
@@ -96,11 +105,18 @@ public sealed class InstancedRenderQueue(GL gl) : RenderQueue<InstancedRenderBat
         var bufferStart = bufferIndexOffset * MatrixSize;
         var bufferSize = (uint)batchInstanceCount * MatrixSize;
 
-        gl.BufferSubData(BufferTargetARB.ArrayBuffer, bufferStart, bufferSize, Unsafe.AsPointer(ref matrixBatch[0]));
-        // lastMesh!.VAO.UpdateInstanceAttributes(TransformBuffers[curBufferId], (uint)bufferStart);
-        gl.DrawArraysInstancedBaseInstance(lastMesh!.MeshType, 0, (uint)lastMesh.Indices.Length, (uint)batchInstanceCount, (uint)0);
-        // gl.DrawArraysInstanced(lastMesh!.MeshType, 0, (uint)lastMesh.Indices.Length, (uint)batchInstanceCount);
+        lastMesh!.UpdateInstancedMatrixBuffer(TransformBuffers[curBufferId], (uint)bufferStart);
+        gl.DrawArraysInstanced(lastMesh!.MeshType, 0, (uint)lastMesh.Indices.Length, (uint)batchInstanceCount);
         bufferIndexOffset += batchInstanceCount;
+        batchInstanceCount = 0;
+    }
+
+    private unsafe void DumpBatchMatrixBuffer()
+    {
+        if (batchInstanceCount == 0) return;
+
+        gl.BindBuffer(BufferTargetARB.ArrayBuffer, TransformBuffers[curBufferId++]);
+        gl.BufferData(BufferTargetARB.ArrayBuffer, BufferSize, Unsafe.AsPointer(ref matrixBatch[0]), BufferUsageARB.DynamicDraw);
         batchInstanceCount = 0;
     }
 

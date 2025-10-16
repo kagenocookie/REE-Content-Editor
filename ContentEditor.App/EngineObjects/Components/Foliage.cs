@@ -76,8 +76,8 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
                     continue;
                 }
 
-                var mat = ctx.LoadMaterialGroup(group.materialPath);
-                // var mat = ctx.LoadMaterialGroup(group.materialPath, ShaderFlags.EnableInstancing);
+                // var mat = ctx.LoadMaterialGroup(group.materialPath);
+                var mat = ctx.LoadMaterialGroup(group.materialPath, ShaderFlags.EnableInstancing);
                 var mesh = ctx.LoadMesh(group.meshPath);
                 if (mesh != null) {
                     if (mat != null) {
@@ -157,6 +157,7 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
             if (group == null || _transformsCache.Count <= i || _transformsCache[i].Count == 0) continue;
 
             context.RenderInstanced(mesh, _transformsCache[i]);
+            // foreach (var trans in _transformsCache[i]) context.RenderSimple(mesh, trans);
         }
     }
 }
