@@ -25,8 +25,12 @@ public abstract class RenderableComponent(GameObject gameObject, RszInstance dat
         // not necessarily "exactly" correct but close enough
         var p1 = Vector3.Transform(local.minpos, world);
         var p2 = Vector3.Transform(local.maxpos, world);
-        return _worldSpaceBounds = new AABB(Vector3.Min(p1, p2), Vector3.Max(p1, p2));
+        _worldSpaceBounds = new AABB(Vector3.Min(p1, p2), Vector3.Max(p1, p2));
+        OnUpdateTransform();
+        return _worldSpaceBounds;
     }
+
+    protected virtual void OnUpdateTransform() {}
 
     internal override void OnActivate()
     {

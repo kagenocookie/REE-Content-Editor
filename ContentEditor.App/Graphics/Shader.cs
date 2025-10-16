@@ -21,6 +21,7 @@ public sealed class Shader : IDisposable
         { ShaderFlags.None, [] },
         { ShaderFlags.EnableSkinning, ["ENABLE_SKINNING"] },
         { ShaderFlags.EnableStreamingTex, ["ENABLE_STREAMING_TEX"] },
+        { ShaderFlags.EnableInstancing, ["ENABLE_INSTANCING"] },
     };
 
     static Shader()

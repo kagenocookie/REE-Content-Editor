@@ -1,3 +1,4 @@
+using System.Numerics;
 using Silk.NET.OpenGL;
 
 namespace ContentEditor.App.Graphics;
@@ -8,6 +9,7 @@ public sealed class VertexArrayObject<TVertexType, TIndexType> : IDisposable
 {
     internal uint _handle;
     private GL _gl;
+    public uint Handle => _handle;
 
     public VertexArrayObject(GL gl)
     {
@@ -26,6 +28,23 @@ public sealed class VertexArrayObject<TVertexType, TIndexType> : IDisposable
     {
         _gl.VertexAttribIPointer(index, count, type, vertexSize * (uint)sizeof(TVertexType), (void*)(offset * sizeof(TVertexType)));
         _gl.EnableVertexAttribArray(index);
+    }
+
+    private const uint INSTANCE_BINDING_INDEX = 10;
+    public unsafe void EnableInstancedMatrix(uint index)
+    {
+        for (uint i = 0; i < 4; ++i) {
+            _gl.EnableVertexAttribArray(index + i);
+            // _gl.VertexAttribPointer(index + i, 4, VertexAttribPointerType.Float, false, (uint)sizeof(Matrix4x4), (void*)(i * sizeof(Vector4)));
+            _gl.VertexAttribBinding(index + i, INSTANCE_BINDING_INDEX);
+            _gl.VertexAttribFormat(index + i, 4, VertexAttribType.Float, false, (uint)(i * sizeof(Vector4)));
+            _gl.VertexAttribDivisor(index + i, 1);
+        }
+    }
+
+    public unsafe void UpdateInstancedMatrixBuffer(uint buffer, uint byteOffset)
+    {
+        _gl.BindVertexBuffer(INSTANCE_BINDING_INDEX, buffer, (IntPtr)byteOffset, (uint)sizeof(Matrix4x4));
     }
 
     public void Bind()

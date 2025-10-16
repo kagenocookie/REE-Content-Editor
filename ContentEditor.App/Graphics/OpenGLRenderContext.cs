@@ -320,25 +320,31 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
             var material = handle.GetMaterial(i);
 
-            // TODO frustum culling
-            // var bounds = sub.mesh.BoundingBox;
-
             Batch.Simple.Add(new NormalRenderBatchItem(material, mesh, transform, handle));
         }
+    }
+
+    public override void RenderInstanced(MeshHandle handle, List<Matrix4X4<float>> transforms)
+    {
+        foreach (var trans in transforms) RenderSimple(handle, trans);
+        // TODO instancing is currently broken and/or slower, fix it eventually
+        // for (int i = 0; i < handle.Handle.Meshes.Count; i++) {
+        //     var mesh = handle.Handle.Meshes[i];
+        //     if (!handle.GetMeshPartEnabled(mesh.MeshGroup)) continue;
+
+        //     var material = handle.GetMaterial(i);
+
+        //     Batch.Instanced.Add(new InstancedRenderBatchItem(material, mesh, transforms));
+        // }
     }
 
     public override void ExecuteRender()
     {
         Batch.Simple.Render(this);
+        Batch.Instanced.Render(this);
         Batch.Gizmo.Render(this);
     }
 
-    public override void RenderInstanced(MeshHandle mesh, int instanceIndex, int instanceCount, in Matrix4X4<float> transform)
-    {
-        // TODO actually do instanced drawing
-        // GL.DrawArraysInstanced(PrimitiveType.Triangles, 0, (uint)actMesh.Indices.Length, instanceCount);
-        RenderSimple(mesh, transform);
-    }
 
     private void BindMaterial(Material material)
     {
@@ -538,6 +544,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         shaders.Clear();
         _defaultTexture?.Dispose();
         _missingTexture?.Dispose();
+        Batch.Dispose();
         base.Dispose(disposing);
     }
 }

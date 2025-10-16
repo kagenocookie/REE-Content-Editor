@@ -1,8 +1,7 @@
-using System.Buffers;
 using ContentEditor.App.Graphics;
+using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
-using ReeLib.UVar;
 using ReeLib.via;
 using Silk.NET.Maths;
 
@@ -15,6 +14,8 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
 
     private readonly List<MeshHandle> meshes = new();
     private readonly List<MaterialGroup> materials = new();
+
+    private readonly List<List<Matrix4X4<float>>> _transformsCache = new();
 
     public override AABB LocalBounds {
         get {
@@ -76,6 +77,7 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
                 }
 
                 var mat = ctx.LoadMaterialGroup(group.materialPath);
+                // var mat = ctx.LoadMaterialGroup(group.materialPath, ShaderFlags.EnableInstancing);
                 var mesh = ctx.LoadMesh(group.meshPath);
                 if (mesh != null) {
                     if (mat != null) {
@@ -87,6 +89,7 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
                 }
             }
         }
+        UpdateInstanceTransforms();
     }
 
     private void UnloadMeshes()
@@ -103,6 +106,39 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
         materials.Clear();
     }
 
+    protected override void OnUpdateTransform()
+    {
+        UpdateInstanceTransforms();
+    }
+
+    private void UpdateInstanceTransforms()
+    {
+        ref readonly var transform = ref GameObject.Transform.WorldTransform;
+        for (int i = 0; i < meshes.Count; i++) {
+            var group = file?.InstanceGroups?[i];
+            if (group == null) {
+                if (_transformsCache.Count > i) {
+                    _transformsCache[i].Clear();
+                }
+                continue;
+            }
+
+            List<Matrix4X4<float>> matrices;
+            if (_transformsCache.Count > i) {
+                matrices = _transformsCache[i];
+                matrices.Clear();
+            } else {
+                _transformsCache.Add(matrices = new List<Matrix4X4<float>>(group.transforms!.Length));
+            }
+
+            foreach (var inst in group.transforms!) {
+                var instanceMat = transform * ContentEditor.App.Transform.GetMatrixFromTransforms(inst.pos.ToGeneric(), inst.rot.ToGeneric(), inst.scale.ToGeneric());
+                matrices.Add(instanceMat);
+            }
+        }
+        _transformsCache.RemoveAtAfter(meshes.Count);
+    }
+
     internal override unsafe void Render(RenderContext context)
     {
         var render = AppConfig.Instance.RenderMeshes.Get();
@@ -115,15 +151,12 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
         }
         ref readonly var transform = ref GameObject.Transform.WorldTransform;
         for (int i = 0; i < meshes.Count; i++) {
-            var coll = meshes[i];
-            if (!coll.Meshes.Any()) continue;
+            var mesh = meshes[i];
+            if (!mesh.Meshes.Any()) continue;
             var group = file?.InstanceGroups?[i];
-            if (group != null) {
-                foreach (var inst in group.transforms!) {
-                    var instanceMat = ContentEditor.App.Transform.GetMatrixFromTransforms(inst.pos.ToGeneric(), inst.rot.ToGeneric(), inst.scale.ToGeneric());
-                    context.RenderInstanced(coll, i, group.transforms.Length, Matrix4X4.Multiply(transform, instanceMat));
-                }
-            }
+            if (group == null || _transformsCache.Count <= i || _transformsCache[i].Count == 0) continue;
+
+            context.RenderInstanced(mesh, _transformsCache[i]);
         }
     }
 }

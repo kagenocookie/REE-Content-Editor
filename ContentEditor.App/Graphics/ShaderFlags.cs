@@ -6,4 +6,5 @@ public enum ShaderFlags
     None = 0,
     EnableSkinning = 1,
     EnableStreamingTex = 2,
+    EnableInstancing = 4,
 }

@@ -53,8 +53,8 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
     /// <summary>
     /// Render a simple mesh (static, single mesh with no animation)
     /// </summary>
-    public abstract void RenderSimple(MeshHandle mesh, in Matrix4X4<float> transform);
-    public abstract void RenderInstanced(MeshHandle mesh, int instanceIndex, int instanceCount, in Matrix4X4<float> transform);
+    public abstract void RenderSimple(MeshHandle handle, in Matrix4X4<float> transform);
+    public abstract void RenderInstanced(MeshHandle handle, List<Matrix4X4<float>> transforms);
 
     public abstract MaterialGroup LoadMaterialGroup(FileHandle file, ShaderFlags flags = ShaderFlags.None);
     public abstract Material GetBuiltInMaterial(BuiltInMaterials material, ShaderFlags flags = ShaderFlags.None);

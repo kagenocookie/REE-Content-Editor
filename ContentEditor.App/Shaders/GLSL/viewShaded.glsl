@@ -16,10 +16,11 @@ out vec3 fNorm;
 void main()
 {
 #include "includes/anim_vert.glsl";
+#include "includes/instance_transform.glsl";
 
-    gl_Position = uProjectionView * uModel * finalPosition;
+    gl_Position = uProjectionView * transform * finalPosition;
     fUv = vUv;
-    mat3 normalMatrix = transpose(inverse(mat3(uModel)));
+    mat3 normalMatrix = transpose(inverse(mat3(transform)));
     fNorm = normalize(normalMatrix * finalNorm);
 }
 #endif

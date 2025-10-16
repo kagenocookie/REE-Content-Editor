@@ -12,6 +12,8 @@ public abstract class Mesh : IDisposable
 
     protected VertAttribute[] attributes = DefaultAttributes;
 
+    private bool isInstanced;
+
     protected record struct VertAttribute(int Offset, int Count, uint Index);
 
     public float[] VertexData { get; protected set; }
@@ -22,7 +24,7 @@ public abstract class Mesh : IDisposable
     public AABB BoundingBox { get; protected set; }
     public int MeshGroup { get; set; }
 
-    public uint ID => VBO.Handle;
+    public uint ID => VAO.Handle;
 
     private MeshFlags _flags;
     public MeshFlags Flags {
@@ -54,6 +56,7 @@ public abstract class Mesh : IDisposable
     private const int Index_Tangent = 4;
     private const int Index_BoneIndex = 5;
     private const int Index_BoneWeight = 6;
+    private const int Index_InstancesMatrix = 7;
 
     private static readonly VertAttribute[] DefaultAttributes = [
         new VertAttribute(0, 3, Index_Position),
@@ -97,8 +100,6 @@ public abstract class Mesh : IDisposable
     public virtual void Bind()
     {
         VAO.Bind();
-        VBO.Bind();
-        EBO.Bind();
     }
 
     private void UpdateAttributes()
@@ -126,6 +127,15 @@ public abstract class Mesh : IDisposable
         }
     }
 
+    public void ApplyInstancing(uint vboHandle, uint byteOffset)
+    {
+        if (!isInstanced) {
+            VAO.EnableInstancedMatrix(Index_InstancesMatrix);
+            isInstanced = true;
+        }
+        VAO.UpdateInstancedMatrixBuffer(vboHandle, byteOffset);
+    }
+
     protected void CreateBuffers()
     {
         VBO = new BufferObject<float>(GL, BufferTargetARB.ArrayBuffer);
@@ -137,7 +147,9 @@ public abstract class Mesh : IDisposable
     {
         VBO.UpdateBuffer(VertexData);
         EBO.UpdateBuffer(Indices);
-        Bind();
+        VAO.Bind();
+        VBO.Bind();
+        EBO.Bind();
         ApplyVertexAttributes();
     }
 

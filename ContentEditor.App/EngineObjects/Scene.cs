@@ -25,8 +25,8 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     public bool IsActive { get; set; }
     public SceneManager SceneManager { get; internal set; } = null!;
 
-    private List<RenderableComponent> renderComponents = new();
-    private List<IUpdateable> updateComponents = new();
+    private HashSet<RenderableComponent> renderComponents = new();
+    private HashSet<IUpdateable> updateComponents = new();
 
     private GL _gl;
 

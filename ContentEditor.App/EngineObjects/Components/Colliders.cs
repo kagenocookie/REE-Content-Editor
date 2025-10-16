@@ -29,6 +29,7 @@ public class Colliders(GameObject gameObject, RszInstance data) : RenderableComp
 
         if (!AppConfig.Instance.RenderColliders.Get()) return;
         UpdateColliderMeshes();
+        IsStatic = false;
     }
 
     internal override void OnDeactivate()

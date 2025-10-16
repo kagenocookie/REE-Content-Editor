@@ -84,9 +84,14 @@ public abstract class RenderQueue<T> where T : struct, RenderQueueItem
 #endregion
 }
 
-public class RenderBatch(GL gl)
+public sealed class RenderBatch(GL gl) : IDisposable
 {
     public NormalRenderQueue Simple { get; } = new(gl);
-    // public InstancedRenderQueue Instanced { get; } = new(); // TODO
+    public InstancedRenderQueue Instanced { get; } = new(gl);
     public GizmoRenderQueue Gizmo { get; } = new(gl);
+
+    public void Dispose()
+    {
+        Instanced.Dispose();
+    }
 }
