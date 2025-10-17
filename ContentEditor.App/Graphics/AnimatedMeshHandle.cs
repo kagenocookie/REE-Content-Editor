@@ -47,6 +47,7 @@ public class AnimatedMeshHandle : MeshHandle
 
     public void BindBones(Material material)
     {
+        if ((material.Shader.Flags & ShaderFlags.EnableSkinning) == 0) return;
         material.BindBoneMatrices(BoneMatrices);
         // for (int i = 0; i < BoneMatrices.Length; ++i) {
         //     material.Shader.SetUniform($"boneMatrices[{i}]", BoneMatrices[i]);
