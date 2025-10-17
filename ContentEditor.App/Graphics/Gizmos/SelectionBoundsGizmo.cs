@@ -49,17 +49,19 @@ public class SelectionBoundsGizmo : Gizmo
         var showBounds = false;
         var builder = new ShapeBuilder() { GeoType = ShapeBuilder.GeometryType.Line };
         foreach (var ww in wnd.ActiveImguiWindows) {
-            if (ww.Handler is ObjectInspector insp && insp.ParentWindow is SceneEditor scnEdit) {
-                var scene = scnEdit.GetScene();
+            if (ww.Handler is ObjectInspector insp && insp.ParentWindow is ISceneEditor editor) {
+                var scene = editor.GetScene();
                 if (scene == null) continue;
 
-                if (scnEdit.PrimaryTarget != insp.Target) continue;
+                var primaryTarget = (editor as SceneEditor)?.PrimaryTarget ?? (editor as PrefabEditor)?.PrimaryTarget;
+
+                if (primaryTarget != insp.Target) continue;
 
                 AABB targetBounds;
-                if (scnEdit.PrimaryTarget is GameObject go) {
+                if (primaryTarget is GameObject go) {
                     targetBounds = go.GetWorldSpaceBounds();
                     showBounds = showBounds || !targetBounds.IsEmpty;
-                } else if (scnEdit.PrimaryTarget is Folder folder) {
+                } else if (primaryTarget is Folder folder) {
                     targetBounds = folder.GetWorldSpaceBounds();
                     showBounds = showBounds || !targetBounds.IsEmpty;
                 } else {
