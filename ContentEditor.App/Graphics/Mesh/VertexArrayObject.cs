@@ -31,7 +31,7 @@ public sealed class VertexArrayObject<TVertexType, TIndexType> : IDisposable
     public unsafe void VertexAttributePointerInt(uint index, int count, VertexAttribIType type, int offset)
     {
         _gl.EnableVertexAttribArray(index);
-        _gl.VertexAttribIFormat(index, count, type, 0);
+        _gl.VertexAttribIFormat(index, count, type, (uint)(offset * sizeof(TVertexType)));
         _gl.VertexAttribBinding(index, VERTEX_BINDING_INDEX);
     }
 
