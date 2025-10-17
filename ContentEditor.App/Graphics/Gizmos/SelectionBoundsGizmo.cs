@@ -25,10 +25,8 @@ public class SelectionBoundsGizmo : Gizmo
 
         // note: we don't need to have a reference stored on the rendercontext for this material
         // because there's no textures in it, nor does it have a link to any MDF2 files
-        var mat = context.GetBuiltInMaterial(BuiltInMaterials.MonoColor);
-        mat.name = "white";
+        var (mat, mat2) = context.GetMaterialBuilder(BuiltInMaterials.MonoColor).Create2("white", "back");
         mat.SetParameter("_MainColor", new Color(255, 255, 255, 255));
-        var mat2 = mat.Clone("back");
         mat2.SetParameter("_MainColor", new Color(136, 136, 136, 255));
         mesh.SetMaterials(new MaterialGroup(mat, mat2), [0]);
     }

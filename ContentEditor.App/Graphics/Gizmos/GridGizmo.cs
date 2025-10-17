@@ -20,10 +20,9 @@ public class GridGizmo : Gizmo
         var mesh = context.CreateBlankMesh();
 
         var matGroup = new MaterialGroup();
-        var mat = context.GetBuiltInMaterial(BuiltInMaterials.MonoColor);
-        mat.name = "gray";
-        mat.SetParameter("_MainColor", new Color(100, 100, 100, 64));
-        mat.BlendMode = new MaterialBlendMode(true, BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+        var mat = context.GetMaterialBuilder(BuiltInMaterials.MonoColor, "gray")
+            .Color("_MainColor", new Color(100, 100, 100, 64))
+            .Blend();
         matGroup.Add(mat);
 
         var lineCount = 100;

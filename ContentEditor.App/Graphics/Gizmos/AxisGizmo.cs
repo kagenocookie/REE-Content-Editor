@@ -19,35 +19,15 @@ public class AxisGizmo : Gizmo
         mesh.Handle.Meshes.Add(new LineMesh(GL, new Vector3(0, 0, -100000), new Vector3(0, 0, 100000)) { MeshType = PrimitiveType.Lines });
 
         var matGroup = new MaterialGroup();
-        var mat = context.GetBuiltInMaterial(BuiltInMaterials.MonoColor);
-        mat.name = "x";
-        mat.SetParameter("_MainColor", new Color(255, 0, 0, 150));
-        mat.BlendMode = new MaterialBlendMode(true, BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-        matGroup.Add(mat);
+        var builder = context.GetMaterialBuilder(BuiltInMaterials.MonoColor).Blend();
 
-        mat = context.GetBuiltInMaterial(BuiltInMaterials.MonoColor);
-        mat.name = "y";
-        mat.SetParameter("_MainColor", new Color(0, 255, 0, 150));
-        mat.BlendMode = new MaterialBlendMode(true, BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-        matGroup.Add(mat);
+        matGroup.Add(builder.Color("_MainColor", new Color(255, 0, 0, 150)).Create("x"));
+        matGroup.Add(builder.Color("_MainColor", new Color(0, 255, 0, 150)).Create("y"));
+        matGroup.Add(builder.Color("_MainColor", new Color(0, 0, 255, 150)).Create("z"));
 
-        mat = context.GetBuiltInMaterial(BuiltInMaterials.MonoColor);
-        mat.name = "z";
-        mat.SetParameter("_MainColor", new Color(0, 0, 255, 150));
-        mat.BlendMode = new MaterialBlendMode(true, BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-        matGroup.Add(mat);
-
-        mat = matGroup.Materials[0].Clone("xx");
-        mat.SetParameter("_MainColor", new Color(255, 0, 0, 48));
-        matGroup.Add(mat);
-
-        mat = matGroup.Materials[1].Clone("yy");
-        mat.SetParameter("_MainColor", new Color(0, 255, 0, 48));
-        matGroup.Add(mat);
-
-        mat = matGroup.Materials[2].Clone("zz");
-        mat.SetParameter("_MainColor", new Color(0, 0, 255, 48));
-        matGroup.Add(mat);
+        matGroup.Add(builder.Color("_MainColor", new Color(255, 0, 0, 48)).Create("xx"));
+        matGroup.Add(builder.Color("_MainColor", new Color(0, 255, 0, 48)).Create("yy"));
+        matGroup.Add(builder.Color("_MainColor", new Color(0, 0, 255, 48)).Create("zz"));
 
         mesh.SetMaterials(matGroup, [0, 1, 2]);
         Meshes.Add(mesh);
