@@ -149,15 +149,12 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
         if (meshes.Count == 0) {
             ReloadMeshes();
         }
-        ref readonly var transform = ref GameObject.Transform.WorldTransform;
-        for (int i = 0; i < meshes.Count; i++) {
+        for (int i = 0; i < meshes.Count && i < _transformsCache.Count; i++) {
+            var cache = _transformsCache[i];
             var mesh = meshes[i];
-            if (!mesh.Meshes.Any()) continue;
-            var group = file?.InstanceGroups?[i];
-            if (group == null || _transformsCache.Count <= i || _transformsCache[i].Count == 0) continue;
-
-            context.RenderInstanced(mesh, _transformsCache[i]);
-            // foreach (var trans in _transformsCache[i]) context.RenderSimple(mesh, trans);
+            if (cache.Count == 0 || mesh.IsEmpty) continue;
+            context.RenderInstanced(mesh, cache);
+            // foreach (var trans in cache) context.RenderSimple(mesh, trans);
         }
     }
 }

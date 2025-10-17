@@ -25,6 +25,7 @@ public class MeshHandle
     public IEnumerable<Mesh> Meshes => Handle.Meshes.AsReadOnly();
     public AABB BoundingBox => Handle.BoundingBox;
     private readonly HashSet<int> DisabledParts = new(0);
+    public bool IsEmpty => Handle.Meshes.Count == 0;
 
     internal MeshHandle(MeshResourceHandle mesh)
     {

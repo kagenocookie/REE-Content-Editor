@@ -326,7 +326,6 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
     public override void RenderInstanced(MeshHandle handle, List<Matrix4X4<float>> transforms)
     {
-        // TODO instancing is currently broken and/or slower than normal rendering, fix it eventually
         for (int i = 0; i < handle.Handle.Meshes.Count; i++) {
             var mesh = handle.Handle.Meshes[i];
             if (!handle.GetMeshPartEnabled(mesh.MeshGroup)) continue;

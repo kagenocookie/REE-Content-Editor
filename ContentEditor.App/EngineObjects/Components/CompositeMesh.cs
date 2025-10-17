@@ -158,14 +158,10 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
         if (meshes.Count == 0) {
             ReloadMeshes();
         }
-        ref readonly var transform = ref GameObject.Transform.WorldTransform;
-        var instances = RszFieldCache.CompositeMesh.InstanceGroups.Get(Data);
-        for (int i = 0; i < instances.Count; i++) {
-            var group = instances[i] as RszInstance;
-            if (group == null || _transformsCache.Count <= i || _transformsCache[i].Count == 0) continue;
-
+        for (int i = 0; i < meshes.Count && i < _transformsCache.Count; i++) {
             var cache = _transformsCache[i];
             var mesh = meshes[i];
+            if (cache.Count == 0 || mesh.IsEmpty) continue;
             context.RenderInstanced(mesh, cache);
             // foreach (var trans in cache) context.RenderSimple(mesh, trans);
         }
