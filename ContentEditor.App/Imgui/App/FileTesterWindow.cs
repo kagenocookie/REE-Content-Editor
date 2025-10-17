@@ -47,6 +47,11 @@ public class FileTesterWindow : IWindowHandler
 
     private readonly HashSet<GameIdentifier> hiddenGames = new();
     private string? wordlistFilepath;
+    private ContentWorkspace? Workspace => (data.ParentWindow as IWorkspaceContainer)?.Workspace;
+
+    private static readonly KnownFileFormats[] AllFormatValues = Enum.GetValues<KnownFileFormats>();
+    private KnownFileFormats[] Formats = [];
+    private string[] FormatLabels = [];
 
     public unsafe void OnIMGUI()
     {
@@ -107,7 +112,7 @@ public class FileTesterWindow : IWindowHandler
                 Logger.Info("Starting RSZ override test...");
 
                 Task.Run(() => {
-                    foreach (var env in GetWorkspaces((data.ParentWindow as IWorkspaceContainer)!.Workspace, true)) {
+                    foreach (var env in GetWorkspaces(Workspace!, true)) {
                         Logger.Info("Loading RSZ Parser " + env.Game);
                         _ = env.Env.RszParser;
                     }
@@ -118,7 +123,19 @@ public class FileTesterWindow : IWindowHandler
         }
         var exec = SearchInProgress;
         if (exec) ImGui.BeginDisabled();
-        ImguiHelpers.FilterableCSharpEnumCombo("File type", ref format, ref formatFilter);
+        if (FormatLabels.Length == 0 && Workspace != null) {
+            var list = new List<(string, KnownFileFormats)>();
+            foreach (var fmt in AllFormatValues) {
+                var exts = Workspace.Env.GetFileExtensionsForFormat(fmt);
+                if (!exts.Any()) continue;
+
+                list.Add((string.Join(", ", exts.Select(ee => "." + ee)), fmt));
+            }
+            Formats = list.Select(kv => kv.Item2).ToArray();
+            FormatLabels = list.Select(kv => $"{kv.Item2} ({kv.Item1})").ToArray();
+        }
+
+        ImguiHelpers.FilterableCombo("File type", FormatLabels, Formats, ref format, ref formatFilter);
         ImGui.Checkbox("Try all configured games", ref allVersions);
         ImGui.SameLine();
         ImGui.Checkbox("Execute read/write test", ref testRewrite);
