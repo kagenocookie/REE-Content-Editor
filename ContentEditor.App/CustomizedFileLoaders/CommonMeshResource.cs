@@ -116,6 +116,7 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
 
         PreloadedMeshes = new();
         var mesh = NativeMesh;
+        if (mesh.MeshData == null || mesh.MeshData.LODs.Count == 0) return;
 
         var mainLod = mesh.MeshData!.LODs[0];
         foreach (var group in mainLod.MeshGroups) {
