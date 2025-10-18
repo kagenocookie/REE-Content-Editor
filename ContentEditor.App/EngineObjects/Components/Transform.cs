@@ -2,6 +2,7 @@ using System.Numerics;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.via;
 using Silk.NET.Maths;
 
 namespace ContentEditor.App;
@@ -145,6 +146,13 @@ public static class TransformExtensions
 {
     public static Quaternion<float> ToSilkNet(this Quaternion quat) => new Quaternion<float>(quat.X, quat.Y, quat.Z, quat.W);
     public static Vector3D<float> ToSilkNet(this Vector3 vec) => new Vector3D<float>(vec.X, vec.Y, vec.Z);
+
+    public static Matrix4X4<float> ToGeneric(this mat4 mat) => new Matrix4X4<float>(
+        mat.m00, mat.m01, mat.m02, mat.m03,
+        mat.m10, mat.m11, mat.m12, mat.m13,
+        mat.m20, mat.m21, mat.m22, mat.m23,
+        mat.m30, mat.m31, mat.m32, mat.m33
+    );
 
     public static Quaternion<float> ToSilkNetQuaternion(this Vector4 vec) => new Quaternion<float>(vec.X, vec.Y, vec.Z, vec.W);
     public static Vector3D<float> ToSilkNetVec3(this Vector4 vec) => new Vector3D<float>(vec.X, vec.Y, vec.Z);

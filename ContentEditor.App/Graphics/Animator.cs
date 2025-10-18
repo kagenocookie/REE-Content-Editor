@@ -42,8 +42,6 @@ public class Animator(ContentWorkspace Workspace)
     public float FrameRate => clipFramerate;
     public float FrameDuration => 1 / clipFramerate;
 
-    private Matrix4X4<float>[] transformCache = [];
-
     public void Play()
     {
         IsPlaying = true;
@@ -157,9 +155,10 @@ public class Animator(ContentWorkspace Workspace)
 
         IsActive = true;
         if (mesh is AnimatedMeshHandle animMesh && animMesh.Bones != null) {
-            if (animMesh.BoneMatrices.Length != animMesh.Bones.DeformBones.Count) {
-                animMesh.BoneMatrices = new Matrix4X4<float>[animMesh.Bones.DeformBones.Count];
+            if (animMesh.DeformBoneMatrices.Length != animMesh.Bones.DeformBones.Count) {
+                animMesh.DeformBoneMatrices = new Matrix4X4<float>[animMesh.Bones.DeformBones.Count];
             }
+            ref var transformCache = ref animMesh.BoneMatrices;
             if (transformCache.Length != animMesh.Bones.Bones.Count) {
                 transformCache = new Matrix4X4<float>[animMesh.Bones.Bones.Count];
             }
@@ -178,7 +177,7 @@ public class Animator(ContentWorkspace Workspace)
 
                 var boneHash = MurMur3HashUtils.GetHash(bone.name);
                 var clip = ActiveMotion.BoneClips.FirstOrDefault(bc => bc.ClipHeader.boneHash == boneHash);
-                Matrix4X4.Decompose<float>(bone.localTransform.ToSystem().ToGeneric(), out var localScale, out var localRot, out var localPos);
+                Matrix4X4.Decompose<float>(bone.localTransform.ToGeneric(), out var localScale, out var localRot, out var localPos);
                 var motBone = ActiveMotion.BoneHeaders?.FirstOrDefault(bh => bh.boneHash == boneHash);
 
                 if (motBone != null) {
@@ -213,7 +212,7 @@ public class Animator(ContentWorkspace Workspace)
                 transformCache[bone.index] = worldMat;
 
                 if (bone.remapIndex != -1) {
-                    animMesh.BoneMatrices[bone.remapIndex] = bone.inverseGlobalTransform.ToSystem().ToGeneric() * worldMat;
+                    animMesh.DeformBoneMatrices[bone.remapIndex] = bone.inverseGlobalTransform.ToGeneric() * worldMat;
                 }
             }
         }
@@ -224,7 +223,7 @@ public class Animator(ContentWorkspace Workspace)
         if (mesh is AnimatedMeshHandle animMesh && animMesh.Bones != null) {
             foreach (var bone in animMesh.Bones.Bones) {
                 if (bone.remapIndex != -1) {
-                    animMesh.BoneMatrices[bone.remapIndex] = Matrix4X4<float>.Identity;
+                    animMesh.DeformBoneMatrices[bone.remapIndex] = Matrix4X4<float>.Identity;
                 }
             }
         }

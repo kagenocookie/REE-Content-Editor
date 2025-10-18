@@ -8,6 +8,7 @@ namespace ContentEditor.App.Graphics;
 public class AnimatedMeshHandle : MeshHandle
 {
     public Matrix4X4<float>[] BoneMatrices = [];
+    public Matrix4X4<float>[] DeformBoneMatrices = [];
 
     private GL GL { get; }
 
@@ -21,16 +22,15 @@ public class AnimatedMeshHandle : MeshHandle
         if (Bones == null) return;
 
         var delta = Time.Delta;
-        if (BoneMatrices.Length == 0) {
-            BoneMatrices = new Matrix4X4<float>[Bones.DeformBones.Count];
-            // BoneMatrices = new Matrix4X4<float>[Bones.Bones.Count];
-            for (int i = 0; i < BoneMatrices.Length; ++i) {
-                BoneMatrices[i] = Matrix4X4<float>.Identity;
+        if (DeformBoneMatrices.Length == 0) {
+            DeformBoneMatrices = new Matrix4X4<float>[Bones.DeformBones.Count];
+            for (int i = 0; i < DeformBoneMatrices.Length; ++i) {
+                DeformBoneMatrices[i] = Matrix4X4<float>.Identity;
             }
-
-            var plshipbone = new mat4(0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 1.758f, -0.004f, 1);
-            var hipsys = plshipbone.ToSystem();
-            var hippos = hipsys.Translation;
+            BoneMatrices = new Matrix4X4<float>[Bones.Bones.Count];
+            for (int i = 0; i < BoneMatrices.Length; ++i) {
+                BoneMatrices[i] = Bones.Bones[i].globalTransform.ToGeneric();
+            }
 
             // var builder = new ShapeBuilder();
             // foreach (var bone in Bones.Bones) {
@@ -48,7 +48,7 @@ public class AnimatedMeshHandle : MeshHandle
     public void BindBones(Material material)
     {
         if ((material.Shader.Flags & ShaderFlags.EnableSkinning) == 0) return;
-        material.BindBoneMatrices(BoneMatrices);
+        material.BindBoneMatrices(DeformBoneMatrices);
         // for (int i = 0; i < BoneMatrices.Length; ++i) {
         //     material.Shader.SetUniform($"boneMatrices[{i}]", BoneMatrices[i]);
         // }
