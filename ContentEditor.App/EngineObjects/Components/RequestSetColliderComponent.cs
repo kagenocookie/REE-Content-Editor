@@ -46,9 +46,10 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
 
         var ctx = Scene!.RenderContext;
 
-        material ??= ctx.GetPresetMaterialGroup(EditorPresetMaterials.Wireframe);
-        foreach (var mat in material.Materials) {
-            mat.SetParameter("_InnerColor", Color.FromVector4(Colors.RequestSetColliders));
+        if (material == null) {
+            material = new MaterialGroup(ctx
+                .GetMaterialBuilder(BuiltInMaterials.Wireframe, "rcol")
+                .Color("_InnerColor", Color.FromVector4(Colors.RequestSetColliders)));
         }
 
         foreach (var group in rcols.OfType<RszInstance>()) {
@@ -74,10 +75,6 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
             Scene!.RenderContext.UnloadMesh(mesh);
         }
         Meshes.Clear();
-        if (material != null) {
-            Scene!.RenderContext.UnloadMaterialGroup(material);
-            material = null;
-        }
     }
 
     internal override unsafe void Render(RenderContext context)

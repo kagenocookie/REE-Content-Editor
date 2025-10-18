@@ -189,7 +189,7 @@ public sealed class MaterialParameter<TValue>(TValue value, int location) // whe
     public override string ToString() => $"{name} = {Value}";
 }
 
-public record MaterialBlendMode(
+public record struct MaterialBlendMode(
     bool Blend = false,
     BlendingFactor BlendModeSrc = BlendingFactor.SrcAlpha,
     BlendingFactor BlendModeDest = BlendingFactor.DstAlpha

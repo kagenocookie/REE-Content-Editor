@@ -36,10 +36,6 @@ public class Colliders(GameObject gameObject, RszInstance data) : RenderableComp
     {
         base.OnDeactivate();
         UnloadMeshes();
-        if (material != null) {
-            Scene?.RenderContext.UnloadMaterialGroup(material);
-            material = null;
-        }
     }
 
     public void UpdateColliderMeshes()
@@ -69,7 +65,12 @@ public class Colliders(GameObject gameObject, RszInstance data) : RenderableComp
         while (meshes.Count <= colliderIndex) meshes.Add(null);
         var meshHandle = meshes[colliderIndex];
         var curMesh = meshHandle?.GetMesh(0);
-        material ??= ctx.GetPresetMaterialGroup(EditorPresetMaterials.Wireframe);
+        if (material == null) {
+            material = new MaterialGroup(
+                ctx.GetMaterialBuilder(BuiltInMaterials.FilledWireframe, "filled_wire"),
+                ctx.GetMaterialBuilder(BuiltInMaterials.Wireframe, "wire")
+            );
+        }
 
         switch (shape.RszClass.name) {
             case "via.physics.SphereShape":

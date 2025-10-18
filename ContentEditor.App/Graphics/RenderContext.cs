@@ -174,17 +174,6 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
         }
     }
 
-    public MaterialGroup GetPresetMaterialGroup(EditorPresetMaterials preset)
-    {
-        var mats = GetPresetMaterials(preset);
-        var grp = new MaterialGroup();
-        foreach (var mat in mats) {
-            grp.Add(mat);
-        }
-        MaterialRefs.AddUnnamed(grp);
-        return grp;
-    }
-
     public void SetMeshMaterial(MeshHandle mesh, MaterialGroup material)
     {
         var handle = mesh.Handle;
