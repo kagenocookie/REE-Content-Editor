@@ -63,6 +63,7 @@ public static class Extensions
     public static Vector2 ToVec2(this Vector4 vec) => new Vector2(vec.X, vec.Y);
     public static Vector3 ToVec3(this Vector4 vec) => new Vector3(vec.X, vec.Y, vec.Z);
     public static Vector4 ToVec4(this Vector2 vec) => new Vector4(vec.X, vec.Y, 0, 0);
+    public static Vector3 ToVec3(this Vector2 vec) => new Vector3(vec.X, vec.Y, 0);
     public static Vector4 ToVec4(this Vector3 vec) => new Vector4(vec.X, vec.Y, vec.Z, 0);
     public static Quaternion ToQuaternion(this Vector4 vec) => Unsafe.As<Vector4, Quaternion>(ref vec);
     public static Vector4 ToVector4(this Quaternion vec) => Unsafe.As<Quaternion, Vector4>(ref vec);

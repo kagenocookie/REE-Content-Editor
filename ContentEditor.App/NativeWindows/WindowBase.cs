@@ -52,7 +52,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     private static Thread mainThread = Thread.CurrentThread;
 
     protected bool _disableIntroGuide;
-    protected static WindowBase? _currentRenderingWindow;
+    protected static WindowBase? _currentWindow;
     protected UIContext context;
 
     protected event Action? Ready;
@@ -338,11 +338,12 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     private void OnUpdate(double delta)
     {
         _controller.MakeCurrent();
-        Update((float)delta);
+        _currentWindow = this;
 
         var io = ImGui.GetIO();
         var prevPos = io.MousePos;
         _controller.Update((float)delta);
+        Update((float)delta);
         var newPos = io.MousePos;
         // hack: prevent imgui from receiving mouse position when the current window is not actually hovered
         // (e.g. when there's another window in front of us)
@@ -352,6 +353,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
                 io.MousePos = new Vector2(-1, -1);
             }
         }
+        _currentWindow = null;
     }
 
     public void HandleRenderActions()
@@ -367,7 +369,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     private void OnRender(double delta)
     {
-        _currentRenderingWindow = this;
+        _currentWindow = this;
         HandleRenderActions();
         _gl.Enable(Silk.NET.OpenGL.EnableCap.DepthTest);
         _gl.ClearColor(System.Drawing.Color.FromArgb(ClearColor.BGRA));
@@ -376,12 +378,14 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         Render((float)delta);
         OnIMGUI();
         if (AppConfig.Instance.ShowFps) {
-            var fpsText = (1 / delta).ToString("0.0", CultureInfo.InvariantCulture);
+            var fps = (1 / delta).ToString("0.0", CultureInfo.InvariantCulture);
+            var frametime = (delta * 1000).ToString("0.00", CultureInfo.InvariantCulture) + "ms";
+            var fpsText = fps + " / " + frametime;
             var fpsSize = ImGui.CalcTextSize(fpsText);
             ImGui.GetForegroundDrawList().AddText(new Vector2(Size.X - fpsSize.X, 0) - ImGui.GetStyle().FramePadding, 0xffffffff, fpsText);
         }
         _controller.Render();
-        _currentRenderingWindow = null;
+        _currentWindow = null;
     }
 
     protected virtual void Render(float deltaTime)
@@ -615,13 +619,13 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
                 throw new Exception("Cannot override current window outside of main thread!");
             }
 
-            backup = _currentRenderingWindow;
-            _currentRenderingWindow = window;
+            backup = _currentWindow;
+            _currentWindow = window;
         }
 
         public void Dispose()
         {
-            _currentRenderingWindow = backup;
+            _currentWindow = backup;
         }
     }
 }

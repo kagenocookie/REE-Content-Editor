@@ -74,8 +74,8 @@ public class SceneController
             dragMode = DragMode.Rotation;
 
             var fwd = Scene.ActiveCamera.Transform.LocalForward;
-            camYaw = MathF.Atan2(fwd.X, fwd.Z);
-            camPitch = -MathF.Asin(Math.Clamp(fwd.Y, -1f, 1f));
+            camYaw = MathF.Atan2(-fwd.X, -fwd.Z);
+            camPitch = MathF.Asin(Math.Clamp(fwd.Y, -1f, 1f));
         }
     }
 
@@ -122,7 +122,7 @@ public class SceneController
         float wheel = ImGui.GetIO().MouseWheel;
         if (Math.Abs(wheel) > float.Epsilon) {
             if (Scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective) {
-                var zoom = Scene.Camera.GameObject.Transform.LocalForward * (wheel * ZoomSpeed) * -1.0f;
+                var zoom = Scene.Camera.GameObject.Transform.LocalForward * (wheel * ZoomSpeed);
                 Scene.Camera.GameObject.Transform.LocalPosition += zoom;
             } else {
                 float ortho = Scene.ActiveCamera.OrthoSize;

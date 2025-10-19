@@ -205,6 +205,11 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         rctx.AfterRender();
     }
 
+    public void RenderUI()
+    {
+        gizmoManager?.RenderUI();
+    }
+
     public void SetActive(bool active)
     {
         if (active == IsActive) return;

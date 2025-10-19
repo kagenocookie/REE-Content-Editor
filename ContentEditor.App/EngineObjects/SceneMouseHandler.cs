@@ -18,6 +18,16 @@ public class SceneMouseHandler
     public Scene? scene;
     public Vector2 viewportOffset;
 
+    public Vector2 MouseViewportPosition { get; private set; }
+    public Vector2 MouseScreenPosition => MouseViewportPosition + viewportOffset;
+
+    public bool IsLeftDown => IsDown(ImGuiMouseButton.Left);
+    public bool IsRightDown => IsDown(ImGuiMouseButton.Right);
+    public bool IsMiddleDown => IsDown(ImGuiMouseButton.Middle);
+
+    public bool IsDragging => isDragging;
+    public Vector2 DragDelta => _dragDelta;
+
     private DateTime lastDownLB;
     private DateTime lastDownRB;
     private DateTime lastDownMB;
@@ -40,9 +50,6 @@ public class SceneMouseHandler
     private Vector2 _dragDelta;
     private Vector2 _dragStartPos;
     private ImGuiMouseButton dragStartButton;
-
-    public bool IsDragging => isDragging;
-    public Vector2 DragDelta => _dragDelta;
 
     private Vector2 lastMousePos = new Vector2(float.MaxValue);
 
@@ -177,6 +184,7 @@ public class SceneMouseHandler
     public void HandleMouseMove(IMouse mouse, Vector2 position)
     {
         position -= viewportOffset;
+        MouseViewportPosition = position;
         var delta = position - lastMousePos;
         lastMousePos = position;
         if (AnyMouseDown) {

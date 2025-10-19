@@ -1,4 +1,5 @@
 using System.Numerics;
+using ContentEditor.Core;
 using ReeLib;
 using ReeLib.via;
 using Silk.NET.Maths;
@@ -64,6 +65,107 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
 
         Transform.LocalPosition = targetCenter + offset;
         Transform.LookAt(targetCenter);
+    }
+
+    /// <summary>
+    /// Transforms a world space position into viewport screen space. Returns Vector2(float.MaxValue) if the point is behind the camera or outside of the viewport when limitToViewport == true.
+    /// </summary>
+    public Vector2 WorldToViewportXYPosition(Vector3 worldPosition, bool limitToViewport = true)
+    {
+        if (Scene == null) return new();
+
+        var size = Scene!.RenderContext.RenderOutputSize;
+        var vec = Project(ViewProjectionMatrix, size, worldPosition);
+        if (limitToViewport) {
+            if (vec.W < 0) return new Vector2(float.MaxValue);
+            if (vec.X < 0 || vec.Y < 0 || vec.X > size.X || vec.Y > size.Y) return new Vector2(float.MaxValue);
+        }
+        return new Vector2(vec.X, vec.Y);
+    }
+
+    /// <summary>
+    /// Transforms a world space position into viewport screen space. Returns Vector2(float.MaxValue) if the point is behind the camera or outside of the viewport when limitToViewport == true.
+    /// </summary>
+    public Vector2 WorldToScreenPosition(Vector3 worldPosition, bool limitToViewport = true)
+    {
+        if (Scene == null) return new();
+
+        var viewportPosition = WorldToViewportXYPosition(worldPosition, limitToViewport);
+        var offset = Scene.MouseHandler?.viewportOffset ?? default;
+        return viewportPosition + offset;
+    }
+
+    /// <summary>
+    /// Transforms a screen space position into world space.
+    /// </summary>
+    public Vector3 ScreenToWorldPosition(Vector3 screenPos)
+        => ViewportToWorldPosition(screenPos - (Scene?.MouseHandler?.viewportOffset.ToVec3() ?? new()));
+
+    /// <summary>
+    /// Transforms a screen space position into world space.
+    /// </summary>
+    public Vector3 ViewportToWorldPosition(Vector3 viewportPos)
+    {
+        if (Scene == null) return new();
+
+        var size = Scene.RenderContext.RenderOutputSize;
+        var vec = Unproject(ViewProjectionMatrix, size, viewportPos);
+        return vec;
+    }
+
+    /// <summary>
+    /// Transforms a screen space position into world space, ensuring that the resulting value is at the same distance from the screen as referencePosition.
+    /// </summary>
+    public Vector3 ScreenToWorldPositionReproject(Vector2 screenPos, Vector3 referencePosition)
+    {
+        if (Scene == null) return new();
+
+        var offset = (Scene.MouseHandler?.viewportOffset ?? new());
+        var viewportPos = screenPos - offset;
+        var size = Scene.RenderContext.RenderOutputSize;
+        // recalculate the reference Z / depth so we get accurate distance
+        var orgDepth = Project(ViewProjectionMatrix, size, referencePosition).Z;
+        var pos = Unproject(ViewProjectionMatrix, size, new Vector3(viewportPos.X, viewportPos.Y, orgDepth));
+        return pos;
+    }
+
+    private static Vector4 Project(in Matrix4X4<float> viewProjection, Vector2 viewportSize, Vector3 position)
+    {
+        Vector4 vec = new Vector4(position, 1);
+        vec = Vector4.Transform(vec, viewProjection.ToSystem());
+
+        if (vec.W > float.Epsilon || vec.W < float.Epsilon)
+        {
+            vec.X /= vec.W;
+            vec.Y /= vec.W;
+            vec.Z /= vec.W;
+        }
+        return new Vector4(
+            (vec.X + 1) *  0.5f * viewportSize.X,
+            (vec.Y - 1) * -0.5f * viewportSize.Y,
+            vec.Z,
+            vec.W
+        );
+    }
+
+    private static Vector3 Unproject(in Matrix4X4<float> viewProjection, Vector2 viewportSize, Vector3 position)
+    {
+        Vector4 vec;
+        vec.X =  2.0f * position.X / (float)viewportSize.X - 1;
+        vec.Y = -2.0f * position.Y / (float)viewportSize.Y + 1;
+        vec.Z = position.Z;
+        vec.W = 1.0f;
+
+        Matrix4X4.Invert(viewProjection, out var inverted);
+        vec = Vector4.Transform(vec, inverted.ToSystem());
+
+        if (vec.W > float.Epsilon || vec.W < float.Epsilon)
+        {
+            vec.X /= vec.W;
+            vec.Y /= vec.W;
+            vec.Z /= vec.W;
+        }
+        return vec.ToVec3();
     }
 
     public void Update(Vector2 size)

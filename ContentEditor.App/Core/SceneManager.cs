@@ -94,10 +94,14 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
 
     public void Render(float deltaTime)
     {
-        // should we sort scenes with render buffers first and then the main viewport scenes to minimize viewport switching?
         foreach (var scene in rootScenes) {
+            if (!scene.IsActive) continue;
+
             scene.OwnRenderContext.ViewportSize = Window.Size;
             scene.Render(deltaTime);
+            if (scene.OwnRenderContext.RenderTargetTextureHandle == 0) {
+                scene.RenderUI();
+            }
         }
     }
 

@@ -50,7 +50,7 @@ Some files may not fully work for other RE ENGINE games.
 | .tex, .dds  | view, convert  | Convert to TGA/PNG
 | .mesh     | ☑️ 3D & data display | FBX & GLTF export/import<br>Format conversion across games
 | .motlist  | ☑️ read/write | Animation preview<br>GLTF import/export<br>Mot copy/paste/retargeting ([info](https://github.com/kagenocookie/REE-Content-Editor/wiki/Animation-tools))
-| .rcol     | read/write | 3D shape preview
+| .rcol     | read/write | 3D shape preview and editing
 | .motbank  | read/write
 | .mcol     | ☑️ read/write | .glb import/export for collision mesh
 | .ainvm    | raw data read
@@ -60,6 +60,8 @@ Some files may not fully work for other RE ENGINE games.
 | many other misc files | raw data read/write
 
 </div>
+
+*File types marked with ☑️ are effectively feature complete.*
 
 ## Custom entity support
 Accessible under the Windows > Entities menu option for supported games, these are streamlined editors for game-specific data. They can be used to more easily modify or add custom items and other game content related objects.

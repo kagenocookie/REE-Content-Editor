@@ -26,7 +26,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     /// <summary>
     /// Get the currently rendering window. Should never be null during the ImGui render phase, likely to be null in multithreaded contexts.
     /// </summary>
-    public static EditorWindow? CurrentWindow => _currentRenderingWindow as EditorWindow;
+    public static EditorWindow? CurrentWindow => _currentWindow as EditorWindow;
 
     public ContentWorkspace Workspace => workspace!;
 

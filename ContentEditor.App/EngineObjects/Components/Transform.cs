@@ -46,13 +46,16 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
         }
     }
 
+    public Vector3 LocalForward => Vector3.Transform(-Vector3.UnitZ, LocalRotation);
+
     public Vector3 Position => WorldTransform.Row4.ToSystem().ToVec3();
+    public Quaternion Rotation => Quaternion.CreateFromRotationMatrix(WorldTransform.ToSystem());
+
+    public Vector3 Forward => Vector3.Normalize(Vector3.Transform(-Vector3.UnitZ, Rotation));
 
     public Vector3D<float> SilkLocalPosition => ((Vector3)Data.Values[0]).ToGeneric();
     public Quaternion<float> SilkLocalRotation => ((Quaternion)Data.Values[1]).ToGeneric();
     public Vector3D<float> SilkLocalScale => ((Vector3)Data.Values[2]).ToGeneric();
-
-    public Vector3 LocalForward => Vector3.Transform(Vector3.UnitZ, LocalRotation);
 
     private Matrix4X4<float> _cachedWorldTransform = Matrix4X4<float>.Identity;
     private bool _worldTransformValid;

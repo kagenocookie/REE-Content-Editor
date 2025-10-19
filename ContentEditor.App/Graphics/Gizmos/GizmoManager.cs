@@ -13,8 +13,6 @@ public sealed class GizmoManager(Scene scene) : IDisposable
         UpdateActiveGizmos();
         foreach (var gizmo in currentGizmos) {
             gizmo.UpdateMesh();
-            // TODO handle some sort of shape ID for interactions
-            // TODO handle shape interactions
         }
     }
 
@@ -71,6 +69,13 @@ public sealed class GizmoManager(Scene scene) : IDisposable
                     ogl.Batch.Gizmo.Add(new GizmoRenderBatchItem(shape.material, shape.mesh, transform, shape.obscuredMaterial));
                 }
             }
+        }
+    }
+
+    public void RenderUI()
+    {
+        foreach (var gizmo in currentGizmos) {
+            gizmo.DrawImGui();
         }
     }
 

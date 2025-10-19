@@ -39,6 +39,11 @@ public class GizmoContainer(Scene scene, IGizmoComponent component) : IDisposabl
         }
     }
 
+    public void DrawImGui()
+    {
+        state.FinishFrame();
+    }
+
     public void Dispose()
     {
         foreach (var shape in shapeBuilders) {

@@ -171,6 +171,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
         scene.Camera.LookAt(previewGameobject, true);
     }
+
     public void OnIMGUI()
     {
         if (scene == null) {
@@ -180,6 +181,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             scene.Controller.Scene = scene;
             scene.MouseHandler = new SceneMouseHandler();
             scene.MouseHandler.scene = scene;
+            scene.ActiveCamera.GameObject.MoveToScene(scene);
         }
 
         MeshComponent meshComponent;
@@ -223,6 +225,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             ImGui.SetCursorPos(embeddedMenuPos.Value);
             ShowEmbeddedMenu(meshComponent);
         }
+        scene.RenderUI();
         ImGui.SetCursorPos(c);
         ImGui.InvisibleButton("##image", expectedSize, ImGuiButtonFlags.MouseButtonLeft | ImGuiButtonFlags.MouseButtonRight);
         // need to store the click/hover events for after so we can handle clicks on the empty area below the info window same as a mesh image click event
@@ -260,8 +263,11 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         } else if (isDragging && !ImGui.IsMouseDown(ImGuiMouseButton.Left) && !ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
             isDragging = false;
         }
+
         if (isDragging || hoveredMesh) {
             AppImguiHelpers.RedirectMouseInputToScene(scene, hoveredMesh, cc);
+        } else if (Scene?.MouseHandler != null) {
+            Scene.MouseHandler.viewportOffset = cc;
         }
     }
 
