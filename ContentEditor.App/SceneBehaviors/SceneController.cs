@@ -92,7 +92,7 @@ public class SceneController
     {
         if (dragMode == DragMode.Rotation) {
             if (buttons == MouseButtonFlags.Right) {
-                var multiplier = Time.Delta * 0.25f * RotateSpeed;
+                var multiplier = 0.002f * RotateSpeed;
                 camYaw = camYaw - delta.X * multiplier;
                 camPitch = Math.Clamp(camPitch - delta.Y * multiplier, -80f * MathF.PI / 180, 80f * MathF.PI / 180);
                 Scene.ActiveCamera.GameObject.Transform.LocalRotation = Quaternion<float>.CreateFromYawPitchRoll(camYaw, camPitch, 0).ToSystem();

@@ -16,6 +16,7 @@ public class SceneMouseHandler
     public event Action<Vector2>? StopDragging;
 
     public Scene? scene;
+    public Vector2 viewportOffset;
 
     private DateTime lastDownLB;
     private DateTime lastDownRB;
@@ -49,10 +50,6 @@ public class SceneMouseHandler
     private const float ClickMaxDistance = 4f;
 
     private bool AnyMouseDown => downLB || downRB || downMB;
-
-
-    private float zoomSpeed = 0.1f;
-
 
     private ref DateTime DownTime(ImGuiMouseButton button)
     {
@@ -111,39 +108,41 @@ public class SceneMouseHandler
 
     private MouseButtonFlags DownFlags => (downLB ? MouseButtonFlags.Left : 0) | (downRB ? MouseButtonFlags.Right : 0) | (downMB ? MouseButtonFlags.Middle : 0);
 
-    public void UpdateMouseDown(IMouse mouse, bool leftDown, bool rightDown, bool middleDown, Vector2 position, Vector2 relativePosition)
+    public void UpdateMouseDown(IMouse mouse, bool leftDown, bool rightDown, bool middleDown, bool allowDown, Vector2 mouseScreenPos, Vector2 viewportOffset)
     {
+        this.viewportOffset = viewportOffset;
         if (leftDown != downLB) {
-            if (leftDown) {
-                HandleMouseDown(ImGuiMouseButton.Left, relativePosition);
-            } else {
-                HandleMouseUp(mouse, ImGuiMouseButton.Left, relativePosition);
+            if (!leftDown) {
+                HandleMouseUp(mouse, ImGuiMouseButton.Left, mouseScreenPos);
+            } else if (allowDown) {
+                HandleMouseDown(ImGuiMouseButton.Left, mouseScreenPos);
             }
         }
 
         if (rightDown != downRB) {
-            if (rightDown) {
-                HandleMouseDown(ImGuiMouseButton.Right, relativePosition);
-            } else {
-                HandleMouseUp(mouse, ImGuiMouseButton.Right, relativePosition);
+            if (!rightDown) {
+                HandleMouseUp(mouse, ImGuiMouseButton.Right, mouseScreenPos);
+            } else if (allowDown) {
+                HandleMouseDown(ImGuiMouseButton.Right, mouseScreenPos);
             }
         }
 
         if (middleDown != downMB) {
             if (middleDown) {
-                HandleMouseDown(ImGuiMouseButton.Middle, relativePosition);
-            } else {
-                HandleMouseUp(mouse, ImGuiMouseButton.Middle, relativePosition);
+                HandleMouseUp(mouse, ImGuiMouseButton.Middle, mouseScreenPos);
+            } else if (allowDown) {
+                HandleMouseDown(ImGuiMouseButton.Middle, mouseScreenPos);
             }
         }
 
-        if (lastMousePos != relativePosition) {
-            HandleMouseMove(mouse, position);
+        if (lastMousePos != mouseScreenPos - viewportOffset) {
+            HandleMouseMove(mouse, mouseScreenPos);
         }
     }
 
     public void HandleMouseDown(ImGuiMouseButton button, Vector2 position)
     {
+        position -= viewportOffset;
         IsDown(button) = true;
         DownTime(button) = DateTime.Now;
         DownPosition(button) = position;
@@ -152,6 +151,7 @@ public class SceneMouseHandler
 
     public void HandleMouseUp(IMouse mouse, ImGuiMouseButton button, Vector2 position)
     {
+        position -= viewportOffset;
         var lastDownPos = DownPosition(button) ?? new Vector2(float.MinValue);
 
         IsDown(button) = false;
@@ -170,12 +170,13 @@ public class SceneMouseHandler
         if (!AnyMouseDown && isDragging) {
             isDragging = false;
             StopDragging?.Invoke(position);
-            scene?.Controller?.OnMouseDragEnd(mouse, dragStartButton, position, _dragStartPos);
+            scene?.Controller?.OnMouseDragEnd(mouse, dragStartButton, position, _dragStartPos + viewportOffset);
         }
     }
 
     public void HandleMouseMove(IMouse mouse, Vector2 position)
     {
+        position -= viewportOffset;
         var delta = position - lastMousePos;
         lastMousePos = position;
         if (AnyMouseDown) {
@@ -193,26 +194,21 @@ public class SceneMouseHandler
                 }
                 isDragging = true;
                 Dragging?.Invoke(position);
-                scene?.Controller?.OnMouseDrag(DownFlags, position, delta);
+                scene?.Controller?.OnMouseDrag(DownFlags, position, _dragDelta);
             }
         }
     }
 
-    public void Update(float deltaTime)
+    public void Update(IMouse mouse)
     {
-        if (scene == null) return;
-
-        float wheel = ImGui.GetIO().MouseWheel;
-        if (Math.Abs(wheel) > float.Epsilon) {
-            if (scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective) {
-                var zoom = scene.Camera.GameObject.Transform.LocalForward * (wheel * zoomSpeed) * -1.0f;
-                scene.Camera.GameObject.Transform.LocalPosition += zoom;
-            } else {
-                float ortho = scene.ActiveCamera.OrthoSize;
-                ortho *= (1.0f - wheel * zoomSpeed);
-                ortho = Math.Clamp(ortho, 0.01f, 100.0f);
-                scene.ActiveCamera.OrthoSize = ortho;
-            }
+        if (downLB && !mouse.IsButtonPressed(MouseButton.Left)) {
+            HandleMouseUp(mouse, ImGuiMouseButton.Left, lastMousePos);
+        }
+        if (downRB && !mouse.IsButtonPressed(MouseButton.Right)) {
+            HandleMouseUp(mouse, ImGuiMouseButton.Right, lastMousePos);
+        }
+        if (downMB && !mouse.IsButtonPressed(MouseButton.Middle)) {
+            HandleMouseUp(mouse, ImGuiMouseButton.Middle, lastMousePos);
         }
     }
 }
