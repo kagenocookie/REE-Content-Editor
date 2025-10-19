@@ -177,7 +177,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         var childAabb = AABB.MaxMin;
         foreach (var child in Children) {
             var aabb = child.GetWorldSpaceBounds();
-            if (aabb.minpos == Vector3.Zero && aabb.maxpos == Vector3.Zero) continue;
+            if (aabb.IsEmpty || aabb.IsInvalid) continue;
 
             childAabb = childAabb.Extend(aabb);
         }

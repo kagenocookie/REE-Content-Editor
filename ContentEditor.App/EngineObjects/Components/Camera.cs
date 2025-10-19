@@ -38,12 +38,20 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
     }
     public void LookAt(GameObject target, bool resetPosition)
     {
-        LookAt(target.GetWorldSpaceBounds(), resetPosition);
+        var bounds = target.GetWorldSpaceBounds();
+        if (bounds.IsInvalid) {
+            bounds = new AABB(target.Transform.Position, target.Transform.Position + new Vector3(0.5f));
+        }
+        LookAt(bounds, resetPosition);
     }
 
     public void LookAt(AABB bounds, bool resetPosition)
     {
         Vector3 offset;
+        if (bounds.IsInvalid) {
+            Logger.Error("Attempted to look at invalid object, cancelling");
+            return;
+        }
         var targetCenter = bounds.Center;
         if (bounds.IsEmpty) {
             offset = new Vector3(3, 3, 3);
