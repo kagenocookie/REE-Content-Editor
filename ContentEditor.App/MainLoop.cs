@@ -4,7 +4,7 @@ using ContentEditor.App.Windowing;
 
 namespace ContentEditor.App;
 
-internal sealed class MainLoop : IDisposable
+internal sealed partial class MainLoop : IDisposable
 {
     private readonly List<WindowBase> windows = new();
 
@@ -84,7 +84,7 @@ internal sealed class MainLoop : IDisposable
         return 0;
     }
 
-    private sealed class FpsLimiter
+    private sealed partial class FpsLimiter
     {
         private Stopwatch stopwatch = new();
         private int fpsLimit;
@@ -92,6 +92,19 @@ internal sealed class MainLoop : IDisposable
         private static readonly double ticksPerSecond = 1 / (double)Stopwatch.Frequency;
 
         private const double sleepPrecisionLeeway = 0.001;
+
+#if WINDOWS
+        [System.Runtime.InteropServices.LibraryImport("Winmm.DLL")]
+        private static partial int timeBeginPeriod(uint period);
+
+        static FpsLimiter()
+        {
+            System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(
+                        // ensure we get accurate enough sleep timings for fps limits
+                        // we can just keep it active until the process ends
+                        timeBeginPeriod(1));
+        }
+#endif
 
         public float StartFrame()
         {
