@@ -13,7 +13,7 @@ public class Colliders(GameObject gameObject, RszInstance data) : Component(game
     private IEnumerable<RszInstance> EnumerableColliders => CollidersList.OfType<RszInstance>();
 
     private Material wireMaterial = null!;
-    private Material fillMaterial = null!;
+    private Material lineMaterial = null!;
     private readonly List<MeshHandle?> meshes = new();
 
     public bool HasMesh => meshes.Count != 0;
@@ -36,8 +36,11 @@ public class Colliders(GameObject gameObject, RszInstance data) : Component(game
     {
         if (!GameObject.ShouldDraw) return null;
         if (wireMaterial == null) {
-            fillMaterial = Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.FilledWireframe, "filled_wire");
-            wireMaterial = Scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.Wireframe, "wire");
+            wireMaterial = Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.Wireframe, "wire");
+            lineMaterial = Scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "lines")
+                .Color("_MainColor", Colors.Colliders with { W = 0.6f })
+                .Float("_FadeMaxDistance", 400)
+                .Blend();
         }
         ref readonly var transform = ref Transform.WorldTransform;
         foreach (var collider in CollidersList.OfType<RszInstance>()) {
@@ -47,20 +50,20 @@ public class Colliders(GameObject gameObject, RszInstance data) : Component(game
             switch (shape.RszClass.name) {
                 case "via.physics.SphereShape":
                 case "via.physics.ContinuousSphereShape":
-                    gizmo.Shape(0, fillMaterial).Add(RszFieldCache.SphereShape.Sphere.Get(shape));
+                    gizmo.Shape(0, lineMaterial).Add(RszFieldCache.SphereShape.Sphere.Get(shape));
                     break;
                 case "via.physics.AabbShape":
-                    gizmo.Shape(0, fillMaterial).Add(RszFieldCache.AabbShape.Aabb.Get(shape));
+                    gizmo.Shape(0, lineMaterial).Add(RszFieldCache.AabbShape.Aabb.Get(shape));
                     break;
                 case "via.physics.BoxShape":
-                    gizmo.Shape(0, fillMaterial).Add(RszFieldCache.BoxShape.Box.Get(shape));
+                    gizmo.Shape(0, lineMaterial).Add(RszFieldCache.BoxShape.Box.Get(shape));
                     break;
                 case "via.physics.CapsuleShape":
                 case "via.physics.ContinuousCapsuleShape":
-                    gizmo.Shape(0, fillMaterial).Add(RszFieldCache.CapsuleShape.Capsule.Get(shape));
+                    gizmo.Shape(0, lineMaterial).Add(RszFieldCache.CapsuleShape.Capsule.Get(shape));
                     break;
                 case "via.physics.CylinderShape":
-                    gizmo.Shape(0, fillMaterial).Add(RszFieldCache.CylinderShape.Cylinder.Get(shape));
+                    gizmo.Shape(0, lineMaterial).Add(RszFieldCache.CylinderShape.Cylinder.Get(shape));
                     break;
                 case "via.physics.MeshShape": {
                         var mcolPath = RszFieldCache.MeshShape.Mesh.Get(shape);

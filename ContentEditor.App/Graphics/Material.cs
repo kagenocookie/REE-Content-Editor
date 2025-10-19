@@ -174,6 +174,7 @@ public class Material
         mat.BlendMode = new MaterialBlendMode(BlendMode.Blend, BlendMode.BlendModeSrc, BlendMode.BlendModeDest);
         mat.DisableDepth = DisableDepth;
         mat.name = name ?? this.name;
+        mat.Hash = Hash;
         return mat;
     }
 

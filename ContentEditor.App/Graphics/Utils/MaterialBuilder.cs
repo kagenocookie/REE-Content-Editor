@@ -1,3 +1,4 @@
+using System.Numerics;
 using ReeLib.via;
 using Silk.NET.OpenGL;
 
@@ -23,6 +24,18 @@ public struct MaterialBuilder(RenderContext context)
     public MaterialBuilder Color(string propertyName, Color color)
     {
         mat!.SetParameter(propertyName, color);
+        return this;
+    }
+
+    public MaterialBuilder Color(string propertyName, Vector4 color)
+    {
+        mat!.SetParameter(propertyName, ReeLib.via.Color.FromVector4(color));
+        return this;
+    }
+
+    public MaterialBuilder Float(string propertyName, float value)
+    {
+        mat!.SetParameter(propertyName, value);
         return this;
     }
 

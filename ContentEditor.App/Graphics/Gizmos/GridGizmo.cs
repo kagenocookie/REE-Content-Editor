@@ -19,20 +19,22 @@ public class GridGizmo : Gizmo
     {
         var mesh = context.CreateBlankMesh();
 
+        const int lineCount = 100;
+        const float gridSpan = lineCount * GridCellSpacing;
+
         var matGroup = new MaterialGroup();
         var mat = context.GetMaterialBuilder(BuiltInMaterials.MonoColor, "gray")
-            .Color("_MainColor", new Color(100, 100, 100, 64))
+            .Color("_MainColor", new Color(100, 100, 100, 100))
+            .Float("_FadeMaxDistance", gridSpan)
             .Blend();
         matGroup.Add(mat);
 
-        var lineCount = 100;
-        var gridSpan = lineCount * GridCellSpacing;
         var lines = new List<Vector3>((lineCount + 1) * 2 * 2);
-        for (int x = -lineCount; x <= lineCount; x++) {
+        for (int x = -lineCount; x < lineCount; x++) {
             lines.Add(new Vector3(x * GridCellSpacing, 0, -gridSpan));
             lines.Add(new Vector3(x * GridCellSpacing, 0, gridSpan));
         }
-        for (int z = -lineCount; z <= lineCount; z++) {
+        for (int z = -lineCount; z < lineCount; z++) {
             lines.Add(new Vector3(-gridSpan, 0, z * GridCellSpacing));
             lines.Add(new Vector3(gridSpan, 0, z * GridCellSpacing));
         }

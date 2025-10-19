@@ -6,21 +6,33 @@
 
 uniform mat4 uModel;
 
+out vec3 worldPos;
+
 void main()
 {
-    gl_Position = uProjectionView * uModel * vec4(vPos, 1.0);
+    vec4 wpos = (uModel * vec4(vPos, 1.0));
+    worldPos = wpos.xyz;
+    gl_Position = uProjectionView * wpos;
 }
 #endif
 
 #ifdef FRAGMENT_PROGRAM
 
+#include "includes/global.glsl";
+
 uniform vec4 _MainColor;
+uniform float _FadeMaxDistance;
+in vec3 worldPos;
 
 layout(location = 0) out vec4 FragColor;
 
 void main()
 {
-    FragColor = _MainColor;
+    float colorMult = 1.0;
+    if (_FadeMaxDistance < 1000000) {
+        colorMult = clamp(1 - length(uCameraPosition - worldPos) / _FadeMaxDistance, 0, 1);
+    }
+    FragColor = _MainColor * colorMult;
 }
 
 #endif

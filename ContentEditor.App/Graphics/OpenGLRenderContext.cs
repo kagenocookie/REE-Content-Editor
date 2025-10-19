@@ -1,8 +1,9 @@
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using ContentEditor.App.FileLoaders;
+using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
-using ReeLib.Common;
 using ReeLib.Mesh;
 using ReeLib.via;
 using Silk.NET.Maths;
@@ -90,6 +91,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         if (!builtInMaterials.TryGetValue((BuiltInMaterials.MonoColor, flags), out var material)) {
             material = new(GL, GetShader("Shaders/GLSL/unshaded-color.glsl", flags));
             material.SetParameter("_MainColor", new Color(255, 255, 255, 255));
+            material.SetParameter("_FadeMaxDistance", float.MaxValue);
             material.name = "color";
         }
         return material.Clone();
@@ -114,21 +116,31 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         if (_globalUniformBuffer == 0) {
             _globalUniformBuffer = GL.GenBuffer();
             GL.BindBuffer(BufferTargetARB.UniformBuffer, _globalUniformBuffer);
-            GL.BufferData(BufferTargetARB.UniformBuffer, (uint)sizeof(Matrix4X4<float>) * 3, null, BufferUsageARB.StaticDraw);
+            GL.BufferData(BufferTargetARB.UniformBuffer, (uint)(sizeof(Matrix4X4<float>) * 3 + sizeof(Vector3)), null, BufferUsageARB.StaticDraw);
             GL.BindBuffer(BufferTargetARB.UniformBuffer, 0);
         }
 
         GL.BindBuffer(BufferTargetARB.UniformBuffer, _globalUniformBuffer);
-        SetUniformBufferMatrix(0, sizeof(Matrix4X4<float>), ViewMatrix);
-        SetUniformBufferMatrix(sizeof(Matrix4X4<float>), sizeof(Matrix4X4<float>), ProjectionMatrix);
-        SetUniformBufferMatrix(sizeof(Matrix4X4<float>) * 2, sizeof(Matrix4X4<float>), ViewProjectionMatrix);
+        int offset = 0;
+        SetUniformBufferMatrix(ref offset, sizeof(Matrix4X4<float>), ViewMatrix);
+        SetUniformBufferMatrix(ref offset, sizeof(Matrix4X4<float>), ProjectionMatrix);
+        SetUniformBufferMatrix(ref offset, sizeof(Matrix4X4<float>), ViewProjectionMatrix);
+        Matrix4X4.Invert(ViewMatrix, out var viewInverted);
+        SetUniformBufferVec3(ref offset, sizeof(Vector3), viewInverted.Row4.ToSystem().ToVec3());
         GL.BindBufferBase(BufferTargetARB.UniformBuffer, 0, _globalUniformBuffer);
         GL.BindBuffer(BufferTargetARB.UniformBuffer, 0);
     }
 
-    private unsafe void SetUniformBufferMatrix(int offset, int size, Matrix4X4<float> value)
+    private unsafe void SetUniformBufferMatrix(ref int offset, int size, Matrix4X4<float> value)
     {
         GL.BufferSubData(BufferTargetARB.UniformBuffer, (nint)offset, (uint)size, (float*)&value);
+        offset += size;
+    }
+
+    private unsafe void SetUniformBufferVec3(ref int offset, int size, Vector3 vec)
+    {
+        GL.BufferSubData(BufferTargetARB.UniformBuffer, (nint)offset, (uint)size, (float*)&vec);
+        offset += size;
     }
 
     private Shader GetShader(string path, ShaderFlags flags)
