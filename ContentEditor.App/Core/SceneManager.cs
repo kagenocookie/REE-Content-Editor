@@ -1,4 +1,5 @@
 using ContentEditor.App.ImguiHandling;
+using ContentEditor.App.Windowing;
 using ContentEditor.Editor;
 using ContentPatcher;
 using ReeLib;
@@ -16,6 +17,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
     public IEnumerable<Scene> RootMasterScenes => rootScenes.Where(scene => scene.OwnRenderContext.RenderTargetTextureHandle == 0 && scene.ParentScene == null);
     public bool HasActiveMasterScene => RootMasterScenes.Where(sc => sc.IsActive).Any();
     public Scene? ActiveMasterScene => RootMasterScenes.FirstOrDefault(sc => sc.IsActive);
+    public IEnumerable<Scene> RootScenes => rootScenes;
 
     public Scene CreateScene(FileHandle sourceFile, bool render, Scene? parentScene = null, Folder? rootFolder = null)
     {
@@ -68,6 +70,26 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
         foreach (var scene in scenes) {
             scene.Update(deltaTime);
         }
+
+        foreach (var master in rootScenes) {
+            if (master.MouseHandler != null) {
+                if (master.IsActive) {
+                    master.MouseHandler.scene = master;
+                } else {
+                    master.MouseHandler.scene = null;
+                }
+            }
+
+            if (master.Controller != null) {
+                if (master.IsActive) {
+                    master.Controller.Scene = master;
+                    master.Controller.Update(deltaTime);
+                } else {
+                    master.Controller.Scene = null!;
+                }
+            }
+        }
+
     }
 
     public void Render(float deltaTime)

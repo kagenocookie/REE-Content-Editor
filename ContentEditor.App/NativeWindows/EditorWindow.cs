@@ -11,7 +11,6 @@ using ImGuiNET;
 using ReeLib;
 using ReeLib.Data;
 using ReeLib.Efx;
-using ReeLib.Tools;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 
@@ -41,24 +40,21 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
     private static bool runningRszInference;
 
-    private ActiveSceneBehavior sceneBehavior = new();
-    private ActiveSceneBehavior? ActiveSceneBehavior => SceneManager.HasActiveMasterScene ? sceneBehavior : null;
-
     /// <summary>
     /// True when the last input was on the main window content and not any imgui windows.
     /// </summary>
     private bool IsWindowContentFocused => isMouseDown || lastClickWasWindow;
 
-    private Vector2 firstMouseDownPosition;
-    private Vector2 lastLeftMouseDownPosition;
-    private Vector2 lastRightMouseDownPosition;
-    private Vector2 lastDragMousePosition;
-    private MouseButton firstMouseDownButton;
     private bool isDragging = false;
     private bool isMouseDown = false;
     private bool lastClickWasWindow = false;
 
     protected bool isBaseWindowFocused;
+
+    private bool HasUnsavedChanges => workspace?.ResourceManager.GetModifiedResourceFiles().Any() == true;
+
+    public IMouse LastMouse { get; private set; } = null!;
+    public IKeyboard LastKeyboard { get; private set; } = null!;
 
     internal EditorWindow(int id, ContentWorkspace? workspace = null) : base(id)
     {
@@ -111,11 +107,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
     protected override void Update(float deltaTime)
     {
+        LastKeyboard = _inputContext.Keyboards[0];
         SceneManager.Update(deltaTime);
-        sceneBehavior.Keyboard = _inputContext.Keyboards[0];
-        if (IsWindowContentFocused) {
-            ActiveSceneBehavior?.Update(deltaTime);
-        }
     }
 
     protected override void Render(float deltaTime)
@@ -154,18 +147,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     {
         mouse.DoubleClickTime = 400;
         mouse.MouseMove += (m, vec) => {
+            LastMouse = m;
             if (ImGui.GetIO().WantCaptureMouse) return;
             OnMouseMove(m, vec);
         };
-        mouse.Click += (m, btn, v) => {
-            if (ImGui.GetIO().WantCaptureMouse) return;
-            OnMouseClick(m, btn, v);
-        };
-        mouse.DoubleClick += (m, btn, v) => {
-            if (ImGui.GetIO().WantCaptureMouse) return;
-            OnMouseDoubleClick(m, btn, v);
-        };
         mouse.MouseDown += (m, btn) => {
+            LastMouse = m;
             isBaseWindowFocused = !ImGui.GetIO().WantCaptureMouse;
             if (!isBaseWindowFocused) {
                 lastClickWasWindow = false;
@@ -175,74 +162,41 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             OnMouseDown(m, btn, m.Position);
         };
         mouse.MouseUp += (m, btn) => {
-            if (ImGui.GetIO().WantCaptureMouse) return;
+            LastMouse = m;
             OnMouseUp(m, btn, m.Position);
         };
     }
 
-    protected virtual void OnMouseClick(IMouse mouse, Silk.NET.Input.MouseButton button, Vector2 position)
-    {
-    }
-
-    protected virtual void OnMouseDoubleClick(IMouse mouse, Silk.NET.Input.MouseButton button, Vector2 position)
-    {
-    }
-
     protected virtual void OnMouseDown(IMouse mouse, Silk.NET.Input.MouseButton button, Vector2 position)
     {
-        if (button == MouseButton.Left) {
-            lastLeftMouseDownPosition = position;
-            if (!isMouseDown) {
-                isMouseDown = true;
-                firstMouseDownButton = button;
-                firstMouseDownPosition = position;
-                lastDragMousePosition = position;
-            }
-        } else if (button == MouseButton.Right) {
-            lastRightMouseDownPosition = position;
-            if (!isMouseDown) {
-                isMouseDown = true;
-                firstMouseDownButton = button;
-                firstMouseDownPosition = position;
-                lastDragMousePosition = position;
-            }
+        if (button > MouseButton.Middle || button < MouseButton.Left) return;
+
+        foreach (var scene in SceneManager.RootMasterScenes) {
+            scene.MouseHandler ??= new();
+            scene.MouseHandler.scene = scene;
+            scene.MouseHandler.HandleMouseDown((ImGuiMouseButton)button, position);
         }
     }
 
     protected virtual void OnMouseUp(IMouse mouse, Silk.NET.Input.MouseButton button, Vector2 position)
     {
-        mouse.IsButtonPressed(MouseButton.Left);
-        if (!mouse.IsButtonPressed(MouseButton.Right) && !mouse.IsButtonPressed(MouseButton.Left)) {
-            isMouseDown = false;
-            OnStopMouseDrag(mouse);
-        }
-    }
+        if (button > MouseButton.Middle || button < MouseButton.Left) return;
+        foreach (var scene in SceneManager.RootScenes) {
+            var allowHandle = ImGui.GetIO().WantCaptureMouse == (scene.OwnRenderContext.RenderTargetTextureHandle != 0);
+            if (!allowHandle) continue;
 
-    protected virtual void OnStopMouseDrag(IMouse mouse)
-    {
-        isDragging = false;
-        var scene = SceneManager.ActiveMasterScene;
-        if (scene != null) {
-            ActiveSceneBehavior?.OnMouseDragEnd(mouse, firstMouseDownButton, mouse.Position, firstMouseDownPosition);
+            scene.MouseHandler ??= new();
+            scene.MouseHandler.scene = scene;
+            scene.MouseHandler.HandleMouseUp(LastMouse, (ImGuiMouseButton)button, position);
         }
     }
 
     protected virtual void OnMouseMove(IMouse mouse, Vector2 pos)
     {
-        // var scene = SceneManager.ActiveMasterScene;
-        if (isMouseDown) {
-            var delta = lastDragMousePosition - pos;
-            lastDragMousePosition = pos;
-            if (delta != Vector2.Zero && !isDragging) {
-                isDragging = true;
-                ActiveSceneBehavior?.OnMouseDragStart(mouse, firstMouseDownButton, pos);
-            }
-            if (isDragging) {
-                var left = mouse.IsButtonPressed(MouseButton.Left);
-                var right = mouse.IsButtonPressed(MouseButton.Right);
-                var mouseEnum = (left ? MouseButtonFlags.Left : 0) | (right ? MouseButtonFlags.Right : 0);
-                ActiveSceneBehavior?.OnMouseDrag(mouseEnum, pos, delta);
-            }
+        foreach (var scene in SceneManager.RootScenes) {
+            scene.MouseHandler ??= new();
+            scene.MouseHandler.scene = scene;
+            scene.MouseHandler.HandleMouseMove(LastMouse, pos);
         }
     }
 
@@ -413,8 +367,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         AddFileEditor(file);
     }
 
-    private bool HasUnsavedChanges => workspace?.ResourceManager.GetModifiedResourceFiles().Any() == true;
-
     protected void ShowMainMenuBar()
     {
         ImGui.BeginMainMenuBar();
@@ -557,12 +509,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     ImGui.Bullet();
                     if (ImGui.MenuItem(scene.Name)) {
                         SceneManager.ChangeMasterScene(null);
-                        sceneBehavior.Scene = null!;
                     }
                 } else {
                     if (ImGui.MenuItem(scene.Name)) {
                         SceneManager.ChangeMasterScene(scene);
-                        sceneBehavior.Scene = scene;
+                        scene.Controller ??= new();
+                        scene.Controller.Keyboard = _inputContext.Keyboards[0];
                     }
                 }
             }

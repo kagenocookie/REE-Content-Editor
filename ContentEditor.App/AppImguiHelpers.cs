@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Text.Json;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
@@ -107,5 +108,17 @@ public static class AppImguiHelpers
             }
             ImGui.EndPopup();
         }
+    }
+
+    public static void RedirectMouseInputToScene(Scene scene, bool isHovered, Vector2 viewportTopLeft)
+    {
+        if (scene.Controller == null || scene.MouseHandler == null) return;
+
+        var absPos = ImGui.GetMousePos();
+        var leftDown = ImGui.IsMouseDown(ImGuiMouseButton.Left);
+        var rightDown = ImGui.IsMouseDown(ImGuiMouseButton.Right);
+        var middleDown = ImGui.IsMouseDown(ImGuiMouseButton.Middle);
+
+        scene.MouseHandler.UpdateMouseDown(EditorWindow.CurrentWindow!.LastMouse, leftDown, rightDown, middleDown, isHovered, absPos, viewportTopLeft);
     }
 }

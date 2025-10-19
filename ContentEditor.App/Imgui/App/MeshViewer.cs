@@ -57,12 +57,6 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     protected UIContext context = null!;
 
     private bool isDragging;
-    private Vector2 lastDragPos;
-    private float moveSpeed = 25.0f;
-    private float moveSpeedMultiplier = 1.0f;
-    private float rotateSpeed = 2.0f;
-    private float zoomSpeed = 0.1f;
-    private float yaw, pitch;
     private const float pitchLimit = MathF.PI / 2 - 0.01f;
     private enum TextureMode
     {
@@ -181,6 +175,11 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     {
         if (scene == null) {
             scene = EditorWindow.CurrentWindow!.SceneManager.CreateScene(fileHandle, true);
+            scene.Controller = new SceneController();
+            scene.Controller.Keyboard = EditorWindow.CurrentWindow.LastKeyboard;
+            scene.Controller.Scene = scene;
+            scene.MouseHandler = new SceneMouseHandler();
+            scene.MouseHandler.scene = scene;
         }
 
         MeshComponent meshComponent;
@@ -218,6 +217,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         if (scene.RenderContext.RenderTargetTextureHandle == 0) return;
 
         var c = ImGui.GetCursorPos();
+        var cc = ImGui.GetCursorScreenPos();
         ImGui.Image((nint)scene.RenderContext.RenderTargetTextureHandle, expectedSize, new System.Numerics.Vector2(0, 1), new System.Numerics.Vector2(1, 0));
         if (embeddedMenuPos != null) {
             ImGui.SetCursorPos(embeddedMenuPos.Value);
@@ -256,66 +256,12 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         if (meshClick) {
             if (!isDragging) {
                 isDragging = true;
-                lastDragPos = ImGui.GetMousePos();
             }
         } else if (isDragging && !ImGui.IsMouseDown(ImGuiMouseButton.Left) && !ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
             isDragging = false;
         }
-
-        if (isDragging) {
-            var delta = ImGui.GetMousePos() - lastDragPos;
-            lastDragPos = ImGui.GetMousePos();
-            if (delta != Vector2.Zero) {
-                var moveDelta = new Vector2(delta.X / expectedSize.X, delta.Y / expectedSize.Y);
-                if (ImGui.IsMouseDown(ImGuiMouseButton.Left)) {
-                    moveSpeedMultiplier = ImGui.IsKeyDown(ImGuiKey.LeftShift) ? 10.0f : 1.0f;
-                    float cameraMoveSpeed = moveSpeed * moveSpeedMultiplier;
-                    if (ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
-                        scene.Camera.Transform.TranslateForwardAligned(new Vector3(moveDelta.X, 0, -moveDelta.Y) * cameraMoveSpeed * scene.RenderContext.DeltaTime);
-                    } else {
-                        scene.Camera.Transform.TranslateForwardAligned(new Vector3(-moveDelta.X, moveDelta.Y, 0) * cameraMoveSpeed * scene.RenderContext.DeltaTime);
-                    }
-                } else if (ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
-                    yaw += moveDelta.X * rotateSpeed;
-                    pitch += moveDelta.Y * rotateSpeed;
-                    if (scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective) {
-                        scene.Camera.Transform.LocalRotation = Quaternion<float>.CreateFromYawPitchRoll(yaw, pitch, 0).ToSystem();
-                    } else {
-                        pitch = Math.Clamp(pitch, -pitchLimit, pitchLimit);
-                        scene.Camera.Transform.LocalRotation = Quaternion<float>.CreateFromYawPitchRoll(yaw, pitch, 0).ToSystem();
-                    }
-                }
-            }
-
-            if (ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
-                var moveVec = Vector3.Zero;
-                if (ImGui.IsKeyDown(ImGuiKey.W)) moveVec.Z--;
-                if (ImGui.IsKeyDown(ImGuiKey.S)) moveVec.Z++;
-                if (ImGui.IsKeyDown(ImGuiKey.A)) moveVec.X--;
-                if (ImGui.IsKeyDown(ImGuiKey.D)) moveVec.X++;
-                if (ImGui.IsKeyDown(ImGuiKey.Q)) moveVec.Y--;
-                if (ImGui.IsKeyDown(ImGuiKey.E)) moveVec.Y++;
-
-                if (moveVec != Vector3.Zero) {
-                    var multiplier = Time.Delta * moveSpeed * (ImGui.IsKeyDown(ImGuiKey.LeftShift) ? 0.5f : 0.075f);
-                    scene.Camera.Transform.TranslateForwardAligned(multiplier * moveVec);
-                }
-            }
-        }
-
-        if (hoveredMesh) {
-            float wheel = ImGui.GetIO().MouseWheel;
-            if (Math.Abs(wheel) > float.Epsilon) {
-                if (scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective) {
-                    var zoom = scene.Camera.GameObject.Transform.LocalForward * (wheel * zoomSpeed) * -1.0f;
-                    scene.Camera.GameObject.Transform.LocalPosition += zoom;
-                } else {
-                    float ortho = scene.ActiveCamera.OrthoSize;
-                    ortho *= (1.0f - wheel * zoomSpeed);
-                    ortho = Math.Clamp(ortho, 0.01f, 100.0f);
-                    scene.ActiveCamera.OrthoSize = ortho;
-                }
-            }
+        if (isDragging || hoveredMesh) {
+            AppImguiHelpers.RedirectMouseInputToScene(scene, hoveredMesh, cc);
         }
     }
 
