@@ -290,13 +290,15 @@ public static partial class RszFieldCache
         foreach (var field in fields) {
             if (!field.FieldType.IsAssignableTo(typeof(RszFieldAccessorBase))) continue;
 
-            var targets = field.GetCustomAttributes<RszAccessorAttribute>();
+            var targets = field.GetCustomAttributes<RszAccessorAttribute>().Append(classAttr);
             if (!targets.Any()) continue;
 
             var accessor = (RszFieldAccessorBase)field.GetValue(null)!;
             if (accessor.Override == null) continue;
 
             foreach (var attr in targets) {
+                if (attr == null) continue;
+
                 if (attr.Games.Length != 0) {
                     var found = false;
                     foreach (var game in attr.Games) {
@@ -337,6 +339,7 @@ public static partial class RszFieldCache
 
         var nested = type.GetNestedTypes(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
         foreach (var sub in nested) {
+            if (sub.Name.EndsWith("<>c")) continue;
             InitializeFieldOverrides(gameName, parser, sub);
         }
     }

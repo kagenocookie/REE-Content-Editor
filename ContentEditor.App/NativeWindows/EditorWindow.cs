@@ -40,14 +40,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
     private static bool runningRszInference;
 
-    /// <summary>
-    /// True when the last input was on the main window content and not any imgui windows.
-    /// </summary>
-    private bool IsWindowContentFocused => isMouseDown || lastClickWasWindow;
-
-    private bool isDragging = false;
-    private bool isMouseDown = false;
-    private bool lastClickWasWindow = false;
+    private bool IsDragging => SceneManager.RootMasterScenes.Any(ss => ss.MouseHandler?.IsDragging == true);
 
     protected bool isBaseWindowFocused;
 
@@ -155,10 +148,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             LastMouse = m;
             isBaseWindowFocused = !ImGui.GetIO().WantCaptureMouse;
             if (!isBaseWindowFocused) {
-                lastClickWasWindow = false;
                 return;
             }
-            lastClickWasWindow = true;
             OnMouseDown(m, btn, m.Position);
         };
         mouse.MouseUp += (m, btn) => {
@@ -629,14 +620,14 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     protected override void OnIMGUI()
     {
         ShowMainMenuBar();
-        if (isDragging) ImGui.BeginDisabled();
+        if (IsDragging) ImGui.BeginDisabled();
         BeginDockableBackground(new Vector2(0, ImGui.CalcTextSize("a").Y + ImGui.GetStyle().FramePadding.Y * 2));
         if (Overlays != null) {
             Overlays.ShowHelp = !_disableIntroGuide && !subwindows.Any(s => !IsDefaultWindow(s)) && !SceneManager.HasActiveMasterScene;
         }
         DrawImguiWindows();
         EndDockableBackground();
-        if (isDragging) ImGui.EndDisabled();
+        if (IsDragging) ImGui.EndDisabled();
     }
 
     internal bool ApplyContentPatches(string? outputPath, string? singleBundle = null)
