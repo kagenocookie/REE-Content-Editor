@@ -50,11 +50,11 @@ public readonly struct GizmoRenderBatchItem : RenderQueueItem
     public readonly Material material;
     public readonly Mesh mesh;
     public readonly Matrix4X4<float> matrix;
-    public readonly Material obscuredMaterial;
+    public readonly Material? obscuredMaterial;
 
     public readonly ulong SortingKey => unchecked((ulong)material.Shader.ID << 48) | ((ulong)material.Hash << 24) | (mesh.ID & 0xffffff);
 
-    public GizmoRenderBatchItem(Material material, Mesh mesh, Matrix4X4<float> matrix, Material obscuredMaterial) : this()
+    public GizmoRenderBatchItem(Material material, Mesh mesh, Matrix4X4<float> matrix, Material? obscuredMaterial = null) : this()
     {
         this.material = material;
         this.mesh = mesh;

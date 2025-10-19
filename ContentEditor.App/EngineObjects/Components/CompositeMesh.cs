@@ -92,7 +92,7 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
                 materials.Add(mat);
             }
         }
-        UpdateInstanceTransforms();
+        RecomputeWorldAABB();
     }
 
     private void UnloadMeshes()

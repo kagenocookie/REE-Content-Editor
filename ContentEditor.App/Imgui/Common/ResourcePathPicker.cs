@@ -69,7 +69,7 @@ public class ResourcePathPicker : IObjectUIHandler
 
         if (ImGui.BeginPopupContextItem()) {
             var ws = context.GetWorkspace();
-            if (!string.IsNullOrWhiteSpace(newPath ?? currentPath) && ImGui.Button("Open file")) {
+            if (!string.IsNullOrWhiteSpace(newPath) && ImGui.Button("Open file")) {
                 ImGui.CloseCurrentPopup();
                 if (ws != null) {
                     var resolvedPath = ws.Env.ResolveFilepath(currentPath);
@@ -84,7 +84,7 @@ public class ResourcePathPicker : IObjectUIHandler
                     }
                 }
             }
-            if (!string.IsNullOrWhiteSpace(newPath ?? currentPath) && ImGui.Button("Extract file ...")) {
+            if (!string.IsNullOrWhiteSpace(newPath) && ImGui.Button("Extract file ...")) {
                 ImGui.CloseCurrentPopup();
                 if (ws != null) {
                     var resolvedPath = ws.Env.ResolveFilepath(currentPath);

@@ -28,6 +28,12 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     public SceneMouseHandler? MouseHandler { get; set; }
     public SceneController? Controller { get; set; }
 
+    public readonly SceneComponentsList<RenderableComponent> Renderable = new();
+    public readonly SceneComponentsList<IUpdateable> Updateable = new();
+    public readonly SceneComponentsList<IGizmoComponent> Gizmos = new();
+
+    private GizmoManager? gizmoManager;
+
     private GL _gl;
 
     private RenderContext renderContext;
@@ -41,7 +47,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     private bool wasActivatedBefore;
     private HashSet<string> _requestedScenes = new(0);
 
-    private bool HasRenderables => renderComponents.Count > 0 || childScenes.Any(ch => ch.HasRenderables);
+    private bool HasRenderables => !Renderable.IsEmpty || childScenes.Any(ch => ch.HasRenderables);
 
     internal Scene(string name, string internalPath, ContentWorkspace workspace, Scene? parentScene = null, Folder? rootFolder = null, GL? gl = null)
     {
@@ -149,8 +155,13 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
 
     internal void Update(float deltaTime)
     {
-        foreach (var comp in updateComponents) {
+        foreach (var comp in Updateable.components) {
             comp.Update(deltaTime);
+        }
+
+        if (!Gizmos.IsEmpty) {
+            gizmoManager ??= new (this);
+            gizmoManager.Update();
         }
     }
 
@@ -161,7 +172,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         var cam = ActiveCamera;
         var rctx = RenderContext;
         if (rctx != this.renderContext) {
-            foreach (var render in renderComponents) {
+            foreach (var render in Renderable.components) {
                 if (!render.GameObject.ShouldDraw) continue;
                 if (!cam.IsVisible(render)) continue;
 
@@ -180,7 +191,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
 
         rctx.DeltaTime = deltaTime;
         rctx.BeforeRender();
-        foreach (var render in renderComponents) {
+        foreach (var render in Renderable.components) {
             if (!render.GameObject.ShouldDraw) continue;
             if (!cam.IsVisible(render)) continue;
 
@@ -189,6 +200,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         foreach (var child in childScenes) {
             child.Render(deltaTime);
         }
+        gizmoManager?.Render();
         rctx.ExecuteRender();
         rctx.AfterRender();
     }
@@ -201,7 +213,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         RootFolder.SetActive(active);
         if (!wasActivatedBefore && active && RootScene == this) {
             wasActivatedBefore = true;
-            var lookTarget = renderComponents.FirstOrDefault()?.GameObject ?? GetAllGameObjects().FirstOrDefault();
+            var lookTarget = Renderable.components.FirstOrDefault()?.GameObject ?? GetAllGameObjects().FirstOrDefault();
             if (lookTarget != null) {
                 ActiveCamera.LookAt(lookTarget, true);
             }
@@ -215,32 +227,13 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     public void Dispose()
     {
         SetActive(false);
+        gizmoManager?.Dispose();
         renderContext.Dispose();
         RootFolder.Dispose();
         while (childScenes.Count != 0) {
             childScenes.Last().Dispose();
         }
         ParentScene?.childScenes.Remove(this);
-    }
-
-    internal void AddUpdateComponent<TComponent>(TComponent component) where TComponent : Component, IUpdateable
-    {
-        updateComponents.Add(component);
-    }
-
-    internal void RemoveUpdateComponent<TComponent>(TComponent component) where TComponent : Component, IUpdateable
-    {
-        updateComponents.Remove(component);
-    }
-
-    internal void AddRenderComponent(RenderableComponent renderComponent)
-    {
-        renderComponents.Add(renderComponent);
-    }
-
-    internal void RemoveRenderComponent(RenderableComponent renderComponent)
-    {
-        renderComponents.Remove(renderComponent);
     }
 
     public override string ToString() => Name;

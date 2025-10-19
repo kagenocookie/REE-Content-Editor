@@ -102,7 +102,14 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
         // just don't cull these at all for now
         if (!comp.IsStatic) return true;
 
-        var b = comp.WorldSpaceBounds;
+        return IsVisible(comp.WorldSpaceBounds);
+    }
+
+    /// <summary>
+    /// Check frustum culling for the given world space AABB bounds.
+    /// </summary>
+    public bool IsVisible(AABB b)
+    {
         var size = b.Size;
         ref readonly var frustum = ref _frustum;
 

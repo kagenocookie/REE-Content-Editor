@@ -1,97 +1,159 @@
-using System.Buffers;
+using System.Diagnostics;
 using ContentEditor.App.Graphics;
+using ContentEditor.App.ImguiHandling.Rcol;
+using ContentEditor.App.Windowing;
 using ContentPatcher;
 using ReeLib;
-using ReeLib.UVar;
+using ReeLib.Rcol;
 using ReeLib.via;
-using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 
 [RszComponentClass("via.physics.RequestSetCollider")]
-public class RequestSetColliderComponent(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data), IFixedClassnameComponent
+public class RequestSetColliderComponent(GameObject gameObject, RszInstance data) : Component(gameObject, data), IFixedClassnameComponent, IGizmoComponent
 {
     static string IFixedClassnameComponent.Classname => "via.physics.RequestSetCollider";
 
-    private MaterialGroup? material;
+    private Material mainMaterial = null!;
+    private Material obscuredMaterial = null!;
 
-    public List<RcolMeshHandle> Meshes { get; } = new();
+    private readonly List<RcolFile?> rcols = new();
 
-    public override AABB LocalBounds => Meshes.Count == 0 ? default : AABB.Combine(Meshes.Select(m => m.BoundingBox));
+    public IEnumerable<RszInstance?> StoredGroups => RszFieldCache.RequestSetCollider.RequestSetGroups.Get(Data).Select(gg => gg as RszInstance);
+    public IEnumerable<string?> StoredResources => RszFieldCache.RequestSetCollider.RequestSetGroups.Get(Data).OfType<RszInstance>().Select(grp => RszFieldCache.RequestSetGroup.Resource.Get(grp));
 
-    public bool HasMesh => Meshes.Count != 0;
+    // public AABB Bounds => AABB.Invalid;
+    // public AABB LocalBounds => rcol == null ? default : AABB.Combine(rcol.Groups.Select(g => g.Shapes.BoundingBox));
+
+    private HashSet<string>? missingRcols;
+    private RcolEditor? editor;
+
+    public bool IsEnabled => Scene?.RenderContext.RenderTargetTextureHandle > 0 || AppConfig.Instance.RenderRequestSetColliders.Get();
+
+    public void OpenEditor(FileHandle rcol)
+    {
+        if (editor != null) {
+            // TODO idk
+        }
+        Debug.Assert(rcols.Contains(rcol.GetFile<RcolFile>()));
+        editor = EditorWindow.CurrentWindow!.AddSubwindow(new RcolEditor(Scene!.Workspace, rcol, this)).Handler as RcolEditor;
+    }
+
+    public void SetEditor(RcolEditor editor)
+    {
+        if (this.editor != null) {
+            // TODO idk
+        }
+
+        Debug.Assert(rcols.Contains(editor.File));
+        this.editor = editor;
+    }
 
     internal override void OnActivate()
     {
         base.OnActivate();
-
-        if (!AppConfig.Instance.RenderRequestSetColliders.Get()) return;
-        ReloadMeshes();
+        Scene!.RootScene.Gizmos.Add(this);
     }
 
     internal override void OnDeactivate()
     {
         base.OnDeactivate();
-        UnloadMeshes();
+        Scene!.RootScene.Gizmos.Remove(this);
     }
 
-    public void ReloadMeshes()
+    public GizmoContainer? Update(GizmoContainer? gizmo)
     {
-        UnloadMeshes();
-
-        var rcols = RszFieldCache.RequestSetCollider.RequestSetGroups.Get(Data);
-        if (rcols == null || rcols.Count == 0) {
-            return;
+        var refRcols = RszFieldCache.RequestSetCollider.RequestSetGroups.Get(Data);
+        if (refRcols == null || refRcols.Count == 0 || Scene?.IsActive != true) {
+            return null;
         }
 
-        var ctx = Scene!.RenderContext;
-
-        if (material == null) {
-            material = new MaterialGroup(ctx
-                .GetMaterialBuilder(BuiltInMaterials.Wireframe, "rcol")
-                .Color("_InnerColor", Color.FromVector4(Colors.RequestSetColliders)));
+        if (mainMaterial == null) {
+            var mat = Scene.RenderContext
+                .GetMaterialBuilder(BuiltInMaterials.Wireframe)
+                .Color("_InnerColor", Color.FromVector4(Colors.RequestSetColliders));
+            (mainMaterial, obscuredMaterial) = mat.Create2("rcol", "rcol_obscured");
+            obscuredMaterial.SetParameter("_InnerColor", Color.FromVector4(Colors.RequestSetColliders) with { A = 80 });
         }
 
-        foreach (var group in rcols.OfType<RszInstance>()) {
+        rcols.Clear();
+
+        var parentMesh = GameObject.GetComponent<MeshComponent>()?.MeshHandle as AnimatedMeshHandle;
+        if (parentMesh != null) {
+            // parentMesh.BoneMatrices
+        }
+
+        gizmo ??= new(Scene, this);
+
+        ref readonly var transform = ref GameObject.Transform.WorldTransform;
+        foreach (var group in refRcols.OfType<RszInstance>()) {
             var rcolPath = RszFieldCache.RequestSetGroup.Resource.Get(group);
-            if (string.IsNullOrEmpty(rcolPath)) continue;
-
-            if (!Scene!.Workspace.ResourceManager.TryResolveFile(rcolPath, out var handle)) {
-                Logger.Info("Failed to resolve rcol file " + rcolPath);
+            if (string.IsNullOrEmpty(rcolPath)) {
+                rcols.Add(null);
                 continue;
             }
 
-            var rcol = (RcolMeshHandle?)ctx.LoadMesh(handle);
+            if (!Scene!.Workspace.ResourceManager.TryResolveFile(rcolPath, out var handle)) {
+                missingRcols ??= new();
+                Logger.ErrorIf(missingRcols.Add(rcolPath), "Failed to resolve rcol file " + rcolPath);
+                rcols.Add(null);
+                continue;
+            }
+
+            rcols.Add(handle.GetFile<RcolFile>());
+        }
+
+        var selectedSet = editor?.PrimaryTarget as RequestSet;
+        var selectedGroup = editor?.PrimaryTarget as RcolGroup;
+
+        foreach (var rcol in rcols) {
             if (rcol == null) continue;
-            rcol.Update();
-            rcol.SetMaterials(material, [0]);
-            Meshes.Add(rcol);
-        }
-    }
 
-    private void UnloadMeshes()
-    {
-        foreach (var mesh in Meshes) {
-            Scene!.RenderContext.UnloadMesh(mesh);
-        }
-        Meshes.Clear();
-    }
+            // TODO maybe add a toggle for set vs group display?
 
-    internal override unsafe void Render(RenderContext context)
-    {
-        var render = AppConfig.Instance.RenderRequestSetColliders.Get();
-        if (!render) {
-            UnloadMeshes();
-            return;
-        }
-        if (Meshes.Count == 0) {
-            ReloadMeshes();
-            if (Meshes.Count == 0) return;
+            foreach (var group in rcol.Groups) {
+                foreach (var shape in group.Shapes) {
+                    if (shape.shape != null) {
+                        if (group == selectedGroup) {
+                            if (gizmo.Shape(2, mainMaterial, obscuredMaterial).EditableBoxed(shape.shape, out var newShape)) {
+                                shape.shape = newShape;
+                            }
+                        } else {
+                            gizmo.Shape(1, mainMaterial).AddBoxed(shape.shape);
+                        }
+                    }
+                }
+                // foreach (var shape in group.ExtraShapes) {
+                //     if (shape.shape != null) {
+                //         if (group == selectedGroup) {
+                //             if (gizmo.Shape(2, mainMaterial, obscuredMaterial).EditableBoxed(shape.shape, out var newShape)) {
+                //                 shape.shape = newShape;
+                //             }
+                //         } else {
+                //             gizmo.Shape(1, mainMaterial).AddBoxed(shape.shape);
+                //         }
+                //     }
+                // }
+            }
+
+            // foreach (var set in rcol.RequestSets) {
+            //     if (set.Group == null) continue;
+
+            //     foreach (var shape in set.Group.Shapes) {
+            //         if (shape.shape != null) {
+            //             gizmo.Shape(0, mainMaterial).AddBoxed(shape.shape);
+            //             if (set == selectedSet) {
+            //                 if (gizmo.Shape(2, mainMaterial, obscuredMaterial).EditableBoxed(shape.shape, out var newShape)) {
+            //                     shape.shape = newShape;
+            //                 }
+            //             } else {
+            //                 gizmo.Shape(0, mainMaterial).AddBoxed(shape.shape);
+            //             }
+            //         }
+            //     }
+            // }
         }
 
-        ref readonly var transform = ref GameObject.Transform.WorldTransform;
-        foreach (var mesh in Meshes) {
-            context.RenderSimple(mesh, transform);
-        }
+        return gizmo;
     }
 }

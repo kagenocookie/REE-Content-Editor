@@ -20,7 +20,7 @@ public class Ground(GameObject gameObject, RszInstance data) : RenderableCompone
     private GrndFile? groundResource;
     private FileHandle? groundMaterialResource;
 
-    public override AABB LocalBounds => groundResource == null ? default : new AABB(groundResource.Header.Min, groundResource.Header.Max);
+    public override AABB LocalBounds => groundResource == null ? AABB.Invalid : new AABB(groundResource.Header.Min, groundResource.Header.Max);
 
     public bool HasMesh => meshes.Count != 0;
 
@@ -28,7 +28,7 @@ public class Ground(GameObject gameObject, RszInstance data) : RenderableCompone
     {
         base.OnActivate();
 
-        GameObject.Scene!.AddUpdateComponent(this);
+        GameObject.Scene!.Updateable.Add(this);
         if (!AppConfig.Instance.RenderMeshes.Get()) return;
 
         if (Scene!.Workspace.ResourceManager.TryResolveResourceFile<GrndFile>(RszFieldCache.Ground.GroundResource.Get(Data), out groundResource)) {
@@ -41,7 +41,7 @@ public class Ground(GameObject gameObject, RszInstance data) : RenderableCompone
     internal override void OnDeactivate()
     {
         base.OnDeactivate();
-        GameObject.Scene!.RemoveUpdateComponent(this);
+        GameObject.Scene!.Updateable.Remove(this);
         UnloadMeshes();
     }
 

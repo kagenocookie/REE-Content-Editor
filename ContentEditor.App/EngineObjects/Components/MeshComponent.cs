@@ -17,7 +17,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
 
     public MeshHandle? MeshHandle => mesh;
 
-    public override AABB LocalBounds => mesh?.BoundingBox ?? default;
+    public override AABB LocalBounds => mesh?.BoundingBox ?? AABB.Invalid;
 
     public bool HasMesh => mesh != null;
     public bool IsStreamingTex = false;
@@ -87,6 +87,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         }
         mesh?.Update();
         IsStatic = mesh == null || !mesh.HasArmature;
+        RecomputeWorldAABB();
     }
 
 

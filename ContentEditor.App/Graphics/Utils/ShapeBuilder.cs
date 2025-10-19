@@ -38,11 +38,27 @@ public class ShapeBuilder
     private List<Cylinder>? cylinders;
     public AABB Bounds = AABB.MaxMin;
 
+    public bool IsEmpty => !(bounds?.Count > 0 || boxes?.Count > 0 || spheres?.Count > 0 || capsules?.Count > 0 || cylinders?.Count > 0 || lines?.Count > 0);
+    public int ShapeCount => (bounds?.Count ?? 0) + (boxes?.Count ?? 0) + (spheres?.Count ?? 0) + (capsules?.Count ?? 0) + (cylinders?.Count ?? 0) + (lines?.Count ?? 0);
+
     private float[]? VertexData;
     private int[]? Indices;
     public int VertexAttributeCount = 9;
 
     public GeometryType GeoType = GeometryType.FakeWire;
+
+    public int CalculateShapeHash()
+    {
+        int hash = 17;
+        hash = unchecked(hash * 31 + ShapeCount);
+        if (lines != null) foreach (var obj in lines) hash = (int)HashCode.Combine(hash, obj.start, obj.end);
+        if (bounds != null) foreach (var obj in bounds) hash = (int)HashCode.Combine(hash, obj.minpos, obj.maxpos);
+        if (boxes != null) foreach (var obj in boxes) hash = (int)HashCode.Combine(hash, obj.Extent, obj.Coord.ToSystem());
+        if (spheres != null) foreach (var obj in spheres) hash = (int)HashCode.Combine(hash, obj.pos, obj.r);
+        if (capsules != null) foreach (var obj in capsules) hash = (int)HashCode.Combine(hash, obj.p0, obj.p1, obj.R);
+        if (cylinders != null) foreach (var obj in cylinders) hash = (int)HashCode.Combine(hash, obj.p0, obj.p1, obj.r);
+        return hash;
+    }
 
     public enum GeometryType
     {

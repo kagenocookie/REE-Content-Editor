@@ -10,12 +10,12 @@ public abstract class UpdateComponent(GameObject gameObject, RszInstance data) :
 
     internal override void OnActivate()
     {
-        GameObject.Scene!.AddUpdateComponent(this);
+        GameObject.Scene!.Updateable.Add(this);
     }
 
     internal override void OnDeactivate()
     {
-        GameObject.Scene!.RemoveUpdateComponent(this);
+        GameObject.Scene!.Updateable.Remove(this);
     }
 
     public void Dispose()

@@ -157,6 +157,16 @@ public static class TransformExtensions
     public static Quaternion<float> ToSilkNetQuaternion(this Vector4 vec) => new Quaternion<float>(vec.X, vec.Y, vec.Z, vec.W);
     public static Vector3D<float> ToSilkNetVec3(this Vector4 vec) => new Vector3D<float>(vec.X, vec.Y, vec.Z);
 
+    public static AABB ToWorldBounds(this AABB local, Matrix4x4 world)
+    {
+        // not necessarily "exactly" correct but close enough
+        var p1 = Vector3.Transform(local.minpos, world);
+        var p2 = Vector3.Transform(local.maxpos, world);
+        return new AABB(Vector3.Min(p1, p2), Vector3.Max(p1, p2));
+    }
+
+    public static AABB ToWorldBounds(this AABB local, Matrix4X4<float> world) => ToWorldBounds(local, world.ToSystem());
+
     public static Quaternion<float> CreateLookAtQuaternion(this Vector3 from, Vector3 to, Vector3 up)
     {
         var fwd = Vector3.Normalize(from - to);

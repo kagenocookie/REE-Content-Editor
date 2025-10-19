@@ -89,7 +89,7 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
                 }
             }
         }
-        UpdateInstanceTransforms();
+        RecomputeWorldAABB();
     }
 
     private void UnloadMeshes()

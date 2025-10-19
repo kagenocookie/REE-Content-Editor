@@ -21,11 +21,12 @@ public abstract class RenderableComponent(GameObject gameObject, RszInstance dat
     internal AABB RecomputeWorldAABB()
     {
         var local = LocalBounds;
-        var world = Transform.WorldTransform.ToSystem();
-        // not necessarily "exactly" correct but close enough
-        var p1 = Vector3.Transform(local.minpos, world);
-        var p2 = Vector3.Transform(local.maxpos, world);
-        _worldSpaceBounds = new AABB(Vector3.Min(p1, p2), Vector3.Max(p1, p2));
+        if (local.IsInvalid) {
+            _worldSpaceBounds = AABB.Invalid;
+        } else {
+            var world = Transform.WorldTransform.ToSystem();
+            _worldSpaceBounds = local.ToWorldBounds(world);
+        }
         OnUpdateTransform();
         return _worldSpaceBounds;
     }
@@ -34,12 +35,12 @@ public abstract class RenderableComponent(GameObject gameObject, RszInstance dat
 
     internal override void OnActivate()
     {
-        GameObject.Scene!.AddRenderComponent(this);
+        GameObject.Scene!.Renderable.Add(this);
     }
 
     internal override void OnDeactivate()
     {
-        GameObject.Scene!.RemoveRenderComponent(this);
+        GameObject.Scene!.Renderable.Remove(this);
     }
 
     public void Dispose()

@@ -137,6 +137,10 @@ public static partial class RszFieldCache
         public static readonly RszFieldAccessorFirst<string> Mesh =
             First<string>((field) => field.type is RszFieldType.String or RszFieldType.Resource)
             .Resource("via.physics.CollisionMeshResourceHolder");
+
+        public static readonly RszFieldAccessorFirst<mat4> TransformMatrix =
+            First<mat4>((field) => field.type is RszFieldType.Mat4)
+            .Type(RszFieldType.Mat4);
     }
 
     /// <summary>
