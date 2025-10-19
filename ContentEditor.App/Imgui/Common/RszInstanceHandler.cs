@@ -965,8 +965,9 @@ public class Mat4StructHandler : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var mat = context.Get<ReeLib.via.mat4>();
+        var open = ImguiHelpers.TreeNodeSuffix(context.label, mat.ToString());
         AppImguiHelpers.ShowDefaultCopyPopup(ref mat, context);
-        if (ImguiHelpers.TreeNodeSuffix(context.label, mat.ToString())) {
+        if (open) {
             Matrix4X4.Decompose(mat.ToSystem().ToGeneric(), out var scale, out var rot, out var trans);
 
             var w = ImGui.CalcItemWidth();
