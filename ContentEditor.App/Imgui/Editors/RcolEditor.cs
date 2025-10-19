@@ -8,7 +8,7 @@ using ReeLib.Rcol;
 
 namespace ContentEditor.App.ImguiHandling.Rcol;
 
-public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IInspectorController, IRSZFileEditor, ISceneEditor
+public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IInspectorController, IRSZFileEditor
 {
     public override string HandlerName => "RequestSetCollider";
 
@@ -17,9 +17,11 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
     public RcolFile File => Handle.GetFile<RcolFile>();
 
     public ContentWorkspace Workspace { get; }
+
     public RcolEditor RootEditor => context.FindHandlerInParents<RcolEditor>(true) ?? this;
 
-    public RequestSetColliderComponent? Component => scene?.RootFolder.GameObjects.FirstOrDefault()?.GetComponent<RequestSetColliderComponent>();
+    private RequestSetColliderComponent? _component;
+    public RequestSetColliderComponent? Component => _component;
 
     protected override bool IsRevertable => context.Changed;
 
@@ -40,13 +42,19 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
         Workspace = env;
     }
 
+    public RcolEditor(ContentWorkspace env, FileHandle file, RequestSetColliderComponent component) : base(file)
+    {
+        Workspace = env;
+        _component = component;
+        scene = component.Scene;
+    }
+
     protected override void OnFileReverted()
     {
         Reset();
     }
 
     public RSZFile GetRSZFile() => File.RSZ;
-    public Scene? GetScene() => scene;
 
     private void Reset()
     {
@@ -58,28 +66,12 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
         failedToReadfile = false;
     }
 
-    private Scene? LoadScene()
-    {
-        context.ClearChildren();
-        if (scene == null) {
-            var workspace = context.GetWorkspace()!;
-            scene = context.GetNativeWindow()?.SceneManager.CreateScene(Handle, false, ((ISceneEditor)this).GetRootScene(context));
-            if (Logger.ErrorIf(scene == null, "Failed to create new scene")) return null;
-            var root = new GameObject("RcolRoot", workspace.Env, scene.RootFolder, scene);
-            var rcol = root.AddComponent<RequestSetColliderComponent>();
-            var group = RszInstance.CreateInstance(workspace.Env.RszParser, workspace.Env.RszParser.GetRSZClass("via.physics.RequestSetCollider.RequestSetGroup")!);
-            RszFieldCache.RequestSetCollider.RequestSetGroups.Set(rcol.Data, [group]);
-            RszFieldCache.RequestSetGroup.Resource.Set(group, Handle.NativePath ?? Handle.Filepath);
-            scene.Add(root);
-        }
-        return scene;
-    }
-
     protected override void DrawFileContents()
     {
         if (scene == null) {
-            LoadScene();
+            // TODO add mesh picker -> open mesh viewer?
         }
+
         if (context.children.Count == 0) {
             var child = context.AddChild("Data", File);
             child.uiHandler = new PlainObjectHandler();
@@ -303,26 +295,6 @@ public class RcolGroupEditor : IObjectUIHandler
         }
 
         context.ShowChildrenUI();
-    }
-}
-
-[ObjectImguiHandler(typeof(RcolShape))]
-public class RcolShapeHandler : IObjectUIHandler, IUIContextEventHandler
-{
-    public void OnIMGUI(UIContext context)
-    {
-        if (context.children.Count == 0) {
-            WindowHandlerFactory.SetupObjectUIContext(context, typeof(RcolShape));
-        }
-        context.ShowChildrenUI();
-    }
-
-    public bool HandleEvent(UIContext context, EditorUIEvent eventData)
-    {
-        if (eventData.IsChangeFromChild) {
-            context.FindHandlerInParents<RcolEditor>()?.Component?.ReloadMeshes();
-        }
-        return true;
     }
 }
 

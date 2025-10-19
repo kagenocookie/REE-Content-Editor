@@ -64,7 +64,8 @@ public sealed class GizmoManager(Scene scene) : IDisposable
             foreach (var item in gizmo.meshDraws) {
                 ogl.Batch.Gizmo.Add(item);
             }
-            foreach (var shape in gizmo.shapeBuilders) {
+
+            foreach (var shape in gizmo.shapeBuilders.OrderByDescending(sb => sb.renderPriority)) {
                 if (shape.mesh != null) {
                     ref readonly var transform = ref gizmo.Component.Transform.WorldTransform;
                     ogl.Batch.Gizmo.Add(new GizmoRenderBatchItem(shape.material, shape.mesh, transform, shape.obscuredMaterial));

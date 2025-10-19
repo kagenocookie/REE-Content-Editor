@@ -10,10 +10,11 @@ public class GizmoShapeBuilder : IDisposable
     public Material material;
     public Material? obscuredMaterial;
     private GizmoState state;
-    private ShapeBuilder builder = new();
+    private ShapeBuilder builder = new() { GeoType = ShapeBuilder.GeometryType.Line };
     private int lastShapeHash;
 
     public ShapeMesh? mesh;
+    public int renderPriority;
 
     public GizmoShapeBuilder(GizmoState state)
     {
@@ -36,6 +37,7 @@ public class GizmoShapeBuilder : IDisposable
                 mesh.Dispose();
                 mesh = null;
             }
+            lastShapeHash = 0;
             return;
         }
 
@@ -51,16 +53,22 @@ public class GizmoShapeBuilder : IDisposable
         mesh.Build(builder);
     }
 
-    public bool EditableBoxed(object shape, out object? newShape)
+    public GizmoShapeBuilder Priority(int renderPriority)
+    {
+        this.renderPriority = renderPriority;
+        return this;
+    }
+
+    public bool EditableBoxed(in Matrix4X4<float> offset, object shape, out object? newShape)
     {
         newShape = null;
         state.Push(shape);
-        builder.AddBoxed(shape);
+        AddBoxed(in offset, shape);
         switch (shape) {
             // case AABB obj: Add(obj); return;
             // case OBB obj: Add(obj); return;
-            case Sphere obj: if (EditableSphere(ref obj)) { newShape = obj; return true; } return false;
-            case Capsule obj: if (EditableCapsule(ref obj)) { newShape = obj; return true; } return false;
+            case Sphere obj: if (EditableSphere(offset, ref obj)) { newShape = obj; return true; } return false;
+            case Capsule obj: if (EditableCapsule(offset, ref obj)) { newShape = obj; return true; } return false;
             // case Capsule obj: Add(obj); return;
             // case Cylinder obj: Add(obj); return;
             default:
@@ -69,7 +77,7 @@ public class GizmoShapeBuilder : IDisposable
         }
     }
 
-    public bool EditableSphere(ref Sphere sphere)
+    public bool EditableSphere(in Matrix4X4<float> offsetMatrix, ref Sphere sphere)
     {
         var handlePoint = sphere.pos + sphere.r * Vector3.UnitY;
         if (state.PositionHandle(ref handlePoint, 0.5f)) {
@@ -79,7 +87,7 @@ public class GizmoShapeBuilder : IDisposable
         return false;
     }
 
-    public bool EditableCapsule(ref Capsule cap)
+    public bool EditableCapsule(in Matrix4X4<float> offsetMatrix, ref Capsule cap)
     {
         return false;
     }
@@ -95,6 +103,34 @@ public class GizmoShapeBuilder : IDisposable
     {
         state.Push(shape);
         builder.AddBoxed(shape);
+    }
+
+    public void Add(in Matrix4X4<float> offsetMatrix, LineSegment shape)
+        => builder.Add(new LineSegment(Vector3.Transform(shape.start, offsetMatrix.ToSystem()), Vector3.Transform(shape.end, offsetMatrix.ToSystem())));
+    public void Add(in Matrix4X4<float> offsetMatrix, AABB shape)
+        => builder.Add(new AABB(Vector3.Transform(shape.minpos, offsetMatrix.ToSystem()), Vector3.Transform(shape.maxpos, offsetMatrix.ToSystem())));
+    public void Add(in Matrix4X4<float> offsetMatrix, OBB shape)
+        => builder.Add(new OBB(offsetMatrix.ToSystem() * shape.Coord.ToSystem(), shape.Extent));
+    public void Add(in Matrix4X4<float> offsetMatrix, Sphere shape)
+        => builder.Add(new Sphere(Vector3.Transform(shape.pos, offsetMatrix.ToSystem()), shape.r));
+    public void Add(in Matrix4X4<float> offsetMatrix, Capsule shape)
+        => builder.Add(new Capsule(Vector3.Transform(shape.p0, offsetMatrix.ToSystem()), Vector3.Transform(shape.p1, offsetMatrix.ToSystem()), shape.R));
+    public void Add(in Matrix4X4<float> offsetMatrix, Cylinder shape)
+        => builder.Add(new Cylinder(Vector3.Transform(shape.p0, offsetMatrix.ToSystem()), Vector3.Transform(shape.p1, offsetMatrix.ToSystem()), shape.r));
+
+    public void AddBoxed(in Matrix4X4<float> offsetMatrix, object shape)
+    {
+        state.Push(shape);
+        switch (shape) {
+            case AABB obj: Add(in offsetMatrix, obj); return;
+            case OBB obj: Add(in offsetMatrix, obj); return;
+            case Sphere obj: Add(in offsetMatrix, obj); return;
+            case Capsule obj: Add(in offsetMatrix, obj); return;
+            case Cylinder obj: Add(in offsetMatrix, obj); return;
+            default:
+                Logger.Error("Unsupported shape type " + (shape?.GetType().Name ?? "NULL"));
+                break;
+        }
     }
 
     public void Dispose()

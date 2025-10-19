@@ -54,6 +54,30 @@ public class AnimatedMeshHandle : MeshHandle
         // }
     }
 
+    public bool TryGetBoneTransform(uint boneHash, out Matrix4X4<float> matrix)
+    {
+        var bone = Bones?.GetByHash(boneHash);
+        if (bone != null && BoneMatrices.Length > bone.index) {
+            matrix = BoneMatrices[bone.index];
+            return true;
+        }
+
+        matrix = Matrix4X4<float>.Identity;
+        return false;
+    }
+
+    public bool TryGetBoneTransform(string boneName, out Matrix4X4<float> matrix)
+    {
+        var bone = Bones?.GetByName(boneName);
+        if (bone != null && BoneMatrices.Length > bone.index) {
+            matrix = BoneMatrices[bone.index];
+            return true;
+        }
+
+        matrix = Matrix4X4<float>.Identity;
+        return false;
+    }
+
     public override void BindForRender(Material material)
     {
         BindBones(material);

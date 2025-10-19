@@ -6,6 +6,7 @@ using ContentPatcher;
 using ReeLib;
 using ReeLib.Rcol;
 using ReeLib.via;
+using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 
@@ -14,7 +15,8 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
 {
     static string IFixedClassnameComponent.Classname => "via.physics.RequestSetCollider";
 
-    private Material mainMaterial = null!;
+    private Material activeMaterial = null!;
+    private Material inactiveMaterial = null!;
     private Material obscuredMaterial = null!;
 
     private readonly List<RcolFile?> rcols = new();
@@ -30,6 +32,20 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
 
     public bool IsEnabled => Scene?.RenderContext.RenderTargetTextureHandle > 0 || AppConfig.Instance.RenderRequestSetColliders.Get();
 
+    public void OpenEditor(int rcolIndex)
+    {
+        var refRcols = RszFieldCache.RequestSetCollider.RequestSetGroups.Get(Data);
+        if (refRcols == null || refRcols.Count == 0 || Scene?.IsActive != true || refRcols.Count <= rcolIndex) {
+            return;
+        }
+
+        var group = ((RszInstance)refRcols[rcolIndex]);
+
+        var rcolPath = RszFieldCache.RequestSetGroup.Resource.Get(group);
+        if (Scene.Workspace.ResourceManager.TryResolveFile(rcolPath, out var file)) {
+            OpenEditor(file);
+        }
+    }
     public void OpenEditor(FileHandle rcol)
     {
         if (editor != null) {
@@ -68,22 +84,22 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
             return null;
         }
 
-        if (mainMaterial == null) {
+        if (inactiveMaterial == null) {
             var mat = Scene.RenderContext
-                .GetMaterialBuilder(BuiltInMaterials.Wireframe)
-                .Color("_InnerColor", Color.FromVector4(Colors.RequestSetColliders));
-            (mainMaterial, obscuredMaterial) = mat.Create2("rcol", "rcol_obscured");
-            obscuredMaterial.SetParameter("_InnerColor", Color.FromVector4(Colors.RequestSetColliders) with { A = 80 });
+                .GetMaterialBuilder(BuiltInMaterials.MonoColor)
+                .Color("_MainColor", Color.FromVector4(Colors.RequestSetColliders));
+            activeMaterial = mat.Blend(Silk.NET.OpenGL.BlendingFactor.SrcAlpha, Silk.NET.OpenGL.BlendingFactor.SrcAlpha).Create("rcol_active");
+
+            (inactiveMaterial, obscuredMaterial) = mat.Blend().Create2("rcol", "rcol_obscured");
+            obscuredMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.RequestSetColliders) with { A = 90 });
+            inactiveMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.RequestSetColliders) with { A = 56 });
         }
 
         rcols.Clear();
 
-        var parentMesh = GameObject.GetComponent<MeshComponent>()?.MeshHandle as AnimatedMeshHandle;
-        if (parentMesh != null) {
-            // parentMesh.BoneMatrices
-        }
-
         gizmo ??= new(Scene, this);
+
+        var parentMesh = GameObject.GetComponent<MeshComponent>()?.MeshHandle as AnimatedMeshHandle;
 
         ref readonly var transform = ref GameObject.Transform.WorldTransform;
         foreach (var group in refRcols.OfType<RszInstance>()) {
@@ -103,9 +119,15 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
             rcols.Add(handle.GetFile<RcolFile>());
         }
 
-        var selectedSet = editor?.PrimaryTarget as RequestSet;
+        var selectedSet = (editor?.PrimaryTarget as RequestSet);
+        if (editor?.PrimaryTarget is RequestSetInfo setInfo) {
+            selectedSet = editor.File.RequestSets.FirstOrDefault(rs => rs.Info == setInfo);
+        } else if (editor?.PrimaryTarget is RszInstance rszInst) {
+            selectedSet = editor.File.RequestSets.FirstOrDefault(rs => rs.Instance == rszInst);
+        }
         var selectedGroup = editor?.PrimaryTarget as RcolGroup;
 
+        Matrix4X4<float> shapeMatrix = Matrix4X4<float>.Identity;
         foreach (var rcol in rcols) {
             if (rcol == null) continue;
 
@@ -114,12 +136,17 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
             foreach (var group in rcol.Groups) {
                 foreach (var shape in group.Shapes) {
                     if (shape.shape != null) {
-                        if (group == selectedGroup) {
-                            if (gizmo.Shape(2, mainMaterial, obscuredMaterial).EditableBoxed(shape.shape, out var newShape)) {
+                        if (string.IsNullOrEmpty(shape.Info.primaryJointNameStr) || parentMesh == null) {
+                            shapeMatrix = Matrix4X4<float>.Identity;
+                        } else {
+                            parentMesh.TryGetBoneTransform(shape.Info.primaryJointNameStr, out shapeMatrix);
+                        }
+                        if (group == selectedGroup || selectedSet?.Group == group) {
+                            if (gizmo.Shape(2, activeMaterial, obscuredMaterial).Priority(1).EditableBoxed(in shapeMatrix, shape.shape, out var newShape)) {
                                 shape.shape = newShape;
                             }
                         } else {
-                            gizmo.Shape(1, mainMaterial).AddBoxed(shape.shape);
+                            gizmo.Shape(1, inactiveMaterial).AddBoxed(in shapeMatrix, shape.shape);
                         }
                     }
                 }

@@ -270,7 +270,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         ImGui.SetCursorPos(ImGui.GetCursorPos() + new Vector2(6, 6));
         if (ImGui.Button($"{AppIcons.GameObject}")) ImGui.OpenPopup("CameraSettings");
         if (ImGui.BeginPopup("CameraSettings")) {
-            ShowCameraSettings();
+            scene!.Controller?.ShowCameraControls();
             ImGui.EndPopup();
         }
     }
@@ -280,7 +280,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         if (ImGui.BeginMenuBar()) {
             if (ImGui.MenuItem($"{AppIcons.GameObject} Controls")) ImGui.OpenPopup("CameraSettings");
             if (ImGui.BeginPopup("CameraSettings")) {
-                ShowCameraSettings();
+                scene!.Controller?.ShowCameraControls();
                 ImGui.EndPopup();
             }
 
@@ -290,6 +290,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 if (ImGui.MenuItem($"{AppIcons.EfxEntry} Material")) ImGui.OpenPopup("Material"); // placeholder icon
                 if (ImGui.MenuItem($"{AppIcons.SI_FileExtractTo} Import / Export")) ImGui.OpenPopup("Export");
                 if (ImGui.MenuItem($"{AppIcons.Play} Animations")) showAnimationsMenu = !showAnimationsMenu;
+                if (ImGui.MenuItem($"{AppIcons.Mesh} RCOL")) ImGui.OpenPopup("RCOL");
                 if (showAnimationsMenu) ImguiHelpers.HighlightMenuItem($"{AppIcons.Play} Animations");
 
                 if (ImGui.BeginPopup("MeshInfo")) {
@@ -298,6 +299,10 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 }
                 if (ImGui.BeginPopup("Material")) {
                     ShowMaterialSettings(meshComponent);
+                    ImGui.EndPopup();
+                }
+                if (ImGui.BeginPopup("RCOL")) {
+                    ShowRcolPicker();
                     ImGui.EndPopup();
                 }
                 if (ImGui.BeginPopup("MeshGroups")) {
@@ -320,7 +325,6 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             UpdateMaterial(meshComponent);
             return false;
         }
-
     }
 
     private void ShowMeshGroupSettings(MeshComponent meshComponent)
@@ -389,40 +393,46 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         mdfPickerContext.ShowUI();
     }
 
-    private void ShowCameraSettings()
+    private UIContext? rcolPicker;
+    private string rcolPath = "";
+    private void ShowRcolPicker()
     {
-        if (ImGui.RadioButton("Orthographic", scene!.ActiveCamera.ProjectionMode == CameraProjection.Orthographic)) {
-            scene.ActiveCamera.ProjectionMode = CameraProjection.Orthographic;
-            CenterCameraToSceneObject();
-            lastDragPos = new();
+        if (rcolPicker == null) {
+            rcolPicker = context.AddChild<MeshViewer, string>(
+                "RCOL File",
+                this,
+                new ResourcePathPicker(Workspace, KnownFileFormats.RequestSetCollider) { UseNativesPath = true, IsPathForIngame = false },
+                (v) => v!.rcolPath,
+                (v, p) => v.rcolPath = p ?? "");
         }
-        ImGui.SameLine();
-        if (ImGui.RadioButton("Perspective", scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective)) {
-            scene.ActiveCamera.ProjectionMode = CameraProjection.Perspective;
-            CenterCameraToSceneObject();
-            lastDragPos = new();
-        }
-        ImGui.SameLine();
-        if (ImGui.Button($"{AppIcons.SI_ResetCamera}")) {
-            CenterCameraToSceneObject();
-            lastDragPos = new();
-        }
-        ImguiHelpers.Tooltip("Reset View Camera");
-        if (scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective) {
-            float fov = scene.ActiveCamera.FieldOfView;
-            if (ImGui.SliderAngle("Field of View", ref fov, 10.0f, 120.0f)) {
-                scene.ActiveCamera.FieldOfView = fov;
+        rcolPicker.ShowUI();
+
+        if (previewGameobject == null) return;
+        var rcolComp = previewGameobject.GetComponent<RequestSetColliderComponent>();
+
+        if (string.IsNullOrEmpty(rcolPath)) {
+            if (rcolComp != null) {
+                RszFieldCache.RequestSetCollider.RequestSetGroups.Get(rcolComp.Data).Clear();
             }
-        } else {
-            float ortho = scene.ActiveCamera.OrthoSize;
-            if (ImGui.SliderFloat("Field of View", ref ortho, 0.1f, 10.0f)) {
-                scene.ActiveCamera.OrthoSize = ortho;
+            return;
+        }
+
+        rcolComp ??= previewGameobject.AddComponent<RequestSetColliderComponent>();
+
+        var storedGroups = RszFieldCache.RequestSetCollider.RequestSetGroups.Get(rcolComp.Data);
+        if (storedGroups.Count == 0) {
+            storedGroups.Add(Workspace.Env.CreateRszInstance("via.physics.RequestSetCollider.RequestSetGroup"));
+        }
+        var storedGroup = (RszInstance)storedGroups[0];
+        var storedPath = RszFieldCache.RequestSetGroup.Resource.Get(storedGroup);
+        if (storedPath != rcolPath) {
+            RszFieldCache.RequestSetGroup.Resource.Set(storedGroup, rcolPath);
+        }
+        if (rcolComp != null) {
+            if (ImGui.Button("Open Editor")) {
+                rcolComp.OpenEditor(0);
             }
         }
-        ImGui.SliderFloat("Move Speed", ref moveSpeed, 1.0f, 50.0f);
-        ImguiHelpers.Tooltip("[Hold] Left Shift to move 10x faster.");
-        ImGui.SliderFloat("Rotate Speed", ref rotateSpeed, 0.1f, 10.0f);
-        ImGui.SliderFloat("Zoom Speed", ref zoomSpeed, 0.01f, 1.0f);
     }
 
     private void ShowImportExportMenu()
