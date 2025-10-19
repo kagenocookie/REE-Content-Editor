@@ -133,7 +133,7 @@ Pull requests are welcome. There are several open issues for bigger features for
 
 ## Credits
 - Everyone who contributed to or was acknowledged in [RE-Engine-Lib](https://github.com/kagenocookie/RE-Engine-Lib)
-- alphaZomega: mot bone remapping configs
+- alphaZomega: mot bone remapping configs for re2 and re3
 
 ## Disclaimer
 This project is in no way affiliated with, endorsed by, or connected to RE ENGINE, Capcom, or any of their affiliates. All trademarks are the property of their respective owners.

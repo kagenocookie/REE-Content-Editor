@@ -131,10 +131,8 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
         foreach (var rcol in rcols) {
             if (rcol == null) continue;
 
-            // TODO maybe add a toggle for set vs group display?
-
             foreach (var group in rcol.Groups) {
-                foreach (var shape in group.Shapes) {
+                foreach (var shape in group.Shapes.Concat(group.ExtraShapes)) {
                     if (shape.shape != null) {
                         if (string.IsNullOrEmpty(shape.Info.primaryJointNameStr) || parentMesh == null) {
                             shapeMatrix = Matrix4X4<float>.Identity;
@@ -150,35 +148,7 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
                         }
                     }
                 }
-                // foreach (var shape in group.ExtraShapes) {
-                //     if (shape.shape != null) {
-                //         if (group == selectedGroup) {
-                //             if (gizmo.Shape(2, mainMaterial, obscuredMaterial).EditableBoxed(shape.shape, out var newShape)) {
-                //                 shape.shape = newShape;
-                //             }
-                //         } else {
-                //             gizmo.Shape(1, mainMaterial).AddBoxed(shape.shape);
-                //         }
-                //     }
-                // }
             }
-
-            // foreach (var set in rcol.RequestSets) {
-            //     if (set.Group == null) continue;
-
-            //     foreach (var shape in set.Group.Shapes) {
-            //         if (shape.shape != null) {
-            //             gizmo.Shape(0, mainMaterial).AddBoxed(shape.shape);
-            //             if (set == selectedSet) {
-            //                 if (gizmo.Shape(2, mainMaterial, obscuredMaterial).EditableBoxed(shape.shape, out var newShape)) {
-            //                     shape.shape = newShape;
-            //                 }
-            //             } else {
-            //                 gizmo.Shape(0, mainMaterial).AddBoxed(shape.shape);
-            //             }
-            //         }
-            //     }
-            // }
         }
 
         return gizmo;

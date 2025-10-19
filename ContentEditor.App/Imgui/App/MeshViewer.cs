@@ -406,6 +406,14 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 (v, p) => v.rcolPath = p ?? "");
         }
         rcolPicker.ShowUI();
+        var settings = AppConfig.Settings;
+        if (settings.RecentRcols.Count > 0) {
+            var selection = rcolPath;
+            var options = settings.RecentRcols.ToArray();
+            if (ImguiHelpers.ValueCombo("Recent files", options, options, ref selection)) {
+                rcolPath = selection;
+            }
+        }
 
         if (previewGameobject == null) return;
         var rcolComp = previewGameobject.GetComponent<RequestSetColliderComponent>();
@@ -427,6 +435,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         var storedPath = RszFieldCache.RequestSetGroup.Resource.Get(storedGroup);
         if (storedPath != rcolPath) {
             RszFieldCache.RequestSetGroup.Resource.Set(storedGroup, rcolPath);
+            AppConfig.Instance.AddRecentRcol(rcolPath);
         }
         if (rcolComp != null) {
             if (ImGui.Button("Open Editor")) {
@@ -529,9 +538,18 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 (v, p) => v.animationSourceFile = p ?? "");
         }
         animationPickerContext.ShowUI();
+        var settings = AppConfig.Settings;
+        if (settings.RecentMotlists.Count > 0) {
+            var selection = animationSourceFile;
+            var options = settings.RecentMotlists.ToArray();
+            if (ImguiHelpers.ValueCombo("Recent files", options, options, ref selection)) {
+                animationSourceFile = selection;
+            }
+        }
         if (animationSourceFile != loadedAnimationSource) {
             if (!string.IsNullOrEmpty(animationSourceFile)) {
                 animator.LoadAnimationList(loadedAnimationSource = animationSourceFile);
+                AppConfig.Instance.AddRecentMotlist(animationSourceFile);
             } else {
                 animator.Unload();
                 loadedAnimationSource = animationSourceFile;
