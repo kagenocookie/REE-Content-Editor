@@ -7,6 +7,12 @@ namespace ContentPatcher;
 
 public static partial class RszFieldCache
 {
+    private static readonly string[] PreDD2 = [
+        nameof(GameName.re7), nameof(GameName.re2), nameof(GameName.re3), nameof(GameName.re2rt),
+        nameof(GameName.re3rt), nameof(GameName.re7rt), nameof(GameName.re8), nameof(GameName.re4),
+        nameof(GameName.dmc5), nameof(GameName.mhrise), nameof(GameName.sf6)
+    ];
+
     /// <summary>
     /// via.Folder
     /// </summary>

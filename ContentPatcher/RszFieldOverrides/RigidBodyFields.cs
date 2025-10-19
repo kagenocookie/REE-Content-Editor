@@ -12,7 +12,7 @@ public static partial class RszFieldCache
     /// </summary>
     public static class CompositeRigidBodyMeshSet
     {
-        [RszAccessor("via.dynamics.CompositeRigidBodyMeshSet.MeshInfo")]
+        [RszAccessor("via.dynamics.CompositeRigidBodyMeshSet.MeshInfo", [nameof(PreDD2)], GamesExclude = true)]
         public static class MeshInfo
         {
             public static readonly RszFieldAccessorFirst<Vector3> Position = First<Vector3>(f => f.type is RszFieldType.Vec3 || f.size == 16)

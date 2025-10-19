@@ -254,6 +254,10 @@ public static partial class RszFieldCache
     private static RszFieldAccessorFieldList<T> FromList<T>(Func<IEnumerable<(RszField field, int index)>, int> conditions, [CallerMemberName] string name = "")
         => new RszFieldAccessorFieldList<T>(conditions, name);
 
+    private static readonly Dictionary<string, string[]> CompositeNames = typeof(RszFieldCache).GetFields(BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Static)
+        .Where(field => field.FieldType.IsArray && field.FieldType.GetElementType() == typeof(string))
+        .ToDictionary(field => field.Name, field => (string[])field.GetValue(null)!)!;
+
     public static void InitializeFieldOverrides(string gameName, RszParser parser)
     {
         InitializeFieldOverrides(gameName, parser, typeof(RszFieldCache));
@@ -262,19 +266,53 @@ public static partial class RszFieldCache
     private static void InitializeFieldOverrides(string gameName, RszParser parser, Type type)
     {
         var fields = type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-        var classTargets = type.GetCustomAttributes<RszAccessorAttribute>();
+        var classAttr = type.GetCustomAttributes<RszAccessorAttribute>().FirstOrDefault();
+        if (classAttr != null) {
+            if (classAttr.Games.Length != 0) {
+                var found = false;
+                foreach (var game in classAttr.Games) {
+                    if (CompositeNames.TryGetValue(game, out var realList)) {
+                        if (realList.Contains(gameName)) {
+                            found = true;
+                            break;
+                        }
+                    } else {
+                        if (game == gameName) {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (found == classAttr.GamesExclude) return;
+            }
+        }
+
         foreach (var field in fields) {
             if (!field.FieldType.IsAssignableTo(typeof(RszFieldAccessorBase))) continue;
 
-            var targets = classTargets.Concat(field.GetCustomAttributes<RszAccessorAttribute>());
+            var targets = field.GetCustomAttributes<RszAccessorAttribute>();
             if (!targets.Any()) continue;
 
             var accessor = (RszFieldAccessorBase)field.GetValue(null)!;
             if (accessor.Override == null) continue;
 
             foreach (var attr in targets) {
-                if (attr.Games.Length != 0 && attr.GamesExclude == attr.Games.Contains(gameName)) {
-                    continue;
+                if (attr.Games.Length != 0) {
+                    var found = false;
+                    foreach (var game in attr.Games) {
+                        if (CompositeNames.TryGetValue(game, out var realList)) {
+                            if (realList.Contains(gameName)) {
+                                found = true;
+                                break;
+                            }
+                        } else {
+                            if (game == gameName) {
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (found == attr.GamesExclude) continue;
                 }
 
                 var cls = parser.GetRSZClass(attr.Classname);
