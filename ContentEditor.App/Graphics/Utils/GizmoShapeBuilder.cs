@@ -1,4 +1,5 @@
 using System.Numerics;
+using ImGuiNET;
 using ReeLib.UVar;
 using ReeLib.via;
 using Silk.NET.Maths;
@@ -150,22 +151,22 @@ public class GizmoShapeBuilder : IDisposable
         }
 
         handleId = -1;
-        var handlePoint = Vector3.Transform(cap.p1, offsetMatrix.ToSystem());
-        if (state.PositionHandle(ref handlePoint, out var hid, 10f)) {
+        var handleTop = Vector3.Transform(cap.p1, offsetMatrix.ToSystem());
+        var handleBot = Vector3.Transform(cap.p0, offsetMatrix.ToSystem());
+        var handleSide = Vector3.Transform((cap.p0 + cap.p1) * 0.5f + right, offsetMatrix.ToSystem());
+        if (state.PositionHandle(ref handleTop, out var hid, 10f, handleTop - handleBot, ImGui.IsKeyDown(ImGuiKey.LeftShift))) {
             Matrix4X4.Invert(offsetMatrix, out var inverted);
-            cap.p1 = Vector3.Transform(handlePoint, inverted.ToSystem());
+            cap.p1 = Vector3.Transform(handleTop, inverted.ToSystem());
             handleId = hid;
         }
-        handlePoint = Vector3.Transform(cap.p0, offsetMatrix.ToSystem());
-        if (state.PositionHandle(ref handlePoint, out hid, 10f)) {
+        if (state.PositionHandle(ref handleBot, out hid, 10f, handleTop - handleBot, ImGui.IsKeyDown(ImGuiKey.LeftShift))) {
             Matrix4X4.Invert(offsetMatrix, out var inverted);
-            cap.p0 = Vector3.Transform(handlePoint, inverted.ToSystem());
+            cap.p0 = Vector3.Transform(handleBot, inverted.ToSystem());
             handleId = hid;
         }
-        handlePoint = Vector3.Transform((cap.p0 + cap.p1) * 0.5f + right, offsetMatrix.ToSystem());
-        if (state.PositionHandle(ref handlePoint, out hid, 10f)) {
+        if (state.PositionHandle(ref handleSide, out hid, 10f, handleSide - (handleBot + handleTop) * 0.5f, ImGui.IsKeyDown(ImGuiKey.LeftShift))) {
             var center = Vector3.Transform((cap.p0 + cap.p1) * 0.5f, offsetMatrix.ToSystem());
-            var newRadius = (handlePoint - center).Length();
+            var newRadius = (handleSide - center).Length();
             cap.r = newRadius;
             handleId = hid;
         }

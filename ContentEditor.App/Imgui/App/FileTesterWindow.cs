@@ -11,6 +11,7 @@ using ReeLib;
 using ReeLib.Common;
 using ReeLib.Mesh;
 using ReeLib.Motlist;
+using ReeLib.Rcol;
 
 namespace ContentEditor.App;
 
@@ -415,6 +416,7 @@ public class FileTesterWindow : IWindowHandler
         switch (format) {
             case KnownFileFormats.MotionList: return VerifyRewriteEquality<MotlistFile>(source.GetFile<MotlistFile>(), env);
             case KnownFileFormats.Mesh: return VerifyRewriteEquality<MeshFile>(source.GetResource<CommonMeshResource>().NativeMesh, env);
+            case KnownFileFormats.RequestSetCollider: return VerifyRewriteEquality<RcolFile>(source.GetFile<RcolFile>(), env);
             default: return null;
         }
     }
@@ -504,6 +506,14 @@ public class FileTesterWindow : IWindowHandler
         AddCompareMapper<MotFile>((m) => [m.Name]);
         AddCompareMapper<MotTreeFile>((m) => [m.Name, m.MotionIDRemaps, m.expandedMotionsCount, m.uknCount1, m.uknCount2]);
         AddCompareMapper<MotIndex>((m) => m.data.Cast<object>().Concat(new object[] { m.extraClipCount, m.motNumber }));
+
+        AddCompareMapper<RszInstance>((m) => m.Values.Append(m.RszClass.crc));
+        AddCompareMapper<RSZFile>((m) => []);
+
+        AddCompareMapper<RcolFile>((m) => [m.Header, m.Groups, m.RequestSets, m.IgnoreTags, m.AutoGenerateJointDescs]);
+        AddCompareMapper<GroupInfo>((m) => [m.guid, m.LayerGuid, m.LayerIndex, m.MaskBits, m.NameHash, m.NumShapes, m.NumMaskGuids, m.NumExtraShapes]);
+
+        AddCompareMapper<ReeLib.Rcol.Header>((m) => [m.numGroups, m.numIgnoreTags, m.numRequestSets, m.numShapes, m.numUserData, m.maxRequestSetId, m.userDataSize, m.status, m.uknRe3_A, m.uknRe3_B, m.ukn1, m.ukn2, m.uknRe3]);
     }
 
     private static Dictionary<Type, Func<object, IEnumerable<object?>>> comparedValueMappers = new();

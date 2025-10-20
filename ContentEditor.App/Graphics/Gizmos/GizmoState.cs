@@ -10,6 +10,8 @@ public class GizmoState(Scene scene)
 
     private (int id, int handleId)? activeHandle;
     private Vector2 activeHandleStartPosition;
+    private Vector3 activeHandleStartWorldPosition;
+    private Vector3 activeHandleStartAxis;
 
     public Scene Scene { get; } = scene;
 
@@ -44,7 +46,7 @@ public class GizmoState(Scene scene)
         children.Add((children.Count, obj, new HandleContainer()));
     }
 
-    public bool PositionHandle(ref Vector3 position, out int handleId, float handleSize = 5f, Vector3 axis = default)
+    public bool PositionHandle(ref Vector3 position, out int handleId, float handleSize = 5f, Vector3 primaryAxis = default, bool lockToAxis = false)
     {
         var current = children.Last();
         handleId = current.handles.count++;
@@ -60,6 +62,8 @@ public class GizmoState(Scene scene)
                 if (Scene.MouseHandler.IsLeftDown) {
                     activeHandle = (current.id, handleId);
                     activeHandleStartPosition = Scene.MouseHandler.MouseScreenPosition;
+                    activeHandleStartWorldPosition = position;
+                    activeHandleStartAxis = primaryAxis == Vector3.Zero ? Vector3.Zero : Vector3.Normalize(primaryAxis);
                 }
             } else {
                 DrawListQueue.Add(() => {
@@ -76,6 +80,12 @@ public class GizmoState(Scene scene)
                 var newPos = Scene.MouseHandler.MouseScreenPosition;
 
                 position = Scene.ActiveCamera.ScreenToWorldPositionReproject(newPos, position);
+                if (activeHandleStartAxis != Vector3.Zero && lockToAxis) {
+                    primaryAxis = activeHandleStartAxis;
+                    var totalOffset = position - activeHandleStartWorldPosition;
+                    var alignedOffset = totalOffset - totalOffset.ProjectOnPlane(primaryAxis);
+                    position = activeHandleStartWorldPosition + primaryAxis * alignedOffset.Length() * (Vector3.Dot(alignedOffset, primaryAxis) > 0 ? 1 : -1);
+                }
                 screenPosition = Scene.ActiveCamera.WorldToScreenPosition(position, false);
             }
             DrawListQueue.Add(() => {
