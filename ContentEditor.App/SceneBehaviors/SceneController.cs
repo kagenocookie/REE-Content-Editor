@@ -15,7 +15,7 @@ public class SceneController
     private DragMode dragMode;
     private enum DragMode { None, Rotation }
 
-    public float MoveSpeed { get; set; } = 10f;
+    public float MoveSpeed { get; set; } = 8f;
     public float RotateSpeed { get; set; } = 2f;
     public float ZoomSpeed { get; set; } = 2f;
 

@@ -1,6 +1,5 @@
 using System.Numerics;
 using ImGuiNET;
-using ReeLib.UVar;
 using ReeLib.via;
 using Silk.NET.Maths;
 
@@ -94,36 +93,45 @@ public class GizmoShapeBuilder : IDisposable
 
     public unsafe bool EditableAABB(in Matrix4X4<float> offsetMatrix, ref AABB aabb, out int handleId)
     {
-        // TODO verify
-        var box = new OBB(mat4.Identity, aabb.Size);
-        if (EditableOBB(offsetMatrix, ref box, out handleId)) {
-            var center = aabb.Center;
-            aabb = new AABB(center - box.Extent, center + box.Extent);
-            return true;
-        }
-        return false;
-    }
-
-    public unsafe bool EditableOBB(in Matrix4X4<float> offsetMatrix, ref OBB box, out int handleId)
-    {
-        // TODO verify
         var pts = stackalloc Vector3[6];
-        pts[0] = Vector3.Transform(box.Extent * UnitDirections[0], offsetMatrix.ToSystem() * box.Coord.ToSystem());
-        pts[1] = Vector3.Transform(box.Extent * UnitDirections[1], offsetMatrix.ToSystem() * box.Coord.ToSystem());
-        pts[2] = Vector3.Transform(box.Extent * UnitDirections[2], offsetMatrix.ToSystem() * box.Coord.ToSystem());
-        pts[3] = Vector3.Transform(box.Extent * UnitDirections[3], offsetMatrix.ToSystem() * box.Coord.ToSystem());
-        pts[4] = Vector3.Transform(box.Extent * UnitDirections[4], offsetMatrix.ToSystem() * box.Coord.ToSystem());
-        pts[5] = Vector3.Transform(box.Extent * UnitDirections[5], offsetMatrix.ToSystem() * box.Coord.ToSystem());
+        var center = aabb.Center;
+        var worldCenter = Vector3.Transform(center, offsetMatrix.ToSystem());
+        var size = aabb.Size / 2;
+        pts[0] = Vector3.Transform(center + size * UnitDirections[0], offsetMatrix.ToSystem());
+        pts[1] = Vector3.Transform(center + size * UnitDirections[1], offsetMatrix.ToSystem());
+        pts[2] = Vector3.Transform(center + size * UnitDirections[2], offsetMatrix.ToSystem());
+        pts[3] = Vector3.Transform(center + size * UnitDirections[3], offsetMatrix.ToSystem());
+        pts[4] = Vector3.Transform(center + size * UnitDirections[4], offsetMatrix.ToSystem());
+        pts[5] = Vector3.Transform(center + size * UnitDirections[5], offsetMatrix.ToSystem());
         handleId = -1;
         for (int i = 0; i < 6; ++i) {
             var pt = pts[i];
-            if (state.PositionHandle(ref pt, out var hid)) {
-                var center = Vector3.Transform(Vector3.Zero, offsetMatrix.ToSystem() * box.Coord.ToSystem());
-                var dist = (pt - center).Length();
-                box.Extent = box.Extent + dist * UnitDirections[i];
+            if (state.PositionHandle(ref pt, out var hid, 5, pt - worldCenter, ImGui.IsKeyDown(ImGuiKey.LeftShift))) {
+                Matrix4x4.Invert(offsetMatrix.ToSystem(), out var invMat);
+                var previousDist = (size * UnitDirections[i]).Length();
+                var newDist = ((Vector3.Transform(pt, invMat) - center) * UnitDirections[i]).Length();
+                var deltaDist = (newDist - previousDist) * 0.5f;
+                if (UnitDirections[i].X + UnitDirections[i].Y + UnitDirections[i].Z < 0) {
+                    aabb.minpos += deltaDist * UnitDirections[i];
+                    aabb.maxpos -= deltaDist * UnitDirections[i];
+                } else {
+                    aabb.minpos -= deltaDist * UnitDirections[i];
+                    aabb.maxpos += deltaDist * UnitDirections[i];
+                }
                 handleId = hid;
             }
         }
+        // TODO add position handle
+        return handleId != -1;
+    }
+
+    public bool EditableOBB(in Matrix4X4<float> offsetMatrix, ref OBB box, out int handleId)
+    {
+        var aabb = new AABB(-box.Extent, box.Extent);
+        if (EditableAABB(offsetMatrix * box.Coord.ToGeneric(), ref aabb, out handleId)) {
+            box.Extent = aabb.Size / 2;
+        }
+        // TODO add matrix gizmo
         return handleId != -1;
     }
 
@@ -190,7 +198,16 @@ public class GizmoShapeBuilder : IDisposable
     public void Add(in Matrix4X4<float> offsetMatrix, LineSegment shape)
         => builder.Add(new LineSegment(Vector3.Transform(shape.start, offsetMatrix.ToSystem()), Vector3.Transform(shape.end, offsetMatrix.ToSystem())));
     public void Add(in Matrix4X4<float> offsetMatrix, AABB shape)
-        => builder.Add(new AABB(Vector3.Transform(shape.minpos, offsetMatrix.ToSystem()), Vector3.Transform(shape.maxpos, offsetMatrix.ToSystem())));
+    {
+        if (offsetMatrix.IsIdentity) {
+            builder.Add(shape);
+        } else {
+            // if the matrix isn't identity, we can't draw it as a pure AABB shpae and need to redirect to OBB instead - probably
+            // unless the game treats AABBs specially in that no rotations are made, in which case we could decompose and take only the translation from the matrix
+            // TODO verify AABB shape matrix handling
+            Add(offsetMatrix, new OBB(Matrix4x4.CreateTranslation(shape.Center), shape.Size / 2));
+        }
+    }
     public void Add(in Matrix4X4<float> offsetMatrix, OBB shape)
         => builder.Add(new OBB(offsetMatrix.ToSystem() * shape.Coord.ToSystem(), shape.Extent));
     public void Add(in Matrix4X4<float> offsetMatrix, Sphere shape)

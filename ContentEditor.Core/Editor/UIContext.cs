@@ -67,6 +67,7 @@ public class UIContext
     public UIContext? GetChildByValue<T>() => children.FirstOrDefault(ch => ch.target is T);
     public T? GetChildValue<T>() => (T?)children.FirstOrDefault(ch => ch.target is T)?.target;
     public T? GetChildHandler<T>() => (T?)children.FirstOrDefault(ch => ch.uiHandler is T)?.uiHandler;
+    public UIContext? FindNestedChildByHandler<T>() where T : class, IObjectUIHandler => children.Select(ch => (ch.uiHandler is T ? ch : ch.FindNestedChildByHandler<T>())).FirstOrDefault(cc => cc != null);
 
     private static object? DefaultGetter(UIContext ctx) => ctx.target;
 

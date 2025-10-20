@@ -145,18 +145,14 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
 [ObjectImguiHandler(typeof(List<RequestSet>))]
 public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSet, List<RequestSet>>
 {
-    // protected override UIContext CreateElementContext(UIContext context, IList list, int elementIndex)
-    // {
-    //     var ctx = WindowHandlerFactory.CreateListElementContext(context, elementIndex);
-    //     ctx.uiHandler = ItemHandler;
-    //     return ctx;
-    // }
-
     protected override string GetKey(RequestSet item) => item.Info.Name;
 
     protected override RequestSet? CreateItem(UIContext context, string key)
     {
-        throw new NotImplementedException();
+        var rcol = context.FindValueInParentValues<RcolFile>();
+        if (rcol == null) return null;
+        rcol.CreateNewRequestSet(key);
+        return null;
     }
 
     protected override void InitChildContext(UIContext itemContext)
@@ -180,15 +176,6 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
                 context.AddChild<RequestSet, string>("Name", rset, getter: (i) => i!.Info.Name, setter: (i, v) => i.Info.Name = v ?? string.Empty).AddDefaultHandler<string>();
                 context.AddChild<RequestSet, string>("KeyName", rset, getter: (i) => i!.Info.KeyName, setter: (i, v) => i.Info.KeyName = v ?? string.Empty).AddDefaultHandler<string>();
                 context.AddChild<RequestSet, int>("Status", rset, getter: (i) => i!.Info.status, setter: (i, v) => i.Info.status = v).AddDefaultHandler<int>();
-
-                // context.AddChild<RequestSet, RcolGroup>("Group", rset, getter: (i) => i!.Group, setter: (i, v) => i.Group = v).AddDefaultHandler<RcolGroup>();
-                // context.AddChild<RequestSet, RszInstance>(
-                //     "UserData",
-                //     rset,
-                //     new NestedUIHandlerStringSuffixed(new SwappableRszInstanceHandler("via.physics.RequestSetColliderUserData")),
-                //     (i) => i!.Instance,
-                //     setter: (i, v) => i.Instance = v);
-                // context.AddChild<RequestSet, List<RszInstance>>("Shape userdata", rset, getter: (i) => i!.ShapeUserdata, setter: (i, v) => i.ShapeUserdata = v!).AddDefaultHandler<List<RszInstance>>();
             }
 
             context.ShowChildrenUI();
@@ -233,6 +220,7 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
                     var item = context.Get<RequestSet>();
                     var clone = item.Clone();
                     clone.Index = item.Index + 1;
+                    clone.Info.ID = clone.Info.ID + 1; // TODO verify unique
                     UndoRedo.RecordListInsert(context.parent, list, clone, list.IndexOf(item) + 1);
                     ImGui.CloseCurrentPopup();
                 }
@@ -248,8 +236,8 @@ public class RequestSetEditor : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
+        var rset = context.Get<RequestSet>();
         if (context.children.Count == 0) {
-            var rset = context.Get<RequestSet>();
             context.AddChild<RequestSet, int>("Index", rset, getter: (i) => i!.Index, setter: (i, v) => i.Index = v).AddDefaultHandler<int>();
             context.AddChild<RequestSet, string>("Name", rset, getter: (i) => i!.Info.Name, setter: (i, v) => i.Info.Name = v ?? string.Empty).AddDefaultHandler<string>();
             context.AddChild<RequestSet, string>("KeyName", rset, getter: (i) => i!.Info.KeyName, setter: (i, v) => i.Info.KeyName = v ?? string.Empty).AddDefaultHandler<string>();
@@ -269,7 +257,14 @@ public class RequestSetEditor : IObjectUIHandler
             context.AddChild<RequestSet, List<RszInstance>>("Shape userdata", rset, getter: (i) => i!.ShapeUserdata, setter: (i, v) => i.ShapeUserdata = v!).AddDefaultHandler<List<RszInstance>>();
         }
 
+        var name = rset.Info.Name;
         context.ShowChildrenUI();
+        if (rset.Info.Name != name) {
+            var listeditor = context.FindParentContextByHandler<RequestSetListEditor>()
+                ?? (context.FindHandlerInParents<ObjectInspector>()?.ParentWindow as RcolEditor)?.Context.FindNestedChildByHandler<RequestSetListEditor>();
+            listeditor?.ClearChildren();
+            // context.parent?.ClearChildren();
+        }
     }
 }
 
@@ -283,18 +278,53 @@ public class RcolGroupEditor : IObjectUIHandler
             context.AddChild<RcolGroup, string>("Name", group, getter: (i) => i!.Info.Name, setter: (i, v) => i.Info.Name = v ?? string.Empty).AddDefaultHandler<string>();
             context.AddChild<RcolGroup, Guid>("GUID", group, getter: (i) => i!.Info.guid, setter: (i, v) => i.Info.guid = v).AddDefaultHandler<Guid>();
             context.AddChild<RcolGroup, Guid>("Layer", group, getter: (i) => i!.Info.LayerGuid, setter: (i, v) => i.Info.LayerGuid = v).AddDefaultHandler<Guid>();
-            context.AddChild<RcolGroup, List<Guid>>("Masks", group, getter: (i) => i!.Info.MaskGuids, setter: (i, v) => i.Info.MaskGuids = v).AddDefaultHandler<List<Guid>>();
+            context.AddChild<RcolGroup, List<Guid>>("Masks", group, new ListHandler(typeof(Guid), typeof(List<Guid>)) { CanCreateNewElements = true }, (i) => i!.Info.MaskGuids, (i, v) => i.Info.MaskGuids = v);
             context.AddChild<RcolGroup, RszInstance>(
                 "UserData",
                 group,
                 new NestedUIHandlerStringSuffixed(new SwappableRszInstanceHandler("via.physics.RequestSetColliderUserData")),
                 (i) => i!.Info.UserData,
                 setter: (i, v) => i.Info.UserData = v);
-            context.AddChild<RcolGroup, List<RcolShape>>("Shapes", group, new ListHandler(typeof(RcolShape)) { CanCreateNewElements = false }, getter: (i) => i!.Shapes);
-            context.AddChild<RcolGroup, List<RcolShape>>("ExtraShapes", group, new ListHandler(typeof(RcolShape)) { CanCreateNewElements = false }, getter: (i) => i!.ExtraShapes);
+            context.AddChild<RcolGroup, List<RcolShape>>("Shapes", group, new ListHandler(typeof(RcolShape)) { CanCreateNewElements = true }, getter: (i) => i!.Shapes);
+            context.AddChild<RcolGroup, List<RcolShape>>("ExtraShapes", group, new ListHandler(typeof(RcolShape)) { CanCreateNewElements = true }, getter: (i) => i!.ExtraShapes);
         }
 
         context.ShowChildrenUI();
+    }
+}
+
+[ObjectImguiHandler(typeof(RcolShape))]
+public class RcolShapeEditor : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        if (context.children.Count == 0) {
+            var group = context.Get<RcolShape>();
+            context.AddChild<RcolShape, string>("Name", group, getter: (i) => i!.Info.Name, setter: (i, v) => i.Info.Name = v ?? string.Empty).AddDefaultHandler<string>();
+            context.AddChild<RcolShape, Guid>("GUID", group, getter: (i) => i!.Info.Guid, setter: (i, v) => i.Info.Guid = v).AddDefaultHandler<Guid>();
+            context.AddChild<RcolShape, int>("LayerIndex", group, getter: (i) => i!.Info.LayerIndex, setter: (i, v) => i.Info.LayerIndex = v).AddDefaultHandler<int>();
+            context.AddChild("Shape Type", group, getter: (ctx) => ((RcolShape)ctx.target!).Info.shapeType, setter: (ctx, v) => {
+                var i = (RcolShape)ctx.target!;
+                if (i.Info.shapeType == (ShapeType)v!) return;
+                i.Info.shapeType = (ShapeType)v!;
+                i.UpdateShapeType();
+                ctx.parent?.ClearChildren();
+            }).AddDefaultHandler<ShapeType>();
+            context.AddChild<RcolShape, int>("Attribute", group, getter: (i) => i!.Info.Attribute, setter: (i, v) => i.Info.Attribute = v).AddDefaultHandler<int>();
+            context.AddChild<RcolShape, uint>("Skip ID Bits", group, getter: (i) => i!.Info.SkipIdBits, setter: (i, v) => i.Info.SkipIdBits = v).AddDefaultHandler<uint>();
+            context.AddChild<RcolShape, uint>("IgnoreTag Bits", group, getter: (i) => i!.Info.IgnoreTagBits, setter: (i, v) => i.Info.IgnoreTagBits = v).AddDefaultHandler<uint>();
+            context.AddChild<RcolShape, string>("Primary Joint", group, getter: (i) => i!.Info.primaryJointNameStr, setter: (i, v) => i.Info.primaryJointNameStr = v ?? string.Empty).AddDefaultHandler<string>();
+            context.AddChild<RcolShape, string>("Secondary Joint", group, getter: (i) => i!.Info.secondaryJointNameStr, setter: (i, v) => i.Info.secondaryJointNameStr = v ?? string.Empty).AddDefaultHandler<string>();
+            context.AddChild("Shape", group, getter: (i) => ((RcolShape)i.target!).shape, setter: (i, s) => ((RcolShape)i.target!).shape = s).AddDefaultHandler();
+            context.AddChild<RcolShape, RszInstance>(
+                "UserData",
+                group,
+                new NestedUIHandlerStringSuffixed(new SwappableRszInstanceHandler("via.physics.RequestSetColliderUserData")),
+                (i) => i!.Instance,
+                setter: (i, v) => i.Instance = v);
+        }
+
+        context.ShowChildrenNestedUI();
     }
 }
 

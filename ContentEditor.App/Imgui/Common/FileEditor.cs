@@ -25,6 +25,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     protected bool failedToReadfile = false;
     protected ImGuiWindowFlags windowFlags;
     protected UIContext context = null!;
+    internal UIContext Context => context;
 
     protected virtual bool IsRevertable => true;
 
