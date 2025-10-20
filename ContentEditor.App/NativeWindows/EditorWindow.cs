@@ -506,6 +506,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                         SceneManager.ChangeMasterScene(scene);
                         scene.Controller ??= new();
                         scene.Controller.Keyboard = _inputContext.Keyboards[0];
+                        scene.AddWidget<SceneVisibilitySettings>();
                     }
                 }
             }
@@ -621,7 +622,14 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     {
         ShowMainMenuBar();
         if (IsDragging) ImGui.BeginDisabled();
-        BeginDockableBackground(new Vector2(0, ImGui.CalcTextSize("a").Y + ImGui.GetStyle().FramePadding.Y * 2));
+
+        var viewportOffset = new Vector2(0, ImGui.CalcTextSize("a").Y + ImGui.GetStyle().FramePadding.Y * 2);
+        foreach (var sc in SceneManager.RootMasterScenes) {
+            if (sc.MouseHandler != null) {
+                sc.OwnRenderContext.ViewportOffset = viewportOffset;
+            }
+        }
+        BeginDockableBackground(viewportOffset);
         if (Overlays != null) {
             Overlays.ShowHelp = !_disableIntroGuide && !subwindows.Any(s => !IsDefaultWindow(s)) && !SceneManager.HasActiveMasterScene;
         }

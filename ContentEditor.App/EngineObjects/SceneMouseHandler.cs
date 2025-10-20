@@ -16,10 +16,10 @@ public class SceneMouseHandler
     public event Action<Vector2>? StopDragging;
 
     public Scene? scene;
-    public Vector2 viewportOffset;
 
+    private Vector2 ViewportOffset => (scene?.RenderContext.ViewportOffset ?? new());
     public Vector2 MouseViewportPosition { get; private set; }
-    public Vector2 MouseScreenPosition => MouseViewportPosition + viewportOffset;
+    public Vector2 MouseScreenPosition => MouseViewportPosition + ViewportOffset;
 
     public bool IsLeftDown => IsDown(ImGuiMouseButton.Left);
     public bool IsRightDown => IsDown(ImGuiMouseButton.Right);
@@ -115,9 +115,8 @@ public class SceneMouseHandler
 
     private MouseButtonFlags DownFlags => (downLB ? MouseButtonFlags.Left : 0) | (downRB ? MouseButtonFlags.Right : 0) | (downMB ? MouseButtonFlags.Middle : 0);
 
-    public void UpdateMouseDown(IMouse mouse, bool leftDown, bool rightDown, bool middleDown, bool allowDown, Vector2 mouseScreenPos, Vector2 viewportOffset)
+    public void UpdateMouseDown(IMouse mouse, bool leftDown, bool rightDown, bool middleDown, bool allowDown, Vector2 mouseScreenPos)
     {
-        this.viewportOffset = viewportOffset;
         if (leftDown != downLB) {
             if (!leftDown) {
                 HandleMouseUp(mouse, ImGuiMouseButton.Left, mouseScreenPos);
@@ -142,14 +141,14 @@ public class SceneMouseHandler
             }
         }
 
-        if (lastMousePos != mouseScreenPos - viewportOffset) {
+        if (lastMousePos != mouseScreenPos - ViewportOffset) {
             HandleMouseMove(mouse, mouseScreenPos);
         }
     }
 
     public void HandleMouseDown(ImGuiMouseButton button, Vector2 position)
     {
-        position -= viewportOffset;
+        position -= ViewportOffset;
         IsDown(button) = true;
         DownTime(button) = DateTime.Now;
         DownPosition(button) = position;
@@ -158,7 +157,7 @@ public class SceneMouseHandler
 
     public void HandleMouseUp(IMouse mouse, ImGuiMouseButton button, Vector2 position)
     {
-        position -= viewportOffset;
+        position -= ViewportOffset;
         var lastDownPos = DownPosition(button) ?? new Vector2(float.MinValue);
 
         IsDown(button) = false;
@@ -177,13 +176,13 @@ public class SceneMouseHandler
         if (!AnyMouseDown && isDragging) {
             isDragging = false;
             StopDragging?.Invoke(position);
-            scene?.Controller?.OnMouseDragEnd(mouse, dragStartButton, position, _dragStartPos + viewportOffset);
+            scene?.Controller?.OnMouseDragEnd(mouse, dragStartButton, position, _dragStartPos + ViewportOffset);
         }
     }
 
     public void HandleMouseMove(IMouse mouse, Vector2 position)
     {
-        position -= viewportOffset;
+        position -= ViewportOffset;
         MouseViewportPosition = position;
         var delta = position - lastMousePos;
         lastMousePos = position;

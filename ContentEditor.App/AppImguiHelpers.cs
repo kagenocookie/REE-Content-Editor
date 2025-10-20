@@ -110,7 +110,7 @@ public static class AppImguiHelpers
         }
     }
 
-    public static void RedirectMouseInputToScene(Scene scene, bool isHovered, Vector2 viewportTopLeft)
+    public static void RedirectMouseInputToScene(Scene scene, bool isHovered)
     {
         if (scene.Controller == null || scene.MouseHandler == null) return;
 
@@ -119,6 +119,6 @@ public static class AppImguiHelpers
         var rightDown = ImGui.IsMouseDown(ImGuiMouseButton.Right);
         var middleDown = ImGui.IsMouseDown(ImGuiMouseButton.Middle);
 
-        scene.MouseHandler.UpdateMouseDown(EditorWindow.CurrentWindow!.LastMouse, leftDown, rightDown, middleDown, isHovered, absPos, viewportTopLeft);
+        scene.MouseHandler.UpdateMouseDown(EditorWindow.CurrentWindow!.LastMouse, leftDown, rightDown, middleDown, isHovered, absPos);
     }
 }

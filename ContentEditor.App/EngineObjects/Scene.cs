@@ -1,14 +1,18 @@
 using System.Collections.ObjectModel;
+using System.Numerics;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Graphics;
+using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
+using ContentEditor.Editor;
 using ContentPatcher;
+using ImGuiNET;
 using ReeLib;
 using Silk.NET.OpenGL;
 
 namespace ContentEditor.App;
 
-public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiver
+public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiver, IWorkspaceContainer, IRectWindow
 {
     public readonly Folder RootFolder;
     public IEnumerable<Folder> Folders => RootFolder.Children;
@@ -36,6 +40,8 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
 
     private GL _gl;
 
+    private UIContext? ui;
+
     private RenderContext renderContext;
     public RenderContext RenderContext => RootScene.renderContext;
     public RenderContext OwnRenderContext => renderContext;
@@ -48,6 +54,9 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     private HashSet<string> _requestedScenes = new(0);
 
     private bool HasRenderables => !Renderable.IsEmpty || childScenes.Any(ch => ch.HasRenderables);
+
+    Vector2 IRectWindow.Size => renderContext.ViewportSize;
+    Vector2 IRectWindow.Position => renderContext.ViewportOffset;
 
     internal Scene(string name, string internalPath, ContentWorkspace workspace, Scene? parentScene = null, Folder? rootFolder = null, GL? gl = null)
     {
@@ -184,7 +193,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
             return;
         }
 
-        cam.Update(rctx.RenderOutputSize);
+        cam.Update(rctx.ViewportSize);
         rctx.ViewMatrix = cam.ViewMatrix;
         rctx.ProjectionMatrix = cam.ProjectionMatrix;
         rctx.ViewProjectionMatrix = cam.ViewProjectionMatrix;
@@ -208,6 +217,22 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     public void RenderUI()
     {
         gizmoManager?.RenderUI();
+        if (ui != null) {
+            var cursorStart = ((IRectWindow)this).Position;
+            for (int i = 0; i < ui.children.Count; i++) {
+                ImGui.SetCursorScreenPos(cursorStart);
+                ui.children[i].ShowUI();
+            }
+        }
+    }
+
+    public void AddWidget<THandler>() where THandler : ISceneWidget, new()
+    {
+        ui ??= UIContext.CreateRootContext(Name, this);
+        var child = ui.GetChildHandler<THandler>();
+        if (child == null) {
+            ui.AddChild(THandler.WidgetName, this, new THandler());
+        }
     }
 
     public void SetActive(bool active)

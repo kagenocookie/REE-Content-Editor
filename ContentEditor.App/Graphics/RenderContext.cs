@@ -28,14 +28,19 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
         set => UpdateResourceManager(value);
     }
 
+    /// <summary>The full renderable screen area size.</summary>
+    public Vector2 ScreenSize { get; set; }
+
+    /// <summary>The offset of the viewport's top left edge relative to the full screen area.</summary>
+    public Vector2 ViewportOffset { get; set; }
+
+    /// <summary>The render output size of this render context's viewport.</summary>
     public Vector2 ViewportSize { get; set; }
 
-    protected Vector2 _renderTargetTextureSize;
     protected bool _renderTargetTextureSizeOutdated;
 
     protected uint _outputTexture;
     public uint RenderTargetTextureHandle => _outputTexture;
-    public Vector2 RenderOutputSize => _outputTexture != 0 ? _renderTargetTextureSize : ViewportSize;
 
     protected Dictionary<IResourceFile, (FileHandle handle, int refcount)> _loadedResources = new();
 
@@ -114,12 +119,12 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
 
     public void SetRenderToTexture(Vector2 textureSize = new())
     {
-        if (textureSize == _renderTargetTextureSize) return;
+        if (textureSize == ViewportSize) return;
         if (textureSize.X < 1 || textureSize.Y < 1) {
             throw new Exception("Invalid negative render texture size");
         }
         _renderTargetTextureSizeOutdated = true;
-        _renderTargetTextureSize = textureSize;
+        ViewportSize = textureSize;
     }
 
     public MeshHandle? LoadMesh(string mesh)

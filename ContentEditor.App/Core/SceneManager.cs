@@ -1,7 +1,7 @@
 using ContentEditor.App.ImguiHandling;
-using ContentEditor.App.Windowing;
 using ContentEditor.Editor;
 using ContentPatcher;
+using ImGuiNET;
 using ReeLib;
 
 namespace ContentEditor.App;
@@ -97,10 +97,17 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
         foreach (var scene in rootScenes) {
             if (!scene.IsActive) continue;
 
-            scene.OwnRenderContext.ViewportSize = Window.Size;
-            scene.Render(deltaTime);
+            scene.OwnRenderContext.ScreenSize = Window.Size;
             if (scene.OwnRenderContext.RenderTargetTextureHandle == 0) {
+                scene.OwnRenderContext.ViewportSize = Window.Size - scene.OwnRenderContext.ViewportOffset;
+                scene.Render(deltaTime);
+                ImGui.SetNextWindowPos(scene.OwnRenderContext.ViewportOffset, ImGuiCond.Always);
+                ImGui.SetNextWindowSize(scene.OwnRenderContext.ViewportSize, ImGuiCond.Always);
+                ImGui.Begin(scene.Name, ImGuiWindowFlags.NoTitleBar|ImGuiWindowFlags.NoResize|ImGuiWindowFlags.NoMove|ImGuiWindowFlags.NoScrollbar|ImGuiWindowFlags.NoScrollWithMouse|ImGuiWindowFlags.NoCollapse|ImGuiWindowFlags.NoDecoration|ImGuiWindowFlags.NoBackground|ImGuiWindowFlags.NoFocusOnAppearing|ImGuiWindowFlags.NoBringToFrontOnFocus|ImGuiWindowFlags.NoInputs);
                 scene.RenderUI();
+                ImGui.End();
+            } else {
+                scene.Render(deltaTime);
             }
         }
     }

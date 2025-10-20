@@ -389,7 +389,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, _outputBuffer);
             GL.ClearColor(0, 0, 0, 0);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            GL.Viewport(new System.Drawing.Size((int)_renderTargetTextureSize.X, (int)_renderTargetTextureSize.Y));
+            GL.Viewport(new System.Drawing.Size((int)ViewportSize.X, (int)ViewportSize.Y));
         }
         base.BeforeRender();
         ApplyGlobalUniforms();
@@ -408,7 +408,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         RenderGizmos();
         if (_outputBuffer != 0) {
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-            GL.Viewport(new System.Drawing.Size((int)ViewportSize.X, (int)ViewportSize.Y));
+            GL.Viewport(new System.Drawing.Size((int)ScreenSize.X, (int)ScreenSize.Y));
         }
     }
 
@@ -453,14 +453,14 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         }
 
         GL.BindTexture(TextureTarget.Texture2D, _outputTexture);
-        GL.TexImage2D(TextureTarget.Texture2D, 0, InternalFormat.Rgb, (uint)_renderTargetTextureSize.X, (uint)_renderTargetTextureSize.Y, 0, PixelFormat.Rgb, PixelType.UnsignedByte, null);
+        GL.TexImage2D(TextureTarget.Texture2D, 0, InternalFormat.Rgb, (uint)ViewportSize.X, (uint)ViewportSize.Y, 0, PixelFormat.Rgb, PixelType.UnsignedByte, null);
         uint nearest = (uint)GLEnum.Nearest;
         GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, in nearest);
         GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, in nearest);
 
         _outputTexDepthBuffer = GL.GenRenderbuffer();
         GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, _outputTexDepthBuffer);
-        GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, InternalFormat.DepthComponent, (uint)_renderTargetTextureSize.X, (uint)_renderTargetTextureSize.Y);
+        GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, InternalFormat.DepthComponent, (uint)ViewportSize.X, (uint)ViewportSize.Y);
         GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, _outputTexDepthBuffer);
         GL.FramebufferTexture(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, _outputTexture, 0);
         GL.DrawBuffer(DrawBufferMode.ColorAttachment0);

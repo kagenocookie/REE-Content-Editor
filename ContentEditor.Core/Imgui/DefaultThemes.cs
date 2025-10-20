@@ -368,7 +368,7 @@ public class DefaultThemes
         style.WindowMinSize = new Vector2(32.0f, 32.0f);
         style.WindowTitleAlign = new Vector2(0.0f, 0.5f);
         style.WindowMenuButtonPosition = ImGuiDir.Left;
-        style.ChildRounding = 0.0f;
+        style.ChildRounding = 1.0f;
         style.ChildBorderSize = 1.0f;
         style.PopupRounding = 4.0f;
         style.PopupBorderSize = 1.0f;

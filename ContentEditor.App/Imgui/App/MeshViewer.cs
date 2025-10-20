@@ -182,6 +182,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             scene.MouseHandler = new SceneMouseHandler();
             scene.MouseHandler.scene = scene;
             scene.ActiveCamera.GameObject.MoveToScene(scene);
+            scene.AddWidget<SceneVisibilitySettings>();
         }
 
         MeshComponent meshComponent;
@@ -220,6 +221,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
         var c = ImGui.GetCursorPos();
         var cc = ImGui.GetCursorScreenPos();
+        scene.OwnRenderContext.ViewportOffset = cc;
         ImGui.Image((nint)scene.RenderContext.RenderTargetTextureHandle, expectedSize, new System.Numerics.Vector2(0, 1), new System.Numerics.Vector2(1, 0));
         if (embeddedMenuPos != null) {
             ImGui.SetCursorPos(embeddedMenuPos.Value);
@@ -265,9 +267,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         }
 
         if (isDragging || hoveredMesh) {
-            AppImguiHelpers.RedirectMouseInputToScene(scene, hoveredMesh, cc);
-        } else if (Scene?.MouseHandler != null) {
-            Scene.MouseHandler.viewportOffset = cc;
+            AppImguiHelpers.RedirectMouseInputToScene(scene, hoveredMesh);
         }
     }
 

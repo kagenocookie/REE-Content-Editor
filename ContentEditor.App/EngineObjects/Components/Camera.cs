@@ -82,7 +82,7 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
     {
         if (Scene == null) return new();
 
-        var size = Scene!.RenderContext.RenderOutputSize;
+        var size = Scene!.RenderContext.ViewportSize;
         var vec = Project(ViewProjectionMatrix, size, worldPosition);
         if (limitToViewport) {
             if (vec.W < 0) return new Vector2(float.MaxValue);
@@ -99,7 +99,7 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
         if (Scene == null) return new();
 
         var viewportPosition = WorldToViewportXYPosition(worldPosition, limitToViewport);
-        var offset = Scene.MouseHandler?.viewportOffset ?? default;
+        var offset = Scene.RenderContext.ViewportOffset;
         return viewportPosition + offset;
     }
 
@@ -107,7 +107,7 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
     /// Transforms a screen space position into world space.
     /// </summary>
     public Vector3 ScreenToWorldPosition(Vector3 screenPos)
-        => ViewportToWorldPosition(screenPos - (Scene?.MouseHandler?.viewportOffset.ToVec3() ?? new()));
+        => ViewportToWorldPosition(screenPos - (Scene?.RenderContext.ViewportOffset.ToVec3() ?? new()));
 
     /// <summary>
     /// Transforms a screen space position into world space.
@@ -116,7 +116,7 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
     {
         if (Scene == null) return new();
 
-        var size = Scene.RenderContext.RenderOutputSize;
+        var size = Scene.RenderContext.ViewportSize;
         var vec = Unproject(ViewProjectionMatrix, size, viewportPos);
         return vec;
     }
@@ -128,9 +128,9 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
     {
         if (Scene == null) return new();
 
-        var offset = (Scene.MouseHandler?.viewportOffset ?? new());
+        var offset = Scene.RenderContext.ViewportOffset;
         var viewportPos = screenPos - offset;
-        var size = Scene.RenderContext.RenderOutputSize;
+        var size = Scene.RenderContext.ViewportSize;
         // recalculate the reference Z / depth so we get accurate distance
         var orgDepth = Project(ViewProjectionMatrix, size, referencePosition).Z;
         var pos = Unproject(ViewProjectionMatrix, size, new Vector3(viewportPos.X, viewportPos.Y, orgDepth));
