@@ -17,48 +17,41 @@ public class SceneVisibilitySettings : ISceneWidget
 
         var style = ImGui.GetStyle();
         var btnSize = style.FramePadding * 2 + new Vector2(UI.FontSize, UI.FontSize);
-        btnSize.X = 4 * (btnSize.X + style.FramePadding.X) + style.WindowPadding.X * 2;
+        btnSize.X = (btnSize.X + style.FramePadding.X) + style.FramePadding.X;
         ImGui.SetNextWindowPos(offset + new Vector2(size.X - btnSize.X - 8, 8));
-        // ImGui.SetNextWindowSize(new Vector2(btnSize.X, btnSize.Y + style.WindowPadding.Y * 2));
         ImGui.BeginChild(WidgetName, new Vector2(btnSize.X, btnSize.Y + style.FramePadding.Y * 2));
-        // ImGui.Begin("##toolbar", ImGuiWindowFlags.NoBringToFrontOnFocus|ImGuiWindowFlags.NoCollapse|ImGuiWindowFlags.NoResize|ImGuiWindowFlags.NoTitleBar|ImGuiWindowFlags.NoDocking|ImGuiWindowFlags.NoScrollbar);
-        var meshIcon = AppIcons.Mesh.ToString();
         ImGui.SetCursorPos(ImGui.GetCursorPos() + style.FramePadding);
-
-        // axis/grid display toggle
-        ImGui.PushStyleColor(ImGuiCol.Text, Colors.Info with { W = AppConfig.Instance.RenderAxis.Get() ? 1 : 0.6f });
-        if (ImGui.Button(meshIcon + "##axis")) {
-            AppConfig.Instance.RenderAxis.Set(!AppConfig.Instance.RenderAxis);
+        if (ImGui.Button($"{AppIcons.Eye}")) {
+            ImGui.OpenPopup(WidgetName);
         }
-        ImGui.PopStyleColor();
-        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Show Gizmos");
+        if (ImGui.BeginPopup(WidgetName)) {
+            var meshIcon = AppIcons.Mesh.ToString();
 
-        // meshes
-        ImGui.SameLine();
-        ImGui.PushStyleColor(ImGuiCol.Text, AppConfig.Instance.RenderMeshes.Get() ? Colors.Default : Colors.Faded);
-        if (ImGui.Button(meshIcon + "##mesh")) {
-            AppConfig.Instance.RenderMeshes.Set(!AppConfig.Instance.RenderMeshes);
-        }
-        ImGui.PopStyleColor();
-        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Show Meshes");
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.Info with { W = AppConfig.Instance.RenderAxis.Get() ? 1 : 0.6f });
+            if (ImGui.Button($"{meshIcon} Axis Gizmos")) {
+                AppConfig.Instance.RenderAxis.Set(!AppConfig.Instance.RenderAxis);
+            }
+            ImGui.PopStyleColor();
 
-        // colliders
-        ImGui.SameLine();
-        ImGui.PushStyleColor(ImGuiCol.Text, Colors.Colliders with { W = AppConfig.Instance.RenderColliders.Get() ? 1 : 0.6f });
-        if (ImGui.Button(meshIcon + "##coll")) {
-            AppConfig.Instance.RenderColliders.Set(!AppConfig.Instance.RenderColliders);
-        }
-        ImGui.PopStyleColor();
-        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Show Colliders");
+            ImGui.PushStyleColor(ImGuiCol.Text, AppConfig.Instance.RenderMeshes.Get() ? Colors.Default : Colors.Faded);
+            if (ImGui.Button($"{meshIcon} Meshes")) {
+                AppConfig.Instance.RenderMeshes.Set(!AppConfig.Instance.RenderMeshes);
+            }
+            ImGui.PopStyleColor();
 
-        // rcol colliders
-        ImGui.SameLine();
-        ImGui.PushStyleColor(ImGuiCol.Text, Colors.RequestSetColliders with { W = AppConfig.Instance.RenderRequestSetColliders.Get() ? 1 : 0.6f });
-        if (ImGui.Button(meshIcon + "##rcol")) {
-            AppConfig.Instance.RenderRequestSetColliders.Set(!AppConfig.Instance.RenderRequestSetColliders);
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.Colliders with { W = AppConfig.Instance.RenderColliders.Get() ? 1 : 0.6f });
+            if (ImGui.Button($"{meshIcon} Physics Colliders")) {
+                AppConfig.Instance.RenderColliders.Set(!AppConfig.Instance.RenderColliders);
+            }
+            ImGui.PopStyleColor();
+
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.RequestSetColliders with { W = AppConfig.Instance.RenderRequestSetColliders.Get() ? 1 : 0.6f });
+            if (ImGui.Button($"{meshIcon} Request Set Colliders (rcol)")) {
+                AppConfig.Instance.RenderRequestSetColliders.Set(!AppConfig.Instance.RenderRequestSetColliders);
+            }
+            ImGui.PopStyleColor();
+            ImGui.EndPopup();
         }
-        ImGui.PopStyleColor();
-        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Show Request Set Colliders (rcol)");
 
         ImGui.EndChild();
     }

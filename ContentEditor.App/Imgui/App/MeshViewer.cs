@@ -296,8 +296,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 if (ImGui.MenuItem($"{AppIcons.EfxEntry} Material")) ImGui.OpenPopup("Material"); // placeholder icon
                 if (ImGui.MenuItem($"{AppIcons.SI_FileExtractTo} Import / Export")) ImGui.OpenPopup("Export");
                 if (ImGui.MenuItem($"{AppIcons.Play} Animations")) showAnimationsMenu = !showAnimationsMenu;
-                if (ImGui.MenuItem($"{AppIcons.Mesh} RCOL")) ImGui.OpenPopup("RCOL");
                 if (showAnimationsMenu) ImguiHelpers.HighlightMenuItem($"{AppIcons.Play} Animations");
+                if (ImGui.MenuItem($"{AppIcons.Mesh} RCOL")) ImGui.OpenPopup("RCOL");
 
                 if (ImGui.BeginPopup("MeshInfo")) {
                     ShowMeshInfo();
@@ -627,7 +627,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         var windowSize = ImGui.GetWindowSize();
         var timestamp = $"{animator.CurrentTime:0.00} / {animator.TotalTime:0.00} ({animator.CurrentFrame:000} / {animator.TotalFrames:000})";
         var timestampSize = ImGui.CalcTextSize(timestamp) + new Vector2(5 * 48, 0);
-        ImGui.SetCursorPos(new Vector2(windowSize.X - timestampSize.X - ImGui.GetStyle().WindowPadding.X * 2, TopMargin));
+        ImGui.SetCursorPos(new Vector2(windowSize.X - timestampSize.X - ImGui.GetStyle().WindowPadding.X * 2 - 42, TopMargin));
         ImGui.PushStyleColor(ImGuiCol.ChildBg, ImguiHelpers.GetColor(ImGuiCol.WindowBg) with { W = 0.5f });
         ImGui.BeginChild("PlaybackControls", new Vector2(timestampSize.X, 46), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
 

@@ -63,7 +63,7 @@ Some files may not fully work for other RE ENGINE games.
 
 </div>
 
-*File types marked with ☑️ are effectively feature complete.*
+*File types marked with ☑️ are effectively feature complete for most usecases.*
 
 ## Custom entity support
 Accessible under the Windows > Entities menu option for supported games, these are streamlined editors for game-specific data. They can be used to more easily modify or add custom items and other game content related objects.

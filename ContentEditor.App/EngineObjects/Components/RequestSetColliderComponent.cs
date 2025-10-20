@@ -30,7 +30,7 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
     private HashSet<string>? missingRcols;
     private RcolEditor? editor;
 
-    public bool IsEnabled => Scene?.RenderContext.RenderTargetTextureHandle > 0 || AppConfig.Instance.RenderRequestSetColliders.Get();
+    public bool IsEnabled => AppConfig.Instance.RenderRequestSetColliders.Get();
 
     public void OpenEditor(int rcolIndex)
     {
@@ -51,6 +51,7 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
         if (editor != null) {
             // TODO idk
         }
+        if (rcols.Count == 0) UpdateRcolFileList();
         Debug.Assert(rcols.Contains(rcol.GetFile<RcolFile>()));
         editor = EditorWindow.CurrentWindow!.AddSubwindow(new RcolEditor(Scene!.Workspace, rcol, this)).Handler as RcolEditor;
     }
@@ -77,31 +78,14 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
         Scene!.RootScene.Gizmos.Remove(this);
     }
 
-    public GizmoContainer? Update(GizmoContainer? gizmo)
+    private void UpdateRcolFileList()
     {
         var refRcols = RszFieldCache.RequestSetCollider.RequestSetGroups.Get(Data);
-        if (refRcols == null || refRcols.Count == 0 || Scene?.IsActive != true) {
-            return null;
-        }
-
-        if (inactiveMaterial == null) {
-            var mat = Scene.RenderContext
-                .GetMaterialBuilder(BuiltInMaterials.MonoColor)
-                .Color("_MainColor", Color.FromVector4(Colors.RequestSetColliders));
-            activeMaterial = mat.Blend(Silk.NET.OpenGL.BlendingFactor.SrcAlpha, Silk.NET.OpenGL.BlendingFactor.SrcAlpha).Create("rcol_active");
-
-            (inactiveMaterial, obscuredMaterial) = mat.Blend().Create2("rcol", "rcol_obscured");
-            obscuredMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.RequestSetColliders) with { A = 90 });
-            inactiveMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.RequestSetColliders) with { A = 56 });
-        }
-
         rcols.Clear();
+        if (refRcols == null || refRcols.Count == 0 || Scene?.IsActive != true) {
+            return;
+        }
 
-        gizmo ??= new(Scene, this);
-
-        var parentMesh = GameObject.GetComponent<MeshComponent>()?.MeshHandle as AnimatedMeshHandle;
-
-        ref readonly var transform = ref GameObject.Transform.WorldTransform;
         foreach (var group in refRcols.OfType<RszInstance>()) {
             var rcolPath = RszFieldCache.RequestSetGroup.Resource.Get(group);
             if (string.IsNullOrEmpty(rcolPath)) {
@@ -118,6 +102,29 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
 
             rcols.Add(handle.GetFile<RcolFile>());
         }
+    }
+
+    public GizmoContainer? Update(GizmoContainer? gizmo)
+    {
+        UpdateRcolFileList();
+        if (rcols.Count == 0 || Scene?.IsActive != true) return null;
+
+        if (inactiveMaterial == null) {
+            var mat = Scene.RenderContext
+                .GetMaterialBuilder(BuiltInMaterials.MonoColor)
+                .Color("_MainColor", Color.FromVector4(Colors.RequestSetColliders));
+            activeMaterial = mat.Blend(Silk.NET.OpenGL.BlendingFactor.SrcAlpha, Silk.NET.OpenGL.BlendingFactor.SrcAlpha).Create("rcol_active");
+
+            (inactiveMaterial, obscuredMaterial) = mat.Blend().Create2("rcol", "rcol_obscured");
+            obscuredMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.RequestSetColliders) with { A = 90 });
+            inactiveMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.RequestSetColliders) with { A = 56 });
+        }
+
+        gizmo ??= new(Scene, this);
+
+        var parentMesh = GameObject.GetComponent<MeshComponent>()?.MeshHandle as AnimatedMeshHandle;
+
+        ref readonly var transform = ref GameObject.Transform.WorldTransform;
 
         var selectedSet = (editor?.PrimaryTarget as RequestSet);
         if (editor?.PrimaryTarget is RequestSetInfo setInfo) {
