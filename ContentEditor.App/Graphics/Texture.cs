@@ -315,7 +315,9 @@ public class Texture : IDisposable
 
     public void Dispose()
     {
+        if (_handle == uint.MaxValue) return;
         _gl.DeleteTexture(_handle);
+        _handle = uint.MaxValue;
     }
 
     public override string ToString() => Path ?? _handle.ToString();

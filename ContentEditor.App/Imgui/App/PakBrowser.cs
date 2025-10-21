@@ -1,9 +1,10 @@
+using System.Diagnostics;
+using System.Numerics;
+using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ImGuiNET;
 using ReeLib;
-using System.Diagnostics;
-using System.Numerics;
 
 namespace ContentEditor.App;
 
@@ -37,6 +38,8 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
     private int page;
     private int rowsPerPage = 1000;
     private int selectedRow = -1;
+
+    private Texture? previewTexture;
 
     private readonly Dictionary<(string, int, ImGuiSortDirection), string[]> cachedResults = new();
 
@@ -523,6 +526,28 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                         }
                     }
                     ImGui.PopStyleColor();
+
+                    if (usePreviewWindow && ImGui.IsItemHovered()) {
+                        if (PathUtils.ParseFileFormat(file).format == KnownFileFormats.Texture) {
+                            ImGui.BeginTooltip();
+                            if (previewTexture?.Path != file) {
+                                using var stream = workspace.GetFile(file);
+                                if (stream != null) {
+                                    var fileh = new TexFile(new FileHandler(stream, file));
+                                    fileh.Read();
+                                    previewTexture?.Dispose();
+                                    previewTexture = new Texture();
+                                    previewTexture.LoadFromTex(fileh);
+                                    previewTexture.SetChannel(Texture.TextureChannel.RGB);
+                                }
+                            }
+                            if (previewTexture != null) {
+                                ImGui.Image((nint)previewTexture.Handle, new Vector2(300, 300));
+                            }
+
+                            ImGui.EndTooltip();
+                        }
+                    }
                     if (ImGui.BeginPopupContextItem()) {
                         if (ImGui.Selectable($"{AppIcons.SI_FileCopyPath} | Copy Path")) {
                             EditorWindow.CurrentWindow?.CopyToClipboard(file);
@@ -610,5 +635,6 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         if (previewWindow != null && !previewWindow.RequestClose()) {
             EditorWindow.CurrentWindow?.CloseSubwindow(previewWindow);
         }
+        previewTexture?.Dispose();
     }
 }
