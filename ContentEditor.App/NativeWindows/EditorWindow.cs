@@ -173,6 +173,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     {
         if (button > MouseButton.Middle || button < MouseButton.Left) return;
         foreach (var scene in SceneManager.RootScenes) {
+            if (!scene.IsActive) continue;
+
             var allowHandle = ImGui.GetIO().WantCaptureMouse == (scene.OwnRenderContext.RenderTargetTextureHandle != 0);
             if (!allowHandle) continue;
 
@@ -185,6 +187,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     protected virtual void OnMouseMove(IMouse mouse, Vector2 pos)
     {
         foreach (var scene in SceneManager.RootScenes) {
+            if (!scene.IsActive) continue;
+
             scene.MouseHandler ??= new();
             scene.MouseHandler.scene = scene;
             scene.MouseHandler.HandleMouseMove(LastMouse, pos);
@@ -507,6 +511,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                         scene.Controller ??= new();
                         scene.Controller.Keyboard = _inputContext.Keyboards[0];
                         scene.Controller.MoveSpeed = AppConfig.Settings.SceneView.MoveSpeed;
+                        scene.Controller.Scene = scene;
                         scene.AddWidget<SceneVisibilitySettings>();
                         scene.AddWidget<SceneCameraControls>();
                     }
