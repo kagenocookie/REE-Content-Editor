@@ -19,24 +19,15 @@ public class RetargetDesigner : BaseWindowHandler
 
     public override bool HasUnsavedChanges => false;
 
-    // private string mesh1 = "";
-    // private string mesh1 = "E:/mods/re2r/chunks/natives/stm/sectionroot/character/player/pl0000/pl0000/pl0000.mesh.2109108288";
-    private string mesh1 = "E:/mods/mhrise/Ver.R Knight Heavy/natives/stm/player/mod/f/pl371/f_body371.mesh.2109148288";
-    // private string mesh1 = "E:/mods/mhrise/Ver.R Knight Heavy/natives/stm/player/mod/f/pl371/f_leg371.mesh.2109148288";
+    private string mesh1 = "";
     private string loadedMesh1 = "";
-    // private string mesh2 = "character/_kit/body/body_000_m/body_000_m.mesh";
-    // private string mesh2 = "";
-    // private string mesh2 = "E:/mods/re4/chunks/natives/stm/_chainsaw/character/ch/cha0/cha000/00/cha000_00.mesh.221108797";
-    private string mesh2 = "E:/mods/dd2/REtool/re_chunk_000/natives/stm/character/_kit/body/body_000_m/body_000_m.mesh.240423143";
+    private string mesh2 = "";
     private string loadedMesh2 = "";
-    // private string sampleMotlist = "";
-    // private string sampleMotlist = "E:/mods/re2r/chunks/natives/stm/sectionroot/animation/player/pl20/list/cmn/base_cmn_move.motlist.524";
-    private string sampleMotlist = "C:/Program Files (x86)/Steam/steamapps/common/Dragons Dogma 2/reframework/data/usercontent/bundles/Mot testing/plw_insectglaive_100.motlist.528";
+    private string sampleMotlist = "";
     private string loadedMotlist = "";
     // TODO need to add a target motlist to use as a base for the bones list (rest poses)
     // alternatively hack one up from the mesh?
-    // private string motFile = "";
-    private string motFile = "pl10_0170_KFF_Gazing_Idle_F_Loop";
+    private string motFile = "";
     private string remapConfig = "";
     private string boneFilter = "";
 

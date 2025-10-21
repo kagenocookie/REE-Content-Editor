@@ -25,19 +25,16 @@ public class SceneController
     {
         if (ImGui.RadioButton("Orthographic", Scene.ActiveCamera.ProjectionMode == CameraProjection.Orthographic)) {
             Scene.ActiveCamera.ProjectionMode = CameraProjection.Orthographic;
-            // CenterCameraToSceneObject();
-            Scene.ActiveCamera.LookAt(Scene.RootFolder.GetWorldSpaceBounds(), true);
+            Scene.ActiveCamera.LookAt(Scene.RootFolder, true);
         }
         ImGui.SameLine();
         if (ImGui.RadioButton("Perspective", Scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective)) {
             Scene.ActiveCamera.ProjectionMode = CameraProjection.Perspective;
-            // CenterCameraToSceneObject();
-            Scene.ActiveCamera.LookAt(Scene.RootFolder.GetWorldSpaceBounds(), true);
+            Scene.ActiveCamera.LookAt(Scene.RootFolder, true);
         }
         ImGui.SameLine();
         if (ImGui.Button($"{AppIcons.SI_ResetCamera}")) {
-            // CenterCameraToSceneObject();
-            Scene.ActiveCamera.LookAt(Scene.RootFolder.GetWorldSpaceBounds(), true);
+            Scene.ActiveCamera.LookAt(Scene.RootFolder, true);
         }
         ImguiHelpers.Tooltip("Reset View Camera");
         if (Scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective) {
@@ -114,6 +111,10 @@ public class SceneController
             if (Keyboard.IsKeyPressed(Key.D)) moveVec.X += 1;
             if (Keyboard.IsKeyPressed(Key.E)) moveVec.Y += 1;
             if (Keyboard.IsKeyPressed(Key.Q)) moveVec.Y -= 1;
+            if (Scene.ActiveCamera.ProjectionMode == CameraProjection.Orthographic) {
+                // redirect W/S to ortho up/down
+                moveVec.Y -= moveVec.Z;
+            }
             if (Keyboard.IsKeyPressed(Key.ShiftLeft)) moveVec *= 10;
 
             Scene.ActiveCamera.GameObject.Transform.TranslateForwardAligned(MoveSpeed * moveVec * deltaTime);

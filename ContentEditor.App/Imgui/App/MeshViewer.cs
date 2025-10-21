@@ -182,6 +182,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             scene.MouseHandler = new SceneMouseHandler();
             scene.MouseHandler.scene = scene;
             scene.ActiveCamera.GameObject.MoveToScene(scene);
+            scene.Controller.MoveSpeed = AppConfig.Settings.MeshViewer.MoveSpeed;
             scene.AddWidget<SceneVisibilitySettings>();
         }
 
@@ -285,10 +286,14 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     {
         if (ImGui.BeginMenuBar()) {
             if (ImGui.MenuItem($"{AppIcons.GameObject} Controls")) ImGui.OpenPopup("CameraSettings");
-            if (ImGui.BeginPopup("CameraSettings")) {
-                scene!.Controller?.ShowCameraControls();
+            if (scene?.Controller != null && ImGui.BeginPopup("CameraSettings")) {
+                scene.Controller.ShowCameraControls();
                 if (scene.ActiveCamera.ProjectionMode != AppConfig.Settings.MeshViewer.DefaultProjection) {
                     AppConfig.Settings.MeshViewer.DefaultProjection = scene.ActiveCamera.ProjectionMode;
+                    AppConfig.Settings.Save();
+                }
+                if (Math.Abs(scene.Controller.MoveSpeed - AppConfig.Settings.MeshViewer.MoveSpeed) > 0.001f) {
+                    AppConfig.Settings.MeshViewer.MoveSpeed = scene.Controller.MoveSpeed;
                     AppConfig.Settings.Save();
                 }
                 ImGui.EndPopup();

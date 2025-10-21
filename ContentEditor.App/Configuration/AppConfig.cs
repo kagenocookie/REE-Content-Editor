@@ -480,6 +480,7 @@ public struct KeyBinding : IEquatable<KeyBinding>
 
 public class AppJsonSettings
 {
+    public SceneViewSettings SceneView { get; init; } = new();
     public MeshViewerSettings MeshViewer { get; init; } = new();
     public List<string> RecentBundles { get; init; } = new();
     public List<string> RecentFiles { get; init; } = new();
@@ -489,7 +490,13 @@ public class AppJsonSettings
     public void Save() => AppConfig.Instance.SaveJsonConfig();
 }
 
+public record SceneViewSettings
+{
+    public float MoveSpeed { get; set; } = 8f;
+}
+
 public record MeshViewerSettings
 {
     public CameraProjection DefaultProjection { get; set; } = CameraProjection.Orthographic;
+    public float MoveSpeed { get; set; } = 5f;
 }

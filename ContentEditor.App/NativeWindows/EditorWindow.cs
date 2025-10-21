@@ -506,7 +506,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                         SceneManager.ChangeMasterScene(scene);
                         scene.Controller ??= new();
                         scene.Controller.Keyboard = _inputContext.Keyboards[0];
+                        scene.Controller.MoveSpeed = AppConfig.Settings.SceneView.MoveSpeed;
                         scene.AddWidget<SceneVisibilitySettings>();
+                        scene.AddWidget<SceneCameraControls>();
                     }
                 }
             }
@@ -527,9 +529,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 }
                 if (ImGui.MenuItem("PAK File Browser")) {
                     AddSubwindow(new PakBrowser(workspace.Env, null));
-                }
-                if (ImGui.MenuItem("Texture Viewer")) {
-                    AddSubwindow(new TextureViewer());
                 }
                 if (ImGui.MenuItem("Data Search")) {
                     AddUniqueSubwindow(new RszDataFinder());
