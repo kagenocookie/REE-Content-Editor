@@ -223,7 +223,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         } else if (file.Loader is TerrFileLoader) {
             return new McolMeshHandle(GL, resource, file.GetFile<TerrFile>());
         } else if (resource.Animatable) {
-            return new AnimatedMeshHandle(GL, resource);
+            return new AnimatedMeshHandle(resource);
         } else {
             return new MeshHandle(resource);
         }

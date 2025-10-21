@@ -225,6 +225,7 @@ public class Animator(ContentWorkspace Workspace)
                 if (bone.remapIndex != -1) {
                     animMesh.DeformBoneMatrices[bone.remapIndex] = Matrix4X4<float>.Identity;
                 }
+                animMesh.BoneMatrices[bone.index] = bone.globalTransform.ToGeneric();
             }
         }
         IsActive = false;

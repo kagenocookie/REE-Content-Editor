@@ -1,7 +1,4 @@
-using System.Numerics;
-using ReeLib.via;
 using Silk.NET.Maths;
-using Silk.NET.OpenGL;
 
 namespace ContentEditor.App.Graphics;
 
@@ -10,11 +7,8 @@ public class AnimatedMeshHandle : MeshHandle
     public Matrix4X4<float>[] BoneMatrices = [];
     public Matrix4X4<float>[] DeformBoneMatrices = [];
 
-    private GL GL { get; }
-
-    internal AnimatedMeshHandle(GL gl, MeshResourceHandle mesh) : base(mesh)
+    internal AnimatedMeshHandle(MeshResourceHandle mesh) : base(mesh)
     {
-        GL = gl;
     }
 
     public override void Update()
@@ -31,17 +25,6 @@ public class AnimatedMeshHandle : MeshHandle
             for (int i = 0; i < BoneMatrices.Length; ++i) {
                 BoneMatrices[i] = Bones.Bones[i].globalTransform.ToGeneric();
             }
-
-            // var builder = new ShapeBuilder();
-            // foreach (var bone in Bones.Bones) {
-            //     var parentTrans = bone.Parent?.globalTransform.ToSystem() ?? Matrix4x4.Identity;
-            //     var boneTrans = bone.localTransform.ToSystem() * parentTrans;
-            //     builder.Add(new Capsule() { p0 = parentTrans.Translation, p1 = boneTrans.Translation, r = 0.01f });
-            //     builder.Add(new OBB() { Coord = boneTrans, Extent = new Vector3(0.025f) });
-            // }
-            // var shapeMesh = builder.Create(GL);
-            // shapeMesh.MeshGroup = 255;
-            // Handle.Meshes.Add(shapeMesh);
         }
     }
 
@@ -49,9 +32,6 @@ public class AnimatedMeshHandle : MeshHandle
     {
         if ((material.Shader.Flags & ShaderFlags.EnableSkinning) == 0) return;
         material.BindBoneMatrices(DeformBoneMatrices);
-        // for (int i = 0; i < BoneMatrices.Length; ++i) {
-        //     material.Shader.SetUniform($"boneMatrices[{i}]", BoneMatrices[i]);
-        // }
     }
 
     public bool TryGetBoneTransform(uint boneHash, out Matrix4X4<float> matrix)
