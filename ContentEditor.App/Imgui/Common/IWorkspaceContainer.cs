@@ -55,6 +55,12 @@ public static class UIContextExtensions
         return context.parent?.FindParentContextByHandler<T>();
     }
 
+    public static T? FindObjectInspectorParent<T>(this UIContext context) where T : class, IWindowHandler
+    {
+        var inspector = context.FindHandlerInParents<ObjectInspector>();
+        return inspector?.ParentWindow as T;
+    }
+
     public static UIContext? FindInHierarchy(this UIContext context, UIContext endParent, Func<UIContext, bool> condition, bool includeSelf = false)
     {
         var p = includeSelf ? context : context.parent;

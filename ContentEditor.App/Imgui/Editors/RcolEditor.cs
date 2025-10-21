@@ -4,6 +4,7 @@ using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
+using ReeLib.Common;
 using ReeLib.Rcol;
 
 namespace ContentEditor.App.ImguiHandling.Rcol;
@@ -162,26 +163,6 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
 
     private static readonly RequestSetNodeItem ItemHandler = new RequestSetNodeItem();
 
-    private class RequestSetNodeEditor : IObjectUIHandler
-    {
-        private static MemberInfo[] DisplayedFields = [
-            typeof(RequestSet).GetProperty(nameof(RequestSet.Index))!,
-        ];
-
-        public void OnIMGUI(UIContext context)
-        {
-            if (context.children.Count == 0) {
-                var rset = context.Get<RequestSet>();
-                context.AddChild<RequestSet, int>("Index", rset, getter: (i) => i!.Index, setter: (i, v) => i.Index = v).AddDefaultHandler<int>();
-                context.AddChild<RequestSet, string>("Name", rset, getter: (i) => i!.Info.Name, setter: (i, v) => i.Info.Name = v ?? string.Empty).AddDefaultHandler<string>();
-                context.AddChild<RequestSet, string>("KeyName", rset, getter: (i) => i!.Info.KeyName, setter: (i, v) => i.Info.KeyName = v ?? string.Empty).AddDefaultHandler<string>();
-                context.AddChild<RequestSet, int>("Status", rset, getter: (i) => i!.Info.status, setter: (i, v) => i.Info.status = v).AddDefaultHandler<int>();
-            }
-
-            context.ShowChildrenUI();
-        }
-    }
-
     private class RequestSetNodeItem : IObjectUIHandler
     {
         public void OnIMGUI(UIContext context)
@@ -219,7 +200,6 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
                     var list = context.parent!.Get<List<RequestSet>>();
                     var item = context.Get<RequestSet>();
                     var clone = item.Clone();
-                    clone.Index = item.Index + 1;
                     clone.Info.ID = clone.Info.ID + 1; // TODO verify unique
                     UndoRedo.RecordListInsert(context.parent, list, clone, list.IndexOf(item) + 1);
                     ImGui.CloseCurrentPopup();
@@ -238,20 +218,30 @@ public class RequestSetEditor : IObjectUIHandler
     {
         var rset = context.Get<RequestSet>();
         if (context.children.Count == 0) {
-            context.AddChild<RequestSet, int>("Index", rset, getter: (i) => i!.Index, setter: (i, v) => i.Index = v).AddDefaultHandler<int>();
+            context.AddChild<RequestSet, uint>("ID", rset, getter: (i) => i!.Info.ID, setter: (i, v) => i.Info.ID = v).AddDefaultHandler<uint>();
             context.AddChild<RequestSet, string>("Name", rset, getter: (i) => i!.Info.Name, setter: (i, v) => i.Info.Name = v ?? string.Empty).AddDefaultHandler<string>();
             context.AddChild<RequestSet, string>("KeyName", rset, getter: (i) => i!.Info.KeyName, setter: (i, v) => i.Info.KeyName = v ?? string.Empty).AddDefaultHandler<string>();
             context.AddChild<RequestSet, int>("Status", rset, getter: (i) => i!.Info.status, setter: (i, v) => i.Info.status = v).AddDefaultHandler<int>();
+
+            context.AddChild<RequestSet, RcolGroup>(
+                "Group Instance",
+                rset,
+                new InstancePickerHandler<RcolGroup>(false, (ctx, refresh) => {
+                    return ctx.FindObjectInspectorParent<RcolEditor>()?.File.Groups ?? [];
+                }) { DisableRefresh = true },
+                (i) => i!.Group,
+                (i, v) => i.Group = v);
             context.AddChild<RequestSet, RcolGroup>(
                 "Group",
                 rset,
                 new NestedUIHandlerStringSuffixed(new RcolGroupEditor()),
                 (i) => i!.Group,
                 (i, v) => i.Group = v);
+
             context.AddChild<RequestSet, RszInstance>(
                 "UserData",
                 rset,
-                new NestedUIHandlerStringSuffixed(new SwappableRszInstanceHandler("via.physics.RequestSetColliderUserData")),
+                new NestedUIHandlerStringSuffixed(new RszClassnamePickerHandler("via.physics.RequestSetColliderUserData")),
                 (i) => i!.Instance,
                 setter: (i, v) => i.Instance = v);
             context.AddChild<RequestSet, List<RszInstance>>("Shape userdata", rset, getter: (i) => i!.ShapeUserdata, setter: (i, v) => i.ShapeUserdata = v!).AddDefaultHandler<List<RszInstance>>();
@@ -261,7 +251,7 @@ public class RequestSetEditor : IObjectUIHandler
         context.ShowChildrenUI();
         if (rset.Info.Name != name) {
             var listeditor = context.FindParentContextByHandler<RequestSetListEditor>()
-                ?? (context.FindHandlerInParents<ObjectInspector>()?.ParentWindow as RcolEditor)?.Context.FindNestedChildByHandler<RequestSetListEditor>();
+                ?? context.FindObjectInspectorParent<RcolEditor>()?.Context.FindNestedChildByHandler<RequestSetListEditor>();
             listeditor?.ClearChildren();
             // context.parent?.ClearChildren();
         }
@@ -335,18 +325,11 @@ public class RcolIgnoreTagHandler : IObjectUIHandler
     {
         var tag = context.Get<IgnoreTag>();
         var tagStr = tag.tag;
-        var w = ImGui.CalcItemWidth();
-        ImGui.SetNextItemWidth(w * 0.7f);
-        ImGui.PushID(context.label);
-        if (ImGui.InputText("##tag", ref tagStr, 100)) {
-            UndoRedo.RecordCallbackSetter(context, tag, tag.tag, tagStr, (o, v) => o.tag = v, $"{tag.GetHashCode()} tag");
+        if (ImGui.InputText(context.label, ref tagStr, 128)) {
+            UndoRedo.RecordCallbackSetter(context, tag, tag.tag, tagStr, (o, v) => {
+                o.tag = v;
+                o.hash = MurMur3HashUtils.GetHash(v);
+            }, $"{tag.GetHashCode()} tag");
         }
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(w * 0.3f - ImGui.GetStyle().FramePadding.X);
-        var ukn = (int)tag.ukn;
-        if (ImGui.InputInt(context.label, ref ukn)) {
-            UndoRedo.RecordCallbackSetter(context, tag, tag.ukn, (uint)ukn, (o, v) => o.ukn = v, $"{tag.GetHashCode()} ukn");
-        }
-        ImGui.PopID();
     }
 }

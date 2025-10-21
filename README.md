@@ -52,7 +52,7 @@ Some files may not fully work for other RE ENGINE games.
 | .tex, .dds  | view, convert  | Convert to TGA/PNG
 | .mesh     | ☑️ 3D & data display | FBX & GLTF export/import<br>Format conversion across games
 | .motlist  | ☑️ read/write | Animation preview<br>GLTF import/export<br>Mot copy/paste/retargeting ([info](https://github.com/kagenocookie/REE-Content-Editor/wiki/Animation-tools))
-| .rcol     | read/write | 3D shape preview and editing
+| .rcol     | read/write | 3D shape preview and editing ([info](https://github.com/kagenocookie/REE-Content-Editor/wiki/RCOL-Request-set-colliders))
 | .motbank  | read/write
 | .mcol     | ☑️ read/write | .glb import/export for collision mesh
 | .ainvm    | raw data read

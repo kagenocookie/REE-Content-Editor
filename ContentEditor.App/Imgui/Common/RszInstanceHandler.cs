@@ -258,6 +258,8 @@ public class SwappableRszInstanceHandler(string? baseClass = null, bool referenc
 
 public class InstancePickerHandler<T>(bool allowNull, Func<UIContext, bool, IEnumerable<T>> instanceProvider, Action<UIContext, T?>? instanceSwapper = null) : IObjectUIHandler
 {
+    public bool DisableRefresh { get; init; }
+
     public void OnIMGUI(UIContext context)
     {
         var instance = context.Get<T>();
@@ -272,11 +274,13 @@ public class InstancePickerHandler<T>(bool allowNull, Func<UIContext, bool, IEnu
             ImGui.SameLine();
             restW -= ImGui.CalcTextSize("Remove").X + ImGui.GetStyle().FramePadding.X * 2;
         }
-        if (ImGui.Button("Refresh list")) {
-            _ = instanceProvider.Invoke(context, true).ToArray();
+        if (!DisableRefresh) {
+            if (ImGui.Button("Refresh list")) {
+                _ = instanceProvider.Invoke(context, true).ToArray();
+            }
+            restW -= ImGui.CalcTextSize("Refresh list").X + ImGui.GetStyle().FramePadding.X * 2;
+            ImGui.SameLine();
         }
-        restW -= ImGui.CalcTextSize("Refresh list").X + ImGui.GetStyle().FramePadding.X * 2;
-        ImGui.SameLine();
 
         ImGui.SetNextItemWidth(restW);
         var newInstance = instance;
