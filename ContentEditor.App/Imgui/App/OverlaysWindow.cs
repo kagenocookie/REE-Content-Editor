@@ -43,11 +43,12 @@ public class OverlaysWindow : IWindowHandler
         } else if (context.GetWorkspace() == null) {
             helptext = "Activate the game you wish to edit in the menu";
         } else if (ShowHelp) {
-            helptext = "Drag & drop a supported file here or use the menu to open a file";
+            helptext = "Drag & drop a supported RE Engine resource file here or use the menu to open one.\nYou can access the game files directly using the Windows > PAK File Browser option.";
         }
         var editorWindow = data.ParentWindow as EditorWindow;
         if (helptext != null) {
-            var wndSize = new Vector2(Math.Min(500, size.X), Math.Min(40, size.Y));
+            var linecount = helptext.Count(c => c == '\n') + 1;
+            var wndSize = new Vector2(Math.Min(570, size.X), Math.Min(20 + linecount * 20, size.Y));
             ImGui.SetNextWindowPos(new Vector2((size.X - wndSize.X) / 2, (size.Y - wndSize.Y) / 2));
             ImGui.SetNextWindowSize(wndSize);
             ImGui.Begin("Guide", ImGuiWindowFlags.NoTitleBar|ImGuiWindowFlags.NoResize|ImGuiWindowFlags.NoMove|ImGuiWindowFlags.NoScrollbar|ImGuiWindowFlags.NoCollapse);
