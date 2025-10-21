@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
+using ContentEditor.App;
 using ContentEditor.Core;
 using ContentPatcher;
 using ContentPatcher.FileFormats;
@@ -479,10 +480,16 @@ public struct KeyBinding : IEquatable<KeyBinding>
 
 public class AppJsonSettings
 {
+    public MeshViewerSettings MeshViewer { get; init; } = new();
     public List<string> RecentBundles { get; init; } = new();
     public List<string> RecentFiles { get; init; } = new();
     public List<string> RecentRcols { get; init; } = new();
     public List<string> RecentMotlists { get; init; } = new();
 
     public void Save() => AppConfig.Instance.SaveJsonConfig();
+}
+
+public record MeshViewerSettings
+{
+    public CameraProjection DefaultProjection { get; set; } = CameraProjection.Orthographic;
 }

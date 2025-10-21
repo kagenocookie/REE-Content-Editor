@@ -196,7 +196,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         if (!meshComponent.HasMesh) {
             meshComponent.IsStreamingTex = true;
             meshComponent.SetMesh(fileHandle, fileHandle);
-            scene.ActiveCamera.ProjectionMode = CameraProjection.Orthographic;
+            scene.ActiveCamera.ProjectionMode = AppConfig.Settings.MeshViewer.DefaultProjection;
             CenterCameraToSceneObject();
         }
 
@@ -287,6 +287,10 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             if (ImGui.MenuItem($"{AppIcons.GameObject} Controls")) ImGui.OpenPopup("CameraSettings");
             if (ImGui.BeginPopup("CameraSettings")) {
                 scene!.Controller?.ShowCameraControls();
+                if (scene.ActiveCamera.ProjectionMode != AppConfig.Settings.MeshViewer.DefaultProjection) {
+                    AppConfig.Settings.MeshViewer.DefaultProjection = scene.ActiveCamera.ProjectionMode;
+                    AppConfig.Settings.Save();
+                }
                 ImGui.EndPopup();
             }
 
