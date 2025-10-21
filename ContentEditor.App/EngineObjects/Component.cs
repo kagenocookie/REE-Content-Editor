@@ -23,6 +23,7 @@ public class Component(GameObject gameObject, RszInstance data)
 
     public Transform Transform => GameObject.Transform;
     public Scene? Scene => GameObject.Scene;
+    public Scene? RootScene => GameObject.Scene?.RootScene;
 
     public string Classname => Data.RszClass.name;
     public override string ToString() => $"{GameObject} [{Data}]";

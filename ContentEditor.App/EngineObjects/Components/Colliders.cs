@@ -1,4 +1,5 @@
 using ContentEditor.App.Graphics;
+using ContentEditor.App.Windowing;
 using ContentPatcher;
 using ReeLib;
 
@@ -14,6 +15,7 @@ public class Colliders(GameObject gameObject, RszInstance data) : Component(game
 
     private Material wireMaterial = null!;
     private Material lineMaterial = null!;
+    private Material lineHighlightMaterial = null!;
     private readonly List<MeshHandle?> meshes = new();
 
     public bool HasMesh => meshes.Count != 0;
@@ -37,33 +39,72 @@ public class Colliders(GameObject gameObject, RszInstance data) : Component(game
         if (!GameObject.ShouldDraw) return null;
         if (wireMaterial == null) {
             wireMaterial = Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.Wireframe, "wire");
-            lineMaterial = Scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "lines")
-                .Color("_MainColor", Colors.Colliders with { W = 0.6f })
+            (lineMaterial, lineHighlightMaterial) = Scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "lines")
+                .Color("_MainColor", Colors.Colliders with { W = 0.5f })
                 .Float("_FadeMaxDistance", 400)
-                .Blend();
+                .Blend()
+                .Create2("lines", "lines_highlight");
+            lineHighlightMaterial.SetParameter("_MainColor", Colors.Colliders with { W = 0.8f });
         }
+        var isActive = EditorWindow.CurrentWindow?.HasOpenInspectorForTarget(GameObject) ?? false;
         ref readonly var transform = ref Transform.WorldTransform;
         foreach (var collider in CollidersList.OfType<RszInstance>()) {
-            gizmo ??= new GizmoContainer(Scene!, this);
+            gizmo ??= new GizmoContainer(RootScene!, this);
 
             var shape = RszFieldCache.Collider.Shape.Get(collider);
             switch (shape.RszClass.name) {
                 case "via.physics.SphereShape":
                 case "via.physics.ContinuousSphereShape":
-                    gizmo.Shape(0, lineMaterial).Add(RszFieldCache.SphereShape.Sphere.Get(shape));
+                    if (isActive) {
+                        var sphere = RszFieldCache.SphereShape.Sphere.Get(shape);
+                        if (gizmo.Shape(2, lineHighlightMaterial).Priority(1).Push().EditableSphere(ref sphere, out var hid)) {
+                            UndoRedo.RecordCallbackSetter(null, shape, RszFieldCache.SphereShape.Sphere.Get(shape), sphere, static (ss, vv) => RszFieldCache.SphereShape.Sphere.Set(ss, vv), $"{shape.GetHashCode()}{hid}");
+                        }
+                    } else {
+                        gizmo.Shape(0, lineMaterial).Add(RszFieldCache.SphereShape.Sphere.Get(shape));
+                    }
                     break;
                 case "via.physics.AabbShape":
                     gizmo.Shape(0, lineMaterial).Add(RszFieldCache.AabbShape.Aabb.Get(shape));
+                    if (isActive) {
+                        var box = RszFieldCache.AabbShape.Aabb.Get(shape);
+                        if (gizmo.Shape(2, lineHighlightMaterial).Priority(1).Push().EditableAABB(ref box, out var hid)) {
+                            UndoRedo.RecordCallbackSetter(null, shape, RszFieldCache.AabbShape.Aabb.Get(shape), box, static (ss, vv) => RszFieldCache.AabbShape.Aabb.Set(ss, vv), $"{shape.GetHashCode()}{hid}");
+                        }
+                    } else {
+                        gizmo.Shape(0, lineMaterial).Add(RszFieldCache.AabbShape.Aabb.Get(shape));
+                    }
                     break;
                 case "via.physics.BoxShape":
-                    gizmo.Shape(0, lineMaterial).Add(RszFieldCache.BoxShape.Box.Get(shape));
+                    if (isActive) {
+                        var box = RszFieldCache.BoxShape.Box.Get(shape);
+                        if (gizmo.Shape(2, lineHighlightMaterial).Priority(1).Push().EditableOBB(ref box, out var hid)) {
+                            UndoRedo.RecordCallbackSetter(null, shape, RszFieldCache.BoxShape.Box.Get(shape), box, static (ss, vv) => RszFieldCache.BoxShape.Box.Set(ss, vv), $"{shape.GetHashCode()}{hid}");
+                        }
+                    } else {
+                        gizmo.Shape(0, lineMaterial).Add(RszFieldCache.BoxShape.Box.Get(shape));
+                    }
                     break;
                 case "via.physics.CapsuleShape":
                 case "via.physics.ContinuousCapsuleShape":
-                    gizmo.Shape(0, lineMaterial).Add(RszFieldCache.CapsuleShape.Capsule.Get(shape));
+                    if (isActive) {
+                        var cap = RszFieldCache.CapsuleShape.Capsule.Get(shape);
+                        if (gizmo.Shape(2, lineHighlightMaterial).Priority(1).Push().EditableCapsule(ref cap, out var hid)) {
+                            UndoRedo.RecordCallbackSetter(null, shape, RszFieldCache.CapsuleShape.Capsule.Get(shape), cap, static (ss, vv) => RszFieldCache.CapsuleShape.Capsule.Set(ss, vv), $"{shape.GetHashCode()}{hid}");
+                        }
+                    } else {
+                        gizmo.Shape(0, lineMaterial).Add(RszFieldCache.CapsuleShape.Capsule.Get(shape));
+                    }
                     break;
                 case "via.physics.CylinderShape":
-                    gizmo.Shape(0, lineMaterial).Add(RszFieldCache.CylinderShape.Cylinder.Get(shape));
+                    if (isActive) {
+                        var cap = RszFieldCache.CylinderShape.Cylinder.Get(shape);
+                        if (gizmo.Shape(2, lineHighlightMaterial).Priority(1).Push().EditableCylinder(ref cap, out var hid)) {
+                            UndoRedo.RecordCallbackSetter(null, shape, RszFieldCache.CylinderShape.Cylinder.Get(shape), cap, static (ss, vv) => RszFieldCache.CylinderShape.Cylinder.Set(ss, vv), $"{shape.GetHashCode()}{hid}");
+                        }
+                    } else {
+                        gizmo.Shape(0, lineMaterial).Add(RszFieldCache.CylinderShape.Cylinder.Get(shape));
+                    }
                     break;
                 case "via.physics.MeshShape": {
                         var mcolPath = RszFieldCache.MeshShape.Mesh.Get(shape);

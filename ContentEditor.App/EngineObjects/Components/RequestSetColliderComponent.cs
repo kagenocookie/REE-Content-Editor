@@ -120,7 +120,7 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
             inactiveMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.RequestSetColliders) with { A = 56 });
         }
 
-        gizmo ??= new(Scene, this);
+        gizmo ??= new(RootScene!, this);
 
         var parentMesh = GameObject.GetComponent<MeshComponent>()?.MeshHandle as AnimatedMeshHandle;
 
@@ -147,7 +147,7 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
                             parentMesh.TryGetBoneTransform(shape.Info.primaryJointNameStr, out shapeMatrix);
                         }
                         if (group == selectedGroup || selectedSet?.Group == group) {
-                            if (gizmo.Shape(2, activeMaterial, obscuredMaterial).Priority(1).EditableBoxed(in shapeMatrix, shape.shape, out var newShape, out int handleId)) {
+                            if (gizmo.Shape(2, activeMaterial, obscuredMaterial).Priority(1).Push().EditableBoxed(in shapeMatrix, shape.shape, out var newShape, out int handleId)) {
                                 UndoRedo.RecordCallbackSetter(null, shape, shape.shape, newShape, static (ss, vv) => ss.shape = vv, $"{shape.GetHashCode()}{handleId}");
                             }
                         } else {

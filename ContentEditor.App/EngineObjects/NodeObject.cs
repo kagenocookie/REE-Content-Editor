@@ -247,4 +247,12 @@ public class NodeObject<TNode> : NodeObject, INodeObject<TNode>, IPathedObject
         }
         return false;
     }
+
+    /// <summary>
+    /// Set this object's scene without "properly" adding it to the scene tree. Intended for editor-only GameObjects that we don't want saved with the scene.
+    /// </summary>
+    internal void ForceSetScene(Scene scene)
+    {
+        Scene = scene;
+    }
 }

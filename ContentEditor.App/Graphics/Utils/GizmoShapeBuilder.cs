@@ -61,11 +61,18 @@ public class GizmoShapeBuilder : IDisposable
         return this;
     }
 
+    /// <summary>
+    /// Pushes a new interactable object to the context stack.
+    /// </summary>
+    public GizmoShapeBuilder Push()
+    {
+        state.Push();
+        return this;
+    }
+
     public bool EditableBoxed(in Matrix4X4<float> offset, object shape, out object? newShape, out int handleId)
     {
         newShape = null;
-        state.Push(shape);
-        AddBoxed(in offset, shape);
         switch (shape) {
             case AABB obj: if (EditableAABB(offset, ref obj, out handleId)) { newShape = obj; return true; } return false;
             case OBB obj: if (EditableOBB(offset, ref obj, out handleId)) { newShape = obj; return true; } return false;
@@ -79,8 +86,10 @@ public class GizmoShapeBuilder : IDisposable
         }
     }
 
+    public unsafe bool EditableSphere(ref Sphere sphere, out int handleId) => EditableSphere(Matrix4X4<float>.Identity, ref sphere, out handleId);
     public bool EditableSphere(in Matrix4X4<float> offsetMatrix, ref Sphere sphere, out int handleId)
     {
+        Add(in offsetMatrix, sphere);
         var handlePoint = Vector3.Transform(sphere.pos + sphere.r * Vector3.UnitY, offsetMatrix.ToSystem());
         if (state.PositionHandle(ref handlePoint, out handleId, 10f)) {
             var center = Vector3.Transform(sphere.pos, offsetMatrix.ToSystem());
@@ -91,8 +100,10 @@ public class GizmoShapeBuilder : IDisposable
         return false;
     }
 
+    public unsafe bool EditableAABB(ref AABB aabb, out int handleId) => EditableAABB(Matrix4X4<float>.Identity, ref aabb, out handleId);
     public unsafe bool EditableAABB(in Matrix4X4<float> offsetMatrix, ref AABB aabb, out int handleId)
     {
+        Add(in offsetMatrix, aabb);
         var pts = stackalloc Vector3[6];
         var center = aabb.Center;
         var worldCenter = Vector3.Transform(center, offsetMatrix.ToSystem());
@@ -125,8 +136,10 @@ public class GizmoShapeBuilder : IDisposable
         return handleId != -1;
     }
 
+    public bool EditableOBB(ref OBB box, out int handleId) => EditableOBB(Matrix4X4<float>.Identity, ref box, out handleId);
     public bool EditableOBB(in Matrix4X4<float> offsetMatrix, ref OBB box, out int handleId)
     {
+        Add(in offsetMatrix, box);
         var aabb = new AABB(-box.Extent, box.Extent);
         if (EditableAABB(offsetMatrix * box.Coord.ToGeneric(), ref aabb, out handleId)) {
             box.Extent = aabb.Size / 2;
@@ -135,8 +148,10 @@ public class GizmoShapeBuilder : IDisposable
         return handleId != -1;
     }
 
+    public bool EditableCapsule(ref Capsule cap, out int handleId) => EditableCapsule(Matrix4X4<float>.Identity, ref cap, out handleId);
     public bool EditableCapsule(in Matrix4X4<float> offsetMatrix, ref Capsule cap, out int handleId)
     {
+        Add(in offsetMatrix, cap);
         var cyl = new Cylinder(cap.p0, cap.p1, cap.R);
         if (EditableCylinder(offsetMatrix, ref cyl, out handleId)) {
             cap = new Capsule(cyl.p0, cyl.p1, cyl.r);
@@ -146,8 +161,10 @@ public class GizmoShapeBuilder : IDisposable
         return false;
     }
 
+    public bool EditableCylinder(ref Cylinder cap, out int handleId) => EditableCylinder(Matrix4X4<float>.Identity, ref cap, out handleId);
     public bool EditableCylinder(in Matrix4X4<float> offsetMatrix, ref Cylinder cap, out int handleId)
     {
+        Add(in offsetMatrix, cap);
         var radius = MathF.Max(cap.r, 0.0001f);
         var up = (cap.p1 - cap.p0);
         var right = Vector3.UnitX * radius;
@@ -189,12 +206,6 @@ public class GizmoShapeBuilder : IDisposable
     public void Add(Capsule shape) => builder.Add(shape);
     public void Add(Cylinder shape) => builder.Add(shape);
 
-    public void AddBoxed(object shape)
-    {
-        state.Push(shape);
-        builder.AddBoxed(shape);
-    }
-
     public void Add(in Matrix4X4<float> offsetMatrix, LineSegment shape)
         => builder.Add(new LineSegment(Vector3.Transform(shape.start, offsetMatrix.ToSystem()), Vector3.Transform(shape.end, offsetMatrix.ToSystem())));
     public void Add(in Matrix4X4<float> offsetMatrix, AABB shape)
@@ -217,9 +228,9 @@ public class GizmoShapeBuilder : IDisposable
     public void Add(in Matrix4X4<float> offsetMatrix, Cylinder shape)
         => builder.Add(new Cylinder(Vector3.Transform(shape.p0, offsetMatrix.ToSystem()), Vector3.Transform(shape.p1, offsetMatrix.ToSystem()), shape.r));
 
+    public void AddBoxed(object shape) => builder.AddBoxed(shape);
     public void AddBoxed(in Matrix4X4<float> offsetMatrix, object shape)
     {
-        state.Push(shape);
         switch (shape) {
             case AABB obj: Add(in offsetMatrix, obj); return;
             case OBB obj: Add(in offsetMatrix, obj); return;

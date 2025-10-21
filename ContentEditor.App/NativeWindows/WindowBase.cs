@@ -4,9 +4,11 @@ using System.Drawing;
 using System.Globalization;
 using System.Numerics;
 using System.Reflection;
+using ContentEditor.App.ImguiHandling;
 using ContentEditor.Editor;
 using ContentPatcher;
 using ImGuiNET;
+using ReeLib.Bvh;
 using Silk.NET.GLFW;
 using Silk.NET.Input;
 using Silk.NET.Maths;
@@ -31,6 +33,15 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     protected readonly List<WindowData> subwindows = new();
     private readonly List<WindowData> removeSubwindows = new();
     public IReadOnlyList<WindowData> ActiveImguiWindows => subwindows.AsReadOnly();
+    public bool HasOpenInspectorForTarget(object target)
+    {
+        foreach (var sub in subwindows) {
+            if (sub.Handler is ObjectInspector inspector && inspector.Target == target) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     private readonly ManualResetEventSlim isClosing = new(false);
     public bool IsClosing => isClosing.IsSet;

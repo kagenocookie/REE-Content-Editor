@@ -5,8 +5,8 @@ namespace ContentEditor.App.Graphics;
 
 public class GizmoState(Scene scene)
 {
-    private List<(int id, object target, HandleContainer handles)> previousChildren = new();
-    private List<(int id, object target, HandleContainer handles)> children = new();
+    private List<(int id, HandleContainer handles)> previousChildren = new();
+    private List<(int id, HandleContainer handles)> children = new();
 
     private (int id, int handleId)? activeHandle;
     private Vector2 activeHandleStartPosition;
@@ -41,9 +41,9 @@ public class GizmoState(Scene scene)
         DrawListQueue.Clear();
     }
 
-    public void Push(object obj)
+    public void Push()
     {
-        children.Add((children.Count, obj, new HandleContainer()));
+        children.Add((children.Count, new HandleContainer()));
     }
 
     public bool PositionHandle(ref Vector3 position, out int handleId, float handleSize = 5f, Vector3 primaryAxis = default, bool lockToAxis = false)

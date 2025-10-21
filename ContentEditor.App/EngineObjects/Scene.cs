@@ -69,6 +69,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         RootFolder = rootFolder ?? new("ROOT", workspace.Env, this);
         var camGo = new GameObject("__editorCamera", workspace.Env);
         camera = Component.Create<Camera>(camGo, workspace.Env);
+        camGo.ForceSetScene(this);
         parentScene?.childScenes.Add(this);
     }
 
