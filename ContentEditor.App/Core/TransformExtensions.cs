@@ -21,10 +21,17 @@ public static class TransformExtensions
 
     public static AABB ToWorldBounds(this AABB local, Matrix4x4 world)
     {
-        // not necessarily "exactly" correct but close enough
-        var p1 = Vector3.Transform(local.minpos, world);
-        var p2 = Vector3.Transform(local.maxpos, world);
-        return new AABB(Vector3.Min(p1, p2), Vector3.Max(p1, p2));
+        var pt = Vector3.Transform(local.minpos, world);
+        var aabb = new AABB(pt, pt)
+            .Extend(Vector3.Transform(local.maxpos, world))
+            .Extend(Vector3.Transform(new Vector3(local.minpos.X, local.minpos.Y, local.maxpos.Y), world))
+            .Extend(Vector3.Transform(new Vector3(local.minpos.X, local.maxpos.Y, local.minpos.Y), world))
+            .Extend(Vector3.Transform(new Vector3(local.minpos.X, local.maxpos.Y, local.maxpos.Y), world))
+            .Extend(Vector3.Transform(new Vector3(local.maxpos.X, local.minpos.Y, local.maxpos.Y), world))
+            .Extend(Vector3.Transform(new Vector3(local.maxpos.X, local.maxpos.Y, local.minpos.Y), world))
+            .Extend(Vector3.Transform(new Vector3(local.maxpos.X, local.maxpos.Y, local.maxpos.Y), world));
+
+        return aabb;
     }
 
     public static AABB ToWorldBounds(this AABB local, Matrix4X4<float> world) => ToWorldBounds(local, world.ToSystem());
