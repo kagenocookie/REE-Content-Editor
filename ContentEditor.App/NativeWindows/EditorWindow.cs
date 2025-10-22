@@ -101,6 +101,14 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     protected override void Update(float deltaTime)
     {
         LastKeyboard = _inputContext.Keyboards[0];
+        if (!ImGui.GetIO().WantCaptureMouse) {
+            var wheel = ImGui.GetIO().MouseWheel;
+            foreach (var scene in SceneManager.RootMasterScenes) {
+                if (!scene.IsActive || scene.MouseHandler == null) continue;
+
+                scene.MouseHandler.MouseWheelDelta = new Vector2(0, wheel);
+            }
+        }
         SceneManager.Update(deltaTime);
     }
 

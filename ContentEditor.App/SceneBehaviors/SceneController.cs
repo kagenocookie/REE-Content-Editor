@@ -119,19 +119,6 @@ public class SceneController
 
             Scene.ActiveCamera.GameObject.Transform.TranslateForwardAligned(MoveSpeed * moveVec * deltaTime);
         }
-
-        float wheel = ImGui.GetIO().MouseWheel;
-        if (Math.Abs(wheel) > float.Epsilon) {
-            if (Scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective) {
-                var zoom = Scene.Camera.GameObject.Transform.LocalForward * (wheel * ZoomSpeed);
-                Scene.Camera.GameObject.Transform.LocalPosition += zoom;
-            } else {
-                float ortho = Scene.ActiveCamera.OrthoSize;
-                ortho *= (1.0f - wheel * ZoomSpeed);
-                ortho = Math.Clamp(ortho, 0.01f, 100.0f);
-                Scene.ActiveCamera.OrthoSize = ortho;
-            }
-        }
     }
 }
 

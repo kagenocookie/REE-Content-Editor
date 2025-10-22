@@ -51,6 +51,8 @@ public class SceneMouseHandler
     private Vector2 _dragStartPos;
     private ImGuiMouseButton dragStartButton;
 
+    public Vector2 MouseWheelDelta { get; set; }
+
     private Vector2 lastMousePos = new Vector2(float.MaxValue);
 
     private const float DoubleClickIntervalSeconds = 0.4f;
@@ -115,7 +117,7 @@ public class SceneMouseHandler
 
     private MouseButtonFlags DownFlags => (downLB ? MouseButtonFlags.Left : 0) | (downRB ? MouseButtonFlags.Right : 0) | (downMB ? MouseButtonFlags.Middle : 0);
 
-    public void UpdateMouseDown(IMouse mouse, bool leftDown, bool rightDown, bool middleDown, bool allowDown, Vector2 mouseScreenPos)
+    public void UpdateMouseState(IMouse mouse, bool leftDown, bool rightDown, bool middleDown, bool allowDown, Vector2 mouseScreenPos)
     {
         if (leftDown != downLB) {
             if (!leftDown) {
@@ -143,6 +145,11 @@ public class SceneMouseHandler
 
         if (lastMousePos != mouseScreenPos - ViewportOffset) {
             HandleMouseMove(mouse, mouseScreenPos);
+        }
+        if (allowDown) {
+            MouseWheelDelta = new Vector2(0, ImGui.GetIO().MouseWheel);
+        } else {
+            MouseWheelDelta = Vector2.Zero;
         }
     }
 
@@ -206,16 +213,22 @@ public class SceneMouseHandler
         }
     }
 
-    public void Update(IMouse mouse)
+    public void Update()
     {
-        if (downLB && !mouse.IsButtonPressed(MouseButton.Left)) {
-            HandleMouseUp(mouse, ImGuiMouseButton.Left, lastMousePos);
-        }
-        if (downRB && !mouse.IsButtonPressed(MouseButton.Right)) {
-            HandleMouseUp(mouse, ImGuiMouseButton.Right, lastMousePos);
-        }
-        if (downMB && !mouse.IsButtonPressed(MouseButton.Middle)) {
-            HandleMouseUp(mouse, ImGuiMouseButton.Middle, lastMousePos);
+        if (scene?.Controller?.ZoomSpeed > 0) {
+            float wheel = MouseWheelDelta.Y;
+            if (Math.Abs(wheel) > float.Epsilon) {
+                if (scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective) {
+                    var zoom = scene.ActiveCamera.GameObject.Transform.LocalForward * (wheel * scene.Controller.ZoomSpeed * 0.1f);
+                    scene.ActiveCamera.GameObject.Transform.LocalPosition += zoom;
+                } else {
+                    float ortho = scene.ActiveCamera.OrthoSize;
+                    ortho *= (1.0f - wheel * scene.Controller.ZoomSpeed * 0.1f);
+                    ortho = Math.Clamp(ortho, 0.01f, 100.0f);
+                    scene.ActiveCamera.OrthoSize = ortho;
+                }
+            }
+            MouseWheelDelta = Vector2.Zero;
         }
     }
 }

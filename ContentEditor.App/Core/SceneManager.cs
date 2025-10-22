@@ -75,6 +75,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
             if (master.MouseHandler != null) {
                 if (master.IsActive) {
                     master.MouseHandler.scene = master;
+                    master.MouseHandler.Update();
                 } else {
                     master.MouseHandler.scene = null;
                 }

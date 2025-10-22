@@ -119,6 +119,6 @@ public static class AppImguiHelpers
         var rightDown = ImGui.IsMouseDown(ImGuiMouseButton.Right);
         var middleDown = ImGui.IsMouseDown(ImGuiMouseButton.Middle);
 
-        scene.MouseHandler.UpdateMouseDown(EditorWindow.CurrentWindow!.LastMouse, leftDown, rightDown, middleDown, isHovered, absPos);
+        scene.MouseHandler.UpdateMouseState(EditorWindow.CurrentWindow!.LastMouse, leftDown, rightDown, middleDown, isHovered, absPos);
     }
 }
