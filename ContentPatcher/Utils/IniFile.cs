@@ -84,7 +84,8 @@ public sealed class IniFile : IDisposable
 
     public static void WriteToFile(string iniFilepath, IEnumerable<(string key, string value, string? group)> values)
     {
-        using var fs = new StreamWriter(File.Create(iniFilepath));
+        var tempFilepath = iniFilepath + ".tmp";
+        using var fs = new StreamWriter(File.Create(tempFilepath));
 
         string? lastGroup = null;
         foreach (var (key, value, group) in values.OrderBy(g => g.group)) {
@@ -96,5 +97,8 @@ public sealed class IniFile : IDisposable
 
             fs.WriteLine(key + " = " + value);
         }
+        fs.Dispose();
+        File.Replace(tempFilepath, iniFilepath, iniFilepath + ".bak");
+        File.Delete(iniFilepath + ".bak");
     }
 }
