@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
@@ -8,6 +9,12 @@ using ReeLib;
 
 namespace ContentEditor.App;
 
+public enum FileDisplayMode
+{
+    List,
+    Grid,
+}
+
 public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWindowHandler, IDisposable
 {
     public string HandlerName => "PAK File Browser";
@@ -15,8 +22,18 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
     public Workspace Workspace { get; } = workspace;
     public string? PakFilePath { get; } = pakFilePath;
 
-    public string CurrentDir { get; set; } = workspace.BasePath[0..^1];
+    private string _currentDir = workspace.BasePath[0..^1];
+    public string CurrentDir {
+        get => _currentDir;
+        set {
+            _currentDir = value;
+            previewGenerator?.CancelCurrentQueue();
+        }
+    }
+
     private string? _editedDir;
+
+    public FileDisplayMode DisplayMode { get; set; } = AppConfig.Instance.PakDisplayMode;
 
     bool IWindowHandler.HasUnsavedChanges => false;
     // note: purposely not disposing the reader, in case we just reused the "main" pak reader from the workspace
@@ -35,9 +52,23 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
 
     private bool hasInvalidatedPaks;
     private bool isShowBookmarks = false;
-    private int page;
-    private int rowsPerPage = 1000;
-    private int selectedRow = -1;
+    private int itemsPerPage = 1000;
+
+    private ImGuiSortDirection gridSortDir = ImGuiSortDirection.Descending;
+    private int gridSortColumn;
+
+    // TODO should probably store somewhere else?
+    private FilePreviewGenerator? previewGenerator;
+
+    private PageState pagination;
+
+    private struct PageState
+    {
+        public int maxPage;
+        public int page;
+        public int displayedCount;
+        public int totalCount;
+    }
 
     private Texture? previewTexture;
 
@@ -165,6 +196,11 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         bool isBookmarked = _bookmarkManager.IsBookmarked(Workspace.Config.Game.name, CurrentDir);
         bool isDefaultBookmark = !isHideDefaults && _bookmarkManagerDefaults.IsBookmarked(Workspace.Config.Game.name, CurrentDir);
         ImguiHelpers.ToggleButton($"{AppIcons.SI_Bookmarks} Bookmarks", ref isShowBookmarks, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
+        ImGui.SameLine();
+        if (ImGui.Button(DisplayMode == FileDisplayMode.Grid ? "Grid View": "List View")) {
+            AppConfig.Instance.PakDisplayMode = DisplayMode = DisplayMode == FileDisplayMode.Grid ? FileDisplayMode.List : FileDisplayMode.Grid;
+            previewGenerator?.CancelCurrentQueue();
+        }
         if (isShowBookmarks) {
             ImGui.Spacing();
             ImGui.Separator();
@@ -404,7 +440,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         if (ImGui.InputText("Path", ref _editedDir, 250)) {
             if (_editedDir.EndsWith('/')) _editedDir = _editedDir[0..^1];
             CurrentDir = _editedDir;
-            page = 0;
+            pagination.page = 0;
         } else {
             _editedDir = null;
         }
@@ -435,165 +471,197 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             PlatformUtils.ShowFolderDialog(ExtractCurrentList, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
         }
         ImguiHelpers.Tooltip("Extract To...");
-        DrawContents(matchedList!);
+        DrawContents();
     }
 
-    private void DrawContents(ListFileWrapper baseList)
+    private void DrawContents()
     {
         if (reader == null) return;
         ImGui.BeginChild("Content");
-        int p = 0, i = 0;
-        var isCtrl = ImGui.IsKeyDown(ImGuiKey.ModCtrl);
-        var isShift = ImGui.IsKeyDown(ImGuiKey.ModShift);
-        int maxPage = 0;
-        string[]? sortedEntries = null;
-        var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
+
+        ShowFiles(out var sortedEntries);
+
+        using (var _ = ImguiHelpers.Disabled(pagination.page <= 0)) {
+            if (ImGui.ArrowButton("##prev", ImGuiDir.Left)) {
+                pagination.page--;
+                previewGenerator?.CancelCurrentQueue();
+            }
+        }
+        ImGui.SameLine();
+        var fileCount = sortedEntries?.Length ?? 0;
+        ImGui.Text(fileCount == 0 ? "Page 0 / 0" : $"Page {pagination.page + 1} / {pagination.maxPage + 1}");
+        ImGui.SameLine();
+        using (var _ = ImguiHelpers.Disabled(pagination.page >= pagination.maxPage)) {
+            if (ImGui.ArrowButton("##next", ImGuiDir.Right)) {
+                pagination.page++;
+                previewGenerator?.CancelCurrentQueue();
+            }
+        }
+        ImGui.SameLine();
+        ImGui.Text($"Total matches: {fileCount} | Displaying: {pagination.page * itemsPerPage + Math.Sign(fileCount)}-{pagination.page * itemsPerPage + pagination.displayedCount}");
+        ImGui.EndChild();
+    }
+
+    private void ShowFiles(out string[] sortedEntries)
+    {
+        sortedEntries = null!;
         var remainingHeight = ImGui.GetWindowSize().Y - ImGui.GetCursorPosY() - ImGui.GetStyle().WindowPadding.Y - UI.FontSize - ImGui.GetStyle().FramePadding.Y;
+        if (DisplayMode == FileDisplayMode.Grid) {
+            ShowFileGrid(ref sortedEntries, remainingHeight);
+        } else {
+            ShowFileList(ref sortedEntries, remainingHeight);
+        }
+    }
+
+    private void GetPageFiles(ListFileWrapper baseList, short ColumnIndex, ImGuiSortDirection SortDirection, [NotNull] ref string[]? sortedEntries)
+    {
+        var cacheKey = (CurrentDir, ColumnIndex, SortDirection);
+        if (!cachedResults.TryGetValue(cacheKey, out sortedEntries)) {
+            var files = baseList.GetFiles(CurrentDir);
+            var sorted = cacheKey.ColumnIndex switch {
+                0 => cacheKey.SortDirection == ImGuiSortDirection.Ascending ? files : files.Reverse(),
+                1 => cacheKey.SortDirection == ImGuiSortDirection.Ascending ? files.OrderBy(e => reader!.GetSize(e)) : files.OrderByDescending(e => reader!.GetSize(e)),
+                _ => cacheKey.SortDirection == ImGuiSortDirection.Ascending ? files : files.Reverse(),
+            };
+            cachedResults[cacheKey] = sortedEntries = sorted.ToArray();
+        }
+        pagination.maxPage = (int)Math.Floor((float)sortedEntries.Length / itemsPerPage);
+        pagination.totalCount = sortedEntries.Length;
+    }
+
+    private void ShowFileGrid([NotNull] ref string[]? sortedEntries, float remainingHeight)
+    {
+        var baseList = matchedList!;
+        var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
+        GetPageFiles(baseList, (short)gridSortColumn, gridSortDir, ref sortedEntries);
+        if (sortedEntries.Length == 0) return;
+
+        previewGenerator ??= new(Workspace, EditorWindow.CurrentWindow?.GLContext!);
+
+        var style = ImGui.GetStyle();
+        var btnSize = new Vector2(120, 100);
+        var availableSize = ImGui.GetWindowWidth() - style.WindowPadding.X;
+        ImGui.BeginChild("FileGrid", new Vector2(availableSize, remainingHeight));
+
+        int i = 0;
+        var curX = 0f;
+        ImGui.PushStyleVar(ImGuiStyleVar.ButtonTextAlign, new Vector2(0.5f, 1f));
+        foreach (var file in sortedEntries.Skip(itemsPerPage * pagination.page).Take(itemsPerPage)) {
+            ImGui.PushID(i);
+            if (curX > 0) {
+                if (curX > availableSize - btnSize.X) {
+                    curX = 0;
+                } else {
+                    ImGui.SameLine();
+                }
+            }
+            curX += btnSize.X + style.FramePadding.X * 2;
+
+            bool isBookmarked = _bookmarkManager.IsBookmarked(Workspace.Config.Game.name, file);
+            if (isBookmarked) {
+                ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.PlotHistogramHovered]);
+            } else {
+                ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.Text]);
+            }
+            var filename = Path.GetFileName(PathUtils.GetFilepathWithoutSuffixes(file.AsSpan()));
+            var displayName = filename.Length < 16 ? filename : filename[^16..];
+            var pos = ImGui.GetCursorScreenPos();
+            var click = ImGui.Button(displayName, btnSize);
+            ImGui.PopStyleColor();
+            if (Path.HasExtension(file)) {
+                var previewStatus = previewGenerator.FetchPreview(file, out var previewTex);
+                if (previewStatus == PreviewImageStatus.Ready) {
+                    var texSize = new Vector2(btnSize.X, btnSize.Y - UI.FontSize) - style.FramePadding * 2;
+                    ImGui.GetWindowDrawList().AddImage(previewTex!, pos + style.FramePadding, pos + new Vector2(texSize.X, texSize.Y));
+                } else  {
+                    ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), 0xffffffff, $"{AppIcons.SI_File}");
+                }
+            } else {
+                ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), 0xffffffff, $"{AppIcons.Folder}");
+            }
+            if (ImGui.IsItemHovered()) {
+                var tt = file;
+                var fmt = PathUtils.ParseFileFormat(file);
+                tt += "\nResource type: " + fmt.format;
+                var prettySize = GetFileSizeString(file);
+                if (prettySize != null) tt += "\nSize: " + prettySize;
+                ImGui.SetItemTooltip(tt);
+            }
+            if (click) {
+                HandleFileClick(baseList, file, false);
+            }
+
+            ShowFileContextMenu(file, _bookmarkManager.IsBookmarked(Workspace.Config.Game.name, file), true);
+            ImGui.PopID();
+            i++;
+        }
+        ImGui.PopStyleVar();
+        ImGui.EndChild();
+        pagination.displayedCount = i;
+    }
+
+    private void ShowFileList([NotNull] ref string[]? sortedEntries, float remainingHeight)
+    {
+        var baseList = matchedList!;
+        int i = 0;
+        var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
         if (ImGui.BeginTable("List", 2, ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingStretchProp | ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.Sortable, new Vector2(0, remainingHeight))) {
             ImGui.TableSetupColumn(" Path ", ImGuiTableColumnFlags.WidthStretch, 0.9f);
             ImGui.TableSetupColumn(" Size ", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize | ImGuiTableColumnFlags.PreferSortDescending, 100);
             ImGui.TableSetupScrollFreeze(0, 1);
             var sort = ImGui.TableGetSortSpecs();
-            var cacheKey = (CurrentDir, sort.Specs.ColumnIndex, sort.Specs.SortDirection);
-            if (!cachedResults.TryGetValue(cacheKey, out sortedEntries)) {
-                var files = baseList.GetFiles(CurrentDir);
-                var sorted = sort.Specs.ColumnIndex switch {
-                    0 => sort.Specs.SortDirection == ImGuiSortDirection.Ascending ? files : files.Reverse(),
-                    1 => sort.Specs.SortDirection == ImGuiSortDirection.Ascending ? files.OrderBy(e => reader.GetSize(e)) : files.OrderByDescending(e => reader.GetSize(e)),
-                    _ => sort.Specs.SortDirection == ImGuiSortDirection.Ascending ? files : files.Reverse(),
-                };
-                cachedResults[cacheKey] = sortedEntries = sorted.ToArray();
-            }
-            maxPage = (int)Math.Floor((float)sortedEntries.Length / rowsPerPage);
+            GetPageFiles(baseList, sort.Specs.ColumnIndex, sort.Specs.SortDirection, ref sortedEntries);
             ImGui.TableHeadersRow();
             ImGui.TableNextColumn();
-            foreach (var file in sortedEntries.Skip(rowsPerPage * page).Take(rowsPerPage)) {
+            foreach (var file in sortedEntries.Skip(itemsPerPage * pagination.page).Take(itemsPerPage)) {
                 ImGui.PushID(i);
                 i++;
                 var displayName = useCompactFilePaths ? CompactFilePath(file) : file;
-                if (isCtrl) {
-                    if (ImGui.Selectable(displayName, i == selectedRow, ImGuiSelectableFlags.SpanAllColumns)) {
-                        selectedRow = i;
-                    }
-                } else if (isShift) {
-                    if (ImGui.Selectable(displayName, i == selectedRow, ImGuiSelectableFlags.SpanAllColumns)) {
-                        selectedRow = i;
-                    }
+                var usePreviewWindow = AppConfig.Instance.UsePakFilePreviewWindow.Get();
+                bool isBookmarked = _bookmarkManager.IsBookmarked(Workspace.Config.Game.name, file);
+                if (isBookmarked) {
+                    ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.PlotHistogramHovered]);
                 } else {
-                    var usePreviewWindow = AppConfig.Instance.UsePakFilePreviewWindow.Get();
-                    var bookmarks = _bookmarkManager.GetBookmarks(Workspace.Config.Game.name);
-                    bool isBookmarked = _bookmarkManager.IsBookmarked(Workspace.Config.Game.name, file);
-                    if (isBookmarked) {
-                        ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.PlotHistogramHovered]);
-                    } else {
-                        ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.Text]);
-                    }
-                    if (ImGui.Selectable(displayName, false, ImGuiSelectableFlags.SpanAllColumns)) {
-                        if (!baseList.FileExists(file)) {
-                            // if it's not a full list file match then it's a folder, navigate to it
-                            ImGui.PopStyleColor();
-                            ImGui.PopID();
-                            ImGui.TableNextColumn();
-                            ImGui.EndTable();
-                            ImGui.EndChild();
-                            CurrentDir = file;
-                            return;
-                        }
-
-                        if (!reader.FileExists(file)) {
-                            var hasLooseFile = File.Exists(Path.Combine(Workspace.Config.GamePath, file));
-                            if (hasLooseFile) {
-                                Logger.Error("File could not be found in the loaded PAK files. Matching loose file was found, the file entry may have been invalidated by Fluffy Mod Manager.");
-                            } else {
-                                Logger.Error("File could not be found in the loaded PAK files. Possible causes: Fluffy Mod Manager archive invalidation, missing some DLC content, not having the right PAK files open, or a wrong file list.");
-                            }
-                        } else {
-                            if (usePreviewWindow) {
-                                if (previewWindow == null || !EditorWindow.CurrentWindow!.HasSubwindow<FilePreviewWindow>(out _, w => w.Handler == previewWindow)) {
-                                    EditorWindow.CurrentWindow!.AddSubwindow(previewWindow = new FilePreviewWindow());
-                                }
-                                if (PakFilePath != null && reader.GetFile(file) is Stream stream) {
-                                    previewWindow.SetFile(stream, file, PakFilePath);
-                                } else {
-                                    previewWindow.SetFile(file);
-                                }
-                            } else if (PakFilePath == null) {
-                                EditorWindow.CurrentWindow?.OpenFiles([file]);
-                            } else {
-                                var stream = reader.GetFile(file);
-                                if (stream == null) {
-                                    EditorWindow.CurrentWindow?.AddSubwindow(new ErrorModal("File not found", "File could not be found in the PAK file(s)."));
-                                } else {
-                                    EditorWindow.CurrentWindow?.OpenFile(stream, file, PakFilePath + "://");
-                                }
-                            }
-                        }
-                    }
-                    ImGui.PopStyleColor();
-
-                    if (usePreviewWindow && ImGui.IsItemHovered()) {
-                        if (PathUtils.ParseFileFormat(file).format == KnownFileFormats.Texture) {
-                            ImGui.BeginTooltip();
-                            if (previewTexture?.Path != file) {
-                                using var stream = workspace.GetFile(file);
-                                if (stream != null) {
-                                    var fileh = new TexFile(new FileHandler(stream, file));
-                                    fileh.Read();
-                                    previewTexture?.Dispose();
-                                    previewTexture = new Texture();
-                                    previewTexture.LoadFromTex(fileh);
-                                    previewTexture.SetChannel(Texture.TextureChannel.RGB);
-                                }
-                            }
-                            if (previewTexture != null) {
-                                ImGui.Image((nint)previewTexture.Handle, new Vector2(300, 300));
-                            }
-
-                            ImGui.EndTooltip();
-                        }
-                    }
-                    if (ImGui.BeginPopupContextItem()) {
-                        if (ImGui.Selectable($"{AppIcons.SI_FileCopyPath} | Copy Path")) {
-                            EditorWindow.CurrentWindow?.CopyToClipboard(file);
-                            ImGui.CloseCurrentPopup();
-                        }
-                        ImGui.Spacing();
-                        if (ImGui.Selectable($"{AppIcons.SI_FileExtractTo} | Extract File to ...")) {
-                            var nativePath = file;
-                            PlatformUtils.ShowSaveFileDialog((savePath) => {
-                                var stream = reader.GetFile(nativePath);
-                                if (stream == null) {
-                                    Logger.Error("Could not find file " + nativePath + " in selected PAK files");
-                                    return;
-                                }
-                                Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
-                                using var fs = File.Create(savePath);
-                                stream.WriteTo(fs);
-                            }, Path.GetFileName(nativePath));
-                            ImGui.CloseCurrentPopup();
-                        }
-                        ImGui.Spacing();
-                        if (isBookmarked) {
-                            if (ImGui.Selectable($"{AppIcons.SI_BookmarkRemove} | Remove from Bookmarks")) {
-                                _bookmarkManager.RemoveBookmark(Workspace.Config.Game.name, file);
-                            }
-                        } else {
-                            if (ImGui.Selectable($"{AppIcons.SI_BookmarkAdd} | Add to Bookmarks")) {
-                                _bookmarkManager.AddBookmark(Workspace.Config.Game.name, file);
-                            }
-                        }
-                        ImGui.EndPopup();
+                    ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.Text]);
+                }
+                if (ImGui.Selectable(displayName, false, ImGuiSelectableFlags.SpanAllColumns)) {
+                    bool wasFile = HandleFileClick(baseList, file, usePreviewWindow);
+                    if (!wasFile) {
+                        ImGui.PopStyleColor();
+                        ImGui.PopID();
+                        ImGui.TableNextColumn();
+                        ImGui.EndTable();
+                        ImGui.EndChild();
+                        return;
                     }
                 }
-                ImGui.TableNextColumn();
-                var size = reader.GetSize(file);
-                if (size > 0) {
-                    string prettySize;
-                    if (size >= 1024 * 1024) {
-                        prettySize = ((float)size / (1024 * 1024)).ToString("0.00") + " MB";
-                    } else {
-                        prettySize = ((float)size / 1024).ToString("0.00") + " KB";
+                ImGui.PopStyleColor();
+
+                if (usePreviewWindow && ImGui.IsItemHovered()) {
+                    if (PathUtils.ParseFileFormat(file).format == KnownFileFormats.Texture) {
+                        ImGui.BeginTooltip();
+                        if (previewTexture?.Path != file) {
+                            using var stream = Workspace.GetFile(file);
+                            if (stream != null) {
+                                var fileh = new TexFile(new FileHandler(stream, file));
+                                fileh.Read();
+                                previewTexture?.Dispose();
+                                previewTexture = new Texture();
+                                previewTexture.LoadFromTex(fileh);
+                                previewTexture.SetChannel(Texture.TextureChannel.RGB);
+                            }
+                        }
+                        if (previewTexture != null) {
+                            ImGui.Image((nint)previewTexture.Handle, new Vector2(300, 300));
+                        }
+
+                        ImGui.EndTooltip();
                     }
+                }
+                ShowFileContextMenu(file, isBookmarked);
+                ImGui.TableNextColumn();
+                var prettySize = GetFileSizeString(file);
+                if (prettySize != null) {
                     var posX = ImGui.GetCursorPosX() + ImGui.GetColumnWidth() - ImGui.CalcTextSize(prettySize).X - ImGui.GetScrollX() - ImGui.GetStyle().ItemSpacing.X;
                     if (posX > ImGui.GetCursorPosX()) {
                         ImGui.SetCursorPosX(posX);
@@ -605,23 +673,111 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             }
             ImGui.EndTable();
         }
-        using (var _ = ImguiHelpers.Disabled(page <= 0)) {
-            if (ImGui.ArrowButton("##prev", ImGuiDir.Left)) {
-                page--;
-            }
-        }
-        ImGui.SameLine();
-        ImGui.Text(i == 0 ? "Page 0 / 0" : $"Page {page + 1} / {maxPage + 1}");
-        ImGui.SameLine();
-        using (var _ = ImguiHelpers.Disabled(page >= maxPage)) {
-            if (ImGui.ArrowButton("##next", ImGuiDir.Right)) {
-                page++;
-            }
-        }
-        ImGui.SameLine();
-        ImGui.Text($"Total matches: {sortedEntries?.Length} | Displaying: {page * rowsPerPage + Math.Sign(i)}-{page * rowsPerPage + i}");
-        ImGui.EndChild();
+        pagination.displayedCount = i;
     }
+
+    private string? GetFileSizeString(string file)
+    {
+        var size = reader!.GetSize(file);
+        if (size > 0) {
+            string prettySize;
+            if (size >= 1024 * 1024) {
+                prettySize = ((float)size / (1024 * 1024)).ToString("0.00") + " MB";
+            } else {
+                prettySize = ((float)size / 1024).ToString("0.00") + " KB";
+            }
+            return prettySize;
+        }
+        return null;
+    }
+
+    private bool HandleFileClick(ListFileWrapper baseList, string file, bool usePreviewWindow)
+    {
+        if (!baseList.FileExists(file)) {
+            // if it's not a full list file match then it's a folder, navigate to it
+            CurrentDir = file;
+            return false;
+        }
+
+        if (!reader.FileExists(file)) {
+            var hasLooseFile = File.Exists(Path.Combine(Workspace.Config.GamePath, file));
+            if (hasLooseFile) {
+                Logger.Error("File could not be found in the loaded PAK files. Matching loose file was found, the file entry may have been invalidated by Fluffy Mod Manager.");
+            } else {
+                Logger.Error("File could not be found in the loaded PAK files. Possible causes: Fluffy Mod Manager archive invalidation, missing some DLC content, not having the right PAK files open, or a wrong file list.");
+            }
+        } else {
+            if (usePreviewWindow) {
+                if (previewWindow == null || !EditorWindow.CurrentWindow!.HasSubwindow<FilePreviewWindow>(out _, w => w.Handler == previewWindow)) {
+                    EditorWindow.CurrentWindow!.AddSubwindow(previewWindow = new FilePreviewWindow());
+                }
+                if (PakFilePath != null && reader.GetFile(file) is Stream stream) {
+                    previewWindow.SetFile(stream, file, PakFilePath);
+                } else {
+                    previewWindow.SetFile(file);
+                }
+            } else if (PakFilePath == null) {
+                EditorWindow.CurrentWindow?.OpenFiles([file]);
+            } else {
+                var stream = reader.GetFile(file);
+                if (stream == null) {
+                    EditorWindow.CurrentWindow?.AddSubwindow(new ErrorModal("File not found", "File could not be found in the PAK file(s)."));
+                } else {
+                    EditorWindow.CurrentWindow?.OpenFile(stream, file, PakFilePath + "://");
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private void ShowFileContextMenu(string file, bool isBookmarked, bool showSort = false)
+    {
+        if (ImGui.BeginPopupContextItem()) {
+            if (ImGui.Selectable($"{AppIcons.SI_FileCopyPath} | Copy Path")) {
+                EditorWindow.CurrentWindow?.CopyToClipboard(file);
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.Spacing();
+            if (ImGui.Selectable($"{AppIcons.SI_FileExtractTo} | Extract File to ...")) {
+                var nativePath = file;
+                PlatformUtils.ShowSaveFileDialog((savePath) => {
+                    var stream = reader.GetFile(nativePath);
+                    if (stream == null) {
+                        Logger.Error("Could not find file " + nativePath + " in selected PAK files");
+                        return;
+                    }
+                    Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
+                    using var fs = File.Create(savePath);
+                    stream.WriteTo(fs);
+                }, Path.GetFileName(nativePath));
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.Spacing();
+            if (isBookmarked) {
+                if (ImGui.Selectable($"{AppIcons.SI_BookmarkRemove} | Remove from Bookmarks")) {
+                    _bookmarkManager.RemoveBookmark(Workspace.Config.Game.name, file);
+                }
+            } else {
+                if (ImGui.Selectable($"{AppIcons.SI_BookmarkAdd} | Add to Bookmarks")) {
+                    _bookmarkManager.AddBookmark(Workspace.Config.Game.name, file);
+                }
+            }
+            if (showSort) {
+                ImGui.Separator();
+                if (ImGui.Selectable("Sort By: " + (gridSortColumn == 1 ? "Size" : "Name"))) {
+                    gridSortColumn = 1 - gridSortColumn;
+                    previewGenerator?.CancelCurrentQueue();
+                }
+                if (ImGui.Selectable("Order: " + gridSortDir)) {
+                    gridSortDir = gridSortDir == ImGuiSortDirection.Ascending ? ImGuiSortDirection.Descending : ImGuiSortDirection.Ascending;
+                    previewGenerator?.CancelCurrentQueue();
+                }
+            }
+            ImGui.EndPopup();
+        }
+    }
+
     private static string CompactFilePath(string path)
     {
         var parts = path.Replace('\\', '/').Split('/');
@@ -640,5 +796,6 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             EditorWindow.CurrentWindow?.CloseSubwindow(previewWindow);
         }
         previewTexture?.Dispose();
+        previewGenerator?.Dispose();
     }
 }

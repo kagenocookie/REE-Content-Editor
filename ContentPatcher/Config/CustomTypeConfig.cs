@@ -7,7 +7,6 @@ public class CustomTypeConfig
 {
     public required CustomField[] Fields { get; init; }
     public required CustomField[] DisplayFieldsOrder { get; init; }
-    public ToStringGenerator? toStringGenerator;
 }
 
 [YamlObject]

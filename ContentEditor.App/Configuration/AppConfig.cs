@@ -37,6 +37,8 @@ public class AppConfig : Singleton<AppConfig>
         public const string AutoExpandFieldsCount = "auto_expand_fields_count";
         public const string UsePakFilePreviewWindow = "use_pak_preview_window";
         public const string UsePakCompactFilePaths = "use_pak_compact_file_paths";
+        public const string PakDisplayMode = "pak_display_mode";
+        public const string ThumbnailCacheFilepath = "thumbnail_cache_path";
 
         public const string RenderAxis = "render_axis";
         public const string RenderMeshes = "render_meshes";
@@ -117,6 +119,8 @@ public class AppConfig : Singleton<AppConfig>
 
     private Dictionary<string, AppGameConfig> gameConfigs = new();
 
+    public static readonly string AppDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "REE-Content-Editor");
+
     public readonly SettingWrapper<int> MaxFps = new SettingWrapper<int>(Keys.MaxFps, _lock, 60);
     public readonly SettingWrapper<int> BackgroundMaxFps = new SettingWrapper<int>(Keys.BackgroundMaxFps, _lock, 30);
     public readonly ClassSettingWrapper<string> MainSelectedGame = new ClassSettingWrapper<string>(Keys.MainWindowGame, _lock);
@@ -124,6 +128,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly ClassSettingWrapper<string> BlenderPath = new ClassSettingWrapper<string>(Keys.BlenderPath, _lock);
     public readonly ClassSettingWrapper<string> RemoteDataSource = new ClassSettingWrapper<string>(Keys.RemoteDataSource, _lock);
     public readonly ClassSettingWrapper<string> GameConfigBaseFilepath = new ClassSettingWrapper<string>(Keys.GameConfigBaseFilepath, _lock);
+    public readonly ClassSettingWrapper<string> ThumbnailCacheFilepath = new ClassSettingWrapper<string>(Keys.ThumbnailCacheFilepath, _lock, () => Path.Combine(AppDataPath, "thumbs"));
     public readonly ClassSettingWrapper<string> Theme = new ClassSettingWrapper<string>(Keys.Theme, _lock, () => "default");
     public readonly SettingWrapper<int> UnpackMaxThreads = new SettingWrapper<int>(Keys.UnpackMaxThreads, _lock, 4);
     public readonly SettingWrapper<ReeLib.via.Color> BackgroundColor = new SettingWrapper<ReeLib.via.Color>(Keys.BackgroundColor, _lock, new ReeLib.via.Color(115, 140, 153, 255));
@@ -138,6 +143,9 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<bool> LogToFile = new SettingWrapper<bool>(Keys.LogToFile, _lock, true);
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
     public readonly ClassSettingWrapper<string> LatestVersion = new ClassSettingWrapper<string>(Keys.LatestVersion, _lock);
+
+    public readonly SettingWrapper<int> PakDisplayModeValue = new SettingWrapper<int>(Keys.LogToFile, _lock, (int)FileDisplayMode.List);
+    public FileDisplayMode PakDisplayMode { get => (FileDisplayMode)PakDisplayModeValue.Get(); set => PakDisplayModeValue.Set((int)value); }
 
     public readonly SettingWrapper<bool> RenderAxis = new SettingWrapper<bool>(Keys.RenderAxis, _lock, true);
     public readonly SettingWrapper<bool> RenderMeshes = new SettingWrapper<bool>(Keys.RenderMeshes, _lock, true);
@@ -254,6 +262,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.UnpackMaxThreads, instance.UnpackMaxThreads.value.ToString(), null),
             (Keys.RemoteDataSource, instance.RemoteDataSource.value?.ToString() ?? "", null),
             (Keys.GameConfigBaseFilepath, instance.GameConfigBaseFilepath.value?.ToString() ?? "", null),
+            (Keys.ThumbnailCacheFilepath, instance.ThumbnailCacheFilepath.value?.ToString() ?? "", null),
             (Keys.Theme, instance.Theme.value?.ToString() ?? "", null),
             (Keys.BackgroundColor, instance.BackgroundColor.value.ToString(), null),
             (Keys.LogLevel, instance.LogLevel.value.ToString(), null),
@@ -264,6 +273,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.EnableUpdateCheck, instance.EnableUpdateCheck.value.ToString(), null),
             (Keys.UsePakFilePreviewWindow, instance.UsePakFilePreviewWindow.value.ToString(), null),
             (Keys.UsePakCompactFilePaths, instance.UsePakCompactFilePaths.value.ToString(), null),
+            (Keys.PakDisplayMode, instance.PakDisplayModeValue.value.ToString(), null),
             (Keys.PrettyLabels, instance.PrettyFieldLabels.value.ToString(), null),
 
             (Keys.RenderAxis, instance.RenderAxis.value.ToString(), null),
@@ -335,6 +345,9 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.GameConfigBaseFilepath:
                             GameConfigBaseFilepath.value = ReadString(value);
                             break;
+                        case Keys.ThumbnailCacheFilepath:
+                            ThumbnailCacheFilepath.value = ReadString(value);
+                            break;
                         case Keys.Theme:
                             Theme.value = string.IsNullOrEmpty(value) ? "default" : value;
                             break;
@@ -364,6 +377,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.UsePakFilePreviewWindow:
                             UsePakFilePreviewWindow.value = ReadBool(value);
+                            break;
+                        case Keys.PakDisplayMode:
+                            if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsed)) PakDisplayModeValue.value = Math.Clamp(parsed, (int)FileDisplayMode.List, (int)FileDisplayMode.Grid);
                             break;
                         case Keys.UsePakCompactFilePaths:
                             UsePakCompactFilePaths.value = ReadBool(value);

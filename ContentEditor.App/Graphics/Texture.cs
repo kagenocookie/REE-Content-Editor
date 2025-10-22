@@ -1,3 +1,4 @@
+using System.Buffers;
 using ContentEditor.App.Windowing;
 using ContentPatcher;
 using ReeLib;
@@ -5,7 +6,6 @@ using ReeLib.DDS;
 using Silk.NET.OpenGL;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 
 namespace ContentEditor.App.Graphics;
 
@@ -88,21 +88,29 @@ public class Texture : IDisposable
     /// <summary>
     /// Load a standard image file format from a stream. This method does not support .dds or .tex files.
     /// </summary>
-    public unsafe Texture LoadFromStream(Stream stream)
+    public Texture LoadFromStream(Stream stream)
     {
-        using (var img = Image.Load<Rgba32>(stream)) {
-            _gl.TexImage2D(TextureTarget.Texture2D, 0, InternalFormat.Rgba8, (uint)img.Width, (uint)img.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, null);
+        using var img = Image.Load<Rgba32>(stream);
+        LoadFromImage(img);
+        return this;
+    }
 
-            img.ProcessPixelRows(accessor => {
-                for (int y = 0; y < accessor.Height; y++) {
-                    fixed (void* data = accessor.GetRowSpan(y)) {
-                        _gl.TexSubImage2D(TextureTarget.Texture2D, 0, 0, y, (uint)accessor.Width, 1, PixelFormat.Rgba, PixelType.UnsignedByte, data);
-                    }
+    /// <summary>
+    /// Load a standard image file.
+    /// </summary>
+    public unsafe Texture LoadFromImage(Image<Rgba32> img)
+    {
+        _gl.TexImage2D(TextureTarget.Texture2D, 0, InternalFormat.Rgba8, (uint)img.Width, (uint)img.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, null);
+
+        img.ProcessPixelRows(accessor => {
+            for (int y = 0; y < accessor.Height; y++) {
+                fixed (void* data = accessor.GetRowSpan(y)) {
+                    _gl.TexSubImage2D(TextureTarget.Texture2D, 0, 0, y, (uint)accessor.Width, 1, PixelFormat.Rgba, PixelType.UnsignedByte, data);
                 }
-            });
-            Width = img.Width;
-            Height = img.Height;
-        }
+            }
+        });
+        Width = img.Width;
+        Height = img.Height;
 
         SetDefaultParameters();
         return this;
@@ -211,9 +219,9 @@ public class Texture : IDisposable
         _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, mips - 1);
     }
 
-    private unsafe Image<Rgba32> GetCurrentTexture()
+    public unsafe Image<Rgba32> GetAsImage()
     {
-        var data = new byte[Width * Height * 4];
+        var data = ArrayPool<byte>.Shared.Rent(Width * Height * 4);
 
         Bind();
 
@@ -222,11 +230,12 @@ public class Texture : IDisposable
         }
 
         var image = Image.LoadPixelData<Rgba32>(data, Width, Height);
+        ArrayPool<byte>.Shared.Return(data);
         return image;
     }
     public void SaveAs(string filepath)
     {
-        using var image = GetCurrentTexture();
+        using var image = GetAsImage();
         if (image == null) return;
 
         string ext = System.IO.Path.GetExtension(filepath).ToLowerInvariant();
@@ -331,6 +340,8 @@ public class Texture : IDisposable
         // DxgiFormat.BC7_UNORM_SRGB => InternalFormat.CompressedSrgbAlphaS3TCDxt5Ext,
         DxgiFormat.BC4_UNORM => InternalFormat.CompressedRedRgtc1,
         DxgiFormat.BC3_UNORM or DxgiFormat.BC3_UNORM_SRGB => InternalFormat.CompressedRgbaS3TCDxt5Ext,
+        DxgiFormat.BC6H_UF16 => InternalFormat.CompressedRgbBptcUnsignedFloat,
+        DxgiFormat.BC6H_SF16 => InternalFormat.CompressedRgbBptcSignedFloat,
 
         DxgiFormat.R16G16B16A16_FLOAT => InternalFormat.Rgba32f,
 

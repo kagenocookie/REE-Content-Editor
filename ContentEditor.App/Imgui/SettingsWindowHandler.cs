@@ -99,6 +99,8 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
 
             ImGui.SeparatorText("Advanced");
             ShowSetting(config.RemoteDataSource, "Resource data source", "The source from which to check for updates and download game-specific resource cache files.\nWill use the default GitHub repository if unspecified.");
+            ShowFolderSetting(config.ThumbnailCacheFilepath, "Thumbnail cache file path", "The folder that cached thumbnails should be stored in. Must not be empty.");
+
             ShowSlider(config.UnpackMaxThreads, "Max unpack threads", 1, 64, "The maximum number of threads to be used when unpacking.\nThe actual thread count is determined automatically by the .NET runtime.");
             ShowSlider(config.AutoExpandFieldsCount, "Auto-expand field count", 0, 16, "The number of fields below which an RSZ object tree node should auto-expand.");
 
@@ -228,6 +230,17 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         }
         if (tooltip != null && ImGui.IsItemHovered()) {
             ImGui.SetItemTooltip(tooltip);
+        }
+    }
+
+    private static void ShowFolderSetting(AppConfig.ClassSettingWrapper<string> setting, string label, string? tooltip)
+    {
+        var configPath = setting.Get();
+        if (AppImguiHelpers.InputFolder(label, ref configPath)) {
+            setting.Set(configPath);
+        }
+        if (tooltip != null && ImGui.IsItemHovered()) {
+            ImGui.SetTooltip(tooltip);
         }
     }
 
