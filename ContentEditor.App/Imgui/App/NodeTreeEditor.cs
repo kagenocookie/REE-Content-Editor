@@ -106,6 +106,8 @@ public abstract class NodeTreeEditor<TNodeHolder, TSelf> : IObjectUIHandler
     protected bool EnableContextMenu = true;
     protected bool UseContextLabel;
 
+    public bool UnnestChildren { get; init; }
+
     protected virtual void HandleContextMenu(TNodeHolder node, UIContext context) { }
 
     protected virtual void HandleSelect(UIContext context, TNodeHolder node)
@@ -141,6 +143,10 @@ public abstract class NodeTreeEditor<TNodeHolder, TSelf> : IObjectUIHandler
                     context.StateBool = true;
                 }
             }
+        }
+        if (UnnestChildren) {
+            ShowChildren(context, node);
+            return;
         }
         var showChildren = context.StateBool;
         ShowPrefixes(context);

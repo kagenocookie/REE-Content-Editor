@@ -128,7 +128,7 @@ public class FolderNodeEditor : IObjectUIHandler
             var subfolder = context.GetChild<SubfolderNodeEditor>();
             if (subfolder == null) {
                 context.ClearChildren();
-                context.AddChild("Folders", folder, new SubfolderNodeEditor());
+                context.AddChild("Folders", folder, new SubfolderNodeEditor() { UnnestChildren = folder == folder.Scene?.RootFolder || folder.GameObjects.Count == 0 });
             }
         }
 
