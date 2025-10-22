@@ -148,12 +148,16 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         var usePreviewWindow = AppConfig.Instance.UsePakFilePreviewWindow.Get();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_FileOpenPreview}", ref usePreviewWindow, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
         ImguiHelpers.Tooltip("Open files in Preview Window");
-        AppConfig.Instance.UsePakFilePreviewWindow.Set(usePreviewWindow);
+        if (usePreviewWindow != AppConfig.Instance.UsePakFilePreviewWindow.Get()) {
+            AppConfig.Instance.UsePakFilePreviewWindow.Set(usePreviewWindow);
+        }
         ImGui.SameLine();
         var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_PathShort}", ref useCompactFilePaths, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
         ImguiHelpers.Tooltip("Use compact file paths");
-        AppConfig.Instance.UsePakCompactFilePaths.Set(useCompactFilePaths);
+        if (useCompactFilePaths != AppConfig.Instance.UsePakCompactFilePaths.Get()) {
+            AppConfig.Instance.UsePakCompactFilePaths.Set(useCompactFilePaths);
+        }
         ImGui.SameLine();
         var bookmarks = _bookmarkManager.GetBookmarks(Workspace.Config.Game.name);
         var defaults = _bookmarkManagerDefaults.GetBookmarks(Workspace.Config.Game.name);
