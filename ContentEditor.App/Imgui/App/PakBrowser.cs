@@ -568,7 +568,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             var displayName = filename;
             if (displayName.Length >= 16) {
                 var ext = Path.GetExtension(displayName);
-                var nameEnd = Math.Min(displayName.Length, 16 - ext.Length - 1);
+                var nameEnd = 13 - ext.Length;
                 displayName = Path.GetFileName(filename)[0..nameEnd].ToString() + ".." + ext.ToString();
             }
             var pos = ImGui.GetCursorScreenPos();
@@ -579,7 +579,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 if (previewStatus == PreviewImageStatus.Ready) {
                     var texSize = new Vector2(btnSize.X, btnSize.Y - UI.FontSize) - style.FramePadding;
                     ImGui.GetWindowDrawList().AddImage(previewTex!, pos + style.FramePadding, pos + new Vector2(texSize.X, texSize.Y));
-                } else  {
+                } else {
                     ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), 0xffffffff, $"{AppIcons.SI_File}");
                 }
             } else {
