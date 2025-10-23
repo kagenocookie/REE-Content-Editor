@@ -18,10 +18,11 @@ public class MainWindow : EditorWindow
 
     internal override void InitializeWindow()
     {
+        var windowSize = AppConfig.Instance.WindowRect.Get();
         InitWindowEvents(new WindowOptions(
             isVisible: true,
-            position: new Silk.NET.Maths.Vector2D<int>(50, 50),
-            size: new Silk.NET.Maths.Vector2D<int>(1280, 720),
+            position: new Silk.NET.Maths.Vector2D<int>((int)windowSize.X, (int)windowSize.Y),
+            size: new Silk.NET.Maths.Vector2D<int>((int)windowSize.Z, (int)windowSize.W),
             framesPerSecond: 0.0,
             updatesPerSecond: 0.0,
             GraphicsAPI.Default,

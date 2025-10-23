@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Numerics;
 using System.Reflection;
 using System.Text.Json;
 using ContentEditor.App;
@@ -40,6 +41,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string UsePakCompactFilePaths = "use_pak_compact_file_paths";
         public const string PakDisplayMode = "pak_display_mode";
         public const string ThumbnailCacheFilepath = "thumbnail_cache_path";
+        public const string WindowRect = "window_rect";
 
         public const string RenderAxis = "render_axis";
         public const string RenderMeshes = "render_meshes";
@@ -143,6 +145,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<bool> ShowFps = new SettingWrapper<bool>(Keys.ShowFps, _lock, false);
     public readonly SettingWrapper<bool> LogToFile = new SettingWrapper<bool>(Keys.LogToFile, _lock, true);
     public readonly SettingWrapper<bool> IsFirstTime = new SettingWrapper<bool>(Keys.IsFirstTime, _lock, true);
+    public readonly SettingWrapper<Vector4> WindowRect = new SettingWrapper<Vector4>(Keys.WindowRect, _lock, new Vector4(50, 50, 1280, 720));
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
     public readonly ClassSettingWrapper<string> LatestVersion = new ClassSettingWrapper<string>(Keys.LatestVersion, _lock);
 
@@ -271,6 +274,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.LogLevel, instance.LogLevel.value.ToString(), null),
             (Keys.MaxUndoSteps, instance.MaxUndoSteps.value.ToString(), null),
             (Keys.AutoExpandFieldsCount, instance.AutoExpandFieldsCount.value.ToString(), null),
+            (Keys.WindowRect, instance.WindowRect.value.ToString("", CultureInfo.InvariantCulture).Replace("<", "").Replace(">", ""), null),
             (Keys.LastUpdateCheck, instance.LastUpdateCheck.value.ToString("O"), null),
             (Keys.LatestVersion, instance.LatestVersion.value?.ToString() ?? "", null),
             (Keys.EnableUpdateCheck, instance.EnableUpdateCheck.value.ToString(), null),
@@ -393,6 +397,19 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.LastUpdateCheck:
                             if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var _updateCheck)) LastUpdateCheck.value = _updateCheck;
                             break;
+                        case Keys.WindowRect: {
+                                var vals = value.Split(',');
+                                var vec = new Vector4(
+                                    float.Parse(vals[0].Trim(), CultureInfo.InvariantCulture),
+                                    float.Parse(vals[1].Trim(), CultureInfo.InvariantCulture),
+                                    float.Parse(vals[2].Trim(), CultureInfo.InvariantCulture),
+                                    float.Parse(vals[3].Trim(), CultureInfo.InvariantCulture)
+                                );
+                                if (vec.Z > 0 && vec.W > 0) {
+                                    WindowRect.value = vec;
+                                }
+                                break;
+                            }
                         case Keys.LatestVersion:
                             LatestVersion.value = ReadString(value);
                             break;

@@ -13,6 +13,7 @@ using ReeLib.Data;
 using ReeLib.Efx;
 using Silk.NET.Input;
 using Silk.NET.Maths;
+using Silk.NET.Windowing;
 
 public partial class EditorWindow : WindowBase, IWorkspaceContainer
 {
@@ -100,6 +101,15 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
     protected override void Update(float deltaTime)
     {
+        if (ImGui.IsKeyPressed(ImGuiKey.F12)) {
+            if (_window.WindowState != WindowState.Fullscreen) {
+                _window.WindowState = WindowState.Fullscreen;
+            } else {
+                _window.WindowState = WindowState.Maximized;
+                _window.WindowState = WindowState.Normal;
+                _window.Position = new Vector2D<int>(_window.Position.X, Math.Max(_window.Position.Y, 25));
+            }
+        }
         LastKeyboard = _inputContext.Keyboards[0];
         if (!ImGui.GetIO().WantCaptureMouse) {
             var wheel = ImGui.GetIO().MouseWheel;
@@ -128,6 +138,15 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             data.Position = new Vector2((Size.X - data.Size.X) / 2, 50);
             AppConfig.Instance.IsFirstTime.Set(false);
         }
+        _window.Move += OnResize;
+        _window.FramebufferResize += OnResize;
+    }
+
+    private void OnResize(Vector2D<int> newVec)
+    {
+        if (this != MainLoop.Instance.MainWindow || _window.WindowState == WindowState.Minimized) return;
+
+        AppConfig.Instance.WindowRect.Set(new Vector4(_window.Position.X, _window.Position.Y, _window.Size.X, _window.Size.Y));
     }
 
     protected override void OnFileDrop(string[] filenames, Vector2D<int> position)
@@ -508,7 +527,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             }
             ImGui.Separator();
             if (ImGui.MenuItem("Exit")) {
-                // Environment.Exit(0);
                 _window.Close();
             }
             ImGui.EndMenu();
