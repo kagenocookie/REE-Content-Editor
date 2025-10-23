@@ -56,17 +56,10 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         var config = AppConfig.Instance;
         if (currentTab == 0) {
             ImGui.SeparatorText("Main settings");
-            var blender = config.BlenderPath.Get() ?? "";
-            if (AppImguiHelpers.InputFilepath("Blender path", ref blender, "blender.exe|blender.exe")) {
-                config.BlenderPath.Set(blender);
-            }
-
-            var configPath = config.GameConfigBaseFilepath.Get();
-            if (AppImguiHelpers.InputFolder("Game config base path", ref configPath)) {
-                if (configPath.EndsWith(".exe")) configPath = Path.GetDirectoryName(configPath)!;
-                config.GameConfigBaseFilepath.Set(configPath);
-            }
-            if (ImGui.IsItemHovered()) ImGui.SetTooltip("The folder path that contains the game specific entity configurations. Will use relative path config/ by default if unspecified.");
+            // var blender = config.BlenderPath.Get() ?? "";
+            // if (AppImguiHelpers.InputFilepath("Blender path", ref blender, "blender.exe|blender.exe")) {
+            //     config.BlenderPath.Set(blender);
+            // }
 
             var theme = config.Theme.Get();
             if (ImguiHelpers.ValueCombo("Theme", DefaultThemes.AvailableThemes, DefaultThemes.AvailableThemes, ref theme)) {
@@ -89,34 +82,40 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                 ImGui.TextColored(Colors.Warning, "Window transparency change will only be applied after restarting the app");
             }
 
-            ShowSetting(config.PrettyFieldLabels, "Simplify field labels", "Whether to simplify field labels instead of showing the raw field names (e.g. \"Target Object\" instead of \"_TargetObject\").");
             ShowSetting(config.EnableUpdateCheck, "Automatically check for updates", "Will occasionally check GitHub for new releases.");
 
-            var maxUndo = config.MaxUndoSteps.Get();
-            if (ImGui.DragInt("Max undo steps", ref maxUndo, 0.25f, 0)) {
-                config.MaxUndoSteps.Set(maxUndo);
+            var showFps = config.ShowFps.Get();
+            if (ImGui.Checkbox("Show FPS", ref showFps)) {
+                config.ShowFps.Set(showFps);
             }
 
             ImGui.SeparatorText("Advanced");
+            var configPath = config.GameConfigBaseFilepath.Get();
+            if (AppImguiHelpers.InputFolder("Game config base path", ref configPath)) {
+                if (configPath.EndsWith(".exe")) configPath = Path.GetDirectoryName(configPath)!;
+                config.GameConfigBaseFilepath.Set(configPath);
+            }
+            if (ImGui.IsItemHovered()) ImGui.SetTooltip("The folder path that contains the game specific entity configurations. Will use relative path config/ by default if unspecified.");
             ShowSetting(config.RemoteDataSource, "Resource data source", "The source from which to check for updates and download game-specific resource cache files.\nWill use the default GitHub repository if unspecified.");
             ShowFolderSetting(config.ThumbnailCacheFilepath, "Thumbnail cache file path", "The folder that cached thumbnails should be stored in. Must not be empty.");
 
             ShowSlider(config.UnpackMaxThreads, "Max unpack threads", 1, 64, "The maximum number of threads to be used when unpacking.\nThe actual thread count is determined automatically by the .NET runtime.");
-            ShowSlider(config.AutoExpandFieldsCount, "Auto-expand field count", 0, 16, "The number of fields below which an RSZ object tree node should auto-expand.");
+            ShowSlider(config.AutoExpandFieldsCount, "Auto-expand field count", 0, 16, "RSZ object fields with less than the defined number of fields will initially auto expand.");
 
             var logLevel = config.LogLevel.Get();
             if (ImGui.Combo("Minimum logging level", ref logLevel, LogLevels, LogLevels.Length)) {
                 config.LogLevel.Set(logLevel);
             }
 
-            ShowSetting(config.LogToFile, "Output logs to file", $"If checked, any logging will also be output to file {FileLogger.DefaultLogFilePath}.\nChanging this setting requires a restart of the app.");
+            var maxUndo = config.MaxUndoSteps.Get();
+            if (ImGui.DragInt("Max undo steps", ref maxUndo, 0.25f, 0)) {
+                config.MaxUndoSteps.Set(maxUndo);
+            }
+            ImguiHelpers.Tooltip("The maximum number of steps you can undo. Higher number means a bit higher memory usage after longer sessions.");
             ShowSlider(config.MaxFps, "Max FPS", 10, 240, "The maximum FPS for rendering.");
             ShowSlider(config.BackgroundMaxFps, "Max FPS in background", 5, config.MaxFps.Get(), "The maximum FPS when the editor window is not focused.");
-
-            var showFps = config.ShowFps.Get();
-            if (ImGui.Checkbox("Show FPS", ref showFps)) {
-                config.ShowFps.Set(showFps);
-            }
+            ShowSetting(config.PrettyFieldLabels, "Simplify field labels", "Whether to simplify field labels instead of showing the raw field names (e.g. \"Target Object\" instead of \"_TargetObject\").");
+            ShowSetting(config.LogToFile, "Output logs to file", $"If checked, any logging will also be output to file {FileLogger.DefaultLogFilePath}.\nChanging this setting requires a restart of the app.");
         } else if (currentTab == 1) {
             var key = config.Key_Undo.Get();
             if (ImguiKeybinding("Undo", ref key, ref filterKey1)) {
@@ -146,6 +145,8 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             }
         } else {
             GameIdentifier game = selectedTab;
+            ImGui.SeparatorText(Languages.TranslateGame(game.name));
+
             var gamepath = config.GetGamePath(game);
             if (AppImguiHelpers.InputFolder("Game path", ref gamepath)) {
                 if (gamepath.EndsWith(".exe")) gamepath = Path.GetDirectoryName(gamepath)!;

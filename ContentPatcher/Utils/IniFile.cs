@@ -98,7 +98,11 @@ public sealed class IniFile : IDisposable
             fs.WriteLine(key + " = " + value);
         }
         fs.Dispose();
-        File.Replace(tempFilepath, iniFilepath, iniFilepath + ".bak");
+        if (!File.Exists(iniFilepath)) {
+            File.Move(tempFilepath, iniFilepath);
+        } else {
+            File.Replace(tempFilepath, iniFilepath, iniFilepath + ".bak");
+        }
         File.Delete(iniFilepath + ".bak");
     }
 }

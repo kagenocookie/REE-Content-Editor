@@ -74,13 +74,10 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
         if (all.Count > 0) isOpen = true;
         if (!isOpen) return;
 
-        var windowSize = ImGui.GetWindowSize();
-        var x = ImGui.GetStyle().WindowPadding.X * 2;
-        var width = windowSize.X - x * 2;
+        var windowSize = ImGui.GetWindowSize() - new Vector2(ImGui.GetStyle().WindowPadding.X * 2, 0);
         var height = windowSize.Y / 4;
-        var y = windowSize.Y - height - ImGui.GetStyle().WindowPadding.Y * 2;
-        ImGui.SetNextWindowSize(new System.Numerics.Vector2(width, height), ImGuiCond.FirstUseEver);
-        ImGui.SetNextWindowPos(new System.Numerics.Vector2(x, 128), ImGuiCond.FirstUseEver);
+        ImGui.SetNextWindowSize(new System.Numerics.Vector2(windowSize.X, height), ImGuiCond.FirstUseEver);
+        ImGui.SetNextWindowPos(new System.Numerics.Vector2(0, windowSize.Y - height), ImGuiCond.FirstUseEver);
         if (ImGui.Begin("Log", ref isOpen)) {
             data.Size = ImGui.GetWindowSize();
             data.Position = ImGui.GetWindowPos();

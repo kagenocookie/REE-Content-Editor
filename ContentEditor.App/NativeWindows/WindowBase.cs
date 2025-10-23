@@ -231,7 +231,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         return false;
     }
 
-    public void AddUniqueSubwindow<THandlerType>(THandlerType subwindow) where THandlerType : IWindowHandler
+    public WindowData AddUniqueSubwindow<THandlerType>(THandlerType subwindow) where THandlerType : IWindowHandler
     {
         var data = subwindows.Where(sw => sw.Handler is THandlerType).FirstOrDefault();
         if (data != null) {
@@ -240,6 +240,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         AddSubwindow(subwindow);
         data = subwindows.Last();
         ImGui.SetWindowFocus(data.Name);
+        return data;
     }
 
     public void CloseSubwindow(IWindowHandler subwindow)

@@ -119,7 +119,15 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
     private void OnReady()
     {
-        AddSubwindow(new ConsoleWindow());
+        var console = AddSubwindow(new ConsoleWindow());
+        console.Size = new Vector2(Size.X, 200);
+        console.Position = new Vector2(0, Size.Y - 200);
+        if (AppConfig.Instance.IsFirstTime) {
+            var data = AddSubwindow(new FirstTimeSetupHelper());
+            data.Size = new Vector2(Math.Min(800, Size.X - 60), Math.Min(400, Size.X - 60));
+            data.Position = new Vector2((Size.X - data.Size.X) / 2, 50);
+            AppConfig.Instance.IsFirstTime.Set(false);
+        }
     }
 
     protected override void OnFileDrop(string[] filenames, Vector2D<int> position)
@@ -241,7 +249,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             }
             ImGui.Separator();
             if (ImGui.MenuItem("Configure games ...")) {
-                AddUniqueSubwindow(new SettingsWindowHandler());
+                AddUniqueSubwindow(new SettingsWindowHandler()).Size = new Vector2(800, 500);
             }
             ImGui.EndMenu();
         }
@@ -555,7 +563,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (HasSubwindow<SettingsWindowHandler>(out var settings)) {
                     CloseSubwindow(settings);
                 } else {
-                    AddSubwindow(new SettingsWindowHandler());
+                    AddUniqueSubwindow(new SettingsWindowHandler()).Size = new Vector2(800, 500);
+
                 }
             }
             if (ImGui.MenuItem("Theme editor")) {

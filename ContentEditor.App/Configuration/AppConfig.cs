@@ -15,6 +15,7 @@ public class AppConfig : Singleton<AppConfig>
 {
     public static class Keys
     {
+        public const string IsFirstTime = "first_time";
         public const string MaxFps = "max_fps";
         public const string BackgroundMaxFps = "max_fps_background";
         public const string MainWindowGame = "main_selected_game";
@@ -133,7 +134,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<int> UnpackMaxThreads = new SettingWrapper<int>(Keys.UnpackMaxThreads, _lock, 4);
     public readonly SettingWrapper<ReeLib.via.Color> BackgroundColor = new SettingWrapper<ReeLib.via.Color>(Keys.BackgroundColor, _lock, new ReeLib.via.Color(115, 140, 153, 255));
     public readonly SettingWrapper<bool> PrettyFieldLabels = new SettingWrapper<bool>(Keys.PrettyLabels, _lock, true);
-    public readonly SettingWrapper<int> LogLevel = new SettingWrapper<int>(Keys.LogLevel, _lock, 0);
+    public readonly SettingWrapper<int> LogLevel = new SettingWrapper<int>(Keys.LogLevel, _lock, 1);
     public readonly SettingWrapper<int> MaxUndoSteps = new SettingWrapper<int>(Keys.MaxUndoSteps, _lock, 250);
     public readonly SettingWrapper<int> AutoExpandFieldsCount = new SettingWrapper<int>(Keys.AutoExpandFieldsCount, _lock, 3);
     public readonly SettingWrapper<bool> EnableUpdateCheck = new SettingWrapper<bool>(Keys.EnableUpdateCheck, _lock, true);
@@ -141,6 +142,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<bool> UsePakCompactFilePaths = new SettingWrapper<bool>(Keys.UsePakCompactFilePaths, _lock, true);
     public readonly SettingWrapper<bool> ShowFps = new SettingWrapper<bool>(Keys.ShowFps, _lock, false);
     public readonly SettingWrapper<bool> LogToFile = new SettingWrapper<bool>(Keys.LogToFile, _lock, true);
+    public readonly SettingWrapper<bool> IsFirstTime = new SettingWrapper<bool>(Keys.IsFirstTime, _lock, true);
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
     public readonly ClassSettingWrapper<string> LatestVersion = new ClassSettingWrapper<string>(Keys.LatestVersion, _lock);
 
@@ -256,6 +258,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.BackgroundMaxFps, instance.BackgroundMaxFps.value.ToString(CultureInfo.InvariantCulture), null),
             (Keys.ShowFps, instance.ShowFps.value.ToString(), null),
             (Keys.LogToFile, instance.LogToFile.value.ToString(), null),
+            (Keys.IsFirstTime, instance.IsFirstTime.value.ToString(), null),
             (Keys.MainWindowGame, instance.MainSelectedGame.value?.ToString() ?? "", null),
             (Keys.MainActiveBundle, instance.MainActiveBundle.value?.ToString() ?? "", null),
             (Keys.BlenderPath, instance.BlenderPath.value?.ToString() ?? "", null),
@@ -329,6 +332,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.LogToFile:
                             LogToFile.value = ReadBool(value);
+                            break;
+                        case Keys.IsFirstTime:
+                            IsFirstTime.value = ReadBool(value);
                             break;
                         case Keys.MainWindowGame:
                             MainSelectedGame.value = ReadString(value);
