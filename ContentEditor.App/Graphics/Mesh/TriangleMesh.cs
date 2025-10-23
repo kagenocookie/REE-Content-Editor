@@ -1,8 +1,6 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
-using Assimp;
 using ReeLib;
-using ReeLib.Common;
 using ReeLib.via;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
@@ -42,6 +40,7 @@ public class TriangleMesh : Mesh
             return;
         }
 
+        var integerIndices = sourceMesh.MeshData?.integerFaces ?? false;
         var hasTan = sourceMesh.MeshBuffer.Tangents.Length != 0;
         var hasWeights = sourceMesh.BoneData?.Bones.Count > 0;
         var hasNormals = sourceMesh.MeshBuffer.Normals.Length > 0;
@@ -50,20 +49,22 @@ public class TriangleMesh : Mesh
 
         var meshVerts = submesh.Positions;
         var meshUV = submesh.UV0;
-        var meshIndices = submesh.Indices;
         var meshNormals = hasNormals ? submesh.Normals : default;
         var meshTangents = hasTan ? submesh.Tangents : default;
         var meshWeights = hasWeights ? submesh.Weights : default;
 
+        var indicesShort = !integerIndices ? submesh.Indices : default;
+        var indicesInt = integerIndices ? submesh.IntegerIndices : default;
+
         var attrs = AttributeCount;
-        Indices = new int[meshIndices.Length];
-        VertexData = new float[meshIndices.Length * attrs];
+        Indices = new int[submesh.indicesCount];
+        VertexData = new float[submesh.indicesCount * attrs];
         var tangentsOffset = TangentAttributeOffset;
         var boneIndsOffset = BonesAttributeOffset;
         var boneWeightsOffset = BonesAttributeOffset + 4;
 
-        int index = 0;
-        foreach (var vert in meshIndices) {
+        for (int index = 0; index < Indices.Length; index++) {
+            var vert = integerIndices ? indicesInt[index] : indicesShort[index];
             Indices[index] = vert;
             var pos = meshVerts[vert];
             var uv = meshUV[vert];
@@ -104,7 +105,6 @@ public class TriangleMesh : Mesh
                     weights /= (weights.X + weights.Y + weights.Z + weights.W);
                 }
             }
-            index++;
         }
 
         BoundingBox = sourceMesh.MeshData?.boundingBox ?? default;

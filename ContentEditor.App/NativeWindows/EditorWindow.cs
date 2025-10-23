@@ -132,7 +132,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         foreach (var filename in filenames) {
             if (filename.EndsWith(".pak")) {
                 AppConfig.Instance.AddRecentFile(filename);
-                AddSubwindow(new PakBrowser(workspace.Env, filename));
+                AddSubwindow(new PakBrowser(workspace, filename));
                 continue;
             }
 
@@ -541,7 +541,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     }
                 }
                 if (ImGui.MenuItem("PAK File Browser")) {
-                    AddSubwindow(new PakBrowser(workspace.Env, null));
+                    AddSubwindow(new PakBrowser(workspace, null));
                 }
                 if (ImGui.MenuItem("Data Search")) {
                     AddUniqueSubwindow(new RszDataFinder());

@@ -45,6 +45,24 @@ public sealed class ContentWorkspace : IDisposable
         ResourceManager.Setup(this);
     }
 
+    private ContentWorkspace(ContentWorkspace source)
+    {
+        Env = source.Env;
+        Config = source.Config;
+        BundleManager = new () { VersionHash = VersionHash };
+        BundleManager.GamePath = Env.Config.GamePath;
+        Diff = new DiffHandler(Env);
+        ResourceManager = new ResourceManager(source.Config);
+        Messages = new MessageManager(Env);
+        VersionHash = source.VersionHash;
+        ResourceManager.Setup(this);
+    }
+
+    public ContentWorkspace CreateTempClone()
+    {
+        return new ContentWorkspace(this);
+    }
+
     public void SetBundle(string? bundle)
     {
         if (bundle == null) {

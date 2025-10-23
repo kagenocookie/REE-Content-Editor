@@ -32,7 +32,7 @@ public class Texture : IDisposable
         Alpha
     }
 
-    public unsafe Texture()
+    public Texture()
     {
         var gl = EditorWindow.CurrentWindow?.GLContext ?? throw new Exception("Could not get OpenGL Context!");
         _gl = gl;
@@ -40,7 +40,7 @@ public class Texture : IDisposable
         Bind();
     }
 
-    public unsafe Texture(GL? gl = null)
+    public Texture(GL? gl = null)
     {
         if (gl == null) {
             gl = EditorWindow.CurrentWindow?.GLContext ?? throw new Exception("Could not get OpenGL Context!");
@@ -48,6 +48,14 @@ public class Texture : IDisposable
         _gl = gl;
         _handle = _gl.GenTexture();
         Bind();
+    }
+
+    public Texture(uint handleId, GL gl, int width, int height)
+    {
+        _gl = gl;
+        _handle = handleId;
+        Width = width;
+        Height = height;
     }
 
     public unsafe Texture LoadFromRawData(Span<byte> data, uint width, uint height)

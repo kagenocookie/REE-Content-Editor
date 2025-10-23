@@ -71,6 +71,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         camera = Component.Create<Camera>(camGo, workspace.Env);
         camGo.ForceSetScene(this);
         parentScene?.childScenes.Add(this);
+        renderContext.ResourceManager = workspace.ResourceManager;
     }
 
     public GameObject? Find(ReadOnlySpan<char> path) => RootFolder.Find(path);

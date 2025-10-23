@@ -61,7 +61,8 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
         ?? _scene?.Meshes.Sum(m => m.VertexCount)
         ?? -1;
 
-    public int PolyCount => _mesh?.MeshBuffer?.Faces.Length
+    public int PolyCount => _mesh?.MeshBuffer?.Faces?.Length
+        ?? _mesh?.MeshBuffer?.IntegerFaces?.Length
         ?? _scene?.Meshes.Sum(m => m.FaceCount)
         ?? -1;
 

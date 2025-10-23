@@ -69,6 +69,9 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
     public abstract (MeshHandle, ShapeMesh) CreateShapeMesh();
     protected abstract MeshResourceHandle? LoadMeshResource(FileHandle fileHandle);
 
+    public void AddSceneGizmo(Gizmo gizmo) => Gizmos.Add(gizmo);
+    public virtual void AddDefaultSceneGizmos() { }
+
     public void Dispose()
     {
         GC.SuppressFinalize(this);

@@ -28,6 +28,8 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
     public readonly RenderBatch Batch = new RenderBatch(gl);
 
+    private bool _hasInitGizmos;
+
     private const float GridCellSpacing = 5f;
 
     public override IEnumerable<Material> GetPresetMaterials(EditorPresetMaterials preset)
@@ -412,20 +414,19 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         }
     }
 
-    private void InitGizmos()
+    public override void AddDefaultSceneGizmos()
     {
         Gizmos.Add(new GridGizmo(GL));
         Gizmos.Add(new AxisGizmo(GL));
         Gizmos.Add(new SelectionBoundsGizmo(GL));
-
-        foreach (var gizmo in Gizmos) gizmo.Init(this);
     }
 
     private void RenderGizmos()
     {
         if (AppConfig.Instance.RenderAxis.Get()) {
-            if (Gizmos.Count == 0) {
-                InitGizmos();
+            if (!_hasInitGizmos && Gizmos.Count > 0) {
+                foreach (var gizmo in Gizmos) gizmo.Init(this);
+                _hasInitGizmos = true;
             }
             foreach (var gizmo in Gizmos) {
                 gizmo.Update(this, 0);

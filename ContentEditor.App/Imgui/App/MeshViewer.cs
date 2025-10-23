@@ -89,16 +89,28 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             mdfVersion = -1;
         }
 
-        var meshBasePath = PathUtils.GetFilepathWithoutExtensionOrVersion(fileHandle.Filepath);
-        var mdfPath = meshBasePath.ToString() + ".mdf2";
+        var meshBasePath = PathUtils.GetFilepathWithoutExtensionOrVersion(fileHandle.Filepath).ToString();
+        var ext = ".mdf2";
+        if (mdfVersion != -1) ext += "." + mdfVersion;
+
+        var mdfPath = meshBasePath + ext;
+        if (!File.Exists(mdfPath)) mdfPath = meshBasePath + "_Mat" + ext;
+
         // if (Path.IsPathRooted(meshBasePath)) {
         //     mdfPath = Directory.EnumerateFiles(Path.GetDirectoryName(meshBasePath!).ToString(), Path.GetFileName(meshBasePath).ToString() + ".mdf2.*").FirstOrDefault();
         // } else {
         //     if (mdfVersion != -1) mdfPath += "." + mdfVersion;
         // }
-        if (mdfVersion != -1) mdfPath += "." + mdfVersion;
+
         if (!File.Exists(mdfPath) && fileHandle.NativePath != null) {
-            mdfPath = PathUtils.GetFilepathWithoutExtensionOrVersion(fileHandle.NativePath).ToString() + ".mdf2" + (mdfVersion == -1 ? "" : "." + mdfVersion);
+            meshBasePath = PathUtils.GetFilepathWithoutExtensionOrVersion(fileHandle.NativePath).ToString();
+            if (Workspace.ResourceManager.TryResolveFile(meshBasePath + ext, out _)) {
+                mdfPath = meshBasePath + ext;
+            } else if (Workspace.ResourceManager.TryResolveFile(meshBasePath + "_Mat" + ext, out _)) {
+                mdfPath = meshBasePath + "_Mat" + ext;
+            } else {
+                mdfPath = "";
+            }
         }
         this.mdfSource = mdfPath;
         this.originalMDF = mdfPath;
@@ -170,6 +182,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         if (previewGameobject == null || scene == null) return;
 
         scene.Camera.LookAt(previewGameobject, true);
+        scene.Camera.OrthoSize = previewGameobject.GetWorldSpaceBounds().Size.Length() * 0.7f;
     }
 
     public void OnIMGUI()
@@ -183,6 +196,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             scene.MouseHandler.scene = scene;
             scene.ActiveCamera.GameObject.MoveToScene(scene);
             scene.Controller.MoveSpeed = AppConfig.Settings.MeshViewer.MoveSpeed;
+            scene.OwnRenderContext.AddDefaultSceneGizmos();
             scene.AddWidget<SceneVisibilitySettings>();
         }
 

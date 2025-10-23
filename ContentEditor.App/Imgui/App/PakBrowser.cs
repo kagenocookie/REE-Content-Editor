@@ -4,6 +4,7 @@ using System.Numerics;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
+using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
 
@@ -15,14 +16,14 @@ public enum FileDisplayMode
     Grid,
 }
 
-public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWindowHandler, IDisposable
+public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFilePath) : IWindowHandler, IDisposable
 {
     public string HandlerName => "PAK File Browser";
 
-    public Workspace Workspace { get; } = workspace;
+    public Workspace Workspace { get; } = contentWorkspace.Env;
     public string? PakFilePath { get; } = pakFilePath;
 
-    private string _currentDir = workspace.BasePath[0..^1];
+    private string _currentDir = contentWorkspace.Env.BasePath[0..^1];
     public string CurrentDir {
         get => _currentDir;
         set {
@@ -536,7 +537,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
         GetPageFiles(baseList, (short)gridSortColumn, gridSortDir, ref sortedEntries);
         if (sortedEntries.Length == 0) return;
 
-        previewGenerator ??= new(Workspace, EditorWindow.CurrentWindow?.GLContext!);
+        previewGenerator ??= new(contentWorkspace, EditorWindow.CurrentWindow?.GLContext!);
 
         var style = ImGui.GetStyle();
         var btnSize = new Vector2(120, 100);
@@ -555,7 +556,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                     ImGui.SameLine();
                 }
             }
-            curX += btnSize.X + style.FramePadding.X * 2;
+            curX += btnSize.X + style.ItemSpacing.X;
 
             bool isBookmarked = _bookmarkManager.IsBookmarked(Workspace.Config.Game.name, file);
             if (isBookmarked) {
@@ -576,7 +577,7 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
             if (Path.HasExtension(file)) {
                 var previewStatus = previewGenerator.FetchPreview(file, out var previewTex);
                 if (previewStatus == PreviewImageStatus.Ready) {
-                    var texSize = new Vector2(btnSize.X, btnSize.Y - UI.FontSize) - style.FramePadding * 2;
+                    var texSize = new Vector2(btnSize.X, btnSize.Y - UI.FontSize) - style.FramePadding;
                     ImGui.GetWindowDrawList().AddImage(previewTex!, pos + style.FramePadding, pos + new Vector2(texSize.X, texSize.Y));
                 } else  {
                     ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), 0xffffffff, $"{AppIcons.SI_File}");

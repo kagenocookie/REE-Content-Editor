@@ -31,11 +31,13 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
         // convert in case we received a native and not internal path
         internalPath = PathUtils.GetInternalFromNativePath(internalPath);
         var scene = new Scene(name, internalPath, env, parentScene, rootFolder) { IsActive = render, SceneManager = this };
-        scene.OwnRenderContext.ResourceManager = env.ResourceManager;
         scenes.Add(scene);
         // if (render) Logger.Debug("Loading scene " + rootFolder?.Name ?? internalPath);
         rootFolder?.MoveToScene(scene);
-        if (parentScene == null) rootScenes.Add(scene);
+        if (parentScene == null) {
+            rootScenes.Add(scene);
+            scene.OwnRenderContext.AddDefaultSceneGizmos();
+        }
         return scene;
     }
 

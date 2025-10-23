@@ -100,6 +100,16 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         FileLoaders.Sort(FileLoaderPriorityComparer.Instance);
     }
 
+    public void RemoveFileLoader<ILoader>() where ILoader : IFileLoader
+    {
+        foreach (var loader in FileLoaders) {
+            if (loader.GetType() == typeof(ILoader)) {
+                FileLoaders.Remove(loader);
+                return;
+            }
+        }
+    }
+
     private class FileLoaderPriorityComparer : IComparer<IFileLoader>
     {
         public static readonly FileLoaderPriorityComparer Instance = new();

@@ -122,13 +122,13 @@ public class ResourcePathPicker : IObjectUIHandler
                 var exts = FileExtensionFilter?.Split('|').Where((x, i) => i % 2 == 1).Select(x => x.Replace("*.", "").Replace(".*", "")).ToArray() ?? [];
                 var extRegex = string.Join("|", exts);
                 if (exts.Length == 0 || exts.Length == 1 && exts[0] == "*") {
-                    EditorWindow.CurrentWindow!.AddSubwindow(new PakBrowser(ws!.Env, null));
+                    EditorWindow.CurrentWindow!.AddSubwindow(new PakBrowser(ws!, null));
                 } else {
                     if (exts.Length > 1) {
                         extRegex = "(?:" + extRegex + ")";
                     }
                     var pattern = ws!.Env.BasePath + "**\\." + extRegex + "\\.**";
-                    EditorWindow.CurrentWindow!.AddSubwindow(new PakBrowser(ws.Env, null) { CurrentDir = pattern });
+                    EditorWindow.CurrentWindow!.AddSubwindow(new PakBrowser(ws, null) { CurrentDir = pattern });
                 }
             }
             ImGui.EndPopup();
