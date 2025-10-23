@@ -641,14 +641,18 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                     if (PathUtils.ParseFileFormat(file).format == KnownFileFormats.Texture) {
                         ImGui.BeginTooltip();
                         if (previewTexture?.Path != file) {
+                            previewTexture?.Dispose();
+                            previewTexture = null;
                             using var stream = Workspace.GetFile(file);
                             if (stream != null) {
-                                var fileh = new TexFile(new FileHandler(stream, file));
-                                fileh.Read();
-                                previewTexture?.Dispose();
-                                previewTexture = new Texture();
-                                previewTexture.LoadFromTex(fileh);
-                                previewTexture.SetChannel(Texture.TextureChannel.RGB);
+                                try {
+                                    var tex = new TexFile(new FileHandler(stream, file));
+                                    tex.Read();
+                                    previewTexture = new Texture();
+                                    previewTexture.LoadFromTex(tex);
+                                } catch (Exception) {
+                                    // ignore
+                                }
                             }
                         }
                         if (previewTexture != null) {

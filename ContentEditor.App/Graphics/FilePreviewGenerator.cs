@@ -44,7 +44,7 @@ public sealed class FilePreviewGenerator(Workspace Workspace, GL gl) : IDisposab
     private string GetThumbnailPath(string filepath)
     {
         // should we worry about file path length limits? if so, we could use hashes instead of full file paths
-        return Path.Combine(PreviewCacheFolder, PathUtils.RemoveNativesFolder(filepath) + ".bmp");
+        return Path.Combine(PreviewCacheFolder, PathUtils.RemoveNativesFolder(filepath) + ".jpg");
     }
 
     public PreviewImageStatus FetchPreview(string file, out Texture? texture)
@@ -159,6 +159,8 @@ public sealed class FilePreviewGenerator(Workspace Workspace, GL gl) : IDisposab
         _statuses[path] = PreviewImageStatus.Loading;
         var texFile = new TexFile(new FileHandler(stream, path));
         texFile.Read();
+        var totalMips = texFile.Header.mipCount;
+        var targetMip = texFile.GetBestMipLevelForDimensions(128, 128);
         var outPath = GetThumbnailPath(path);
 
         using var fullTexture = new Texture(_threadGL);
@@ -166,10 +168,10 @@ public sealed class FilePreviewGenerator(Workspace Workspace, GL gl) : IDisposab
         fullTexture.Bind();
         fullTexture.SetChannel(Texture.TextureChannel.RGB);
 
-        using var img = fullTexture.GetAsImage();
+        using var img = fullTexture.GetAsImage(targetMip);
         img.Mutate(x => x.Resize(128, 128));
         Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
-        img.SaveAsBmp(outPath, null);
+        img.SaveAsJpeg(outPath, null);
         _statuses[path] = PreviewImageStatus.Generated;
     }
 

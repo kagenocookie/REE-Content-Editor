@@ -100,10 +100,14 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                         PlatformUtils.ShowSaveFileDialog((file) => {
                             window.InvokeFromUIThread(() => {
                                 if (!string.IsNullOrEmpty(file)) {
-                                    texture.SaveAs(file);
+                                    if (fileHandle != null && fileHandle.Format.format == KnownFileFormats.Texture) {
+                                        fileHandle.GetFile<TexFile>().SaveAsDDS(file);
+                                    } else {
+                                        texture.SaveAs(file);
+                                    }
                                 }
                             });
-                        }, baseName.ToString(), filter: "TGA (*.tga)|*.tga|PNG (*.png)|*.png");
+                        }, baseName.ToString(), filter: "TGA (*.tga)|*.tga|PNG (*.png)|*.png|DDS (*.dds)|*.dds");
                     }
                 }
                 ImGui.EndMenu();

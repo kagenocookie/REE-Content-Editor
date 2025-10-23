@@ -233,6 +233,25 @@ public class Texture : IDisposable
         ArrayPool<byte>.Shared.Return(data);
         return image;
     }
+
+    public unsafe Image<Rgba32> GetAsImage(int mipLevel)
+    {
+        var w = Math.Max(1, Width >> mipLevel);
+        var h = Math.Max(1, Height >> mipLevel);
+
+        var data = ArrayPool<byte>.Shared.Rent(w * h * 4);
+
+        Bind();
+
+        fixed (byte* bytes = data) {
+            _gl.GetTexImage(TextureTarget.Texture2D, mipLevel, PixelFormat.Rgba, PixelType.UnsignedByte, bytes);
+        }
+
+        var image = Image.LoadPixelData<Rgba32>(data, w, h);
+        ArrayPool<byte>.Shared.Return(data);
+        return image;
+    }
+
     public void SaveAs(string filepath)
     {
         using var image = GetAsImage();
