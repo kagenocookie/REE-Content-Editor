@@ -564,7 +564,12 @@ public partial class PakBrowser(Workspace workspace, string? pakFilePath) : IWin
                 ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.Text]);
             }
             var filename = Path.GetFileName(PathUtils.GetFilepathWithoutSuffixes(file.AsSpan()));
-            var displayName = filename.Length < 16 ? filename : filename[^16..];
+            var displayName = filename;
+            if (displayName.Length >= 16) {
+                var ext = Path.GetExtension(displayName);
+                var nameEnd = Math.Min(displayName.Length, 16 - ext.Length - 1);
+                displayName = Path.GetFileName(filename)[0..nameEnd].ToString() + ".." + ext.ToString();
+            }
             var pos = ImGui.GetCursorScreenPos();
             var click = ImGui.Button(displayName, btnSize);
             ImGui.PopStyleColor();
