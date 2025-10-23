@@ -87,7 +87,7 @@ public sealed class FilePreviewGenerator : IDisposable
             EnqueueFile(file);
             return PreviewImageStatus.Pending;
         } else {
-            return _statuses[file] = PreviewImageStatus.Unsupported;
+            return _statuses[file] = AppIcons.GetIcon(fmt.format).icon == '\0' ? PreviewImageStatus.Unsupported : PreviewImageStatus.PredefinedIcon;
         }
     }
 
@@ -260,5 +260,6 @@ public enum PreviewImageStatus
     Loading,
     Generated,
     Ready,
+    PredefinedIcon,
     Failed,
 }

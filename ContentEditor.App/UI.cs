@@ -1,3 +1,4 @@
+using System.Numerics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.ImguiHandling.Efx;
 using ContentEditor.App.Windowing;
@@ -205,5 +206,14 @@ public static class AppIcons
         EFXAction => EfxAction,
         EFXEntry => EfxEntry,
         _ => '\0',
+    };
+    public static (char icon, Vector4 color) GetIcon(KnownFileFormats format) => format switch {
+        KnownFileFormats.Prefab => (Prefab, Colors.GameObject),
+        KnownFileFormats.Scene => (Folder, Colors.Folder),
+        KnownFileFormats.Effect => (Efx, Vector4.One),
+        KnownFileFormats.Mesh => (Mesh, Vector4.One),
+        KnownFileFormats.RequestSetCollider => (Mesh, Colors.RequestSetColliders),
+        KnownFileFormats.CollisionMesh => (Mesh, Colors.Colliders),
+        _ => ('\0', Vector4.One),
     };
 }

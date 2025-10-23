@@ -579,6 +579,9 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 if (previewStatus == PreviewImageStatus.Ready) {
                     var texSize = new Vector2(btnSize.X, btnSize.Y - UI.FontSize) - style.FramePadding;
                     ImGui.GetWindowDrawList().AddImage(previewTex!, pos + style.FramePadding, pos + new Vector2(texSize.X, texSize.Y));
+                } else if (previewStatus == PreviewImageStatus.PredefinedIcon) {
+                    var (icon, col) = AppIcons.GetIcon(PathUtils.ParseFileFormat(file).format);
+                    ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), ImGui.ColorConvertFloat4ToU32(col), $"{icon}");
                 } else {
                     ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), 0xffffffff, $"{AppIcons.SI_File}");
                 }
