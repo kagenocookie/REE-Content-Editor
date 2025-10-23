@@ -636,9 +636,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                         ImGui.PopStyleColor();
                         ImGui.PopID();
                         ImGui.TableNextColumn();
-                        ImGui.EndTable();
-                        ImGui.EndChild();
-                        return;
+                        break;
                     }
                 }
                 ImGui.PopStyleColor();
