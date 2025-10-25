@@ -417,6 +417,7 @@ public class FileTesterWindow : IWindowHandler
             case KnownFileFormats.MotionList: return VerifyRewriteEquality<MotlistFile>(source.GetFile<MotlistFile>(), env);
             case KnownFileFormats.Mesh: return VerifyRewriteEquality<MeshFile>(source.GetResource<CommonMeshResource>().NativeMesh, env);
             case KnownFileFormats.RequestSetCollider: return VerifyRewriteEquality<RcolFile>(source.GetFile<RcolFile>(), env);
+            case KnownFileFormats.Timeline: return VerifyRewriteEquality<TmlFile>(source.GetFile<TmlFile>(), env);
             default: return null;
         }
     }
@@ -514,6 +515,10 @@ public class FileTesterWindow : IWindowHandler
         AddCompareMapper<GroupInfo>((m) => [m.guid, m.LayerGuid, m.LayerIndex, m.MaskBits, m.NameHash, m.NumShapes, m.NumMaskGuids, m.NumExtraShapes]);
 
         AddCompareMapper<ReeLib.Rcol.Header>((m) => [m.numGroups, m.numIgnoreTags, m.numRequestSets, m.numShapes, m.numUserData, m.maxRequestSetId, m.userDataSize, m.status, m.uknRe3_A, m.uknRe3_B, m.ukn1, m.ukn2, m.uknRe3]);
+        AddCompareMapper<TmlFile>((m) => [m.Tracks, m.Header]);
+        AddCompareMapper<ReeLib.Tml.Header>((m) => [
+            m.version, m.magic, m.totalFrames, m.guid,
+            m.rootNodeCount, m.trackCount, m.nodeGroupCount, m.nodeReorderCount, m.nodeCount, m.propertyCount, m.keyCount]);
     }
 
     private static Dictionary<Type, Func<object, IEnumerable<object?>>> comparedValueMappers = new();

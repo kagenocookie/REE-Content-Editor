@@ -240,6 +240,8 @@ public static partial class WindowHandlerFactory
                 return new ImguiHandling.Rcol.RcolEditor(env, file);
             case KnownFileFormats.MotionList:
                 return new MotlistEditor(env, file);
+            case KnownFileFormats.Timeline:
+                return new TmlEditor(env, file);
             case KnownFileFormats.CollisionDefinition:
                 return new RawDataEditor<CdefFile>(env, file);
             case KnownFileFormats.DynamicsDefinition:
