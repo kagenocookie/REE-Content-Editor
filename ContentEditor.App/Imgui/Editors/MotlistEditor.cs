@@ -583,8 +583,9 @@ public class ClipEntryHandler : IObjectUIHandler
         typeof(ClipEntry).GetProperty(nameof(ClipEntry.FrameCount))!,
         typeof(ClipEntry).GetProperty(nameof(ClipEntry.Guid))!,
         typeof(ClipEntry).GetProperty(nameof(ClipEntry.Tracks))!,
+        typeof(ClipEntry).GetProperty(nameof(ClipEntry.SpeedPointData))!,
         typeof(ClipEntry).GetProperty(nameof(ClipEntry.HermiteData))!,
-        typeof(ClipEntry).GetProperty(nameof(ClipEntry.UnknownData))!,
+        typeof(ClipEntry).GetProperty(nameof(ClipEntry.ClipInfoList))!,
     ];
 
     public void OnIMGUI(UIContext context)

@@ -8,31 +8,31 @@ using ReeLib.Tml;
 
 namespace ContentEditor.App.ImguiHandling;
 
-public class TmlEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
+public class TmlEditor<TClipFileType> : FileEditor, IWorkspaceContainer, IObjectUIHandler where TClipFileType : TmlFile
 {
     public ContentWorkspace Workspace { get; }
-    public TmlFile File { get; private set; }
+    public TClipFileType File { get; private set; }
 
-    public override string HandlerName => "Motlist";
+    public override string HandlerName => typeof(TClipFileType) == typeof(ClipFile) ? "Clip" : "Timeline";
 
     static TmlEditor()
     {
         // ensure property/key constructors are set up
         System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(MotlistEditor).TypeHandle);
-        WindowHandlerFactory.DefineInstantiator<TimelineTrack>((ctx) => new TimelineTrack(ctx.FindValueInParentValues<TmlEditor>()?.File.Header.version ?? ClipVersion.MHWilds));
+        WindowHandlerFactory.DefineInstantiator<TimelineTrack>((ctx) => new TimelineTrack(ctx.FindValueInParentValues<TmlEditor<TClipFileType>>()?.File.Header.version ?? ClipVersion.MHWilds));
     }
 
     public TmlEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
         Workspace = env;
-        File = file.GetFile<TmlFile>();
+        File = file.GetFile<TClipFileType>();
     }
 
     protected override void OnFileReverted()
     {
         base.OnFileReverted();
         context.ClearChildren();
-        File = Handle.GetFile<TmlFile>();
+        File = Handle.GetFile<TClipFileType>();
     }
 
     protected override void DrawFileContents()
@@ -45,7 +45,7 @@ public class TmlEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
             context.AddChild<TmlFile, List<SpeedPointData>>("Speed Point Data", File, new ListHandler(typeof(SpeedPointData), typeof(List<SpeedPointData>)), (m) => m!.SpeedPointData);
             context.AddChild<TmlFile, List<HermiteInterpolationData>>("Hermite Interpolation Data", File, new ListHandler(typeof(HermiteInterpolationData), typeof(List<HermiteInterpolationData>)), (m) => m!.HermiteData);
             context.AddChild<TmlFile, List<Bezier3DKeys>>("Bezier3D Interpolation Data", File, new ListHandler(typeof(Bezier3DKeys), typeof(List<Bezier3DKeys>)), (m) => m!.Bezier3DData);
-            context.AddChild<TmlFile, List<TmlClipInfo>>("Clip Info", File, new ListHandler(typeof(TmlClipInfo), typeof(List<TmlClipInfo>)), (m) => m!.ClipInfo);
+            context.AddChild<TmlFile, List<ClipInfoStruct>>("Clip Info", File, new ListHandler(typeof(ClipInfoStruct), typeof(List<ClipInfoStruct>)), (m) => m!.ClipInfo);
 
             // context.AddChild<TmlFile, List<TimelineNode>>("Nodes", File, new ListHandler(typeof(TimelineNode), typeof(List<TimelineNode>)), (m) => m!.RootNodes);
             // context.AddChild<TmlFile, List<Property>>("Properties", File, new ListHandler(typeof(Property), typeof(List<Property>)), (m) => m!.Properties);
