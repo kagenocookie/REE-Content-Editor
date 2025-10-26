@@ -534,11 +534,13 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
         if (SceneManager.RootMasterScenes.Any() && ImGui.BeginMenu("Scenes")) {
             foreach (var scene in SceneManager.RootMasterScenes) {
+                // ImGui.Bullet(); TODO scene.Modified
                 if (scene.IsActive) {
-                    ImGui.Bullet();
+                    ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered));
                     if (ImGui.MenuItem(scene.Name)) {
                         SceneManager.ChangeMasterScene(null);
                     }
+                    ImGui.PopStyleColor();
                 } else {
                     if (ImGui.MenuItem(scene.Name)) {
                         SceneManager.ChangeMasterScene(scene);
