@@ -465,7 +465,9 @@ public class FileTesterWindow : IWindowHandler
         using var list2 = mapper.Invoke(newValue).GetEnumerator();
         foreach (var org in list1)
         {
-            if (!list2.MoveNext()) return "missing values after index " + index;
+            if (!list2.MoveNext()) {
+                return "missing values after index " + index;
+            }
 
             var newVal = list2.Current;
             if ((org == null) != (newVal == null)) {
@@ -479,7 +481,9 @@ public class FileTesterWindow : IWindowHandler
             }
             index++;
         }
-        if (list2.MoveNext()) return "too many values after index " + index;
+        if (list2.MoveNext()) {
+            return "too many values after index " + index;
+        }
 
         return null;
     }
@@ -515,7 +519,7 @@ public class FileTesterWindow : IWindowHandler
         AddCompareMapper<GroupInfo>((m) => [m.guid, m.LayerGuid, m.LayerIndex, m.MaskBits, m.NameHash, m.NumShapes, m.NumMaskGuids, m.NumExtraShapes]);
 
         AddCompareMapper<ReeLib.Rcol.Header>((m) => [m.numGroups, m.numIgnoreTags, m.numRequestSets, m.numShapes, m.numUserData, m.maxRequestSetId, m.userDataSize, m.status, m.uknRe3_A, m.uknRe3_B, m.ukn1, m.ukn2, m.uknRe3]);
-        AddCompareMapper<TmlFile>((m) => [m.Tracks, m.Header]);
+        AddCompareMapper<TmlFile>((m) => [m.Tracks, m.Header, m.HermiteData, m.SpeedPointData, m.Bezier3DData, m.ClipInfo]);
         AddCompareMapper<ReeLib.Tml.Header>((m) => [
             m.version, m.magic, m.totalFrames, m.guid,
             m.rootNodeCount, m.trackCount, m.nodeGroupCount, m.nodeReorderCount, m.nodeCount, m.propertyCount, m.keyCount]);

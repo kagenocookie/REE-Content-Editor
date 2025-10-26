@@ -1119,3 +1119,20 @@ public class AABBStructHandler : IObjectUIHandler
         }
     }
 }
+
+[ObjectImguiHandler(typeof(UndeterminedFieldType), Stateless = true)]
+public class UndeterminedFieldTypeHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var value = context.Get<UndeterminedFieldType>();
+#if DEBUG
+        ImGui.DragInt(context.label + " (value type unknown)", ref value.value);
+#else
+        ImGui.BeginDisabled();
+        ImGui.DragInt(context.label + " (value type unknown)", ref value.value);
+        ImGui.EndDisabled();
+#endif
+        ImguiHelpers.Tooltip("The value type of this field is unknown. It's most likely always 0 in all known shipped files.");
+    }
+}
