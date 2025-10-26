@@ -12,6 +12,7 @@ using ReeLib.Common;
 using ReeLib.Mot;
 using ReeLib.Motlist;
 using ReeLib.MotTree;
+using ReeLib.Tml;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -26,8 +27,8 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     {
         WindowHandlerFactory.DefineInstantiator<EndClipStruct>((ctx) => new EndClipStruct() { Version = ctx.FindValueInParentValues<ClipEntry>()?.Version ?? ClipVersion.MHWilds });
         WindowHandlerFactory.DefineInstantiator<CTrack>((ctx) => new CTrack(ctx.FindValueInParentValues<ClipEntry>()?.Version ?? ClipVersion.MHWilds));
-        WindowHandlerFactory.DefineInstantiator<Property>((ctx) => new Property(ctx.FindValueInParentValues<ClipEntry>()?.Version ?? ClipVersion.MHWilds));
-        WindowHandlerFactory.DefineInstantiator<Key>((ctx) => new Key(ctx.FindValueInParentValues<ClipEntry>()!.Header.version));
+        WindowHandlerFactory.DefineInstantiator<Property>((ctx) => new Property(ctx.FindValueInParentValues<ClipEntry>()?.Version ?? ctx.FindValueInParentValues<TimelineTrack>()?.Version ?? ClipVersion.MHWilds));
+        WindowHandlerFactory.DefineInstantiator<Key>((ctx) => new Key(ctx.FindValueInParentValues<ClipEntry>()?.Header.version ?? ctx.FindValueInParentValues<TimelineTrack>()?.Version ?? ClipVersion.MHWilds));
         WindowHandlerFactory.DefineInstantiator<MotIndex>((ctx) => new MotIndex(
             ctx.FindHandlerInParents<MotlistEditor>()?.File.Header.version
             ?? (ctx.GetWorkspace()?.Env.TryGetFileExtensionVersion("motlist", out var v) == true ? (MotlistVersion)v : MotlistVersion.DD2)));
