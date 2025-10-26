@@ -55,7 +55,7 @@ Some files may not fully work for other RE ENGINE games.
 | .rcol     | ☑️ read/write | 3D shape preview and editing ([info](https://github.com/kagenocookie/REE-Content-Editor/wiki/RCOL-Request-set-colliders))
 | .motbank  | read/write
 | .mcol     | ☑️ read/write | .glb import/export for collision mesh
-| .tml      | read/write
+| .tml, .clip | read/write
 | .ainvm    | raw data read
 | .cdef, .def | ☑️ read/write
 | common image formats | view only
