@@ -56,6 +56,7 @@ Some files may not fully work for other RE ENGINE games.
 | .motbank  | read/write
 | .mcol     | ☑️ read/write | .glb import/export for collision mesh
 | .tml, .clip | read/write
+| .gui      | read/write
 | .ainvm    | raw data read
 | .cdef, .def | ☑️ read/write
 | common image formats | view only

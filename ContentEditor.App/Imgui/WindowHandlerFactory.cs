@@ -262,6 +262,8 @@ public static partial class WindowHandlerFactory
                 return new GroundTextureEditor(file);
             case KnownFileFormats.GroundMaterialList:
                 return new GroundMaterialEditor(file);
+            case KnownFileFormats.GUI:
+                return new GuiEditor(env, file);
         }
 
         if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {

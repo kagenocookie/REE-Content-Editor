@@ -8,6 +8,7 @@ using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
+using ReeLib.Clip;
 using ReeLib.Common;
 using ReeLib.Mesh;
 using ReeLib.Motlist;
@@ -418,6 +419,7 @@ public class FileTesterWindow : IWindowHandler
             case KnownFileFormats.Mesh: return VerifyRewriteEquality<MeshFile>(source.GetResource<CommonMeshResource>().NativeMesh, env);
             case KnownFileFormats.RequestSetCollider: return VerifyRewriteEquality<RcolFile>(source.GetFile<RcolFile>(), env);
             case KnownFileFormats.Timeline: return VerifyRewriteEquality<TmlFile>(source.GetFile<TmlFile>(), env);
+            case KnownFileFormats.GUI: return VerifyRewriteEquality<GuiFile>(source.GetFile<GuiFile>(), env);
             default: return null;
         }
     }
@@ -440,7 +442,8 @@ public class FileTesterWindow : IWindowHandler
 
         if (type.IsValueType) {
             if (type.GetInterface(nameof(IComparable)) != null) {
-                return ((IComparable)originalValue).CompareTo(newValue) == 0 ? null : "Values are not equal: " + originalValue + " => " + newValue;
+                if (((IComparable)originalValue).CompareTo(newValue) == 0) return null;
+                return "Values are not equal: " + originalValue + " => " + newValue;
             }
         }
         if (type == typeof(string)) {
@@ -455,7 +458,7 @@ public class FileTesterWindow : IWindowHandler
                 comparedValueMappers[type] = mapper = (obj) => ((IList)obj).Cast<object?>();
             } else {
                 var fields = type.GetFields(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance);
-                var props = type.GetProperties(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance).Where(p => p.CanRead && p.GetMethod!.GetParameters().Length == 0);
+                var props = type.GetProperties(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance).Where(p => p.CanRead && p.GetMethod!.GetParameters().Length == 0 && p.GetMethod.GetBaseDefinition().DeclaringType != typeof(BaseModel));
                 comparedValueMappers[type] = mapper = (obj) => fields.Select(f => f.GetValue(obj)).Concat(props.Select(p => p.GetValue(obj)));
             }
         }
@@ -523,6 +526,15 @@ public class FileTesterWindow : IWindowHandler
         AddCompareMapper<ReeLib.Tml.Header>((m) => [
             m.version, m.magic, m.totalFrames, m.guid,
             m.rootNodeCount, m.trackCount, m.nodeGroupCount, m.nodeReorderCount, m.nodeCount, m.propertyCount, m.keyCount]);
+
+        AddCompareMapper<GuiFile>((m) => [m.Containers, m.RootElement, m.ResourceAttributes, m.Resources, m.ChildGUIs, m.ChildGuiOverries, m.Additional2, m.Additional3]);
+        AddCompareMapper<ReeLib.Gui.ContainerInfo>((m) => [m.guid, m.Name, m.ClassName]);
+        AddCompareMapper<ReeLib.Gui.Element>((m) => [m.Name, m.ClassName, m.ID, m.ContainerId, m.guid3, m.Attributes, m.ExtraAttributes, m.ElementData]);
+        AddCompareMapper<ReeLib.Gui.Attribute>((m) => [m.propertyType, m.OrderIndex, m.uknInt, m.Value]);
+        AddCompareMapper<ReeLib.Gui.GuiClip>((m) => [m.guid, m.IsDefault, m.name, m.clip]);
+        AddCompareMapper<ClipEntry>((m) => [m.Header, m.Bezier3DData, m.ClipInfoList, m.ClipKeys, m.ExtraPropertyData, m.FrameCount, m.Guid, m.HermiteData, m.SpeedPointData, m.Tracks]);
+        AddCompareMapper<ClipHeader>((m) => [m.numFrames, m.numKeys, m.numNodes, m.numProperties, m.guid]);
+        AddCompareMapper<ExtraPropertyInfo>((m) => [m.count, m.flags, m.propertyUTF16Hash, m.values]);
     }
 
     private static Dictionary<Type, Func<object, IEnumerable<object?>>> comparedValueMappers = new();
