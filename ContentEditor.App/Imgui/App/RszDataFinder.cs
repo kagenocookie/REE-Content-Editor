@@ -26,9 +26,9 @@ public class RszDataFinder : IWindowHandler
     private bool searchUserFiles = true;
     private bool searchPfb = false;
     private bool searchScn = false;
+    private bool searchByClass = false;
     private bool searchClassOnly = false;
-    private RszFieldType rszFieldType = RszFieldType.String;
-    private string rszFieldTypeFilter = "";
+    private string rszFieldType = "";
 
     private bool searchAllGames;
 
@@ -62,6 +62,14 @@ public class RszDataFinder : IWindowHandler
 
     private string[]? classNames;
     private static readonly string[] FindTypes = ["RSZ Data", "Messages", "EFX", "Uvar", "Mot", "GUI"];
+    private static readonly Dictionary<string, RszFieldType[]> RszFilterableFields = new () {
+        { "String", [RszFieldType.String, RszFieldType.Resource, RszFieldType.RuntimeType] },
+        { "Userdata Reference", [RszFieldType.UserData] },
+        { "Signed Integer", [RszFieldType.S64, RszFieldType.S32, RszFieldType.S16, RszFieldType.S8, RszFieldType.Enum] },
+        { "Unsigned Integer", [RszFieldType.U64, RszFieldType.U32, RszFieldType.U16, RszFieldType.UByte, RszFieldType.Enum] },
+        { "Guid", [RszFieldType.Guid] },
+    };
+    private static readonly string[] RszFilterTypes = RszFilterableFields.Keys.ToArray();
 
     public void Init(UIContext context)
     {
@@ -88,8 +96,8 @@ public class RszDataFinder : IWindowHandler
         ImguiHelpers.Tabs(FindTypes, ref findType);
         switch (findType) {
             case 0:
-                ImGui.Checkbox("Search by specific class", ref searchClassOnly);
-                if (searchClassOnly) {
+                ImGui.Checkbox("Search by specific class", ref searchByClass);
+                if (searchByClass) {
                     ShowRszClassSearch(workspace.Env);
                 } else {
                     ShowRszFieldSearch(workspace.Env);
@@ -168,8 +176,12 @@ public class RszDataFinder : IWindowHandler
 
     private void ShowRszFieldSearch(Workspace env)
     {
-        ImguiHelpers.FilterableCSharpEnumCombo("Field type", ref rszFieldType, ref rszFieldTypeFilter!);
-        var value = RszValueInput(rszFieldType);
+        ImguiHelpers.ValueCombo("Field type", RszFilterTypes, RszFilterTypes, ref rszFieldType);
+        if (!RszFilterableFields.TryGetValue(rszFieldType, out var targetTypes)) {
+            return;
+        }
+
+        var value = RszValueInput(targetTypes[0]);
         ImGui.Checkbox("Search user files", ref searchUserFiles);
         ImGui.Checkbox("Search SCN files", ref searchScn);
         ImGui.Checkbox("Search PFB files", ref searchPfb);
@@ -318,9 +330,15 @@ public class RszDataFinder : IWindowHandler
                         value = valueString;
                         break;
                     case RszFieldType.U8 or RszFieldType.U16 or RszFieldType.U32 or RszFieldType.U64:
+                        ImGui.InputText("Value", ref tmpvalue, 400);
+                        if (ulong.TryParse(tmpvalue, out _)) {
+                            valueString = tmpvalue;
+                            value = Convert.ChangeType(tmpvalue, csType);
+                        }
+                        break;
                     case RszFieldType.S8 or RszFieldType.S16 or RszFieldType.S32 or RszFieldType.S64:
                         ImGui.InputText("Value", ref tmpvalue, 400);
-                        if (long.TryParse(tmpvalue, out var vvv)) {
+                        if (long.TryParse(tmpvalue, out _)) {
                             valueString = tmpvalue;
                             value = Convert.ChangeType(tmpvalue, csType);
                         }
@@ -561,20 +579,21 @@ public class RszDataFinder : IWindowHandler
         }
     }
 
-    private void InvokeRszSearchField(SearchContext context, string ext, Func<RszFileOption, FileHandler, BaseRszFile> fileFact, RszFieldType fieldType, bool array, object? value)
+    private void InvokeRszSearchField(SearchContext context, string ext, Func<RszFileOption, FileHandler, BaseRszFile> fileFact, string filterType, bool array, object? queryValue)
     {
+        var fieldTypes = RszFilterableFields[filterType];
         Func<object?, object?, bool> equalityComparer;
-        if (fieldType is RszFieldType.String or RszFieldType.RuntimeType or RszFieldType.Resource) {
+        if (fieldTypes.Contains(RszFieldType.String)) {
             equalityComparer = (object? a, object? b) => (a as string)?.Equals(b as string, StringComparison.InvariantCultureIgnoreCase) == true;
-        } else if (fieldType is RszFieldType.UserData) {
+        } else if (fieldTypes.Contains(RszFieldType.UserData)) {
             if (context.Env.IsEmbeddedUserdata) {
-                var hash = MurMur3HashUtils.GetHash((string)value!);
+                var hash = MurMur3HashUtils.GetHash((string)queryValue!);
                 equalityComparer = (object? a, object? b) => ((a as RszInstance)?.RSZUserData as RSZUserDataInfo_TDB_LE_67)?.jsonPathHash == hash;
             } else {
                 equalityComparer = (object? a, object? b) => ((a as RszInstance)?.RSZUserData as RSZUserDataInfo)?.Path?.Equals(b as string, StringComparison.InvariantCultureIgnoreCase) == true;
             }
         } else {
-            equalityComparer = (object? a, object? b) => a?.Equals(b) == true;
+            equalityComparer = (object? a, object? b) => a == null || b == null ? a == b : Convert.ChangeType(a, b.GetType()).Equals(b) == true;
         }
 
         foreach (var (path, stream) in context.Env.GetFilesWithExtension(ext, context.Token)) {
@@ -589,9 +608,9 @@ public class RszDataFinder : IWindowHandler
                 foreach (var inst in rsz.InstanceList) {
                     if (inst.RSZUserData != null) continue;
                     foreach (var field in inst.Fields) {
-                        if (field.type != fieldType) continue;
+                        if (!fieldTypes.Contains(field.type)) continue;
 
-                        if (value == null) {
+                        if (queryValue == null) {
                             AddMatch(context, $"{FindPathToRszObject(rsz, inst, file)} {field.name} = {inst.GetFieldValue(field.name)}", path);
                             return;
                         }
@@ -600,12 +619,12 @@ public class RszDataFinder : IWindowHandler
                         if (field.array) {
                             var values = (IList<object>)fieldValue!;
                             foreach (var v in values) {
-                                if (equalityComparer(v, value)) {
+                                if (equalityComparer(v, queryValue)) {
                                     AddMatch(context, FindPathToRszObject(rsz, inst, file), path);
                                 }
                             }
                         } else {
-                            if (equalityComparer(fieldValue, value)) {
+                            if (equalityComparer(fieldValue, queryValue)) {
                                 AddMatch(context, FindPathToRszObject(rsz, inst, file), path);
                             }
                         }
