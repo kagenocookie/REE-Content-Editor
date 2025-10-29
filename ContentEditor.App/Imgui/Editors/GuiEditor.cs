@@ -1,13 +1,6 @@
-using System.ComponentModel;
-using System.Numerics;
-using Assimp;
-using ContentEditor.App.Windowing;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
-using ReeLib.Bvh;
 using ReeLib.Gui;
-using ReeLib.Terr;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -44,14 +37,14 @@ public class GuiEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     protected override void DrawFileContents()
     {
         if (context.children.Count == 0) {
-            context.AddChild<GuiFile, DisplayElement>("Root View Element", File, getter: (f) => f!.Root!).AddDefaultHandler();
+            context.AddChild<GuiFile, DisplayElement>("Root View Element", File, getter: (f) => f!.RootView!).AddDefaultHandler();
             context.AddChild<GuiFile, List<GuiContainer>>("Containers", File, new ListHandlerTyped<GuiContainer>(), (f) => f!.Containers);
-            context.AddChild<GuiFile, List<ResourceAttribute>>("Resource Attributes", File, getter: (f) => f!.ResourceAttributes!).AddDefaultHandler();
-            context.AddChild<GuiFile, List<string>>("Child GUI Files", File, new ResourceListPathPicker(Workspace, KnownFileFormats.GUI), (f) => f!.ChildGUIs!);
-            context.AddChild<GuiFile, List<string>>("Resources", File, new ResourceListPathPicker(Workspace), (f) => f!.ChildGUIs!);
-            context.AddChild<GuiFile, List<ChildGuiOverride>>("Additional Data 1", File, new ListHandlerTyped<ChildGuiOverride>(), (f) => f!.ChildGuiOverries!);
-            context.AddChild<GuiFile, List<AdditionalData2>>("Additional Data 2", File, new ListHandlerTyped<AdditionalData2>(), (f) => f!.Additional2!);
-            context.AddChild<GuiFile, List<AdditionalData3>>("Additional Data 3", File, new ListHandlerTyped<AdditionalData3>(), (f) => f!.Additional3!);
+            context.AddChild<GuiFile, List<AttributeOverride>>("Attribute Overrides", File, getter: (f) => f!.AttributeOverrides!).AddDefaultHandler();
+            context.AddChild<GuiFile, List<string>>("Included GUIs", File, new ResourceListPathPicker(Workspace, KnownFileFormats.GUI), (f) => f!.LinkedGUIs!);
+            context.AddChild<GuiFile, List<string>>("Resources", File, new ResourceListPathPicker(Workspace), (f) => f!.Resources!);
+            context.AddChild<GuiFile, List<GuiParameter>>("Parameters", File, new ListHandlerTyped<GuiParameter>(), (f) => f!.Parameters!);
+            context.AddChild<GuiFile, List<GuiParameterReference>>("Parameter References", File, new ListHandlerTyped<GuiParameterReference>(), (f) => f!.ParameterReferences!);
+            context.AddChild<GuiFile, List<GuiParameterOverride>>("Parameter Overrides", File, new ListHandlerTyped<GuiParameterOverride>(), (f) => f!.ParameterOverrides!);
         }
 
         context.ShowChildrenUI();

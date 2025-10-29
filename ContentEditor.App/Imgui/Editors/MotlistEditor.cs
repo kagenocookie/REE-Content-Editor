@@ -25,10 +25,10 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 
     static MotlistEditor()
     {
-        WindowHandlerFactory.DefineInstantiator<EndClipStruct>((ctx) => new EndClipStruct() { Version = ctx.FindValueInParentValues<ClipEntry>()?.Version ?? ClipVersion.MHWilds });
-        WindowHandlerFactory.DefineInstantiator<CTrack>((ctx) => new CTrack(ctx.FindValueInParentValues<ClipEntry>()?.Version ?? ClipVersion.MHWilds));
-        WindowHandlerFactory.DefineInstantiator<Property>((ctx) => new Property(ctx.FindValueInParentValues<ClipEntry>()?.Version ?? ctx.FindValueInParentValues<TimelineTrack>()?.Version ?? ClipVersion.MHWilds));
-        WindowHandlerFactory.DefineInstantiator<Key>((ctx) => new Key(ctx.FindValueInParentValues<ClipEntry>()?.Header.version ?? ctx.FindValueInParentValues<TimelineTrack>()?.Version ?? ClipVersion.MHWilds));
+        WindowHandlerFactory.DefineInstantiator<EndClipStruct>((ctx) => new EndClipStruct() { Version = ctx.FindValueInParentValues<EmbeddedClip>()?.Version ?? ClipVersion.MHWilds });
+        WindowHandlerFactory.DefineInstantiator<CTrack>((ctx) => new CTrack(ctx.FindValueInParentValues<EmbeddedClip>()?.Version ?? ClipVersion.MHWilds));
+        WindowHandlerFactory.DefineInstantiator<Property>((ctx) => new Property(ctx.FindValueInParentValues<EmbeddedClip>()?.Version ?? ctx.FindValueInParentValues<TimelineTrack>()?.Version ?? ClipVersion.MHWilds));
+        WindowHandlerFactory.DefineInstantiator<Key>((ctx) => new Key(ctx.FindValueInParentValues<EmbeddedClip>()?.Header.version ?? ctx.FindValueInParentValues<TimelineTrack>()?.Version ?? ClipVersion.MHWilds));
         WindowHandlerFactory.DefineInstantiator<MotIndex>((ctx) => new MotIndex(
             ctx.FindHandlerInParents<MotlistEditor>()?.File.Header.version
             ?? (ctx.GetWorkspace()?.Env.TryGetFileExtensionVersion("motlist", out var v) == true ? (MotlistVersion)v : MotlistVersion.DD2)));
@@ -576,25 +576,25 @@ public class MotBoneListHandler : ListHandler
     }
 }
 
-[ObjectImguiHandler(typeof(ClipEntry))]
+[ObjectImguiHandler(typeof(EmbeddedClip))]
 public class ClipEntryHandler : IObjectUIHandler
 {
     private static MemberInfo[] DisplayedFields = [
-        typeof(ClipEntry).GetField(nameof(ClipEntry.ExtraPropertyData))!,
-        typeof(ClipEntry).GetProperty(nameof(ClipEntry.FrameCount))!,
-        typeof(ClipEntry).GetProperty(nameof(ClipEntry.Guid))!,
-        typeof(ClipEntry).GetProperty(nameof(ClipEntry.Tracks))!,
-        typeof(ClipEntry).GetProperty(nameof(ClipEntry.SpeedPointData))!,
-        typeof(ClipEntry).GetProperty(nameof(ClipEntry.HermiteData))!,
-        typeof(ClipEntry).GetProperty(nameof(ClipEntry.ClipInfoList))!,
+        typeof(EmbeddedClip).GetField(nameof(EmbeddedClip.ExtraPropertyData))!,
+        typeof(EmbeddedClip).GetProperty(nameof(EmbeddedClip.FrameCount))!,
+        typeof(EmbeddedClip).GetProperty(nameof(EmbeddedClip.Guid))!,
+        typeof(EmbeddedClip).GetProperty(nameof(EmbeddedClip.Tracks))!,
+        typeof(EmbeddedClip).GetProperty(nameof(EmbeddedClip.SpeedPointData))!,
+        typeof(EmbeddedClip).GetProperty(nameof(EmbeddedClip.HermiteData))!,
+        typeof(EmbeddedClip).GetProperty(nameof(EmbeddedClip.ClipInfoList))!,
     ];
 
     public void OnIMGUI(UIContext context)
     {
-        var instance = context.Get<ClipEntry>();
+        var instance = context.Get<EmbeddedClip>();
         if (context.children.Count == 0) {
             var ws = context.GetWorkspace();
-            WindowHandlerFactory.SetupObjectUIContext(context, typeof(ClipEntry), false, DisplayedFields);
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(EmbeddedClip), false, DisplayedFields);
         }
 
         context.ShowChildrenUI();
@@ -608,6 +608,7 @@ public class CTrackHandler : IObjectUIHandler
         typeof(CTrack).GetProperty(nameof(CTrack.Name))!,
         typeof(CTrack).GetField(nameof(CTrack.nameHash))!,
         typeof(CTrack).GetField(nameof(CTrack.nodeCount))!,
+        typeof(CTrack).GetProperty(nameof(CTrack.ChildTracks))!,
         typeof(CTrack).GetProperty(nameof(CTrack.Properties))!,
         typeof(CTrack).GetField(nameof(CTrack.Start_Frame))!,
         typeof(CTrack).GetField(nameof(CTrack.End_Frame))!,

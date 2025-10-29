@@ -44,6 +44,8 @@ public class RszDataFinder : IWindowHandler
 
     private string motSearch = "";
 
+    private string guiSearch = "";
+
     private CancellationTokenSource? cancellationTokenSource;
     private int searchedFiles;
     private bool SearchInProgress => cancellationTokenSource != null;
@@ -59,7 +61,7 @@ public class RszDataFinder : IWindowHandler
     private int findType;
 
     private string[]? classNames;
-    private static readonly string[] FindTypes = ["RSZ Data", "Messages", "EFX", "Uvar", "Mot"];
+    private static readonly string[] FindTypes = ["RSZ Data", "Messages", "EFX", "Uvar", "Mot", "GUI"];
 
     public void Init(UIContext context)
     {
@@ -104,6 +106,9 @@ public class RszDataFinder : IWindowHandler
                 break;
             case 4:
                 ShowMotFind(workspace.Env);
+                break;
+            case 5:
+                ShowGuiFind(workspace.Env);
                 break;
         }
         if (searching) {
@@ -429,6 +434,27 @@ public class RszDataFinder : IWindowHandler
             Task.Run(() => {
                 foreach (var ee in GetWorkspaces(env)) {
                     InvokeSearchMot(CreateContext(ee, env), motSearch);
+                }
+                cancellationTokenSource?.Cancel();
+                cancellationTokenSource = null;
+            });
+        }
+    }
+
+    private void ShowGuiFind(Workspace env)
+    {
+        ImGui.InputText("Query", ref guiSearch, 100);
+
+        if (string.IsNullOrEmpty(guiSearch)) return;
+
+        if (ImGui.Button("Search")) {
+            matches.Clear();
+            cancellationTokenSource = new();
+            var token = cancellationTokenSource.Token;
+            searchedFiles = 0;
+            Task.Run(() => {
+                foreach (var ee in GetWorkspaces(env)) {
+                    InvokeSearchGui(CreateContext(ee, env), guiSearch);
                 }
                 cancellationTokenSource?.Cancel();
                 cancellationTokenSource = null;
@@ -808,6 +834,77 @@ public class RszDataFinder : IWindowHandler
                 var desc = $"{mot.Name}";
                 AddMatch(context, desc, path);
 
+            } catch (Exception e) {
+                context.Window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
+            }
+        }
+    }
+
+    private void InvokeSearchGui(SearchContext context, string query)
+    {
+        var hasGuid = Guid.TryParse(query, out var guid);
+        foreach (var (path, stream) in context.Env.GetFilesWithExtension("gui", context.Token)) {
+
+            try {
+                if (context.Token.IsCancellationRequested) return;
+                Interlocked.Increment(ref searchedFiles);
+                var file = new GuiFile(new FileHandler(stream, path));
+                file.Read();
+
+                foreach (var prop in file.AttributeOverrides) {
+                    if (prop.TargetPath.Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
+                        AddMatch(context, $"Attribute Override {prop.TargetPath}", path);
+                        continue;
+                    }
+                }
+
+                foreach (var prop in file.Parameters) {
+                    if (hasGuid && prop.guid == guid || prop.name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
+                        AddMatch(context, $"Parameter Declaration \"{prop.name}\"", path);
+                        continue;
+                    }
+                }
+
+                foreach (var prop in file.ParameterReferences) {
+                    if (hasGuid && prop.guid == guid || prop.path.Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
+                        AddMatch(context, $"Parameter Reference \"{prop.path}\"", path);
+                        continue;
+                    }
+                }
+
+                foreach (var prop in file.ParameterOverrides) {
+                    if (hasGuid && prop.guid == guid) {
+                        AddMatch(context, $"Parameter Override \"{prop.path}\"", path);
+                        continue;
+                    }
+                }
+
+                foreach (var container in file.Containers) {
+                    if (hasGuid && container.Info.guid == guid || container.Info.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
+                        AddMatch(context, $"Container {container.Info.Name}", path);
+                        continue;
+                    }
+
+                    foreach (var clip in container.Clips) {
+                        if (hasGuid && (clip.guid == guid || clip.clip?.Guid == guid) || clip.name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
+                            AddMatch(context, $"Clip {container.Info.Name}/{clip.name}", path);
+                            break;
+                        }
+                    }
+                }
+
+                foreach (var container in file.Containers) {
+                    foreach (var elem in container.Elements) {
+                        if (hasGuid && elem.ID == guid || elem.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
+                            AddMatch(context, $"Element {container.Info.Name}/{elem.Name}", path);
+                            continue;
+                        }
+                        if (hasGuid && elem.guid3 == guid) {
+                            AddMatch(context, $"Element GUID3 - {container.Info.Name}/{elem.Name}", path);
+                            continue;
+                        }
+                    }
+                }
             } catch (Exception e) {
                 context.Window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
             }

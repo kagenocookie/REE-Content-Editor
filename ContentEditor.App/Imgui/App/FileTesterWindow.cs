@@ -527,12 +527,12 @@ public class FileTesterWindow : IWindowHandler
             m.version, m.magic, m.totalFrames, m.guid,
             m.rootNodeCount, m.trackCount, m.nodeGroupCount, m.nodeReorderCount, m.nodeCount, m.propertyCount, m.keyCount]);
 
-        AddCompareMapper<GuiFile>((m) => [m.Containers, m.RootElement, m.ResourceAttributes, m.Resources, m.ChildGUIs, m.ChildGuiOverries, m.Additional2, m.Additional3]);
+        AddCompareMapper<GuiFile>((m) => [m.Containers, m.RootViewElement, m.AttributeOverrides, m.Resources, m.LinkedGUIs, m.Parameters, m.ParameterReferences, m.ParameterOverrides]);
         AddCompareMapper<ReeLib.Gui.ContainerInfo>((m) => [m.guid, m.Name, m.ClassName]);
         AddCompareMapper<ReeLib.Gui.Element>((m) => [m.Name, m.ClassName, m.ID, m.ContainerId, m.guid3, m.Attributes, m.ExtraAttributes, m.ElementData]);
         AddCompareMapper<ReeLib.Gui.Attribute>((m) => [m.propertyType, m.OrderIndex, m.uknInt, m.Value]);
         AddCompareMapper<ReeLib.Gui.GuiClip>((m) => [m.guid, m.IsDefault, m.name, m.clip]);
-        AddCompareMapper<ClipEntry>((m) => [m.Header, m.Bezier3DData, m.ClipInfoList, m.ClipKeys, m.ExtraPropertyData, m.FrameCount, m.Guid, m.HermiteData, m.SpeedPointData, m.Tracks]);
+        AddCompareMapper<EmbeddedClip>((m) => [m.Header, m.Bezier3DData, m.ClipInfoList, m.ClipKeys, m.ExtraPropertyData, m.FrameCount, m.Guid, m.HermiteData, m.SpeedPointData, m.Tracks]);
         AddCompareMapper<ClipHeader>((m) => [m.numFrames, m.numKeys, m.numNodes, m.numProperties, m.guid]);
         AddCompareMapper<ExtraPropertyInfo>((m) => [m.count, m.flags, m.propertyUTF16Hash, m.values]);
     }
