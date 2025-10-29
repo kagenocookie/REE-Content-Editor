@@ -420,6 +420,8 @@ public class FileTesterWindow : IWindowHandler
             case KnownFileFormats.RequestSetCollider: return VerifyRewriteEquality<RcolFile>(source.GetFile<RcolFile>(), env);
             case KnownFileFormats.Timeline: return VerifyRewriteEquality<TmlFile>(source.GetFile<TmlFile>(), env);
             case KnownFileFormats.GUI: return VerifyRewriteEquality<GuiFile>(source.GetFile<GuiFile>(), env);
+            case KnownFileFormats.CollisionMesh: return VerifyRewriteEquality<McolFile>(source.GetFile<McolFile>(), env);
+            case KnownFileFormats.CompositeCollision: return VerifyRewriteEquality<CocoFile>(source.GetFile<CocoFile>(), env);
             default: return null;
         }
     }
@@ -458,7 +460,7 @@ public class FileTesterWindow : IWindowHandler
                 comparedValueMappers[type] = mapper = (obj) => ((IList)obj).Cast<object?>();
             } else {
                 var fields = type.GetFields(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance);
-                var props = type.GetProperties(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance).Where(p => p.CanRead && p.GetMethod!.GetParameters().Length == 0 && p.GetMethod.GetBaseDefinition().DeclaringType != typeof(BaseModel));
+                var props = type.GetProperties(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance).Where(p => p.CanRead && p.GetMethod!.GetParameters().Length == 0 && p.GetMethod.GetBaseDefinition().DeclaringType != typeof(BaseModel) && p.GetMethod.GetBaseDefinition().DeclaringType != typeof(BaseFile));
                 comparedValueMappers[type] = mapper = (obj) => fields.Select(f => f.GetValue(obj)).Concat(props.Select(p => p.GetValue(obj)));
             }
         }
@@ -535,6 +537,9 @@ public class FileTesterWindow : IWindowHandler
         AddCompareMapper<EmbeddedClip>((m) => [m.Header, m.Bezier3DData, m.ClipInfoList, m.ClipKeys, m.ExtraPropertyData, m.FrameCount, m.Guid, m.HermiteData, m.SpeedPointData, m.Tracks]);
         AddCompareMapper<ClipHeader>((m) => [m.numFrames, m.numKeys, m.numNodes, m.numProperties, m.guid]);
         AddCompareMapper<ExtraPropertyInfo>((m) => [m.count, m.flags, m.propertyUTF16Hash, m.values]);
+
+        AddCompareMapper<McolFile>((m) => [m.bvh]);
+        AddCompareMapper<CocoFile>((m) => [m.CollisionMeshPaths, m.Trees]);
     }
 
     private static Dictionary<Type, Func<object, IEnumerable<object?>>> comparedValueMappers = new();
