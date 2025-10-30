@@ -98,6 +98,7 @@ public class ShapeBuilder
         if (spheres != null) foreach (var sphere in spheres) count += CalculateSemicircleVertCount(sphere.R) * 6;
         if (capsules != null) foreach (var capsule in capsules) count += CalculateSemicircleVertCount(capsule.R) * 8 + 4 * 6;
         if (cylinders != null) foreach (var cylinder in cylinders) count += CalculateSemicircleVertCount(cylinder.r) * 4 + 4 * 6;
+        if (lines?.Count > 0) throw new NotImplementedException();
         return count;
     }
 
@@ -107,6 +108,7 @@ public class ShapeBuilder
         if (spheres != null) foreach (var sphere in spheres) count += CalculateLineSemicircleVertCount(sphere.R) * 6;
         if (capsules != null) foreach (var capsule in capsules) count += CalculateLineSemicircleVertCount(capsule.R) * 8 + 4 * 2;
         if (cylinders != null) foreach (var cylinder in cylinders) count += CalculateLineSemicircleVertCount(cylinder.r) * 4 + 4 * 2;
+        count += (lines?.Count ?? 0) * 2;
         return count;
     }
 

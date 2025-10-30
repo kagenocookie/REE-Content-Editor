@@ -56,6 +56,11 @@
       "Path": "natives/stm/appdata/quest",
       "Tags": ["Misc"],
       "Comment": "Quests"
+    },
+    {
+      "Path": "natives/stm/appdata/maincontents.scn.20",
+      "Tags": ["Stage"],
+      "Comment": "Main world stage"
     }
   ],
   "re4": [

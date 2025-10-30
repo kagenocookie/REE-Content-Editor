@@ -119,6 +119,7 @@ public class Colliders(GameObject gameObject, RszInstance data) : Component(game
                     }
                 case "via.physics.HeightFieldShape": {
                         var hfFilepath = RszFieldCache.HeightFieldShape.HeightField.Get(shape);
+                        gizmo.Mesh(hfFilepath, transform, lineMaterial);
                         break;
                     }
                 default:

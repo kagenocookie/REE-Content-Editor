@@ -224,6 +224,10 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             return new RcolMeshHandle(GL, resource, file.GetFile<RcolFile>());
         } else if (file.Loader is TerrFileLoader) {
             return new McolMeshHandle(GL, resource, file.GetFile<TerrFile>());
+        } else if (file.Loader is ChfFileLoader) {
+            return new HeightFieldMeshHandle(GL, resource, file.GetFile<CHFFile>());
+        } else if (file.Loader is HfFileLoader) {
+            return new HeightFieldMeshHandle(GL, resource, file.GetFile<HFFile>());
         } else if (resource.Animatable) {
             return new AnimatedMeshHandle(resource);
         } else {
