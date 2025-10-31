@@ -77,6 +77,9 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     private static int nextSubwindowID = 1;
 
+    private float smoothFrametime = 16f;
+    private const float SmoothFpsScale = 0.1f;
+
     public bool SaveInProgress { get; set; }
 
     private enum State
@@ -390,8 +393,9 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         Render((float)delta);
         OnIMGUI();
         if (AppConfig.Instance.ShowFps) {
-            var fps = (1 / delta).ToString("0.0", CultureInfo.InvariantCulture);
-            var frametime = (delta * 1000).ToString("0.00", CultureInfo.InvariantCulture) + "ms";
+            smoothFrametime = (smoothFrametime * (1 - SmoothFpsScale) + (float)delta * SmoothFpsScale);
+            var fps = (1 / smoothFrametime).ToString("0.0", CultureInfo.InvariantCulture);
+            var frametime = (smoothFrametime * 1000).ToString("0.00", CultureInfo.InvariantCulture) + "ms";
             var fpsText = fps + " / " + frametime;
             var fpsSize = ImGui.CalcTextSize(fpsText);
             ImGui.GetForegroundDrawList().AddText(new Vector2(Size.X - fpsSize.X, 0) - ImGui.GetStyle().FramePadding, 0xffffffff, fpsText);
