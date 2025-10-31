@@ -378,7 +378,6 @@ public class RszDataFinder : IWindowHandler
         if (!string.IsNullOrEmpty(msgSearch) && ImGui.Button("Search")) {
             matches.Clear();
             cancellationTokenSource = new();
-            var (user, pfb, scn) = (searchUserFiles, searchPfb, searchScn);
             var token = cancellationTokenSource.Token;
             searchedFiles = 0;
             Task.Run(() => {
@@ -402,7 +401,6 @@ public class RszDataFinder : IWindowHandler
         if (ImGui.Button("Search")) {
             matches.Clear();
             cancellationTokenSource = new();
-            var (user, pfb, scn) = (searchUserFiles, searchPfb, searchScn);
             var token = cancellationTokenSource.Token;
             searchedFiles = 0;
             Task.Run(() => {
@@ -425,7 +423,6 @@ public class RszDataFinder : IWindowHandler
         if (ImGui.Button("Search")) {
             matches.Clear();
             cancellationTokenSource = new();
-            var (user, pfb, scn) = (searchUserFiles, searchPfb, searchScn);
             var token = cancellationTokenSource.Token;
             searchedFiles = 0;
             Task.Run(() => {
@@ -605,6 +602,16 @@ public class RszDataFinder : IWindowHandler
                 file.Read();
 
                 var rsz = file.GetRSZ()!;
+                if (fieldTypes[0] == RszFieldType.Guid && file is ScnFile scn) {
+                    foreach (var gi in scn.GameObjectInfoList) {
+                        if (equalityComparer(gi.guid, queryValue)) {
+                            var obj = scn.RSZ.ObjectList[gi.objectId];
+                            AddMatch(context, FindPathToRszObject(rsz, obj, file), path);
+                            break;
+                        }
+                    }
+                }
+
                 foreach (var inst in rsz.InstanceList) {
                     if (inst.RSZUserData != null) continue;
                     foreach (var field in inst.Fields) {
