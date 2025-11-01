@@ -2,14 +2,14 @@ using Silk.NET.Maths;
 
 namespace ContentEditor.App.Graphics;
 
-public class GizmoContainer(Scene scene, IGizmoComponent component) : IDisposable
+public class GizmoContainer(Scene scene, Component component) : IDisposable
 {
     internal Dictionary<string, MeshHandle> ownedMeshes = new();
     internal List<GizmoRenderBatchItem> meshDraws = new();
     internal List<GizmoShapeBuilder> shapeBuilders = new();
     private readonly GizmoState state = new(scene);
 
-    public IGizmoComponent GComponent { get; } = component;
+    // public IGizmoComponent GComponent { get; } = component;
     public Component Component { get; } = (Component)component;
 
     public GizmoShapeBuilder Shape(int index, Material material) => Shape(index, material, null!);
@@ -55,7 +55,7 @@ public class GizmoContainer(Scene scene, IGizmoComponent component) : IDisposabl
         ownedMeshes.Clear();
     }
 
-    public void Mesh(string meshPath, Matrix4X4<float> transform, Material? materialOverride = null)
+    public void Mesh(string meshPath, in Matrix4X4<float> transform, Material? materialOverride = null)
     {
         if (!ownedMeshes.TryGetValue(meshPath, out var mesh)) {
             mesh = scene.RenderContext.LoadMesh(meshPath);
@@ -77,7 +77,7 @@ public class GizmoContainer(Scene scene, IGizmoComponent component) : IDisposabl
             meshDraws.Add(new GizmoRenderBatchItem(material, sub, transform));
         }
     }
-    public void Mesh(MeshHandle mesh, Matrix4X4<float> transform)
+    public void Mesh(MeshHandle mesh, in Matrix4X4<float> transform)
     {
         int i = 0;
         foreach (var m in mesh.Meshes) {
@@ -85,14 +85,14 @@ public class GizmoContainer(Scene scene, IGizmoComponent component) : IDisposabl
         }
     }
 
-    public void Mesh(MeshHandle mesh, Matrix4X4<float> transform, Material material)
+    public void Mesh(MeshHandle mesh, in Matrix4X4<float> transform, Material material)
     {
         foreach (var m in mesh.Meshes) {
             meshDraws.Add(new GizmoRenderBatchItem(material, m, transform));
         }
     }
 
-    public void Mesh(MeshHandle mesh, Matrix4X4<float> transform, Material material, Material obscuredMaterial)
+    public void Mesh(MeshHandle mesh, in Matrix4X4<float> transform, Material material, Material obscuredMaterial)
     {
         foreach (var m in mesh.Meshes) {
             meshDraws.Add(new GizmoRenderBatchItem(material, m, transform, obscuredMaterial));

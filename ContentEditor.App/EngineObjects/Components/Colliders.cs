@@ -31,7 +31,16 @@ public class Colliders(GameObject gameObject, RszInstance data) : Component(game
     internal override void OnDeactivate()
     {
         base.OnDeactivate();
+        UnloadMeshes();
         Scene!.RootScene.Gizmos.Remove(this);
+    }
+
+    private void UnloadMeshes()
+    {
+        foreach (var m in meshes) {
+            if (m != null) Scene!.RenderContext.UnloadMesh(m);
+        }
+        meshes.Clear();
     }
 
     public GizmoContainer? Update(GizmoContainer? gizmo)

@@ -1,10 +1,12 @@
-using System.Net.Cache;
 using System.Numerics;
+using ContentEditor.App.Graphics;
+using ContentEditor.App.ImguiHandling;
+using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ImGuiNET;
+using ReeLib.via;
 using Silk.NET.Input;
 using Silk.NET.Maths;
-using Silk.NET.Windowing;
 
 namespace ContentEditor.App;
 
@@ -20,6 +22,12 @@ public class SceneController
     public float ZoomSpeed { get; set; } = 2f;
 
     private float camYaw, camPitch;
+    private Material matGizmoX = null!;
+
+    private void InitGizmoMaterials()
+    {
+        matGizmoX = Scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "xform_x").Color("_MainColor", new Color(0xff, 0x33, 0x33, 0xff));
+    }
 
     public void ShowCameraControls()
     {
@@ -118,6 +126,18 @@ public class SceneController
             if (Keyboard.IsKeyPressed(Key.ShiftLeft)) moveVec *= 10;
 
             Scene.ActiveCamera.GameObject.Transform.TranslateForwardAligned(MoveSpeed * moveVec * deltaTime);
+        }
+    }
+
+    public void UpdateGizmo(EditorWindow window, GizmoManager manager)
+    {
+        if (matGizmoX == null) InitGizmoMaterials();
+
+        foreach (var ui in window.ActiveImguiWindows) {
+            if (ui.Handler is ObjectInspector inspector && inspector.Target is GameObject go && go.Scene?.RootScene == Scene) {
+                var gizmo = manager.GetOrAddStandaloneGizmo(go.Transform);
+                gizmo.Shape(0, matGizmoX!, matGizmoX!).GeometryType(ShapeBuilder.GeometryType.Filled).Push().TransformHandle(go.Transform);
+            }
         }
     }
 }

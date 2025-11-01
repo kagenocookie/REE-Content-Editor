@@ -56,7 +56,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     private bool HasRenderables => !Renderable.IsEmpty || childScenes.Any(ch => ch.HasRenderables);
 
     Vector2 IRectWindow.Size => renderContext.ViewportSize;
-    Vector2 IRectWindow.Position => renderContext.ViewportOffset;
+    Vector2 IRectWindow.Position => renderContext.ViewportOffset + renderContext.UIOffset;
 
     internal Scene(string name, string internalPath, ContentWorkspace workspace, Scene? parentScene = null, Folder? rootFolder = null, GL? gl = null)
     {
@@ -170,9 +170,10 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
             comp.Update(deltaTime);
         }
 
-        if (!Gizmos.IsEmpty) {
+        if (!Gizmos.IsEmpty || (ParentScene == null && Controller != null)) {
             gizmoManager ??= new (this);
             gizmoManager.Update();
+            Controller?.UpdateGizmo(EditorWindow.CurrentWindow!, gizmoManager);
         }
     }
 

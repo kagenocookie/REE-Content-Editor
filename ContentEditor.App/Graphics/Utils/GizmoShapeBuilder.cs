@@ -70,6 +70,12 @@ public class GizmoShapeBuilder : IDisposable
         return this;
     }
 
+    public GizmoShapeBuilder GeometryType(ShapeBuilder.GeometryType geometryType)
+    {
+        builder.GeoType = geometryType;
+        return this;
+    }
+
     public bool EditableBoxed(in Matrix4X4<float> offset, object shape, out object? newShape, out int handleId)
     {
         newShape = null;
@@ -86,7 +92,7 @@ public class GizmoShapeBuilder : IDisposable
         }
     }
 
-    public unsafe bool EditableSphere(ref Sphere sphere, out int handleId) => EditableSphere(Matrix4X4<float>.Identity, ref sphere, out handleId);
+    public bool EditableSphere(ref Sphere sphere, out int handleId) => EditableSphere(Matrix4X4<float>.Identity, ref sphere, out handleId);
     public bool EditableSphere(in Matrix4X4<float> offsetMatrix, ref Sphere sphere, out int handleId)
     {
         Add(in offsetMatrix, sphere);
@@ -100,7 +106,68 @@ public class GizmoShapeBuilder : IDisposable
         return false;
     }
 
-    public unsafe bool EditableAABB(ref AABB aabb, out int handleId) => EditableAABB(Matrix4X4<float>.Identity, ref aabb, out handleId);
+    public bool TransformHandle(Transform transform)
+    {
+        var pos = transform.LocalPosition;
+        var handleId = -1;
+        if (PositionHandles(transform.WorldTransform.ToSystem(), out var newWorldPos, out var hid)) {
+            handleId = hid;
+            var parentMatr = transform.GameObject.Parent?.WorldTransform ?? Matrix4X4<float>.Identity;
+            var newLocalPos = Vector3.Transform(newWorldPos, parentMatr.ToSystem());
+            UndoRedo.RecordCallbackSetter(null, transform, pos, newLocalPos, (t, v) => t.LocalPosition = v, $"{transform.GetHashCode()}p");
+        }
+
+        if (handleId != -1) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public bool PositionHandles(in Matrix4x4 localToWorldMatrix, out Vector3 newWorldPosition, out int handleId)
+    {
+        var worldPosition = Vector3.Transform(Vector3.Zero, localToWorldMatrix);
+
+        var camdist = (worldPosition - state.Scene.ActiveCamera.Transform.Position).Length();
+        var handleScale = camdist * 0.01f;
+        var cylinderScale = handleScale * 0.2f;
+        var handleLengthScale = camdist * 0.2f;
+        var uiScale = handleScale * 1.5f;
+
+        // TODO think of a nice way of rendering different axis handle colors
+        var up = Vector3.Transform(Vector3.UnitY * handleLengthScale, localToWorldMatrix);
+        var right = Vector3.Transform(Vector3.UnitX * handleLengthScale, localToWorldMatrix);
+        var fwd = Vector3.Transform(-Vector3.UnitZ * handleLengthScale, localToWorldMatrix);
+        var upAxis = (up - worldPosition);
+        var rightAxis = (right - worldPosition);
+        var backAxis = (fwd - worldPosition);
+        Add(new Cylinder(worldPosition, up, cylinderScale));
+        Add(new Cylinder(worldPosition, right, cylinderScale));
+        Add(new Cylinder(worldPosition, fwd, cylinderScale));
+        Add(new Cone(up, handleScale, up + (upAxis * 0.14f), 0.001f));
+        Add(new Cone(right, handleScale, right + (rightAxis * 0.14f), 0.001f));
+        Add(new Cone(fwd, handleScale, fwd + (backAxis * 0.14f), 0.001f));
+        handleId = -1;
+        if (state.ArrowHandle(ref worldPosition, out var hid, upAxis * 1.15f, uiScale)) {
+            handleId = hid;
+        }
+        if (state.ArrowHandle(ref worldPosition, out hid, rightAxis * 1.15f, uiScale)) {
+            handleId = hid;
+        }
+        if (state.ArrowHandle(ref worldPosition, out hid, backAxis * 1.15f, uiScale)) {
+            handleId = hid;
+        }
+        if (handleId != -1) {
+            Matrix4x4.Invert(localToWorldMatrix, out var inverse);
+            newWorldPosition = worldPosition;
+            return true;
+        } else {
+            newWorldPosition = Vector3.Zero;
+            return false;
+        }
+    }
+
+    public bool EditableAABB(ref AABB aabb, out int handleId) => EditableAABB(Matrix4X4<float>.Identity, ref aabb, out handleId);
     public unsafe bool EditableAABB(in Matrix4X4<float> offsetMatrix, ref AABB aabb, out int handleId)
     {
         Add(in offsetMatrix, aabb);
@@ -132,7 +199,15 @@ public class GizmoShapeBuilder : IDisposable
                 handleId = hid;
             }
         }
-        // TODO add position handle
+
+        var posMatrix = Matrix4x4.CreateTranslation(center) * offsetMatrix.ToSystem();
+        if (PositionHandles(posMatrix, out var newCenter, out var posHandle)) {
+            Matrix4x4.Invert(offsetMatrix.ToSystem(), out var invMat);
+            var localNewCenter = Vector3.Transform(newCenter, invMat);
+            aabb.minpos += localNewCenter - center;
+            aabb.maxpos += localNewCenter - center;
+            handleId = posHandle;
+        }
         return handleId != -1;
     }
 
@@ -143,8 +218,10 @@ public class GizmoShapeBuilder : IDisposable
         var aabb = new AABB(-box.Extent, box.Extent);
         if (EditableAABB(offsetMatrix * box.Coord.ToGeneric(), ref aabb, out handleId)) {
             box.Extent = aabb.Size / 2;
+            box.Coord = new mat4(Matrix4x4.CreateTranslation(aabb.Center) * box.Coord.ToSystem());
         }
-        // TODO add matrix gizmo
+
+        // TODO add rotation gizmo
         return handleId != -1;
     }
 
@@ -205,6 +282,7 @@ public class GizmoShapeBuilder : IDisposable
     public void Add(Sphere shape) => builder.Add(shape);
     public void Add(Capsule shape) => builder.Add(shape);
     public void Add(Cylinder shape) => builder.Add(shape);
+    public void Add(Cone shape) => builder.Add(shape);
 
     public void Add(in Matrix4X4<float> offsetMatrix, LineSegment shape)
         => builder.Add(new LineSegment(Vector3.Transform(shape.start, offsetMatrix.ToSystem()), Vector3.Transform(shape.end, offsetMatrix.ToSystem())));

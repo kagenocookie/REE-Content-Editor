@@ -78,14 +78,16 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
     /// <summary>
     /// Transforms a world space position into viewport screen space. Returns Vector2(float.MaxValue) if the point is behind the camera or outside of the viewport when limitToViewport == true.
     /// </summary>
-    public Vector2 WorldToViewportXYPosition(Vector3 worldPosition, bool limitToViewport = true)
+    public Vector2 WorldToViewportXYPosition(Vector3 worldPosition, bool limitToViewport = true, bool limitToFront = true)
     {
         if (Scene == null) return new();
 
         var size = Scene!.RenderContext.ViewportSize;
         var vec = Project(ViewProjectionMatrix, size, worldPosition);
+        if (limitToFront && vec.W < 0) {
+            return new Vector2(float.MaxValue);
+        }
         if (limitToViewport) {
-            if (vec.W < 0) return new Vector2(float.MaxValue);
             if (vec.X < 0 || vec.Y < 0 || vec.X > size.X || vec.Y > size.Y) return new Vector2(float.MaxValue);
         }
         return new Vector2(vec.X, vec.Y);
@@ -94,11 +96,11 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
     /// <summary>
     /// Transforms a world space position into viewport screen space. Returns Vector2(float.MaxValue) if the point is behind the camera or outside of the viewport when limitToViewport == true.
     /// </summary>
-    public Vector2 WorldToScreenPosition(Vector3 worldPosition, bool limitToViewport = true)
+    public Vector2 WorldToScreenPosition(Vector3 worldPosition, bool limitToViewport = true, bool limitToFront = true)
     {
         if (Scene == null) return new();
 
-        var viewportPosition = WorldToViewportXYPosition(worldPosition, limitToViewport);
+        var viewportPosition = WorldToViewportXYPosition(worldPosition, limitToViewport, limitToFront);
         var offset = Scene.RenderContext.ViewportOffset;
         return viewportPosition + offset;
     }

@@ -34,6 +34,9 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
     /// <summary>The offset of the viewport's top left edge relative to the full screen area.</summary>
     public Vector2 ViewportOffset { get; set; }
 
+    /// <summary>The additional offset from the viewport to the UI-enabled area.</summary>
+    public Vector2 UIOffset { get; set; }
+
     /// <summary>The render output size of this render context's viewport.</summary>
     public Vector2 ViewportSize { get; set; }
 

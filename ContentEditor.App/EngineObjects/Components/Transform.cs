@@ -52,6 +52,8 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
     public Quaternion Rotation => Quaternion.CreateFromRotationMatrix(WorldTransform.ToSystem());
 
     public Vector3 Forward => Vector3.Normalize(Vector3.Transform(-Vector3.UnitZ, Rotation));
+    public Vector3 Right => Vector3.Normalize(Vector3.Transform(Vector3.UnitX, Rotation));
+    public Vector3 Up => Vector3.Normalize(Vector3.Transform(Vector3.UnitY, Rotation));
 
     public Vector3D<float> SilkLocalPosition => ((Vector3)Data.Values[0]).ToGeneric();
     public Quaternion<float> SilkLocalRotation => ((Quaternion)Data.Values[1]).ToGeneric();

@@ -11,6 +11,7 @@ using ImGuiNET;
 using ReeLib;
 using ReeLib.Data;
 using ReeLib.Efx;
+using ReeLib.Tools;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
@@ -125,6 +126,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     protected override void Render(float deltaTime)
     {
         SceneManager.Render(deltaTime);
+        DebugUI.Render();
     }
 
     private void OnReady()
@@ -602,41 +604,53 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     SetWorkspace(workspace.Game, workspace.CurrentBundle?.Name, true);
                 }
             }
-
-            if (ImGui.MenuItem("Rebuild RSZ patch data")) {
-                if (workspace != null && !runningRszInference) {
-                    runningRszInference = true;
-                    Logger.Info("Starting RSZ data scan...");
-                    Task.Run(() => {
-                        try {
-                            var sw = Stopwatch.StartNew();
-                            var tools = new ReeLib.Tools.ResourceTools(workspace.Env);
-                            tools.BaseOutputPath = Path.Combine(Directory.GetCurrentDirectory(), "rsz-output");
-                            tools.InferRszData();
-                            var end = sw.Elapsed;
-                            InvokeFromUIThread(() => Logger.Info("RSZ data scan finished in " + end.TotalSeconds + "s."));
-                            InvokeFromUIThread(() => Logger.Info($"Data stored in {tools.BaseOutputPath}"));
-                        } finally {
-                            runningRszInference = false;
-                        }
-                    });
-                } else {
-                    Logger.Info("Scan already in progress or workspace missing");
-                }
-            }
-
-            if (ImGui.MenuItem("Rebuild EFX data")) {
-                if (workspace != null && !runningRszInference) {
-                    runningRszInference = true;
-                    var outDir = Path.Combine(Directory.GetCurrentDirectory(), "efx_structs");
-                    foreach (var game in AppConfig.Instance.ConfiguredGames) {
-                        var gameId = new GameIdentifier(game);
-                        var efxOutput = Path.Combine(outDir, game, "efx_structs.json");
-                        EfxTools.GenerateEFXStructsJson(gameId.ToEfxVersion(), efxOutput);
+            if (ImGui.BeginMenu("Data Deneration")) {
+                if (ImGui.MenuItem("Rebuild RSZ patch data")) {
+                    if (workspace != null && !runningRszInference) {
+                        runningRszInference = true;
+                        Logger.Info("Starting RSZ data scan...");
+                        Task.Run(() => {
+                            try {
+                                var sw = Stopwatch.StartNew();
+                                var tools = new ReeLib.Tools.ResourceTools(workspace.Env);
+                                tools.BaseOutputPath = Path.Combine(Directory.GetCurrentDirectory(), "rsz-output");
+                                tools.InferRszData();
+                                var end = sw.Elapsed;
+                                InvokeFromUIThread(() => Logger.Info("RSZ data scan finished in " + end.TotalSeconds + "s."));
+                                InvokeFromUIThread(() => Logger.Info($"Data stored in {tools.BaseOutputPath}"));
+                            } finally {
+                                runningRszInference = false;
+                            }
+                        });
+                    } else {
+                        Logger.Info("Scan already in progress or workspace missing");
                     }
-                } else {
-                    Logger.Info("Scan already in progress or workspace missing");
                 }
+
+                if (ImGui.MenuItem("Rebuild EFX data")) {
+                    if (workspace != null && !runningRszInference) {
+                        runningRszInference = true;
+                        var outDir = Path.Combine(Directory.GetCurrentDirectory(), "efx_structs");
+                        foreach (var game in AppConfig.Instance.ConfiguredGames) {
+                            var gameId = new GameIdentifier(game);
+                            var efxOutput = Path.Combine(outDir, game, "efx_structs.json");
+                            EfxTools.GenerateEFXStructsJson(gameId.ToEfxVersion(), efxOutput);
+                        }
+                    } else {
+                        Logger.Info("Scan already in progress or workspace missing");
+                    }
+                }
+                if (ImGui.MenuItem("Generate file extension cache")) {
+                    if (workspace != null) {
+                        try {
+                            FileExtensionTools.ExtractAllFileExtensionCacheData(AppConfig.Instance.ConfiguredGames.Select(c => new GameIdentifier(c)));
+                        } catch (Exception e) {
+                            Logger.Error(e.Message);
+                        }
+                    }
+                    AddUniqueSubwindow(new FileTesterWindow());
+                }
+                ImGui.EndMenu();
             }
 
             if (ImGui.MenuItem("IMGUI test window")) {
@@ -667,7 +681,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         var viewportOffset = new Vector2(0, ImGui.CalcTextSize("a").Y + ImGui.GetStyle().FramePadding.Y * 2);
         foreach (var sc in SceneManager.RootMasterScenes) {
             if (sc.MouseHandler != null) {
-                sc.OwnRenderContext.ViewportOffset = viewportOffset;
+                sc.OwnRenderContext.UIOffset = viewportOffset;
             }
         }
         BeginDockableBackground(viewportOffset);

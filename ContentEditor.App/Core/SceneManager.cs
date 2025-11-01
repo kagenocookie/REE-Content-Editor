@@ -102,7 +102,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
 
             scene.OwnRenderContext.ScreenSize = Window.Size;
             if (scene.OwnRenderContext.RenderTargetTextureHandle == 0) {
-                scene.OwnRenderContext.ViewportSize = Window.Size - scene.OwnRenderContext.ViewportOffset;
+                scene.OwnRenderContext.ViewportSize = Window.Size;
                 scene.Render(deltaTime);
                 ImGui.SetNextWindowPos(scene.OwnRenderContext.ViewportOffset, ImGuiCond.Always);
                 ImGui.SetNextWindowSize(scene.OwnRenderContext.ViewportSize, ImGuiCond.Always);

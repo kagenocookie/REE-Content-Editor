@@ -1,5 +1,7 @@
+using System.Data.Common;
 using System.Numerics;
 using ImGuiNET;
+using ReeLib.via;
 
 namespace ContentEditor.App.Graphics;
 
@@ -9,7 +11,7 @@ public class GizmoState(Scene scene)
     private List<(int id, HandleContainer handles)> children = new();
 
     private (int id, int handleId)? activeHandle;
-    private Vector2 activeHandleStartPosition;
+    private Vector3 activeHandleStartOffset;
     private Vector3 activeHandleStartWorldPosition;
     private Vector3 activeHandleStartAxis;
 
@@ -20,6 +22,9 @@ public class GizmoState(Scene scene)
     private const uint ColorHandleFillHovered = 0xD85615FF;
     private const uint ColorHandleActive = 0xF82F00FF;
     private const float HandleBorderSize = 0.75f;
+
+    private const uint ArrowHandleHighlightColor = 0xffaaaaff;
+    private const uint ArrowHandleActiveColor = 0xffccccff;
 
     private List<Action> DrawListQueue = new();
 
@@ -37,13 +42,79 @@ public class GizmoState(Scene scene)
 
     public void DrawImGui()
     {
-        foreach (var q in DrawListQueue) q.Invoke();
+        foreach (var q in DrawListQueue) {
+            q.Invoke();
+        }
         DrawListQueue.Clear();
     }
 
     public void Push()
     {
         children.Add((children.Count, new HandleContainer()));
+    }
+
+    private static bool CheckOverlapLine2D(Vector2 cap1, Vector2 cap2, float radius, Vector2 point)
+    {
+        var v1 = cap2 - cap1;
+        var d = v1.LengthSquared();
+        if (d < 0.00001f) {
+            return Vector2.DistanceSquared(point, cap1) < radius * radius;
+        }
+
+        d = Math.Clamp(((point.X - cap1.X) * v1.X + (point.Y - cap1.Y) * v1.Y) / d, 0, 1);
+        point.X -= cap1.X + v1.X * d;
+        point.Y -= cap1.Y + v1.Y * d;
+        return point.LengthSquared() < radius * radius;
+    }
+
+    public bool ArrowHandle(ref Vector3 position, out int handleId, Vector3 axis, float handleRadius = 0.5f)
+    {
+        if (axis == Vector3.Zero) return PositionHandle(ref position, out handleId, handleRadius, axis, true);
+
+        var current = children.Last();
+        handleId = current.handles.count++;
+        if (activeHandle != null && activeHandle != (current.id, handleId) || Scene.MouseHandler == null) {
+            return false;
+        }
+        var pos1 = Scene.ActiveCamera.WorldToScreenPosition(position, false, true);
+        var pos2 = Scene.ActiveCamera.WorldToScreenPosition(position + axis, false, true);
+        var pos1Offset = Scene.ActiveCamera.WorldToScreenPosition(position + Scene.ActiveCamera.Transform.Right * handleRadius);
+        var screenRadius = (pos1 - pos1Offset).Length() * 0.5f;
+        if (activeHandle == null) {
+            var mouse = Scene.MouseHandler.MouseScreenPosition;
+            if (!Scene.MouseHandler.IsDragging) {
+                if (CheckOverlapLine2D(pos1, pos2, screenRadius, mouse)) {
+                    DrawListQueue.Add(() => {
+                        ImGui.GetWindowDrawList().AddLine(pos1, pos2 - (pos2 - pos1) * 0.15f, ArrowHandleHighlightColor, screenRadius);
+                    });
+                    if (Scene.MouseHandler.IsLeftDown) {
+                        StartDragHandle(current.id, handleId, position, axis, mouse);
+                    }
+                }
+            }
+        } else {
+            if (!Scene.MouseHandler.IsLeftDown) {
+                activeHandle = null;
+            } else {
+                var newPos = Scene.ActiveCamera.ScreenToWorldPositionReproject(Scene.MouseHandler.MouseScreenPosition, position) - activeHandleStartOffset;
+                position = AlignToInitialAxis(newPos);
+            }
+            DrawListQueue.Add(() => {
+                ImGui.GetWindowDrawList().AddLine(pos1, pos2 - (pos2 - pos1) * 0.15f, ArrowHandleActiveColor, screenRadius);
+            });
+            return true;
+        }
+
+        return false;
+    }
+
+    private void StartDragHandle(int id, int handleId, Vector3 position, Vector3 axis, Vector2 mouse)
+    {
+        activeHandle = (id, handleId);
+        var mouseWorldPosition = Scene.ActiveCamera.ScreenToWorldPositionReproject(mouse, position);
+        activeHandleStartOffset = mouseWorldPosition - position;
+        activeHandleStartWorldPosition = position;
+        activeHandleStartAxis = axis == Vector3.Zero ? Vector3.Zero : Vector3.Normalize(axis);
     }
 
     public bool PositionHandle(ref Vector3 position, out int handleId, float handleSize = 5f, Vector3 primaryAxis = default, bool lockToAxis = false)
@@ -60,10 +131,7 @@ public class GizmoState(Scene scene)
                     ImGui.GetWindowDrawList().AddCircleFilled(screenPosition, handleSize * HandleBorderSize, ColorHandleFillHovered);
                 });
                 if (Scene.MouseHandler.IsLeftDown) {
-                    activeHandle = (current.id, handleId);
-                    activeHandleStartPosition = Scene.MouseHandler.MouseScreenPosition;
-                    activeHandleStartWorldPosition = position;
-                    activeHandleStartAxis = primaryAxis == Vector3.Zero ? Vector3.Zero : Vector3.Normalize(primaryAxis);
+                    StartDragHandle(current.id, handleId, position, primaryAxis, mouse);
                 }
             } else {
                 DrawListQueue.Add(() => {
@@ -75,17 +143,11 @@ public class GizmoState(Scene scene)
             if (!Scene.MouseHandler!.IsLeftDown) {
                 activeHandle = null;
             } else {
-                var orgPos = activeHandleStartPosition;
-                var prevPos = screenPosition;
-                var newPos = Scene.MouseHandler.MouseScreenPosition;
-
-                position = Scene.ActiveCamera.ScreenToWorldPositionReproject(newPos, position);
+                position = Scene.ActiveCamera.ScreenToWorldPositionReproject(Scene.MouseHandler.MouseScreenPosition, position);
                 if (activeHandleStartAxis != Vector3.Zero && lockToAxis) {
-                    primaryAxis = activeHandleStartAxis;
-                    var totalOffset = position - activeHandleStartWorldPosition;
-                    var alignedOffset = totalOffset - totalOffset.ProjectOnPlane(primaryAxis);
-                    position = activeHandleStartWorldPosition + primaryAxis * alignedOffset.Length() * (Vector3.Dot(alignedOffset, primaryAxis) > 0 ? 1 : -1);
+                    position = AlignToInitialAxis(position);
                 }
+
                 screenPosition = Scene.ActiveCamera.WorldToScreenPosition(position, false);
             }
             DrawListQueue.Add(() => {
@@ -99,5 +161,13 @@ public class GizmoState(Scene scene)
             });
         }
         return false;
+    }
+
+    private Vector3 AlignToInitialAxis(Vector3 position)
+    {
+        Vector3 primaryAxis = activeHandleStartAxis;
+        var totalOffset = position - activeHandleStartWorldPosition;
+        var alignedOffset = totalOffset - totalOffset.ProjectOnPlane(primaryAxis);
+        return activeHandleStartWorldPosition + primaryAxis * alignedOffset.Length() * (Vector3.Dot(alignedOffset, primaryAxis) > 0 ? 1 : -1);
     }
 }
