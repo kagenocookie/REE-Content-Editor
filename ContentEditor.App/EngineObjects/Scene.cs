@@ -37,6 +37,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     public readonly SceneComponentsList<IGizmoComponent> Gizmos = new();
 
     private GizmoManager? gizmoManager;
+    internal GizmoManager? GizmoManager => gizmoManager;
 
     private GL _gl;
 

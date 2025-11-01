@@ -1,33 +1,81 @@
+using ReeLib.via;
 using Silk.NET.Maths;
 
 namespace ContentEditor.App.Graphics;
 
-public class GizmoContainer(Scene scene, Component component) : IDisposable
+public enum GizmoMaterialPreset
+{
+    AxisX,
+    AxisY,
+    AxisZ,
+    AxisX_Highlight,
+    AxisY_Highlight,
+    AxisZ_Highlight,
+    AxisX_Active,
+    AxisY_Active,
+    AxisZ_Active,
+}
+
+public class GizmoContainer : IDisposable
 {
     internal Dictionary<string, MeshHandle> ownedMeshes = new();
     internal List<GizmoRenderBatchItem> meshDraws = new();
-    internal List<GizmoShapeBuilder> shapeBuilders = new();
-    private readonly GizmoState state = new(scene);
+
+    private readonly GizmoState state;
+
+    private readonly Stack<GizmoShapeBuilder> shapeStack = new();
+    private readonly Scene scene;
 
     // public IGizmoComponent GComponent { get; } = component;
-    public Component Component { get; } = (Component)component;
+    public Component Component { get; }
 
-    public GizmoShapeBuilder Shape(int index, Material material) => Shape(index, material, null!);
-    public GizmoShapeBuilder Shape(int index, Material material, Material obscuredMaterial)
+    internal Dictionary<int, GizmoShapeBuilder> shapeBuilders = new();
+
+    public GizmoContainer(Scene scene, Component component)
     {
-        while (shapeBuilders.Count <= index) {
-            shapeBuilders.Add(new GizmoShapeBuilder(state));
+        this.scene = scene;
+        Component = (Component)component;
+        state = new(scene, this);
+    }
+
+    public void PushMaterial(Material material, Material? obscuredMaterial = null, ShapeBuilder.GeometryType geometryType = ShapeBuilder.GeometryType.Line, int priority = 0)
+    {
+        var hash = HashCode.Combine(material.Hash, obscuredMaterial?.Hash << 8);
+        if (!shapeBuilders.TryGetValue(hash, out var sb)) {
+            shapeBuilders[hash] = sb = new GizmoShapeBuilder(state);
+            sb.material = material;
+            sb.obscuredMaterial = obscuredMaterial;
+            sb.Priority(priority);
+            sb.GeometryType(geometryType);
         }
-        var builder = shapeBuilders[index] ??= new GizmoShapeBuilder(state);
-        builder.material = material;
-        builder.obscuredMaterial = obscuredMaterial;
-        return builder;
+        shapeStack.Push(sb);
+    }
+
+    public void SetShapeGeometryType(ShapeBuilder.GeometryType type)
+    {
+        shapeStack.Peek().GeometryType(type);
+    }
+
+    public void PushMaterial(GizmoMaterialPreset material, ShapeBuilder.GeometryType geometryType = ShapeBuilder.GeometryType.Line, bool showObscured = true)
+    {
+        var mat = scene.GizmoManager!.GetMaterial(material);
+        PushMaterial(mat, showObscured ? mat : null, geometryType);
+    }
+
+    public void PopMaterial()
+    {
+        shapeStack.Pop();
+    }
+
+    public void BeginControl()
+    {
+        shapeStack.Peek().Push();
     }
 
     public void UpdateMesh()
     {
         foreach (var shape in shapeBuilders) {
-            shape.UpdateMesh();
+            shape.Value.UpdateMesh();
         }
     }
 
@@ -35,7 +83,7 @@ public class GizmoContainer(Scene scene, Component component) : IDisposable
     {
         meshDraws.Clear();
         foreach (var shape in shapeBuilders) {
-            shape.ClearShapes();
+            shape.Value.ClearShapes();
         }
     }
 
@@ -47,7 +95,7 @@ public class GizmoContainer(Scene scene, Component component) : IDisposable
     public void Dispose()
     {
         foreach (var shape in shapeBuilders) {
-            shape.Dispose();
+            shape.Value.Dispose();
         }
         foreach (var (path, mesh) in ownedMeshes) {
             scene.RenderContext.UnloadMesh(mesh);
@@ -98,4 +146,14 @@ public class GizmoContainer(Scene scene, Component component) : IDisposable
             meshDraws.Add(new GizmoRenderBatchItem(material, m, transform, obscuredMaterial));
         }
     }
+
+    public void Add(OBB shape) => shapeStack.Peek().Add(shape);
+    public void Add(AABB shape) => shapeStack.Peek().Add(shape);
+    public void Add(Cone shape) => shapeStack.Peek().Add(shape);
+    public void Add(Sphere shape) => shapeStack.Peek().Add(shape);
+    public void Add(Capsule shape) => shapeStack.Peek().Add(shape);
+    public void Add(Cylinder shape) => shapeStack.Peek().Add(shape);
+    public void Add(LineSegment shape) => shapeStack.Peek().Add(shape);
+
+    public GizmoShapeBuilder Cur => shapeStack.Peek();
 }

@@ -147,12 +147,16 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
                             parentMesh.TryGetBoneTransform(shape.Info.primaryJointNameStr, out shapeMatrix);
                         }
                         if (group == selectedGroup || selectedSet?.Group == group) {
-                            if (gizmo.Shape(2, activeMaterial, obscuredMaterial).Priority(1).Push().EditableBoxed(in shapeMatrix, shape.shape, out var newShape, out int handleId)) {
+                            gizmo.PushMaterial(activeMaterial, obscuredMaterial, priority: 1);
+                            gizmo.BeginControl();
+                            if (gizmo.Cur.EditableBoxed(in shapeMatrix, shape.shape, out var newShape, out int handleId)) {
                                 UndoRedo.RecordCallbackSetter(null, shape, shape.shape, newShape, static (ss, vv) => ss.shape = vv, $"{shape.GetHashCode()}{handleId}");
                             }
                         } else {
-                            gizmo.Shape(1, inactiveMaterial).AddBoxed(in shapeMatrix, shape.shape);
+                            gizmo.PushMaterial(activeMaterial, obscuredMaterial, priority: 1);
+                            gizmo.Cur.AddBoxed(in shapeMatrix, shape.shape);
                         }
+                        gizmo.PopMaterial();
                     }
                 }
             }

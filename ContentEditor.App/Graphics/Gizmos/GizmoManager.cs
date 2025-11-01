@@ -1,3 +1,4 @@
+using ReeLib.via;
 using Silk.NET.Maths;
 
 namespace ContentEditor.App.Graphics;
@@ -9,6 +10,7 @@ public sealed class GizmoManager(Scene scene) : IDisposable
     private readonly List<IGizmoComponent> removedComponents = new();
     private readonly Dictionary<Transform, GizmoContainer> worldSpaceGizmos = new();
     private readonly HashSet<Transform> notRequestedStandalones = new();
+    private readonly List<(GizmoMaterialPreset preset, Material material)> presetMaterials = new();
 
     public void Update()
     {
@@ -95,7 +97,7 @@ public sealed class GizmoManager(Scene scene) : IDisposable
                 ogl.Batch.Gizmo.Add(item);
             }
 
-            foreach (var shape in gizmo.shapeBuilders.OrderByDescending(sb => sb.renderPriority)) {
+            foreach (var shape in gizmo.shapeBuilders.Values.OrderByDescending(sb => sb.renderPriority)) {
                 if (shape.mesh != null) {
                     ref readonly var transform = ref gizmo.Component.Transform.WorldTransform;
                     ogl.Batch.Gizmo.Add(new GizmoRenderBatchItem(shape.material, shape.mesh, transform, shape.obscuredMaterial));
@@ -107,7 +109,7 @@ public sealed class GizmoManager(Scene scene) : IDisposable
                 ogl.Batch.Gizmo.Add(item);
             }
 
-            foreach (var shape in cg.Value.shapeBuilders.OrderByDescending(sb => sb.renderPriority)) {
+            foreach (var shape in cg.Value.shapeBuilders.Values.OrderByDescending(sb => sb.renderPriority)) {
                 if (shape.mesh != null) {
                     ogl.Batch.Gizmo.Add(new GizmoRenderBatchItem(shape.material, shape.mesh, Matrix4X4<float>.Identity, shape.obscuredMaterial));
                 }
@@ -134,5 +136,29 @@ public sealed class GizmoManager(Scene scene) : IDisposable
             gg.Value.Dispose();
         }
         containers.Clear();
+    }
+
+    public Material GetMaterial(GizmoMaterialPreset preset)
+    {
+        foreach (var pm in presetMaterials) {
+            if (pm.preset == preset) {
+                return pm.material;
+            }
+        }
+
+        var material = preset switch {
+            GizmoMaterialPreset.AxisX => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_x").Color("_MainColor", new Color(0xff, 0, 0, 0xff)),
+            GizmoMaterialPreset.AxisY => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_y").Color("_MainColor", new Color(0, 0xff, 0, 0xff)),
+            GizmoMaterialPreset.AxisZ => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_z").Color("_MainColor", new Color(0, 0, 0xff, 0xff)),
+            GizmoMaterialPreset.AxisX_Highlight => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_x").Color("_MainColor", new Color(0xff, 0xaa, 0xaa, 0xff)),
+            GizmoMaterialPreset.AxisY_Highlight => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_y").Color("_MainColor", new Color(0xaa, 0xff, 0xaa, 0xff)),
+            GizmoMaterialPreset.AxisZ_Highlight => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_z").Color("_MainColor", new Color(0xaa, 0xaa, 0xff, 0xff)),
+            GizmoMaterialPreset.AxisX_Active => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_x").Color("_MainColor", new Color(0xff, 0xcc, 0xcc, 0xff)),
+            GizmoMaterialPreset.AxisY_Active => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_y").Color("_MainColor", new Color(0xcc, 0xff, 0xcc, 0xff)),
+            GizmoMaterialPreset.AxisZ_Active => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_z").Color("_MainColor", new Color(0xcc, 0xcc, 0xff, 0xff)),
+            _ => throw new NotImplementedException($"Unsupported gizmo material preset {preset}"),
+        };
+        presetMaterials.Add((preset, material));
+        return material;
     }
 }

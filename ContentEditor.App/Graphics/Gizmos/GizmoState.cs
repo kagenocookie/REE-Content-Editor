@@ -5,7 +5,7 @@ using ReeLib.via;
 
 namespace ContentEditor.App.Graphics;
 
-public class GizmoState(Scene scene)
+public class GizmoState(Scene scene, GizmoContainer container)
 {
     private List<(int id, HandleContainer handles)> previousChildren = new();
     private List<(int id, HandleContainer handles)> children = new();
@@ -22,9 +22,6 @@ public class GizmoState(Scene scene)
     private const uint ColorHandleFillHovered = 0xD85615FF;
     private const uint ColorHandleActive = 0xF82F00FF;
     private const float HandleBorderSize = 0.75f;
-
-    private const uint ArrowHandleHighlightColor = 0xffaaaaff;
-    private const uint ArrowHandleActiveColor = 0xffccccff;
 
     private List<Action> DrawListQueue = new();
 
@@ -67,13 +64,21 @@ public class GizmoState(Scene scene)
         return point.LengthSquared() < radius * radius;
     }
 
-    public bool ArrowHandle(ref Vector3 position, out int handleId, Vector3 axis, float handleRadius = 0.5f)
+    public enum Axis { X, Y, Z }
+
+    public bool ArrowHandle(ref Vector3 position, out int handleId, Vector3 axis, Axis axisType, float handleRadius = 0.5f)
     {
         if (axis == Vector3.Zero) return PositionHandle(ref position, out handleId, handleRadius, axis, true);
+        var cylinderEnd = position + axis * 0.8f;
+        var coneEnd = position + axis;
 
         var current = children.Last();
         handleId = current.handles.count++;
         if (activeHandle != null && activeHandle != (current.id, handleId) || Scene.MouseHandler == null) {
+            container.PushMaterial((GizmoMaterialPreset)axisType, ShapeBuilder.GeometryType.Filled);
+            container.Add(new Cylinder(position, cylinderEnd, handleRadius * 0.08f));
+            container.Add(new Cone(cylinderEnd, handleRadius * 0.5f, coneEnd, 0.0001f));
+            container.PopMaterial();
             return false;
         }
         var pos1 = Scene.ActiveCamera.WorldToScreenPosition(position, false, true);
@@ -84,14 +89,20 @@ public class GizmoState(Scene scene)
             var mouse = Scene.MouseHandler.MouseScreenPosition;
             if (!Scene.MouseHandler.IsDragging) {
                 if (CheckOverlapLine2D(pos1, pos2, screenRadius, mouse)) {
-                    DrawListQueue.Add(() => {
-                        ImGui.GetWindowDrawList().AddLine(pos1, pos2 - (pos2 - pos1) * 0.15f, ArrowHandleHighlightColor, screenRadius);
-                    });
+                    container.PushMaterial((GizmoMaterialPreset)(axisType + (int)GizmoMaterialPreset.AxisX_Highlight), ShapeBuilder.GeometryType.Filled);
                     if (Scene.MouseHandler.IsLeftDown) {
                         StartDragHandle(current.id, handleId, position, axis, mouse);
                     }
+                } else {
+                    container.PushMaterial((GizmoMaterialPreset)axisType, ShapeBuilder.GeometryType.Filled);
                 }
+            } else {
+                container.PushMaterial((GizmoMaterialPreset)axisType, ShapeBuilder.GeometryType.Filled);
             }
+
+            container.Add(new Cylinder(position, cylinderEnd, handleRadius * 0.08f));
+            container.Add(new Cone(cylinderEnd, handleRadius * 0.5f, coneEnd, 0.0001f));
+            container.PopMaterial();
         } else {
             if (!Scene.MouseHandler.IsLeftDown) {
                 activeHandle = null;
@@ -99,9 +110,10 @@ public class GizmoState(Scene scene)
                 var newPos = Scene.ActiveCamera.ScreenToWorldPositionReproject(Scene.MouseHandler.MouseScreenPosition, position) - activeHandleStartOffset;
                 position = AlignToInitialAxis(newPos);
             }
-            DrawListQueue.Add(() => {
-                ImGui.GetWindowDrawList().AddLine(pos1, pos2 - (pos2 - pos1) * 0.15f, ArrowHandleActiveColor, screenRadius);
-            });
+            container.PushMaterial((GizmoMaterialPreset)(axisType + (int)GizmoMaterialPreset.AxisX_Active), ShapeBuilder.GeometryType.Filled);
+            container.Add(new Cylinder(position, cylinderEnd, handleRadius * 0.08f));
+            container.Add(new Cone(cylinderEnd, handleRadius * 0.5f, coneEnd, 0.0001f));
+            container.PopMaterial();
             return true;
         }
 

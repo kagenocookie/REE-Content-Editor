@@ -129,32 +129,23 @@ public class GizmoShapeBuilder : IDisposable
         var worldPosition = Vector3.Transform(Vector3.Zero, localToWorldMatrix);
 
         var camdist = (worldPosition - state.Scene.ActiveCamera.Transform.Position).Length();
-        var handleScale = camdist * 0.01f;
-        var cylinderScale = handleScale * 0.2f;
         var handleLengthScale = camdist * 0.2f;
-        var uiScale = handleScale * 1.5f;
+        var uiScale = camdist * 0.03f;
 
-        // TODO think of a nice way of rendering different axis handle colors
         var up = Vector3.Transform(Vector3.UnitY * handleLengthScale, localToWorldMatrix);
         var right = Vector3.Transform(Vector3.UnitX * handleLengthScale, localToWorldMatrix);
         var fwd = Vector3.Transform(-Vector3.UnitZ * handleLengthScale, localToWorldMatrix);
         var upAxis = (up - worldPosition);
         var rightAxis = (right - worldPosition);
         var backAxis = (fwd - worldPosition);
-        Add(new Cylinder(worldPosition, up, cylinderScale));
-        Add(new Cylinder(worldPosition, right, cylinderScale));
-        Add(new Cylinder(worldPosition, fwd, cylinderScale));
-        Add(new Cone(up, handleScale, up + (upAxis * 0.14f), 0.001f));
-        Add(new Cone(right, handleScale, right + (rightAxis * 0.14f), 0.001f));
-        Add(new Cone(fwd, handleScale, fwd + (backAxis * 0.14f), 0.001f));
         handleId = -1;
-        if (state.ArrowHandle(ref worldPosition, out var hid, upAxis * 1.15f, uiScale)) {
+        if (state.ArrowHandle(ref worldPosition, out var hid, upAxis, GizmoState.Axis.Y, uiScale)) {
             handleId = hid;
         }
-        if (state.ArrowHandle(ref worldPosition, out hid, rightAxis * 1.15f, uiScale)) {
+        if (state.ArrowHandle(ref worldPosition, out hid, rightAxis, GizmoState.Axis.X, uiScale)) {
             handleId = hid;
         }
-        if (state.ArrowHandle(ref worldPosition, out hid, backAxis * 1.15f, uiScale)) {
+        if (state.ArrowHandle(ref worldPosition, out hid, backAxis, GizmoState.Axis.Z, uiScale)) {
             handleId = hid;
         }
         if (handleId != -1) {
