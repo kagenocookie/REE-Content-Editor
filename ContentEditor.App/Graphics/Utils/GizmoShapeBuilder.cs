@@ -267,19 +267,20 @@ public class GizmoShapeBuilder : IDisposable
         var worldCenter = Vector3.Transform(localCenter, offsetMatrix.ToSystem());
         var size = box.Extent;
         var pts = stackalloc Vector3[6];
-        pts[0] = Vector3.Transform(localCenter + size * UnitDirections[0], offsetMatrix.ToSystem());
-        pts[1] = Vector3.Transform(localCenter + size * UnitDirections[1], offsetMatrix.ToSystem());
-        pts[2] = Vector3.Transform(localCenter + size * UnitDirections[2], offsetMatrix.ToSystem());
-        pts[3] = Vector3.Transform(localCenter + size * UnitDirections[3], offsetMatrix.ToSystem());
-        pts[4] = Vector3.Transform(localCenter + size * UnitDirections[4], offsetMatrix.ToSystem());
-        pts[5] = Vector3.Transform(localCenter + size * UnitDirections[5], offsetMatrix.ToSystem());
+        var pointMtx = box.Coord.ToSystem() * offsetMatrix.ToSystem();
+        pts[0] = Vector3.Transform(size * UnitDirections[0], pointMtx);
+        pts[1] = Vector3.Transform(size * UnitDirections[1], pointMtx);
+        pts[2] = Vector3.Transform(size * UnitDirections[2], pointMtx);
+        pts[3] = Vector3.Transform(size * UnitDirections[3], pointMtx);
+        pts[4] = Vector3.Transform(size * UnitDirections[4], pointMtx);
+        pts[5] = Vector3.Transform(size * UnitDirections[5], pointMtx);
         handleId = -1;
         for (int i = 0; i < 6; ++i) {
             var pt = pts[i];
-            if (state.PointHandle(ref pt, out var hid, 5, pt - worldCenter, ImGui.IsKeyDown(ImGuiKey.LeftShift))) {
-                Matrix4x4.Invert(offsetMatrix.ToSystem(), out var invMat);
+            if (state.PointHandle(ref pt, out var hid, 5, pt - worldCenter, true)) {
+                Matrix4x4.Invert(pointMtx, out var invMat);
                 var previousDist = (size * UnitDirections[i]).Length();
-                var newDist = ((Vector3.Transform(pt, invMat) - localCenter) * UnitDirections[i]).Length();
+                var newDist = ((Vector3.Transform(pt, invMat)) * UnitDirections[i]).Length();
                 var deltaDist = (newDist - previousDist) * 0.5f;
                 if (UnitDirections[i].X + UnitDirections[i].Y + UnitDirections[i].Z < 0) {
                     box.Extent -= deltaDist * UnitDirections[i];

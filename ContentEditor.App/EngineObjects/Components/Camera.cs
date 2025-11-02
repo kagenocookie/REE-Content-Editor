@@ -109,6 +109,7 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
 
     public bool IsPointInViewport(Vector2 screenPoint)
     {
+        screenPoint -= Scene!.RenderContext.ViewportOffset;
         var size = Scene!.RenderContext.ViewportSize;
         return screenPoint.X >= 0 && screenPoint.Y >= 0 && screenPoint.X <= size.X && screenPoint.Y <= size.Y;
     }
@@ -155,10 +156,9 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
             return new Ray() { from = Transform.Position, dir = Transform.Forward };
         }
 
-        var offset = Scene.RenderContext.ViewportOffset;
-        var viewportPos = screenPos - offset;
+        var viewportPos = screenPos - Scene.RenderContext.ViewportOffset;
         var size = Scene.RenderContext.ViewportSize;
-        var relative = screenPos / size - new Vector2(0.5f);
+        var relative = viewportPos / size - new Vector2(0.5f);
 
         var verticalAngle = 0.5f * FieldOfView;
         var worldHeight = 2f * MathF.Tan(verticalAngle);
