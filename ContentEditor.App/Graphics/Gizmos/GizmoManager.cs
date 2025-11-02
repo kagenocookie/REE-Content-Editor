@@ -45,8 +45,11 @@ public sealed class GizmoManager(Scene scene) : IDisposable
 
         foreach (var comp in scene.Gizmos.components) {
             if (!comp.IsEnabled || !((Component)comp).GameObject.ShouldDraw) continue;
-            var aabb = comp.Bounds.ToWorldBounds(((Component)comp).Transform.WorldTransform.ToSystem());
-            if (!aabb.IsInvalid && !cam.IsVisible(aabb)) continue;
+            var localBounds = comp.Bounds;
+            if (!localBounds.IsInvalid) {
+                var aabb = localBounds.ToWorldBounds(((Component)comp).Transform.WorldTransform.ToSystem());
+                if (!cam.IsVisible(aabb)) continue;
+            }
 
             var prevContainer = containers.GetValueOrDefault(comp);
             prevContainer?.Clear();
