@@ -71,10 +71,9 @@ public class GizmoShapeBuilder : IDisposable
         return this;
     }
 
-    public GizmoShapeBuilder GeometryType(ShapeBuilder.GeometryType geometryType)
+    public void SetGeometryType(ShapeBuilder.GeometryType geometryType)
     {
         builder.GeoType = geometryType;
-        return this;
     }
 
     public bool EditableBoxed(in Matrix4X4<float> offset, object shape, out object? newShape, out int handleId)
@@ -116,13 +115,19 @@ public class GizmoShapeBuilder : IDisposable
 
     public bool TransformHandle(Transform transform)
     {
-        var pos = transform.LocalPosition;
         var handleId = -1;
         if (PositionHandles(transform.WorldTransform.ToSystem(), out var newWorldPos, out var hid)) {
             handleId = hid;
             var parentMatr = transform.GameObject.Parent?.WorldTransform ?? Matrix4X4<float>.Identity;
             var newLocalPos = Vector3.Transform(newWorldPos, parentMatr.ToSystem());
-            UndoRedo.RecordCallbackSetter(null, transform, pos, newLocalPos, (t, v) => t.LocalPosition = v, $"{transform.GetHashCode()}p");
+            UndoRedo.RecordCallbackSetter(null, transform, transform.LocalPosition, newLocalPos, (t, v) => t.LocalPosition = v, $"{transform.GetHashCode()}p");
+        }
+        if (RotationHandles(transform.WorldTransform.ToSystem(), out var newQuat, out hid)) {
+            handleId = hid;
+            var parentMatr = transform.GameObject.Parent?.WorldTransform.ToSystem() ?? Matrix4x4.Identity;
+            var inverse = Quaternion.Inverse(Quaternion.CreateFromRotationMatrix(parentMatr));
+            var newRotation = inverse * newQuat;
+            UndoRedo.RecordCallbackSetter(null, transform, transform.LocalRotation, newRotation, (t, v) => t.LocalRotation = v, $"{transform.GetHashCode()}r");
         }
 
         if (handleId != -1) {
@@ -143,6 +148,11 @@ public class GizmoShapeBuilder : IDisposable
             handleId = hid;
             transform.pos = Vector3.Transform(newWorldPos, localToWorld);
         }
+        if (RotationHandles(transformed, out var newQuat, out hid)) {
+            handleId = hid;
+            var inverse = Quaternion.Inverse(Quaternion.CreateFromRotationMatrix(localToWorld));
+            transform.rot = inverse * newQuat;
+        }
 
         newTransform = transform;
         return handleId != -1;
@@ -156,12 +166,9 @@ public class GizmoShapeBuilder : IDisposable
         var handleLengthScale = camdist * 0.2f;
         var uiScale = camdist * 0.03f;
 
-        var up = Vector3.Transform(Vector3.UnitY * handleLengthScale, localToWorldMatrix);
-        var right = Vector3.Transform(Vector3.UnitX * handleLengthScale, localToWorldMatrix);
-        var fwd = Vector3.Transform(-Vector3.UnitZ * handleLengthScale, localToWorldMatrix);
-        var upAxis = Vector3.Normalize(up - worldPosition);
-        var rightAxis = Vector3.Normalize(right - worldPosition);
-        var backAxis = Vector3.Normalize(fwd - worldPosition);
+        var upAxis = Vector3.Normalize(Vector3.TransformNormal(Vector3.UnitY, localToWorldMatrix)) * handleLengthScale;
+        var rightAxis = Vector3.Normalize(Vector3.TransformNormal(Vector3.UnitX, localToWorldMatrix)) * handleLengthScale;
+        var fwdAxis = Vector3.Normalize(Vector3.TransformNormal(-Vector3.UnitZ, localToWorldMatrix)) * handleLengthScale;
         handleId = -1;
         if (state.ArrowHandle(ref worldPosition, out var hid, upAxis, GizmoState.Axis.Y, uiScale)) {
             handleId = hid;
@@ -169,7 +176,7 @@ public class GizmoShapeBuilder : IDisposable
         if (state.ArrowHandle(ref worldPosition, out hid, rightAxis, GizmoState.Axis.X, uiScale)) {
             handleId = hid;
         }
-        if (state.ArrowHandle(ref worldPosition, out hid, backAxis, GizmoState.Axis.Z, uiScale)) {
+        if (state.ArrowHandle(ref worldPosition, out hid, fwdAxis, GizmoState.Axis.Z, uiScale)) {
             handleId = hid;
         }
         if (handleId != -1) {
@@ -177,6 +184,36 @@ public class GizmoShapeBuilder : IDisposable
             return true;
         } else {
             newWorldPosition = Vector3.Zero;
+            return false;
+        }
+    }
+
+    public bool RotationHandles(in Matrix4x4 localToWorldMatrix, out Quaternion newRotation, out int handleId)
+    {
+        var worldPosition = Vector3.Transform(Vector3.Zero, localToWorldMatrix);
+
+        var camdist = (worldPosition - state.Scene.ActiveCamera.Transform.Position).Length();
+        var handleSize = camdist * 0.24f;
+
+        var upAxis = Vector3.Normalize(Vector3.TransformNormal(Vector3.UnitY, localToWorldMatrix));
+        var rightAxis = Vector3.Normalize(Vector3.TransformNormal(Vector3.UnitX, localToWorldMatrix));
+        var fwdAxis = Vector3.Normalize(Vector3.TransformNormal(-Vector3.UnitZ, localToWorldMatrix));
+        handleId = -1;
+        var rotation = Quaternion.CreateFromRotationMatrix(localToWorldMatrix);
+
+        if (state.RotationHandle(worldPosition, ref rotation, out var hid, upAxis, GizmoState.Axis.Y, handleSize)) {
+            handleId = hid;
+        }
+        if (state.RotationHandle(worldPosition, ref rotation, out hid, rightAxis, GizmoState.Axis.X, handleSize)) {
+            handleId = hid;
+        }
+        if (state.RotationHandle(worldPosition, ref rotation, out hid, fwdAxis, GizmoState.Axis.Z, handleSize)) {
+            handleId = hid;
+        }
+        newRotation = rotation;
+        if (handleId != -1) {
+            return true;
+        } else {
             return false;
         }
     }
@@ -226,23 +263,23 @@ public class GizmoShapeBuilder : IDisposable
     {
         Add(in offsetMatrix, box);
 
-        var center = box.Coord.Row3.ToVec3();
-        var worldCenter = Vector3.Transform(center, offsetMatrix.ToSystem());
+        var localCenter = box.Coord.Row3.ToVec3();
+        var worldCenter = Vector3.Transform(localCenter, offsetMatrix.ToSystem());
         var size = box.Extent;
         var pts = stackalloc Vector3[6];
-        pts[0] = Vector3.Transform(center + size * UnitDirections[0], offsetMatrix.ToSystem());
-        pts[1] = Vector3.Transform(center + size * UnitDirections[1], offsetMatrix.ToSystem());
-        pts[2] = Vector3.Transform(center + size * UnitDirections[2], offsetMatrix.ToSystem());
-        pts[3] = Vector3.Transform(center + size * UnitDirections[3], offsetMatrix.ToSystem());
-        pts[4] = Vector3.Transform(center + size * UnitDirections[4], offsetMatrix.ToSystem());
-        pts[5] = Vector3.Transform(center + size * UnitDirections[5], offsetMatrix.ToSystem());
+        pts[0] = Vector3.Transform(localCenter + size * UnitDirections[0], offsetMatrix.ToSystem());
+        pts[1] = Vector3.Transform(localCenter + size * UnitDirections[1], offsetMatrix.ToSystem());
+        pts[2] = Vector3.Transform(localCenter + size * UnitDirections[2], offsetMatrix.ToSystem());
+        pts[3] = Vector3.Transform(localCenter + size * UnitDirections[3], offsetMatrix.ToSystem());
+        pts[4] = Vector3.Transform(localCenter + size * UnitDirections[4], offsetMatrix.ToSystem());
+        pts[5] = Vector3.Transform(localCenter + size * UnitDirections[5], offsetMatrix.ToSystem());
         handleId = -1;
         for (int i = 0; i < 6; ++i) {
             var pt = pts[i];
             if (state.PositionHandle(ref pt, out var hid, 5, pt - worldCenter, ImGui.IsKeyDown(ImGuiKey.LeftShift))) {
                 Matrix4x4.Invert(offsetMatrix.ToSystem(), out var invMat);
                 var previousDist = (size * UnitDirections[i]).Length();
-                var newDist = ((Vector3.Transform(pt, invMat) - center) * UnitDirections[i]).Length();
+                var newDist = ((Vector3.Transform(pt, invMat) - localCenter) * UnitDirections[i]).Length();
                 var deltaDist = (newDist - previousDist) * 0.5f;
                 if (UnitDirections[i].X + UnitDirections[i].Y + UnitDirections[i].Z < 0) {
                     box.Extent -= deltaDist * UnitDirections[i];
@@ -253,15 +290,22 @@ public class GizmoShapeBuilder : IDisposable
             }
         }
 
-        var posMatrix = Matrix4x4.CreateTranslation(center) * offsetMatrix.ToSystem();
+        var posMatrix = Matrix4x4.CreateTranslation(localCenter) * offsetMatrix.ToSystem();
         if (PositionHandles(posMatrix, out var newCenter, out var posHandle)) {
             Matrix4x4.Invert(offsetMatrix.ToSystem(), out var invMat);
             var localNewCenter = Vector3.Transform(newCenter, invMat);
-            box.Coord = Matrix4x4.CreateTranslation(localNewCenter - center) * box.Coord.ToSystem();
+            box.Coord = box.Coord.ToSystem() * Matrix4x4.CreateTranslation(localNewCenter - localCenter);
             handleId = posHandle;
         }
 
-        // TODO add rotation gizmo
+        var orgLocalRotation = Quaternion.CreateFromRotationMatrix(box.Coord.ToSystem());
+        var rotMatrix = Matrix4x4.CreateFromQuaternion(orgLocalRotation) * posMatrix;
+        if (RotationHandles(rotMatrix, out var newQuat, out var hidd)) {
+            handleId = hidd;
+            Matrix4x4.Invert(posMatrix, out var invMat);
+            var invRotation = Quaternion.CreateFromRotationMatrix(invMat);
+            box.Coord = Matrix4x4.CreateFromQuaternion(Quaternion.Inverse(orgLocalRotation) * invRotation * newQuat) * box.Coord.ToSystem();
+        }
         return handleId != -1;
     }
 
@@ -321,6 +365,8 @@ public class GizmoShapeBuilder : IDisposable
     public void Add(Capsule shape) => builder.Add(shape);
     public void Add(Cylinder shape) => builder.Add(shape);
     public void Add(Cone shape) => builder.Add(shape);
+
+    public void AddCircle(Vector3 position, Vector3 forward, float handleSize) => builder.AddCircle(position, forward, handleSize);
 
     public void Add(in Matrix4X4<float> offsetMatrix, LineSegment shape)
         => builder.Add(new LineSegment(Vector3.Transform(shape.start, offsetMatrix.ToSystem()), Vector3.Transform(shape.end, offsetMatrix.ToSystem())));

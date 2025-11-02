@@ -297,7 +297,9 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         var scene = (file.Resource as AssimpMaterialResource)?.Scene;
         var materials = scene?.Materials ?? (file.GetCustomContent<CommonMeshResource>())?.MaterialList;
         if (materials == null) {
-            Logger.Error("Failed to load material group " + file.Filepath);
+            if (file.Format.format != KnownFileFormats.Mesh) {
+                Logger.Error("Failed to load material group " + file.Filepath);
+            }
             var material = CreateViewShadedMaterial(flags);
             group.Add(material);
             material.SetParameter(TextureUnit.Texture0, GetDefaultTexture());

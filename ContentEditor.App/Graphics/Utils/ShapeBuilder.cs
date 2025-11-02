@@ -96,6 +96,10 @@ public class ShapeBuilder
     public void Add(Capsule shape) => GetShapeContainer<Capsule, ShapeBuilderCapsule>().shapes.Add(shape);
     public void Add(Cylinder shape) => GetShapeContainer<Cylinder, ShapeBuilderCylinder>().shapes.Add(shape);
     public void Add(Cone shape) => GetShapeContainer<Cone, ShapeBuilderCone>().shapes.Add(shape);
+    public void AddCircle(Vector3 position, Vector3 forward, float radius)
+    {
+        GetShapeContainer<(Vector3 pos, Vector3 dir, float radius), ShapeBuilderCircle>().shapes.Add((position, forward, radius));
+    }
 
     public void UpdateMesh(ref float[] vertices, ref int[] indices, ref AABB bound)
     {
@@ -556,6 +560,41 @@ public class ShapeBuilder
         {
             int hash = 17;
             foreach (var obj in shapes) hash = (int)HashCode.Combine(hash, obj.p0, obj.p1, obj.r0, obj.r1);
+            return hash;
+        }
+    }
+    public class ShapeBuilderCircle : ShapeBuilderShapeType<(Vector3 pos, Vector3 dir, float radius)>
+    {
+        public override void Build(ref int index, ShapeBuilder builder)
+        {
+            var geoType = builder.GeoType;
+            foreach (var (pos, dir, radius) in shapes) {
+                var startIndex = index;
+                if (geoType == GeometryType.Line) {
+                    builder.StoreLineSemiCircle(ref index, radius, Vector3.Zero, new Vector3(0.5f, 0.5f, 0));
+                    builder.StoreLineSemiCircle(ref index, radius, Vector3.Zero, new Vector3(0.5f, -0.5f, 0));
+                } else {
+                    throw new NotImplementedException();
+                }
+
+                var rotation = Quaternion<float>.Normalize(TransformExtensions.CreateFromToQuaternion(Vector3.UnitY, Vector3.Normalize(dir))).ToSystem();
+                builder.TransformVertices(startIndex, index, rotation, pos);
+            }
+        }
+
+        public override int CalculateVertexCount(ShapeBuilder builder)
+        {
+            int count = 0;
+            if (builder.GeoType == GeometryType.Line) {
+                foreach (var sphere in shapes) count += CalculateLineSemicircleVertCount(sphere.radius) * 2;
+            }
+            return count;
+        }
+
+        public override int CalculateShapeHash()
+        {
+            int hash = 17;
+            foreach (var obj in shapes) hash = (int)HashCode.Combine(hash, obj.pos, obj.dir, obj.radius);
             return hash;
         }
     }

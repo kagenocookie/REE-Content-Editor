@@ -199,7 +199,7 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
                         RszFieldCache.CompositeMesh.TransformController.LocalRotation.Set(inst, newTr.rot);
                         RszFieldCache.CompositeMesh.TransformController.LocalScale.Set(inst, newTr.scale);
                         RecomputeWorldAABB();
-                    }, $"{inst.GetHashCode()}t");
+                    }, $"{inst.GetHashCode()}{handleId}t");
                 }
             }
         }

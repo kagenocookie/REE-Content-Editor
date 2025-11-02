@@ -41,6 +41,21 @@ public static class TransformExtensions
         return Matrix4x4.CreateScale(xform.scale) * Matrix4x4.CreateFromQuaternion(xform.rot) * Matrix4x4.CreateTranslation(xform.pos);
     }
 
+    public static float AngleBetween(Vector3 v1, Vector3 v2)
+    {
+        var cross = Vector3.Cross(v1, v2);
+        var dot = Vector3.Dot(v1, v2);
+        return MathF.Atan2(cross.Length(), dot);
+    }
+
+    public static float SignedAngleBetween(Vector3 v1, Vector3 v2, Vector3 axis)
+    {
+        var cross = Vector3.Cross(v1, v2);
+        var dot = Vector3.Dot(v1, v2);
+        var angle = MathF.Atan2(cross.Length(), dot);
+        return (Vector3.Dot(axis, cross) < 0) ? -angle : angle;
+    }
+
     public static Quaternion<float> CreateLookAtQuaternion(this Vector3 from, Vector3 to, Vector3 up)
     {
         var fwd = Vector3.Normalize(from - to);

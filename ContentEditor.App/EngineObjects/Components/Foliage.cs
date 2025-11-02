@@ -175,7 +175,7 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
                     UndoRedo.RecordCallbackSetter(null, (group.transforms, m), item, newTransform, (obj, newTr) => {
                         obj.transforms[obj.m] = newTr;
                         RecomputeWorldAABB();
-                    }, $"{group.GetHashCode()}{m}t");
+                    }, $"{group.GetHashCode()}{m}{handleId}t");
                 }
             }
         }

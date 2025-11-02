@@ -22,6 +22,8 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
     public float NearPlane { get; set; } = 0.1f;
     public float FarPlane { get; set; } = 8096.0f;
 
+    public float AspectRatio => Scene!.RenderContext.ViewportSize.X / Scene.RenderContext.ViewportSize.Y;
+
     public Matrix4X4<float> ViewMatrix { get; private set; } = Matrix4X4<float>.Identity;
     public Matrix4X4<float> ProjectionMatrix { get; private set; } = Matrix4X4<float>.Identity;
     public Matrix4X4<float> ViewProjectionMatrix { get; private set; } = Matrix4X4<float>.Identity;
@@ -143,6 +145,28 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
         var orgDepth = Project(ViewProjectionMatrix, size, referencePosition).Z;
         var pos = Unproject(ViewProjectionMatrix, size, new Vector3(viewportPos.X, viewportPos.Y, orgDepth));
         return pos;
+    }
+
+    public Ray ScreenToRay(Vector2 screenPos)
+    {
+        if (Scene == null) return new();
+
+        if (ProjectionMode == CameraProjection.Orthographic) {
+            return new Ray() { from = Transform.Position, dir = Transform.Forward };
+        }
+
+        var offset = Scene.RenderContext.ViewportOffset;
+        var viewportPos = screenPos - offset;
+        var size = Scene.RenderContext.ViewportSize;
+        var relative = screenPos / size - new Vector2(0.5f);
+
+        var verticalAngle = 0.5f * FieldOfView;
+        var worldHeight = 2f * MathF.Tan(verticalAngle);
+
+        var worldUnits = new Vector3(relative * worldHeight, 1);
+        worldUnits.X *= -AspectRatio;
+        var dir = Vector3.Transform(worldUnits, Transform.Rotation);
+        return new Ray() { from = Transform.Position, dir = dir };
     }
 
     private static Vector4 Project(in Matrix4X4<float> viewProjection, Vector2 viewportSize, Vector3 position)

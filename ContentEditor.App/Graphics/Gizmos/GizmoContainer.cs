@@ -46,13 +46,13 @@ public class GizmoContainer : IDisposable
 
     public void PushMaterial(Material material, Material? obscuredMaterial = null, ShapeBuilder.GeometryType geometryType = ShapeBuilder.GeometryType.Line, int priority = 0)
     {
-        var hash = HashCode.Combine(material.Hash, obscuredMaterial?.Hash << 8);
+        var hash = HashCode.Combine(material.Hash, obscuredMaterial?.Hash << 8, geometryType);
         if (!shapeBuilders.TryGetValue(hash, out var sb)) {
             shapeBuilders[hash] = sb = new GizmoShapeBuilder(state);
             sb.material = material;
             sb.obscuredMaterial = obscuredMaterial;
             sb.Priority(priority);
-            sb.GeometryType(geometryType);
+            sb.SetGeometryType(geometryType);
         }
         shapeStack.Push(sb);
     }
@@ -61,11 +61,6 @@ public class GizmoContainer : IDisposable
     {
         var mat = scene.GizmoManager!.GetMaterial(material);
         PushMaterial(mat, showObscured ? mat : null, geometryType);
-    }
-
-    public void SetShapeGeometryType(ShapeBuilder.GeometryType type)
-    {
-        shapeStack.Peek().GeometryType(type);
     }
 
     public void GrabFocus()

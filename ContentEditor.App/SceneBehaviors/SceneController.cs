@@ -128,7 +128,7 @@ public class SceneController
         foreach (var ui in window.ActiveImguiWindows) {
             if (ui.Handler is ObjectInspector inspector && inspector.Target is GameObject go && go.Scene?.RootScene == Scene) {
                 var gizmo = manager.GetOrAddStandaloneGizmo(go.Transform);
-                gizmo.Cur.GeometryType(ShapeBuilder.GeometryType.Filled).Push().TransformHandle(go.Transform);
+                gizmo.Cur.Push().TransformHandle(go.Transform);
             }
         }
     }
