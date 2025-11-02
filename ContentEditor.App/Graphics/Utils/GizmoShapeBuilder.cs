@@ -159,9 +159,9 @@ public class GizmoShapeBuilder : IDisposable
         var up = Vector3.Transform(Vector3.UnitY * handleLengthScale, localToWorldMatrix);
         var right = Vector3.Transform(Vector3.UnitX * handleLengthScale, localToWorldMatrix);
         var fwd = Vector3.Transform(-Vector3.UnitZ * handleLengthScale, localToWorldMatrix);
-        var upAxis = (up - worldPosition);
-        var rightAxis = (right - worldPosition);
-        var backAxis = (fwd - worldPosition);
+        var upAxis = Vector3.Normalize(up - worldPosition);
+        var rightAxis = Vector3.Normalize(right - worldPosition);
+        var backAxis = Vector3.Normalize(fwd - worldPosition);
         handleId = -1;
         if (state.ArrowHandle(ref worldPosition, out var hid, upAxis, GizmoState.Axis.Y, uiScale)) {
             handleId = hid;
