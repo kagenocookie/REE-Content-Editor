@@ -65,7 +65,7 @@ public class GizmoContainer : IDisposable
 
     public void GrabFocus()
     {
-        Debug.Assert(scene.GizmoManager!.ActiveContainer == null);
+        Debug.Assert(scene.GizmoManager!.ActiveContainer == null || scene.GizmoManager!.ActiveContainer == this);
         scene.GizmoManager!.ActiveContainer = this;
     }
 
@@ -75,7 +75,7 @@ public class GizmoContainer : IDisposable
         scene.GizmoManager!.ActiveContainer = null;
     }
 
-    private void LoseFocusSafe()
+    public void LoseFocusSafe()
     {
         if (scene.GizmoManager?.ActiveContainer == this)
             scene.GizmoManager.ActiveContainer = null;

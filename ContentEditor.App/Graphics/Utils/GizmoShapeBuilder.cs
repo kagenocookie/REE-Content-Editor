@@ -97,7 +97,7 @@ public class GizmoShapeBuilder : IDisposable
         Add(in offsetMatrix, sphere);
         var handlePoint = Vector3.Transform(sphere.pos + sphere.r * Vector3.UnitY, offsetMatrix.ToSystem());
         handleId = -1;
-        if (state.PositionHandle(ref handlePoint, out var hid, 10f)) {
+        if (state.PointHandle(ref handlePoint, out var hid, 10f)) {
             handleId = hid;
             var worldPos = Vector3.Transform(sphere.pos, offsetMatrix.ToSystem());
             var newRadius = (handlePoint - worldPos).Length();
@@ -236,7 +236,7 @@ public class GizmoShapeBuilder : IDisposable
         handleId = -1;
         for (int i = 0; i < 6; ++i) {
             var pt = pts[i];
-            if (state.PositionHandle(ref pt, out var hid, 5, pt - worldCenter, ImGui.IsKeyDown(ImGuiKey.LeftShift))) {
+            if (state.PointHandle(ref pt, out var hid, 5, pt - worldCenter, ImGui.IsKeyDown(ImGuiKey.LeftShift))) {
                 var previousDist = (size * UnitDirections[i]).Length();
                 var newDist = ((pt - worldCenter) * UnitDirections[i]).Length();
                 var deltaDist = (newDist - previousDist) * 0.5f;
@@ -276,7 +276,7 @@ public class GizmoShapeBuilder : IDisposable
         handleId = -1;
         for (int i = 0; i < 6; ++i) {
             var pt = pts[i];
-            if (state.PositionHandle(ref pt, out var hid, 5, pt - worldCenter, ImGui.IsKeyDown(ImGuiKey.LeftShift))) {
+            if (state.PointHandle(ref pt, out var hid, 5, pt - worldCenter, ImGui.IsKeyDown(ImGuiKey.LeftShift))) {
                 Matrix4x4.Invert(offsetMatrix.ToSystem(), out var invMat);
                 var previousDist = (size * UnitDirections[i]).Length();
                 var newDist = ((Vector3.Transform(pt, invMat) - localCenter) * UnitDirections[i]).Length();
@@ -338,17 +338,17 @@ public class GizmoShapeBuilder : IDisposable
         var handleTop = Vector3.Transform(cap.p1, offsetMatrix.ToSystem());
         var handleBot = Vector3.Transform(cap.p0, offsetMatrix.ToSystem());
         var handleSide = Vector3.Transform((cap.p0 + cap.p1) * 0.5f + right, offsetMatrix.ToSystem());
-        if (state.PositionHandle(ref handleTop, out var hid, 10f, handleTop - handleBot, ImGui.IsKeyDown(ImGuiKey.LeftShift))) {
+        if (state.PointHandle(ref handleTop, out var hid, 10f, handleTop - handleBot, ImGui.IsKeyDown(ImGuiKey.LeftShift))) {
             Matrix4X4.Invert(offsetMatrix, out var inverted);
             cap.p1 = Vector3.Transform(handleTop, inverted.ToSystem());
             handleId = hid;
         }
-        if (state.PositionHandle(ref handleBot, out hid, 10f, handleTop - handleBot, ImGui.IsKeyDown(ImGuiKey.LeftShift))) {
+        if (state.PointHandle(ref handleBot, out hid, 10f, handleTop - handleBot, ImGui.IsKeyDown(ImGuiKey.LeftShift))) {
             Matrix4X4.Invert(offsetMatrix, out var inverted);
             cap.p0 = Vector3.Transform(handleBot, inverted.ToSystem());
             handleId = hid;
         }
-        if (state.PositionHandle(ref handleSide, out hid, 10f, handleSide - (handleBot + handleTop) * 0.5f, true)) {
+        if (state.PointHandle(ref handleSide, out hid, 10f, handleSide - (handleBot + handleTop) * 0.5f, true)) {
             var center = Vector3.Transform((cap.p0 + cap.p1) * 0.5f, offsetMatrix.ToSystem());
             var newRadius = (handleSide - center).Length();
             cap.r = newRadius;
