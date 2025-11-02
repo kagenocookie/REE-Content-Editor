@@ -21,7 +21,7 @@ public sealed class FilePreviewGenerator : IDisposable
     private readonly ConcurrentDictionary<string, Texture> _loadedPreviews = new();
     private readonly ConcurrentDictionary<string, PreviewImageStatus> _statuses = new();
 
-    private static readonly Int2 ThumbnailSize = new Int2(128, 128);
+    private static readonly Int2 ThumbnailSize = new Int2(256, 256);
     private readonly GL _mainGl;
     private static WindowOptions _workerWindowOptions = WindowOptions.Default with {
         IsVisible = false,

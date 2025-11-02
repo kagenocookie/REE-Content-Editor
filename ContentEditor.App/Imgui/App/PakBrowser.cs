@@ -40,7 +40,6 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
     // note: purposely not disposing the reader, in case we just reused the "main" pak reader from the workspace
     // it doesn't really need disposing with the current implementation either way
     private CachedMemoryPakReader? reader;
-    private FilePreviewWindow? previewWindow;
     private WindowData data = null!;
     protected UIContext context = null!;
     private ListFileWrapper? matchedList;
@@ -70,8 +69,6 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         public int displayedCount;
         public int totalCount;
     }
-
-    private Texture? previewTexture;
 
     private readonly Dictionary<(string, int, ImGuiSortDirection), string[]> cachedResults = new();
 
@@ -606,7 +603,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 ImGui.SetItemTooltip(tt);
             }
             if (click) {
-                HandleFileClick(baseList, file, false);
+                HandleFileClick(baseList, file);
             }
 
             ShowFileContextMenu(file, _bookmarkManager.IsBookmarked(Workspace.Config.Game.name, file), true);
@@ -623,6 +620,10 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         sortedEntries ??= [];
         var baseList = matchedList!;
         int i = 0;
+        var showPreviews = AppConfig.Instance.UsePakFilePreviewWindow.Get();
+        if (showPreviews) {
+            previewGenerator ??= new(contentWorkspace, EditorWindow.CurrentWindow?.GLContext!);
+        }
         var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
         if (ImGui.BeginTable("List", 2, ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingStretchProp | ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.Sortable, new Vector2(0, remainingHeight))) {
             ImGui.TableSetupColumn(" Path ", ImGuiTableColumnFlags.WidthStretch, 0.9f);
@@ -636,15 +637,30 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 ImGui.PushID(i);
                 i++;
                 var displayName = useCompactFilePaths ? CompactFilePath(file) : file;
-                var usePreviewWindow = AppConfig.Instance.UsePakFilePreviewWindow.Get();
                 bool isBookmarked = _bookmarkManager.IsBookmarked(Workspace.Config.Game.name, file);
                 if (isBookmarked) {
                     ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.PlotHistogramHovered]);
                 } else {
                     ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.Text]);
                 }
+
+                {
+                    if (Path.HasExtension(file)) {
+                        var (icon, col) = AppIcons.GetIcon(PathUtils.ParseFileFormat(file).format);
+                        if (icon == '\0') {
+                            ImGui.Text($"{AppIcons.SI_File}");
+                        } else if (icon == AppIcons.Folder) {
+                            ImGui.TextColored(col, $"{AppIcons.FolderLink}");
+                        } else {
+                            ImGui.TextColored(col, $"{icon}");
+                        }
+                    } else {
+                        ImGui.Text($"{AppIcons.Folder}");
+                    }
+                    ImGui.SameLine();
+                }
                 if (ImGui.Selectable(displayName, false, ImGuiSelectableFlags.SpanAllColumns)) {
-                    bool wasFile = HandleFileClick(baseList, file, usePreviewWindow);
+                    bool wasFile = HandleFileClick(baseList, file);
                     if (!wasFile) {
                         ImGui.PopStyleColor();
                         ImGui.PopID();
@@ -654,29 +670,14 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 }
                 ImGui.PopStyleColor();
 
-                if (usePreviewWindow && ImGui.IsItemHovered()) {
-                    if (PathUtils.ParseFileFormat(file).format == KnownFileFormats.Texture) {
-                        ImGui.BeginTooltip();
-                        if (previewTexture?.Path != file) {
-                            previewTexture?.Dispose();
-                            previewTexture = null;
-                            using var stream = Workspace.GetFile(file);
-                            if (stream != null) {
-                                try {
-                                    var tex = new TexFile(new FileHandler(stream, file));
-                                    tex.Read();
-                                    previewTexture = new Texture();
-                                    previewTexture.LoadFromTex(tex);
-                                } catch (Exception) {
-                                    // ignore
-                                }
-                            }
+                if (showPreviews && ImGui.IsItemHovered()) {
+                    if (Path.HasExtension(file)) {
+                        var previewStatus = previewGenerator!.FetchPreview(file, out var previewTex);
+                        if (previewStatus == PreviewImageStatus.Ready) {
+                            ImGui.BeginTooltip();
+                            ImGui.Image((nint)previewTex!.Handle, new Vector2(256, 256));
+                            ImGui.EndTooltip();
                         }
-                        if (previewTexture != null) {
-                            ImGui.Image((nint)previewTexture.Handle, new Vector2(300, 300));
-                        }
-
-                        ImGui.EndTooltip();
                     }
                 }
                 ShowFileContextMenu(file, isBookmarked);
@@ -712,7 +713,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         return null;
     }
 
-    private bool HandleFileClick(ListFileWrapper baseList, string file, bool usePreviewWindow)
+    private bool HandleFileClick(ListFileWrapper baseList, string file)
     {
         if (!baseList.FileExists(file)) {
             // if it's not a full list file match then it's a folder, navigate to it
@@ -729,16 +730,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             }
         } else {
             try {
-                if (usePreviewWindow) {
-                    if (previewWindow == null || !EditorWindow.CurrentWindow!.HasSubwindow<FilePreviewWindow>(out _, w => w.Handler == previewWindow)) {
-                        EditorWindow.CurrentWindow!.AddSubwindow(previewWindow = new FilePreviewWindow());
-                    }
-                    if (PakFilePath != null && reader.GetFile(file) is Stream stream) {
-                        previewWindow.SetFile(stream, file, PakFilePath);
-                    } else {
-                        previewWindow.SetFile(file);
-                    }
-                } else if (PakFilePath == null) {
+                if (PakFilePath == null) {
                     EditorWindow.CurrentWindow?.OpenFiles([file]);
                 } else {
                     var stream = reader.GetFile(file);
@@ -817,10 +809,6 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
 
     public void Dispose()
     {
-        if (previewWindow != null && !previewWindow.RequestClose()) {
-            EditorWindow.CurrentWindow?.CloseSubwindow(previewWindow);
-        }
-        previewTexture?.Dispose();
         previewGenerator?.Dispose();
     }
 }
