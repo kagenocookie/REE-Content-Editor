@@ -128,7 +128,7 @@ public class FolderNodeEditor : IObjectUIHandler
             var subfolder = context.GetChild<SubfolderNodeEditor>();
             if (subfolder == null) {
                 context.ClearChildren();
-                context.AddChild("Folders", folder, new SubfolderNodeEditor() { UnnestChildren = folder == folder.Scene?.RootFolder || folder.GameObjects.Count == 0 });
+                context.AddChild("Folders", folder, new SubfolderNodeEditor());
             }
         }
 
@@ -350,6 +350,7 @@ public class SubfolderNodeEditor : NodeTreeEditor<Folder, FolderNodeEditor>
         nodeColor = Colors.Folder;
         EnableContextMenu = false;
         UseContextLabel = true;
+        UnnestChildren = true;
     }
 
     protected override void HandleSelect(UIContext context, Folder node)
