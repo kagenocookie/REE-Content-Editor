@@ -142,13 +142,23 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 hasInvalidatedPaks = reader.FileExists(0);
             } else {
                 // single file
-                reader = new CachedMemoryPakReader();
-                if (!reader.TryReadManifestFileList(PakFilePath)) {
-                    reader.AddFiles(list.Files);
+                if (!File.Exists(PakFilePath)) {
+                    ImGui.TextColored(Colors.Warning, $"File {PakFilePath} not found.");
+                    return;
                 }
-                reader.CacheEntries(true);
-                matchedList = new ListFileWrapper(reader.CachedPaths);
-                hasInvalidatedPaks = reader.FileExists(0);
+                try {
+                    reader = new CachedMemoryPakReader();
+                    if (!reader.TryReadManifestFileList(PakFilePath)) {
+                        reader.AddFiles(list.Files);
+                    }
+                    reader.CacheEntries(true);
+                    matchedList = new ListFileWrapper(reader.CachedPaths);
+                    hasInvalidatedPaks = reader.FileExists(0);
+                } catch (Exception e) {
+                    reader = null;
+                    Logger.Error($"Pak file {PakFilePath} could not be opened: {e.Message}");
+                    return;
+                }
             }
             // TODO handle unknowns properly
         }
@@ -198,7 +208,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         bool isDefaultBookmark = !isHideDefaults && _bookmarkManagerDefaults.IsBookmarked(Workspace.Config.Game.name, CurrentDir);
         ImguiHelpers.ToggleButton($"{AppIcons.SI_Bookmarks} Bookmarks", ref isShowBookmarks, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
         ImGui.SameLine();
-        if (ImGui.Button(DisplayMode == FileDisplayMode.Grid ? "Grid View": "List View")) {
+        if (ImGui.Button(DisplayMode == FileDisplayMode.Grid ? "Grid View" : "List View")) {
             AppConfig.Instance.PakDisplayMode = DisplayMode = DisplayMode == FileDisplayMode.Grid ? FileDisplayMode.List : FileDisplayMode.Grid;
             previewGenerator?.CancelCurrentQueue();
         }
@@ -343,8 +353,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
 
                         ImGui.TableNextRow();
                         ImGui.TableSetColumnIndex(0);
-                        if (ImGui.Selectable(bm.Path, false))
-                        {
+                        if (ImGui.Selectable(bm.Path, false)) {
                             CurrentDir = bm.Path;
                         }
 
@@ -719,24 +728,28 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 Logger.Error("File could not be found in the loaded PAK files. Possible causes: Fluffy Mod Manager archive invalidation, missing some DLC content, not having the right PAK files open, or a wrong file list.");
             }
         } else {
-            if (usePreviewWindow) {
-                if (previewWindow == null || !EditorWindow.CurrentWindow!.HasSubwindow<FilePreviewWindow>(out _, w => w.Handler == previewWindow)) {
-                    EditorWindow.CurrentWindow!.AddSubwindow(previewWindow = new FilePreviewWindow());
-                }
-                if (PakFilePath != null && reader.GetFile(file) is Stream stream) {
-                    previewWindow.SetFile(stream, file, PakFilePath);
+            try {
+                if (usePreviewWindow) {
+                    if (previewWindow == null || !EditorWindow.CurrentWindow!.HasSubwindow<FilePreviewWindow>(out _, w => w.Handler == previewWindow)) {
+                        EditorWindow.CurrentWindow!.AddSubwindow(previewWindow = new FilePreviewWindow());
+                    }
+                    if (PakFilePath != null && reader.GetFile(file) is Stream stream) {
+                        previewWindow.SetFile(stream, file, PakFilePath);
+                    } else {
+                        previewWindow.SetFile(file);
+                    }
+                } else if (PakFilePath == null) {
+                    EditorWindow.CurrentWindow?.OpenFiles([file]);
                 } else {
-                    previewWindow.SetFile(file);
+                    var stream = reader.GetFile(file);
+                    if (stream == null) {
+                        EditorWindow.CurrentWindow?.AddSubwindow(new ErrorModal("File not found", "File could not be found in the PAK file(s)."));
+                    } else {
+                        EditorWindow.CurrentWindow?.OpenFile(stream, file, PakFilePath + "://");
+                    }
                 }
-            } else if (PakFilePath == null) {
-                EditorWindow.CurrentWindow?.OpenFiles([file]);
-            } else {
-                var stream = reader.GetFile(file);
-                if (stream == null) {
-                    EditorWindow.CurrentWindow?.AddSubwindow(new ErrorModal("File not found", "File could not be found in the PAK file(s)."));
-                } else {
-                    EditorWindow.CurrentWindow?.OpenFile(stream, file, PakFilePath + "://");
-                }
+            } catch (Exception e) {
+                Logger.Error($"Failed to open file {file}: {e.Message}");
             }
         }
 
