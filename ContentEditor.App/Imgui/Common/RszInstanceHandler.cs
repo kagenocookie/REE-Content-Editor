@@ -827,7 +827,7 @@ public class ResourceInfoHandler : Singleton<ResourceInfoHandler>, IObjectUIHand
     public void OnIMGUI(UIContext context)
     {
         if (context.children.Count == 0) {
-            context.AddChild<ResourceInfo, string>(context.label, context.Get<ResourceInfo>(), new ResourcePathPicker(), static (c) => c!.Path, static (c, v) => c.Path = v);
+            context.AddChild<ResourceInfo, string>(context.label, context.Get<ResourceInfo>(), new ResourcePathPicker(), static (c) => c!.Path, static (c, v) => c.Path = v ?? "");
         }
         context.children[0].ShowUI();
     }

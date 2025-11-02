@@ -12,6 +12,8 @@ public sealed class GizmoManager(Scene scene) : IDisposable
     private readonly HashSet<Transform> notRequestedStandalones = new();
     private readonly List<(GizmoMaterialPreset preset, Material material)> presetMaterials = new();
 
+    public GizmoContainer? ActiveContainer { get; internal set; }
+
     public void Update()
     {
         UpdateActiveGizmos();
@@ -90,8 +92,9 @@ public sealed class GizmoManager(Scene scene) : IDisposable
 
         foreach (var cg in worldSpaceGizmos) {
             cg.Value.UpdateMesh();
+            componentGizmos.Add(cg.Value);
         }
-        // componentGizmos.AddRange(standaloneGizmos.Values);
+
         foreach (var gizmo in componentGizmos) {
             foreach (var item in gizmo.meshDraws) {
                 ogl.Batch.Gizmo.Add(item);
@@ -99,18 +102,7 @@ public sealed class GizmoManager(Scene scene) : IDisposable
 
             foreach (var shape in gizmo.shapeBuilders.Values.OrderByDescending(sb => sb.renderPriority)) {
                 if (shape.mesh != null) {
-                    ref readonly var transform = ref gizmo.Component.Transform.WorldTransform;
-                    ogl.Batch.Gizmo.Add(new GizmoRenderBatchItem(shape.material, shape.mesh, transform, shape.obscuredMaterial));
-                }
-            }
-        }
-        foreach (var cg in worldSpaceGizmos) {
-            foreach (var item in cg.Value.meshDraws) {
-                ogl.Batch.Gizmo.Add(item);
-            }
-
-            foreach (var shape in cg.Value.shapeBuilders.Values.OrderByDescending(sb => sb.renderPriority)) {
-                if (shape.mesh != null) {
+                    // note: the shapes should've already been generated with their matrices applied
                     ogl.Batch.Gizmo.Add(new GizmoRenderBatchItem(shape.material, shape.mesh, Matrix4X4<float>.Identity, shape.obscuredMaterial));
                 }
             }

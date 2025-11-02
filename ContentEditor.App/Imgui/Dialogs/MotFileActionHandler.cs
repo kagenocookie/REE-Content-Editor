@@ -263,7 +263,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                 }
 
                 foreach (var bone in mot.BoneHeaders) {
-                    if (remapConfig.Parents.TryGetValue(bone.boneName, out var newName) || boneHashes.TryGetValue(bone.boneHash, out newName)) {
+                    if (bone.boneName != null && remapConfig.Parents.TryGetValue(bone.boneName, out var newName) || boneHashes.TryGetValue(bone.boneHash, out newName)) {
                         renames.Add((bone.boneName ?? bone.boneHash.ToString()) + " => " + newName);
                         // bone.boneName = newName;
                         // bone.boneHash = MurMur3HashUtils.GetHash(newName);

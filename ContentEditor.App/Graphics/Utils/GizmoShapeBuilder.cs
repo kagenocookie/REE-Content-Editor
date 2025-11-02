@@ -1,4 +1,5 @@
 using System.Numerics;
+using ContentEditor.Core;
 using ImGuiNET;
 using ReeLib.via;
 using Silk.NET.Maths;
@@ -92,7 +93,7 @@ public class GizmoShapeBuilder : IDisposable
         }
     }
 
-    public bool EditableSphere(ref Sphere sphere, out int handleId) => EditableSphere(Matrix4X4<float>.Identity, ref sphere, out handleId);
+    // public bool EditableSphere(ref Sphere sphere, out int handleId) => EditableSphere(Matrix4X4<float>.Identity, ref sphere, out handleId);
     public bool EditableSphere(in Matrix4X4<float> offsetMatrix, ref Sphere sphere, out int handleId)
     {
         Add(in offsetMatrix, sphere);
@@ -158,14 +159,55 @@ public class GizmoShapeBuilder : IDisposable
         }
     }
 
-    public bool EditableAABB(ref AABB aabb, out int handleId) => EditableAABB(Matrix4X4<float>.Identity, ref aabb, out handleId);
     public unsafe bool EditableAABB(in Matrix4X4<float> offsetMatrix, ref AABB aabb, out int handleId)
     {
-        Add(in offsetMatrix, aabb);
-        var pts = stackalloc Vector3[6];
+        Matrix4x4.Decompose(offsetMatrix.ToSystem(), out _, out _, out var offset);
+
+        Add(aabb + offset);
         var center = aabb.Center;
-        var worldCenter = Vector3.Transform(center, offsetMatrix.ToSystem());
+        var worldCenter = Vector3.Transform(Vector3.Zero, offsetMatrix.ToSystem()) + center;
         var size = aabb.Size / 2;
+        var pts = stackalloc Vector3[6];
+        pts[0] = worldCenter + size * UnitDirections[0];
+        pts[1] = worldCenter + size * UnitDirections[1];
+        pts[2] = worldCenter + size * UnitDirections[2];
+        pts[3] = worldCenter + size * UnitDirections[3];
+        pts[4] = worldCenter + size * UnitDirections[4];
+        pts[5] = worldCenter + size * UnitDirections[5];
+        handleId = -1;
+        for (int i = 0; i < 6; ++i) {
+            var pt = pts[i];
+            if (state.PositionHandle(ref pt, out var hid, 5, pt - worldCenter, ImGui.IsKeyDown(ImGuiKey.LeftShift))) {
+                var previousDist = (size * UnitDirections[i]).Length();
+                var newDist = ((pt - worldCenter) * UnitDirections[i]).Length();
+                var deltaDist = (newDist - previousDist) * 0.5f;
+                if (UnitDirections[i].X + UnitDirections[i].Y + UnitDirections[i].Z < 0) {
+                    aabb.minpos += deltaDist * UnitDirections[i];
+                } else {
+                    aabb.maxpos += deltaDist * UnitDirections[i];
+                }
+                handleId = hid;
+            }
+        }
+
+        var posMatrix = Matrix4x4.CreateTranslation(worldCenter);
+        if (PositionHandles(posMatrix, out var newWorldCenter, out var posHandle)) {
+            var worldOffset = newWorldCenter - worldCenter;
+            aabb.minpos += worldOffset;
+            aabb.maxpos += worldOffset;
+            handleId = posHandle;
+        }
+        return handleId != -1;
+    }
+
+    public unsafe bool EditableOBB(in Matrix4X4<float> offsetMatrix, ref OBB box, out int handleId)
+    {
+        Add(in offsetMatrix, box);
+
+        var center = box.Coord.Row3.ToVec3();
+        var worldCenter = Vector3.Transform(center, offsetMatrix.ToSystem());
+        var size = box.Extent;
+        var pts = stackalloc Vector3[6];
         pts[0] = Vector3.Transform(center + size * UnitDirections[0], offsetMatrix.ToSystem());
         pts[1] = Vector3.Transform(center + size * UnitDirections[1], offsetMatrix.ToSystem());
         pts[2] = Vector3.Transform(center + size * UnitDirections[2], offsetMatrix.ToSystem());
@@ -181,11 +223,9 @@ public class GizmoShapeBuilder : IDisposable
                 var newDist = ((Vector3.Transform(pt, invMat) - center) * UnitDirections[i]).Length();
                 var deltaDist = (newDist - previousDist) * 0.5f;
                 if (UnitDirections[i].X + UnitDirections[i].Y + UnitDirections[i].Z < 0) {
-                    aabb.minpos += deltaDist * UnitDirections[i];
-                    aabb.maxpos -= deltaDist * UnitDirections[i];
+                    box.Extent -= deltaDist * UnitDirections[i];
                 } else {
-                    aabb.minpos -= deltaDist * UnitDirections[i];
-                    aabb.maxpos += deltaDist * UnitDirections[i];
+                    box.Extent += deltaDist * UnitDirections[i];
                 }
                 handleId = hid;
             }
@@ -195,28 +235,14 @@ public class GizmoShapeBuilder : IDisposable
         if (PositionHandles(posMatrix, out var newCenter, out var posHandle)) {
             Matrix4x4.Invert(offsetMatrix.ToSystem(), out var invMat);
             var localNewCenter = Vector3.Transform(newCenter, invMat);
-            aabb.minpos += localNewCenter - center;
-            aabb.maxpos += localNewCenter - center;
+            box.Coord = Matrix4x4.CreateTranslation(localNewCenter - center) * box.Coord.ToSystem();
             handleId = posHandle;
-        }
-        return handleId != -1;
-    }
-
-    public bool EditableOBB(ref OBB box, out int handleId) => EditableOBB(Matrix4X4<float>.Identity, ref box, out handleId);
-    public bool EditableOBB(in Matrix4X4<float> offsetMatrix, ref OBB box, out int handleId)
-    {
-        Add(in offsetMatrix, box);
-        var aabb = new AABB(-box.Extent, box.Extent);
-        if (EditableAABB(offsetMatrix * box.Coord.ToGeneric(), ref aabb, out handleId)) {
-            box.Extent = aabb.Size / 2;
-            box.Coord = new mat4(Matrix4x4.CreateTranslation(aabb.Center) * box.Coord.ToSystem());
         }
 
         // TODO add rotation gizmo
         return handleId != -1;
     }
 
-    public bool EditableCapsule(ref Capsule cap, out int handleId) => EditableCapsule(Matrix4X4<float>.Identity, ref cap, out handleId);
     public bool EditableCapsule(in Matrix4X4<float> offsetMatrix, ref Capsule cap, out int handleId)
     {
         Add(in offsetMatrix, cap);
@@ -229,7 +255,6 @@ public class GizmoShapeBuilder : IDisposable
         return false;
     }
 
-    public bool EditableCylinder(ref Cylinder cap, out int handleId) => EditableCylinder(Matrix4X4<float>.Identity, ref cap, out handleId);
     public bool EditableCylinder(in Matrix4X4<float> offsetMatrix, ref Cylinder cap, out int handleId)
     {
         Add(in offsetMatrix, cap);
@@ -257,7 +282,7 @@ public class GizmoShapeBuilder : IDisposable
             cap.p0 = Vector3.Transform(handleBot, inverted.ToSystem());
             handleId = hid;
         }
-        if (state.PositionHandle(ref handleSide, out hid, 10f, handleSide - (handleBot + handleTop) * 0.5f, ImGui.IsKeyDown(ImGuiKey.LeftShift))) {
+        if (state.PositionHandle(ref handleSide, out hid, 10f, handleSide - (handleBot + handleTop) * 0.5f, true)) {
             var center = Vector3.Transform((cap.p0 + cap.p1) * 0.5f, offsetMatrix.ToSystem());
             var newRadius = (handleSide - center).Length();
             cap.r = newRadius;
@@ -279,17 +304,12 @@ public class GizmoShapeBuilder : IDisposable
         => builder.Add(new LineSegment(Vector3.Transform(shape.start, offsetMatrix.ToSystem()), Vector3.Transform(shape.end, offsetMatrix.ToSystem())));
     public void Add(in Matrix4X4<float> offsetMatrix, AABB shape)
     {
-        if (offsetMatrix.IsIdentity) {
-            builder.Add(shape);
-        } else {
-            // if the matrix isn't identity, we can't draw it as a pure AABB shpae and need to redirect to OBB instead - probably
-            // unless the game treats AABBs specially in that no rotations are made, in which case we could decompose and take only the translation from the matrix
-            // TODO verify AABB shape matrix handling
-            Add(offsetMatrix, new OBB(Matrix4x4.CreateTranslation(shape.Center), shape.Size / 2));
-        }
+        // AABBs don't rotate, must only apply the offset position here
+        Matrix4X4.Decompose(offsetMatrix, out _, out _, out var offset);
+        builder.Add(shape + offset.ToSystem());
     }
     public void Add(in Matrix4X4<float> offsetMatrix, OBB shape)
-        => builder.Add(new OBB(offsetMatrix.ToSystem() * shape.Coord.ToSystem(), shape.Extent));
+        => builder.Add(new OBB(shape.Coord.ToSystem() * offsetMatrix.ToSystem(), shape.Extent));
     public void Add(in Matrix4X4<float> offsetMatrix, Sphere shape)
         => builder.Add(new Sphere(Vector3.Transform(shape.pos, offsetMatrix.ToSystem()), shape.r));
     public void Add(in Matrix4X4<float> offsetMatrix, Capsule shape)

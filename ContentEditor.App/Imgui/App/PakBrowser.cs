@@ -611,6 +611,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
 
     private void ShowFileList([NotNull] ref string[]? sortedEntries, float remainingHeight)
     {
+        sortedEntries ??= [];
         var baseList = matchedList!;
         int i = 0;
         var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
@@ -710,7 +711,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             return false;
         }
 
-        if (!reader.FileExists(file)) {
+        if (!reader!.FileExists(file)) {
             var hasLooseFile = File.Exists(Path.Combine(Workspace.Config.GamePath, file));
             if (hasLooseFile) {
                 Logger.Error("File could not be found in the loaded PAK files. Matching loose file was found, the file entry may have been invalidated by Fluffy Mod Manager.");
@@ -753,7 +754,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             if (ImGui.Selectable($"{AppIcons.SI_FileExtractTo} | Extract File to ...")) {
                 var nativePath = file;
                 PlatformUtils.ShowSaveFileDialog((savePath) => {
-                    var stream = reader.GetFile(nativePath);
+                    var stream = reader!.GetFile(nativePath);
                     if (stream == null) {
                         Logger.Error("Could not find file " + nativePath + " in selected PAK files");
                         return;

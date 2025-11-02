@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using ReeLib.via;
 using Silk.NET.Maths;
 
@@ -31,6 +32,9 @@ public class GizmoContainer : IDisposable
 
     internal Dictionary<int, GizmoShapeBuilder> shapeBuilders = new();
 
+    public bool IsActive => scene.GizmoManager!.ActiveContainer == this;
+    public bool CanActivate => scene.GizmoManager!.ActiveContainer == null || scene.GizmoManager!.ActiveContainer == this;
+
     public GizmoContainer(Scene scene, Component component)
     {
         this.scene = scene;
@@ -60,6 +64,24 @@ public class GizmoContainer : IDisposable
     {
         var mat = scene.GizmoManager!.GetMaterial(material);
         PushMaterial(mat, showObscured ? mat : null, geometryType);
+    }
+
+    public void GrabFocus()
+    {
+        Debug.Assert(scene.GizmoManager!.ActiveContainer == null);
+        scene.GizmoManager!.ActiveContainer = this;
+    }
+
+    public void LoseFocus()
+    {
+        Debug.Assert(scene.GizmoManager!.ActiveContainer == this);
+        scene.GizmoManager!.ActiveContainer = null;
+    }
+
+    private void LoseFocusSafe()
+    {
+        if (scene.GizmoManager?.ActiveContainer == this)
+            scene.GizmoManager.ActiveContainer = null;
     }
 
     public void PopMaterial()
@@ -100,6 +122,7 @@ public class GizmoContainer : IDisposable
         foreach (var (path, mesh) in ownedMeshes) {
             scene.RenderContext.UnloadMesh(mesh);
         }
+        LoseFocusSafe();
         ownedMeshes.Clear();
     }
 

@@ -72,52 +72,52 @@ public class Colliders(GameObject gameObject, RszInstance data) : Component(game
                 case "via.physics.ContinuousSphereShape":
                     if (isActive) {
                         var sphere = RszFieldCache.SphereShape.Sphere.Get(shape);
-                        if (gizmo.Cur.EditableSphere(ref sphere, out var hid)) {
+                        if (gizmo.Cur.EditableSphere(transform, ref sphere, out var hid)) {
                             UndoRedo.RecordCallbackSetter(null, shape, RszFieldCache.SphereShape.Sphere.Get(shape), sphere, static (ss, vv) => RszFieldCache.SphereShape.Sphere.Set(ss, vv), $"{shape.GetHashCode()}{hid}");
                         }
                     } else {
-                        gizmo.Add(RszFieldCache.SphereShape.Sphere.Get(shape));
+                        gizmo.Cur.Add(transform, RszFieldCache.SphereShape.Sphere.Get(shape));
                     }
                     break;
                 case "via.physics.AabbShape":
                     if (isActive) {
                         var box = RszFieldCache.AabbShape.Aabb.Get(shape);
-                        if (gizmo.Cur.EditableAABB(ref box, out var hid)) {
+                        if (gizmo.Cur.EditableAABB(transform, ref box, out var hid)) {
                             UndoRedo.RecordCallbackSetter(null, shape, RszFieldCache.AabbShape.Aabb.Get(shape), box, static (ss, vv) => RszFieldCache.AabbShape.Aabb.Set(ss, vv), $"{shape.GetHashCode()}{hid}");
                         }
                     } else {
-                        gizmo.Add(RszFieldCache.AabbShape.Aabb.Get(shape));
+                        gizmo.Cur.Add(transform, RszFieldCache.AabbShape.Aabb.Get(shape));
                     }
                     break;
                 case "via.physics.BoxShape":
                     if (isActive) {
                         var box = RszFieldCache.BoxShape.Box.Get(shape);
-                        if (gizmo.Cur.EditableOBB(ref box, out var hid)) {
+                        if (gizmo.Cur.EditableOBB(transform, ref box, out var hid)) {
                             UndoRedo.RecordCallbackSetter(null, shape, RszFieldCache.BoxShape.Box.Get(shape), box, static (ss, vv) => RszFieldCache.BoxShape.Box.Set(ss, vv), $"{shape.GetHashCode()}{hid}");
                         }
                     } else {
-                        gizmo.Add(RszFieldCache.BoxShape.Box.Get(shape));
+                        gizmo.Cur.Add(transform, RszFieldCache.BoxShape.Box.Get(shape));
                     }
                     break;
                 case "via.physics.CapsuleShape":
                 case "via.physics.ContinuousCapsuleShape":
                     if (isActive) {
                         var cap = RszFieldCache.CapsuleShape.Capsule.Get(shape);
-                        if (gizmo.Cur.EditableCapsule(ref cap, out var hid)) {
+                        if (gizmo.Cur.EditableCapsule(transform, ref cap, out var hid)) {
                             UndoRedo.RecordCallbackSetter(null, shape, RszFieldCache.CapsuleShape.Capsule.Get(shape), cap, static (ss, vv) => RszFieldCache.CapsuleShape.Capsule.Set(ss, vv), $"{shape.GetHashCode()}{hid}");
                         }
                     } else {
-                        gizmo.Add(RszFieldCache.CapsuleShape.Capsule.Get(shape));
+                        gizmo.Cur.Add(transform, RszFieldCache.CapsuleShape.Capsule.Get(shape));
                     }
                     break;
                 case "via.physics.CylinderShape":
                     if (isActive) {
                         var cap = RszFieldCache.CylinderShape.Cylinder.Get(shape);
-                        if (gizmo.Cur.EditableCylinder(ref cap, out var hid)) {
+                        if (gizmo.Cur.EditableCylinder(transform, ref cap, out var hid)) {
                             UndoRedo.RecordCallbackSetter(null, shape, RszFieldCache.CylinderShape.Cylinder.Get(shape), cap, static (ss, vv) => RszFieldCache.CylinderShape.Cylinder.Set(ss, vv), $"{shape.GetHashCode()}{hid}");
                         }
                     } else {
-                        gizmo.Add(RszFieldCache.CylinderShape.Cylinder.Get(shape));
+                        gizmo.Cur.Add(transform, RszFieldCache.CylinderShape.Cylinder.Get(shape));
                     }
                     break;
                 case "via.physics.MeshShape": {
