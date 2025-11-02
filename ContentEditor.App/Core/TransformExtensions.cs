@@ -36,6 +36,11 @@ public static class TransformExtensions
 
     public static AABB ToWorldBounds(this AABB local, Matrix4X4<float> world) => ToWorldBounds(local, world.ToSystem());
 
+    public static Matrix4x4 ToMatrix(this in ReeLib.via.Transform xform)
+    {
+        return Matrix4x4.CreateScale(xform.scale) * Matrix4x4.CreateFromQuaternion(xform.rot) * Matrix4x4.CreateTranslation(xform.pos);
+    }
+
     public static Quaternion<float> CreateLookAtQuaternion(this Vector3 from, Vector3 to, Vector3 up)
     {
         var fwd = Vector3.Normalize(from - to);

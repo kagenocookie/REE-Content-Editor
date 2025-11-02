@@ -1,4 +1,5 @@
 using ContentEditor.App.Graphics;
+using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
@@ -8,7 +9,7 @@ using Silk.NET.Maths;
 namespace ContentEditor.App;
 
 [RszComponentClass("via.render.CompositeMesh")]
-public class CompositeMesh(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data), IFixedClassnameComponent
+public class CompositeMesh(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data), IFixedClassnameComponent, IGizmoComponent
 {
     static string IFixedClassnameComponent.Classname => "via.render.CompositeMesh";
 
@@ -48,9 +49,12 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
 
     public bool HasMesh => meshes.Count != 0;
 
+    bool IGizmoComponent.IsEnabled => AppConfig.Instance.RenderMeshes.Get() && (EditorWindow.CurrentWindow?.HasOpenInspectorForTarget(GameObject) ?? false);
+
     internal override void OnActivate()
     {
         base.OnActivate();
+        Scene!.RootScene.Gizmos.Add(this);
 
         if (!AppConfig.Instance.RenderMeshes.Get()) return;
         ReloadMeshes();
@@ -59,6 +63,7 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
     internal override void OnDeactivate()
     {
         base.OnDeactivate();
+        Scene!.RootScene.Gizmos.Remove(this);
         UnloadMeshes();
     }
 
@@ -165,5 +170,40 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
             context.RenderInstanced(mesh, cache);
             // foreach (var trans in cache) context.RenderSimple(mesh, trans);
         }
+    }
+
+    GizmoContainer? IGizmoComponent.Update(GizmoContainer? gizmo)
+    {
+        gizmo ??= new GizmoContainer(RootScene!, this);
+
+        ref readonly var transformOg = ref GameObject.Transform.WorldTransform;
+        var transform = transformOg.ToSystem();
+        var instances = RszFieldCache.CompositeMesh.InstanceGroups.Get(Data);
+        for (int i = 0; i < instances.Count; i++) {
+            var group = instances[i] as RszInstance;
+            if (group == null) {
+                continue;
+            }
+
+            var transforms = RszFieldCache.CompositeMesh.InstanceGroup.Transforms.Get(group);
+            foreach (var inst in transforms.Cast<RszInstance>()) {
+                if (!RszFieldCache.CompositeMesh.TransformController.Enabled.Get(inst)) continue;
+
+                var pos = RszFieldCache.CompositeMesh.TransformController.LocalPosition.Get(inst);
+                var rot = RszFieldCache.CompositeMesh.TransformController.LocalRotation.Get(inst);
+                var scl = RszFieldCache.CompositeMesh.TransformController.LocalScale.Get(inst);
+                var item = new ReeLib.via.Transform(pos, rot, scl);
+                if (gizmo.Cur.Push().TransformHandle(transform, item, out var newTransform, out int handleId)) {
+                    UndoRedo.RecordCallbackSetter(null, inst, item, newTransform, (obj, newTr) => {
+                        RszFieldCache.CompositeMesh.TransformController.LocalPosition.Set(inst, newTr.pos);
+                        RszFieldCache.CompositeMesh.TransformController.LocalRotation.Set(inst, newTr.rot);
+                        RszFieldCache.CompositeMesh.TransformController.LocalScale.Set(inst, newTr.scale);
+                        RecomputeWorldAABB();
+                    }, $"{inst.GetHashCode()}t");
+                }
+            }
+        }
+
+        return gizmo;
     }
 }

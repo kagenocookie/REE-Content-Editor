@@ -1,4 +1,5 @@
 using ContentEditor.App.Graphics;
+using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
@@ -8,7 +9,7 @@ using Silk.NET.Maths;
 namespace ContentEditor.App;
 
 [RszComponentClass("via.landscape.Foliage")]
-public class Foliage(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data), IFixedClassnameComponent
+public class Foliage(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data), IFixedClassnameComponent, IGizmoComponent
 {
     static string IFixedClassnameComponent.Classname => "via.landscape.Foliage";
 
@@ -43,9 +44,12 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
 
     public bool HasMesh => meshes.Count != 0;
 
+    bool IGizmoComponent.IsEnabled => AppConfig.Instance.RenderMeshes.Get() && (EditorWindow.CurrentWindow?.HasOpenInspectorForTarget(GameObject) ?? false);
+
     internal override void OnActivate()
     {
         base.OnActivate();
+        Scene!.RootScene.Gizmos.Add(this);
 
         if (!AppConfig.Instance.RenderMeshes.Get()) return;
         ReloadMeshes();
@@ -54,6 +58,7 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
     internal override void OnDeactivate()
     {
         base.OnDeactivate();
+        Scene!.RootScene.Gizmos.Remove(this);
         UnloadMeshes();
     }
 
@@ -76,7 +81,6 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
                     continue;
                 }
 
-                // var mat = ctx.LoadMaterialGroup(group.materialPath);
                 var mat = ctx.LoadMaterialGroup(group.materialPath, ShaderFlags.EnableInstancing);
                 var mesh = ctx.LoadMesh(group.meshPath);
                 if (mesh != null) {
@@ -113,15 +117,13 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
 
     private void UpdateInstanceTransforms()
     {
+        if (file == null) {
+            _transformsCache.Clear();
+            return;
+        }
         ref readonly var transform = ref GameObject.Transform.WorldTransform;
         for (int i = 0; i < meshes.Count; i++) {
-            var group = file?.InstanceGroups?[i];
-            if (group == null) {
-                if (_transformsCache.Count > i) {
-                    _transformsCache[i].Clear();
-                }
-                continue;
-            }
+            var group = file.InstanceGroups[i];
 
             List<Matrix4X4<float>> matrices;
             if (_transformsCache.Count > i) {
@@ -154,7 +156,30 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
             var mesh = meshes[i];
             if (cache.Count == 0 || mesh.IsEmpty) continue;
             context.RenderInstanced(mesh, cache);
-            // foreach (var trans in cache) context.RenderSimple(mesh, trans);
         }
+    }
+
+    GizmoContainer? IGizmoComponent.Update(GizmoContainer? gizmo)
+    {
+        if (file == null) return null;
+        gizmo ??= new GizmoContainer(RootScene!, this);
+
+        ref readonly var transformOg = ref GameObject.Transform.WorldTransform;
+        var transform = transformOg.ToSystem();
+
+        for (int i = 0; i < meshes.Count; i++) {
+            var group = file.InstanceGroups[i];
+            for (int m = 0; m < group.transforms!.Length; m++) {
+                var item = group.transforms![m];
+                if (gizmo.Cur.Push().TransformHandle(transform, item, out var newTransform, out int handleId)) {
+                    UndoRedo.RecordCallbackSetter(null, (group.transforms, m), item, newTransform, (obj, newTr) => {
+                        obj.transforms[obj.m] = newTr;
+                        RecomputeWorldAABB();
+                    }, $"{group.GetHashCode()}{m}t");
+                }
+            }
+        }
+
+        return gizmo;
     }
 }

@@ -75,7 +75,7 @@ public class GizmoState(Scene scene, GizmoContainer container)
         var current = children.Last();
         handleId = current.handles.count++;
         if (activeHandle != null && activeHandle != (current.id, handleId) || Scene.MouseHandler == null || !container.CanActivate) {
-            container.PushMaterial((GizmoMaterialPreset)axisType, ShapeBuilder.GeometryType.Filled);
+            container.PushMaterial((GizmoMaterialPreset)(axisType + (int)GizmoMaterialPreset.AxisX), ShapeBuilder.GeometryType.Filled);
             container.Add(new Cylinder(position, cylinderEnd, handleRadius * 0.08f));
             container.Add(new Cone(cylinderEnd, handleRadius * 0.5f, coneEnd, 0.0001f));
             container.PopMaterial();
@@ -83,7 +83,10 @@ public class GizmoState(Scene scene, GizmoContainer container)
         }
         var pos1 = Scene.ActiveCamera.WorldToScreenPosition(position, false, true);
         var pos2 = Scene.ActiveCamera.WorldToScreenPosition(position + axis, false, true);
-        var pos1Offset = Scene.ActiveCamera.WorldToScreenPosition(position + Scene.ActiveCamera.Transform.Right * handleRadius);
+        if (!Scene.ActiveCamera.IsPointInViewport(pos1) && !Scene.ActiveCamera.IsPointInViewport(pos2)) {
+            return false;
+        }
+        var pos1Offset = Scene.ActiveCamera.WorldToScreenPosition(position + Scene.ActiveCamera.Transform.Right * handleRadius, false, true);
         var screenRadius = (pos1 - pos1Offset).Length() * 0.5f;
         if (activeHandle == null) {
             var mouse = Scene.MouseHandler.MouseScreenPosition;
@@ -94,10 +97,10 @@ public class GizmoState(Scene scene, GizmoContainer container)
                         StartDragHandle(current.id, handleId, position, axis, mouse);
                     }
                 } else {
-                    container.PushMaterial((GizmoMaterialPreset)axisType, ShapeBuilder.GeometryType.Filled);
+                    container.PushMaterial((GizmoMaterialPreset)(axisType + (int)GizmoMaterialPreset.AxisX), ShapeBuilder.GeometryType.Filled);
                 }
             } else {
-                container.PushMaterial((GizmoMaterialPreset)axisType, ShapeBuilder.GeometryType.Filled);
+                container.PushMaterial((GizmoMaterialPreset)(axisType + (int)GizmoMaterialPreset.AxisX), ShapeBuilder.GeometryType.Filled);
             }
 
             container.Add(new Cylinder(position, cylinderEnd, handleRadius * 0.08f));

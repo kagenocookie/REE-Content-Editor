@@ -105,6 +105,12 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
         return viewportPosition + offset;
     }
 
+    public bool IsPointInViewport(Vector2 screenPoint)
+    {
+        var size = Scene!.RenderContext.ViewportSize;
+        return screenPoint.X >= 0 && screenPoint.Y >= 0 && screenPoint.X <= size.X && screenPoint.Y <= size.Y;
+    }
+
     /// <summary>
     /// Transforms a screen space position into world space.
     /// </summary>

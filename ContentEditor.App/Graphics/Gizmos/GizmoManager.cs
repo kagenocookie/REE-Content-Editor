@@ -142,6 +142,7 @@ public sealed class GizmoManager(Scene scene) : IDisposable
         }
 
         var material = preset switch {
+            GizmoMaterialPreset.Default => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "default").Color("_MainColor", new Color(0xff, 0xff, 0xff, 0xff)),
             GizmoMaterialPreset.AxisX => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_x").Color("_MainColor", new Color(0xff, 0, 0, 0xff)),
             GizmoMaterialPreset.AxisY => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_y").Color("_MainColor", new Color(0, 0xff, 0, 0xff)),
             GizmoMaterialPreset.AxisZ => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_z").Color("_MainColor", new Color(0, 0, 0xff, 0xff)),

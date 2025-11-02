@@ -6,6 +6,7 @@ namespace ContentEditor.App.Graphics;
 
 public enum GizmoMaterialPreset
 {
+    Default,
     AxisX,
     AxisY,
     AxisZ,
@@ -40,6 +41,7 @@ public class GizmoContainer : IDisposable
         this.scene = scene;
         Component = (Component)component;
         state = new(scene, this);
+        PushMaterial(GizmoMaterialPreset.Default);
     }
 
     public void PushMaterial(Material material, Material? obscuredMaterial = null, ShapeBuilder.GeometryType geometryType = ShapeBuilder.GeometryType.Line, int priority = 0)
@@ -55,15 +57,15 @@ public class GizmoContainer : IDisposable
         shapeStack.Push(sb);
     }
 
-    public void SetShapeGeometryType(ShapeBuilder.GeometryType type)
-    {
-        shapeStack.Peek().GeometryType(type);
-    }
-
     public void PushMaterial(GizmoMaterialPreset material, ShapeBuilder.GeometryType geometryType = ShapeBuilder.GeometryType.Line, bool showObscured = true)
     {
         var mat = scene.GizmoManager!.GetMaterial(material);
         PushMaterial(mat, showObscured ? mat : null, geometryType);
+    }
+
+    public void SetShapeGeometryType(ShapeBuilder.GeometryType type)
+    {
+        shapeStack.Peek().GeometryType(type);
     }
 
     public void GrabFocus()

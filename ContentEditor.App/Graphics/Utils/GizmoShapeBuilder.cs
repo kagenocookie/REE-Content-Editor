@@ -132,6 +132,22 @@ public class GizmoShapeBuilder : IDisposable
         }
     }
 
+    public bool TransformHandle(in Matrix4x4 localToWorld, ReeLib.via.Transform transform, out ReeLib.via.Transform newTransform, out int handleId)
+    {
+        var pos = transform.pos;
+        handleId = -1;
+
+        var matrix = transform.ToMatrix() * localToWorld;
+        var transformed = matrix * localToWorld;
+        if (PositionHandles(transformed, out var newWorldPos, out var hid)) {
+            handleId = hid;
+            transform.pos = Vector3.Transform(newWorldPos, localToWorld);
+        }
+
+        newTransform = transform;
+        return handleId != -1;
+    }
+
     public bool PositionHandles(in Matrix4x4 localToWorldMatrix, out Vector3 newWorldPosition, out int handleId)
     {
         var worldPosition = Vector3.Transform(Vector3.Zero, localToWorldMatrix);

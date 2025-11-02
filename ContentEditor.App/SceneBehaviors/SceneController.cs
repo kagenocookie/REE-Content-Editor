@@ -22,12 +22,6 @@ public class SceneController
     public float ZoomSpeed { get; set; } = 2f;
 
     private float camYaw, camPitch;
-    private Material matGizmoX = null!;
-
-    private void InitGizmoMaterials()
-    {
-        matGizmoX = Scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "xform_x").Color("_MainColor", new Color(0xff, 0x33, 0x33, 0xff));
-    }
 
     public void ShowCameraControls()
     {
@@ -131,14 +125,10 @@ public class SceneController
 
     public void UpdateGizmo(EditorWindow window, GizmoManager manager)
     {
-        if (matGizmoX == null) InitGizmoMaterials();
-
         foreach (var ui in window.ActiveImguiWindows) {
             if (ui.Handler is ObjectInspector inspector && inspector.Target is GameObject go && go.Scene?.RootScene == Scene) {
                 var gizmo = manager.GetOrAddStandaloneGizmo(go.Transform);
-                gizmo.PushMaterial(matGizmoX!);
                 gizmo.Cur.GeometryType(ShapeBuilder.GeometryType.Filled).Push().TransformHandle(go.Transform);
-                gizmo.PopMaterial();
             }
         }
     }
