@@ -153,7 +153,7 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
                                 UndoRedo.RecordCallbackSetter(null, shape, shape.shape, newShape, static (ss, vv) => ss.shape = vv, $"{shape.GetHashCode()}{handleId}");
                             }
                         } else {
-                            gizmo.PushMaterial(activeMaterial, obscuredMaterial, priority: 1);
+                            gizmo.PushMaterial(inactiveMaterial);
                             gizmo.Cur.AddBoxed(in shapeMatrix, shape.shape);
                         }
                         gizmo.PopMaterial();

@@ -59,7 +59,7 @@ public class Colliders(GameObject gameObject, RszInstance data) : Component(game
         ref readonly var transform = ref Transform.WorldTransform;
         gizmo ??= new GizmoContainer(RootScene!, this);
         if (isActive) {
-            gizmo.PushMaterial(lineHighlightMaterial, priority: 1);
+            gizmo.PushMaterial(lineHighlightMaterial, lineHighlightMaterial, priority: 1);
         } else {
             gizmo.PushMaterial(lineMaterial);
         }
