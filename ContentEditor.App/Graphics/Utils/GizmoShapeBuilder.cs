@@ -93,18 +93,25 @@ public class GizmoShapeBuilder : IDisposable
         }
     }
 
-    // public bool EditableSphere(ref Sphere sphere, out int handleId) => EditableSphere(Matrix4X4<float>.Identity, ref sphere, out handleId);
     public bool EditableSphere(in Matrix4X4<float> offsetMatrix, ref Sphere sphere, out int handleId)
     {
         Add(in offsetMatrix, sphere);
         var handlePoint = Vector3.Transform(sphere.pos + sphere.r * Vector3.UnitY, offsetMatrix.ToSystem());
-        if (state.PositionHandle(ref handlePoint, out handleId, 10f)) {
-            var center = Vector3.Transform(sphere.pos, offsetMatrix.ToSystem());
-            var newRadius = (handlePoint - center).Length();
+        handleId = -1;
+        if (state.PositionHandle(ref handlePoint, out var hid, 10f)) {
+            handleId = hid;
+            var worldPos = Vector3.Transform(sphere.pos, offsetMatrix.ToSystem());
+            var newRadius = (handlePoint - worldPos).Length();
             sphere.r = newRadius;
-            return true;
         }
-        return false;
+
+        if (PositionHandles(Matrix4x4.CreateTranslation(sphere.pos) * offsetMatrix.ToSystem(), out var newpos, out hid)) {
+            handleId = hid;
+            Matrix4x4.Invert(offsetMatrix.ToSystem(), out var inverse);
+            sphere.pos = Vector3.Transform(newpos, inverse);
+        }
+
+        return handleId != -1;
     }
 
     public bool TransformHandle(Transform transform)
@@ -150,7 +157,6 @@ public class GizmoShapeBuilder : IDisposable
             handleId = hid;
         }
         if (handleId != -1) {
-            Matrix4x4.Invert(localToWorldMatrix, out var inverse);
             newWorldPosition = worldPosition;
             return true;
         } else {
