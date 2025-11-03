@@ -59,7 +59,7 @@ public static class FileLoaderExtensions
     public static TFile RewriteClone<TFile>(this TFile file, ContentWorkspace workspace) where TFile : BaseFile
     {
         var stream = new MemoryStream();
-        var handler = new FileHandler(stream) { FileVersion = file.FileHandler.FileVersion };
+        var handler = new FileHandler(stream, file.FileHandler.FilePath) { FileVersion = file.FileHandler.FileVersion };
         file.WriteTo(handler, false);
         handler.Seek(0);
         var newFile = DefaultFileLoader<TFile>.GetFileConstructor().Invoke(workspace, handler);

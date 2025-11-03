@@ -4,5 +4,5 @@ namespace ContentPatcher;
 
 public class AimpFileLoader : DefaultFileLoader<AimpFile>
 {
-    public AimpFileLoader() : base(KnownFileFormats.AIMap) { SaveRawStream = true; }
+    public AimpFileLoader() : base(KnownFileFormats.AIMap) { }
 }
