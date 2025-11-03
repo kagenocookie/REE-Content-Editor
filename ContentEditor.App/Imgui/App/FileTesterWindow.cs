@@ -422,6 +422,7 @@ public class FileTesterWindow : IWindowHandler
             case KnownFileFormats.GUI: return VerifyRewriteEquality<GuiFile>(source.GetFile<GuiFile>(), env);
             case KnownFileFormats.CollisionMesh: return VerifyRewriteEquality<McolFile>(source.GetFile<McolFile>(), env);
             case KnownFileFormats.CompositeCollision: return VerifyRewriteEquality<CocoFile>(source.GetFile<CocoFile>(), env);
+            case KnownFileFormats.AIMap: return VerifyRewriteEquality<AimpFile>(source.GetFile<AimpFile>(), env);
             default: return null;
         }
     }
@@ -540,6 +541,7 @@ public class FileTesterWindow : IWindowHandler
 
         AddCompareMapper<McolFile>((m) => [m.bvh]);
         AddCompareMapper<CocoFile>((m) => [m.CollisionMeshPaths, m.Trees]);
+        AddCompareMapper<ReeLib.Aimp.AimpHeader>((m) => [m.agentRadWhenBuild, m.guid, m.hash, m.uriHash, m.mapType, m.name, m.uknId, m.sectionType]);
     }
 
     private static Dictionary<Type, Func<object, IEnumerable<object?>>> comparedValueMappers = new();
