@@ -264,6 +264,8 @@ public static partial class WindowHandlerFactory
                 return new GroundMaterialEditor(file);
             case KnownFileFormats.GUI:
                 return new GuiEditor(env, file);
+            case KnownFileFormats.AIMap:
+                return new AimapEditor(env, file);
         }
 
         if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {

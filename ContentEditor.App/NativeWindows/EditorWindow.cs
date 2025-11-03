@@ -574,7 +574,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     AddSubwindow(new PakBrowser(workspace, null));
                 }
                 if (ImGui.MenuItem("Data Search")) {
-                    AddUniqueSubwindow(new RszDataFinder());
+                    AddSubwindow(new RszDataFinder());
                 }
             }
             ImGui.EndMenu();
