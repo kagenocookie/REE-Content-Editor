@@ -23,6 +23,18 @@ public static class Colors
 
     public static Vector4 Colliders => new Vector4(0, 1, 0, 0.8f);
     public static Vector4 RequestSetColliders => new Vector4(1, 0.4f, 0.1f, 0.8f);
+    /// <summary>Cardboard</summary>
+    public static Vector4 PFB => new Vector4(0.80f, 0.62f, 0.38f, 1);
+    /// <summary>Purple</summary>
+    public static Vector4 SCN => new Vector4(0.53f, 0.29f, 0.91f, 1);
+    /// <summary>Cerulean</summary>
+    public static Vector4 MESH => new Vector4(0, 0.54f, 0.94f, 1);
+    /// <summary>Cyan</summary>
+    public static Vector4 MCOL => new Vector4(0, 0.85f, 1, 1);
+    /// <summary>Rust</summary>
+    public static Vector4 RCOL => new Vector4(0.85f, 0.27f, 0.25f, 1);
+    /// <summary>Gold</summary>
+    public static Vector4 MDF => new Vector4(0.93f, 0.55f, 0.07f, 1);
 }
 
 public sealed class AppColors
