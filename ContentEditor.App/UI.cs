@@ -173,8 +173,22 @@ public static class AppIcons
     public static readonly char SI_ViewEnabled = '\ued1c';
     public static readonly char SI_ViewDisabled = '\ued1d';
     public static readonly char SI_PathShort = '\ued1e';
+    public static readonly char SI_ViewList = '\ued1f';
+    public static readonly char SI_ViewGridBig = '\ued20';
+    public static readonly char SI_ViewGridSmall = '\ued21';
+    public static readonly char SI_FileType_MDF = '\ued22';
+    public static readonly char SI_FileType_MMTR = '\ued23';
+    public static readonly char SI_FileType_TEX = '\ued24';
+    public static readonly char SI_FileType_UVS = '\ued25';
+    public static readonly char SI_FileType_USER = '\ued26';
+    public static readonly char SI_FileType_SCN = '\ued2a';
+    public static readonly char SI_FileType_MESH = '\ued2b';
+    public static readonly char SI_FileType_PREFAB = '\ued2c';
+    public static readonly char SI_FileType_MCOL = '\ued2d';
+    public static readonly char SI_FileType_RCOL = '\ued2e';
+    public static readonly char SI_FileType_COCO = '\ued2f';
 
-    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_PathShort, 0];
+    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_FileType_COCO, 0];
 
     public static string PrependIcon(this string text, object target)
     {
@@ -208,12 +222,18 @@ public static class AppIcons
         _ => '\0',
     };
     public static (char icon, Vector4 color) GetIcon(KnownFileFormats format) => format switch {
-        KnownFileFormats.Prefab => (Prefab, Colors.GameObject),
-        KnownFileFormats.Scene => (Folder, Colors.Folder),
+        KnownFileFormats.Prefab => (SI_FileType_PREFAB, Colors.PFB),
+        KnownFileFormats.Scene => (SI_FileType_SCN, Colors.SCN),
         KnownFileFormats.Effect => (Efx, Vector4.One),
-        KnownFileFormats.Mesh => (Mesh, Vector4.One),
-        KnownFileFormats.RequestSetCollider => (Mesh, Colors.RequestSetColliders),
-        KnownFileFormats.CollisionMesh => (Mesh, Colors.Colliders),
+        KnownFileFormats.Mesh => (SI_FileType_MESH, Colors.MESH),
+        KnownFileFormats.CollisionMesh => (SI_FileType_MCOL, Colors.MCOL),
+        KnownFileFormats.RequestSetCollider => (SI_FileType_RCOL, Colors.RCOL),
+        KnownFileFormats.MaterialDefinition => (SI_FileType_MDF, Colors.MDF),
+        KnownFileFormats.MasterMaterial => (SI_FileType_MMTR, Colors.MDF),
+        KnownFileFormats.Texture => (SI_FileType_TEX, Vector4.One),
+        KnownFileFormats.UVSequence => (SI_FileType_UVS, Vector4.One),
+        KnownFileFormats.UserData => (SI_FileType_USER, Vector4.One),
+        KnownFileFormats.CompositeCollision => (SI_FileType_COCO, Vector4.One),
         _ => ('\0', Vector4.One),
     };
 }
