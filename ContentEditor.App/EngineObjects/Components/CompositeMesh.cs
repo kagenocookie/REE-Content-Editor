@@ -54,7 +54,7 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
     internal override void OnActivate()
     {
         base.OnActivate();
-        Scene!.RootScene.Gizmos.Add(this);
+        Scene!.Root.Gizmos.Add(this);
 
         if (!AppConfig.Instance.RenderMeshes.Get()) return;
         ReloadMeshes();
@@ -63,7 +63,7 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
     internal override void OnDeactivate()
     {
         base.OnDeactivate();
-        Scene!.RootScene.Gizmos.Remove(this);
+        Scene!.Root.Gizmos.Remove(this);
         UnloadMeshes();
     }
 

@@ -32,7 +32,7 @@ public sealed class GizmoManager(Scene scene) : IDisposable
         }
 
         foreach (var (comp, cont) in containers) {
-            if (!scene.Gizmos.components.Contains(comp)) {
+            if (!scene.Root.Gizmos.components.Contains(comp)) {
                 removedComponents.Add(comp);
             }
         }
@@ -43,7 +43,7 @@ public sealed class GizmoManager(Scene scene) : IDisposable
         }
         removedComponents.Clear();
 
-        foreach (var comp in scene.Gizmos.components) {
+        foreach (var comp in scene.Root.Gizmos.components) {
             if (!comp.IsEnabled || !((Component)comp).GameObject.ShouldDraw) continue;
             var localBounds = comp.Bounds;
             if (!localBounds.IsInvalid) {

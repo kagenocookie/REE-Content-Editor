@@ -5,7 +5,7 @@ using Silk.NET.Input;
 
 namespace ContentEditor.App;
 
-public class SceneMouseHandler
+public class SceneMouseHandler(Scene scene)
 {
     public event Action<ImGuiMouseButton, Vector2>? Clicked;
     public event Action<ImGuiMouseButton, Vector2>? DoubleClicked;
@@ -15,9 +15,7 @@ public class SceneMouseHandler
     public event Action<Vector2>? StartDragging;
     public event Action<Vector2>? StopDragging;
 
-    public Scene? scene;
-
-    private Vector2 ViewportOffset => (scene?.RenderContext.ViewportOffset ?? new());
+    private Vector2 ViewportOffset => scene.RenderContext.ViewportOffset;
     public Vector2 MouseViewportPosition { get; private set; }
     public Vector2 MouseScreenPosition => MouseViewportPosition + ViewportOffset;
 
@@ -183,7 +181,7 @@ public class SceneMouseHandler
         if (!AnyMouseDown && isDragging) {
             isDragging = false;
             StopDragging?.Invoke(position);
-            scene?.Controller?.OnMouseDragEnd(mouse, dragStartButton, position, _dragStartPos + ViewportOffset);
+            scene.Controller.OnMouseDragEnd(mouse, dragStartButton, position, _dragStartPos + ViewportOffset);
         }
     }
 
@@ -204,18 +202,18 @@ public class SceneMouseHandler
                     _dragStartPos = position;
                     _dragDelta = Vector2.Zero;
                     StartDragging?.Invoke(position);
-                    scene?.Controller?.OnMouseDragStart(mouse, dragStartButton, position);
+                    scene?.Controller.OnMouseDragStart(mouse, dragStartButton, position);
                 }
                 isDragging = true;
                 Dragging?.Invoke(position);
-                scene?.Controller?.OnMouseDrag(DownFlags, position, _dragDelta);
+                scene?.Controller.OnMouseDrag(DownFlags, position, _dragDelta);
             }
         }
     }
 
     public void Update()
     {
-        if (scene?.Controller?.ZoomSpeed > 0) {
+        if (scene.Controller.ZoomSpeed > 0) {
             float wheel = MouseWheelDelta.Y;
             if (Math.Abs(wheel) > float.Epsilon) {
                 if (scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective) {

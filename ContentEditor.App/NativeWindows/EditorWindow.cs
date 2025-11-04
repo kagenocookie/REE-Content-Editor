@@ -42,7 +42,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
     private static bool runningRszInference;
 
-    private bool IsDragging => SceneManager.RootMasterScenes.Any(ss => ss.MouseHandler?.IsDragging == true);
+    private bool IsDragging => SceneManager.RootMasterScenes.Any(ss => ss.Mouse.IsDragging);
 
     protected bool isBaseWindowFocused;
 
@@ -115,9 +115,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         if (!ImGui.GetIO().WantCaptureMouse) {
             var wheel = ImGui.GetIO().MouseWheel;
             foreach (var scene in SceneManager.RootMasterScenes) {
-                if (!scene.IsActive || scene.MouseHandler == null) continue;
+                if (!scene.IsActive) continue;
 
-                scene.MouseHandler.MouseWheelDelta = new Vector2(0, wheel);
+                scene.Mouse.MouseWheelDelta = new Vector2(0, wheel);
             }
         }
         SceneManager.Update(deltaTime);
@@ -200,9 +200,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         if (button > MouseButton.Middle || button < MouseButton.Left) return;
 
         foreach (var scene in SceneManager.RootMasterScenes) {
-            scene.MouseHandler ??= new();
-            scene.MouseHandler.scene = scene;
-            scene.MouseHandler.HandleMouseDown((ImGuiMouseButton)button, position);
+            scene.Mouse.HandleMouseDown((ImGuiMouseButton)button, position);
         }
     }
 
@@ -215,9 +213,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             var allowHandle = ImGui.GetIO().WantCaptureMouse == (scene.OwnRenderContext.RenderTargetTextureHandle != 0);
             if (!allowHandle) continue;
 
-            scene.MouseHandler ??= new();
-            scene.MouseHandler.scene = scene;
-            scene.MouseHandler.HandleMouseUp(LastMouse, (ImGuiMouseButton)button, position);
+            scene.Mouse.HandleMouseUp(LastMouse, (ImGuiMouseButton)button, position);
         }
     }
 
@@ -226,9 +222,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         foreach (var scene in SceneManager.RootScenes) {
             if (!scene.IsActive) continue;
 
-            scene.MouseHandler ??= new();
-            scene.MouseHandler.scene = scene;
-            scene.MouseHandler.HandleMouseMove(LastMouse, pos);
+            scene.Mouse.HandleMouseMove(LastMouse, pos);
         }
     }
 
@@ -546,10 +540,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 } else {
                     if (ImGui.MenuItem(scene.Name)) {
                         SceneManager.ChangeMasterScene(scene);
-                        scene.Controller ??= new();
                         scene.Controller.Keyboard = _inputContext.Keyboards[0];
                         scene.Controller.MoveSpeed = AppConfig.Settings.SceneView.MoveSpeed;
-                        scene.Controller.Scene = scene;
                         scene.AddWidget<SceneVisibilitySettings>();
                         scene.AddWidget<SceneCameraControls>();
                     }
@@ -680,9 +672,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
         var viewportOffset = new Vector2(0, ImGui.CalcTextSize("a").Y + ImGui.GetStyle().FramePadding.Y * 2);
         foreach (var sc in SceneManager.RootMasterScenes) {
-            if (sc.MouseHandler != null) {
-                sc.OwnRenderContext.UIOffset = viewportOffset;
-            }
+            sc.OwnRenderContext.UIOffset = viewportOffset;
         }
         BeginDockableBackground(viewportOffset);
         if (Overlays != null) {
