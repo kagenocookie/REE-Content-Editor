@@ -1,6 +1,8 @@
 using System.Numerics;
 using ContentEditor.App.Windowing;
+using ContentPatcher;
 using ImGuiNET;
+using ReeLib.Aimp;
 using ReeLib.Common;
 using ReeLib.via;
 
@@ -57,6 +59,18 @@ public class Vector3FieldHandler : Singleton<Vector3FieldHandler>, IObjectUIHand
     {
         var val = context.Get<Vector3>();
         if (ImGui.DragFloat3(context.label, ref val, 0.01f)) UndoRedo.RecordSet(context, val);
+        AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);
+    }
+}
+
+[ObjectImguiHandler(typeof(PaddedVec3), Stateless = true)]
+public class PaddedVec3FieldHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var val = context.Get<PaddedVec3>();
+        var valVec = val.Vector3;
+        if (ImGui.DragFloat3(context.label, ref valVec, 0.01f)) UndoRedo.RecordSet(context, new PaddedVec3(valVec.X, valVec.Y, valVec.Z));
         AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);
     }
 }
