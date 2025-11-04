@@ -183,12 +183,24 @@ public static class AppIcons
     public static readonly char SI_FileType_USER = '\ued26';
     public static readonly char SI_FileType_SCN = '\ued2a';
     public static readonly char SI_FileType_MESH = '\ued2b';
-    public static readonly char SI_FileType_PREFAB = '\ued2c';
+    public static readonly char SI_FileType_PFB = '\ued2c';
     public static readonly char SI_FileType_MCOL = '\ued2d';
     public static readonly char SI_FileType_RCOL = '\ued2e';
     public static readonly char SI_FileType_COCO = '\ued2f';
+    public static readonly char SI_GenericMagnifyingGlass = '\ued30';
+    public static readonly char SI_SceneGameObject = '\ued31';
+    public static readonly char SI_SceneGameObject2 = '\ued32';
+    public static readonly char SI_SceneGameObject3 = '\ued33';
+    public static readonly char SI_SceneParentGameObject = '\ued34';
+    public static readonly char SI_SceneBoundingBox = '\ued35';
+    public static readonly char SI_FileType_UVAR = '\ued36';
+    public static readonly char SI_FileType_MOT = '\ued37';
+    public static readonly char SI_FileType_MOTTREE = '\ued38';
+    public static readonly char SI_FileType_MOTLIST = '\ued39';
+    public static readonly char SI_FileType_MOTBANK = '\ued3a';
+    public static readonly char SI_FileType_GPUMOTLIST = '\ued3b';
 
-    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_FileType_COCO, 0];
+    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_FileType_GPUMOTLIST, 0];
 
     public static string PrependIcon(this string text, object target)
     {
@@ -222,7 +234,7 @@ public static class AppIcons
         _ => '\0',
     };
     public static (char icon, Vector4 color) GetIcon(KnownFileFormats format) => format switch {
-        KnownFileFormats.Prefab => (SI_FileType_PREFAB, Colors.PFB),
+        KnownFileFormats.Prefab => (SI_FileType_PFB, Colors.PFB),
         KnownFileFormats.Scene => (SI_FileType_SCN, Colors.SCN),
         KnownFileFormats.Effect => (Efx, Vector4.One),
         KnownFileFormats.Mesh => (SI_FileType_MESH, Colors.MESH),
@@ -233,7 +245,13 @@ public static class AppIcons
         KnownFileFormats.Texture => (SI_FileType_TEX, Vector4.One),
         KnownFileFormats.UVSequence => (SI_FileType_UVS, Vector4.One),
         KnownFileFormats.UserData => (SI_FileType_USER, Vector4.One),
+        KnownFileFormats.UserVariables => (SI_FileType_UVAR, Vector4.One),
         KnownFileFormats.CompositeCollision => (SI_FileType_COCO, Vector4.One),
+        KnownFileFormats.Motion => (SI_FileType_MOT, Vector4.One),
+        KnownFileFormats.MotionTree => (SI_FileType_MOTTREE, Vector4.One),
+        KnownFileFormats.MotionList => (SI_FileType_MOTLIST, Vector4.One),
+        KnownFileFormats.MotionBank => (SI_FileType_MOTBANK, Vector4.One),
+        KnownFileFormats.GpuMotionList => (SI_FileType_GPUMOTLIST, Vector4.One),
         _ => ('\0', Vector4.One),
     };
 }
