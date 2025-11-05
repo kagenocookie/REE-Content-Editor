@@ -62,6 +62,8 @@ public sealed class GizmoManager(Scene scene) : IDisposable
             if (newContainer != null) {
                 containers[comp] = newContainer;
                 componentGizmos.Add(newContainer);
+            } else {
+                containers.Remove(comp);
             }
         }
     }

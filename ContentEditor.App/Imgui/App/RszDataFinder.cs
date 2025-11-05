@@ -63,7 +63,7 @@ public class RszDataFinder : IWindowHandler
     private string[]? classNames;
     private static readonly string[] FindTypes = ["RSZ Data", "Messages", "EFX", "Uvar", "Mot", "GUI"];
     private static readonly Dictionary<string, RszFieldType[]> RszFilterableFields = new () {
-        { "String", [RszFieldType.String, RszFieldType.Resource, RszFieldType.RuntimeType] },
+        { "String / Resource", [RszFieldType.String, RszFieldType.Resource, RszFieldType.RuntimeType] },
         { "Userdata Reference", [RszFieldType.UserData] },
         { "Signed Integer", [RszFieldType.S64, RszFieldType.S32, RszFieldType.S16, RszFieldType.S8, RszFieldType.Enum] },
         { "Unsigned Integer", [RszFieldType.U64, RszFieldType.U32, RszFieldType.U16, RszFieldType.UByte, RszFieldType.Enum] },

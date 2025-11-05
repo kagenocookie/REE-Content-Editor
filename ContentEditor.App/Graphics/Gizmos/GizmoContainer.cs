@@ -176,4 +176,6 @@ public class GizmoContainer : IDisposable
     public void Add(LineSegment shape) => shapeStack.Peek().Add(shape);
 
     public GizmoShapeBuilder Cur => shapeStack.Peek();
+
+    public override string ToString() => Component.ToString();
 }

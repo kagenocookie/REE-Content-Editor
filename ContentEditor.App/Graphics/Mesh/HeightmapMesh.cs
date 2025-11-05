@@ -111,4 +111,11 @@ public class HeightmapMesh : Mesh
             Indices = new int[totalVerts * 6];
         }
     }
+
+    public override Mesh Clone()
+    {
+        var mm = new HeightmapMesh();
+        CopyGeometryDataReuseArrays(mm);
+        return mm;
+    }
 }

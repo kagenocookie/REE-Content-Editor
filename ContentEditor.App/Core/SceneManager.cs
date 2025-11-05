@@ -106,6 +106,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
             if (master.IsActive) {
                 if (master == scene) return;
                 master.SetActive(false);
+                master.Root.DisableEditMode();
             }
         }
 

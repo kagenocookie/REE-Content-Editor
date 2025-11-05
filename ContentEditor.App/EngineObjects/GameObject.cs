@@ -232,6 +232,13 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         return Components.OfType<TComponent>().First();
     }
 
+    public TComponent GetOrAddComponent<TComponent>() where TComponent : Component, IFixedClassnameComponent
+    {
+        var existing = GetComponent<TComponent>();
+        if (existing == null) existing = AddComponent<TComponent>();
+        return existing;
+    }
+
     public GameObject? Find(ReadOnlySpan<char> path)
     {
         var part = path.IndexOf('/');

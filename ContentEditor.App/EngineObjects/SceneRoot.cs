@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
 
@@ -23,7 +24,7 @@ public class SceneRoot : IDisposable
     public SceneMouseHandler MouseHandler { get; }
     public SceneController Controller { get; }
 
-    private readonly Dictionary<string, (EditModeHandler? handler, HashSet<IEditableComponent> list)> _editableComponents = new();
+    private readonly Dictionary<Type, (EditModeHandler? handler, HashSet<IEditableComponent> list)> _editableComponents = new();
 
     public SceneRoot(Scene scene)
     {
@@ -40,8 +41,9 @@ public class SceneRoot : IDisposable
 
     public void RegisterEditableComponent(IEditableComponent component)
     {
-        if (!_editableComponents.TryGetValue(component.EditTypeID, out var list)) {
-            _editableComponents[component.EditTypeID] = list = (null, new HashSet<IEditableComponent>());
+        if (!_editableComponents.TryGetValue(component.EditHandlerType, out var list)) {
+            AddEditMode(component.EditHandlerType);
+            list = _editableComponents[component.EditHandlerType];
         }
 
         list.list.Add(component);
@@ -49,7 +51,7 @@ public class SceneRoot : IDisposable
 
     public void UnregisterEditableComponent(IEditableComponent component)
     {
-        if (_editableComponents.TryGetValue(component.EditTypeID, out var list)) {
+        if (_editableComponents.TryGetValue(component.EditHandlerType, out var list)) {
             list.list.Remove(component);
             if (ActiveEditMode == list.handler && ActiveEditMode?.Target == component) {
                 ActiveEditMode.SetTarget(null);
@@ -57,42 +59,75 @@ public class SceneRoot : IDisposable
         }
     }
 
-    public IEnumerable<IEditableComponent> GetEditableComponents(string editModeId)
+    public IEnumerable<EditModeHandler> GetAvailableEditModes()
     {
-        if (_editableComponents.TryGetValue(editModeId, out var list)) {
+        return _editableComponents
+            .Where(kv => kv.Value.list.Count > 0 && kv.Value.handler != null)
+            .Select(kv => kv.Value.handler!);
+    }
+
+    public EditModeHandler GetOrAddEditMode<TEditMode>() where TEditMode : EditModeHandler, new()
+    {
+        if (!_editableComponents.TryGetValue(typeof(TEditMode), out var data) || data.handler == null) {
+            return AddEditMode(typeof(TEditMode));
+        }
+
+        return data.handler;
+    }
+
+    public IEnumerable<IEditableComponent> GetEditableComponents(EditModeHandler handler)
+    {
+        if (_editableComponents.TryGetValue(handler.GetType(), out var list)) {
             return list.list;
         }
         return Array.Empty<IEditableComponent>();
     }
 
-    public EditModeHandler? SetEditMode<TComponent>(TComponent component) where TComponent : Component, IEditableComponent
+    public void DisableEditMode()
     {
-        var typeId = component.EditTypeID;
-        if (_editableComponents?.TryGetValue(typeId, out var list) != true || !list.list.Contains(component)) {
-            Logger.Error($"Attempted to enter {typeId} edit mode of unregistered component " + component);
+        if (ActiveEditMode != null) {
+            ActiveEditMode.SetTarget(null);
+        }
+        ActiveEditMode = null;
+    }
+
+    public EditModeHandler? SetEditMode<TComponent>(TComponent component) where TComponent : class, IEditableComponent
+    {
+        Debug.Assert(component is Component);
+        var type = component.EditHandlerType;
+        if (!_editableComponents.TryGetValue(type, out var list) || !list.list.Contains(component)) {
+            Logger.Error($"Attempted to enter {type} edit mode of unregistered component " + component);
             return null;
         }
 
         if (ActiveEditMode != null) {
             if (ActiveEditMode.Target == component) return ActiveEditMode;
 
-            if (ActiveEditMode.EditTypeID != typeId) {
-                ActiveEditMode.SetTarget(component);
+            if (ActiveEditMode.GetType() != type) {
+                ActiveEditMode.SetTarget(component as Component);
                 return null;
             }
 
             ActiveEditMode.SetTarget(null);
         }
 
+        ActiveEditMode = AddEditMode(component.EditHandlerType);
+        ActiveEditMode.SetTarget(component as Component);
+        return ActiveEditMode;
+    }
+
+    private EditModeHandler AddEditMode(Type editMode)
+    {
+        _editableComponents.TryGetValue(editMode, out var list);
+
         if (list.handler == null) {
-            list.handler = (EditModeHandler)Activator.CreateInstance(component.EditHandlerType)!;
+            list.handler = (EditModeHandler)Activator.CreateInstance(editMode)!;
             list.handler.Init(Scene);
-            _editableComponents[typeId] = list;
+            list.list ??= new();
+            _editableComponents[editMode] = list;
         }
 
-        ActiveEditMode = list.handler;
-        ActiveEditMode.SetTarget(component);
-        return ActiveEditMode;
+        return list.handler;
     }
 
     internal void Update(float deltaTime)
