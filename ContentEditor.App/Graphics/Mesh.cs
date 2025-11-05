@@ -174,4 +174,25 @@ public abstract class Mesh : IDisposable
             Indices[i] = i;
         }
     }
+
+    public virtual Mesh Clone()
+    {
+        var newInstance = (Mesh)Activator.CreateInstance(GetType())!;
+        CopyGeometryData(newInstance);
+        return newInstance;
+    }
+
+    protected void CopyGeometryData(Mesh target)
+    {
+        target.GL = GL;
+        target.VertexData = new float[VertexData.Length];
+        Array.Copy(VertexData, target.VertexData, VertexData.Length);
+        target.Indices = new int[Indices.Length];
+        Array.Copy(Indices, target.Indices, Indices.Length);
+        target.BoundingBox = BoundingBox;
+        target.MeshGroup = MeshGroup;
+        target.attributes = attributes;
+        target.MeshType = MeshType;
+        target._flags = _flags;
+    }
 }

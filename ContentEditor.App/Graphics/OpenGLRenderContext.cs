@@ -200,12 +200,15 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
                     meshlist.Add(newMesh);
                 }
             }
+            meshResource.PreloadedMeshes = meshlist;
         }
 
+        // because the PreloadedMeshes list is shared globally per file, we can't reuse it directly because references are counted per rendercontext
+        // if this method got called, it means we definitely didn't have it locally yet, therefore always Clone() here
         int meshIdx = 0;
         foreach (var group in mainLod.MeshGroups) {
             foreach (var sub in group.Submeshes) {
-                var newMesh = meshlist[meshIdx++];
+                var newMesh = meshlist[meshIdx++].Clone();
                 newMesh.Initialize(GL);
                 handle.SetMaterialName(handle.Meshes.Count, meshFile.MaterialNames[sub.materialIndex]);
                 handle.Bones = boneList;

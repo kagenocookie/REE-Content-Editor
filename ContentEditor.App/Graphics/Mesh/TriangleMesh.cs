@@ -9,6 +9,8 @@ namespace ContentEditor.App.Graphics;
 
 public class TriangleMesh : Mesh
 {
+    private TriangleMesh() {}
+
     public TriangleMesh(GL gl, float[] vertexData, int[] indices) : base(gl)
     {
         VertexData = vertexData;
@@ -108,6 +110,13 @@ public class TriangleMesh : Mesh
         }
 
         BoundingBox = sourceMesh.MeshData?.boundingBox ?? default;
+    }
+
+    public override Mesh Clone()
+    {
+        var copy = new TriangleMesh();
+        CopyGeometryData(copy);
+        return copy;
     }
 
     public override string ToString() => $"{VAO} {VBO} indices: {Indices.Length}";

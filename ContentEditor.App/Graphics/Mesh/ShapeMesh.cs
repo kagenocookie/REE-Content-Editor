@@ -9,6 +9,8 @@ public class ShapeMesh : Mesh
 {
     public ShapeType ShapeType { get; private set; } = ShapeType.Invalid;
 
+    private ShapeMesh() { }
+
     public ShapeMesh(GL gl) : base(gl)
     {
     }
