@@ -199,8 +199,19 @@ public static class AppIcons
     public static readonly char SI_FileType_MOTLIST = '\ued39';
     public static readonly char SI_FileType_MOTBANK = '\ued3a';
     public static readonly char SI_FileType_GPUMOTLIST = '\ued3b';
+    public static readonly char SI_FileType_CFIL = '\ued3c';
+    public static readonly char SI_FileType_CDEF = '\ued3d';
+    public static readonly char SI_FileType_CMAT = '\ued3e';
+    public static readonly char SI_FileType_FOL = '\ued3f';
+    public static readonly char SI_FileType_GPBF = '\ued40';
+    public static readonly char SI_FileType_GPUC = '\ued41';
+    public static readonly char SI_FileType_RTEX = '\ued42';
+    public static readonly char SI_FileType_EFX = '\ued43';
+    public static readonly char SI_FileType_TML = '\ued44';
+    public static readonly char SI_FileType_CLIP = '\ued45';
+    public static readonly char SI_FileType_SceneEffect = '\ued46';
 
-    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_FileType_GPUMOTLIST, 0];
+    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_FileType_SceneEffect, 0];
 
     public static string PrependIcon(this string text, object target)
     {
@@ -236,7 +247,6 @@ public static class AppIcons
     public static (char icon, Vector4 color) GetIcon(KnownFileFormats format) => format switch {
         KnownFileFormats.Prefab => (SI_FileType_PFB, Colors.PFB),
         KnownFileFormats.Scene => (SI_FileType_SCN, Colors.SCN),
-        KnownFileFormats.Effect => (Efx, Vector4.One),
         KnownFileFormats.Mesh => (SI_FileType_MESH, Colors.MESH),
         KnownFileFormats.CollisionMesh => (SI_FileType_MCOL, Colors.MCOL),
         KnownFileFormats.RequestSetCollider => (SI_FileType_RCOL, Colors.RCOL),
@@ -252,6 +262,16 @@ public static class AppIcons
         KnownFileFormats.MotionList => (SI_FileType_MOTLIST, Vector4.One),
         KnownFileFormats.MotionBank => (SI_FileType_MOTBANK, Vector4.One),
         KnownFileFormats.GpuMotionList => (SI_FileType_GPUMOTLIST, Vector4.One),
+        KnownFileFormats.CollisionFilter => (SI_FileType_CFIL, Vector4.One),
+        KnownFileFormats.CollisionDefinition => (SI_FileType_CDEF, Vector4.One),
+        KnownFileFormats.CollisionMaterial => (SI_FileType_CMAT, Vector4.One),
+        KnownFileFormats.Foliage => (SI_FileType_FOL, Vector4.One),
+        KnownFileFormats.ByteBuffer => (SI_FileType_GPBF, Vector4.One),
+        KnownFileFormats.GpuCloth => (SI_FileType_GPUC, Vector4.One),
+        KnownFileFormats.RenderTexture => (SI_FileType_RTEX, Vector4.One),
+        KnownFileFormats.Effect => (SI_FileType_EFX, Vector4.One),
+        KnownFileFormats.Timeline => (SI_FileType_TML, Vector4.One),
+        KnownFileFormats.Clip => (SI_FileType_CLIP, Vector4.One),
         _ => ('\0', Vector4.One),
     };
 }
