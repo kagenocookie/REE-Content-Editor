@@ -30,25 +30,25 @@ public class RcolEditMode : EditModeHandler
 
     public override void OnIMGUI()
     {
-        if (Target is RequestSetColliderComponent curst) {
+        if (Target is RequestSetColliderComponent comp) {
             var editedTarget = PrimaryEditor?.PrimaryTarget;
             if (editedTarget == null) {
-                curst.activeGroup = null;
+                comp.activeGroup = null;
                 return;
             }
 
-            curst.activeGroup = editedTarget as RcolGroup
+            comp.activeGroup = editedTarget as RcolGroup
                 ?? (editedTarget as RequestSet)?.Group;
             if (editedTarget is RcolGroup gg) {
-                curst.activeGroup = gg;
+                comp.activeGroup = gg;
             } else if (editedTarget is RequestSet rs) {
-                curst.activeGroup = rs.Group;
+                comp.activeGroup = rs.Group;
             } else if (editedTarget is RequestSetInfo rsi) {
-                curst.activeGroup = PrimaryEditor!.File.RequestSets.FirstOrDefault(rs => rs.Info == rsi)?.Group;
+                comp.activeGroup = PrimaryEditor!.File.RequestSets.FirstOrDefault(rs => rs.Info == rsi)?.Group;
             } else if (editedTarget is RszInstance rsz) {
-                curst.activeGroup = PrimaryEditor!.File.RequestSets.FirstOrDefault(rs => rs.Instance == rsz)?.Group;
+                comp.activeGroup = PrimaryEditor!.File.RequestSets.FirstOrDefault(rs => rs.Instance == rsz)?.Group;
             } else {
-                curst.activeGroup = null;
+                comp.activeGroup = null;
             }
         }
     }

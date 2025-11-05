@@ -114,8 +114,10 @@ public class TriangleMesh : Mesh
 
     public override Mesh Clone()
     {
+        // for triangle meshes, reuse ths arrays directly instead of copying them
+        // reasoning being that these are generally imported and never modified so it shouldn't be an issue
         var copy = new TriangleMesh();
-        CopyGeometryData(copy);
+        CopyGeometryDataReuseArrays(copy);
         return copy;
     }
 

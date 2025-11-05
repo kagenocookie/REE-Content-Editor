@@ -6,27 +6,36 @@ namespace ContentEditor.App;
 public class SceneRoot : IDisposable
 {
     public readonly SceneComponentsList<IGizmoComponent> Gizmos = new();
-    private readonly Scene scene;
-    private readonly Camera editorCamera;
+    public Scene Scene { get; }
 
     public EditModeHandler? ActiveEditMode { get; private set; }
-    private readonly Dictionary<string, (EditModeHandler? handler, HashSet<IEditableComponent> list)> _editableComponents = new();
 
     private GizmoManager? gizmoManager;
     internal GizmoManager? GizmoManager => gizmoManager;
 
-    public Camera Camera => editorCamera;
-    public Scene Scene => scene;
+    public Camera Camera { get; }
+
+    /// <summary>
+    /// Root GameObject for editor-only objects and components that aren't supposed to be part of the scene.
+    /// </summary>
+    public GameObject EditorRoot { get; }
 
     public SceneMouseHandler MouseHandler { get; }
     public SceneController Controller { get; }
 
-    public SceneRoot(Scene scene, Camera camera)
+    private readonly Dictionary<string, (EditModeHandler? handler, HashSet<IEditableComponent> list)> _editableComponents = new();
+
+    public SceneRoot(Scene scene)
     {
-        this.scene = scene;
-        this.editorCamera = camera;
+        Scene = scene;
         MouseHandler = new(scene);
         Controller = new(scene);
+        EditorRoot = new GameObject("__editorRoot", scene.Workspace.Env);
+        EditorRoot.ForceSetScene(scene);
+
+        var camGo = new GameObject("__editorCamera", scene.Workspace.Env);
+        Camera = Component.Create<Camera>(camGo, scene.Workspace.Env);
+        EditorRoot.AddChild(camGo);
     }
 
     public void RegisterEditableComponent(IEditableComponent component)
@@ -77,7 +86,7 @@ public class SceneRoot : IDisposable
 
         if (list.handler == null) {
             list.handler = (EditModeHandler)Activator.CreateInstance(component.EditHandlerType)!;
-            list.handler.Init(scene);
+            list.handler.Init(Scene);
             _editableComponents[typeId] = list;
         }
 
@@ -89,7 +98,7 @@ public class SceneRoot : IDisposable
     internal void Update(float deltaTime)
     {
         if (!Gizmos.IsEmpty || Controller != null) {
-            gizmoManager ??= new(scene);
+            gizmoManager ??= new(Scene);
             ActiveEditMode?.Update();
             gizmoManager.Update();
             Controller?.UpdateGizmo(EditorWindow.CurrentWindow!, gizmoManager);

@@ -223,8 +223,6 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     {
         if (file.Loader is McolFileLoader) {
             return new McolMeshHandle(GL, resource, file.GetFile<McolFile>());
-        } else if (file.Loader is RcolFileLoader) {
-            return new RcolMeshHandle(GL, resource, file.GetFile<RcolFile>());
         } else if (file.Loader is TerrFileLoader) {
             return new McolMeshHandle(GL, resource, file.GetFile<TerrFile>());
         } else if (file.Loader is ChfFileLoader) {

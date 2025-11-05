@@ -182,6 +182,18 @@ public abstract class Mesh : IDisposable
         return newInstance;
     }
 
+    protected void CopyGeometryDataReuseArrays(Mesh target)
+    {
+        target.GL = GL;
+        target.VertexData = VertexData;
+        target.Indices = Indices;
+        target.BoundingBox = BoundingBox;
+        target.MeshGroup = MeshGroup;
+        target.attributes = attributes;
+        target.MeshType = MeshType;
+        target._flags = _flags;
+    }
+
     protected void CopyGeometryData(Mesh target)
     {
         target.GL = GL;
