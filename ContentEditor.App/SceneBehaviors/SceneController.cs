@@ -10,9 +10,9 @@ using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 
-public class SceneController
+public class SceneController(Scene scene)
 {
-    public Scene Scene { get; set; } = null!;
+    public Scene Scene { get; init; } = scene;
     public IKeyboard Keyboard { get; set; } = null!;
     private DragMode dragMode;
     private enum DragMode { None, Rotation }

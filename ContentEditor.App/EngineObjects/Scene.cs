@@ -18,8 +18,10 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     public IEnumerable<Folder> Folders => RootFolder.Children;
     public IEnumerable<GameObject> GameObjects => RootFolder.GameObjects;
 
+    public SceneRoot Root { get; private set; }
     public Scene? ParentScene { get; private set; }
-    public Scene RootScene => ParentScene?.RootScene ?? this;
+    public Scene RootScene => Root.Scene;
+
     private readonly List<Scene> childScenes = new();
     internal ReadOnlyCollection<Scene> ChildScenes => childScenes.AsReadOnly();
 
@@ -29,15 +31,13 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     public bool IsActive { get; set; }
     public SceneManager SceneManager { get; internal set; } = null!;
 
-    public SceneMouseHandler? MouseHandler { get; set; }
-    public SceneController? Controller { get; set; }
+    public SceneMouseHandler Mouse => Root.MouseHandler;
+    public SceneController Controller => Root.Controller;
 
     public readonly SceneComponentsList<RenderableComponent> Renderable = new();
     public readonly SceneComponentsList<IUpdateable> Updateable = new();
-    public readonly SceneComponentsList<IGizmoComponent> Gizmos = new();
 
-    private GizmoManager? gizmoManager;
-    internal GizmoManager? GizmoManager => gizmoManager;
+    public bool IsRoot => ParentScene == null;
 
     private GL _gl;
 
@@ -47,9 +47,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     public RenderContext RenderContext => RootScene.renderContext;
     public RenderContext OwnRenderContext => renderContext;
 
-    private Camera camera;
-    public Camera Camera => camera;
-    public Camera ActiveCamera => RootScene.Camera;
+    public Camera ActiveCamera => Root.Camera;
 
     private bool wasActivatedBefore;
     private HashSet<string> _requestedScenes = new(0);
@@ -68,9 +66,15 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         _gl = gl ?? parentScene?._gl ?? EditorWindow.CurrentWindow?.GLContext ?? throw new Exception("Could not get OpenGL Context!");
         renderContext = new OpenGLRenderContext(_gl);
         RootFolder = rootFolder ?? new("ROOT", workspace.Env, this);
-        var camGo = new GameObject("__editorCamera", workspace.Env);
-        camera = Component.Create<Camera>(camGo, workspace.Env);
-        camGo.ForceSetScene(this);
+        if (parentScene == null) {
+            var camGo = new GameObject("__editorCamera", workspace.Env);
+            var camera = Component.Create<Camera>(camGo, workspace.Env);
+            camGo.ForceSetScene(this);
+            Root = new SceneRoot(this, camera);
+        } else {
+            Root = parentScene.Root;
+        }
+
         parentScene?.childScenes.Add(this);
         renderContext.ResourceManager = workspace.ResourceManager;
     }
@@ -171,10 +175,8 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
             comp.Update(deltaTime);
         }
 
-        if (!Gizmos.IsEmpty || (ParentScene == null && Controller != null)) {
-            gizmoManager ??= new (this);
-            gizmoManager.Update();
-            Controller?.UpdateGizmo(EditorWindow.CurrentWindow!, gizmoManager);
+        if (ParentScene == null) {
+            Root.Update(deltaTime);
         }
     }
 
@@ -213,14 +215,14 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         foreach (var child in childScenes) {
             child.Render(deltaTime);
         }
-        gizmoManager?.Render();
+        Root.Render();
         rctx.ExecuteRender();
         rctx.AfterRender();
     }
 
     public void RenderUI()
     {
-        gizmoManager?.RenderUI();
+        Root.RenderUI();
         if (ui != null) {
             var cursorStart = ((IRectWindow)this).Position;
             for (int i = 0; i < ui.children.Count; i++) {
@@ -261,7 +263,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     public void Dispose()
     {
         SetActive(false);
-        gizmoManager?.Dispose();
+        if (ParentScene == null) Root.Dispose();
         renderContext.Dispose();
         RootFolder.Dispose();
         while (childScenes.Count != 0) {

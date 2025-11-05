@@ -25,14 +25,14 @@ public class Colliders(GameObject gameObject, RszInstance data) : Component(game
     internal override void OnActivate()
     {
         base.OnActivate();
-        Scene!.RootScene.Gizmos.Add(this);
+        Scene!.Root.Gizmos.Add(this);
     }
 
     internal override void OnDeactivate()
     {
         base.OnDeactivate();
         UnloadMeshes();
-        Scene!.RootScene.Gizmos.Remove(this);
+        Scene!.Root.Gizmos.Remove(this);
     }
 
     private void UnloadMeshes()

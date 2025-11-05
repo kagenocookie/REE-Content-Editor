@@ -74,25 +74,10 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
         }
 
         foreach (var master in rootScenes) {
-            if (master.MouseHandler != null) {
-                if (master.IsActive) {
-                    master.MouseHandler.scene = master;
-                    master.MouseHandler.Update();
-                } else {
-                    master.MouseHandler.scene = null;
-                }
-            }
-
-            if (master.Controller != null) {
-                if (master.IsActive) {
-                    master.Controller.Scene = master;
-                    master.Controller.Update(deltaTime);
-                } else {
-                    master.Controller.Scene = null!;
-                }
-            }
+            if (!master.IsActive) continue;
+            master.Mouse.Update();
+            master.Controller.Update(deltaTime);
         }
-
     }
 
     public void Render(float deltaTime)

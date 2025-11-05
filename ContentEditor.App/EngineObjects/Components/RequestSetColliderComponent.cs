@@ -11,7 +11,10 @@ using Silk.NET.Maths;
 namespace ContentEditor.App;
 
 [RszComponentClass("via.physics.RequestSetCollider")]
-public class RequestSetColliderComponent(GameObject gameObject, RszInstance data) : Component(gameObject, data), IFixedClassnameComponent, IGizmoComponent
+public class RequestSetColliderComponent(GameObject gameObject, RszInstance data) : Component(gameObject, data),
+    IFixedClassnameComponent,
+    IGizmoComponent,
+    IEditableComponent<RcolEditMode>
 {
     static string IFixedClassnameComponent.Classname => "via.physics.RequestSetCollider";
 
@@ -28,54 +31,22 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
     // public AABB LocalBounds => rcol == null ? default : AABB.Combine(rcol.Groups.Select(g => g.Shapes.BoundingBox));
 
     private HashSet<string>? missingRcols;
-    private RcolEditor? editor;
+    public RcolGroup? activeGroup;
 
     public bool IsEnabled => AppConfig.Instance.RenderRequestSetColliders.Get();
-
-    public void OpenEditor(int rcolIndex)
-    {
-        var refRcols = RszFieldCache.RequestSetCollider.RequestSetGroups.Get(Data);
-        if (refRcols == null || refRcols.Count == 0 || Scene?.IsActive != true || refRcols.Count <= rcolIndex) {
-            return;
-        }
-
-        var group = ((RszInstance)refRcols[rcolIndex]);
-
-        var rcolPath = RszFieldCache.RequestSetGroup.Resource.Get(group);
-        if (Scene.Workspace.ResourceManager.TryResolveFile(rcolPath, out var file)) {
-            OpenEditor(file);
-        }
-    }
-    public void OpenEditor(FileHandle rcol)
-    {
-        if (editor != null) {
-            // TODO idk
-        }
-        if (rcols.Count == 0) UpdateRcolFileList();
-        Debug.Assert(rcols.Contains(rcol.GetFile<RcolFile>()));
-        editor = EditorWindow.CurrentWindow!.AddSubwindow(new RcolEditor(Scene!.Workspace, rcol, this)).Handler as RcolEditor;
-    }
-
-    public void SetEditor(RcolEditor editor)
-    {
-        if (this.editor != null) {
-            // TODO idk
-        }
-
-        Debug.Assert(rcols.Contains(editor.File));
-        this.editor = editor;
-    }
 
     internal override void OnActivate()
     {
         base.OnActivate();
-        Scene!.RootScene.Gizmos.Add(this);
+        Scene!.Root.Gizmos.Add(this);
+        Scene!.Root.RegisterEditableComponent(this);
     }
 
     internal override void OnDeactivate()
     {
         base.OnDeactivate();
-        Scene!.RootScene.Gizmos.Remove(this);
+        Scene!.Root.Gizmos.Remove(this);
+        Scene!.Root.UnregisterEditableComponent(this);
     }
 
     private void UpdateRcolFileList()
@@ -126,14 +97,6 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
 
         ref readonly var transform = ref GameObject.Transform.WorldTransform;
 
-        var selectedSet = (editor?.PrimaryTarget as RequestSet);
-        if (editor?.PrimaryTarget is RequestSetInfo setInfo) {
-            selectedSet = editor.File.RequestSets.FirstOrDefault(rs => rs.Info == setInfo);
-        } else if (editor?.PrimaryTarget is RszInstance rszInst) {
-            selectedSet = editor.File.RequestSets.FirstOrDefault(rs => rs.Instance == rszInst);
-        }
-        var selectedGroup = editor?.PrimaryTarget as RcolGroup;
-
         Matrix4X4<float> shapeMatrix = Matrix4X4<float>.Identity;
         foreach (var rcol in rcols) {
             if (rcol == null) continue;
@@ -146,7 +109,7 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
                         } else {
                             parentMesh.TryGetBoneTransform(shape.Info.primaryJointNameStr, out shapeMatrix);
                         }
-                        if (group == selectedGroup || selectedSet?.Group == group) {
+                        if (group == activeGroup) {
                             gizmo.PushMaterial(activeMaterial, obscuredMaterial, priority: 1);
                             gizmo.BeginControl();
                             if (gizmo.Cur.EditableBoxed(in shapeMatrix, shape.shape, out var newShape, out int handleId)) {

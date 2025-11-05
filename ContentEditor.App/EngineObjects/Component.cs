@@ -16,6 +16,21 @@ public interface IConstructorComponent
     void ComponentInit();
 }
 
+/// <summary>
+/// A component that supports some sort of edit mode.
+/// </summary>
+public interface IEditableComponent
+{
+    public Type EditHandlerType { get; }
+    public string EditTypeID { get; }
+}
+
+public interface IEditableComponent<T> : IEditableComponent
+{
+    Type IEditableComponent.EditHandlerType => typeof(T);
+    string IEditableComponent.EditTypeID => typeof(T).Name;
+}
+
 public class Component(GameObject gameObject, RszInstance data)
 {
     public RszInstance Data { get; } = data;

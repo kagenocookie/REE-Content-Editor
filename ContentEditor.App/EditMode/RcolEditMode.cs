@@ -1,0 +1,55 @@
+using ContentEditor.App.ImguiHandling.Rcol;
+using ContentEditor.App.Windowing;
+using ReeLib;
+using ReeLib.Rcol;
+
+namespace ContentEditor.App;
+
+public class RcolEditMode : EditModeHandler
+{
+    public static readonly string TypeID = nameof(RequestSet);
+    public override string EditTypeID => TypeID;
+
+    public RcolEditor? PrimaryEditor { get; private set; }
+
+    protected override void OnTargetChanged(Component? previous)
+    {
+        if (previous is RequestSetColliderComponent prst) prst.activeGroup = null;
+    }
+
+    public void OpenEditor(string rcolFilepath)
+    {
+        if (!(Target is RequestSetColliderComponent component)) {
+            return;
+        }
+        if (Scene.Workspace.ResourceManager.TryResolveFile(rcolFilepath, out var file)) {
+            PrimaryEditor = new RcolEditor(Scene.Workspace, file, component);
+            EditorWindow.CurrentWindow!.AddSubwindow(PrimaryEditor);
+        }
+    }
+
+    public override void OnIMGUI()
+    {
+        if (Target is RequestSetColliderComponent curst) {
+            var editedTarget = PrimaryEditor?.PrimaryTarget;
+            if (editedTarget == null) {
+                curst.activeGroup = null;
+                return;
+            }
+
+            curst.activeGroup = editedTarget as RcolGroup
+                ?? (editedTarget as RequestSet)?.Group;
+            if (editedTarget is RcolGroup gg) {
+                curst.activeGroup = gg;
+            } else if (editedTarget is RequestSet rs) {
+                curst.activeGroup = rs.Group;
+            } else if (editedTarget is RequestSetInfo rsi) {
+                curst.activeGroup = PrimaryEditor!.File.RequestSets.FirstOrDefault(rs => rs.Info == rsi)?.Group;
+            } else if (editedTarget is RszInstance rsz) {
+                curst.activeGroup = PrimaryEditor!.File.RequestSets.FirstOrDefault(rs => rs.Instance == rsz)?.Group;
+            } else {
+                curst.activeGroup = null;
+            }
+        }
+    }
+}

@@ -9,7 +9,6 @@ using ContentEditor.Editor;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
-using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 
@@ -181,21 +180,16 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     {
         if (previewGameobject == null || scene == null) return;
 
-        scene.Camera.LookAt(previewGameobject, true);
-        scene.Camera.OrthoSize = previewGameobject.GetWorldSpaceBounds().Size.Length() * 0.7f;
+        scene.ActiveCamera.LookAt(previewGameobject, true);
+        scene.ActiveCamera.OrthoSize = previewGameobject.GetWorldSpaceBounds().Size.Length() * 0.7f;
     }
 
     public void OnIMGUI()
     {
         if (scene == null) {
             scene = EditorWindow.CurrentWindow!.SceneManager.CreateScene(fileHandle, true);
-            scene.Controller = new SceneController();
-            scene.Controller.Keyboard = EditorWindow.CurrentWindow.LastKeyboard;
-            scene.Controller.Scene = scene;
-            scene.MouseHandler = new SceneMouseHandler();
-            scene.MouseHandler.scene = scene;
-            scene.ActiveCamera.GameObject.MoveToScene(scene);
-            scene.Controller.MoveSpeed = AppConfig.Settings.MeshViewer.MoveSpeed;
+            scene.Root.Controller.Keyboard = EditorWindow.CurrentWindow.LastKeyboard;
+            scene.Root.Controller.MoveSpeed = AppConfig.Settings.MeshViewer.MoveSpeed;
             scene.OwnRenderContext.AddDefaultSceneGizmos();
             scene.AddWidget<SceneVisibilitySettings>();
         }
@@ -291,7 +285,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         ImGui.SetCursorPos(ImGui.GetCursorPos() + new Vector2(6, 6));
         if (ImGui.Button($"{AppIcons.GameObject}")) ImGui.OpenPopup("CameraSettings");
         if (ImGui.BeginPopup("CameraSettings")) {
-            scene!.Controller?.ShowCameraControls();
+            scene!.Controller.ShowCameraControls();
             ImGui.EndPopup();
         }
     }
@@ -300,7 +294,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     {
         if (ImGui.BeginMenuBar()) {
             if (ImGui.MenuItem($"{AppIcons.GameObject} Controls")) ImGui.OpenPopup("CameraSettings");
-            if (scene?.Controller != null && ImGui.BeginPopup("CameraSettings")) {
+            if (scene != null && ImGui.BeginPopup("CameraSettings")) {
                 scene.Controller.ShowCameraControls();
                 if (scene.ActiveCamera.ProjectionMode != AppConfig.Settings.MeshViewer.DefaultProjection) {
                     AppConfig.Settings.MeshViewer.DefaultProjection = scene.ActiveCamera.ProjectionMode;
@@ -456,6 +450,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
         rcolComp ??= previewGameobject.AddComponent<RequestSetColliderComponent>();
 
+        // TODO move this into the edit handler so it can work outside of mesh viewer
         var storedGroups = RszFieldCache.RequestSetCollider.RequestSetGroups.Get(rcolComp.Data);
         if (storedGroups.Count == 0) {
             storedGroups.Add(Workspace.Env.CreateRszInstance("via.physics.RequestSetCollider.RequestSetGroup"));
@@ -466,10 +461,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             RszFieldCache.RequestSetGroup.Resource.Set(storedGroup, rcolPath);
             AppConfig.Instance.AddRecentRcol(rcolPath);
         }
-        if (rcolComp != null) {
-            if (ImGui.Button("Open Editor")) {
-                rcolComp.OpenEditor(0);
-            }
+        if (ImGui.Button("Open Editor")) {
+            (Scene!.Root.SetEditMode(rcolComp) as RcolEditMode)?.OpenEditor(rcolPath);
         }
     }
 

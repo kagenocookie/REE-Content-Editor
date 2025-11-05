@@ -99,7 +99,7 @@ public class GizmoState(Scene scene, GizmoContainer container)
 
         var current = children.Last();
         handleId = current.handles.count++;
-        if (activeHandle != null && activeHandle != (current.id, handleId) || Scene.MouseHandler == null || !container.CanActivate) {
+        if (activeHandle != null && activeHandle != (current.id, handleId) || !container.CanActivate) {
             container.PushMaterial((GizmoMaterialPreset)(axisType + (int)GizmoMaterialPreset.AxisX), ShapeBuilder.GeometryType.Filled);
             container.Add(new Cylinder(position, cylinderEnd, handleRadius * 0.08f));
             container.Add(new Cone(cylinderEnd, handleRadius * 0.5f, coneEnd, 0.0001f));
@@ -114,12 +114,12 @@ public class GizmoState(Scene scene, GizmoContainer container)
         var pos1Offset = Scene.ActiveCamera.WorldToScreenPosition(position + Scene.ActiveCamera.Transform.Right * handleRadius, false, true);
         var screenRadius = (pos1 - pos1Offset).Length() * 0.5f;
         if (activeHandle == null || !isHandleActive) {
-            var mouse = Scene.MouseHandler.MouseScreenPosition;
-            if (!Scene.MouseHandler.IsDragging) {
+            var mouse = Scene.Mouse.MouseScreenPosition;
+            if (!Scene.Mouse.IsDragging) {
                 if (CheckOverlapLine2D(pos1, pos2, screenRadius, mouse)) {
                     ReserveHandle(current.id, handleId);
                     container.PushMaterial((GizmoMaterialPreset)(axisType + (int)GizmoMaterialPreset.AxisX_Highlight), ShapeBuilder.GeometryType.Filled);
-                    if (Scene.MouseHandler.IsLeftDown) {
+                    if (Scene.Mouse.IsLeftDown) {
                         StartDragHandle(current.id, handleId, position, axis, mouse);
                     }
                 } else {
@@ -137,10 +137,10 @@ public class GizmoState(Scene scene, GizmoContainer container)
             return false;
         }
 
-        if (!Scene.MouseHandler.IsLeftDown) {
+        if (!Scene.Mouse.IsLeftDown) {
             StopHandle();
         } else {
-            var newPos = Scene.ActiveCamera.ScreenToWorldPositionReproject(Scene.MouseHandler.MouseScreenPosition, position) - activeHandleStartOffset;
+            var newPos = Scene.ActiveCamera.ScreenToWorldPositionReproject(Scene.Mouse.MouseScreenPosition, position) - activeHandleStartOffset;
             position = AlignToInitialAxis(newPos);
         }
         container.PushMaterial((GizmoMaterialPreset)(axisType + (int)GizmoMaterialPreset.AxisX_Active), ShapeBuilder.GeometryType.Filled);
@@ -157,7 +157,7 @@ public class GizmoState(Scene scene, GizmoContainer container)
 
         var current = children.Last();
         handleId = current.handles.count++;
-        if (activeHandle != null && activeHandle != (current.id, handleId) || Scene.MouseHandler == null || !container.CanActivate) {
+        if (activeHandle != null && activeHandle != (current.id, handleId) || !container.CanActivate) {
             container.PushMaterial((GizmoMaterialPreset)(axisType + (int)GizmoMaterialPreset.AxisX), ShapeBuilder.GeometryType.Line);
             container.Cur.AddCircle(position, axis, handleSize);
             container.PopMaterial();
@@ -165,13 +165,13 @@ public class GizmoState(Scene scene, GizmoContainer container)
         }
 
         if (activeHandle == null || !isHandleActive) {
-            var mouse = Scene.MouseHandler.MouseScreenPosition;
-            if (!Scene.MouseHandler.IsDragging) {
+            var mouse = Scene.Mouse.MouseScreenPosition;
+            if (!Scene.Mouse.IsDragging) {
                 var screenPosition = Scene.ActiveCamera.WorldToScreenPosition(position);
                 if (Scene.ActiveCamera.IsPointInViewport(screenPosition) && CheckOverlapProjectedCircle(position, axis, mouse, handleSize, handleSize * 0.1f)) {
                     ReserveHandle(current.id, handleId);
                     container.PushMaterial((GizmoMaterialPreset)(axisType + (int)GizmoMaterialPreset.AxisX_Highlight), ShapeBuilder.GeometryType.Line);
-                    if (Scene.MouseHandler.IsLeftDown) {
+                    if (Scene.Mouse.IsLeftDown) {
                         var projectedMousePos = position + Vector3.Normalize(ProjectMouseOnPlane(position, axis, mouse) - position) * handleSize;
                         StartRotationHandle(current.id, handleId, position, axis, projectedMousePos);
                         activeHandleStartRotation = quaternion;
@@ -190,13 +190,13 @@ public class GizmoState(Scene scene, GizmoContainer container)
             return false;
         }
 
-        if (!Scene.MouseHandler.IsLeftDown) {
+        if (!Scene.Mouse.IsLeftDown) {
             StopHandle();
         } else {
             var len = activeHandleStartOffset.Length();
             var initialVec = activeHandleStartOffset;
             axis = activeHandleStartAxis;
-            var currentVec = Vector3.Normalize(ProjectMouseOnPlane(position, axis, Scene.MouseHandler.MouseScreenPosition) - position) * len;
+            var currentVec = Vector3.Normalize(ProjectMouseOnPlane(position, axis, Scene.Mouse.MouseScreenPosition) - position) * len;
             var angle = TransformExtensions.SignedAngleBetween(initialVec, currentVec, axis);
 
             if (ImGui.IsKeyDown(ImGuiKey.LeftCtrl)) { // snap to 15 deg
@@ -223,18 +223,17 @@ public class GizmoState(Scene scene, GizmoContainer container)
     {
         var current = children.Last();
         handleId = current.handles.count++;
-        if (Scene.MouseHandler == null) return false;
         var screenPosition = Scene.ActiveCamera.WorldToScreenPosition(position);
         if (container.CanActivate && (activeHandle == null || !isHandleActive)) {
-            var mouse = Scene.MouseHandler.MouseScreenPosition;
-            if ((mouse - screenPosition).LengthSquared() < handleSize * handleSize && !Scene.MouseHandler.IsDragging) {
+            var mouse = Scene.Mouse.MouseScreenPosition;
+            if ((mouse - screenPosition).LengthSquared() < handleSize * handleSize && !Scene.Mouse.IsDragging) {
                 ReserveHandle(current.id, handleId);
                 // TODO not ideal - needless allocations - optimize later
                 DrawListQueue.Add(() => {
                     ImGui.GetWindowDrawList().AddCircleFilled(screenPosition, handleSize, ColorHandleBorder);
                     ImGui.GetWindowDrawList().AddCircleFilled(screenPosition, handleSize * HandleBorderSize, ColorHandleFillHovered);
                 });
-                if (Scene.MouseHandler.IsLeftDown) {
+                if (Scene.Mouse.IsLeftDown) {
                     StartDragHandle(current.id, handleId, position, primaryAxis, mouse);
                 }
             } else {
@@ -245,10 +244,10 @@ public class GizmoState(Scene scene, GizmoContainer container)
                 });
             }
         } else if (activeHandle == (current.id, handleId)) {
-            if (!Scene.MouseHandler.IsLeftDown) {
+            if (!Scene.Mouse.IsLeftDown) {
                 StopHandle();
             } else {
-                position = Scene.ActiveCamera.ScreenToWorldPositionReproject(Scene.MouseHandler.MouseScreenPosition, position);
+                position = Scene.ActiveCamera.ScreenToWorldPositionReproject(Scene.Mouse.MouseScreenPosition, position);
                 if (activeHandleStartAxis != Vector3.Zero && lockToAxis) {
                     position = AlignToInitialAxis(position);
                 }

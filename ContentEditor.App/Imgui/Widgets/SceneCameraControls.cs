@@ -11,7 +11,7 @@ public class SceneCameraControls : ISceneWidget
     public void OnIMGUI(UIContext context)
     {
         var scene = context.root.target as Scene;
-        if (scene?.Controller == null) return;
+        if (scene == null) return;
 
         var window = context.GetWindow();
 

@@ -33,8 +33,8 @@ public class GizmoContainer : IDisposable
 
     internal Dictionary<int, GizmoShapeBuilder> shapeBuilders = new();
 
-    public bool IsActive => scene.GizmoManager!.ActiveContainer == this;
-    public bool CanActivate => scene.GizmoManager!.ActiveContainer == null || scene.GizmoManager!.ActiveContainer == this;
+    public bool IsActive => scene.Root.GizmoManager!.ActiveContainer == this;
+    public bool CanActivate => scene.Root.GizmoManager!.ActiveContainer == null || scene.Root.GizmoManager!.ActiveContainer == this;
 
     public GizmoContainer(Scene scene, Component component)
     {
@@ -59,26 +59,26 @@ public class GizmoContainer : IDisposable
 
     public void PushMaterial(GizmoMaterialPreset material, ShapeBuilder.GeometryType geometryType = ShapeBuilder.GeometryType.Line, bool showObscured = true)
     {
-        var mat = scene.GizmoManager!.GetMaterial(material);
+        var mat = scene.Root.GizmoManager!.GetMaterial(material);
         PushMaterial(mat, showObscured ? mat : null, geometryType);
     }
 
     public void GrabFocus()
     {
-        Debug.Assert(scene.GizmoManager!.ActiveContainer == null || scene.GizmoManager!.ActiveContainer == this);
-        scene.GizmoManager!.ActiveContainer = this;
+        Debug.Assert(scene.Root.GizmoManager!.ActiveContainer == null || scene.Root.GizmoManager!.ActiveContainer == this);
+        scene.Root.GizmoManager!.ActiveContainer = this;
     }
 
     public void LoseFocus()
     {
-        Debug.Assert(scene.GizmoManager!.ActiveContainer == this);
-        scene.GizmoManager!.ActiveContainer = null;
+        Debug.Assert(scene.Root.GizmoManager!.ActiveContainer == this);
+        scene.Root.GizmoManager!.ActiveContainer = null;
     }
 
     public void LoseFocusSafe()
     {
-        if (scene.GizmoManager?.ActiveContainer == this)
-            scene.GizmoManager.ActiveContainer = null;
+        if (scene.Root.GizmoManager?.ActiveContainer == this)
+            scene.Root.GizmoManager.ActiveContainer = null;
     }
 
     public void PopMaterial()
