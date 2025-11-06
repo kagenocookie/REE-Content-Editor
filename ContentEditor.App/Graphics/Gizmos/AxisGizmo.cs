@@ -14,9 +14,9 @@ public class AxisGizmo : Gizmo
     public override void Init(OpenGLRenderContext context)
     {
         var mesh = context.CreateBlankMesh();
-        mesh.Handle.Meshes.Add(new LineMesh(GL, new Vector3(-100000, 0, 0), new Vector3(100000, 0, 0)) { MeshType = PrimitiveType.Lines });
-        mesh.Handle.Meshes.Add(new LineMesh(GL, new Vector3(0, -100000, 0), new Vector3(0, 100000, 0)) { MeshType = PrimitiveType.Lines });
-        mesh.Handle.Meshes.Add(new LineMesh(GL, new Vector3(0, 0, -100000), new Vector3(0, 0, 100000)) { MeshType = PrimitiveType.Lines });
+        mesh.Handle.Meshes.Add(new LineMesh(GL, new Vector3(-100000, 0, 0), new Vector3(100000, 0, 0)));
+        mesh.Handle.Meshes.Add(new LineMesh(GL, new Vector3(0, -100000, 0), new Vector3(0, 100000, 0)));
+        mesh.Handle.Meshes.Add(new LineMesh(GL, new Vector3(0, 0, -100000), new Vector3(0, 0, 100000)));
 
         var matGroup = new MaterialGroup();
         var builder = context.GetMaterialBuilder(BuiltInMaterials.MonoColor).Blend();

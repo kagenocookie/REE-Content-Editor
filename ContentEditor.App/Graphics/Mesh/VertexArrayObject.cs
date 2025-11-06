@@ -21,10 +21,10 @@ public sealed class VertexArrayObject<TVertexType, TIndexType> : IDisposable
         _handle = _gl.GenVertexArray();
     }
 
-    public unsafe void VertexAttributePointerFloat(uint index, int count, VertexAttribType type, int offset)
+    public unsafe void VertexAttributePointerFloat(uint index, int count, VertexAttribType type, int offset, bool normalize = false)
     {
         _gl.EnableVertexAttribArray(index);
-        _gl.VertexAttribFormat(index, count, type, false, (uint)(offset * sizeof(TVertexType)));
+        _gl.VertexAttribFormat(index, count, type, normalize, (uint)(offset * sizeof(TVertexType)));
         _gl.VertexAttribBinding(index, VERTEX_BINDING_INDEX);
     }
 

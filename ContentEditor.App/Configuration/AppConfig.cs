@@ -180,6 +180,7 @@ public class AppConfig : Singleton<AppConfig>
     public void AddRecentBundle(string file) => AddRecentString(file, JsonSettings.RecentBundles, 25);
     public void AddRecentRcol(string file) => AddRecentString(file, JsonSettings.RecentRcols, 15);
     public void AddRecentMotlist(string file) => AddRecentString(file, JsonSettings.RecentMotlists, 15);
+    public void AddRecentNavmesh(string file) => AddRecentString(file, JsonSettings.RecentNavmeshes, 15);
     private void AddRecentString(string file, List<string> list, int maxEntries)
     {
         var prevIndex = list.IndexOf(file);
@@ -525,6 +526,7 @@ public class AppJsonSettings
     public List<string> RecentFiles { get; init; } = new();
     public List<string> RecentRcols { get; init; } = new();
     public List<string> RecentMotlists { get; init; } = new();
+    public List<string> RecentNavmeshes { get; init; } = new();
 
     public void Save() => AppConfig.Instance.SaveJsonConfig();
 }

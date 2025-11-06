@@ -160,6 +160,8 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
         return mesh;
     }
 
+    public abstract void StoreMesh(MeshResourceHandle mesh);
+
     protected virtual MeshHandle CreateMeshInstanceHandle(MeshResourceHandle resource, FileHandle file) => new MeshHandle(resource);
 
     public void UnloadMesh(MeshHandle handle)

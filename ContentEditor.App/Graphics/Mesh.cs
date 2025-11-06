@@ -36,6 +36,7 @@ public abstract class Mesh : IDisposable
 
     public bool HasTangents => (Flags & MeshFlags.HasTangents) != 0;
     public bool HasBones => (Flags & MeshFlags.HasBones) != 0;
+    public bool HasColor => attributes.Any(a => a.Index == Index_Color);
 
     private const int MinAttributeCount = 9;
     protected int AttributeCount => MinAttributeCount
@@ -54,7 +55,17 @@ public abstract class Mesh : IDisposable
     private const int Index_Tangent = 4;
     private const int Index_BoneIndex = 5;
     private const int Index_BoneWeight = 6;
-    private const int Index_InstancesMatrix = 7;
+    private const int Index_Color = 7;
+    private const int Index_InstancesMatrix = 8;
+
+    protected static readonly VertAttribute[] LineAttributes = [
+        new VertAttribute(0, 3, Index_Position),
+    ];
+
+    protected static readonly VertAttribute[] UnshadedColorAttributes = [
+        new VertAttribute(0, 3, Index_Position),
+        new VertAttribute(3, 1, Index_Color),
+    ];
 
     private static readonly VertAttribute[] DefaultAttributes = [
         new VertAttribute(0, 3, Index_Position),
@@ -115,15 +126,18 @@ public abstract class Mesh : IDisposable
 
     protected void ApplyVertexAttributes()
     {
-        var count = (uint)AttributeCount;
+        var count = 0;
         foreach (var va in attributes) {
+            count += va.Count;
             if (va.Index == Index_BoneIndex || va.Index == Index_Index) {
                 VAO.VertexAttributePointerInt(va.Index, va.Count, VertexAttribIType.Int, va.Offset);
+            } else if (va.Index == Index_Color) {
+                VAO.VertexAttributePointerFloat(va.Index, 4, VertexAttribType.UnsignedByte, va.Offset, true);
             } else {
                 VAO.VertexAttributePointerFloat(va.Index, va.Count, VertexAttribType.Float, va.Offset);
             }
         }
-        VAO.BindVertexBuffer(VBO.Handle, count);
+        VAO.BindVertexBuffer(VBO.Handle, (uint)count);
 
         // this is only needed for instanced meshes, not for normally drawn ones.
         // But it doesn't seem to break normal meshes either so it's "fine"

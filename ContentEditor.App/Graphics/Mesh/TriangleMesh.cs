@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 using ReeLib;
+using ReeLib.Aimp;
 using ReeLib.via;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
@@ -33,6 +34,198 @@ public class TriangleMesh : Mesh
     public TriangleMesh(MeshFile sourceMesh, ReeLib.Mesh.Submesh submesh)
     {
         PrepareMeshVertexBufferData(sourceMesh, submesh);
+    }
+
+    public TriangleMesh(AimpFile file, ContentGroupContainer container, ContentGroupTriangle data)
+    {
+        attributes = UnshadedColorAttributes;
+        var attrs = 4;
+        Indices = new int[data.NodeCount * 3];
+        VertexData = new float[Indices.Length * attrs];
+
+        BoundingBox = container.bounds;
+        var nodes = container.Nodes.Nodes;
+        var verts = container.Vertices;
+        var triangles = data.Nodes;
+        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
+
+        var index = 0;
+        for (int i = 0; i < data.NodeCount; ++i) {
+            var node = nodes[i];
+            var tri = triangles[i];
+            var color = BitConverter.Int32BitsToSingle(node.GetColor(file).ABGR);
+            var a = verts[tri.index1].Vector3;
+            var b = verts[tri.index2].Vector3;
+            var c = verts[tri.index3].Vector3;
+
+            pointData[index++] = new Vector4(a, color);
+            pointData[index++] = new Vector4(b, color);
+            pointData[index++] = new Vector4(c, color);
+        }
+    }
+
+    public TriangleMesh(AimpFile file, ContentGroupContainer container, ContentGroupPolygon data)
+    {
+        attributes = UnshadedColorAttributes;
+        var attrs = 4;
+        var polygons = data.Nodes;
+        var nodes = container.Nodes.Nodes;
+        var verts = container.Vertices;
+        BoundingBox = container.bounds;
+
+        var totalTriangleCount = 0;
+        foreach (var poly in polygons) {
+            totalTriangleCount += poly.indices.Length - 2;
+        }
+        Indices = new int[totalTriangleCount * 3];
+        VertexData = new float[Indices.Length * attrs];
+
+        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
+
+        var index = 0;
+        for (int i = 0; i < data.NodeCount; ++i) {
+            var node = nodes[i];
+            var poly = polygons[i];
+            var color = BitConverter.Int32BitsToSingle(node.GetColor(file).ABGR);
+            for (int x = 2; x < poly.indices.Length; ++x) {
+                var a = verts[poly.indices[0]].Vector3;
+                var b = verts[poly.indices[x - 1]].Vector3;
+                var c = verts[poly.indices[x - 0]].Vector3;
+
+                pointData[index++] = new Vector4(a, color);
+                pointData[index++] = new Vector4(b, color);
+                pointData[index++] = new Vector4(c, color);
+            }
+        }
+    }
+
+    public TriangleMesh(AimpFile file, ContentGroupContainer container, ContentGroupMapBoundary data, int nodeOffset)
+    {
+        // I'm not yet sure if we wanna use this one or not... boundary shapes look stupid
+        attributes = UnshadedColorAttributes;
+        var attrs = 4;
+        var polygons = data.Nodes;
+        var nodes = container.Nodes.Nodes;
+        var verts = container.Vertices;
+        BoundingBox = container.bounds;
+
+        Indices = new int[polygons.Count * 24];
+        VertexData = new float[Indices.Length * attrs];
+
+        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
+
+        var index = 0;
+        Span<Vector3> pts = stackalloc Vector3[8];
+        for (int i = 0; i < data.NodeCount; ++i) {
+            var node = nodes[nodeOffset + i];
+            var poly = polygons[i];
+            var color = BitConverter.Int32BitsToSingle(node.GetColor(file).ABGR);
+            for (int k = 0; k < 8; ++k) pts[k] = verts[poly.indices[k]].Vector3;
+
+            pointData[index++] = new Vector4(pts[0], color);
+            pointData[index++] = new Vector4(pts[1], color);
+            pointData[index++] = new Vector4(pts[5], color);
+            pointData[index++] = new Vector4(pts[0], color);
+            pointData[index++] = new Vector4(pts[5], color);
+            pointData[index++] = new Vector4(pts[4], color);
+
+            pointData[index++] = new Vector4(pts[4], color);
+            pointData[index++] = new Vector4(pts[5], color);
+            pointData[index++] = new Vector4(pts[2], color);
+            pointData[index++] = new Vector4(pts[4], color);
+            pointData[index++] = new Vector4(pts[2], color);
+            pointData[index++] = new Vector4(pts[3], color);
+
+            pointData[index++] = new Vector4(pts[3], color);
+            pointData[index++] = new Vector4(pts[2], color);
+            pointData[index++] = new Vector4(pts[6], color);
+            pointData[index++] = new Vector4(pts[3], color);
+            pointData[index++] = new Vector4(pts[6], color);
+            pointData[index++] = new Vector4(pts[7], color);
+
+            pointData[index++] = new Vector4(pts[6], color);
+            pointData[index++] = new Vector4(pts[7], color);
+            pointData[index++] = new Vector4(pts[0], color);
+            pointData[index++] = new Vector4(pts[6], color);
+            pointData[index++] = new Vector4(pts[0], color);
+            pointData[index++] = new Vector4(pts[1], color);
+        }
+    }
+
+    public TriangleMesh(AimpFile file, ContentGroupContainer container, ContentGroupMapAABB data, int nodeOffset)
+    {
+        attributes = UnshadedColorAttributes;
+        var attrs = 4;
+        var polygons = data.Nodes;
+        var nodes = container.Nodes.Nodes;
+        var verts = container.Vertices;
+        BoundingBox = container.bounds;
+
+        Indices = new int[polygons.Count * 24];
+        VertexData = new float[Indices.Length * attrs];
+
+        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
+
+        var index = 0;
+        Span<Vector3> pts = stackalloc Vector3[8];
+        for (int i = 0; i < data.NodeCount; ++i) {
+            var node = nodes[nodeOffset + i];
+            var poly = polygons[i];
+            var color = BitConverter.Int32BitsToSingle(node.GetColor(file).ABGR);
+            var min = verts[poly.indices[0]].Vector3;
+            var max = verts[poly.indices[1]].Vector3;
+
+            pts[0] = new Vector3(min.X, min.Y, min.Z);
+            pts[1] = new Vector3(min.X, min.Y, max.Z);
+            pts[2] = new Vector3(min.X, max.Y, min.Z);
+            pts[3] = new Vector3(min.X, max.Y, max.Z);
+            pts[4] = new Vector3(max.X, min.Y, min.Z);
+            pts[5] = new Vector3(max.X, min.Y, max.Z);
+            pts[6] = new Vector3(max.X, max.Y, min.Z);
+            pts[7] = new Vector3(max.X, max.Y, max.Z);
+
+            pointData[index++] = new Vector4(pts[0], color);
+            pointData[index++] = new Vector4(pts[1], color);
+            pointData[index++] = new Vector4(pts[2], color);
+            pointData[index++] = new Vector4(pts[1], color);
+            pointData[index++] = new Vector4(pts[2], color);
+            pointData[index++] = new Vector4(pts[3], color);
+
+            pointData[index++] = new Vector4(pts[4], color);
+            pointData[index++] = new Vector4(pts[5], color);
+            pointData[index++] = new Vector4(pts[6], color);
+            pointData[index++] = new Vector4(pts[5], color);
+            pointData[index++] = new Vector4(pts[6], color);
+            pointData[index++] = new Vector4(pts[7], color);
+
+            // pointData[index++] = new Vector4(pts[0], color);
+            // pointData[index++] = new Vector4(pts[1], color);
+            // pointData[index++] = new Vector4(pts[4], color);
+            // pointData[index++] = new Vector4(pts[1], color);
+            // pointData[index++] = new Vector4(pts[4], color);
+            // pointData[index++] = new Vector4(pts[5], color);
+
+            // pointData[index++] = new Vector4(pts[2], color);
+            // pointData[index++] = new Vector4(pts[3], color);
+            // pointData[index++] = new Vector4(pts[6], color);
+            // pointData[index++] = new Vector4(pts[3], color);
+            // pointData[index++] = new Vector4(pts[6], color);
+            // pointData[index++] = new Vector4(pts[7], color);
+
+            pointData[index++] = new Vector4(pts[0], color);
+            pointData[index++] = new Vector4(pts[2], color);
+            pointData[index++] = new Vector4(pts[4], color);
+            pointData[index++] = new Vector4(pts[2], color);
+            pointData[index++] = new Vector4(pts[4], color);
+            pointData[index++] = new Vector4(pts[6], color);
+
+            pointData[index++] = new Vector4(pts[1], color);
+            pointData[index++] = new Vector4(pts[3], color);
+            pointData[index++] = new Vector4(pts[5], color);
+            pointData[index++] = new Vector4(pts[3], color);
+            pointData[index++] = new Vector4(pts[5], color);
+            pointData[index++] = new Vector4(pts[7], color);
+        }
     }
 
     private void PrepareMeshVertexBufferData(MeshFile sourceMesh, ReeLib.Mesh.Submesh submesh)

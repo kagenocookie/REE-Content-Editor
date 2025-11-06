@@ -38,7 +38,7 @@ public class GridGizmo : Gizmo
             lines.Add(new Vector3(-gridSpan, 0, z * GridCellSpacing));
             lines.Add(new Vector3(gridSpan, 0, z * GridCellSpacing));
         }
-        mesh.Handle.Meshes.Add(new LineMesh(GL, lines.ToArray()) { MeshType = PrimitiveType.Lines });
+        mesh.Handle.Meshes.Add(new LineMesh(GL, lines.ToArray()));
         mesh.SetMaterials(matGroup, [0]);
         Meshes.Add(mesh);
     }

@@ -1,5 +1,7 @@
 using System.Numerics;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Runtime.InteropServices;
+using ReeLib;
+using ReeLib.Aimp;
 using ReeLib.via;
 using Silk.NET.OpenGL;
 
@@ -9,20 +11,252 @@ public class LineMesh : Mesh
 {
     public LineMesh(GL gl, params Vector3[] points) : base(gl)
     {
-        var attrs = AttributeCount;
-        VertexData = new float[points.Length * attrs];
+        MeshType = PrimitiveType.Lines;
+        attributes = LineAttributes;
+        VertexData = new float[points.Length * 3];
+        var pointData = MemoryMarshal.Cast<float, Vector3>(VertexData);
         Indices = new int[points.Length];
         BoundingBox = AABB.MaxMin;
         for (int index = 0; index < points.Length; ++index) {
             var point = points[index];
-            VertexData[index * attrs + 0] = point.X;
-            VertexData[index * attrs + 1] = point.Y;
-            VertexData[index * attrs + 2] = point.Z;
-            VertexData[index * attrs + 8] = (float)index;
+            pointData[index] = point;
             Indices[index] = index;
             BoundingBox = BoundingBox.Extend(point);
         }
         UpdateBuffers();
+    }
+
+    public LineMesh(GL gl, MeshFile sourceMesh, ReeLib.Mesh.Submesh submesh) : base(gl)
+    {
+        MeshType = PrimitiveType.Lines;
+        attributes = LineAttributes;
+        PrepareMeshVertexBufferData(sourceMesh, submesh);
+        UpdateBuffers();
+    }
+
+    public LineMesh(TriangleMesh sourceMesh)
+    {
+        MeshType = PrimitiveType.Lines;
+        BoundingBox = sourceMesh.BoundingBox;
+        int attrs;
+        var vertCount = sourceMesh.Indices.Length;
+        var sourceData = sourceMesh.VertexData;
+        Indices = new int[vertCount * 4 / 3]; // each triangle counts as 4 indices ABBC
+        var sourceAttrCount = sourceData.Length / vertCount;
+        if (sourceMesh.HasColor) {
+            attributes = UnshadedColorAttributes;
+            attrs = 4;
+            VertexData = new float[Indices.Length * attrs];
+            const int sourceColorAttrOffset = 3;
+            var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
+            var myIndices = 0;
+            for (int i = 0; i < vertCount; ++i) {
+                pointData[myIndices++] = new Vector4(
+                    sourceData[i * sourceAttrCount + 0],
+                    sourceData[i * sourceAttrCount + 1],
+                    sourceData[i * sourceAttrCount + 2],
+                    sourceData[i * sourceAttrCount + sourceColorAttrOffset]
+                );
+                i++;
+                pointData[myIndices++] = new Vector4(
+                    sourceData[i * sourceAttrCount + 0],
+                    sourceData[i * sourceAttrCount + 1],
+                    sourceData[i * sourceAttrCount + 2],
+                    sourceData[i * sourceAttrCount + sourceColorAttrOffset]
+                );
+                pointData[myIndices++] = new Vector4(
+                    sourceData[i * sourceAttrCount + 0],
+                    sourceData[i * sourceAttrCount + 1],
+                    sourceData[i * sourceAttrCount + 2],
+                    sourceData[i * sourceAttrCount + sourceColorAttrOffset]
+                );
+                i++;
+                pointData[myIndices++] = new Vector4(
+                    sourceData[i * sourceAttrCount + 0],
+                    sourceData[i * sourceAttrCount + 1],
+                    sourceData[i * sourceAttrCount + 2],
+                    sourceData[i * sourceAttrCount + sourceColorAttrOffset]
+                );
+            }
+        } else {
+            attributes = LineAttributes;
+            attrs = 3;
+            VertexData = new float[Indices.Length * attrs];
+            var pointData = MemoryMarshal.Cast<float, Vector3>(VertexData);
+            var myIndices = 0;
+            for (int i = 0; i < vertCount; ++i) {
+                pointData[myIndices++] = new Vector3(
+                    sourceData[i * sourceAttrCount + 0],
+                    sourceData[i * sourceAttrCount + 1],
+                    sourceData[i * sourceAttrCount + 2]
+                );
+                i++;
+                pointData[myIndices++] = new Vector3(
+                    sourceData[i * sourceAttrCount + 0],
+                    sourceData[i * sourceAttrCount + 1],
+                    sourceData[i * sourceAttrCount + 2]
+                );
+                pointData[myIndices++] = new Vector3(
+                    sourceData[i * sourceAttrCount + 0],
+                    sourceData[i * sourceAttrCount + 1],
+                    sourceData[i * sourceAttrCount + 2]
+                );
+                i++;
+                pointData[myIndices++] = new Vector3(
+                    sourceData[i * sourceAttrCount + 0],
+                    sourceData[i * sourceAttrCount + 1],
+                    sourceData[i * sourceAttrCount + 2]
+                );
+            }
+        }
+    }
+
+    public LineMesh(AimpFile file, ContentGroupContainer container, ContentGroupTriangle data)
+    {
+        MeshType = PrimitiveType.Lines;
+        attributes = UnshadedColorAttributes;
+        var attrs = 4;
+        Indices = new int[data.NodeCount * 4]; // ABBC
+        VertexData = new float[Indices.Length * attrs];
+        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
+
+        BoundingBox = container.bounds;
+        var nodes = container.Nodes.Nodes;
+        var verts = container.Vertices;
+        var triangles = data.Nodes;
+
+        var index = 0;
+        for (int i = 0; i < data.NodeCount; ++i) {
+            var tri = triangles[i];
+            var node = nodes[i];
+            var a = verts[tri.index1].Vector3;
+            var b = verts[tri.index2].Vector3;
+            var c = verts[tri.index3].Vector3;
+            pointData[index++] = new Vector4(a, BitConverter.Int32BitsToSingle(node.GetColor(file).ABGR));
+            pointData[index++] = new Vector4(b, BitConverter.Int32BitsToSingle(node.GetColor(file).ABGR));
+            pointData[index++] = new Vector4(b, BitConverter.Int32BitsToSingle(node.GetColor(file).ABGR));
+            pointData[index++] = new Vector4(c, BitConverter.Int32BitsToSingle(node.GetColor(file).ABGR));
+        }
+    }
+
+    public LineMesh(AimpFile file, ContentGroupContainer container, ContentGroupMapPoint points)
+    {
+        MeshType = PrimitiveType.Lines;
+        attributes = UnshadedColorAttributes;
+        var attrs = 4;
+        var lineCount = 0;
+        // where does container.Nodes.minIndex come in?
+        var effectiveNodeIndices = new int[container.Nodes.maxIndex + 1];
+        int offsetIndex = 0;
+        for (int i = 0; i < points.Nodes.Count; i++) {
+            var node = container.Nodes.Nodes[i];
+            lineCount += node.Links.Count;
+            // I'm not quite sure what the point of these extra indices is... maybe they lerp generate the gap points?
+            while (offsetIndex < node.nextIndex && offsetIndex < effectiveNodeIndices.Length) {
+                effectiveNodeIndices[offsetIndex++] = i;
+            }
+        }
+
+        Indices = new int[lineCount * 2];
+        VertexData = new float[lineCount * 2 * attrs];
+        BoundingBox = container.bounds;
+        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
+
+        var index = 0;
+        for (int i = 0; i < points.Nodes.Count; i++) {
+            var nodeInfo = container.Nodes.Nodes[i];
+            foreach (var link in nodeInfo.Links) {
+                var n1 = container.Nodes.Nodes[effectiveNodeIndices[link.sourceNodeIndex]];
+                var n2 = container.Nodes.Nodes[effectiveNodeIndices[link.targetNodeIndex]];
+                var p1 = points.Nodes[n1.index].pos;
+                var p2 = points.Nodes[n2.index].pos;
+
+                pointData[index] = new Vector4(p1, BitConverter.Int32BitsToSingle(n1.GetColor(file).ABGR));
+                Indices[index] = index;
+                index++;
+                pointData[index] = new Vector4(p2, BitConverter.Int32BitsToSingle(n2.GetColor(file).ABGR));
+                Indices[index] = index;
+                index++;
+            }
+        }
+    }
+
+    public LineMesh(AimpFile file, ContentGroupContainer container, ContentGroupMapBoundary data, int nodeOffset)
+    {
+        MeshType = PrimitiveType.Lines;
+        attributes = UnshadedColorAttributes;
+        var attrs = 4;
+        var polygons = data.Nodes;
+        var nodes = container.Nodes.Nodes;
+        var verts = container.Vertices;
+        BoundingBox = container.bounds;
+
+        Indices = new int[polygons.Count * 16];
+        VertexData = new float[Indices.Length * attrs];
+
+        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
+
+        var index = 0;
+        Span<Vector3> pts = stackalloc Vector3[8];
+        for (int i = 0; i < data.NodeCount; ++i) {
+            var node = nodes[nodeOffset + i];
+            var poly = polygons[i];
+            var color = BitConverter.Int32BitsToSingle(node.GetColor(file).ABGR);
+            for (int k = 0; k < 8; ++k) pts[k] = verts[poly.indices[k]].Vector3;
+
+            pointData[index++] = new Vector4(pts[0], color);
+            pointData[index++] = new Vector4(pts[1], color);
+            pointData[index++] = new Vector4(pts[1], color);
+            pointData[index++] = new Vector4(pts[2], color);
+            pointData[index++] = new Vector4(pts[2], color);
+            pointData[index++] = new Vector4(pts[3], color);
+            pointData[index++] = new Vector4(pts[3], color);
+            pointData[index++] = new Vector4(pts[0], color);
+
+            pointData[index++] = new Vector4(pts[4 + 0], color);
+            pointData[index++] = new Vector4(pts[4 + 1], color);
+            pointData[index++] = new Vector4(pts[4 + 1], color);
+            pointData[index++] = new Vector4(pts[4 + 2], color);
+            pointData[index++] = new Vector4(pts[4 + 2], color);
+            pointData[index++] = new Vector4(pts[4 + 3], color);
+            pointData[index++] = new Vector4(pts[4 + 3], color);
+            pointData[index++] = new Vector4(pts[4 + 0], color);
+        }
+    }
+
+    private void PrepareMeshVertexBufferData(MeshFile sourceMesh, ReeLib.Mesh.Submesh submesh)
+    {
+        // note: untested
+        var integerIndices = sourceMesh.MeshData?.integerFaces ?? false;
+        var lineVertCount = submesh.vertCount * 4 / 3;
+
+        var indicesShort = !integerIndices ? submesh.Indices : default;
+        var indicesInt = integerIndices ? submesh.IntegerIndices : default;
+        var meshVerts = submesh.Positions;
+
+        var triangles = submesh.indicesCount / 3;
+        Indices = new int[triangles * 4]; // each triangle counts as 4 indices ABBC
+        VertexData = new float[Indices.Length * 3];
+        var pointData = MemoryMarshal.Cast<float, Vector3>(VertexData);
+        BoundingBox = AABB.MaxMin;
+        var index = 0;
+        for (int faceIndex = 0; faceIndex < triangles; ++faceIndex) {
+            var a = integerIndices ? indicesInt[faceIndex * 3 + 0] : indicesShort[faceIndex * 3 + 0];
+            var b = integerIndices ? indicesInt[faceIndex * 3 + 1] : indicesShort[faceIndex * 3 + 1];
+            var c = integerIndices ? indicesInt[faceIndex * 3 + 2] : indicesShort[faceIndex * 3 + 2];
+            var pa = meshVerts[a];
+            var pb = meshVerts[b];
+            var pc = meshVerts[c];
+            pointData[index] = pa;
+            Indices[index++] = a;
+            pointData[index] = pb;
+            Indices[index++] = b;
+            pointData[index] = pb;
+            Indices[index++] = b;
+            pointData[index] = pc;
+            Indices[index++] = c;
+            BoundingBox = BoundingBox.Extend(pa).Extend(pb).Extend(pc);
+        }
     }
 
     public override string ToString() => $"{VAO} {VBO} indices: {Indices.Length}";

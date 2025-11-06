@@ -672,14 +672,17 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         var masterScene = SceneManager.ActiveMasterScene;
         if (masterScene?.Root.GetAvailableEditModes().Any() == true) {
             var activeEditMode = masterScene.Root.ActiveEditMode;
-            if (ImGui.BeginMenu(activeEditMode == null ? "Edit mode: inactive" : "Editing: " + activeEditMode.DisplayName)) {
+            if (ImGui.BeginMenu(activeEditMode == null ? "Editing: --" : "Editing: " + activeEditMode.DisplayName)) {
                 if (activeEditMode != null) {
                     activeEditMode.DrawMainUI();
                     if (activeEditMode.Target is Component cc) {
+                        ImGui.Spacing();
                         if (ImGui.Button($"{AppIcons.SI_ResetCamera}")) {
                             masterScene.ActiveCamera.LookAt(cc.GameObject, true);
                         }
                         ImguiHelpers.Tooltip("Focus on target object");
+                        ImGui.SameLine();
+                        ImGui.Text(activeEditMode.Target.ToString());
                     }
                     ImGui.Separator();
                 }

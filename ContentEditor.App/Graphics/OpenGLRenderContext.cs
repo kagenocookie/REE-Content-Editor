@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using ContentEditor.App.FileLoaders;
@@ -99,6 +100,17 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         return material.Clone();
     }
 
+    private Material CreateGizmoVertexColorMaterial(ShaderFlags flags)
+    {
+        if (!builtInMaterials.TryGetValue((BuiltInMaterials.GizmoVertexColor, flags), out var material)) {
+            material = new(GL, GetShader("Shaders/GLSL/gizmo-vertex-color.glsl", flags));
+            material.SetParameter("_MainColor", new Color(255, 255, 255, 255));
+            material.SetParameter("_FadeMaxDistance", float.MaxValue);
+            material.name = "color";
+        }
+        return material.Clone();
+    }
+
     public override Material GetBuiltInMaterial(BuiltInMaterials material, ShaderFlags flags = ShaderFlags.None)
     {
         // TODO figure out better, non-hardcoded parametrization for shaders
@@ -107,6 +119,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             BuiltInMaterials.FilledWireframe => CreateFilledWireMaterial(flags),
             BuiltInMaterials.Wireframe => CreateWireMaterial(flags),
             BuiltInMaterials.MonoColor => CreateMonoMaterial(flags),
+            BuiltInMaterials.GizmoVertexColor => CreateGizmoVertexColorMaterial(flags),
             BuiltInMaterials.ViewShaded => CreateViewShadedMaterial(flags),
             BuiltInMaterials.Standard => CreateStandardMaterial(flags),
             _ => throw new NotImplementedException("Unsupported material " + material),
@@ -217,6 +230,16 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         }
 
         return handle;
+    }
+
+    public override void StoreMesh(MeshResourceHandle mesh)
+    {
+        var reference = MeshRefs.AddUnnamed(mesh);
+        Debug.Assert(reference.References == 1);
+
+        foreach (var m in mesh.Meshes) {
+            m.Initialize(GL);
+        }
     }
 
     protected override MeshHandle CreateMeshInstanceHandle(MeshResourceHandle resource, FileHandle file)
