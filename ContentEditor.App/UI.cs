@@ -289,7 +289,7 @@ public static class AppIcons
         KnownFileFormats.GUIStyleList => (SI_FileType_GSTY, Vector4.One),
         KnownFileFormats.GUIConfig => (SI_FileType_GCF, Vector4.One),
         KnownFileFormats.Fsm or KnownFileFormats.Fsm2 => (SI_FileType_FSM, Vector4.One),
-        KnownFileFormats.MotionFsm or KnownFileFormats.MotionFsm2 => (SI_FileType_FSM, Vector4.One),
+        KnownFileFormats.MotionFsm or KnownFileFormats.MotionFsm2 => (SI_FileType_MOTFSM, Vector4.One),
         KnownFileFormats.TimelineFsm2 => (SI_FileType_TMLFSM2, Vector4.One),
         KnownFileFormats.Chain => (SI_FileType_CHAIN, Vector4.One),
         KnownFileFormats.Chain2 => (SI_FileType_CHAIN2, Vector4.One),
