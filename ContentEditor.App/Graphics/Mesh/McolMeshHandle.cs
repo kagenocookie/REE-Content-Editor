@@ -46,11 +46,8 @@ public class McolMeshHandle : MeshHandle
         foreach (var shape in bvh.boxes) builder.Add(shape.box);
         foreach (var shape in bvh.capsules) builder.Add(shape.capsule);
 
-        float[] vert = [];
-        int[] inds = [];
-        AABB bounds = AABB.MaxMin;
-        builder.UpdateMesh(ref vert, ref inds, ref bounds);
-        var mesh = new TriangleMesh(GL, vert, inds, bounds);
+        var mesh = new ShapeMesh(GL);
+        mesh.Build(builder);
         Handle.Meshes.Add(mesh);
     }
 }

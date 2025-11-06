@@ -15,11 +15,13 @@ public static partial class RszFieldCache
         public static readonly RszFieldAccessorLast<List<object>> RequestSetGroups =
             // note: re7 has a plain resource list instead of the extra object inbetween, this doesn't work there
             Last<List<object>>(f => f.array && f.type is RszFieldType.Data or RszFieldType.S32 or RszFieldType.Object)
-            .Object("via.physics.RequestSetCollider.RequestSetGroup");
+            .Object("via.physics.RequestSetCollider.RequestSetGroup")
+            .Rename();
 
         public static readonly RszFieldAccessorFirst<string> ColliderBank =
             First<string>(f => !f.array && f.type is RszFieldType.String or RszFieldType.Resource)
             .Resource("via.physics.CharacterColliderBankResourceHolder")
+            .Rename()
             .Optional();
     }
 
@@ -31,7 +33,8 @@ public static partial class RszFieldCache
     {
         public static readonly RszFieldAccessorFirst<string> RequestSetColliders =
             First<string>(f => f.array && f.type is RszFieldType.String or RszFieldType.Resource)
-            .Resource("via.physics.RequestSetColliderResourceHolder");
+            .Resource("via.physics.RequestSetColliderResourceHolder")
+            .Rename();
     }
 
     /// <summary>
@@ -42,6 +45,7 @@ public static partial class RszFieldCache
     {
         public static readonly RszFieldAccessorFirst<string> Resource =
             First<string>(f => !f.array && f.type is RszFieldType.String or RszFieldType.Resource)
-            .Resource("via.physics.RequestSetColliderResourceHolder");
+            .Resource("via.physics.RequestSetColliderResourceHolder")
+            .Rename();
     }
 }

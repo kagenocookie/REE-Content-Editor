@@ -23,9 +23,11 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
     private Material obscuredMaterial = null!;
 
     private readonly List<RcolFile?> rcols = new();
+    private RcolFile? overrideFile;
+    public IEnumerable<RcolFile> ActiveRcolFiles => rcols.Where(a => a != null)!;
 
     public IEnumerable<RszInstance?> StoredGroups => RszFieldCache.RequestSetCollider.RequestSetGroups.Get(Data).Select(gg => gg as RszInstance);
-    public IEnumerable<string?> StoredResources => RszFieldCache.RequestSetCollider.RequestSetGroups.Get(Data).OfType<RszInstance>().Select(grp => RszFieldCache.RequestSetGroup.Resource.Get(grp));
+    public IEnumerable<string> StoredResources => RszFieldCache.RequestSetCollider.RequestSetGroups.Get(Data).OfType<RszInstance>().Select(grp => RszFieldCache.RequestSetGroup.Resource.Get(grp));
 
     // public AABB Bounds => AABB.Invalid;
     // public AABB LocalBounds => rcol == null ? default : AABB.Combine(rcol.Groups.Select(g => g.Shapes.BoundingBox));
@@ -49,11 +51,20 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
         Scene!.Root.UnregisterEditableComponent(this);
     }
 
+    public void SetOverrideFile(RcolFile? file)
+    {
+        if (file == overrideFile) return;
+
+        overrideFile = file;
+        UpdateRcolFileList();
+    }
+
     private void UpdateRcolFileList()
     {
         var refRcols = RszFieldCache.RequestSetCollider.RequestSetGroups.Get(Data);
         rcols.Clear();
-        if (refRcols == null || refRcols.Count == 0 || Scene?.IsActive != true) {
+        if (overrideFile != null) rcols.Add(overrideFile);
+        if (refRcols == null || Scene?.IsActive != true) {
             return;
         }
 
@@ -64,7 +75,7 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
                 continue;
             }
 
-            if (!Scene!.Workspace.ResourceManager.TryResolveFile(rcolPath, out var handle)) {
+            if (!Scene.Workspace.ResourceManager.TryResolveFile(rcolPath, out var handle)) {
                 missingRcols ??= new();
                 Logger.ErrorIf(missingRcols.Add(rcolPath), "Failed to resolve rcol file " + rcolPath);
                 rcols.Add(null);
@@ -105,9 +116,10 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
                 foreach (var shape in group.Shapes.Concat(group.ExtraShapes)) {
                     if (shape.shape != null) {
                         if (string.IsNullOrEmpty(shape.Info.primaryJointNameStr) || parentMesh == null) {
-                            shapeMatrix = Matrix4X4<float>.Identity;
+                            shapeMatrix = transform;
                         } else {
                             parentMesh.TryGetBoneTransform(shape.Info.primaryJointNameStr, out shapeMatrix);
+                            shapeMatrix = shapeMatrix * transform;
                         }
                         if (group == activeGroup) {
                             gizmo.PushMaterial(activeMaterial, obscuredMaterial, priority: 1);

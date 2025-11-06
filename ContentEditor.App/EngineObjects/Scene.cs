@@ -67,10 +67,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         renderContext = new OpenGLRenderContext(_gl);
         RootFolder = rootFolder ?? new("ROOT", workspace.Env, this);
         if (parentScene == null) {
-            var camGo = new GameObject("__editorCamera", workspace.Env);
-            var camera = Component.Create<Camera>(camGo, workspace.Env);
-            camGo.ForceSetScene(this);
-            Root = new SceneRoot(this, camera);
+            Root = new SceneRoot(this);
         } else {
             Root = parentScene.Root;
         }

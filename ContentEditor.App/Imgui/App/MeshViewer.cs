@@ -307,14 +307,18 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 ImGui.EndPopup();
             }
 
-            if (!isSynced) {
+            if (!isSynced && previewGameobject != null) {
                 if (ImGui.MenuItem($"{AppIcons.SI_GenericInfo} Mesh Info")) ImGui.OpenPopup("MeshInfo");
                 if (ImGui.MenuItem($"{AppIcons.Eye} Mesh Groups")) ImGui.OpenPopup("MeshGroups");
                 if (ImGui.MenuItem($"{AppIcons.EfxEntry} Material")) ImGui.OpenPopup("Material"); // placeholder icon
                 if (ImGui.MenuItem($"{AppIcons.SI_FileExtractTo} Import / Export")) ImGui.OpenPopup("Export");
                 if (ImGui.MenuItem($"{AppIcons.Play} Animations")) showAnimationsMenu = !showAnimationsMenu;
                 if (showAnimationsMenu) ImguiHelpers.HighlightMenuItem($"{AppIcons.Play} Animations");
-                if (ImGui.MenuItem($"{AppIcons.Mesh} RCOL")) ImGui.OpenPopup("RCOL");
+                if (ImGui.BeginMenu($"{AppIcons.Mesh} RCOL")) {
+                    var rcolEdit = Scene!.Root.SetEditMode(previewGameobject.GetOrAddComponent<RequestSetColliderComponent>());
+                    rcolEdit?.DrawMainUI();
+                    ImGui.EndMenu();
+                }
 
                 if (ImGui.BeginPopup("MeshInfo")) {
                     ShowMeshInfo();
@@ -322,10 +326,6 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 }
                 if (ImGui.BeginPopup("Material")) {
                     ShowMaterialSettings(meshComponent);
-                    ImGui.EndPopup();
-                }
-                if (ImGui.BeginPopup("RCOL")) {
-                    ShowRcolPicker();
                     ImGui.EndPopup();
                 }
                 if (ImGui.BeginPopup("MeshGroups")) {
@@ -414,56 +414,6 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 (v, p) => v.mdfSource = p ?? "");
         }
         mdfPickerContext.ShowUI();
-    }
-
-    private UIContext? rcolPicker;
-    private string rcolPath = "";
-    private void ShowRcolPicker()
-    {
-        if (rcolPicker == null) {
-            rcolPicker = context.AddChild<MeshViewer, string>(
-                "RCOL File",
-                this,
-                new ResourcePathPicker(Workspace, KnownFileFormats.RequestSetCollider) { UseNativesPath = true, IsPathForIngame = false },
-                (v) => v!.rcolPath,
-                (v, p) => v.rcolPath = p ?? "");
-        }
-        rcolPicker.ShowUI();
-        var settings = AppConfig.Settings;
-        if (settings.RecentRcols.Count > 0) {
-            var selection = rcolPath;
-            var options = settings.RecentRcols.ToArray();
-            if (ImguiHelpers.ValueCombo("Recent files", options, options, ref selection)) {
-                rcolPath = selection;
-            }
-        }
-
-        if (previewGameobject == null) return;
-        var rcolComp = previewGameobject.GetComponent<RequestSetColliderComponent>();
-
-        if (string.IsNullOrEmpty(rcolPath)) {
-            if (rcolComp != null) {
-                RszFieldCache.RequestSetCollider.RequestSetGroups.Get(rcolComp.Data).Clear();
-            }
-            return;
-        }
-
-        rcolComp ??= previewGameobject.AddComponent<RequestSetColliderComponent>();
-
-        // TODO move this into the edit handler so it can work outside of mesh viewer
-        var storedGroups = RszFieldCache.RequestSetCollider.RequestSetGroups.Get(rcolComp.Data);
-        if (storedGroups.Count == 0) {
-            storedGroups.Add(Workspace.Env.CreateRszInstance("via.physics.RequestSetCollider.RequestSetGroup"));
-        }
-        var storedGroup = (RszInstance)storedGroups[0];
-        var storedPath = RszFieldCache.RequestSetGroup.Resource.Get(storedGroup);
-        if (storedPath != rcolPath) {
-            RszFieldCache.RequestSetGroup.Resource.Set(storedGroup, rcolPath);
-            AppConfig.Instance.AddRecentRcol(rcolPath);
-        }
-        if (ImGui.Button("Open Editor")) {
-            (Scene!.Root.SetEditMode(rcolComp) as RcolEditMode)?.OpenEditor(rcolPath);
-        }
     }
 
     private void ShowImportExportMenu()

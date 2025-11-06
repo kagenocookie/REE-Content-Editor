@@ -86,7 +86,7 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
     {
         if (Scene == null) return new();
 
-        var size = Scene!.RenderContext.ViewportSize;
+        var size = Scene.RenderContext.ViewportSize;
         var vec = Project(ViewProjectionMatrix, size, worldPosition);
         if (limitToFront && vec.W < 0) {
             return new Vector2(float.MaxValue);
