@@ -210,8 +210,20 @@ public static class AppIcons
     public static readonly char SI_FileType_TML = '\ued44';
     public static readonly char SI_FileType_CLIP = '\ued45';
     public static readonly char SI_FileType_SceneEffect = '\ued46';
+    public static readonly char SI_FileType_GUI = '\ued47';
+    public static readonly char SI_FileType_GCP = '\ued48';
+    public static readonly char SI_FileType_GSTY = '\ued49';
+    public static readonly char SI_FileType_GCF = '\ued4a';
+    public static readonly char SI_FileType_FSM = '\ued4b';
+    public static readonly char SI_FileType_MOTFSM = '\ued4c';
+    public static readonly char SI_FileType_TMLFSM2 = '\ued4d';
+    public static readonly char SI_FileType_CHAIN = '\ued4e';
+    public static readonly char SI_FileType_CHAIN2 = '\ued4f';
+    public static readonly char SI_FileType_UCURVE = '\ued50';
+    public static readonly char SI_FileType_UCURVELIST = '\ued51';
+    public static readonly char SI_SceneGameObject4 = '\ued52';
 
-    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_FileType_SceneEffect, 0];
+    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_SceneGameObject4, 0];
 
     public static string PrependIcon(this string text, object target)
     {
@@ -272,6 +284,17 @@ public static class AppIcons
         KnownFileFormats.Effect => (SI_FileType_EFX, Vector4.One),
         KnownFileFormats.Timeline => (SI_FileType_TML, Vector4.One),
         KnownFileFormats.Clip => (SI_FileType_CLIP, Vector4.One),
+        KnownFileFormats.GUI => (SI_FileType_GUI, Vector4.One),
+        KnownFileFormats.GUIColorPreset => (SI_FileType_GCP, Vector4.One),
+        KnownFileFormats.GUIStyleList => (SI_FileType_GSTY, Vector4.One),
+        KnownFileFormats.GUIConfig => (SI_FileType_GCF, Vector4.One),
+        KnownFileFormats.Fsm or KnownFileFormats.Fsm2 => (SI_FileType_FSM, Vector4.One),
+        KnownFileFormats.MotionFsm or KnownFileFormats.MotionFsm2 => (SI_FileType_FSM, Vector4.One),
+        KnownFileFormats.TimelineFsm2 => (SI_FileType_TMLFSM2, Vector4.One),
+        KnownFileFormats.Chain => (SI_FileType_CHAIN, Vector4.One),
+        KnownFileFormats.Chain2 => (SI_FileType_CHAIN2, Vector4.One),
+        KnownFileFormats.UserCurve => (SI_FileType_UCURVE, Vector4.One),
+        KnownFileFormats.UserCurveList => (SI_FileType_UCURVELIST, Vector4.One),
         _ => ('\0', Vector4.One),
     };
 }
