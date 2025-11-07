@@ -50,9 +50,15 @@ public class ShapeBuilder
 
     private float[]? VertexData;
     private int[]? Indices;
-    public int VertexAttributeCount = 9;
 
-    public GeometryType GeoType = GeometryType.FakeWire;
+    public GeometryType GeoType;
+    public MeshLayout layout;
+
+    public ShapeBuilder(GeometryType type, MeshLayout layout)
+    {
+        GeoType = type;
+        this.layout = layout;
+    }
 
     public int CalculateShapeHash()
     {
@@ -85,7 +91,7 @@ public class ShapeBuilder
 
         if (VertexData?.Length == count && Indices?.Length == count) return;
 
-        VertexData = new float[count * VertexAttributeCount];
+        VertexData = new float[count * layout.VertexSize];
         Indices = new int[count];
     }
 
@@ -105,9 +111,7 @@ public class ShapeBuilder
     {
         VertexData = vertices;
         Indices = indices;
-        AllocateArray();
-        int index = 0;
-        foreach (var sc in Shapes) sc.Build(ref index, this);
+        BuildShapes();
         vertices = VertexData!;
         indices = Indices!;
         bound = Bounds;
@@ -117,40 +121,18 @@ public class ShapeBuilder
         Bounds = AABB.MaxMin;
     }
 
-    public static void CreateSingle(AABB shape, ref float[] vertices, ref int[] indices, ref AABB bound)
+    public void BuildShapes()
     {
-        // could be optimized to not need a concrete shape builder instance but probably not a meaningful difference
-        var b = new ShapeBuilder();
-        b.Add(shape);
-        b.UpdateMesh(ref vertices, ref indices, ref bound);
+        AllocateArray();
+        int index = 0;
+        foreach (var sc in Shapes) sc.Build(ref index, this);
     }
 
-    public static void CreateSingle(OBB shape, ref float[] vertices, ref int[] indices, ref AABB bound)
+    public void GetBuffers(ref float[] vertices, ref int[] indices, ref AABB bound)
     {
-        var b = new ShapeBuilder();
-        b.Add(shape);
-        b.UpdateMesh(ref vertices, ref indices, ref bound);
-    }
-
-    public static void CreateSingle(Sphere shape, ref float[] vertices, ref int[] indices, ref AABB bound)
-    {
-        var b = new ShapeBuilder();
-        b.Add(shape);
-        b.UpdateMesh(ref vertices, ref indices, ref bound);
-    }
-
-    public static void CreateSingle(Capsule shape, ref float[] vertices, ref int[] indices, ref AABB bound)
-    {
-        var b = new ShapeBuilder();
-        b.Add(shape);
-        b.UpdateMesh(ref vertices, ref indices, ref bound);
-    }
-
-    public static void CreateSingle(Cylinder shape, ref float[] vertices, ref int[] indices, ref AABB bound)
-    {
-        var b = new ShapeBuilder();
-        b.Add(shape);
-        b.UpdateMesh(ref vertices, ref indices, ref bound);
+        vertices = VertexData!;
+        indices = Indices!;
+        bound = Bounds;
     }
 
     public void Clear()
@@ -164,12 +146,12 @@ public class ShapeBuilder
     private void TransformVertices(int start, int end, Quaternion rotation, Vector3 offset)
     {
         for (int i = start; i < end; ++i) {
-            var point = new Vector3(VertexData![i * VertexAttributeCount + 0], VertexData[i * VertexAttributeCount + 1], VertexData[i * VertexAttributeCount + 2]);
+            var point = new Vector3(VertexData![i * layout.VertexSize + 0], VertexData[i * layout.VertexSize + 1], VertexData[i * layout.VertexSize + 2]);
             point = Vector3.Transform(point, rotation) + offset;
 
-            VertexData[i * VertexAttributeCount + 0] = point.X;
-            VertexData[i * VertexAttributeCount + 1] = point.Y;
-            VertexData[i * VertexAttributeCount + 2] = point.Z;
+            VertexData[i * layout.VertexSize + 0] = point.X;
+            VertexData[i * layout.VertexSize + 1] = point.Y;
+            VertexData[i * layout.VertexSize + 2] = point.Z;
         }
     }
 
@@ -179,12 +161,12 @@ public class ShapeBuilder
         var seq = vertex % 6;
 
         // uv
-        VertexData![index * VertexAttributeCount + 3] = seq is 1 or 2 or 4 ? 1 : 0;
-        VertexData[index * VertexAttributeCount + 4] = seq is 0 or 1 or 3 ? 1 : 0;
+        VertexData![index * layout.VertexSize + 3] = seq is 1 or 2 or 4 ? 1 : 0;
+        VertexData[index * layout.VertexSize + 4] = seq is 0 or 1 or 3 ? 1 : 0;
         // normals - note: correctness untested
-        VertexData[index * VertexAttributeCount + 5] = side is 0 or 1 ? 1 : 0;
-        VertexData[index * VertexAttributeCount + 6] = side is 2 or 3 ? 1 : 0;
-        VertexData[index * VertexAttributeCount + 7] = side is 4 or 5 ? 1 : 0;
+        VertexData[index * layout.VertexSize + 5] = side is 0 or 1 ? 1 : 0;
+        VertexData[index * layout.VertexSize + 6] = side is 2 or 3 ? 1 : 0;
+        VertexData[index * layout.VertexSize + 7] = side is 4 or 5 ? 1 : 0;
     }
 
     private void StoreLineSemiCircle(ref int index, float radius, Vector3 center, Vector3 rotEuler)
@@ -273,11 +255,17 @@ public class ShapeBuilder
 
     private void InsertVertex(ref int index, Vector3 vec)
     {
-        VertexData![index * VertexAttributeCount + 0] = vec.X;
-        VertexData[index * VertexAttributeCount + 1] = vec.Y;
-        VertexData[index * VertexAttributeCount + 2] = vec.Z;
-        VertexData[index * VertexAttributeCount + 6] = 1; // default normal = (0, 1, 0)
-        VertexData[index * VertexAttributeCount + 8] = BitConverter.Int32BitsToSingle(index);
+        VertexData![index * layout.VertexSize + 0] = vec.X;
+        VertexData[index * layout.VertexSize + 1] = vec.Y;
+        VertexData[index * layout.VertexSize + 2] = vec.Z;
+        if (layout.HasAttributes(MeshAttributeFlag.Normal)) {
+            // default normal = (0, 1, 0)
+            VertexData[index * layout.VertexSize + layout.AttributeIndexOffsets[MeshLayout.Index_Normal] + 1] = 1;
+        }
+        if (layout.HasAttributes(MeshAttributeFlag.Index)) {
+            VertexData[index * layout.VertexSize + layout.AttributeIndexOffsets[MeshLayout.Index_Index]] = BitConverter.Int32BitsToSingle(index);
+        }
+
         Indices![index] = index;
         index++;
         Bounds = Bounds.Extend(vec);
@@ -644,7 +632,7 @@ public class ShapeBuilder
                         builder.InsertVertex(ref index, shape.Center + BoxLinePoints[i] * extent);
                     }
                 }
-            } else {
+            } else if (builder.GeoType == GeometryType.FakeWire) {
                 foreach (var shape in shapes) {
                     var extent = shape.Size / 2;
                     for (int i = 0; i < BoxTrianglePoints.Length; ++i) {
@@ -652,12 +640,40 @@ public class ShapeBuilder
                         builder.InsertVertex(ref index, shape.Center + BoxTrianglePoints[i] * extent);
                     }
                 }
+            } else {
+                Span<Vector3> pts = stackalloc Vector3[8];
+                foreach (var shape in shapes) {
+                    var min = shape.minpos;
+                    var max = shape.maxpos;
+                    // TODO verify
+
+                    pts[0] = new Vector3(min.X, min.Y, min.Z);
+                    pts[1] = new Vector3(min.X, min.Y, max.Z);
+                    pts[2] = new Vector3(min.X, max.Y, min.Z);
+                    pts[3] = new Vector3(min.X, max.Y, max.Z);
+                    pts[4] = new Vector3(max.X, min.Y, min.Z);
+                    pts[5] = new Vector3(max.X, min.Y, max.Z);
+                    pts[6] = new Vector3(max.X, max.Y, min.Z);
+                    pts[7] = new Vector3(max.X, max.Y, max.Z);
+
+                    builder.InsertQuad(ref index, pts[0], pts[1], pts[3], pts[2]);
+                    builder.InsertQuad(ref index, pts[4], pts[5], pts[7], pts[6]);
+                    builder.InsertQuad(ref index, pts[0], pts[1], pts[5], pts[4]);
+                    builder.InsertQuad(ref index, pts[2], pts[3], pts[7], pts[6]);
+                    builder.InsertQuad(ref index, pts[0], pts[2], pts[6], pts[4]);
+                    builder.InsertQuad(ref index, pts[1], pts[3], pts[7], pts[5]);
+                }
             }
         }
 
         public override int CalculateVertexCount(ShapeBuilder builder)
         {
-            return shapes.Count * (builder.GeoType == ShapeBuilder.GeometryType.Line ? BoxLinePoints.Length : BoxTrianglePoints.Length);
+            return shapes.Count * (builder.GeoType switch {
+                ShapeBuilder.GeometryType.Line => BoxLinePoints.Length,
+                ShapeBuilder.GeometryType.FakeWire => BoxTrianglePoints.Length,
+                ShapeBuilder.GeometryType.Filled => 6 * 6,
+                _ => throw new NotImplementedException(),
+            });
         }
 
         public override int CalculateShapeHash()

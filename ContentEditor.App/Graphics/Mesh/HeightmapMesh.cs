@@ -9,6 +9,7 @@ public class HeightmapMesh : Mesh
 
     internal HeightmapMesh() : base()
     {
+        layout = MeshLayout.BasicTriangleMesh;
     }
 
     public void Update(float[][] heights, Vector3 min, Vector3 max, Vector2 uvWrapCount)

@@ -10,9 +10,7 @@ public abstract class Mesh : IDisposable
 {
     protected GL GL;
 
-    protected VertAttribute[] attributes = DefaultAttributes;
-
-    protected record struct VertAttribute(int Offset, int Count, uint Index);
+    public MeshLayout layout { get; protected set; }
 
     public float[] VertexData { get; protected set; }
     public int[] Indices { get; protected set; }
@@ -24,70 +22,11 @@ public abstract class Mesh : IDisposable
 
     public uint ID => VAO.Handle;
 
-    private MeshFlags _flags;
-    public MeshFlags Flags {
-        get => _flags;
-        protected set {
-            if (_flags == value) return;
-            _flags = value;
-            UpdateAttributes();
-        }
-    }
-
-    public bool HasTangents => (Flags & MeshFlags.HasTangents) != 0;
-    public bool HasBones => (Flags & MeshFlags.HasBones) != 0;
-    public bool HasColor => attributes.Any(a => a.Index == Index_Color);
-
-    private const int MinAttributeCount = 9;
-    protected int AttributeCount => MinAttributeCount
-        + (HasTangents ? 3 : 0)
-        + (HasBones ? 8 : 0);
-
-    protected const int TangentAttributeOffset = 9;
-    protected int BonesAttributeOffset => HasTangents ? 12 : 9;
+    public bool HasTangents => layout.HasAttributes(MeshAttributeFlag.Tangent);
+    public bool HasBones => layout.HasAttributes(MeshAttributeFlag.Weight);
+    public bool HasColor => layout.HasAttributes(MeshAttributeFlag.Color);
 
     public PrimitiveType MeshType { get; set; } = PrimitiveType.Triangles;
-
-    private const int Index_Position = 0;
-    private const int Index_UV = 1;
-    private const int Index_Normal = 2;
-    private const int Index_Index = 3;
-    private const int Index_Tangent = 4;
-    private const int Index_BoneIndex = 5;
-    private const int Index_BoneWeight = 6;
-    private const int Index_Color = 7;
-    private const int Index_InstancesMatrix = 8;
-
-    protected static readonly VertAttribute[] LineAttributes = [
-        new VertAttribute(0, 3, Index_Position),
-    ];
-
-    protected static readonly VertAttribute[] UnshadedColorAttributes = [
-        new VertAttribute(0, 3, Index_Position),
-        new VertAttribute(3, 1, Index_Color),
-    ];
-
-    private static readonly VertAttribute[] DefaultAttributes = [
-        new VertAttribute(0, 3, Index_Position),
-        new VertAttribute(3, 2, Index_UV),
-        new VertAttribute(5, 3, Index_Normal),
-        new VertAttribute(8, 1, Index_Index),
-    ];
-
-    private static readonly VertAttribute[] AttributesBones = DefaultAttributes.Concat([
-        new VertAttribute(9, 4, Index_BoneIndex),
-        new VertAttribute(13, 4, Index_BoneWeight),
-    ]).ToArray();
-
-    private static readonly VertAttribute[] AttributesTangents = DefaultAttributes.Concat([
-        new VertAttribute(9, 3, Index_Tangent),
-    ]).ToArray();
-
-    private static readonly VertAttribute[] AttributesTangentsBones = DefaultAttributes.Concat([
-        new VertAttribute(9, 3, Index_Tangent),
-        new VertAttribute(12, 4, Index_BoneIndex),
-        new VertAttribute(16, 4, Index_BoneWeight),
-    ]).ToArray();
 
     protected Mesh()
     {
@@ -111,37 +50,24 @@ public abstract class Mesh : IDisposable
         VAO.Bind();
     }
 
-    private void UpdateAttributes()
-    {
-        if (Flags == (MeshFlags.HasBones|MeshFlags.HasTangents)) {
-            attributes = AttributesTangentsBones;
-        } else if (Flags == MeshFlags.HasBones) {
-            attributes = AttributesBones;
-        } else if (Flags == MeshFlags.HasTangents) {
-            attributes = AttributesTangents;
-        } else {
-            attributes = DefaultAttributes;
-        }
-    }
-
     protected void ApplyVertexAttributes()
     {
-        var count = 0;
-        foreach (var va in attributes) {
-            count += va.Count;
-            if (va.Index == Index_BoneIndex || va.Index == Index_Index) {
-                VAO.VertexAttributePointerInt(va.Index, va.Count, VertexAttribIType.Int, va.Offset);
-            } else if (va.Index == Index_Color) {
+        var size = 0;
+        foreach (var va in layout.Attributes) {
+            size += va.Size;
+            if (va.Index == MeshLayout.Index_BoneIndex || va.Index == MeshLayout.Index_Index) {
+                VAO.VertexAttributePointerInt(va.Index, va.Size, VertexAttribIType.Int, va.Offset);
+            } else if (va.Index == MeshLayout.Index_Color) {
                 VAO.VertexAttributePointerFloat(va.Index, 4, VertexAttribType.UnsignedByte, va.Offset, true);
             } else {
-                VAO.VertexAttributePointerFloat(va.Index, va.Count, VertexAttribType.Float, va.Offset);
+                VAO.VertexAttributePointerFloat(va.Index, va.Size, VertexAttribType.Float, va.Offset);
             }
         }
-        VAO.BindVertexBuffer(VBO.Handle, (uint)count);
+        VAO.BindVertexBuffer(VBO.Handle, (uint)size);
 
         // this is only needed for instanced meshes, not for normally drawn ones.
         // But it doesn't seem to break normal meshes either so it's "fine"
-        VAO.EnableInstancedMatrix(Index_InstancesMatrix);
+        VAO.EnableInstancedMatrix(MeshLayout.Index_InstancesMatrix);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -203,9 +129,8 @@ public abstract class Mesh : IDisposable
         target.Indices = Indices;
         target.BoundingBox = BoundingBox;
         target.MeshGroup = MeshGroup;
-        target.attributes = attributes;
+        target.layout = layout;
         target.MeshType = MeshType;
-        target._flags = _flags;
     }
 
     protected void CopyGeometryData(Mesh target)
@@ -217,8 +142,7 @@ public abstract class Mesh : IDisposable
         Array.Copy(Indices, target.Indices, Indices.Length);
         target.BoundingBox = BoundingBox;
         target.MeshGroup = MeshGroup;
-        target.attributes = attributes;
+        target.layout = layout;
         target.MeshType = MeshType;
-        target._flags = _flags;
     }
 }

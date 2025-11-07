@@ -45,7 +45,7 @@ public class SelectionBoundsGizmo : Gizmo
         if (wnd == null) return;
 
         var showBounds = false;
-        var builder = new ShapeBuilder() { GeoType = ShapeBuilder.GeometryType.Line };
+        var builder = new ShapeBuilder(ShapeBuilder.GeometryType.Line, MeshLayout.PositionOnly);
         foreach (var ww in wnd.ActiveImguiWindows) {
             if (ww.Handler is ObjectInspector insp && insp.ParentWindow is ISceneEditor editor) {
                 var scene = editor.GetScene();

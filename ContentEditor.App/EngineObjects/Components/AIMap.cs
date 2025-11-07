@@ -159,7 +159,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
     {
         if (!navMeshes.TryGetValue(NavmeshContentType.Points, out var mesh)) {
             navMeshes[NavmeshContentType.Points] = mesh = new MeshHandle(new MeshResourceHandle(new LineMesh(overrideFile!, container, content)));
-            var builder = new ShapeBuilder() { GeoType = ShapeBuilder.GeometryType.Line };
+            var builder = new ShapeBuilder(ShapeBuilder.GeometryType.Line, MeshLayout.PositionOnly);
             foreach (var pt in content.Nodes) {
                 builder.Add(new Sphere(pt.pos, 0.25f));
             }
@@ -231,16 +231,27 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
             .Color("_MainColor", new Color(0xff, 0x66, 0xbb, 0xff));
         gizmo.Mesh(mesh.Meshes.First(), Transform.WorldTransform, boundsMaterial);
     }
-    private void UpdateAABBs(GizmoContainer gizmo, ContentGroupContainer container, ContentGroupMapAABB content, int offset)
+    private void UpdateAABBs(GizmoContainer gizmo, ContentGroupContainer container, ContentGroupMapAABB content, int nodeOffset)
     {
         if (!navMeshes.TryGetValue(NavmeshContentType.AABBs, out var mesh)) {
-            var tri = new TriangleMesh(overrideFile!, container, content, offset);
+            var isMain = container == overrideFile!.mainContent;
+            var builder = new ShapeBuilder(isMain ? ShapeBuilder.GeometryType.Line : ShapeBuilder.GeometryType.Filled, MeshLayout.PositionOnly);
+            var nodes = container.Nodes.Nodes;
+            var polygons = content.Nodes;
+            var verts = container.Vertices;
+            for (int i = 0; i < content.NodeCount; ++i) {
+                var node = nodes[nodeOffset + i];
+                var poly = polygons[i];
+                var min = verts[poly.indices[0]].Vector3;
+                var max = verts[poly.indices[1]].Vector3;
+                builder.Add(new AABB(min, max));
+            }
+            var tri = new ShapeMesh(builder);
             navMeshes[NavmeshContentType.AABBs] = mesh = new MeshHandle(new MeshResourceHandle(tri));
-            mesh.Handle.Meshes.Add(new LineMesh(tri));
             Scene!.RenderContext.StoreMesh(mesh.Handle);
         }
 
-        aabbsMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "aabb")
+        aabbsMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "aabb")
             .Color("_MainColor", new Color(0x99, 0x66, 0xbb, 0x66)).Blend();
         gizmo.Mesh(mesh.Meshes.First(), Transform.WorldTransform, aabbsMaterial);
     }

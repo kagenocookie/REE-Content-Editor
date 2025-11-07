@@ -11,7 +11,7 @@ public class GizmoShapeBuilder : IDisposable
     public Material material;
     public Material? obscuredMaterial;
     private GizmoState state;
-    private ShapeBuilder builder = new() { GeoType = ShapeBuilder.GeometryType.Line };
+    private ShapeBuilder builder = new(ShapeBuilder.GeometryType.Line, MeshLayout.PositionOnly);
     private int lastShapeHash;
 
     public ShapeMesh? mesh;
