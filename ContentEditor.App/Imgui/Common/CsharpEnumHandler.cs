@@ -65,6 +65,8 @@ public class CsharpFlagsEnumFieldHandler<T, TUnderlying>() : IObjectUIHandler
     private string[] Names = Enum.GetNames<T>();
     private T[] Values = Enum.GetValues<T>();
 
+    public bool HideNumberInput { get; init; }
+
     private static object[] GetBoxedValues(Type type)
     {
         var values = Enum.GetValues(type);
@@ -93,7 +95,9 @@ public class CsharpFlagsEnumFieldHandler<T, TUnderlying>() : IObjectUIHandler
     {
         var value = context.Get<T>();
         ImguiHelpers.BeginRect();
-        if (ImGui.InputScalar(context.label, scalarType, (IntPtr)(&value))) {
+        if (HideNumberInput) {
+            ImGui.Text(context.label + ": ");
+        } else if (ImGui.InputScalar(context.label, scalarType, (IntPtr)(&value))) {
             UndoRedo.RecordSet(context, value);
         }
 
@@ -101,7 +105,9 @@ public class CsharpFlagsEnumFieldHandler<T, TUnderlying>() : IObjectUIHandler
         var endX = ImGui.GetWindowSize().X;
         var totalPadding = startX * 2;
         var w_total = endX - totalPadding;
-        ImGui.Text("Flags: ");
+        if (!HideNumberInput) {
+            ImGui.Text("Flags: ");
+        }
         ImGui.SameLine();
         var tabMargin = ImGui.GetStyle().FramePadding.X * 2 + 32; // how do we determine checkbox size properly?
 
@@ -120,7 +126,7 @@ public class CsharpFlagsEnumFieldHandler<T, TUnderlying>() : IObjectUIHandler
             }
             x += tabWidth;
 
-            var hasFlag = !(Unsafe.As<T, TUnderlying>(ref value) & Unsafe.As<T, TUnderlying>(ref flagValue)).Equals(default);
+            var hasFlag = (Unsafe.As<T, TUnderlying>(ref value) & Unsafe.As<T, TUnderlying>(ref flagValue)).Equals(Unsafe.As<T, TUnderlying>(ref flagValue));
             if (ImGui.Checkbox(label, ref hasFlag)) {
                 var result = hasFlag
                     ? Unsafe.As<T, TUnderlying>(ref value) | Unsafe.As<T, TUnderlying>(ref flagValue)

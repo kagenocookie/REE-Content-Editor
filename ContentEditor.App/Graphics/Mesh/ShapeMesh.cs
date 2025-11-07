@@ -9,7 +9,7 @@ public class ShapeMesh : Mesh
 {
     public ShapeType ShapeType { get; private set; } = ShapeType.Invalid;
 
-    private ShapeMesh() { }
+    public ShapeMesh() { }
 
     public ShapeMesh(GL gl) : base(gl)
     {
@@ -75,7 +75,7 @@ public class ShapeMesh : Mesh
         if (builder.GeoType == ShapeBuilder.GeometryType.Line) {
             MeshType = PrimitiveType.Lines;
         }
-        UpdateBuffers();
+        if (GL != null) UpdateBuffers();
     }
 
     public override string ToString() => $"{VAO} {VBO} indices: {Indices.Length}";

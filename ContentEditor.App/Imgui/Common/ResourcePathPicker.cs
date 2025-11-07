@@ -20,6 +20,8 @@ public class ResourcePathPicker : IObjectUIHandler
     public bool UseNativesPath { get; init; }
     public bool IsPathForIngame { get; init; } = true;
 
+    private ContentWorkspace? workspace;
+
     public ResourcePathPicker()
     {
         FileFormats = [];
@@ -27,6 +29,7 @@ public class ResourcePathPicker : IObjectUIHandler
 
     public ResourcePathPicker(ContentWorkspace? ws, params KnownFileFormats[] allowedFormats)
     {
+        workspace = ws;
         var isKnownFormats = (allowedFormats.Length > 1 || allowedFormats.Length == 1 && allowedFormats[0] != KnownFileFormats.Unknown);
         FileFormats = isKnownFormats ? allowedFormats : [];
         if (ws != null && isKnownFormats) {
@@ -40,6 +43,7 @@ public class ResourcePathPicker : IObjectUIHandler
 
     public ResourcePathPicker(ContentWorkspace? ws, string additionalFilter, params KnownFileFormats[] allowedFormats)
     {
+        workspace = ws;
         var isKnownFormats = (allowedFormats.Length > 1 || allowedFormats.Length == 1 && allowedFormats[0] != KnownFileFormats.Unknown);
         FileFormats = isKnownFormats ? allowedFormats : [];
         if (ws != null && isKnownFormats) {
@@ -68,7 +72,7 @@ public class ResourcePathPicker : IObjectUIHandler
         }
 
         if (ImGui.BeginPopupContextItem()) {
-            var ws = context.GetWorkspace();
+            var ws = workspace ??= context.GetWorkspace();
             if (!string.IsNullOrWhiteSpace(newPath) && ImGui.Button("Open file")) {
                 ImGui.CloseCurrentPopup();
                 if (ws != null) {

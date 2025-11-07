@@ -103,9 +103,9 @@ public class SceneRoot : IDisposable
         if (ActiveEditMode != null) {
             if (ActiveEditMode.Target == component) return ActiveEditMode;
 
-            if (ActiveEditMode.GetType() != type) {
+            if (ActiveEditMode.GetType() == type) {
                 ActiveEditMode.SetTarget(component as Component);
-                return null;
+                return ActiveEditMode;
             }
 
             ActiveEditMode.SetTarget(null);

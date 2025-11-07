@@ -16,6 +16,10 @@ public class RcolEditMode : EditModeHandler
 
     public RcolEditor? PrimaryEditor { get; private set; }
 
+    private UIContext? filePicker;
+    private string rcolPath = "";
+    protected UIContext? context;
+
     protected override void OnTargetChanged(Component? previous)
     {
         if (previous is RequestSetColliderComponent prst) {
@@ -44,9 +48,6 @@ public class RcolEditMode : EditModeHandler
         EditorWindow.CurrentWindow!.AddSubwindow(PrimaryEditor);
     }
 
-    private UIContext? filePicker;
-    private string rcolPath = "";
-    protected UIContext context = null!;
     public override void DrawMainUI()
     {
         if (context == null) {

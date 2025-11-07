@@ -208,5 +208,6 @@ public enum BuiltInMaterials
     MonoColor,
     Wireframe,
     FilledWireframe,
+    GizmoVertexColor,
     Standard,
 }

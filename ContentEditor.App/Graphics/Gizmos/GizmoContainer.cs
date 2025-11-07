@@ -167,6 +167,11 @@ public class GizmoContainer : IDisposable
         }
     }
 
+    public void Mesh(Mesh mesh, in Matrix4X4<float> transform, Material material, Material? obscuredMaterial = null)
+    {
+        meshDraws.Add(new GizmoRenderBatchItem(material, mesh, transform, obscuredMaterial));
+    }
+
     public void Add(OBB shape) => shapeStack.Peek().Add(shape);
     public void Add(AABB shape) => shapeStack.Peek().Add(shape);
     public void Add(Cone shape) => shapeStack.Peek().Add(shape);

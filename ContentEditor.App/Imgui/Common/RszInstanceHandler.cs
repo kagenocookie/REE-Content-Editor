@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Numerics;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -891,6 +890,7 @@ public class PrefabRefHandler : IObjectUIHandler
 
         var preloadType = instance.Values[0].GetType();
         var preload = instance.Values[0] is bool b ? b : (byte)instance.Values[0] != 0;
+        var nextW = ImGui.CalcItemWidth() - ImGui.CalcTextSize("Preload").X - ImGui.GetStyle().FramePadding.X * 2;
         if (ImGui.Checkbox("Preload", ref preload)) {
             if (preloadType == typeof(bool)) {
                 UndoRedo.RecordCallbackSetter(context, instance, !preload, preload, (i, v) => i.Values[0] = v, $"{instance.GetHashCode()} Preload");
@@ -900,6 +900,7 @@ public class PrefabRefHandler : IObjectUIHandler
         }
         if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("If true, the prefab will get loaded immediately with the scene and included in the resources list.\nYou rarely want to change this for existing files.");
         ImGui.SameLine();
+        ImGui.SetNextItemWidth(nextW);
         context.ShowChildrenUI();
     }
 }

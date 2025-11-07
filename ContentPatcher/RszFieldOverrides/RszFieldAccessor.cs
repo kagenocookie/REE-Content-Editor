@@ -258,6 +258,9 @@ public static partial class RszFieldCache
         .Where(field => field.FieldType.IsArray && field.FieldType.GetElementType() == typeof(string))
         .ToDictionary(field => field.Name, field => (string[])field.GetValue(null)!)!;
 
+    public static T Get<T>(this RszInstance instance, RszFieldAccessorBase<T> accessor)
+        => accessor.Get(instance);
+
     public static void InitializeFieldOverrides(string gameName, RszParser parser)
     {
         InitializeFieldOverrides(gameName, parser, typeof(RszFieldCache));
