@@ -17,7 +17,8 @@ public class HeightFieldMeshHandle : MeshHandle
 
     public override void Update()
     {
-        var builder = new ShapeBuilder() { GeoType = ShapeBuilder.GeometryType.Line };
+        var layout = MeshLayout.Get(MeshAttributeFlag.Position);
+        var builder = new ShapeBuilder(ShapeBuilder.GeometryType.Line, layout);
         var min = File.min with { Y = 0 };
         for (int x = 0; x < File.splitCount; ++x) {
             for (int y = 0; y < File.splitCount; ++y) {
@@ -36,7 +37,7 @@ public class HeightFieldMeshHandle : MeshHandle
         int[] inds = [];
         AABB bounds = AABB.MaxMin;
         builder.UpdateMesh(ref vert, ref inds, ref bounds);
-        var mesh = new TriangleMesh(GL, vert, inds, bounds) { MeshType = PrimitiveType.Lines };
+        var mesh = new TriangleMesh(GL, vert, inds, bounds, layout) { MeshType = PrimitiveType.Lines };
         Handle.Meshes.Add(mesh);
     }
 }

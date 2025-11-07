@@ -19,10 +19,10 @@ public class TriangleMesh : Mesh
         UpdateBuffers();
     }
 
-    public TriangleMesh(GL gl, float[] vertexData, int[] indices, AABB bounds, bool includeTangents = false) : this(gl, vertexData, indices)
+    public TriangleMesh(GL gl, float[] vertexData, int[] indices, AABB bounds, in MeshLayout layout) : this(gl, vertexData, indices)
     {
         BoundingBox = bounds;
-        Flags = (includeTangents ? MeshFlags.HasTangents : MeshFlags.None);
+        this.layout = layout;
     }
 
     public TriangleMesh(GL gl, MeshFile sourceMesh, ReeLib.Mesh.Submesh submesh) : base(gl)
@@ -38,10 +38,9 @@ public class TriangleMesh : Mesh
 
     public TriangleMesh(AimpFile file, ContentGroupContainer container, ContentGroupTriangle data)
     {
-        attributes = UnshadedColorAttributes;
-        var attrs = 4;
+        layout = MeshLayout.ColoredPositions;
         Indices = new int[data.NodeCount * 3];
-        VertexData = new float[Indices.Length * attrs];
+        VertexData = new float[Indices.Length * layout.VertexSize];
 
         BoundingBox = container.bounds;
         var nodes = container.Nodes.Nodes;
@@ -66,8 +65,7 @@ public class TriangleMesh : Mesh
 
     public TriangleMesh(AimpFile file, ContentGroupContainer container, ContentGroupPolygon data)
     {
-        attributes = UnshadedColorAttributes;
-        var attrs = 4;
+        layout = MeshLayout.ColoredPositions;
         var polygons = data.Nodes;
         var nodes = container.Nodes.Nodes;
         var verts = container.Vertices;
@@ -78,7 +76,7 @@ public class TriangleMesh : Mesh
             totalTriangleCount += poly.indices.Length - 2;
         }
         Indices = new int[totalTriangleCount * 3];
-        VertexData = new float[Indices.Length * attrs];
+        VertexData = new float[Indices.Length * layout.VertexSize];
 
         var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
 
@@ -102,15 +100,14 @@ public class TriangleMesh : Mesh
     public TriangleMesh(AimpFile file, ContentGroupContainer container, ContentGroupMapBoundary data, int nodeOffset)
     {
         // I'm not yet sure if we wanna use this one or not... boundary shapes look stupid
-        attributes = UnshadedColorAttributes;
-        var attrs = 4;
+        layout = MeshLayout.ColoredPositions;
         var polygons = data.Nodes;
         var nodes = container.Nodes.Nodes;
         var verts = container.Vertices;
         BoundingBox = container.bounds;
 
         Indices = new int[polygons.Count * 24];
-        VertexData = new float[Indices.Length * attrs];
+        VertexData = new float[Indices.Length * layout.VertexSize];
 
         var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
 
@@ -152,82 +149,6 @@ public class TriangleMesh : Mesh
         }
     }
 
-    public TriangleMesh(AimpFile file, ContentGroupContainer container, ContentGroupMapAABB data, int nodeOffset)
-    {
-        attributes = UnshadedColorAttributes;
-        var attrs = 4;
-        var polygons = data.Nodes;
-        var nodes = container.Nodes.Nodes;
-        var verts = container.Vertices;
-        BoundingBox = container.bounds;
-
-        Indices = new int[polygons.Count * 24];
-        VertexData = new float[Indices.Length * attrs];
-
-        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
-
-        var index = 0;
-        Span<Vector3> pts = stackalloc Vector3[8];
-        for (int i = 0; i < data.NodeCount; ++i) {
-            var node = nodes[nodeOffset + i];
-            var poly = polygons[i];
-            var color = BitConverter.Int32BitsToSingle(node.GetColor(file).ABGR);
-            var min = verts[poly.indices[0]].Vector3;
-            var max = verts[poly.indices[1]].Vector3;
-
-            pts[0] = new Vector3(min.X, min.Y, min.Z);
-            pts[1] = new Vector3(min.X, min.Y, max.Z);
-            pts[2] = new Vector3(min.X, max.Y, min.Z);
-            pts[3] = new Vector3(min.X, max.Y, max.Z);
-            pts[4] = new Vector3(max.X, min.Y, min.Z);
-            pts[5] = new Vector3(max.X, min.Y, max.Z);
-            pts[6] = new Vector3(max.X, max.Y, min.Z);
-            pts[7] = new Vector3(max.X, max.Y, max.Z);
-
-            pointData[index++] = new Vector4(pts[0], color);
-            pointData[index++] = new Vector4(pts[1], color);
-            pointData[index++] = new Vector4(pts[2], color);
-            pointData[index++] = new Vector4(pts[1], color);
-            pointData[index++] = new Vector4(pts[2], color);
-            pointData[index++] = new Vector4(pts[3], color);
-
-            pointData[index++] = new Vector4(pts[4], color);
-            pointData[index++] = new Vector4(pts[5], color);
-            pointData[index++] = new Vector4(pts[6], color);
-            pointData[index++] = new Vector4(pts[5], color);
-            pointData[index++] = new Vector4(pts[6], color);
-            pointData[index++] = new Vector4(pts[7], color);
-
-            // pointData[index++] = new Vector4(pts[0], color);
-            // pointData[index++] = new Vector4(pts[1], color);
-            // pointData[index++] = new Vector4(pts[4], color);
-            // pointData[index++] = new Vector4(pts[1], color);
-            // pointData[index++] = new Vector4(pts[4], color);
-            // pointData[index++] = new Vector4(pts[5], color);
-
-            // pointData[index++] = new Vector4(pts[2], color);
-            // pointData[index++] = new Vector4(pts[3], color);
-            // pointData[index++] = new Vector4(pts[6], color);
-            // pointData[index++] = new Vector4(pts[3], color);
-            // pointData[index++] = new Vector4(pts[6], color);
-            // pointData[index++] = new Vector4(pts[7], color);
-
-            pointData[index++] = new Vector4(pts[0], color);
-            pointData[index++] = new Vector4(pts[2], color);
-            pointData[index++] = new Vector4(pts[4], color);
-            pointData[index++] = new Vector4(pts[2], color);
-            pointData[index++] = new Vector4(pts[4], color);
-            pointData[index++] = new Vector4(pts[6], color);
-
-            pointData[index++] = new Vector4(pts[1], color);
-            pointData[index++] = new Vector4(pts[3], color);
-            pointData[index++] = new Vector4(pts[5], color);
-            pointData[index++] = new Vector4(pts[3], color);
-            pointData[index++] = new Vector4(pts[5], color);
-            pointData[index++] = new Vector4(pts[7], color);
-        }
-    }
-
     private void PrepareMeshVertexBufferData(MeshFile sourceMesh, ReeLib.Mesh.Submesh submesh)
     {
         if (sourceMesh.MeshBuffer == null)
@@ -239,8 +160,7 @@ public class TriangleMesh : Mesh
         var hasTan = sourceMesh.MeshBuffer.Tangents.Length != 0;
         var hasWeights = sourceMesh.BoneData?.Bones.Count > 0;
         var hasNormals = sourceMesh.MeshBuffer.Normals.Length > 0;
-        Flags = (hasTan ? MeshFlags.HasTangents : MeshFlags.None)
-            | (hasWeights ? MeshFlags.HasBones : MeshFlags.None);
+        layout = MeshLayout.Get(MeshAttributeFlag.Triangles | (hasWeights ? MeshAttributeFlag.Weight : 0));
 
         var meshVerts = submesh.Positions;
         var meshUV = submesh.UV0;
@@ -251,12 +171,11 @@ public class TriangleMesh : Mesh
         var indicesShort = !integerIndices ? submesh.Indices : default;
         var indicesInt = integerIndices ? submesh.IntegerIndices : default;
 
-        var attrs = AttributeCount;
+        var attrs = layout.VertexSize;
         Indices = new int[submesh.indicesCount];
         VertexData = new float[submesh.indicesCount * attrs];
-        var tangentsOffset = TangentAttributeOffset;
-        var boneIndsOffset = BonesAttributeOffset;
-        var boneWeightsOffset = BonesAttributeOffset + 4;
+        var boneIndsOffset = layout.AttributeIndexOffsets[MeshLayout.Index_BoneIndex];
+        var boneWeightsOffset = layout.AttributeIndexOffsets[MeshLayout.Index_BoneWeight];
 
         for (int index = 0; index < Indices.Length; index++) {
             var vert = integerIndices ? indicesInt[index] : indicesShort[index];
@@ -274,12 +193,6 @@ public class TriangleMesh : Mesh
             VertexData[vertOffset + 6] = norm.Y;
             VertexData[vertOffset + 7] = norm.Z;
             VertexData[vertOffset + 8] = BitConverter.Int32BitsToSingle(index);
-            if (hasTan) {
-                var tan = meshTangents[vert];
-                VertexData[vertOffset + tangentsOffset + 0] = tan.X;
-                VertexData[vertOffset + tangentsOffset + 1] = tan.Y;
-                VertexData[vertOffset + tangentsOffset + 2] = tan.Z;
-            }
             if (HasBones) {
                 var vertWeight = meshWeights[vert];
 

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using ReeLib;
@@ -12,8 +13,8 @@ public class LineMesh : Mesh
     public LineMesh(GL gl, params Vector3[] points) : base(gl)
     {
         MeshType = PrimitiveType.Lines;
-        attributes = LineAttributes;
-        VertexData = new float[points.Length * 3];
+        layout = MeshLayout.PositionOnly;
+        VertexData = new float[points.Length * layout.VertexSize];
         var pointData = MemoryMarshal.Cast<float, Vector3>(VertexData);
         Indices = new int[points.Length];
         BoundingBox = AABB.MaxMin;
@@ -29,25 +30,24 @@ public class LineMesh : Mesh
     public LineMesh(GL gl, MeshFile sourceMesh, ReeLib.Mesh.Submesh submesh) : base(gl)
     {
         MeshType = PrimitiveType.Lines;
-        attributes = LineAttributes;
+        layout = MeshLayout.PositionOnly;
         PrepareMeshVertexBufferData(sourceMesh, submesh);
         UpdateBuffers();
     }
 
-    public LineMesh(TriangleMesh sourceMesh)
+    public LineMesh(Mesh sourceTriangleMesh)
     {
+        Debug.Assert(sourceTriangleMesh.MeshType == PrimitiveType.Triangles);
         MeshType = PrimitiveType.Lines;
-        BoundingBox = sourceMesh.BoundingBox;
-        int attrs;
-        var vertCount = sourceMesh.Indices.Length;
-        var sourceData = sourceMesh.VertexData;
+        BoundingBox = sourceTriangleMesh.BoundingBox;
+        var vertCount = sourceTriangleMesh.Indices.Length;
+        var sourceData = sourceTriangleMesh.VertexData;
         Indices = new int[vertCount * 4 / 3]; // each triangle counts as 4 indices ABBC
-        var sourceAttrCount = sourceData.Length / vertCount;
-        if (sourceMesh.HasColor) {
-            attributes = UnshadedColorAttributes;
-            attrs = 4;
-            VertexData = new float[Indices.Length * attrs];
-            const int sourceColorAttrOffset = 3;
+        var sourceAttrCount = sourceTriangleMesh.layout.VertexSize;
+        if (sourceTriangleMesh.HasColor) {
+            layout = MeshLayout.ColoredPositions;
+            VertexData = new float[Indices.Length * layout.VertexSize];
+            var sourceColorAttrOffset = sourceTriangleMesh.layout.AttributeIndexOffsets[MeshLayout.Index_Color];
             var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
             var myIndices = 0;
             for (int i = 0; i < vertCount; ++i) {
@@ -79,9 +79,8 @@ public class LineMesh : Mesh
                 );
             }
         } else {
-            attributes = LineAttributes;
-            attrs = 3;
-            VertexData = new float[Indices.Length * attrs];
+            layout = MeshLayout.PositionOnly;
+            VertexData = new float[Indices.Length * layout.VertexSize];
             var pointData = MemoryMarshal.Cast<float, Vector3>(VertexData);
             var myIndices = 0;
             for (int i = 0; i < vertCount; ++i) {
@@ -114,10 +113,9 @@ public class LineMesh : Mesh
     public LineMesh(AimpFile file, ContentGroupContainer container, ContentGroupTriangle data)
     {
         MeshType = PrimitiveType.Lines;
-        attributes = UnshadedColorAttributes;
-        var attrs = 4;
+        layout = MeshLayout.ColoredPositions;
         Indices = new int[data.NodeCount * 4]; // ABBC
-        VertexData = new float[Indices.Length * attrs];
+        VertexData = new float[Indices.Length * layout.VertexSize];
         var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
 
         BoundingBox = container.bounds;
@@ -142,8 +140,7 @@ public class LineMesh : Mesh
     public LineMesh(AimpFile file, ContentGroupContainer container, ContentGroupMapPoint points)
     {
         MeshType = PrimitiveType.Lines;
-        attributes = UnshadedColorAttributes;
-        var attrs = 4;
+        layout = MeshLayout.ColoredPositions;
         var lineCount = 0;
         // where does container.Nodes.minIndex come in?
         var effectiveNodeIndices = new int[container.Nodes.maxIndex + 1];
@@ -158,7 +155,7 @@ public class LineMesh : Mesh
         }
 
         Indices = new int[lineCount * 2];
-        VertexData = new float[lineCount * 2 * attrs];
+        VertexData = new float[lineCount * 2 * layout.VertexSize];
         BoundingBox = container.bounds;
         var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
 
@@ -184,15 +181,14 @@ public class LineMesh : Mesh
     public LineMesh(AimpFile file, ContentGroupContainer container, ContentGroupMapBoundary data, int nodeOffset)
     {
         MeshType = PrimitiveType.Lines;
-        attributes = UnshadedColorAttributes;
-        var attrs = 4;
+        layout = MeshLayout.ColoredPositions;
         var polygons = data.Nodes;
         var nodes = container.Nodes.Nodes;
         var verts = container.Vertices;
         BoundingBox = container.bounds;
 
         Indices = new int[polygons.Count * 16];
-        VertexData = new float[Indices.Length * attrs];
+        VertexData = new float[Indices.Length * layout.VertexSize];
 
         var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
 

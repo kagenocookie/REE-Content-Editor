@@ -40,7 +40,7 @@ public class McolMeshHandle : MeshHandle
         }
 
         Handle.RemoveMeshes(bvh.triangles.Count == 0 ? 0 : 1);
-        var builder = new ShapeBuilder();
+        var builder = new ShapeBuilder(ShapeBuilder.GeometryType.Line, MeshLayout.PositionOnly);
 
         foreach (var shape in bvh.spheres) builder.Add(shape.sphere);
         foreach (var shape in bvh.boxes) builder.Add(shape.box);
