@@ -222,8 +222,15 @@ public static class AppIcons
     public static readonly char SI_FileType_UCURVE = '\ued50';
     public static readonly char SI_FileType_UCURVELIST = '\ued51';
     public static readonly char SI_SceneGameObject4 = '\ued52';
+    public static readonly char SI_Generic3Axis = '\ued53';
+    public static readonly char SI_GenericIO = '\ued54';
+    public static readonly char SI_GenericExport = '\ued55';
+    public static readonly char SI_GenericImport = '\ued56';
+    public static readonly char SI_GenericConvert = '\ued57';
+    public static readonly char SI_GenericCamera = '\ued58';
+    public static readonly char SI_MeshViewerMeshGroup = '\ued59';
 
-    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_SceneGameObject4, 0];
+    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_MeshViewerMeshGroup, 0];
 
     public static string PrependIcon(this string text, object target)
     {
