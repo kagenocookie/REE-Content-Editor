@@ -53,6 +53,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
     protected Material? triangleFaceMaterial;
     protected Material? boundsMaterial;
     protected Material? aabbsMaterial;
+    protected Material? wallsMaterial;
 
     public void SetOverrideFile(AimpFile? file)
     {
@@ -149,6 +150,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
                     UpdateAABBs(gizmo, container, (ContentGroupMapAABB)content, offset);
                     break;
                 case NavmeshContentType.Walls:
+                    UpdateWalls(gizmo, container, (ContentGroupWall)content, offset);
                     break;
             }
             offset += content.NodeCount;
@@ -255,4 +257,25 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
             .Color("_MainColor", new Color(0x99, 0x66, 0xbb, 0x66)).Blend();
         gizmo.Mesh(mesh.Meshes.First(), Transform.WorldTransform, aabbsMaterial);
     }
+
+    private void UpdateWalls(GizmoContainer gizmo, ContentGroupContainer container, ContentGroupWall content, int nodeOffset)
+    {
+        if (!navMeshes.TryGetValue(NavmeshContentType.Walls, out var mesh)) {
+            navMeshes[NavmeshContentType.Walls] = mesh = new MeshHandle(new MeshResourceHandle(new TriangleMesh(overrideFile!, container, content, nodeOffset)));
+            mesh.Handle.Meshes.Add(new LineMesh(mesh.Meshes.First()));
+            Scene!.RenderContext.StoreMesh(mesh.Handle);
+        }
+
+        wallsMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "walls")
+            .Color("_MainColor", new Color(0xff, 0x88, 0x88, 0xcc)).Blend();
+
+        triangleMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "polys")
+            .Color("_MainColor", new Color(0xcc, 0xee, 0xff, 0xff));
+        triangleMaterialObscure ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "poly_obs")
+            .Color("_MainColor", new Color(0xcc, 0xee, 0xff, 0xaa))
+            .Float("_FadeMaxDistance", 150).Blend();
+        gizmo.Mesh(mesh.Meshes.First(), Transform.WorldTransform, wallsMaterial);
+        gizmo.Mesh(mesh.Meshes.Skip(1).First(), Transform.WorldTransform, triangleMaterial, triangleMaterialObscure);
+    }
+
 }
