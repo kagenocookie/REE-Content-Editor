@@ -188,7 +188,21 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     protected override MeshResourceHandle? LoadMeshResource(FileHandle fileHandle)
     {
         var meshResource = fileHandle.Resource as CommonMeshResource ?? fileHandle.GetCustomContent<CommonMeshResource>();
-        if (meshResource == null) return null;
+        if (meshResource == null) {
+            var resolvedMesh = fileHandle.GetCustomContent<Mesh>();
+            if (resolvedMesh != null) {
+                var copy = resolvedMesh.Clone();
+                copy.Initialize(GL);
+                // TODO add a generic flag for meshes that shouldn't keep the buffer in CPU
+                // currently intended mainly to save on memory for gtl files because they're huge
+                copy.ClearCPUBuffer();
+                var singleMeshHandle = new MeshResourceHandle(MeshRefs.NextInstanceID);
+                singleMeshHandle.SetMaterialName(0, "mat");
+                singleMeshHandle.Meshes.Add(copy);
+                return singleMeshHandle;
+            }
+            return null;
+        }
 
         var handle = new MeshResourceHandle(MeshRefs.NextInstanceID);
         var meshFile = meshResource.NativeMesh;

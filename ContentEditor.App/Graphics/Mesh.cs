@@ -45,6 +45,11 @@ public abstract class Mesh : IDisposable
         UpdateBuffers();
     }
 
+    internal void ClearCPUBuffer()
+    {
+        VertexData = [];
+    }
+
     public virtual void Bind()
     {
         VAO.Bind();

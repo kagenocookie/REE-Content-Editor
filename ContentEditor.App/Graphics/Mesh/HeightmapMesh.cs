@@ -5,11 +5,9 @@ namespace ContentEditor.App.Graphics;
 
 public class HeightmapMesh : Mesh
 {
-    public BvhData? BVH { get; }
-
     internal HeightmapMesh() : base()
     {
-        layout = MeshLayout.BasicTriangleMesh;
+        layout = MeshLayout.BasicTriangleMeshNoIndex;
     }
 
     public void Update(float[][] heights, Vector3 min, Vector3 max, Vector2 uvWrapCount)
@@ -89,15 +87,14 @@ public class HeightmapMesh : Mesh
 
     private void InsertVertex(ref int index, Vector3 vec, Vector3 norm, Vector2 uv)
     {
-        VertexData![index * 9 + 0] = vec.X;
-        VertexData[index * 9 + 1] = vec.Y;
-        VertexData[index * 9 + 2] = vec.Z;
-        VertexData[index * 9 + 3] = uv.X;
-        VertexData[index * 9 + 4] = uv.Y;
-        VertexData[index * 9 + 5] = norm.X;
-        VertexData[index * 9 + 6] = norm.Y;
-        VertexData[index * 9 + 7] = norm.Z;
-        VertexData[index * 9 + 8] = BitConverter.Int32BitsToSingle(index);
+        VertexData![index * layout.VertexSize + 0] = vec.X;
+        VertexData[index * layout.VertexSize + 1] = vec.Y;
+        VertexData[index * layout.VertexSize + 2] = vec.Z;
+        VertexData[index * layout.VertexSize + 3] = uv.X;
+        VertexData[index * layout.VertexSize + 4] = uv.Y;
+        VertexData[index * layout.VertexSize + 5] = norm.X;
+        VertexData[index * layout.VertexSize + 6] = norm.Y;
+        VertexData[index * layout.VertexSize + 7] = norm.Z;
         Indices![index] = index;
         index++;
     }
@@ -107,8 +104,8 @@ public class HeightmapMesh : Mesh
         var totalPoints = pointsZ * pointsX;
         var totalVerts = totalPoints * 4;
 
-        if (VertexData == null || VertexData.Length != totalVerts * 9) {
-            VertexData = new float[totalVerts * 6 * 9];
+        if (VertexData == null || VertexData.Length != totalVerts * layout.VertexSize) {
+            VertexData = new float[totalVerts * 6 * layout.VertexSize];
             Indices = new int[totalVerts * 6];
         }
     }

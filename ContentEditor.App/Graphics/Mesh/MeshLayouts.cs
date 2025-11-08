@@ -35,7 +35,14 @@ public readonly struct MeshLayout(params VertexAttribute[] attributes)
         new VertexAttribute(8, 1, Index_Index),
     ];
 
+    private static readonly VertexAttribute[] DefaultAttributesNoIndex = [
+        new VertexAttribute(0, 3, Index_Position),
+        new VertexAttribute(3, 2, Index_UV),
+        new VertexAttribute(5, 3, Index_Normal),
+    ];
+
     public static readonly MeshLayout BasicTriangleMesh = new MeshLayout(DefaultAttributes);
+    public static readonly MeshLayout BasicTriangleMeshNoIndex = new MeshLayout(DefaultAttributesNoIndex);
     public static readonly MeshLayout SkinnedTriangleMesh = new MeshLayout([
         .. DefaultAttributes,
         new VertexAttribute(9, 4, Index_BoneIndex),
@@ -87,6 +94,8 @@ public readonly struct MeshLayout(params VertexAttribute[] attributes)
                 return ColoredPositions;
             case MeshAttributeFlag.Triangles:
                 return BasicTriangleMesh;
+            case MeshAttributeFlag.TrianglesNoIndex:
+                return BasicTriangleMeshNoIndex;
             case MeshAttributeFlag.Triangles|MeshAttributeFlag.Weight:
                 return SkinnedTriangleMesh;
             default:
@@ -108,5 +117,6 @@ public enum MeshAttributeFlag
     Color = 1 << 6,
     Instanced = 1 << 7,
 
-    Triangles = Position|UV|Normal,
+    Triangles = Position|UV|Normal|Index,
+    TrianglesNoIndex = Position|UV|Normal,
 }

@@ -1,8 +1,5 @@
-using System.Numerics;
 using Assimp;
-using ContentEditor.App.Graphics;
 using ContentPatcher;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ReeLib;
 
 namespace ContentEditor.App.FileLoaders;
@@ -10,7 +7,7 @@ namespace ContentEditor.App.FileLoaders;
 public class GroundMaterialResourceFile(FileHandle handle, GmlFile file, CommonMeshResource assMesh) : IResourceFile
 {
     public GmlFile File { get; } = file;
-    public CommonMeshResource AssMesh { get; } = assMesh;
+    public CommonMeshResource Mesh { get; } = assMesh;
 
     public void WriteTo(string filepath)
     {
@@ -50,26 +47,7 @@ public class GmlFileLoader : IFileLoader, IFileHandleContentProvider<CommonMeshR
 
     public CommonMeshResource GetFile(FileHandle handle)
     {
-        var res = handle.GetResource<GroundMaterialResourceFile>();
-        if (!res.AssMesh.HasNativeMesh) {
-            res.AssMesh.PreloadedMeshes ??= new();
-            var hm = new HeightmapMesh();
-            var file = res.File;
-            // note: we need the Min/Max to get set from the ground file's data before this is called
-            // var range = file.Ranges[0];
-            // hm.Update(file.DataItems[0].Heights, res.Min, res.Max);
-            res.AssMesh.PreloadedMeshes.Add(hm);
-
-            // TODO: figure out how we could not need the fake mesh data
-            var mesh = res.AssMesh.NativeMesh = new MeshFile(file.FileHandler);
-            mesh.MeshBuffer = new ();
-            mesh.MeshData = new(mesh.MeshBuffer);
-            mesh.MeshData.LODs.Add(new ReeLib.Mesh.MeshLOD(mesh.MeshBuffer));
-            mesh.MeshData.LODs[0].MeshGroups.Add(new ReeLib.Mesh.MeshGroup(mesh.MeshBuffer));
-            mesh.MeshData.LODs[0].MeshGroups[0].Submeshes.Add(new ReeLib.Mesh.Submesh(mesh.MeshBuffer) { materialIndex = 0 });
-            mesh.MaterialNames.Add("terrain0");
-        }
-        return res.AssMesh;
+        return handle.GetResource<GroundMaterialResourceFile>().Mesh;
     }
 
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
