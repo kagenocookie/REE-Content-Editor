@@ -83,6 +83,9 @@ public class SceneController(Scene scene)
         if (dragMode == DragMode.Rotation) {
             mouse.Cursor.CursorMode = CursorMode.Normal;
             mouse.Position = dragStartPosition;
+            foreach (var window in MainLoop.Instance.Windows) {
+                window.NotifyCursorMoved();
+            }
         }
         dragMode = DragMode.None;
     }
