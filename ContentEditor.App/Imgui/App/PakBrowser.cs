@@ -59,7 +59,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
 
     // TODO should probably store somewhere else?
     private FilePreviewGenerator? previewGenerator;
-
+    private bool isPreviewEnabled = AppConfig.Instance.UsePakFilePreviewWindow.Get();
     private PageState pagination;
 
     private struct PageState
@@ -184,11 +184,10 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImguiHelpers.Tooltip("Invalidated PAK entries have been detected (most likely from Fluffy Mod Manager).\nYou may be unable to open some files.");
         }
         ImGui.SameLine();
-        var usePreviewWindow = AppConfig.Instance.UsePakFilePreviewWindow.Get();
-        ImguiHelpers.ToggleButton($"{AppIcons.SI_FileOpenPreview}", ref usePreviewWindow, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
+        ImguiHelpers.ToggleButton($"{AppIcons.SI_FileOpenPreview}", ref isPreviewEnabled, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
         ImguiHelpers.Tooltip("Toggle File Preview");
-        if (usePreviewWindow != AppConfig.Instance.UsePakFilePreviewWindow.Get()) {
-            AppConfig.Instance.UsePakFilePreviewWindow.Set(usePreviewWindow);
+        if (isPreviewEnabled != AppConfig.Instance.UsePakFilePreviewWindow.Get()) {
+            AppConfig.Instance.UsePakFilePreviewWindow.Set(isPreviewEnabled);
         }
         ImGui.SameLine();
         var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
@@ -582,14 +581,13 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImGui.PopStyleColor();
             if (Path.HasExtension(file)) {
                 var previewStatus = previewGenerator.FetchPreview(file, out var previewTex);
-                if (previewStatus == PreviewImageStatus.Ready) {
+                if (isPreviewEnabled && previewStatus == PreviewImageStatus.Ready) {
                     var texSize = new Vector2(btnSize.X, btnSize.Y - UI.FontSize) - style.FramePadding;
-                    ImGui.GetWindowDrawList().AddImage(previewTex!, pos + style.FramePadding, pos + new Vector2(texSize.X, texSize.Y));
-                } else if (previewStatus == PreviewImageStatus.PredefinedIcon) {
-                    var (icon, col) = AppIcons.GetIcon(PathUtils.ParseFileFormat(file).format);
-                    ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), ImGui.ColorConvertFloat4ToU32(col), $"{icon}");
+                    ImGui.GetWindowDrawList().AddImage(previewTex!, pos + style.FramePadding, pos + texSize);
                 } else {
-                    ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), 0xffffffff, $"{AppIcons.SI_File}");
+                    var (icon, col) = previewStatus == PreviewImageStatus.PredefinedIcon ||
+                        previewStatus == PreviewImageStatus.Ready ? AppIcons.GetIcon(PathUtils.ParseFileFormat(file).format) : (AppIcons.SI_File, Vector4.One);
+                    ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), ImGui.ColorConvertFloat4ToU32(col), $"{icon}");
                 }
             } else {
                 ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), 0xffffffff, $"{AppIcons.Folder}");
