@@ -1,13 +1,8 @@
-using System.Diagnostics;
 using ContentEditor.App.Graphics;
-using ContentEditor.App.ImguiHandling.Rcol;
-using ContentEditor.App.Windowing;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Aimp;
-using ReeLib.Rcol;
 using ReeLib.via;
-using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 
@@ -46,8 +41,10 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
     public NavmeshContentType visibleContentTypes;
 
     protected readonly Dictionary<NavmeshContentType, MeshHandle> navMeshes = new();
+    protected Material? waypMaterial;
+    protected Material? waypMaterialObscure;
+    protected Material? linkMaterial;
     protected Material? pointMaterial;
-    protected Material? pointMaterial2;
     protected Material? triangleMaterial;
     protected Material? triangleMaterialObscure;
     protected Material? triangleFaceMaterial;
@@ -105,7 +102,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
 
     public GizmoContainer? Update(GizmoContainer? gizmo)
     {
-        if (visibleContentTypes == NavmeshContentType.None || overrideFile == null) return null;
+        if (visibleContentTypes == 0 || overrideFile == null) return null;
 
         if (overrideFile.mainContent != null) UpdateContainer(ref gizmo, overrideFile.mainContent);
         if (overrideFile.secondaryContent != null) UpdateContainer(ref gizmo, overrideFile.secondaryContent);
@@ -115,16 +112,17 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
 
     private void UpdateContainer(ref GizmoContainer? gizmo, ContentGroupContainer container)
     {
+        UpdateLinks(ref gizmo, container, container == overrideFile!.mainContent ? NavmeshContentType.MainLinks : NavmeshContentType.SecondaryLinks);
         int offset = 0;
         foreach (var content in container.contents) {
-            var contentType = content switch {
+            NavmeshContentType contentType = content switch {
                 ContentGroupMapPoint => NavmeshContentType.Points,
                 ContentGroupTriangle => NavmeshContentType.Triangles,
                 ContentGroupPolygon => NavmeshContentType.Polygons,
                 ContentGroupMapBoundary => NavmeshContentType.Boundaries,
                 ContentGroupMapAABB => NavmeshContentType.AABBs,
                 ContentGroupWall => NavmeshContentType.Walls,
-                _ => NavmeshContentType.None,
+                _ => 0,
             };
 
             if ((visibleContentTypes & contentType) != contentType) {
@@ -157,24 +155,42 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
         }
     }
 
+    private void UpdateLinks(ref GizmoContainer? gizmo, ContentGroupContainer container, NavmeshContentType group)
+    {
+        if ((visibleContentTypes & group) != group) return;
+
+        var isWayp = container.contents[0] is ContentGroupMapPoint;
+        gizmo ??= new GizmoContainer(Scene!, this);
+        if (!navMeshes.TryGetValue(group, out var mesh)) {
+            navMeshes[group] = mesh = new MeshHandle(new MeshResourceHandle(new LineMesh(overrideFile!, container)));
+            Scene!.RenderContext.StoreMesh(mesh.Handle);
+        }
+
+        if (isWayp) {
+            waypMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "pts").Color("_MainColor", new Color(0xff, 0xff, 0xff, 0xff));
+            waypMaterialObscure ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "pts").Color("_MainColor", new Color(0xff, 0xff, 0xff, 0x30)).Blend();
+            gizmo.Mesh(mesh.Meshes.First(), Transform.WorldTransform, waypMaterial, waypMaterialObscure);
+        } else {
+            linkMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "links").Color("_MainColor", new Color(0xdd, 0x33, 0x77, 0xff));
+            gizmo.Mesh(mesh.Meshes.First(), Transform.WorldTransform, linkMaterial, linkMaterial);
+        }
+    }
+
     private void UpdatePoints(GizmoContainer gizmo, ContentGroupContainer container, ContentGroupMapPoint content)
     {
         if (!navMeshes.TryGetValue(NavmeshContentType.Points, out var mesh)) {
-            navMeshes[NavmeshContentType.Points] = mesh = new MeshHandle(new MeshResourceHandle(new LineMesh(overrideFile!, container, content)));
             var builder = new ShapeBuilder(ShapeBuilder.GeometryType.Line, MeshLayout.PositionOnly);
             foreach (var pt in content.Nodes) {
                 builder.Add(new Sphere(pt.pos, 0.25f));
             }
             var sh = new ShapeMesh();
             sh.Build(builder);
-            mesh.Handle.Meshes.Add(sh);
+            navMeshes[NavmeshContentType.Points] = mesh = new MeshHandle(new MeshResourceHandle(sh));
             Scene!.RenderContext.StoreMesh(mesh.Handle);
         }
 
-        pointMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "pts").Color("_MainColor", new Color(0xff, 0xff, 0xff, 0xff));
-        pointMaterial2 ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "pts").Color("_MainColor", new Color(0xff, 0xff, 0xff, 0xff)).Float("_FadeMaxDistance", 250);
-        gizmo.Mesh(mesh.Meshes.First(), Transform.WorldTransform, pointMaterial, pointMaterial);
-        gizmo.Mesh(mesh.Meshes.Skip(1).First(), Transform.WorldTransform, pointMaterial2);
+        pointMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "pts").Color("_MainColor", new Color(0xff, 0xff, 0xff, 0xff)).Float("_FadeMaxDistance", 250);
+        gizmo.Mesh(mesh.Meshes.First(), Transform.WorldTransform, pointMaterial);
     }
 
     private void UpdateTriangles(GizmoContainer gizmo, ContentGroupContainer container, ContentGroupTriangle content)
@@ -189,13 +205,14 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
         triangleMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "tris")
             .Color("_MainColor", new Color(0xcc, 0xee, 0xff, 0xff));
         triangleMaterialObscure ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "tri_obs")
-            .Color("_MainColor", new Color(0xcc, 0xee, 0xff, 0xaa))
-            .Float("_FadeMaxDistance", 150).Blend();
+            .Color("_MainColor", new Color(0xcc, 0xee, 0xff, 0x50))
+            .Float("_FadeMaxDistance", 120).Blend();
         triangleFaceMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "tri_face")
             .Color("_MainColor", new Color(0xcc, 0xee, 0xff, 0x88))
             .Float("_FadeMaxDistance", 200).Blend();
         gizmo.Mesh(mesh.Meshes.First(), Transform.WorldTransform, triangleFaceMaterial);
         gizmo.Mesh(mesh.Meshes.Skip(1).First(), Transform.WorldTransform, triangleMaterial, triangleMaterialObscure);
+        // gizmo.Mesh(mesh.Meshes.Skip(1).First(), Transform.WorldTransform, triangleMaterial);
     }
 
     private void UpdatePolygons(GizmoContainer gizmo, ContentGroupContainer container, ContentGroupPolygon content)
@@ -204,17 +221,15 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
             var tri = new TriangleMesh(overrideFile!, container, content);
             navMeshes[NavmeshContentType.Polygons] = mesh = new MeshHandle(new MeshResourceHandle(tri));
             mesh.Handle.Meshes.Add(new LineMesh(tri));
-            // mesh.Handle.Meshes.Add(new TriangleMesh(overrideFile!, container, content));
-            // new LineMesh(overrideFile!, container, content)
             Scene!.RenderContext.StoreMesh(mesh.Handle);
         }
 
-        triangleMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "polys")
+        triangleMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "tris")
             .Color("_MainColor", new Color(0xcc, 0xee, 0xff, 0xff));
-        triangleMaterialObscure ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "poly_obs")
-            .Color("_MainColor", new Color(0xcc, 0xee, 0xff, 0xaa))
-            .Float("_FadeMaxDistance", 150).Blend();
-        triangleFaceMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "poly_face")
+        triangleMaterialObscure ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "tri_obs")
+            .Color("_MainColor", new Color(0xcc, 0xee, 0xff, 0x50))
+            .Float("_FadeMaxDistance", 120).Blend();
+        triangleFaceMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "tri_face")
             .Color("_MainColor", new Color(0xcc, 0xee, 0xff, 0x88))
             .Float("_FadeMaxDistance", 200).Blend();
         gizmo.Mesh(mesh.Meshes.First(), Transform.WorldTransform, triangleFaceMaterial);
