@@ -556,7 +556,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
 
         ShowGameSelectionMenu();
-        ShowEditModesMenu();
 
         if (ImGui.BeginMenu("Windows")) {
             if (ImGui.MenuItem("Open New Workspace")) {
@@ -670,62 +669,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
 
         ImGui.EndMainMenuBar();
-    }
-
-    private void ShowEditModesMenu()
-    {
-        var masterScene = SceneManager.ActiveMasterScene;
-        if (masterScene?.Root.GetAvailableEditModes().Any() == true) {
-            var activeEditMode = masterScene.Root.ActiveEditMode;
-            if (ImGui.BeginMenu(activeEditMode == null ? "Editing: --" : "Editing: " + activeEditMode.DisplayName)) {
-                if (activeEditMode != null) {
-                    activeEditMode.DrawMainUI();
-                    if (activeEditMode.Target is Component cc) {
-                        ImGui.Spacing();
-                        if (ImGui.Button($"{AppIcons.SI_ResetCamera}")) {
-                            masterScene.ActiveCamera.LookAt(cc.GameObject, true);
-                        }
-                        ImguiHelpers.Tooltip("Focus on target object");
-                        ImGui.SameLine();
-                        ImGui.Text(activeEditMode.Target.ToString());
-                    }
-                    ImGui.Separator();
-                }
-                foreach (var mode in masterScene.Root.GetAvailableEditModes()) {
-                    var showComponents = false;
-                    if (mode == activeEditMode) {
-                        ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered));
-                        showComponents = ImGui.BeginMenu(mode.DisplayName);
-                        ImGui.PopStyleColor();
-                    } else {
-                        showComponents = ImGui.BeginMenu(mode.DisplayName);
-                    }
-
-                    if (showComponents) {
-                        int i = 0;
-                        foreach (var editable in masterScene.Root.GetEditableComponents(mode)) {
-                            var comp = (Component)editable;
-                            ImGui.PushID(i++);
-                            if (mode == activeEditMode && editable == activeEditMode.Target) {
-                                ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered));
-                                if (ImGui.MenuItem(comp.GameObject.Path + " | " + comp.Scene?.InternalPath)) {
-                                    masterScene.Root.DisableEditMode();
-                                }
-                                ImGui.PopStyleColor();
-                            } else {
-                                if (ImGui.MenuItem(comp.GameObject.Path + " | " + comp.Scene?.InternalPath)) {
-                                    masterScene.Root.SetEditMode(editable);
-                                }
-                            }
-                            ImGui.PopID();
-                        }
-                        ImGui.EndMenu();
-                    }
-                }
-
-                ImGui.EndMenu();
-            }
-        }
     }
 
     protected override void OnIMGUI()

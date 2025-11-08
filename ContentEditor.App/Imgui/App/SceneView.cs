@@ -79,7 +79,12 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
         expectedSize.Y = Math.Max(expectedSize.Y, 4);
         Scene.RenderContext.SetRenderToTexture(expectedSize);
 
-        if (Scene.RenderContext.RenderTargetTextureHandle == 0) return;
+        if (Scene.RenderContext.RenderTargetTextureHandle == 0) {
+            // the texture handle gets assigned immediately before the first render
+            // that means it won't be available until all required resources load in
+            ImGui.Text($"Loading scene {Scene.InternalPath ?? Scene.Name} ...");
+            return;
+        }
 
         var c = ImGui.GetCursorPos();
         var cc = ImGui.GetCursorScreenPos();
@@ -111,7 +116,65 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
 
     private void ShowMenu()
     {
-        // TODO scene menu bar
+        if (ImGui.BeginMenuBar()) {
+            ShowEditModesMenu();
+            ImGui.EndMenuBar();
+        }
+    }
+
+    private void ShowEditModesMenu()
+    {
+        if (Scene.Root.GetAvailableEditModes().Any() == true) {
+            var activeEditMode = Scene.Root.ActiveEditMode;
+            if (ImGui.BeginMenu(activeEditMode == null ? "Editing: --" : "Editing: " + activeEditMode.DisplayName)) {
+                if (activeEditMode != null) {
+                    activeEditMode.DrawMainUI();
+                    if (activeEditMode.Target is Component cc) {
+                        ImGui.Spacing();
+                        if (ImGui.Button($"{AppIcons.SI_ResetCamera}")) {
+                            Scene.ActiveCamera.LookAt(cc.GameObject, true);
+                        }
+                        ImguiHelpers.Tooltip("Focus on target object");
+                        ImGui.SameLine();
+                        ImGui.Text(activeEditMode.Target.ToString());
+                    }
+                    ImGui.Separator();
+                }
+                foreach (var mode in Scene.Root.GetAvailableEditModes()) {
+                    var showComponents = false;
+                    if (mode == activeEditMode) {
+                        ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered));
+                        showComponents = ImGui.BeginMenu(mode.DisplayName);
+                        ImGui.PopStyleColor();
+                    } else {
+                        showComponents = ImGui.BeginMenu(mode.DisplayName);
+                    }
+
+                    if (showComponents) {
+                        int i = 0;
+                        foreach (var editable in Scene.Root.GetEditableComponents(mode)) {
+                            var comp = (Component)editable;
+                            ImGui.PushID(i++);
+                            if (mode == activeEditMode && editable == activeEditMode.Target) {
+                                ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered));
+                                if (ImGui.MenuItem(comp.GameObject.Path + " | " + comp.Scene?.InternalPath)) {
+                                    Scene.Root.DisableEditMode();
+                                }
+                                ImGui.PopStyleColor();
+                            } else {
+                                if (ImGui.MenuItem(comp.GameObject.Path + " | " + comp.Scene?.InternalPath)) {
+                                    Scene.Root.SetEditMode(editable);
+                                }
+                            }
+                            ImGui.PopID();
+                        }
+                        ImGui.EndMenu();
+                    }
+                }
+
+                ImGui.EndMenu();
+            }
+        }
     }
 
     public static bool IsSupportedFileExtension(string filepathOrExtension)
