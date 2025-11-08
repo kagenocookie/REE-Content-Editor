@@ -130,10 +130,11 @@ public class LineMesh : Mesh
             var a = verts[tri.index1].Vector3;
             var b = verts[tri.index2].Vector3;
             var c = verts[tri.index3].Vector3;
-            pointData[index++] = new Vector4(a, BitConverter.Int32BitsToSingle(node.GetColor(file).ABGR));
-            pointData[index++] = new Vector4(b, BitConverter.Int32BitsToSingle(node.GetColor(file).ABGR));
-            pointData[index++] = new Vector4(b, BitConverter.Int32BitsToSingle(node.GetColor(file).ABGR));
-            pointData[index++] = new Vector4(c, BitConverter.Int32BitsToSingle(node.GetColor(file).ABGR));
+            var color = BitConverter.Int32BitsToSingle((int)node.GetColor(file).rgba);
+            pointData[index++] = new Vector4(a, color);
+            pointData[index++] = new Vector4(b, color);
+            pointData[index++] = new Vector4(b, color);
+            pointData[index++] = new Vector4(c, color);
         }
     }
 
@@ -168,10 +169,10 @@ public class LineMesh : Mesh
                 var p1 = points.Nodes[n1.index].pos;
                 var p2 = points.Nodes[n2.index].pos;
 
-                pointData[index] = new Vector4(p1, BitConverter.Int32BitsToSingle(n1.GetColor(file).ABGR));
+                pointData[index] = new Vector4(p1, BitConverter.Int32BitsToSingle((int)n1.GetColor(file).rgba));
                 Indices[index] = index;
                 index++;
-                pointData[index] = new Vector4(p2, BitConverter.Int32BitsToSingle(n2.GetColor(file).ABGR));
+                pointData[index] = new Vector4(p2, BitConverter.Int32BitsToSingle((int)n2.GetColor(file).rgba));
                 Indices[index] = index;
                 index++;
             }
@@ -197,7 +198,7 @@ public class LineMesh : Mesh
         for (int i = 0; i < data.NodeCount; ++i) {
             var node = nodes[nodeOffset + i];
             var poly = polygons[i];
-            var color = BitConverter.Int32BitsToSingle(node.GetColor(file).ABGR);
+            var color = BitConverter.Int32BitsToSingle((int)node.GetColor(file).rgba);
             for (int k = 0; k < 8; ++k) pts[k] = verts[poly.indices[k]].Vector3;
 
             pointData[index++] = new Vector4(pts[0], color);

@@ -52,7 +52,7 @@ public class TriangleMesh : Mesh
         for (int i = 0; i < data.NodeCount; ++i) {
             var node = nodes[i];
             var tri = triangles[i];
-            var color = BitConverter.Int32BitsToSingle(node.GetColor(file).ABGR);
+            var color = BitConverter.Int32BitsToSingle((int)node.GetColor(file).rgba);
             var a = verts[tri.index1].Vector3;
             var b = verts[tri.index2].Vector3;
             var c = verts[tri.index3].Vector3;
@@ -84,7 +84,7 @@ public class TriangleMesh : Mesh
         for (int i = 0; i < data.NodeCount; ++i) {
             var node = nodes[i];
             var poly = polygons[i];
-            var color = BitConverter.Int32BitsToSingle(node.GetColor(file).ABGR);
+            var color = BitConverter.Int32BitsToSingle((int)node.GetColor(file).rgba);
             for (int x = 2; x < poly.indices.Length; ++x) {
                 var a = verts[poly.indices[0]].Vector3;
                 var b = verts[poly.indices[x - 1]].Vector3;
@@ -97,16 +97,15 @@ public class TriangleMesh : Mesh
         }
     }
 
-    public TriangleMesh(AimpFile file, ContentGroupContainer container, ContentGroupMapBoundary data, int nodeOffset)
+    public TriangleMesh(AimpFile file, ContentGroupContainer container, ContentGroupWall data, int nodeOffset)
     {
-        // I'm not yet sure if we wanna use this one or not... boundary shapes look stupid
         layout = MeshLayout.ColoredPositions;
         var polygons = data.Nodes;
         var nodes = container.Nodes.Nodes;
         var verts = container.Vertices;
         BoundingBox = container.bounds;
 
-        Indices = new int[polygons.Count * 24];
+        Indices = new int[polygons.Count * (4 * 6)];
         VertexData = new float[Indices.Length * layout.VertexSize];
 
         var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
@@ -116,7 +115,60 @@ public class TriangleMesh : Mesh
         for (int i = 0; i < data.NodeCount; ++i) {
             var node = nodes[nodeOffset + i];
             var poly = polygons[i];
-            var color = BitConverter.Int32BitsToSingle(node.GetColor(file).ABGR);
+            var color = BitConverter.Int32BitsToSingle((int)node.GetColor(file).rgba);
+            for (int k = 0; k < 8; ++k) pts[k] = verts[poly.indices[k]].Vector3;
+
+            // TODO figure out what the point of the matrix / transforms is - maybe OBB-like data?
+
+            pointData[index++] = new Vector4(pts[0], color);
+            pointData[index++] = new Vector4(pts[1], color);
+            pointData[index++] = new Vector4(pts[2], color);
+            pointData[index++] = new Vector4(pts[0], color);
+            pointData[index++] = new Vector4(pts[2], color);
+            pointData[index++] = new Vector4(pts[3], color);
+
+            pointData[index++] = new Vector4(pts[4], color);
+            pointData[index++] = new Vector4(pts[5], color);
+            pointData[index++] = new Vector4(pts[6], color);
+            pointData[index++] = new Vector4(pts[4], color);
+            pointData[index++] = new Vector4(pts[6], color);
+            pointData[index++] = new Vector4(pts[7], color);
+
+            pointData[index++] = new Vector4(pts[0], color);
+            pointData[index++] = new Vector4(pts[1], color);
+            pointData[index++] = new Vector4(pts[4], color);
+            pointData[index++] = new Vector4(pts[1], color);
+            pointData[index++] = new Vector4(pts[4], color);
+            pointData[index++] = new Vector4(pts[5], color);
+
+            pointData[index++] = new Vector4(pts[2], color);
+            pointData[index++] = new Vector4(pts[3], color);
+            pointData[index++] = new Vector4(pts[6], color);
+            pointData[index++] = new Vector4(pts[3], color);
+            pointData[index++] = new Vector4(pts[6], color);
+            pointData[index++] = new Vector4(pts[7], color);
+        }
+    }
+    public TriangleMesh(AimpFile file, ContentGroupContainer container, ContentGroupMapBoundary data, int nodeOffset)
+    {
+        // I'm not yet sure if we wanna use this one or not... boundary shapes look stupid
+        layout = MeshLayout.ColoredPositions;
+        var polygons = data.Nodes;
+        var nodes = container.Nodes.Nodes;
+        var verts = container.Vertices;
+        BoundingBox = container.bounds;
+
+        Indices = new int[polygons.Count * (4 * 6)];
+        VertexData = new float[Indices.Length * layout.VertexSize];
+
+        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
+
+        var index = 0;
+        Span<Vector3> pts = stackalloc Vector3[8];
+        for (int i = 0; i < data.NodeCount; ++i) {
+            var node = nodes[nodeOffset + i];
+            var poly = polygons[i];
+            var color = BitConverter.Int32BitsToSingle((int)node.GetColor(file).rgba);
             for (int k = 0; k < 8; ++k) pts[k] = verts[poly.indices[k]].Vector3;
 
             pointData[index++] = new Vector4(pts[0], color);
