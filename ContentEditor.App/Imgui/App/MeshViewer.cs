@@ -188,6 +188,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     {
         if (scene == null) {
             scene = EditorWindow.CurrentWindow!.SceneManager.CreateScene(fileHandle, true);
+            scene.Type = SceneType.Independent;
             scene.Root.Controller.Keyboard = EditorWindow.CurrentWindow.LastKeyboard;
             scene.Root.Controller.MoveSpeed = AppConfig.Settings.MeshViewer.MoveSpeed;
             scene.OwnRenderContext.AddDefaultSceneGizmos();

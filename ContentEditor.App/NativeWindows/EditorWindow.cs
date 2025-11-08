@@ -51,6 +51,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     public IMouse LastMouse { get; private set; } = null!;
     public IKeyboard LastKeyboard { get; private set; } = null!;
 
+    protected Vector2 viewportOffset;
+
     internal EditorWindow(int id, ContentWorkspace? workspace = null) : base(id)
     {
         Ready += OnReady;
@@ -544,6 +546,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                         scene.Controller.MoveSpeed = AppConfig.Settings.SceneView.MoveSpeed;
                         scene.AddWidget<SceneVisibilitySettings>();
                         scene.AddWidget<SceneCameraControls>();
+                        var data = AddUniqueSubwindow(new SceneView(Workspace, scene));
+                        data.Position = new Vector2(0, viewportOffset.Y);
+                        data.Size = new Vector2(Size.X, Size.Y - viewportOffset.Y);
                     }
                 }
             }
@@ -726,19 +731,17 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     protected override void OnIMGUI()
     {
         ShowMainMenuBar();
-        if (IsDragging) ImGui.BeginDisabled();
+        var dragging = IsDragging;
+        if (dragging) ImGui.BeginDisabled();
 
-        var viewportOffset = new Vector2(0, ImGui.CalcTextSize("a").Y + ImGui.GetStyle().FramePadding.Y * 2);
-        foreach (var sc in SceneManager.RootMasterScenes) {
-            sc.OwnRenderContext.UIOffset = viewportOffset;
-        }
+        viewportOffset = new Vector2(0, ImGui.CalcTextSize("a").Y + ImGui.GetStyle().FramePadding.Y * 2);
         BeginDockableBackground(viewportOffset);
         if (Overlays != null) {
             Overlays.ShowHelp = !_disableIntroGuide && !subwindows.Any(s => !IsDefaultWindow(s)) && !SceneManager.HasActiveMasterScene;
         }
         DrawImguiWindows();
         EndDockableBackground();
-        if (IsDragging) ImGui.EndDisabled();
+        if (dragging) ImGui.EndDisabled();
     }
 
     internal bool ApplyContentPatches(string? outputPath, string? singleBundle = null)

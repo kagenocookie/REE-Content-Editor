@@ -12,12 +12,20 @@ using Silk.NET.OpenGL;
 
 namespace ContentEditor.App;
 
+public enum SceneType
+{
+    Main,
+    Sub,
+    Independent,
+}
+
 public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiver, IWorkspaceContainer, IRectWindow
 {
     public readonly Folder RootFolder;
     public IEnumerable<Folder> Folders => RootFolder.Children;
     public IEnumerable<GameObject> GameObjects => RootFolder.GameObjects;
 
+    public SceneType Type { get; set; }
     public SceneRoot Root { get; private set; }
     public Scene? ParentScene { get; private set; }
     public Scene RootScene => Root.Scene;
@@ -68,8 +76,10 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         RootFolder = rootFolder ?? new("ROOT", workspace.Env, this);
         if (parentScene == null) {
             Root = new SceneRoot(this);
+            Type = SceneType.Main;
         } else {
             Root = parentScene.Root;
+            Type = SceneType.Sub;
         }
 
         parentScene?.childScenes.Add(this);

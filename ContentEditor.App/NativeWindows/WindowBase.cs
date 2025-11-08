@@ -424,7 +424,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         var size = ImGui.GetWindowViewport().Size - offset + padding;
         ImGui.SetNextWindowPos(offset, ImGuiCond.Always);
         ImGui.SetNextWindowSize(size, ImGuiCond.Always);
-        ImGui.Begin("Dockspace", ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse);
+        ImGui.Begin("Dockspace", ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoBringToFrontOnFocus);
         ImGui.DockSpace(ImGui.GetID("_dock"), new Vector2(0, 0), ImGuiDockNodeFlags.PassthruCentralNode);
     }
     protected void EndDockableBackground()
