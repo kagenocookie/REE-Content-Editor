@@ -8,14 +8,17 @@ namespace ContentEditor.App;
 [Flags]
 public enum NavmeshContentType : int
 {
-    None = 0,
+
     Points = 1 << 0,
     Triangles = 1 << 1,
     Polygons = 1 << 2,
     Boundaries = 1 << 3,
     AABBs = 1 << 4,
     Walls = 1 << 5,
-    All = Points|Triangles|Polygons|Boundaries|AABBs|Walls,
+
+    MainLinks = 1 << 8,
+    SecondaryLinks = 1 << 9,
+    All = Points|Triangles|Polygons|Boundaries|AABBs|Walls|MainLinks|SecondaryLinks,
 }
 
 public class NavmeshEditor : EditModeHandler
@@ -25,14 +28,14 @@ public class NavmeshEditor : EditModeHandler
     private UIContext? filePicker;
     private string filepath = "";
     protected UIContext? context;
-    public NavmeshContentType displayedContentTypes = NavmeshContentType.All;
+    public NavmeshContentType displayedContentTypes = NavmeshContentType.Points|NavmeshContentType.Triangles|NavmeshContentType.AABBs|NavmeshContentType.Walls|NavmeshContentType.MainLinks|NavmeshContentType.SecondaryLinks;
 
     private bool firstTimeOnTarget;
 
     protected override void OnTargetChanged(Component? previous)
     {
         if (previous is AIMapComponentBase map) {
-            map.visibleContentTypes = NavmeshContentType.None;
+            map.visibleContentTypes = 0;
         }
         firstTimeOnTarget = true;
     }
@@ -54,8 +57,8 @@ public class NavmeshEditor : EditModeHandler
                 getter: o => o!.displayedContentTypes,
                 setter: (o, v) => o.displayedContentTypes = v
             );
-
         }
+
         context.children[0].ShowUI();
 
         if (Target is AIMapComponentBase map) {

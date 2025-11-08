@@ -14,7 +14,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
 
     public IRectWindow Window { get; } = window;
 
-    public IEnumerable<Scene> RootMasterScenes => rootScenes.Where(scene => scene.OwnRenderContext.RenderTargetTextureHandle == 0 && scene.ParentScene == null);
+    public IEnumerable<Scene> RootMasterScenes => rootScenes.Where(scene => scene.Type == SceneType.Main);
     public bool HasActiveMasterScene => RootMasterScenes.Where(sc => sc.IsActive).Any();
     public Scene? ActiveMasterScene => RootMasterScenes.FirstOrDefault(sc => sc.IsActive);
     public IEnumerable<Scene> RootScenes => rootScenes;
@@ -86,17 +86,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
             if (!scene.IsActive) continue;
 
             scene.OwnRenderContext.ScreenSize = Window.Size;
-            if (scene.OwnRenderContext.RenderTargetTextureHandle == 0) {
-                scene.OwnRenderContext.ViewportSize = Window.Size;
-                scene.Render(deltaTime);
-                ImGui.SetNextWindowPos(scene.OwnRenderContext.ViewportOffset, ImGuiCond.Always);
-                ImGui.SetNextWindowSize(scene.OwnRenderContext.ViewportSize, ImGuiCond.Always);
-                ImGui.Begin(scene.Name, ImGuiWindowFlags.NoTitleBar|ImGuiWindowFlags.NoResize|ImGuiWindowFlags.NoMove|ImGuiWindowFlags.NoScrollbar|ImGuiWindowFlags.NoScrollWithMouse|ImGuiWindowFlags.NoCollapse|ImGuiWindowFlags.NoDecoration|ImGuiWindowFlags.NoBackground|ImGuiWindowFlags.NoFocusOnAppearing|ImGuiWindowFlags.NoBringToFrontOnFocus|ImGuiWindowFlags.NoInputs);
-                scene.RenderUI();
-                ImGui.End();
-            } else {
-                scene.Render(deltaTime);
-            }
+            scene.Render(deltaTime);
         }
     }
 

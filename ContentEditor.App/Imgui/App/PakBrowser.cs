@@ -726,21 +726,27 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             } else {
                 Logger.Error("File could not be found in the loaded PAK files. Possible causes: Fluffy Mod Manager archive invalidation, missing some DLC content, not having the right PAK files open, or a wrong file list.");
             }
-        } else {
-            try {
-                if (PakFilePath == null) {
-                    EditorWindow.CurrentWindow?.OpenFiles([file]);
-                } else {
-                    var stream = reader.GetFile(file);
-                    if (stream == null) {
-                        EditorWindow.CurrentWindow?.AddSubwindow(new ErrorModal("File not found", "File could not be found in the PAK file(s)."));
-                    } else {
-                        EditorWindow.CurrentWindow?.OpenFile(stream, file, PakFilePath + "://");
-                    }
-                }
-            } catch (Exception e) {
-                Logger.Error($"Failed to open file {file}: {e.Message}");
+            return true;
+        }
+
+        try {
+            if (PathUtils.ParseFileFormat(file).format == KnownFileFormats.Mesh && file.Contains("/streaming")) {
+                Logger.Warn("Attempted to open streaming mesh. Opening the main non-streaming mesh instead.");
+                file = file.Replace("/streaming/", "/");
             }
+
+            if (PakFilePath == null) {
+                EditorWindow.CurrentWindow?.OpenFiles([file]);
+            } else {
+                var stream = reader.GetFile(file);
+                if (stream == null) {
+                    EditorWindow.CurrentWindow?.AddSubwindow(new ErrorModal("File not found", "File could not be found in the PAK file(s)."));
+                } else {
+                    EditorWindow.CurrentWindow?.OpenFile(stream, file, PakFilePath + "://");
+                }
+            }
+        } catch (Exception e) {
+            Logger.Error($"Failed to open file {file}: {e.Message}");
         }
 
         return true;

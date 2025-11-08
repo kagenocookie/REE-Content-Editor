@@ -433,7 +433,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
         if (_outputBuffer != 0) {
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, _outputBuffer);
-            GL.ClearColor(0, 0, 0, 0);
+            GL.ClearColor(System.Drawing.Color.FromArgb(ClearColor.BGRA));
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             GL.Viewport(new System.Drawing.Size((int)ViewportSize.X, (int)ViewportSize.Y));
         }

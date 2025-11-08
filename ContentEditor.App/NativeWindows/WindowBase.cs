@@ -68,7 +68,9 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     protected event Action? Ready;
 
-    private DateTime _lastMouseMoveTime;
+    private Vector2 lastMousePosition;
+    private bool windowNotHovered;
+    private int updatesSinceLastMove;
 
     private OverlaysWindow imguiOverlays = null!;
     public OverlaysWindow Overlays => imguiOverlays;
@@ -131,7 +133,9 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         var mouse = _inputContext.Mice.FirstOrDefault();
         if (mouse != null) {
             mouse.MouseMove += (m, vec) => {
-                _lastMouseMoveTime = DateTime.Now;
+                lastMousePosition = vec;
+                windowNotHovered = false;
+                updatesSinceLastMove = 0;
             };
             SetupMouse(mouse);
         }
@@ -354,21 +358,25 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     {
         _controller.MakeCurrent();
         _currentWindow = this;
+        var mousePos = _inputContext.Mice[0].Position;
 
         var io = ImGui.GetIO();
-        var prevPos = io.MousePos;
         _controller.Update((float)delta);
         Update((float)delta);
-        var newPos = io.MousePos;
         // hack: prevent imgui from receiving mouse position when the current window is not actually hovered
         // (e.g. when there's another window in front of us)
         // ideally we'd just modify the imgui controller but it's using several internal methods
-        if (newPos != prevPos) {
-            if ((DateTime.Now - _lastMouseMoveTime).TotalSeconds > 0.0625f) {
-                io.MousePos = new Vector2(-1, -1);
-            }
+        // add a minimum distance because MouseMove doesn't seem to always trigger for small movements
+        if (windowNotHovered || updatesSinceLastMove++ > 1 && (mousePos - lastMousePosition).LengthSquared() > 16) {
+            io.MousePos = new Vector2(-1, -1);
+            windowNotHovered = true;
         }
         _currentWindow = null;
+    }
+
+    internal void NotifyCursorMoved()
+    {
+        updatesSinceLastMove = -1;
     }
 
     public void HandleRenderActions()
@@ -416,7 +424,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         var size = ImGui.GetWindowViewport().Size - offset + padding;
         ImGui.SetNextWindowPos(offset, ImGuiCond.Always);
         ImGui.SetNextWindowSize(size, ImGuiCond.Always);
-        ImGui.Begin("Dockspace", ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse);
+        ImGui.Begin("Dockspace", ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoBringToFrontOnFocus);
         ImGui.DockSpace(ImGui.GetID("_dock"), new Vector2(0, 0), ImGuiDockNodeFlags.PassthruCentralNode);
     }
     protected void EndDockableBackground()

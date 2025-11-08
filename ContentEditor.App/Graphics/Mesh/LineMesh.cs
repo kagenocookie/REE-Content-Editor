@@ -138,47 +138,6 @@ public class LineMesh : Mesh
         }
     }
 
-    public LineMesh(AimpFile file, ContentGroupContainer container, ContentGroupMapPoint points)
-    {
-        MeshType = PrimitiveType.Lines;
-        layout = MeshLayout.ColoredPositions;
-        var lineCount = 0;
-        // where does container.Nodes.minIndex come in?
-        var effectiveNodeIndices = new int[container.Nodes.maxIndex + 1];
-        int offsetIndex = 0;
-        for (int i = 0; i < points.Nodes.Count; i++) {
-            var node = container.Nodes.Nodes[i];
-            lineCount += node.Links.Count;
-            // I'm not quite sure what the point of these extra indices is... maybe they lerp generate the gap points?
-            while (offsetIndex < node.nextIndex && offsetIndex < effectiveNodeIndices.Length) {
-                effectiveNodeIndices[offsetIndex++] = i;
-            }
-        }
-
-        Indices = new int[lineCount * 2];
-        VertexData = new float[lineCount * 2 * layout.VertexSize];
-        BoundingBox = container.bounds;
-        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
-
-        var index = 0;
-        for (int i = 0; i < points.Nodes.Count; i++) {
-            var nodeInfo = container.Nodes.Nodes[i];
-            foreach (var link in nodeInfo.Links) {
-                var n1 = container.Nodes.Nodes[effectiveNodeIndices[link.sourceNodeIndex]];
-                var n2 = container.Nodes.Nodes[effectiveNodeIndices[link.targetNodeIndex]];
-                var p1 = points.Nodes[n1.index].pos;
-                var p2 = points.Nodes[n2.index].pos;
-
-                pointData[index] = new Vector4(p1, BitConverter.Int32BitsToSingle((int)n1.GetColor(file).rgba));
-                Indices[index] = index;
-                index++;
-                pointData[index] = new Vector4(p2, BitConverter.Int32BitsToSingle((int)n2.GetColor(file).rgba));
-                Indices[index] = index;
-                index++;
-            }
-        }
-    }
-
     public LineMesh(AimpFile file, ContentGroupContainer container, ContentGroupMapBoundary data, int nodeOffset)
     {
         MeshType = PrimitiveType.Lines;
@@ -218,6 +177,43 @@ public class LineMesh : Mesh
             pointData[index++] = new Vector4(pts[4 + 3], color);
             pointData[index++] = new Vector4(pts[4 + 3], color);
             pointData[index++] = new Vector4(pts[4 + 0], color);
+        }
+    }
+
+    public LineMesh(AimpFile file, ContentGroupContainer container)
+    {
+        MeshType = PrimitiveType.Lines;
+        layout = MeshLayout.ColoredPositions;
+        var nodes = container.Nodes.Nodes;
+        var linkCount = nodes.Sum(n => n.Links.Count);
+        var effectiveNodeIndices = container.Nodes.EffectiveNodeIndices;
+
+        Indices = new int[linkCount * 2];
+        VertexData = new float[Indices.Length * layout.VertexSize];
+
+        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
+
+        int index = 0;
+        for (int i = 0; i < nodes.Length; i++) {
+            var nodeInfo = nodes[i];
+            foreach (var link in nodeInfo.Links) {
+                var n1 = nodes[effectiveNodeIndices[link.sourceNodeIndex]];
+                var n2 = nodes[effectiveNodeIndices[link.targetNodeIndex]];
+
+                var p1 = container.NodeOrigins[n1.index];
+                var p2 = container.NodeOrigins[n2.index];
+
+                // ignore triangle based links here - the web of links becomes an unsightly mess
+                // and yes, we've allocated more data than we needed in that case, shouldn't be an issue
+                if (container.contents[n1.groupIndex] is ContentGroupTriangle or ContentGroupPolygon) continue;
+
+                pointData[index] = new Vector4(p1, BitConverter.Int32BitsToSingle((int)n1.GetColor(file).rgba));
+                Indices[index] = index;
+                index++;
+                pointData[index] = new Vector4(p2, BitConverter.Int32BitsToSingle((int)n2.GetColor(file).rgba));
+                Indices[index] = index;
+                index++;
+            }
         }
     }
 

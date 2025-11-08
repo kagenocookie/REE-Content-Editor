@@ -57,7 +57,7 @@ Some files may not fully work for other RE ENGINE games.
 | .mcol     | ☑️ read/write | .glb import/export for collision mesh
 | .tml, .clip | read/write
 | .gui      | read/write
-| .ainvm    | raw data read/write
+| .aimap, .ainvm, .aiwayp | raw data read/write | 3D preview
 | .cdef, .def | ☑️ read/write
 | common image formats | view only
 | common mesh formats | ☑️ 3D display | Convert to RE mesh
