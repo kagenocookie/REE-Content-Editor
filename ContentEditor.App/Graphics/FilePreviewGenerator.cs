@@ -143,7 +143,9 @@ public sealed class FilePreviewGenerator : IDisposable
                     continue;
                 }
 
-                if (!workspace.ResourceManager.TryResolveFile(path, out var f)) {
+                var fmt = PathUtils.ParseFileFormat(path).format;
+                var mainAssetPath = fmt == KnownFileFormats.Mesh ? path.Replace("/streaming/", "/").Replace("\\streaming\\", "\\") : path;
+                if (!workspace.ResourceManager.TryResolveFile(mainAssetPath, out var f)) {
                     _statuses[path] = PreviewImageStatus.Failed;
                     continue;
                 }
@@ -154,10 +156,8 @@ public sealed class FilePreviewGenerator : IDisposable
                     continue;
                 }
 
-                var fmt = PathUtils.ParseFileFormat(path);
-
                 try {
-                    switch (fmt.format) {
+                    switch (fmt) {
                         case KnownFileFormats.Texture:
                             GenerateTextureThumbnail(path, f.Stream);
                             break;
@@ -206,6 +206,7 @@ public sealed class FilePreviewGenerator : IDisposable
     private void GenerateMeshThumbnail(string path)
     {
         _statuses[path] = PreviewImageStatus.Loading;
+        var mainPath = path.Replace("/streaming/", "/").Replace("\\streaming\\", "\\");
         var outPath = GetThumbnailPath(path);
 
         using var tmpScene = new Scene("_preview", "", workspace, null, null, _threadGL);
@@ -214,11 +215,11 @@ public sealed class FilePreviewGenerator : IDisposable
 
         var go = new GameObject("mesh", workspace.Env, tmpScene.RootFolder, tmpScene);
         var comp = go.AddComponent<MeshComponent>();
-        var basePath = PathUtils.GetFilepathWithoutExtensionOrVersion(path).ToString();
+        var basePath = PathUtils.GetFilepathWithoutExtensionOrVersion(mainPath).ToString();
         workspace.ResourceManager.TryResolveFile(basePath + ".mdf2", out var mdfHandle);
         if (mdfHandle == null) workspace.ResourceManager.TryResolveFile(basePath + "_Mat.mdf2", out mdfHandle);
 
-        comp.SetMesh(path, mdfHandle?.Filepath);
+        comp.SetMesh(mainPath, mdfHandle?.Filepath);
         if (comp.MeshHandle == null) {
             _statuses[path] = PreviewImageStatus.Failed;
             Logger.Debug($"Failed to generate thumbnail for mesh " + path);
