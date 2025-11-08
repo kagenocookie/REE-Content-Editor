@@ -70,7 +70,9 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
     public void OnIMGUI()
     {
         if (!Scene.IsActive) {
-            ImGui.GetWindowDrawList().AddText(new Vector2(8, 8), 0xffffffff, "Scene is not active");
+            using var _ = ImguiHelpers.OverrideStyleCol(ImGuiCol.Text, Colors.Warning);
+            ImguiHelpers.TextCentered("No active scene. Activate one from the Scenes menu.");
+            return;
         }
 
         ShowMenu();

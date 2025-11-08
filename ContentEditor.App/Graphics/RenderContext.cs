@@ -3,6 +3,7 @@ using System.Numerics;
 using ContentEditor.Editor;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.via;
 using Silk.NET.Maths;
 
 namespace ContentEditor.App.Graphics;
@@ -49,6 +50,8 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
 
     bool IFileHandleReferenceHolder.CanClose => true;
     IRectWindow? IFileHandleReferenceHolder.Parent => null;
+
+    public Color ClearColor { get; internal set; }
 
     internal virtual void BeforeRender()
     {
