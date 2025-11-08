@@ -912,7 +912,9 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             return null;
         }
         handle.DiffHandler = handle.Loader.CreateDiffHandler();
-        if (handle.DiffHandler != null && handle.NativePath != null && handle.HandleType is FileHandleType.Disk or FileHandleType.Bundle) {
+        if (handle.DiffHandler == null) return handle;
+
+        if (handle.NativePath != null && handle.HandleType is FileHandleType.Disk or FileHandleType.Bundle) {
             var baseFile = workspace.Env.GetFile(handle.NativePath!);
             if (baseFile != null) {
                 var baseFileHandle = CreateFileHandleInternal(handle.NativePath!, handle.NativePath!, baseFile)!;
@@ -921,7 +923,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                 handle.DiffHandler.LoadBase(workspace, handle);
             }
         } else {
-            handle.DiffHandler?.LoadBase(workspace, handle);
+            handle.DiffHandler.LoadBase(workspace, handle);
         }
         return handle;
     }

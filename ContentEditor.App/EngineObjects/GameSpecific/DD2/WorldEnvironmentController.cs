@@ -93,7 +93,7 @@ public class WorldEnvironmentController(GameObject gameObject, RszInstance data)
     private const int CellsPerEnvCount = 16;
 
     public GridSplitter Fields = new GridSplitter(new Vector2(MinX, MinY), new Vector2(MaxX, MaxY), FieldCount, 0);
-    public GridSplitter GroundFields = new GridSplitter(new Vector2(MinX, MinY), new Vector2(MaxX, MaxY), GroundFieldCount, 1);
+    public GridSplitter GroundFields = new GridSplitter(new Vector2(MinX, MinY), new Vector2(MaxX, MaxY), GroundFieldCount, 2);
     public GridSplitter Env = new GridSplitter(new Vector2(MinX, MinY), new Vector2(MaxX, MaxY), EnvCount, 1);
     public GridSplitter SubEnv = new GridSplitter(new Vector2(MinX, MinY), new Vector2(MaxX, MaxY), SubEnvCount, 1);
 
