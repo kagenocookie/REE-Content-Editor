@@ -59,7 +59,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
 
     // TODO should probably store somewhere else?
     private FilePreviewGenerator? previewGenerator;
-    private bool isPreviewEnabled = AppConfig.Instance.UsePakFilePreviewWindow.Get();
+    private bool isFilePreviewEnabled = AppConfig.Instance.UsePakFilePreviewWindow.Get();
     private PageState pagination;
 
     private struct PageState
@@ -184,10 +184,10 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImguiHelpers.Tooltip("Invalidated PAK entries have been detected (most likely from Fluffy Mod Manager).\nYou may be unable to open some files.");
         }
         ImGui.SameLine();
-        ImguiHelpers.ToggleButton($"{AppIcons.SI_FileOpenPreview}", ref isPreviewEnabled, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
+        ImguiHelpers.ToggleButton($"{AppIcons.SI_FileOpenPreview}", ref isFilePreviewEnabled, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
         ImguiHelpers.Tooltip("Toggle File Preview");
-        if (isPreviewEnabled != AppConfig.Instance.UsePakFilePreviewWindow.Get()) {
-            AppConfig.Instance.UsePakFilePreviewWindow.Set(isPreviewEnabled);
+        if (isFilePreviewEnabled != AppConfig.Instance.UsePakFilePreviewWindow.Get()) {
+            AppConfig.Instance.UsePakFilePreviewWindow.Set(isFilePreviewEnabled);
         }
         ImGui.SameLine();
         var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
@@ -580,13 +580,19 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             var click = ImGui.Button(displayName, btnSize);
             ImGui.PopStyleColor();
             if (Path.HasExtension(file)) {
-                var previewStatus = previewGenerator.FetchPreview(file, out var previewTex);
-                if (isPreviewEnabled && previewStatus == PreviewImageStatus.Ready) {
-                    var texSize = new Vector2(btnSize.X, btnSize.Y - UI.FontSize) - style.FramePadding;
-                    ImGui.GetWindowDrawList().AddImage(previewTex!, pos + style.FramePadding, pos + texSize);
+                if (isFilePreviewEnabled) {
+                    var previewStatus = previewGenerator.FetchPreview(file, out var previewTex);
+                    if (previewStatus == PreviewImageStatus.Ready) {
+                        var texSize = new Vector2(btnSize.X, btnSize.Y - UI.FontSize) - style.FramePadding;
+                        ImGui.GetWindowDrawList().AddImage(previewTex!, pos + style.FramePadding, pos + texSize);
+                    } else {
+                        var (icon, col) = previewStatus == PreviewImageStatus.PredefinedIcon ||
+                            previewStatus == PreviewImageStatus.Ready ? AppIcons.GetIcon(PathUtils.ParseFileFormat(file).format) : (AppIcons.SI_File, Vector4.One);
+                        ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), ImGui.ColorConvertFloat4ToU32(col), $"{icon}");
+                    }
                 } else {
-                    var (icon, col) = previewStatus == PreviewImageStatus.PredefinedIcon ||
-                        previewStatus == PreviewImageStatus.Ready ? AppIcons.GetIcon(PathUtils.ParseFileFormat(file).format) : (AppIcons.SI_File, Vector4.One);
+                    var (icon, col) = AppIcons.GetIcon(PathUtils.ParseFileFormat(file).format);
+                    (icon, col) = icon != '\0' ? (icon, col) : (AppIcons.SI_File, Vector4.One);
                     ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), ImGui.ColorConvertFloat4ToU32(col), $"{icon}");
                 }
             } else {
@@ -618,8 +624,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         sortedEntries ??= [];
         var baseList = matchedList!;
         int i = 0;
-        var showPreviews = AppConfig.Instance.UsePakFilePreviewWindow.Get();
-        if (showPreviews) {
+        if (isFilePreviewEnabled) {
             previewGenerator ??= new(contentWorkspace, EditorWindow.CurrentWindow?.GLContext!);
         }
         var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
@@ -668,7 +673,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 }
                 ImGui.PopStyleColor();
 
-                if (showPreviews && ImGui.IsItemHovered()) {
+                if (isFilePreviewEnabled && ImGui.IsItemHovered()) {
                     if (Path.HasExtension(file)) {
                         var previewStatus = previewGenerator!.FetchPreview(file, out var previewTex);
                         if (previewStatus == PreviewImageStatus.Ready) {
