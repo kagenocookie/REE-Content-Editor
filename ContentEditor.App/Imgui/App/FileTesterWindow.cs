@@ -423,6 +423,7 @@ public class FileTesterWindow : IWindowHandler
             case KnownFileFormats.CollisionMesh: return VerifyRewriteEquality<McolFile>(source.GetFile<McolFile>(), env);
             case KnownFileFormats.CompositeCollision: return VerifyRewriteEquality<CocoFile>(source.GetFile<CocoFile>(), env);
             case KnownFileFormats.AIMap: return VerifyRewriteEquality<AimpFile>(source.GetFile<AimpFile>(), env);
+            case KnownFileFormats.CollisionFilter: return VerifyRewriteEquality<CfilFile>(source.GetFile<CfilFile>(), env);
             default: return null;
         }
     }

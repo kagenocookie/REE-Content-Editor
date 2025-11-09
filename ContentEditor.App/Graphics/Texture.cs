@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Numerics;
 using ContentEditor.App.Windowing;
 using ContentPatcher;
 using ReeLib;
@@ -132,7 +133,7 @@ public class Texture : IDisposable
         }
 
         var it = dds.CreateMipMapIterator();
-        if (it.isCompressed) {
+        if (it.IsCompressed) {
             LoadCompressedDDSMipMaps(ref it, dds.Header.DX10.Format);
         } else {
             LoadUncompressedDDSMipMaps(ref it, dds.Header.DX10.Format);
@@ -258,6 +259,60 @@ public class Texture : IDisposable
         var image = Image.LoadPixelData<Rgba32>(data, w, h);
         ArrayPool<byte>.Shared.Return(data);
         return image;
+    }
+
+    public unsafe DDSFile GetAsDDS(int minMipLevel = 0, int maxMipLevel = int.MaxValue, bool generateMissingMipMaps = false)
+    {
+        Bind();
+
+        var maxPossibleMip = BitOperations.Log2(BitOperations.RoundUpToPowerOf2((uint)Math.Max(Height, Width)));
+
+        var actualMaxMip = 0;
+        do {
+            var w = _gl.GetTexLevelParameter(TextureTarget.Texture2D, actualMaxMip, GetTextureParameter.TextureWidth);
+            if (w == 0) break;
+        } while (++actualMaxMip < maxMipLevel);
+
+        if (generateMissingMipMaps && actualMaxMip < maxPossibleMip)
+        {
+            _gl.GenerateMipmap(TextureTarget.Texture2D);
+        }
+
+        maxMipLevel = Math.Min(maxMipLevel, actualMaxMip);
+        minMipLevel = Math.Min(minMipLevel, maxMipLevel);
+
+        var dds = new DDSFile(new FileHandler(new MemoryStream()));
+
+        dds.Header.depth = 1;
+        dds.Header.mipMapCount = maxMipLevel - minMipLevel;
+        dds.Header.width = (uint)Math.Max(1, Width >> minMipLevel);
+        dds.Header.height = (uint)Math.Max(1, Width >> minMipLevel);
+        dds.Header.IsHasDX10 = true;
+        dds.Header.DX10 = new() {
+            Format = DxgiFormat.R8G8B8A8_UNORM,
+            ArraySize = 1,
+            ResourceDimension = ResourceDimension.TEXTURE2D,
+        };
+        dds.Header.pitchOrLinearSize = dds.Header.width * dds.Header.height;
+        dds.Header.flags = HeaderFlags.HEIGHT|HeaderFlags.WIDTH|HeaderFlags.DEPTH|HeaderFlags.CAPS|HeaderFlags.MIPMAPCOUNT|HeaderFlags.LINEARSIZE;
+
+        dds.Write();
+
+        var data = ArrayPool<byte>.Shared.Rent((int)(dds.Header.width * dds.Header.height * sizeof(int)));
+        for (int mip = minMipLevel; mip < maxMipLevel; ++mip) {
+            var w = Math.Max(1, Width >> mip);
+            var h = Math.Max(1, Height >> mip);
+
+            var size = h * w * sizeof(int);
+
+            fixed (byte* bytes = data) {
+                _gl.GetTexImage(TextureTarget.Texture2D, mip, PixelFormat.Rgba, PixelType.UnsignedByte, bytes);
+            }
+            dds.FileHandler.WriteArray(data, 0, size);
+        }
+
+        ArrayPool<byte>.Shared.Return(data);
+        return dds;
     }
 
     public void SaveAs(string filepath)
