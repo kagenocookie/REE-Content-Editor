@@ -89,18 +89,23 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             return;
         }
 
+        var extractList = matchedList;
+        if (CurrentDir.StartsWith(PakReader.UnknownFilePathPrefix)) {
+            extractList = new ListFileWrapper(reader.UnknownFilePaths);
+        }
+
         try {
             string[] files;
             if (CurrentDir.Contains('*') || CurrentDir.Contains('+')) {
-                files = matchedList!.FilterAllFiles(CurrentDir);
+                files = extractList.FilterAllFiles(CurrentDir);
             } else if (reader.FileExists(CurrentDir)) {
                 files = [CurrentDir];
             } else {
-                files = matchedList!.FilterAllFiles(CurrentDir.Replace('\\', '/') + ".*");
+                files = extractList.FilterAllFiles(CurrentDir.Replace('\\', '/') + ".*");
             }
 
             unpackExpectedFiles = files.Length;
-            unpacker = new PakReader();
+            unpacker = new PakReader() { IncludeUnknownFilePaths = true };
             unpacker.PakFilePriority = reader.PakFilePriority;
             unpacker.MaxThreads = AppConfig.Instance.UnpackMaxThreads.Get();
             unpacker.EnableConsoleLogging = false;
@@ -133,6 +138,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         if (reader == null) {
             if (PakFilePath == null) {
                 // all files - use default pak reader data, but make a clone just so we don't mess with the original stuff
+                Workspace.PakReader.IncludeUnknownFilePaths = true;
                 Workspace.PakReader.CacheEntries();
                 reader = Workspace.PakReader.Clone();
                 matchedList = list;
@@ -144,7 +150,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                     return;
                 }
                 try {
-                    reader = new CachedMemoryPakReader();
+                    reader = new CachedMemoryPakReader() { IncludeUnknownFilePaths = true };
                     if (!reader.TryReadManifestFileList(PakFilePath)) {
                         reader.AddFiles(list.Files);
                     }
@@ -191,11 +197,10 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         }
         ImGui.SameLine();
         var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
-        ImguiHelpers.ToggleButton($"{AppIcons.SI_PathShort}", ref useCompactFilePaths, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
-        ImguiHelpers.Tooltip("Toggle Compact File Paths");
-        if (useCompactFilePaths != AppConfig.Instance.UsePakCompactFilePaths.Get()) {
+        if (ImguiHelpers.ToggleButton($"{AppIcons.SI_PathShort}", ref useCompactFilePaths, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f)) {
             AppConfig.Instance.UsePakCompactFilePaths.Set(useCompactFilePaths);
         }
+        ImguiHelpers.Tooltip("Toggle Compact File Paths");
         ImGui.SameLine();
         var bookmarks = _bookmarkManager.GetBookmarks(Workspace.Config.Game.name);
         var defaults = _bookmarkManagerDefaults.GetBookmarks(Workspace.Config.Game.name);
@@ -524,6 +529,12 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         var cacheKey = (CurrentDir, ColumnIndex, SortDirection);
         if (!cachedResults.TryGetValue(cacheKey, out sortedEntries)) {
             var files = baseList.GetFiles(CurrentDir);
+            if (string.IsNullOrEmpty(CurrentDir) && reader!.ContainsUnknownFiles) {
+                Array.Resize(ref files, files.Length + 1);
+                files[^1] = PakReader.UnknownFilePathPrefix;
+            } else if (CurrentDir.StartsWith(PakReader.UnknownFilePathPrefix)) {
+                files = reader!.UnknownFilePaths;
+            }
             var sorted = cacheKey.ColumnIndex switch {
                 0 => cacheKey.SortDirection == ImGuiSortDirection.Ascending ? files : files.Reverse(),
                 1 => cacheKey.SortDirection == ImGuiSortDirection.Ascending ? files.OrderBy(e => reader!.GetSize(e)) : files.OrderByDescending(e => reader!.GetSize(e)),
