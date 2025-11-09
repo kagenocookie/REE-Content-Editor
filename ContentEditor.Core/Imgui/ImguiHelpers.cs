@@ -394,8 +394,9 @@ public static class ImguiHelpers
     /// <summary>
     /// Draws an imgui button that behaves like a checkbox.
     /// </summary>
-    public static void ToggleButton(string label, ref bool value, Vector4? color = null, float frameSize = 0f)
+    public static bool ToggleButton(string label, ref bool value, Vector4? color = null, float frameSize = 0f)
     {
+        var changed = false;
         if (value && color.HasValue) {
             ImGui.PushStyleColor(ImGuiCol.Text, color.Value);
             ImGui.PushStyleColor(ImGuiCol.Border, color.Value);
@@ -403,14 +404,17 @@ public static class ImguiHelpers
 
             if (ImGui.Button(label)) {
                 value = !value;
+                changed = true;
             }
             ImGui.PopStyleVar();
             ImGui.PopStyleColor(2);
         } else {
             if (ImGui.Button(label)) {
                 value = !value;
+                changed = true;
             }
         }
+        return changed;
     }
     /// <summary>
     /// Draws an imgui tooltip when item is hovered.

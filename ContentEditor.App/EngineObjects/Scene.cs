@@ -60,7 +60,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     private bool wasActivatedBefore;
     private HashSet<string> _requestedScenes = new(0);
 
-    private bool HasRenderables => !Renderable.IsEmpty || childScenes.Any(ch => ch.HasRenderables);
+    public bool HasRenderables => !Renderable.IsEmpty || childScenes.Any(ch => ch.HasRenderables);
 
     Vector2 IRectWindow.Size => renderContext.ViewportSize;
     Vector2 IRectWindow.Position => renderContext.ViewportOffset + renderContext.UIOffset;

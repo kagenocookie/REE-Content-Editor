@@ -82,9 +82,14 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
         Scene.RenderContext.SetRenderToTexture(expectedSize);
 
         if (Scene.RenderContext.RenderTargetTextureHandle == 0) {
-            // the texture handle gets assigned immediately before the first render
-            // that means it won't be available until all required resources load in
-            ImGui.Text($"Loading scene {Scene.InternalPath ?? Scene.Name} ...");
+            if (Scene.HasRenderables) {
+                // the texture handle gets assigned immediately before the first render
+                // that means it won't be available until all required resources load in
+                ImGui.Text($"Loading scene {Scene.InternalPath ?? Scene.Name} ...");
+            } else {
+                using var _ = ImguiHelpers.OverrideStyleCol(ImGuiCol.Text, Colors.Warning);
+                ImguiHelpers.TextCentered($"Scene {Scene.InternalPath ?? Scene.Name} has no 3D content");
+            }
             return;
         }
 
@@ -95,12 +100,8 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
         Scene.RenderUI();
         ImGui.SetCursorPos(c);
         ImGui.InvisibleButton("##image", expectedSize, ImGuiButtonFlags.MouseButtonLeft | ImGuiButtonFlags.MouseButtonRight);
-        // need to store the click/hover events for after so we can handle clicks on the empty area below the info window same as a mesh image click event
         var meshClick = ImGui.IsItemClicked(ImGuiMouseButton.Right) || ImGui.IsItemClicked(ImGuiMouseButton.Left);
         var hoveredMesh = ImGui.IsItemHovered();
-
-        // 3D view controls
-        meshClick = meshClick || ImGui.IsItemClicked(ImGuiMouseButton.Right) || ImGui.IsItemClicked(ImGuiMouseButton.Left);
 
         if (meshClick) {
             if (!isDragging) {

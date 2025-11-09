@@ -112,8 +112,6 @@ public static class AppImguiHelpers
 
     public static void RedirectMouseInputToScene(Scene scene, bool isHovered)
     {
-        if (scene.Root.Controller == null || scene.Root.MouseHandler == null) return;
-
         var absPos = ImGui.GetMousePos();
         var leftDown = ImGui.IsMouseDown(ImGuiMouseButton.Left);
         var rightDown = ImGui.IsMouseDown(ImGuiMouseButton.Right);
