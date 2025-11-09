@@ -294,7 +294,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     private bool ShowMenu(MeshComponent meshComponent)
     {
         if (ImGui.BeginMenuBar()) {
-            if (ImGui.MenuItem($"{AppIcons.GameObject} Controls")) ImGui.OpenPopup("CameraSettings");
+            if (ImGui.MenuItem($"{AppIcons.SI_GenericCamera} Controls")) ImGui.OpenPopup("CameraSettings");
             if (scene != null && ImGui.BeginPopup("CameraSettings")) {
                 scene.Controller.ShowCameraControls();
                 if (scene.ActiveCamera.ProjectionMode != AppConfig.Settings.MeshViewer.DefaultProjection) {
@@ -310,16 +310,19 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
             if (!isSynced && previewGameobject != null) {
                 if (ImGui.MenuItem($"{AppIcons.SI_GenericInfo} Mesh Info")) ImGui.OpenPopup("MeshInfo");
-                if (ImGui.MenuItem($"{AppIcons.Eye} Mesh Groups")) ImGui.OpenPopup("MeshGroups");
-                if (ImGui.MenuItem($"{AppIcons.EfxEntry} Material")) ImGui.OpenPopup("Material"); // placeholder icon
-                if (ImGui.MenuItem($"{AppIcons.SI_FileExtractTo} Import / Export")) ImGui.OpenPopup("Export");
-                if (ImGui.MenuItem($"{AppIcons.Play} Animations")) showAnimationsMenu = !showAnimationsMenu;
-                if (showAnimationsMenu) ImguiHelpers.HighlightMenuItem($"{AppIcons.Play} Animations");
-                if (ImGui.BeginMenu($"{AppIcons.Mesh} RCOL")) {
+                ImGui.Text("|");
+                if (ImGui.MenuItem($"{AppIcons.SI_MeshViewerMeshGroup} Mesh Groups")) ImGui.OpenPopup("MeshGroups");
+                if (ImGui.MenuItem($"{AppIcons.SI_FileType_MDF} Material")) ImGui.OpenPopup("Material");
+                if (ImGui.BeginMenu($"{AppIcons.SI_FileType_RCOL} RCOL")) {
                     var rcolEdit = Scene!.Root.SetEditMode(previewGameobject.GetOrAddComponent<RequestSetColliderComponent>());
                     rcolEdit?.DrawMainUI();
                     ImGui.EndMenu();
                 }
+                ImGui.Text("|");
+                if (ImGui.MenuItem($"{AppIcons.Play} Animations")) showAnimationsMenu = !showAnimationsMenu;
+                if (showAnimationsMenu) ImguiHelpers.HighlightMenuItem($"{AppIcons.Play} Animations");
+                ImGui.Text("|");
+                if (ImGui.MenuItem($"{AppIcons.SI_GenericIO} Import / Export")) ImGui.OpenPopup("Export");
 
                 if (ImGui.BeginPopup("MeshInfo")) {
                     ShowMeshInfo();
@@ -422,7 +425,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         if (mesh == null) return;
 
         using var _ = ImguiHelpers.Disabled(exportInProgress);
-        if (ImGui.Button("Export Mesh ...")) {
+        if (ImGui.Button($"{AppIcons.SI_GenericExport} Export Mesh")) {
             // potential export enhancement: include (embed) textures
             if (fileHandle.Resource is CommonMeshResource assmesh) {
                 PlatformUtils.ShowSaveFileDialog((exportPath) => {
@@ -447,7 +450,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         }
         if (fileHandle.HandleType is FileHandleType.Bundle or FileHandleType.Disk && File.Exists(fileHandle.Filepath) && fileHandle.Format.format == KnownFileFormats.Mesh) {
             ImGui.SameLine();
-            if (ImGui.Button("Import From File...")) {
+            if (ImGui.Button($"{AppIcons.SI_GenericImport} Import From File...")) {
                 var window = EditorWindow.CurrentWindow!;
                 PlatformUtils.ShowFileDialog((files) => {
                     window.InvokeFromUIThread(() => {
@@ -473,8 +476,10 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         if (animator?.File != null) ImGui.Checkbox("Include animations", ref exportAnimations);
         if (animator?.File != null && exportAnimations) ImGui.Checkbox("Selected animation only", ref exportCurrentAnimationOnly);
         ImGui.SeparatorText("Convert Mesh");
+        var conv1 = ImGui.Button($"{AppIcons.SI_GenericConvert}");
+        ImguiHelpers.Tooltip("Convert");
+        ImGui.SameLine();
         ImguiHelpers.ValueCombo("Mesh Version", MeshFile.AllVersionConfigsWithExtension, MeshFile.AllVersionConfigs, ref exportTemplate);
-        var conv1 = ImGui.Button("Convert ...");
         var bundleConvert = Workspace.CurrentBundle != null && ImguiHelpers.SameLine() && ImGui.Button("Save to bundle ...");
         if (conv1 || bundleConvert) {
             var ver = MeshFile.GetFileExtension(exportTemplate);

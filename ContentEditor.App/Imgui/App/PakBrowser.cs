@@ -59,7 +59,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
 
     // TODO should probably store somewhere else?
     private FilePreviewGenerator? previewGenerator;
-
+    private bool isFilePreviewEnabled = AppConfig.Instance.UsePakFilePreviewWindow.Get();
     private PageState pagination;
 
     private struct PageState
@@ -184,16 +184,15 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImguiHelpers.Tooltip("Invalidated PAK entries have been detected (most likely from Fluffy Mod Manager).\nYou may be unable to open some files.");
         }
         ImGui.SameLine();
-        var usePreviewWindow = AppConfig.Instance.UsePakFilePreviewWindow.Get();
-        ImguiHelpers.ToggleButton($"{AppIcons.SI_FileOpenPreview}", ref usePreviewWindow, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
-        ImguiHelpers.Tooltip("Open files in Preview Window");
-        if (usePreviewWindow != AppConfig.Instance.UsePakFilePreviewWindow.Get()) {
-            AppConfig.Instance.UsePakFilePreviewWindow.Set(usePreviewWindow);
+        ImguiHelpers.ToggleButton($"{AppIcons.SI_FileOpenPreview}", ref isFilePreviewEnabled, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
+        ImguiHelpers.Tooltip("Toggle File Preview");
+        if (isFilePreviewEnabled != AppConfig.Instance.UsePakFilePreviewWindow.Get()) {
+            AppConfig.Instance.UsePakFilePreviewWindow.Set(isFilePreviewEnabled);
         }
         ImGui.SameLine();
         var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_PathShort}", ref useCompactFilePaths, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
-        ImguiHelpers.Tooltip("Use compact file paths");
+        ImguiHelpers.Tooltip("Toggle Compact File Paths");
         if (useCompactFilePaths != AppConfig.Instance.UsePakCompactFilePaths.Get()) {
             AppConfig.Instance.UsePakCompactFilePaths.Set(useCompactFilePaths);
         }
@@ -205,7 +204,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         bool isDefaultBookmark = !isHideDefaults && _bookmarkManagerDefaults.IsBookmarked(Workspace.Config.Game.name, CurrentDir);
         ImguiHelpers.ToggleButton($"{AppIcons.SI_Bookmarks} Bookmarks", ref isShowBookmarks, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
         ImGui.SameLine();
-        if (ImGui.Button(DisplayMode == FileDisplayMode.Grid ? "Grid View" : "List View")) {
+        if (ImGui.Button(DisplayMode == FileDisplayMode.Grid ? $"{AppIcons.SI_ViewGridSmall} Grid View" : $"{AppIcons.SI_ViewList} List View")) {
             AppConfig.Instance.PakDisplayMode = DisplayMode = DisplayMode == FileDisplayMode.Grid ? FileDisplayMode.List : FileDisplayMode.Grid;
             previewGenerator?.CancelCurrentQueue();
         }
@@ -581,15 +580,20 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             var click = ImGui.Button(displayName, btnSize);
             ImGui.PopStyleColor();
             if (Path.HasExtension(file)) {
-                var previewStatus = previewGenerator.FetchPreview(file, out var previewTex);
-                if (previewStatus == PreviewImageStatus.Ready) {
-                    var texSize = new Vector2(btnSize.X, btnSize.Y - UI.FontSize) - style.FramePadding;
-                    ImGui.GetWindowDrawList().AddImage(previewTex!, pos + style.FramePadding, pos + new Vector2(texSize.X, texSize.Y));
-                } else if (previewStatus == PreviewImageStatus.PredefinedIcon) {
-                    var (icon, col) = AppIcons.GetIcon(PathUtils.ParseFileFormat(file).format);
-                    ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), ImGui.ColorConvertFloat4ToU32(col), $"{icon}");
+                if (isFilePreviewEnabled) {
+                    var previewStatus = previewGenerator.FetchPreview(file, out var previewTex);
+                    if (previewStatus == PreviewImageStatus.Ready) {
+                        var texSize = new Vector2(btnSize.X, btnSize.Y - UI.FontSize) - style.FramePadding;
+                        ImGui.GetWindowDrawList().AddImage(previewTex!, pos + style.FramePadding, pos + texSize);
+                    } else {
+                        var (icon, col) = previewStatus == PreviewImageStatus.PredefinedIcon ||
+                            previewStatus == PreviewImageStatus.Ready ? AppIcons.GetIcon(PathUtils.ParseFileFormat(file).format) : (AppIcons.SI_File, Vector4.One);
+                        ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), ImGui.ColorConvertFloat4ToU32(col), $"{icon}");
+                    }
                 } else {
-                    ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), 0xffffffff, $"{AppIcons.SI_File}");
+                    var (icon, col) = AppIcons.GetIcon(PathUtils.ParseFileFormat(file).format);
+                    (icon, col) = icon != '\0' ? (icon, col) : (AppIcons.SI_File, Vector4.One);
+                    ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), ImGui.ColorConvertFloat4ToU32(col), $"{icon}");
                 }
             } else {
                 ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), 0xffffffff, $"{AppIcons.Folder}");
@@ -620,14 +624,13 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         sortedEntries ??= [];
         var baseList = matchedList!;
         int i = 0;
-        var showPreviews = AppConfig.Instance.UsePakFilePreviewWindow.Get();
-        if (showPreviews) {
+        if (isFilePreviewEnabled) {
             previewGenerator ??= new(contentWorkspace, EditorWindow.CurrentWindow?.GLContext!);
         }
         var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
         if (ImGui.BeginTable("List", 2, ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingStretchProp | ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.Sortable, new Vector2(0, remainingHeight))) {
-            ImGui.TableSetupColumn(" Path ", ImGuiTableColumnFlags.WidthStretch, 0.9f);
-            ImGui.TableSetupColumn(" Size ", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize | ImGuiTableColumnFlags.PreferSortDescending, 100);
+            ImGui.TableSetupColumn("Path", ImGuiTableColumnFlags.WidthStretch, 0.9f);
+            ImGui.TableSetupColumn("Size", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize | ImGuiTableColumnFlags.PreferSortDescending, 100);
             ImGui.TableSetupScrollFreeze(0, 1);
             var sort = ImGui.TableGetSortSpecs();
             GetPageFiles(baseList, sort.Specs.ColumnIndex, sort.Specs.SortDirection, ref sortedEntries);
@@ -670,7 +673,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 }
                 ImGui.PopStyleColor();
 
-                if (showPreviews && ImGui.IsItemHovered()) {
+                if (isFilePreviewEnabled && ImGui.IsItemHovered()) {
                     if (Path.HasExtension(file)) {
                         var previewStatus = previewGenerator!.FetchPreview(file, out var previewTex);
                         if (previewStatus == PreviewImageStatus.Ready) {

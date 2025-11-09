@@ -25,28 +25,26 @@ public class SceneVisibilitySettings : ISceneWidget
             ImGui.OpenPopup(WidgetName);
         }
         if (ImGui.BeginPopup(WidgetName)) {
-            var meshIcon = AppIcons.Mesh.ToString();
-
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.Info with { W = AppConfig.Instance.RenderAxis.Get() ? 1 : 0.6f });
-            if (ImGui.Button($"{meshIcon} Axis Gizmos")) {
+            if (ImGui.Button($"{AppIcons.SI_Generic3Axis} Axis Gizmos")) {
                 AppConfig.Instance.RenderAxis.Set(!AppConfig.Instance.RenderAxis);
             }
             ImGui.PopStyleColor();
 
             ImGui.PushStyleColor(ImGuiCol.Text, AppConfig.Instance.RenderMeshes.Get() ? Colors.Default : Colors.Faded);
-            if (ImGui.Button($"{meshIcon} Meshes")) {
+            if (ImGui.Button($"{AppIcons.SI_FileType_MESH} Meshes")) {
                 AppConfig.Instance.RenderMeshes.Set(!AppConfig.Instance.RenderMeshes);
             }
             ImGui.PopStyleColor();
 
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.Colliders with { W = AppConfig.Instance.RenderColliders.Get() ? 1 : 0.6f });
-            if (ImGui.Button($"{meshIcon} Physics Colliders")) {
+            if (ImGui.Button($"{AppIcons.SI_FileType_MCOL} Physics Colliders")) {
                 AppConfig.Instance.RenderColliders.Set(!AppConfig.Instance.RenderColliders);
             }
             ImGui.PopStyleColor();
 
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.RequestSetColliders with { W = AppConfig.Instance.RenderRequestSetColliders.Get() ? 1 : 0.6f });
-            if (ImGui.Button($"{meshIcon} Request Set Colliders (rcol)")) {
+            if (ImGui.Button($"{AppIcons.SI_FileType_RCOL} Request Set Colliders")) {
                 AppConfig.Instance.RenderRequestSetColliders.Set(!AppConfig.Instance.RenderRequestSetColliders);
             }
             ImGui.PopStyleColor();
