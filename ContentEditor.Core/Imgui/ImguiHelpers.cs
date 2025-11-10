@@ -417,13 +417,22 @@ public static class ImguiHelpers
         return changed;
     }
     /// <summary>
-    /// Draws an imgui tooltip when item is hovered.
+    /// Draws a tooltip when item is hovered.
     /// </summary>
     public static void Tooltip(string text)
     {
         if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(text);
     }
-
+    /// <summary>
+    /// Draws a colored tooltip when item is hovered.
+    /// </summary>
+    public static void TooltipColored(string text, Vector4? color = null)
+    {
+        color ??= ImguiHelpers.GetColor(ImGuiCol.Text);
+        ImGui.PushStyleColor(ImGuiCol.Text, color.Value);
+        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(text);
+        ImGui.PopStyleColor();
+    }
     /// <summary>
     /// Draws a highlight over the last drawn menu bar item.
     /// </summary>
@@ -439,5 +448,13 @@ public static class ImguiHelpers
             pos + new Vector2(-padding.X, size.Y),
             ImGui.ColorConvertFloat4ToU32(color.Value)
         );
+    }
+    /// <summary>
+    /// Pushes element(s) to the right side of the window.
+    /// </summary>
+    public static void AlignElementRight(float width)
+    {
+        float avail = ImGui.GetContentRegionAvail().X;
+        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + avail - width);
     }
 }
