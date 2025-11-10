@@ -3,17 +3,17 @@
     {
       "Path": "natives/stm/character/ch",
       "Tags": ["Character"],
-      "Comment": "Folder containing base game characters"
+      "Comment": "Base game characters"
     },
     {
       "Path": "natives/stm/_ge/character/ch",
       "Tags": ["Character"],
-      "Comment": "Folder containing 'Gold Edition' characters"
+      "Comment": "Gold Edition' characters"
     },
     {
       "Path": "natives/stm/character/it",
       "Tags": ["Weapon", "Item"],
-      "Comment": "Folder containing base game weapons and items"
+      "Comment": "Base game weapons and items"
     }
   ],
   "dd2": [
@@ -180,6 +180,147 @@
         "Stage"
       ],
       "Comment": "Main locations"
+    }
+  ],
+  "re7rt": [
+    {
+      "Path": "natives/stm/weapon/wp0040_axe",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Axe (Ethan)"
+    },
+    {
+      "Path": "natives/stm/weapon/wp0060_chainsaw",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Chainsaw"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1000_gasburner",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Burner / Flamethrower"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1010_handgun",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "M1911 Handgun"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1030_shotgun",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "M21 Shotgun"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1110_portablecannon",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Grenade Launcher"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1140_magnum",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "44 MAG"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1190_knife",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Knife (Ethan)"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1210_handgun",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "G17 Handgun"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1230_pumpshotgun",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "M37 Shotgun"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1240_miahandgun",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "MPM Hangun (Mia)"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1340_chrishandgun",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Albert-01R Handgun"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1390_chrisknife",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Tactical Knife (Chris)"
+    },
+    {
+      "Path": "natives/stm/ch8/weapon/wp1330_chrisshotgun",
+      "Tags": [
+        "Weapon",
+        "DLC"
+      ],
+      "Comment": "Thor\u0027s Hammer - AW Model-02 Shotgun"
+    },
+    {
+      "Path": "natives/stm/ch8/weapon/wp1340_chrishandgun",
+      "Tags": [
+        "Weapon",
+        "DLC"
+      ],
+      "Comment": "Samurai Edge - AW Model-01 Handgun"
+    },
+    {
+      "Path": "natives/stm/ch8/weapon/wp1390_chrisknife",
+      "Tags": [
+        "Weapon",
+        "DLC"
+      ],
+      "Comment": "Tactical Knife (Chris)"
+    },
+    {
+      "Path": "natives/stm/ch8/weapon/wp3000_grenadebomb",
+      "Tags": [
+        "Weapon",
+        "DLC"
+      ],
+      "Comment": "Grenade"
+    },
+    {
+      "Path": "natives/stm/ch8/weapon/wp3010_thermatebomb",
+      "Tags": [
+        "Weapon",
+        "DLC"
+      ],
+      "Comment": "Incendiary Grenade"
+    },
+    {
+      "Path": "natives/stm/ch8/weapon/wp3020_stangrenadebomb",
+      "Tags": [
+        "Weapon",
+        "DLC"
+      ],
+      "Comment": "Neuro-Stun Grenade"
     }
   ]
 }

@@ -229,8 +229,10 @@ public static class AppIcons
     public static readonly char SI_GenericConvert = '\ued57';
     public static readonly char SI_GenericCamera = '\ued58';
     public static readonly char SI_MeshViewerMeshGroup = '\ued59';
+    public static readonly char SI_BookmarkCustomHide = '\ued5a';
+    public static readonly char SI_BookmarkCustomClear = '\ued5b';
 
-    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_MeshViewerMeshGroup, 0];
+    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_BookmarkCustomClear, 0];
 
     public static string PrependIcon(this string text, object target)
     {

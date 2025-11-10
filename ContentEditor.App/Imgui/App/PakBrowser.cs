@@ -46,6 +46,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
     private BookmarkManager _bookmarkManagerDefaults = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "app/default_bookmarks_pak.json"));
     private BookmarkManager _bookmarkManager = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "user/bookmarks_pak.json"));
     private List<string> _activeTagFilter = new();
+    private string bookmarkSearch = string.Empty;
 
     private PakReader? unpacker;
     private int unpackExpectedFiles;
@@ -204,6 +205,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         ImguiHelpers.Tooltip("Toggle Compact File Paths");
         ImGui.SameLine();
         bool isHideDefaults = _bookmarkManagerDefaults.IsHideDefaults;
+        bool isHideCustoms = _bookmarkManager.IsHideCustoms;
         bool isBookmarked = _bookmarkManager.IsBookmarked(Workspace.Config.Game.name, CurrentDir);
         ImguiHelpers.AlignElementRight((ImGui.CalcTextSize($"{AppIcons.SI_ViewGridSmall}").X + ImGui.GetStyle().FramePadding.X * 2) * 2 + ImGui.GetStyle().ItemSpacing.X);
         ImguiHelpers.ToggleButton($"{AppIcons.SI_Bookmarks}", ref isShowBookmarks, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
@@ -222,7 +224,11 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             _bookmarkManagerDefaults.IsHideDefaults = isHideDefaults;
             using (var _ = ImguiHelpers.Disabled(_bookmarkManager.GetBookmarks(Workspace.Config.Game.name).Count == 0)) {
                 ImGui.SameLine();
-                if (ImGui.Button($"{AppIcons.SI_BookmarkClear}")) {
+                ImguiHelpers.ToggleButton($"{AppIcons.SI_BookmarkCustomHide}", ref isHideCustoms, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
+                ImguiHelpers.Tooltip("Hide Custom Bookmarks");
+                _bookmarkManager.IsHideCustoms = isHideCustoms;
+                ImGui.SameLine();
+                if (ImGui.Button($"{AppIcons.SI_BookmarkCustomClear}")) {
                     ImGui.OpenPopup("Confirm Action");
                 }
                 ImguiHelpers.Tooltip("Clear Custom Bookmarks");
@@ -265,7 +271,6 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImGui.SameLine();
             ImguiHelpers.AlignElementRight(300f);
             ImGui.SetNextItemWidth(300f);
-            string bookmarkSearch = string.Empty;
             ImGui.InputTextWithHint("##BookmarkSearch", $"{AppIcons.SI_GenericMagnifyingGlass} Search Comments", ref bookmarkSearch, 64);
             var bookmarkSearchQuery = bookmarkSearch.Trim().ToLowerInvariant();
             if (_activeTagFilter.Count > 0) {
@@ -290,12 +295,14 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 }
             }
             if (_bookmarkManagerDefaults.GetBookmarks(Workspace.Config.Game.name).Count > 0 && !_bookmarkManagerDefaults.IsHideDefaults) {
-                ShowBookmarksTable("Default", _bookmarkManagerDefaults, _activeTagFilter, bookmarkSearchQuery);
+                ShowBookmarksTable("Default", 3, _bookmarkManagerDefaults, _activeTagFilter, bookmarkSearchQuery);
             }
-            if (_bookmarkManager.GetBookmarks(Workspace.Config.Game.name).Count > 0) {
-                ShowBookmarksTable("Custom", _bookmarkManager, _activeTagFilter, bookmarkSearchQuery);
+            if (_bookmarkManager.GetBookmarks(Workspace.Config.Game.name).Count > 0 && !_bookmarkManager.IsHideCustoms) {
+                ShowBookmarksTable("Custom", 4, _bookmarkManager, _activeTagFilter, bookmarkSearchQuery);
             } else {
-                ImGui.TextDisabled("No Custom Bookmarks yet...");
+                if (!_bookmarkManager.IsHideCustoms) {
+                    ImGui.TextDisabled("No Custom Bookmarks yet...");
+                }
             }
             ImGui.Separator();
             ImGui.Spacing();
@@ -683,17 +690,20 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         }
     }
 
-    private void ShowBookmarksTable(string label, BookmarkManager manager, List<string> activeTagFilter, string searchText)
+    private void ShowBookmarksTable(string label, int columnNum, BookmarkManager manager, List<string> activeTagFilter, string searchText)
     {
         var bookmarks = manager.GetBookmarks(Workspace.Config.Game.name);
         if (bookmarks == null || bookmarks.Count == 0) {
             return;
         }
         ImGui.SeparatorText(label);
-        if (ImGui.BeginTable($"{label}Table", 3, ImGuiTableFlags.Resizable | ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.RowBg)) {
+        if (ImGui.BeginTable($"{label}Table", columnNum, ImGuiTableFlags.Resizable | ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.RowBg)) {
             ImGui.TableSetupColumn("Path", ImGuiTableColumnFlags.WidthStretch, 0.5f);
             ImGui.TableSetupColumn("Tags", ImGuiTableColumnFlags.WidthStretch, 0.3f);
             ImGui.TableSetupColumn("Comment", ImGuiTableColumnFlags.WidthStretch, 0.2f);
+            if (manager == _bookmarkManager) {
+                ImGui.TableSetupColumn("Order");
+            }
             ImGui.TableHeadersRow();
 
             foreach (var bm in bookmarks.ToList()) {
@@ -769,6 +779,28 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                         ImGui.TextDisabled(bm.Comment);
                     } else {
                         ImGui.Text(bm.Comment);
+                    }
+                }
+                if (manager == _bookmarkManager) {
+                    ImGui.TableSetColumnIndex(3);
+                    int idx = bookmarks.IndexOf(bm);
+                    int uniqueId = bm.GetHashCode();
+                    // SILVER: w/o this id the down arrow keys would cause imgui errors for 1 frame. Maybe drag & drop would be neater for this but no idea how to set that up.
+                    int? moveFrom = null, moveTo = null;
+                    using (var _ = ImguiHelpers.Disabled(!string.IsNullOrEmpty(searchText))) {
+                        if (ImGui.ArrowButton($"##up_{uniqueId}", ImGuiDir.Up) && idx > 0) {
+                            moveFrom = idx;
+                            moveTo = idx - 1;
+                        }
+                        ImGui.SameLine();
+                        if (ImGui.ArrowButton($"##down_{uniqueId}", ImGuiDir.Down) && idx < bookmarks.Count - 1) {
+                            moveFrom = idx;
+                            moveTo = idx + 1;
+                        }
+                    }
+                    if (moveFrom.HasValue && moveTo.HasValue) {
+                        (bookmarks[moveFrom.Value], bookmarks[moveTo.Value]) = (bookmarks[moveTo.Value], bookmarks[moveFrom.Value]);
+                        manager.SaveBookmarks();
                     }
                 }
             }
