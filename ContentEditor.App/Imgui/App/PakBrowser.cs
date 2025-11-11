@@ -47,6 +47,13 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
     private BookmarkManager _bookmarkManager = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "user/bookmarks_pak.json"));
     private List<string> _activeTagFilter = new();
     private string bookmarkSearch = string.Empty;
+    private enum FilterMode
+    {
+        AnyMatch,
+        AllMatch,
+        ExactMatch
+    }
+    private FilterMode _filterMode = FilterMode.AnyMatch;
 
     private PakReader? unpacker;
     private int unpackExpectedFiles;
@@ -278,6 +285,21 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                     _activeTagFilter.Clear();
                 }
                 ImguiHelpers.Tooltip("Clear Filters");
+                ImGui.SameLine();
+                if (ImGui.Button($"Filter Mode: {_filterMode switch {
+                    FilterMode.AnyMatch => "Any",
+                    FilterMode.AllMatch => "All",
+                    FilterMode.ExactMatch => "Exact",
+                    _ => "?"
+                }}")) {
+                    _filterMode = _filterMode switch {
+                        FilterMode.AnyMatch => FilterMode.AllMatch,
+                        FilterMode.AllMatch => FilterMode.ExactMatch,
+                        _ => FilterMode.AnyMatch
+                    };
+                }
+                ImGui.SameLine();
+                ImguiHelpers.Tooltip("Filter Modes:\nAny = Keep entries with at least one matching tag\nAll = Keep entries containing all active tags\nExact = Keep entries with tags exactly matching the active filters");
                 ImGui.SameLine();
                 ImGui.Text("Active Filters: ");
 
@@ -689,11 +711,10 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImGui.EndPopup();
         }
     }
-
     private void ShowBookmarksTable(string label, int columnNum, BookmarkManager manager, List<string> activeTagFilter, string searchText)
     {
         var bookmarks = manager.GetBookmarks(Workspace.Config.Game.name);
-        if (bookmarks == null || bookmarks.Count == 0) {
+        if (bookmarks.Count == 0) {
             return;
         }
         ImGui.SeparatorText(label);
@@ -707,13 +728,34 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImGui.TableHeadersRow();
 
             foreach (var bm in bookmarks.ToList()) {
-                if ((activeTagFilter.Count > 0 && !activeTagFilter.Any(t => bm.Tags.Contains(t))) ||
-                    (!string.IsNullOrEmpty(searchText) && (bm.Comment == null || !bm.Comment.ToLowerInvariant().Contains(searchText)))) {
+                bool tagMatch = true;
+
+                if (activeTagFilter.Count > 0) {
+                    switch (_filterMode) {
+                        case FilterMode.AnyMatch:
+                            tagMatch = activeTagFilter.Any(t => bm.Tags.Contains(t));
+                            break;
+                        case FilterMode.AllMatch:
+                            tagMatch = activeTagFilter.All(t => bm.Tags.Contains(t));
+                            break;
+                        case FilterMode.ExactMatch:
+                            tagMatch = bm.Tags.Count == activeTagFilter.Count && activeTagFilter.All(t => bm.Tags.Contains(t));
+                            break;
+                    }
+                }
+
+                if (!tagMatch || (!string.IsNullOrEmpty(searchText) && (bm.Comment == null || !bm.Comment.Contains(searchText, StringComparison.OrdinalIgnoreCase)))) {
                     continue;
+                }
+
+                string displayPath = bm.Path;
+                var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
+                if (useCompactFilePaths) {
+                    displayPath = LessCompactFilePath(bm.Path);
                 }
                 ImGui.TableNextRow();
                 ImGui.TableSetColumnIndex(0);
-                if (ImGui.Selectable(bm.Path, false)) {
+                if (ImGui.Selectable(displayPath, false)) {
                     CurrentDir = bm.Path;
                 }
                 if (manager == _bookmarkManager && ImGui.BeginPopupContextItem(bm.Path)) {
@@ -785,7 +827,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                     ImGui.TableSetColumnIndex(3);
                     int idx = bookmarks.IndexOf(bm);
                     int uniqueId = bm.GetHashCode();
-                    // SILVER: w/o this id the down arrow keys would cause imgui errors for 1 frame. Maybe drag & drop would be neater for this but no idea how to set that up.
+                    // SILVER: w/o this id the down arrow buttons would cause imgui errors for 1 frame. Maybe drag & drop would be neater for this but no idea how to set that up.
                     int? moveFrom = null, moveTo = null;
                     using (var _ = ImguiHelpers.Disabled(!string.IsNullOrEmpty(searchText))) {
                         if (ImGui.ArrowButton($"##up_{uniqueId}", ImGuiDir.Up) && idx > 0) {
@@ -807,12 +849,22 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImGui.EndTable();
         }
     }
+
     private static string CompactFilePath(string path)
     {
         var parts = path.Replace('\\', '/').Split('/');
         if (parts.Length <= 2) return path;
 
         return ".../" + parts[^1];
+    }
+
+    private static string LessCompactFilePath(string path)
+    {
+        var parts = path.Replace('\\', '/').Split('/');
+        if (parts.Length <= 2) return path;
+
+        var remainingParts = parts[2..];
+        return string.Join("/", remainingParts);
     }
     public bool RequestClose()
     {
