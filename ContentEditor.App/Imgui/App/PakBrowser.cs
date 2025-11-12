@@ -728,13 +728,14 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         }
 
         float rowHeight = ImGui.GetTextLineHeightWithSpacing();
-        float currDisplayHeight = filteredBookmarks.Count <= 5 ? 0f : rowHeight * 10;
-
+        float currDisplayHeight = filteredBookmarks.Count <= 5 ? 0 : rowHeight * 10;
+        var bookmarkTableFlags = ImGuiTableFlags.Resizable | ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.RowBg;
+        if (filteredBookmarks.Count >= 5) {
+            bookmarkTableFlags |= ImGuiTableFlags.ScrollY;
+        }
         ImGui.SeparatorText(label);
-        // TODO SILVER: there's a very annoying bug where following these actions: Hide Custom Bookmarks > Apply Filter #1 > Filter Mode set to 'Any' > Apply Filter #2 > Search for a comment
-        // the bookmarks table will be only a few pixels in height. If you manage to scroll this pixel sized table then it will fix itself. I'm in hell.
         if (ImGui.BeginChild($"{label}_Scroll", new Vector2(0, currDisplayHeight), ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AutoResizeY)) {
-            if (ImGui.BeginTable($"{label}Table", columnNum, ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.RowBg)) {
+            if (ImGui.BeginTable($"{label}Table", columnNum, bookmarkTableFlags)) {
                 ImGui.TableSetupColumn("Path", ImGuiTableColumnFlags.WidthStretch);
                 ImGui.TableSetupColumn("Tags", ImGuiTableColumnFlags.WidthStretch);
                 ImGui.TableSetupColumn("Comment", ImGuiTableColumnFlags.WidthStretch);
