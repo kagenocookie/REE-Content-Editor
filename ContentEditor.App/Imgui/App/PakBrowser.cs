@@ -810,8 +810,8 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 }
                 ImGui.EndTable();
             }
-            ImGui.EndChild();
         }
+        ImGui.EndChild();
     }
     private List<BookmarkManager.BookmarkEntry> FilterBookmarks(List<BookmarkManager.BookmarkEntry> bookmarks, List<string> activeTagFilter, string searchText, FilterMode filterMode) {
         return bookmarks.Where(bm => {
