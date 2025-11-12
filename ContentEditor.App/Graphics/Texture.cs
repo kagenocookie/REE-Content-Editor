@@ -265,7 +265,7 @@ public class Texture : IDisposable
     {
         Bind();
 
-        var maxPossibleMip = BitOperations.Log2(BitOperations.RoundUpToPowerOf2((uint)Math.Max(Height, Width)));
+        var maxPossibleMip = DDSFileExtensions.CalculateMipCount(Height, Width);
 
         var actualMaxMip = 0;
         do {
@@ -281,8 +281,10 @@ public class Texture : IDisposable
         maxMipLevel = Math.Min(maxMipLevel, actualMaxMip);
         minMipLevel = Math.Min(minMipLevel, maxMipLevel);
 
-        var dds = new DDSFile(new FileHandler(new MemoryStream()));
+        var dds = new DDSFile(new FileHandler(new MemoryStream(), Path));
 
+        dds.Header.magic = DDSFile.Magic;
+        dds.Header.size = 124;
         dds.Header.depth = 1;
         dds.Header.mipMapCount = maxMipLevel - minMipLevel;
         dds.Header.width = (uint)Math.Max(1, Width >> minMipLevel);
@@ -293,15 +295,21 @@ public class Texture : IDisposable
             ArraySize = 1,
             ResourceDimension = ResourceDimension.TEXTURE2D,
         };
-        dds.Header.pitchOrLinearSize = dds.Header.width * dds.Header.height;
+        dds.Header.PixelFormat = new() {
+            Size = 32,
+            FourCC = DDSFourCC.DX10,
+            Flags = PixelFormatFlags.FOURCC,
+        };
+        dds.Header.Caps1 = DDSCaps.TEXTURE|DDSCaps.MIPMAP;
+        dds.Header.pitchOrLinearSize = dds.Header.width * dds.Header.height * sizeof(int);
         dds.Header.flags = HeaderFlags.HEIGHT|HeaderFlags.WIDTH|HeaderFlags.DEPTH|HeaderFlags.CAPS|HeaderFlags.MIPMAPCOUNT|HeaderFlags.LINEARSIZE;
 
         dds.Write();
 
-        var data = ArrayPool<byte>.Shared.Rent((int)(dds.Header.width * dds.Header.height * sizeof(int)));
+        var data = ArrayPool<byte>.Shared.Rent((int)dds.Header.pitchOrLinearSize);
         for (int mip = minMipLevel; mip < maxMipLevel; ++mip) {
-            var w = Math.Max(1, Width >> mip);
-            var h = Math.Max(1, Height >> mip);
+            var w = (int)Math.Max(1, dds.Header.width >> mip);
+            var h = (int)Math.Max(1, dds.Header.width >> mip);
 
             var size = h * w * sizeof(int);
 
@@ -311,6 +319,7 @@ public class Texture : IDisposable
             dds.FileHandler.WriteArray(data, 0, size);
         }
 
+        dds.Write();
         ArrayPool<byte>.Shared.Return(data);
         return dds;
     }
