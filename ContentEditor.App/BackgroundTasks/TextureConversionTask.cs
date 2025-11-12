@@ -48,6 +48,9 @@ public class TextureConversionTask : IBackgroundTask
                     case GenerateMipMaps:
                         targetMipLevel = 0;
                         break;
+                    case RemoveMipMaps:
+                        targetMipLevel = 1;
+                        break;
                 }
             }
 
@@ -59,9 +62,19 @@ public class TextureConversionTask : IBackgroundTask
 
             if (token.IsCancellationRequested) return;
 
-            if (targetMipLevel != -1) {
-                Status = "Generating MipMaps";
-                tmpImage = image.GenerateMipMaps(TEX_FILTER_FLAGS.DEFAULT, targetMipLevel);
+            if (targetMipLevel != -1 && targetMipLevel != meta.MipLevels) {
+                if (targetMipLevel == 0 || targetMipLevel > meta.MipLevels) {
+                    Status = "Generating MipMaps";
+                    tmpImage = image.GenerateMipMaps(TEX_FILTER_FLAGS.DEFAULT, targetMipLevel);
+                } else if (targetMipLevel < meta.MipLevels) {
+                    Status = "Removing MipMaps";
+                    tmpImage = image.CreateCopyWithEmptyMipMaps(1, DXGI_FORMAT.R8G8B8A8_UNORM, CP_FLAGS.NONE, false);
+                    if (targetMipLevel > 1) {
+                        Status = "Generating MipMaps";
+                        SwapImage(ref image, ref tmpImage);
+                        tmpImage = image.GenerateMipMaps(TEX_FILTER_FLAGS.DEFAULT, targetMipLevel);
+                    }
+                }
                 SwapImage(ref image, ref tmpImage);
             }
 
@@ -73,7 +86,7 @@ public class TextureConversionTask : IBackgroundTask
                 var convFormat = (DXGI_FORMAT)outputformat;
 
                 if (outputformat.IsBlockCompressedFormat()) {
-                    if (BackgroundResources.Instance.Value!.TryGetD3DDevice(out var d3dDevice)) {
+                    if (outputformat is DxgiFormat.BC6H_UF16 or DxgiFormat.BC6H_SF16 or DxgiFormat.BC7_UNORM or DxgiFormat.BC7_UNORM_SRGB && BackgroundResources.Instance.Value!.TryGetD3DDevice(out var d3dDevice)) {
                         // GPU happy path
                         Status = "Compressing (GPU)";
                         tmpImage = image.Compress(d3dDevice, convFormat, TEX_COMPRESS_FLAGS.DEFAULT, 1.0f);
@@ -108,8 +121,10 @@ public class TextureConversionTask : IBackgroundTask
         }
     }
 
-    private static void SwapImage(ref ScratchImage src, ref ScratchImage tmp)
+    private static void SwapImage(ref ScratchImage src, ref ScratchImage? tmp)
     {
+        if (tmp == null) return;
+
         src.Dispose();
         src = tmp;
         tmp = null!;
@@ -120,6 +135,7 @@ public class TextureConversionTask : IBackgroundTask
     }
 
     public class GenerateMipMaps : TextureOperation { }
+    public class RemoveMipMaps : TextureOperation { }
     public class ChangeFormat(ReeLib.DDS.DxgiFormat format) : TextureOperation
     {
         public DxgiFormat Format { get; } = format;

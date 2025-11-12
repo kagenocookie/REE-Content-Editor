@@ -269,7 +269,7 @@ public static partial class WindowHandlerFactory
         }
 
         if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {
-            return new TextureViewer(file);
+            return new TextureViewer(env, file);
         }
 
         if (MeshViewer.IsSupportedFileExtension(file.Filepath)) {

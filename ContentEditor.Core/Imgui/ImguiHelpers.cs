@@ -92,6 +92,19 @@ public static class ImguiHelpers
         return false;
     }
 
+    public static bool InlineRadioGroup<TValue>(string[] labels, TValue[] values, ref TValue selected) where TValue : unmanaged, IBinaryNumber<TValue>
+    {
+        var changed = false;
+        for (int i = 0; i < labels.Length; ++i) {
+            if (i != 0) ImGui.SameLine();
+            if (ImGui.RadioButton(labels[i], values[i].Equals(selected))) {
+                changed = true;
+                selected = values[i];
+            }
+        }
+        return changed;
+    }
+
     public static bool ValueCombo<TValue>(string label, string[] labels, TValue[] values, ref TValue selected)
     {
         var selectedIndex = Array.IndexOf(values, selected);
