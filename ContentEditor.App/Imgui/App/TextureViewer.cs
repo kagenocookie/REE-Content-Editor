@@ -17,7 +17,7 @@ namespace ContentEditor.App;
 
 public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleReferenceHolder
 {
-    public bool HasUnsavedChanges => false;
+    public bool HasUnsavedChanges => fileHandle?.Modified == true;
 
     public string HandlerName => $"Texture Viewer";
 
@@ -32,16 +32,22 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
     private TextureChannel currentChannel = TextureChannel.RGBA;
     private static readonly HashSet<string> StandardImageFileExtensions = [".png", ".bmp", ".gif", ".jpg", ".jpeg", ".webp", ".tga", ".tiff", ".qoi", ".dds"];
 
+    private const string ImagesFileFilter = "TGA (*.tga)|*.tga|PNG (*.png)|*.png|DDS (*.dds)|*.dds";
+
     private WindowData data = null!;
     protected UIContext context = null!;
 
-    private ContentWorkspace? workspace;
+    private ContentWorkspace workspace = null!;
+    private FormatPreset selectedFormatPreset;
 
     private string? lastImportSourcePath;
     private string exportTemplate = "";
-    private bool exportIncludeMipMaps = true;
+    private MipGenOptions mipMapOption = MipGenOptions.Generate;
+    private string[] MipGenLabels = ["Leave Unchanged", "Generate All Mip Map Levels", "Remove Mip Maps"];
+    private int[] MipGenValues = [0, 1, 2];
+    private enum MipGenOptions { Unchanged, Generate, Remove };
 
-    private DxgiFormat exportFormat = DxgiFormat.BC7_UNORM;
+    private DxgiFormat exportFormat = DxgiFormat.BC7_UNORM_SRGB;
 
     private static DxgiFormat[] DxgiFormats = [
         DxgiFormat.R8G8B8A8_UNORM,
@@ -60,13 +66,25 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
     ];
     private static string[] DxgiFormatStrings = DxgiFormats.Select(f => f.ToString()).ToArray();
 
+    private static readonly FormatPreset[] Presets = [
+        new FormatPreset("Color Texture | BC7_UNORM_SRGB", DxgiFormat.BC7_UNORM_SRGB, MipGenOptions.Generate),
+        new FormatPreset("Normal Texture | BC7_UNORM", DxgiFormat.BC7_UNORM, MipGenOptions.Generate),
+        new FormatPreset("UI (compressed) | BC7_UNORM_SRGB", DxgiFormat.BC7_UNORM_SRGB, MipGenOptions.Remove),
+        new FormatPreset("Uncompressed (Color) | R8G8B8A8_UNORM_SRGB", DxgiFormat.R8G8B8A8_UNORM_SRGB, MipGenOptions.Unchanged),
+        new FormatPreset("Uncompressed (Non-Color) | R8G8B8A8_UNORM", DxgiFormat.R8G8B8A8_UNORM, MipGenOptions.Unchanged),
+    ];
+    private static readonly string[] PresetNames = Presets.Select(x => x.name).ToArray();
+
+    private record struct FormatPreset(string name, DxgiFormat format, MipGenOptions mips);
+
     public TextureViewer(string path)
     {
         texturePath = path;
     }
 
-    public TextureViewer(FileHandle file)
+    public TextureViewer(ContentWorkspace env, FileHandle file)
     {
+        workspace = env;
         SetImageSource(file);
     }
 
@@ -96,9 +114,11 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         file.References.Add(this);
         if (string.IsNullOrEmpty(exportTemplate)) {
             if (file.Format.format == KnownFileFormats.Texture) {
-                exportTemplate = file.GetFile<TexFile>().CurrentVersionConfig ?? TexFile.AllVersionConfigs.Last();
-            } else {
-                exportTemplate = TexFile.AllVersionConfigs.Last();
+                exportTemplate = file.GetFile<TexFile>().CurrentVersionConfig!;
+            }
+
+            if (string.IsNullOrEmpty(exportTemplate)) {
+                exportTemplate = TexFile.GetGameVersionConfigs(workspace.Env.Config.Game).FirstOrDefault() ?? TexFile.AllVersionConfigs.Last();
             }
         }
     }
@@ -116,7 +136,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
     {
         this.context = context;
         data = context.Get<WindowData>();
-        workspace = context.GetWorkspace();
+        workspace = context.GetWorkspace()!;
     }
 
     public void OnWindow()
@@ -256,15 +276,94 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                     });
                 }
 
+                if (texture != null) {
+                    if (fileHandle?.Modified == true && File.Exists(texturePath)) {
+                        if (ImGui.MenuItem("Save")) {
+                            if (fileHandle.Loader is TexFileLoader) {
+                                fileHandle.Save(workspace);
+                            } else {
+                                texture.SaveAs(texturePath);
+                            }
+                            fileHandle.Modified = false;
+                        }
+                        if (ImGui.MenuItem("Revert")) {
+                            fileHandle.Stream.Dispose();
+                            fileHandle.Stream = File.OpenRead(texturePath).ToMemoryStream();
+                            if (fileHandle.Loader is TexFileLoader) {
+                                fileHandle.GetFile<TexFile>().FileHandler = new FileHandler(fileHandle.Stream, fileHandle.Filepath);
+                            } else if (fileHandle.Resource is BaseFileResource<DDSFile> dds) {
+                                dds.File.FileHandler = new FileHandler(fileHandle.Stream, fileHandle.Filepath);
+                            }
+                            fileHandle.Revert(workspace);
+                            SetImageSource(fileHandle);
+                        }
+                    }
+
+                    if (ImGui.MenuItem("Save As ...")) {
+                        var baseName = PathUtils.GetFilepathWithoutExtensionOrVersion(texturePath ?? texture.Path);
+                        var fileFilter = ImagesFileFilter;
+                        var currentTexExt = fileHandle?.Loader is TexFileLoader ? PathUtils.GetFilenameExtensionWithSuffixes(texture.Path).ToString() : null;
+                        if (!string.IsNullOrEmpty(currentTexExt)) {
+                            fileFilter += $"|TEX (.{currentTexExt})|*.{currentTexExt}";
+                        }
+
+                        PlatformUtils.ShowSaveFileDialog((file) => {
+                            MainLoop.Instance.InvokeFromUIThread(() => SaveTextureToFile(file));
+                        }, baseName.ToString(), filter: fileFilter);
+                    }
+                }
+
+
                 ImGui.EndMenu();
             }
 
-            if (ImGui.BeginMenu($"{AppIcons.SI_GenericIO} Import / Export")) {
+            if (ImGui.BeginMenu($"{AppIcons.SI_GenericIO} Convert")) {
                 ShowExportMenu();
                 ImGui.EndMenu();
             }
             ImGui.EndMenuBar();
         }
+    }
+
+    private bool SaveTextureToFile(string file)
+    {
+        if (texture == null) return false;
+
+        if (fileHandle == null) {
+            texture.SaveAs(file);
+            return false;
+        }
+
+        var fmt = PathUtils.ParseFileFormat(file);
+        if (fmt.format == KnownFileFormats.Texture && fmt.version == -1) {
+            fmt.version = TexFile.GetFileExtension(exportTemplate);
+            file += "." + fmt.version;
+        }
+        // saving to tex
+        if (fmt.format == KnownFileFormats.Texture) {
+            if (fileHandle == null || fileHandle.Format.format != KnownFileFormats.Texture) {
+                // not currently a tex file - needs conversion
+                texture.SaveAs(file);
+            } else {
+                // it's already a tex file, ensure it's the same ext and then save it
+                if (!file.Contains("." + fileHandle.Format.version.ToString())) {
+                    Logger.Error($"The texture file extension was changed from .tex.{fileHandle.Format.version} to {PathUtils.GetFilenameExtensionWithSuffixes(file)}. Use the Convert menu for changing formats.");
+                    return false;
+                }
+
+                fileHandle.Save(workspace, file);
+            }
+            return true;
+        }
+
+        // saving to dds/other
+        if (fileHandle.Format.format == KnownFileFormats.Texture && Path.GetExtension(file) == ".dds") {
+            fileHandle.GetFile<TexFile>().SaveAsDDS(file);
+        } else {
+            texture.SaveAs(file);
+        }
+
+        return true;
     }
 
     private void ShowExportMenu()
@@ -274,23 +373,6 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         var isTex = fileHandle.Format.format == KnownFileFormats.Texture;
         var isDds = !isTex && Path.GetExtension(texturePath) == ".dds";
         var filepath = texturePath;
-
-        var baseName = PathUtils.GetFilepathWithoutExtensionOrVersion(texturePath ?? texture.Path);
-        if (ImGui.MenuItem("Save As ...")) {
-            var window = EditorWindow.CurrentWindow!;
-            PlatformUtils.ShowSaveFileDialog((file) => {
-                window.InvokeFromUIThread(() => {
-                    if (!string.IsNullOrEmpty(file)) {
-                        if (fileHandle != null && fileHandle.Format.format == KnownFileFormats.Texture) {
-                            fileHandle.GetFile<TexFile>().SaveAsDDS(file);
-                        } else {
-                            texture.SaveAs(file);
-                        }
-                    }
-                });
-            }, baseName.ToString(), filter: "TGA (*.tga)|*.tga|PNG (*.png)|*.png|DDS (*.dds)|*.dds");
-        }
-
 
         if (fileHandle.HandleType is FileHandleType.Bundle or FileHandleType.Disk && File.Exists(filepath) && fileHandle.Format.format == KnownFileFormats.Mesh) {
             if (ImGui.Selectable($"{AppIcons.SI_GenericImport} Import From DDS...")) {
@@ -311,15 +393,49 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         }
 
         ImGui.SeparatorText("Convert TEX");
-        var conv1 = ImGui.Button($"{AppIcons.SI_GenericConvert}");
-        ImguiHelpers.Tooltip("Convert");
-        ImGui.SameLine();
         ImguiHelpers.ValueCombo("Tex Version", TexFile.AllVersionConfigsWithExtension, TexFile.AllVersionConfigs, ref exportTemplate);
+
+        ImGui.Spacing();
+        if (ImguiHelpers.ValueCombo("Preset", PresetNames, Presets, ref selectedFormatPreset)) {
+            exportFormat = selectedFormatPreset.format;
+            mipMapOption = selectedFormatPreset.mips;
+        }
+        ImGui.Spacing();
+
+        ImguiHelpers.ValueCombo("DXGI Format", DxgiFormatStrings, DxgiFormats, ref exportFormat);
+        ImguiHelpers.Tooltip("The format to convert non-DDS images to.");
+
+        var mmo = (int)mipMapOption;
+        ImGui.BeginGroup();
+        if (ImguiHelpers.InlineRadioGroup(MipGenLabels, MipGenValues, ref mmo)) {
+            mipMapOption = (MipGenOptions)mmo;
+        }
+        ImGui.EndGroup();
+        ImguiHelpers.Tooltip("Choose what to do with mip maps (lower resolution images for better performance). If the mips are already in the target state, they will be reused unchanged.");
+
+        if (exportFormat != selectedFormatPreset.format || mipMapOption != selectedFormatPreset.mips) {
+            selectedFormatPreset = default;
+        }
+
+        var conv1 = ImGui.Button($"{AppIcons.SI_GenericConvert} Convert");
+        if (fileHandle.Loader is TexFileLoader) {
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.SI_GenericImport} Update Current")) {
+                var defaultFilename = GetTexFilenameSuggestion();
+                var tex = fileHandle.GetFile<TexFile>();
+                ProcessTexture(defaultFilename, (dds) => {
+                    MainLoop.Instance.InvokeFromUIThread(() => {
+                        tex.LoadDataFromDDS(dds);
+                        texture.LoadFromDDS(dds);
+                        fileHandle.Modified = true;
+                    });
+                });
+            }
+        }
+
         var bundleConvert = workspace.CurrentBundle != null && ImguiHelpers.SameLine() && ImGui.Button("Save to bundle ...");
         if (conv1 || bundleConvert) {
-            var ver = TexFile.GetFileExtension(exportTemplate);
-            var ext = $".tex.{ver}";
-            var defaultFilename = baseName.ToString() + ext;
+            var defaultFilename = GetTexFilenameSuggestion();
 
             ProcessTexture(defaultFilename, (dds) => {
                 var tex = new TexFile(new FileHandler(new MemoryStream(), defaultFilename));
@@ -341,11 +457,14 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                 }
             });
         }
-        ImguiHelpers.ValueCombo("DXGI Format", DxgiFormatStrings, DxgiFormats, ref exportFormat);
-        ImguiHelpers.Tooltip("The format to convert non-DDS images to.");
+    }
 
-        ImGui.Checkbox("Include Mip Maps", ref exportIncludeMipMaps);
-        ImguiHelpers.Tooltip("Whether mip maps should be included. Missing mip levels will be auto generated.");
+    private string GetTexFilenameSuggestion()
+    {
+        var baseName = PathUtils.GetFilepathWithoutExtensionOrVersion(texturePath ?? texture?.Path ?? "texture");
+        var ver = TexFile.GetFileExtension(exportTemplate);
+        var ext = $".tex.{ver}";
+        return baseName.ToString() + ext;
     }
 
     private unsafe void ProcessTexture(string defaultFilename, Action<DDSFile> callback)
@@ -371,8 +490,10 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
             operations.Add(new TextureConversionTask.ChangeFormat(exportFormat));
         }
 
-        if (exportIncludeMipMaps) {
+        if (mipMapOption == MipGenOptions.Generate) {
             operations.Add(new TextureConversionTask.GenerateMipMaps());
+        } else if (mipMapOption == MipGenOptions.Remove) {
+            operations.Add(new TextureConversionTask.RemoveMipMaps());
         }
 
         if (operations.Count == 0) {

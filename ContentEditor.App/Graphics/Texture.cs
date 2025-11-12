@@ -132,7 +132,13 @@ public class Texture : IDisposable
             throw new Exception("Failed to read DDS header");
         }
 
+        return LoadFromDDS(dds);
+    }
+
+    public Texture LoadFromDDS(DDSFile dds)
+    {
         var it = dds.CreateMipMapIterator();
+        Bind();
         if (it.IsCompressed) {
             LoadCompressedDDSMipMaps(ref it, dds.Header.DX10.Format);
         } else {
@@ -343,8 +349,24 @@ public class Texture : IDisposable
                 CompressionLevel = SixLabors.ImageSharp.Formats.Png.PngCompressionLevel.BestCompression,
             });
             Logger.Info($"Texture saved as PNG to: {filepath}");
+        } else if (ext == ".dds") {
+            var dds = GetAsDDS();
+            using var fs = File.Create(filepath);
+            dds.FileHandler.Stream.CopyTo(fs);
+            dds.Dispose();
         } else {
-            throw new Exception($"Unsupported export format: {ext}");
+            var fmt = PathUtils.ParseFileFormat(filepath);
+            if (fmt.format != KnownFileFormats.Texture) {
+                throw new Exception($"Unsupported export format: {ext}");
+            }
+            var dds = GetAsDDS();
+
+            var tex = new TexFile(new FileHandler());
+            tex.ChangeVersion(TexFile.GetGameVersionConfigs(fmt.version).FirstOrDefault() ?? TexFile.AllVersionConfigs.Last());
+            tex.LoadDataFromDDS(dds);
+            tex.SaveAs(filepath);
+            dds.Dispose();
+            tex.Dispose();
         }
     }
 
