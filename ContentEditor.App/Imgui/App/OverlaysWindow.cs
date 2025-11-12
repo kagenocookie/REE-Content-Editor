@@ -71,6 +71,26 @@ public class OverlaysWindow : IWindowHandler
                 tooltipMsg = null;
             }
         }
+
+        var bg = MainLoop.Instance.BackgroundTasks;
+        var runningTasks = bg.PendingTasks;
+        if (runningTasks > 0) {
+            var taskWindowSize = new Vector2(400, 240);
+            ImGui.SetNextWindowPos(size - taskWindowSize - ImGui.GetStyle().WindowPadding, ImGuiCond.Appearing);
+            ImGui.SetNextWindowSize(taskWindowSize, ImGuiCond.Appearing);
+            ImGui.SetNextWindowCollapsed(false, ImGuiCond.Appearing);
+            if (ImGui.Begin("BackgroundTasks")) {
+                ImGui.Text("Pending background tasks: " + runningTasks);
+
+                var jobSize = new Vector2(ImGui.GetWindowWidth() - ImGui.GetStyle().WindowPadding.X * 2, 30);
+                foreach (var job in bg.CurrentJobs) {
+                    ImGui.Separator();
+                    ImGui.ProgressBar(-1 * (float)ImGui.GetTime(), jobSize);
+                    ImGui.TextWrapped(job);
+                }
+            }
+            ImGui.End();
+        }
     }
 
     public bool RequestClose()

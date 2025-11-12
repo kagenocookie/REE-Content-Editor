@@ -196,7 +196,7 @@ public class ResourcePathPicker : IObjectUIHandler
 
     public delegate void BundleSaveFileCallback(Bundle bundle, string savePath, string localPath, string nativePath);
 
-    public static void ShowSaveToBundle(IFileLoader loader, IResourceFile resource, ContentWorkspace workspace, string initialFilename, string? nativePath = null)
+    public static void ShowSaveToBundle(IFileLoader loader, IResourceFile resource, ContentWorkspace workspace, string initialFilename, string? nativePath = null, Action? callback = null)
     {
         if (!string.IsNullOrEmpty(nativePath)) nativePath = Path.Combine(Path.GetDirectoryName(nativePath)!, initialFilename).Replace('\\', '/').ToLowerInvariant();
 
@@ -208,6 +208,7 @@ public class ResourcePathPicker : IObjectUIHandler
                     bundle.AddResource(localPath, nativePath, tempHandle.Format.format.IsDefaultReplacedBundleResource());
                 }
             }
+            callback?.Invoke();
         });
     }
 

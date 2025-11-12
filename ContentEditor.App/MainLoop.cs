@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using ContentEditor.App.Windowing;
+using ContentEditor.BackgroundTasks;
 
 namespace ContentEditor.App;
 
@@ -12,6 +13,8 @@ internal sealed partial class MainLoop : IDisposable
     public IReadOnlyList<WindowBase> Windows => windows.AsReadOnly();
     private readonly ConcurrentQueue<WindowBase> queuedWindows = new();
     private readonly ConcurrentQueue<Action> mainThreadActions = new();
+
+    public BackgroundTaskService BackgroundTasks { get; } = new(BackgroundTaskConfig.Default);
 
     private readonly List<IUpdateable> updateables = new();
     private readonly Time time = new Time();
@@ -172,5 +175,6 @@ internal sealed partial class MainLoop : IDisposable
     {
         foreach (var sub in windows) sub.Dispose();
         windows.Clear();
+        BackgroundTasks.Dispose();
     }
 }

@@ -3,11 +3,14 @@ using System.Numerics;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
+using ContentEditor.BackgroundTasks;
 using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher;
+using DirectXTexNet;
 using ImGuiNET;
 using ReeLib;
+using ReeLib.DDS;
 using static ContentEditor.App.Graphics.Texture;
 
 namespace ContentEditor.App;
@@ -37,6 +40,25 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
     private string? lastImportSourcePath;
     private string exportTemplate = "";
     private bool exportIncludeMipMaps = true;
+
+    private DxgiFormat exportFormat = DxgiFormat.BC7_UNORM;
+
+    private static DxgiFormat[] DxgiFormats = [
+        DxgiFormat.R8G8B8A8_UNORM,
+        DxgiFormat.R8G8B8A8_UNORM_SRGB,
+        DxgiFormat.BC1_UNORM,
+        DxgiFormat.BC1_UNORM_SRGB,
+        DxgiFormat.BC2_UNORM,
+        DxgiFormat.BC2_UNORM_SRGB,
+        DxgiFormat.BC3_UNORM,
+        DxgiFormat.BC3_UNORM_SRGB,
+        DxgiFormat.BC4_UNORM,
+        DxgiFormat.BC5_SNORM,
+        DxgiFormat.BC5_UNORM,
+        DxgiFormat.BC7_UNORM,
+        DxgiFormat.BC7_UNORM_SRGB,
+    ];
+    private static string[] DxgiFormatStrings = DxgiFormats.Select(f => f.ToString()).ToArray();
 
     public TextureViewer(string path)
     {
@@ -299,51 +321,65 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
             var ext = $".tex.{ver}";
             var defaultFilename = baseName.ToString() + ext;
 
-            var tex = ConvertTextureToTex(defaultFilename);
-
-            if (bundleConvert) {
-                var tempres = new BaseFileResource<TexFile>(tex);
-                ResourcePathPicker.ShowSaveToBundle(fileHandle.Loader, tempres, workspace, defaultFilename, fileHandle.NativePath);
-            } else {
-                PlatformUtils.ShowSaveFileDialog((path) => tex.SaveAs(path), defaultFilename);
-            }
+            ProcessTexture(defaultFilename, (dds) => {
+                var tex = new TexFile(new FileHandler(new MemoryStream(), defaultFilename));
+                tex.ChangeVersion(exportTemplate);
+                tex.LoadDataFromDDS(dds);
+                // note: potential memory leak if the user doesn't confirm the save dialog. Surely nobody will have issues because of it...
+                if (bundleConvert) {
+                    var tempres = new BaseFileResource<TexFile>(tex);
+                    ResourcePathPicker.ShowSaveToBundle(fileHandle.Loader, tempres, workspace, defaultFilename, fileHandle.NativePath, () => {
+                        dds.Dispose();
+                        tex.Dispose();
+                    });
+                } else {
+                    PlatformUtils.ShowSaveFileDialog((path) => {
+                        tex.SaveAs(path);
+                        dds.Dispose();
+                        tex.Dispose();
+                    }, defaultFilename);
+                }
+            });
         }
+        ImguiHelpers.ValueCombo("DXGI Format", DxgiFormatStrings, DxgiFormats, ref exportFormat);
+        ImguiHelpers.Tooltip("The format to convert non-DDS images to.");
+
         ImGui.Checkbox("Include Mip Maps", ref exportIncludeMipMaps);
         ImguiHelpers.Tooltip("Whether mip maps should be included. Missing mip levels will be auto generated.");
     }
 
-    private TexFile ConvertTextureToTex(string defaultFilename)
+    private unsafe void ProcessTexture(string defaultFilename, Action<DDSFile> callback)
     {
         Debug.Assert(texture != null && fileHandle != null);
 
         var isTex = fileHandle.Format.format == KnownFileFormats.Texture;
         var isDds = !isTex && Path.GetExtension(texturePath) == ".dds";
 
-        var tex = new TexFile(new FileHandler(new MemoryStream(), defaultFilename));
-        if (isTex) {
-            fileHandle.GetFile<TexFile>().WriteTo(tex.FileHandler);
-            tex.Read();
-            tex.ChangeVersion(exportTemplate);
-            return tex;
-        }
-
-        tex.ChangeVersion(exportTemplate);
-
         DDSFile dds;
-        if (!isDds) {
-            dds = texture.GetAsDDS(0, exportIncludeMipMaps ? int.MaxValue : 1, exportIncludeMipMaps);
+        if (isTex) {
+            dds = fileHandle.GetFile<TexFile>().ConvertToDDS(new FileHandler(new MemoryStream(), defaultFilename));
+        } else if (!isDds) {
+            dds = texture.GetAsDDS(0, 1);
         } else {
-            dds = new DDSFile(new FileHandler(fileHandle.Stream));
+            // copy the current source dds file
+            dds = new DDSFile(new FileHandler(fileHandle.Stream.ToMemoryStream(false, true), defaultFilename));
             dds.Read();
-            if (!exportIncludeMipMaps) {
-                dds.Header.mipMapCount = 1;
-            }
         }
 
-        // TODO add an output dxgi format setting
-        tex.LoadDataFromDDS(dds);
+        var operations = new List<TextureConversionTask.TextureOperation>();
+        if (dds.Header.DX10.Format != exportFormat) {
+            operations.Add(new TextureConversionTask.ChangeFormat(exportFormat));
+        }
 
-        return tex;
+        if (exportIncludeMipMaps) {
+            operations.Add(new TextureConversionTask.GenerateMipMaps());
+        }
+
+        if (operations.Count == 0) {
+            callback(dds);
+        } else {
+            MainLoop.Instance.BackgroundTasks.Queue(new TextureConversionTask(dds, callback, operations.ToArray()));
+        }
     }
 
     private static string GetTextureTypeSuffix(string path)
