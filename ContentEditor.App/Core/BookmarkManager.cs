@@ -20,16 +20,15 @@ namespace ContentEditor.App
         private Dictionary<string, List<BookmarkEntry>> _bookmarks = new();
         public bool IsHideDefaults { get; set; } = false;
         public bool IsHideCustoms { get; set; } = false;
-        public int CurrDisplayNum { get; set; } = 0;
         // SILVER: These colors should stay hardcoded (for now)
         public static readonly Dictionary<string, Vector4[]> TagColors = new()
         {
-            { "Character", new[] { new Vector4(0.2f, 0.6f, 1f, 0.5f),   new Vector4(0.3f, 0.7f, 1f, 0.8f),      new Vector4(0.1f, 0.5f, 0.9f, 1f)}},
+            {"Character",  new[] { new Vector4(0.2f, 0.6f, 1f, 0.5f),   new Vector4(0.3f, 0.7f, 1f, 0.8f),      new Vector4(0.1f, 0.5f, 0.9f, 1f)}},
             { "Weapon",    new[] { new Vector4(0.9f, 0.3f, 0.3f, 0.5f), new Vector4(1f, 0.4f, 0.4f, 0.8f),      new Vector4(0.8f, 0.2f, 0.2f, 1f)}},
             { "Item",      new[] { new Vector4(0.3f, 0.8f, 0.3f, 0.5f), new Vector4(0.4f, 0.9f, 0.4f, 0.8f),    new Vector4(0.2f, 0.7f, 0.2f, 1f)}},
             { "Stage",     new[] { new Vector4(0.6f, 0.3f, 0.9f, 0.5f), new Vector4(0.6f, 0.3f, 0.9f, 0.8f),    new Vector4(0.6f, 0.3f, 0.9f, 1f)}},
             { "Misc",      new[] { new Vector4(0.9f, 0.8f, 0.2f, 0.5f), new Vector4(1f, 0.9f, 0.3f, 0.8f),      new Vector4(0.8f, 0.7f, 0.1f, 1f)}},
-            { "UI",        new[] { new Vector4(0.3f, 0.3f, 0.3f, 0.5f), new Vector4(0.3f, 0.3f, 0.3f, 0.8f),    new Vector4(0.3f, 0.3f, 0.3f, 1f)}},// TODO SILVER: placeholder color
+            { "UI",        new[] { new Vector4(1f, 0.4f, 0.1f, 0.5f),   new Vector4(1f, 0.4f, 0.1f, 0.8f),      new Vector4(1f, 0.4f, 0.1f, 1f)}},
             { "DLC",       new[] { new Vector4(1f, 0f, 1f, 0.5f),       new Vector4(1f, 0f, 1f, 0.8f),          new Vector4(1f, 0f, 1f, 1f)}},
         };
         public BookmarkManager(string jsonFilePath)
