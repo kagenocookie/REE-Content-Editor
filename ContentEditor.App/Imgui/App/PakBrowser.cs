@@ -711,142 +711,150 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImGui.EndPopup();
         }
     }
+
     private void ShowBookmarksTable(string label, int columnNum, BookmarkManager manager, List<string> activeTagFilter, string searchText)
     {
         var bookmarks = manager.GetBookmarks(Workspace.Config.Game.name);
         if (bookmarks.Count == 0) {
             return;
         }
-        ImGui.SeparatorText(label);
-        if (ImGui.BeginTable($"{label}Table", columnNum, ImGuiTableFlags.Resizable | ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.RowBg)) {
-            ImGui.TableSetupColumn("Path", ImGuiTableColumnFlags.WidthStretch, 0.5f);
-            ImGui.TableSetupColumn("Tags", ImGuiTableColumnFlags.WidthStretch, 0.3f);
-            ImGui.TableSetupColumn("Comment", ImGuiTableColumnFlags.WidthStretch, 0.2f);
-            if (manager == _bookmarkManager) {
-                ImGui.TableSetupColumn("Order");
-            }
-            ImGui.TableHeadersRow();
 
-            foreach (var bm in bookmarks.ToList()) {
-                bool tagMatch = true;
-
-                if (activeTagFilter.Count > 0) {
-                    switch (_filterMode) {
-                        case FilterMode.AnyMatch:
-                            tagMatch = activeTagFilter.Any(t => bm.Tags.Contains(t));
-                            break;
-                        case FilterMode.AllMatch:
-                            tagMatch = activeTagFilter.All(t => bm.Tags.Contains(t));
-                            break;
-                        case FilterMode.ExactMatch:
-                            tagMatch = bm.Tags.Count == activeTagFilter.Count && activeTagFilter.All(t => bm.Tags.Contains(t));
-                            break;
+        var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
+        float rowHeight = ImGui.GetTextLineHeightWithSpacing();
+        float currDisplayHeight = manager.CurrDisplayNum <= 5 ? 0f : rowHeight * 7;
+        string displayLabel = manager.CurrDisplayNum == 0 ? label + " [No Matches Found]" : label;
+        ImGui.SeparatorText(displayLabel);
+        // TODO SILVER: if we can't find any matches then table shouldn't be drawn
+        if (ImGui.BeginChild($"{label}_Scroll", new Vector2(0, currDisplayHeight), ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AutoResizeY)) {
+            if (ImGui.BeginTable($"{label}Table", columnNum, ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.RowBg)) {
+                ImGui.TableSetupColumn("Path", ImGuiTableColumnFlags.WidthStretch, 0.5f);
+                ImGui.TableSetupColumn("Tags", ImGuiTableColumnFlags.WidthStretch, 0.3f);
+                ImGui.TableSetupColumn("Comment", ImGuiTableColumnFlags.WidthStretch, 0.2f);
+                if (manager == _bookmarkManager) {
+                    ImGui.TableSetupColumn("Order");
+                }
+                ImGui.TableHeadersRow();
+                manager.CurrDisplayNum = 0;
+                foreach (var bm in bookmarks.ToList()) {
+                    bool tagMatch = true;
+                    if (activeTagFilter.Count > 0) {
+                        switch (_filterMode) {
+                            case FilterMode.AnyMatch:
+                                tagMatch = activeTagFilter.Any(tag => bm.Tags.Contains(tag));
+                                break;
+                            case FilterMode.AllMatch:
+                                tagMatch = activeTagFilter.All(tag => bm.Tags.Contains(tag));
+                                break;
+                            case FilterMode.ExactMatch:
+                                tagMatch = bm.Tags.Count == activeTagFilter.Count && activeTagFilter.All(tag => bm.Tags.Contains(tag));
+                                break;
+                        }
                     }
-                }
 
-                if (!tagMatch || (!string.IsNullOrEmpty(searchText) && (bm.Comment == null || !bm.Comment.Contains(searchText, StringComparison.OrdinalIgnoreCase)))) {
-                    continue;
-                }
+                    if (!tagMatch || (!string.IsNullOrEmpty(searchText) && (bm.Comment == null || !bm.Comment.Contains(searchText, StringComparison.OrdinalIgnoreCase)))) {
+                        continue;
+                    }
 
-                string displayPath = bm.Path;
-                var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
-                if (useCompactFilePaths) {
-                    displayPath = LessCompactFilePath(bm.Path);
-                }
-                ImGui.TableNextRow();
-                ImGui.TableSetColumnIndex(0);
-                if (ImGui.Selectable(displayPath, false)) {
-                    CurrentDir = bm.Path;
-                }
-                if (manager == _bookmarkManager && ImGui.BeginPopupContextItem(bm.Path)) {
-                    if (ImGui.Selectable($"{AppIcons.SI_FileJumpTo} | Jump to Location")) {
+                    manager.CurrDisplayNum++;
+                    string displayPath = useCompactFilePaths ? LessCompactFilePath(bm.Path) : bm.Path;
+                    ImGui.TableNextRow();
+                    ImGui.TableSetColumnIndex(0);
+                    if (ImGui.Selectable(displayPath, false)) {
                         CurrentDir = bm.Path;
                     }
-                    ImGui.Spacing();
-                    if (ImGui.Selectable($"{AppIcons.SI_FileCopyPath} | Copy Path")) {
-                        EditorWindow.CurrentWindow?.CopyToClipboard(bm.Path);
-                    }
-                    ImGui.Spacing();
-                    if (ImGui.Selectable($"{AppIcons.SI_BookmarkRemove} | Remove from Bookmarks")) {
-                        manager.RemoveBookmark(Workspace.Config.Game.name, bm.Path);
-                    }
-                    ImGui.Spacing();
-                    if (ImGui.BeginMenu($"{AppIcons.SI_GenericTag} | Tags")) {
-                        foreach (var tag in BookmarkManager.TagColors.Keys) {
-                            bool hasTag = bm.Tags.Contains(tag);
-                            if (ImGui.MenuItem(tag, "", hasTag)) {
-                                if (hasTag) {
-                                    bm.Tags.Remove(tag);
-                                    manager.SaveBookmarks();
-                                } else {
-                                    bm.Tags.Add(tag);
-                                    manager.SaveBookmarks();
+                    if (manager == _bookmarkManager && ImGui.BeginPopupContextItem(bm.Path)) {
+                        // TODO SILVER: Move this to a helper method
+                        if (ImGui.Selectable($"{AppIcons.SI_FileJumpTo} | Jump to Location")) {
+                            CurrentDir = bm.Path;
+                        }
+                        ImGui.Spacing();
+                        if (ImGui.Selectable($"{AppIcons.SI_FileCopyPath} | Copy Path")) {
+                            EditorWindow.CurrentWindow?.CopyToClipboard(bm.Path);
+                        }
+                        ImGui.Spacing();
+                        if (ImGui.Selectable($"{AppIcons.SI_BookmarkRemove} | Remove from Bookmarks")) {
+                            manager.RemoveBookmark(Workspace.Config.Game.name, bm.Path);
+                        }
+                        ImGui.Spacing();
+                        if (ImGui.BeginMenu($"{AppIcons.SI_GenericTag} | Tags")) {
+                            foreach (var tag in BookmarkManager.TagColors.Keys) {
+                                bool hasTag = bm.Tags.Contains(tag);
+                                if (ImGui.MenuItem(tag, "", hasTag)) {
+                                    if (hasTag) {
+                                        bm.Tags.Remove(tag);
+                                        manager.SaveBookmarks();
+                                    } else {
+                                        bm.Tags.Add(tag);
+                                        manager.SaveBookmarks();
+                                    }
                                 }
                             }
+                            ImGui.EndMenu();
                         }
-                        ImGui.EndMenu();
+                        string comment = bm.Comment;
+                        if (ImGui.InputText("Edit Comment", ref comment, 64, ImGuiInputTextFlags.EnterReturnsTrue)) {
+                            bm.Comment = comment;
+                            manager.SaveBookmarks();
+                        }
+                        ImGui.EndPopup();
                     }
-                    string comment = bm.Comment;
-                    if (ImGui.InputText("Edit Comment", ref comment, 64, ImGuiInputTextFlags.EnterReturnsTrue)) {
-                        bm.Comment = comment;
-                        manager.SaveBookmarks();
-                    }
-                    ImGui.EndPopup();
-                }
-                ImGui.TableSetColumnIndex(1);
-                foreach (var tag in bm.Tags) {
-                    ImGui.PushID($"{bm.Path}_{tag}");
+                    ImGui.TableSetColumnIndex(1);
+                    foreach (var tag in bm.Tags) {
+                        ImGui.PushID($"{bm.Path}_{tag}");
 
-                    if (BookmarkManager.TagColors.TryGetValue(tag, out var colors)) {
-                        ImGui.PushStyleColor(ImGuiCol.Button, colors[0]);
-                        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, colors[1]);
-                        ImGui.PushStyleColor(ImGuiCol.ButtonActive, colors[2]);
-                    }
+                        if (BookmarkManager.TagColors.TryGetValue(tag, out var colors)) {
+                            ImGui.PushStyleColor(ImGuiCol.Button, colors[0]);
+                            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, colors[1]);
+                            ImGui.PushStyleColor(ImGuiCol.ButtonActive, colors[2]);
+                        }
 
-                    ImGui.PushStyleColor(ImGuiCol.Text, Vector4.One);
-                    if (ImGui.Button($"[ {tag} ]")) {
-                        if (activeTagFilter.Contains(tag)) {
-                            activeTagFilter.Remove(tag);
-                        } else {
-                            activeTagFilter.Add(tag);
+                        ImGui.PushStyleColor(ImGuiCol.Text, Vector4.One);
+                        if (ImGui.Button($"[ {tag} ]")) {
+                            if (activeTagFilter.Contains(tag)) {
+                                activeTagFilter.Remove(tag);
+                            } else {
+                                activeTagFilter.Add(tag);
+                            }
                         }
-                    }
-                    ImGui.PopStyleColor(4);
-                    ImGui.PopID();
-                    ImGui.SameLine();
-                }
-                ImGui.TableSetColumnIndex(2);
-                if (!string.IsNullOrEmpty(bm.Comment)) {
-                    if (manager == _bookmarkManagerDefaults) {
-                        ImGui.TextDisabled(bm.Comment);
-                    } else {
-                        ImGui.Text(bm.Comment);
-                    }
-                }
-                if (manager == _bookmarkManager) {
-                    ImGui.TableSetColumnIndex(3);
-                    int idx = bookmarks.IndexOf(bm);
-                    int uniqueId = bm.GetHashCode();
-                    // SILVER: w/o this id the down arrow buttons would cause imgui errors for 1 frame. Maybe drag & drop would be neater for this but no idea how to set that up.
-                    int? moveFrom = null, moveTo = null;
-                    using (var _ = ImguiHelpers.Disabled(!string.IsNullOrEmpty(searchText))) {
-                        if (ImGui.ArrowButton($"##up_{uniqueId}", ImGuiDir.Up) && idx > 0) {
-                            moveFrom = idx;
-                            moveTo = idx - 1;
-                        }
+                        ImGui.PopStyleColor(4);
+                        ImGui.PopID();
                         ImGui.SameLine();
-                        if (ImGui.ArrowButton($"##down_{uniqueId}", ImGuiDir.Down) && idx < bookmarks.Count - 1) {
-                            moveFrom = idx;
-                            moveTo = idx + 1;
+                    }
+                    ImGui.TableSetColumnIndex(2);
+                    if (!string.IsNullOrEmpty(bm.Comment)) {
+                        if (manager == _bookmarkManagerDefaults) {
+                            ImGui.TextDisabled(bm.Comment);
+                        } else {
+                            ImGui.Text(bm.Comment);
                         }
                     }
-                    if (moveFrom.HasValue && moveTo.HasValue) {
-                        (bookmarks[moveFrom.Value], bookmarks[moveTo.Value]) = (bookmarks[moveTo.Value], bookmarks[moveFrom.Value]);
-                        manager.SaveBookmarks();
+                    if (manager == _bookmarkManager) {
+                        ImGui.TableSetColumnIndex(3);
+                        int idx = bookmarks.IndexOf(bm);
+                        int uniqueId = bm.GetHashCode();
+                        // SILVER: w/o this id the down arrow buttons would cause imgui errors for 1 frame. Maybe drag & drop would be neater for this...
+                        int? moveFrom = null, moveTo = null;
+                        using (var _ = ImguiHelpers.Disabled(!string.IsNullOrEmpty(searchText))) {
+                            if (ImGui.ArrowButton($"##up_{uniqueId}", ImGuiDir.Up) && idx > 0) {
+                                moveFrom = idx;
+                                moveTo = idx - 1;
+                            }
+                            ImGui.SameLine();
+                            if (ImGui.ArrowButton($"##down_{uniqueId}", ImGuiDir.Down) && idx < bookmarks.Count - 1) {
+                                moveFrom = idx;
+                                moveTo = idx + 1;
+                            }
+                        }
+                        if (moveFrom.HasValue && moveTo.HasValue) {
+                            (bookmarks[moveFrom.Value], bookmarks[moveTo.Value]) = (bookmarks[moveTo.Value], bookmarks[moveFrom.Value]);
+                            manager.SaveBookmarks();
+                        }
                     }
                 }
+                
+                ImGui.EndTable();
             }
-            ImGui.EndTable();
+            ImGui.EndChild();
         }
     }
 
@@ -866,6 +874,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         var remainingParts = parts[2..];
         return string.Join("/", remainingParts);
     }
+
     public bool RequestClose()
     {
         return false;
