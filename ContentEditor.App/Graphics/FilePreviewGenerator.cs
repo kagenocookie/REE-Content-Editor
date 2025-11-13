@@ -193,7 +193,6 @@ public sealed class FilePreviewGenerator : IDisposable
 
         using var fullTexture = new Texture(_threadGL);
         fullTexture.LoadFromTex(texFile);
-        fullTexture.Bind();
         fullTexture.SetChannel(Texture.TextureChannel.RGB);
 
         using var img = fullTexture.GetAsImage(targetMip);

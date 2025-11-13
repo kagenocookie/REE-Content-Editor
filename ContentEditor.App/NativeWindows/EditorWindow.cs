@@ -574,6 +574,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem("Data Search")) {
                     AddSubwindow(new RszDataFinder());
                 }
+                if (ImGui.MenuItem("Texture Channel Packer")) {
+                    AddSubwindow(new TextureChannelPacker());
+                }
             }
             ImGui.EndMenu();
         }
