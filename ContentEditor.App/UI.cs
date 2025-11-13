@@ -231,8 +231,12 @@ public static class AppIcons
     public static readonly char SI_MeshViewerMeshGroup = '\ued59';
     public static readonly char SI_BookmarkCustomHide = '\ued5a';
     public static readonly char SI_BookmarkCustomClear = '\ued5b';
+    public static readonly char SI_Update = '\ued5c';
+    public static readonly char SI_UpdateTexture = '\ued5d';
+    public static readonly char SI_TagDLC = '\ued5e';
+    public static readonly char SI_TagItem = '\ued5f';
 
-    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_BookmarkCustomClear, 0];
+    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_TagItem, 0];
 
     public static string PrependIcon(this string text, object target)
     {

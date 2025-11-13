@@ -280,6 +280,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImGui.SetNextItemWidth(300f);
             ImGui.InputTextWithHint("##BookmarkSearch", $"{AppIcons.SI_GenericMagnifyingGlass} Search Comments", ref bookmarkSearch, 64);
             var bookmarkSearchQuery = bookmarkSearch.Trim().ToLowerInvariant();
+            // TODO SILVER: Add a toggle button for a Match Case func. and add an overlapping X button to clear the search bar. Once done probably move it to ImguiHelpers so it can be reused elsewhere
             if (_activeTagFilter.Count > 0) {
                 if (ImGui.Button($"{AppIcons.SI_FilterClear}")) {
                     _activeTagFilter.Clear();
@@ -767,7 +768,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                         }
 
                         ImGui.PushStyleColor(ImGuiCol.Text, Vector4.One);
-                        if (ImGui.Button($"[ {tag} ]")) {
+                        if (ImGui.Button($"[ {tag} ]")) {// TODO SILVER: Map icons to tags, for these buttons only the icons should be shown to free up space for path/comment
                             if (activeTagFilter.Contains(tag)) {
                                 activeTagFilter.Remove(tag);
                             } else {
