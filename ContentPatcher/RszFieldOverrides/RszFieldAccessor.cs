@@ -47,6 +47,12 @@ public abstract class RszFieldAccessorBase<T>(string name) : RszFieldAccessorBas
         return index == -1 ? default! : (T)instance.Values[index];
     }
 
+    public T GetOrDefault(RszInstance instance, T defaultValue)
+    {
+        var index = GetIndex(instance.RszClass);
+        return index == -1 ? defaultValue : (T)instance.Values[index];
+    }
+
     public void Set(RszInstance instance, T value)
     {
         var index = GetIndex(instance.RszClass);
