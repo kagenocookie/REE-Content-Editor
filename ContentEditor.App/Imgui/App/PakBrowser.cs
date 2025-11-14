@@ -47,6 +47,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
     private BookmarkManager _bookmarkManager = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "user/bookmarks_pak.json"));
     private List<string> _activeTagFilter = new();
     private string bookmarkSearch = string.Empty;
+    private bool isBookmarkSearchMatchCase = false;
     private enum FilterMode
     {
         AnyMatch,
@@ -277,25 +278,39 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             }
             ImGui.SameLine();
             ImguiHelpers.AlignElementRight(300f);
-            ImGui.SetNextItemWidth(300f);
+            ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isBookmarkSearchMatchCase, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
+            ImguiHelpers.Tooltip("Match Case");
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(260f);
+            ImGui.SetNextItemAllowOverlap();
             ImGui.InputTextWithHint("##BookmarkSearch", $"{AppIcons.SI_GenericMagnifyingGlass} Search Comments", ref bookmarkSearch, 64);
-            var bookmarkSearchQuery = bookmarkSearch.Trim().ToLowerInvariant();
-            // TODO SILVER: Add a toggle button for a Match Case func. and add an overlapping X button to clear the search bar. Once done probably move it to ImguiHelpers so it can be reused elsewhere
+            var bookmarkSearchQuery = isBookmarkSearchMatchCase ? bookmarkSearch.Trim() : bookmarkSearch.Trim().ToLowerInvariant();
+            if (!string.IsNullOrEmpty(bookmarkSearch)) {
+                ImGui.SameLine();
+                ImGui.SetCursorPosX(ImGui.GetCursorPosX() - (40f));
+                ImGui.SetNextItemAllowOverlap();
+                if (ImGui.Button($"{AppIcons.SI_GenericError}")) { // SILVER: temp icon
+                    bookmarkSearch = string.Empty;
+                }
+            } // SILVER: Maybe move this whole search bar to ImguiHelpers so it can be reused elsewhere
             if (_activeTagFilter.Count > 0) {
                 if (ImGui.Button($"{AppIcons.SI_FilterClear}")) {
                     _activeTagFilter.Clear();
                 }
                 ImguiHelpers.Tooltip("Clear Filters");
                 ImGui.SameLine();
-                if (ImGui.Button($"Filter Mode: {_filterMode switch {
+                string filterModeName = _filterMode switch {
                     FilterMode.AnyMatch => "Any",
                     FilterMode.AllMatch => "All",
                     FilterMode.ExactMatch => "Exact",
                     _ => "?"
-                }}")) {
+                };
+
+                if (ImGui.Button($"Filter Mode: {filterModeName}")) {
                     _filterMode = _filterMode switch {
                         FilterMode.AnyMatch => FilterMode.AllMatch,
                         FilterMode.AllMatch => FilterMode.ExactMatch,
+                        FilterMode.ExactMatch => FilterMode.AnyMatch,
                         _ => FilterMode.AnyMatch
                     };
                 }
@@ -336,7 +351,6 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         }
         ImguiHelpers.Tooltip("Back");
         ImGui.SameLine();
-        // SILVER: Only enable the 'Return to Top' button when we are at least 3 layers deep
         using (var _ = ImguiHelpers.Disabled(CurrentDir.Count(c => c == '/') < 3)) {
             if (ImGui.ArrowButton("##up", ImGuiDir.Up)) {
                 CurrentDir = Workspace.BasePath[0..^1];
@@ -829,11 +843,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 }
             }
 
-            bool commentMatch = true;
-            if (!string.IsNullOrEmpty(searchText)) {
-                commentMatch = bm.Comment != null && bm.Comment.Contains(searchText, StringComparison.OrdinalIgnoreCase);
-            }
-
+            bool commentMatch = string.IsNullOrEmpty(searchText) || (bm.Comment?.Contains(searchText, isBookmarkSearchMatchCase ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase) ?? false);
             return tagMatch && commentMatch;
         }).ToList();
     }
