@@ -51,6 +51,8 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
     private DxgiFormat exportFormat = DxgiFormat.BC7_UNORM_SRGB;
 
     internal static DxgiFormat[] DxgiFormats = [
+        DxgiFormat.BC7_UNORM,
+        DxgiFormat.BC7_UNORM_SRGB,
         DxgiFormat.R8G8B8A8_UNORM,
         DxgiFormat.R8G8B8A8_UNORM_SRGB,
         DxgiFormat.BC1_UNORM,
@@ -62,8 +64,6 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         DxgiFormat.BC4_UNORM,
         DxgiFormat.BC5_SNORM,
         DxgiFormat.BC5_UNORM,
-        DxgiFormat.BC7_UNORM,
-        DxgiFormat.BC7_UNORM_SRGB,
     ];
     internal static string[] DxgiFormatStrings = DxgiFormats.Select(f => f.ToString()).ToArray();
 

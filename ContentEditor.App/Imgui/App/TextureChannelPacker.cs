@@ -32,7 +32,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
     private Texture.TextureChannel outputDisplayChannel = Texture.TextureChannel.RGB;
     private string convertTemplateConfig = "";
     private DxgiFormat exportFormat = DxgiFormat.BC7_UNORM_SRGB;
-    private bool exportMipMaps;
+    private bool exportMipMaps = true;
     private bool isDirty = false;
 
     public enum TextureSourceSwizzle
@@ -330,15 +330,14 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
                             case TextureSwizzle.RGB: tspan[x].R = pixel.R; tspan[x].G = pixel.G; tspan[x].B = pixel.B; break;
                             case TextureSwizzle.RGBA: tspan[x] = pixel; break;
                             case TextureSwizzle.NRRx: {
-                                var vec = new Vector2(pixel.R, pixel.G) / 255f - new Vector2(127);
+                                var vec = new Vector2(pixel.R / 255f * 2 - 1, pixel.G / 255f * 2 - 1);
                                 // TODO verify NRRx math correctness
                                 const float Cos45 = 0.70710678118654752440084436210485f;
                                 var signs = new Vector2(Math.Sign(vec.X), Math.Sign(vec.Y));
                                 vec = new Vector2(Cos45 * vec.X - Cos45 * vec.Y, Cos45 * vec.X + Cos45 * vec.Y);
-                                vec = vec * vec * signs;
 
-                                tspan[x].A = (byte)Math.Round((vec.X + 127) * 255f);
-                                tspan[x].G = (byte)Math.Round((vec.Y + 127) * 255f);
+                                tspan[x].A = (byte)Math.Round((vec.X + 0.5f) * 255f);
+                                tspan[x].G = (byte)Math.Round((vec.Y + 0.5f) * 255f);
                                 break;
                             }
                         }
@@ -379,7 +378,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
         ImGui.PushID(slot.input.Name);
         var size = new Vector2(128, 128);
         ImGui.PushItemWidth(size.X);
-        ImguiHelpers.TextCentered(slot.input.Name, size.X);
+        ImguiHelpers.TextCentered(slot.input.Name + " => " + slot.outputSwizzle, size.X);
 
         bool click;
         var btnPos = ImGui.GetCursorScreenPos();
