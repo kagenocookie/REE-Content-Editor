@@ -263,7 +263,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImguiHelpers.Tooltip("Filters");
 
             if (ImGui.BeginPopup("TagFilterDropdown")) {
-                foreach (var tag in BookmarkManager.TagColors.Keys) {
+                foreach (var tag in BookmarkManager.TagInfoMap.Keys) {
                     bool hasTag = _activeTagFilter.Contains(tag);
                     if (ImGui.Selectable(tag)) {
                         if (hasTag) {
@@ -306,8 +306,8 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
 
                 foreach (var tag in _activeTagFilter) {
                     ImGui.PushID("ActiveTag_" + tag);
-                    if (BookmarkManager.TagColors.TryGetValue(tag, out var colors)) {
-                        ImGui.PushStyleColor(ImGuiCol.Text, colors[1]);
+                    if (BookmarkManager.TagInfoMap.TryGetValue(tag, out var info)) {
+                        ImGui.PushStyleColor(ImGuiCol.Text, info.Colors[1]);
                     }
                     ImGui.SameLine();
                     ImGui.Text(tag);
@@ -761,23 +761,21 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                     ImGui.TableSetColumnIndex(1);
                     foreach (var tag in bm.Tags) {
                         ImGui.PushID($"{bm.Path}_{tag}");
-                        if (BookmarkManager.TagColors.TryGetValue(tag, out var colors)) {
-                            ImGui.PushStyleColor(ImGuiCol.Button, colors[0]);
-                            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, colors[1]);
-                            ImGui.PushStyleColor(ImGuiCol.ButtonActive, colors[2]);
-                        }
-
-                        ImGui.PushStyleColor(ImGuiCol.Text, Vector4.One);
-                        if (ImGui.Button($"[ {tag} ]")) {// TODO SILVER: Map icons to tags, for these buttons only the icons should be shown to free up space for path/comment
-                            if (activeTagFilter.Contains(tag)) {
-                                activeTagFilter.Remove(tag);
-                            } else {
-                                activeTagFilter.Add(tag);
+                        if (BookmarkManager.TagInfoMap.TryGetValue(tag, out var info)) {
+                            ImGui.PushStyleColor(ImGuiCol.Button, info.Colors[0]);
+                            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, info.Colors[1]);
+                            ImGui.PushStyleColor(ImGuiCol.ButtonActive, info.Colors[2]);
+                            ImGui.PushStyleColor(ImGuiCol.Text, Vector4.One);
+                            if (ImGui.Button(info.Icon)) {
+                                if (!activeTagFilter.Remove(tag)) {
+                                    activeTagFilter.Add(tag);
+                                }
                             }
+                            ImguiHelpers.Tooltip(tag);
+                            ImGui.PopStyleColor(4);
                         }
-                        ImGui.PopStyleColor(4);
-                        ImGui.PopID();
                         ImGui.SameLine();
+                        ImGui.PopID();
                     }
 
                     ImGui.TableSetColumnIndex(2);
@@ -854,7 +852,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         }
         ImGui.Spacing();
         if (ImGui.BeginMenu($"{AppIcons.SI_GenericTag} | Tags")) {
-            foreach (var tag in BookmarkManager.TagColors.Keys) {
+            foreach (var tag in BookmarkManager.TagInfoMap.Keys) {
                 bool hasTag = bm.Tags.Contains(tag);
                 if (ImGui.MenuItem(tag, "", hasTag)) {
                     if (hasTag) {
@@ -865,6 +863,11 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                         manager.SaveBookmarks();
                     }
                 }
+            }
+            ImGui.Separator();
+            if (ImGui.MenuItem("Clear All Tags")) {
+                bm.Tags.Clear();
+                manager.SaveBookmarks();
             }
             ImGui.EndMenu();
         }

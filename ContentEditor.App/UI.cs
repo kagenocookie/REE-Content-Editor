@@ -235,8 +235,11 @@ public static class AppIcons
     public static readonly char SI_UpdateTexture = '\ued5d';
     public static readonly char SI_TagDLC = '\ued5e';
     public static readonly char SI_TagItem = '\ued5f';
+    public static readonly char SI_TagWeapon = '\ued60';
+    public static readonly char SI_TagCharacter = '\ued61';
+    public static readonly char SI_GenericMatchCase = '\ued62';
 
-    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_TagItem, 0];
+    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_GenericMatchCase, 0];
 
     public static string PrependIcon(this string text, object target)
     {
