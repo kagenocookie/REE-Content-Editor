@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.Numerics;
 using ContentEditor.App.Windowing;
 using ContentPatcher;
 using ReeLib;
@@ -21,7 +20,7 @@ public class Texture : IDisposable
 
     public int Width { get; private set; }
     public int Height { get; private set; }
-    public string? Format { get; set; }
+    public DxgiFormat Format { get; set; } = DxgiFormat.R8G8B8A8_UNORM;
 
     public enum TextureChannel
     {
@@ -150,7 +149,7 @@ public class Texture : IDisposable
         it.Dispose();
         Width = (int)dds.Header.width;
         Height = (int)dds.Header.height;
-        Format = dds.Header.DX10.Format.ToString();
+        Format = dds.Header.DX10.Format;
         return this;
     }
 
@@ -177,7 +176,7 @@ public class Texture : IDisposable
         it.Dispose();
         Width = tex.Header.width;
         Height = tex.Header.height;
-        Format = tex.Header.format.ToString();
+        Format = tex.Header.format;
         return this;
     }
 
@@ -290,7 +289,8 @@ public class Texture : IDisposable
         maxMipLevel = Math.Min(maxMipLevel, actualMaxMip);
         minMipLevel = Math.Min(minMipLevel, maxMipLevel);
 
-        var dds = new DDSFile(new FileHandler(new MemoryStream(), Path));
+        var stream = new MemoryStream();
+        var dds = new DDSFile(new FileHandler(stream, Path));
 
         dds.Header.magic = DDSFile.Magic;
         dds.Header.size = 124;
@@ -313,6 +313,7 @@ public class Texture : IDisposable
         dds.Header.pitchOrLinearSize = dds.Header.width * dds.Header.height * sizeof(int);
         dds.Header.flags = HeaderFlags.HEIGHT|HeaderFlags.WIDTH|HeaderFlags.DEPTH|HeaderFlags.CAPS|HeaderFlags.MIPMAPCOUNT|HeaderFlags.LINEARSIZE;
 
+        stream.Capacity = Math.Max(stream.Capacity, (int)dds.Header.pitchOrLinearSize + 124);
         dds.Write();
 
         var data = ArrayPool<byte>.Shared.Rent((int)dds.Header.pitchOrLinearSize);
