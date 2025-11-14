@@ -76,7 +76,7 @@ internal sealed partial class MainLoop : IDisposable
             }
             foreach (var s in windows) s.TriggerUpdate();
 
-            fpsLimit.SetLimit(PlatformUtils.IsAppInForeground() ? AppConfig.Instance.MaxFps.Get() : AppConfig.Instance.BackgroundMaxFps.Get());
+            fpsLimit.SetLimit(PlatformUtils.IsAppInForeground() || windows.Any(w => w.DragDropData != null) ? AppConfig.Instance.MaxFps.Get() : AppConfig.Instance.BackgroundMaxFps.Get());
             fpsLimit.TryLimit();
         }
     }

@@ -32,7 +32,8 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
     private TextureChannel currentChannel = TextureChannel.RGBA;
     private static readonly HashSet<string> StandardImageFileExtensions = [".png", ".bmp", ".gif", ".jpg", ".jpeg", ".webp", ".tga", ".tiff", ".qoi", ".dds"];
 
-    private const string ImagesFileFilter = "TGA (*.tga)|*.tga|PNG (*.png)|*.png|DDS (*.dds)|*.dds";
+    public const string OpenFileFilter = "Supported images (.tga, .png, .dds)|*.tga;*.png;*.dds|TGA (*.tga)|*.tga|PNG (*.png)|*.png|DDS (*.dds)|*.dds";
+    public const string SaveFileFilter = "TGA (*.tga)|*.tga|PNG (*.png)|*.png|DDS (*.dds)|*.dds";
 
     private WindowData data = null!;
     protected UIContext context = null!;
@@ -49,7 +50,9 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
 
     private DxgiFormat exportFormat = DxgiFormat.BC7_UNORM_SRGB;
 
-    private static DxgiFormat[] DxgiFormats = [
+    internal static DxgiFormat[] DxgiFormats = [
+        DxgiFormat.BC7_UNORM,
+        DxgiFormat.BC7_UNORM_SRGB,
         DxgiFormat.R8G8B8A8_UNORM,
         DxgiFormat.R8G8B8A8_UNORM_SRGB,
         DxgiFormat.BC1_UNORM,
@@ -61,10 +64,8 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         DxgiFormat.BC4_UNORM,
         DxgiFormat.BC5_SNORM,
         DxgiFormat.BC5_UNORM,
-        DxgiFormat.BC7_UNORM,
-        DxgiFormat.BC7_UNORM_SRGB,
     ];
-    private static string[] DxgiFormatStrings = DxgiFormats.Select(f => f.ToString()).ToArray();
+    internal static string[] DxgiFormatStrings = DxgiFormats.Select(f => f.ToString()).ToArray();
 
     private static readonly FormatPreset[] Presets = [
         new FormatPreset("Color Texture | BC7_UNORM_SRGB", DxgiFormat.BC7_UNORM_SRGB, MipGenOptions.Generate),
@@ -171,7 +172,6 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
             ImGui.SameLine();
             if (ImGui.RadioButton("RGBA", currentChannel == TextureChannel.RGBA)) {
                 currentChannel = TextureChannel.RGBA;
-                texture.Bind();
                 texture.SetChannel(currentChannel);
             }
             ImGui.SameLine();
@@ -182,7 +182,6 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
             ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.8f, 0.8f, 0.8f, 1f));
             if (ImGui.RadioButton("RGB", currentChannel == TextureChannel.RGB)) {
                 currentChannel = TextureChannel.RGB;
-                texture.Bind();
                 texture.SetChannel(currentChannel);
             }
             ImGui.PopStyleColor(4);
@@ -194,7 +193,6 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
             ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1f, 0f, 0f, 1f));
             if (ImGui.RadioButton("R", currentChannel == TextureChannel.Red)) {
                 currentChannel = TextureChannel.Red;
-                texture.Bind();
                 texture.SetChannel(currentChannel);
             }
             ImGui.PopStyleColor(4);
@@ -206,7 +204,6 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
             ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0f, 1f, 0f, 1f));
             if (ImGui.RadioButton("G", currentChannel == TextureChannel.Green)) {
                 currentChannel = TextureChannel.Green;
-                texture.Bind();
                 texture.SetChannel(currentChannel);
             }
             ImGui.PopStyleColor(4);
@@ -218,7 +215,6 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
             ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0f, 0.5f, 1f, 1f));
             if (ImGui.RadioButton("B", currentChannel == TextureChannel.Blue)) {
                 currentChannel = TextureChannel.Blue;
-                texture.Bind();
                 texture.SetChannel(currentChannel);
             }
             ImGui.PopStyleColor(4);
@@ -229,7 +225,6 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
             ImGui.PushStyleColor(ImGuiCol.CheckMark, new Vector4(0.8f, 0.8f, 0.9f, 1f));
             if (ImGui.RadioButton("A", currentChannel == TextureChannel.Alpha)) {
                 currentChannel = TextureChannel.Alpha;
-                texture.Bind();
                 texture.SetChannel(currentChannel);
             }
             ImGui.PopStyleColor(3);
@@ -301,7 +296,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
 
                     if (ImGui.MenuItem("Save As ...")) {
                         var baseName = PathUtils.GetFilepathWithoutExtensionOrVersion(texturePath ?? texture.Path);
-                        var fileFilter = ImagesFileFilter;
+                        var fileFilter = SaveFileFilter;
                         var currentTexExt = fileHandle?.Loader is TexFileLoader ? PathUtils.GetFilenameExtensionWithSuffixes(texture.Path).ToString() : null;
                         if (!string.IsNullOrEmpty(currentTexExt)) {
                             fileFilter += $"|TEX (.{currentTexExt})|*.{currentTexExt}";

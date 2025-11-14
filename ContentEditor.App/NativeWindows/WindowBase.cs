@@ -5,10 +5,10 @@ using System.Globalization;
 using System.Numerics;
 using System.Reflection;
 using ContentEditor.App.ImguiHandling;
+using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher;
 using ImGuiNET;
-using ReeLib.Bvh;
 using Silk.NET.GLFW;
 using Silk.NET.Input;
 using Silk.NET.Maths;
@@ -390,6 +390,23 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         }
     }
 
+    private unsafe void HandleExtDragDrop()
+    {
+        if (DragDropData == null) return;
+
+        ImGui.GetIO().MousePos = dragDropPosition;
+        if (!fileWasDropped) {
+            if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.SourceExtern)) {
+                if (DragDropData.filenames?.Length >= 1) {
+                    ImGui.SetDragDropPayload(ImguiHelpers.DragDrop_File, IntPtr.Zero, 0);
+                } else {
+                    ImGui.SetDragDropPayload(ImguiHelpers.DragDrop_Text, IntPtr.Zero, 0);
+                }
+                ImGui.EndDragDropSource();
+            }
+        }
+    }
+
     private void OnRender(double delta)
     {
         _currentWindow = this;
@@ -399,6 +416,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         _gl.Clear(ClearBufferMask.ColorBufferBit|ClearBufferMask.DepthBufferBit);
 
         Render((float)delta);
+        HandleExtDragDrop();
         OnIMGUI();
         if (AppConfig.Instance.ShowFps) {
             smoothFrametime = (smoothFrametime * (1 - SmoothFpsScale) + (float)delta * SmoothFpsScale);
@@ -409,6 +427,20 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
             ImGui.GetForegroundDrawList().AddText(new Vector2(Size.X - fpsSize.X, 0) - ImGui.GetStyle().FramePadding, 0xffffffff, fpsText);
         }
         _controller.Render();
+        if (fileWasDropped && DragDropData != null) {
+            var data = DragDropData;
+            if (data != null) {
+                if (data.text != null) {
+                    if (Path.IsPathFullyQualified(data.text) && (File.Exists(data.text) || Directory.Exists(data.text))) {
+                        OnFileDrop([data.text], new Vector2D<int>());
+                    }
+                } else if (data.filenames?.Length > 0) {
+                    OnFileDrop(data.filenames, new Vector2D<int>());
+                }
+            }
+            DragDropData = null;
+            fileWasDropped = false;
+        }
         _currentWindow = null;
     }
 
@@ -601,37 +633,35 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     {
     }
 
+    public void ConsumeDragDrop()
+    {
+        DragDropData = null;
+        fileWasDropped = false;
+    }
+
+    private Vector2 dragDropPosition;
+    public DragDropContextObject? DragDropData { get; private set; }
+    private bool fileWasDropped;
+
     void IDragDropTarget.DragEnter(DragDropContextObject data, uint keyState, Point position, ref uint effect)
     {
-        using var _ = new OverrideCurrentWindow(this);
-        Logger.Debug("DragEnter: " + data + " at " + position);
+        DragDropData = data;
     }
 
     void IDragDropTarget.DragOver(uint keyState, Point position, ref uint effect)
     {
-        // Logger.Info("DragOver " + position);
+        var clientPos = _window.PointToClient(new Vector2D<int>(position.X, position.Y));
+        dragDropPosition = new Vector2(clientPos.X, clientPos.Y);
     }
 
     void IDragDropTarget.DragLeave()
     {
-        // Logger.Info("DragLeave");
+        DragDropData = null;
     }
 
     void IDragDropTarget.Drop(DragDropContextObject data, uint keyState, Point position, ref uint effect)
     {
-        using var _ = new OverrideCurrentWindow(this);
-        Logger.Debug("DragDrop: " + data + " at " + position);
-        if (data.text != null) {
-            if (Path.IsPathFullyQualified(data.text) && (File.Exists(data.text) || Directory.Exists(data.text))) {
-                OnFileDrop([data.text], new Vector2D<int>(position.X, position.Y));
-            } else {
-                // TODO fake input if it's dropped on a text input?
-            }
-            return;
-        }
-        if (data.filenames != null) {
-            OnFileDrop(data.filenames, new Vector2D<int>(position.X, position.Y));
-        }
+        fileWasDropped = true;
     }
 
     internal struct OverrideCurrentWindow : IDisposable

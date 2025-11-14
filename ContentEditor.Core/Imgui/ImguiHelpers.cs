@@ -9,6 +9,9 @@ public static class ImguiHelpers
 {
     private const int MarginX = 4;
 
+    public const string DragDrop_File = "EXT_FILE";
+    public const string DragDrop_Text = "EXT_TEXT";
+
     public static bool TreeNodeSuffix(string label, string suffix, Vector4 color = default)
     {
         ImGui.BeginGroup();
@@ -340,6 +343,11 @@ public static class ImguiHelpers
     public static Vector4 GetColor(ImGuiCol style)
     {
         return ImGui.GetStyle().Colors[(int)style];
+    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint GetColorU32(ImGuiCol style)
+    {
+        return ImGui.ColorConvertFloat4ToU32(ImGui.GetStyle().Colors[(int)style]);
     }
 
     public struct DisposableStyleOverride() : IDisposable

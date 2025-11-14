@@ -69,6 +69,16 @@ public sealed class BackgroundTaskService : IDisposable
         }
     }
 
+    public void CancelTask(IBackgroundTask pendingTask)
+    {
+        foreach (var w in workers) {
+            if (w.CurrentTask == pendingTask) {
+                w.CancelAsync();
+                break;
+            }
+        }
+    }
+
     private void FinishTask(BackgroundTaskWorker worker)
     {
         lock (_lock) {
@@ -141,6 +151,7 @@ public sealed class BackgroundTaskService : IDisposable
         protected override void OnRunWorkerCompleted(RunWorkerCompletedEventArgs e)
         {
             resources?.ReleaseResources();
+            service.FinishTask(this);
             base.OnRunWorkerCompleted(e);
         }
 

@@ -168,6 +168,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             }
 
             if (workspace.ResourceManager.TryGetOrLoadFile(filename, out var file)) {
+                file.Stream.Seek(0, SeekOrigin.Begin);
                 AddFileEditor(file);
             } else {
                 AddSubwindow(new ErrorModal("Unsupported file", "File is not supported:\n" + filename));
@@ -573,6 +574,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 }
                 if (ImGui.MenuItem("Data Search")) {
                     AddSubwindow(new RszDataFinder());
+                }
+                if (ImGui.MenuItem("Texture Channel Packer")) {
+                    AddSubwindow(new TextureChannelPacker());
                 }
             }
             ImGui.EndMenu();
