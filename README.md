@@ -49,7 +49,7 @@ Some files may not fully work for other RE ENGINE games.
 | .uvar     | ☑️ read/write
 | .mdf2     | ☑️ read/write
 | .efx      | ☑️ read/write
-| .tex, .dds  | view, convert  | Convert to TGA/PNG
+| .tex, .dds  | ☑️ view, convert  | Convert between TGA/PNG/DDS/TEX<br>Format conversion across games
 | .mesh     | ☑️ 3D & data display | FBX & GLTF export/import<br>Format conversion across games
 | .motlist  | ☑️ read/write | Animation preview<br>GLTF import/export<br>Mot copy/paste/retargeting ([info](https://github.com/kagenocookie/REE-Content-Editor/wiki/Animation-tools))
 | .rcol     | ☑️ read/write | 3D shape preview and editing ([info](https://github.com/kagenocookie/REE-Content-Editor/wiki/RCOL-Request-set-colliders))

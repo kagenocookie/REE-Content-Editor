@@ -35,6 +35,10 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
     private bool exportMipMaps = true;
     private bool isDirty = false;
 
+    private PackingPreset? selectedPreset;
+
+    private TextureConversionTask? activeTask;
+
     public enum TextureSourceSwizzle
     {
         Red = 1,
@@ -57,7 +61,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
         RG = Red | Green,
         GB = Green | Blue,
         BA = Blue | Alpha,
-        NRRx = Green | Alpha,
+        GA_NRRx = Green | Alpha,
         RGB = Red | Green | Blue,
         RGBA = Red | Green | Blue | Alpha,
     }
@@ -73,50 +77,48 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
     private static readonly string[][] SwizzleSourceNames = SwizzleSources.Select(ss => ss.Select(s => s.ToString()).ToArray()).ToArray();
 
     private static readonly PackingPreset[] Presets = [
-        new PackingPreset("ALBD", new InputTexture("Albedo", TextureSourceSwizzle.RGB, TextureSwizzle.RGB), new InputTexture("Dielectric", TextureSourceSwizzle.Red, TextureSwizzle.Alpha)),
-        new PackingPreset("ALBM", new InputTexture("Albedo", TextureSourceSwizzle.RGB, TextureSwizzle.RGB), new InputTexture("Metallic", TextureSourceSwizzle.Red, TextureSwizzle.Alpha)),
-        new PackingPreset("ATOC",
+        new PackingPreset("ALBD", DxgiFormat.BC7_UNORM_SRGB, new InputTexture("Albedo", TextureSourceSwizzle.RGB, TextureSwizzle.RGB), new InputTexture("Dielectric", TextureSourceSwizzle.Red, TextureSwizzle.Alpha)),
+        new PackingPreset("ALBM", DxgiFormat.BC7_UNORM_SRGB, new InputTexture("Albedo", TextureSourceSwizzle.RGB, TextureSwizzle.RGB), new InputTexture("Metallic", TextureSourceSwizzle.Red, TextureSwizzle.Alpha)),
+        new PackingPreset("ATOC", DxgiFormat.BC7_UNORM,
             new InputTexture("Alpha", TextureSourceSwizzle.Red, TextureSwizzle.Red),
             new InputTexture("Translucency", TextureSourceSwizzle.Green, TextureSwizzle.Green),
             new InputTexture("Ambient Occlusion", TextureSourceSwizzle.Blue, TextureSwizzle.Blue),
             new InputTexture("Cavity", TextureSourceSwizzle.Alpha, TextureSwizzle.Alpha)),
-        new PackingPreset("ATOD",
+        new PackingPreset("ATOD", DxgiFormat.BC7_UNORM,
             new InputTexture("Alpha", TextureSourceSwizzle.Red, TextureSwizzle.Red),
             new InputTexture("Translucency", TextureSourceSwizzle.Green, TextureSwizzle.Green),
             new InputTexture("Ambient Occlusion", TextureSourceSwizzle.Blue, TextureSwizzle.Blue),
             new InputTexture("Dirt Mask", TextureSourceSwizzle.Alpha, TextureSwizzle.Alpha)),
-        new PackingPreset("ATOS",
+        new PackingPreset("ATOS", DxgiFormat.BC7_UNORM,
             new InputTexture("Alpha", TextureSourceSwizzle.Red, TextureSwizzle.Red),
             new InputTexture("Translucency", TextureSourceSwizzle.Green, TextureSwizzle.Green),
             new InputTexture("Ambient Occlusion", TextureSourceSwizzle.Blue, TextureSwizzle.Blue),
             new InputTexture("Subsurface Scattering", TextureSourceSwizzle.Alpha, TextureSwizzle.Alpha)),
-        new PackingPreset("NRRA",
-            new InputTexture("Normal", TextureSourceSwizzle.RG, TextureSwizzle.NRRx),
+        new PackingPreset("NRRA", DxgiFormat.BC7_UNORM,
+            new InputTexture("Normal", TextureSourceSwizzle.RG, TextureSwizzle.GA_NRRx),
             new InputTexture("Roughness", TextureSourceSwizzle.Red, TextureSwizzle.Red),
             new InputTexture("Alpha", TextureSourceSwizzle.Red, TextureSwizzle.Blue)),
-        new PackingPreset("NRRC",
-            new InputTexture("Normal", TextureSourceSwizzle.RG, TextureSwizzle.NRRx),
+        new PackingPreset("NRRC", DxgiFormat.BC7_UNORM,
+            new InputTexture("Normal", TextureSourceSwizzle.RG, TextureSwizzle.GA_NRRx),
             new InputTexture("Roughness", TextureSourceSwizzle.Red, TextureSwizzle.Red),
             new InputTexture("Cavity", TextureSourceSwizzle.Red, TextureSwizzle.Blue)),
-        new PackingPreset("NRRT",
-            new InputTexture("Normal", TextureSourceSwizzle.RG, TextureSwizzle.NRRx),
+        new PackingPreset("NRRT", DxgiFormat.BC7_UNORM,
+            new InputTexture("Normal", TextureSourceSwizzle.RG, TextureSwizzle.GA_NRRx),
             new InputTexture("Roughness", TextureSourceSwizzle.Red, TextureSwizzle.Red),
             new InputTexture("Translucency", TextureSourceSwizzle.Red, TextureSwizzle.Blue)),
-        new PackingPreset("NRRO",
-            new InputTexture("Normal", TextureSourceSwizzle.RG, TextureSwizzle.NRRx),
+        new PackingPreset("NRRO", DxgiFormat.BC7_UNORM,
+            new InputTexture("Normal", TextureSourceSwizzle.RG, TextureSwizzle.GA_NRRx),
             new InputTexture("Roughness", TextureSourceSwizzle.Red, TextureSwizzle.Red),
             new InputTexture("Occlusion", TextureSourceSwizzle.Red, TextureSwizzle.Blue)),
-        new PackingPreset("NRMR",
+        new PackingPreset("NRMR", DxgiFormat.BC7_UNORM,
             new InputTexture("Normal", TextureSourceSwizzle.RG, TextureSwizzle.RG),
             new InputTexture("Roughness", TextureSourceSwizzle.Red, TextureSwizzle.Alpha)),
-        new PackingPreset("Custom",
+        new PackingPreset("Custom", DxgiFormat.BC7_UNORM,
             new InputTexture("Tex1", TextureSourceSwizzle.Red, TextureSwizzle.Red),
             new InputTexture("Tex2", TextureSourceSwizzle.Green, TextureSwizzle.Green),
             new InputTexture("Tex3", TextureSourceSwizzle.Blue, TextureSwizzle.Blue),
             new InputTexture("Tex4", TextureSourceSwizzle.Alpha, TextureSwizzle.Alpha))
     ];
-
-    private PackingPreset? selectedPreset;
 
     private static readonly string[] PresetNames = Presets.Select(p => p.name).ToArray();
 
@@ -156,11 +158,11 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
     }
 
     private record InputTexture(string Name, TextureSourceSwizzle inputSwizzle, TextureSwizzle outputSwizzle);
-    private record PackingPreset(string name, params InputTexture[] slots)
+    private record PackingPreset(string name, DxgiFormat defaultFormat, params InputTexture[] slots)
     {
         public PackingPreset Instantiate()
         {
-            return new PackingPreset(name, slots.Select(s => new InputTexture(s.Name, s.inputSwizzle, s.outputSwizzle)).ToArray());
+            return new PackingPreset(name, defaultFormat, slots.Select(s => new InputTexture(s.Name, s.inputSwizzle, s.outputSwizzle)).ToArray());
         }
     }
 
@@ -175,7 +177,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
     public void OnIMGUI()
     {
         var selectedName = selectedPreset?.name;
-        if (ImguiHelpers.ValueCombo("Preset", PresetNames, PresetNames, ref selectedName)) {
+        if (ImguiHelpers.ValueCombo("Preset", PresetNames, PresetNames, ref selectedName, 800)) {
             if (selectedPreset != null) {
                 foreach (var s in slots) {
                     s.texture?.Dispose();
@@ -186,15 +188,20 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
                 selectedPreset = null;
             } else {
                 selectedPreset = Presets.First(p => p.name == selectedName).Instantiate();
+                exportFormat = selectedPreset.defaultFormat;
                 foreach (var src in selectedPreset.slots) {
                     slots.Add(new TextureSlot(src, null, null, src.inputSwizzle, src.outputSwizzle));
                 }
+                isDirty = true;
+                outputTexture?.Dispose();
+                outputTexture = null;
             }
         }
 
         if (selectedPreset == null) {
             return;
         }
+
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 16);
         var topPos = ImGui.GetCursorPos();
         ImGui.Indent(32);
@@ -214,7 +221,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
         ImGui.Indent(outputPos.X);
         if (outputTexture != null) {
             ImGui.SetCursorPosY(outputPos.Y);
-            if (ImguiHelpers.CSharpEnumCombo("Display", ref outputDisplayChannel)) {
+            if (ImguiHelpers.CSharpEnumCombo("Display", ref outputDisplayChannel, 800)) {
                 outputTexture.SetChannel(outputDisplayChannel);
             }
             ImGui.Text("Size: " + outputTexture.Width + " x " + outputTexture.Height + " (Based on first texture slot)");
@@ -295,8 +302,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
                 using var srcImg = slot.texture.GetAsImage();
                 var img = srcImg.Clone();
                 if (img.Width != res.x || img.Height != res.y) {
-                    // TODO pick better quality sampler?
-                    img.Mutate(o => o.Resize(res.x, res.y));
+                    img.Mutate(o => o.Resize(res.x, res.y, KnownResamplers.Bicubic));
                 }
 
                 var targetPixels = outImageData.GetPixelMemoryGroup();
@@ -317,7 +323,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
                             case TextureSourceSwizzle.BA: pixel = new Rgba32(cspan[x].B, cspan[x].A, 0, 0); break;
                             case TextureSourceSwizzle.RGB: pixel = new Rgba32(cspan[x].R, cspan[x].G, cspan[x].B, 0); break;
                         }
-                        if (slot.invertSource) pixel = new Rgba32(1 - pixel.R, 1 - pixel.G, 1 - pixel.B, 1 - pixel.A);
+                        if (slot.invertSource) pixel = new Rgba32((byte)(255 - pixel.R), (byte)(255 - pixel.G), (byte)(255 - pixel.B), (byte)(255 - pixel.A));
 
                         switch (slot.outputSwizzle) {
                             case TextureSwizzle.Red: tspan[x].R = pixel.R; break;
@@ -329,15 +335,16 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
                             case TextureSwizzle.BA: tspan[x].B = pixel.R; tspan[x].A = pixel.G; break;
                             case TextureSwizzle.RGB: tspan[x].R = pixel.R; tspan[x].G = pixel.G; tspan[x].B = pixel.B; break;
                             case TextureSwizzle.RGBA: tspan[x] = pixel; break;
-                            case TextureSwizzle.NRRx: {
-                                var vec = new Vector2(pixel.R / 255f * 2 - 1, pixel.G / 255f * 2 - 1);
-                                // TODO verify NRRx math correctness
+                            case TextureSwizzle.GA_NRRx: {
+                                var vec = new Vector2(pixel.R / 127.5f - 1, pixel.G / 127.5f - 1);
                                 const float Cos45 = 0.70710678118654752440084436210485f;
-                                var signs = new Vector2(Math.Sign(vec.X), Math.Sign(vec.Y));
                                 vec = new Vector2(Cos45 * vec.X - Cos45 * vec.Y, Cos45 * vec.X + Cos45 * vec.Y);
+                                var signs = new Vector2(Math.Sign(vec.X), Math.Sign(vec.Y));
 
-                                tspan[x].A = (byte)Math.Round((vec.X + 0.5f) * 255f);
-                                tspan[x].G = (byte)Math.Round((vec.Y + 0.5f) * 255f);
+                                vec = new Vector2(MathF.Sqrt(MathF.Abs(vec.X)), MathF.Sqrt(MathF.Abs(vec.Y))) * signs;
+
+                                tspan[x].A = (byte)Math.Round((vec.X + 1f) * 127.5f);
+                                tspan[x].G = (byte)Math.Round((vec.Y + 1f) * 127.5f);
                                 break;
                             }
                         }
@@ -349,13 +356,21 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
         }
 
         if (outImageData != null) {
+            outputTexture?.Dispose();
             outputTexture = new Texture();
             outputTexture.LoadFromImage(outImageData);
             outputTexture.SetChannel(outputDisplayChannel);
             outImageData.Dispose();
 
-            MainLoop.Instance.BackgroundTasks.Queue(new TextureConversionTask(outputTexture.GetAsDDS(), (outDDS) => {
-                MainLoop.Instance.InvokeFromUIThread(() => outputTexture.LoadFromDDS(outDDS));
+            if (activeTask != null) {
+                MainLoop.Instance.BackgroundTasks.CancelTask(activeTask);
+            }
+
+            MainLoop.Instance.BackgroundTasks.Queue(activeTask = new TextureConversionTask(outputTexture.GetAsDDS(0, 1), (outDDS) => {
+                MainLoop.Instance.InvokeFromUIThread(() => {
+                    outputTexture.LoadFromDDS(outDDS);
+                    outDDS.Dispose();
+                });
             }, GetOperations()));
         }
     }

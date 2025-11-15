@@ -61,12 +61,12 @@ public static class ImguiHelpers
         }
     }
 
-    public static bool CSharpEnumCombo<TEnum>(string label, ref TEnum selected) where TEnum : struct, Enum
+    public static bool CSharpEnumCombo<TEnum>(string label, ref TEnum selected, int height = -1) where TEnum : struct, Enum
     {
         var values = Enum.GetValues<TEnum>();
         var labels = Enum.GetNames<TEnum>();
         var selectedIndex = Array.IndexOf(values, selected);
-        if (ImGui.Combo(label, ref selectedIndex, labels, labels.Length)) {
+        if (ImGui.Combo(label, ref selectedIndex, labels, labels.Length, height)) {
             selected = values[selectedIndex];
             return true;
         }
@@ -108,10 +108,10 @@ public static class ImguiHelpers
         return changed;
     }
 
-    public static bool ValueCombo<TValue>(string label, string[] labels, TValue[] values, ref TValue selected)
+    public static bool ValueCombo<TValue>(string label, string[] labels, TValue[] values, ref TValue selected, int height = -1)
     {
         var selectedIndex = Array.IndexOf(values, selected);
-        if (ImGui.Combo(label, ref selectedIndex, labels, labels.Length)) {
+        if (ImGui.Combo(label, ref selectedIndex, labels, labels.Length, height)) {
             selected = values[selectedIndex];
             return true;
         }

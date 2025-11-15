@@ -23,6 +23,7 @@ public static class Colors
 
     public static Vector4 Colliders => new Vector4(0, 1, 0, 0.8f);
     public static Vector4 RequestSetColliders => new Vector4(1, 0.4f, 0.1f, 0.8f);
+    public static Vector4 Lights => new Vector4(1, 1, 0, 0.8f);
     /// <summary>Cardboard</summary>
     public static Vector4 PFB => new Vector4(0.80f, 0.62f, 0.38f, 1);
     /// <summary>Purple</summary>

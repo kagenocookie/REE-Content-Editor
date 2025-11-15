@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using ContentEditor.App;
 
 namespace ContentEditor.BackgroundTasks;
@@ -27,7 +28,7 @@ public sealed class BackgroundTaskService : IDisposable
             var list = new List<string>();
             for (int i = 0; i < workers.Count; ++i) {
                 var worker = workers[i];
-                if (worker.IsBusy) {
+                if (worker.CurrentTask != null) {
                     var task = worker.CurrentTask?.Status ?? "Finalizing";
                     list.Add(task + " | " + worker.ToString());
                 }
@@ -71,22 +72,34 @@ public sealed class BackgroundTaskService : IDisposable
 
     public void CancelTask(IBackgroundTask pendingTask)
     {
-        foreach (var w in workers) {
-            if (w.CurrentTask == pendingTask) {
-                w.CancelAsync();
-                break;
+        lock (_lock) {
+            pendingTask.IsCancelled = true;
+            foreach (var w in workers) {
+                if (w.CurrentTask == pendingTask) {
+                    w.CancelAsync();
+                    break;
+                }
             }
         }
     }
 
-    private void FinishTask(BackgroundTaskWorker worker)
+    private bool TryGetNextTask(BackgroundTaskWorker worker, [MaybeNullWhen(false)] out IBackgroundTask nextTask)
     {
         lock (_lock) {
-            if (waitingTasks.TryDequeue(out var nextTask)) {
-                worker.StartTask(nextTask);
-            } else {
-                freeWorkers.Push(worker);
+            while (waitingTasks.TryDequeue(out nextTask)) {
+                if (!nextTask.IsCancelled) {
+                    return true;
+                }
             }
+
+            return false;
+        }
+    }
+
+    private void FreeWorker(BackgroundTaskWorker worker)
+    {
+        lock (_lock) {
+            freeWorkers.Push(worker);
         }
     }
 
@@ -122,8 +135,8 @@ public sealed class BackgroundTaskService : IDisposable
 
         public new void CancelAsync()
         {
-            CurrentTask = null;
             tokenSource.Cancel();
+            CurrentTask = null;
             tokenSource = new();
             base.CancelAsync();
         }
@@ -143,16 +156,25 @@ public sealed class BackgroundTaskService : IDisposable
                 } catch (Exception e) {
                     MainLoop.Instance.InvokeFromUIThread(() => Logger.Error($"Background task {CurrentTask} failed: " + e.Message));
                 }
-                service.FinishTask(this);
+
                 CurrentTask = null;
+                if (!service.TryGetNextTask(this, out var nextTask)) {
+                    break;
+                }
+
+                CurrentTask = nextTask;
             }
         }
 
         protected override void OnRunWorkerCompleted(RunWorkerCompletedEventArgs e)
         {
             resources?.ReleaseResources();
-            service.FinishTask(this);
             base.OnRunWorkerCompleted(e);
+            if (service.TryGetNextTask(this, out var task)) {
+                StartTask(task);
+            } else {
+                service.FreeWorker(this);
+            }
         }
 
         protected override void Dispose(bool disposing)
@@ -167,13 +189,10 @@ public sealed class BackgroundTaskService : IDisposable
 
 public interface IBackgroundTask
 {
-    // /// <summary>
-    // /// 0-1 value of how far along the task is. If -1, will be treated as not having a way to track progress.
-    // /// </summary>
-    // public float Progress { get; }
-    public string? Status { get; }
+    bool IsCancelled { get; internal set; }
+    string? Status { get; }
 
-    public void Execute(CancellationToken token = default);
+    void Execute(CancellationToken token = default);
 }
 
 public static class BackgroundTaskExtensions

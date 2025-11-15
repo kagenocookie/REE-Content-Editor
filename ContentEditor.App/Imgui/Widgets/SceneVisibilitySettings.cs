@@ -48,6 +48,13 @@ public class SceneVisibilitySettings : ISceneWidget
                 AppConfig.Instance.RenderRequestSetColliders.Set(!AppConfig.Instance.RenderRequestSetColliders);
             }
             ImGui.PopStyleColor();
+
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.Lights with { W = AppConfig.Instance.RenderLights.Get() ? 1 : 0.6f });
+            if (ImGui.Button($"{AppIcons.Eye} Lights")) {
+                AppConfig.Instance.RenderLights.Set(!AppConfig.Instance.RenderLights);
+            }
+            ImGui.PopStyleColor();
+
             ImGui.EndPopup();
         }
 
