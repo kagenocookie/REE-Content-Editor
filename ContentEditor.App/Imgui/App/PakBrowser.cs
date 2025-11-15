@@ -712,6 +712,13 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                     _bookmarkManager.AddBookmark(Workspace.Config.Game.name, file);
                 }
             }
+            ImGui.Spacing();
+            if (Path.HasExtension(file)) {
+                if (ImGui.Selectable("Jump to Containing Folder")) {
+                    string currFolder = Path.GetDirectoryName(file);
+                    _currentDir = PathUtils.NormalizeFilepath(currFolder);
+                }
+            }
             if (showSort) {
                 ImGui.Separator();
                 if (ImGui.Selectable("Sort By: " + (gridSortColumn == 1 ? "Size" : "Name"))) {

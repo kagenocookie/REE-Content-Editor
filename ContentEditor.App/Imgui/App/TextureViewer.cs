@@ -312,7 +312,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                 ImGui.EndMenu();
             }
 
-            if (ImGui.BeginMenu($"{AppIcons.SI_GenericIO} Convert")) {
+            if (ImGui.BeginMenu($"{AppIcons.SI_GenericConvert} Convert")) {
                 ShowExportMenu();
                 ImGui.EndMenu();
             }

@@ -244,6 +244,83 @@
       "Comment": "Joe Baker (End of Zoe)"
     },
     {
+      "Path": "natives/stm/props/sm1800_herb00a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Herb"
+    },
+    {
+      "Path": "natives/stm/props/sm1852_antisepticsolutionmedium",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "First Aid Med"
+    },
+    {
+      "Path": "natives/stm/props/sm1853_antisepticsolutionstrong",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Strong First Aid Med"
+    },
+    {
+      "Path": "natives/stm/props/sm1927_stimulant",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Steroids"
+    },
+    {
+      "Path": "natives/stm/props/sm1928_depressant",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Stabilizer"
+    },
+    {
+      "Path": "natives\\stm\\props\\sm2036_chemicals01a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Chem Fluid"
+    },
+    {
+      "Path": "natives/stm/props/sm2037_chemicalm01a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Strong Chem Fluid"
+    },
+    {
+      "Path": "natives/stm/props/sm2038_chemicall01a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Separating Agent"
+    },
+    {
+      "Path": "natives/stm/props/sm2179_psychostimulant01a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Psychostimulants"
+    },
+    {
+      "Path": "natives/stm/props/sm2183_gunpowder01a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Gunpowder"
+    },
+    {
+      "Path": "natives/stm/props/sm2290_repairkit01a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Repair Kit"
+    },
+    {
       "Path": "natives/stm/weapon/wp1001_gascan",
       "Tags": [
         "Item"
