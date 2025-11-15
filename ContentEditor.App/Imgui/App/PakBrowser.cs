@@ -200,23 +200,23 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImguiHelpers.TooltipColored("Invalidated PAK entries have been detected (most likely from Fluffy Mod Manager).\nYou may be unable to open some files.", Colors.Warning);
         }
         ImGui.SameLine();
-        ImguiHelpers.ToggleButton($"{AppIcons.SI_FileOpenPreview}", ref isFilePreviewEnabled, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
+        ImguiHelpers.ToggleButton($"{AppIcons.SI_FileOpenPreview}", ref isFilePreviewEnabled, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
         ImguiHelpers.Tooltip("Toggle File Preview");
         if (isFilePreviewEnabled != AppConfig.Instance.UsePakFilePreviewWindow.Get()) {
             AppConfig.Instance.UsePakFilePreviewWindow.Set(isFilePreviewEnabled);
         }
         ImGui.SameLine();
         var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
-        if (ImguiHelpers.ToggleButton($"{AppIcons.SI_PathShort}", ref useCompactFilePaths, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f)) {
+        if (ImguiHelpers.ToggleButton($"{AppIcons.SI_PathShort}", ref useCompactFilePaths, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f)) {
             AppConfig.Instance.UsePakCompactFilePaths.Set(useCompactFilePaths);
         }
         ImguiHelpers.Tooltip("Toggle Compact File Paths");
         ImGui.SameLine();
-        bool isHideDefaults = _bookmarkManagerDefaults.IsHideDefaults;
-        bool isHideCustoms = _bookmarkManager.IsHideCustoms;
+        bool isHideDefaults = _bookmarkManagerDefaults.IsHideBookmarks;
+        bool isHideCustoms = _bookmarkManager.IsHideBookmarks;
         bool isBookmarked = _bookmarkManager.IsBookmarked(Workspace.Config.Game.name, CurrentDir);
         ImguiHelpers.AlignElementRight((ImGui.CalcTextSize($"{AppIcons.SI_ViewGridSmall}").X + ImGui.GetStyle().FramePadding.X * 2) * 2 + ImGui.GetStyle().ItemSpacing.X);
-        ImguiHelpers.ToggleButton($"{AppIcons.SI_Bookmarks}", ref isShowBookmarks, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
+        ImguiHelpers.ToggleButton($"{AppIcons.SI_Bookmarks}", ref isShowBookmarks, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
         ImguiHelpers.Tooltip("Bookmarks");
         ImGui.SameLine();
         if (ImGui.Button(DisplayMode == FileDisplayMode.Grid ? $"{AppIcons.SI_ViewGridSmall}" : $"{AppIcons.SI_ViewList}")) {
@@ -227,14 +227,14 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         ImGui.Spacing();
         ImGui.Separator();
         if (isShowBookmarks) {
-            ImguiHelpers.ToggleButton($"{AppIcons.SI_BookmarkHide}", ref isHideDefaults, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
+            ImguiHelpers.ToggleButton($"{AppIcons.SI_BookmarkHide}", ref isHideDefaults, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
             ImguiHelpers.Tooltip("Hide Default Bookmarks");
-            _bookmarkManagerDefaults.IsHideDefaults = isHideDefaults;
+            _bookmarkManagerDefaults.IsHideBookmarks = isHideDefaults;
             using (var _ = ImguiHelpers.Disabled(_bookmarkManager.GetBookmarks(Workspace.Config.Game.name).Count == 0)) {
                 ImGui.SameLine();
-                ImguiHelpers.ToggleButton($"{AppIcons.SI_BookmarkCustomHide}", ref isHideCustoms, color: ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
+                ImguiHelpers.ToggleButton($"{AppIcons.SI_BookmarkCustomHide}", ref isHideCustoms, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered), 2.0f);
                 ImguiHelpers.Tooltip("Hide Custom Bookmarks");
-                _bookmarkManager.IsHideCustoms = isHideCustoms;
+                _bookmarkManager.IsHideBookmarks = isHideCustoms;
                 ImGui.SameLine();
                 if (ImGui.Button($"{AppIcons.SI_BookmarkCustomClear}")) {
                     ImGui.OpenPopup("Confirm Action");
@@ -332,13 +332,13 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                     ImGui.PopID();
                 }
             }
-            if (_bookmarkManagerDefaults.GetBookmarks(Workspace.Config.Game.name).Count > 0 && !_bookmarkManagerDefaults.IsHideDefaults) {
+            if (_bookmarkManagerDefaults.GetBookmarks(Workspace.Config.Game.name).Count > 0 && !_bookmarkManagerDefaults.IsHideBookmarks) {
                 ShowBookmarksTable("Default", 3, _bookmarkManagerDefaults, _activeTagFilter, bookmarkSearchQuery);
             }
-            if (_bookmarkManager.GetBookmarks(Workspace.Config.Game.name).Count > 0 && !_bookmarkManager.IsHideCustoms) {
+            if (_bookmarkManager.GetBookmarks(Workspace.Config.Game.name).Count > 0 && !_bookmarkManager.IsHideBookmarks) {
                 ShowBookmarksTable("Custom", 4, _bookmarkManager, _activeTagFilter, bookmarkSearchQuery);
             } else {
-                if (!_bookmarkManager.IsHideCustoms) {
+                if (!_bookmarkManager.IsHideBookmarks) {
                     ImGui.TextDisabled("No Custom Bookmarks yet...");
                 }
             }

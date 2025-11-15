@@ -18,8 +18,7 @@ namespace ContentEditor.App
         }
         private readonly string _jsonFilePath;
         private Dictionary<string, List<BookmarkEntry>> _bookmarks = new();
-        public bool IsHideDefaults { get; set; } = false;
-        public bool IsHideCustoms { get; set; } = false;
+        public bool IsHideBookmarks { get; set; } = false;
         public readonly struct TagInfo {
             public readonly string Icon;
             public readonly Vector4[] Colors;
@@ -96,14 +95,12 @@ namespace ContentEditor.App
 
             var json = File.ReadAllText(_jsonFilePath);
             _bookmarks = JsonSerializer.Deserialize<Dictionary<string, List<BookmarkEntry>>>(json) ?? new Dictionary<string, List<BookmarkEntry>>();
-            Logger.Debug($"Bookmarks loaded from {_jsonFilePath}");
         }
         public void SaveBookmarks()
         {
             Directory.CreateDirectory(Path.GetDirectoryName(_jsonFilePath)!);
             var json = JsonSerializer.Serialize(_bookmarks, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_jsonFilePath, json);
-            Logger.Debug($"Bookmarks saved to {_jsonFilePath}");
         }
     }
 }
