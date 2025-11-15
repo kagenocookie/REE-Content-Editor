@@ -15,7 +15,7 @@ public class WindowData
 
     public int ID { get; set; }
     public string Name { get; set; } = string.Empty;
-    public Vector2 Size { get; set; }
+    public Vector2 Size { get; set; } = new Vector2(1000, 500);
     public Vector2 Position { get; set; }
     public bool IsPersistent { get; set; }
     public IRectWindow ParentWindow { get; set; }
