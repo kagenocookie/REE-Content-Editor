@@ -576,7 +576,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     AddSubwindow(new RszDataFinder());
                 }
                 if (ImGui.MenuItem("Texture Channel Packer")) {
-                    AddSubwindow(new TextureChannelPacker());
+                    AddSubwindow(new TextureChannelPacker()).Size = new Vector2(1280, 800);
                 }
             }
             ImGui.EndMenu();
@@ -606,7 +606,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     SetWorkspace(workspace.Game, workspace.CurrentBundle?.Name, true);
                 }
             }
-            if (ImGui.BeginMenu("Data Deneration")) {
+            if (ImGui.BeginMenu("Data Generation")) {
                 if (ImGui.MenuItem("Rebuild RSZ patch data")) {
                     if (workspace != null && !runningRszInference) {
                         runningRszInference = true;

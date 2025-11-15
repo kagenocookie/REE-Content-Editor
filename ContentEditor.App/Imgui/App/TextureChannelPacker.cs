@@ -232,6 +232,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
 
             ImGui.SeparatorText("Saving");
 
+            var leftEdge = ImGui.GetCursorPosX();
             var save1 = ImGui.Button("Save As ...");
             ImguiHelpers.Tooltip("Save the current texture to a standard file format");
             if (save1) {
@@ -269,6 +270,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
                 }, GetOperations()));
             }
             ImGui.SameLine();
+            ImGui.SetNextItemWidth(ImGui.CalcItemWidth() - (ImGui.GetCursorPosX() - leftEdge));
             ImguiHelpers.ValueCombo("Tex Version", TexFile.AllVersionConfigsWithExtension, TexFile.AllVersionConfigs, ref convertTemplateConfig);
             if (ImguiHelpers.ValueCombo("DXGI Format", TextureViewer.DxgiFormatStrings, TextureViewer.DxgiFormats, ref exportFormat)) {
                 isDirty = true;
@@ -377,7 +379,6 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
 
     public void OnWindow()
     {
-        ImGui.SetNextWindowSize(new Vector2(800, 500), ImGuiCond.FirstUseEver);
         if (!ImguiHelpers.BeginWindow(data, null, ImGuiWindowFlags.MenuBar)) {
             WindowManager.Instance.CloseWindow(data);
             return;
