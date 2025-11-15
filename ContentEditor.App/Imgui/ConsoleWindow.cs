@@ -11,7 +11,7 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
 
     public string HandlerName => "Log";
 
-    private static string[] tabs = ["All", "Debug", "Info", "Warning", "Error"];
+    private static string[] tabs = ["All", "Debug", $"{AppIcons.SI_GenericInfo} Info", $"{AppIcons.SI_GenericWarning} Warning", $"{AppIcons.SI_GenericError} Error"];
     private int currentTab;
     private bool compactMultiline;
 

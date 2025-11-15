@@ -18,25 +18,39 @@ namespace ContentEditor.App
         }
         private readonly string _jsonFilePath;
         private Dictionary<string, List<BookmarkEntry>> _bookmarks = new();
-        public bool IsHideDefaults { get; set; } = false;
-        // SILVER: These colors should stay hardcoded
-        public static readonly Dictionary<string, Vector4[]> TagColors = new()
-        {
-            { "Character", new[] { new Vector4(0.2f, 0.6f, 1f, 0.5f),   new Vector4(0.3f, 0.7f, 1f, 0.8f),      new Vector4(0.1f, 0.5f, 0.9f, 1f)}},
-            { "Weapon",    new[] { new Vector4(0.9f, 0.3f, 0.3f, 0.5f), new Vector4(1f, 0.4f, 0.4f, 0.8f),      new Vector4(0.8f, 0.2f, 0.2f, 1f)}},
-            { "Item",      new[] { new Vector4(0.3f, 0.8f, 0.3f, 0.5f), new Vector4(0.4f, 0.9f, 0.4f, 0.8f),    new Vector4(0.2f, 0.7f, 0.2f, 1f)}},
-            { "Stage",     new[] { new Vector4(0.6f, 0.3f, 0.9f, 0.5f), new Vector4(0.6f, 0.3f, 0.9f, 0.8f),    new Vector4(0.6f, 0.3f, 0.9f, 1f)}},
-            { "Misc",      new[] { new Vector4(0.9f, 0.8f, 0.2f, 0.5f), new Vector4(1f, 0.9f, 0.3f, 0.8f),      new Vector4(0.8f, 0.7f, 0.1f, 1f)}},
+        public bool IsHideBookmarks { get; set; } = false;
+        public readonly struct TagInfo {
+            public readonly string Icon;
+            public readonly Vector4[] Colors;
+
+            public TagInfo(string icon, Vector4[] colors) {
+                Icon = icon;
+                Colors = colors;
+            }
+        }
+
+        // SILVER: These colors should stay hardcoded (for now) also maybe 'Stage' should be renamed to 'Scene'
+        // should key/unique items have their own tag? 
+        public static readonly Dictionary<string, TagInfo> TagInfoMap = new() {
+            ["Character"] = new TagInfo($"{AppIcons.SI_TagCharacter}",  new[] { new Vector4(0.2f, 0.6f, 1f, 0.5f), new Vector4(0.3f, 0.7f, 1f, 0.8f), new Vector4(0.1f, 0.5f, 0.9f, 1f) }),
+            ["DLC"] = new TagInfo($"{AppIcons.SI_TagDLC}",              new[] { new Vector4(1f, 0f, 1f, 0.5f), new Vector4(1f, 0f, 1f, 0.8f), new Vector4(1f, 0f, 1f, 1f) }),
+            ["Enemy"] = new TagInfo($"{AppIcons.SI_TagCharacter}",      new[] { new Vector4(0.9f, 0.3f, 0.3f, 0.5f), new Vector4(1f, 0.4f, 0.4f, 0.8f), new Vector4(0.8f, 0.2f, 0.2f, 1f) }),
+            ["Item"] = new TagInfo($"{AppIcons.SI_TagItem}",            new[] { new Vector4(0.3f, 0.8f, 0.3f, 0.5f), new Vector4(0.4f, 0.9f, 0.4f, 0.8f), new Vector4(0.2f, 0.7f, 0.2f, 1f) }),
+            ["Misc"] = new TagInfo("Misc",                              new[] { new Vector4(0.9f, 0.8f, 0.2f, 0.5f), new Vector4(1f, 0.9f, 0.3f, 0.8f), new Vector4(0.8f, 0.7f, 0.1f, 1f) }),// TODO SILVER: Make Misc icon
+            ["Stage"] = new TagInfo($"{AppIcons.SI_FileType_SCN}",      new[] { new Vector4(0.6f, 0.3f, 0.9f, 0.5f), new Vector4(0.6f, 0.3f, 0.9f, 0.8f), new Vector4(0.6f, 0.3f, 0.9f, 1f) }),
+            ["UI"] = new TagInfo($"{AppIcons.SI_FileType_GUI}",         new[] { new Vector4(1f, 0.4f, 0.1f, 0.5f), new Vector4(1f, 0.4f, 0.1f, 0.8f), new Vector4(1f, 0.4f, 0.1f, 1f) }),
+            ["Weapon"] = new TagInfo($"{AppIcons.SI_TagWeapon}",        new[] { new Vector4(0.9f, 0.3f, 0.3f, 0.5f), new Vector4(1f, 0.4f, 0.4f, 0.8f), new Vector4(0.8f, 0.2f, 0.2f, 1f) }),
         };
+
         public BookmarkManager(string jsonFilePath)
         {
             _jsonFilePath = jsonFilePath;
             LoadBookmarks();
         }
-        public IReadOnlyList<BookmarkEntry> GetBookmarks(string game)
+        public IList<BookmarkEntry> GetBookmarks(string game)
         {
             if (_bookmarks.TryGetValue(game, out var list)) {
-                return list.AsReadOnly();
+                return list;
             }
             return Array.Empty<BookmarkEntry>();
         }
@@ -82,14 +96,12 @@ namespace ContentEditor.App
 
             var json = File.ReadAllText(_jsonFilePath);
             _bookmarks = JsonSerializer.Deserialize<Dictionary<string, List<BookmarkEntry>>>(json) ?? new Dictionary<string, List<BookmarkEntry>>();
-            Logger.Debug($"Bookmarks loaded from {_jsonFilePath}");
         }
         public void SaveBookmarks()
         {
             Directory.CreateDirectory(Path.GetDirectoryName(_jsonFilePath)!);
             var json = JsonSerializer.Serialize(_bookmarks, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_jsonFilePath, json);
-            Logger.Debug($"Bookmarks saved to {_jsonFilePath}");
         }
     }
 }
