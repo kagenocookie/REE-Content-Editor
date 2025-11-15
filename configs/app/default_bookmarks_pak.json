@@ -184,11 +184,143 @@
   ],
   "re7rt": [
     {
+      "Path": "natives/stm/character/player/pl0000",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Ethan Winters"
+    },
+    {
+      "Path": "natives/stm/character/player/pl2000",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Mia Winters (Flashback)"
+    },
+    {
+      "Path": "natives/stm/character/player/pl2100",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Mia Winters"
+    },
+    {
+      "Path": "natives/stm/character/player/pl3000",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Clancy Jarvis"
+    },
+    {
+      "Path": "natives/stm/character/player/pl3100",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Clancy Jarvis (21)"
+    },
+    {
+      "Path": "natives/stm/character/player/pl3400",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Zoe Baker (Daughters)"
+    },
+    {
+      "Path": "natives/stm/ch8/character/player/pl1000",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Chris Redfield (Not a Hero)"
+    },
+    {
+      "Path": "natives/stm/ch9/character/player/pl9000",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Joe Baker (End of Zoe)"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1001_gascan",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Burner Fuel"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1011_handgunbullet",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Handgun Ammo"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1013_handgunbulletstrong",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Enhanced Handgun Ammo"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1031_shotgunbullet",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Shotgun Shells"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1111_flamebullet",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Flame Rounds"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1112_acidbullet",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Neuro Rounds"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1141_magnumbullet",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "44 Mag Ammo"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1161_machinegunbullet",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Machine Gun Ammo"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1019_brokenhandgun",
+      "Tags": [
+        "Item",
+        "Weapon"
+      ],
+      "Comment": "Broken Handgun"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1039_brokenshotgun",
+      "Tags": [
+        "Item",
+        "Weapon"
+      ],
+      "Comment": "Broken Shotgun"
+    },
+    {
       "Path": "natives/stm/weapon/wp0040_axe",
       "Tags": [
         "Weapon"
       ],
-      "Comment": "Axe (Ethan)"
+      "Comment": "Axe"
     },
     {
       "Path": "natives/stm/weapon/wp0060_chainsaw",
@@ -231,6 +363,13 @@
         "Weapon"
       ],
       "Comment": "44 MAG"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1160_machinegun",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "P19 Machine Gun"
     },
     {
       "Path": "natives/stm/weapon/wp1190_knife",
