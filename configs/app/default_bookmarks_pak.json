@@ -279,7 +279,21 @@
       "Comment": "Stabilizer"
     },
     {
-      "Path": "natives\\stm\\props\\sm2036_chemicals01a",
+      "Path": "natives/stm/props/sm2025_flower01a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Supplements"
+    },
+    {
+      "Path": "natives/stm/props/sm2026_alcohol01a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Solid Fuel"
+    },
+    {
+      "Path": "natives/stm/props/sm2036_chemicals01a",
       "Tags": [
         "Item"
       ],
