@@ -312,7 +312,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                 ImGui.EndMenu();
             }
 
-            if (ImGui.BeginMenu($"{AppIcons.SI_GenericIO} Convert")) {
+            if (ImGui.BeginMenu($"{AppIcons.SI_GenericConvert} Convert")) {
                 ShowExportMenu();
                 ImGui.EndMenu();
             }
@@ -415,7 +415,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         var conv1 = ImGui.Button($"{AppIcons.SI_GenericConvert} Convert");
         if (fileHandle.Loader is TexFileLoader) {
             ImGui.SameLine();
-            if (ImGui.Button($"{AppIcons.SI_GenericImport} Update Current")) {
+            if (ImGui.Button($"{AppIcons.SI_UpdateTexture} Update Current")) {
                 var defaultFilename = GetTexFilenameSuggestion();
                 var tex = fileHandle.GetFile<TexFile>();
                 ProcessTexture(defaultFilename, (dds) => {
