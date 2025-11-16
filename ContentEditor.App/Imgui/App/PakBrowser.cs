@@ -287,7 +287,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             var bookmarkSearchQuery = isBookmarkSearchMatchCase ? bookmarkSearch.Trim() : bookmarkSearch.Trim().ToLowerInvariant();
             if (!string.IsNullOrEmpty(bookmarkSearch)) {
                 ImGui.SameLine();
-                ImGui.SetCursorPosX(ImGui.GetCursorPosX() - (40f));
+                ImGui.SetCursorPosX(ImGui.GetCursorPosX() - (ImGui.CalcTextSize($"{AppIcons.SI_GenericError}").X * 2));
                 ImGui.SetNextItemAllowOverlap();
                 if (ImGui.Button($"{AppIcons.SI_GenericError}")) { // SILVER: temp icon
                     bookmarkSearch = string.Empty;
@@ -401,7 +401,6 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
     {
         if (reader == null) return;
         ImGui.BeginChild("Content");
-
         ShowFiles(out var sortedEntries);
 
         using (var _ = ImguiHelpers.Disabled(pagination.page <= 0)) {
@@ -644,6 +643,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         if (!baseList.FileExists(file)) {
             // if it's not a full list file match then it's a folder, navigate to it
             CurrentDir = file;
+            pagination.page = 0;
             return false;
         }
 
