@@ -525,7 +525,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
     };
     private static bool ShowTextureTypeUI(string path, bool previewOnly = false)
     {
-        var mapping = path switch {
+        var mapping = path.ToLowerInvariant() switch {
             "albd" => (TextureTypeNames["ALBD"], new[] { "Albedo R", "Albedo G", "Albedo B", "Dielectric" }),
             "albm" => (TextureTypeNames["ALBM"], new[] { "Albedo R", "Albedo G", "Albedo B", "Metallic" }),
             "atoc" => (TextureTypeNames["ATOC"], new[] { "Alpha", "Translucency", "Ambient Occlusion", "Cavity" }),
