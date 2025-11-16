@@ -121,6 +121,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
     ];
 
     private static readonly string[] PresetNames = Presets.Select(p => p.name).ToArray();
+    private static readonly string[] PresetFullNames = Presets.Select(p => TextureViewer.TextureTypeNames.GetValueOrDefault(p.name, p.name)).ToArray();
 
     private class TextureSlot
     {
@@ -177,7 +178,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
     public void OnIMGUI()
     {
         var selectedName = selectedPreset?.name;
-        if (ImguiHelpers.ValueCombo("Preset", PresetNames, PresetNames, ref selectedName, 800)) {
+        if (ImguiHelpers.ValueCombo("Preset", PresetFullNames, PresetNames, ref selectedName, 800)) {
             if (selectedPreset != null) {
                 foreach (var s in slots) {
                     s.texture?.Dispose();
@@ -379,7 +380,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
 
     public void OnWindow()
     {
-        if (!ImguiHelpers.BeginWindow(data, null, ImGuiWindowFlags.MenuBar)) {
+        if (!ImguiHelpers.BeginWindow(data)) {
             WindowManager.Instance.CloseWindow(data);
             return;
         }

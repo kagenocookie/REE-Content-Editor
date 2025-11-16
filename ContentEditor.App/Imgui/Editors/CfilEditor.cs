@@ -41,7 +41,6 @@ public class CfilEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     protected override void DrawFileContents()
     {
         if (context.children.Count == 0) {
-            // TODO re7 case - ints instead of guids
             context.AddChild<CfilFile, Guid>("Layer Guid", File, new GuidFieldHandler(), (f) => f!.LayerGuid, (f, v) => f.LayerGuid = v);
             context.AddChild<CfilFile, Guid[]>("Masks", File, new ResizableArrayHandler(typeof(Guid)), (f) => f!.MaskGuids, (f, v) => f.MaskGuids = v);
         }

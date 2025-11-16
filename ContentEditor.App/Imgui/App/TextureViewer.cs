@@ -509,21 +509,35 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         path = path.Substring(lastUnderscoreIDX + 1, firstDotIDX - lastUnderscoreIDX - 1);
         return path;
     }
+    public static Dictionary<string, string> TextureTypeNames = new Dictionary<string, string>() {
+        { "ALBD", "ALBD - AlbedoDielectric" },
+        { "ALBM", "ALBM - AlbedoMetallic" },
+        { "ATOC", "ATOC - AlphaTranslucentOcclusionCavity" },
+        { "ATOD", "ATOD - AlphaTranslucentOcclusionDirtmask" },
+        { "ATOS", "ATOS - AlphaTranslucentOcclusionSubsurfaceScattering" },
+        { "NRMR", "NRMR - NormalRoughness" },
+        { "NRRA", "NRRA - NormalRoughnessAlpha" },
+        { "NRRC", "NRRC - NormalRoughnessCavity" },
+        { "NRRO", "NRRO - NormalRoughnessOcclusion" },
+        { "NRRT", "NRRT - NormalRoughnessTranslucent" },
+        { "OCSD", "OCSD - OcclusionCavitySubsurfaceScatteringDetail" },
+        { "OCTD", "OCTD - OcclusionCavityTranslucentDetail" },
+    };
     private static bool ShowTextureTypeUI(string path, bool previewOnly = false)
     {
         var mapping = path switch {
-            "albd" => ("ALBD - AlbedoDielectric", new[] { "Albedo R", "Albedo G", "Albedo B", "Dielectric" }),
-            "albm" => ("ALBM - AlbedoMetallic", new[] { "Albedo R", "Albedo G", "Albedo B", "Metallic" }),
-            "atoc" => ("ATOC - AlphaTranslucentOcclusionCavity", new[] { "Alpha", "Translucency", "Ambient Occlusion", "Cavity" }),
-            "atod" => ("ATOD - AlphaTranslucentOcclusionDirtmask", new[] { "Alpha", "Translucency", "Ambient Occlusion", "Dirt Mask" }),
-            "atos" => ("ATOS - AlphaTranslucentOcclusionSubsurfaceScattering", new[] { "Alpha", "Translucency", "Ambient Occlusion", "Subsurface Scattering" }),
-            "nrmr" => ("NRMR - NormalRoughness", new[] { "Normal X", "Normal Y", "N/A", "Roughness" }),
-            "nrra" => ("NRRA - NormalRoughnessAlpha", new[] { "Roughness", "Normal Y", "Alpha", "Normal X" }),
-            "nrrc" => ("NRRC - NormalRoughnessCavity", new[] { "Roughness", "Normal Y", "Cavity", "Normal X" }),
-            "nrro" => ("NRRO - NormalRoughnessOcclusion", new[] { "Roughness", "Normal Y", "Ambient Occlusion", "Normal X" }),
-            "nrrt" => ("NRRT - NormalRoughnessTranslucent", new[] { "Roughness", "Normal Y", "Translucency", "Normal X" }),
-            "ocsd" => ("OCSD - OcclusionCavitySubsurfaceScatteringDetail", new[] { "Ambient Occlusion", "Cavity", "Subsurface Scattering", "Detail Mask" }),
-            "octd" => ("OCTD - OcclusionCavityTranslucentDetail", new[] { "Ambient Occlusion", "Cavity", "Translucency", "Detail Mask" }),
+            "albd" => (TextureTypeNames["ALBD"], new[] { "Albedo R", "Albedo G", "Albedo B", "Dielectric" }),
+            "albm" => (TextureTypeNames["ALBM"], new[] { "Albedo R", "Albedo G", "Albedo B", "Metallic" }),
+            "atoc" => (TextureTypeNames["ATOC"], new[] { "Alpha", "Translucency", "Ambient Occlusion", "Cavity" }),
+            "atod" => (TextureTypeNames["ATOD"], new[] { "Alpha", "Translucency", "Ambient Occlusion", "Dirt Mask" }),
+            "atos" => (TextureTypeNames["ATOS"], new[] { "Alpha", "Translucency", "Ambient Occlusion", "Subsurface Scattering" }),
+            "nrmr" => (TextureTypeNames["NRMR"], new[] { "Normal X", "Normal Y", "N/A", "Roughness" }),
+            "nrra" => (TextureTypeNames["NRRA"], new[] { "Roughness", "Normal Y", "Alpha", "Normal X" }),
+            "nrrc" => (TextureTypeNames["NRRC"], new[] { "Roughness", "Normal Y", "Cavity", "Normal X" }),
+            "nrro" => (TextureTypeNames["NRRO"], new[] { "Roughness", "Normal Y", "Ambient Occlusion", "Normal X" }),
+            "nrrt" => (TextureTypeNames["NRRT"], new[] { "Roughness", "Normal Y", "Translucency", "Normal X" }),
+            "ocsd" => (TextureTypeNames["OCSD"], new[] { "Ambient Occlusion", "Cavity", "Subsurface Scattering", "Detail Mask" }),
+            "octd" => (TextureTypeNames["OCTD"], new[] { "Ambient Occlusion", "Cavity", "Translucency", "Detail Mask" }),
             _ => (null, null)
         };
 
