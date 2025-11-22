@@ -8,6 +8,7 @@ using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
+using ReeLib.Bhvt;
 using ReeLib.Clip;
 using ReeLib.Common;
 using ReeLib.Mesh;
