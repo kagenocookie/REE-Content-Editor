@@ -266,6 +266,11 @@ public static partial class WindowHandlerFactory
                 return new GuiEditor(env, file);
             case KnownFileFormats.AIMap:
                 return new AimapEditor(env, file);
+            case KnownFileFormats.Fsm2:
+            case KnownFileFormats.BehaviorTree:
+                return new BhvtEditor(env, file);
+            case KnownFileFormats.MotionFsm2:
+                return new MotFsm2FileEditor(env, file);
         }
 
         if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {

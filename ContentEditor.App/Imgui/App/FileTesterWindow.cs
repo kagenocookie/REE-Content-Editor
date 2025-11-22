@@ -424,6 +424,9 @@ public class FileTesterWindow : IWindowHandler
             case KnownFileFormats.CompositeCollision: return VerifyRewriteEquality<CocoFile>(source.GetFile<CocoFile>(), env);
             case KnownFileFormats.AIMap: return VerifyRewriteEquality<AimpFile>(source.GetFile<AimpFile>(), env);
             case KnownFileFormats.CollisionFilter: return VerifyRewriteEquality<CfilFile>(source.GetFile<CfilFile>(), env);
+            case KnownFileFormats.BehaviorTree: return VerifyRewriteEquality<BhvtFile>(source.GetFile<BhvtFile>(), env);
+            case KnownFileFormats.Fsm2: return VerifyRewriteEquality<BhvtFile>(source.GetFile<BhvtFile>(), env);
+            case KnownFileFormats.MotionFsm2: return VerifyRewriteEquality<Motfsm2File>(source.GetFile<Motfsm2File>(), env);
             default: return null;
         }
     }
@@ -525,6 +528,9 @@ public class FileTesterWindow : IWindowHandler
         AddCompareMapper<RcolFile>((m) => [m.Header, m.Groups, m.RequestSets, m.IgnoreTags, m.AutoGenerateJointDescs]);
         AddCompareMapper<GroupInfo>((m) => [m.guid, m.LayerGuid, m.LayerIndex, m.MaskBits, m.NameHash, m.NumShapes, m.NumMaskGuids, m.NumExtraShapes]);
 
+        AddCompareMapper<UVarFile>((m) => [m.Header.embedCount, m.Header.magic, m.Header.name, m.Header.ukn, m.Header.UVARhash, m.Header.variableCount, m.EmbeddedUVARs, m.Variables]);
+        AddCompareMapper<ReeLib.UVar.Variable>((m) => [m.guid, m.Value, m.Expression, m.flags, m.Name, m.nameHash]);
+
         AddCompareMapper<ReeLib.Rcol.Header>((m) => [m.numGroups, m.numIgnoreTags, m.numRequestSets, m.numShapes, m.numUserData, m.maxRequestSetId, m.userDataSize, m.status, m.uknRe3_A, m.uknRe3_B, m.ukn1, m.ukn2, m.uknRe3]);
         AddCompareMapper<TmlFile>((m) => [m.Tracks, m.Header, m.HermiteData, m.SpeedPointData, m.Bezier3DData, m.ClipInfo]);
         AddCompareMapper<ReeLib.Tml.Header>((m) => [
@@ -543,6 +549,18 @@ public class FileTesterWindow : IWindowHandler
         AddCompareMapper<McolFile>((m) => [m.bvh]);
         AddCompareMapper<CocoFile>((m) => [m.CollisionMeshPaths, m.Trees]);
         AddCompareMapper<ReeLib.Aimp.AimpHeader>((m) => [m.agentRadWhenBuild, m.guid, m.hash, m.uriHash, m.mapType, m.name, m.uknId, m.sectionType]);
+
+        AddCompareMapper<Motfsm2File>((m) => [m.BhvtFile, m.TransitionDatas, m.TransitionMaps]);
+        AddCompareMapper<BhvtFile>((m) => [m.Header.hash, m.Nodes, m.Variable, m.ReferenceTrees, m.GameObjectReferences]);
+        AddCompareMapper<BHVTNode>((m) => [
+            // 0+
+            m.ID, m.isEnd, m.isBranch, m.mNameHash, m.mFullnameHash, m.ParentID, m.Priority, m.SelectorCallerConditionID, m.unknownAI, m.WorkFlags, m.AI_Path, m.Attributes,
+            // 12+
+            m.Name, m.Children, m.ReferenceTree, m.Selector, m.SelectorCallerCondition, m.SelectorCallers, m.Tags, m.States.States, m.AllStates.AllStates, m.Actions.Actions]);
+        AddCompareMapper<NState>((m) => [m.TargetNode?.ID, m.mStates, m.mStatesEx, m.TransitionData, m.Condition]);
+        AddCompareMapper<NAllState>((m) => [m.TargetState?.ID, m.TransitionData, m.Condition, m.mAllTransitionAttributes]);
+        AddCompareMapper<NTransition>((m) => [m.StartNode?.ID, m.Condition, m.transitionEvents]);
+        AddCompareMapper<NChild>((m) => [m.ChildNode?.ID, m.Condition]);
     }
 
     private static Dictionary<Type, Func<object, IEnumerable<object?>>> comparedValueMappers = new();
