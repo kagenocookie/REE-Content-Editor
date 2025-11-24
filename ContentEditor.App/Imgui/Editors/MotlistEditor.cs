@@ -373,7 +373,7 @@ public class BoneMotionClipListHandler : ListHandler
 {
     public BoneMotionClipListHandler() : base(typeof(BoneMotionClip), typeof(List<BoneMotionClip>))
     {
-        CanCreateNewElements = true;
+        CanCreateRemoveElements = true;
     }
 
     protected override object? CreateNewElement(UIContext context)
@@ -493,7 +493,7 @@ public class MotFileListHandler : ListHandler
 {
     public MotFileListHandler() : base(typeof(MotFileBase), typeof(List<MotFileBase>))
     {
-        CanCreateNewElements = true;
+        CanCreateRemoveElements = true;
         Filterable = true;
     }
 
@@ -522,7 +522,7 @@ public class MotBoneListHandler : ListHandler
 {
     public MotBoneListHandler() : base(typeof(MotBone), typeof(List<MotBone>))
     {
-        CanCreateNewElements = true;
+        CanCreateRemoveElements = true;
     }
 
     protected override object? CreateNewElement(UIContext context)

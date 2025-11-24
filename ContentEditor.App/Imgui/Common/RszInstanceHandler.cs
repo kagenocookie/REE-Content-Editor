@@ -369,7 +369,7 @@ public class ArrayRSZHandler : BaseListHandler, ITooltipHandler
     public ArrayRSZHandler(RszField field)
     {
         this.field = field;
-        CanCreateNewElements = true;
+        CanCreateRemoveElements = true;
     }
 
     public bool HandleTooltip(UIContext context)
@@ -779,7 +779,7 @@ public class GuidFieldHandler : Singleton<GuidFieldHandler>, IObjectUIHandler
     {
         var val = context.Get<Guid>();
         var str = val.ToString();
-        if (ImGui.InputText(context.label, ref str, GuidLength, ImGuiInputTextFlags.CharsHexadecimal | ImGuiInputTextFlags.CharsNoBlank)) {
+        if (ImGui.InputText(context.label, ref str, GuidLength, ImGuiInputTextFlags.CharsNoBlank)) {
             if (Guid.TryParse(str, out var newguid)) {
                 UndoRedo.RecordSet(context, newguid);
             } else {

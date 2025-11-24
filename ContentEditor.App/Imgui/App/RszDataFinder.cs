@@ -786,6 +786,7 @@ public class RszDataFinder : IWindowHandler
 
     private void InvokeSearchUvar(SearchContext context, Variable.TypeKind type, string query)
     {
+        _ = Guid.TryParse(query, out var guid);
         foreach (var (path, stream) in context.Env.GetFilesWithExtension("uvar", context.Token)) {
             try {
                 if (context.Token.IsCancellationRequested) return;
@@ -796,19 +797,29 @@ public class RszDataFinder : IWindowHandler
 
                 foreach (var uv in file.Variables) {
                     if (type != Variable.TypeKind.Unknown && type != uv.type) continue;
-                    if (!string.IsNullOrEmpty(query) && !uv.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) continue;
-
-                    var desc = $"{uv.Name} = {uv.Value}";
-                    AddMatch(context, desc, path);
+                    if (guid != Guid.Empty && guid == uv.guid) {
+                        var desc = $"{uv.Name} = {uv.Value}";
+                        AddMatch(context, desc, path);
+                        continue;
+                    }
+                    if (string.IsNullOrEmpty(query) || uv.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
+                        var desc = $"{uv.Name} = {uv.Value}";
+                        AddMatch(context, desc, path);
+                    }
                 }
 
                 foreach (var embed in file.EmbeddedUVARs) {
                     foreach (var uv in embed.Variables) {
                         if (type != Variable.TypeKind.Unknown && type != uv.type) continue;
-                        if (!string.IsNullOrEmpty(query) && !uv.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) continue;
-
-                        var desc = $"[{embed.Header.name}] {uv.Name} = {uv.Value}";
-                        AddMatch(context, desc, path);
+                        if (guid != Guid.Empty && guid == uv.guid) {
+                            var desc = $"[{embed.Header.name}] {uv.Name} = {uv.Value}";
+                            AddMatch(context, desc, path);
+                            continue;
+                        }
+                        if (string.IsNullOrEmpty(query) || uv.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
+                            var desc = $"[{embed.Header.name}] {uv.Name} = {uv.Value}";
+                            AddMatch(context, desc, path);
+                        }
                     }
                 }
             } catch (Exception e) {

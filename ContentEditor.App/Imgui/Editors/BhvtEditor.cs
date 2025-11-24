@@ -1,4 +1,6 @@
+using ContentEditor.App.Windowing;
 using ContentPatcher;
+using ImGuiNET;
 using ReeLib;
 using ReeLib.Bhvt;
 using ReeLib.Motfsm2;
@@ -124,10 +126,12 @@ public class BhvtFileEditor : IObjectUIHandler
         if (context.children.Count == 0) {
             var file = context.Get<BhvtFile>();
             context.AddChild<BhvtFile, UVarFile?>("Variables", file, new NestedUIHandlerStringSuffixed(new UvarFileImguiHandler()), getter: (f) => f!.Variable);
-            context.AddChild<BhvtFile, uint>("Behavior Tree Hash", file, getter: (f) => f!.Header.hash).AddDefaultHandler();
+            context.AddChild<BhvtFile, uint>("Behavior Tree Hash", file, getter: (f) => f!.Header.hash, setter: (f, v) => f.Header.hash = v).AddDefaultHandler();
             context.AddChild<BhvtFile, List<UVarFile>>("ReferenceTrees", file, new ListHandlerTyped<UVarFile>(), (f) => f!.ReferenceTrees);
             context.AddChild<BhvtFile, BHVTNode>("Root Node", file, getter: (f) => f!.RootNode).AddDefaultHandler<BHVTNode>();
             context.AddChild<BhvtFile, List<BhvtGameObjectReference>>("GameObject References", file, new ListHandlerTyped<BhvtGameObjectReference>(), (f) => f!.GameObjectReferences);
+            context.AddChild<BhvtFile, BhvtObjectIndexTable>("Action Object Table", file, getter: (f) => f!.ActionObjectTable).AddDefaultHandler();
+            context.AddChild<BhvtFile, List<BHVTNode>>("All Nodes", file, new ListHandlerTyped<BHVTNode>() { Filterable = true, CanCreateRemoveElements = false }, getter: (f) => f!.Nodes);
         }
         context.ShowChildrenUI();
     }
@@ -143,6 +147,7 @@ public class BHVTNodeEditor : IObjectUIHandler
             context.AddChild<BHVTNode, NodeID>("ID", file, getter: (f) => f!.ID, setter: (f, v) => f.ID = v).AddDefaultHandler();
             context.AddChild<BHVTNode, string>("Name", file, getter: (f) => f!.Name, setter: (f, v) => f.Name = v ?? "").AddDefaultHandler();
             context.AddChild<BHVTNode, int>("Priority", file, getter: (f) => f!.Priority, setter: (f, v) => f.Priority = v).AddDefaultHandler();
+            context.AddChild<BHVTNode, NodeID>("Parent Node ID", file, NodeIDEditor.InstanceDisabled, (f) => f!.ParentID);
             // TODO: selector must be nullable
             context.AddChild<BHVTNode, RszInstance>("Selector", file, getter: (f) => f!.Selector, setter: (f, v) => f.Selector = v).AddDefaultHandler<RszInstance>();
             context.AddChild<BHVTNode, List<RszInstance>>("SelectorCallers", file, new ListHandlerTyped<RszInstance>(), getter: (f) => f!.SelectorCallers).AddDefaultHandler();
@@ -154,9 +159,9 @@ public class BHVTNodeEditor : IObjectUIHandler
             context.AddChild<BHVTNode, List<NAction>>("Actions", file, new ListHandlerTyped<NAction>(), getter: (f) => f!.Actions.Actions);
             context.AddChild<BHVTNode, List<uint>>("Tags", file, getter: (f) => f!.Tags).AddDefaultHandler();
             context.AddChild<BHVTNode, List<NState>>("States", file, new ListHandlerTyped<NState>(), (f) => f!.States.States);
-            context.AddChild<BHVTNode, List<NAllState>>("AllStates (?)", file, new ListHandlerTyped<NAllState>(), (f) => f!.AllStates.AllStates);
+            context.AddChild<BHVTNode, List<NAllState>>("AllStates (?)", file, new ListHandlerTyped<NAllState>() { Filterable = true }, (f) => f!.AllStates.AllStates);
             context.AddChild<BHVTNode, List<NTransition>>("Transitions", file, new ListHandlerTyped<NTransition>(), (f) => f!.Transitions.Transitions);
-            context.AddChild<BHVTNode, List<NChild>>("Children", file, new ListHandlerTyped<NChild>(), (f) => f!.Children.Children);
+            context.AddChild<BHVTNode, List<NChild>>("Children", file, new ListHandlerTyped<NChild>() { Filterable = true }, (f) => f!.Children.Children);
             context.AddChild<BHVTNode, UVarFile?>("Reference Tree", file, new InstancePickerHandler<UVarFile>(true, (ctx, force) => {
                 return ctx.FindValueInParentValues<BhvtFile>()?.ReferenceTrees ?? [];
             }), (f) => f!.ReferenceTree);
@@ -191,5 +196,43 @@ public class NChildEditor : IObjectUIHandler
             context.AddChild<NChild, BHVTNode>("Node", file, getter: (f) => f!.ChildNode, setter: (f, v) => f.ChildNode = v).AddDefaultHandler<BHVTNode>();
         }
         context.ShowChildrenNestedUI();
+    }
+}
+
+[ObjectImguiHandler(typeof(NodeID), Stateless = true)]
+public class NodeIDEditor : IObjectUIHandler
+{
+    public static readonly NodeIDEditor Instance = new();
+    public static readonly NodeIDEditor InstanceDisabled = new(true);
+
+    private readonly bool disabled;
+
+    public NodeIDEditor() { }
+
+    private NodeIDEditor(bool disabled)
+    {
+        this.disabled = disabled;
+    }
+
+    public unsafe void OnIMGUI(UIContext context)
+    {
+        var nodeId = context.Get<NodeID>();
+        if (disabled) ImGui.BeginDisabled();
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, (IntPtr)(&nodeId), 2, 0.01f)) {
+            UndoRedo.RecordSet(context, nodeId);
+        }
+        if (disabled) ImGui.EndDisabled();
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled) && ImGui.IsKeyPressed(ImGuiKey.MouseRight)) {
+            ImGui.OpenPopup(context.label);
+        }
+        ImGui.BeginDisabled(false);
+        if (ImGui.BeginPopup(context.label)) {
+            if (ImGui.Selectable("Copy ID")) {
+                EditorWindow.CurrentWindow?.CopyToClipboard(nodeId.ID.ToString(), $"Copied {nodeId.ID.ToString()}!");
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
+        ImGui.EndDisabled();
     }
 }

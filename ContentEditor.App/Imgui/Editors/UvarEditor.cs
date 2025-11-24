@@ -60,10 +60,22 @@ public class UvarFileImguiHandler : IObjectUIHandler
         if (context.children.Count == 0) {
             var file = context.Get<UVarFile>();
             context.AddChild("Name", file.Header, new StringFieldHandler(), (c) => ((HeaderStruct)c.target!).name, (c, v) => ((HeaderStruct)c.target!).name = (string)v!);
-            context.AddChild("Variables", file.Variables).AddDefaultHandler<List<Variable>>();
+            context.AddChild("Variables", file.Variables, new UvarVariableListHandler() { Filterable = true });
             context.AddChild("Embedded files", file.EmbeddedUVARs, new ListHandler<UVarFile>(() => new UVarFile(new FileHandler())));
         }
         context.ShowChildrenUI();
+    }
+}
+
+[ObjectImguiHandler(typeof(List<Variable>), Stateless = true)]
+public class UvarVariableListHandler : ListHandlerTyped<Variable>
+{
+    protected override bool MatchesFilter(object? obj, string filter)
+    {
+        if (obj is Variable vv) {
+            return vv.Name.Contains(filter, StringComparison.InvariantCultureIgnoreCase) || Guid.TryParse(filter, out var guid) && vv.guid == guid;
+        }
+        return false;
     }
 }
 

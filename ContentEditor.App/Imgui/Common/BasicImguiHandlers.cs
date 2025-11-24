@@ -120,9 +120,8 @@ public class StringFieldHandler : Singleton<StringFieldHandler>, IObjectUIHandle
             UndoRedo.RecordSet(context, val);
         }
 
-
         if (ImGui.BeginPopupContextItem(context.label)) {
-            if (ImGui.Button("Copy UTF-16 hash")) {
+            if (ImGui.Selectable("Copy UTF-16 hash")) {
                 var hash = MurMur3HashUtils.GetHash(val);
                 EditorWindow.CurrentWindow?.CopyToClipboard(hash.ToString(), "Copied hash: " + hash);
                 ImGui.CloseCurrentPopup();

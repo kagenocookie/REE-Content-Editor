@@ -432,7 +432,7 @@ public static partial class WindowHandlerFactory
         }
 
         if (valueType.IsGenericType && genericListTypes.Contains(valueType.GetGenericTypeDefinition())) {
-            return new ListHandler(valueType.GetGenericArguments()[0]) { CanCreateNewElements = true };
+            return new ListHandler(valueType.GetGenericArguments()[0]) { CanCreateRemoveElements = true };
         }
 
         if (valueType.IsClass) {

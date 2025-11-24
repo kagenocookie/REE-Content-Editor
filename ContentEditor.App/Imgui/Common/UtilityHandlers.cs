@@ -140,6 +140,22 @@ public abstract class TreeContextUIHandler(IObjectUIHandler nested) : IObjectUIH
     protected abstract void HandleContextMenu(UIContext context);
 }
 
+public class ContextMenuUIHandler(IObjectUIHandler inner, Action<UIContext> contextCallback) : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        inner.OnIMGUI(context);
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled) && ImGui.IsKeyPressed(ImGuiKey.MouseRight)) {
+            // appending extra _ctx to id so we avoid triggering any internal / disabled context menus
+            ImGui.OpenPopup(context.label + "_ctx");
+        }
+        if (ImGui.BeginPopup(context.label + "_ctx")) {
+            contextCallback.Invoke(context);
+            ImGui.EndPopup();
+        }
+    }
+}
+
 public class InstanceTypePickerHandler<T>(Type?[] classOptions, Func<UIContext, Type, T>? factory = null, bool filterable = true) : IObjectUIHandler
 {
     private Type? chosenType;

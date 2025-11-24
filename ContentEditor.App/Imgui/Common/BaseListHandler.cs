@@ -6,7 +6,7 @@ namespace ContentEditor.App.ImguiHandling;
 
 public class BaseListHandler : IObjectUIHandler
 {
-    public bool CanCreateNewElements { get; set; }
+    public bool CanCreateRemoveElements { get; set; }
     public bool Filterable { get; set; }
 
     private readonly Type? containerType;
@@ -18,8 +18,10 @@ public class BaseListHandler : IObjectUIHandler
 
     protected virtual bool MatchesFilter(object? obj, string filter)
     {
-        Logger.Debug("Missing list filter implementation");
-        return true;
+        if (filter[0] == '!') {
+            return obj?.ToString()?.Contains(filter.Substring(1), StringComparison.InvariantCultureIgnoreCase) != true;
+        }
+        return obj?.ToString()?.Contains(filter, StringComparison.InvariantCultureIgnoreCase) == true;
     }
 
     public void OnIMGUI(UIContext context)
@@ -33,7 +35,7 @@ public class BaseListHandler : IObjectUIHandler
             return;
         }
         var count = list.Count;
-        if (count == 0 && !CanCreateNewElements) {
+        if (count == 0 && !CanCreateRemoveElements) {
             ImGui.Text(context.label + ": <empty>");
             return;
         }
@@ -68,7 +70,7 @@ public class BaseListHandler : IObjectUIHandler
                 }
                 var child = context.children[i];
                 var remove = false;
-                if (CanCreateNewElements) {
+                if (CanCreateRemoveElements) {
                     remove = ImGui.Button("X");
                     ImGui.SameLine();
                 }
@@ -82,7 +84,7 @@ public class BaseListHandler : IObjectUIHandler
                 }
                 ImGui.PopID();
             }
-            if (CanCreateNewElements && ImGui.Button("Add")) {
+            if (CanCreateRemoveElements && ImGui.Button("Add")) {
                 try {
                     var newInstance = CreateNewElement(context);
                     if (newInstance != null) {
@@ -137,7 +139,7 @@ public class ListHandler : BaseListHandler
     public ListHandler(Type elementType, Type? containerType = null) : base(containerType)
     {
         this.elementType = elementType;
-        CanCreateNewElements = !elementType.IsAbstract;
+        CanCreateRemoveElements = !elementType.IsAbstract;
     }
 
     protected override UIContext CreateElementContext(UIContext context, IList list, int elementIndex)
@@ -166,7 +168,7 @@ public class ListHandler<T> : ListHandler where T : class
     public ListHandler(Func<T>? instantiator) : base(typeof(T))
     {
         Instantiator = instantiator;
-        base.CanCreateNewElements = instantiator != null;
+        CanCreateRemoveElements = instantiator != null;
     }
 
     protected override object? CreateNewElement(UIContext context) => Instantiator?.Invoke() ?? base.CreateNewElement(context);
@@ -179,7 +181,7 @@ public class ArrayHandler : BaseListHandler
     public ArrayHandler(Type elementType)
     {
         this.elementType = elementType;
-        CanCreateNewElements = false;
+        CanCreateRemoveElements = false;
     }
 
     protected override UIContext CreateElementContext(UIContext context, IList list, int elementIndex)
@@ -197,7 +199,7 @@ public class ResizableArrayHandler : BaseListHandler
     public ResizableArrayHandler(Type elementType, Type? arrayType = null) : base(arrayType ?? elementType.MakeArrayType())
     {
         this.elementType = elementType;
-        CanCreateNewElements = true;
+        CanCreateRemoveElements = true;
     }
 
     protected override object? CreateNewListInstance()
