@@ -116,11 +116,11 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
 
             if (isGroupSelected) {
                 ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered));
+            } else {
+                ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.Text));
             }
             bool openSubGroup = ImGui.TreeNodeEx(group.Name, ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.FramePadding);
-            if (isGroupSelected) {
-                ImGui.PopStyleColor();
-            }
+            ImGui.PopStyleColor();
 
             if (ImGui.IsItemClicked()) {
                 selectedGroup = i;
@@ -134,11 +134,11 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
 
                     if (isSubSelected) {
                         ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered));
+                    } else {
+                        ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.Text));
                     }
                     ImGui.Bullet();
-                    if (isSubSelected) {
-                        ImGui.PopStyleColor();
-                    }
+                    ImGui.PopStyleColor();
                     ImGui.SameLine();
                     if (ImGui.Selectable(sub.Name)) {
                         selectedGroup = i;
