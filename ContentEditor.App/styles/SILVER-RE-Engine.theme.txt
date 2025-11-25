@@ -1,4 +1,4 @@
-color Text = FFFFFCF8
+color Text = FFF5F2EE
 color TextDisabled = FF969696
 color WindowBg = FF1E1E1E
 color ChildBg = FFFFFF

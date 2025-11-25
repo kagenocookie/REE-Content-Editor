@@ -584,14 +584,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
         if (ImGui.BeginMenu("Tools")) {
             if (ImGui.MenuItem("Settings")) {
-                if (HasSubwindow<SettingsWindowHandler>(out var settings)) {
-                    CloseSubwindow(settings);
-                } else {
-                    AddUniqueSubwindow(new SettingsWindowHandler()).Size = new Vector2(800, 500);
-
-                }
+                AddUniqueSubwindow(new SettingsWindowHandler());
             }
-            if (ImGui.MenuItem("Theme editor")) {
+            if (ImGui.MenuItem("Theme Editor")) {
                 AddUniqueSubwindow(new ThemeEditor());
             }
             ImGui.Separator();
