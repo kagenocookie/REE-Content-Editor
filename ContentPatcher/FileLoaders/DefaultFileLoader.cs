@@ -82,3 +82,15 @@ public class DefaultFileLoader<TFileType> : IFileLoader, IFileHandleContentProvi
 
     public IResourceFilePatcher? CreateDiffHandler() => diffHandler?.Invoke();
 }
+
+public class DefaultFileMultiLoader<TFileType> : DefaultFileLoader<TFileType>, IFileLoader where TFileType : BaseFile
+{
+    public KnownFileFormats[] Formats { get; }
+
+    public DefaultFileMultiLoader(params KnownFileFormats[] formats) : base(formats[0])
+    {
+        Formats = formats;
+    }
+
+    bool IFileLoader.CanHandleFile(string filepath, REFileFormat format) => Formats.Contains(format.format);
+}

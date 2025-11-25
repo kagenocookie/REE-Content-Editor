@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
@@ -8,6 +10,7 @@ using ContentEditor.Core;
 using ContentPatcher;
 using ImGuiNET;
 using ReeLib;
+using ReeLib.Bhvt;
 using ReeLib.Clip;
 using ReeLib.Common;
 using ReeLib.Mesh;
@@ -16,7 +19,7 @@ using ReeLib.Rcol;
 
 namespace ContentEditor.App;
 
-public class FileTesterWindow : IWindowHandler
+public partial class FileTesterWindow : IWindowHandler
 {
     public string HandlerName => "File Tester";
     public bool HasUnsavedChanges => false;
@@ -49,6 +52,8 @@ public class FileTesterWindow : IWindowHandler
 
     private readonly HashSet<GameIdentifier> hiddenGames = new();
     private string? wordlistFilepath;
+    private int wordlistHashType;
+    private Dictionary<uint, string>? wordlistCache;
     private ContentWorkspace? Workspace => (data.ParentWindow as IWorkspaceContainer)?.Workspace;
 
     private static readonly KnownFileFormats[] AllFormatValues = Enum.GetValues<KnownFileFormats>();
@@ -77,35 +82,39 @@ public class FileTesterWindow : IWindowHandler
 
             if (ImGui.TreeNode("Hash reversing")) {
                 if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Will attempt to match the given UTF16 hash with a wordlist (lowercase, uppercase, capital case variants are attempted)");
-                AppImguiHelpers.InputFilepath("Wordlist filepath", ref wordlistFilepath);
+                if (AppImguiHelpers.InputFilepath("Wordlist filepath", ref wordlistFilepath)) {
+                    wordlistCache = null;
+                }
+                if (ImguiHelpers.InlineRadioGroup(["UTF-16", "Ascii", "UTF-8"], [0, 1, 2], ref wordlistHashType)) {
+                    wordlistCache = null;
+                }
                 var v = testedHash;
                 if (ImGui.InputScalar("Tested hash", ImGuiDataType.U32, (IntPtr)(&v))) {
                     testedHash = v;
                 }
                 if (!string.IsNullOrEmpty(wordlistFilepath) && ImGui.Button("Find")) {
-                    var words = File.ReadAllLines(wordlistFilepath);
-                    // var testedHash = MurMur3HashUtils.GetHash(hashTest);
                     if (testedHash == 2180083513) {
                         Logger.Info("Requested hash is an empty string's hash!");
+                    } else {
+                        if (wordlistCache == null) {
+                            var words = File.ReadAllLines(wordlistFilepath);
+                            wordlistCache = new(words.Length * 3);
+                            Func<string, uint> hasher = wordlistHashType switch { 1 => MurMur3HashUtils.GetAsciiHash, 2 => MurMur3HashUtils.GetUTF8Hash, _ => MurMur3HashUtils.GetHash };
+                            foreach (var word in words) {
+                                if (word == "") continue;
+                                var upper = word.ToUpperInvariant();
+                                var capital = char.ToUpper(word[0]) + word.Substring(1);
+                                wordlistCache[hasher(word)] = word;
+                                wordlistCache[hasher(upper)] = upper;
+                                wordlistCache[hasher(capital)] = capital;
+                            }
+                        }
+                        if (wordlistCache.TryGetValue(testedHash, out var match)) {
+                            Logger.Info($"Found hash match (UTF-16): {match}");
+                        } else {
+                            Logger.Info("Hash lookup finished, no matches found.");
+                        }
                     }
-                    var found = false;
-                    foreach (var word in words) {
-                        if (word == "") continue;
-
-                        if (MurMur3HashUtils.GetHash(word) == testedHash) {
-                            Logger.Info($"Found hash match: {word} (UTF16 hash {testedHash})");
-                            found = true;
-                        }
-                        if (MurMur3HashUtils.GetHash(word.ToUpperInvariant()) == testedHash) {
-                            Logger.Info($"Found hash match: {word.ToUpperInvariant()} (UTF16 hash {testedHash})");
-                            found = true;
-                        }
-                        if (MurMur3HashUtils.GetHash(char.ToUpper(word[0]) + word.Substring(1)) == testedHash) {
-                            Logger.Info($"Found hash match: {char.ToUpper(word[0]) + word.Substring(1)} (UTF16 hash {testedHash})");
-                            found = true;
-                        }
-                    }
-                    Logger.Info(!found ? $"Hash lookup finished, no matches found." : "Hash lookup finished.");
                 }
                 ImGui.TreePop();
             }
@@ -424,16 +433,36 @@ public class FileTesterWindow : IWindowHandler
             case KnownFileFormats.CompositeCollision: return VerifyRewriteEquality<CocoFile>(source.GetFile<CocoFile>(), env);
             case KnownFileFormats.AIMap: return VerifyRewriteEquality<AimpFile>(source.GetFile<AimpFile>(), env);
             case KnownFileFormats.CollisionFilter: return VerifyRewriteEquality<CfilFile>(source.GetFile<CfilFile>(), env);
+            case KnownFileFormats.BehaviorTree: return VerifyRewriteEquality<BhvtFile>(source.GetFile<BhvtFile>(), env);
+            case KnownFileFormats.Fsm2: return VerifyRewriteEquality<BhvtFile>(source.GetFile<BhvtFile>(), env);
+            case KnownFileFormats.MotionFsm2: return VerifyRewriteEquality<Motfsm2File>(source.GetFile<Motfsm2File>(), env);
             default: return null;
         }
     }
 
     private static string? VerifyRewriteEquality<TFile>(TFile file, ContentWorkspace workspace) where TFile : BaseFile
     {
-        var newfile = file.RewriteClone(workspace);
+        var newfile = RewriteCloneRawStream(file, workspace);
         if (!newfile.Read()) return "read/write error";
 
         return CompareValues(file, newfile);
+    }
+
+    private static TFile RewriteCloneRawStream<TFile>(TFile file, ContentWorkspace workspace) where TFile : BaseFile
+    {
+        // hard clone the file stream to ensure the original file stays intact in case of any destructive modifications in the file writer
+        var stream = new MemoryStream((int)file.FileHandler.Stream.Length);
+        var handler = new FileHandler(stream, file.FileHandler.FilePath) { FileVersion = file.FileHandler.FileVersion };
+        file.FileHandler.Seek(0);
+        file.FileHandler.Stream.CopyTo(stream);
+        handler.Seek(0);
+        var newFile = DefaultFileLoader<TFile>.GetFileConstructor().Invoke(workspace, handler);
+        newFile.Read();
+        handler.Seek(0);
+        newFile.Write();
+        handler.Seek(0);
+        newFile.Read();
+        return newFile;
     }
 
     private static string? CompareValues(object originalValue, object newValue)
@@ -460,10 +489,13 @@ public class FileTesterWindow : IWindowHandler
         if (!comparedValueMappers.TryGetValue(type, out var mapper)) {
             if (originalValue is IList) {
                 comparedValueMappers[type] = mapper = (obj) => ((IList)obj).Cast<object?>();
+                mapperNameLookups[type] = index => index.ToString();
             } else {
                 var fields = type.GetFields(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance);
                 var props = type.GetProperties(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance).Where(p => p.CanRead && p.GetMethod!.GetParameters().Length == 0 && p.GetMethod.GetBaseDefinition().DeclaringType != typeof(BaseModel) && p.GetMethod.GetBaseDefinition().DeclaringType != typeof(BaseFile));
                 comparedValueMappers[type] = mapper = (obj) => fields.Select(f => f.GetValue(obj)).Concat(props.Select(p => p.GetValue(obj)));
+                var names = fields.Select(f => f.Name).Concat(props.Select(p => p.Name)).ToArray();
+                mapperNameLookups[type] = (index) => names[index];
             }
         }
 
@@ -472,19 +504,22 @@ public class FileTesterWindow : IWindowHandler
         using var list2 = mapper.Invoke(newValue).GetEnumerator();
         foreach (var org in list1)
         {
+            var name = mapperNameLookups[type](index);
             if (!list2.MoveNext()) {
-                return "missing values after index " + index;
+                return "missing values after index " + name;
             }
 
             var newVal = list2.Current;
             if ((org == null) != (newVal == null)) {
-                return $"{type.Name}[{index}].{(newVal == null ? "NULL" : "NOT NULL")}";
+                // return $"{type.Name}[{name}].{(newVal == null ? "NULL" : "NOT NULL")}";
+                return $"[{name}].{(newVal == null ? "NULL" : "NOT NULL")}";
             }
             if (org == null || newVal == null) continue;
 
             var comparison = CompareValues(org, newVal);
             if (comparison != null) {
-                return $"{type.Name}[{index}].{comparison}";
+                // return $"{type.Name}[{name}].{comparison}";
+                return $"[{name}].{comparison}";
             }
             index++;
         }
@@ -497,11 +532,12 @@ public class FileTesterWindow : IWindowHandler
 
     static FileTesterWindow()
     {
+        AddCompareMapper<NChild>((m) => [m.ChildNode?.ID, m.Condition]);
         AddCompareMapper<MeshFile>((m) => [
             // 0-9
             m.Header.flags, m.Header.nameCount, m.Header.uknCount, m.Header.ukn, m.Header.ukn1, m.Header.wilds_unkn1, m.Header.wilds_unkn2, m.Header.wilds_unkn3, m.Header.wilds_unkn4, m.Header.wilds_unkn5,
             // 10+
-            m.BoneData, m.MeshBuffer, m.MaterialNames, m.StreamingInfo, m.MeshData, m.ShadowMesh, m.OccluderMesh, m.BlendShapes, m.FloatData, m.StreamingBuffers, m.NormalRecalcData
+            m.BoneData, m.MeshBuffer, m.MaterialNames, m.StreamingInfo, m.MeshData, m.ShadowMesh, m.OccluderMesh, m.BlendShapes, m.FloatData, m.StreamingBuffers, m.NormalRecalcData,
         ]);
         AddCompareMapper<MeshBone>((m) => [m.boundingBox, m.index, m.childIndex, m.nextSibling, m.symmetryIndex, m.remapIndex]);
         AddCompareMapper<MeshBuffer>((m) => [
@@ -519,11 +555,14 @@ public class FileTesterWindow : IWindowHandler
         AddCompareMapper<MotTreeFile>((m) => [m.Name, m.MotionIDRemaps, m.expandedMotionsCount, m.uknCount1, m.uknCount2]);
         AddCompareMapper<MotIndex>((m) => m.data.Cast<object>().Concat(new object[] { m.extraClipCount, m.motNumber }));
 
-        AddCompareMapper<RszInstance>((m) => m.Values.Append(m.RszClass.crc));
+        AddCompareMapper<RszInstance>((m) => m.Values.Append(m.RszClass.crc), true);
         AddCompareMapper<RSZFile>((m) => []);
 
         AddCompareMapper<RcolFile>((m) => [m.Header, m.Groups, m.RequestSets, m.IgnoreTags, m.AutoGenerateJointDescs]);
         AddCompareMapper<GroupInfo>((m) => [m.guid, m.LayerGuid, m.LayerIndex, m.MaskBits, m.NameHash, m.NumShapes, m.NumMaskGuids, m.NumExtraShapes]);
+
+        AddCompareMapper<UVarFile>((m) => [m.Header.embedCount, m.Header.magic, m.Header.name, m.Header.ukn, m.Header.UVARhash, m.Header.variableCount, m.EmbeddedUVARs, m.Variables]);
+        AddCompareMapper<ReeLib.UVar.Variable>((m) => [m.guid, m.Value, m.Expression, m.flags, m.Name, m.nameHash]);
 
         AddCompareMapper<ReeLib.Rcol.Header>((m) => [m.numGroups, m.numIgnoreTags, m.numRequestSets, m.numShapes, m.numUserData, m.maxRequestSetId, m.userDataSize, m.status, m.uknRe3_A, m.uknRe3_B, m.ukn1, m.ukn2, m.uknRe3]);
         AddCompareMapper<TmlFile>((m) => [m.Tracks, m.Header, m.HermiteData, m.SpeedPointData, m.Bezier3DData, m.ClipInfo]);
@@ -543,11 +582,42 @@ public class FileTesterWindow : IWindowHandler
         AddCompareMapper<McolFile>((m) => [m.bvh]);
         AddCompareMapper<CocoFile>((m) => [m.CollisionMeshPaths, m.Trees]);
         AddCompareMapper<ReeLib.Aimp.AimpHeader>((m) => [m.agentRadWhenBuild, m.guid, m.hash, m.uriHash, m.mapType, m.name, m.uknId, m.sectionType]);
+
+        AddCompareMapper<Motfsm2File>((m) => [m.BhvtFile, m.TransitionDatas, m.TransitionMaps]);
+        AddCompareMapper<BhvtFile>((m) => [m.Header.hash, m.RootNode, m.Variable, m.ReferenceTrees, m.GameObjectReferences,
+            // 5
+            m.ActionRsz.ObjectList.Count, m.StaticActionRsz.ObjectList.Count,
+            m.ExpressionTreeConditionsRsz.ObjectList.Count, m.StaticExpressionTreeConditionsRsz.ObjectList.Count,
+
+            // note: not comparing below counts because some files have duplicate RSZ ObjectList entries for the same instance
+            // would need a major refactor of how RSZ objects work to handle "correctly"
+            // leaving it like this probably shouldn't cause issues
+
+            // m.SelectorCallerRsz.ObjectList.Count, m.StaticSelectorCallerRsz.ObjectList.Count,
+            // m.TransitionEventRsz.ObjectList.Count, m.StaticTransitionEventRsz.ObjectList.Count,
+            // m.ConditionsRsz.ObjectList.Count, m.StaticConditionsRsz.ObjectList.Count,
+            // m.SelectorRsz.ObjectList.Count
+            ]);
+        AddCompareMapper<BHVTNode>((m) => [
+            // 0+
+            m.ID, m.isEnd, m.isBranch, m.mNameHash, m.mFullnameHash, m.ParentID, m.Priority, m.SelectorCallerConditionID, m.unknownAI, m.WorkFlags, m.AI_Path, m.Attributes,
+            // 12+
+            m.Name, m.Children, m.ReferenceTree, m.Selector, m.SelectorCallerCondition, m.SelectorCallers, m.Tags, m.States.States, m.AllStates.AllStates, m.Actions.Actions]);
+        AddCompareMapper<NState>((m) => [m.TargetNode?.ID, m.TransitionEvents, m.stateEx, m.TransitionData, m.Condition]);
+        AddCompareMapper<NAllState>((m) => [m.TargetNode?.ID, m.TransitionData, m.Condition, m.transitionAttributes]);
+        AddCompareMapper<NTransition>((m) => [m.StartNode?.ID, m.Condition, m.transitionEvents]);
     }
 
     private static Dictionary<Type, Func<object, IEnumerable<object?>>> comparedValueMappers = new();
-    private static void AddCompareMapper<T>(Func<T, IEnumerable<object?>> mapper)
+    private static Dictionary<Type, Func<int, string>> mapperNameLookups = new();
+    private static void AddCompareMapper<T>(Func<T, IEnumerable<object?>> mapper, bool noLookup = false, [CallerArgumentExpression(nameof(mapper))] string expr = null!)
     {
+        var fields = NameLookupRegex().Matches(expr).Select(mm => mm.Groups[1].Value).ToArray();
         comparedValueMappers[typeof(T)] = (o) => mapper.Invoke((T)o);
+        if (!noLookup) mapperNameLookups[typeof(T)] = index => fields[index];
+        else mapperNameLookups[typeof(T)] = index => index.ToString();
     }
+
+    [GeneratedRegex("[\\s,.\\[][a-zA-Z]+\\.([a-zA-Z0-9_\\.\\?]+?)(?=[,\\]]|$)")]
+    private static partial Regex NameLookupRegex();
 }

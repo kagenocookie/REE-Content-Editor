@@ -268,15 +268,15 @@ public class RcolGroupEditor : IObjectUIHandler
             context.AddChild<RcolGroup, string>("Name", group, getter: (i) => i!.Info.Name, setter: (i, v) => i.Info.Name = v ?? string.Empty).AddDefaultHandler<string>();
             context.AddChild<RcolGroup, Guid>("GUID", group, getter: (i) => i!.Info.guid, setter: (i, v) => i.Info.guid = v).AddDefaultHandler<Guid>();
             context.AddChild<RcolGroup, Guid>("Layer", group, getter: (i) => i!.Info.LayerGuid, setter: (i, v) => i.Info.LayerGuid = v).AddDefaultHandler<Guid>();
-            context.AddChild<RcolGroup, List<Guid>>("Masks", group, new ListHandler(typeof(Guid), typeof(List<Guid>)) { CanCreateNewElements = true }, (i) => i!.Info.MaskGuids, (i, v) => i.Info.MaskGuids = v);
+            context.AddChild<RcolGroup, List<Guid>>("Masks", group, new ListHandler(typeof(Guid), typeof(List<Guid>)) { CanCreateRemoveElements = true }, (i) => i!.Info.MaskGuids, (i, v) => i.Info.MaskGuids = v);
             context.AddChild<RcolGroup, RszInstance>(
                 "UserData",
                 group,
                 new NestedUIHandlerStringSuffixed(new SwappableRszInstanceHandler("via.physics.RequestSetColliderUserData")),
                 (i) => i!.Info.UserData,
                 setter: (i, v) => i.Info.UserData = v);
-            context.AddChild<RcolGroup, List<RcolShape>>("Shapes", group, new ListHandler(typeof(RcolShape)) { CanCreateNewElements = true }, getter: (i) => i!.Shapes);
-            context.AddChild<RcolGroup, List<RcolShape>>("ExtraShapes", group, new ListHandler(typeof(RcolShape)) { CanCreateNewElements = true }, getter: (i) => i!.ExtraShapes);
+            context.AddChild<RcolGroup, List<RcolShape>>("Shapes", group, new ListHandler(typeof(RcolShape)) { CanCreateRemoveElements = true }, getter: (i) => i!.Shapes);
+            context.AddChild<RcolGroup, List<RcolShape>>("ExtraShapes", group, new ListHandler(typeof(RcolShape)) { CanCreateRemoveElements = true }, getter: (i) => i!.ExtraShapes);
         }
 
         context.ShowChildrenUI();

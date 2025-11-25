@@ -381,6 +381,17 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         }
         if (guid != Guid.Empty) {
             newObj.guid = Guid.NewGuid();
+
+            foreach (var comp in newObj.Components) {
+                foreach (var childObj in comp.Data.GetChildren()) {
+                    for (int f = 0; f < childObj.Values.Length; ++f) {
+                        var value = childObj.Values[f];
+                        if (value is GameObjectRef goref && goref.guid == guid) {
+                            ((GameObjectRef)childObj.Values[f]).Set(newObj.guid, newObj);
+                        }
+                    }
+                }
+            }
         }
 
         return newObj;
