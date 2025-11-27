@@ -267,7 +267,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             }
             ImGui.Separator();
             if (ImGui.MenuItem("Configure games ...")) {
-                AddUniqueSubwindow(new SettingsWindowHandler()).Size = new Vector2(800, 500);
+                AddUniqueSubwindow(new SettingsWindowHandler());
             }
             ImGui.EndMenu();
         }

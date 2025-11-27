@@ -59,7 +59,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         new SettingGroup { Name = "Hotkeys", SubGroups = {
                 new SettingSubGroup { Name = "Global", ID = SubGroupID.Hotkeys_Global},
                 // SILVER: More of a TODO thing but there should be contextual hotkeys for the editors
-                //new SettingSubGroup { Name = "Pak Browser"}, 
+                //new SettingSubGroup { Name = "Pak Browser"},
                 //new SettingSubGroup { Name = "Mesh Viewer"},
                 //new SettingSubGroup { Name = "Texture Viewer"},
             }
@@ -91,6 +91,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
 
     private void ShowSettingsMenu(ref bool isShow)
     {
+        ImGui.SetNextWindowSize(new Vector2(800, 500), ImGuiCond.FirstUseEver);
         if (ImGui.Begin("Settings", ref isShow)) {
             ImGui.BeginChild("GroupList", new Vector2(200, 0), ImGuiChildFlags.Borders);
             ShowGroupList();
@@ -209,8 +210,8 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             if (configPath.EndsWith(".exe")) configPath = Path.GetDirectoryName(configPath)!;
             config.GameConfigBaseFilepath.Set(configPath);
         }
-        ShowSetting(config.RemoteDataSource, "Resource data source", "The source from which to check for updates and download game-specific resource cache files.\nWill use the default GitHub repository if unspecified.");
         ImguiHelpers.Tooltip("The folder path that contains the game specific entity configurations. Will use relative path config/ by default if unspecified.");
+        ShowSetting(config.RemoteDataSource, "Resource data source", "The source from which to check for updates and download game-specific resource cache files.\nWill use the default GitHub repository if unspecified.");
 
         ShowFolderSetting(config.ThumbnailCacheFilepath, "Thumbnail cache file path", "The folder that cached thumbnails should be stored in. Must not be empty.");
         ShowSlider(config.UnpackMaxThreads, "Max unpack threads", 1, 64, "The maximum number of threads to be used when unpacking.\nThe actual thread count is determined automatically by the .NET runtime.");
