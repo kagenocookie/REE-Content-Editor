@@ -271,6 +271,8 @@ public static partial class WindowHandlerFactory
                 return new BhvtEditor(env, file);
             case KnownFileFormats.MotionFsm2:
                 return new MotFsm2FileEditor(env, file);
+            case KnownFileFormats.TimelineFsm2:
+                return new TmlFsm2FileEditor(env, file);
         }
 
         if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {

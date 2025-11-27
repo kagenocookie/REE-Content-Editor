@@ -129,11 +129,11 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
     }
 }
 
-public class RszClassnamePickerHandler(string? baseClass = null, string label = "Classname") : IObjectUIHandler
+public class RszClassnamePickerHandler(string? baseClass = null, string label = "Classname", bool allowNull = false) : IObjectUIHandler
 {
     private static readonly RszInstanceHandler inner = new();
     private string[]? classOptions;
-    private HashSet<string>? classOptionsSet;
+    private string[]? classValues;
     private string? classInput;
 
     public void OnIMGUI(UIContext context)
@@ -142,8 +142,12 @@ public class RszClassnamePickerHandler(string? baseClass = null, string label = 
         if (context.children.Count == 0) {
             var ws = context.GetWorkspace();
             if (ws != null && !string.IsNullOrEmpty(baseClass)) {
-                classOptions = ws.Env.TypeCache.GetSubclasses(baseClass).ToArray();
-                classOptionsSet = classOptions.ToHashSet();
+                if (allowNull) {
+                    classOptions = ws.Env.TypeCache.GetSubclasses(baseClass).Prepend("<null>").ToArray();
+                    classValues = ws.Env.TypeCache.GetSubclasses(baseClass).Prepend("").ToArray();
+                } else {
+                    classValues = classOptions = ws.Env.TypeCache.GetSubclasses(baseClass).ToArray();
+                }
             }
             if (instance != null) {
                 WindowHandlerFactory.SetupRSZInstanceHandler(context);
@@ -152,20 +156,24 @@ public class RszClassnamePickerHandler(string? baseClass = null, string label = 
 
         if (classOptions?.Length > 1) {
             classInput ??= instance?.RszClass.name ?? string.Empty;
-            ImguiHelpers.FilterableCombo(label, classOptions, classOptions, ref classInput, ref context.state);
-            if (!string.IsNullOrEmpty(classInput) && classInput != instance?.RszClass.name) {
+            ImguiHelpers.FilterableCombo(label, classOptions, classValues, ref classInput, ref context.state);
+            if (!string.IsNullOrEmpty(classInput) ? classInput != instance?.RszClass.name : allowNull && instance != null) {
                 if (ImGui.Button("Change")) {
-                    var ws = context.GetWorkspace();
-                    var cls = ws!.Env.RszParser.GetRSZClass(classInput);
-                    if (cls == null) {
-                        Logger.Error("Invalid classname " + classInput);
+                    if (string.IsNullOrEmpty(classInput)) {
+                        UndoRedo.RecordSet(context, (RszInstance?)null, mergeMode: UndoRedoMergeMode.NeverMerge);
                     } else {
-                        var newInstance = RszInstance.CreateInstance(ws!.Env.RszParser, cls);
-                        UndoRedo.RecordSet(context, newInstance, postChangeAction: (ctx) => {
-                            ctx.ClearChildren();
-                            WindowHandlerFactory.SetupRSZInstanceHandler(ctx);
-                            classInput = null;
-                        }, mergeMode: UndoRedoMergeMode.NeverMerge);
+                        var ws = context.GetWorkspace();
+                        var cls = ws!.Env.RszParser.GetRSZClass(classInput);
+                        if (cls == null) {
+                            Logger.Error("Invalid classname " + classInput);
+                        } else {
+                            var newInstance = RszInstance.CreateInstance(ws!.Env.RszParser, cls);
+                            UndoRedo.RecordSet(context, newInstance, postChangeAction: (ctx) => {
+                                ctx.ClearChildren();
+                                WindowHandlerFactory.SetupRSZInstanceHandler(ctx);
+                                classInput = null;
+                            }, mergeMode: UndoRedoMergeMode.NeverMerge);
+                        }
                     }
                 }
                 ImGui.SameLine();
@@ -176,6 +184,27 @@ public class RszClassnamePickerHandler(string? baseClass = null, string label = 
         }
 
         inner.OnIMGUI(context);
+    }
+}
+
+public class RszListInstanceHandler(string baseClass) : ListHandlerTyped<RszInstance>
+{
+    protected override object? CreateNewElement(UIContext context)
+    {
+        var ws = context.GetWorkspace()!;
+        var cls = ws.Env.RszParser.GetRSZClass(baseClass);
+        if (cls == null) {
+            return null;
+        } else {
+            return RszInstance.CreateInstance(ws.Env.RszParser, cls);
+        }
+    }
+
+    protected override UIContext CreateElementContext(UIContext context, IList list, int elementIndex)
+    {
+        var ctx = WindowHandlerFactory.CreateListElementContext(context, elementIndex);
+        ctx.uiHandler = new NestedUIHandlerStringSuffixed(new RszClassnamePickerHandler(baseClass));
+        return ctx;
     }
 }
 

@@ -38,18 +38,7 @@ public class TmlEditor<TClipFileType> : FileEditor, IWorkspaceContainer, IObject
     protected override void DrawFileContents()
     {
         if (context.children.Count == 0) {
-            context.AddChild<TmlFile, Guid>("GUID", File, getter: (m) => m!.Header.guid, setter: (m, n) => m.Header.guid = n).AddDefaultHandler();
-            context.AddChild<TmlFile, List<TimelineTrack>>("Tracks", File, new ListHandler(typeof(TimelineTrack), typeof(List<TimelineTrack>)), (m) => m!.Tracks);
-            context.AddChild<TmlFile, List<TmlNodeGroup>>("Node Groups", File, new ListHandler(typeof(TmlNodeGroup), typeof(List<TmlNodeGroup>)), (m) => m!.NodeGroups);
-
-            context.AddChild<TmlFile, List<SpeedPointData>>("Speed Point Data", File, new ListHandler(typeof(SpeedPointData), typeof(List<SpeedPointData>)), (m) => m!.SpeedPointData);
-            context.AddChild<TmlFile, List<HermiteInterpolationData>>("Hermite Interpolation Data", File, new ListHandler(typeof(HermiteInterpolationData), typeof(List<HermiteInterpolationData>)), (m) => m!.HermiteData);
-            context.AddChild<TmlFile, List<Bezier3DKeys>>("Bezier3D Interpolation Data", File, new ListHandler(typeof(Bezier3DKeys), typeof(List<Bezier3DKeys>)), (m) => m!.Bezier3DData);
-            context.AddChild<TmlFile, List<ClipInfoStruct>>("Clip Info", File, new ListHandler(typeof(ClipInfoStruct), typeof(List<ClipInfoStruct>)), (m) => m!.ClipInfo);
-
-            // context.AddChild<TmlFile, List<TimelineNode>>("Nodes", File, new ListHandler(typeof(TimelineNode), typeof(List<TimelineNode>)), (m) => m!.RootNodes);
-            // context.AddChild<TmlFile, List<Property>>("Properties", File, new ListHandler(typeof(Property), typeof(List<Property>)), (m) => m!.Properties);
-            // context.AddChild<TmlFile, List<Key>>("Keys", File, new ListHandler(typeof(Key), typeof(List<Key>)), (m) => m!.Keys);
+            context.AddChild("GUID", File, TmlFileObjectHandler.Instance);
         }
         context.ShowChildrenUI();
     }
@@ -57,6 +46,31 @@ public class TmlEditor<TClipFileType> : FileEditor, IWorkspaceContainer, IObject
     void IObjectUIHandler.OnIMGUI(UIContext context)
     {
         OnIMGUI();
+    }
+}
+
+[ObjectImguiHandler(typeof(TmlFile), Stateless = true)]
+public class TmlFileObjectHandler : IObjectUIHandler
+{
+    public static readonly TmlFileObjectHandler Instance = new();
+    public void OnIMGUI(UIContext context)
+    {
+        if (context.children.Count == 0) {
+            var file = context.Get<TmlFile>();
+            context.AddChild<TmlFile, Guid>("GUID", file, getter: (m) => m!.Header.guid, setter: (m, n) => m.Header.guid = n).AddDefaultHandler();
+            context.AddChild<TmlFile, List<TimelineTrack>>("Tracks", file, new ListHandler(typeof(TimelineTrack), typeof(List<TimelineTrack>)), (m) => m!.Tracks);
+            context.AddChild<TmlFile, List<TmlNodeGroup>>("Node Groups", file, new ListHandler(typeof(TmlNodeGroup), typeof(List<TmlNodeGroup>)), (m) => m!.NodeGroups);
+
+            context.AddChild<TmlFile, List<SpeedPointData>>("Speed Point Data", file, new ListHandler(typeof(SpeedPointData), typeof(List<SpeedPointData>)), (m) => m!.SpeedPointData);
+            context.AddChild<TmlFile, List<HermiteInterpolationData>>("Hermite Interpolation Data", file, new ListHandler(typeof(HermiteInterpolationData), typeof(List<HermiteInterpolationData>)), (m) => m!.HermiteData);
+            context.AddChild<TmlFile, List<Bezier3DKeys>>("Bezier3D Interpolation Data", file, new ListHandler(typeof(Bezier3DKeys), typeof(List<Bezier3DKeys>)), (m) => m!.Bezier3DData);
+            context.AddChild<TmlFile, List<ClipInfoStruct>>("Clip Info", file, new ListHandler(typeof(ClipInfoStruct), typeof(List<ClipInfoStruct>)), (m) => m!.ClipInfo);
+
+            // context.AddChild<TmlFile, List<TimelineNode>>("Nodes", file, new ListHandler(typeof(TimelineNode), typeof(List<TimelineNode>)), (m) => m!.RootNodes);
+            // context.AddChild<TmlFile, List<Property>>("Properties", file, new ListHandler(typeof(Property), typeof(List<Property>)), (m) => m!.Properties);
+            // context.AddChild<TmlFile, List<Key>>("Keys", file, new ListHandler(typeof(Key), typeof(List<Key>)), (m) => m!.Keys);
+        }
+        context.ShowChildrenUI();
     }
 }
 

@@ -156,6 +156,16 @@ public class ContextMenuUIHandler(IObjectUIHandler inner, Action<UIContext> cont
     }
 }
 
+public class ConditionalUIHandler(IObjectUIHandler inner, Func<UIContext, bool> condition) : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        if (condition.Invoke(context)) {
+            inner.OnIMGUI(context);
+        }
+    }
+}
+
 public class InstanceTypePickerHandler<T>(Type?[] classOptions, Func<UIContext, Type, T>? factory = null, bool filterable = true) : IObjectUIHandler
 {
     private Type? chosenType;

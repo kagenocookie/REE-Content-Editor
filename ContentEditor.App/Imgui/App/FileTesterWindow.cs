@@ -428,6 +428,7 @@ public partial class FileTesterWindow : IWindowHandler
             case KnownFileFormats.Mesh: return VerifyRewriteEquality<MeshFile>(source.GetResource<CommonMeshResource>().NativeMesh, env);
             case KnownFileFormats.RequestSetCollider: return VerifyRewriteEquality<RcolFile>(source.GetFile<RcolFile>(), env);
             case KnownFileFormats.Timeline: return VerifyRewriteEquality<TmlFile>(source.GetFile<TmlFile>(), env);
+            case KnownFileFormats.Clip: return VerifyRewriteEquality<ClipFile>(source.GetFile<ClipFile>(), env);
             case KnownFileFormats.GUI: return VerifyRewriteEquality<GuiFile>(source.GetFile<GuiFile>(), env);
             case KnownFileFormats.CollisionMesh: return VerifyRewriteEquality<McolFile>(source.GetFile<McolFile>(), env);
             case KnownFileFormats.CompositeCollision: return VerifyRewriteEquality<CocoFile>(source.GetFile<CocoFile>(), env);
@@ -436,6 +437,7 @@ public partial class FileTesterWindow : IWindowHandler
             case KnownFileFormats.BehaviorTree: return VerifyRewriteEquality<BhvtFile>(source.GetFile<BhvtFile>(), env);
             case KnownFileFormats.Fsm2: return VerifyRewriteEquality<BhvtFile>(source.GetFile<BhvtFile>(), env);
             case KnownFileFormats.MotionFsm2: return VerifyRewriteEquality<Motfsm2File>(source.GetFile<Motfsm2File>(), env);
+            case KnownFileFormats.TimelineFsm2: return VerifyRewriteEquality<Tmlfsm2File>(source.GetFile<Tmlfsm2File>(), env);
             default: return null;
         }
     }
@@ -553,7 +555,7 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<MotlistFile>((m) => [m.Header.MotListName, m.Header.BaseMotListPath, m.MotFiles, m.Motions]);
         AddCompareMapper<MotFile>((m) => [m.Name]);
         AddCompareMapper<MotTreeFile>((m) => [m.Name, m.MotionIDRemaps, m.expandedMotionsCount, m.uknCount1, m.uknCount2]);
-        AddCompareMapper<MotIndex>((m) => m.data.Cast<object>().Concat(new object[] { m.extraClipCount, m.motNumber }));
+        AddCompareMapper<MotIndex>((m) => m.data.Cast<object>().Concat(new object[] { m.extraClipCount, m.motNumber }), true);
 
         AddCompareMapper<RszInstance>((m) => m.Values.Append(m.RszClass.crc), true);
         AddCompareMapper<RSZFile>((m) => []);
@@ -569,6 +571,7 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<ReeLib.Tml.Header>((m) => [
             m.version, m.magic, m.totalFrames, m.guid,
             m.rootNodeCount, m.trackCount, m.nodeGroupCount, m.nodeReorderCount, m.nodeCount, m.propertyCount, m.keyCount]);
+        AddCompareMapper<ReeLib.Clip.PropertyInfo>((m) => [m.arrayIndex, m.ChildMembershipCount, m.ChildStartIndex, m.DataType, m.endFrame, m.startFrame, m.FunctionName, m.nameAsciiHash, m.nameUtf16Hash]);
 
         AddCompareMapper<GuiFile>((m) => [m.Containers, m.RootViewElement, m.AttributeOverrides, m.Resources, m.LinkedGUIs, m.Parameters, m.ParameterReferences, m.ParameterOverrides]);
         AddCompareMapper<ReeLib.Gui.ContainerInfo>((m) => [m.guid, m.Name, m.ClassName]);
@@ -584,7 +587,7 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<ReeLib.Aimp.AimpHeader>((m) => [m.agentRadWhenBuild, m.guid, m.hash, m.uriHash, m.mapType, m.name, m.uknId, m.sectionType]);
 
         AddCompareMapper<Motfsm2File>((m) => [m.BhvtFile, m.TransitionDatas, m.TransitionMaps]);
-        AddCompareMapper<BhvtFile>((m) => [m.Header.hash, m.RootNode, m.Variable, m.ReferenceTrees, m.GameObjectReferences,
+        AddCompareMapper<BhvtFile>((m) => [m.Header.hash, m.RootNode, m.UserVariables, m.SubVariables, m.GameObjectReferences,
             // 5
             m.ActionRsz.ObjectList.Count, m.StaticActionRsz.ObjectList.Count,
             m.ExpressionTreeConditionsRsz.ObjectList.Count, m.StaticExpressionTreeConditionsRsz.ObjectList.Count,
@@ -600,12 +603,14 @@ public partial class FileTesterWindow : IWindowHandler
             ]);
         AddCompareMapper<BHVTNode>((m) => [
             // 0+
-            m.ID, m.isEnd, m.isBranch, m.mNameHash, m.mFullnameHash, m.ParentID, m.Priority, m.SelectorCallerConditionID, m.unknownAI, m.WorkFlags, m.AI_Path, m.Attributes,
+            m.ID, m.isEnd, m.isBranch, m.mNameHash, m.mFullnameHash, m.ParentID, m.Priority, m.SelectorCallerConditionID, m.unknownAI, m.WorkFlags, m.AI_Path, m.Attributes, m.ReferenceTree,
             // 12+
-            m.Name, m.Children, m.ReferenceTree, m.Selector, m.SelectorCallerCondition, m.SelectorCallers, m.Tags, m.States.States, m.AllStates.AllStates, m.Actions.Actions]);
+            m.Name, m.Children, m.Selector, m.SelectorCallerCondition, m.SelectorCallers, m.Tags, m.States.States, m.AllStates.AllStates, m.Actions.Actions]);
         AddCompareMapper<NState>((m) => [m.TargetNode?.ID, m.TransitionEvents, m.stateEx, m.TransitionData, m.Condition]);
         AddCompareMapper<NAllState>((m) => [m.TargetNode?.ID, m.TransitionData, m.Condition, m.transitionAttributes]);
         AddCompareMapper<NTransition>((m) => [m.StartNode?.ID, m.Condition, m.transitionEvents]);
+
+        AddCompareMapper<Tmlfsm2File>((m) => [m.BehaviorTrees, m.Clips]);
     }
 
     private static Dictionary<Type, Func<object, IEnumerable<object?>>> comparedValueMappers = new();
