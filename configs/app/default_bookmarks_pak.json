@@ -228,12 +228,132 @@
       "Comment": "Zoe Baker (Daughters)"
     },
     {
+      "Path": "natives/stm/ch8/character/enemy/em4400",
+      "Tags": [
+        "Enemy",
+        "DLC"
+      ],
+      "Comment": "Mama Mold (Not a Hero)"
+    },
+    {
+      "Path": "natives/stm/ch8/character/enemy/em4500",
+      "Tags": [
+        "Enemy",
+        "DLC"
+      ],
+      "Comment": "Lucas Baker - Mutated (Not a Hero)"
+    },
+    {
+      "Path": "natives/stm/ch8/character/enemy/em4600",
+      "Tags": [
+        "Enemy",
+        "DLC"
+      ],
+      "Comment": "Fumer (Not a Hero)"
+    },
+    {
+      "Path": "natives/stm/ch8/character/enemy/em9100",
+      "Tags": [
+        "Enemy",
+        "DLC"
+      ],
+      "Comment": "Blue Umbrella Soldier #1 (Not a Hero)"
+    },
+    {
+      "Path": "natives/stm/ch8/character/enemy/em9400",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Blue Umbrella Soldier #2 (Not a Hero)"
+    },
+    {
       "Path": "natives/stm/ch8/character/player/pl1000",
       "Tags": [
         "Character",
         "DLC"
       ],
       "Comment": "Chris Redfield (Not a Hero)"
+    },
+    {
+      "Path": "natives/stm/ch8/weapon/wp1330_chrisshotgun",
+      "Tags": [
+        "Weapon",
+        "DLC"
+      ],
+      "Comment": "Thor\u0027s Hammer - AW Model-02 Shotgun"
+    },
+    {
+      "Path": "natives/stm/ch8/weapon/wp1340_chrishandgun",
+      "Tags": [
+        "Weapon",
+        "DLC"
+      ],
+      "Comment": "Samurai Edge - AW Model-01 Handgun"
+    },
+    {
+      "Path": "natives/stm/ch8/weapon/wp1390_chrisknife",
+      "Tags": [
+        "Weapon",
+        "DLC"
+      ],
+      "Comment": "Tactical Knife (Chris)"
+    },
+    {
+      "Path": "natives/stm/ch8/weapon/wp3000_grenadebomb",
+      "Tags": [
+        "Weapon",
+        "DLC"
+      ],
+      "Comment": "Grenade"
+    },
+    {
+      "Path": "natives/stm/ch8/weapon/wp3010_thermatebomb",
+      "Tags": [
+        "Weapon",
+        "DLC"
+      ],
+      "Comment": "Incendiary Grenade"
+    },
+    {
+      "Path": "natives/stm/ch8/weapon/wp3020_stangrenadebomb",
+      "Tags": [
+        "Weapon",
+        "DLC"
+      ],
+      "Comment": "Neuro-Stun Grenade"
+    },
+    {
+      "Path": "natives/stm/ch9/character/enemy/em6400",
+      "Tags": [
+        "Enemy",
+        "DLC"
+      ],
+      "Comment": "Jack Baker - Swamp Man (End of Zoe)"
+    },
+    {
+      "Path": "natives/stm/ch9/character/enemy/em6800",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Zoe Baker - Crystalized (End of Zoe)"
+    },
+    {
+      "Path": "natives/stm/ch9/character/enemy/em7500/em7500",
+      "Tags": [
+        "Enemy",
+        "DLC"
+      ],
+      "Comment": "Alligator (End of Zoe)"
+    },
+    {
+      "Path": "natives/stm/ch9/character/enemy/em7700",
+      "Tags": [
+        "Enemy",
+        "DLC"
+      ],
+      "Comment": "Molded - Twin Blade (End of Zoe)"
     },
     {
       "Path": "natives/stm/ch9/character/player/pl9000",
@@ -279,7 +399,21 @@
       "Comment": "Stabilizer"
     },
     {
-      "Path": "natives\\stm\\props\\sm2036_chemicals01a",
+      "Path": "natives/stm/props/sm2025_flower01a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Supplements"
+    },
+    {
+      "Path": "natives/stm/props/sm2026_alcohol01a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Solid Fuel"
+    },
+    {
+      "Path": "natives/stm/props/sm2036_chemicals01a",
       "Tags": [
         "Item"
       ],
@@ -489,54 +623,6 @@
         "Weapon"
       ],
       "Comment": "Tactical Knife (Chris)"
-    },
-    {
-      "Path": "natives/stm/ch8/weapon/wp1330_chrisshotgun",
-      "Tags": [
-        "Weapon",
-        "DLC"
-      ],
-      "Comment": "Thor\u0027s Hammer - AW Model-02 Shotgun"
-    },
-    {
-      "Path": "natives/stm/ch8/weapon/wp1340_chrishandgun",
-      "Tags": [
-        "Weapon",
-        "DLC"
-      ],
-      "Comment": "Samurai Edge - AW Model-01 Handgun"
-    },
-    {
-      "Path": "natives/stm/ch8/weapon/wp1390_chrisknife",
-      "Tags": [
-        "Weapon",
-        "DLC"
-      ],
-      "Comment": "Tactical Knife (Chris)"
-    },
-    {
-      "Path": "natives/stm/ch8/weapon/wp3000_grenadebomb",
-      "Tags": [
-        "Weapon",
-        "DLC"
-      ],
-      "Comment": "Grenade"
-    },
-    {
-      "Path": "natives/stm/ch8/weapon/wp3010_thermatebomb",
-      "Tags": [
-        "Weapon",
-        "DLC"
-      ],
-      "Comment": "Incendiary Grenade"
-    },
-    {
-      "Path": "natives/stm/ch8/weapon/wp3020_stangrenadebomb",
-      "Tags": [
-        "Weapon",
-        "DLC"
-      ],
-      "Comment": "Neuro-Stun Grenade"
     }
   ]
 }

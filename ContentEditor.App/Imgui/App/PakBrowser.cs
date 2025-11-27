@@ -869,6 +869,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         }
         ImGui.Spacing();
         if (ImGui.BeginMenu($"{AppIcons.SI_GenericTag} | Tags")) {
+            ImGui.PushItemFlag(ImGuiItemFlags.AutoClosePopups, false);
             foreach (var tag in BookmarkManager.TagInfoMap.Keys) {
                 bool hasTag = bm.Tags.Contains(tag);
                 if (ImGui.MenuItem(tag, "", hasTag)) {
@@ -886,6 +887,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 bm.Tags.Clear();
                 manager.SaveBookmarks();
             }
+            ImGui.PopItemFlag();
             ImGui.EndMenu();
         }
         string comment = bm.Comment;
