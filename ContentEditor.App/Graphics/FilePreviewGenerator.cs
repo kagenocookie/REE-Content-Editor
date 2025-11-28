@@ -145,8 +145,15 @@ public sealed class FilePreviewGenerator : IDisposable
 
                 var fmt = PathUtils.ParseFileFormat(path).format;
                 var mainAssetPath = fmt == KnownFileFormats.Mesh ? path.Replace("/streaming/", "/").Replace("\\streaming\\", "\\") : path;
-                if (!workspace.ResourceManager.TryResolveFile(mainAssetPath, out var f)) {
+                FileHandle f;
+                try {
+                    if (!workspace.ResourceManager.TryResolveFile(mainAssetPath, out f)) {
+                        _statuses[path] = PreviewImageStatus.Failed;
+                        continue;
+                    }
+                } catch (Exception e) {
                     _statuses[path] = PreviewImageStatus.Failed;
+                    Logger.Error($"Could not load file {mainAssetPath} for preview generation ({e.Message})");
                     continue;
                 }
                 if (_stopRequested || _cancelRequested) break;
