@@ -481,7 +481,12 @@ public class MotClipHandler : IObjectUIHandler
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(MotClip), false, DisplayedFields);
         }
 
-        if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString())) {
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString());
+        if (ImGui.BeginPopupContextItem(context.label)) {
+            AppImguiHelpers.ShowVirtualCopyPopupButtons<MotClip>(context);
+            ImGui.EndPopup();
+        }
+        if (show) {
             context.ShowChildrenUI();
             ImGui.TreePop();
         }

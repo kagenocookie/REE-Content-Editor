@@ -5,6 +5,7 @@ using System.Text.Json;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ImGuiNET;
+using ReeLib.Common;
 
 namespace ContentEditor.App;
 
@@ -107,6 +108,18 @@ public static class AppImguiHelpers
                 ImGui.CloseCurrentPopup();
             }
             ImGui.EndPopup();
+        }
+    }
+
+    public static void ShowVirtualCopyPopupButtons<T>(UIContext context) where T : class => ShowVirtualCopyPopupButtons<T>(context.Get<T>(), context);
+    public static void ShowVirtualCopyPopupButtons<T>(T target, UIContext context) where T : class
+    {
+        if (ImGui.Selectable("Copy")) {
+            VirtualClipboard.CopyToClipboard(target.DeepCloneGeneric<T>());
+        }
+        if (VirtualClipboard.TryGetFromClipboard<T>(out var newClip) && ImGui.Selectable("Paste (replace)")) {
+            UndoRedo.RecordSet(context, newClip);
+            context.ClearChildren();
         }
     }
 
