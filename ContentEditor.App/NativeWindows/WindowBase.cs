@@ -544,12 +544,13 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         var cursor = this._inputContext.Mice[0].Cursor;
         switch (imguiCursor) {
             case ImGuiMouseCursor.Arrow:
-                if (cursor.StandardCursor != StandardCursor.Arrow && ImGui.GetIO().WantCaptureMouse) {
-                    cursor.StandardCursor = StandardCursor.Arrow;
-                }
+                cursor.StandardCursor = StandardCursor.Arrow;
                 break;
             case ImGuiMouseCursor.TextInput:
                 cursor.StandardCursor = StandardCursor.IBeam;
+                break;
+            case ImGuiMouseCursor.NotAllowed:
+                cursor.StandardCursor = StandardCursor.NotAllowed;
                 break;
             case ImGuiMouseCursor.Hand:
                 cursor.StandardCursor = StandardCursor.Hand;
