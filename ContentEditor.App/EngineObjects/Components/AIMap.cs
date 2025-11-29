@@ -68,7 +68,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
         foreach (var stored in StoredResources) {
             if (string.IsNullOrEmpty(stored)) continue;
 
-            if (Scene!.Workspace.ResourceManager.TryResolveFile(stored, out var file)) {
+            if (Scene!.Workspace.ResourceManager.TryResolveGameFile(stored, out var file)) {
                 var aifile = file.GetFile<AimpFile>();
                 if (files.Contains(aifile)) continue;
 

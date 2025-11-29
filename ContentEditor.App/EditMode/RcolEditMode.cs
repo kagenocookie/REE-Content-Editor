@@ -33,7 +33,7 @@ public class RcolEditMode : EditModeHandler
         if (!(Target is RequestSetColliderComponent component)) {
             return;
         }
-        if (Scene.Workspace.ResourceManager.TryResolveFile(rcolFilepath, out var file)) {
+        if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(rcolFilepath, out var file)) {
             OpenEditor(file);
         }
     }
@@ -80,7 +80,7 @@ public class RcolEditMode : EditModeHandler
             }
         }
 
-        if (Scene.Workspace.ResourceManager.TryResolveFile(rcolPath, out var file)) {
+        if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(rcolPath, out var file)) {
             var rcol = file.GetFile<RcolFile>();
             if (ImGui.Button("Open Editor")) {
                 OpenEditor(file);
@@ -94,7 +94,7 @@ public class RcolEditMode : EditModeHandler
     {
         if (!(Target is RequestSetColliderComponent comp)) return;
 
-        if (Scene.Workspace.ResourceManager.TryResolveFile(rcolPath, out var file)) {
+        if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(rcolPath, out var file)) {
             var rcol = file.GetFile<RcolFile>();
             if (!comp.ActiveRcolFiles.Contains(rcol)) {
                 comp.SetOverrideFile(rcol);

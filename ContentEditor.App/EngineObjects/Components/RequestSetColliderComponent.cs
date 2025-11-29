@@ -75,7 +75,7 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
                 continue;
             }
 
-            if (!Scene.Workspace.ResourceManager.TryResolveFile(rcolPath, out var handle)) {
+            if (!Scene.Workspace.ResourceManager.TryResolveGameFile(rcolPath, out var handle)) {
                 missingRcols ??= new();
                 Logger.ErrorIf(missingRcols.Add(rcolPath), "Failed to resolve rcol file " + rcolPath);
                 rcols.Add(null);

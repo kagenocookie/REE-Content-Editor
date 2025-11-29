@@ -99,7 +99,7 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
 
     private IResourceFile? LoadResource(string path)
     {
-        if (!ResourceManager.TryResolveFile(path, out var fileHandle)) {
+        if (!ResourceManager.TryResolveGameFile(path, out var fileHandle)) {
             Logger.Error("Failed to load resource " + path);
             return null;
         }
@@ -138,7 +138,7 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
 
     public MeshHandle? LoadMesh(string mesh)
     {
-        if (ResourceManager.TryResolveFile(mesh, out var handle)) {
+        if (ResourceManager.TryResolveGameFile(mesh, out var handle)) {
             return LoadMesh(handle);
         }
         return null;
@@ -174,7 +174,7 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
 
     public MaterialGroup? LoadMaterialGroup(string materialPath, ShaderFlags flags = ShaderFlags.None)
     {
-        if (ResourceManager.TryResolveFile(materialPath, out var handle)) {
+        if (ResourceManager.TryResolveGameFile(materialPath, out var handle)) {
             return LoadMaterialGroup(handle, flags);
         }
         return null;

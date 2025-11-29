@@ -69,7 +69,7 @@ public class ItemPositions(GameObject gameObject, RszInstance data) : BaseSingle
 
     private void LoadMeshFromPrefab(string prefab)
     {
-        if (Scene!.Workspace.ResourceManager.TryResolveFile(prefab, out var handle)) {
+        if (Scene!.Workspace.ResourceManager.TryResolveGameFile(prefab, out var handle)) {
             var pfb = handle.GetFile<PfbFile>();
             var meshComp = pfb.IterAllGameObjects(true)
                 .SelectMany(go => go.Components.Where(comp => comp.RszClass.name == MeshComponent.Classname))

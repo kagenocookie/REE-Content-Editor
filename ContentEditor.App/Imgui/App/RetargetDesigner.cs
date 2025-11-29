@@ -84,7 +84,7 @@ public class RetargetDesigner : BaseWindowHandler
             ctxMlst.ShowUI();
         }
 
-        if (!string.IsNullOrEmpty(mesh1) && (meshViewer1 == null || mesh1 != loadedMesh1) && workspace.ResourceManager.TryResolveFile(mesh1, out var fh)) {
+        if (!string.IsNullOrEmpty(mesh1) && (meshViewer1 == null || mesh1 != loadedMesh1) && workspace.ResourceManager.TryGetOrLoadFile(mesh1, out var fh)) {
             loadedMesh1 = mesh1;
             if (meshViewer1 == null) {
                 meshViewer1 = new MeshViewer(workspace, fh);
@@ -96,7 +96,7 @@ public class RetargetDesigner : BaseWindowHandler
 
         if (!string.IsNullOrEmpty(mesh2) && (meshViewer2 == null || mesh2 != loadedMesh2)) {
             loadedMesh2 = mesh2;
-            if (workspace.ResourceManager.TryResolveFile(mesh2, out fh)) {
+            if (workspace.ResourceManager.TryGetOrLoadFile(mesh2, out fh)) {
                 if (meshViewer2 == null) {
                     meshViewer2 = new MeshViewer(workspace, fh);
                     meshViewer2.Init(context);

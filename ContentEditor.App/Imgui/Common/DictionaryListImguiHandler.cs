@@ -16,7 +16,8 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
     protected bool FlatList { get; set; }
     protected bool Filterable { get; set; }
 
-    protected virtual bool Filter(UIContext context, string filter) => true;
+    protected virtual bool Filter(UIContext context, string filter)
+        => context.GetRaw()?.ToString()?.Contains(filter, StringComparison.InvariantCultureIgnoreCase) == true;
 
     protected virtual IObjectUIHandler CreateNewItemInput(UIContext context)
     {

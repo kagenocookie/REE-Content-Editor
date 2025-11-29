@@ -628,9 +628,15 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         }
     }
 
-    public bool TryGetOrLoadFile(string filename, [MaybeNullWhen(false)] out FileHandle fileHandle)
+    /// <summary>
+    /// Attempt to load a file from the given file path. Can be a disk path, a native or internal path.
+    /// </summary>
+    /// <param name="filepath"></param>
+    /// <param name="fileHandle"></param>
+    /// <returns></returns>
+    public bool TryGetOrLoadFile(string filepath, [MaybeNullWhen(false)] out FileHandle fileHandle)
     {
-        fileHandle = ReadOrGetFileResource(filename, null);
+        fileHandle = ReadOrGetFileResource(filepath, null);
         return fileHandle != null;
     }
 
@@ -654,7 +660,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     /// <summary>
     /// Attempt to find and load a file based on an internal or native filepath. Checks the active bundle and base game files and returns the first result.
     /// </summary>
-    public bool TryResolveFile(string filename, [MaybeNullWhen(false)] out FileHandle file)
+    public bool TryResolveGameFile(string filename, [MaybeNullWhen(false)] out FileHandle file)
     {
         var nativePath = workspace.Env.ResolveFilepath(filename);
         if (nativePath != null) {
@@ -675,7 +681,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     {
         var linkedResourceQueue = new Queue<string>();
         while (backgroundQueue.TryDequeue(out var item)) {
-            if (!TryResolveFile(item.filename, out var mainRes)) continue;
+            if (!TryResolveGameFile(item.filename, out var mainRes)) continue;
             linkedResourceQueue.Enqueue(item.filename);
 
             var preloadedResources = 0;
@@ -683,7 +689,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                 var next = linkedResourceQueue.Dequeue();
                 var fmt = PathUtils.ParseFileFormat(next);
                 if (PreloadFormats.Contains(fmt.format)) {
-                    if (!TryResolveFile(next, out var linked)) continue;
+                    if (!TryResolveGameFile(next, out var linked)) continue;
                     preloadedResources++;
 
                     if (fmt.format == KnownFileFormats.Scene) {
@@ -990,7 +996,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
     public bool TryResolveResourceFile<TFileType>(string filename, [MaybeNullWhen(false)] out TFileType file) where TFileType : BaseFile
     {
-        if (!TryResolveFile(filename, out var handle)) {
+        if (!TryResolveGameFile(filename, out var handle)) {
             file = null;
             return false;
         }

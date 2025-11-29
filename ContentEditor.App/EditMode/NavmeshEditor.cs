@@ -86,7 +86,7 @@ public class NavmeshEditor : EditModeHandler
         }
         context.children[1].ShowUI();
 
-        if (Scene.Workspace.ResourceManager.TryResolveFile(filepath, out var file)) {
+        if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(filepath, out var file)) {
             // var rcol = file.GetFile<RcolFile>();
             // if (ImGui.Button("Open Editor")) {
             //     OpenEditor(file);
@@ -100,7 +100,7 @@ public class NavmeshEditor : EditModeHandler
     {
         if (!(Target is AIMapComponentBase comp)) return;
 
-        if (Scene.Workspace.ResourceManager.TryResolveFile(filepath, out var file)) {
+        if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(filepath, out var file)) {
             var nvm = file.GetFile<AimpFile>();
             if (comp.DisplayedFile != nvm) {
                 comp.SetOverrideFile(nvm);

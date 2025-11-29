@@ -147,7 +147,7 @@ public sealed class FilePreviewGenerator : IDisposable
                 var mainAssetPath = fmt == KnownFileFormats.Mesh ? path.Replace("/streaming/", "/").Replace("\\streaming\\", "\\") : path;
                 FileHandle f;
                 try {
-                    if (!workspace.ResourceManager.TryResolveFile(mainAssetPath, out f)) {
+                    if (!workspace.ResourceManager.TryGetOrLoadFile(mainAssetPath, out f)) {
                         _statuses[path] = PreviewImageStatus.Failed;
                         continue;
                     }
@@ -222,8 +222,8 @@ public sealed class FilePreviewGenerator : IDisposable
         var go = new GameObject("mesh", workspace.Env, tmpScene.RootFolder, tmpScene);
         var comp = go.AddComponent<MeshComponent>();
         var basePath = PathUtils.GetFilepathWithoutExtensionOrVersion(mainPath).ToString();
-        workspace.ResourceManager.TryResolveFile(basePath + ".mdf2", out var mdfHandle);
-        if (mdfHandle == null) workspace.ResourceManager.TryResolveFile(basePath + "_Mat.mdf2", out mdfHandle);
+        workspace.ResourceManager.TryGetOrLoadFile(basePath + ".mdf2", out var mdfHandle);
+        if (mdfHandle == null) workspace.ResourceManager.TryGetOrLoadFile(basePath + "_Mat.mdf2", out mdfHandle);
 
         comp.SetMesh(mainPath, mdfHandle?.Filepath);
         if (comp.MeshHandle == null) {

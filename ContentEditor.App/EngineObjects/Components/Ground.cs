@@ -32,7 +32,7 @@ public class Ground(GameObject gameObject, RszInstance data) : RenderableCompone
         if (!AppConfig.Instance.RenderMeshes.Get()) return;
 
         if (Scene!.Workspace.ResourceManager.TryResolveResourceFile<GrndFile>(RszFieldCache.Ground.GroundResource.Get(Data), out groundResource)) {
-            Scene!.Workspace.ResourceManager.TryResolveFile(RszFieldCache.Ground.GroundMaterialResource.Get(Data), out groundMaterialResource);
+            Scene!.Workspace.ResourceManager.TryResolveGameFile(RszFieldCache.Ground.GroundMaterialResource.Get(Data), out groundMaterialResource);
 
             ReloadMeshes();
         }
@@ -102,7 +102,7 @@ public class Ground(GameObject gameObject, RszInstance data) : RenderableCompone
 
         if (!meshes.TryGetValue(curId, out var tmesh)) {
             var tex = groundResource.GroundTextures[curId];
-            if (Scene!.Workspace.ResourceManager.TryResolveFile(tex, out var handle)) {
+            if (Scene!.Workspace.ResourceManager.TryResolveGameFile(tex, out var handle)) {
                 var res = handle.GetResource<GroundTerrainResourceFile>();
 
                 var pos = WorldEnvironmentController.Instance!.GroundFields.GetPosition(curId);

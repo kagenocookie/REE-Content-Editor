@@ -31,7 +31,7 @@ public class GmlFileLoader : IFileLoader, IFileHandleContentProvider<CommonMeshR
         var meshdata = new CommonMeshResource(handle.Filename.ToString(), workspace.Env);
         var mats = new List<Assimp.Material>();
         foreach (var tex in file.Textures) {
-            if (workspace.ResourceManager.TryResolveFile(tex.albedoPath, out var texfile)) {
+            if (workspace.ResourceManager.TryResolveGameFile(tex.albedoPath, out var texfile)) {
                 mats.Add(new Assimp.Material() {
                     TextureDiffuse = new TextureSlot(tex.albedoPath, TextureType.Diffuse, 0, TextureMapping.FromUV, 0, 1, TextureOperation.Multiply, TextureWrapMode.Wrap, TextureWrapMode.Wrap, 0),
                     Name = "terrain" + mats.Count

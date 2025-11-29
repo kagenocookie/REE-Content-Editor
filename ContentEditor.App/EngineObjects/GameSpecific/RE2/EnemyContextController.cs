@@ -43,7 +43,7 @@ public class EnemyContextController(GameObject gameObject, RszInstance data) : B
 
     private bool TryLoadMesh(string meshPath)
     {
-        if (Scene!.Workspace.ResourceManager.TryResolveFile(meshPath, out _)) {
+        if (Scene!.Workspace.ResourceManager.TryResolveGameFile(meshPath, out _)) {
             var mdfPath = Path.ChangeExtension(meshPath, "mdf2");
             SetMesh(meshPath, mdfPath);
             return true;

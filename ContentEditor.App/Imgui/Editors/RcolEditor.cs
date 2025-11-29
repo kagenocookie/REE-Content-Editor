@@ -146,6 +146,11 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
 [ObjectImguiHandler(typeof(List<RequestSet>))]
 public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSet, List<RequestSet>>
 {
+    public RequestSetListEditor()
+    {
+        Filterable = true;
+    }
+
     protected override string GetKey(RequestSet item) => item.Info.Name;
 
     protected override RequestSet? CreateItem(UIContext context, string key)

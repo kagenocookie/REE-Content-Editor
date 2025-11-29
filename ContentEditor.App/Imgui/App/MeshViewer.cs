@@ -103,9 +103,9 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
         if (!File.Exists(mdfPath) && fileHandle.NativePath != null) {
             meshBasePath = PathUtils.GetFilepathWithoutExtensionOrVersion(fileHandle.NativePath).ToString();
-            if (Workspace.ResourceManager.TryResolveFile(meshBasePath + ext, out _)) {
+            if (Workspace.ResourceManager.TryResolveGameFile(meshBasePath + ext, out _)) {
                 mdfPath = meshBasePath + ext;
-            } else if (Workspace.ResourceManager.TryResolveFile(meshBasePath + "_Mat" + ext, out _)) {
+            } else if (Workspace.ResourceManager.TryResolveGameFile(meshBasePath + "_Mat" + ext, out _)) {
                 mdfPath = meshBasePath + "_Mat" + ext;
             } else {
                 mdfPath = "";
@@ -136,7 +136,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
     public void ChangeMesh(string newMesh)
     {
-        if (Workspace.ResourceManager.TryResolveFile(newMesh, out var newFile) && newFile != fileHandle) {
+        if (Workspace.ResourceManager.TryResolveGameFile(newMesh, out var newFile) && newFile != fileHandle) {
             ChangeMesh(newFile);
         }
     }
@@ -565,7 +565,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             isMDFUpdateRequest = false;
             if (string.IsNullOrEmpty(mdfSource)) {
                 meshComponent.SetMesh(fileHandle, fileHandle);
-            } else if (Workspace.ResourceManager.TryResolveFile(mdfSource, out var mdfHandle)) {
+            } else if (Workspace.ResourceManager.TryResolveGameFile(mdfSource, out var mdfHandle)) {
                 meshComponent.SetMesh(fileHandle, mdfHandle);
             } else {
                 meshComponent.SetMesh(fileHandle, fileHandle);
@@ -680,11 +680,10 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     public static bool IsSupportedFileExtension(string filepathOrExtension)
     {
         var format = PathUtils.ParseFileFormat(filepathOrExtension);
-        if (format.format == KnownFileFormats.Mesh) {
-            return true;
-        }
+        if (format.format == KnownFileFormats.Mesh) return true;
+        if (format.format != KnownFileFormats.Unknown) return false;
 
-        return MeshLoader.StandardFileExtensions.Contains(Path.GetExtension(filepathOrExtension));
+        return MeshLoader.StandardFileExtensions.Contains(Path.GetExtension(filepathOrExtension).ToLowerInvariant());
     }
 
     public bool RequestClose()

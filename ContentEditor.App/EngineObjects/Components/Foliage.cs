@@ -73,7 +73,7 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
         }
 
         var ctx = Scene!.RenderContext;
-        if (Scene!.Workspace.ResourceManager.TryResolveFile(resourcePath, out var folFile)) {
+        if (Scene!.Workspace.ResourceManager.TryResolveGameFile(resourcePath, out var folFile)) {
             file = folFile.GetFile<FolFile>();
             for (int i = 0; i < file.InstanceGroups?.Count; i++) {
                 var group = file.InstanceGroups[i];

@@ -310,7 +310,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         var filehash = PakUtils.GetFilepathHash(filepath);
         if (TextureRefs.TryAddReference(filehash, out var handle)) {
             return handle.Resource;
-        } else if (ResourceManager.TryResolveFile(filepath, out var texHandle)) {
+        } else if (ResourceManager.TryResolveGameFile(filepath, out var texHandle)) {
             var tex = new Texture(GL).LoadFromFile(texHandle);
             if (texHandle.Filepath != filepath) {
                 var srcHash = filehash;

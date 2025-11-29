@@ -48,7 +48,7 @@ public class EmbeddedResourceFileHandler(ResourceCustomField field) : IObjectUIH
                 ImGui.TextColored(Colors.Error, "The path is specified as a native path - this is not supported!\nPath should not be prefixed with natives/ and containly only the base file extension without versions.");
                 return;
             }
-            if (!workspace.ResourceManager.TryResolveFile(path, out file)) {
+            if (!workspace.ResourceManager.TryResolveGameFile(path, out file)) {
                 ImGui.TextColored(Colors.Warning, "Could not resolve file " + path);
                 return;
             }

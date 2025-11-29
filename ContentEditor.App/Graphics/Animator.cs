@@ -125,7 +125,7 @@ public class Animator(ContentWorkspace Workspace)
     public void LoadAnimationList(string fileSource)
     {
         Unload();
-        if (Workspace.ResourceManager.TryResolveFile(fileSource, out var file)) {
+        if (Workspace.ResourceManager.TryGetOrLoadFile(fileSource, out var file)) {
             animationFile = file;
             if (file.Resource is BaseFileResource<MotlistFile> motlist) {
                 foreach (var submot in motlist.File.MotFiles) {

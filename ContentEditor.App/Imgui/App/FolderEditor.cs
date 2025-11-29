@@ -252,7 +252,7 @@ public class FolderNodeEditor : IObjectUIHandler
         }
 
         // note: folder.ChildScene can stay null for a few frames (at least 1), which is why we need to display a status until it's fully loaded
-        if (ws.ResourceManager.TryResolveFile(folder.ScenePath, out var file)) {
+        if (ws.ResourceManager.TryResolveGameFile(folder.ScenePath, out var file)) {
             if (folder.ChildScene == null) {
                 folder.RequestLoad();
                 ImGui.TextColored(Colors.Info, $"Loading linked scene {folder.ScenePath}...");

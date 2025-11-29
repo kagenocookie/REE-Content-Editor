@@ -180,16 +180,6 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
         }
     }
 
-    public static bool IsSupportedFileExtension(string filepathOrExtension)
-    {
-        var format = PathUtils.ParseFileFormat(filepathOrExtension);
-        if (format.format == KnownFileFormats.Mesh) {
-            return true;
-        }
-
-        return MeshLoader.StandardFileExtensions.Contains(Path.GetExtension(filepathOrExtension));
-    }
-
     public bool RequestClose()
     {
         return false;

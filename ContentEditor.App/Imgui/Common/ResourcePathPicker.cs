@@ -107,7 +107,7 @@ public class ResourcePathPicker : IObjectUIHandler
                 }
             }
             if (ws?.CurrentBundle != null && ImGui.Button("Save to bundle ...")) {
-                if (ws.ResourceManager.TryResolveFile(currentPath, out var file)) {
+                if (ws.ResourceManager.TryResolveGameFile(currentPath, out var file)) {
                     var wnd = EditorWindow.CurrentWindow!;
                     SaveFileToBundle(ws, file, (bundle, savePath, localPath, nativePath) => {
                         file.Save(ws, savePath);

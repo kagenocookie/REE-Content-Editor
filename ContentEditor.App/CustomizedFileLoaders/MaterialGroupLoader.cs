@@ -34,7 +34,7 @@ public class MaterialGroupLoader : IFileLoader,
             if (diffuse?.texPath != null) {
                 newMat.TextureDiffuse = new TextureSlot(diffuse.texPath, TextureType.Diffuse, 0, TextureMapping.FromUV, 0, 1, TextureOperation.Multiply, TextureWrapMode.Wrap, TextureWrapMode.Wrap, 0);
                 // preload the texture since we'll probably need it
-                workspace.ResourceManager.TryResolveFile(diffuse.texPath, out _);
+                workspace.ResourceManager.TryResolveGameFile(diffuse.texPath, out _);
             }
 
             scene.Materials.Add(newMat);
