@@ -184,7 +184,7 @@ public class DiffMaker
             for (int n = head; n < target.Count - tail; ++n) {
                 removedArr.Add(CreateArrayRemoveMarker(n));
             }
-            return removedArr.Count;
+            return removedArr;
         }
 
         // all target values are the same as in source
