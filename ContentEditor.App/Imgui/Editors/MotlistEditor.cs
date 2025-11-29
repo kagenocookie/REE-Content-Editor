@@ -25,10 +25,21 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 
     static MotlistEditor()
     {
-        WindowHandlerFactory.DefineInstantiator<EndClipStruct>((ctx) => new EndClipStruct() { Version = ctx.FindValueInParentValues<EmbeddedClip>()?.Version ?? ClipVersion.MHWilds });
-        WindowHandlerFactory.DefineInstantiator<CTrack>((ctx) => new CTrack(ctx.FindValueInParentValues<EmbeddedClip>()?.Version ?? ClipVersion.MHWilds));
-        WindowHandlerFactory.DefineInstantiator<Property>((ctx) => new Property(ctx.FindValueInParentValues<EmbeddedClip>()?.Version ?? ctx.FindValueInParentValues<TimelineTrack>()?.Version ?? ClipVersion.MHWilds));
-        WindowHandlerFactory.DefineInstantiator<Key>((ctx) => new Key(ctx.FindValueInParentValues<EmbeddedClip>()?.Header.version ?? ctx.FindValueInParentValues<TimelineTrack>()?.Version ?? ClipVersion.MHWilds));
+        static ClipVersion GetVersionFromContext(UIContext ctx) => ctx.FindValueInParentValues<EmbeddedClip>()?.Version ?? ctx.FindValueInParentValues<TimelineTrack>()?.Version ?? ClipVersion.MHWilds;
+
+        WindowHandlerFactory.DefineInstantiator<EndClipStruct>((ctx) => new EndClipStruct() { Version = GetVersionFromContext(ctx) });
+        WindowHandlerFactory.DefineInstantiator<CTrack>((ctx) => new CTrack(GetVersionFromContext(ctx)));
+        WindowHandlerFactory.DefineInstantiator<Property>((ctx) => new Property(GetVersionFromContext(ctx)));
+        WindowHandlerFactory.DefineInstantiator<Key>((ctx) => {
+            var key = new Key(GetVersionFromContext(ctx));
+            var property = ctx.FindValueInParentValues<Property>();
+            if (property != null) {
+                key.PropertyType = property.Info.DataType;
+            }
+            key.interpolation = InterpolationType.Linear;
+            key.ResetValue();
+            return key;
+        });
         WindowHandlerFactory.DefineInstantiator<MotIndex>((ctx) => new MotIndex(
             ctx.FindHandlerInParents<MotlistEditor>()?.File.Header.version
             ?? (ctx.GetWorkspace()?.Env.TryGetFileExtensionVersion("motlist", out var v) == true ? (MotlistVersion)v : MotlistVersion.DD2)));
@@ -642,7 +653,6 @@ public class KeyHandler : IObjectUIHandler
 {
     private static MemberInfo[] DisplayedFields = [
         typeof(Key).GetProperty(nameof(Key.Value))!,
-        typeof(Key).GetProperty(nameof(Key.PropertyType))!,
         typeof(Key).GetField(nameof(Key.frame))!,
         typeof(Key).GetField(nameof(Key.rate))!,
         typeof(Key).GetField(nameof(Key.interpolation))!,
@@ -655,7 +665,33 @@ public class KeyHandler : IObjectUIHandler
         var instance = context.Get<Key>();
         if (context.children.Count == 0) {
             var ws = context.GetWorkspace();
+            context.AddChild<Key, string>("Property Type", instance, new ReadOnlyWrapperHandler(StringFieldHandler.Instance), (c) => c!.PropertyType.ToString());
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(Key), false, DisplayedFields);
+        }
+
+        if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString())) {
+            context.ShowChildrenUI();
+            ImGui.TreePop();
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(Property))]
+public class PropertyHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<Property>();
+        if (instance.IsPropertyContainer) {
+            instance.ChildProperties ??= new List<Property>();
+        } else {
+            instance.Keys ??= new List<Key>();
+        }
+
+        if (context.children.Count == 0) {
+            context.AddChild<Property, ReeLib.Clip.PropertyInfo>("Info", instance, getter: p => p!.Info).AddDefaultHandler();
+            context.AddChild<Property, List<Property>>("Child Properties", instance, new ConditionalUIHandler(new ListHandlerTyped<Property>(), static c => ((Property)c.target!).IsPropertyContainer), getter: p => p!.ChildProperties);
+            context.AddChild<Property, List<Key>>("Keys", instance, new ConditionalUIHandler(new ListHandlerTyped<Key>(), static c => !((Property)c.target!).IsPropertyContainer), getter: p => p!.Keys);
         }
 
         if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString())) {
@@ -671,7 +707,6 @@ public class PropertyInfoHandler : IObjectUIHandler
     private static MemberInfo[] DisplayedFields = [
         typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.startFrame))!,
         typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.endFrame))!,
-        typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.DataType))!,
         typeof(ReeLib.Clip.PropertyInfo).GetProperty(nameof(ReeLib.Clip.PropertyInfo.FunctionName))!,
         typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.nameUtf16Hash))!,
         typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.nameAsciiHash))!,
@@ -686,6 +721,19 @@ public class PropertyInfoHandler : IObjectUIHandler
         var instance = context.Get<ReeLib.Clip.PropertyInfo>();
         if (context.children.Count == 0) {
             var ws = context.GetWorkspace();
+            context.AddChild("Property Type", instance, new CsharpEnumHandler(typeof(PropertyType)), (UIContext c) => ((ReeLib.Clip.PropertyInfo)c!.target!).DataType, (c, v) => {
+                var info = ((ReeLib.Clip.PropertyInfo)c!.target!);
+                info.DataType = (PropertyType)v!;
+                var propCtx = c.FindParentContextByHandler<PropertyHandler>();
+                var prop = propCtx?.Get<Property>();
+                if (prop?.Keys != null) {
+                    foreach (var key in prop.Keys) {
+                        key.PropertyType = info.DataType;
+                        key.ResetValue();
+                    }
+                }
+                propCtx?.ClearChildren();
+            });
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(ReeLib.Clip.PropertyInfo), false, DisplayedFields);
         }
 
