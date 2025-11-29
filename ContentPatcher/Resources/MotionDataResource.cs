@@ -31,6 +31,11 @@ public class MotionDataResource : IContentResource
         mot.WriteTo(handler, false);
         stream.Seek(0, SeekOrigin.Begin);
         MotDataBase64 = Convert.ToBase64String(stream.GetBuffer().AsSpan(0, (int)stream.Length));
+        try {
+            var decoded = Convert.FromBase64String(MotDataBase64);
+        } catch (Exception) {
+            Logger.Error("Encoded base64 was not valid base64! WTF!");
+        }
     }
 
     [JsonPropertyName("name")]
