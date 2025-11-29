@@ -539,6 +539,37 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
             imguiOverlays.Init(imguiOverlaysData.Context);
         }
         imguiOverlays.OnIMGUI();
+
+        var imguiCursor = ImGui.GetMouseCursor();
+        var cursor = this._inputContext.Mice[0].Cursor;
+        switch (imguiCursor) {
+            case ImGuiMouseCursor.Arrow:
+                if (cursor.StandardCursor != StandardCursor.Arrow && ImGui.GetIO().WantCaptureMouse) {
+                    cursor.StandardCursor = StandardCursor.Arrow;
+                }
+                break;
+            case ImGuiMouseCursor.TextInput:
+                cursor.StandardCursor = StandardCursor.IBeam;
+                break;
+            case ImGuiMouseCursor.Hand:
+                cursor.StandardCursor = StandardCursor.Hand;
+                break;
+            case ImGuiMouseCursor.ResizeAll:
+                cursor.StandardCursor = StandardCursor.ResizeAll;
+                break;
+            case ImGuiMouseCursor.ResizeNWSE:
+                cursor.StandardCursor = StandardCursor.NwseResize;
+                break;
+            case ImGuiMouseCursor.ResizeNESW:
+                cursor.StandardCursor = StandardCursor.NeswResize;
+                break;
+            case ImGuiMouseCursor.ResizeEW:
+                cursor.StandardCursor = StandardCursor.HResize;
+                break;
+            case ImGuiMouseCursor.ResizeNS:
+                cursor.StandardCursor = StandardCursor.VResize;
+                break;
+        }
     }
 
     protected static bool IsDefaultWindow(WindowData data) => data.Handler != null && DefaultWindows.Contains(data.Handler.GetType());
