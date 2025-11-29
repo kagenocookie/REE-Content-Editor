@@ -146,40 +146,44 @@ public static class ImguiHelpers
 
     public static bool FilterableCombo<TValue>(string label, string[] labels, ReadOnlySpan<TValue> values, ref TValue? selected, ref string? filter)
     {
-        ImGui.BeginGroup();
-        var w = ImGui.CalcItemWidth();
-        ImGui.SetNextItemWidth(w / 2 - MarginX);
-        bool changed = false;
+        var selectedIndex = values!.BoxedIndexOf(selected);
+        if (!ImGui.BeginCombo(label, selectedIndex == -1 ? selected?.ToString() ?? "" : labels[selectedIndex])) {
+            return false;
+        }
+
+        filter ??= "";
+        var pos = ImGui.GetCursorScreenPos();
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+        ImGui.InputText($"##filter", ref filter, 48);
+        // show placeholder
         if (string.IsNullOrEmpty(filter)) {
-            // could be optimized with a dictionary lookup instead of array index - but we can add that later
-            // note: we can't add a where TValue : IEquatable<TValue> constraint to use the built in Span.IndexOf() because enum values are boxed
-            var selectedIndex = values!.BoxedIndexOf(selected);
-            if (ImGui.Combo($"##{label}", ref selectedIndex, labels, labels.Length, 1000)) {
-                changed = true;
-                selected = values[selectedIndex];
-            }
-        } else {
-            // could be optimized by storing a per-filter cache on the enum descriptor, but we probably don't care since it's just UI anyway
-            var filteredLabels = new List<string>();
-            var filteredValues = new List<TValue>();
-            for (int i = 0; i < labels.Length; i++) {
-                var item = labels[i];
-                if (item.Contains(filter, StringComparison.InvariantCultureIgnoreCase)) {
-                    filteredLabels.Add(item);
-                    filteredValues.Add(values[i]);
+            ImGui.GetWindowDrawList().AddText(pos + ImGui.GetStyle().FramePadding, ImguiHelpers.GetColorU32(ImGuiCol.TextDisabled), "Filter...");
+        }
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+
+        var count = labels.Length;
+        var changed = false;
+        if (string.IsNullOrEmpty(filter)) {
+            for (int i = 0; i < count; ++i) {
+                if (ImGui.Selectable(labels[i], selected != null && selected.Equals(values[i]))) {
+                    selected = values[i];
+                    changed = true;
                 }
             }
-            var selectedIndex = selected == null ? -1 : filteredValues.IndexOf(selected);
-            if (ImGui.Combo($"##{label}", ref selectedIndex, filteredLabels.ToArray(), filteredLabels.Count, 1000)) {
-                changed = true;
-                selected = filteredValues[selectedIndex];
+        } else {
+            for (int i = 0; i < count; ++i) {
+                if (!labels[i].Contains(filter, StringComparison.InvariantCultureIgnoreCase)) continue;
+
+                if (ImGui.Selectable(labels[i], selected != null && selected.Equals(values[i]))) {
+                    selected = values[i];
+                    changed = true;
+                }
             }
         }
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(w / 2 - MarginX);
-        filter ??= "";
-        ImGui.InputText(label, ref filter, 48);
-        ImGui.EndGroup();
+
+        ImGui.EndCombo();
         return changed;
     }
 
