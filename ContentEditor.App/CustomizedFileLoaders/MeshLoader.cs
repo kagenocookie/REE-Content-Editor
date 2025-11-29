@@ -91,8 +91,8 @@ public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<Motlis
                 PostProcessSteps.SplitLargeMeshes,
                 Path.GetExtension(handle.Filepath));
 
-            if (!importedScene.HasMeshes) {
-                Logger.Error("No meshes found in file " + handle.Filepath);
+            if (!importedScene.HasMeshes && !importedScene.HasAnimations) {
+                Logger.Error("No meshes or animations found in file " + handle.Filepath);
                 return null;
             }
 
