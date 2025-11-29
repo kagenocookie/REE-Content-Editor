@@ -54,6 +54,7 @@ Some files may not fully work for other RE ENGINE games.
 | .motlist  | ☑️ read/write | Animation preview<br>GLTF import/export<br>Mot copy/paste/retargeting ([info](https://github.com/kagenocookie/REE-Content-Editor/wiki/Animation-tools))
 | .rcol     | ☑️ read/write | 3D shape preview and editing ([info](https://github.com/kagenocookie/REE-Content-Editor/wiki/RCOL-Request-set-colliders))
 | .motbank  | read/write
+| .motfsm2, .fsmv2, .bhvt, .tmlfsm2  | read/write
 | .mcol     | ☑️ read/write | .glb import/export for collision mesh
 | .tml, .clip | read/write
 | .gui      | read/write
