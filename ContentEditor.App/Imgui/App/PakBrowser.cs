@@ -641,6 +641,16 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
     private bool HandleFileClick(ListFileWrapper baseList, string file)
     {
         if (!baseList.FileExists(file)) {
+            if (file.Equals(PakUtils.ManifestFilepath, StringComparison.InvariantCultureIgnoreCase)) {
+                var stream = reader!.GetFile(file);
+                if (stream == null) {
+                    EditorWindow.CurrentWindow?.AddSubwindow(new ErrorModal("File not found", "File could not be found in the PAK file(s)."));
+                } else {
+                    EditorWindow.CurrentWindow?.OpenFile(stream, file, PakFilePath + "://");
+                }
+                return true;
+            }
+
             // if it's not a full list file match then it's a folder, navigate to it
             CurrentDir = file;
             pagination.page = 0;
