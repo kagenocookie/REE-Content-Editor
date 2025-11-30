@@ -653,14 +653,13 @@ public class KeyHandler : IObjectUIHandler
 
     public void OnIMGUI(UIContext context)
     {
-        var instance = context.Get<Key>();
         if (context.children.Count == 0) {
-            var ws = context.GetWorkspace();
+            var instance = context.Get<Key>();
             context.AddChild<Key, string>("Property Type", instance, new ReadOnlyWrapperHandler(StringFieldHandler.Instance), (c) => c!.PropertyType.ToString());
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(Key), false, DisplayedFields);
         }
 
-        if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString())) {
+        if (AppImguiHelpers.CopyableTreeNode<Key>(context)) {
             context.ShowChildrenUI();
             ImGui.TreePop();
         }
@@ -685,7 +684,7 @@ public class PropertyHandler : IObjectUIHandler
             context.AddChild<Property, List<Key>>("Keys", instance, new ConditionalUIHandler(new ListHandlerTyped<Key>(), static c => !((Property)c.target!).IsPropertyContainer), getter: p => p!.Keys);
         }
 
-        if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString())) {
+        if (AppImguiHelpers.CopyableTreeNode<Property>(context)) {
             context.ShowChildrenUI();
             ImGui.TreePop();
         }
@@ -724,9 +723,9 @@ public class PropertyInfoHandler : IObjectUIHandler
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(ReeLib.Clip.PropertyInfo), false, DisplayedFields);
             if (ws?.Game == GameIdentifier.re7)
             {
-                context.AddChild("uknRE7_2", instance, getter: (c) => c.uknRE7_2, setter: (c, v) => c.uknRE7_2 = v).AddDefaultHandler();
-                context.AddChild("uknRE7_3", instance, getter: (c) => c.uknRE7_3, setter: (c, v) => c.uknRE7_3 = v).AddDefaultHandler();
-                context.AddChild("uknRE7_3", instance, getter: (c) => c.uknRE7_3, setter: (c, v) => c.uknRE7_3 = v).AddDefaultHandler();
+                context.AddChild("uknRE7_2", instance, getter: (c) => c!.uknRE7_2, setter: (c, v) => c.uknRE7_2 = v).AddDefaultHandler();
+                context.AddChild("uknRE7_3", instance, getter: (c) => c!.uknRE7_3, setter: (c, v) => c.uknRE7_3 = v).AddDefaultHandler();
+                context.AddChild("uknRE7_3", instance, getter: (c) => c!.uknRE7_3, setter: (c, v) => c.uknRE7_3 = v).AddDefaultHandler();
             }
         }
 
