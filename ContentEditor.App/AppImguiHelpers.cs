@@ -111,6 +111,17 @@ public static class AppImguiHelpers
         }
     }
 
+    public static bool CopyableTreeNode<T>(UIContext context) where T : class
+    {
+        var instance = context.Get<T>()!;
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString() ?? "NULL");
+        if (ImGui.BeginPopupContextItem(context.label)) {
+            ShowVirtualCopyPopupButtons<T>(instance, context);
+            ImGui.EndPopup();
+        }
+        return show;
+    }
+
     public static void ShowVirtualCopyPopupButtons<T>(UIContext context) where T : class => ShowVirtualCopyPopupButtons<T>(context.Get<T>(), context);
     public static void ShowVirtualCopyPopupButtons<T>(T target, UIContext context) where T : class
     {

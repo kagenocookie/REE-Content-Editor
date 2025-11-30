@@ -486,18 +486,11 @@ public class MotClipHandler : IObjectUIHandler
 
     public void OnIMGUI(UIContext context)
     {
-        var instance = context.Get<MotClip>();
         if (context.children.Count == 0) {
-            var ws = context.GetWorkspace();
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(MotClip), false, DisplayedFields);
         }
 
-        var show = ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString());
-        if (ImGui.BeginPopupContextItem(context.label)) {
-            AppImguiHelpers.ShowVirtualCopyPopupButtons<MotClip>(context);
-            ImGui.EndPopup();
-        }
-        if (show) {
+        if (AppImguiHelpers.CopyableTreeNode<MotClip>(context)) {
             context.ShowChildrenUI();
             ImGui.TreePop();
         }
@@ -635,13 +628,11 @@ public class CTrackHandler : IObjectUIHandler
 
     public void OnIMGUI(UIContext context)
     {
-        var instance = context.Get<CTrack>();
         if (context.children.Count == 0) {
-            var ws = context.GetWorkspace();
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(CTrack), false, DisplayedFields);
         }
 
-        if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString())) {
+        if (AppImguiHelpers.CopyableTreeNode<CTrack>(context)) {
             context.ShowChildrenUI();
             ImGui.TreePop();
         }
