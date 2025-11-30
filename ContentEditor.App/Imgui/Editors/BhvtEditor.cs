@@ -299,7 +299,12 @@ public class NStateEditor : IObjectUIHandler
             context.AddChild<NState, uint>("State EX", file, getter: (f) => f!.stateEx, setter: (f, v) => f.stateEx = v).AddDefaultHandler();
             context.AddChild<NState, uint>("Transition Map ID", file, getter: (f) => f!.transitionMapID, setter: (f, v) => f.transitionMapID = v).AddDefaultHandler();
             context.AddChild<NState, BHVTNode>("Target Node", file, new InstancePickerHandler<BHVTNode>(false, BhvtEditor.FindBhvtNodes), (f) => f!.TargetNode, (f, v) => f.TargetNode = v);
-            context.AddChild<NState, RszInstance>("Condition", file, new NestedUIHandlerStringSuffixed(new RszClassnamePickerHandler("via.behaviortree.Condition", allowNull: true)), (f) => f!.Condition, (f, v) => f.Condition = v);
+            context.AddChildContextSetter<NState, RszInstance>("Condition", file, new NestedUIHandlerStringSuffixed(new RszClassnamePickerHandler("via.behaviortree.Condition", allowNull: true)),
+                (f) => f!.Condition,
+                (ctx, f, newVal) => {
+                    f.Condition = newVal;
+                    ctx.FindParentContextByHandler<NStateEditor>()?.FindNestedChildByHandler<NestedUIHandlerStringSuffixed>()?.ClearChildren();
+                });
             context.AddChild<NState, TransitionData>("Transition Parameters", file, getter: (f) => f!.TransitionData, setter: (f, v) => f.TransitionData = v).AddDefaultHandler<TransitionData>();
             context.AddChild<NState, List<RszInstance>>("Transition Events", file, new RszListInstanceHandler("via.behaviortree.TransitionEvent"), (f) => f!.TransitionEvents);
         }

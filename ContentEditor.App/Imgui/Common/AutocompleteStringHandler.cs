@@ -9,20 +9,20 @@ public class AutocompleteStringHandler(bool requireListedChoice, string[]? sugge
     public void OnIMGUI(UIContext context)
     {
         var selected = context.Get<string>();
-
-        context.state ??= selected ?? string.Empty;
+        context.InitFilterDefault(selected);
         var didChange = false;
-        if (ImGui.InputText(context.label, ref context.state, 1024)) {
+        if (ImGui.InputText(context.label, ref context.Filter, 1024)) {
             didChange = true;
             if (!requireListedChoice) {
-                selected = context.state;
+                selected = context.Filter;
                 OnSelected(context, selected);
             }
         }
-        var currentSuggestions = GetSuggestions(context, context.state);
-        if (currentSuggestions.Contains(context.state)){
+        var filter = context.Filter;
+        var currentSuggestions = GetSuggestions(context, filter);
+        if (currentSuggestions.Contains(filter)){
             if (requireListedChoice && didChange) {
-                OnSelected(context, context.state);
+                OnSelected(context, filter);
             }
             return;
         }
@@ -31,8 +31,8 @@ public class AutocompleteStringHandler(bool requireListedChoice, string[]? sugge
             return;
         }
 
-        if (!string.IsNullOrEmpty(context.state) && ImGui.BeginListBox($"Suggestions##{context.label}", new System.Numerics.Vector2(ImGui.CalcItemWidth(), lineCount * (UI.FontSize + ImGui.GetStyle().FramePadding.Y * 4)))) {
-            var items = currentSuggestions.Where(cs => cs.Contains(context.state, StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrEmpty(filter) && ImGui.BeginListBox($"Suggestions##{context.label}", new System.Numerics.Vector2(ImGui.CalcItemWidth(), lineCount * (UI.FontSize + ImGui.GetStyle().FramePadding.Y * 4)))) {
+            var items = currentSuggestions.Where(cs => cs.Contains(filter, StringComparison.OrdinalIgnoreCase));
             foreach (var suggestion in items) {
                 if (ImGui.Button(suggestion)) {
                     OnSelected(context, suggestion);
@@ -46,7 +46,7 @@ public class AutocompleteStringHandler(bool requireListedChoice, string[]? sugge
 
     protected virtual void OnSelected(UIContext context, string selection)
     {
-        context.state = selection;
+        context.Filter = selection;
         if (!NoUndoRedo) {
             UndoRedo.RecordSet(context, selection);
         } else {

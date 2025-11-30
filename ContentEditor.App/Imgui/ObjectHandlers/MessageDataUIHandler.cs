@@ -33,7 +33,7 @@ public class MessageDataUIHandler : IObjectUIHandler, IObjectUIInstantiator
             }
         } else {
             // TODO app configurable default language?
-            var lang = context.state ?? Language.English.ToString();
+            var lang = context.InitFilterDefault(Language.English.ToString());
             var langIndex = Array.IndexOf(LanguageNames, lang);
 
             var w = ImGui.CalcItemWidth();
@@ -43,7 +43,7 @@ public class MessageDataUIHandler : IObjectUIHandler, IObjectUIInstantiator
             ImGui.PushID(context.label);
             ImGui.SetNextItemWidth(langWidth);
             if (ImGui.Combo("##language", ref langIndex, LanguageNames, LanguageNames.Length)) {
-                context.state = lang = LanguageNames[langIndex];
+                context.Filter = lang = LanguageNames[langIndex];
             }
             ImGui.SameLine();
             var msg = data.Get(lang) ?? "";

@@ -42,7 +42,7 @@ public class CfilEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     {
         if (context.children.Count == 0) {
             context.AddChild<CfilFile, Guid>("Layer Guid", File, new GuidFieldHandler(), (f) => f!.LayerGuid, (f, v) => f.LayerGuid = v);
-            context.AddChild<CfilFile, Guid[]>("Masks", File, new ResizableArrayHandler(typeof(Guid)), (f) => f!.MaskGuids, (f, v) => f.MaskGuids = v);
+            context.AddChild<CfilFile, Guid[]>("Masks", File, new ResizableArrayHandler(typeof(Guid)), (f) => f!.MaskGuids, (f, v) => f.MaskGuids = v!);
         }
         context.ShowChildrenUI();
     }

@@ -182,7 +182,7 @@ public class InstanceTypePickerHandler<T>(Type?[] classOptions, Func<UIContext, 
         }
 
         if (filterable) {
-            ImguiHelpers.FilterableCombo(context.label, labels, classOptions!, ref chosenType, ref context.state);
+            ImguiHelpers.FilterableCombo(context.label, labels, classOptions!, ref chosenType, ref context.Filter);
         } else {
             ImguiHelpers.ValueCombo(context.label, labels, classOptions!, ref chosenType);
         }

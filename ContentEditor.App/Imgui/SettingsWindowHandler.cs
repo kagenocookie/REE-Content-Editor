@@ -20,7 +20,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     private int selectedSubGroup = -1;
     private static bool? _wasOriginallyAlphaBg;
     private static readonly string[] LogLevels = ["Debug", "Info", "Error"];
-    private static string? filterKey1, filterKey2;
+    private static string filterKey1 = "", filterKey2 = "";
     private string customGameNameInput = "", customGameFilepath = "";
     private static HashSet<string>? fullSupportedGames;
     private enum SubGroupID
@@ -416,7 +416,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         }
         if (tooltip != null) { ImguiHelpers.Tooltip(tooltip); }
     }
-    private static bool ImguiKeybinding(string label, ref KeyBinding binding, ref string? filter)
+    private static bool ImguiKeybinding(string label, ref KeyBinding binding, ref string filter)
     {
         ImGui.PushID(label);
         var changed = false;

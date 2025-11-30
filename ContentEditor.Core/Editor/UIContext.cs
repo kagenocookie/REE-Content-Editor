@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using ContentEditor.Core;
 using ContentEditor.Editor;
 using ImGuiNET;
@@ -7,14 +8,13 @@ namespace ContentEditor;
 
 public class UIContext
 {
-    public string? state;
+    private List<UIContextStateVariable> State { get; } = new(0);
     public UIOptions options;
     public object? target;
     public object? owner;
     public UIContext root;
     public FieldDisplaySettings? displaySettings;
     public string label;
-    // public string field = string.Empty;
     public object? originalValue;
     private Func<UIContext, object?> getter;
     private Action<UIContext, object?> setter;
@@ -25,10 +25,54 @@ public class UIContext
     private bool wasChanged;
 
     public bool HasChildren => children.Count != 0;
-    public bool StateBool
+    public bool StateBool {
+        get => (bool)GetStateValue<bool>(1, false).value!;
+        set => GetStateValue<bool>(1, value).value = value;
+    }
+    public ref string Filter => ref GetStateRef<string>(2, "");
+    public ref string ClassnameFilter => ref GetStateRef<string>(3, "");
+    public ref string CachedString => ref GetStateRef<string>(4, "");
+
+    public string InitFilterDefault(string? defaultFilter) => GetStateRef<string>(2, defaultFilter ?? "");
+
+    private class UIContextStateVariable(int id, object? value)
     {
-        get => state != null;
-        set => state = value ? string.Empty : null;
+        public int id = id;
+        public object? value = value;
+    }
+
+    private unsafe ref T GetStateRef<T>(int id, T defaultValue) where T : class
+    {
+        UIContextStateVariable? state = null;
+        foreach (var item in State) {
+            if (item.id == id) {
+                state = item;
+                break;
+            }
+        }
+        if (state == null) {
+            state = new UIContextStateVariable(id, defaultValue);
+            State.Add(state);
+        }
+
+        return ref Unsafe.AsRef<T>(Unsafe.AsPointer(ref state.value));
+    }
+
+    private UIContextStateVariable GetStateValue<T>(int id, T defaultValue) where T : unmanaged
+    {
+        UIContextStateVariable? state = null;
+        foreach (var item in State) {
+            if (item.id == id) {
+                state = item;
+                break;
+            }
+        }
+        if (state == null) {
+            state = new UIContextStateVariable(id, defaultValue);
+            State.Add(state);
+        }
+
+        return state;
     }
 
     public bool Changed
@@ -70,16 +114,11 @@ public class UIContext
     public UIContext? FindNestedChildByHandler<T>() where T : class, IObjectUIHandler => children.Select(ch => (ch.uiHandler is T ? ch : ch.FindNestedChildByHandler<T>())).FirstOrDefault(cc => cc != null);
 
     private static object? DefaultGetter(UIContext ctx) => ctx.target;
-
-    private static void NotImplementedSetter(UIContext ctx, object? val)
-    {
-        throw new NotImplementedException();
-    }
+    private static void NotImplementedSetter(UIContext ctx, object? val) => throw new NotImplementedException();
 
     public UIContext AddChild(string label, object? instance, IObjectUIHandler? handler = null, Func<UIContext, object?>? getter = null, Action<UIContext, object?>? setter = null)
     {
-        setter ??= NotImplementedSetter;
-        var child = new UIContext(label, instance, root, getter ?? DefaultGetter, setter, options) {
+        var child = new UIContext(label, instance, root, getter ?? DefaultGetter, setter ?? NotImplementedSetter, options) {
             parent = this,
         };
         child.uiHandler = handler;
@@ -89,16 +128,18 @@ public class UIContext
     public UIContext AddChild<TTarget, TValue>(string label, TTarget? instance, IObjectUIHandler? handler = null, Func<TTarget?, TValue?>? getter = null, Action<TTarget, TValue?>? setter = null)
     {
         Func<UIContext, object?> boxedGetter = getter == null ? DefaultGetter : (ctx) => getter((TTarget?)ctx.target);
-        Action<UIContext, object?>? boxedSetter = setter == null ? null :  (ctx, val) => {
+        Action<UIContext, object?> boxedSetter = setter == null ? NotImplementedSetter :  (ctx, val) => {
             setter.Invoke((TTarget)ctx.target!, (TValue?)val);
         };
-        boxedSetter ??= ((_, _) => throw new NotImplementedException());
-        var child = new UIContext(label, instance, root, boxedGetter, boxedSetter, options) {
-            parent = this,
+        return AddChild(label, instance, handler, boxedGetter, boxedSetter);
+    }
+    public UIContext AddChildContextSetter<TTarget, TValue>(string label, TTarget? instance, IObjectUIHandler? handler = null, Func<TTarget?, TValue?>? getter = null, Action<UIContext, TTarget, TValue?>? setter = null)
+    {
+        Func<UIContext, object?> boxedGetter = getter == null ? DefaultGetter : (ctx) => getter((TTarget?)ctx.target);
+        Action<UIContext, object?> boxedSetter = setter == null ? NotImplementedSetter :  (ctx, val) => {
+            setter.Invoke(ctx, (TTarget)ctx.target!, (TValue?)val);
         };
-        child.uiHandler = handler;
-        children.Add(child);
-        return child;
+        return AddChild(label, instance, handler, boxedGetter, boxedSetter);
     }
 
     public bool IsChildOf(UIContext context)

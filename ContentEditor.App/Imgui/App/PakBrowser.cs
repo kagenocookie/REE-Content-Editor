@@ -715,7 +715,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImGui.Spacing();
             if (Path.HasExtension(file)) {
                 if (ImGui.Selectable("Jump to Containing Folder")) {
-                    string currFolder = Path.GetDirectoryName(file);
+                    string currFolder = Path.GetDirectoryName(file)!;
                     _currentDir = PathUtils.NormalizeFilepath(currFolder);
                 }
             }

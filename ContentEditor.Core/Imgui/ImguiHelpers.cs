@@ -72,7 +72,7 @@ public static class ImguiHelpers
         }
         return false;
     }
-    public static bool FilterableCSharpEnumCombo<TEnum>(string label, ref TEnum selected, ref string? filter) where TEnum : struct, Enum
+    public static bool FilterableCSharpEnumCombo<TEnum>(string label, ref TEnum selected, ref string filter) where TEnum : struct, Enum
     {
         var values = Enum.GetValues<TEnum>();
         var labels = Enum.GetNames<TEnum>();
@@ -118,7 +118,7 @@ public static class ImguiHelpers
         return false;
     }
 
-    public static bool FilterableEnumCombo<TEnumSource>(string label, TEnumSource enumDescriptor, ref object? selected, ref string? filter)
+    public static bool FilterableEnumCombo<TEnumSource>(string label, TEnumSource enumDescriptor, ref object? selected, ref string filter)
         where TEnumSource : IEnumDataSource
     {
         var labels = enumDescriptor.GetLabels();
@@ -126,7 +126,7 @@ public static class ImguiHelpers
         return FilterableCombo(label, labels, values, ref selected, ref filter);
     }
 
-    public static bool FilterableEntityCombo<TEntityBaseType>(string label, IEnumerable<KeyValuePair<long, TEntityBaseType>> entities, ref long selected, ref string? filter)
+    public static bool FilterableEntityCombo<TEntityBaseType>(string label, IEnumerable<KeyValuePair<long, TEntityBaseType>> entities, ref long selected, ref string filter)
         where TEntityBaseType : Entity
     {
         var labels = entities.Select(kv => kv.Value.Label).ToArray();
@@ -144,14 +144,13 @@ public static class ImguiHelpers
         return -1;
     }
 
-    public static bool FilterableCombo<TValue>(string label, string[] labels, ReadOnlySpan<TValue> values, ref TValue? selected, ref string? filter)
+    public static bool FilterableCombo<TValue>(string label, string[] labels, ReadOnlySpan<TValue> values, ref TValue? selected, ref string filter)
     {
         var selectedIndex = values!.BoxedIndexOf(selected);
         if (!ImGui.BeginCombo(label, selectedIndex == -1 ? selected?.ToString() ?? "" : labels[selectedIndex])) {
             return false;
         }
 
-        filter ??= "";
         var pos = ImGui.GetCursorScreenPos();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
         ImGui.InputText($"##filter", ref filter, 48);

@@ -42,9 +42,8 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
             if (!ImGui.TreeNode(context.label)) return;
         }
         if (Filterable) {
-            context.state ??= string.Empty;
             ImGui.Indent(4);
-            ImGui.InputText("Filter", ref context.state, 120);
+            ImGui.InputText("Filter", ref context.Filter, 120);
             ImGui.Unindent(4);
             ImGui.Spacing();
         }
@@ -92,7 +91,7 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
                 ImGui.PopID();
                 continue;
             }
-            if (Filterable && !string.IsNullOrEmpty(context.state) && !Filter(child, context.state)) {
+            if (Filterable && !string.IsNullOrEmpty(context.Filter) && !Filter(child, context.Filter)) {
                 ImGui.PopID();
                 continue;
             }

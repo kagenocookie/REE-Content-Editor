@@ -54,7 +54,7 @@ public class EntityEditor : IWindowHandler
         var instances = workspace.ResourceManager.GetEntityInstances(entityType);
         var selectedId = data.GetOrAddPersistentData<long>("selectedEntity", -1);
 
-        if (ImguiHelpers.FilterableEntityCombo("Entity", instances, ref selectedId, ref data.Context.state)) {
+        if (ImguiHelpers.FilterableEntityCombo("Entity", instances, ref selectedId, ref data.Context.Filter)) {
             data.SetPersistentData("selectedEntity", selectedId);
             // note: we can clear children safely, any changes are still stored in the resource manager
             // just gotta figure out how to keep those changes tracked in bundle

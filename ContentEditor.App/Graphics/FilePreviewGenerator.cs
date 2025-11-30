@@ -147,7 +147,7 @@ public sealed class FilePreviewGenerator : IDisposable
                 var mainAssetPath = fmt == KnownFileFormats.Mesh ? path.Replace("/streaming/", "/").Replace("\\streaming\\", "\\") : path;
                 FileHandle f;
                 try {
-                    if (!workspace.ResourceManager.TryGetOrLoadFile(mainAssetPath, out f)) {
+                    if (!workspace.ResourceManager.TryGetOrLoadFile(mainAssetPath, out f!)) {
                         _statuses[path] = PreviewImageStatus.Failed;
                         continue;
                     }

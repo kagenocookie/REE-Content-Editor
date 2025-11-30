@@ -26,7 +26,7 @@ public partial class FileTesterWindow : IWindowHandler
     int IWindowHandler.FixedID => -2312;
 
     private KnownFileFormats format;
-    private string? formatFilter;
+    private string formatFilter = "";
     private bool allVersions;
     private bool testRewrite;
     private bool smokeTest;

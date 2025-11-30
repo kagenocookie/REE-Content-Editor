@@ -54,12 +54,13 @@ public class BaseListHandler : IObjectUIHandler
             list = context.Get<IList>();
         }
         if (show) {
+            string? filter = null;
             if (Filterable) {
-                context.state ??= "";
-                ImGui.InputText("Filter", ref context.state, 200);
+                ImGui.InputText("Filter", ref context.Filter, 200);
+                filter = context.Filter;
             }
             for (int i = 0; i < list.Count; ++i) {
-                if (Filterable && !string.IsNullOrEmpty(context.state) && !MatchesFilter(list[i], context.state)) {
+                if (Filterable && !string.IsNullOrEmpty(filter) && !MatchesFilter(list[i], filter)) {
                     continue;
                 }
 

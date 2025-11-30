@@ -27,17 +27,16 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
 
         if (context.children.Count >= 10) {
             ImGui.Indent(8);
-            context.state ??= "";
             ImGui.SetNextItemWidth(Math.Min(200, ImGui.CalcItemWidth() - 16));
-            ImGui.InputText("Filter fields", ref context.state, 48);
+            ImGui.InputText("Filter fields", ref context.Filter, 48);
             ImGui.Unindent(8);
             ImGui.Spacing();
         }
-        if (string.IsNullOrEmpty(context.state)) {
+        if (string.IsNullOrEmpty(context.Filter)) {
             context.ShowChildrenUI();
         } else {
             foreach (var child in context.children) {
-                if (child.label.Contains(context.state, StringComparison.InvariantCultureIgnoreCase)) {
+                if (child.label.Contains(context.Filter, StringComparison.InvariantCultureIgnoreCase)) {
                     child.ShowUI();
                 }
             }
@@ -156,7 +155,7 @@ public class RszClassnamePickerHandler(string? baseClass = null, string label = 
 
         if (classOptions?.Length > 1) {
             classInput ??= instance?.RszClass.name ?? string.Empty;
-            ImguiHelpers.FilterableCombo(label, classOptions, classValues, ref classInput, ref context.state);
+            ImguiHelpers.FilterableCombo(label, classOptions, classValues, ref classInput, ref context.ClassnameFilter);
             if (!string.IsNullOrEmpty(classInput) ? classInput != instance?.RszClass.name : allowNull && instance != null) {
                 if (ImGui.Button("Change")) {
                     if (string.IsNullOrEmpty(classInput)) {
@@ -168,6 +167,7 @@ public class RszClassnamePickerHandler(string? baseClass = null, string label = 
                             Logger.Error("Invalid classname " + classInput);
                         } else {
                             var newInstance = RszInstance.CreateInstance(ws!.Env.RszParser, cls);
+                            if (instance != null) newInstance.CopyCommonValueFieldsFrom(instance);
                             UndoRedo.RecordSet(context, newInstance, postChangeAction: (ctx) => {
                                 ctx.ClearChildren();
                                 WindowHandlerFactory.SetupRSZInstanceHandler(ctx);
@@ -231,7 +231,7 @@ public class SwappableRszInstanceHandler(string? baseClass = null, bool referenc
 
         if (classOptions != null && classOptions.Length > 1) {
             classInput ??= instance?.RszClass.name ?? string.Empty;
-            ImguiHelpers.FilterableCombo("Class", classOptions, classOptions, ref classInput, ref context.state);
+            ImguiHelpers.FilterableCombo("Class", classOptions, classOptions, ref classInput, ref context.Filter);
             if (!string.IsNullOrEmpty(classInput) && classInput != instance?.RszClass.name) {
                 if (ImGui.Button("Change")) {
                     var ws = context.GetWorkspace();
@@ -265,7 +265,7 @@ public class SwappableRszInstanceHandler(string? baseClass = null, bool referenc
             var labels = otherInstanceOptions.Select(inst => inst.GetString()).ToArray();
 
             var newInstance = instance;
-            if (ImguiHelpers.FilterableCombo(instanceLabel, labels, otherInstanceOptions, ref newInstance, ref context.state)) {
+            if (ImguiHelpers.FilterableCombo(instanceLabel, labels, otherInstanceOptions, ref newInstance, ref context.Filter)) {
                 if (newInstance?.RszClass != instance?.RszClass) {
                     UndoRedo.RecordSet(context, newInstance, (ctx) => {
                         ctx.ClearChildren();
@@ -312,7 +312,7 @@ public class InstancePickerHandler<T>(bool allowNull, Func<UIContext, bool, IEnu
 
         ImGui.SetNextItemWidth(restW);
         var newInstance = instance;
-        if (ImguiHelpers.FilterableCombo(context.label, labels, availableInstances, ref newInstance, ref context.state)) {
+        if (ImguiHelpers.FilterableCombo(context.label, labels, availableInstances, ref newInstance, ref context.Filter)) {
             if (instanceSwapper != null) {
                 instanceSwapper.Invoke(context, newInstance);
             } else {
@@ -459,7 +459,7 @@ public class EnumFieldHandler : IObjectUIHandler
     {
         var selected = context.GetRaw();
         var enumsrc = new RszEnumSource { descriptor = enumDescriptor };
-        if (ImguiHelpers.FilterableEnumCombo(context.label, enumsrc, ref selected, ref context.state)) {
+        if (ImguiHelpers.FilterableEnumCombo(context.label, enumsrc, ref selected, ref context.Filter)) {
             UndoRedo.RecordSet(context, selected);
         }
         AppImguiHelpers.ShowDefaultCopyPopup(selected, selected!.GetType(), context);
@@ -674,13 +674,13 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
             return;
         }
 
-        if (context.state == null) {
+        if (string.IsNullOrEmpty(context.CachedString)) {
             if (instance.RSZUserData is RSZUserDataInfo info) {
                 info.ReadClassName(ws.Env.RszParser);
-                context.state = $"{info.ClassName} [{info.Path}]";
+                context.CachedString = $"{info.ClassName} [{info.Path}]";
             } else if (instance.RSZUserData is RSZUserDataInfo_TDB_LE_67 infoEmbedded) {
                 infoEmbedded.ReadClassName(ws.Env.RszParser);
-                context.state = $"{infoEmbedded.ClassName} [Hash: {infoEmbedded.jsonPathHash}]";
+                context.CachedString = $"{infoEmbedded.ClassName} [Hash: {infoEmbedded.jsonPathHash}]";
             } else {
                 ImGui.Text(context.label + ": Unhandled UserData");
                 return;
@@ -688,7 +688,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
         }
 
         ImguiHelpers.BeginRect();
-        if (ImguiHelpers.TreeNodeSuffix(context.label, context.state ?? instance.RSZUserData.ClassName!)) {
+        if (ImguiHelpers.TreeNodeSuffix(context.label, context.CachedString)) {
             if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
                 if (context.children.Count > 0) {
                     var editor = context.GetChildHandler<UserDataFileEditor>()!;
@@ -708,7 +708,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
     {
         if (context.children.Count == 0) {
             RSZFile? file = null;
-            context.state = null;
+            context.CachedString = "";
 
             if (instance.RSZUserData is RSZUserDataInfo info) {
                 // var pathCtx = context.AddChild<RSZUserDataInfo, string>(

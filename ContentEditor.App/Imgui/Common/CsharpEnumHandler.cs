@@ -46,7 +46,7 @@ public class CsharpEnumHandler : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var selected = context.GetRaw();
-        if (ImguiHelpers.FilterableCombo(context.label, data.Labels, data.Values, ref selected, ref context.state)) {
+        if (ImguiHelpers.FilterableCombo(context.label, data.Labels, data.Values, ref selected, ref context.Filter)) {
             if (!NoUndoRedo) {
                 UndoRedo.RecordSet(context, selected);
             } else {

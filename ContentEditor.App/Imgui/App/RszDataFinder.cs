@@ -36,7 +36,7 @@ public class RszDataFinder : IWindowHandler
 
     private EfxAttributeType efxAttrType;
     private string efxSearch = "";
-    private string? efxAttrFilter = "";
+    private string efxAttrFilter = "";
     private bool efxFileMatchOnly = true;
 
     private Variable.TypeKind uvarKind;

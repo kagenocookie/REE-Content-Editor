@@ -708,12 +708,9 @@ public class PropertyInfoHandler : IObjectUIHandler
         typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.startFrame))!,
         typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.endFrame))!,
         typeof(ReeLib.Clip.PropertyInfo).GetProperty(nameof(ReeLib.Clip.PropertyInfo.FunctionName))!,
-        typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.nameUtf16Hash))!,
-        typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.nameAsciiHash))!,
         typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.arrayIndex))!,
         typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.speedPointNum))!,
         typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.uknCount))!,
-        typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.RE3hash))!,
     ];
 
     public void OnIMGUI(UIContext context)
@@ -721,8 +718,7 @@ public class PropertyInfoHandler : IObjectUIHandler
         var instance = context.Get<ReeLib.Clip.PropertyInfo>();
         if (context.children.Count == 0) {
             var ws = context.GetWorkspace();
-            context.AddChild("Property Type", instance, new CsharpEnumHandler(typeof(PropertyType)), (UIContext c) => ((ReeLib.Clip.PropertyInfo)c!.target!).DataType, (c, v) => {
-                var info = ((ReeLib.Clip.PropertyInfo)c!.target!);
+            context.AddChildContextSetter("Property Type", instance, new CsharpEnumHandler(typeof(PropertyType)), (c) => c!.DataType, (c, info, v) => {
                 info.DataType = (PropertyType)v!;
                 var propCtx = c.FindParentContextByHandler<PropertyHandler>();
                 var prop = propCtx?.Get<Property>();
@@ -735,6 +731,12 @@ public class PropertyInfoHandler : IObjectUIHandler
                 propCtx?.ClearChildren();
             });
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(ReeLib.Clip.PropertyInfo), false, DisplayedFields);
+            if (ws?.Game == GameIdentifier.re7)
+            {
+                context.AddChild("uknRE7_2", instance, getter: (c) => c.uknRE7_2, setter: (c, v) => c.uknRE7_2 = v).AddDefaultHandler();
+                context.AddChild("uknRE7_3", instance, getter: (c) => c.uknRE7_3, setter: (c, v) => c.uknRE7_3 = v).AddDefaultHandler();
+                context.AddChild("uknRE7_3", instance, getter: (c) => c.uknRE7_3, setter: (c, v) => c.uknRE7_3 = v).AddDefaultHandler();
+            }
         }
 
         if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString()!)) {

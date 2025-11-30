@@ -65,10 +65,10 @@ public class ResourcePathPicker : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var currentPath = context.Get<string>();
-        var newPath = context.state ?? currentPath;
+        var newPath = context.InitFilterDefault(currentPath);
         if (AppImguiHelpers.InputFilepath(context.label, ref newPath, FileExtensionFilter)) {
             context.Changed = true;
-            context.state = newPath;
+            context.Filter = newPath;
         }
 
         if (ImGui.BeginPopupContextItem()) {
@@ -141,29 +141,29 @@ public class ResourcePathPicker : IObjectUIHandler
         if (newPath != currentPath) {
             if (ImGui.Button("Update path")) {
                 ApplyPathChange(context, newPath);
-                context.state = null;
+                context.Filter = "";
             }
             if (ImguiHelpers.SameLine() && ImGui.Button("Cancel change")) {
                 context.Changed = false;
-                context.state = null;
+                context.Filter = "";
             }
         }
 
         // validate the filepath
         if (IsPathForIngame && UseNativesPath) {
             // native path
-            if (context.state != null && (Path.IsPathFullyQualified(context.state) || !context.state.StartsWith("natives/") || PathUtils.ParseFileFormat(context.state).version == -1)) {
+            if ((Path.IsPathFullyQualified(context.Filter) || !context.Filter.StartsWith("natives/") || PathUtils.ParseFileFormat(context.Filter).version == -1)) {
                 ImGui.TextColored(Colors.Warning, "The given file path may not resolve properly ingame.\nEnsure it's a native path (including the natives/stm/ part and with file extension version)");
             }
         } else if (IsPathForIngame) {
             // internal path
-            if (context.state != null && (Path.IsPathFullyQualified(context.state) || PathUtils.ParseFileFormat(context.state).version != -1 || context.state.Contains("natives/"))) {
+            if ((Path.IsPathFullyQualified(context.Filter) || PathUtils.ParseFileFormat(context.Filter).version != -1 || context.Filter.Contains("natives/"))) {
                 ImGui.TextColored(Colors.Warning, "The given file path may not resolve properly ingame.\nEnsure it's an internal path (without the natives/stm/ part and no file extension version)");
             }
         }
 
-        if (FileFormats.Length != 0 && !string.IsNullOrEmpty(context.state) && !string.IsNullOrEmpty(FileExtensionFilter)) {
-            var parsed = PathUtils.ParseFileFormat(context.state);
+        if (FileFormats.Length != 0 && !string.IsNullOrEmpty(context.Filter) && !string.IsNullOrEmpty(FileExtensionFilter)) {
+            var parsed = PathUtils.ParseFileFormat(context.Filter);
             if (!FileFormats.Contains(parsed.format)) {
                 ImGui.TextColored(Colors.Warning, "The file may be an incorrect type. Expected file types: " + FileExtensionFilter);
             }
@@ -176,7 +176,7 @@ public class ResourcePathPicker : IObjectUIHandler
     {
         if (!IsPathForIngame) {
             UndoRedo.RecordSet(context, newPath, window);
-            context.state = newPath;
+            context.Filter = newPath;
             return;
         }
 
@@ -191,7 +191,7 @@ public class ResourcePathPicker : IObjectUIHandler
             }
         }
         UndoRedo.RecordSet(context, newPath, window);
-        context.state = newPath;
+        context.Filter = newPath;
     }
 
     public delegate void BundleSaveFileCallback(Bundle bundle, string savePath, string localPath, string nativePath);

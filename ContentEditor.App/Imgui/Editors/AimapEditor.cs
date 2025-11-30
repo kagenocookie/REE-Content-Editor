@@ -40,8 +40,6 @@ public class AimapEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         failedToReadfile = false;
     }
 
-    private string? lastFilepath;
-
     protected override void DrawFileContents()
     {
         if (context.children.Count == 0) {
