@@ -478,7 +478,7 @@ public partial class FileTesterWindow : IWindowHandler
         if (type.IsValueType) {
             if (type.GetInterface(nameof(IComparable)) != null) {
                 if (((IComparable)originalValue).CompareTo(newValue) == 0) return null;
-                return "Values are not equal: " + originalValue + " => " + newValue;
+                return " Values are not equal: " + originalValue + " => " + newValue;
             }
         }
         if (type == typeof(string)) {
@@ -566,7 +566,7 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<UVarFile>((m) => [m.Header.embedCount, m.Header.magic, m.Header.name, m.Header.ukn, m.Header.UVARhash, m.Header.variableCount, m.EmbeddedUVARs, m.Variables]);
         AddCompareMapper<ReeLib.UVar.Variable>((m) => [m.guid, m.Value, m.Expression, m.flags, m.Name, m.nameHash]);
 
-        AddCompareMapper<ReeLib.Rcol.Header>((m) => [m.numGroups, m.numIgnoreTags, m.numRequestSets, m.numShapes, m.numUserData, m.maxRequestSetId, m.userDataSize, m.status, m.uknRe3_A, m.uknRe3_B, m.ukn1, m.ukn2, m.uknRe3]);
+        AddCompareMapper<ReeLib.Rcol.Header>((m) => [m.numGroups, m.numIgnoreTags, m.numRequestSets, m.numShapes, m.numUserData, m.maxRequestSetId, m.status, m.uknRe3_A, m.uknRe3_B, m.ukn1, m.ukn2, m.uknRe3]);
         AddCompareMapper<TmlFile>((m) => [m.Tracks, m.Header, m.HermiteData, m.SpeedPointData, m.Bezier3DData, m.ClipInfo]);
         AddCompareMapper<ReeLib.Tml.Header>((m) => [
             m.version, m.magic, m.totalFrames, m.guid,
