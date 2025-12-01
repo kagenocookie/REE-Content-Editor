@@ -153,6 +153,7 @@ public static class ImguiHelpers
 
         var pos = ImGui.GetCursorScreenPos();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+        if (ImGui.IsWindowAppearing()) ImGui.SetKeyboardFocusHere();
         ImGui.InputText($"##filter", ref filter, 48);
         // show placeholder
         if (string.IsNullOrEmpty(filter)) {
