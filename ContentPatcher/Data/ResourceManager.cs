@@ -811,7 +811,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                 var looseStream = workspace.Env.FindSingleFile(resolvedFilename ?? filepath, out var loosePath, Workspace.FileSourceType.Loose);
                 if (looseStream != null) {
                     var useRawHandler = handle?.Loader is UnknownStreamFileLoader;
-                    var looseHandle = useRawHandler ? CreateRawStreamFileHandle(loosePath!, resolvedFilename, looseStream) : CreateFileHandleInternal(loosePath!, resolvedFilename, looseStream)!;
+                    var looseHandle = useRawHandler ? CreateRawStreamFileHandle(loosePath ?? filepath, resolvedFilename, looseStream) : CreateFileHandleInternal(loosePath ?? filepath, resolvedFilename, looseStream)!;
                     if (looseHandle != null) {
                         if (handle == null) {
                             handle = looseHandle;
