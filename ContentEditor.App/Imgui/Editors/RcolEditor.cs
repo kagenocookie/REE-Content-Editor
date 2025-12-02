@@ -50,21 +50,12 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
         scene = component.Scene;
     }
 
-    protected override void OnFileReverted()
-    {
-        Reset();
-    }
-
     public RSZFile GetRSZFile() => File.RSZ;
 
-    private void Reset()
+    protected override void Reset()
     {
-        if (context.children.Count > 0) {
-            // not letting the child contexts dispose - so we don't dispose the file stream
-            context.children.Clear();
-        }
+        base.Reset();
         if (primaryInspector != null) primaryInspector.Target = null!;
-        failedToReadfile = false;
     }
 
     protected override void DrawFileContents()

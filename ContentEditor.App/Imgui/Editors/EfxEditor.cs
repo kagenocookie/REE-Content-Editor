@@ -34,19 +34,10 @@ public class EfxEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIns
         Workspace = env;
     }
 
-    protected override void OnFileReverted()
+    protected override void Reset()
     {
-        Reset();
-    }
-
-    private void Reset()
-    {
-        if (context.children.Count > 0) {
-            // not letting the child contexts dispose - so we don't dispose the file stream
-            context.children.Clear();
-        }
+        base.Reset();
         if (primaryInspector != null) primaryInspector.Target = null!;
-        failedToReadfile = false;
     }
 
     protected override void DrawFileContents()

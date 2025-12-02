@@ -30,8 +30,8 @@ public class TmlEditor<TClipFileType> : FileEditor, IWorkspaceContainer, IObject
 
     protected override void OnFileReverted()
     {
-        base.OnFileReverted();
         context.ClearChildren();
+        base.OnFileReverted();
         File = Handle.GetFile<TClipFileType>();
     }
 

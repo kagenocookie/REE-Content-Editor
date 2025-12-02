@@ -25,19 +25,6 @@ public class BhvtEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         Workspace = env;
     }
 
-    protected override void OnFileReverted()
-    {
-        Reset();
-    }
-
-    private void Reset()
-    {
-        if (context.children.Count > 0) {
-            context.children.Clear();
-        }
-        failedToReadfile = false;
-    }
-
     protected override void DrawFileContents()
     {
         if (context.children.Count == 0) {
@@ -134,19 +121,6 @@ public class TmlFsm2FileEditor : FileEditor, IWorkspaceContainer, IObjectUIHandl
     public TmlFsm2FileEditor(ContentWorkspace env, FileHandle file) : base (file)
     {
         Workspace = env;
-    }
-
-    protected override void OnFileReverted()
-    {
-        Reset();
-    }
-
-    private void Reset()
-    {
-        if (context.children.Count > 0) {
-            context.children.Clear();
-        }
-        failedToReadfile = false;
     }
 
     protected override void DrawFileContents()

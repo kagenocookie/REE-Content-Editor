@@ -11,7 +11,7 @@ namespace ContentEditor.App.ImguiHandling;
 
 public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFocusableFileHandleReferenceHolder, IUIContextEventHandler
 {
-    public virtual bool HasUnsavedChanges => context.Changed;
+    public virtual bool HasUnsavedChanges => context.Changed || Handle.Modified;
 
     public virtual string HandlerName { get; } = "File";
     public FileHandle Handle { get; private set; }
@@ -203,11 +203,23 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         }
     }
 
-    protected virtual void OnFileChanged() { }
+    protected virtual void OnFileChanged()
+    {
+        context.ClearChildren();
+        context.Changed = false;
+    }
 
     protected virtual void OnFileReverted()
     {
+        Reset();
         context.SetChangedNoPropagate(false);
+    }
+
+    protected virtual void Reset()
+    {
+        // default to doing a simple clear and not ClearChildren() so we don't dispose the file stream
+        context.children.Clear();
+        failedToReadfile = false;
     }
 
     protected virtual void OnFileSaved()

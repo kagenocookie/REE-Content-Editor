@@ -463,7 +463,6 @@ public partial class FileTesterWindow : IWindowHandler
         handler.Seek(0);
         newFile.Write();
         handler.Seek(0);
-        newFile.Read();
         return newFile;
     }
 
@@ -482,7 +481,7 @@ public partial class FileTesterWindow : IWindowHandler
             }
         }
         if (type == typeof(string)) {
-            return (string)originalValue == (string)newValue ? null : "string changed " + originalValue + " => " + newValue;
+            return (string)originalValue == (string)newValue ? null : " string changed " + originalValue + " => " + newValue;
         }
         if (type == typeof(float)) {
             return (MathF.Abs((float)originalValue - (float)newValue) > 0.0001f) ? null : "float changed " + originalValue + " => " + newValue;

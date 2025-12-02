@@ -33,16 +33,6 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
         File = file.GetFile<MsgFile>();
     }
 
-    protected override void OnFileReverted()
-    {
-        Reset();
-    }
-
-    private void Reset()
-    {
-        failedToReadfile = false;
-    }
-
     private sealed class MessageNameComparer : Singleton<MessageNameComparer>, IComparer<MessageEntry>
     {
         public int Compare(MessageEntry? x, MessageEntry? y) => x == null || y == null ? 0 : x.Header.entryName.CompareTo(y.Header.entryName);

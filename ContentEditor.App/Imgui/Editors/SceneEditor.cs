@@ -44,17 +44,12 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
     public RSZFile GetRSZFile() => File.RSZ;
     public Scene? GetScene() => scene;
 
-    protected override void OnFileReverted()
-    {
-        Reset();
-    }
-
-    private void Reset()
+    protected override void Reset()
     {
         primaryInspector = null;
-        failedToReadfile = false;
         CloseInspectors();
         context.ClearChildren();
+        base.Reset();
         scene?.Dispose();
         scene = null;
     }

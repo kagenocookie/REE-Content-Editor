@@ -29,19 +29,13 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         windowFlags = ImGuiWindowFlags.HorizontalScrollbar;
     }
 
-    protected override void OnFileReverted()
-    {
-        base.OnFileReverted();
-        Reset();
-    }
-
     protected override void OnFileSaved()
     {
         base.OnFileSaved();
         Reset();
     }
 
-    private void Reset()
+    protected override void Reset()
     {
         selectedPattern = null;
     }

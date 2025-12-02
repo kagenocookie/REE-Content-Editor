@@ -8,7 +8,6 @@ public class UserDataFileEditor : FileEditor, IWorkspaceContainer, IRSZFileEdito
 {
     public override string HandlerName => "UserData";
 
-    public RszInstance? Instance { get; private set; }
     public string Filename => Handle.Filepath;
     public UserFile File => Handle.GetFile<UserFile>();
 
@@ -29,33 +28,24 @@ public class UserDataFileEditor : FileEditor, IWorkspaceContainer, IRSZFileEdito
     public RSZFile GetRSZFile() => File.RSZ;
     protected override bool CanSave => context.GetWorkspace()?.Env.TryGetFileExtensionVersion("user", out _) != false || Handle.HandleType != FileHandleType.Embedded;
 
-    protected override void OnFileReverted()
-    {
-        Reset();
-        Instance = File.RSZ.ObjectList.FirstOrDefault();
-    }
-
-    private void Reset()
+    protected override void Reset()
     {
         fileContext?.ClearChildren();
         fileContext?.parent?.RemoveChild(fileContext);
         fileContext = null;
-        failedToReadfile = false;
+        base.Reset();
     }
 
     protected override void DrawFileContents()
     {
-        if (Instance == null) {
-            if (File.RSZ.ObjectList.Count == 0 && !TryRead(File)) return;
-            Instance = File.RSZ.ObjectList[0];
-        }
+        if (File.RSZ.ObjectList.Count == 0 && !TryRead(File)) return;
 
         ImGui.PushID(Filename);
         if (context.children.Count == 0 || fileContext == null) {
             context.ClearChildren();
+            var instance = File.RSZ.ObjectList[0];
             // context.AddChild("Filter", searcher, searcher);
-            // context.AddChild<UserFile, List<ResourceInfo>>("Resources", File, getter: static (c) => c!.ResourceInfoList, handler: new TooltipUIHandler(new ListHandler(typeof(ResourceInfo)), "List of resources that will be preloaded together with the file ingame.\nShould be updated automatically on save."));
-            fileContext = context.AddChild("Base type: " + Instance.RszClass.name, Instance);
+            fileContext = context.AddChild("Base type: " + instance.RszClass.name, instance);
             WindowHandlerFactory.SetupRSZInstanceHandler(fileContext);
             fileContext.SetChangedNoPropagate(context.Changed);
         }

@@ -22,19 +22,10 @@ public class RawDataEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         Workspace = env;
     }
 
-    protected override void OnFileReverted()
+    protected override void Reset()
     {
-        Reset();
-    }
-
-    private void Reset()
-    {
-        if (rawContext != null) {
-            // not letting the child contexts dispose - so we don't dispose the file stream
-            context.children.Clear();
-            rawContext = null;
-        }
-        failedToReadfile = false;
+        base.Reset();
+        rawContext = null;
     }
 
     protected virtual object GetContent() => Handle.Resource;

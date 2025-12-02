@@ -68,12 +68,12 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
         }
     }
 
-    private void Reset()
+    protected override void Reset()
     {
         primaryInspector = null;
-        failedToReadfile = false;
         CloseInspectors();
         context.ClearChildren();
+        base.Reset();
         scene?.Dispose();
         scene = null;
     }

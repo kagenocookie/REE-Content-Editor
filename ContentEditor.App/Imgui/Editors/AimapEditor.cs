@@ -27,19 +27,6 @@ public class AimapEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         Workspace = env;
     }
 
-    protected override void OnFileReverted()
-    {
-        Reset();
-    }
-
-    private void Reset()
-    {
-        if (context.children.Count > 0) {
-            context.children.Clear();
-        }
-        failedToReadfile = false;
-    }
-
     protected override void DrawFileContents()
     {
         if (context.children.Count == 0) {

@@ -30,19 +30,6 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         Workspace = env;
     }
 
-    protected override void OnFileReverted()
-    {
-        Reset();
-    }
-
-    private void Reset()
-    {
-        if (context.children.Count > 0) {
-            context.children.Clear();
-        }
-        failedToReadfile = false;
-    }
-
     private string? lastFilepath;
 
     protected override void DrawFileContents()

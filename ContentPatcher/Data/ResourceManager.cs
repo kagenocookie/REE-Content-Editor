@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.Json.Nodes;
@@ -807,11 +808,10 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         if (includeActiveBundle) {
             if (!AttemptResolveBundleFile(ref handle, filepath, nativePath, resolvedFilename)) {
                 // try loose file as fallback only
-                var looseStream = workspace.Env.FindSingleFile(resolvedFilename ?? filepath, out resolvedFilename, Workspace.FileSourceType.Loose);
+                var looseStream = workspace.Env.FindSingleFile(resolvedFilename ?? filepath, out var loosePath, Workspace.FileSourceType.Loose);
                 if (looseStream != null) {
                     var useRawHandler = handle?.Loader is UnknownStreamFileLoader;
-                    var loosePath = Path.Combine(workspace.Env.Config.GamePath, resolvedFilename!);
-                    var looseHandle = useRawHandler ? CreateRawStreamFileHandle(loosePath, resolvedFilename, looseStream) : CreateFileHandleInternal(loosePath, resolvedFilename, looseStream)!;
+                    var looseHandle = useRawHandler ? CreateRawStreamFileHandle(loosePath!, resolvedFilename, looseStream) : CreateFileHandleInternal(loosePath!, resolvedFilename, looseStream)!;
                     if (looseHandle != null) {
                         if (handle == null) {
                             handle = looseHandle;
@@ -832,7 +832,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     private bool AttemptResolveBundleFile([NotNullIfNotNull(nameof(handle))] ref FileHandle? handle, string filepath, string? nativePath, string? resolvedFilename)
     {
         // TODO should include dependency bundles as well here
-        if (activeBundle?.ResourceListing != null && activeBundle.TryFindResourceByNativePath(filepath, out var bundleLocalResource)) {
+        if (activeBundle?.ResourceListing != null && activeBundle.TryFindResourceByNativePath(nativePath ?? filepath, out var bundleLocalResource)) {
             // we can treat the given handle as a "temporary" file and now load the active file
 
             var resourceListing = activeBundle.ResourceListing[bundleLocalResource];
@@ -956,6 +956,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             }
         }
 
+        Debug.Assert(nativePath == null || nativePath.StartsWith("natives"));
         var handle = new FileHandle(filepath, stream.ToMemoryStream(disposeStream: allowDisposeStream, forceCopy: true), handleType, UnknownStreamFileLoader.Instance) {
             NativePath = nativePath ?? PreprocessNativeFilepath(filepath),
             FileSource = fileSource,
