@@ -141,11 +141,11 @@ public class ResourcePathPicker : IObjectUIHandler
         if (newPath != currentPath) {
             if (ImGui.Button("Update path")) {
                 ApplyPathChange(context, newPath);
-                context.Filter = "";
+                context.Filter = newPath;
             }
             if (ImguiHelpers.SameLine() && ImGui.Button("Cancel change")) {
                 context.Changed = false;
-                context.Filter = "";
+                context.Filter = currentPath;
             }
         }
 
