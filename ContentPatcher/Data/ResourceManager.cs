@@ -799,6 +799,19 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     private FileHandle? ReadFileResource(string filepath, string? nativePath, bool includeActiveBundle)
     {
         FileHandle? handle = null;
+        if (Path.IsPathFullyQualified(filepath)) {
+            if (!File.Exists(filepath)) return null;
+
+            var file = File.OpenRead(filepath);
+            handle = CreateFileHandleInternal(filepath, nativePath, file);
+            if (handle == null) return null;
+
+            openFiles.TryAdd(handle.NativePath ?? handle.Filepath, handle);
+            return handle;
+        }
+
+        // if it's a relative path, always start by attempting to load the PAK sourced file, so we can have the base file for diffing
+        // could be optimized to only do so for actually diffable files, but usually there probably isn't enough modded files to make a meaningful difference
         filepath = filepath.NormalizeFilepath();
         var stream = workspace.Env.FindSingleFile(filepath, out var resolvedFilename);
         if (stream != null) {
@@ -806,19 +819,20 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         }
 
         if (includeActiveBundle) {
-            if (!AttemptResolveBundleFile(ref handle, filepath, nativePath, resolvedFilename)) {
-                // try loose file as fallback only
-                var looseStream = workspace.Env.FindSingleFile(resolvedFilename ?? filepath, out var loosePath, Workspace.FileSourceType.Loose);
-                if (looseStream != null) {
-                    var useRawHandler = handle?.Loader is UnknownStreamFileLoader;
-                    var looseHandle = useRawHandler ? CreateRawStreamFileHandle(loosePath ?? filepath, resolvedFilename, looseStream) : CreateFileHandleInternal(loosePath ?? filepath, resolvedFilename, looseStream)!;
-                    if (looseHandle != null) {
-                        if (handle == null) {
-                            handle = looseHandle;
-                        } else {
-                            looseHandle.DiffHandler = handle.DiffHandler ?? looseHandle.DiffHandler;
-                            handle = looseHandle;
-                        }
+            AttemptResolveBundleFile(ref handle, filepath, nativePath, resolvedFilename);
+        }
+
+        if (workspace.Env.AllowUseLooseFiles && handle?.HandleType != FileHandleType.Bundle) {
+            var looseStream = workspace.Env.FindSingleFile(resolvedFilename ?? filepath, out var loosePath, Workspace.FileSourceType.Loose);
+            if (looseStream != null) {
+                var useRawHandler = handle?.Loader is UnknownStreamFileLoader;
+                var looseHandle = useRawHandler ? CreateRawStreamFileHandle(loosePath ?? filepath, resolvedFilename, looseStream) : CreateFileHandleInternal(loosePath ?? filepath, resolvedFilename, looseStream)!;
+                if (looseHandle != null) {
+                    if (handle == null) {
+                        handle = looseHandle;
+                    } else {
+                        looseHandle.DiffHandler = handle.DiffHandler ?? looseHandle.DiffHandler;
+                        handle = looseHandle;
                     }
                 }
             }

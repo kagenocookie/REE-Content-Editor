@@ -217,6 +217,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ShowSlider(config.UnpackMaxThreads, "Max unpack threads", 1, 64, "The maximum number of threads to be used when unpacking.\nThe actual thread count is determined automatically by the .NET runtime.");
 
         ShowSetting(config.LogToFile, "Output logs to file", $"If checked, any logging will also be output to file {FileLogger.DefaultLogFilePath}.\nChanging this setting requires a restart of the app.");
+        ShowSetting(config.LoadFromNatives, "Load files from natives/ folder", $"If checked, the app will prefer to load loose files from the active game's natives folder instead of packed files, similar to how the game would.");
         var logLevel = config.LogLevel.Get();
         if (ImGui.Combo("Minimum logging level", ref logLevel, LogLevels, LogLevels.Length)) {
             config.LogLevel.Set(logLevel);

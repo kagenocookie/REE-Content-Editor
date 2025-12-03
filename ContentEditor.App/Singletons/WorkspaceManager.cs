@@ -11,7 +11,7 @@ public class WorkspaceManager : Singleton<WorkspaceManager>
         if (!Workspaces.TryGetValue(game, out var workspace)) {
             var config = GameConfig.CreateFromRepository(game);
             Workspaces[game] = workspace = new RefCounted<Workspace>(new Workspace(config) {
-                AllowUseLooseFiles = false,
+                AllowUseLooseFiles = AppConfig.Instance.LoadFromNatives.Get(),
             });
             workspace.Instance.Config.GamePath = AppConfig.Instance.GetGamePath(game) ?? string.Empty;
             var rszPath = AppConfig.Instance.GetGameRszJsonPath(game);
