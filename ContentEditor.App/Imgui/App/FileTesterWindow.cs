@@ -241,7 +241,8 @@ public partial class FileTesterWindow : IWindowHandler
                                 Logger.Error("Rewrite mismatch: " + path + " - " + diffDesc);
                                 fails.Add(path);
                             }
-                        } catch (Exception) {
+                        } catch (Exception e) {
+                            Logger.Error("Read failed: " + e.Message);
                             fails.Add(path);
                         } finally {
                             if (file != null) env.ResourceManager.CloseFile(file);
