@@ -62,7 +62,7 @@ public class BundleManagementUI : IWindowHandler
         if (bundleManager.AllBundles.Count == 0) {
             ImGui.TextColored(Colors.Info, "No bundles found");
         } else {
-            var filter = data.GetPersistentData<string>("bundleFilter");
+            var filter = data.GetPersistentData<string>("bundleFilter") ?? "";
             var selectedBundle = bundleManager.GetBundle(selectedName, null);
             var names = bundleManager.AllBundles.Select(b => b.Name).ToArray();
             var bundlespan = CollectionsMarshal.AsSpan(bundleManager.AllBundles);

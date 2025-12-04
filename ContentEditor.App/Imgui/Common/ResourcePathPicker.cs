@@ -224,11 +224,17 @@ public class ResourcePathPicker : IObjectUIHandler
         var bundleFolder = workspace.BundleManager.GetBundleFolder(bundle);
         var nativeFilepath = file.NativePath ?? PathUtils.GetNativeFromFullFilepath(file.Filepath) ?? fn;
         var localFilepath = fn;
-        var suggestedSavePath = Path.Combine(bundleFolder, localFilepath);
-        if (File.Exists(suggestedSavePath)) {
+        string suggestedSavePath;
+        if (AppConfig.Instance.BundleDefaultSaveFullPath) {
             localFilepath = PathUtils.RemoveNativesFolder(nativeFilepath);
             suggestedSavePath = Path.Combine(bundleFolder, localFilepath);
-            Logger.Warn($"The file {suggestedSavePath} already exists, defaulting to the full file path instead.");
+        } else {
+            suggestedSavePath = Path.Combine(bundleFolder, localFilepath);
+            if (File.Exists(suggestedSavePath)) {
+                localFilepath = PathUtils.RemoveNativesFolder(nativeFilepath);
+                suggestedSavePath = Path.Combine(bundleFolder, localFilepath);
+                Logger.Warn($"The file {suggestedSavePath} already exists, defaulting to the full file path instead.");
+            }
         }
         var orgFilename = Path.GetFileName(suggestedSavePath);
         var saveFolder = Path.GetDirectoryName(suggestedSavePath)!;

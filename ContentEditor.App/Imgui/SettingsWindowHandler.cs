@@ -26,6 +26,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     private enum SubGroupID
     {
         Preferences_General,
+        Preferences_Editing,
         Display_General,
         Display_Theme,
         Hotkeys_Global,
@@ -49,6 +50,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     {
         new SettingGroup { Name = "Preferences", SubGroups = {
                 new SettingSubGroup { Name = "General", ID = SubGroupID.Preferences_General},
+                new SettingSubGroup { Name = "Editing", ID = SubGroupID.Preferences_Editing},
             }
         },
         new SettingGroup { Name = "Display", SubGroups = {
@@ -165,6 +167,9 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                         case SubGroupID.Preferences_General:
                             ShowPreferencesGeneralTab();
                             break;
+                        case SubGroupID.Preferences_Editing:
+                            ShowPreferencesEditingTab();
+                            break;
                         case SubGroupID.Display_General:
                             ShowDisplayGeneralTab();
                             break;
@@ -222,6 +227,12 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         if (ImGui.Combo("Minimum logging level", ref logLevel, LogLevels, LogLevels.Length)) {
             config.LogLevel.Set(logLevel);
         }
+    }
+    private static void ShowPreferencesEditingTab()
+    {
+        ImGui.Spacing();
+
+        ShowSetting(config.BundleDefaultSaveFullPath, "Save bundle files with full path", "When checked, will always default to saving with the full relative path instead of the root bundle folder when adding new files to the active bundle.");
 
         var maxUndo = config.MaxUndoSteps.Get();
         if (ImGui.DragInt("Max undo steps", ref maxUndo, 0.25f, 0)) {

@@ -33,6 +33,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string PrettyLabels = "pretty_labels";
         public const string RecentFiles = "recent_files";
         public const string LoadFromNatives = "load_natives";
+        public const string BundleDefaultSaveFullPath = "bundle_save_full_path";
         public const string Theme = "theme";
         public const string LatestVersion = "latest_version";
         public const string EnableUpdateCheck = "enable_update_check";
@@ -148,6 +149,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<bool> LogToFile = new SettingWrapper<bool>(Keys.LogToFile, _lock, true);
     public readonly SettingWrapper<bool> IsFirstTime = new SettingWrapper<bool>(Keys.IsFirstTime, _lock, true);
     public readonly SettingWrapper<bool> LoadFromNatives = new SettingWrapper<bool>(Keys.LoadFromNatives, _lock, false);
+    public readonly SettingWrapper<bool> BundleDefaultSaveFullPath = new SettingWrapper<bool>(Keys.BundleDefaultSaveFullPath, _lock, false);
     public readonly SettingWrapper<Vector4> WindowRect = new SettingWrapper<Vector4>(Keys.WindowRect, _lock, new Vector4(50, 50, 1280, 720));
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
     public readonly ClassSettingWrapper<string> LatestVersion = new ClassSettingWrapper<string>(Keys.LatestVersion, _lock);
@@ -268,6 +270,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.LogToFile, instance.LogToFile.value.ToString(), null),
             (Keys.IsFirstTime, instance.IsFirstTime.value.ToString(), null),
             (Keys.LoadFromNatives, instance.LoadFromNatives.value.ToString(), null),
+            (Keys.BundleDefaultSaveFullPath, instance.BundleDefaultSaveFullPath.value.ToString(), null),
             (Keys.MainWindowGame, instance.MainSelectedGame.value?.ToString() ?? "", null),
             (Keys.MainActiveBundle, instance.MainActiveBundle.value?.ToString() ?? "", null),
             (Keys.BlenderPath, instance.BlenderPath.value?.ToString() ?? "", null),
@@ -349,6 +352,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.LoadFromNatives:
                             LoadFromNatives.value = ReadBool(value);
+                            break;
+                        case Keys.BundleDefaultSaveFullPath:
+                            BundleDefaultSaveFullPath.value = ReadBool(value);
                             break;
                         case Keys.MainWindowGame:
                             MainSelectedGame.value = ReadString(value);
