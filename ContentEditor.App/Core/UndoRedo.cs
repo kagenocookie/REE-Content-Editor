@@ -181,6 +181,11 @@ public class UndoRedo
         GetState(window).Push(new ListRemoveUndoRedo(context, list, list.IndexOf(item), $"{context.GetHashCode()} Remove {item}", childIndexOffset));
     }
 
+    public static void RecordListMove<T>(UIContext? sourceContext, UIContext targetContext, IList? sourceList, T item, IList targetList, T targetItem, WindowBase? window = null, string? id = null) where T : class
+    {
+        GetState(window).Push(new ListMoveUndoRedo(sourceContext ?? targetContext, targetContext, sourceList ?? targetList, item, targetList, targetItem, id ?? $"Move {item.GetHashCode()} {targetItem.GetHashCode()}"));
+    }
+
     public static void RecordCallback(UIContext? context, Action doCallback, Action undoCallback, string? id = null, WindowBase? window = null)
     {
         GetState(window).Push(new CallbackUndoRedo(context, doCallback, undoCallback, id));
@@ -274,6 +279,57 @@ public class UndoRedo
         {
             originalValue = ((ContextSetUndoRedo<T>)previousValue).originalValue;
             return true;
+        }
+    }
+
+    public class ListMoveUndoRedo(UIContext sourceContext, UIContext targetContext, IList sourceList, object item, IList targetList, object targetItem, string? id) : UndoRedoCommand(id ?? $"Swap_{RandomString(10)}")
+    {
+        private int index1 = sourceList.IndexOf(item);
+
+        public override void Do()
+        {
+            sourceList.Remove(item);
+            if (sourceList != targetList) {
+                var index2 = targetList.IndexOf(targetItem);
+                targetList.Insert(index2, item);
+                targetContext.children.RemoveAtAfter(index2);
+                sourceContext.children.RemoveAtAfter(index1);
+                targetContext.Changed = true;
+            } else {
+                var index2 = sourceList.IndexOf(targetItem);
+                if (index2 < index1) {
+                    sourceList.Insert(index2, item);
+                } else if (index2 < sourceList.Count - 1) {
+                    sourceList.Insert(index2 + 1, item);
+                } else {
+                    sourceList.Add(item);
+                }
+                sourceContext.children.RemoveAtAfter(Math.Min(index1, index2));
+            }
+            sourceContext.Changed = true;
+        }
+
+        public override void Undo()
+        {
+            if (sourceList != targetList) {
+                var index2 = targetList.IndexOf(item);
+                targetList.RemoveAt(index2);
+                if (index1 == sourceList.Count) sourceList.Add(item); else sourceList.Insert(index1, item);
+                targetContext.children.RemoveAtAfter(index2);
+                sourceContext.children.RemoveAtAfter(index1);
+                targetContext.Changed = true;
+            } else {
+                sourceList.Remove(item);
+                var index2 = sourceList.IndexOf(targetItem);
+                if (index1 == sourceList.Count) sourceList.Add(item); else sourceList.Insert(index1, item);
+                sourceContext.children.RemoveAtAfter(Math.Min(index1, index2));
+            }
+            sourceContext.Changed = true;
+        }
+
+        public override bool Merge(UndoRedoCommand previousValue)
+        {
+            return false;
         }
     }
 

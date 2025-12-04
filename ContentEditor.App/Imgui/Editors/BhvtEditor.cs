@@ -245,7 +245,7 @@ public class NChildEditor : IObjectUIHandler
             context.AddChild<NChild, RszInstance>("Condition", file, new NestedUIHandlerStringSuffixed(new RszClassnamePickerHandler("via.behaviortree.Condition", allowNull: true)), (f) => f!.Condition, (f, v) => f.Condition = v);
             context.AddChild<NChild, BHVTNode>("Node", file, getter: (f) => f!.ChildNode, setter: (f, v) => f.ChildNode = v).AddDefaultHandler<BHVTNode>();
         }
-        context.ShowChildrenNestedUI();
+        context.ShowChildrenNestedReorderableUI<NChild>(false);
     }
 }
 
@@ -259,7 +259,7 @@ public class NActionEditor : IObjectUIHandler
             context.AddChild<NAction, uint>("Action EX", file, getter: (f) => f!.ActionEx, setter: (f, v) => f.ActionEx = v).AddDefaultHandler();
             context.AddChild<NAction, RszInstance>("Action", file, new NestedUIHandlerStringSuffixed(new RszClassnamePickerHandler("via.behaviortree.Action")), (f) => f!.Instance, (f, v) => f.Instance = v);
         }
-        context.ShowChildrenNestedUI();
+        context.ShowChildrenNestedReorderableUI<NAction>(false);
     }
 }
 

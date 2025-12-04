@@ -1,4 +1,6 @@
+using System.Collections;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Text.Json;
@@ -132,6 +134,78 @@ public static class AppImguiHelpers
             UndoRedo.RecordSet(context, newClip);
             context.ClearChildren();
         }
+    }
+
+    private static IList? _dragDropSourceList;
+    private static object? _dragDropPayload;
+    private static UIContext? _dragDropSourceContext;
+    public static unsafe bool DragDropReorder<T>(UIContext context, bool allowMigrateAcrossLists, [MaybeNullWhen(false)] out T droppedInstance) where T : class
+    {
+        droppedInstance = null;
+        if (context.target is not IList list) {
+            Debug.Fail("target is not list");
+            return false;
+        }
+
+        if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.PayloadNoCrossContext|ImGuiDragDropFlags.PayloadNoCrossProcess)) {
+            _dragDropPayload = context.Get<T>();
+            _dragDropSourceList = list;
+            _dragDropSourceContext = context;
+            var payloadName = typeof(T).FullName;
+            if (!allowMigrateAcrossLists) payloadName += $"{list.GetHashCode()}";
+            ImGui.SetDragDropPayload(payloadName, IntPtr.Zero, 0);
+            ImGui.Text(context.label + "    " + _dragDropPayload.ToString());
+            ImGui.EndDragDropSource();
+        }
+
+        var didDrop = false;
+        if (ImGui.BeginDragDropTarget()) {
+            var payloadName = typeof(T).FullName;
+            if (!allowMigrateAcrossLists) payloadName += $"{list.GetHashCode()}";
+
+            var payload = ImGui.GetDragDropPayload();
+            if (payload.NativePtr != null && payload.IsDataType(payloadName)) {
+                var pos = ImGui.GetCursorScreenPos();
+                var sourceIndex = list.IndexOf(_dragDropPayload);
+                if (sourceIndex == -1 || sourceIndex > list.IndexOf(context.GetRaw())) {
+                    pos.Y -= ImGui.GetItemRectSize().Y + ImGui.GetStyle().FramePadding.Y * 2;
+                }
+                ImGui.GetWindowDrawList().AddLine(pos, pos + new Vector2(ImGui.CalcItemWidth(), 0), ImguiHelpers.GetColorU32(ImGuiCol.PlotHistogram));
+
+                if (_dragDropSourceContext != context && ImGui.AcceptDragDropPayload(payloadName).NativePtr != null) {
+                    droppedInstance = _dragDropPayload as T;
+                    if (droppedInstance != null) {
+                        UndoRedo.RecordListMove(_dragDropSourceContext, context, _dragDropSourceList, droppedInstance, list, context.Get<T>());
+                        didDrop = true;
+                    } else {
+                        Logger.Error("Drag&drop failed");
+                    }
+                }
+            } else {
+                ImGui.SetMouseCursor(ImGuiMouseCursor.NotAllowed);
+            }
+
+            ImGui.EndDragDropTarget();
+        }
+        return didDrop;
+    }
+
+    public static void ShowChildrenNestedReorderableUI<T>(this UIContext context, bool allowMigrateAcrossLists) where T : class
+    {
+        ShowChildrenNestedReorderableUI<T>(context, allowMigrateAcrossLists, out _);
+    }
+    public static bool ShowChildrenNestedReorderableUI<T>(this UIContext context, bool allowMigrateAcrossLists, [MaybeNullWhen(false)] out T droppedInstance) where T : class
+    {
+        // note: we can't use the usual TreeNodeSuffix() here because drag drop doesn't work with BeginGroup()
+        var show = ImGui.TreeNode(context.label + "     " + context.GetRaw()?.ToString() ?? "");
+        var didDrop = AppImguiHelpers.DragDropReorder<T>(context, allowMigrateAcrossLists, out droppedInstance);
+        if (show) {
+            for (int i = 0; i < context.children.Count; i++) {
+                context.children[i].ShowUI();
+            }
+            ImGui.TreePop();
+        }
+        return didDrop;
     }
 
     public static void RedirectMouseInputToScene(Scene scene, bool isHovered)
