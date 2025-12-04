@@ -78,7 +78,10 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
                     try {
                         var newJson = JsonSerializer.Deserialize<JsonNode>(clipboard, env.Env.JsonOptions)!;
                         var prevJson = instance.ToJson(env.Env);
-                        UndoRedo.RecordCallbackSetter(context, instance, prevJson, newJson, (target, json) => env.Diff.ApplyDiff(target, json));
+                        UndoRedo.RecordCallbackSetter(context, context, prevJson, newJson, (ctx, json) => {
+                            ctx.Set(env.Diff.OverrideInstance(ctx.Get<RszInstance>(), json));
+                            ctx.ResetState();
+                        });
                     } catch (Exception e) {
                         Logger.Error(e, "Invalid JSON");
                     }
@@ -128,14 +131,29 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
     }
 }
 
+public class NestedRszClassnamePickerHandler(string? baseClass = null, string label = "Classname", bool allowNull = false, bool allowCopy = true) : RszClassnamePickerHandler(baseClass, label, allowNull)
+{
+    public override void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<RszInstance?>();
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, instance?.ToString() ?? "");
+        if (allowCopy && instance != null) {
+            RszInstanceHandler.ShowDefaultTooltip(context);
+        }
+        if (show) {
+            base.OnIMGUI(context);
+            ImGui.TreePop();
+        }
+    }
+}
+
 public class RszClassnamePickerHandler(string? baseClass = null, string label = "Classname", bool allowNull = false) : IObjectUIHandler
 {
     private static readonly RszInstanceHandler inner = new();
     private string[]? classOptions;
     private string[]? classValues;
-    private string? classInput;
 
-    public void OnIMGUI(UIContext context)
+    public virtual void OnIMGUI(UIContext context)
     {
         var instance = context.Get<RszInstance?>();
         if (context.children.Count == 0) {
@@ -154,8 +172,11 @@ public class RszClassnamePickerHandler(string? baseClass = null, string label = 
         }
 
         if (classOptions?.Length > 1) {
-            classInput ??= instance?.RszClass.name ?? string.Empty;
-            ImguiHelpers.FilterableCombo(label, classOptions, classValues, ref classInput, ref context.ClassnameFilter);
+            if (string.IsNullOrEmpty(context.InputClassname)) {
+                context.InputClassname = instance?.RszClass.name ?? string.Empty;
+            }
+            ImguiHelpers.FilterableCombo(label, classOptions, classValues, ref context.InputClassname!, ref context.ClassnameFilter);
+            var classInput = context.InputClassname;
             if (!string.IsNullOrEmpty(classInput) ? classInput != instance?.RszClass.name : allowNull && instance != null) {
                 if (ImGui.Button("Change")) {
                     if (string.IsNullOrEmpty(classInput)) {
@@ -171,14 +192,14 @@ public class RszClassnamePickerHandler(string? baseClass = null, string label = 
                             UndoRedo.RecordSet(context, newInstance, postChangeAction: (ctx) => {
                                 ctx.ClearChildren();
                                 WindowHandlerFactory.SetupRSZInstanceHandler(ctx);
-                                classInput = null;
+                                context.InputClassname = ctx.Get<RszInstance>()?.RszClass.name ?? string.Empty;
                             }, mergeMode: UndoRedoMergeMode.NeverMerge);
                         }
                     }
                 }
                 ImGui.SameLine();
                 if (ImGui.Button("Cancel")) {
-                    classInput = null;
+                    context.InputClassname = instance?.RszClass.name ?? string.Empty;
                 }
             }
         }
@@ -213,7 +234,6 @@ public class SwappableRszInstanceHandler(string? baseClass = null, bool referenc
     private static readonly RszInstanceHandler inner = new();
     private string[]? classOptions;
     private HashSet<string>? classOptionsSet;
-    private string? classInput;
 
     public void OnIMGUI(UIContext context)
     {
@@ -230,8 +250,11 @@ public class SwappableRszInstanceHandler(string? baseClass = null, bool referenc
         }
 
         if (classOptions != null && classOptions.Length > 1) {
-            classInput ??= instance?.RszClass.name ?? string.Empty;
-            ImguiHelpers.FilterableCombo("Class", classOptions, classOptions, ref classInput, ref context.Filter);
+            if (string.IsNullOrEmpty(context.InputClassname)) {
+                context.InputClassname = instance?.RszClass.name ?? string.Empty;
+            }
+            ImguiHelpers.FilterableCombo("Class", classOptions, classOptions, ref context.InputClassname!, ref context.ClassnameFilter);
+            var classInput = context.InputClassname;
             if (!string.IsNullOrEmpty(classInput) && classInput != instance?.RszClass.name) {
                 if (ImGui.Button("Change")) {
                     var ws = context.GetWorkspace();
@@ -243,13 +266,13 @@ public class SwappableRszInstanceHandler(string? baseClass = null, bool referenc
                         UndoRedo.RecordSet(context, newInstance, postChangeAction: (ctx) => {
                             ctx.ClearChildren();
                             WindowHandlerFactory.SetupRSZInstanceHandler(ctx);
-                            classInput = null;
+                            context.InputClassname = ctx.Get<RszInstance>()?.RszClass.name ?? "";
                         }, mergeMode: UndoRedoMergeMode.NeverMerge);
                     }
                 }
                 ImGui.SameLine();
                 if (ImGui.Button("Cancel")) {
-                    classInput = null;
+                    context.InputClassname = instance?.RszClass.name ?? "";
                 }
             }
         }
@@ -270,7 +293,7 @@ public class SwappableRszInstanceHandler(string? baseClass = null, bool referenc
                     UndoRedo.RecordSet(context, newInstance, (ctx) => {
                         ctx.ClearChildren();
                         WindowHandlerFactory.SetupRSZInstanceHandler(ctx);
-                        classInput = null;
+                        context.InputClassname = ctx.Get<RszInstance>()?.RszClass.name ?? "";
                     }, mergeMode: UndoRedoMergeMode.NeverMerge);
                 } else {
                     UndoRedo.RecordSet(context, newInstance, mergeMode: UndoRedoMergeMode.NeverMerge);
@@ -326,7 +349,7 @@ public class NestedRszInstanceHandler : IObjectUIHandler
 {
     public bool ForceDefaultClose { get; set; }
     private bool _wasInit = false;
-    private readonly RszField? field;
+    private readonly string? classname;
 
     public NestedRszInstanceHandler()
     {
@@ -334,7 +357,12 @@ public class NestedRszInstanceHandler : IObjectUIHandler
 
     public NestedRszInstanceHandler(RszField field)
     {
-        this.field = field;
+        classname = field.original_type;
+    }
+
+    public NestedRszInstanceHandler(string classname)
+    {
+        this.classname = classname;
     }
 
     public void OnIMGUI(UIContext context)
@@ -343,7 +371,7 @@ public class NestedRszInstanceHandler : IObjectUIHandler
         if (instance == null) {
             ImGui.Text(context.label + ": NULL");
 
-            if (string.IsNullOrEmpty(field?.original_type)) return;
+            if (string.IsNullOrEmpty(classname)) return;
 
             var ws = context.GetWorkspace();
             if (ws == null) return;
@@ -351,7 +379,7 @@ public class NestedRszInstanceHandler : IObjectUIHandler
             ImGui.SameLine();
             ImGui.PushID(context.label);
             if (ImGui.Button("Create")) {
-                var cls = ws.Env.RszParser.GetRSZClass(field.original_type);
+                var cls = ws.Env.RszParser.GetRSZClass(classname);
                 if (cls == null) {
                     Logger.Error("Class not found");
                 } else {

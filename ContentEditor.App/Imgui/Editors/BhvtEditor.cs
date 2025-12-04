@@ -203,9 +203,9 @@ public class BHVTNodeEditor : IObjectUIHandler
             context.AddChild<BHVTNode, NodeID>("Parent Node ID", node, NodeIDEditor.InstanceDisabled, (f) => f!.ParentID);
             context.AddChild<BHVTNode, NodeAttribute>("Attributes", node, new CsharpFlagsEnumFieldHandler<NodeAttribute, ushort>(), (f) => f!.Attributes, (f, v) => f.Attributes = v);
             context.AddChild<BHVTNode, string>("Reference Tree", node, new ConditionalUIHandler(new ResourcePathPicker(context.GetWorkspace(), KnownFileFormats.MotionFsm2), RefTreeCondition), f => f!.ReferenceTree, (f, v) => f.ReferenceTree = v);
-            context.AddChild<BHVTNode, RszInstance>("Selector", node, new NestedUIHandlerStringSuffixed(new RszClassnamePickerHandler("via.behaviortree.Selector", allowNull: true)), (f) => f!.Selector, (f, v) => f.Selector = v);
+            context.AddChild<BHVTNode, RszInstance>("Selector", node, new NestedRszClassnamePickerHandler("via.behaviortree.Selector", allowNull: true), (f) => f!.Selector, (f, v) => f.Selector = v);
             context.AddChild<BHVTNode, List<RszInstance>>("SelectorCallers", node, new RszListInstanceHandler("via.behaviortree.SelectorCaller"), getter: (f) => f!.SelectorCallers);
-            context.AddChild<BHVTNode, RszInstance>("SelectorCallerCondition", node, new NestedUIHandlerStringSuffixed(new RszClassnamePickerHandler("via.behaviortree.Condition", allowNull: true)), (f) => f!.SelectorCallerCondition, (f, v) => f.SelectorCallerCondition = v);
+            context.AddChild<BHVTNode, RszInstance>("SelectorCallerCondition", node, new NestedRszClassnamePickerHandler("via.behaviortree.Condition", allowNull: true), (f) => f!.SelectorCallerCondition, (f, v) => f.SelectorCallerCondition = v);
             context.AddChild<BHVTNode, bool>("isBranch", node, FsmBoolHandler, (f) => f!.isBranch, (f, v) => f.isBranch = v);
             context.AddChild<BHVTNode, bool>("isEnd", node, FsmBoolHandler, (f) => f!.isEnd, (f, v) => f.isEnd = v);
             context.AddChild<BHVTNode, WorkFlags>("Work Flags", node, new ConditionalUIHandler(new CsharpFlagsEnumFieldHandler<WorkFlags, ushort>(), FSMNodeCondition), (f) => f!.WorkFlags, (f, v) => f.WorkFlags = v);
@@ -228,7 +228,8 @@ public class BhvtTransitionEditor : IObjectUIHandler
         if (context.children.Count == 0) {
             var file = context.Get<NTransition>();
             context.AddChild<NTransition, BHVTNode>("StartNode", file, new InstancePickerHandler<BHVTNode>(true, BhvtEditor.FindBhvtNodes), (f) => f!.StartNode, (f, v) => f.StartNode = v);
-            context.AddChild<NTransition, RszInstance>("Condition", file, new NestedUIHandlerStringSuffixed(new RszClassnamePickerHandler("via.behaviortree.Condition", allowNull: true)), (f) => f!.Condition, (f, v) => f.Condition = v);
+            // context.AddChild<NTransition, RszInstance>("Condition", file, new NestedUIHandlerStringSuffixed(new RszClassnamePickerHandler("via.behaviortree.Condition", allowNull: true, allowCopy: true)), (f) => f!.Condition, (f, v) => f.Condition = v);
+            context.AddChild<NTransition, RszInstance>("Condition", file, new NestedRszClassnamePickerHandler("via.behaviortree.Condition", allowNull: true), (f) => f!.Condition, (f, v) => f.Condition = v);
             context.AddChild<NTransition, List<uint>>("States", file, getter: (f) => f!.transitionEvents).AddDefaultHandler();
         }
         context.ShowChildrenNestedUI();
@@ -242,7 +243,7 @@ public class NChildEditor : IObjectUIHandler
     {
         if (context.children.Count == 0) {
             var file = context.Get<NChild>();
-            context.AddChild<NChild, RszInstance>("Condition", file, new NestedUIHandlerStringSuffixed(new RszClassnamePickerHandler("via.behaviortree.Condition", allowNull: true)), (f) => f!.Condition, (f, v) => f.Condition = v);
+            context.AddChild<NChild, RszInstance>("Condition", file, new NestedRszClassnamePickerHandler("via.behaviortree.Condition", allowNull: true), (f) => f!.Condition, (f, v) => f.Condition = v);
             context.AddChild<NChild, BHVTNode>("Node", file, getter: (f) => f!.ChildNode, setter: (f, v) => f.ChildNode = v).AddDefaultHandler<BHVTNode>();
         }
         context.ShowChildrenNestedReorderableUI<NChild>(false);
@@ -257,7 +258,7 @@ public class NActionEditor : IObjectUIHandler
         if (context.children.Count == 0) {
             var file = context.Get<NAction>();
             context.AddChild<NAction, uint>("Action EX", file, getter: (f) => f!.ActionEx, setter: (f, v) => f.ActionEx = v).AddDefaultHandler();
-            context.AddChild<NAction, RszInstance>("Action", file, new NestedUIHandlerStringSuffixed(new RszClassnamePickerHandler("via.behaviortree.Action")), (f) => f!.Instance, (f, v) => f.Instance = v);
+            context.AddChild<NAction, RszInstance>("Action", file, new NestedRszClassnamePickerHandler("via.behaviortree.Action"), (f) => f!.Instance, (f, v) => f.Instance = v);
         }
         context.ShowChildrenNestedReorderableUI<NAction>(false);
     }
@@ -273,7 +274,7 @@ public class NStateEditor : IObjectUIHandler
             context.AddChild<NState, uint>("State EX", file, getter: (f) => f!.stateEx, setter: (f, v) => f.stateEx = v).AddDefaultHandler();
             context.AddChild<NState, uint>("Transition Map ID", file, getter: (f) => f!.transitionMapID, setter: (f, v) => f.transitionMapID = v).AddDefaultHandler();
             context.AddChild<NState, BHVTNode>("Target Node", file, new InstancePickerHandler<BHVTNode>(false, BhvtEditor.FindBhvtNodes), (f) => f!.TargetNode, (f, v) => f.TargetNode = v);
-            context.AddChildContextSetter<NState, RszInstance>("Condition", file, new NestedUIHandlerStringSuffixed(new RszClassnamePickerHandler("via.behaviortree.Condition", allowNull: true)),
+            context.AddChildContextSetter<NState, RszInstance>("Condition", file, new NestedRszClassnamePickerHandler("via.behaviortree.Condition", allowNull: true),
                 (f) => f!.Condition,
                 (ctx, f, newVal) => {
                     f.Condition = newVal;

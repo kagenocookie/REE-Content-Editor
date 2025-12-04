@@ -30,8 +30,9 @@ public class UIContext
         set => GetStateValue<bool>(1, value).value = value;
     }
     public ref string Filter => ref GetStateRef<string>(2, "");
-    public ref string ClassnameFilter => ref GetStateRef<string>(3, "");
-    public ref string CachedString => ref GetStateRef<string>(4, "");
+    public ref string InputClassname => ref GetStateRef<string>(3, "");
+    public ref string ClassnameFilter => ref GetStateRef<string>(4, "");
+    public ref string CachedString => ref GetStateRef<string>(5, "");
 
     public string InitFilterDefault(string? defaultFilter) => GetStateRef<string>(2, defaultFilter ?? "");
 
@@ -39,6 +40,11 @@ public class UIContext
     {
         public int id = id;
         public object? value = value;
+    }
+
+    public void ResetState()
+    {
+        State.Clear();
     }
 
     private unsafe ref T GetStateRef<T>(int id, T defaultValue) where T : class

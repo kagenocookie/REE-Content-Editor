@@ -30,6 +30,14 @@ public class DiffHandler(Workspace env)
         }
     }
 
+    public RszInstance OverrideInstance(RszInstance instance, JsonNode? diff)
+    {
+        if (diff == null) return instance;
+        var newInstance = instance;
+        patcher.ApplyRSZObjectDiff(ref newInstance, diff, env);
+        return newInstance;
+    }
+
     public void ApplyDiff(List<RszInstance> instances, JsonNode? diff, string? elementClassname)
     {
         if (diff == null) return;
