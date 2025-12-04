@@ -151,7 +151,7 @@ public class BundleManagementUI : IWindowHandler
                 if (openFileCallback != null) {
                     if (ImGui.Button("Open")) {
                         var path = bundleManager.ResolveBundleLocalPath(bundle, e.Key);
-                        if (!File.Exists(path)) {
+                        if (bundle.Name == preselectBundle || !File.Exists(path)) {
                             openFileCallback.Invoke(e.Value.Target);
                         } else {
                             openFileCallback.Invoke(path);
