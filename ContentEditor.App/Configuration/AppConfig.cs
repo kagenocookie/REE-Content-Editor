@@ -39,6 +39,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string EnableUpdateCheck = "enable_update_check";
         public const string LastUpdateCheck = "last_update_check";
         public const string AutoExpandFieldsCount = "auto_expand_fields_count";
+        public const string FontSize = "font_size";
         public const string UsePakFilePreviewWindow = "use_pak_preview_window";
         public const string UsePakCompactFilePaths = "use_pak_compact_file_paths";
         public const string PakDisplayMode = "pak_display_mode";
@@ -142,6 +143,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<int> LogLevel = new SettingWrapper<int>(Keys.LogLevel, _lock, 1);
     public readonly SettingWrapper<int> MaxUndoSteps = new SettingWrapper<int>(Keys.MaxUndoSteps, _lock, 250);
     public readonly SettingWrapper<int> AutoExpandFieldsCount = new SettingWrapper<int>(Keys.AutoExpandFieldsCount, _lock, 3);
+    public readonly SettingWrapper<int> FontSize = new SettingWrapper<int>(Keys.FontSize, _lock, 20);
     public readonly SettingWrapper<bool> EnableUpdateCheck = new SettingWrapper<bool>(Keys.EnableUpdateCheck, _lock, true);
     public readonly SettingWrapper<bool> UsePakFilePreviewWindow = new SettingWrapper<bool>(Keys.UsePakFilePreviewWindow, _lock, true);
     public readonly SettingWrapper<bool> UsePakCompactFilePaths = new SettingWrapper<bool>(Keys.UsePakCompactFilePaths, _lock, true);
@@ -283,6 +285,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.LogLevel, instance.LogLevel.value.ToString(), null),
             (Keys.MaxUndoSteps, instance.MaxUndoSteps.value.ToString(), null),
             (Keys.AutoExpandFieldsCount, instance.AutoExpandFieldsCount.value.ToString(), null),
+            (Keys.FontSize, instance.FontSize.value.ToString(), null),
             (Keys.WindowRect, instance.WindowRect.value.ToString("", CultureInfo.InvariantCulture).Replace("<", "").Replace(">", ""), null),
             (Keys.LastUpdateCheck, instance.LastUpdateCheck.value.ToString("O"), null),
             (Keys.LatestVersion, instance.LatestVersion.value?.ToString() ?? "", null),
@@ -391,6 +394,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.AutoExpandFieldsCount:
                             if (int.TryParse(value, out _intvalue)) AutoExpandFieldsCount.value = Math.Max(_intvalue, 0);
+                            break;
+                        case Keys.FontSize:
+                            if (int.TryParse(value, out _intvalue)) FontSize.value = Math.Max(_intvalue, 10);
                             break;
                         case Keys.PrettyLabels:
                             PrettyFieldLabels.value = ReadBool(value);

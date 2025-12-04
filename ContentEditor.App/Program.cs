@@ -119,6 +119,8 @@ sealed class Program
         AppConfig.Instance.LogLevel.ValueChanged += (level) => {
             Logger.CurrentLogger.LoggingLevel = (LogSeverity)level;
         };
+        UI.FontSize = AppConfig.Instance.FontSize.Get();
+        UI.FontSizeLarge = AppConfig.Instance.FontSize.Get() * 3;
         ResourceRepository.MetadataRemoteSource = AppConfig.Instance.RemoteDataSource.Get() ?? ResourceRepository.MetadataRemoteSource!;
         ConsoleWindow.EventLogger = evtLogger;
         ReeLib.Common.Log.LogCallback = (level, msg) => {

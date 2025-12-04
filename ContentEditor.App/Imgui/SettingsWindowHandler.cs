@@ -244,6 +244,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     {
         ImGui.Spacing();
 
+        ShowSlider(config.FontSize, "UI Font Size", 10, 128, "The default font size for drawing text. Needs restart to apply.");
         ShowSetting(config.PrettyFieldLabels, "Simplify field labels", "Whether to simplify field labels instead of showing the raw field names (e.g. \"Target Object\" instead of \"_TargetObject\").");
         ShowSlider(config.AutoExpandFieldsCount, "Auto-expand field count", 0, 16, "RSZ object fields with less than the defined number of fields will initially auto expand.");
 
