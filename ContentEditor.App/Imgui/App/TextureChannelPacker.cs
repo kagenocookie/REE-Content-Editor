@@ -448,8 +448,9 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
             ImGui.EndDragDropTarget();
         }
         if (click) {
+            var wnd = EditorWindow.CurrentWindow!;
             PlatformUtils.ShowFileDialog((files) => {
-                MainLoop.Instance.InvokeFromUIThread(() => {
+                wnd.InvokeFromUIThread(() => {
                     ReplaceSlotTexture(slot, files[0]);
                     isDirty = true;
                 });
