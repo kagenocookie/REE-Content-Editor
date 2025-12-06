@@ -46,6 +46,15 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
 
             var ws = context.GetWorkspace();
             if (Logger.ErrorIf(ws == null)) return true;
+            try {
+                // try and add a failsafe in case somehow the paste later fails for reasons unknown
+                var motCopy = motData.ToMotFile();
+                if (motCopy == null) throw new NullReferenceException("File is null");
+                motData.VerificationId = VirtualClipboard.Store(motCopy);
+            } catch (Exception e) {
+                Logger.Error("Failed to copy motion data: " + e.Message);
+                return true;
+            }
             EditorWindow.CurrentWindow?.CopyToClipboard(motData.ToJsonString(ws.Env), "Copied motion " + motData.MotName + " to clipboard (JSON)");
             return true;
         }
@@ -62,7 +71,17 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                     if (Logger.ErrorIf(motlist == null, "Could not find parent motlist")) return true;
 
                     var prevMot = context.Get<MotFileBase>();
-                    var newMot = motData.ToMotFile();
+                    MotFileBase newMot;
+                    try {
+                        newMot = motData.ToMotFile()!;
+                        if (newMot == null) throw new NullReferenceException("File is null");
+                    } catch (Exception e) {
+                        Logger.Warn($"Pasted data is invalid ({e.Message}), attempting virtual clipboard...");
+                        if (!VirtualClipboard.TryGetById(motData.VerificationId, out newMot!)) {
+                            Logger.Error($"Pasted data is invalid.");
+                            return true;
+                        }
+                    }
                     if (newMot == null) return true;
 
                     if (pasteRetarget) {

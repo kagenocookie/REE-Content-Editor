@@ -31,11 +31,6 @@ public class MotionDataResource : IContentResource
         mot.WriteTo(handler, false);
         stream.Seek(0, SeekOrigin.Begin);
         MotDataBase64 = Convert.ToBase64String(stream.GetBuffer().AsSpan(0, (int)stream.Length));
-        try {
-            var decoded = Convert.FromBase64String(MotDataBase64);
-        } catch (Exception) {
-            Logger.Error("Encoded base64 was not valid base64! WTF!");
-        }
     }
 
     [JsonPropertyName("name")]
@@ -46,6 +41,8 @@ public class MotionDataResource : IContentResource
     public KnownFileFormats MotType { get; set; }
     [JsonPropertyName("motDataBase64")]
     public string MotDataBase64 { get; set; }
+    [JsonPropertyName("verificationId")]
+    public int VerificationId { get; set; }
 
     [JsonIgnore]
     public string ResourceIdentifier => "mot_data";
@@ -109,7 +106,7 @@ public class MotionDataResource : IContentResource
         var mot = new MotFile(new FileHandler(stream));
         mot.Header.version = MotVersion;
         if (!mot.Read()) {
-            Logger.Error("Failed to read mot file data");
+            Logger.Error("Failed to re-read mot file data");
             return null;
         }
 
