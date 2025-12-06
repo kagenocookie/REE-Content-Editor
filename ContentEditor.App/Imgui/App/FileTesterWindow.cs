@@ -578,7 +578,8 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<ReeLib.Gui.Element>((m) => [m.Name, m.ClassName, m.ID, m.ContainerId, m.guid3, m.Attributes, m.ExtraAttributes, m.ElementData]);
         AddCompareMapper<ReeLib.Gui.Attribute>((m) => [m.propertyType, m.OrderIndex, m.uknInt, m.Value]);
         AddCompareMapper<ReeLib.Gui.GuiClip>((m) => [m.guid, m.IsDefault, m.name, m.clip]);
-        AddCompareMapper<EmbeddedClip>((m) => [m.Header, m.Bezier3DData, m.ClipInfoList, m.ClipKeys, m.ExtraPropertyData, m.FrameCount, m.Guid, m.HermiteData, m.SpeedPointData, m.Tracks]);
+        AddCompareMapper<EmbeddedClip>((m) => [m.Header, m.Bezier3DData, m.ClipInfoList, m.Properties, m.ClipKeys.Count, m.ExtraPropertyData, m.FrameCount, m.Guid, m.HermiteData, m.SpeedPointData, m.Tracks]);
+        AddCompareMapper<Property>((m) => [m.Info.FunctionName, m.Info.arrayIndex, m.Info.ChildMembershipCount, m.ChildProperties?.Count, m.Keys?.Count, m.Info.DataType, m.Info.startFrame, m.Info.endFrame, m.Info.nameAsciiHash, m.Info.nameUtf16Hash, m.Info.timelineUkn, m.Info.timelineUkn2, m.Info.uknByte, m.Info.uknByte00, m.Info.uknCount, m.Info.uknRE7_2, m.Info.uknRE7_3, m.Info.uknRE7_4]);
         AddCompareMapper<ClipHeader>((m) => [m.numFrames, m.numKeys, m.numNodes, m.numProperties, m.guid]);
         AddCompareMapper<ExtraPropertyInfo>((m) => [m.count, m.flags, m.propertyUTF16Hash, m.values]);
 
@@ -623,6 +624,6 @@ public partial class FileTesterWindow : IWindowHandler
         else mapperNameLookups[typeof(T)] = index => index.ToString();
     }
 
-    [GeneratedRegex("[\\s,.\\[][a-zA-Z]+\\.([a-zA-Z0-9_\\.\\?]+?)(?=[,\\]]|$)")]
+    [GeneratedRegex("[\\s,.\\[][a-zA-Z]+\\.([a-zA-Z0-9_?\\.\\?]+?)(?=[, \\]]|$)")]
     private static partial Regex NameLookupRegex();
 }

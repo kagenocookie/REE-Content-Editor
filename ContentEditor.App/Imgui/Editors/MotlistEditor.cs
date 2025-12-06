@@ -214,6 +214,7 @@ public class MotFileHandler : IObjectUIHandler
 
             context.AddChild<MotFile, float>("Start Frame", instance, getter: (m) => m!.Header.startFrame, setter: (m, v) => m!.Header.startFrame = v).AddDefaultHandler<float>();
             context.AddChild<MotFile, float>("End Frame", instance, getter: (m) => m!.Header.endFrame, setter: (m, v) => m!.Header.endFrame = v).AddDefaultHandler<float>();
+            context.AddChild<MotFile, ushort>("Ukn Extra", instance, getter: (m) => m!.Header.uknExtra, setter: (m, v) => m!.Header.uknExtra = v).AddDefaultHandler<ushort>();
 
             context.AddChild<MotFile, List<MotBone>>("Bones", instance, getter: (m) => m!.RootBones).AddDefaultHandler();
             context.AddChild<MotFile, List<BoneMotionClip>>("Animation Clips", instance, getter: (m) => m!.BoneClips).AddDefaultHandler();
@@ -616,8 +617,6 @@ public class CTrackHandler : IObjectUIHandler
     private static MemberInfo[] DisplayedFields = [
         typeof(CTrack).GetProperty(nameof(CTrack.Name))!,
         typeof(CTrack).GetField(nameof(CTrack.nameHash))!,
-        typeof(CTrack).GetField(nameof(CTrack.nodeCount))!,
-        typeof(CTrack).GetProperty(nameof(CTrack.ChildTracks))!,
         typeof(CTrack).GetProperty(nameof(CTrack.Properties))!,
         typeof(CTrack).GetField(nameof(CTrack.Start_Frame))!,
         typeof(CTrack).GetField(nameof(CTrack.End_Frame))!,
