@@ -39,6 +39,8 @@ public class BhvtEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     }
 
     internal static IEnumerable<BHVTNode> FindBhvtNodes(UIContext context, bool force) => context.FindValueInParentValues<BhvtFile>()?.Nodes ?? [];
+    internal static IEnumerable<BHVTNode> FindChildBhvtNodes(UIContext context, bool force) => context.FindValueInParentValues<BHVTNode>()?.Children.Children
+        .Where(x => x.ChildNode != null).Select(ch => ch.ChildNode!) ?? [];
 }
 
 public class MotFsm2FileEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
@@ -56,19 +58,6 @@ public class MotFsm2FileEditor : FileEditor, IWorkspaceContainer, IObjectUIHandl
     public MotFsm2FileEditor(ContentWorkspace env, FileHandle file) : base (file)
     {
         Workspace = env;
-    }
-
-    protected override void OnFileReverted()
-    {
-        Reset();
-    }
-
-    private void Reset()
-    {
-        if (context.children.Count > 0) {
-            context.children.Clear();
-        }
-        failedToReadfile = false;
     }
 
     protected override void DrawFileContents()
@@ -227,7 +216,7 @@ public class BhvtTransitionEditor : IObjectUIHandler
     {
         if (context.children.Count == 0) {
             var file = context.Get<NTransition>();
-            context.AddChild<NTransition, BHVTNode>("StartNode", file, new InstancePickerHandler<BHVTNode>(true, BhvtEditor.FindBhvtNodes), (f) => f!.StartNode, (f, v) => f.StartNode = v);
+            context.AddChild<NTransition, BHVTNode>("StartNode", file, new InstancePickerHandler<BHVTNode>(true, BhvtEditor.FindChildBhvtNodes), (f) => f!.StartNode, (f, v) => f.StartNode = v);
             // context.AddChild<NTransition, RszInstance>("Condition", file, new NestedUIHandlerStringSuffixed(new RszClassnamePickerHandler("via.behaviortree.Condition", allowNull: true, allowCopy: true)), (f) => f!.Condition, (f, v) => f.Condition = v);
             context.AddChild<NTransition, RszInstance>("Condition", file, new NestedRszClassnamePickerHandler("via.behaviortree.Condition", allowNull: true), (f) => f!.Condition, (f, v) => f.Condition = v);
             context.AddChild<NTransition, List<uint>>("States", file, getter: (f) => f!.transitionEvents).AddDefaultHandler();
