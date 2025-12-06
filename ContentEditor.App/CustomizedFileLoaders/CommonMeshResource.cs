@@ -1,11 +1,7 @@
 using Assimp;
-using Assimp.Configs;
-using Assimp.Unmanaged;
-using ContentEditor;
 using ContentEditor.App.Graphics;
 using ContentPatcher;
 using ReeLib;
-using ReeLib.Mesh;
 
 namespace ContentEditor.App.FileLoaders;
 

@@ -1,8 +1,6 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Assimp;
-using ContentEditor;
-using ContentEditor.App.Graphics;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Common;
@@ -10,7 +8,6 @@ using ReeLib.Mesh;
 using ReeLib.Mot;
 using ReeLib.Motlist;
 using ReeLib.via;
-using Silk.NET.Maths;
 
 namespace ContentEditor.App.FileLoaders;
 
