@@ -65,7 +65,7 @@ public partial class CommonMeshResource : IResourceFile
                     ?? nodeDict.GetValueOrDefault(mot.RootBones.First().Header.boneHash)
                     ?? scene.RootNode.Children.FirstOrDefault(n => n.Name.Equals("root", StringComparison.InvariantCultureIgnoreCase));
                 if (rootNode == null) {
-                    Logger.Error($"Animation {mot.Name} contains an unnamed bone {header.boneHash} and a viable root bone was not found.");
+                    Logger.Error($"Animation {mot.Name} contains an unnamed bone {header.boneHash} and no viable root bone was not found.");
                     continue;
                 }
 
@@ -91,6 +91,11 @@ public partial class CommonMeshResource : IResourceFile
                         channel.PositionKeys.Add(new VectorKey(clip.Translation!.frameIndexes[i], clip.Translation!.translations![i]));
                     }
                 }
+            } else {
+                // some blender fbx importer versions don't work unless we also add at least one position key to everything
+                // unsure if the assimp exporter does something weird or blender's importer being bad
+                var rest = mot.GetBoneByHash(header.boneHash)?.Header.translation ?? new Vector3(boneNode.Transform.M14, boneNode.Transform.M24, boneNode.Transform.M34);
+                channel.PositionKeys.Add(new VectorKey(0, rest));
             }
             if (clip.HasRotation) {
                 if (clip.Rotation!.frameIndexes == null) {
