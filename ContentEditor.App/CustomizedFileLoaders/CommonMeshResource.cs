@@ -102,8 +102,8 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
             return;
         }
 
-        if (singleMot != null) AddMotToScene(scene, singleMot);
-        if (motlist != null) AddMotlistToScene(scene, motlist);
+        if (singleMot != null) AddMotToScene(scene, singleMot, ext);
+        if (motlist != null) AddMotlistToScene(scene, motlist, ext);
         context.ExportFile(scene, filepath, exportFormat);
     }
 

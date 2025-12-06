@@ -19,21 +19,24 @@ public partial class CommonMeshResource : IResourceFile
         }
     }
 
-    private static void AddMotlistToScene(Assimp.Scene scene, MotlistFile motlist)
+    private static void AddMotlistToScene(Assimp.Scene scene, MotlistFile motlist, string exportFormat)
     {
         foreach (var file in motlist.MotFiles) {
             if (file is MotFile mot) {
-                AddMotToScene(scene, mot);
+                AddMotToScene(scene, mot, exportFormat);
             }
         }
     }
 
-    private static void AddMotToScene(Assimp.Scene scene, MotFile mot)
+    private static void AddMotToScene(Assimp.Scene scene, MotFile mot, string exportFormat)
     {
         var anim = new Assimp.Animation();
         anim.Name = mot.Name;
         anim.TicksPerSecond = mot.Header.FrameRate;
         anim.DurationInTicks = mot.Header.endFrame;
+        // fbx is stupid and we need to do this for the keyframes to read correctly
+        var timescale = exportFormat == "fbx" ? mot.Header.FrameRate / 24f : 1;
+
         var nodeDict = FlatNodes(scene.RootNode).ToDictionary(n => MurMur3HashUtils.GetHash(n.Name));
         foreach (var clip in mot.BoneClips) {
             var header = clip.ClipHeader;
@@ -88,7 +91,7 @@ public partial class CommonMeshResource : IResourceFile
                     if (clip.Translation.translations?.Length > 0) channel.PositionKeys.Add(new VectorKey(0, clip.Translation.translations[0]));
                 } else {
                     for (int i = 0; i < clip.Translation!.frameIndexes.Length; ++i) {
-                        channel.PositionKeys.Add(new VectorKey(clip.Translation!.frameIndexes[i], clip.Translation!.translations![i]));
+                        channel.PositionKeys.Add(new VectorKey(clip.Translation!.frameIndexes[i] * timescale, clip.Translation!.translations![i]));
                     }
                 }
             } else {
@@ -102,16 +105,21 @@ public partial class CommonMeshResource : IResourceFile
                     if (clip.Rotation.rotations?.Length > 0) channel.RotationKeys.Add(new QuaternionKey(0, clip.Rotation.rotations[0]));
                 } else {
                     for (int i = 0; i < clip.Rotation!.frameIndexes!.Length; ++i) {
-                        channel.RotationKeys.Add(new QuaternionKey(clip.Rotation!.frameIndexes![i], clip.Rotation!.rotations![i]));
+                        channel.RotationKeys.Add(new QuaternionKey(clip.Rotation!.frameIndexes![i] * timescale, clip.Rotation!.rotations![i]));
                     }
                 }
+            } else {
+                // some blender fbx importer versions don't work unless we also add at least one rotation key to everything
+                // unsure if the assimp exporter does something weird or blender's importer being bad
+                var rest = mot.GetBoneByHash(header.boneHash)?.Header.quaternion ?? Quaternion.CreateFromRotationMatrix(Matrix4x4.Transpose(boneNode.Transform));
+                channel.RotationKeys.Add(new QuaternionKey(0, rest));
             }
             if (clip.HasScale) {
                 if (clip.Scale!.frameIndexes == null) {
                     if (clip.Scale.translations?.Length > 0) channel.ScalingKeys.Add(new VectorKey(0, clip.Scale.translations[0]));
                 } else {
                     for (int i = 0; i < clip.Scale!.frameIndexes!.Length; ++i) {
-                        channel.ScalingKeys.Add(new VectorKey(clip.Scale!.frameIndexes![i], clip.Scale!.translations![i]));
+                        channel.ScalingKeys.Add(new VectorKey(clip.Scale!.frameIndexes![i] * timescale, clip.Scale!.translations![i]));
                     }
                 }
             }
