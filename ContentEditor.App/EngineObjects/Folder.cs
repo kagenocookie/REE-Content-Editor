@@ -10,6 +10,8 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
 {
     public readonly List<GameObject> GameObjects = new();
 
+    public bool IsInTree => Scene?.Folders.Contains(this) == true || Parent?.IsInTree == true;
+
     public string Tags = string.Empty;
     public bool Update = true;
     public bool Draw = true;

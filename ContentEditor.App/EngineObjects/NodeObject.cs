@@ -55,8 +55,6 @@ public class NodeObject<TNode> : NodeObject, INodeObject<TNode>, IPathedObject
 
     public Scene? Scene { get; protected set; }
 
-    public bool IsInTree => Scene?.Find(Name) != null || Parent?.IsInTree == true;
-
     protected string? _cachedPath;
     public string Path => _cachedPath ??= GetPath();
 

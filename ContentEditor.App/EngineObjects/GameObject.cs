@@ -54,6 +54,8 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         set => SceneFlags = (value ? SceneFlags|SceneFlags.Draw : SceneFlags&~SceneFlags.Draw);
     }
 
+    public bool IsInTree => Scene?.GameObjects.Contains(this) == true || Parent?.IsInTree == true || Folder?.IsInTree == true;
+
     protected override string GetPath()
     {
         if (_parent != null) {
@@ -402,11 +404,17 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         if (Parent != null) {
             Folder = Parent.Folder;
         }
-        if (Parent == null && (Folder == null || !Folder.GameObjects.Contains(this))) {
+        if (!IsInTree) {
             Folder = null;
             DeactivateComponents();
+            foreach (var child in Children) {
+                child.OnParentChanged();
+            }
         } else if (Scene?.IsActive == true) {
             ActivateComponents();
+            foreach (var child in Children) {
+                child.OnParentChanged();
+            }
         }
     }
 
