@@ -247,6 +247,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         if (UI.FontSize != config.FontSize.Get()) {
             if (ImGui.Button("Update UI")) {
                 UI.FontSize = config.FontSize.Get();
+                UI.FontSizeLarge = UI.FontSize * UI.FontSizeLargeMultiplier;
             }
         }
         ShowSetting(config.PrettyFieldLabels, "Simplify field labels", "Whether to simplify field labels instead of showing the raw field names (e.g. \"Target Object\" instead of \"_TargetObject\").");

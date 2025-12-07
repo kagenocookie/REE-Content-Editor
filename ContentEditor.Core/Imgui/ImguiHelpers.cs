@@ -301,10 +301,10 @@ public static class ImguiHelpers
         ImGui.Unindent(fullSize / 2 - w / 2);
     }
 
-    public static bool TextMultilineAutoResize(string label, ref string text, float width, float maxHeight, int fontsize, uint maxLen = 2048, ImGuiInputTextFlags flags = ImGuiInputTextFlags.AllowTabInput)
+    public static bool TextMultilineAutoResize(string label, ref string text, float width, float maxHeight, float fontsize, uint maxLen = 2048, ImGuiInputTextFlags flags = ImGuiInputTextFlags.AllowTabInput)
     {
         var lineCount = text.Count(s => s == '\n') + 1;
-        var requiredHeight = lineCount * (fontsize) + ImGui.GetStyle().FramePadding.Y * 2;
+        var requiredHeight = lineCount * fontsize + ImGui.GetStyle().FramePadding.Y * 2;
         if (ImGui.InputTextMultiline(label, ref text, maxLen, new System.Numerics.Vector2(width, Math.Min(requiredHeight, maxHeight)), flags)) {
             return true;
         }

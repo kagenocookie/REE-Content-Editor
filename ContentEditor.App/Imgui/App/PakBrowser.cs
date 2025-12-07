@@ -345,7 +345,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImGui.Spacing();
         }
 
-        if (ImGui.ArrowButton("##left", ImGuiDir.Left)) {
+        if (ImGui.ArrowButton("##left", ImGuiDir.Left) || ImGui.IsKeyPressed(ImGuiKey.Backspace)) {
             CurrentDir = Path.GetDirectoryName(CurrentDir)?.Replace('\\', '/') ?? string.Empty;
         }
         ImguiHelpers.Tooltip("Back");

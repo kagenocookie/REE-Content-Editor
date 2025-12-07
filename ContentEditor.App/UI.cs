@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Text;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.ImguiHandling.Efx;
 using ContentEditor.App.Windowing;
@@ -21,15 +22,18 @@ public static class UI
         return window;
     }
 
-    public static int FontSize { get; set; } = 20;
-    public static int FontSizeLarge { get; set; } = 60;
+    public static float FontSize { get; set; } = 20;
+    public static float FontSizeLarge { get; set; } = 20 * FontSizeLargeMultiplier;
+
+    public const float FontSizeLargeMultiplier = 3;
 
     public static float UIScale => FontSize / 20f;
 
     public unsafe static void ConfigureImgui()
     {
         var io = ImGui.GetIO();
-        io.ConfigFlags |= ImGuiConfigFlags.DockingEnable;
+        io.ConfigFlags |= ImGuiConfigFlags.DockingEnable | ImGuiConfigFlags.NavEnableKeyboard;
+
         var fonts = io.Fonts;
         fonts.Clear();
 
