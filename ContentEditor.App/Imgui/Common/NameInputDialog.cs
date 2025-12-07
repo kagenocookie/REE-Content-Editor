@@ -46,6 +46,7 @@ public class NameInputDialog : IWindowHandler
     {
         var size = parent.Size;
         var modalSize = new Vector2(Math.Max(size.X / 2, 800), Math.Max(size.Y / 4, 200));
+        var btnHeight = UI.FontSize + ImGui.GetStyle().FramePadding.X * 2;
         ImGui.SetNextWindowFocus();
         ImGui.SetNextWindowPos(parent.Position + new Vector2(size.X / 2 - modalSize.X / 2, size.Y / 2 - modalSize.Y / 2));
         ImGui.SetNextWindowSize(modalSize);
@@ -73,13 +74,13 @@ public class NameInputDialog : IWindowHandler
         ImGui.Spacing();
         ImGui.Spacing();
         if (!valid) ImGui.BeginDisabled();
-        if (ImGui.Button("Confirm", new Vector2(modalSize.X / 2 - 12, 28))) {
+        if (ImGui.Button("Confirm", new Vector2(modalSize.X / 2 - 12, btnHeight))) {
             OnConfirmed.Invoke(input);
             EditorWindow.CurrentWindow?.CloseSubwindow(this);
         }
         if (!valid) ImGui.EndDisabled();
         ImGui.SameLine();
-        if (ImGui.Button("Cancel", new Vector2(modalSize.X / 2 - 12, 28))) {
+        if (ImGui.Button("Cancel", new Vector2(modalSize.X / 2 - 12, btnHeight))) {
             OnCancelled?.Invoke();
             EditorWindow.CurrentWindow?.CloseSubwindow(this);
         }

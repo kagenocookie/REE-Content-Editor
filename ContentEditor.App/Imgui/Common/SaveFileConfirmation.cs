@@ -45,6 +45,8 @@ public class SaveFileConfirmation : IWindowHandler
     {
         var size = parent.Size;
         var modalSize = new Vector2(Math.Max(size.X / 2, 600), Math.Max(size.Y / 4, 200));
+        var btnHeight = UI.FontSize + ImGui.GetStyle().FramePadding.X * 2;
+
         ImGui.SetNextWindowFocus();
         ImGui.SetNextWindowPos(parent.Position + new Vector2(size.X / 2 - modalSize.X / 2, size.Y / 2 - modalSize.Y / 2));
         ImGui.SetNextWindowSize(modalSize);
@@ -59,7 +61,7 @@ public class SaveFileConfirmation : IWindowHandler
         ImGui.Spacing();
         ImGui.Spacing();
         ImGui.Spacing();
-        if (ImGui.Button("Save", new Vector2(modalSize.X / 3 - 12, 28))) {
+        if (ImGui.Button("Save", new Vector2(modalSize.X / 3 - 12, btnHeight))) {
             var allSuccessful = true;
             foreach (var file in Files) {
                 if (!file.Save(context.GetWorkspace()!)) {
@@ -73,12 +75,12 @@ public class SaveFileConfirmation : IWindowHandler
             }
         }
         ImGui.SameLine();
-        if (ImGui.Button("Don't save (discard changes)", new Vector2(modalSize.X / 3 - 12, 28))) {
+        if (ImGui.Button("Don't save (discard changes)", new Vector2(modalSize.X / 3 - 12, btnHeight))) {
             OnConfirmed?.Invoke();
             EditorWindow.CurrentWindow?.CloseSubwindow(this);
         }
         ImGui.SameLine();
-        if (ImGui.Button("Cancel", new Vector2(modalSize.X / 3 - 12, 28))) {
+        if (ImGui.Button("Cancel", new Vector2(modalSize.X / 3 - 12, btnHeight))) {
             OnCancelled?.Invoke();
             EditorWindow.CurrentWindow?.CloseSubwindow(this);
         }

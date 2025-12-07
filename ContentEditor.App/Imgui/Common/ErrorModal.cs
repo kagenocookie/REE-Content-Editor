@@ -41,6 +41,7 @@ public class ErrorModal : IWindowHandler, IDisposable
         var p = ImGui.GetStyle().WindowPadding;
         var size = parent?.Size ?? ImGui.GetIO().DisplaySize;
         var modalSize = new Vector2(Math.Max(size.X / 2, 600), Math.Max(size.Y / 4, 200));
+        var btnHeight = UI.FontSize + ImGui.GetStyle().FramePadding.X * 2;
 
         ImGui.SetNextWindowFocus();
         if (parent != null) {
@@ -59,7 +60,7 @@ public class ErrorModal : IWindowHandler, IDisposable
         ImGui.Unindent(ts / 2);
 
         ImGui.SetCursorPosY(modalSize.Y - 48);
-        if (ImGui.Button("OK", new Vector2(modalSize.X - 16, 28))) {
+        if (ImGui.Button("OK", new Vector2(modalSize.X - 16, btnHeight))) {
             EditorWindow.CurrentWindow?.CloseSubwindow(this);
         }
 
