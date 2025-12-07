@@ -31,6 +31,7 @@ jobs:
       run: |
         dotnet publish -c Debug --no-restore -f net8.0-windows /p:VersionSuffix=r${{ steps.vars.outputs.sha_short }} -o build ContentEditor.App/ContentEditor.App.csproj
         rm -Recurse build/runtimes/linux-*
+        rm -Recurse build/runtimes/android-*
         rm -Recurse build/runtimes/osx*
         cp -Force -R configs build/
 
@@ -40,6 +41,7 @@ jobs:
         $TAG="${{ github.ref_name }}".Replace("v","")
         dotnet publish -c Release --no-restore -f net8.0-windows /p:DebugType=none /p:DebugSymbols=false /p:VersionPrefix=$TAG -o build ContentEditor.App/ContentEditor.App.csproj
         rm -Recurse build/runtimes/linux-*
+        rm -Recurse build/runtimes/android-*
         rm -Recurse build/runtimes/osx*
         cp -Force -R configs build/
 
