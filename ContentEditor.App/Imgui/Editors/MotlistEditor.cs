@@ -616,7 +616,6 @@ public class CTrackHandler : IObjectUIHandler
 {
     private static MemberInfo[] DisplayedFields = [
         typeof(CTrack).GetProperty(nameof(CTrack.Name))!,
-        typeof(CTrack).GetField(nameof(CTrack.nameHash))!,
         typeof(CTrack).GetProperty(nameof(CTrack.Properties))!,
         typeof(CTrack).GetField(nameof(CTrack.Start_Frame))!,
         typeof(CTrack).GetField(nameof(CTrack.End_Frame))!,
