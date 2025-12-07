@@ -459,11 +459,3 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
 
     public override string ToString() => Name;
 }
-
-public class MaterialResource : IResourceFile
-{
-    public void WriteTo(string filepath)
-    {
-        throw new NotImplementedException();
-    }
-}
