@@ -1,6 +1,5 @@
 using System.Numerics;
 using ContentEditor.App.Windowing;
-using ImGuiNET;
 using Silk.NET.Input;
 
 namespace ContentEditor.App;

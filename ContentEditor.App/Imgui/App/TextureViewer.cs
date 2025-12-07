@@ -8,7 +8,6 @@ using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher;
 using DirectXTexNet;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.DDS;
 using static ContentEditor.App.Graphics.Texture;
@@ -256,7 +255,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
             } else {
                 size = new Vector2(tabSize.Y * texSize, tabSize.Y);
             }
-            ImGui.Image((nint)texture.Handle, size);
+            ImGui.Image(texture.AsTextureRef(), size);
         }
     }
 

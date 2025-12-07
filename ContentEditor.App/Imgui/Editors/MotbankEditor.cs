@@ -1,7 +1,6 @@
 using System.Reflection;
 using ContentEditor.Core;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.Motbank;
 

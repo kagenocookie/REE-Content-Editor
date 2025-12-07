@@ -1,5 +1,3 @@
-using ImGuiNET;
-
 namespace ContentEditor.Core;
 
 public class LoadOrderUI : IWindowHandler
@@ -26,7 +24,7 @@ public class LoadOrderUI : IWindowHandler
 
     public void OnWindow() => this.ShowDefaultWindow(context);
 
-    public void OnIMGUI()
+    public unsafe void OnIMGUI()
     {
         if (!bundleManager.IsLoaded) {
             bundleManager.LoadDataBundles();
@@ -46,7 +44,7 @@ public class LoadOrderUI : IWindowHandler
             }
 
             if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.PayloadNoCrossContext|ImGuiDragDropFlags.PayloadNoCrossProcess)) {
-                ImGui.SetDragDropPayload("BUNDLE", IntPtr.Zero, 0);
+                ImGui.SetDragDropPayload("BUNDLE"u8, null, 0);
                 draggedBundle = bundle;
                 ImGui.Text(bundle.Name);
                 ImGui.EndDragDropSource();

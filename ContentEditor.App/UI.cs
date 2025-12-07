@@ -5,7 +5,6 @@ using ContentEditor.App.Windowing;
 using ContentEditor.Themes;
 using ContentPatcher;
 using ContentPatcher.FileFormats;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.Efx;
 
@@ -27,14 +26,6 @@ public static class UI
 
     public static float UIScale => FontSize / 20f;
 
-    public static ImFontPtr LargeIconFont { get; private set; }
-
-    private static ushort[] PolishRanges = [
-        0x0020, 0x00FF,
-        0x0100, 0x017F,
-        0
-    ];
-
     public unsafe static void ConfigureImgui()
     {
         var io = ImGui.GetIO();
@@ -42,40 +33,15 @@ public static class UI
         var fonts = io.Fonts;
         fonts.Clear();
 
-        ImFontConfigPtr normalIcons = new(ImGuiNative.ImFontConfig_ImFontConfig()) {
-            PixelSnapH = true,
-        };
+        var normalIcons = ImGui.ImFontConfig();
 
-        fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/NotoSansJP-Regular.ttf"), (float)FontSize, normalIcons, fonts.GetGlyphRangesChineseFull());
+        fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/NotoSans-Regular.ttf"), normalIcons);
         normalIcons.MergeMode = true;
-        fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/NotoSans-Regular.ttf"), (float)FontSize, normalIcons, fonts.GetGlyphRangesDefault());
-        fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/NotoSans-Regular.ttf"), (float)FontSize, normalIcons, fonts.GetGlyphRangesCyrillic());
-        fixed (ushort* ranges = PolishRanges) {
-            fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/NotoSans-Regular.ttf"), (float)FontSize, normalIcons, (nint)ranges);
-        }
-        fixed (ushort* ranges = AppIcons.Range) {
-            fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/appicons.ttf"), (float)FontSize, normalIcons, (nint)ranges);
-        }
-        fixed (ushort* ranges = AppIcons.Range) {
-            fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/silver_icons.ttf"), (float)FontSize, normalIcons, (nint)ranges);
-        }
-
-        ImFontConfigPtr largeIcons = new(ImGuiNative.ImFontConfig_ImFontConfig()) {
-            PixelSnapH = true,
-        };
-
-        largeIcons.MergeMode = false;
-        fixed (ushort* ranges = AppIcons.Range) {
-            LargeIconFont = fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/appicons.ttf"), (float)FontSizeLarge, largeIcons, (nint)ranges);
-        }
-        largeIcons.MergeMode = true;
-        fixed (ushort* ranges = AppIcons.Range) {
-            fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/silver_icons.ttf"), (float)FontSizeLarge, largeIcons, (nint)ranges);
-        }
-
-        fonts.Build();
-        ImGuiNative.ImFontConfig_destroy(normalIcons);
-        ImGuiNative.ImFontConfig_destroy(largeIcons);
+        fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/NotoSansJP-Regular.ttf"), normalIcons);
+        fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/appicons.ttf"), normalIcons);
+        fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/silver_icons.ttf"), normalIcons);
+        fonts.AddFontDefault();
+        normalIcons.Destroy();
 #if !DEBUG
         io.ConfigErrorRecoveryEnableAssert = false;
 #endif
@@ -241,7 +207,7 @@ public static class AppIcons
     public static readonly char SI_TagCharacter = '\ued61';
     public static readonly char SI_GenericMatchCase = '\ued62';
 
-    public static readonly ushort[] Range = [(ushort)EfxEntry, (ushort)SI_GenericMatchCase, 0];
+    public static readonly uint[] Range = [(uint)EfxEntry, (uint)SI_GenericMatchCase, 0];
 
     public static string PrependIcon(this string text, object target)
     {

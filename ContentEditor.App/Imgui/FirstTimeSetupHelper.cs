@@ -2,7 +2,6 @@ using System.Numerics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Themes;
-using ImGuiNET;
 using ReeLib;
 
 namespace ContentEditor.App;

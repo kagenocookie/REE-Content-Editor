@@ -3,7 +3,6 @@ using ContentEditor.App.Graphics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
-using ImGuiNET;
 using ReeLib.via;
 using Silk.NET.Input;
 using Silk.NET.Maths;

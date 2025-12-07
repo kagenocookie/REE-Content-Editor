@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Numerics;
 using System.Reflection;
-using ImGuiNET;
 
 namespace ContentEditor.Themes;
 
@@ -82,7 +81,7 @@ public class DefaultThemes
     {
         Colors.Current = AppColors.GetDarkThemeColors();
         // Cherry style from ImThemes
-        var style = ImGuiNET.ImGui.GetStyle();
+        var style = ImGui.GetStyle();
 
         style.Alpha = 1.0f;
         style.DisabledAlpha = 0.6000000238418579f;
@@ -110,7 +109,8 @@ public class DefaultThemes
         style.GrabRounding = 2.0f;
         style.TabRounding = 4.0f;
         style.TabBorderSize = 1.0f;
-        style.TabMinWidthForCloseButton = 0.0f;
+        style.TabCloseButtonMinWidthSelected = 0.0f;
+        style.TabCloseButtonMinWidthUnselected = 0.0f;
         style.ColorButtonPosition = ImGuiDir.Right;
         style.ButtonTextAlign = new Vector2(0.5f, 0.5f);
         style.SelectableTextAlign = new Vector2(0.0f, 0.0f);
@@ -174,7 +174,7 @@ public class DefaultThemes
     {
         Colors.Current = AppColors.GetDarkThemeColors();
         // Comfortable Dark Cyan styleSouthCraftX from ImThemes
-        var style = ImGuiNET.ImGui.GetStyle();
+        var style = ImGui.GetStyle();
 
         style.Alpha = 1.0f;
         style.DisabledAlpha = 1.0f;
@@ -202,7 +202,8 @@ public class DefaultThemes
         style.GrabRounding = 20.0f;
         style.TabRounding = 9.8f;
         style.TabBorderSize = 0.0f;
-        style.TabMinWidthForCloseButton = 0.0f;
+        style.TabCloseButtonMinWidthSelected = 0.0f;
+        style.TabCloseButtonMinWidthUnselected = 0.0f;
         style.ColorButtonPosition = ImGuiDir.Right;
         style.ButtonTextAlign = new Vector2(0.5f, 0.5f);
         style.SelectableTextAlign = new Vector2(0.0f, 0.0f);
@@ -266,7 +267,7 @@ public class DefaultThemes
     {
         Colors.Current = AppColors.GetLightThemeColors();
         // Light styledougbinks from ImThemes
-        var style = ImGuiNET.ImGui.GetStyle();
+        var style = ImGui.GetStyle();
 
         style.Alpha = 1.0f;
         style.DisabledAlpha = 0.6000000238418579f;
@@ -294,7 +295,8 @@ public class DefaultThemes
         style.GrabRounding = 0.0f;
         style.TabRounding = 4.0f;
         style.TabBorderSize = 0.0f;
-        style.TabMinWidthForCloseButton = 0.0f;
+        style.TabCloseButtonMinWidthSelected = 0.0f;
+        style.TabCloseButtonMinWidthUnselected = 0.0f;
         style.ColorButtonPosition = ImGuiDir.Right;
         style.ButtonTextAlign = new Vector2(0.5f, 0.5f);
         style.SelectableTextAlign = new Vector2(0.0f, 0.0f);
@@ -358,7 +360,7 @@ public class DefaultThemes
     {
         Colors.Current = AppColors.GetDarkThemeColors();
         // Rounded Visual Studio styleRedNicStone from ImThemes
-        var style = ImGuiNET.ImGui.GetStyle();
+        var style = ImGui.GetStyle();
 
         style.Alpha = 1.0f;
         style.DisabledAlpha = 0.6000000238418579f;
@@ -386,7 +388,8 @@ public class DefaultThemes
         style.GrabRounding = 2.0f;
         style.TabRounding = 3.5f;
         style.TabBorderSize = 0.0f;
-        style.TabMinWidthForCloseButton = 0.0f;
+        style.TabCloseButtonMinWidthSelected = 0.0f;
+        style.TabCloseButtonMinWidthUnselected = 0.0f;
         style.ColorButtonPosition = ImGuiDir.Right;
         style.ButtonTextAlign = new Vector2(0.5f, 0.5f);
         style.SelectableTextAlign = new Vector2(0.0f, 0.0f);
@@ -450,7 +453,7 @@ public class DefaultThemes
     {
         Colors.Current = AppColors.GetDarkThemeColors();
         // Unreal styledev0-1 from ImThemes
-        var style = ImGuiNET.ImGui.GetStyle();
+        var style = ImGui.GetStyle();
 
         style.Alpha = 1.0f;
         style.DisabledAlpha = 0.6000000238418579f;
@@ -478,7 +481,8 @@ public class DefaultThemes
         style.GrabRounding = 0.0f;
         style.TabRounding = 4.0f;
         style.TabBorderSize = 0.0f;
-        style.TabMinWidthForCloseButton = 0.0f;
+        style.TabCloseButtonMinWidthSelected = 0.0f;
+        style.TabCloseButtonMinWidthUnselected = 0.0f;
         style.ColorButtonPosition = ImGuiDir.Right;
         style.ButtonTextAlign = new Vector2(0.5f, 0.5f);
         style.SelectableTextAlign = new Vector2(0.0f, 0.0f);
@@ -542,7 +546,7 @@ public class DefaultThemes
     {
         Colors.Current = AppColors.GetDarkThemeColors();
         // Dark style from ImThemes
-        var style = ImGuiNET.ImGui.GetStyle();
+        var style = ImGui.GetStyle();
 
         style.Alpha = 1.0f;
         style.DisabledAlpha = 0.6000000238418579f;
@@ -570,7 +574,8 @@ public class DefaultThemes
         style.GrabRounding = 0.0f;
         style.TabRounding = 4.0f;
         style.TabBorderSize = 0.0f;
-        style.TabMinWidthForCloseButton = 0.0f;
+        style.TabCloseButtonMinWidthSelected = 0.0f;
+        style.TabCloseButtonMinWidthUnselected = 0.0f;
         style.ColorButtonPosition = ImGuiDir.Right;
         style.ButtonTextAlign = new Vector2(0.5f, 0.5f);
         style.SelectableTextAlign = new Vector2(0.0f, 0.0f);
@@ -636,7 +641,7 @@ public class DefaultThemes
         var themeData = "";
         var colors = Enum.GetValues<ImGuiCol>();
         foreach (var col in colors) {
-            if (col == ImGuiCol.COUNT) continue;
+            if (col == ImGuiCol.Count) continue;
             var color = ImGui.GetColorU32(col);
             themeData += "color " + col + " = " + color.ToString("X", CultureInfo.InvariantCulture) + "\n";
         }

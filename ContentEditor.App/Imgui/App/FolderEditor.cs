@@ -6,7 +6,6 @@ using ContentEditor;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.Common;
 using ReeLib.Pfb;

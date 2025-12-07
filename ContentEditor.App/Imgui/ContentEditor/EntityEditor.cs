@@ -1,7 +1,6 @@
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
-using ImGuiNET;
 
 namespace ContentEditor.App.DD2;
 

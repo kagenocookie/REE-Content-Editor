@@ -1,5 +1,4 @@
 using ContentPatcher;
-using ImGuiNET;
 
 namespace ContentEditor.App.ImguiHandling.EntityResources;
 

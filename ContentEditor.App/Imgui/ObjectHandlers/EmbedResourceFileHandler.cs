@@ -5,7 +5,6 @@ using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ContentPatcher.DD2;
-using ImGuiNET;
 using ReeLib;
 
 namespace ContentEditor.App.EntityResources;

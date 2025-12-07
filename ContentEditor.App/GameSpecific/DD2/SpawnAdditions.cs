@@ -6,7 +6,6 @@ using System.Text.Json.Serialization;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.via;
 

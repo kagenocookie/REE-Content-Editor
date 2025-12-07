@@ -5,7 +5,6 @@ using ContentEditor.App.Windowing;
 using ContentEditor.BackgroundTasks;
 using ContentEditor.Core;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.DDS;
 using ReeLib.via;
@@ -229,7 +228,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
             ImGui.Spacing();
 
             var outputSize = ImGui.GetWindowSize() - new Vector2(outputPos.X, outputPos.Y) - ImGui.GetStyle().WindowPadding * 2 - outputBottomMargin - new Vector2(64, 0);
-            ImGui.Image((nint)outputTexture.Handle, outputSize);
+            ImGui.Image(outputTexture.AsTextureRef(), outputSize);
 
             ImGui.SeparatorText("Saving");
 
@@ -400,10 +399,10 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
         bool click;
         var btnPos = ImGui.GetCursorScreenPos();
         if (slot.texture != null) {
-            click = ImGui.ImageButton(slot.input.Name, (nint)slot.texture.Handle, size - ImGui.GetStyle().FramePadding * 2);
+            click = ImGui.ImageButton(slot.input.Name, slot.texture.AsTextureRef(), size - ImGui.GetStyle().FramePadding * 2);
             if (ImGui.IsItemHovered() && ImGui.BeginTooltip()) {
                 ImGui.Text("Right click for more options.");
-                ImGui.Image((nint)slot.texture.Handle, new Vector2(512, 512));
+                ImGui.Image(slot.texture.AsTextureRef(), new Vector2(512, 512));
                 ImGui.EndTooltip();
             }
             if (ImGui.BeginPopupContextItem()) {
@@ -434,11 +433,11 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
 
         if (ImGui.BeginDragDropTarget()) {
             var payload2 = ImGui.GetDragDropPayload();
-            if (payload2.NativePtr != null && payload2.IsDataType(ImguiHelpers.DragDrop_File)) {
+            if (payload2.Handle != null && payload2.IsDataType(ImguiHelpers.DragDrop_File)) {
                 var payloadPtr = ImGui.AcceptDragDropPayload(ImguiHelpers.DragDrop_File);
                 var data = EditorWindow.CurrentWindow?.DragDropData;
                 ImGui.GetForegroundDrawList().AddRectFilled(btnPos, btnPos + size, (ImguiHelpers.GetColorU32(ImGuiCol.PlotHistogramHovered) & 0x00ffffff | 0xaa000000));
-                if (payloadPtr.NativePtr != null) {
+                if (payloadPtr.Handle != null) {
                     if (data != null && data.filenames?.Length >= 1) {
                         ReplaceSlotTexture(slot, data.filenames[0]);
                     }

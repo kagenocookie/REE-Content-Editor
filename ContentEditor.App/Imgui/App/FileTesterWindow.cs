@@ -8,7 +8,6 @@ using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.Bhvt;
 using ReeLib.Clip;
@@ -91,7 +90,7 @@ public partial class FileTesterWindow : IWindowHandler
                     wordlistCache = null;
                 }
                 var v = testedHash;
-                if (ImGui.InputScalar("Tested hash", ImGuiDataType.U32, (IntPtr)(&v))) {
+                if (ImGui.InputScalar("Tested hash", ImGuiDataType.U32, &v)) {
                     testedHash = v;
                 }
                 if (!string.IsNullOrEmpty(wordlistFilepath) && ImGui.Button("Find")) {

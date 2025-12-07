@@ -3,7 +3,6 @@ using System.Numerics;
 using System.Text.RegularExpressions;
 using ContentEditor.App.Windowing;
 using ContentEditor.Editor;
-using ImGuiNET;
 
 namespace ContentEditor.App;
 

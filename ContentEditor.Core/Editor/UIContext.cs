@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using ContentEditor.Core;
 using ContentEditor.Editor;
-using ImGuiNET;
 
 namespace ContentEditor;
 

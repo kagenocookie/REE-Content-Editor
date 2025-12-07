@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Numerics;
 using ContentEditor.Core;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using Silk.NET.Windowing;
 

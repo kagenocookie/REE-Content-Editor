@@ -4,7 +4,6 @@ using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Editor;
 using ContentPatcher;
-using ImGuiNET;
 
 namespace ContentEditor.App;
 

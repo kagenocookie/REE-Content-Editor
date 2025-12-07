@@ -3,7 +3,6 @@ using ContentEditor.App.Graphics;
 using ContentEditor.App.ImguiHandling;
 using ContentPatcher;
 using ContentPatcher.DD2;
-using ImGuiNET;
 using ReeLib;
 
 namespace ContentEditor.App.DD2;
@@ -44,7 +43,7 @@ public sealed class DD2ItemIconHandler(CustomField field) : IObjectUIHandler, IO
             }
 
             var (uv0, uv1) = pattern.GetBoundingPoints();
-            ImGui.Image(texture, new System.Numerics.Vector2(200, 200), uv0, uv1);
+            ImGui.Image(texture.AsTextureRef(), new Vector2(200, 200), uv0, uv1);
             if (entity.Id < entity.Config.CustomIDRange![0]) {
                 return;
             }
@@ -109,7 +108,7 @@ public sealed class DD2ItemIconHandler(CustomField field) : IObjectUIHandler, IO
                 context.Changed = true;
             }
 
-            ImGui.Image(texture, new System.Numerics.Vector2(200, 200), v0 / texture.Width, v1 / texture.Height);
+            ImGui.Image(texture.AsTextureRef(), new System.Numerics.Vector2(200, 200), v0 / texture.Width, v1 / texture.Height);
             return;
         }
     }

@@ -6,7 +6,6 @@ using System.Text.Json.Nodes;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.Il2cpp;
 using ReeLib.via;

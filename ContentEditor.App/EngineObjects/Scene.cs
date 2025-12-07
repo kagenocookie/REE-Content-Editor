@@ -6,7 +6,6 @@ using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Editor;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using Silk.NET.OpenGL;
 

@@ -1,7 +1,6 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using ImGuiNET;
 
 namespace ContentEditor.Core;
 
@@ -267,17 +266,10 @@ public static class ImguiHelpers
         return true;
     }
 
-    public static unsafe GCHandle SetDragDropPayload<T>(string payloadType, T target) where T : class
-    {
-        var handle = GCHandle.Alloc(target);
-        ImGui.SetDragDropPayload("BUNDLE", (IntPtr)handle, (uint)sizeof(IntPtr));
-        return handle;
-    }
-
     public static unsafe bool InputScalar<TVal>(string label, ImGuiDataType type, ref TVal value) where TVal : unmanaged, INumber<TVal>
     {
         var num = value;
-        if (ImGui.DragScalar(label, type, (IntPtr)(&num))) {
+        if (ImGui.DragScalar(label, type, &num)) {
             value = num;
             return true;
         }
@@ -319,7 +311,13 @@ public static class ImguiHelpers
         return false;
     }
 
-    public static void TextColoredWrapped(Vector4 color, ReadOnlySpan<char> text)
+    public static void TextColoredWrapped(Vector4 color, ReadOnlySpan<byte> text)
+    {
+        ImGui.PushStyleColor(ImGuiCol.Text, color);
+        ImGui.TextWrapped(text);
+        ImGui.PopStyleColor();
+    }
+    public static void TextColoredWrapped(Vector4 color, string text)
     {
         ImGui.PushStyleColor(ImGuiCol.Text, color);
         ImGui.TextWrapped(text);

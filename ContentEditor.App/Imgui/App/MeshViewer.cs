@@ -7,7 +7,6 @@ using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 
 namespace ContentEditor.App;
@@ -232,7 +231,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         var c = ImGui.GetCursorPos();
         var cc = ImGui.GetCursorScreenPos();
         scene.OwnRenderContext.ViewportOffset = cc;
-        ImGui.Image((nint)scene.RenderContext.RenderTargetTextureHandle, expectedSize, new System.Numerics.Vector2(0, 1), new System.Numerics.Vector2(1, 0));
+        AppImguiHelpers.Image(scene.RenderContext.RenderTargetTextureHandle, expectedSize, new System.Numerics.Vector2(0, 1), new System.Numerics.Vector2(1, 0));
         if (embeddedMenuPos != null) {
             ImGui.SetCursorPos(embeddedMenuPos.Value);
             ShowEmbeddedMenu(meshComponent);

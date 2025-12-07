@@ -1,7 +1,6 @@
 using System.Numerics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
-using ImGuiNET;
 
 namespace ContentEditor.App;
 
@@ -103,7 +102,7 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
                 if (compactMultiline) {
                     var br = item.message.IndexOf('\n');
                     if (br != -1) {
-                        ImguiHelpers.TextColoredWrapped(col, item.message.AsSpan()[..br]);
+                        ImguiHelpers.TextColoredWrapped(col, item.message[..br]);
                     } else {
                         ImguiHelpers.TextColoredWrapped(col, item.message);
                     }

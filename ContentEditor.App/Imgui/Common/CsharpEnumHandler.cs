@@ -1,7 +1,6 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using ContentEditor.Core;
-using ImGuiNET;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -97,7 +96,7 @@ public class CsharpFlagsEnumFieldHandler<T, TUnderlying>() : IObjectUIHandler
         ImguiHelpers.BeginRect();
         if (HideNumberInput) {
             ImGui.Text(context.label + ": ");
-        } else if (ImGui.InputScalar(context.label, scalarType, (IntPtr)(&value))) {
+        } else if (ImGui.InputScalar(context.label, scalarType, &value)) {
             UndoRedo.RecordSet(context, value);
         }
 

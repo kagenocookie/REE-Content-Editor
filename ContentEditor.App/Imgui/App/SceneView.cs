@@ -3,7 +3,6 @@ using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 
 namespace ContentEditor.App;
@@ -96,7 +95,7 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
         var c = ImGui.GetCursorPos();
         var cc = ImGui.GetCursorScreenPos();
         Scene.OwnRenderContext.ViewportOffset = cc;
-        ImGui.Image((nint)Scene.RenderContext.RenderTargetTextureHandle, expectedSize, new System.Numerics.Vector2(0, 1), new System.Numerics.Vector2(1, 0));
+        AppImguiHelpers.Image(Scene.RenderContext.RenderTargetTextureHandle, expectedSize, new System.Numerics.Vector2(0, 1), new System.Numerics.Vector2(1, 0));
         Scene.RenderUI();
         ImGui.SetCursorPos(c);
         ImGui.InvisibleButton("##image", expectedSize, ImGuiButtonFlags.MouseButtonLeft | ImGuiButtonFlags.MouseButtonRight);

@@ -4,7 +4,6 @@ using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.Msg;
 using ReeLib.Uvs;
@@ -206,7 +205,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
                         var size = new System.Numerics.Vector2(maxwidth, scale * tex.Height);
                         var imageStart = ImGui.GetCursorScreenPos();
                         ImguiHelpers.BeginRect();
-                        ImGui.Image((nint)tex.Handle, size);
+                        ImGui.Image(tex.AsTextureRef(), size);
                         ImguiHelpers.EndRect(0);
                         var afterImagePos = ImGui.GetCursorPos();
 
@@ -299,10 +298,9 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         var texPath = File.Textures[pattern.textureIndex].path;
         var tex = GetOrLoadTexture(texPath);
         if (tex != null) {
-            ImGui.ColorEdit4("Color tint", ref color);
             var (uv0, uv1) = pattern.GetBoundingPoints();
             // var size = new Vector2(tex.Width, tex.Height) * (uv1 - uv0);
-            ImGui.Image(tex, size, uv0, uv1, color);
+            ImGui.Image(tex.AsTextureRef(), size, uv0, uv1);
         }
     }
 
@@ -371,7 +369,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             ImguiHelpers.BeginRect();
             var (uv0, uv1) = pattern.GetBoundingPoints();
             ImGui.Image(
-                (nint)tex.Handle,
+                tex.AsTextureRef(),
                 new System.Numerics.Vector2(tex.Width * (uv1.X - uv0.X), tex.Height * (uv1.Y - uv0.Y)),
                 uv0,
                 uv1

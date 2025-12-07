@@ -1,5 +1,3 @@
-using ImGuiNET;
-
 namespace ContentEditor.App.ImguiHandling;
 
 public class AutocompleteStringHandler(bool requireListedChoice, string[]? suggestions = null, int lineCount = 8) : IObjectUIHandler

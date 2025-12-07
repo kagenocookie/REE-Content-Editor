@@ -1,6 +1,5 @@
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
-using ImGuiNET;
 using ReeLib;
 
 namespace ContentEditor.App.ImguiHandling;

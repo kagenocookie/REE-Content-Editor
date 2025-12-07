@@ -1,6 +1,5 @@
 using System.Numerics;
 using System.Reflection;
-using ImGuiNET;
 
 namespace ContentEditor;
 

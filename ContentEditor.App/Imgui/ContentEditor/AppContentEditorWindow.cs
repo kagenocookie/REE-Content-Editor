@@ -2,7 +2,6 @@ using ContentEditor.App.DD2;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.Core;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 
 namespace ContentEditor.App;

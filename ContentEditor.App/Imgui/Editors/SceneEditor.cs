@@ -1,7 +1,6 @@
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Windowing;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.Pfb;
 

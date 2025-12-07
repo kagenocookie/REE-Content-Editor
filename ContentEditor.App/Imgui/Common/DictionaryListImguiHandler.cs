@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using ImGuiNET;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace ContentEditor.App.ImguiHandling;

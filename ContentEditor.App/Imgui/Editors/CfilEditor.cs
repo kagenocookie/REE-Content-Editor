@@ -2,7 +2,6 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using ContentEditor.Core;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.UVar;
 

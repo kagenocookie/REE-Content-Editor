@@ -1,6 +1,5 @@
 using System.Collections;
 using ContentEditor.Core;
-using ImGuiNET;
 
 namespace ContentEditor.App.ImguiHandling;
 

@@ -1,5 +1,4 @@
 using System.Numerics;
-using ImGuiNET;
 
 namespace ContentEditor.App;
 

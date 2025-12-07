@@ -2,7 +2,6 @@ using System.Collections;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.Il2cpp;
 

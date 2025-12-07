@@ -1,6 +1,5 @@
 using System.Numerics;
 using ContentEditor.Core;
-using ImGuiNET;
 using ReeLib.via;
 using Silk.NET.Maths;
 

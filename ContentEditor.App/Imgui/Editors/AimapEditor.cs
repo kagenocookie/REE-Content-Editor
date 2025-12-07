@@ -2,7 +2,6 @@ using System.Numerics;
 using Assimp;
 using ContentEditor.App.Windowing;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.Aimp;
 using ReeLib.Bvh;

@@ -8,12 +8,10 @@ using ContentEditor.App.ImguiHandling;
 using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher;
-using ImGuiNET;
 using Silk.NET.GLFW;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
-using Silk.NET.OpenGL.Extensions.ImGui;
 using Silk.NET.Windowing;
 using SilkWindow = Silk.NET.Windowing.Window;
 
@@ -25,7 +23,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 {
     internal IWindow _window;
     internal GL _gl;
-    protected ImGuiController _controller;
+    protected Silk.NET.OpenGL.Extensions.Hexa.ImGui.ImGuiController _controller;
     protected IInputContext _inputContext;
 
     public GL GLContext => _gl;
@@ -162,7 +160,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     internal void InitGraphics()
     {
         _gl = _window.CreateOpenGL();
-        _controller = new ImGuiController(_gl, _window, _inputContext, onConfigureIO: UI.ConfigureImgui);
+        _controller = new Silk.NET.OpenGL.Extensions.Hexa.ImGui.ImGuiController(_gl, _window, _inputContext, onConfigureIO: UI.ConfigureImgui);
         UI.ApplyTheme(AppConfig.Instance.Theme.Get() ?? "default");
         // RemoveDropCallback();
         PlatformUtils.SetupDragDrop(this, _window);
@@ -398,9 +396,9 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         if (!fileWasDropped) {
             if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.SourceExtern)) {
                 if (DragDropData.filenames?.Length >= 1) {
-                    ImGui.SetDragDropPayload(ImguiHelpers.DragDrop_File, IntPtr.Zero, 0);
+                    ImGui.SetDragDropPayload(ImguiHelpers.DragDrop_File, null, 0);
                 } else {
-                    ImGui.SetDragDropPayload(ImguiHelpers.DragDrop_Text, IntPtr.Zero, 0);
+                    ImGui.SetDragDropPayload(ImguiHelpers.DragDrop_Text, null, 0);
                 }
                 ImGui.EndDragDropSource();
             }
@@ -414,6 +412,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         _gl.Enable(Silk.NET.OpenGL.EnableCap.DepthTest);
         _gl.ClearColor(System.Drawing.Color.FromArgb(ClearColor.BGRA));
         _gl.Clear(ClearBufferMask.ColorBufferBit|ClearBufferMask.DepthBufferBit);
+        ImGui.PushFont(null, UI.FontSize);
 
         Render((float)delta);
         HandleExtDragDrop();
@@ -426,6 +425,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
             var fpsSize = ImGui.CalcTextSize(fpsText);
             ImGui.GetForegroundDrawList().AddText(new Vector2(Size.X - fpsSize.X, 0) - ImGui.GetStyle().FramePadding, 0xffffffff, fpsText);
         }
+        ImGui.PopFont();
         _controller.Render();
         if (fileWasDropped && DragDropData != null) {
             var data = DragDropData;
@@ -558,16 +558,16 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
             case ImGuiMouseCursor.ResizeAll:
                 cursor.StandardCursor = StandardCursor.ResizeAll;
                 break;
-            case ImGuiMouseCursor.ResizeNWSE:
+            case ImGuiMouseCursor.ResizeNwse:
                 cursor.StandardCursor = StandardCursor.NwseResize;
                 break;
-            case ImGuiMouseCursor.ResizeNESW:
+            case ImGuiMouseCursor.ResizeNesw:
                 cursor.StandardCursor = StandardCursor.NeswResize;
                 break;
-            case ImGuiMouseCursor.ResizeEW:
+            case ImGuiMouseCursor.ResizeEw:
                 cursor.StandardCursor = StandardCursor.HResize;
                 break;
-            case ImGuiMouseCursor.ResizeNS:
+            case ImGuiMouseCursor.ResizeNs:
                 cursor.StandardCursor = StandardCursor.VResize;
                 break;
         }
@@ -627,37 +627,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     {
         if (_controller == null) return;
 
-        // _controller.Dispose();
-        // manually do what ImguiController.Dispose() would do - except leave the shader intact because it seems to share data
-        // if we dispose the shader, all imgui windows stop rendering
-        // may not be an issue with single-threaded windowing?
-        // leaving this here in case we need it again
-        var ctrlType = _controller.GetType();
-
-        RemoveDelegate(_window, nameof(IView.Resize), _controller);
-        // RemoveDelegate(_inputContext.Keyboards[0], nameof(IKeyboard.KeyChar), _controller);
-        static void RemoveDelegate(object owner, string name, object target)
-        {
-            var eventField = owner.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-            var dell = eventField?.GetValue(owner) as Delegate;
-            // var invo = dell?.GetInvocationList().FirstOrDefault(d => d.Target == target);
-            // if (invo != null) owner.GetType().GetEvent(name)!.RemoveEventHandler(owner, invo);
-            var invo = dell!.GetInvocationList().FirstOrDefault(d => d.Target == target);
-            owner.GetType().GetEvent(name)!.RemoveEventHandler(owner, invo);
-        }
-
-        _gl.DeleteBuffer((uint)ctrlType.GetField("_vboHandle", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(_controller)!);
-        _gl.DeleteBuffer((uint)ctrlType.GetField("_elementsHandle", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(_controller)!);
-        _gl.DeleteVertexArray((uint)ctrlType.GetField("_vertexArrayObject", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(_controller)!);
-
-        (ctrlType.GetField("_fontTexture", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(_controller) as IDisposable)!.Dispose();
-
-        // Silk.NET.OpenGL.Extensions.ImGui.Shader
-        // var _shader = ctrlType.GetField("_shader", BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(_controller);
-        // _shader.GetType().GetMethod("Dispose").Invoke(_shader, []);
-
-        ImGuiNET.ImGui.DestroyContext(_controller.Context);
-
+        _controller.Dispose();
         _controller = null!;
     }
 

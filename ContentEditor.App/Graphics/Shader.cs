@@ -52,6 +52,16 @@ public sealed class Shader : IDisposable
         Name = Path.GetFileNameWithoutExtension(shaderPath);
     }
 
+    internal Shader(GL gl, string vertShader, string fragShader, ShaderFlags flags = ShaderFlags.None, int version = 330)
+    {
+        _gl = gl;
+        Flags = flags;
+        var vertex = LoadShader(ShaderType.VertexShader, vertShader);
+        var frag = LoadShader(ShaderType.FragmentShader, fragShader);
+        CreateProgram(vertex, frag, 0);
+        Name = "";
+    }
+
     public bool LoadFromCombinedShaderFile(string shaderPath, ShaderFlags flags = ShaderFlags.None, int version = 330)
     {
         var defines = FlagDefines[flags];

@@ -8,8 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Hexa.NET.ImGui" Version="2.2.9" />
     <PackageReference Include="SmartFormat" Version="3.6.0" />
-    <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
   </ItemGroup>
 
 </Project>

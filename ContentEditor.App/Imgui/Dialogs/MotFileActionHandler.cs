@@ -4,7 +4,6 @@ using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.Common;
 
@@ -233,7 +232,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                     }
                     ImGui.Spacing();
                     ImGui.Separator();
-                    ImguiHelpers.TextColoredWrapped(Colors.Note, "Mot replacement does not support undo/redo. If you need to revert applied changes, reopen the file or restore it from a backup.");
+                    ImguiHelpers.TextColoredWrapped(Colors.Note, "Mot replacement does not support undo/redo. If you need to revert applied changes, reopen the file or restore it from a backup."u8);
 
                     ImGui.Spacing();
                     if (ImGui.Button("Confirm Replace", new Vector2(170, 0))) {

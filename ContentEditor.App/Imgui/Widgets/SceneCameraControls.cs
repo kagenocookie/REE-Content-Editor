@@ -1,6 +1,5 @@
 using System.Numerics;
 using ContentEditor.App.ImguiHandling;
-using ImGuiNET;
 
 namespace ContentEditor.App;
 

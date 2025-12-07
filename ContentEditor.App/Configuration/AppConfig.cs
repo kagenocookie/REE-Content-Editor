@@ -7,7 +7,6 @@ using ContentEditor.App;
 using ContentEditor.Core;
 using ContentPatcher;
 using ContentPatcher.FileFormats;
-using ImGuiNET;
 using ReeLib;
 
 namespace ContentEditor;

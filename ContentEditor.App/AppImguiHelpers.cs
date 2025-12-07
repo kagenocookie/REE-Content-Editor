@@ -4,9 +4,9 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Text.Json;
+using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
-using ImGuiNET;
 using ReeLib.Common;
 
 namespace ContentEditor.App;
@@ -14,6 +14,18 @@ namespace ContentEditor.App;
 public static class AppImguiHelpers
 {
     private static readonly ConcurrentDictionary<uint, string> fileBrowseResults = new();
+
+    public unsafe static void Image(uint handle, Vector2 size)
+    {
+        ImGui.Image(new ImTextureRef(null, new ImTextureID(handle)), size);
+    }
+
+    public unsafe static void Image(uint handle, Vector2 size, Vector2 uv0, Vector2 uv1)
+    {
+        ImGui.Image(new ImTextureRef(null, new ImTextureID(handle)), size, uv0, uv1);
+    }
+
+    public unsafe static ImTextureRef AsTextureRef(this Texture texture) => new ImTextureRef(null, new ImTextureID(texture.Handle));
 
     public static bool InputFilepath(string label, [NotNull] ref string? path, string? extension = null)
     {
@@ -153,7 +165,7 @@ public static class AppImguiHelpers
             _dragDropSourceContext = context;
             var payloadName = typeof(T).FullName;
             if (!allowMigrateAcrossLists) payloadName += $"{list.GetHashCode()}";
-            ImGui.SetDragDropPayload(payloadName, IntPtr.Zero, 0);
+            ImGui.SetDragDropPayload(payloadName, null, 0);
             ImGui.Text(context.label + "    " + _dragDropPayload.ToString());
             ImGui.EndDragDropSource();
         }
@@ -164,7 +176,7 @@ public static class AppImguiHelpers
             if (!allowMigrateAcrossLists) payloadName += $"{list.GetHashCode()}";
 
             var payload = ImGui.GetDragDropPayload();
-            if (payload.NativePtr != null && payload.IsDataType(payloadName)) {
+            if (payload.Handle != null && payload.IsDataType(payloadName)) {
                 var pos = ImGui.GetCursorScreenPos();
                 var sourceIndex = list.IndexOf(_dragDropPayload);
                 if (sourceIndex == -1 || sourceIndex > list.IndexOf(context.GetRaw())) {
@@ -172,7 +184,7 @@ public static class AppImguiHelpers
                 }
                 ImGui.GetWindowDrawList().AddLine(pos, pos + new Vector2(ImGui.CalcItemWidth(), 0), ImguiHelpers.GetColorU32(ImGuiCol.PlotHistogram));
 
-                if (_dragDropSourceContext != context && ImGui.AcceptDragDropPayload(payloadName).NativePtr != null) {
+                if (_dragDropSourceContext != context && ImGui.AcceptDragDropPayload(payloadName).Handle != null) {
                     droppedInstance = _dragDropPayload as T;
                     if (droppedInstance != null) {
                         UndoRedo.RecordListMove(_dragDropSourceContext, context, _dragDropSourceList, droppedInstance, list, context.Get<T>());

@@ -1,6 +1,5 @@
 using ContentEditor.App.Windowing;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.Bhvt;
 using ReeLib.Motfsm2;
@@ -84,9 +83,9 @@ public class TransitionMapEditor : IObjectUIHandler
         var map = context.Get<TransitionMap>();
         ImGui.PushID(context.label);
         ImGui.PushItemWidth(ImGui.CalcItemWidth() / 2 - ImGui.GetStyle().FramePadding.X);
-        var changed = ImGui.InputScalar("ID", ImGuiDataType.U32, (IntPtr)(&map.transitionId));
+        var changed = ImGui.InputScalar("ID"u8, ImGuiDataType.U32, &map.transitionId);
         ImGui.SameLine();
-        changed = ImGui.InputScalar("Data Index", ImGuiDataType.U32, (IntPtr)(&map.dataIndex)) || changed;
+        changed = ImGui.InputScalar("Data Index"u8, ImGuiDataType.U32, &map.dataIndex) || changed;
         if (changed) {
             UndoRedo.RecordSet(context, map, undoId: $"tmap{context.label}");
         }
@@ -295,7 +294,7 @@ public class NodeIDEditor : IObjectUIHandler
     {
         var nodeId = context.Get<NodeID>();
         if (disabled) ImGui.BeginDisabled();
-        if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, (IntPtr)(&nodeId), 2, 0.01f)) {
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, &nodeId, 2, 0.01f)) {
             UndoRedo.RecordSet(context, nodeId);
         }
         if (disabled) ImGui.EndDisabled();

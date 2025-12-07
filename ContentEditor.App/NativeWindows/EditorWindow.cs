@@ -7,7 +7,6 @@ using ContentEditor.App.FileLoaders;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.Core;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.Data;
 using ReeLib.Efx;

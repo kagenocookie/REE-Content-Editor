@@ -5,7 +5,6 @@ using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Widgets;
 using ContentEditor.Core;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.Clip;
 using ReeLib.Common;

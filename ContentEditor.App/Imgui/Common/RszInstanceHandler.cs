@@ -6,7 +6,6 @@ using System.Text.Json.Nodes;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 using ReeLib.Il2cpp;
 using ReeLib.via;
@@ -523,7 +522,7 @@ public class FlagsEnumFieldHandler : IObjectUIHandler
         var value = context.GetRaw()!;
         ImguiHelpers.BeginRect();
         long longValue = enumDescriptor.BackingType == typeof(ulong) ? (long)(ulong)value : Convert.ToInt64(value);
-        if (ImGui.InputScalar(context.label, scalarType, (IntPtr)(&longValue))) {
+        if (ImGui.InputScalar(context.label, scalarType, &longValue)) {
             UndoRedo.RecordSet(context, value = Convert.ChangeType(longValue, value.GetType()));
         }
 
@@ -578,7 +577,7 @@ public class PositionFieldHandler : Singleton<PositionFieldHandler>, IObjectUIHa
     public unsafe void OnIMGUI(UIContext context)
     {
         var val = context.Get<Position>();
-        if (ImGui.DragScalarN(context.label, ImGuiDataType.Double, (IntPtr)(&val), 4, 0.01f)) {
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.Double, &val, 4, 0.01f)) {
             UndoRedo.RecordSet(context, val);
         }
         AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);
@@ -591,7 +590,7 @@ public class Int2FieldHandler : Singleton<Int2FieldHandler>, IObjectUIHandler
     public unsafe void OnIMGUI(UIContext context)
     {
         var val = context.Get<Int2>();
-        if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, (IntPtr)(&val), 2, 0.05f)) {
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, &val, 2, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
         AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);
@@ -604,7 +603,7 @@ public class Int3FieldHandler : Singleton<Int3FieldHandler>, IObjectUIHandler
     public unsafe void OnIMGUI(UIContext context)
     {
         var val = context.Get<Int3>();
-        if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, (IntPtr)(&val), 3, 0.05f)) {
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, &val, 3, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
         AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);
@@ -617,7 +616,7 @@ public class Int4FieldHandler : Singleton<Int4FieldHandler>, IObjectUIHandler
     public unsafe void OnIMGUI(UIContext context)
     {
         var val = context.Get<Int4>();
-        if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, (IntPtr)(&val), 4, 0.05f)) {
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, &val, 4, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
         AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);
@@ -630,7 +629,7 @@ public class Uint2FieldHandler : Singleton<Uint2FieldHandler>, IObjectUIHandler
     public unsafe void OnIMGUI(UIContext context)
     {
         var val = context.Get<Uint2>();
-        if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, (IntPtr)(&val), 2, 0.05f)) {
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, &val, 2, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
         AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);
@@ -643,7 +642,7 @@ public class Uint3FieldHandler : Singleton<Uint3FieldHandler>, IObjectUIHandler
     public unsafe void OnIMGUI(UIContext context)
     {
         var val = context.Get<Uint3>();
-        if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, (IntPtr)(&val), 3, 0.05f)) {
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, &val, 3, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
         AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);
@@ -656,7 +655,7 @@ public class Uint4FieldHandler : Singleton<Uint4FieldHandler>, IObjectUIHandler
     public unsafe void OnIMGUI(UIContext context)
     {
         var val = context.Get<Uint4>();
-        if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, (IntPtr)(&val), 4, 0.05f)) {
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, &val, 4, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
         AppImguiHelpers.ShowDefaultCopyPopup(ref val, context);

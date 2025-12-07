@@ -5,7 +5,6 @@ using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
-using ImGuiNET;
 using ReeLib;
 
 namespace ContentEditor.App;
@@ -500,27 +499,29 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 displayName = Path.GetFileName(filename)[0..nameEnd].ToString() + ".." + ext.ToString();
             }
             var pos = ImGui.GetCursorScreenPos();
-            var click = ImGui.Button(displayName, btnSize);
+            var click = ImGui.Button(displayName.ToString(), btnSize);
             ImGui.PopStyleColor();
+            ImGui.PushFont(null, UI.FontSizeLarge);
             if (Path.HasExtension(file)) {
                 if (isFilePreviewEnabled) {
                     var previewStatus = previewGenerator.FetchPreview(file, out var previewTex);
                     if (previewStatus == PreviewImageStatus.Ready) {
                         var texSize = new Vector2(btnSize.X, btnSize.Y - UI.FontSize) - style.FramePadding;
-                        ImGui.GetWindowDrawList().AddImage(previewTex!, pos + style.FramePadding, pos + texSize);
+                        ImGui.GetWindowDrawList().AddImage(previewTex!.AsTextureRef(), pos + style.FramePadding, pos + texSize);
                     } else {
                         var (icon, col) = previewStatus == PreviewImageStatus.PredefinedIcon ||
                             previewStatus == PreviewImageStatus.Ready ? AppIcons.GetIcon(PathUtils.ParseFileFormat(file).format) : (AppIcons.SI_File, Vector4.One);
-                        ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + iconPadding, ImGui.ColorConvertFloat4ToU32(col), $"{icon}");
+                        ImGui.GetWindowDrawList().AddText(pos + iconPadding, ImGui.ColorConvertFloat4ToU32(col), $"{icon}");
                     }
                 } else {
                     var (icon, col) = AppIcons.GetIcon(PathUtils.ParseFileFormat(file).format);
                     (icon, col) = icon != '\0' ? (icon, col) : (AppIcons.SI_File, Vector4.One);
-                    ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + iconPadding, ImGui.ColorConvertFloat4ToU32(col), $"{icon}");
+                    ImGui.GetWindowDrawList().AddText(pos + iconPadding, ImGui.ColorConvertFloat4ToU32(col), $"{icon}");
                 }
             } else {
-                ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + iconPadding, 0xffffffff, $"{AppIcons.Folder}");
+                ImGui.GetWindowDrawList().AddText(pos + iconPadding, 0xffffffff, $"{AppIcons.Folder}");
             }
+            ImGui.PopFont();
             if (ImGui.IsItemHovered()) {
                 var tt = file;
                 var fmt = PathUtils.ParseFileFormat(file);
@@ -601,7 +602,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                         var previewStatus = previewGenerator!.FetchPreview(file, out var previewTex);
                         if (previewStatus == PreviewImageStatus.Ready) {
                             ImGui.BeginTooltip();
-                            ImGui.Image((nint)previewTex!.Handle, new Vector2(256, 256));
+                            ImGui.Image(previewTex!.AsTextureRef(), new Vector2(256, 256));
                             ImGui.EndTooltip();
                         }
                     }

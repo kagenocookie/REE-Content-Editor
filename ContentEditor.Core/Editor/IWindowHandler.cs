@@ -1,5 +1,4 @@
 using ContentEditor.Core;
-using ImGuiNET;
 
 namespace ContentEditor;
 
