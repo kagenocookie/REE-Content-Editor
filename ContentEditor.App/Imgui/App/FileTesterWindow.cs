@@ -13,6 +13,8 @@ using ReeLib;
 using ReeLib.Bhvt;
 using ReeLib.Clip;
 using ReeLib.Common;
+using ReeLib.Efx;
+using ReeLib.Efx.Structs.Common;
 using ReeLib.Mesh;
 using ReeLib.Motlist;
 using ReeLib.Rcol;
@@ -439,6 +441,7 @@ public partial class FileTesterWindow : IWindowHandler
             case KnownFileFormats.Fsm2: return VerifyRewriteEquality<BhvtFile>(source.GetFile<BhvtFile>(), env);
             case KnownFileFormats.MotionFsm2: return VerifyRewriteEquality<Motfsm2File>(source.GetFile<Motfsm2File>(), env);
             case KnownFileFormats.TimelineFsm2: return VerifyRewriteEquality<Tmlfsm2File>(source.GetFile<Tmlfsm2File>(), env);
+            case KnownFileFormats.Effect: return VerifyRewriteEquality<EfxFile>(source.GetFile<EfxFile>(), env);
             default: return null;
         }
     }
@@ -612,6 +615,13 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<NTransition>((m) => [m.StartNode?.ID, m.Condition, m.transitionEvents]);
 
         AddCompareMapper<Tmlfsm2File>((m) => [m.BehaviorTrees, m.Clips]);
+
+        AddCompareMapper<EfxFile>((m) => [m.Header, m.Entries, m.Strings, m.BoneRelations, m.Bones, m.ExpressionParameters, m.FieldParameterValues, m.UvarGroups, m.parentFile != null]);
+        AddCompareMapper<EFXEntry>((m) => [m.Attributes, m.entryAssignment, m.index, m.name, m.nameHash, m.Groups]);
+        AddCompareMapper<ReeLib.Efx.Strings>((m) => [m.ActionNames, m.BoneNames, m.EfxNames, m.ExpressionParameterNames, m.FieldParameterNames, m.GroupNames]);
+        AddCompareMapper<EFXExpressionParameter>((m) => [m.expressionParameterNameUTF16Hash, m.expressionParameterNameUTF8Hash, m.name, m.type, m.value1, m.value2, m.value3]);
+        AddCompareMapper<EFXExpressionList>((m) => [m.ExpressionCount, m.Expressions]);
+        AddCompareMapper<EFXMaterialExpressionList>((m) => [m.ExpressionCount, m.Expressions, m.indexCount, m.indices]);
     }
 
     private static Dictionary<Type, Func<object, IEnumerable<object?>>> comparedValueMappers = new();
