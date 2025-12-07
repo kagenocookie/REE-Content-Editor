@@ -95,7 +95,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     {
         ImGui.SetNextWindowSize(new Vector2(800, 500), ImGuiCond.FirstUseEver);
         if (ImGui.Begin("Settings", ref isShow)) {
-            ImGui.BeginChild("GroupList", new Vector2(200, 0), ImGuiChildFlags.Borders);
+            ImGui.BeginChild("GroupList", new Vector2(200 * UI.UIScale, 0), ImGuiChildFlags.Borders);
             ShowGroupList();
             ImGui.EndChild();
 

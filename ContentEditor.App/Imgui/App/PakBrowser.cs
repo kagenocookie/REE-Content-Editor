@@ -467,7 +467,8 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         previewGenerator ??= new(contentWorkspace, EditorWindow.CurrentWindow?.GLContext!);
 
         var style = ImGui.GetStyle();
-        var btnSize = new Vector2(120, 100);
+        var btnSize = new Vector2(120 * UI.UIScale, 100 * UI.UIScale);
+        var iconPadding = new Vector2(32, 14) * UI.UIScale;
         var availableSize = ImGui.GetWindowWidth() - style.WindowPadding.X;
         ImGui.BeginChild("FileGrid", new Vector2(availableSize, remainingHeight));
 
@@ -510,15 +511,15 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                     } else {
                         var (icon, col) = previewStatus == PreviewImageStatus.PredefinedIcon ||
                             previewStatus == PreviewImageStatus.Ready ? AppIcons.GetIcon(PathUtils.ParseFileFormat(file).format) : (AppIcons.SI_File, Vector4.One);
-                        ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), ImGui.ColorConvertFloat4ToU32(col), $"{icon}");
+                        ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + iconPadding, ImGui.ColorConvertFloat4ToU32(col), $"{icon}");
                     }
                 } else {
                     var (icon, col) = AppIcons.GetIcon(PathUtils.ParseFileFormat(file).format);
                     (icon, col) = icon != '\0' ? (icon, col) : (AppIcons.SI_File, Vector4.One);
-                    ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), ImGui.ColorConvertFloat4ToU32(col), $"{icon}");
+                    ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + iconPadding, ImGui.ColorConvertFloat4ToU32(col), $"{icon}");
                 }
             } else {
-                ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + new Vector2(32, 14), 0xffffffff, $"{AppIcons.Folder}");
+                ImGui.GetWindowDrawList().AddText(UI.LargeIconFont, UI.FontSizeLarge, pos + iconPadding, 0xffffffff, $"{AppIcons.Folder}");
             }
             if (ImGui.IsItemHovered()) {
                 var tt = file;

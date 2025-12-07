@@ -25,6 +25,8 @@ public static class UI
     public static int FontSize { get; set; } = 20;
     public static int FontSizeLarge { get; set; } = 60;
 
+    public static float UIScale => FontSize / 20f;
+
     public static ImFontPtr LargeIconFont { get; private set; }
 
     private static ushort[] PolishRanges = [
