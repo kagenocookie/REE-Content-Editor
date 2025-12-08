@@ -50,7 +50,7 @@ jobs:
       run: |
         $TAG="${{ github.ref_name }}".Replace("v","")
         dotnet publish -c Release --no-restore /p:DebugType=none /p:DebugSymbols=false /p:VersionPrefix=$TAG -o build_patcher ContentPatcher/ContentPatcher.csproj
-        rm -Recurse build_patcher/ImGui.NET.dll
+        rm -Recurse build_patcher/Hexa.NET.ImGui.dll
         rm -Recurse build_patcher/runtimes/*
         cp -R configs build_patcher/
 
