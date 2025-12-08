@@ -164,20 +164,6 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
             if (ImGui.IsKeyPressed(ImGuiKey.Delete)) {
                 ShowDeleteConfirm(selectedRow);
             }
-            if (ImGui.IsKeyPressed(ImGuiKey.DownArrow) && selectedRow < File.Entries.Count - 1) {
-                var next = File.Entries.Where((e, i) => i > selectedRow && IsFiltered(e)).FirstOrDefault();
-                if (next != null) {
-                    selectedRow = File.Entries.IndexOf(next);
-                    scrollToSelected = true;
-                }
-            }
-            if (ImGui.IsKeyPressed(ImGuiKey.UpArrow) && selectedRow > 0) {
-                var next = File.Entries.Where((e, i) => i < selectedRow && IsFiltered(e)).LastOrDefault();
-                if (next != null) {
-                    selectedRow = File.Entries.IndexOf(next);
-                    scrollToSelected = true;
-                }
-            }
         }
         if (selectedRow >= 0 && selectedRow < File.Entries.Count) {
             var selected = File.Entries[selectedRow];
