@@ -53,6 +53,16 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
         scene?.Dispose();
     }
 
+    public Scene? FindLoadedScene(string internalPath)
+    {
+        foreach (var scene in scenes) {
+            if (scene.InternalPath == internalPath) {
+                return scene;
+            }
+        }
+        return null;
+    }
+
     internal void ChangeWorkspace(ContentWorkspace workspace)
     {
         if (env == workspace) return;

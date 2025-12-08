@@ -81,11 +81,15 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
     private Scene? LoadScene()
     {
         context.ClearChildren();
+        var window = context.GetNativeWindow();
+        scene = Handle.InternalPath == null ? null : window?.SceneManager.FindLoadedScene(Handle.InternalPath);
+        if (scene != null) return scene;
+
         var root = SourceScene.GetSharedInstance(Workspace.Env);
         if (Logger.ErrorIf(root == null, "Failed to instantiate scene")) return null;
         scene = root.Scene;
         if (scene == null) {
-            scene = context.GetNativeWindow()?.SceneManager.CreateScene(Handle, ParentEditor?.scene?.IsActive ?? false, ParentEditor?.scene, root);
+            scene = window?.SceneManager.CreateScene(Handle, ParentEditor?.scene?.IsActive ?? false, ParentEditor?.scene, root);
             if (Logger.ErrorIf(scene == null, "Failed to create new scene")) return null;
         }
         return scene;

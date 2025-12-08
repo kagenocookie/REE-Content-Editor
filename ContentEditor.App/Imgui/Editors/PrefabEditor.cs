@@ -88,11 +88,15 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
     private Scene? LoadScene()
     {
         context.ClearChildren();
+        var window = context.GetNativeWindow();
+        scene = Handle.InternalPath == null ? null : window?.SceneManager.FindLoadedScene(Handle.InternalPath);
+        if (scene != null) return scene;
+
         var root = Prefab.GetSharedInstance();
         if (Logger.ErrorIf(root == null, "Failed to instantiate prefab")) return null;
         scene = root.Scene;
         if (scene == null) {
-            scene = context.GetNativeWindow()?.SceneManager.CreateScene(Handle, false, ((ISceneEditor)this).GetRootScene(context));
+            scene = window?.SceneManager.CreateScene(Handle, false, ((ISceneEditor)this).GetRootScene(context));
             if (Logger.ErrorIf(scene == null, "Failed to create new scene")) return null;
             scene.Add(root);
         }
