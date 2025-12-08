@@ -293,7 +293,7 @@ public static class ImguiHelpers
     public static void TextCentered(string text, float fullSize = -1)
     {
         if (fullSize <= 0) {
-            fullSize = ImGui.GetWindowSize().X - ImGui.GetStyle().WindowPadding.X * 2;
+            fullSize = ImGui.GetContentRegionAvail().X;
         }
         var w = ImGui.CalcTextSize(text).X;
         ImGui.Indent(fullSize / 2 - w / 2);
