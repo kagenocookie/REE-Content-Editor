@@ -39,7 +39,7 @@ public class Material
         modelMatrixParam = new MaterialParameter<Matrix4X4<float>>(Matrix4X4<float>.Identity, _gl.GetUniformLocation(shader.Handle, "uModel"));
     }
 
-    private void SetParameter<TValue>(List<MaterialParameter<TValue>> list, string name, TValue vec)
+    private void SetParameter<TValue>(List<MaterialParameter<TValue>> list, string name, TValue value)
     {
         var param = list.FirstOrDefault(v => v.name == name);
         if (param == null) {
@@ -48,9 +48,9 @@ public class Material
                 Logger.Error($"uniform {name} not found in shader.");
                 return;
             }
-            list.Add(new MaterialParameter<TValue>(vec, loc) { name = name });
+            list.Add(new MaterialParameter<TValue>(value, loc) { name = name });
         } else {
-            param.Value = vec;
+            param.Value = value;
         }
         RecomputeHash();
     }
@@ -97,11 +97,6 @@ public class Material
     {
         var param = textureParameters.FindIndex(v => v.name == name);
         if (param == -1) {
-            var loc = _gl.GetUniformLocation(shader.Handle, name);
-            if (loc == -1) {
-                Logger.Error($"uniform {name} not found in shader.");
-                return;
-            }
             textureParameters.Add((name, slot, tex));
         } else {
             textureParameters[param] = (name, slot, tex);
@@ -132,7 +127,6 @@ public class Material
             if (tex == null) continue;
 
             tex.Bind(slot);
-            shader.SetUniform(name, tex);
         }
         if (BlendMode.Blend) {
             _gl.Enable(EnableCap.Blend);

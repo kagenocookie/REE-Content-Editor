@@ -135,17 +135,6 @@ public sealed class Shader : IDisposable
         _gl.UniformMatrix4(location, 1, false, (float*) &value);
     }
 
-    public void SetUniform(string name, Texture texture)
-    {
-        int location = _gl.GetUniformLocation(_handle, name);
-        if (location == -1)
-        {
-            Logger.Error($"{name} uniform not found on shader.");
-            return;
-        }
-        _gl.Uniform1(location, texture.Handle);
-    }
-
     public void Dispose()
     {
         if (_handle != 0) {
