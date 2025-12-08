@@ -826,7 +826,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
 
 public class GuidFieldHandler : Singleton<GuidFieldHandler>, IObjectUIHandler
 {
-    private const uint GuidLength = 36;
+    private const uint GuidLength = 37;
     private bool noContextMenu;
 
     public static readonly GuidFieldHandler NoContextMenuInstance = new GuidFieldHandler() { noContextMenu = true };
