@@ -42,6 +42,13 @@ public static class AppImguiHelpers
         var changed = ImGui.InputText(label, ref path, 280, ImGuiInputTextFlags.ElideLeft);
         ImGui.PopID();
 
+        if (Path.IsPathFullyQualified(path) && ImGui.BeginPopupContextItem(label)) {
+            if (ImGui.Selectable("Open in Explorer")) {
+                FileSystemUtils.ShowFileInExplorer(path);
+            }
+            ImGui.EndPopup();
+        }
+
         if (fileBrowseResults.TryRemove(id, out var browseInput)) {
             path = browseInput;
             changed = true;
@@ -73,6 +80,13 @@ public static class AppImguiHelpers
         ImGui.SetNextItemWidth(textWidth);
         var changed = ImGui.InputText(label, ref path, 280, ImGuiInputTextFlags.ElideLeft);
         ImGui.PopID();
+
+        if (Path.IsPathFullyQualified(path) && ImGui.BeginPopupContextItem(label)) {
+            if (ImGui.Selectable("Open in Explorer")) {
+                FileSystemUtils.ShowFileInExplorer(path);
+            }
+            ImGui.EndPopup();
+        }
 
         if (fileBrowseResults.TryRemove(id, out var browseInput)) {
             path = browseInput;
