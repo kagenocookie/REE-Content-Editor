@@ -89,16 +89,22 @@ public sealed class ContentWorkspace : IDisposable
     {
         Logger.Info("Saving files ...");
         int count = 0;
-        foreach (var file in ResourceManager.GetModifiedResourceFiles()) {
-            if (file.Modified) {
-                if (parent == null || file.References.Any(ff => ff.Parent == parent)) {
-                    if (file.Save(this)) {
-                        count++;
+        string? lastFile = null;
+        try {
+            foreach (var file in ResourceManager.GetModifiedResourceFiles()) {
+                lastFile = file.Filepath;
+                if (file.Modified) {
+                    if (parent == null || file.References.Any(ff => ff.Parent == parent)) {
+                        if (file.Save(this)) {
+                            count++;
+                        }
                     }
                 }
             }
+            SaveBundle();
+        } catch (Exception e) {
+            Logger.Error(e, $"Save failed. {lastFile}");
         }
-        SaveBundle();
         return count;
     }
 
