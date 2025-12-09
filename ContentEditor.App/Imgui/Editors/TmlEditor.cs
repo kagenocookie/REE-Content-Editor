@@ -73,6 +73,30 @@ public class TmlFileObjectHandler : IObjectUIHandler
     }
 }
 
+[ObjectImguiHandler(typeof(UcurveFile), Stateless = true)]
+public class UcurveFileObjectHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        if (context.children.Count == 0) {
+            var file = context.Get<UcurveFile>();
+            context.AddChild<UcurveFile, Guid>("GUID", file, getter: (m) => m!.Header.guid, setter: (m, n) => m.Header.guid = n).AddDefaultHandler();
+            context.AddChild<UcurveFile, List<TimelineTrack>>("Tracks", file, new ListHandler(typeof(TimelineTrack), typeof(List<TimelineTrack>)), (m) => m!.Tracks);
+            context.AddChild<UcurveFile, List<TmlNodeGroup>>("Node Groups", file, new ListHandler(typeof(TmlNodeGroup), typeof(List<TmlNodeGroup>)), (m) => m!.NodeGroups);
+
+            context.AddChild<UcurveFile, List<SpeedPointData>>("Speed Point Data", file, new ListHandler(typeof(SpeedPointData), typeof(List<SpeedPointData>)), (m) => m!.SpeedPointData);
+            context.AddChild<UcurveFile, List<HermiteInterpolationData>>("Hermite Interpolation Data", file, new ListHandler(typeof(HermiteInterpolationData), typeof(List<HermiteInterpolationData>)), (m) => m!.HermiteData);
+            context.AddChild<UcurveFile, List<Bezier3DKeys>>("Bezier3D Interpolation Data", file, new ListHandler(typeof(Bezier3DKeys), typeof(List<Bezier3DKeys>)), (m) => m!.Bezier3DData);
+            context.AddChild<UcurveFile, List<ClipInfoStruct>>("Clip Info", file, new ListHandler(typeof(ClipInfoStruct), typeof(List<ClipInfoStruct>)), (m) => m!.ClipInfo);
+
+            context.AddChild<UcurveFile, List<TimelineNode>>("Nodes", file, new ListHandler(typeof(TimelineNode), typeof(List<TimelineNode>)), (m) => m!.RootNodes);
+            context.AddChild<UcurveFile, List<Property>>("Properties", file, new ListHandler(typeof(Property), typeof(List<Property>)), (m) => m!.Properties);
+            context.AddChild<UcurveFile, List<Key>>("Keys", file, new ListHandler(typeof(Key), typeof(List<Key>)), (m) => m!.Keys);
+        }
+        context.ShowChildrenUI();
+    }
+}
+
 [ObjectImguiHandler(typeof(TmlNodeGroup))]
 public class TmlNodeGroupHandler : IObjectUIHandler
 {
