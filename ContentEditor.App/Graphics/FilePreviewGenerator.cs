@@ -8,6 +8,7 @@ using ReeLib.via;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace ContentEditor.App.Graphics;
@@ -200,9 +201,14 @@ public sealed class FilePreviewGenerator : IDisposable
 
         using var fullTexture = new Texture(_threadGL);
         fullTexture.LoadFromTex(texFile);
-        fullTexture.SetChannel(Texture.TextureChannel.RGB);
 
         using var img = fullTexture.GetAsImage(targetMip);
+        img.ProcessPixelRows(accessor => {
+            for (int y = 0; y < accessor.Height; y++) {
+                Span<Rgba32> data = accessor.GetRowSpan(y);
+                for (int i = 0; i < data.Length; ++i) data[i] = data[i] with { A = 255 };
+            }
+        });
         img.Mutate(x => x.Resize(ThumbnailSize.x, ThumbnailSize.y));
         Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
         img.SaveAsJpeg(outPath, null);
