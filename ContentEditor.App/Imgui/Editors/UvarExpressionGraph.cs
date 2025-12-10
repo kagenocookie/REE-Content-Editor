@@ -60,6 +60,7 @@ public class UvarExpressionGraph : IWorkspaceContainer, IWindowHandler
         DrawNodes();
     }
 
+    private UvarNode? contextMenuNode;
     private void DrawNodes()
     {
         if (nodeCtx == null) {
@@ -80,6 +81,35 @@ public class UvarExpressionGraph : IWorkspaceContainer, IWindowHandler
         ImNodes.MiniMap(ImNodesMiniMapLocation.BottomRight);
         ImNodes.EndNodeEditor();
 
+        if (ImGui.IsMouseClicked(ImGuiMouseButton.Right)) {
+            ImGui.OpenPopup("NodeCtx");
+            int hoveredNode = 0;
+            if (ImNodes.IsNodeHovered(ref hoveredNode)) {
+                contextMenuNode = Expression.Nodes.FirstOrDefault(n => n.nodeId == hoveredNode);
+                ImNodes.SelectNode(hoveredNode);
+            } else {
+                contextMenuNode = null;
+            }
+        }
+        if (ImGui.BeginPopup("NodeCtx")) {
+            var pos = ImGui.GetMousePosOnOpeningCurrentPopup();
+            if (ImGui.BeginMenu("Create")) {
+                foreach (var type in UvarNode.NodeTypes) {
+                    if (ImGui.Selectable(type)) {
+                        var newNode = UvarNode.Create(type);
+                        newNode.nodeId = (short)(Expression.Nodes.Count == 0 ? 0 : (Expression.Nodes.Max(n => n.nodeId) + 1));
+                        ImNodes.SetNodeScreenSpacePos(newNode.nodeId, pos);
+                        AddNodes([newNode]);
+                    }
+                }
+                ImGui.EndMenu();
+            }
+            if (contextMenuNode != null && ImGui.Selectable("Delete")) {
+                RemoveNodes([contextMenuNode]);
+            }
+            ImGui.EndPopup();
+        }
+
         int startAttr = 0, endAttr = 0, linkId = 0;
         if (ImNodes.IsLinkCreated(ref startAttr, ref endAttr)) {
             var startNode = Expression.Nodes[startAttr];
@@ -97,6 +127,69 @@ public class UvarExpressionGraph : IWorkspaceContainer, IWindowHandler
             var conn = Expression.Connections[linkId];
             UndoRedo.RecordListRemove(ParentContext, Expression.Connections, Expression.Connections.IndexOf(conn));
         }
+        if (ImGui.IsKeyPressed(ImGuiKey.Delete)) {
+            var selectedCount = ImNodes.NumSelectedNodes();
+            if (selectedCount > 0) {
+                Span<int> nodeIds = stackalloc int[selectedCount];
+                ImNodes.GetSelectedNodes(ref nodeIds[0]);
+
+                var nodes = new List<UvarNode>();
+                foreach (var node in Expression.Nodes) {
+                    if (nodeIds.Contains(node.nodeId)) {
+                        nodes.Add(node);
+                    }
+                }
+                RemoveNodes(nodes);
+            }
+        }
+    }
+
+    private void RemoveNodes(List<UvarNode> nodes)
+    {
+        var ids = nodes.Select(n => n.nodeId);
+        var connections = new List<UvarExpression.NodeConnection>();
+        for (int i = 0; i < Expression.Connections.Count; i++) {
+            var conn = Expression.Connections[i];
+            if (ids.Contains(conn.sourceId) || ids.Contains(conn.targetId)) {
+                connections.Add(conn);
+            }
+        }
+        var positions = nodes.Select(n => ImNodes.GetNodeGridSpacePos(n.nodeId)).ToList();
+
+        UndoRedo.RecordCallback(ParentContext, () => {
+            foreach (var node in nodes) {
+                Expression.Nodes.Remove(node);
+            }
+            foreach (var conn in connections) {
+                Expression.Connections.Remove(conn);
+            }
+        }, () => {
+            for (int i = 0; i < nodes.Count; i++) {
+                var node = nodes[i];
+                Expression.Nodes.Add(node);
+                ImNodes.SetNodeGridSpacePos(node.nodeId, positions[i]);
+            }
+            foreach (var conn in connections) {
+                Expression.Connections.Add(conn);
+            }
+        });
+    }
+
+    private void AddNodes(List<UvarNode> nodes)
+    {
+        var positions = nodes.Select(n => ImNodes.GetNodeGridSpacePos(n.nodeId)).ToList();
+
+        UndoRedo.RecordCallback(ParentContext, () => {
+            for (int i = 0; i < nodes.Count; i++) {
+                var node = nodes[i];
+                Expression.Nodes.Add(node);
+                ImNodes.SetNodeGridSpacePos(node.nodeId, positions[i]);
+            }
+        }, () => {
+            foreach (var node in nodes) {
+                Expression.Nodes.Remove(node);
+            }
+        });
     }
 
     private void ResetNodePositions()
