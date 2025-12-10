@@ -1,11 +1,13 @@
+using System.Globalization;
 using System.Numerics;
-using System.Text;
+using System.Reflection;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.ImguiHandling.Efx;
 using ContentEditor.App.Windowing;
 using ContentEditor.Themes;
 using ContentPatcher;
 using ContentPatcher.FileFormats;
+using Hexa.NET.ImNodes;
 using ReeLib;
 using ReeLib.Efx;
 
@@ -68,6 +70,105 @@ public static class UI
         var ini = IniFile.ReadFile(themePath);
         DefaultThemes.ApplyThemeData(ini);
     }
+
+    internal static readonly PropertyInfo[] NodesThemeFields = [
+        typeof(ImNodesStylePtr).GetProperty(nameof(ImNodesStylePtr.LinkHoverDistance))!,
+        typeof(ImNodesStylePtr).GetProperty(nameof(ImNodesStylePtr.LinkLineSegmentsPerLength))!,
+        typeof(ImNodesStylePtr).GetProperty(nameof(ImNodesStylePtr.LinkThickness))!,
+
+        typeof(ImNodesStylePtr).GetProperty(nameof(ImNodesStylePtr.MiniMapOffset))!,
+        typeof(ImNodesStylePtr).GetProperty(nameof(ImNodesStylePtr.MiniMapPadding))!,
+
+        typeof(ImNodesStylePtr).GetProperty(nameof(ImNodesStylePtr.NodeBorderThickness))!,
+        typeof(ImNodesStylePtr).GetProperty(nameof(ImNodesStylePtr.NodeCornerRounding))!,
+        typeof(ImNodesStylePtr).GetProperty(nameof(ImNodesStylePtr.NodePadding))!,
+
+        typeof(ImNodesStylePtr).GetProperty(nameof(ImNodesStylePtr.PinCircleRadius))!,
+        typeof(ImNodesStylePtr).GetProperty(nameof(ImNodesStylePtr.PinHoverRadius))!,
+        typeof(ImNodesStylePtr).GetProperty(nameof(ImNodesStylePtr.PinLineThickness))!,
+        typeof(ImNodesStylePtr).GetProperty(nameof(ImNodesStylePtr.PinOffset))!,
+        typeof(ImNodesStylePtr).GetProperty(nameof(ImNodesStylePtr.PinQuadSideLength))!,
+        typeof(ImNodesStylePtr).GetProperty(nameof(ImNodesStylePtr.PinTriangleSideLength))!,
+    ];
+
+    public static string GetImNodesThemeStyleData()
+    {
+        var style = ImNodes.GetStyle();
+        var themeData = "";
+        var colors = Enum.GetValues<ImNodesCol>();
+        foreach (var col in colors) {
+            if (col == ImNodesCol.Count) continue;
+            var color = style.Colors[(int)col];
+            themeData += "nodes_col " + col + " = " + color.ToString("X", CultureInfo.InvariantCulture) + "\n";
+        }
+
+        foreach (var field in NodesThemeFields) {
+            var value = field.GetValue(style);
+            string valueStr;
+            switch (value) {
+                case float flt:
+                    valueStr = flt.ToString(CultureInfo.InvariantCulture);
+                    break;
+                case Vector2 vec2:
+                    valueStr = vec2.X.ToString(CultureInfo.InvariantCulture) + ", " + vec2.Y.ToString(CultureInfo.InvariantCulture);
+                    break;
+                default:
+                    continue;
+            }
+            themeData += "nodes_prop " + field.Name + " = " + valueStr + "\n";
+        }
+        return themeData;
+    }
+
+    public static ImNodesContextPtr InitImNodeContext()
+    {
+        var ctx = ImNodes.CreateContext();
+        ImNodes.SetImGuiContext(ImGui.GetCurrentContext());
+        ImNodes.SetCurrentContext(ctx);
+        var theme = AppConfig.Instance.Theme.Get();
+        var themePath = Path.Combine(AppContext.BaseDirectory, "styles", theme + ".theme.txt");
+        if (File.Exists(themePath)) {
+            var ini = IniFile.ReadFile(themePath);
+            ApplyImNodesTheme(ini);
+        }
+        return ctx;
+    }
+
+    public static unsafe void ApplyImNodesTheme(IEnumerable<(string key, string value, string? group)> ini)
+    {
+        var style = ImNodes.GetStyle();
+        Colors.Current = AppColors.GetDarkThemeColors();
+        foreach (var kv in ini) {
+            if (kv.key.StartsWith("nodes_col ")) {
+                var name = kv.key.Replace("nodes_col ", "");
+                if (uint.TryParse(kv.value, System.Globalization.NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var colU32) && Enum.TryParse<ImNodesCol>(name, out var col)) {
+                    style.Colors[(int)col] = colU32;
+                }
+            } else if (kv.key.StartsWith("nodes_prop ")) {
+                var name = kv.key.Replace("nodes_prop ", "");
+                var prop = NodesThemeFields.FirstOrDefault(ff => ff.Name == name);
+                if (prop == null) continue;
+
+                var type = prop.PropertyType.GetElementType();
+
+                if (type == typeof(float)) {
+                    if (float.TryParse(kv.value, CultureInfo.InvariantCulture, out var flt)) {
+                        ref var val = ref ((floatGetter)Delegate.CreateDelegate(typeof(floatGetter), style, prop.GetMethod!))();
+                        val = flt;
+                    }
+                } else if (type == typeof(Vector2)) {
+                    var vals = kv.value.Split(',');
+                    if (float.TryParse(vals[0], CultureInfo.InvariantCulture, out var v1) && float.TryParse(vals[1], CultureInfo.InvariantCulture, out var v2)) {
+                        ref var val = ref ((Vector2Getter)Delegate.CreateDelegate(typeof(Vector2Getter), style, prop.GetMethod!))();
+                        val = new Vector2(v1, v2);
+                    }
+                }
+            }
+        }
+    }
+
+    private delegate ref Vector2 Vector2Getter();
+    private delegate ref float floatGetter();
 }
 
 public static class AppIcons

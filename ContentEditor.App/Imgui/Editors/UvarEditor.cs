@@ -1,4 +1,5 @@
 using System.Reflection;
+using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
@@ -124,5 +125,24 @@ public class UvarVariableImguiHandler : IObjectUIHandler
             Logger.Error(e, "Unsupported Uvar variable type and flag combination");
             context.Set(before);
         }
+    }
+}
+
+[ObjectImguiHandler(typeof(UvarExpression), Stateless = true)]
+public class UvarExpressionEditor : LazyPlainObjectHandler
+{
+    public UvarExpressionEditor() : base(typeof(UvarExpression))
+    {
+    }
+
+    protected override bool DoTreeNode(UIContext context, object instance)
+    {
+        var show = base.DoTreeNode(context, instance);
+        ImGui.SameLine();
+        if (ImGui.Button("Graph Edit")) {
+            var variable = context.FindValueInParentValues<Variable>();
+            EditorWindow.CurrentWindow?.AddSubwindow(new UvarExpressionGraph(context.FindValueInParentValues<UVarFile>()!, context.Get<UvarExpression>(), context, variable?.Name ?? "Unknown Expression Graph"));
+        }
+        return show;
     }
 }

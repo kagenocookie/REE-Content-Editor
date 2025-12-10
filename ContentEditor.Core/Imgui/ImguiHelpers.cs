@@ -388,11 +388,32 @@ public static class ImguiHelpers
         return new DisposableImguiID();
     }
 
+    public static DisposableIndent ScopedIndent(float indent)
+    {
+        ImGui.Indent(indent);
+        return new DisposableIndent(indent);
+    }
+
     public struct DisposableImguiID : IDisposable
     {
         public void Dispose()
         {
             ImGui.PopID();
+        }
+    }
+
+    public struct DisposableIndent : IDisposable
+    {
+        private float indent;
+
+        public DisposableIndent(float indent)
+        {
+            this.indent = indent;
+        }
+
+        public void Dispose()
+        {
+            ImGui.Unindent(indent);
         }
     }
 

@@ -7,6 +7,7 @@ using System.Text.Json;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
+using Hexa.NET.ImNodes;
 using ReeLib.Common;
 
 namespace ContentEditor.App;
@@ -55,6 +56,17 @@ public static class AppImguiHelpers
         }
 
         return changed;
+    }
+
+    public static float NodeContentAvailX(int nodeId)
+    {
+        return ImNodes.GetNodeDimensions(nodeId).X - (ImGui.GetCursorPosX() - ImNodes.GetNodeEditorSpacePos(nodeId).X) - ImNodes.GetStyle().NodePadding.X;
+    }
+
+    public static void NodeSeparator(int nodeId)
+    {
+        ImGui.GetWindowDrawList().AddLine(ImGui.GetCursorScreenPos(), ImGui.GetCursorScreenPos() + new Vector2(AppImguiHelpers.NodeContentAvailX(nodeId), 0), ImguiHelpers.GetColorU32(ImGuiCol.Separator));
+        ImGui.Spacing();
     }
 
     public static void PrependIcon(object target)
