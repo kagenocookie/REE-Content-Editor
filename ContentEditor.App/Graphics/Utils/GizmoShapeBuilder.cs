@@ -75,15 +75,15 @@ public class GizmoShapeBuilder : IDisposable
         builder.GeoType = geometryType;
     }
 
-    public bool EditableBoxed(in Matrix4X4<float> offset, object shape, out object? newShape, out int handleId)
+    public bool EditableBoxed(in Matrix4x4 offset, object shape, out object? newShape, out int handleId)
     {
         newShape = null;
         switch (shape) {
-            case AABB obj: if (EditableAABB(offset, ref obj, out handleId)) { newShape = obj; return true; } return false;
-            case OBB obj: if (EditableOBB(offset, ref obj, out handleId)) { newShape = obj; return true; } return false;
-            case Sphere obj: if (EditableSphere(offset, ref obj, out handleId)) { newShape = obj; return true; } return false;
-            case Capsule obj: if (EditableCapsule(offset, ref obj, out handleId)) { newShape = obj; return true; } return false;
-            case Cylinder obj: if (EditableCylinder(offset, ref obj, out handleId)) { newShape = obj; return true; } return false;
+            case AABB obj: if (EditableAABB(offset.ToGeneric(), ref obj, out handleId)) { newShape = obj; return true; } return false;
+            case OBB obj: if (EditableOBB(offset.ToGeneric(), ref obj, out handleId)) { newShape = obj; return true; } return false;
+            case Sphere obj: if (EditableSphere(offset.ToGeneric(), ref obj, out handleId)) { newShape = obj; return true; } return false;
+            case Capsule obj: if (EditableCapsule(offset.ToGeneric(), ref obj, out handleId)) { newShape = obj; return true; } return false;
+            case Cylinder obj: if (EditableCylinder(offset.ToGeneric(), ref obj, out handleId)) { newShape = obj; return true; } return false;
             default:
                 Logger.Error("Unsupported shape type " + (shape?.GetType().Name ?? "NULL"));
                 handleId = -1;
@@ -386,14 +386,14 @@ public class GizmoShapeBuilder : IDisposable
         => builder.Add(new Cylinder(Vector3.Transform(shape.p0, offsetMatrix.ToSystem()), Vector3.Transform(shape.p1, offsetMatrix.ToSystem()), shape.r));
 
     public void AddBoxed(object shape) => builder.AddBoxed(shape);
-    public void AddBoxed(in Matrix4X4<float> offsetMatrix, object shape)
+    public void AddBoxed(in Matrix4x4 offsetMatrix, object shape)
     {
         switch (shape) {
-            case AABB obj: Add(in offsetMatrix, obj); return;
-            case OBB obj: Add(in offsetMatrix, obj); return;
-            case Sphere obj: Add(in offsetMatrix, obj); return;
-            case Capsule obj: Add(in offsetMatrix, obj); return;
-            case Cylinder obj: Add(in offsetMatrix, obj); return;
+            case AABB obj: Add(offsetMatrix.ToGeneric(), obj); return;
+            case OBB obj: Add(offsetMatrix.ToGeneric(), obj); return;
+            case Sphere obj: Add(offsetMatrix.ToGeneric(), obj); return;
+            case Capsule obj: Add(offsetMatrix.ToGeneric(), obj); return;
+            case Cylinder obj: Add(offsetMatrix.ToGeneric(), obj); return;
             default:
                 Logger.Error("Unsupported shape type " + (shape?.GetType().Name ?? "NULL"));
                 break;

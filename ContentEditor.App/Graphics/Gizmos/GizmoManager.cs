@@ -1,3 +1,4 @@
+using System.Numerics;
 using ReeLib.via;
 using Silk.NET.Maths;
 
@@ -108,7 +109,7 @@ public sealed class GizmoManager(Scene scene) : IDisposable
             foreach (var shape in gizmo.shapeBuilders.Values.OrderByDescending(sb => sb.renderPriority)) {
                 if (shape.mesh != null) {
                     // note: the shapes should've already been generated with their matrices applied
-                    ogl.Batch.Gizmo.Add(new GizmoRenderBatchItem(shape.material, shape.mesh, Matrix4X4<float>.Identity, shape.obscuredMaterial));
+                    ogl.Batch.Gizmo.Add(new GizmoRenderBatchItem(shape.material, shape.mesh, Matrix4x4.Identity, shape.obscuredMaterial));
                 }
             }
         }

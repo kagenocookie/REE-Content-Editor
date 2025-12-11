@@ -17,8 +17,8 @@ public class Material
     private readonly List<MaterialParameter<Vector4>> vec4Parameters = new();
     private readonly List<MaterialParameter<float>> floatParameters = new();
     private readonly List<(string name, TextureUnit slot, Texture? tex)> textureParameters = new();
-    private MaterialParameter<Matrix4X4<float>>? boneMatricesParameter;
-    private readonly MaterialParameter<Matrix4X4<float>> modelMatrixParam;
+    private MaterialParameter<Matrix4x4>? boneMatricesParameter;
+    private readonly MaterialParameter<Matrix4x4> modelMatrixParam;
 
     /// <summary>
     /// 24-bit integer hash of the material parameter names and values.
@@ -36,7 +36,7 @@ public class Material
         _gl = gl;
         this.shader = shader;
         this.name = name;
-        modelMatrixParam = new MaterialParameter<Matrix4X4<float>>(Matrix4X4<float>.Identity, _gl.GetUniformLocation(shader.Handle, "uModel"));
+        modelMatrixParam = new MaterialParameter<Matrix4x4>(Matrix4x4.Identity, _gl.GetUniformLocation(shader.Handle, "uModel"));
     }
 
     private void SetParameter<TValue>(List<MaterialParameter<TValue>> list, string name, TValue value)
@@ -137,12 +137,12 @@ public class Material
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe void BindModel(in Matrix4X4<float> mat)
+    public unsafe void BindModel(in Matrix4x4 mat)
     {
         Shader.SetUniform(modelMatrixParam!._location, mat);
     }
 
-    public unsafe void BindBoneMatrices(Span<Matrix4X4<float>> matrices)
+    public unsafe void BindBoneMatrices(Span<Matrix4x4> matrices)
     {
         if (boneMatricesParameter == null) {
             var loc = _gl.GetUniformLocation(shader.Handle, "boneMatrices[0]");
@@ -150,7 +150,7 @@ public class Material
                 Logger.Error($"Uniform boneMatrices not found in shader.");
                 return;
             }
-            boneMatricesParameter = new MaterialParameter<Matrix4X4<float>>(Matrix4X4<float>.Identity, loc);
+            boneMatricesParameter = new MaterialParameter<Matrix4x4>(Matrix4x4.Identity, loc);
         }
 
         for (int i = 0; i < matrices.Length; ++i) {

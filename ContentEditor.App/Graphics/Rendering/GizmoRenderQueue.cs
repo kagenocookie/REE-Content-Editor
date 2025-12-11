@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
@@ -49,12 +50,13 @@ public readonly struct GizmoRenderBatchItem : RenderQueueItem
 {
     public readonly Material material;
     public readonly Mesh mesh;
-    public readonly Matrix4X4<float> matrix;
+    public readonly Matrix4x4 matrix;
     public readonly Material? obscuredMaterial;
 
     public readonly ulong SortingKey => unchecked((ulong)material.Shader.ID << 48) | ((ulong)material.Hash << 24) | (mesh.ID & 0xffffff);
 
-    public GizmoRenderBatchItem(Material material, Mesh mesh, Matrix4X4<float> matrix, Material? obscuredMaterial = null) : this()
+    public GizmoRenderBatchItem(Material material, Mesh mesh, Matrix4X4<float> matrix, Material? obscuredMaterial = null) : this(material, mesh, matrix.ToSystem(), obscuredMaterial) {}
+    public GizmoRenderBatchItem(Material material, Mesh mesh, Matrix4x4 matrix, Material? obscuredMaterial = null) : this()
     {
         this.material = material;
         this.mesh = mesh;

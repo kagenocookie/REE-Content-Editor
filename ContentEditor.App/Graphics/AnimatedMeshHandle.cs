@@ -1,11 +1,15 @@
+using System.Numerics;
 using Silk.NET.Maths;
 
 namespace ContentEditor.App.Graphics;
 
 public class AnimatedMeshHandle : MeshHandle
 {
-    public Matrix4X4<float>[] BoneMatrices = [];
-    public Matrix4X4<float>[] DeformBoneMatrices = [];
+    /// <summary>
+    /// All bone pose-global tranforms
+    /// </summary>
+    public Matrix4x4[] BoneMatrices = [];
+    public Matrix4x4[] DeformBoneMatrices = [];
 
     internal AnimatedMeshHandle(MeshResourceHandle mesh) : base(mesh)
     {
@@ -17,13 +21,13 @@ public class AnimatedMeshHandle : MeshHandle
 
         var delta = Time.Delta;
         if (DeformBoneMatrices.Length == 0) {
-            DeformBoneMatrices = new Matrix4X4<float>[Bones.DeformBones.Count];
+            DeformBoneMatrices = new Matrix4x4[Bones.DeformBones.Count];
             for (int i = 0; i < DeformBoneMatrices.Length; ++i) {
-                DeformBoneMatrices[i] = Matrix4X4<float>.Identity;
+                DeformBoneMatrices[i] = Matrix4x4.Identity;
             }
-            BoneMatrices = new Matrix4X4<float>[Bones.Bones.Count];
+            BoneMatrices = new Matrix4x4[Bones.Bones.Count];
             for (int i = 0; i < BoneMatrices.Length; ++i) {
-                BoneMatrices[i] = Bones.Bones[i].globalTransform.ToGeneric();
+                BoneMatrices[i] = Bones.Bones[i].globalTransform.ToSystem();
             }
         }
     }
@@ -34,7 +38,7 @@ public class AnimatedMeshHandle : MeshHandle
         material.BindBoneMatrices(DeformBoneMatrices);
     }
 
-    public bool TryGetBoneTransform(uint boneHash, out Matrix4X4<float> matrix)
+    public bool TryGetBoneTransform(uint boneHash, out Matrix4x4 matrix)
     {
         var bone = Bones?.GetByHash(boneHash);
         if (bone != null && BoneMatrices.Length > bone.index) {
@@ -42,11 +46,11 @@ public class AnimatedMeshHandle : MeshHandle
             return true;
         }
 
-        matrix = Matrix4X4<float>.Identity;
+        matrix = Matrix4x4.Identity;
         return false;
     }
 
-    public bool TryGetBoneTransform(string boneName, out Matrix4X4<float> matrix)
+    public bool TryGetBoneTransform(string boneName, out Matrix4x4 matrix)
     {
         var bone = Bones?.GetByName(boneName);
         if (bone != null && BoneMatrices.Length > bone.index) {
@@ -54,7 +58,7 @@ public class AnimatedMeshHandle : MeshHandle
             return true;
         }
 
-        matrix = Matrix4X4<float>.Identity;
+        matrix = Matrix4x4.Identity;
         return false;
     }
 
