@@ -63,7 +63,7 @@ public class ThemeEditor : IWindowHandler
             EditorWindow.CurrentWindow?.AddUniqueSubwindow(new ImguiTestWindow());
         }
         
-        ImGui.SeparatorText("Style editor");
+        ImGui.SeparatorText("Style Editor");
         ImguiHelpers.Tabs(["Built-in", "Nodes", "Contextual"], ref tab, true);
         ImGui.BeginChild("Styles");
         if (tab == 0) {

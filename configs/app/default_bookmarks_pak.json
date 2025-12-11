@@ -228,6 +228,199 @@
       "Comment": "Zoe Baker (Daughters)"
     },
     {
+      "Path": "natives/stm/character/enemy/em2000",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Mia Winters (Infected)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em2300/em2300",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Mia Winters (Denim Jacket)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em2800",
+      "Tags": [
+        "Enemy",
+        "DLC"
+      ],
+      "Comment": "Eveline (Daughters)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3000",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Jack Baker"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3100",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Marguerite Baker"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3200",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Lucas Baker"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3300",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Eveline (Elderly)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3400",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Zoe Baker"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3500",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Eveline"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3600",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Marguerite Baker (Mutated)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3700",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Jack Baker (Daughters)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3800",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Marguerite Baker (Daughters)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3900",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Lucas Baker (Daughters)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em4000",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Molded"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em4100",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Molded (Crawler)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em4200",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Molded (Fat)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em6000",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Alan Droney"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em6100",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Police Deputy"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em6200",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Andre Stickland"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em6500",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Police Deputy (Molded)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em7300",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Blue Umbrella Soldier"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em8000",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Jack Baker (Chainsaw Fight)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em8100/em8100",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Jack Baker (Mutated)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em8900",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Eveline (Final Boss)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em9200",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Pete Walken"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em9600",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Shipworker"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em9700",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Shipworker (Molded)"
+    },
+    {
       "Path": "natives/stm/ch8/character/enemy/em4400",
       "Tags": [
         "Enemy",
