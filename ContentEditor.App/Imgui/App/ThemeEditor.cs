@@ -1,16 +1,17 @@
-using System.Globalization;
-using System.Numerics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Themes;
 using Hexa.NET.ImNodes;
+using System.Globalization;
+using System.Numerics;
+using System.Reflection;
 
 namespace ContentEditor.App;
 
 public class ThemeEditor : IWindowHandler
 {
-    public string HandlerName => "Themes";
+    public string HandlerName => "Theme Editor";
 
     public bool HasUnsavedChanges => false;
     public bool ShowHelp { get; set; }
@@ -20,7 +21,22 @@ public class ThemeEditor : IWindowHandler
     protected UIContext context = null!;
 
     private int tab;
-
+    private bool isColorSortingDone = false;
+    private enum StyleGroupID
+    {
+        General,
+        Icons_App,
+        Icons_FileType,
+        Tags,
+    }
+    private StyleGroupID selectedTabIDX = StyleGroupID.General;
+    private List<(string Name, StyleGroupID ID, List<FieldInfo> Fields)> tabs = new()
+    {
+        ("General", StyleGroupID.General, new()),
+        ("App Icons", StyleGroupID.Icons_App, new()),
+        ("File Type Icons", StyleGroupID.Icons_FileType, new()),
+        ("Tags", StyleGroupID.Tags, new()),
+    };
     public void Init(UIContext context)
     {
         this.context = context;
@@ -30,8 +46,9 @@ public class ThemeEditor : IWindowHandler
     public void OnWindow() => this.ShowDefaultWindow(context);
     public void OnIMGUI()
     {
-        ImGui.TextWrapped("Change any settings you wish in the below style editor section. You can use Tools > IMGUI test window menu option to preview most components. Once you're satisfied with your changes, press \"Save to file\" and store it in the styles folder.");
-
+        ImGui.Button($"{AppIcons.SI_GenericInfo}");
+        ImguiHelpers.Tooltip("Change any settings you wish in the below style editor section. You can use the IMGUI Test Window to preview most components.\nOnce you're satisfied with your changes, press \"Save to file\" and store it in the styles folder.");
+        ImGui.SameLine();
         if (ImGui.Button("Save to file ...")) {
             var themeData = DefaultThemes.GetCurrentStyleData() + "\n\n" + UI.GetImNodesThemeStyleData();
 
@@ -41,7 +58,11 @@ public class ThemeEditor : IWindowHandler
                 File.WriteAllText(path, themeData);
             }, initialFile: Path.GetFullPath(Path.Combine(themePath, "custom_theme.theme.txt")), filter: ".theme.txt|*.theme.txt");
         }
-
+        ImGui.SameLine();
+        if (ImGui.Button("Open IMGUI Test Window")) {
+            EditorWindow.CurrentWindow?.AddUniqueSubwindow(new ImguiTestWindow());
+        }
+        
         ImGui.SeparatorText("Style editor");
         ImguiHelpers.Tabs(["Built-in", "Nodes", "Contextual"], ref tab, true);
         ImGui.BeginChild("Styles");
@@ -66,6 +87,8 @@ public class ThemeEditor : IWindowHandler
         } else {
             ImNodes.SetCurrentContext(nodeCtx.Value);
         }
+        ImGui.Spacing();
+        ImGui.Spacing();
         ImGui.SetNextWindowSize(new Vector2(Math.Min(ImGui.GetContentRegionAvail().X / 2, 600 * UI.UIScale), 0));
         ImGui.BeginChild("node colors");
 
@@ -160,20 +183,89 @@ public class ThemeEditor : IWindowHandler
         ImGui.EndChild();
     }
 
-    private void ShowContextualColorEditor()
+    public void ShowContextualColorEditor()
+    {
+        if (!isColorSortingDone) { SortColorsByName(); }
+        ImGui.Spacing();
+        ImGui.Spacing();
+        if (ImGui.BeginTabBar("ColorEditorTabs")) {
+            foreach (var tab in tabs) {
+                var flags = (selectedTabIDX == tab.ID) ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None;
+
+                if (ImGui.BeginTabItem(tab.Name, flags)) {
+                    switch (tab.ID) {
+                        case StyleGroupID.General:
+                            ShowColorFields(tab.Fields);
+                            break;
+                        case StyleGroupID.Icons_App:
+                            ShowColorFields(tab.Fields);
+                            break;
+                        case StyleGroupID.Icons_FileType:
+                            ShowColorFields(tab.Fields);
+                            break;
+                        case StyleGroupID.Tags:
+                            ShowColorFields(tab.Fields);
+                            break;
+                        default:
+                            ImGui.Text("Lorem Ipsum");
+                            break;
+                    }
+                    ImGui.EndTabItem();
+                }
+
+                if (ImGui.IsItemClicked()) {
+                    selectedTabIDX = tab.ID;
+                }
+            }
+            ImGui.EndTabBar();
+        }
+    }
+
+    private void SortColorsByName()
     {
         foreach (var field in AppColors.ColorFields) {
-            var col = (Vector4)field.GetValue(Colors.Current)!;
+            var tabId = field.Name switch {
+                var name when name.StartsWith("Icon", StringComparison.OrdinalIgnoreCase) => StyleGroupID.Icons_App,
+                var name when name.StartsWith("FileType", StringComparison.OrdinalIgnoreCase) => StyleGroupID.Icons_FileType,
+                var name when name.StartsWith("Tag", StringComparison.OrdinalIgnoreCase) => StyleGroupID.Tags,
+                _ => StyleGroupID.General
+            };
+            tabs.Find(x => x.ID == tabId).Fields.Add(field);
+        }
+        isColorSortingDone = true;
+    }
+
+    private void ShowColorFields(List<FieldInfo> fields)
+    {
+        ImGui.BeginChild("##ColorFields");
+        ImGui.Spacing();
+        foreach (var f in fields) { ShowColorEditorField(f); }
+        ImGui.Spacing();
+        ImGui.EndChild();
+    }
+
+    private static void ShowColorEditorField(FieldInfo field)
+    {
+        var col = (Vector4)field.GetValue(Colors.Current)!;
+        string id = $"ColorEditorBox_{field.Name}";
+
+        ImGui.PushStyleColor(ImGuiCol.Border, col);
+        Vector2 size = new Vector2(0, ImGui.GetTextLineHeightWithSpacing() * 3.0f);
+
+        if (ImGui.BeginChild(id, size, ImGuiChildFlags.Borders)) {
             if (ImGui.ColorEdit4(field.Name, ref col)) {
                 UndoRedo.RecordCallbackSetter(null, field, (Vector4)field.GetValue(Colors.Current)!, col, (f, v) => f.SetValue(Colors.Current, v), field.Name);
             }
+
+            ImGui.Spacing();
+            ImGui.TextColored(col, $"Lorem ipsum dolor sit amet | {AppIcons.SI_GenericMagnifyingGlass} | {AppIcons.SI_GenericQmark}");
         }
 
-        foreach (var field in AppColors.ColorFields) {
-            var col = (Vector4)field.GetValue(Colors.Current)!;
-            ImGui.TextColored(col, "Lorem ipsum dolor sit amet");
-        }
+        ImGui.EndChild();
+        ImGui.PopStyleColor();
+        ImGui.Spacing();
     }
+
 
     public bool RequestClose()
     {

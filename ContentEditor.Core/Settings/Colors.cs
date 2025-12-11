@@ -16,25 +16,58 @@ public static class Colors
     public static Vector4 Info => Current.Info;
     public static Vector4 Note => Current.Note;
     public static Vector4 Success => Current.Success;
-
     public static Vector4 GameObject => Current.GameObject;
     public static Vector4 Folder => Current.Folder;
-
     public static Vector4 Colliders => new Vector4(0, 1, 0, 0.8f);
     public static Vector4 RequestSetColliders => new Vector4(1, 0.4f, 0.1f, 0.8f);
     public static Vector4 Lights => new Vector4(1, 1, 0, 0.8f);
-    /// <summary>Cardboard</summary>
-    public static Vector4 PFB => new Vector4(0.80f, 0.62f, 0.38f, 1);
-    /// <summary>Purple</summary>
-    public static Vector4 SCN => new Vector4(0.53f, 0.29f, 0.91f, 1);
-    /// <summary>Cerulean</summary>
-    public static Vector4 MESH => new Vector4(0, 0.54f, 0.94f, 1);
-    /// <summary>Cyan</summary>
-    public static Vector4 MCOL => new Vector4(0, 0.85f, 1, 1);
-    /// <summary>Rust</summary>
-    public static Vector4 RCOL => new Vector4(0.85f, 0.27f, 0.25f, 1);
-    /// <summary>Gold</summary>
-    public static Vector4 MDF => new Vector4(0.93f, 0.55f, 0.07f, 1);
+    public static Vector4 TextActive => Current.TextActive;
+    public static Vector4 FileTypePFB => Current.FileTypePFB;
+    public static Vector4 FileTypeSCN => Current.FileTypeSCN;
+    public static Vector4 FileTypeMESH => Current.FileTypeMESH;
+    public static Vector4 FileTypeMCOL => Current.FileTypeMCOL;
+    public static Vector4 FileTypeRCOL => Current.FileTypeRCOL;
+    public static Vector4 FileTypeMDF => Current.FileTypeMDF;
+    /// <summary>
+    /// Main color for icons, it should be the same as the text color of the current theme
+    ///</summary>
+    public static Vector4 IconPrimary => Current.IconPrimary;
+    /// <summary>
+    /// Accent color for icons, should be the same as the secondary color of the current theme
+    ///</summary>
+    public static Vector4 IconSecondary => Current.IconSecondary;
+    /// <summary>
+    /// Use it in place of the secondary color when the icon removes or deletes something
+    ///</summary>
+    public static Vector4 IconTertiary => Current.IconTertiary;
+    /// <summary>
+    /// Active color of icons when used with methods such as ToggleButton etc.
+    ///</summary>
+    public static Vector4 IconActive => Current.IconActive;
+    public static Vector4 TagCharacter => Current.TagCharacter;
+    public static Vector4 TagCharacterHovered => Current.TagCharacterHovered;
+    public static Vector4 TagCharacterSelected => Current.TagCharacterSelected;
+    public static Vector4 TagDLC => Current.TagDLC;
+    public static Vector4 TagDLCHovered => Current.TagDLCHovered;
+    public static Vector4 TagDLCSelected => Current.TagDLCSelected;
+    public static Vector4 TagEnemy => Current.TagEnemy;
+    public static Vector4 TagEnemyHovered => Current.TagEnemyHovered;
+    public static Vector4 TagEnemySelected => Current.TagEnemySelected;
+    public static Vector4 TagItem => Current.TagItem;
+    public static Vector4 TagItemHovered => Current.TagItemHovered;
+    public static Vector4 TagItemSelected => Current.TagItemSelected;
+    public static Vector4 TagMisc => Current.TagMisc;
+    public static Vector4 TagMiscHovered => Current.TagMiscHovered;
+    public static Vector4 TagMiscSelected => Current.TagMiscSelected;
+    public static Vector4 TagStage => Current.TagStage;
+    public static Vector4 TagStageHovered => Current.TagStageHovered;
+    public static Vector4 TagStageSelected => Current.TagStageSelected;
+    public static Vector4 TagUI => Current.TagUI;
+    public static Vector4 TagUIHovered => Current.TagUIHovered;
+    public static Vector4 TagUISelected => Current.TagUISelected;
+    public static Vector4 TagWeapon => Current.TagWeapon;
+    public static Vector4 TagWeaponHovered => Current.TagWeaponHovered;
+    public static Vector4 TagWeaponSelected => Current.TagWeaponSelected;
 }
 
 public sealed class AppColors
@@ -52,6 +85,44 @@ public sealed class AppColors
     public Vector4 GameObject = new Vector4(1, 0.96f, 0.92f, 1);
     public Vector4 Folder = new Vector4(0.9f, 1f, 0.9f, 1);
 
+    public Vector4 TextActive = new Vector4(0.114f, 0.6f, 0.93f, 1);
+
+    public Vector4 FileTypePFB = new Vector4(0.80f, 0.62f, 0.38f, 1);
+    public Vector4 FileTypeSCN = new Vector4(0.53f, 0.29f, 0.91f, 1);
+    public Vector4 FileTypeMESH = new Vector4(0, 0.54f, 0.94f, 1);
+    public Vector4 FileTypeMCOL = new Vector4(0, 0.85f, 1, 1);
+    public Vector4 FileTypeRCOL = new Vector4(0.85f, 0.27f, 0.25f, 1);
+    public Vector4 FileTypeMDF = new Vector4(0.93f, 0.55f, 0.07f, 1);
+
+    public Vector4 IconPrimary = new Vector4(1, 1, 1, 1);
+    public Vector4 IconSecondary = new Vector4(0.114f, 0.6f, 0.93f, 1);
+    public Vector4 IconTertiary = new Vector4(1, 0.4f, 0.4f, 1);
+    public Vector4 IconActive = new Vector4(0.114f, 0.6f, 0.93f, 1);
+
+    public Vector4 TagCharacter = new Vector4(0.2f, 0.6f, 1, 0.5f);
+    public Vector4 TagCharacterHovered = new Vector4(0.2f, 0.6f, 1, 0.8f);
+    public Vector4 TagCharacterSelected = new Vector4(0.2f, 0.6f, 1, 1);
+    public Vector4 TagDLC = new Vector4(1, 0, 1, 0.5f);
+    public Vector4 TagDLCHovered = new Vector4(1, 0, 1, 0.8f);
+    public Vector4 TagDLCSelected = new Vector4(1, 0, 1, 1);
+    public Vector4 TagEnemy = new Vector4(0.9f, 0.3f, 0.3f, 0.5f);
+    public Vector4 TagEnemyHovered = new Vector4(0.9f, 0.3f, 0.3f, 0.8f);
+    public Vector4 TagEnemySelected = new Vector4(0.9f, 0.3f, 0.3f, 1);
+    public Vector4 TagItem = new Vector4(0.3f, 0.8f, 0.3f, 0.5f);
+    public Vector4 TagItemHovered = new Vector4(0.4f, 0.9f, 0.4f, 0.8f);
+    public Vector4 TagItemSelected = new Vector4(0.2f, 0.7f, 0.2f, 1);
+    public Vector4 TagMisc = new Vector4(0.9f, 0.8f, 0.2f, 0.5f);
+    public Vector4 TagMiscHovered = new Vector4(1, 0.9f, 0.3f, 0.8f);
+    public Vector4 TagMiscSelected = new Vector4(0.8f, 0.7f, 0.1f, 1);
+    public Vector4 TagStage = new Vector4(0.6f, 0.3f, 0.9f, 0.5f);
+    public Vector4 TagStageHovered = new Vector4(0.6f, 0.3f, 0.9f, 0.8f);
+    public Vector4 TagStageSelected = new Vector4(0.6f, 0.3f, 0.9f, 1);
+    public Vector4 TagUI = new Vector4(1, 0.4f, 0.1f, 0.5f);
+    public Vector4 TagUIHovered = new Vector4(1, 0.4f, 0.1f, 0.8f);
+    public Vector4 TagUISelected = new Vector4(1, 0.4f, 0.1f, 1);
+    public Vector4 TagWeapon = new Vector4(0.9f, 0.3f, 0.3f, 0.5f);
+    public Vector4 TagWeaponHovered = new Vector4(1, 0.4f, 0.4f, 0.8f);
+    public Vector4 TagWeaponSelected = new Vector4(0.8f, 0.2f, 0.2f, 1);
     public static AppColors GetDarkThemeColors() => new AppColors();
 
     public static AppColors GetLightThemeColors() => new AppColors() {

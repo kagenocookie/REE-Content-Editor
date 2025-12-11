@@ -91,7 +91,8 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
                 EditorWindow.CurrentWindow?.CopyToClipboard(string.Join("\n", list.Select(l => l.message)), "Copied!");
             }
             ImGui.SameLine();
-            ImGui.Checkbox("Compact multiline messages", ref compactMultiline);
+            ImguiHelpers.ToggleButton($"{AppIcons.SI_LogCompact}", ref compactMultiline, Colors.IconActive);
+            ImguiHelpers.Tooltip("Compact multiline messages");
             ImGui.Spacing();
             ImGui.Separator();
             ImGui.BeginChild("Content");

@@ -46,6 +46,7 @@ public static class UI
         fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/NotoSansJP-Regular.ttf"), normalIcons);
         fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/appicons.ttf"), normalIcons);
         fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/silver_icons.ttf"), normalIcons);
+        fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/silver_icons_color.ttf"), normalIcons);
         fonts.AddFontDefault();
         normalIcons.Destroy();
 #if !DEBUG
@@ -137,7 +138,7 @@ public static class UI
     public static unsafe void ApplyImNodesTheme(IEnumerable<(string key, string value, string? group)> ini)
     {
         var style = ImNodes.GetStyle();
-        Colors.Current = AppColors.GetDarkThemeColors();
+        //Colors.Current = AppColors.GetDarkThemeColors(); //SILVER: Calling this here resets some of the colors of the current theme to default
         foreach (var kv in ini) {
             if (kv.key.StartsWith("nodes_col ")) {
                 var name = kv.key.Replace("nodes_col ", "");
@@ -311,8 +312,18 @@ public static class AppIcons
     public static readonly char SI_TagWeapon = '\ued60';
     public static readonly char SI_TagCharacter = '\ued61';
     public static readonly char SI_GenericMatchCase = '\ued62';
+    public static readonly char[] SIC_BookmarkHide = { '\ued63', '\ued64', '\ued65' };
+    public static readonly char[] SIC_BookmarkCustomHide = { '\ued66', '\ued67', '\ued68' };
+    public static readonly char[] SIC_BookmarkCustomClear = { '\ued69', '\ued6a' };
+    public static readonly char[] SIC_FilterClear = { '\ued6b', '\ued6c' };
+    public static readonly char[] SIC_BookmarkAdd = { '\ued6d', '\ued6e' };
+    public static readonly char[] SIC_BookmarkRemove = { '\ued6f', '\ued70' };
+    public static readonly char[] SIC_FileJumpTo = { '\ued71', '\ued72', '\ued73' };
+    public static readonly char SI_GenericClose = '\ued74';
+    public static readonly char SI_Log = '\ued75';
+    public static readonly char SI_LogCompact = '\ued76';
 
-    public static readonly uint[] Range = [(uint)EfxEntry, (uint)SI_GenericMatchCase, 0];
+    public static readonly uint[] Range = [(uint)EfxEntry, (uint)SI_LogCompact, 0];
 
     public static string PrependIcon(this string text, object target)
     {
@@ -346,13 +357,13 @@ public static class AppIcons
         _ => '\0',
     };
     public static (char icon, Vector4 color) GetIcon(KnownFileFormats format) => format switch {
-        KnownFileFormats.Prefab => (SI_FileType_PFB, Colors.PFB),
-        KnownFileFormats.Scene => (SI_FileType_SCN, Colors.SCN),
-        KnownFileFormats.Mesh => (SI_FileType_MESH, Colors.MESH),
-        KnownFileFormats.CollisionMesh => (SI_FileType_MCOL, Colors.MCOL),
-        KnownFileFormats.RequestSetCollider => (SI_FileType_RCOL, Colors.RCOL),
-        KnownFileFormats.MaterialDefinition => (SI_FileType_MDF, Colors.MDF),
-        KnownFileFormats.MasterMaterial => (SI_FileType_MMTR, Colors.MDF),
+        KnownFileFormats.Prefab => (SI_FileType_PFB, Colors.FileTypePFB),
+        KnownFileFormats.Scene => (SI_FileType_SCN, Colors.FileTypeSCN),
+        KnownFileFormats.Mesh => (SI_FileType_MESH, Colors.FileTypeMESH),
+        KnownFileFormats.CollisionMesh => (SI_FileType_MCOL, Colors.FileTypeMCOL),
+        KnownFileFormats.RequestSetCollider => (SI_FileType_RCOL, Colors.FileTypeRCOL),
+        KnownFileFormats.MaterialDefinition => (SI_FileType_MDF, Colors.FileTypeMDF),
+        KnownFileFormats.MasterMaterial => (SI_FileType_MMTR, Colors.FileTypeMDF),
         KnownFileFormats.Texture => (SI_FileType_TEX, Vector4.One),
         KnownFileFormats.UVSequence => (SI_FileType_UVS, Vector4.One),
         KnownFileFormats.UserData => (SI_FileType_USER, Vector4.One),

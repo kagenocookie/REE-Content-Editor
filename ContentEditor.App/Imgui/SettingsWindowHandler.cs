@@ -117,7 +117,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             bool isGroupSelected = selectedGroup == i;
 
             if (isGroupSelected) {
-                ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered));
+                ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
             } else {
                 ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.Text));
             }
@@ -135,7 +135,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                     bool isSubSelected = isGroupSelected && selectedSubGroup == j;
 
                     if (isSubSelected) {
-                        ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered));
+                        ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
                     } else {
                         ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.Text));
                     }
@@ -265,12 +265,16 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     {
         ImGui.Spacing();
 
+        if (ImGui.Button("Open Theme Editor")) {
+            EditorWindow.CurrentWindow?.AddUniqueSubwindow(new ThemeEditor());
+        }
+
+        ImGui.Spacing();
         var theme = config.Theme.Get();
         if (ImguiHelpers.ValueCombo("Theme", DefaultThemes.AvailableThemes, DefaultThemes.AvailableThemes, ref theme)) {
             UI.ApplyTheme(theme!);
             config.Theme.Set(theme);
         }
-        ImguiHelpers.Tooltip("Custom themes can be configured through Tools > Theme Editor.");
 
         var bgColor = config.BackgroundColor.Get().ToVector4();
         var isAlpha = bgColor.W < 1;

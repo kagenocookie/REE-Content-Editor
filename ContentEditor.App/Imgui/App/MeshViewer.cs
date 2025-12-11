@@ -292,7 +292,9 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
     private bool ShowMenu(MeshComponent meshComponent)
     {
+        ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, ImGui.GetStyle().FramePadding with { Y = ImGui.GetStyle().FramePadding.Y + 4 });
         if (ImGui.BeginMenuBar()) {
+            ImGui.PopStyleVar();
             if (ImGui.MenuItem($"{AppIcons.SI_GenericCamera} Controls")) ImGui.OpenPopup("CameraSettings");
             if (scene != null && ImGui.BeginPopup("CameraSettings")) {
                 scene.Controller.ShowCameraControls();
@@ -348,6 +350,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             UpdateMaterial(meshComponent);
             return true;
         } else {
+            ImGui.PopStyleVar();
             UpdateMaterial(meshComponent);
             return false;
         }
@@ -502,7 +505,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     {
         ImGui.SeparatorText("Animations");
         if (animator == null) {
-            animator = new (Workspace);
+            animator = new(Workspace);
         }
         if (!UpdateAnimatorMesh(meshComponent)) return;
 
@@ -600,7 +603,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         var timestampSize = ImGui.CalcTextSize(timestamp) + new Vector2(5 * 48, 0);
         ImGui.SetCursorPos(new Vector2(windowSize.X - timestampSize.X - ImGui.GetStyle().WindowPadding.X * 2 - 42, TopMargin));
         ImGui.PushStyleColor(ImGuiCol.ChildBg, ImguiHelpers.GetColor(ImGuiCol.WindowBg) with { W = 0.5f });
-        ImGui.BeginChild("PlaybackControls", new Vector2(timestampSize.X, 46), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
+        ImGui.BeginChild("PlaybackControls", new Vector2(timestampSize.X, 80), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
 
         var p = ImGui.GetStyle().FramePadding;
         // the margins are weird on the buttons by default - font issue maybe, either way adding a bit of extra Y here
@@ -650,6 +653,16 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 4);
         ImGui.Text(timestamp);
 
+        using (var _ = ImguiHelpers.Disabled(!animator.IsActive)) {
+            int frame = animator.CurrentFrame;
+            ImGui.SetNextItemWidth(350);
+            if (ImGui.SliderInt("##AnimFrameSlider", ref frame, 0, animator.TotalFrames)) {
+                animator.Pause();
+                animator.Seek(frame * animator.FrameDuration);
+                animator.Update(0);
+            }
+        }
+
         ImGui.EndChild();
         ImGui.PopStyleColor();
 
@@ -659,7 +672,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     public void SetAnimation(string animlist)
     {
         if (animator == null) {
-            animator = new (Workspace);
+            animator = new(Workspace);
         }
         animator.LoadAnimationList(animlist);
         var firstAnim = animator.Animations.FirstOrDefault();
@@ -671,7 +684,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     public void SetAnimation(MotFile mot)
     {
         if (animator == null) {
-            animator = new (Workspace);
+            animator = new(Workspace);
         }
         animator.SetActiveMotion(mot);
     }

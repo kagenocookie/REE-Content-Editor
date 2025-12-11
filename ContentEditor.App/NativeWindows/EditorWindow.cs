@@ -534,7 +534,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             foreach (var scene in SceneManager.RootMasterScenes) {
                 // ImGui.Bullet(); TODO scene.Modified
                 if (scene.IsActive) {
-                    ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered));
+                    ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
                     if (ImGui.MenuItem(scene.Name)) {
                         SceneManager.ChangeMasterScene(null);
                     }
@@ -649,7 +649,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 ImGui.EndMenu();
             }
 
-            if (ImGui.MenuItem("IMGUI test window")) {
+            if (ImGui.MenuItem("IMGUI Test Window")) {
                 AddUniqueSubwindow(new ImguiTestWindow());
             }
             if (ImGui.MenuItem("File testing")) {

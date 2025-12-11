@@ -217,9 +217,9 @@ public static class ImguiHelpers
             x += tabWidth;
 
             if (i == selectedTabIndex) {
-                ImGui.BeginDisabled(true);
+                ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
                 ImGui.Text(tab);
-                ImGui.EndDisabled();
+                ImGui.PopStyleColor();
             } else {
                 if (ImGui.Button(tab)) {
                     selectedTabIndex = i;
@@ -438,7 +438,7 @@ public static class ImguiHelpers
     /// <summary>
     /// Draws an imgui button that behaves like a checkbox.
     /// </summary>
-    public static bool ToggleButton(string label, ref bool value, Vector4? color = null, float frameSize = 0f)
+    public static bool ToggleButton(string label, ref bool value, Vector4? color = null, float frameSize = 2f)
     {
         var changed = false;
         if (value && color.HasValue) {
@@ -459,6 +459,96 @@ public static class ImguiHelpers
             }
         }
         return changed;
+    }
+    /// <summary>
+    /// Draws an imgui button that behaves like a checkbox with a multi-colored icon
+    /// </summary>
+    public static bool ToggleButtonMultiColor(char[] icons, ref bool toggleBool, Vector4[] colors, Vector4 overrideColor, float frameSize = 2f)
+    {
+        var iconSize = ImGui.CalcTextSize(icons[0].ToString());
+        var padding = ImGui.GetStyle().FramePadding;
+        var size = iconSize + new Vector2(padding.X * 2, padding.Y * 2);
+
+        bool changed = false;
+        bool activeOverride = toggleBool;
+        bool disabled = ImGui.GetStyle().Alpha < 1.0f; // SILVER: Diabolical way to track if we're inside a disabled section
+
+        if (activeOverride) {
+            ImGui.PushStyleColor(ImGuiCol.Text, overrideColor);
+            ImGui.PushStyleColor(ImGuiCol.Border, overrideColor);
+            ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, frameSize);
+        }
+
+        if (ImGui.Button("##ToggleButtonMultiColor" + string.Join("", icons), size)) {
+            toggleBool = !toggleBool;
+            changed = true;
+        }
+
+        if (activeOverride) {
+            ImGui.PopStyleVar();
+            ImGui.PopStyleColor(2);
+        }
+
+        var drawList = ImGui.GetWindowDrawList();
+        var min = ImGui.GetItemRectMin();
+        var max = ImGui.GetItemRectMax();
+        Vector2 pos = new(
+            min.X + (max.X - min.X - iconSize.X) * 0.5f,
+            min.Y + (max.Y - min.Y - iconSize.Y) * 0.5f
+        );
+
+        for (int i = 0; i < icons.Length; i++) {
+            Vector4 col = toggleBool ? overrideColor : colors[i];
+            if (disabled) { col.W *= ImGui.GetStyle().DisabledAlpha; }
+
+            drawList.AddText(pos, ImGui.ColorConvertFloat4ToU32(col), icons[i].ToString());
+        }
+
+        return changed;
+    }
+    public static bool ButtonMultiColor(char[] icons, Vector4[] colors)
+    {
+        var iconSize = ImGui.CalcTextSize(icons[0].ToString());
+        var padding = ImGui.GetStyle().FramePadding;
+        var size = iconSize + new Vector2(padding.X * 2, padding.Y * 2);
+
+        bool changed = false;
+        bool disabled = ImGui.GetStyle().Alpha < 1.0f;
+
+        if (ImGui.Button("##ButtonMultiColor" + string.Join("", icons), size)) {
+            changed = true;
+        }
+
+        var drawList = ImGui.GetWindowDrawList();
+        var min = ImGui.GetItemRectMin();
+        var max = ImGui.GetItemRectMax();
+
+        Vector2 pos = new(
+            min.X + (max.X - min.X - iconSize.X) * 0.5f,
+            min.Y + (max.Y - min.Y - iconSize.Y) * 0.5f
+        );
+
+        for (int i = 0; i < icons.Length; i++) {
+            if (disabled) { colors[i].W *= ImGui.GetStyle().DisabledAlpha; }
+            drawList.AddText(pos, ImGui.ColorConvertFloat4ToU32(colors[i]), icons[i].ToString());
+        }
+
+        return changed;
+    }
+    public static void DrawMultiColorIconWithText(char[] icons, string label, Vector4[] colors)
+    {
+        var drawList = ImGui.GetWindowDrawList();
+        var pos = ImGui.GetItemRectMin();
+        var size = ImGui.GetItemRectSize();
+        pos.Y += (size.Y - ImGui.CalcTextSize(icons[0].ToString()).Y) * 0.5f;
+        pos.X += ImGui.CalcTextSize(icons[0].ToString()).X * 0.25f;
+
+        for (int i = 0; i < icons.Length; i++) {
+            drawList.AddText(pos, ImGui.ColorConvertFloat4ToU32(colors[i]), icons[i].ToString());
+        }
+
+        pos.X += ImGui.CalcTextSize(icons[0].ToString()).X + ImGui.GetStyle().ItemInnerSpacing.X;
+        drawList.AddText(pos, ImGui.GetColorU32(ImGuiCol.Text), label);
     }
     /// <summary>
     /// Draws a tooltip when item is hovered.
