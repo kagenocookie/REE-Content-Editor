@@ -220,6 +220,14 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ShowFolderSetting(config.ThumbnailCacheFilepath, "Thumbnail cache file path", "The folder that cached thumbnails should be stored in. Must not be empty.");
         ShowSlider(config.UnpackMaxThreads, "Max unpack threads", 1, 64, "The maximum number of threads to be used when unpacking.\nThe actual thread count is determined automatically by the .NET runtime.");
 
+        var navchanged = ShowSetting(config.EnableKeyboardNavigation, "Enable keyboard navigation", "Whether to enable navigating between fields using arrow keys.");
+        if (navchanged) {
+            if (config.EnableKeyboardNavigation) {
+                ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.NavEnableKeyboard;
+            } else {
+                ImGui.GetIO().ConfigFlags &= ~ImGuiConfigFlags.NavEnableKeyboard;
+            }
+        }
         ShowSetting(config.LogToFile, "Output logs to file", $"If checked, any logging will also be output to file {FileLogger.DefaultLogFilePath}.\nChanging this setting requires a restart of the app.");
         ShowSetting(config.LoadFromNatives, "Load files from natives/ folder", $"If checked, the app will prefer to load loose files from the active game's natives folder instead of packed files, similar to how the game would.");
         var logLevel = config.LogLevel.Get();
@@ -410,13 +418,16 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         }
         if (tooltip != null) { ImguiHelpers.Tooltip(tooltip); }
     }
-    private static void ShowSetting(AppConfig.SettingWrapper<bool> setting, string label, string? tooltip)
+    private static bool ShowSetting(AppConfig.SettingWrapper<bool> setting, string label, string? tooltip)
     {
         var value = setting.Get();
+        var changed = false;
         if (ImGui.Checkbox(label, ref value)) {
             setting.Set(value);
+            changed = true;
         }
         if (tooltip != null) { ImguiHelpers.Tooltip(tooltip); }
+        return changed;
     }
     private static void ShowSlider(AppConfig.SettingWrapper<int> setting, string label, int min, int max, string? tooltip)
     {
