@@ -270,6 +270,12 @@ public partial class CommonMeshResource : IResourceFile
         return mesh;
     }
 
+    private static string CleanBoneName(string name)
+    {
+        // sometimes assimp is an ass and adds random shit to the bone names
+        return name.Replace("_$AssimpFbx$_Translation", "").Replace("_$AssimpFbx$_Rotation", "").Replace("_$AssimpFbx$_Scaling", "");
+    }
+
     private MotlistFile ImportAnimationsFromAssimp(Assimp.Scene scene, GameName gameVersion)
     {
         workspace.TryGetFileExtensionVersion("motlist", out var version);
@@ -280,7 +286,7 @@ public partial class CommonMeshResource : IResourceFile
         var meta = scene.Metadata;
 
         // setup mot bone hierarchy
-        var boneNames = scene.Animations.SelectMany(a => a.NodeAnimationChannels.Select(ann => ann.NodeName)).ToHashSet();
+        var boneNames = scene.Animations.SelectMany(a => a.NodeAnimationChannels.Select(ann => CleanBoneName(ann.NodeName))).ToHashSet();
         static void AddRecursiveBones(List<MotBone> bones, NodeCollection children, HashSet<string> boneNames, MotBone? parentBone)
         {
             foreach (var node in children) {
@@ -336,17 +342,19 @@ public partial class CommonMeshResource : IResourceFile
 
             // TODO determine best compression types
             foreach (var channel in aiAnim.NodeAnimationChannels) {
-                var clipHeader = new BoneClipHeader(motver);
-                var clip = new BoneMotionClip(clipHeader);
+                var boneName = CleanBoneName(channel.NodeName);
+                var existingClip = mot.BoneClips.FirstOrDefault(c => c.ClipHeader.boneName == boneName);
+                var clipHeader = existingClip?.ClipHeader ?? new BoneClipHeader(motver);
+                var clip = existingClip ?? new BoneMotionClip(clipHeader);
 
                 MotBone? bone = null;
-                if (channel.NodeName.StartsWith("_hash")) {
+                if (boneName.StartsWith("_hash")) {
                     // not much else we can do about these
                     clipHeader.boneName = null;
-                    clipHeader.boneHash = uint.TryParse(channel.NodeName.AsSpan().Slice("_hash".Length), out var hash) ? hash : 0;
+                    clipHeader.boneHash = uint.TryParse(boneName.AsSpan().Slice("_hash".Length), out var hash) ? hash : 0;
                 } else {
-                    clipHeader.boneName = channel.NodeName;
-                    clipHeader.boneHash = MurMur3HashUtils.GetHash(channel.NodeName);
+                    clipHeader.boneName = boneName;
+                    clipHeader.boneHash = MurMur3HashUtils.GetHash(boneName);
                     bone = mot.GetBoneByHash(clipHeader.boneHash);
                     clipHeader.boneIndex = (ushort)(bone?.Index ?? 0); // would we need these to be remap index?
                 }
@@ -399,7 +407,7 @@ public partial class CommonMeshResource : IResourceFile
                     }
                 }
 
-                if (clip.ClipHeader.trackFlags != 0) {
+                if (clip.ClipHeader.trackFlags != 0 && existingClip == null) {
                     mot.BoneClips.Add(clip);
                 }
             }
