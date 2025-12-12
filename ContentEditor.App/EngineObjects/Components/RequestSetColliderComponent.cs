@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Numerics;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.ImguiHandling.Rcol;
 using ContentEditor.App.Windowing;
@@ -106,9 +107,9 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
 
         var parentMesh = GameObject.GetComponent<MeshComponent>()?.MeshHandle as AnimatedMeshHandle;
 
-        ref readonly var transform = ref GameObject.Transform.WorldTransform;
+        var transform = GameObject.Transform.WorldTransform.ToSystem();
 
-        Matrix4X4<float> shapeMatrix = Matrix4X4<float>.Identity;
+        Matrix4x4 shapeMatrix = Matrix4x4.Identity;
         foreach (var rcol in rcols) {
             if (rcol == null) continue;
 

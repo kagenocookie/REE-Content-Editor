@@ -156,11 +156,11 @@ public class Animator(ContentWorkspace Workspace)
         IsActive = true;
         if (mesh is AnimatedMeshHandle animMesh && animMesh.Bones != null) {
             if (animMesh.DeformBoneMatrices.Length != animMesh.Bones.DeformBones.Count) {
-                animMesh.DeformBoneMatrices = new Matrix4X4<float>[animMesh.Bones.DeformBones.Count];
+                animMesh.DeformBoneMatrices = new Matrix4x4[animMesh.Bones.DeformBones.Count];
             }
             ref var transformCache = ref animMesh.BoneMatrices;
             if (transformCache.Length != animMesh.Bones.Bones.Count) {
-                transformCache = new Matrix4X4<float>[animMesh.Bones.Bones.Count];
+                transformCache = new Matrix4x4[animMesh.Bones.Bones.Count];
             }
 
             currentTime += deltaTime;
@@ -171,48 +171,48 @@ public class Animator(ContentWorkspace Workspace)
             foreach (var bone in animMesh.Bones.Bones) {
 
                 if (IgnoreRootMotion && bone.parentIndex == -1) {
-                    transformCache[bone.index] = Matrix4X4<float>.Identity;
+                    transformCache[bone.index] = Matrix4x4.Identity;
                     continue;
                 }
 
                 var boneHash = MurMur3HashUtils.GetHash(bone.name);
                 var clip = ActiveMotion.BoneClips.FirstOrDefault(bc => bc.ClipHeader.boneHash == boneHash);
-                Matrix4X4.Decompose<float>(bone.localTransform.ToGeneric(), out var localScale, out var localRot, out var localPos);
+                Matrix4x4.Decompose(bone.localTransform.ToSystem(), out var localScale, out var localRot, out var localPos);
                 var motBone = ActiveMotion.BoneHeaders?.FirstOrDefault(bh => bh.boneHash == boneHash);
 
                 if (motBone != null) {
-                    localPos = motBone.translation.ToGeneric();
-                    localRot = motBone.quaternion.ToGeneric();
+                    localPos = motBone.translation;
+                    localRot = motBone.quaternion;
                 }
 
                 if (clip?.HasTranslation == true && clip.Translation!.frameIndexes != null) {
                     var (t1, t2, interp) = FindFrames(clip.Translation, frame);
                     if (t1 >= 0) {
-                        localPos = Vector3D.Lerp(clip.Translation.translations![t1].ToGeneric(), clip.Translation.translations![t2].ToGeneric(), interp);
+                        localPos = Vector3.Lerp(clip.Translation.translations![t1], clip.Translation.translations![t2], interp);
                     }
                 }
 
                 if (clip?.HasRotation == true && clip.Rotation!.frameIndexes != null) {
                     var (t1, t2, interp) = FindFrames(clip.Rotation, frame);
                     if (t1 >= 0) {
-                        localRot = Quaternion<float>.Lerp(clip.Rotation.rotations![t1].ToGeneric(), clip.Rotation.rotations![t2].ToGeneric(), interp);
+                        localRot = Quaternion.Lerp(clip.Rotation.rotations![t1], clip.Rotation.rotations![t2], interp);
                     }
                 }
 
                 if (clip?.HasScale == true && clip.Scale!.frameIndexes != null) {
                     var (t1, t2, interp) = FindFrames(clip.Scale, frame);
                     if (t1 >= 0) {
-                        localScale = Vector3D.Lerp(clip.Scale.translations![t1].ToGeneric(), clip.Scale.translations![t2].ToGeneric(), interp);
+                        localScale = Vector3.Lerp(clip.Scale.translations![t1], clip.Scale.translations![t2], interp);
                     }
                 }
 
-                var localTransform = Matrix4X4.CreateScale<float>(localScale) * Matrix4X4.CreateFromQuaternion<float>(localRot) * Matrix4X4.CreateTranslation<float>(localPos);
+                var localTransform = Matrix4x4.CreateScale(localScale) * Matrix4x4.CreateFromQuaternion(localRot) * Matrix4x4.CreateTranslation(localPos);
 
                 var worldMat = bone.Parent == null ? localTransform : localTransform * transformCache[bone.Parent.index];
                 transformCache[bone.index] = worldMat;
 
                 if (bone.remapIndex != -1) {
-                    animMesh.DeformBoneMatrices[bone.remapIndex] = bone.inverseGlobalTransform.ToGeneric() * worldMat;
+                    animMesh.DeformBoneMatrices[bone.remapIndex] = bone.inverseGlobalTransform.ToSystem() * worldMat;
                 }
             }
         }
@@ -223,9 +223,9 @@ public class Animator(ContentWorkspace Workspace)
         if (mesh is AnimatedMeshHandle animMesh && animMesh.Bones != null) {
             foreach (var bone in animMesh.Bones.Bones) {
                 if (bone.remapIndex != -1) {
-                    animMesh.DeformBoneMatrices[bone.remapIndex] = Matrix4X4<float>.Identity;
+                    animMesh.DeformBoneMatrices[bone.remapIndex] = Matrix4x4.Identity;
                 }
-                animMesh.BoneMatrices[bone.index] = bone.globalTransform.ToGeneric();
+                animMesh.BoneMatrices[bone.index] = bone.globalTransform.ToSystem();
             }
         }
         IsActive = false;

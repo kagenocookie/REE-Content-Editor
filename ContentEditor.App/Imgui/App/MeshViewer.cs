@@ -8,6 +8,7 @@ using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.via;
 
 namespace ContentEditor.App;
 
@@ -72,6 +73,10 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     private bool exportInProgress;
 
     private string? lastImportSourcePath;
+
+    private bool showSkeleton;
+    private GizmoShapeBuilder? _skeletonBuilder;
+    private MeshHandle? gizmoMeshHandle;
 
     public MeshViewer(ContentWorkspace workspace, FileHandle file)
     {
@@ -212,6 +217,10 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         if (mesh == null) {
             ImGui.Text("No mesh selected");
             return;
+        }
+
+        if (showSkeleton) {
+            RenderSkeleton();
         }
 
         Vector2? embeddedMenuPos = null;
@@ -509,6 +518,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         }
         if (!UpdateAnimatorMesh(meshComponent)) return;
 
+        ImGui.Checkbox("Show skeleton", ref showSkeleton);
+
         if (animationPickerContext == null) {
             animationPickerContext = context.AddChild<MeshViewer, string>(
                 "Source File",
@@ -557,6 +568,46 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         } else if (animator?.File != null) {
             ImGui.TextColored(Colors.Note, "Selected file contains no playable animations");
         }
+    }
+
+    private void RenderSkeleton()
+    {
+        var mcomp = previewGameobject?.GetComponent<MeshComponent>();
+        var mesh = mcomp?.MeshHandle as AnimatedMeshHandle;
+        if (mesh == null || scene == null || mcomp == null) return;
+
+        if (_skeletonBuilder == null) {
+            _skeletonBuilder = new GizmoShapeBuilder(new GizmoState(scene, new GizmoContainer(scene, mcomp)));
+            _skeletonBuilder.SetGeometryType(ShapeBuilder.GeometryType.Line);
+        }
+
+        _skeletonBuilder.ClearShapes();
+        _skeletonBuilder.Push();
+        foreach (var bone in mesh.Bones!.Bones) {
+            var transform = mesh.BoneMatrices[bone.index];
+            var parent = bone.Parent;
+            var parentTransform = bone.parentIndex == -1 ? Matrix4x4.Identity : mesh.BoneMatrices[bone.parentIndex];
+
+            _skeletonBuilder.Add(new Capsule(
+                parentTransform.Translation,
+                transform.Translation,
+                0.001f));
+
+            _skeletonBuilder.Add(new Sphere(
+                transform.Translation,
+                0.005f));
+        }
+
+        _skeletonBuilder.UpdateMesh();
+        if (gizmoMeshHandle == null) {
+            gizmoMeshHandle = new MeshHandle(new MeshResourceHandle(_skeletonBuilder.mesh!));
+            var material = scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "skeleton")
+                .Color("_MainColor", new Color(0xff, 0xff, 0, 0x77)).Blend();
+            gizmoMeshHandle.SetMaterials(new MaterialGroup(material));
+            scene.RenderContext.StoreMesh(gizmoMeshHandle.Handle);
+        }
+        (scene.RenderContext as OpenGLRenderContext)?.Batch.Gizmo
+            .Add(new GizmoRenderBatchItem(gizmoMeshHandle.GetMaterial(0), gizmoMeshHandle.GetMesh(0), Matrix4x4.Identity, gizmoMeshHandle.GetMaterial(0)));
     }
 
     private void UpdateMaterial(MeshComponent meshComponent)
@@ -706,6 +757,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     {
         fileHandle?.References.Remove(this);
         if (scene != null) {
+            _skeletonBuilder?.Dispose();
+            _skeletonBuilder = null;
             EditorWindow.CurrentWindow?.SceneManager.UnloadScene(scene);
             scene = null;
         }

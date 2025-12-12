@@ -1,3 +1,4 @@
+using System.Numerics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ReeLib.via;
@@ -35,7 +36,7 @@ public class SelectionBoundsGizmo : Gizmo
     {
         if (!shouldRenderNext) return;
 
-        context.Batch.Gizmo.Add(new GizmoRenderBatchItem(Meshes[0].GetMaterial(0), Meshes[0].GetMesh(0), Matrix4X4<float>.Identity, Meshes[0].GetMaterial(1)));
+        context.Batch.Gizmo.Add(new GizmoRenderBatchItem(Meshes[0].GetMaterial(0), Meshes[0].GetMesh(0), Matrix4x4.Identity, Meshes[0].GetMaterial(1)));
     }
 
     public override void Update(OpenGLRenderContext context, float deltaTime)

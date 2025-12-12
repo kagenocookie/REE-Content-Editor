@@ -34,7 +34,10 @@ public static class UI
     public unsafe static void ConfigureImgui()
     {
         var io = ImGui.GetIO();
-        io.ConfigFlags |= ImGuiConfigFlags.DockingEnable | ImGuiConfigFlags.NavEnableKeyboard;
+        io.ConfigFlags |= ImGuiConfigFlags.DockingEnable;
+        if (AppConfig.Instance.EnableKeyboardNavigation.Get()) {
+            io.ConfigFlags |= ImGuiConfigFlags.NavEnableKeyboard;
+        }
 
         var fonts = io.Fonts;
         fonts.Clear();

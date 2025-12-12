@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
@@ -47,11 +48,12 @@ public readonly struct NormalRenderBatchItem : RenderQueueItem
     public readonly Material material;
     public readonly Mesh mesh;
     public readonly MeshHandle meshHandle;
-    public readonly Matrix4X4<float> matrix;
+    public readonly Matrix4x4 matrix;
 
     public readonly ulong SortingKey => unchecked((ulong)material.Shader.ID << 48) | ((ulong)material.Hash << 24) | (mesh.ID & 0xffffff);
 
-    public NormalRenderBatchItem(Material material, Mesh mesh, Matrix4X4<float> matrix, MeshHandle handle) : this()
+    public NormalRenderBatchItem(Material material, Mesh mesh, Matrix4X4<float> matrix, MeshHandle handle) : this(material, mesh, matrix.ToSystem(), handle) {}
+    public NormalRenderBatchItem(Material material, Mesh mesh, Matrix4x4 matrix, MeshHandle handle) : this()
     {
         this.material = material;
         this.mesh = mesh;

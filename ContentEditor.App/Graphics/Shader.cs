@@ -1,3 +1,4 @@
+using System.Numerics;
 using ReeLib.Common;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
@@ -119,7 +120,7 @@ public sealed class Shader : IDisposable
         _gl.Uniform1(location, value);
     }
 
-    public unsafe void SetUniform(string name, Matrix4X4<float> value)
+    public unsafe void SetUniform(string name, Matrix4x4 value)
     {
         int location = _gl.GetUniformLocation(_handle, name);
         if (location == -1)
@@ -130,7 +131,7 @@ public sealed class Shader : IDisposable
         _gl.UniformMatrix4(location, 1, false, (float*) &value);
     }
 
-    public unsafe void SetUniform(int location, Matrix4X4<float> value)
+    public unsafe void SetUniform(int location, Matrix4x4 value)
     {
         _gl.UniformMatrix4(location, 1, false, (float*) &value);
     }

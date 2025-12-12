@@ -57,7 +57,62 @@ public class UvarExpressionGraph : IWorkspaceContainer, IWindowHandler
     protected void DrawFileContents()
     {
         ImGui.Text("Edited Variable: " + ContextHint);
+        ImGui.SameLine();
+        if (ImGui.Button("Consolidate node IDs")) {
+            ConsolidateNodeIDs();
+        }
         DrawNodes();
+    }
+
+    private void ConsolidateNodeIDs()
+    {
+        var idDict = Expression.Nodes.ToDictionary(n => n.nodeId, n => n.nodeId);
+        var ids = idDict.Keys.Order().ToArray();
+        int offset = 0;
+        int lastId = -1;
+        for (int i = 0; i < ids.Length; ++i) {
+            var id = ids[i];
+            var diff = (id - lastId) - 1;
+            offset += diff;
+            idDict[id] = (short)(id - offset);
+            lastId = id;
+        }
+
+        if (offset == 0) {
+            Logger.Info("No node changes made");
+            return;
+        }
+
+        var nodes = Expression.Nodes.Select(n => n.Clone()).ToList();
+        var conns = new List<UvarExpression.NodeConnection>();
+        var prevNodes = Expression.Nodes;
+        var prevConns = Expression.Connections;
+
+        foreach (var node in nodes) {
+            node.nodeId = idDict[node.nodeId];
+        }
+
+        foreach (var conn in prevConns) {
+            conns.Add(new UvarExpression.NodeConnection() {
+                sourceId = idDict[conn.sourceId],
+                targetId = idDict[conn.targetId],
+                inputSlot = conn.inputSlot,
+                outputSlot = conn.outputSlot,
+            });
+        }
+
+        UndoRedo.RecordCallback(ParentContext, () => {
+            Expression.Connections = conns;
+            Expression.Nodes = nodes;
+            ResetNodePositions();
+            ParentContext.ClearChildren();
+        }, () => {
+            Expression.Connections = prevConns;
+            Expression.Nodes = prevNodes;
+            ResetNodePositions();
+            ParentContext.ClearChildren();
+        });
+        Logger.Info("Node IDs consolidated");
     }
 
     private UvarNode? contextMenuNode;
@@ -194,7 +249,7 @@ public class UvarExpressionGraph : IWorkspaceContainer, IWindowHandler
 
     private void ResetNodePositions()
     {
-        if (Expression.outputNodeId >= Expression.Nodes.Count) {
+        if (Expression.outputNodeId >= Expression.Nodes.Count || nodeCtx == null) {
             return;
         }
 
@@ -327,6 +382,7 @@ public class UvarExpressionGraph : IWorkspaceContainer, IWindowHandler
     {
         if (nodeCtx.HasValue) {
             ImNodes.DestroyContext(nodeCtx.Value);
+            nodeCtx = null;
         }
         return false;
     }
