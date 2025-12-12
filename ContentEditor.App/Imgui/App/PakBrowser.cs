@@ -138,9 +138,9 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
     public void OnIMGUI()
     {
         var list = Workspace.ListFile;
-        if (list == null) {
+        if (list == null || list.Files.Length == 0) {
+            list ??= new ListFileWrapper(Array.Empty<string>());
             ImGui.TextColored(Colors.Warning, $"List file not found for game {Workspace.Config.Game}");
-            return;
         }
 
         if (reader == null) {
