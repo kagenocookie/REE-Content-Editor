@@ -266,7 +266,6 @@ public class ThemeEditor : IWindowHandler
         ImGui.Spacing();
     }
 
-
     public bool RequestClose()
     {
         return false;

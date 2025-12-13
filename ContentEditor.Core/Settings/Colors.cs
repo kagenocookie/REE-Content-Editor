@@ -28,6 +28,20 @@ public static class Colors
     public static Vector4 FileTypeMCOL => Current.FileTypeMCOL;
     public static Vector4 FileTypeRCOL => Current.FileTypeRCOL;
     public static Vector4 FileTypeMDF => Current.FileTypeMDF;
+    public static Vector4 FileTypeMMTR => Current.FileTypeMMTR;
+    public static Vector4 FileTypeGPUMOTLIST => Current.FileTypeGPUMOTLIST;
+    public static Vector4 FileTypeGPBF => Current.FileTypeGPBF;
+    public static Vector4 FileTypeGPUC => Current.FileTypeGPUC;
+    public static Vector4 FileTypeUVS => Current.FileTypeUVS;
+    public static Vector4 FileTypeUSER => Current.FileTypeUSER;
+    public static Vector4 FileTypeUVAR => Current.FileTypeUVAR;
+    public static Vector4 FileTypeCOCO => Current.FileTypeCOCO;
+    public static Vector4 FileTypeMOT => Current.FileTypeMOT;
+    public static Vector4 FileTypeMOTTREE => Current.FileTypeMOTTREE;
+    public static Vector4 FileTypeMOTLIST => Current.FileTypeMOTLIST;
+    public static Vector4 FileTypeMOTBANK => Current.FileTypeMOTBANK;
+    public static Vector4 FileTypeMOTFSM => Current.FileTypeMOTFSM;
+
     /// <summary>
     /// Main color for icons, it should be the same as the text color of the current theme
     ///</summary>
@@ -93,6 +107,19 @@ public sealed class AppColors
     public Vector4 FileTypeMCOL = new Vector4(0, 0.85f, 1, 1);
     public Vector4 FileTypeRCOL = new Vector4(0.85f, 0.27f, 0.25f, 1);
     public Vector4 FileTypeMDF = new Vector4(0.93f, 0.55f, 0.07f, 1);
+    public Vector4 FileTypeMMTR = new Vector4(0.93f, 0.55f, 0.07f, 1);
+    public Vector4 FileTypeGPUMOTLIST = new Vector4(0.46f, 0.73f, 0, 1);
+    public Vector4 FileTypeGPBF = new Vector4(0.46f, 0.73f, 0, 1);
+    public Vector4 FileTypeGPUC = new Vector4(0.46f, 0.73f, 0, 1);
+    public Vector4 FileTypeUVS = new Vector4(0.32f, 0.83f, 0.72f, 1);
+    public Vector4 FileTypeUSER = new Vector4(0.60f, 0.87f, 1, 1);
+    public Vector4 FileTypeUVAR = new Vector4(0.87f, 0.60f, 1, 1);
+    public Vector4 FileTypeCOCO = new Vector4(0.95f, 0.17f, 0.39f, 1);
+    public Vector4 FileTypeMOT = new Vector4(0.6f, 0.6f, 1, 1);
+    public Vector4 FileTypeMOTTREE = new Vector4(0.6f, 0.6f, 1, 1);
+    public Vector4 FileTypeMOTLIST = new Vector4(0.6f, 0.6f, 1, 1);
+    public Vector4 FileTypeMOTBANK = new Vector4(0.6f, 0.6f, 1, 1);
+    public Vector4 FileTypeMOTFSM = new Vector4(0.6f, 0.6f, 1, 1);
 
     public Vector4 IconPrimary = new Vector4(1, 1, 1, 1);
     public Vector4 IconSecondary = new Vector4(0.114f, 0.6f, 0.93f, 1);
