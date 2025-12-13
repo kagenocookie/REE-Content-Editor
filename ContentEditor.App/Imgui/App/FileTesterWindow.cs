@@ -618,7 +618,7 @@ public partial class FileTesterWindow : IWindowHandler
             // m.TransitionEventRsz.ObjectList.Count, m.StaticTransitionEventRsz.ObjectList.Count,
             // m.ConditionsRsz.ObjectList.Count, m.StaticConditionsRsz.ObjectList.Count,
             // m.SelectorRsz.ObjectList.Count
-            ]);
+        ]);
         AddCompareMapper<BHVTNode>((m) => [
             // 0+
             m.ID, m.isEnd, m.isBranch, m.mNameHash, m.mFullnameHash, m.ParentID, m.Priority, m.SelectorCallerConditionID, m.unknownAI, m.WorkFlags, m.AI_Path, m.Attributes, m.ReferenceTree,

@@ -733,7 +733,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
 
     private void HandleLinkedUserdata(UIContext context, RszInstance instance, ContentPatcher.ContentWorkspace ws)
     {
-        if (context.children.Count == 0) {
+        if (context.children.Count == 0 && !context.StateBool) {
             RSZFile? file = null;
             context.CachedString = "";
 
@@ -786,8 +786,12 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                     return;
                 }
 
-                var handle = ws.ResourceManager.GetFileHandle(resolvedPath!);
-                WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, new UserDataFileEditor(ws, handle), "UserFile");
+                if (ws.ResourceManager.TryResolveGameFile(resolvedPath, out var handle)) {
+                    WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, new UserDataFileEditor(ws, handle), "UserFile");
+                } else {
+                    context.StateBool = true;
+                    context.ClearChildren();
+                }
             } else if (instance.RSZUserData is RSZUserDataInfo_TDB_LE_67 infoEmbedded) {
                 file = infoEmbedded.EmbeddedRSZ;
                 // TODO re7?
@@ -817,7 +821,11 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
         }
 
         if (context.children.Count == 0) {
-            ImGui.TextColored(Colors.Warning, "Failed to set up UserData reference");
+            ImGui.TextColored(Colors.Error, "Failed to load or find UserData reference");
+            ImGui.SameLine();
+            if (ImGui.Button("Try again")) {
+                context.StateBool = false;
+            }
         } else {
             context.ShowChildrenUI();
         }

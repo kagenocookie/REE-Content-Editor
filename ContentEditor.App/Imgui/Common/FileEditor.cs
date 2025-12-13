@@ -196,9 +196,14 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             if (Handle.References.Count == 0) {
                 workspace.ResourceManager.CloseFile(Handle);
             }
-            Handle = workspace.ResourceManager.GetFileHandle(savePath, nativePath);
-            ConnectFile();
-            OnFileChanged();
+            var newHandle = workspace.ResourceManager.GetFileHandle(savePath, nativePath);
+            if (newHandle == null) {
+                Logger.Error("Could not re-load newly saved file from path " + savePath);
+            } else {
+                Handle = newHandle;
+                ConnectFile();
+                OnFileChanged();
+            }
         }
     }
 

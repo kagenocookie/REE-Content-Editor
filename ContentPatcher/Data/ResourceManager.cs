@@ -1041,13 +1041,9 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         }
     }
 
-    public FileHandle GetFileHandle(string filepath, string? nativePath = null)
+    public FileHandle? GetFileHandle(string filepath, string? nativePath = null)
     {
-        var resource = ReadOrGetFileResource(filepath, nativePath);
-        if (resource == null) {
-            throw new NotSupportedException();
-        }
-        return resource;
+        return ReadOrGetFileResource(filepath, nativePath);
     }
 
     public TFileType? GetOpenFile<TFileType>(string filepath, bool markModified = false) where TFileType : BaseFile

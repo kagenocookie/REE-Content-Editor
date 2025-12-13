@@ -639,7 +639,13 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem("Generate file extension cache")) {
                     if (workspace != null) {
                         try {
-                            FileExtensionTools.ExtractAllFileExtensionCacheData(AppConfig.Instance.ConfiguredGames.Select(c => new GameIdentifier(c)));
+                            var games = AppConfig.Instance.ConfiguredGames.Select(c => new GameIdentifier(c))
+                                .Concat(Enum.GetValues<GameName>().Select(n => new GameIdentifier(n.ToString())))
+                                .Distinct()
+                                .OrderBy(s => s.name).ToList();
+                            FileExtensionTools.ExtractAllFileExtensionCacheData(games, game => {
+                                return AppConfig.Instance.GetGameFilelist(game);
+                            });
                         } catch (Exception e) {
                             Logger.Error(e.Message);
                         }
