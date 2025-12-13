@@ -1,3 +1,3 @@
 Some of the icon used by the app are taken from Icomoon (https://icomoon.io/), as-is with no changes, licensed under the CC-BY-4.0 license (https://creativecommons.org/licenses/by/4.0/).
 
-'Silver_Icons' provided by Peter S. Silver (a.k.a. SilverEzredes), licensed under CC BY-NC 4.0 (https://creativecommons.org/licenses/by-nc/4.0/)"
+'Silver_Icons' and 'Silver_Icons_Color' are provided by Peter S. Silver, licensed under CC BY-NC 4.0 (https://creativecommons.org/licenses/by-nc/4.0/)"

@@ -145,7 +145,7 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
                 foreach (var mode in Scene.Root.GetAvailableEditModes()) {
                     var showComponents = false;
                     if (mode == activeEditMode) {
-                        ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered));
+                        ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
                         showComponents = ImGui.BeginMenu(mode.DisplayName);
                         ImGui.PopStyleColor();
                     } else {
@@ -158,7 +158,7 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
                             var comp = (Component)editable;
                             ImGui.PushID(i++);
                             if (mode == activeEditMode && editable == activeEditMode.Target) {
-                                ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.PlotHistogramHovered));
+                                ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
                                 if (ImGui.MenuItem(comp.GameObject.Path + " | " + comp.Scene?.InternalPath)) {
                                     Scene.Root.DisableEditMode();
                                 }

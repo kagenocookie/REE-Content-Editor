@@ -19,27 +19,27 @@ namespace ContentEditor.App
         private readonly string _jsonFilePath;
         private Dictionary<string, List<BookmarkEntry>> _bookmarks = new();
         public bool IsHideBookmarks { get; set; } = false;
-        public readonly struct TagInfo {
-            public readonly string Icon;
-            public readonly Vector4[] Colors;
+        public struct TagInfo
+        {
+            public string Icon;
+            public Func<Vector4[]> Colors;
 
-            public TagInfo(string icon, Vector4[] colors) {
+            public TagInfo(string icon, Func<Vector4[]> colors)
+            {
                 Icon = icon;
                 Colors = colors;
             }
         }
-
-        // SILVER: These colors should stay hardcoded (for now) also maybe 'Stage' should be renamed to 'Scene'
-        // should key/unique items have their own tag? 
-        public static readonly Dictionary<string, TagInfo> TagInfoMap = new() {
-            ["Character"] = new TagInfo($"{AppIcons.SI_TagCharacter}",  new[] { new Vector4(0.2f, 0.6f, 1f, 0.5f), new Vector4(0.3f, 0.7f, 1f, 0.8f), new Vector4(0.1f, 0.5f, 0.9f, 1f) }),
-            ["DLC"] = new TagInfo($"{AppIcons.SI_TagDLC}",              new[] { new Vector4(1f, 0f, 1f, 0.5f), new Vector4(1f, 0f, 1f, 0.8f), new Vector4(1f, 0f, 1f, 1f) }),
-            ["Enemy"] = new TagInfo($"{AppIcons.SI_TagCharacter}",      new[] { new Vector4(0.9f, 0.3f, 0.3f, 0.5f), new Vector4(1f, 0.4f, 0.4f, 0.8f), new Vector4(0.8f, 0.2f, 0.2f, 1f) }),
-            ["Item"] = new TagInfo($"{AppIcons.SI_TagItem}",            new[] { new Vector4(0.3f, 0.8f, 0.3f, 0.5f), new Vector4(0.4f, 0.9f, 0.4f, 0.8f), new Vector4(0.2f, 0.7f, 0.2f, 1f) }),
-            ["Misc"] = new TagInfo("Misc",                              new[] { new Vector4(0.9f, 0.8f, 0.2f, 0.5f), new Vector4(1f, 0.9f, 0.3f, 0.8f), new Vector4(0.8f, 0.7f, 0.1f, 1f) }),// TODO SILVER: Make Misc icon
-            ["Stage"] = new TagInfo($"{AppIcons.SI_FileType_SCN}",      new[] { new Vector4(0.6f, 0.3f, 0.9f, 0.5f), new Vector4(0.6f, 0.3f, 0.9f, 0.8f), new Vector4(0.6f, 0.3f, 0.9f, 1f) }),
-            ["UI"] = new TagInfo($"{AppIcons.SI_FileType_GUI}",         new[] { new Vector4(1f, 0.4f, 0.1f, 0.5f), new Vector4(1f, 0.4f, 0.1f, 0.8f), new Vector4(1f, 0.4f, 0.1f, 1f) }),
-            ["Weapon"] = new TagInfo($"{AppIcons.SI_TagWeapon}",        new[] { new Vector4(0.9f, 0.3f, 0.3f, 0.5f), new Vector4(1f, 0.4f, 0.4f, 0.8f), new Vector4(0.8f, 0.2f, 0.2f, 1f) }),
+        // TODO SILVER: Make Misc icon
+        public static Dictionary<string, TagInfo> TagInfoMap = new() {
+            ["Character"] = new TagInfo($"{AppIcons.SI_TagCharacter}", () => new[] { Colors.TagCharacter, Colors.TagCharacterHovered, Colors.TagCharacterSelected }),
+            ["DLC"] = new TagInfo($"{AppIcons.SI_TagDLC}", () => new[] { Colors.TagDLC, Colors.TagDLCHovered, Colors.TagDLCSelected }),
+            ["Enemy"] = new TagInfo($"{AppIcons.SI_TagCharacter}", () => new[] { Colors.TagEnemy, Colors.TagEnemyHovered, Colors.TagEnemySelected }),
+            ["Item"] = new TagInfo($"{AppIcons.SI_TagItem}", () => new[] { Colors.TagItem, Colors.TagItemHovered, Colors.TagItemSelected }),
+            ["Misc"] = new TagInfo("Misc", () => new[] { Colors.TagMisc, Colors.TagMiscHovered, Colors.TagMiscSelected }),
+            ["Stage"] = new TagInfo($"{AppIcons.SI_FileType_SCN}", () => new[] { Colors.TagStage, Colors.TagStageHovered, Colors.TagStageSelected }),
+            ["UI"] = new TagInfo($"{AppIcons.SI_FileType_GUI}", () => new[] { Colors.TagUI, Colors.TagUIHovered, Colors.TagUISelected }),
+            ["Weapon"] = new TagInfo($"{AppIcons.SI_TagWeapon}", () => new[] { Colors.TagWeapon, Colors.TagWeaponHovered, Colors.TagWeaponSelected }),
         };
 
         public BookmarkManager(string jsonFilePath)
