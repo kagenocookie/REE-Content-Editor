@@ -138,16 +138,17 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
     public void OnIMGUI()
     {
         var list = Workspace.ListFile;
-        if (list == null) {
+        if (list == null || list.Files.Length == 0) {
+            list ??= new ListFileWrapper(Array.Empty<string>());
             ImGui.TextColored(Colors.Warning, $"List file not found for game {Workspace.Config.Game}");
-            return;
         }
 
         if (reader == null) {
             if (PakFilePath == null) {
                 // all files - use default pak reader data, but make a clone just so we don't mess with the original stuff
                 Workspace.PakReader.IncludeUnknownFilePaths = true;
-                Workspace.PakReader.CacheEntries();
+                Workspace.PakReader.AddFiles(list.Files);
+                Workspace.PakReader.CacheEntries(true);
                 reader = Workspace.PakReader.Clone();
                 matchedList = list;
                 hasInvalidatedPaks = reader.FileExists(0);

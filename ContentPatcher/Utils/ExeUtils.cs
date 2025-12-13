@@ -10,11 +10,11 @@ public static class ExeUtils
     /// Calculates a hash string based on an exe's metadata file version and detected PAK files.
     /// </summary>
     /// <returns>A string in the format `v[file_version]-[PAK_path_hash_hex]`, ex: "v1.0.3.0-A6</returns>
-    public static string GetGameVersionHash(Workspace env, string? exePath = null)
+    public static string GetGameVersionHash(GameConfig config, string? exePath = null)
     {
         string hash = string.Empty;
-        var gamePath = env.Config.GamePath;
-        exePath ??= FindGameExecutable(gamePath, env.Config.Game.name);
+        var gamePath = config.GamePath;
+        exePath ??= FindGameExecutable(gamePath, config.Game.name);
         if (exePath != null) {
             exePath = exePath.Replace("\\", "/");
             var versionInfo = FileVersionInfo.GetVersionInfo(exePath);

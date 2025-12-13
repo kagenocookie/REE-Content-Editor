@@ -38,10 +38,13 @@ public sealed class ContentWorkspace : IDisposable
                 valid = true;
             } catch (Exception e) {
                 Logger.Error("RSZ files are not supported at the moment, the RSZ template json is either unconfigured or invalid. Error: " + e.Message);
+                // fallback to a "game agnostic" rsz json so we can at least open meshes and other basic functionality
+                env.Config.Resources.LocalPaths.RszPatchFiles = [Path.Combine(AppContext.BaseDirectory, "configs/global/agnostic_rsz.json")];
+                var parser = env.RszParser;
             }
             if (valid) patchConfig.Load(this);
         }
-        VersionHash = ExeUtils.GetGameVersionHash(env);
+        VersionHash = ExeUtils.GetGameVersionHash(env.Config);
         ResourceManager.Setup(this);
     }
 

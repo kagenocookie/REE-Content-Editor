@@ -80,6 +80,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                             Logger.Error($"Pasted data is invalid.");
                             return true;
                         }
+                        Logger.Info($"Virtual clipboard worked OK, disregard last warning.");
                     }
                     if (newMot == null) return true;
 

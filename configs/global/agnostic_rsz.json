@@ -1,0 +1,50 @@
+{
+    "1": {
+        "crc": "1",
+        "fields": [
+            { "name": "Name", "type": "String", "size": 4, "align": 4 },
+            { "name": "Tags", "type": "String", "size": 4, "align": 4 },
+            { "name": "Draw", "type": "Bool", "size": 1, "align": 1, "array": true },
+            { "name": "Update", "type": "Bool", "size": 1, "align": 1, "array": true },
+            { "name": "Standby", "type": "Bool", "size": 1, "align": 1, "array": true },
+            { "name": "ScenePath", "type": "String", "size": 4, "align": 4 }
+        ],
+        "name": "via.Folder"
+    },
+    "2": {
+        "crc": "2",
+        "fields": [
+            { "align": 16, "name": "Position", "original_type": "via.Vec3", "size": 16, "type": "Vec3" },
+            { "align": 16, "name": "Rotation", "original_type": "via.Quaternion", "size": 16, "type": "Quaternion" },
+            { "align": 16, "name": "Scale", "original_type": "via.Vec3", "size": 16, "type": "Vec3" },
+            { "align": 4, "name": "ParentJoint", "size": 4, "type": "String" },
+            { "align": 1, "name": "SameJointsContraint", "size": 1, "type": "Bool" },
+            { "align": 1, "name": "AbsoluteScaling", "size": 1, "type": "Bool" }
+        ],
+        "name": "via.Transform"
+    },
+    "3": {
+        "crc": "3",
+        "fields": [
+            { "name": "Name", "type": "String", "size": 4, "align": 4 },
+            { "name": "Tags", "type": "String", "size": 4, "align": 4 },
+            { "name": "Draw", "type": "Bool", "size": 1, "align": 1, "array": true },
+            { "name": "Update", "type": "Bool", "size": 1, "align": 1, "array": true }
+        ],
+        "name": "via.GameObject"
+    },
+    "4": {
+        "crc": "4",
+        "fields": [
+            { "name": "Mesh", "type": "Resource", "size": 4, "align": 4, "original_type": "via.render.MeshResourceHolder" },
+            { "name": "Material", "type": "Resource", "size": 4, "align": 4, "original_type": "via.render.MeshMaterialResourceHolder" },
+            { "name": "PartsEnable", "type": "Bool", "size": 1, "align": 1, "array": true }
+        ],
+        "name": "via.render.Mesh"
+    },
+    "5": {
+        "crc": "5",
+        "fields": [],
+        "name": "via.Camera"
+    }
+}
