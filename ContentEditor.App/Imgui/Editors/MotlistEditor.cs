@@ -220,6 +220,7 @@ public class MotFileHandler : IObjectUIHandler
             context.AddChild<MotFile, List<MotClip>>("Behavior Clips", instance, getter: (m) => m!.Clips).AddDefaultHandler();
             context.AddChild<MotFile, List<MotPropertyTrack>>("Animated Properties", instance, getter: (m) => m!.MotPropertyTracks).AddDefaultHandler();
             context.AddChild<MotFile, MotPropertyTree>("Property Tree", instance, new LazyPlainObjectHandler(typeof(MotPropertyTree)), (m) => m!.PropertyTree, (m, v) => m.PropertyTree = v);
+            context.AddChild<MotFile, List<MotEndClip>>("End Clips", instance, getter: (m) => m!.EndClips).AddDefaultHandler();
         }
 
         context.ShowChildrenUI();
@@ -646,6 +647,7 @@ public class KeyHandler : IObjectUIHandler
         typeof(Key).GetField(nameof(Key.interpolation))!,
         typeof(Key).GetField(nameof(Key.instanceValue))!,
         typeof(Key).GetField(nameof(Key.unknown))!,
+        typeof(Key).GetField(nameof(Key.hermiteDataIndex))!,
     ];
 
     public void OnIMGUI(UIContext context)

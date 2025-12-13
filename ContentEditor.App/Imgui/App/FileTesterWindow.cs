@@ -15,6 +15,7 @@ using ReeLib.Common;
 using ReeLib.Efx;
 using ReeLib.Efx.Structs.Common;
 using ReeLib.Mesh;
+using ReeLib.Mot;
 using ReeLib.Motlist;
 using ReeLib.Rcol;
 
@@ -477,17 +478,21 @@ public partial class FileTesterWindow : IWindowHandler
             return "type mismatch " + type + " and " + newValue.GetType();
         }
 
+        if (type == typeof(string)) {
+            return (string)originalValue == (string)newValue ? null : " string changed " + originalValue + " => " + newValue;
+        }
+        if (type == typeof(float)) {
+            if (float.IsInfinity((float)originalValue)) {
+                return float.IsInfinity((float)newValue) ? null : "float changed " + originalValue + " => " + newValue;
+            } else {
+                return (MathF.Abs((float)originalValue - (float)newValue) < 0.0001f) ? null : "float changed " + originalValue + " => " + newValue;
+            }
+        }
         if (type.IsValueType) {
             if (type.GetInterface(nameof(IComparable)) != null) {
                 if (((IComparable)originalValue).CompareTo(newValue) == 0) return null;
                 return " Values are not equal: " + originalValue + " => " + newValue;
             }
-        }
-        if (type == typeof(string)) {
-            return (string)originalValue == (string)newValue ? null : " string changed " + originalValue + " => " + newValue;
-        }
-        if (type == typeof(float)) {
-            return (MathF.Abs((float)originalValue - (float)newValue) > 0.0001f) ? null : "float changed " + originalValue + " => " + newValue;
         }
 
         if (!comparedValueMappers.TryGetValue(type, out var mapper)) {
@@ -508,7 +513,7 @@ public partial class FileTesterWindow : IWindowHandler
         using var list2 = mapper.Invoke(newValue).GetEnumerator();
         foreach (var org in list1)
         {
-            var name = mapperNameLookups[type](index);
+            var name = mapperNameLookups[type](index++);
             if (!list2.MoveNext()) {
                 return "missing values after index " + name;
             }
@@ -518,14 +523,15 @@ public partial class FileTesterWindow : IWindowHandler
                 // return $"{type.Name}[{name}].{(newVal == null ? "NULL" : "NOT NULL")}";
                 return $"[{name}].{(newVal == null ? "NULL" : "NOT NULL")}";
             }
-            if (org == null || newVal == null) continue;
+            if (org == null || newVal == null) {
+                continue;
+            }
 
             var comparison = CompareValues(org, newVal);
             if (comparison != null) {
-                // return $"{type.Name}[{name}].{comparison}";
+                // Log.Warn($"[{name}].{comparison}");
                 return $"[{name}].{comparison}";
             }
-            index++;
         }
         if (list2.MoveNext()) {
             return "too many values after index " + index;
@@ -554,9 +560,15 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<Submesh>((m) => [m.materialIndex, m.bufferIndex, m.ukn2, m.indicesCount]);
         AddCompareMapper<MeshStreamingInfo>((m) => [m.Entries]);
 
-        AddCompareMapper<MotlistFile>((m) => [m.Header.MotListName, m.Header.BaseMotListPath, m.MotFiles, m.Motions]);
-        AddCompareMapper<MotFile>((m) => [m.Name]);
+        AddCompareMapper<MotlistFile>((m) => [m.Header.MotListName, m.Header.BaseMotListPath, m.Header.numMots, m.Header.uknValue, m.MotFiles, m.Motions]);
+        AddCompareMapper<MotFile>((m) => [m.Name, m.MotPropertyTracks, m.BoneHeaders, m.BoneClips, m.Clips, m.Bones,
+            // ignoring these two for now - end clips because the read is inconsistent, tree because it's massive and also works fine
+            // m.EndClips, m.PropertyTree
+        ]);
         AddCompareMapper<MotTreeFile>((m) => [m.Name, m.MotionIDRemaps, m.expandedMotionsCount, m.uknCount1, m.uknCount2]);
+        AddCompareMapper<MotBone>((m) => [m.Name, m.Header.boneHash, m.Children.Count, m.Index, m.Quaternion, m.Translation, m.Parent?.Name, m.Header.uknValue1, m.Header.uknValue2]);
+        AddCompareMapper<Track>((m) => [m.translations, m.rotations, m.flags, m.floats, m.frameIndexes, m.keyCount, m.maxFrame, m.frameRate]);
+        AddCompareMapper<BoneClipHeader>((m) => [m.boneHash, m.boneIndex, m.boneName, m.trackFlags, m.uknFloat, m.uknIndex]);
         AddCompareMapper<MotIndex>((m) => m.data.Cast<object>().Concat(new object[] { m.extraClipCount, m.motNumber }), true);
 
         AddCompareMapper<RszInstance>((m) => m.Values.Append(m.RszClass.crc), true);
@@ -581,7 +593,10 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<ReeLib.Gui.Attribute>((m) => [m.propertyType, m.OrderIndex, m.uknInt, m.Value]);
         AddCompareMapper<ReeLib.Gui.GuiClip>((m) => [m.guid, m.IsDefault, m.name, m.clip]);
         AddCompareMapper<EmbeddedClip>((m) => [m.Header, m.Bezier3DData, m.ClipInfoList, m.Properties, m.ClipKeys.Count, m.ExtraPropertyData, m.FrameCount, m.Guid, m.HermiteData, m.SpeedPointData, m.Tracks]);
-        AddCompareMapper<Property>((m) => [m.Info.FunctionName, m.Info.arrayIndex, m.Info.ChildMembershipCount, m.ChildProperties?.Count, m.Keys?.Count, m.Info.DataType, m.Info.startFrame, m.Info.endFrame, m.Info.nameAsciiHash, m.Info.nameUtf16Hash, m.Info.timelineUkn, m.Info.timelineUkn2, m.Info.uknByte, m.Info.uknByte00, m.Info.uknCount, m.Info.uknRE7_2, m.Info.uknRE7_3, m.Info.uknRE7_4]);
+        AddCompareMapper<Property>((m) => [
+            m.Info.FunctionName, m.Info.arrayIndex, m.Info.ChildMembershipCount, m.ChildProperties, m.Keys,
+            m.Info.DataType, m.Info.startFrame, m.Info.endFrame,
+            m.Info.nameAsciiHash, m.Info.nameUtf16Hash, m.Info.speedPointNum,  m.Info.timelineUkn, m.Info.timelineUkn2, m.Info.uknByte, m.Info.uknByte00, m.Info.uknCount, m.Info.uknRE7_2, m.Info.uknRE7_3, m.Info.uknRE7_4]);
         AddCompareMapper<ClipHeader>((m) => [m.numFrames, m.numKeys, m.numNodes, m.numProperties, m.guid]);
         AddCompareMapper<ExtraPropertyInfo>((m) => [m.count, m.flags, m.propertyUTF16Hash, m.values]);
 

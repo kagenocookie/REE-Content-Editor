@@ -7,6 +7,7 @@ public class BaseListHandler : IObjectUIHandler
 {
     public bool CanCreateRemoveElements { get; set; }
     public bool Filterable { get; set; }
+    public bool AllowContextMenu { get; set; } = true;
 
     private readonly Type? containerType;
 
@@ -21,6 +22,15 @@ public class BaseListHandler : IObjectUIHandler
             return obj?.ToString()?.Contains(filter.Substring(1), StringComparison.InvariantCultureIgnoreCase) != true;
         }
         return obj?.ToString()?.Contains(filter, StringComparison.InvariantCultureIgnoreCase) == true;
+    }
+
+    protected virtual bool ShowContextMenuItems(UIContext context)
+    {
+        if (ImGui.Selectable("Clear")) {
+            UndoRedo.RecordListClear(context, context.Get<IList>());
+            return true;
+        }
+        return false;
     }
 
     public void OnIMGUI(UIContext context)
@@ -40,9 +50,9 @@ public class BaseListHandler : IObjectUIHandler
         }
 
         var show = ImguiHelpers.TreeNodeSuffix(context.label, $"({count})");
-        if (this is IContextMenuHandler ctxm && ctxm.AllowContextMenu) {
+        if (AllowContextMenu) {
             if (ImGui.BeginPopupContextItem(context.label)) {
-                if (ctxm.ShowContextMenuItems(context)) {
+                if (ShowContextMenuItems(context)) {
                     ImGui.CloseCurrentPopup();
                 }
                 ImGui.EndPopup();

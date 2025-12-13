@@ -181,6 +181,10 @@ public class UndoRedo
         GetState(window).Push(new ListRemoveUndoRedo(context, list, list.IndexOf(item), $"{context.GetHashCode()} Remove {item}", childIndexOffset));
     }
 
+    public static void RecordListClear(UIContext context, IList list, WindowBase? window = null, int childIndexOffset = 0)
+    {
+        GetState(window).Push(new ListClearUndoRedo(context, list, $"{context.GetHashCode()} Clear", childIndexOffset));
+    }
     public static void RecordListMove<T>(UIContext? sourceContext, UIContext targetContext, IList? sourceList, T item, IList targetList, T targetItem, WindowBase? window = null, string? id = null) where T : class
     {
         GetState(window).Push(new ListMoveUndoRedo(sourceContext ?? targetContext, targetContext, sourceList ?? targetList, item, targetList, targetItem, id ?? $"Move {item.GetHashCode()} {targetItem.GetHashCode()}"));
@@ -361,6 +365,33 @@ public class UndoRedo
         }
     }
 
+    public class ListClearUndoRedo(UIContext context, IList list, string? id, int childIndexOffset) : UndoRedoCommand(id ?? $"Callback_{RandomString(10)}")
+    {
+        private List<object?>? backup;
+
+        public override void Do()
+        {
+            if (backup == null) {
+                backup = new List<object?>();
+                foreach (var item in list) backup.Add(item);
+            }
+            list.Clear();
+            context.children.RemoveAtAfter(childIndexOffset);
+            context.Changed = true;
+        }
+
+        public override void Undo()
+        {
+            foreach (var item in backup!) list.Add(item);
+            context.children.RemoveAtAfter(childIndexOffset);
+            context.Changed = true;
+        }
+
+        public override bool Merge(UndoRedoCommand previousValue)
+        {
+            return false;
+        }
+    }
     public class ListRemoveUndoRedo(UIContext context, IList list, int index, string? id, int childIndexOffset) : UndoRedoCommand(id ?? $"Callback_{RandomString(10)}")
     {
         private object? item;
