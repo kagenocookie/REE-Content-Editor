@@ -201,8 +201,8 @@ public class BHVTNodeEditor : IObjectUIHandler
 
     public void OnIMGUI(UIContext context)
     {
+        var node = context.Get<BHVTNode>();
         if (context.children.Count == 0) {
-            var node = context.Get<BHVTNode>();
             if (node == null) {
                 ImGui.Text(context.label + ": null");
                 ImGui.SameLine();
@@ -229,9 +229,20 @@ public class BHVTNodeEditor : IObjectUIHandler
             context.AddChild<BHVTNode, List<NState>>("States", node, new ListHandlerTyped<NState>(), (f) => f!.States.States);
             context.AddChild<BHVTNode, List<NAllState>>("AllStates (?)", node, new ListHandlerTyped<NAllState>() { Filterable = true }, (f) => f!.AllStates.AllStates);
             context.AddChild<BHVTNode, List<NTransition>>("Transitions", node, new ListHandlerTyped<NTransition>(), (f) => f!.Transitions.Transitions);
-            context.AddChild<BHVTNode, List<NChild>>("Children", node, new ListHandlerTyped<NChild>() { Filterable = true }, (f) => f!.Children.Children);
+            context.AddChild<BHVTNode, List<NChild>>("Children", node, new NodeChildrenListHandler(), (f) => f!.Children.Children);
         }
-        context.ShowChildrenNestedUI();
+
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, node.ToString());
+        if (ImGui.BeginPopupContextItem(context.label)) {
+            if (ImGui.Selectable("Copy Node")) {
+                VirtualClipboard.CopyToClipboard(node.Clone());
+            }
+            ImGui.EndPopup();
+        }
+        if (show) {
+            context.ShowChildrenUI();
+            ImGui.TreePop();
+        }
     }
 }
 
@@ -261,7 +272,56 @@ public class NChildEditor : IObjectUIHandler
             context.AddChild<NChild, RszInstance>("Condition", file, new NestedRszClassnamePickerHandler("via.behaviortree.Condition", allowNull: true), (f) => f!.Condition, (f, v) => f.Condition = v);
             context.AddChild<NChild, BHVTNode>("Node", file, getter: (f) => f!.ChildNode, setter: (f, v) => f.ChildNode = v).AddDefaultHandler<BHVTNode>();
         }
-        context.ShowChildrenNestedReorderableUI<NChild>(false);
+        if (context.ShowChildrenNestedReorderableUI<NChild>(false)) {
+            var listCtx = context.FindParentContextByValue<List<NChild>>();
+            UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, () => listCtx?.ClearChildren());
+        }
+    }
+}
+
+public class NodeChildrenListHandler : ListHandlerTyped<NChild>
+{
+    public NodeChildrenListHandler()
+    {
+        Filterable = true;
+    }
+
+    protected override bool ShowContextMenuItems(UIContext context)
+    {
+        if (base.ShowContextMenuItems(context)) {
+            return true;
+        }
+
+        if (VirtualClipboard.TryGetFromClipboard<BHVTNode>(out var newNode) && ImGui.Selectable("Paste as new child node")) {
+            var nodelist = context.Get<List<NChild>>();
+            var parent = context.FindValueInParentValues<BHVTNode>();
+            var fileCtx = context.FindParentContextByValue<BhvtFile>();
+            var file = fileCtx?.Get<BhvtFile>();
+            if (parent == null) {
+                Logger.Error("Parent node not found");
+                return true;
+            }
+            if (file != null) {
+                newNode.MakeUnique(file);
+            }
+            var newchild = new NChild();
+            newchild.ChildNode = newNode;
+            newNode.ParentID = parent.ID;
+            var children = newNode.AllChildNodes.ToList();
+            UndoRedo.RecordCallback(context, () => {
+                nodelist.Add(newchild);
+                file?.Nodes.AddRange(children);
+            }, () => {
+                nodelist.Remove(newchild);
+                foreach (var ch in children) file?.Nodes.Remove(ch);
+            });
+
+            context.ClearChildren();
+            fileCtx?.ClearChildren();
+            return true;
+        }
+
+        return false;
     }
 }
 

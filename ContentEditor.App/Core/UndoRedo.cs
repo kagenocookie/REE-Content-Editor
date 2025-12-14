@@ -19,6 +19,13 @@ public class UndoRedo
         };
     }
 
+    public enum CallbackType
+    {
+        Do = 1,
+        Undo = 2,
+        Both = 3
+    }
+
     private class StateList
     {
         public int MaxSteps { get; internal set; } = AppConfig.Instance.MaxUndoSteps.Get();
@@ -39,12 +46,14 @@ public class UndoRedo
         {
             if (MaxSteps == 0) {
                 item.Do();
+                item.ExecuteHooks(CallbackType.Do);
                 return;
             }
 
             if (mode == UndoRedoMergeMode.MergeIdentical && CurrentIndex >= 0 && CurrentIndex == Items.Count - 1 && Items.Last().Id == item.Id && item.Merge(Items[CurrentIndex])) {
                 Items[CurrentIndex] = item;
                 item.Do();
+                item.ExecuteHooks(CallbackType.Do);
                 return;
             }
             if (CurrentIndex == -1 || CurrentIndex < Items.Count - 1) {
@@ -67,6 +76,7 @@ public class UndoRedo
                 CurrentIndex++;
             }
             item.Do();
+            item.ExecuteHooks(CallbackType.Do);
             // Console.WriteLine($"State {Items.Count}[{CurrentIndex}] ");
         }
 
@@ -75,6 +85,7 @@ public class UndoRedo
             if (CanUndo) {
                 var item = Items[CurrentIndex--];
                 item.Undo();
+                item.ExecuteHooks(CallbackType.Undo);
             }
             // Console.WriteLine($"State {Items.Count}[{CurrentIndex}] ");
         }
@@ -84,8 +95,19 @@ public class UndoRedo
             if (CanRedo) {
                 var item = Items[++CurrentIndex];
                 item.Do();
+                item.ExecuteHooks(CallbackType.Do);
             }
             // Console.WriteLine($"State {Items.Count}[{CurrentIndex}] ");
+        }
+
+        public void AddCommandCallback(CallbackType type, Action action)
+        {
+            var last = Items.LastOrDefault();
+            if (last == null) return;
+
+            last.hooks ??= new List<(CallbackType type, Action)>();
+            last.hooks.Add((type, action));
+            last.ExecuteHooks(CallbackType.Do);
         }
 
         public void SetCommandDisposable(Action? disposeBefore, Action? disposeAfter)
@@ -247,6 +269,11 @@ public class UndoRedo
         if (states.Remove(window, out var state)) {
             state.Clear();
         }
+    }
+
+    public static void AttachCallbackToLastAction(CallbackType type, Action action, WindowBase? window = null)
+    {
+        GetState(window).AddCommandCallback(type, action);
     }
 
     #region Undo command types
@@ -447,6 +474,17 @@ public class UndoRedo
 public abstract class UndoRedoCommand(string id)
 {
     public string Id { get; } = id;
+
+    internal List<(UndoRedo.CallbackType type, Action callback)>? hooks;
+    internal void ExecuteHooks(UndoRedo.CallbackType type)
+    {
+        if (hooks == null) return;
+        foreach (var hook in hooks) {
+            if ((hook.type & type) != 0) {
+                hook.callback.Invoke();
+            }
+        }
+    }
 
     public abstract void Do();
     public abstract void Undo();

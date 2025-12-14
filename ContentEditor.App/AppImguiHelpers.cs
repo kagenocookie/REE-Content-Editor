@@ -185,7 +185,7 @@ public static class AppImguiHelpers
             return false;
         }
 
-        if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.PayloadNoCrossContext|ImGuiDragDropFlags.PayloadNoCrossProcess)) {
+        if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.PayloadNoCrossContext|ImGuiDragDropFlags.PayloadNoCrossProcess|ImGuiDragDropFlags.SourceAllowNullId)) {
             _dragDropPayload = context.Get<T>();
             _dragDropSourceList = list;
             _dragDropSourceContext = context;
@@ -228,14 +228,13 @@ public static class AppImguiHelpers
         return didDrop;
     }
 
-    public static void ShowChildrenNestedReorderableUI<T>(this UIContext context, bool allowMigrateAcrossLists) where T : class
+    public static bool ShowChildrenNestedReorderableUI<T>(this UIContext context, bool allowMigrateAcrossLists) where T : class
     {
-        ShowChildrenNestedReorderableUI<T>(context, allowMigrateAcrossLists, out _);
+        return ShowChildrenNestedReorderableUI<T>(context, allowMigrateAcrossLists, out _);
     }
     public static bool ShowChildrenNestedReorderableUI<T>(this UIContext context, bool allowMigrateAcrossLists, [MaybeNullWhen(false)] out T droppedInstance) where T : class
     {
-        // note: we can't use the usual TreeNodeSuffix() here because drag drop doesn't work with BeginGroup()
-        var show = ImGui.TreeNode(context.label + "     " + context.GetRaw()?.ToString() ?? "");
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, context.GetRaw()?.ToString() ?? "");
         var didDrop = AppImguiHelpers.DragDropReorder<T>(context, allowMigrateAcrossLists, out droppedInstance);
         if (show) {
             for (int i = 0; i < context.children.Count; i++) {
