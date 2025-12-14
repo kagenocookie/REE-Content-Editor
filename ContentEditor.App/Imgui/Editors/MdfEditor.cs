@@ -48,32 +48,32 @@ public class MdfFileImguiHandler : IObjectUIHandler
     {
         if (context.children.Count == 0) {
             var file = context.Get<MdfFile>();
-            context.AddChild("Data", file.Materials).AddDefaultHandler<List<MatData>>();
+            context.AddChild("Data", file.Materials).AddDefaultHandler<List<MaterialData>>();
         }
         context.ShowChildrenUI();
     }
 }
 
-[ObjectImguiHandler(typeof(MatHeader), Stateless = true)]
+[ObjectImguiHandler(typeof(MaterialHeader), Stateless = true)]
 public class MatHeaderImguiHandler : IObjectUIHandler
 {
     private static MemberInfo[] DisplayedFields = [
-        typeof(MatHeader).GetField(nameof(MatHeader.matName))!,
-        typeof(MatHeader).GetField(nameof(MatHeader.shaderType))!,
-        typeof(MatHeader).GetProperty(nameof(MatHeader.Flags1))!,
-        typeof(MatHeader).GetProperty(nameof(MatHeader.Flags2))!,
-        typeof(MatHeader).GetProperty(nameof(MatHeader.Phong))!,
-        typeof(MatHeader).GetProperty(nameof(MatHeader.Tesselation))!,
-        typeof(MatHeader).GetField(nameof(MatHeader.ukn1))!,
+        typeof(MaterialHeader).GetField(nameof(MaterialHeader.matName))!,
+        typeof(MaterialHeader).GetField(nameof(MaterialHeader.shaderType))!,
+        typeof(MaterialHeader).GetProperty(nameof(MaterialHeader.Flags1))!,
+        typeof(MaterialHeader).GetProperty(nameof(MaterialHeader.Flags2))!,
+        typeof(MaterialHeader).GetProperty(nameof(MaterialHeader.Phong))!,
+        typeof(MaterialHeader).GetProperty(nameof(MaterialHeader.Tesselation))!,
+        typeof(MaterialHeader).GetField(nameof(MaterialHeader.ukn1))!,
     ];
 
     public void OnIMGUI(UIContext context)
     {
         if (context.children.Count == 0) {
-            var tex = context.Get<MatHeader>();
+            var tex = context.Get<MaterialHeader>();
             var ws = context.GetWorkspace();
-            WindowHandlerFactory.SetupObjectUIContext(context, typeof(MatHeader), members: DisplayedFields);
-            context.AddChild<MatHeader, string>("MMTR path", tex, new ResourcePathPicker(ws, KnownFileFormats.MasterMaterial), (p) => p!.mmtrPath, (p, v) => p.mmtrPath = v);
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(MaterialHeader), members: DisplayedFields);
+            context.AddChild<MaterialHeader, string>("MMTR path", tex, new ResourcePathPicker(ws, KnownFileFormats.MasterMaterial), (p) => p!.mmtrPath, (p, v) => p.mmtrPath = v);
         }
         ImGui.SetNextItemOpen(true, ImGuiCond.Always);
         context.ShowChildrenUI();
@@ -93,37 +93,45 @@ public class TexHeaderImguiHandler : IObjectUIHandler
     }
 }
 
-[ObjectImguiHandler(typeof((GpbfHeader name, GpbfHeader data)), Stateless = true)]
-public class Mdf2GpbfPairImguiHandler : IObjectUIHandler
+[ObjectImguiHandler(typeof(GpuBufferEntry), Stateless = true)]
+public class MeshGpbfImguiHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
         if (context.children.Count == 0) {
-            var tex = context.Get<(GpbfHeader name, GpbfHeader data)>();
-            context.AddChild<(GpbfHeader name, GpbfHeader data), string>(tex.name.name, tex, new StringFieldHandler(), (p) => p.data.name, (p, v) => p.data.name = v ?? string.Empty);
+            var tex = context.Get<GpuBufferEntry>();
+            context.AddChild<GpuBufferEntry, string>("Name", tex, new StringFieldHandler(), (p) => p.name, (p, v) => p.name = v ?? string.Empty);
+            context.AddChild<GpuBufferEntry, string>("Path", tex, new ResourcePathPicker(context.GetWorkspace(), KnownFileFormats.ByteBuffer), (p) => p!.path, (p, v) => p.path = v ?? string.Empty);
         }
+
+        var w = ImGui.CalcItemWidth();
+        var w1 = Math.Min(200, w * 0.3f);
+        ImGui.SetNextItemWidth(w1);
         context.children[0].ShowUI();
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(w - w1 - ImGui.GetStyle().FramePadding.X);
+        context.children[1].ShowUI();
     }
 }
 
-[ObjectImguiHandler(typeof(List<MatData>), Stateless = true)]
-public class MdfMaterialListImguiHandler : DictionaryListImguiHandler<string, MatData, List<MatData>>
+[ObjectImguiHandler(typeof(List<MaterialData>), Stateless = true)]
+public class MdfMaterialListImguiHandler : DictionaryListImguiHandler<string, MaterialData, List<MaterialData>>
 {
     public MdfMaterialListImguiHandler()
     {
         Filterable = true;
     }
 
-    protected override bool Filter(UIContext context, string filter) => context.Get<MatData>().Header.matName.Contains(filter, StringComparison.OrdinalIgnoreCase);
-    protected override string GetKey(MatData item) => item.Header.matName;
+    protected override bool Filter(UIContext context, string filter) => context.Get<MaterialData>().Header.matName.Contains(filter, StringComparison.OrdinalIgnoreCase);
+    protected override string GetKey(MaterialData item) => item.Header.matName;
 
-    protected override MatData CreateItem(UIContext context, string key)
-        => new MatData(new MatHeader() { matName = key });
+    protected override MaterialData CreateItem(UIContext context, string key)
+        => new MaterialData(new MaterialHeader() { matName = key });
 
     protected override void InitChildContext(UIContext itemContext)
     {
         if (itemContext.GetRaw() != null) {
-            itemContext.uiHandler = new MdfMaterialLazyPlainObjectHandler(typeof(MatData));
+            itemContext.uiHandler = new MdfMaterialLazyPlainObjectHandler(typeof(MaterialData));
         }
     }
 }
@@ -137,17 +145,17 @@ public class MdfMaterialLazyPlainObjectHandler : LazyPlainObjectHandler
     protected override bool DoTreeNode(UIContext context, object instance)
     {
         var tree = base.DoTreeNode(context, instance);
-        var mat = (MatData)instance;
+        var mat = (MaterialData)instance;
         if (ImGui.BeginPopupContextItem(context.label)) {
             if (ImGui.Button("Duplicate")) {
-                var list = context.parent!.Get<List<MatData>>();
+                var list = context.parent!.Get<List<MaterialData>>();
                 var clone = mat.Clone();
                 clone.Header.matName = $"{mat.Header.matName}_copy".GetUniqueName(str => list.Any(l => l.Header.matName == str));
                 UndoRedo.RecordListAdd(context.parent, list, clone);
                 ImGui.CloseCurrentPopup();
             }
             if (ImGui.Button("Delete")) {
-                var list = context.parent!.Get<List<MatData>>();
+                var list = context.parent!.Get<List<MaterialData>>();
                 UndoRedo.RecordListRemove(context.parent, list, mat, childIndexOffset: 1);
                 ImGui.CloseCurrentPopup();
             }

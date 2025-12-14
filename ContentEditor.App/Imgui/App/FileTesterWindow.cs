@@ -14,6 +14,7 @@ using ReeLib.Clip;
 using ReeLib.Common;
 using ReeLib.Efx;
 using ReeLib.Efx.Structs.Common;
+using ReeLib.Mdf;
 using ReeLib.Mesh;
 using ReeLib.Mot;
 using ReeLib.Motlist;
@@ -442,6 +443,7 @@ public partial class FileTesterWindow : IWindowHandler
             case KnownFileFormats.MotionFsm2: return VerifyRewriteEquality<Motfsm2File>(source.GetFile<Motfsm2File>(), env);
             case KnownFileFormats.TimelineFsm2: return VerifyRewriteEquality<Tmlfsm2File>(source.GetFile<Tmlfsm2File>(), env);
             case KnownFileFormats.Effect: return VerifyRewriteEquality<EfxFile>(source.GetFile<EfxFile>(), env);
+            case KnownFileFormats.MaterialDefinition: return VerifyRewriteEquality<MdfFile>(source.GetFile<MdfFile>(), env);
             default: return null;
         }
     }
@@ -637,6 +639,10 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<EFXExpressionParameter>((m) => [m.expressionParameterNameUTF16Hash, m.expressionParameterNameUTF8Hash, m.name, m.type, m.value1, m.value2, m.value3]);
         AddCompareMapper<EFXExpressionList>((m) => [m.ExpressionCount, m.Expressions]);
         AddCompareMapper<EFXMaterialExpressionList>((m) => [m.ExpressionCount, m.Expressions, m.indexCount, m.indices]);
+
+        AddCompareMapper<MaterialHeader>((m) => [m.alphaFlags, m.gpbfDataCount, m.gpbfNameCount, m.matName, m.mmtrPath, m.pragmataUkn, m.texCount, m.paramCount, m.shaderType]);
+        AddCompareMapper<TexHeader>((m) => [m.asciiHash, m.hash, m.texPath, m.texType]);
+        AddCompareMapper<ParamHeader>((m) => [m.asciiHash, m.hash, m.componentCount, m.paramName, m.parameter]);
     }
 
     private static Dictionary<Type, Func<object, IEnumerable<object?>>> comparedValueMappers = new();
