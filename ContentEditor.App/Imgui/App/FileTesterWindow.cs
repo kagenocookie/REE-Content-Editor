@@ -590,16 +590,16 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<ReeLib.Clip.PropertyInfo>((m) => [m.arrayIndex, m.ChildMembershipCount, m.ChildStartIndex, m.DataType, m.endFrame, m.startFrame, m.FunctionName, m.nameAsciiHash, m.nameUtf16Hash]);
 
         AddCompareMapper<GuiFile>((m) => [m.Containers, m.RootViewElement, m.AttributeOverrides, m.Resources, m.LinkedGUIs, m.Parameters, m.ParameterReferences, m.ParameterOverrides]);
-        AddCompareMapper<ReeLib.Gui.ContainerInfo>((m) => [m.guid, m.Name, m.ClassName]);
-        AddCompareMapper<ReeLib.Gui.Element>((m) => [m.Name, m.ClassName, m.ID, m.ContainerId, m.guid3, m.Attributes, m.ExtraAttributes, m.ElementData]);
+        AddCompareMapper<ReeLib.Gui.ContainerInfo>((m) => [m.ID, m.Name, m.ClassName]);
+        AddCompareMapper<ReeLib.Gui.Element>((m) => [m.Name, m.ClassName, m.ID, m.ContainerID, m.guid3, m.Attributes, m.ExtraAttributes, m.ElementData]);
         AddCompareMapper<ReeLib.Gui.Attribute>((m) => [m.propertyType, m.OrderIndex, m.uknInt, m.Value]);
-        AddCompareMapper<ReeLib.Gui.GuiClip>((m) => [m.guid, m.IsDefault, m.name, m.clip]);
+        AddCompareMapper<ReeLib.Gui.GuiClip>((m) => [m.ID, m.IsDefault, m.name, m.clip]);
         AddCompareMapper<EmbeddedClip>((m) => [m.Header, m.Bezier3DData, m.ClipInfoList, m.Properties, m.ClipKeys.Count, m.ExtraPropertyData, m.FrameCount, m.Guid, m.HermiteData, m.SpeedPointData, m.Tracks]);
         AddCompareMapper<Property>((m) => [
             m.Info.FunctionName, m.Info.arrayIndex, m.Info.ChildMembershipCount, m.ChildProperties, m.Keys,
             m.Info.DataType, m.Info.startFrame, m.Info.endFrame,
             m.Info.nameAsciiHash, m.Info.nameUtf16Hash, m.Info.speedPointNum,  m.Info.timelineUkn, m.Info.timelineUkn2, m.Info.uknByte, m.Info.uknByte00, m.Info.uknCount, m.Info.uknRE7_2, m.Info.uknRE7_3, m.Info.uknRE7_4]);
-        AddCompareMapper<ClipHeader>((m) => [m.numFrames, m.numKeys, m.numNodes, m.numProperties, m.guid]);
+        AddCompareMapper<ClipHeader>((m) => [m.numFrames, m.keysCount, m.numNodes, m.numProperties, m.guid]);
         AddCompareMapper<ExtraPropertyInfo>((m) => [m.count, m.flags, m.propertyUTF16Hash, m.values]);
 
         AddCompareMapper<McolFile>((m) => [m.bvh]);

@@ -80,9 +80,11 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
 
         if (mesh != null) {
             var parts = RszFieldCache.Mesh.PartsEnable.Get(Data);
-            for (int i = 0; i < parts.Count; ++i) {
-                var enabled = (bool)parts[i];
-                mesh.SetMeshPartEnabled(i, enabled);
+            if (parts != null) {
+                for (int i = 0; i < parts.Count; ++i) {
+                    var enabled = (bool)parts[i];
+                    mesh.SetMeshPartEnabled(i, enabled);
+                }
             }
         }
         mesh?.Update();

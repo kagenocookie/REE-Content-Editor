@@ -645,7 +645,7 @@ public class KeyHandler : IObjectUIHandler
         typeof(Key).GetField(nameof(Key.frame))!,
         typeof(Key).GetField(nameof(Key.rate))!,
         typeof(Key).GetField(nameof(Key.interpolation))!,
-        typeof(Key).GetField(nameof(Key.instanceValue))!,
+        typeof(Key).GetField(nameof(Key.flags))!,
         typeof(Key).GetField(nameof(Key.unknown))!,
         typeof(Key).GetField(nameof(Key.hermiteDataIndex))!,
     ];

@@ -16,6 +16,25 @@ public class GuiEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 
     protected override bool IsRevertable => context.Changed;
 
+    static GuiEditor()
+    {
+        WindowHandlerFactory.DefineInstantiator<GuiContainer>(ctx => {
+            var version = ctx.FindHandlerInParents<GuiEditor>()?.File.Header.GuiVersion ?? GuiVersion.RE4;
+            var instance = new GuiContainer(version);
+            return instance;
+        });
+        WindowHandlerFactory.DefineInstantiator<GuiClip>(ctx => {
+            var version = ctx.FindHandlerInParents<GuiEditor>()?.File.Header.GuiVersion ?? GuiVersion.RE4;
+            var instance = new GuiClip(version);
+            return instance;
+        });
+        WindowHandlerFactory.DefineInstantiator<Element>(ctx => {
+            var version = ctx.FindHandlerInParents<GuiEditor>()?.File.Header.GuiVersion ?? GuiVersion.RE4;
+            var instance = new Element(version);
+            return instance;
+        });
+    }
+
     public GuiEditor(ContentWorkspace env, FileHandle file) : base (file)
     {
         Workspace = env;
