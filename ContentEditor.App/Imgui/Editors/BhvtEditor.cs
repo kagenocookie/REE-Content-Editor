@@ -1,4 +1,5 @@
 using ContentEditor.App.Windowing;
+using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Bhvt;
@@ -141,6 +142,9 @@ public class BhvtFileEditor : IObjectUIHandler
             context.AddChild<BhvtFile, BhvtObjectIndexTable>("Action Object Table", file, getter: (f) => f!.ActionObjectTable).AddDefaultHandler();
             context.AddChild<BhvtFile, List<BHVTNode>>("All Nodes", file, new ListHandlerTyped<BHVTNode>() { Filterable = true, CanCreateRemoveElements = false }, getter: (f) => f!.Nodes);
         }
+        // if (ImGui.Button("View Node Tree")) {
+        //     EditorWindow.CurrentWindow?.AddSubwindow(new BhvtNodeTree(context.Get<BhvtFile>()));
+        // }
         context.ShowChildrenUI();
     }
 }
@@ -169,6 +173,29 @@ public class BHVTNodeEditor : IObjectUIHandler
             var parent = ctx.FindParentContextByHandler<BHVTNodeEditor>()?.Get<BHVTNode>();
             var isBhvt = rootEditor is BhvtEditor;
             return new BHVTNode(version) { Attributes = attrs, ID = new NodeID((uint)System.Random.Shared.Next(), 0), ParentID = parent?.ID ?? default };
+        });
+
+        WindowHandlerFactory.DefineInstantiator<NState>((ctx) => {
+            var rootEditor = ctx.FindHandlerInParents<FileEditor>();
+            if (rootEditor is not MotFsm2FileEditor mfs2) {
+                Logger.Error("State is not inside a Motfsm, this won't work.");
+                return new NState();
+            }
+
+            var version = mfs2.File.BhvtFile.Header.Version;
+            var state = new NState();
+            state.transitionMapID = (uint)System.Random.Shared.Next();
+            var data = mfs2.File.TransitionDatas.FirstOrDefault();
+            if (data == null) {
+                mfs2.File.TransitionDatas.Add(data = new TransitionData(version) {
+                    id = (uint)System.Random.Shared.Next(),
+                    EndType = EndType.EndOfMotion
+                });
+            }
+            mfs2.File.ChangeTransitionMapping(state.transitionMapID, data.id);
+            state.TransitionData = data;
+
+            return state;
         });
     }
 
@@ -268,10 +295,77 @@ public class NStateEditor : IObjectUIHandler
                     f.Condition = newVal;
                     ctx.FindParentContextByHandler<NStateEditor>()?.FindNestedChildByHandler<NestedUIHandlerStringSuffixed>()?.ClearChildren();
                 });
-            context.AddChild<NState, TransitionData>("Transition Parameters", file, getter: (f) => f!.TransitionData, setter: (f, v) => f.TransitionData = v).AddDefaultHandler<TransitionData>();
+            context.AddChild<NState, TransitionData>("Transition Parameters", file, new TransitionDataEditor(), (f) => f!.TransitionData, (f, v) => f.TransitionData = v);
             context.AddChild<NState, List<RszInstance>>("Transition Events", file, new RszListInstanceHandler("via.behaviortree.TransitionEvent"), (f) => f!.TransitionEvents);
         }
         context.ShowChildrenNestedUI();
+    }
+}
+
+public class TransitionDataEditor : LazyPlainObjectHandler
+{
+    public TransitionDataEditor() : base(typeof(TransitionData))
+    {
+        _instancePicker = new InstancePickerHandler<TransitionData>(false, (ctx, force) => {
+            var root = ctx.FindHandlerInParents<MotFsm2FileEditor>()?.File;
+            return root?.TransitionDatas ?? [];
+        }, (ctx, newInstance) => {
+            var parentCtx = ctx.FindParentContextByValue<NState>();
+            var parent = parentCtx?.Get<NState>();
+            var root = ctx.FindHandlerInParents<MotFsm2FileEditor>()?.File;
+            if (parent == null || root == null) {
+                Logger.Warn("Could not find parent state or motfsm2 file, you may have found an edge case.");
+                return;
+            }
+            var prevData = parent.TransitionData;
+            UndoRedo.RecordCallback(ctx, () => {
+                root.ChangeTransitionMapping(parent.transitionMapID, newInstance!.id);
+                parent.TransitionData = newInstance;
+                parentCtx!.ClearChildren();
+            }, () => {
+                root.ChangeTransitionMapping(parent.transitionMapID, prevData?.id ?? root.TransitionDatas.First().id);
+                parent.TransitionData = prevData;
+                parentCtx!.ClearChildren();
+            });
+        }, labelOverride: "Swap Transition Data");
+    }
+
+    private InstancePickerHandler<TransitionData> _instancePicker;
+
+    protected override bool DoTreeNode(UIContext context, object instance)
+    {
+        if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString() ?? string.Empty)) {
+            _instancePicker.OnIMGUI(context);
+            if (ImGui.Button("Create new transition data")) {
+                var root = context.FindHandlerInParents<MotFsm2FileEditor>()?.File;
+                var stateCtx = context.FindParentContextByValue<NState>();
+                var state = stateCtx?.Get<NState>();
+                if (root == null || state == null) {
+                    Logger.Error("Could not find parent state or motfsm2 file");
+                    return true;
+                }
+
+                var data = new TransitionData(root.Option.Version) {
+                    id = (uint)System.Random.Shared.Next(),
+                    EndType = EndType.EndOfMotion
+                };
+                var prevData = state.TransitionData;
+
+                UndoRedo.RecordCallback(context, () => {
+                    state.TransitionData = data;
+                    root.TransitionDatas.Add(data);
+                    root.ChangeTransitionMapping(state.transitionMapID, data.id);
+                    stateCtx!.ClearChildren();
+                }, () => {
+                    state.TransitionData = prevData;
+                    root.TransitionDatas.Remove(data);
+                    root.ChangeTransitionMapping(state.transitionMapID, prevData?.id ?? root.TransitionDatas.First().id);
+                    stateCtx!.ClearChildren();
+                });
+            }
+            return true;
+        }
+        return false;
     }
 }
 

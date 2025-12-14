@@ -209,6 +209,7 @@ public static partial class WindowHandlerFactory
         classFormatters[cls] = formatter;
     }
 
+    public static T Instantiate<T>(UIContext context) => (T)Instantiate(context, typeof(T));
     public static object Instantiate(UIContext context, Type type)
     {
         if (instantiators.TryGetValue(type, out var func)) {

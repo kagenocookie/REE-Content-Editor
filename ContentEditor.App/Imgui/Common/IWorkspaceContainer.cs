@@ -55,6 +55,16 @@ public static class UIContextExtensions
         return context.parent?.FindParentContextByHandler<T>();
     }
 
+    public static UIContext? FindParentContextByValue<T>(this UIContext context, bool ignoreSelf = false) where T : class
+    {
+        if (ignoreSelf) {
+            return context.parent?.FindParentContextByValue<T>();
+        }
+        if (context.Cast<T>() is T) return context;
+
+        return context.parent?.FindParentContextByValue<T>();
+    }
+
     public static T? FindObjectInspectorParent<T>(this UIContext context) where T : class, IWindowHandler
     {
         var inspector = context.FindHandlerInParents<ObjectInspector>();

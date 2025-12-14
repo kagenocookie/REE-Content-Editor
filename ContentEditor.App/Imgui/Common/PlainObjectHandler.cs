@@ -24,7 +24,7 @@ public class LazyPlainObjectHandler(Type type) : IObjectUIHandler
         return ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString() ?? string.Empty);
     }
 
-    public void OnIMGUI(UIContext context)
+    public virtual void OnIMGUI(UIContext context)
     {
         var instance = context.GetRaw();
         if (instance == null) {

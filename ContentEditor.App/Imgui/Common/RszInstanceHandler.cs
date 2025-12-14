@@ -306,7 +306,7 @@ public class SwappableRszInstanceHandler(string? baseClass = null, bool referenc
     }
 }
 
-public class InstancePickerHandler<T>(bool allowNull, Func<UIContext, bool, IEnumerable<T>> instanceProvider, Action<UIContext, T?>? instanceSwapper = null) : IObjectUIHandler
+public class InstancePickerHandler<T>(bool allowNull, Func<UIContext, bool, IEnumerable<T>> instanceProvider, Action<UIContext, T?>? instanceSwapper = null, string? labelOverride = null) : IObjectUIHandler
 {
     public bool DisableRefresh { get; init; }
 
@@ -334,7 +334,7 @@ public class InstancePickerHandler<T>(bool allowNull, Func<UIContext, bool, IEnu
 
         ImGui.SetNextItemWidth(restW);
         var newInstance = instance;
-        if (ImguiHelpers.FilterableCombo(context.label, labels, availableInstances, ref newInstance, ref context.Filter)) {
+        if (ImguiHelpers.FilterableCombo(labelOverride ?? context.label, labels, availableInstances, ref newInstance, ref context.Filter)) {
             if (instanceSwapper != null) {
                 instanceSwapper.Invoke(context, newInstance);
             } else {
