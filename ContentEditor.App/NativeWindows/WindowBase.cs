@@ -355,6 +355,9 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     private void OnUpdate(double delta)
     {
+        if (_window.WindowState == WindowState.Minimized) {
+            return;
+        }
         _controller.MakeCurrent();
         _currentWindow = this;
         var mousePos = _inputContext.Mice[0].Position;
@@ -408,6 +411,9 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     private void OnRender(double delta)
     {
+        if (_window.WindowState == WindowState.Minimized) {
+            return;
+        }
         _currentWindow = this;
         HandleRenderActions();
         _gl.Enable(Silk.NET.OpenGL.EnableCap.DepthTest);
