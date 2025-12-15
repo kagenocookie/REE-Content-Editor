@@ -47,9 +47,9 @@ public class ThemeEditor : IWindowHandler
     public void OnIMGUI()
     {
         ImGui.Button($"{AppIcons.SI_GenericInfo}");
-        ImguiHelpers.Tooltip("Change any settings you wish in the below style editor section. You can use the IMGUI Test Window to preview most components.\nOnce you're satisfied with your changes, press \"Save to file\" and store it in the styles folder.");
+        ImguiHelpers.Tooltip("Change any settings you wish in the below style editor section. You can use the IMGUI Test Window to preview most components.\nOnce you're satisfied with your changes, press \"Save\" and store it in the styles folder.");
         ImGui.SameLine();
-        if (ImGui.Button("Save to file ...")) {
+        if (ImGui.Button($"{AppIcons.SI_Save}")) {
             var themeData = DefaultThemes.GetCurrentStyleData() + "\n\n" + UI.GetImNodesThemeStyleData();
 
             var themePath = Path.Combine(AppContext.BaseDirectory, "styles");
@@ -58,6 +58,7 @@ public class ThemeEditor : IWindowHandler
                 File.WriteAllText(path, themeData);
             }, initialFile: Path.GetFullPath(Path.Combine(themePath, "custom_theme.theme.txt")), filter: ".theme.txt|*.theme.txt");
         }
+        ImguiHelpers.Tooltip("Save");
         ImGui.SameLine();
         if (ImGui.Button("Open IMGUI Test Window")) {
             EditorWindow.CurrentWindow?.AddUniqueSubwindow(new ImguiTestWindow());

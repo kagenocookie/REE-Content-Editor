@@ -10,7 +10,7 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
 
     public string HandlerName => "Log";
 
-    private static string[] tabs = ["All", "Debug", $"{AppIcons.SI_GenericInfo} Info", $"{AppIcons.SI_GenericWarning} Warning", $"{AppIcons.SI_GenericError} Error"];
+    private static string[] tabs = [$"{AppIcons.SI_Log}", $"{AppIcons.SI_LogDebug} Debug", $"{AppIcons.SI_GenericInfo} Info", $"{AppIcons.SI_GenericWarning} Warning", $"{AppIcons.SI_GenericError} Error"];
     private int currentTab;
     private bool compactMultiline;
 
@@ -82,17 +82,19 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
             data.Position = ImGui.GetWindowPos();
             ImguiHelpers.Tabs(tabs, ref currentTab, true);
             ImGui.SameLine();
-            if (ImGui.Button("Clear")) {
-                Clear();
-            }
-            ImGui.SameLine();
             var list = GetListForTab(currentTab);
-            if (ImGui.Button("Copy all")) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_LogCopyAll, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary})) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(string.Join("\n", list.Select(l => l.message)), "Copied!");
             }
+            ImguiHelpers.Tooltip("Copy All");
             ImGui.SameLine();
             ImguiHelpers.ToggleButton($"{AppIcons.SI_LogCompact}", ref compactMultiline, Colors.IconActive);
             ImguiHelpers.Tooltip("Compact multiline messages");
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.SI_GenericClear}")) {
+                Clear();
+            }
+            ImguiHelpers.Tooltip("Clear");
             ImGui.Spacing();
             ImGui.Separator();
             ImGui.BeginChild("Content");

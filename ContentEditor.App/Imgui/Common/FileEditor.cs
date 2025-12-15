@@ -103,18 +103,21 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         if (failedToReadfile) return;
 
         if (CanSave) {
-            if (ImGui.Button("Save")) {
+            if (ImGui.Button($"{AppIcons.SI_Save}")) {
                 Save();
             }
+            ImguiHelpers.Tooltip("Save");
             var workspace = data.Context.GetWorkspace()!;
             ImGui.SameLine();
-            if (ImGui.Button("Save as ...")) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_SaveAs, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary })) {
                 PlatformUtils.ShowSaveFileDialog((path) => SaveTo(path, true), Handle.Filepath);
             }
+            ImguiHelpers.Tooltip("Save As...");
             ImGui.SameLine();
-            if (ImGui.Button("Save copy to ...")) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_SaveCopy, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary })) {
                 PlatformUtils.ShowSaveFileDialog((path) => SaveTo(path, false), Handle.Filepath);
             }
+            ImguiHelpers.Tooltip("Save Copy to...");
             if (Handle.DiffHandler != null && ImguiHelpers.SameLine() && Handle.HandleType is not FileHandleType.Memory && ImGui.Button("See changes")) {
                 var diff = Handle.DiffHandler.FindDiff(Handle);
                 if (diff == null) {
