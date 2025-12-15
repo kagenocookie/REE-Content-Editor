@@ -26,6 +26,8 @@ public partial class CommonMeshResource : IResourceFile
         var totalTriCount = totalFaceCount * 3;
         var paddedTriCount = totalTriCount + srcMeshes.Count(m => (m.FaceCount * 3) % 2 != 0);
 
+        float scale = AppConfig.Settings.Import.Scale;
+
         mesh.Header.BufferCount = 1;
 
         var buffer = new MeshBuffer();
@@ -75,17 +77,21 @@ public partial class CommonMeshResource : IResourceFile
         var deformBones = new SortedList<int, MeshBone>();
         if (buffer.Weights.Length > 0) {
             var boneNames = srcMeshes.SelectMany(m => m.Bones.Select(b => b.Name)).ToHashSet();
-            static void AddRecursiveBones(MeshFile file, NodeCollection children, HashSet<string> boneNames, MeshBone? parentBone)
+            static void AddRecursiveBones(MeshFile file, NodeCollection children, HashSet<string> boneNames, MeshBone? parentBone, float scale)
             {
                 foreach (var node in children) {
                     if (node.Name.StartsWith(ShapekeyPrefix) || node.Name.StartsWith(SecondaryWeightDummyBonePrefix)) continue;
 
                     if (boneNames.Contains(node.Name)) {
                         file.BoneData ??= new();
+                        var tx = Matrix4x4.Transpose(node.Transform);
+                        if (scale != 0 && scale != 1) {
+                            tx.Translation *= scale;
+                        }
                         var bone = new MeshBone() {
                             name = node.Name,
                             index = file.BoneData.Bones.Count,
-                            localTransform = Matrix4x4.Transpose(node.Transform),
+                            localTransform = tx,
                             childIndex = -1,
                             nextSibling = -1,
                             symmetryIndex = file.BoneData.Bones.Count,
@@ -108,14 +114,14 @@ public partial class CommonMeshResource : IResourceFile
                             parentBone.Children.Add(bone);
                         }
                         bone.inverseGlobalTransform = Matrix4x4.Invert(bone.globalTransform.ToSystem(), out var inverse) ? inverse : throw new Exception("Failed to calculate inverse bone matrix " + bone.name);
-                        AddRecursiveBones(file, node.Children, boneNames, bone);
+                        AddRecursiveBones(file, node.Children, boneNames, bone, scale);
                     } else if (node.Children.Count > 0) {
                         // just in case there's some weird hierarchy shenanigans going on?
-                        AddRecursiveBones(file, node.Children, boneNames, parentBone);
+                        AddRecursiveBones(file, node.Children, boneNames, parentBone, scale);
                     }
                 }
             }
-            AddRecursiveBones(mesh, scene.RootNode.Children, boneNames, null);
+            AddRecursiveBones(mesh, scene.RootNode.Children, boneNames, null, scale);
             // handle symmetry bones
             foreach (var bone in mesh.BoneData!.Bones) {
                 if (bone.name.StartsWith("l_", StringComparison.InvariantCultureIgnoreCase)) {
@@ -164,6 +170,10 @@ public partial class CommonMeshResource : IResourceFile
             meshData.totalMeshCount++;
             group.submeshCount++;
             group.Submeshes.Add(newSub);
+
+            if (scale != 1 && scale != 0) {
+                for (int i = 0; i < aiMesh.Vertices.Count; ++i) aiMesh.Vertices[i] *= scale;
+            }
 
             CollectionsMarshal.AsSpan(aiMesh.Vertices).CopyTo(buffer.Positions.AsSpan(vertOffset));
 
@@ -285,9 +295,11 @@ public partial class CommonMeshResource : IResourceFile
         var motver = motlist.Header.version.GetMotVersion();
         var meta = scene.Metadata;
 
+        float scale = AppConfig.Settings.Import.Scale;
+
         // setup mot bone hierarchy
         var boneNames = scene.Animations.SelectMany(a => a.NodeAnimationChannels.Select(ann => CleanBoneName(ann.NodeName))).ToHashSet();
-        static void AddRecursiveBones(List<MotBone> bones, NodeCollection children, HashSet<string> boneNames, MotBone? parentBone)
+        static void AddRecursiveBones(List<MotBone> bones, NodeCollection children, HashSet<string> boneNames, MotBone? parentBone, float scale)
         {
             foreach (var node in children) {
                 if (boneNames.Contains(node.Name)) {
@@ -297,6 +309,7 @@ public partial class CommonMeshResource : IResourceFile
                     if (!Matrix4x4.Decompose(localMatrix, out _, out header.quaternion, out header.translation)) {
                         Logger.Error("Failed to decompose bone offset");
                     }
+                    header.translation *= scale;
                     if (header.quaternion.W < 0) {
                         header.quaternion = Quaternion.Negate(header.quaternion);
                     }
@@ -304,15 +317,15 @@ public partial class CommonMeshResource : IResourceFile
                     bones.Add(bone);
                     bone.Parent = parentBone;
                     parentBone?.Children.Add(bone);
-                    AddRecursiveBones(bones, node.Children, boneNames, bone);
+                    AddRecursiveBones(bones, node.Children, boneNames, bone, scale);
                 } else if (node.Children.Count > 0) {
                     // just in case there's some weird hierarchy shenanigans going on?
-                    AddRecursiveBones(bones, node.Children, boneNames, parentBone);
+                    AddRecursiveBones(bones, node.Children, boneNames, parentBone, scale);
                 }
             }
         }
         List<MotBone> motBones = new();
-        AddRecursiveBones(motBones, scene.RootNode.Children, boneNames, null);
+        AddRecursiveBones(motBones, scene.RootNode.Children, boneNames, null, scale);
         var rootBones = motBones.Where(b => b.Parent == null).ToList();
         List<BoneHeader> boneHeaders = motBones.Select(b => b.Header).ToList();
 
@@ -369,7 +382,7 @@ public partial class CommonMeshResource : IResourceFile
                     for (int i = 0; i < channel.PositionKeyCount; ++i) {
                         var key = channel.PositionKeys[i];
                         track.frameIndexes[i] = (int)Math.Round(key.Time * timeScale);
-                        track.translations[i] = key.Value;
+                        track.translations[i] = key.Value * scale;
                     }
                 }
 
