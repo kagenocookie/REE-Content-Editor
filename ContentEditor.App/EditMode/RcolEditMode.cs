@@ -63,7 +63,7 @@ public class RcolEditMode : EditModeHandler
         filePicker.ShowUI();
 
         if (Target is RequestSetColliderComponent rcolTarget) {
-            var storedSuggestions = rcolTarget.StoredResources.ToArray();
+            var storedSuggestions = rcolTarget.StoredResources?.ToArray() ?? [];
             if (storedSuggestions.Length > 0) {
                 if (ImguiHelpers.ValueCombo("Component Files", storedSuggestions, storedSuggestions, ref rcolPath)) {
                     AppConfig.Instance.AddRecentRcol(rcolPath);

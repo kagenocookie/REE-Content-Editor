@@ -78,6 +78,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     private GizmoShapeBuilder? _skeletonBuilder;
     private MeshHandle? gizmoMeshHandle;
 
+    private bool showImportSettings;
+
     public MeshViewer(ContentWorkspace workspace, FileHandle file)
     {
         Workspace = workspace;
@@ -369,6 +371,10 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     {
         var meshGroupIds = mesh!.GroupIDs.ToList();
         var parts = RszFieldCache.Mesh.PartsEnable.Get(meshComponent.Data);
+        if (parts == null) {
+            ImGui.TextColored(Colors.Error, "Could not resolve enabled parts field for current game.");
+            return;
+        }
         foreach (var group in meshGroupIds) {
             if (group < 0 || group >= parts.Count) continue;
 
@@ -479,6 +485,10 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 }, lastImportSourcePath, fileExtension: MeshFilesFilter);
             }
         }
+        ImGui.SameLine();
+        ImguiHelpers.ToggleButton($"{AppIcons.GameObject}", ref showImportSettings, Colors.IconActive);
+        ImguiHelpers.Tooltip("Show Settings");
+
         if (exportInProgress) {
             ImGui.SameLine();
             // we have no way of showing any progress from assimp's side (which is 99% of the export duration) so this is the best we can do
@@ -486,6 +496,17 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         }
         if (animator?.File != null) ImGui.Checkbox("Include animations", ref exportAnimations);
         if (animator?.File != null && exportAnimations) ImGui.Checkbox("Selected animation only", ref exportCurrentAnimationOnly);
+        if (showImportSettings) {
+            ImGui.SeparatorText("Import Settings");
+            var scale = AppConfig.Settings.Import.Scale * 100;
+            if (ImGui.InputFloat("Import Scale", ref scale, "%.00f%%")) {
+                AppConfig.Settings.Import.Scale = Math.Clamp(scale / 100, 0.001f, 100);
+                AppConfig.Settings.Save();
+            }
+            ImGui.Spacing();
+            ImGui.Spacing();
+        }
+
         ImGui.SeparatorText("Convert Mesh");
         var conv1 = ImGui.Button($"{AppIcons.SI_GenericConvert}");
         ImguiHelpers.Tooltip("Convert");
@@ -535,6 +556,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             var options = settings.RecentMotlists.ToArray();
             if (ImguiHelpers.ValueCombo("Recent files", options, options, ref selection)) {
                 animationSourceFile = selection;
+                animationPickerContext.ResetState();
             }
         }
         if (animationSourceFile != loadedAnimationSource) {

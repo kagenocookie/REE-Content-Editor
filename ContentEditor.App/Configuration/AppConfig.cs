@@ -551,6 +551,7 @@ public class AppJsonSettings
 {
     public SceneViewSettings SceneView { get; init; } = new();
     public MeshViewerSettings MeshViewer { get; init; } = new();
+    public ImportSettings Import { get; init; } = new();
     public List<string> RecentBundles { get; init; } = new();
     public List<string> RecentFiles { get; init; } = new();
     public List<string> RecentRcols { get; init; } = new();
@@ -563,6 +564,11 @@ public class AppJsonSettings
 public record SceneViewSettings
 {
     public float MoveSpeed { get; set; } = 8f;
+}
+
+public record ImportSettings
+{
+    public float Scale { get; set; } = 1f;
 }
 
 public record MeshViewerSettings
