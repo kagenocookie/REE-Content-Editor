@@ -916,13 +916,13 @@ public class RszDataFinder : IWindowHandler
                 }
 
                 foreach (var container in file.Containers) {
-                    if (hasGuid && container.Info.guid == guid || container.Info.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
+                    if (hasGuid && container.Info.ID == guid || container.Info.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
                         AddMatch(context, $"Container {container.Info.Name}", path);
                         continue;
                     }
 
                     foreach (var clip in container.Clips) {
-                        if (hasGuid && (clip.guid == guid || clip.clip?.Guid == guid) || clip.name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
+                        if (hasGuid && (clip.ID == guid || clip.clip?.Guid == guid) || clip.name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
                             AddMatch(context, $"Clip {container.Info.Name}/{clip.name}", path);
                             break;
                         }

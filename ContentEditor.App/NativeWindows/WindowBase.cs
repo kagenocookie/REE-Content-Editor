@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Globalization;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.Core;
 using ContentEditor.Editor;
@@ -354,6 +355,9 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     private void OnUpdate(double delta)
     {
+        if (_window.WindowState == WindowState.Minimized) {
+            return;
+        }
         _controller.MakeCurrent();
         _currentWindow = this;
         var mousePos = _inputContext.Mice[0].Position;
@@ -407,6 +411,9 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     private void OnRender(double delta)
     {
+        if (_window.WindowState == WindowState.Minimized) {
+            return;
+        }
         _currentWindow = this;
         HandleRenderActions();
         _gl.Enable(Silk.NET.OpenGL.EnableCap.DepthTest);
@@ -684,4 +691,24 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
             _currentWindow = backup;
         }
     }
+
+    static WindowBase()
+    {
+        // source: https://github.com/HexaEngine/Hexa.NET.ImGui/issues/35#issuecomment-3172275411
+
+        // By default the Visual C++ runtime library seems to consider .NET apps to be console apps (presumably
+        // because the UCRT code to detect the app type didn't run) and thus a message box is not shown when
+        // assert() is triggered. This is important for ImGui, which uses IM_ASSERT() liberally.
+        // By calling _set_error_mode we can force the message box to be shown.
+        const int _OUT_TO_MSGBOX = 2;
+        _ = _set_error_mode(_OUT_TO_MSGBOX);
+    }
+
+    /// <summary>
+    /// Specifies the behavior of the assert() function in the Visual C++ runtime library.
+    /// </summary>
+    /// <param name="mode_val"> An enum value that specifies the desired behavior. </param>
+    /// <returns> The old setting or <c>-1</c> if an error occurs. </returns>
+    [DllImport("ucrtbase.dll", CallingConvention = CallingConvention.Cdecl)]
+    private static extern int _set_error_mode(int mode_val);
 }
