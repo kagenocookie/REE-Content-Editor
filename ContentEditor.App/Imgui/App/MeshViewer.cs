@@ -618,6 +618,17 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             _skeletonBuilder.Add(new Sphere(
                 transform.Translation,
                 0.005f));
+
+            if (bone.Children.Count == 0) {
+                var len = transform.Translation - parentTransform.Translation;
+                var tip = transform.Translation + Vector3.Normalize(Vector3.TransformNormal(Vector3.UnitZ, transform)) * len;
+                _skeletonBuilder.Add(new Capsule(
+                    transform.Translation,
+                    tip,
+                    0.001f));
+
+                _skeletonBuilder.Add(new Sphere(tip, 0.005f));
+            }
         }
 
         _skeletonBuilder.UpdateMesh();
