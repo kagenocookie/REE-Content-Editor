@@ -386,6 +386,7 @@ public class BoneMotionClipListHandler : ListHandler
     public BoneMotionClipListHandler() : base(typeof(BoneMotionClip), typeof(List<BoneMotionClip>))
     {
         CanCreateRemoveElements = true;
+        Filterable = true;
     }
 
     protected override object? CreateNewElement(UIContext context)
@@ -659,6 +660,55 @@ public class KeyHandler : IObjectUIHandler
         }
 
         if (AppImguiHelpers.CopyableTreeNode<Key>(context)) {
+            context.ShowChildrenUI();
+            ImGui.TreePop();
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(ShortKey))]
+public class ShortKeyHandler : IObjectUIHandler
+{
+    private static MemberInfo[] DisplayedFields = [
+        typeof(Key).GetField(nameof(Key.frame))!,
+        typeof(Key).GetField(nameof(Key.interpolation))!,
+        typeof(Key).GetField(nameof(Key.flags))!,
+        typeof(Key).GetField(nameof(Key.unknown))!,
+    ];
+
+    public void OnIMGUI(UIContext context)
+    {
+        if (context.children.Count == 0) {
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(ShortKey), false, DisplayedFields);
+        }
+
+        if (AppImguiHelpers.CopyableTreeNode<ShortKey>(context)) {
+            context.ShowChildrenUI();
+            ImGui.TreePop();
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(ShortValueKey))]
+public class ShortValueKeyHandler : IObjectUIHandler
+{
+    private static MemberInfo[] DisplayedFields = [
+        typeof(Key).GetProperty(nameof(Key.Value))!,
+        typeof(Key).GetField(nameof(Key.frame))!,
+        typeof(Key).GetField(nameof(Key.interpolation))!,
+        typeof(Key).GetField(nameof(Key.flags))!,
+        typeof(Key).GetField(nameof(Key.unknown))!,
+    ];
+
+    public void OnIMGUI(UIContext context)
+    {
+        if (context.children.Count == 0) {
+            var instance = context.Get<ShortValueKey>();
+            context.AddChild<ShortValueKey, string>("Property Type", instance, new ReadOnlyWrapperHandler(StringFieldHandler.Instance), (c) => c!.PropertyType.ToString());
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(ShortValueKey), false, DisplayedFields);
+        }
+
+        if (AppImguiHelpers.CopyableTreeNode<ShortValueKey>(context)) {
             context.ShowChildrenUI();
             ImGui.TreePop();
         }

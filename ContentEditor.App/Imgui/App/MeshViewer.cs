@@ -586,6 +586,13 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 if (ImGui.RadioButton(name, animator.ActiveMotion == mot)) {
                     animator.SetActiveMotion(mot);
                 }
+                if (ImGui.BeginPopupContextItem(name)) {
+                    if (ImGui.Selectable("Copy name")) {
+                        EditorWindow.CurrentWindow?.CopyToClipboard(name, $"Copied name: {name}");
+                        ImGui.CloseCurrentPopup();
+                    }
+                    ImGui.EndPopup();
+                }
             }
         } else if (animator?.File != null) {
             ImGui.TextColored(Colors.Note, "Selected file contains no playable animations");
