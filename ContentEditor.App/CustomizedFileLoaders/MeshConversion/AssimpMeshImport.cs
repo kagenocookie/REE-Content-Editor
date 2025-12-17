@@ -328,6 +328,7 @@ public partial class CommonMeshResource : IResourceFile
         AddRecursiveBones(motBones, scene.RootNode.Children, boneNames, null, scale);
         var rootBones = motBones.Where(b => b.Parent == null).ToList();
         List<BoneHeader> boneHeaders = motBones.Select(b => b.Header).ToList();
+        List<string> orderedBoneNames = motBones.Select(b => b.Header.boneName).ToList();
 
         foreach (var aiAnim in scene.Animations) {
             if (!aiAnim.HasNodeAnimations) continue;
@@ -354,7 +355,7 @@ public partial class CommonMeshResource : IResourceFile
             var timeScale = targetFps / sourceFps;
 
             // TODO determine best compression types
-            foreach (var channel in aiAnim.NodeAnimationChannels) {
+            foreach (var channel in aiAnim.NodeAnimationChannels.OrderBy(ch => orderedBoneNames.IndexOf(CleanBoneName(ch.NodeName)))) {
                 var boneName = CleanBoneName(channel.NodeName);
                 var existingClip = mot.BoneClips.FirstOrDefault(c => c.ClipHeader.boneName == boneName);
                 var clipHeader = existingClip?.ClipHeader ?? new BoneClipHeader(motver);
