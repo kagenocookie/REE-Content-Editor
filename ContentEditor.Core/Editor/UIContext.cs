@@ -33,6 +33,9 @@ public class UIContext
     public ref string ClassnameFilter => ref GetStateRef<string>(4, "");
     public ref string CachedString => ref GetStateRef<string>(5, "");
 
+    public T[]? GetStateArray<T>() => GetStateOrNull(6)?.value as T[];
+    public void SetStateArray<T>(T[] list) => GetStateRef<T[]>(6, list) = list;
+
     public string InitFilterDefault(string? defaultFilter) => GetStateRef<string>(2, defaultFilter ?? "");
 
     private class UIContextStateVariable(int id, object? value)
@@ -75,6 +78,22 @@ public class UIContext
         if (state == null) {
             state = new UIContextStateVariable(id, defaultValue);
             State.Add(state);
+        }
+
+        return state;
+    }
+
+    private UIContextStateVariable? GetStateOrNull(int id)
+    {
+        UIContextStateVariable? state = null;
+        foreach (var item in State) {
+            if (item.id == id) {
+                state = item;
+                break;
+            }
+        }
+        if (state == null) {
+            return null;
         }
 
         return state;
