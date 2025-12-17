@@ -343,8 +343,6 @@ public static class AppIcons
     public static readonly char[] SIC_FolderContain = { '\ued95', '\ued96', };
     public static readonly char[] SIC_FolderContain2 = { '\ued97', '\ued98', '\ued99' };
 
-    public static readonly uint[] Range = [(uint)EfxEntry, SIC_FolderContain2[0], SIC_FolderContain2[2], 0];
-
     public static string PrependIcon(this string text, object target)
     {
         var icon = GetIcon(target);
