@@ -372,9 +372,11 @@ public partial class CommonMeshResource : IResourceFile
                     bone = mot.GetBoneByHash(clipHeader.boneHash);
                     clipHeader.boneIndex = (ushort)(bone?.Index ?? 0); // would we need these to be remap index?
                 }
-                if (channel.HasPositionKeys && (bone == null || channel.PositionKeys.Any(k => Vector3.DistanceSquared(k.Value, bone.Translation) > 0.000001f))) {
+                if (channel.HasPositionKeys) {
+                    var firstValue = bone != null ? bone.Translation : channel.PositionKeys[0].Value;
+                    var allEqual = bone != null && !channel.PositionKeys.Any(k => Vector3.DistanceSquared(k.Value, firstValue) > 0.000001f);
+                    var track = new Track(motver, TrackValueType.Vector3);
                     clipHeader.trackFlags |= TrackFlag.Translation;
-                    var track = clip.Translation = new Track(motver, TrackValueType.Vector3);
                     track.maxFrame = (float)(channel.PositionKeys.Last().Time * timeScale);
                     track.frameRate = targetFps;
                     track.frameIndexes = new int[channel.PositionKeyCount];
@@ -384,7 +386,10 @@ public partial class CommonMeshResource : IResourceFile
                         var key = channel.PositionKeys[i];
                         track.frameIndexes[i] = (int)Math.Round(key.Time * timeScale);
                         track.translations[i] = key.Value * scale;
+                        if (allEqual) break;
                     }
+                    // additional hack because some fbx files have duplicate root bones but all of them have all key types and we don't want to overwrite them
+                    if (!allEqual || !clip.HasTranslation) clip.Translation = track;
                 }
 
                 if (channel.HasScalingKeys && (bone == null || channel.ScalingKeys.Any(k => Vector3.DistanceSquared(k.Value, Vector3.One) > 0.000001f))) {
@@ -402,7 +407,9 @@ public partial class CommonMeshResource : IResourceFile
                     }
                 }
 
-                if (channel.HasRotationKeys && (bone == null || channel.RotationKeys.Any(k => k.Value != bone.Quaternion))) {
+                if (channel.HasRotationKeys) {
+                    var firstValue = bone != null ? bone.Quaternion : channel.RotationKeys[0].Value;
+                    var allEqual = bone != null && !channel.RotationKeys.Any(k => k.Value != firstValue);
                     clipHeader.trackFlags |= TrackFlag.Rotation;
                     var track = clip.Rotation = new Track(motver, TrackValueType.Quaternion);
                     track.maxFrame = (float)(channel.RotationKeys.Last().Time * timeScale);
@@ -418,7 +425,9 @@ public partial class CommonMeshResource : IResourceFile
                             quat = Quaternion.Negate(quat);
                         }
                         track.rotations[i] = quat;
+                        if (allEqual) break;
                     }
+                    if (!allEqual || !clip.HasRotation) clip.Rotation = track;
                 }
 
                 if (clip.ClipHeader.trackFlags != 0 && existingClip == null) {
