@@ -18,6 +18,7 @@ public class ResourcePathPicker : IObjectUIHandler
     /// </summary>
     public bool UseNativesPath { get; init; }
     public bool IsPathForIngame { get; init; } = true;
+    public bool DisableWarnings { get; init; }
 
     private ContentWorkspace? workspace;
 
@@ -161,7 +162,7 @@ public class ResourcePathPicker : IObjectUIHandler
             }
         }
 
-        if (FileFormats.Length != 0 && !string.IsNullOrEmpty(context.Filter) && !string.IsNullOrEmpty(FileExtensionFilter)) {
+        if (!DisableWarnings && FileFormats.Length != 0 && !string.IsNullOrEmpty(context.Filter) && !string.IsNullOrEmpty(FileExtensionFilter)) {
             var parsed = PathUtils.ParseFileFormat(context.Filter);
             if (!FileFormats.Contains(parsed.format)) {
                 ImGui.TextColored(Colors.Warning, "The file may be an incorrect type. Expected file types: " + FileExtensionFilter);

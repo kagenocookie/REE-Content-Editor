@@ -545,7 +545,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             animationPickerContext = context.AddChild<MeshViewer, string>(
                 "Source File",
                 this,
-                new ResourcePathPicker(Workspace, MeshFilesFilter, KnownFileFormats.MotionList, KnownFileFormats.Motion) { UseNativesPath = true, IsPathForIngame = false },
+                new ResourcePathPicker(Workspace, MeshFilesFilter, KnownFileFormats.MotionList, KnownFileFormats.Motion) { UseNativesPath = true, IsPathForIngame = false, DisableWarnings = true },
                 (v) => v!.animationSourceFile,
                 (v, p) => v.animationSourceFile = p ?? "");
         }
