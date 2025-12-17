@@ -16,7 +16,9 @@ public class MotListFileLoader : DefaultFileLoader<MotlistFile>
         if (dangling.Length > 0) {
             Logger.Warn("Found mot files without motion IDs. These will get lost after reopening the file unless you give them a motion ID from the Motions list:\n" + string.Join("\n", dangling));
         }
-        file.FileHandler.Stream.SetLength(0);
+        if (outputPath == handle.Filepath) {
+            file.FileHandler.Stream.SetLength(0);
+        }
         return base.Save(workspace, handle, outputPath);
     }
 }
