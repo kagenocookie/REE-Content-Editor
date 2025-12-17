@@ -521,7 +521,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                     ImGui.GetWindowDrawList().AddText(pos + iconPadding, ImGui.ColorConvertFloat4ToU32(col), $"{icon}");
                 }
             } else {
-                ImGui.GetWindowDrawList().AddText(pos + iconPadding, 0xffffffff, $"{AppIcons.Folder}");
+                ImGui.GetWindowDrawList().AddText(pos + iconPadding, 0xffffffff, $"{AppIcons.SI_FolderEmpty}");
             }
             ImGui.PopFont();
             if (ImGui.IsItemHovered()) {
@@ -578,13 +578,13 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                         var (icon, col) = AppIcons.GetIcon(PathUtils.ParseFileFormat(file).format);
                         if (icon == '\0') {
                             ImGui.Text($"{AppIcons.SI_File}");
-                        } else if (icon == AppIcons.Folder) {
+                        } else if (icon == AppIcons.SI_FolderEmpty) {
                             ImGui.TextColored(col, $"{AppIcons.FolderLink}");
                         } else {
                             ImGui.TextColored(col, $"{icon}");
                         }
                     } else {
-                        ImGui.Text($"{AppIcons.Folder}");
+                        ImGui.Text($"{AppIcons.SI_FolderEmpty}");
                     }
                     ImGui.SameLine();
                 }
@@ -704,7 +704,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 ImGui.CloseCurrentPopup();
             }
             ImGui.Spacing();
-            if (ImGui.Selectable($"{AppIcons.SI_FileExtractTo} | Extract File to ...")) {
+            if (ImGui.Selectable("##ExtractFileTo")) {
                 var nativePath = file;
                 PlatformUtils.ShowSaveFileDialog((savePath) => {
                     var stream = reader!.GetFile(nativePath);
@@ -718,6 +718,8 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 }, Path.GetFileName(nativePath));
                 ImGui.CloseCurrentPopup();
             }
+            ImGui.SameLine();
+            ImguiHelpers.DrawMultiColorIconWithText(AppIcons.SIC_FileExtractTo, "| Extract File to...", new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary });
             ImGui.Spacing();
             if (isBookmarked) {
                 if (ImGui.Selectable("##RemoveBookmark")) {
@@ -734,10 +736,12 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             }
             ImGui.Spacing();
             if (Path.HasExtension(file)) {
-                if (ImGui.Selectable("Jump to Containing Folder")) {
+                if (ImGui.Selectable("##JumpToContainingFolder")) {
                     string currFolder = Path.GetDirectoryName(file)!;
                     _currentDir = PathUtils.NormalizeFilepath(currFolder);
                 }
+                ImGui.SameLine();
+                ImguiHelpers.DrawMultiColorIconWithText(AppIcons.SIC_FolderContain, "| Jump to Containing Folder", new[] { Colors.IconPrimary, Colors.IconSecondary });
             }
             if (showSort) {
                 ImGui.Separator();

@@ -739,12 +739,13 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
         using (var _ = ImguiHelpers.Disabled(!animator.IsActive)) {
             int frame = animator.CurrentFrame;
-            ImGui.SetNextItemWidth(350);
+            ImGui.SetNextItemWidth(325);
             if (ImGui.SliderInt("##AnimFrameSlider", ref frame, 0, animator.TotalFrames)) {
                 animator.Pause();
                 animator.Seek(frame * animator.FrameDuration);
                 animator.Update(0);
             }
+            ImGui.PopItemWidth();
         }
 
         ImGui.EndChild();

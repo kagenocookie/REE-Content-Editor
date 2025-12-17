@@ -332,8 +332,18 @@ public static class AppIcons
     public static readonly char SI_LogDebug = '\ued84';
     public static readonly char SI_GenericClear = '\ued85';
     public static readonly char SI_TagMisc = '\ued86';
+    public static readonly char SI_Settings = '\ued87';
+    public static readonly char SI_Settings2 = '\ued88';
+    public static readonly char SI_Folder = '\ued89';
+    public static readonly char SI_FolderEmpty = '\ued8a';
+    public static readonly char SI_FolderOpen = '\ued8b';
+    public static readonly char[] SIC_FileExtractTo = { '\ued8c', '\ued8d', '\ued8e' };
+    public static readonly char[] SIC_FolderOpenFileExplorer = { '\ued91', '\ued92', };
+    public static readonly char[] SIC_FolderFile = { '\ued93', '\ued94', };
+    public static readonly char[] SIC_FolderContain = { '\ued95', '\ued96', };
+    public static readonly char[] SIC_FolderContain2 = { '\ued97', '\ued98', '\ued99' };
 
-    public static readonly uint[] Range = [(uint)EfxEntry, SI_TagMisc, 0];
+    public static readonly uint[] Range = [(uint)EfxEntry, SIC_FolderContain2[0], SIC_FolderContain2[2], 0];
 
     public static string PrependIcon(this string text, object target)
     {
