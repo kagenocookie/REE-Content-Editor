@@ -298,7 +298,10 @@ public partial class CommonMeshResource : IResourceFile
         float scale = AppConfig.Settings.Import.Scale;
 
         // setup mot bone hierarchy
-        var boneNames = scene.Animations.SelectMany(a => a.NodeAnimationChannels.Select(ann => CleanBoneName(ann.NodeName))).ToHashSet();
+        var boneNames = scene.Animations
+            .SelectMany(a => a.NodeAnimationChannels.Select(ann => CleanBoneName(ann.NodeName)))
+            .Where(name => !name.StartsWith(SecondaryWeightDummyBonePrefix) && !name.StartsWith(ShapekeyPrefix))
+            .ToHashSet();
         static void AddRecursiveBones(List<MotBone> bones, NodeCollection children, HashSet<string> boneNames, MotBone? parentBone, float scale)
         {
             foreach (var node in children) {
@@ -357,6 +360,8 @@ public partial class CommonMeshResource : IResourceFile
             // TODO determine best compression types
             foreach (var channel in aiAnim.NodeAnimationChannels.OrderBy(ch => orderedBoneNames.IndexOf(CleanBoneName(ch.NodeName)))) {
                 var boneName = CleanBoneName(channel.NodeName);
+                if (!orderedBoneNames.Contains(boneName)) continue;
+
                 var existingClip = mot.BoneClips.FirstOrDefault(c => c.ClipHeader.boneName == boneName);
                 var clipHeader = existingClip?.ClipHeader ?? new BoneClipHeader(motver);
                 var clip = existingClip ?? new BoneMotionClip(clipHeader);
@@ -416,6 +421,7 @@ public partial class CommonMeshResource : IResourceFile
                     track.frameRate = targetFps;
                     track.frameIndexes = new int[channel.RotationKeyCount];
                     track.rotations = new Quaternion[channel.RotationKeyCount];
+                    track.RotationCompressionType = QuaternionDecompression.LoadQuaternions3Component;
                     track.keyCount = channel.RotationKeyCount;
                     for (int i = 0; i < channel.RotationKeyCount; ++i) {
                         var key = channel.RotationKeys[i];
