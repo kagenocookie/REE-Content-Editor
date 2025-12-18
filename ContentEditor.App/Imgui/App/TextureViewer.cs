@@ -88,10 +88,6 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         SetImageSource(file);
     }
 
-    public TextureViewer()
-    {
-    }
-
     public void Focus()
     {
         var data = context.Get<WindowData>();
@@ -166,8 +162,13 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         }
 
         if (texture != null) {
-            ImGui.Text($"Path: {texture.Path}");
-            ImGui.Text($"Size: {texture.Width} x {texture.Height} | Format: {texture.Format} | Channels:");
+            if (ImGui.Button("Path") && texture.Path != null) {
+                EditorWindow.CurrentWindow?.CopyToClipboard(texture.Path);
+            }
+            ImguiHelpers.Tooltip($"{texture.Path}");
+            ImGui.SameLine();
+            ImGui.Text($"| Size: {texture.Width} x {texture.Height} | Format: {texture.Format}");
+            ImGui.Text("Channels:");
             ImGui.SameLine();
             if (ImGui.RadioButton("RGBA", currentChannel == TextureChannel.RGBA)) {
                 currentChannel = TextureChannel.RGBA;
@@ -311,7 +312,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                 ImGui.EndMenu();
             }
 
-            if (ImGui.BeginMenu($"{AppIcons.SI_GenericConvert} Convert")) {
+            if (ImGui.BeginMenu("Convert")) {
                 ShowExportMenu();
                 ImGui.EndMenu();
             }
@@ -398,7 +399,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
 
         ImguiHelpers.ValueCombo("DXGI Format", DxgiFormatStrings, DxgiFormats, ref exportFormat);
         ImguiHelpers.Tooltip("The format to convert non-DDS images to.");
-
+        ImGui.Spacing();
         var mmo = (int)mipMapOption;
         ImGui.BeginGroup();
         if (ImguiHelpers.InlineRadioGroup(MipGenLabels, MipGenValues, ref mmo)) {
@@ -410,7 +411,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         if (exportFormat != selectedFormatPreset.format || mipMapOption != selectedFormatPreset.mips) {
             selectedFormatPreset = default;
         }
-
+        ImGui.Spacing();
         var conv1 = ImGui.Button($"{AppIcons.SI_GenericConvert} Convert");
         if (fileHandle.Loader is TexFileLoader) {
             ImGui.SameLine();
