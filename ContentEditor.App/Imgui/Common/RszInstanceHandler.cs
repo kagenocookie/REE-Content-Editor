@@ -313,7 +313,11 @@ public class InstancePickerHandler<T>(bool allowNull, Func<UIContext, bool, IEnu
     public void OnIMGUI(UIContext context)
     {
         var instance = context.Get<T>();
-        var availableInstances = instanceProvider.Invoke(context, false).ToArray();
+        var availableInstances = context.GetStateArray<T>();
+        if (availableInstances == null) {
+            availableInstances = instanceProvider.Invoke(context, false).ToArray();
+            context.SetStateArray<T>(availableInstances);
+        }
         var labels = availableInstances.Select(inst => inst?.ToString() ?? "<NULL>").ToArray();
 
         var restW = ImGui.CalcItemWidth();
@@ -326,7 +330,8 @@ public class InstancePickerHandler<T>(bool allowNull, Func<UIContext, bool, IEnu
         }
         if (!DisableRefresh) {
             if (ImGui.Button("Refresh list")) {
-                _ = instanceProvider.Invoke(context, true).ToArray();
+                availableInstances = instanceProvider.Invoke(context, true).ToArray();
+                context.SetStateArray<T>(availableInstances);
             }
             restW -= ImGui.CalcTextSize("Refresh list").X + ImGui.GetStyle().FramePadding.X * 2;
             ImGui.SameLine();

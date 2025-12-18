@@ -97,6 +97,7 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         if (context.children.Count == 0) {
             context.AddChild<MotlistFile, string>("Motlist Name", File, getter: (m) => m!.Header.MotListName, setter: (m, n) => m.Header.MotListName = n ?? string.Empty).AddDefaultHandler<string>();
             context.AddChild<MotlistFile, string>("Base Motlist Path", File, getter: (m) => m!.Header.BaseMotListPath, setter: (m, n) => m.Header.BaseMotListPath = n ?? string.Empty).AddDefaultHandler<string>();
+            context.AddChild<MotlistFile, short>("HeaderNum", File, getter: (m) => m!.Header.uknNum, setter: (m, n) => m.Header.uknNum = n).AddDefaultHandler();
             context.AddChild<MotlistFile, List<MotFileBase>>("Motion Files", File, getter: (m) => m!.MotFiles).AddDefaultHandler<List<MotFileBase>>();
             context.AddChild<MotlistFile, List<MotIndex>>("Motions", File, getter: (m) => m!.Motions).AddDefaultHandler<List<MotIndex>>();
         }
@@ -523,6 +524,7 @@ public class MotFileListHandler : ListHandler
         var mot = new MotFile(editor.File.FileHandler);
         var boneSource = editor.File.MotFiles.FirstOrDefault() as MotFile;
         if (boneSource != null) mot.CopyBones(boneSource);
+        mot.Header.version = editor.File.Header.version.GetMotVersion();
 
         return mot;
     }
@@ -637,10 +639,43 @@ public class CTrackHandler : IObjectUIHandler
         }
     }
 }
+[ObjectImguiHandler(typeof(List<Key>))]
+public class KeyListHandler : ListHandler
+{
+    public static readonly KeyListHandler Instance = new();
+
+    public KeyListHandler() : base(typeof(Key), typeof(List<Key>))
+    {
+        CanCreateRemoveElements = true;
+    }
+
+    protected override object? CreateNewElement(UIContext context)
+    {
+        var prop = context.FindValueInParentValues<Property>();
+        var firstKey = prop?.Keys?.FirstOrDefault();
+        var version = prop?.Info?.Version ?? context.FindValueInParentValues<ClipFile>()?.Header.version ?? ClipVersion.MHWilds;
+        Key newKey = firstKey switch {
+            ShortValueKey => new ShortValueKey(version),
+            ShortKey => new ShortKey(version),
+            _ => new ShortValueKey(version)
+        };
+
+        return newKey;
+    }
+
+    protected override UIContext CreateElementContext(UIContext context, IList list, int elementIndex)
+    {
+        var key = list[elementIndex];
+        var ctx = WindowHandlerFactory.CreateListElementContext(context, elementIndex);
+        WindowHandlerFactory.SetupArrayElementHandler(ctx, key?.GetType() ?? typeof(Key));
+        return ctx;
+    }
+}
 
 [ObjectImguiHandler(typeof(Key))]
 public class KeyHandler : IObjectUIHandler
 {
+    public static readonly KeyHandler Instance = new();
     private static MemberInfo[] DisplayedFields = [
         typeof(Key).GetProperty(nameof(Key.Value))!,
         typeof(Key).GetField(nameof(Key.frame))!,
@@ -666,9 +701,10 @@ public class KeyHandler : IObjectUIHandler
     }
 }
 
-[ObjectImguiHandler(typeof(ShortKey))]
+[ObjectImguiHandler(typeof(ShortKey), Stateless = true)]
 public class ShortKeyHandler : IObjectUIHandler
 {
+    public static readonly ShortKeyHandler Instance = new();
     private static MemberInfo[] DisplayedFields = [
         typeof(Key).GetField(nameof(Key.frame))!,
         typeof(Key).GetField(nameof(Key.interpolation))!,
@@ -689,9 +725,10 @@ public class ShortKeyHandler : IObjectUIHandler
     }
 }
 
-[ObjectImguiHandler(typeof(ShortValueKey))]
+[ObjectImguiHandler(typeof(ShortValueKey), Stateless = true)]
 public class ShortValueKeyHandler : IObjectUIHandler
 {
+    public static readonly ShortValueKeyHandler Instance = new();
     private static MemberInfo[] DisplayedFields = [
         typeof(Key).GetProperty(nameof(Key.Value))!,
         typeof(Key).GetField(nameof(Key.frame))!,
@@ -730,7 +767,7 @@ public class PropertyHandler : IObjectUIHandler
         if (context.children.Count == 0) {
             context.AddChild<Property, ReeLib.Clip.PropertyInfo>("Info", instance, getter: p => p!.Info).AddDefaultHandler();
             context.AddChild<Property, List<Property>>("Child Properties", instance, new ConditionalUIHandler(new ListHandlerTyped<Property>(), static c => ((Property)c.target!).IsPropertyContainer), getter: p => p!.ChildProperties);
-            context.AddChild<Property, List<Key>>("Keys", instance, new ConditionalUIHandler(new ListHandlerTyped<Key>(), static c => !((Property)c.target!).IsPropertyContainer), getter: p => p!.Keys);
+            context.AddChild<Property, List<Key>>("Keys", instance, new ConditionalUIHandler(KeyListHandler.Instance, static c => !((Property)c.target!).IsPropertyContainer), getter: p => p!.Keys);
         }
 
         if (AppImguiHelpers.CopyableTreeNode<Property>(context)) {

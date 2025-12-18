@@ -202,16 +202,16 @@ public class BHVTNodeEditor : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var node = context.Get<BHVTNode>();
-        if (context.children.Count == 0) {
-            if (node == null) {
-                ImGui.Text(context.label + ": null");
-                ImGui.SameLine();
-                if (ImGui.Button("Create")) {
-                    UndoRedo.RecordSet(context, WindowHandlerFactory.Instantiate(context, typeof(BHVTNode)));
-                }
-                return;
+        if (node == null) {
+            ImGui.Text(context.label + ": null");
+            ImGui.SameLine();
+            if (ImGui.Button("Create")) {
+                UndoRedo.RecordSet(context, WindowHandlerFactory.Instantiate(context, typeof(BHVTNode)));
             }
+            return;
+        }
 
+        if (context.children.Count == 0) {
             context.AddChild<BHVTNode, NodeID>("ID", node, getter: (f) => f!.ID, setter: (f, v) => f.ID = v).AddDefaultHandler();
             context.AddChild<BHVTNode, string>("Name", node, getter: (f) => f!.Name, setter: (f, v) => f.Name = v ?? "").AddDefaultHandler();
             context.AddChild<BHVTNode, int>("Priority", node, getter: (f) => f!.Priority, setter: (f, v) => f.Priority = v).AddDefaultHandler();
@@ -322,6 +322,14 @@ public class NodeChildrenListHandler : ListHandlerTyped<NChild>
         }
 
         return false;
+    }
+
+    protected override object? CreateNewElement(UIContext context)
+    {
+        var version = context.FindHandlerInParents<BHVTNode>()?.Transitions.Version ?? GameVersion.re3;
+        var child = new NChild();
+        child.ChildNode = WindowHandlerFactory.Instantiate<BHVTNode>(context);
+        return child;
     }
 }
 

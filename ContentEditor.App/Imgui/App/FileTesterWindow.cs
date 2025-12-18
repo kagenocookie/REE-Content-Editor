@@ -562,7 +562,7 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<Submesh>((m) => [m.materialIndex, m.bufferIndex, m.ukn2, m.indicesCount]);
         AddCompareMapper<MeshStreamingInfo>((m) => [m.Entries]);
 
-        AddCompareMapper<MotlistFile>((m) => [m.Header.MotListName, m.Header.BaseMotListPath, m.Header.numMots, m.Header.uknValue, m.MotFiles, m.Motions]);
+        AddCompareMapper<MotlistFile>((m) => [m.Header.MotListName, m.Header.BaseMotListPath, m.Header.numMots, m.Header.uknNum, m.Header.uknValue, m.MotFiles, m.Motions]);
         AddCompareMapper<MotFile>((m) => [m.Name, m.MotPropertyTracks, m.BoneHeaders, m.BoneClips, m.Clips, m.Bones,
             // ignoring these two for now - end clips because the read is inconsistent, tree because it's massive and also works fine
             // m.EndClips, m.PropertyTree
