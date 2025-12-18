@@ -752,7 +752,6 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 animator.Seek(frame * animator.FrameDuration);
                 animator.Update(0);
             }
-            ImGui.PopItemWidth();
         }
 
         ImGui.EndChild();
