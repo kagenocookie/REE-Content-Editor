@@ -91,7 +91,7 @@ public class UcurveFileObjectHandler : IObjectUIHandler
 
             context.AddChild<UcurveFile, List<TimelineNode>>("Nodes", file, new ListHandler(typeof(TimelineNode), typeof(List<TimelineNode>)), (m) => m!.RootNodes);
             context.AddChild<UcurveFile, List<Property>>("Properties", file, new ListHandler(typeof(Property), typeof(List<Property>)), (m) => m!.Properties);
-            context.AddChild<UcurveFile, List<Key>>("Keys", file, new ListHandler(typeof(Key), typeof(List<Key>)), (m) => m!.Keys);
+            context.AddChild<UcurveFile, List<NormalKey>>("Keys", file, new ListHandler(typeof(NormalKey), typeof(List<NormalKey>)), (m) => m!.Keys);
         }
         context.ShowChildrenUI();
     }

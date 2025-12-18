@@ -29,8 +29,8 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         WindowHandlerFactory.DefineInstantiator<EndClipStruct>((ctx) => new EndClipStruct() { Version = GetVersionFromContext(ctx) });
         WindowHandlerFactory.DefineInstantiator<CTrack>((ctx) => new CTrack(GetVersionFromContext(ctx)));
         WindowHandlerFactory.DefineInstantiator<Property>((ctx) => new Property(GetVersionFromContext(ctx)));
-        WindowHandlerFactory.DefineInstantiator<Key>((ctx) => {
-            var key = new Key(GetVersionFromContext(ctx));
+        WindowHandlerFactory.DefineInstantiator<NormalKey>((ctx) => {
+            var key = new NormalKey(GetVersionFromContext(ctx));
             var property = ctx.FindValueInParentValues<Property>();
             if (property != null) {
                 key.PropertyType = property.Info.DataType;
@@ -351,7 +351,7 @@ public class BoneMotionClipHandler : IObjectUIHandler
             context.AddChild<BoneMotionClip, Track>(nameof(BoneMotionClip.Scale), instance, new TrackHandler(), m => m!.Scale, (m, v) => m.Scale = v);
         }
 
-        if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString())) {
+        if (AppImguiHelpers.CopyableTreeNode<BoneMotionClip>(context)) {
             context.ShowChildrenUI();
             ImGui.TreePop();
         }
@@ -639,12 +639,12 @@ public class CTrackHandler : IObjectUIHandler
         }
     }
 }
-[ObjectImguiHandler(typeof(List<Key>))]
+[ObjectImguiHandler(typeof(List<KeyBase>))]
 public class KeyListHandler : ListHandler
 {
     public static readonly KeyListHandler Instance = new();
 
-    public KeyListHandler() : base(typeof(Key), typeof(List<Key>))
+    public KeyListHandler() : base(typeof(KeyBase), typeof(List<KeyBase>))
     {
         CanCreateRemoveElements = true;
     }
@@ -654,11 +654,13 @@ public class KeyListHandler : ListHandler
         var prop = context.FindValueInParentValues<Property>();
         var firstKey = prop?.Keys?.FirstOrDefault();
         var version = prop?.Info?.Version ?? context.FindValueInParentValues<ClipFile>()?.Header.version ?? ClipVersion.MHWilds;
-        Key newKey = firstKey switch {
-            ShortValueKey => new ShortValueKey(version),
-            ShortKey => new ShortKey(version),
-            _ => new ShortValueKey(version)
+        KeyBase newKey = firstKey switch {
+            NoHermiteKey => new NoHermiteKey(version),
+            BoolKey => new BoolKey(version),
+            _ => new NoHermiteKey(version)
         };
+        newKey.PropertyType = prop?.Info.DataType ?? PropertyType.Unknown;
+        newKey.ResetValue();
 
         return newKey;
     }
@@ -667,85 +669,85 @@ public class KeyListHandler : ListHandler
     {
         var key = list[elementIndex];
         var ctx = WindowHandlerFactory.CreateListElementContext(context, elementIndex);
-        WindowHandlerFactory.SetupArrayElementHandler(ctx, key?.GetType() ?? typeof(Key));
+        WindowHandlerFactory.SetupArrayElementHandler(ctx, key?.GetType() ?? typeof(NormalKey));
         return ctx;
     }
 }
 
-[ObjectImguiHandler(typeof(Key))]
+[ObjectImguiHandler(typeof(NormalKey))]
 public class KeyHandler : IObjectUIHandler
 {
     public static readonly KeyHandler Instance = new();
     private static MemberInfo[] DisplayedFields = [
-        typeof(Key).GetProperty(nameof(Key.Value))!,
-        typeof(Key).GetField(nameof(Key.frame))!,
-        typeof(Key).GetField(nameof(Key.rate))!,
-        typeof(Key).GetField(nameof(Key.interpolation))!,
-        typeof(Key).GetField(nameof(Key.flags))!,
-        typeof(Key).GetField(nameof(Key.unknown))!,
-        typeof(Key).GetField(nameof(Key.hermiteDataIndex))!,
+        typeof(NormalKey).GetProperty(nameof(NormalKey.Value))!,
+        typeof(NormalKey).GetField(nameof(NormalKey.frame))!,
+        typeof(NormalKey).GetField(nameof(NormalKey.rate))!,
+        typeof(NormalKey).GetField(nameof(NormalKey.interpolation))!,
+        typeof(NormalKey).GetField(nameof(NormalKey.flags))!,
+        typeof(NormalKey).GetField(nameof(NormalKey.unknown))!,
+        typeof(NormalKey).GetField(nameof(NormalKey.hermiteDataIndex))!,
     ];
 
     public void OnIMGUI(UIContext context)
     {
         if (context.children.Count == 0) {
-            var instance = context.Get<Key>();
-            context.AddChild<Key, string>("Property Type", instance, new ReadOnlyWrapperHandler(StringFieldHandler.Instance), (c) => c!.PropertyType.ToString());
-            WindowHandlerFactory.SetupObjectUIContext(context, typeof(Key), false, DisplayedFields);
+            var instance = context.Get<NormalKey>();
+            context.AddChild<NormalKey, string>("Property Type", instance, new ReadOnlyWrapperHandler(StringFieldHandler.Instance), (c) => c!.PropertyType.ToString());
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(NormalKey), false, DisplayedFields);
         }
 
-        if (AppImguiHelpers.CopyableTreeNode<Key>(context)) {
+        if (AppImguiHelpers.CopyableTreeNode<NormalKey>(context)) {
             context.ShowChildrenUI();
             ImGui.TreePop();
         }
     }
 }
 
-[ObjectImguiHandler(typeof(ShortKey), Stateless = true)]
+[ObjectImguiHandler(typeof(BoolKey), Stateless = true)]
 public class ShortKeyHandler : IObjectUIHandler
 {
     public static readonly ShortKeyHandler Instance = new();
     private static MemberInfo[] DisplayedFields = [
-        typeof(Key).GetField(nameof(Key.frame))!,
-        typeof(Key).GetField(nameof(Key.interpolation))!,
-        typeof(Key).GetField(nameof(Key.flags))!,
-        typeof(Key).GetField(nameof(Key.unknown))!,
+        typeof(BoolKey).GetField(nameof(BoolKey.frame))!,
+        typeof(BoolKey).GetField(nameof(BoolKey.flags))!,
+        typeof(BoolKey).GetField(nameof(BoolKey.uknByte))!,
+        typeof(BoolKey).GetField(nameof(BoolKey.value))!,
     ];
 
     public void OnIMGUI(UIContext context)
     {
         if (context.children.Count == 0) {
-            WindowHandlerFactory.SetupObjectUIContext(context, typeof(ShortKey), false, DisplayedFields);
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(BoolKey), false, DisplayedFields);
         }
 
-        if (AppImguiHelpers.CopyableTreeNode<ShortKey>(context)) {
+        if (AppImguiHelpers.CopyableTreeNode<BoolKey>(context)) {
             context.ShowChildrenUI();
             ImGui.TreePop();
         }
     }
 }
 
-[ObjectImguiHandler(typeof(ShortValueKey), Stateless = true)]
+[ObjectImguiHandler(typeof(NoHermiteKey), Stateless = true)]
 public class ShortValueKeyHandler : IObjectUIHandler
 {
     public static readonly ShortValueKeyHandler Instance = new();
     private static MemberInfo[] DisplayedFields = [
-        typeof(Key).GetProperty(nameof(Key.Value))!,
-        typeof(Key).GetField(nameof(Key.frame))!,
-        typeof(Key).GetField(nameof(Key.interpolation))!,
-        typeof(Key).GetField(nameof(Key.flags))!,
-        typeof(Key).GetField(nameof(Key.unknown))!,
+        typeof(NormalKey).GetProperty(nameof(NormalKey.Value))!,
+        typeof(NormalKey).GetField(nameof(NormalKey.frame))!,
+        typeof(NormalKey).GetField(nameof(NormalKey.interpolation))!,
+        typeof(NormalKey).GetField(nameof(NormalKey.flags))!,
+        typeof(NormalKey).GetField(nameof(NormalKey.unknown))!,
     ];
 
     public void OnIMGUI(UIContext context)
     {
         if (context.children.Count == 0) {
-            var instance = context.Get<ShortValueKey>();
-            context.AddChild<ShortValueKey, string>("Property Type", instance, new ReadOnlyWrapperHandler(StringFieldHandler.Instance), (c) => c!.PropertyType.ToString());
-            WindowHandlerFactory.SetupObjectUIContext(context, typeof(ShortValueKey), false, DisplayedFields);
+            var instance = context.Get<NoHermiteKey>();
+            context.AddChild<NoHermiteKey, string>("Property Type", instance, new ReadOnlyWrapperHandler(StringFieldHandler.Instance), (c) => c!.PropertyType.ToString());
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(NoHermiteKey), false, DisplayedFields);
         }
 
-        if (AppImguiHelpers.CopyableTreeNode<ShortValueKey>(context)) {
+        if (AppImguiHelpers.CopyableTreeNode<NoHermiteKey>(context)) {
             context.ShowChildrenUI();
             ImGui.TreePop();
         }
@@ -761,13 +763,13 @@ public class PropertyHandler : IObjectUIHandler
         if (instance.IsPropertyContainer) {
             instance.ChildProperties ??= new List<Property>();
         } else {
-            instance.Keys ??= new List<Key>();
+            instance.Keys ??= new List<KeyBase>();
         }
 
         if (context.children.Count == 0) {
             context.AddChild<Property, ReeLib.Clip.PropertyInfo>("Info", instance, getter: p => p!.Info).AddDefaultHandler();
             context.AddChild<Property, List<Property>>("Child Properties", instance, new ConditionalUIHandler(new ListHandlerTyped<Property>(), static c => ((Property)c.target!).IsPropertyContainer), getter: p => p!.ChildProperties);
-            context.AddChild<Property, List<Key>>("Keys", instance, new ConditionalUIHandler(KeyListHandler.Instance, static c => !((Property)c.target!).IsPropertyContainer), getter: p => p!.Keys);
+            context.AddChild<Property, List<KeyBase>>("Keys", instance, new ConditionalUIHandler(KeyListHandler.Instance, static c => !((Property)c.target!).IsPropertyContainer), getter: p => p!.Keys);
         }
 
         if (AppImguiHelpers.CopyableTreeNode<Property>(context)) {
@@ -787,6 +789,9 @@ public class PropertyInfoHandler : IObjectUIHandler
         typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.arrayIndex))!,
         typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.speedPointNum))!,
         typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.uknCount))!,
+        typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.uknByte))!,
+        typeof(ReeLib.Clip.PropertyInfo).GetField(nameof(ReeLib.Clip.PropertyInfo.uknByte2))!,
+        typeof(ReeLib.Clip.PropertyInfo).GetProperty(nameof(ReeLib.Clip.PropertyInfo.KeyType))!,
     ];
 
     public void OnIMGUI(UIContext context)

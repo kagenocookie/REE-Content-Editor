@@ -343,7 +343,7 @@ public partial class CommonMeshResource : IResourceFile
             mot.RootBones.AddRange(rootBones);
             mot.BoneHeaders = boneHeaders;
 
-            var sourceFps = aiAnim.TicksPerSecond;
+            double sourceFps = aiAnim.TicksPerSecond;
             ushort targetFps = 60;
             if (sourceFps == 0) sourceFps = 60;
 
@@ -355,9 +355,9 @@ public partial class CommonMeshResource : IResourceFile
             var motIndex = new MotIndex(motlist.Header.version) { MotFile = mot, motNumber = (ushort)motlist.MotFiles.Count };
             motlist.Motions.Add(motIndex);
 
-            var timeScale = targetFps / sourceFps;
+            double timeScale = targetFps / sourceFps;
 
-            // TODO determine best compression types
+            // TODO add compression calculation method somewhere
             foreach (var channel in aiAnim.NodeAnimationChannels.OrderBy(ch => orderedBoneNames.IndexOf(CleanBoneName(ch.NodeName)))) {
                 var boneName = CleanBoneName(channel.NodeName);
                 if (!orderedBoneNames.Contains(boneName)) continue;
@@ -391,7 +391,6 @@ public partial class CommonMeshResource : IResourceFile
                         var key = channel.PositionKeys[i];
                         track.frameIndexes[i] = (int)Math.Round(key.Time * timeScale);
                         track.translations[i] = key.Value * scale;
-                        if (allEqual) break;
                     }
                     // additional hack because some fbx files have duplicate root bones but all of them have all key types and we don't want to overwrite them
                     if (!allEqual || !clip.HasTranslation) clip.Translation = track;
@@ -431,7 +430,6 @@ public partial class CommonMeshResource : IResourceFile
                             quat = Quaternion.Negate(quat);
                         }
                         track.rotations[i] = quat;
-                        if (allEqual) break;
                     }
                     if (!allEqual || !clip.HasRotation) clip.Rotation = track;
                 }

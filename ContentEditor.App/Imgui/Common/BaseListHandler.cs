@@ -217,6 +217,15 @@ public class ResizableArrayHandler : BaseListHandler
         return Array.CreateInstance(elementType, 0);
     }
 
+    protected override bool ShowContextMenuItems(UIContext context)
+    {
+        if (ImGui.Selectable("Clear")) {
+            UndoRedo.RecordSet(context, Array.CreateInstance(elementType, 0));
+            return true;
+        }
+        return false;
+    }
+
     protected override UIContext CreateElementContext(UIContext context, IList list, int elementIndex)
     {
         var ctx = WindowHandlerFactory.CreateListElementContext(context, elementIndex);
