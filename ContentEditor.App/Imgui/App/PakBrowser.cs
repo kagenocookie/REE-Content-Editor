@@ -62,7 +62,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
     private bool isShowBookmarks = false;
     private int itemsPerPage = 1000;
 
-    private ImGuiSortDirection gridSortDir = ImGuiSortDirection.Descending;
+    private ImGuiSortDirection gridSortDir = ImGuiSortDirection.Ascending;
     private int gridSortColumn;
 
     // TODO should probably store somewhere else?
@@ -491,7 +491,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             if (isBookmarked) {
                 ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
             } else {
-                ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.Text]);
+                ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.Text));
             }
             var filename = Path.GetFileName(PathUtils.GetFilepathWithoutSuffixes(file.AsSpan()));
             var displayName = filename;
