@@ -7,6 +7,7 @@ using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Common;
 using ReeLib.Il2cpp;
 using ReeLib.via;
 using Silk.NET.Maths;
@@ -693,13 +694,73 @@ public class SizeFieldHandler : Singleton<SizeFieldHandler>, IObjectUIHandler
 
 public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IObjectUIHandler
 {
+    private string? baseClassname;
+
+    public UserDataReferenceHandler()
+    {
+    }
+
+    public UserDataReferenceHandler(string originalType)
+    {
+        baseClassname = originalType;
+    }
+
     public void OnIMGUI(UIContext context)
     {
         var instance = context.Get<RszInstance>();
         var ws = context.GetWorkspace();
         if (instance.RSZUserData == null || ws == null) {
             if (instance.RszClass.crc == 0) {
-                ImGui.Text(context.label + ": NULL");
+                if (ws != null && !string.IsNullOrEmpty(baseClassname)) {
+                    var subtypes = ws.Env.TypeCache.GetSubclasses(baseClassname).ToArray();
+                    if (subtypes.Length == 0) {
+                        ImGui.Text(context.label + ": NULL (unable to create new instance)");
+                        return;
+                    }
+                    if (ws.Env.IsEmbeddedUserdata || ws.Env.IsEmbeddedInstanceInfoUserdata) {
+                        // TODO recheck re7 userdata
+                        ImGui.PushID(context.label);
+                        ImguiHelpers.BeginRect();
+                        ImGui.Text(context.label + ": NULL");
+
+                        if (string.IsNullOrEmpty(context.ClassnameFilter)) {
+                            context.ClassnameFilter = subtypes[0];
+                        }
+                        ImguiHelpers.ValueCombo(context.label, subtypes, subtypes, ref context.ClassnameFilter);
+                        if (!string.IsNullOrEmpty(context.ClassnameFilter)) {
+                            ImGui.SameLine();
+                            if (ImGui.Button("Create")) {
+                                var parentRsz = context.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
+                                if (parentRsz == null) {
+                                    Logger.Error("Can't find parent RSZ file!");
+                                } else {
+                                    var rsz = new RSZFile(ws.Env.RszFileOption, new FileHandler());
+                                    var newInstance = ws.Env.CreateRszInstance(context.ClassnameFilter);
+                                    rsz.AddToObjectTable(newInstance);
+                                    newInstance.Values[0] = $"assets:/UserData/{newInstance.RszClass.ShortName}_{System.Random.Shared.Next()}.user.json";
+
+                                    var uinfo = new RSZUserDataInfo_TDB_LE_67() {
+                                        ClassName = newInstance.RszClass.name,
+                                        typeId = newInstance.RszClass.typeId,
+                                        jsonPathHash = MurMur3HashUtils.GetHash((string)newInstance.Values[0]),
+                                        EmbeddedRSZ = rsz,
+                                    };
+                                    parentRsz.EmbeddedRSZFileList ??= new List<RSZFile>();
+                                    parentRsz.EmbeddedRSZFileList.Add(rsz);
+                                    parentRsz.RSZUserDataInfoList.Add(uinfo);
+                                    var rszLinkInstance = new RszInstance(newInstance.RszClass, uinfo);
+                                    context.Set(rszLinkInstance);
+                                    context.ResetState();
+                                }
+                            }
+                        }
+                        ImguiHelpers.EndRect(4);
+                        ImGui.PopID();
+                    }
+                    return;
+                }
+
+                ImGui.Text(context.label + ": NULL (unable to create new instance)");
                 return;
             }
             ImGui.TextColored(Colors.Warning, "Invalid UserData instance");
@@ -770,7 +831,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                             info.typeId = file.RSZ.ObjectList[0].RszClass.typeId;
                         } else {
                             // create a new userdata info
-                            ctx.parent!.Set(instance = new RszInstance(file.RSZ.ObjectList[0].RszClass, -1, new RSZUserDataInfo() {
+                            ctx.parent!.Set(instance = new RszInstance(file.RSZ.ObjectList[0].RszClass, new RSZUserDataInfo() {
                                 Path = newPath,
                                 typeId = file.RSZ.ObjectList[0].RszClass.typeId,
                                 instanceId = instance.Index,
