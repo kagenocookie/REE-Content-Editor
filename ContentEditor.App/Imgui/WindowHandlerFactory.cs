@@ -539,7 +539,7 @@ public static partial class WindowHandlerFactory
             RszFieldType.RuntimeType => StringFieldHandler.Instance, // TODO proper RuntimeType editor (use il2cpp data)
             RszFieldType.Resource => new ResourcePathPicker(ws, field),
 
-            RszFieldType.UserData => new UserDataReferenceHandler(),
+            RszFieldType.UserData => new UserDataReferenceHandler(field.original_type),
 
             RszFieldType.S8 => new NumericFieldHandler<sbyte>(ImGuiDataType.S8),
             RszFieldType.S16 => TryCreateEnumHandler(ws, field.array ? RszInstance.GetElementType(field.original_type) : field.original_type) ?? new NumericFieldHandler<short>(ImGuiDataType.S16),

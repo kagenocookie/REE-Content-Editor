@@ -546,25 +546,33 @@ public class RszDataFinder : IWindowHandler
                 file.Read();
                 var rsz = file.GetRSZ()!;
 
-                foreach (var inst in rsz.InstanceList) {
-                    if (context.Token.IsCancellationRequested) return;
-                    if (inst.RszClass == cls && inst.RSZUserData == null) {
-                        if (value == null) {
-                            AddMatch(context, FindPathToRszObject(rsz, inst, file), path);
-                            break;
-                        }
+                var rszList = new [] { rsz };
 
-                        var fieldValue = inst.Values[fieldIndex];
-                        if (array) {
-                            var values = (IList<object>)fieldValue;
-                            foreach (var v in values) {
-                                if (equalityComparer(v, value)) {
-                                    AddMatch(context, FindPathToRszObject(rsz, inst, file), path);
-                                }
+                if (rsz.EmbeddedRSZFileList != null) {
+                    rszList = rszList.Concat(rsz.EmbeddedRSZFileList).ToArray();
+                }
+
+                foreach (var inRsz in rszList) {
+                    foreach (var inst in inRsz.InstanceList) {
+                        if (context.Token.IsCancellationRequested) return;
+                        if (inst.RszClass == cls && inst.RSZUserData == null) {
+                            if (value == null) {
+                                AddMatch(context, FindPathToRszObject(inRsz, inst, file), path);
+                                break;
                             }
-                        } else {
-                            if (equalityComparer(fieldValue, value)) {
-                                AddMatch(context, FindPathToRszObject(rsz, inst, file), path);
+
+                            var fieldValue = inst.Values[fieldIndex];
+                            if (array) {
+                                var values = (IList<object>)fieldValue;
+                                foreach (var v in values) {
+                                    if (equalityComparer(v, value)) {
+                                        AddMatch(context, FindPathToRszObject(inRsz, inst, file), path);
+                                    }
+                                }
+                            } else {
+                                if (equalityComparer(fieldValue, value)) {
+                                    AddMatch(context, FindPathToRszObject(inRsz, inst, file), path);
+                                }
                             }
                         }
                     }
@@ -611,27 +619,35 @@ public class RszDataFinder : IWindowHandler
                     }
                 }
 
-                foreach (var inst in rsz.InstanceList) {
-                    if (inst.RSZUserData != null) continue;
-                    foreach (var field in inst.Fields) {
-                        if (!fieldTypes.Contains(field.type)) continue;
+                var rszList = new [] { rsz };
 
-                        if (queryValue == null) {
-                            AddMatch(context, $"{FindPathToRszObject(rsz, inst, file)} {field.name} = {inst.GetFieldValue(field.name)}", path);
-                            return;
-                        }
+                if (rsz.EmbeddedRSZFileList != null) {
+                    rszList = rszList.Concat(rsz.EmbeddedRSZFileList).ToArray();
+                }
 
-                        var fieldValue = inst.GetFieldValue(field.name);
-                        if (field.array) {
-                            var values = (IList<object>)fieldValue!;
-                            foreach (var v in values) {
-                                if (equalityComparer(v, queryValue)) {
-                                    AddMatch(context, FindPathToRszObject(rsz, inst, file), path);
-                                }
+                foreach (var inRsz in rszList) {
+                    foreach (var inst in inRsz.InstanceList) {
+                        if (inst.RSZUserData != null) continue;
+                        foreach (var field in inst.Fields) {
+                            if (!fieldTypes.Contains(field.type)) continue;
+
+                            if (queryValue == null) {
+                                AddMatch(context, $"{FindPathToRszObject(inRsz, inst, file)} {field.name} = {inst.GetFieldValue(field.name)}", path);
+                                return;
                             }
-                        } else {
-                            if (equalityComparer(fieldValue, queryValue)) {
-                                AddMatch(context, FindPathToRszObject(rsz, inst, file), path);
+
+                            var fieldValue = inst.GetFieldValue(field.name);
+                            if (field.array) {
+                                var values = (IList<object>)fieldValue!;
+                                foreach (var v in values) {
+                                    if (equalityComparer(v, queryValue)) {
+                                        AddMatch(context, FindPathToRszObject(inRsz, inst, file), path);
+                                    }
+                                }
+                            } else {
+                                if (equalityComparer(fieldValue, queryValue)) {
+                                    AddMatch(context, FindPathToRszObject(inRsz, inst, file), path);
+                                }
                             }
                         }
                     }
