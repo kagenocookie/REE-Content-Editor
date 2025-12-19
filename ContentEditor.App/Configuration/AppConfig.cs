@@ -569,6 +569,7 @@ public record SceneViewSettings
 public record ImportSettings
 {
     public float Scale { get; set; } = 1f;
+    public bool ForceRootIdentity { get; set; } = true;
 }
 
 public record MeshViewerSettings

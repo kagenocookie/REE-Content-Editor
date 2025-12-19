@@ -28,10 +28,7 @@ public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<Motlis
         Assimp.Scene importedScene;
         if (handle.Format.format == KnownFileFormats.Mesh) {
             var fileHandler = new FileHandler(handle.Stream, handle.Filepath);
-            uint magic = 0;
-            handle.Stream.Seek(0, SeekOrigin.Begin);
-            handle.Stream.Read(MemoryUtils.StructureAsBytes(ref magic));
-            handle.Stream.Seek(0, SeekOrigin.Begin);
+            uint magic = fileHandler.Read<uint>(0);
             if (magic == MeshFile.Magic) {
                 var file = new MeshFile(fileHandler);
                 if (!file.Read()) return null;

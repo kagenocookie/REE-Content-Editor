@@ -29,6 +29,7 @@ public class MeshFileHandler : IObjectUIHandler
             context.AddChild<MeshFile, NormalRecalcData>("Normal Recalc", instance, getter: v => v!.NormalRecalcData).AddDefaultHandler<NormalRecalcData>();
             context.AddChild<MeshFile, List<uint>>("Hashes", instance, getter: v => v!.Hashes).AddDefaultHandler<List<uint>>();
             context.AddChild<MeshFile, List<Vector3>>("FloatData", instance, getter: v => v!.FloatData).AddDefaultHandler<List<Vector3>>();
+            context.AddChild<MeshFile, List<MeshBuffer>>("Streaming Buffers", instance, getter: v => v!.StreamingBuffers).AddDefaultHandler<List<MeshBuffer>>();
         }
 
         context.ShowChildrenUI();

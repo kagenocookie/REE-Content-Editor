@@ -27,6 +27,7 @@ public partial class CommonMeshResource : IResourceFile
         var paddedTriCount = totalTriCount + srcMeshes.Count(m => (m.FaceCount * 3) % 2 != 0);
 
         float scale = AppConfig.Settings.Import.Scale;
+        if (scale <= 0) scale = 1;
 
         mesh.Header.BufferCount = 1;
 
@@ -77,7 +78,7 @@ public partial class CommonMeshResource : IResourceFile
         var deformBones = new SortedList<int, MeshBone>();
         if (buffer.Weights.Length > 0) {
             var boneNames = srcMeshes.SelectMany(m => m.Bones.Select(b => b.Name)).ToHashSet();
-            static void AddRecursiveBones(MeshFile file, NodeCollection children, HashSet<string> boneNames, MeshBone? parentBone, float scale)
+            static void AddRecursiveBones(MeshFile file, NodeCollection children, HashSet<string> boneNames, MeshBone? parentBone, ImportSettings settings)
             {
                 foreach (var node in children) {
                     if (node.Name.StartsWith(ShapekeyPrefix) || node.Name.StartsWith(SecondaryWeightDummyBonePrefix)) continue;
@@ -85,8 +86,8 @@ public partial class CommonMeshResource : IResourceFile
                     if (boneNames.Contains(node.Name)) {
                         file.BoneData ??= new();
                         var tx = Matrix4x4.Transpose(node.Transform);
-                        if (scale != 0 && scale != 1) {
-                            tx.Translation *= scale;
+                        if (settings.Scale != 0 && settings.Scale != 1) {
+                            tx.Translation *= settings.Scale;
                         }
                         var bone = new MeshBone() {
                             name = node.Name,
@@ -99,6 +100,9 @@ public partial class CommonMeshResource : IResourceFile
                         file.BoneData.Bones.Add(bone);
                         bone.useSecondaryWeight = node.Children.Any(ch => ch.Name.StartsWith(SecondaryWeightDummyBonePrefix));
                         if (parentBone == null) {
+                            if (settings.ForceRootIdentity) {
+                                bone.localTransform = Matrix4x4.Identity;
+                            }
                             bone.globalTransform = bone.localTransform;
                             bone.parentIndex = -1;
                             file.BoneData.RootBones.Add(bone);
@@ -114,14 +118,14 @@ public partial class CommonMeshResource : IResourceFile
                             parentBone.Children.Add(bone);
                         }
                         bone.inverseGlobalTransform = Matrix4x4.Invert(bone.globalTransform.ToSystem(), out var inverse) ? inverse : throw new Exception("Failed to calculate inverse bone matrix " + bone.name);
-                        AddRecursiveBones(file, node.Children, boneNames, bone, scale);
+                        AddRecursiveBones(file, node.Children, boneNames, bone, settings);
                     } else if (node.Children.Count > 0) {
                         // just in case there's some weird hierarchy shenanigans going on?
-                        AddRecursiveBones(file, node.Children, boneNames, parentBone, scale);
+                        AddRecursiveBones(file, node.Children, boneNames, parentBone, settings);
                     }
                 }
             }
-            AddRecursiveBones(mesh, scene.RootNode.Children, boneNames, null, scale);
+            AddRecursiveBones(mesh, scene.RootNode.Children, boneNames, null, AppConfig.Settings.Import);
             // handle symmetry bones
             foreach (var bone in mesh.BoneData!.Bones) {
                 if (bone.name.StartsWith("l_", StringComparison.InvariantCultureIgnoreCase)) {
@@ -139,6 +143,8 @@ public partial class CommonMeshResource : IResourceFile
             }
             boneIndexMap = mesh.BoneData!.Bones.ToDictionary(b => b.name, b => b.index);
         }
+
+        var warnedBones = new HashSet<string>();
 
         foreach (var aiMesh in srcMeshes) {
             var groupIdx = MeshLoader.GetMeshGroupFromName(aiMesh.Name);
@@ -171,7 +177,7 @@ public partial class CommonMeshResource : IResourceFile
             group.submeshCount++;
             group.Submeshes.Add(newSub);
 
-            if (scale != 1 && scale != 0) {
+            if (scale != 1) {
                 for (int i = 0; i < aiMesh.Vertices.Count; ++i) aiMesh.Vertices[i] *= scale;
             }
 
@@ -229,8 +235,9 @@ public partial class CommonMeshResource : IResourceFile
 
                         var outWeight = (weightBuffer[vertOffset + entry.VertexID] ??= new(serializerVersion));
                         var weightIndex = Array.FindIndex(outWeight.boneWeights, bb => bb == 0);
-                        if (weightIndex == -1) {
-                            throw new Exception("Too many weights for bone " + aiBone.Name);
+                        if (weightIndex == -1 || weightIndex >= outWeight.boneIndices.Length) {
+                            if (warnedBones.Add(aiBone.Name)) Log.Warn("Too many weights for bone " + aiBone.Name + ". Ignoring.");
+                            continue;
                         }
                         outWeight.boneIndices[weightIndex] = boneIndex;
                         outWeight.boneWeights[weightIndex] = entry.Weight;
