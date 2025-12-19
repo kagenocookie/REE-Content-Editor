@@ -744,6 +744,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 ImguiHelpers.DrawMultiColorIconWithText(AppIcons.SIC_FolderContain, "| Jump to Containing Folder", new[] { Colors.IconPrimary, Colors.IconSecondary });
             }
             if (showSort) {
+                ImGui.Spacing();
                 ImGui.Separator();
                 if (ImGui.Selectable("Sort By: " + (gridSortColumn == 1 ? "Size" : "Name"))) {
                     gridSortColumn = 1 - gridSortColumn;
