@@ -272,7 +272,11 @@ public partial class CommonMeshResource : IResourceFile
             foreach (var weight in buffer.Weights) {
                 for (int i = 0; i < weight.boneIndices.Length; ++i) {
                     var index = weight.boneIndices[i];
-                    if (deformBones.TryGetValue(index, out var remap)) {
+                    if (index == 0) {
+                        if (i > 0 && weight.boneWeights[i] == 0) {
+                            weight.boneIndices[i] = weight.boneIndices[i-1];
+                        }
+                    } else if (deformBones.TryGetValue(index, out var remap)) {
                         weight.boneIndices[i] = remap.remapIndex;
                     }
                 }
