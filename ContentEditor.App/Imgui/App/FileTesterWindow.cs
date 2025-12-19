@@ -598,7 +598,7 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<Property>((m) => [
             m.Info.FunctionName, m.Info.arrayIndex, m.Info.ChildMembershipCount, m.ChildProperties, m.Keys,
             m.Info.DataType, m.Info.startFrame, m.Info.endFrame,
-            m.Info.nameAsciiHash, m.Info.nameUtf16Hash, m.Info.speedPointNum,  m.Info.timelineUkn, m.Info.timelineUkn2, m.Info.uknByte, m.Info.uknByte00, m.Info.uknCount, m.Info.uknRE7_2, m.Info.uknRE7_3, m.Info.uknRE7_4]);
+            m.Info.nameAsciiHash, m.Info.nameUtf16Hash, m.Info.speedPointNum,  m.Info.timelineUkn, m.Info.timelineUkn2, m.Info.uknByte, m.Info.uknByte2, m.Info.uknCount, m.Info.uknRE7_2, m.Info.uknRE7_3, m.Info.uknRE7_4]);
         AddCompareMapper<ClipHeader>((m) => [m.numFrames, m.keysCount, m.numNodes, m.numProperties, m.guid]);
         AddCompareMapper<ExtraPropertyInfo>((m) => [m.count, m.flags, m.propertyUTF16Hash, m.values]);
 

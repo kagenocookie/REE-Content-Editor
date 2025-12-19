@@ -503,6 +503,12 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 AppConfig.Settings.Import.Scale = Math.Clamp(scale / 100, 0.001f, 100);
                 AppConfig.Settings.Save();
             }
+            var rootId = AppConfig.Settings.Import.ForceRootIdentity;
+            if (ImGui.Checkbox("Force Default Root Orientation", ref rootId)) {
+                AppConfig.Settings.Import.ForceRootIdentity = rootId;
+                AppConfig.Settings.Save();
+            }
+            ImguiHelpers.Tooltip("Forces the root bone into the default (Identity) orientation on import.\nUse if you find that your imported mesh skeletons are fully rotated along an axis");
             ImGui.Spacing();
             ImGui.Spacing();
         }
