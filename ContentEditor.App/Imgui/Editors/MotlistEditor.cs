@@ -655,9 +655,10 @@ public class KeyListHandler : ListHandler
         var firstKey = prop?.Keys?.FirstOrDefault();
         var version = prop?.Info?.Version ?? context.FindValueInParentValues<ClipFile>()?.Header.version ?? ClipVersion.MHWilds;
         KeyBase newKey = firstKey switch {
+            NormalKey => new NormalKey(version),
             NoHermiteKey => new NoHermiteKey(version),
             BoolKey => new BoolKey(version),
-            _ => new NoHermiteKey(version)
+            _ => new NormalKey(version)
         };
         newKey.PropertyType = prop?.Info.DataType ?? PropertyType.Unknown;
         newKey.ResetValue();
