@@ -325,8 +325,23 @@ public static class AppIcons
     public static readonly char SI_GenericClose = '\ued74';
     public static readonly char SI_Log = '\ued75';
     public static readonly char SI_LogCompact = '\ued76';
-
-    public static readonly uint[] Range = [(uint)EfxEntry, (uint)SI_LogCompact, 0];
+    public static readonly char SI_Save = '\ued77';
+    public static readonly char[] SIC_SaveAs = { '\ued78', '\ued79', '\ued7a', '\ued7b', '\ued7c' };
+    public static readonly char[] SIC_SaveCopy = { '\ued7d', '\ued7e', '\ued7f' };
+    public static readonly char[] SIC_LogCopyAll = { '\ued80', '\ued81', '\ued82', '\ued83' };
+    public static readonly char SI_LogDebug = '\ued84';
+    public static readonly char SI_GenericClear = '\ued85';
+    public static readonly char SI_TagMisc = '\ued86';
+    public static readonly char SI_Settings = '\ued87';
+    public static readonly char SI_Settings2 = '\ued88';
+    public static readonly char SI_Folder = '\ued89';
+    public static readonly char SI_FolderEmpty = '\ued8a';
+    public static readonly char SI_FolderOpen = '\ued8b';
+    public static readonly char[] SIC_FileExtractTo = { '\ued8c', '\ued8d', '\ued8e' };
+    public static readonly char[] SIC_FolderOpenFileExplorer = { '\ued91', '\ued92', };
+    public static readonly char[] SIC_FolderFile = { '\ued93', '\ued94', };
+    public static readonly char[] SIC_FolderContain = { '\ued95', '\ued96', };
+    public static readonly char[] SIC_FolderContain2 = { '\ued97', '\ued98', '\ued99' };
 
     public static string PrependIcon(this string text, object target)
     {

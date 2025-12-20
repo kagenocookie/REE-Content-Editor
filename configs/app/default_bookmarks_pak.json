@@ -801,7 +801,7 @@
       "Tags": [
         "Weapon"
       ],
-      "Comment": "MPM Hangun (Mia)"
+      "Comment": "MPM Handgun (Mia)"
     },
     {
       "Path": "natives/stm/weapon/wp1340_chrishandgun",
@@ -816,6 +816,64 @@
         "Weapon"
       ],
       "Comment": "Tactical Knife (Chris)"
+    }
+  ],
+  "pragmata": [
+    {
+      "Path": "natives/stm/character/ch/ch00/ch0000",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Hugh Williams (Delphi)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch00/ch0012/00",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Hugh Williams (Scribble)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0100",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana"
+    },
+    {
+      "Path": "natives/stm/item/model/it00010/wp7100",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Repair Kit"
+    },
+    {
+      "Path": "natives/stm/item/model/it01000/wp0900/00",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Grip Gun"
+    },
+    {
+      "Path": "natives/stm/item/model/it01300/wp1510",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Stasis Net"
+    },
+    {
+      "Path": "natives/stm/item/model/it01400/wp1400/00",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Charge Piercer"
+    },
+    {
+      "Path": "natives/stm/item/model/it03100/wp1300/00",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Shockwave Gun"
     }
   ]
 }
