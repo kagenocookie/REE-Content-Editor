@@ -16,7 +16,7 @@ jobs:
         lfs: true
 
     - name: Restore dependencies
-      run: dotnet restore -r win-x6
+      run: dotnet restore -r win-x64
 
     - name: Set outputs
       id: vars
