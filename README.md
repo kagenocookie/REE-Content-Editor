@@ -9,11 +9,12 @@ Besides basic file editing, the tool is able to merge multiple changes to the sa
 - All mainline Resident Evil games
 - Dragon's Dogma 2
 - Devil May Cry 5
+- Pragmata Demo
 
 Some files may not fully work for other RE ENGINE games.
 
 ## Setup
-- Install the .NET 8 runtime (https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+- Install the .NET Desktop Runtime 10 or newer (https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
 - Download the latest [release](https://github.com/kagenocookie/REE-Content-Editor/releases) or [debug](https://github.com/kagenocookie/REE-Content-Editor/actions) build `ContentEditor.zip`
 - Launch `ContentEditor.App.exe`
 - Usage guides are available on [the wiki](https://github.com/kagenocookie/REE-Content-Editor/wiki), these will be updated as new features are added and improved
@@ -22,7 +23,7 @@ Some files may not fully work for other RE ENGINE games.
 - Clone the repository
 - `git submodule init`
 - `git submodule update`
-- Use the `net8.0-windows` target to make native file dialogs work
+- Use the `net10.0-windows` target to make native file dialogs work
 - Build with `dotnet build` or whichever C#-capable IDE's build features (vscode, VS)
 
 ## Features

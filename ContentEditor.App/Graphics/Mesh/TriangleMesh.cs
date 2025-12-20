@@ -46,7 +46,7 @@ public class TriangleMesh : Mesh
         var nodes = container.Nodes.Nodes;
         var verts = container.Vertices;
         var triangles = data.Nodes;
-        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
+        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData.AsSpan());
 
         var index = 0;
         for (int i = 0; i < data.NodeCount; ++i) {
@@ -78,7 +78,7 @@ public class TriangleMesh : Mesh
         Indices = new int[totalTriangleCount * 3];
         VertexData = new float[Indices.Length * layout.VertexSize];
 
-        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
+        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData.AsSpan());
 
         var index = 0;
         for (int i = 0; i < data.NodeCount; ++i) {
@@ -108,7 +108,7 @@ public class TriangleMesh : Mesh
         Indices = new int[polygons.Count * (4 * 6)];
         VertexData = new float[Indices.Length * layout.VertexSize];
 
-        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
+        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData.AsSpan());
 
         var index = 0;
         Span<Vector3> pts = stackalloc Vector3[8];
@@ -161,7 +161,7 @@ public class TriangleMesh : Mesh
         Indices = new int[polygons.Count * (4 * 6)];
         VertexData = new float[Indices.Length * layout.VertexSize];
 
-        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
+        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData.AsSpan());
 
         var index = 0;
         Span<Vector3> pts = stackalloc Vector3[8];

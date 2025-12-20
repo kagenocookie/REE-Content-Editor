@@ -1,3 +1,6 @@
 [submodule "RE-Engine-Lib"]
 	path = RE-Engine-Lib
 	url = https://github.com/kagenocookie/RE-Engine-Lib.git
+[submodule "GDeflateNet"]
+	path = GDeflateNet
+	url = https://github.com/neptuwunium/GDeflateNet.git

@@ -436,16 +436,18 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                 var tex = new TexFile(new FileHandler(new MemoryStream(), defaultFilename));
                 tex.ChangeVersion(exportTemplate);
                 tex.LoadDataFromDDS(dds);
+                var texLoader = fileHandle.Loader as TextureLoader ?? new TextureLoader();
+                var tmpHandle = FileHandle.CreateEmbedded(texLoader, new BaseFileResource<TexFile>(tex), defaultFilename, null);
                 // note: potential memory leak if the user doesn't confirm the save dialog. Surely nobody will have issues because of it...
                 if (bundleConvert) {
                     var tempres = new BaseFileResource<TexFile>(tex);
-                    ResourcePathPicker.ShowSaveToBundle(fileHandle.Loader, tempres, workspace, defaultFilename, fileHandle.NativePath, () => {
+                    ResourcePathPicker.ShowSaveToBundle(texLoader, tempres, workspace, defaultFilename, fileHandle.NativePath, () => {
                         dds.Dispose();
                         tex.Dispose();
                     });
                 } else {
                     PlatformUtils.ShowSaveFileDialog((path) => {
-                        tex.SaveAs(path);
+                        tmpHandle.Save(workspace, path);
                         dds.Dispose();
                         tex.Dispose();
                     }, defaultFilename);

@@ -15,7 +15,7 @@ public class LineMesh : Mesh
         MeshType = PrimitiveType.Lines;
         layout = MeshLayout.PositionOnly;
         VertexData = new float[points.Length * layout.VertexSize];
-        var pointData = MemoryMarshal.Cast<float, Vector3>(VertexData);
+        var pointData = MemoryMarshal.Cast<float, Vector3>(VertexData.AsSpan());
         Indices = new int[points.Length];
         BoundingBox = AABB.MaxMin;
         for (int index = 0; index < points.Length; ++index) {
@@ -48,7 +48,7 @@ public class LineMesh : Mesh
             layout = MeshLayout.ColoredPositions;
             VertexData = new float[Indices.Length * layout.VertexSize];
             var sourceColorAttrOffset = sourceTriangleMesh.layout.AttributeIndexOffsets[MeshLayout.Index_Color];
-            var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
+            var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData.AsSpan());
             var myIndices = 0;
             for (int i = 0; i < vertCount; ++i) {
                 pointData[myIndices++] = new Vector4(
@@ -81,7 +81,7 @@ public class LineMesh : Mesh
         } else {
             layout = MeshLayout.PositionOnly;
             VertexData = new float[Indices.Length * layout.VertexSize];
-            var pointData = MemoryMarshal.Cast<float, Vector3>(VertexData);
+            var pointData = MemoryMarshal.Cast<float, Vector3>(VertexData.AsSpan());
             var myIndices = 0;
             for (int i = 0; i < vertCount; ++i) {
                 pointData[myIndices++] = new Vector3(
@@ -116,7 +116,7 @@ public class LineMesh : Mesh
         layout = MeshLayout.ColoredPositions;
         Indices = new int[data.NodeCount * 4]; // ABBC
         VertexData = new float[Indices.Length * layout.VertexSize];
-        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
+        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData.AsSpan());
 
         BoundingBox = container.bounds;
         var nodes = container.Nodes.Nodes;
@@ -150,7 +150,7 @@ public class LineMesh : Mesh
         Indices = new int[polygons.Count * 16];
         VertexData = new float[Indices.Length * layout.VertexSize];
 
-        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
+        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData.AsSpan());
 
         var index = 0;
         Span<Vector3> pts = stackalloc Vector3[8];
@@ -191,7 +191,7 @@ public class LineMesh : Mesh
         Indices = new int[linkCount * 2];
         VertexData = new float[Indices.Length * layout.VertexSize];
 
-        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData);
+        var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData.AsSpan());
 
         int index = 0;
         for (int i = 0; i < nodes.Length; i++) {
@@ -230,7 +230,7 @@ public class LineMesh : Mesh
         var triangles = submesh.indicesCount / 3;
         Indices = new int[triangles * 4]; // each triangle counts as 4 indices ABBC
         VertexData = new float[Indices.Length * 3];
-        var pointData = MemoryMarshal.Cast<float, Vector3>(VertexData);
+        var pointData = MemoryMarshal.Cast<float, Vector3>(VertexData.AsSpan());
         BoundingBox = AABB.MaxMin;
         var index = 0;
         for (int faceIndex = 0; faceIndex < triangles; ++faceIndex) {

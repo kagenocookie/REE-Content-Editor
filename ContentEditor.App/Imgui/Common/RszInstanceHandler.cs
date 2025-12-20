@@ -928,6 +928,7 @@ public class GuidFieldHandler : Singleton<GuidFieldHandler>, IObjectUIHandler
                 ws?.Messages.GetTextAsync(val).ContinueWith((res) => {
                     if (res.Result == null) {
                         Logger.Info("Message not found for guid " + val);
+                        window?.Overlays.ShowTooltip("Message not found for guid " + val, 2f);
                     } else {
                         Logger.Info("Guid " + val + " message:\n" + res.Result);
                         window?.Overlays.ShowTooltip(res.Result, 1.5f);
