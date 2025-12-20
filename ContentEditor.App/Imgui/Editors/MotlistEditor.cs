@@ -220,7 +220,7 @@ public class MotFileHandler : IObjectUIHandler
             context.AddChild<MotFile, List<BoneMotionClip>>("Animation Clips", instance, getter: (m) => m!.BoneClips).AddDefaultHandler();
             context.AddChild<MotFile, List<MotClip>>("Behavior Clips", instance, getter: (m) => m!.Clips).AddDefaultHandler();
             context.AddChild<MotFile, List<MotPropertyTrack>>("Animated Properties", instance, getter: (m) => m!.MotPropertyTracks).AddDefaultHandler();
-            context.AddChild<MotFile, MotPropertyTree>("Property Tree", instance, new LazyPlainObjectHandler(typeof(MotPropertyTree)), (m) => m!.PropertyTree, (m, v) => m.PropertyTree = v);
+            context.AddChild<MotFile, MotPropertyTree>("Property Tree", instance, new CopyableTreeUIHandler<MotPropertyTree>(), (m) => m!.PropertyTree, (m, v) => m.PropertyTree = v);
             context.AddChild<MotFile, List<MotEndClip>>("End Clips", instance, getter: (m) => m!.EndClips).AddDefaultHandler();
         }
 
