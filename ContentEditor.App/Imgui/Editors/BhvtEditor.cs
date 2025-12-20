@@ -187,7 +187,7 @@ public class BHVTNodeEditor : IObjectUIHandler
             state.transitionMapID = (uint)System.Random.Shared.Next();
             var data = mfs2.File.TransitionDatas.FirstOrDefault();
             if (data == null) {
-                mfs2.File.TransitionDatas.Add(data = new TransitionData(version) {
+                mfs2.File.TransitionDatas.Add(data = new TransitionData() {
                     id = (uint)System.Random.Shared.Next(),
                     EndType = EndType.EndOfMotion
                 });
@@ -413,7 +413,7 @@ public class TransitionDataEditor : LazyPlainObjectHandler
                     return true;
                 }
 
-                var data = new TransitionData(root.Option.Version) {
+                var data = new TransitionData() {
                     id = (uint)System.Random.Shared.Next(),
                     EndType = EndType.EndOfMotion
                 };
