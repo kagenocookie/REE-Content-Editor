@@ -174,7 +174,8 @@ public class MotFileBaseHandler : IObjectUIHandler
         if (context.children.Count == 0) {
             context.AddChild("Motion type", instance, new InstanceTypePickerHandler<MotFileBase>([null, typeof(MotFile), typeof(MotTreeFile)], filterable: false, factory: (ctx, newType) => {
                 var motlist = ctx.FindHandlerInParents<MotlistEditor>()?.File;
-                var newInstance = (MotFileBase)Activator.CreateInstance(newType, [motlist?.FileHandler ?? new FileHandler()])!;
+                var newInstance = (MotFileBase)WindowHandlerFactory.Instantiate(context, newType);
+                newInstance.FileHandler = motlist?.FileHandler ?? new FileHandler();
                 return newInstance;
             }), setter: (ctx, newMot) => {
                 ctx.parent!.Set(newMot);
@@ -509,6 +510,37 @@ public class MotFileListHandler : ListHandler
         Filterable = true;
     }
 
+    static MotFileListHandler()
+    {
+        WindowHandlerFactory.DefineInstantiator<MotFile>((context) => {
+            var editor = context.FindHandlerInParents<MotlistEditor>();
+            if (editor == null) {
+                Logger.Error("Could not found motlist editor context");
+                return new MotFile(new FileHandler());
+            }
+
+            var mot = new MotFile(editor.File.FileHandler);
+            var boneSource = editor.File.MotFiles.FirstOrDefault() as MotFile;
+            if (boneSource != null) mot.CopyBones(boneSource);
+            mot.ChangeVersion(editor.File.Header.version.GetMotVersion());
+
+            return mot;
+        });
+        WindowHandlerFactory.DefineInstantiator<MotTreeFile>((context) => {
+            var editor = context.FindHandlerInParents<MotlistEditor>();
+            if (editor == null) {
+                Logger.Error("Could not found motlist editor context");
+                return new MotTreeFile(new FileHandler());
+            }
+
+            var mot = new MotTreeFile(editor.File.FileHandler);
+            var boneSource = editor.File.MotFiles.FirstOrDefault() as MotFile;
+            mot.version = editor.File.Header.version.GetMotTreeVersion();
+
+            return mot;
+        });
+    }
+
     protected override bool MatchesFilter(object? obj, string filter)
     {
         return obj is MotFileBase mot && mot.Name.Contains(filter, StringComparison.InvariantCultureIgnoreCase);
@@ -516,17 +548,7 @@ public class MotFileListHandler : ListHandler
 
     protected override object? CreateNewElement(UIContext context)
     {
-        var editor = context.FindHandlerInParents<MotlistEditor>();
-        if (editor == null) {
-            Logger.Error("Could not found motlist editor context");
-            return null;
-        }
-        var mot = new MotFile(editor.File.FileHandler);
-        var boneSource = editor.File.MotFiles.FirstOrDefault() as MotFile;
-        if (boneSource != null) mot.CopyBones(boneSource);
-        mot.Header.version = editor.File.Header.version.GetMotVersion();
-
-        return mot;
+        return WindowHandlerFactory.Instantiate<MotFile>(context)!;
     }
 }
 
