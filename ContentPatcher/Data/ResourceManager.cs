@@ -29,7 +29,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         KnownFileFormats.CollisionMesh,
         KnownFileFormats.RequestSetCollider,
         KnownFileFormats.Texture,
-        KnownFileFormats.MaterialDefinition,
+        KnownFileFormats.MeshMaterial,
     ];
 
     public bool HasAnyActivatedEntities => entities.Values.Any(entityData => entityData.activatedInstances.Count != 0);

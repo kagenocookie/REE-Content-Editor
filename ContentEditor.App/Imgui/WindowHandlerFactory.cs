@@ -229,7 +229,7 @@ public static partial class WindowHandlerFactory
                 return new UVSequenceFileEditor(env, file);
             case KnownFileFormats.UserVariables:
                 return new UvarEditor(env, file);
-            case KnownFileFormats.MaterialDefinition:
+            case KnownFileFormats.MeshMaterial:
                 return new MdfEditor(env, file);
             case KnownFileFormats.Prefab:
                 return new PrefabEditor(env, file);

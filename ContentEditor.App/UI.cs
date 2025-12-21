@@ -378,7 +378,7 @@ public static class AppIcons
         KnownFileFormats.Mesh => (SI_FileType_MESH, Colors.FileTypeMESH),
         KnownFileFormats.CollisionMesh => (SI_FileType_MCOL, Colors.FileTypeMCOL),
         KnownFileFormats.RequestSetCollider => (SI_FileType_RCOL, Colors.FileTypeRCOL),
-        KnownFileFormats.MaterialDefinition => (SI_FileType_MDF, Colors.FileTypeMDF),
+        KnownFileFormats.MeshMaterial => (SI_FileType_MDF, Colors.FileTypeMDF),
         KnownFileFormats.MasterMaterial => (SI_FileType_MMTR, Colors.FileTypeMMTR),
         KnownFileFormats.Texture => (SI_FileType_TEX, Colors.IconPrimary),
         KnownFileFormats.UVSequence => (SI_FileType_UVS, Colors.FileTypeUVS),

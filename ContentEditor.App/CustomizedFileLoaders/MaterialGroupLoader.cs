@@ -11,7 +11,7 @@ public class MaterialGroupLoader : IFileLoader,
 
     public bool CanHandleFile(string filepath, REFileFormat format)
     {
-        return format.format == KnownFileFormats.MaterialDefinition;
+        return format.format == KnownFileFormats.MeshMaterial;
     }
 
     public IResourceFilePatcher? CreateDiffHandler() => null;

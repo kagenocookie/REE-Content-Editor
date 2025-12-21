@@ -430,7 +430,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             mdfPickerContext = context.AddChild<MeshViewer, string>(
                 "MDF2 Material",
                 this,
-                new ResourcePathPicker(Workspace, Workspace.Env.TypeCache.GetResourceSubtypes(KnownFileFormats.MaterialDefinition)) { UseNativesPath = true, IsPathForIngame = false },
+                new ResourcePathPicker(Workspace, Workspace.Env.TypeCache.GetResourceSubtypes(KnownFileFormats.MeshMaterial)) { UseNativesPath = true, IsPathForIngame = false },
                 (v) => v!.mdfSource,
                 (v, p) => v.mdfSource = p ?? "");
         }
