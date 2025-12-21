@@ -52,9 +52,7 @@ public static class UI
         fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/silver_icons_color.ttf"), normalIcons);
         fonts.AddFontDefault();
         normalIcons.Destroy();
-#if !DEBUG
         io.ConfigErrorRecoveryEnableAssert = false;
-#endif
     }
 
     public unsafe static void ApplyTheme(string theme)
