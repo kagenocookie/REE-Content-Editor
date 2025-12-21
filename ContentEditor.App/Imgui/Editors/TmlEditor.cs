@@ -19,6 +19,7 @@ public class TmlEditor<TClipFileType> : FileEditor, IWorkspaceContainer, IObject
         // ensure property/key constructors are set up
         System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(MotlistEditor).TypeHandle);
         WindowHandlerFactory.DefineInstantiator<TimelineTrack>((ctx) => new TimelineTrack(ctx.FindValueInParentValues<TmlEditor<TClipFileType>>()?.File.Header.version ?? ClipVersion.MHWilds));
+        WindowHandlerFactory.DefineInstantiator<TimelineNode>((ctx) => new TimelineNode(ctx.FindValueInParentValues<TmlEditor<TClipFileType>>()?.File.Header.version ?? ClipVersion.MHWilds));
     }
 
     public TmlEditor(ContentWorkspace env, FileHandle file) : base(file)
