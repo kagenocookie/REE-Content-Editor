@@ -19,7 +19,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     private int selectedSubGroup = -1;
     private static bool? _wasOriginallyAlphaBg;
     private static readonly string[] LogLevels = ["Debug", "Info", "Error"];
-    private static string filterKey1 = "", filterKey2 = "";
+    private static string filterKey1 = "", filterKey2 = "", filterKey3 = "", filterKey4 = "";
     private string customGameNameInput = "", customGameFilepath = "";
     private static HashSet<string>? fullSupportedGames;
     private enum SubGroupID
@@ -315,8 +315,12 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         if (key.Key != ImGuiKey.Y) ImGui.TextColored(Colors.Warning, "While focused, text inputs will not correctly take this setting into account and still use the default layout keys for undo/redo");
 
         key = config.Key_Save.Get();
-        if (ImguiKeybinding("Save", ref key, ref filterKey2)) {
+        if (ImguiKeybinding("Save", ref key, ref filterKey3)) {
             config.Key_Save.Set(key);
+        }
+        key = config.Key_Back.Get();
+        if (ImguiKeybinding("Back", ref key, ref filterKey4)) {
+            config.Key_Back.Set(key);
         }
     }
     private static void ShowGamesResidentEvilTab()

@@ -224,6 +224,8 @@ public class ImGuiController : IDisposable
         io.MouseDown[0] = mouseState.IsButtonPressed(MouseButton.Left);
         io.MouseDown[1] = mouseState.IsButtonPressed(MouseButton.Right);
         io.MouseDown[2] = mouseState.IsButtonPressed(MouseButton.Middle);
+        io.MouseDown[3] = mouseState.IsButtonPressed(MouseButton.Button4);
+        io.MouseDown[4] = mouseState.IsButtonPressed(MouseButton.Button5);
 
         var point = new Point((int)mouseState.Position.X, (int)mouseState.Position.Y);
         io.MousePos = new Vector2(point.X, point.Y);
