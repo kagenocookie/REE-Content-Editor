@@ -444,6 +444,7 @@ public partial class FileTesterWindow : IWindowHandler
             case KnownFileFormats.TimelineFsm2: return VerifyRewriteEquality<Tmlfsm2File>(source.GetFile<Tmlfsm2File>(), env);
             case KnownFileFormats.Effect: return VerifyRewriteEquality<EfxFile>(source.GetFile<EfxFile>(), env);
             case KnownFileFormats.MaterialDefinition: return VerifyRewriteEquality<MdfFile>(source.GetFile<MdfFile>(), env);
+            case KnownFileFormats.MotionBank: return VerifyRewriteEquality<MotbankFile>(source.GetFile<MotbankFile>(), env);
             default: return null;
         }
     }

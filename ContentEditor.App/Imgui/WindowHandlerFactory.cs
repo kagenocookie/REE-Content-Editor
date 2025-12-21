@@ -52,7 +52,7 @@ public static partial class WindowHandlerFactory
         (typeof(BaseModel), nameof(BaseModel.Start)),
         (typeof(BaseFile), nameof(BaseFile.Size)),
         (typeof(BaseFile), nameof(BaseFile.Embedded)),
-        (typeof(MotlistItem), nameof(MotlistItem.Version)),
+        (typeof(MotbankEntry), nameof(MotbankEntry.Version)),
         (typeof(EFXAttribute), nameof(EFXAttribute.Version)),
         (typeof(EFXAttribute), nameof(EFXAttribute.type)),
         (typeof(EFXAttribute), nameof(EFXAttribute.IsTypeAttribute))
