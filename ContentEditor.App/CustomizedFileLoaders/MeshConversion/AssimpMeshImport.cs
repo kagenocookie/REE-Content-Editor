@@ -68,6 +68,7 @@ public partial class CommonMeshResource : IResourceFile
             if (string.IsNullOrEmpty(mat.Name)) continue;
             mesh.MaterialNames.Add(mat.Name);
         }
+        if (mesh.MaterialNames.Count == 0) mesh.MaterialNames.Add("default");
 
         var lod0Mesh = new MeshLOD(buffer);
         meshData.LODs.Add(lod0Mesh);
