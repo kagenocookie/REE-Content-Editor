@@ -557,8 +557,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         }
         animationPickerContext.ShowUI();
         if (!string.IsNullOrEmpty(animationSourceFile) && animator.File != null && ImGui.Button("Force reload")) {
-            animator.Unload();
             Workspace.ResourceManager.CloseFile(animator.File);
+            animator.Unload();
             loadedAnimationSource = null;
         }
         var settings = AppConfig.Settings;
