@@ -375,6 +375,9 @@ public partial class CommonMeshResource : IResourceFile
             mot.Bones.AddRange(motBones);
             mot.RootBones.AddRange(rootBones);
             mot.BoneHeaders = boneHeaders;
+            if (mot.Name.Contains("_loop")) {
+                mot.Header.blending = 0;
+            }
 
             double sourceFps = aiAnim.TicksPerSecond;
             ushort targetFps = 60;

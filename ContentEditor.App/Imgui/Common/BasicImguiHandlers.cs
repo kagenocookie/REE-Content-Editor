@@ -9,6 +9,8 @@ namespace ContentEditor.App.ImguiHandling;
 
 public class NumericFieldHandler<T>(ImGuiDataType type) : IObjectUIHandler where T : unmanaged
 {
+    public static readonly NumericFieldHandler<T> FloatInstance = new NumericFieldHandler<T>(ImGuiDataType.Float);
+
     public unsafe void OnIMGUI(UIContext context)
     {
         var num = (T)context.Get<object>();
