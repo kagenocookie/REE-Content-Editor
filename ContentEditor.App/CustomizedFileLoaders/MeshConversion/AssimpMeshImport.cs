@@ -56,6 +56,9 @@ public partial class CommonMeshResource : IResourceFile
             buffer.Colors = new Color[totalVertCount];
             mesh.Header.flags |= ContentFlags.HasVertexColor;
         }
+        var maxWeights = MeshFile.GetWeightLimit(versionConfig);
+        var isSixWeight = maxWeights % 6 == 0;
+        var allowExtraWeights = maxWeights > 8;
 
         buffer.Faces = new ushort[paddedTriCount];
 
@@ -236,8 +239,20 @@ public partial class CommonMeshResource : IResourceFile
                         var outWeight = (weightBuffer[vertOffset + entry.VertexID] ??= new(serializerVersion));
                         var weightIndex = Array.FindIndex(outWeight.boneWeights, bb => bb == 0);
                         if (weightIndex == -1 || weightIndex >= outWeight.boneIndices.Length) {
-                            if (warnedBones.Add(aiBone.Name)) Log.Warn("Too many weights for bone " + aiBone.Name + ". Ignoring.");
-                            continue;
+                            var fail = true;
+                            if (allowExtraWeights && !isShapeKey) {
+                                if (buffer.ExtraWeights == null) {
+                                    buffer.ExtraWeights = new VertexBoneWeights[totalVertCount];
+                                    for (int ew = 0; ew < totalVertCount; ew++) buffer.ExtraWeights[ew] = new VertexBoneWeights(serializerVersion);
+                                }
+                                outWeight = buffer.ExtraWeights[vertOffset + entry.VertexID];
+                                weightIndex = Array.FindIndex(outWeight.boneWeights, bb => bb == 0);
+                                fail = (weightIndex == -1 || weightIndex >= outWeight.boneIndices.Length);
+                            }
+                            if (fail) {
+                                if (warnedBones.Add(aiBone.Name)) Log.Warn($"Too many weights (> {maxWeights}) for {(isShapeKey ? "SHAPEKEY" : "")} bone {aiBone.Name}. Ignoring.");
+                                continue;
+                            }
                         }
                         outWeight.boneIndices[weightIndex] = boneIndex;
                         outWeight.boneWeights[weightIndex] = entry.Weight;
@@ -269,18 +284,9 @@ public partial class CommonMeshResource : IResourceFile
                 mesh.BoneData!.DeformBones.Add(bone);
             }
 
-            foreach (var weight in buffer.Weights) {
-                for (int i = 0; i < weight.boneIndices.Length; ++i) {
-                    var index = weight.boneIndices[i];
-                    if (index == 0) {
-                        if (i > 0 && weight.boneWeights[i] == 0) {
-                            weight.boneIndices[i] = weight.boneIndices[i-1];
-                        }
-                    } else if (deformBones.TryGetValue(index, out var remap)) {
-                        weight.boneIndices[i] = remap.remapIndex;
-                    }
-                }
-            }
+            RemapDeformBones(buffer.Weights, deformBones);
+
+            if (buffer.ExtraWeights != null) RemapDeformBones(buffer.ExtraWeights, deformBones);
         }
 
         // mesh.ShadowMesh = new ShadowMesh(buffer);
@@ -289,6 +295,22 @@ public partial class CommonMeshResource : IResourceFile
         mesh.ChangeVersion(versionConfig);
 
         return mesh;
+    }
+
+    private static void RemapDeformBones(VertexBoneWeights[] weights, SortedList<int, MeshBone> deformBones)
+    {
+        foreach (var weight in weights) {
+            for (int i = 0; i < weight.boneIndices.Length; ++i) {
+                var index = weight.boneIndices[i];
+                if (index == 0) {
+                    if (i > 0 && weight.boneWeights[i] == 0) {
+                        weight.boneIndices[i] = weight.boneIndices[i - 1];
+                    }
+                } else if (deformBones.TryGetValue(index, out var remap)) {
+                    weight.boneIndices[i] = remap.remapIndex;
+                }
+            }
+        }
     }
 
     private static string CleanBoneName(string name)

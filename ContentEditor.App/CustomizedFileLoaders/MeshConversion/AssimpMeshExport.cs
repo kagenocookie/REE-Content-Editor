@@ -278,6 +278,20 @@ public partial class CommonMeshResource : IResourceFile
                         }
                     }
 
+                    if (file.MeshBuffer.ExtraWeights != null) {
+                        for (int vertId = 0; vertId < sub.ExtraWeights.Length; ++vertId) {
+                            var vd = sub.ExtraWeights[vertId];
+                            for (int i = 0; i < vd.boneIndices.Length; ++i) {
+                                var weight = vd.boneWeights[i];
+                                if (weight > 0) {
+                                    var srcBone = file.BoneData!.DeformBones[vd.boneIndices[i]];
+                                    var bone = aiMesh.Bones[srcBone.index];
+                                    bone.VertexWeights.Add(new VertexWeight(vertId, weight));
+                                }
+                            }
+                        }
+                    }
+
                     if (includeShapeKeys) {
                         var dict = new Dictionary<int, Bone>();
                         foreach (var bone in file.BoneData!.DeformBones) {
