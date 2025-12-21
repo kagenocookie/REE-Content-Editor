@@ -88,7 +88,8 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
 
     public void OnWindow() => this.ShowDefaultWindow(context);
 
-    private void ExtractCurrentList(string outputDir)
+    private void ExtractCurrentList(string outputDir) => ExtractList(CurrentDir, outputDir);
+    private void ExtractList(string selectedPath, string outputDir)
     {
         if (unpacker != null) return;
 
@@ -98,18 +99,18 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         }
 
         var extractList = matchedList;
-        if (CurrentDir.StartsWith(PakReader.UnknownFilePathPrefix)) {
+        if (selectedPath.StartsWith(PakReader.UnknownFilePathPrefix)) {
             extractList = new ListFileWrapper(reader.UnknownFilePaths);
         }
 
         try {
             string[] files;
-            if (CurrentDir.Contains('*') || CurrentDir.Contains('+')) {
-                files = extractList.FilterAllFiles(CurrentDir);
-            } else if (reader.FileExists(CurrentDir)) {
-                files = [CurrentDir];
+            if (selectedPath.Contains('*') || selectedPath.Contains('+')) {
+                files = extractList.FilterAllFiles(selectedPath);
+            } else if (reader.FileExists(selectedPath)) {
+                files = [selectedPath];
             } else {
-                files = extractList.FilterAllFiles(CurrentDir.Replace('\\', '/') + ".*");
+                files = extractList.FilterAllFiles(selectedPath.Replace('\\', '/') + ".*");
             }
 
             unpackExpectedFiles = files.Length;
@@ -704,22 +705,29 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 ImGui.CloseCurrentPopup();
             }
             ImGui.Spacing();
+            var isFolder = !Path.HasExtension(file);
             if (ImGui.Selectable("##ExtractFileTo")) {
-                var nativePath = file;
-                PlatformUtils.ShowSaveFileDialog((savePath) => {
-                    var stream = reader!.GetFile(nativePath);
-                    if (stream == null) {
-                        Logger.Error("Could not find file " + nativePath + " in selected PAK files");
-                        return;
-                    }
-                    Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
-                    using var fs = File.Create(savePath);
-                    stream.WriteTo(fs);
-                }, Path.GetFileName(nativePath));
+                if (isFolder) {
+                    // show folder unpack dialog instead
+                    PlatformUtils.ShowFolderDialog((output) => {
+                        ExtractList(file, output);
+                    }, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
+                } else {
+                    PlatformUtils.ShowSaveFileDialog((savePath) => {
+                        var stream = reader!.GetFile(file);
+                        if (stream == null) {
+                            Logger.Error("Could not find file " + file + " in selected PAK files");
+                            return;
+                        }
+                        Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
+                        using var fs = File.Create(savePath);
+                        stream.WriteTo(fs);
+                    }, Path.GetFileName(file));
+                }
                 ImGui.CloseCurrentPopup();
             }
             ImGui.SameLine();
-            ImguiHelpers.DrawMultiColorIconWithText(AppIcons.SIC_FileExtractTo, "| Extract File to...", new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary });
+            ImguiHelpers.DrawMultiColorIconWithText(AppIcons.SIC_FileExtractTo, isFolder ? "| Extract Folder to..." : "| Extract File to...", new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary });
             ImGui.Spacing();
             if (isBookmarked) {
                 if (ImGui.Selectable("##RemoveBookmark")) {
