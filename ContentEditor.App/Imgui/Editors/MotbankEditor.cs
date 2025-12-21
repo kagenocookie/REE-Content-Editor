@@ -21,6 +21,14 @@ public class MotbankFileHandler : IObjectUIHandler
 
         context.ShowChildrenUI();
     }
+
+    static MotbankFileHandler()
+    {
+        WindowHandlerFactory.DefineInstantiator<MotlistItem>((ctx) => {
+            var editor = ctx.FindValueInParentValues<MotbankFile>();
+            return new MotlistItem(editor?.version ?? 3);
+        });
+    }
 }
 
 [ObjectImguiHandler(typeof(MotlistItem))]
