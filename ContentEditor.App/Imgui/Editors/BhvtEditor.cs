@@ -3,6 +3,7 @@ using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Bhvt;
+using ReeLib.Common;
 using ReeLib.Motfsm2;
 using ReeLib.Tmlfsm2;
 
@@ -404,8 +405,8 @@ public class TransitionDataEditor : LazyPlainObjectHandler
     {
         if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString() ?? string.Empty)) {
             _instancePicker.OnIMGUI(context);
+            var root = context.FindHandlerInParents<MotFsm2FileEditor>()?.File;
             if (ImGui.Button("Create new transition data")) {
-                var root = context.FindHandlerInParents<MotFsm2FileEditor>()?.File;
                 var stateCtx = context.FindParentContextByValue<NState>();
                 var state = stateCtx?.Get<NState>();
                 if (root == null || state == null) {
@@ -413,10 +414,8 @@ public class TransitionDataEditor : LazyPlainObjectHandler
                     return true;
                 }
 
-                var data = new TransitionData() {
-                    id = (uint)System.Random.Shared.Next(),
-                    EndType = EndType.EndOfMotion
-                };
+                var data = ((TransitionData)instance).DeepCloneGeneric<TransitionData>();
+                data.id = (uint)System.Random.Shared.Next();
                 var prevData = state.TransitionData;
 
                 UndoRedo.RecordCallback(context, () => {
@@ -430,6 +429,16 @@ public class TransitionDataEditor : LazyPlainObjectHandler
                     root.ChangeTransitionMapping(state.transitionMapID, prevData?.id ?? root.TransitionDatas.First().id);
                     stateCtx!.ClearChildren();
                 });
+            }
+            if (root != null) {
+                var maps = root.TransitionMaps;
+                var datas = root.TransitionDatas;
+                var curIndex = datas?.IndexOf((TransitionData)instance);
+                var usedCount = maps.Count(tm => tm.dataIndex == curIndex);
+                if (usedCount > 1) {
+                    ImGui.SameLine();
+                    ImGui.TextColored(Colors.Note, "This transition data is used by " + usedCount + " nodes");
+                }
             }
             return true;
         }
