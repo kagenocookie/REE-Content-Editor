@@ -38,7 +38,7 @@ public class BhvtEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         this.OnIMGUI();
     }
 
-    internal static IEnumerable<BHVTNode> FindBhvtNodes(UIContext context, bool force) => context.FindValueInParentValues<BhvtFile>()?.Nodes ?? [];
+    internal static IEnumerable<BHVTNode> FindBhvtNodes(UIContext context, bool force) => context.FindValueInParentValues<BhvtFile>()?.GetAllNodes() ?? [];
     internal static IEnumerable<BHVTNode> FindChildBhvtNodes(UIContext context, bool force) => context.FindValueInParentValues<BHVTNode>()?.Children.Children
         .Where(x => x.ChildNode != null).Select(ch => ch.ChildNode!) ?? [];
 }

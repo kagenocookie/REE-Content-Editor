@@ -381,8 +381,11 @@ public class UndoRedo
 
         public override void Undo()
         {
-            list.RemoveAt(Math.Abs(index));
-            context.children.RemoveAtAfter(Math.Abs(index));
+            var idx = list.IndexOf(item);
+            if (idx == -1) return;
+
+            list.RemoveAt(idx);
+            context.children.RemoveAtAfter(idx);
             context.Changed = true;
         }
 
