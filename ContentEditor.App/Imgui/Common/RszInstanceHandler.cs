@@ -425,12 +425,12 @@ public class NestedRszInstanceHandler : IObjectUIHandler
 
 public class ArrayRSZHandler : BaseListHandler, ITooltipHandler
 {
-    private RszField field;
-    public RszField Field => field;
+    private RszField _field;
+    public RszField Field => _field;
 
     public ArrayRSZHandler(RszField field)
     {
-        this.field = field;
+        this._field = field;
         CanCreateRemoveElements = true;
     }
 
@@ -442,7 +442,7 @@ public class ArrayRSZHandler : BaseListHandler, ITooltipHandler
     protected override UIContext CreateElementContext(UIContext context, IList list, int elementIndex)
     {
         var ctx = WindowHandlerFactory.CreateListElementContext(context, elementIndex);
-        WindowHandlerFactory.CreateRSZFieldElementHandler(ctx, field);
+        WindowHandlerFactory.CreateRSZFieldElementHandler(ctx, _field);
         if (list.Count > 300 && ctx.uiHandler is NestedRszInstanceHandler lazy) {
             lazy.ForceDefaultClose = true;
         }
@@ -451,11 +451,11 @@ public class ArrayRSZHandler : BaseListHandler, ITooltipHandler
 
     public string? GetElementClassnameType(UIContext context)
     {
-        if (string.IsNullOrEmpty(field.original_type)) {
+        if (string.IsNullOrEmpty(_field.original_type)) {
             var first = context.Get<IList<object>>().FirstOrDefault() as RszInstance;
             return first?.RszClass.name;
         } else {
-            return RszInstance.GetElementType(field.original_type);
+            return RszInstance.GetElementType(_field.original_type);
         }
     }
 
@@ -468,7 +468,7 @@ public class ArrayRSZHandler : BaseListHandler, ITooltipHandler
             Logger.Error("Could not determine array element type");
             return null;
         }
-        return RszInstance.CreateArrayItem(env.Env.RszParser, field, classname);
+        return RszInstance.CreateArrayItem(env.Env.RszParser, _field, classname);
     }
 }
 
@@ -1259,7 +1259,9 @@ public class UndeterminedFieldTypeHandler : IObjectUIHandler
     {
         var value = context.Get<UndeterminedFieldType>();
 #if DEBUG
-        ImGui.DragInt(context.label + " (value type unknown)", ref value.value);
+        if (ImGui.DragInt(context.label + " (value type unknown)", ref value.value)) {
+            UndoRedo.RecordSet(context, value, undoId: $"{context.parent?.GetHashCode().ToString()}{context.label}");
+        }
 #else
         ImGui.BeginDisabled();
         ImGui.DragInt(context.label + " (value type unknown)", ref value.value);

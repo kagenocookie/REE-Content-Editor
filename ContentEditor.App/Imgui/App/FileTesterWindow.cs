@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using ContentEditor.App.FileLoaders;
@@ -19,6 +20,7 @@ using ReeLib.Mesh;
 using ReeLib.Mot;
 using ReeLib.Motlist;
 using ReeLib.Rcol;
+using ReeLib.Tml;
 
 namespace ContentEditor.App;
 
@@ -59,7 +61,7 @@ public partial class FileTesterWindow : IWindowHandler
     private Dictionary<uint, string>? wordlistCache;
     private ContentWorkspace? Workspace => (data.ParentWindow as IWorkspaceContainer)?.Workspace;
 
-    private static readonly KnownFileFormats[] AllFormatValues = Enum.GetValues<KnownFileFormats>();
+    private static readonly KnownFileFormats[] AllFormatValues = Enum.GetValues<KnownFileFormats>().Distinct().ToArray();
     private KnownFileFormats[] Formats = [];
     private string[] FormatLabels = [];
 
@@ -342,6 +344,7 @@ public partial class FileTesterWindow : IWindowHandler
     private static bool ShouldSkipFile(KnownFileFormats format, string filepath)
     {
         // streaming mesh data is pure buffers and not a proper file format, no point in checking those
+        // if (filepath != "") return true;
         return format == KnownFileFormats.Mesh && filepath.StartsWith("natives/stm/streaming");
     }
 
@@ -431,8 +434,9 @@ public partial class FileTesterWindow : IWindowHandler
             case KnownFileFormats.MotionList: return VerifyRewriteEquality<MotlistFile>(source.GetFile<MotlistFile>(), env);
             case KnownFileFormats.Mesh: return VerifyRewriteEquality<MeshFile>(source.GetResource<CommonMeshResource>().NativeMesh, env);
             case KnownFileFormats.RequestSetCollider: return VerifyRewriteEquality<RcolFile>(source.GetFile<RcolFile>(), env);
-            case KnownFileFormats.Timeline: return VerifyRewriteEquality<TmlFile>(source.GetFile<TmlFile>(), env);
-            case KnownFileFormats.Clip: return VerifyRewriteEquality<ClipFile>(source.GetFile<ClipFile>(), env);
+            case KnownFileFormats.Clip:
+            case KnownFileFormats.UserCurve:
+            case KnownFileFormats.Timeline: return VerifyRewriteEquality<ClipFile>(source.GetFile<ClipFile>(), env);
             case KnownFileFormats.GUI: return VerifyRewriteEquality<GuiFile>(source.GetFile<GuiFile>(), env);
             case KnownFileFormats.CollisionMesh: return VerifyRewriteEquality<McolFile>(source.GetFile<McolFile>(), env);
             case KnownFileFormats.CompositeCollision: return VerifyRewriteEquality<CocoFile>(source.GetFile<CocoFile>(), env);
@@ -584,23 +588,24 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<ReeLib.UVar.Variable>((m) => [m.guid, m.Value, m.Expression, m.flags, m.Name, m.nameHash]);
 
         AddCompareMapper<ReeLib.Rcol.Header>((m) => [m.numGroups, m.numIgnoreTags, m.numRequestSets, m.numShapes, m.numUserData, m.maxRequestSetId, m.status, m.uknRe3_A, m.uknRe3_B, m.ukn1, m.ukn2, m.uknRe3]);
-        AddCompareMapper<TmlFile>((m) => [m.Tracks, m.Header, m.HermiteData, m.SpeedPointData, m.Bezier3DData, m.ClipInfo]);
-        AddCompareMapper<ReeLib.Tml.Header>((m) => [
-            m.version, m.magic, m.totalFrames, m.guid,
-            m.rootNodeCount, m.trackCount, m.nodeGroupCount, m.nodeReorderCount, m.nodeCount, m.propertyCount, m.keyCount]);
+        AddCompareMapper<ClipFile>((m) => [m.Header, m.TrackGroups, m.RootTracks, m.Sections, m.Clip]);
+        AddCompareMapper<ReeLib.Tml.ClipHeader>((m) => [
+            m.version, m.magic, m.numFrames, m.guid,
+            m.rootTrackCount, m.trackCount, m.sectionCount, m.nodeReorderCount, m.trackCount, m.propertyCount, m.keysCount]);
         AddCompareMapper<ReeLib.Clip.PropertyInfo>((m) => [m.arrayIndex, m.ChildMembershipCount, m.ChildStartIndex, m.DataType, m.endFrame, m.startFrame, m.FunctionName, m.nameAsciiHash, m.nameUtf16Hash]);
+        AddCompareMapper<TimelineTrack>((m) => [m.Name, m.pragmataHash, m.nameHash1, m.nameUtf16Hash, m.startFrame, m.endFrame, m.guid1, m.guid2, m.Tag, m.nodeType, m.uknByte, m.uknByte2, m.TimelineChildTracks]);
 
         AddCompareMapper<GuiFile>((m) => [m.Containers, m.RootViewElement, m.AttributeOverrides, m.Resources, m.LinkedGUIs, m.Parameters, m.ParameterReferences, m.ParameterOverrides]);
         AddCompareMapper<ReeLib.Gui.ContainerInfo>((m) => [m.ID, m.Name, m.ClassName]);
         AddCompareMapper<ReeLib.Gui.Element>((m) => [m.Name, m.ClassName, m.ID, m.ContainerID, m.guid3, m.Attributes, m.ExtraAttributes, m.ElementData]);
         AddCompareMapper<ReeLib.Gui.Attribute>((m) => [m.propertyType, m.OrderIndex, m.uknInt, m.Value]);
         AddCompareMapper<ReeLib.Gui.GuiClip>((m) => [m.ID, m.IsDefault, m.name, m.clip]);
-        AddCompareMapper<EmbeddedClip>((m) => [m.Header, m.Bezier3DData, m.ClipInfoList, m.Properties, m.ClipKeys.Count, m.ExtraPropertyData, m.FrameCount, m.Guid, m.HermiteData, m.SpeedPointData, m.Tracks]);
+        AddCompareMapper<EmbeddedClip>((m) => [m.Header, m.Bezier3DData, m.ClipInfoList, m.Properties.Count, m.NormalKeys.Count, m.ExtraPropertyData, m.FrameCount, m.Guid, m.HermiteData, m.SpeedPointData, m.Tracks]);
         AddCompareMapper<Property>((m) => [
             m.Info.FunctionName, m.Info.arrayIndex, m.Info.ChildMembershipCount, m.ChildProperties, m.Keys,
             m.Info.DataType, m.Info.startFrame, m.Info.endFrame,
-            m.Info.nameAsciiHash, m.Info.nameUtf16Hash, m.Info.speedPointNum,  m.Info.timelineUkn, m.Info.timelineUkn2, m.Info.uknByte, m.Info.uknByte2, m.Info.uknCount, m.Info.uknRE7_2, m.Info.uknRE7_3, m.Info.uknRE7_4]);
-        AddCompareMapper<ClipHeader>((m) => [m.numFrames, m.keysCount, m.numNodes, m.numProperties, m.guid]);
+            m.Info.nameAsciiHash, m.Info.nameUtf16Hash, m.Info.speedPointNum,  m.Info.timelineUkn, m.Info.timelineUkn2, m.Info.uknByte, m.Info.flags, m.Info.uknCount, m.Info.uknRE7_2, m.Info.uknRE7_3, m.Info.uknRE7_4]);
+        AddCompareMapper<ClipBaseHeader>((m) => [m.numFrames, m.keysCount, m.trackCount, m.propertyCount, m.guid]);
         AddCompareMapper<ExtraPropertyInfo>((m) => [m.count, m.flags, m.propertyUTF16Hash, m.values]);
 
         AddCompareMapper<McolFile>((m) => [m.bvh]);
@@ -644,6 +649,7 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<MaterialHeader>((m) => [m.alphaFlags, m.gpbfDataCount, m.gpbfNameCount, m.matName, m.mmtrPath, m.pragmataUkn, m.texCount, m.paramCount, m.shaderType]);
         AddCompareMapper<TexHeader>((m) => [m.asciiHash, m.hash, m.texPath, m.texType]);
         AddCompareMapper<ParamHeader>((m) => [m.asciiHash, m.hash, m.componentCount, m.paramName, m.parameter]);
+        AddCompareMapper<Quaternion>((m) => [m.X, m.Y, m.Z, m.W]);
     }
 
     private static Dictionary<Type, Func<object, IEnumerable<object?>>> comparedValueMappers = new();

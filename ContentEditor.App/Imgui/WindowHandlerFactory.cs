@@ -242,9 +242,9 @@ public static partial class WindowHandlerFactory
             case KnownFileFormats.MotionList:
                 return new MotlistEditor(env, file);
             case KnownFileFormats.Clip:
-                return new TmlEditor<ClipFile>(env, file);
             case KnownFileFormats.Timeline:
-                return new TmlEditor<TmlFile>(env, file);
+            case KnownFileFormats.UserCurve:
+                return new ClipFileEditor(env, file);
             case KnownFileFormats.CollisionDefinition:
                 return new RawDataEditor<CdefFile>(env, file);
             case KnownFileFormats.DynamicsDefinition:
