@@ -169,7 +169,7 @@ public static class AppImguiHelpers
             VirtualClipboard.CopyToClipboard(target.DeepCloneGeneric<T>());
         }
         if (VirtualClipboard.TryGetFromClipboard<T>(out var newClip) && ImGui.Selectable("Paste (replace)")) {
-            UndoRedo.RecordSet(context, newClip);
+            UndoRedo.RecordSet(context, newClip.DeepCloneGeneric<T>());
             context.ClearChildren();
         }
     }
