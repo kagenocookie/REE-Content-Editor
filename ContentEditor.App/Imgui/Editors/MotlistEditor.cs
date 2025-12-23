@@ -8,7 +8,9 @@ using ContentPatcher;
 using ReeLib;
 using ReeLib.Clip;
 using ReeLib.Common;
+using ReeLib.Mcamlist;
 using ReeLib.Mot;
+using ReeLib.Motcam;
 using ReeLib.Motlist;
 using ReeLib.MotTree;
 using ReeLib.Tml;
@@ -126,8 +128,8 @@ public class MotIndexImguiHandler : IObjectUIHandler
 
     public void OnIMGUI(UIContext context)
     {
-        var mot = context.Get<MotIndex>();
         if (context.children.Count == 0) {
+            var mot = context.Get<MotIndex>();
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(MotIndex), members: DisplayedFields);
             var motlist = context.FindHandlerInParents<MotlistEditor>()?.File;
             if (motlist != null) {
@@ -157,11 +159,142 @@ public class MotIndexImguiHandler : IObjectUIHandler
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(MotIndex), members: [typeof(MotIndex).GetProperty(nameof(MotIndex.MotClips))!]);
         }
 
-        if (ImguiHelpers.TreeNodeSuffix(context.label, mot.ToString())) {
-            context.ShowChildrenUI();
-            ImGui.TreePop();
+        context.ShowChildrenNestedUI();
+    }
+}
+
+public class MotionCamListEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
+{
+    public ContentWorkspace Workspace { get; }
+    public McamlistFile File { get; private set; }
+
+    public override string HandlerName => "MotionCamList";
+
+    static MotionCamListEditor()
+    {
+        WindowHandlerFactory.DefineInstantiator<McamIndex>((ctx) => new McamIndex(
+            ctx.FindHandlerInParents<MotionCamListEditor>()?.File.Header.version
+            ?? (ctx.GetWorkspace()?.Env.TryGetFileExtensionVersion("mcamlist", out var v) == true ? (McamlistVersion)v : McamlistVersion.SF6)));
+
+        WindowHandlerFactory.DefineInstantiator<MotcamClip>((ctx) => new MotcamClip(
+            ctx.FindHandlerInParents<MotionCamListEditor>()?.File is McamlistFile mcamlist ?
+                (mcamlist.MotFiles.FirstOrDefault() as MotcamFile)?.Header.version ?? mcamlist.Header.version.GetMotcamVersion()
+                : ctx.GetWorkspace()?.Env.TryGetFileExtensionVersion("motcam", out var v) == true ? (MotcamVersion)v : MotcamVersion.SF6));
+
+        WindowHandlerFactory.DefineInstantiator<MotcamFile>((context) => {
+            var editor = context.FindHandlerInParents<MotionCamListEditor>();
+            if (editor == null) {
+                Logger.Error("Could not found motlist editor context");
+                return new MotcamFile(new FileHandler());
+            }
+
+            var mot = new MotcamFile(editor.File.FileHandler);
+            mot.ChangeVersion((editor.File.MotFiles.FirstOrDefault() as MotcamFile)?.Header.version ?? editor.File.Header.version.GetMotcamVersion());
+            return mot;
+        });
+    }
+
+    public MotionCamListEditor(ContentWorkspace env, FileHandle file) : base(file)
+    {
+        Workspace = env;
+        File = file.GetFile<McamlistFile>();
+    }
+
+    protected override void OnFileReverted()
+    {
+        base.OnFileReverted();
+        context.ClearChildren();
+        File = Handle.GetFile<McamlistFile>();
+    }
+
+    protected override void DrawFileControls(WindowData data)
+    {
+        if (Handle.Resource is CommonMeshResource mesh) {
+            if (ImGui.Button("Save As Motlist ...")) {
+                Workspace.Env.TryGetFileExtensionVersion("motlist", out var version);
+                var ext = ".motlist." + version;
+                PlatformUtils.ShowSaveFileDialog((path) => {
+                    if (path.EndsWith(ext + ext)) path = path.Replace(ext + ext, ext);
+                    mesh.Motlist.WriteTo(path);
+                }, Path.GetFileNameWithoutExtension(Handle.Filename.ToString()), $"MOTLIST ({ext})|*{ext}");
+            }
+            if (Workspace.CurrentBundle != null) {
+                ImGui.SameLine();
+                if (ImGui.Button("Save Motlist To Bundle ...")) {
+                    Workspace.Env.TryGetFileExtensionVersion("motlist", out var version);
+                    var ext = ".motlist." + version;
+                    ResourcePathPicker.ShowSaveToBundle(new MotListFileLoader(), new BaseFileResource<MotlistFile>(mesh.Motlist), Workspace, Path.ChangeExtension(Handle.Filename.ToString(), ext));
+                }
+            }
+        } else {
+            base.DrawFileControls(data);
+        }
+    }
+
+    protected override void DrawFileContents()
+    {
+        if (context.children.Count == 0) {
+            context.AddChild<McamlistFile, string>("Motlist Name", File, getter: (m) => m!.Header.Name, setter: (m, n) => m.Header.Name = n ?? string.Empty).AddDefaultHandler<string>();
+            context.AddChild<McamlistFile, string>("Base List Path", File, getter: (m) => m!.Header.BaseMcamlistPath, setter: (m, n) => m.Header.BaseMcamlistPath = n ?? string.Empty).AddDefaultHandler<string>();
+            context.AddChild<McamlistFile, short>("HeaderNum", File, getter: (m) => m!.Header.uknNum, setter: (m, n) => m.Header.uknNum = n).AddDefaultHandler();
+            context.AddChild<McamlistFile, List<MotFileBase>>("Motion Files", File, getter: (m) => m!.MotFiles).AddDefaultHandler<List<MotFileBase>>();
+            context.AddChild<McamlistFile, List<McamIndex>>("Motions", File, getter: (m) => m!.Motions).AddDefaultHandler<List<McamIndex>>();
+        }
+        context.ShowChildrenUI();
+    }
+
+    void IObjectUIHandler.OnIMGUI(UIContext context)
+    {
+        OnIMGUI();
+    }
+
+    internal void RefreshUI()
+    {
+        context.GetChildByValue<List<MotFileBase>>()?.ClearChildren();
+    }
+}
+
+[ObjectImguiHandler(typeof(McamIndex))]
+public class McamIndexImguiHandler : IObjectUIHandler
+{
+    private static MemberInfo[] DisplayedFields = [
+        typeof(McamIndex).GetField(nameof(McamIndex.motNumber))!,
+        typeof(McamIndex).GetField(nameof(McamIndex.Switch))!,
+        typeof(McamIndex).GetField(nameof(McamIndex.data))!,
+    ];
+
+    public void OnIMGUI(UIContext context)
+    {
+        if (context.children.Count == 0) {
+            var mot = context.Get<McamIndex>();
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(McamIndex), members: DisplayedFields);
+            var motlist = context.FindHandlerInParents<MotionCamListEditor>()?.File;
+            if (motlist != null) {
+                context.AddChild("Mcam File Instance", (object)mot, getter: (c) => ((McamIndex)c.target!).MotFile, setter: (c, v) => {
+                    ((McamIndex)c.target!).MotFile = (MotFileBase)v!;
+                    c.parent?.ClearChildren();
+                }, handler: new InstancePickerHandler<MotFileBase>(true, (ctx, forceRefresh) => {
+                    if (forceRefresh) motlist = ctx.FindHandlerInParents<MotionCamListEditor>()!.File;
+                    return motlist.MotFiles;
+                }, (ctx, mf) => {
+                    UndoRedo.RecordSet(ctx, mf);
+                }));
+            }
+
+            context.AddChild("Mcam File", mot, getter: (c) => ((McamIndex)c.target!).MotFile, handler: new MotFileBaseHandler(), setter: (ctx, newMot) => {
+                var motlist = ctx.FindHandlerInParents<MotionCamListEditor>()?.File;
+                var newInst = (MotFileBase?)newMot;
+                if (motlist != null && newMot != null) {
+                    if (newInst != null && !motlist.MotFiles.Contains(newInst)) {
+                        motlist.MotFiles.Add(newInst);
+                    }
+                }
+                ((McamIndex)ctx.target!).MotFile = newInst;
+                ctx.ClearChildren();
+            });
         }
 
+        context.ShowChildrenNestedUI();
     }
 }
 
@@ -172,7 +305,11 @@ public class MotFileBaseHandler : IObjectUIHandler
     {
         var instance = context.Get<MotFileBase>();
         if (context.children.Count == 0) {
-            context.AddChild("Motion type", instance, new InstanceTypePickerHandler<MotFileBase>([null, typeof(MotFile), typeof(MotTreeFile)], filterable: false, factory: (ctx, newType) => {
+            var isMcamlist = context.FindHandlerInParents<MotionCamListEditor>() != null;
+            Type?[] instanceTypes = isMcamlist
+                ? [null, typeof(MotcamFile)]
+                : [null, typeof(MotFile), typeof(MotTreeFile)];
+            context.AddChild("Motion type", instance, new InstanceTypePickerHandler<MotFileBase>(instanceTypes, filterable: false, factory: (ctx, newType) => {
                 var motlist = ctx.FindHandlerInParents<MotlistEditor>()?.File;
                 var newInstance = (MotFileBase)WindowHandlerFactory.Instantiate(context, newType);
                 newInstance.FileHandler = motlist?.FileHandler ?? new FileHandler();
@@ -249,6 +386,29 @@ public class MotTreeFileHandler : IObjectUIHandler
         context.ShowChildrenUI();
     }
 }
+[ObjectImguiHandler(typeof(MotcamFile))]
+public class MotcamFileHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<MotcamFile>();
+        if (context.children.Count == 0) {
+            var ws = context.GetWorkspace();
+            context.AddChild<MotcamFile, string>("Name", instance, getter: (m) => m!.Header.motName, setter: (m, v) => m!.Header.motName = v ?? string.Empty).AddDefaultHandler<string>();
+            context.AddChild<MotcamFile, float>("Frame Count", instance, getter: (m) => m!.Header.frameCount, setter: (m, v) => m!.Header.frameCount = v).AddDefaultHandler<float>();
+            context.AddChild<MotcamFile, ushort>("Frame Rate", instance, getter: (m) => m!.Header.frameRate, setter: (m, v) => m!.Header.frameRate = v).AddDefaultHandler<ushort>();
+
+            context.AddChild<MotcamFile, bool>("Looping", instance, BoolFieldHandler.Instance, getter: (m) => m!.Header.blending == 0, setter: (m, v) => m!.Header.blending = v ? 0 : -1);
+            context.AddChild<MotcamFile, ushort>("Ukn Extra", instance, getter: (m) => m!.Header.uknExtra, setter: (m, v) => m!.Header.uknExtra = v).AddDefaultHandler<ushort>();
+            context.AddChild<MotcamFile, float>("Ukn Float", instance, getter: (m) => m!.Header.uknFloat, setter: (m, v) => m!.Header.uknFloat = v).AddDefaultHandler<float>();
+
+            context.AddChild<MotcamFile, MotcamClip>("Clip1", instance, getter: (m) => m!.Clip1, setter: (m, v) => m!.Clip1 = v).AddDefaultHandler<MotcamClip>();
+            context.AddChild<MotcamFile, MotcamClip>("Clip2", instance, getter: (m) => m!.Clip2, setter: (m, v) => m!.Clip2 = v).AddDefaultHandler<MotcamClip>();
+        }
+
+        context.ShowChildrenUI();
+    }
+}
 
 [ObjectImguiHandler(typeof(MotBone))]
 public class MotBoneHandler : IObjectUIHandler
@@ -289,9 +449,10 @@ public class TrackHandler : IObjectUIHandler
             ImGui.Text(context.label);
             ImGui.SameLine();
             if (ImGui.Button("Create")) {
-                var editor = context.FindHandlerInParents<MotlistEditor>();
+                var editor = context.FindHandlerInParents<MotlistEditor>()?.File.Header.version.GetMotVersion()
+                    ?? context.FindHandlerInParents<MotionCamListEditor>()?.File.Header.version.GetMotcamVersion().GetMotVersion();
                 if (editor == null) {
-                    Logger.Error("Could not found motlist editor context");
+                    Logger.Error("Could not determine correct mot version");
                     return;
                 }
                 if (context.target is MotPropertyTrack motTrack) {
@@ -303,7 +464,7 @@ public class TrackHandler : IObjectUIHandler
                         Logger.Error("Could not determine track type");
                     } else {
                         var type = trackHandlers.IndexOf(this) == 1 ? TrackValueType.Quaternion : TrackValueType.Vector3;
-                        instance = new Track(editor.File.Header.version.GetMotVersion(), type);
+                        instance = new Track(editor.Value, type);
                         UndoRedo.RecordSet(context, instance);
                     }
                 }
@@ -338,21 +499,44 @@ public class TrackHandler : IObjectUIHandler
 [ObjectImguiHandler(typeof(BoneMotionClip))]
 public class BoneMotionClipHandler : IObjectUIHandler
 {
-    private static MemberInfo[] DisplayedFields = [
-        typeof(BoneMotionClip).GetProperty(nameof(BoneMotionClip.ClipHeader))!,
-    ];
-
     public void OnIMGUI(UIContext context)
     {
         var instance = context.Get<BoneMotionClip>();
         if (context.children.Count == 0) {
             context.AddChild<BoneMotionClip, BoneClipHeader>(nameof(BoneMotionClip.ClipHeader), instance, getter: m => m!.ClipHeader).AddDefaultHandler();
-            context.AddChild<BoneMotionClip, Track>(nameof(BoneMotionClip.Translation), instance, new TrackHandler(), m => m!.Translation, (m, v) => m.Translation = v);
-            context.AddChild<BoneMotionClip, Track>(nameof(BoneMotionClip.Rotation), instance, new TrackHandler(), m => m!.Rotation, (m, v) => m.Rotation = v);
-            context.AddChild<BoneMotionClip, Track>(nameof(BoneMotionClip.Scale), instance, new TrackHandler(), m => m!.Scale, (m, v) => m.Scale = v);
+            context.AddChild<BoneMotionClip, Track>(nameof(BoneMotionClip.Translation), instance, TrackHandler.Instance, m => m!.Translation, (m, v) => m.Translation = v);
+            context.AddChild<BoneMotionClip, Track>(nameof(BoneMotionClip.Rotation), instance, TrackHandler.Instance, m => m!.Rotation, (m, v) => m.Rotation = v);
+            context.AddChild<BoneMotionClip, Track>(nameof(BoneMotionClip.Scale), instance, TrackHandler.Instance, m => m!.Scale, (m, v) => m.Scale = v);
         }
 
         if (AppImguiHelpers.CopyableTreeNode<BoneMotionClip>(context)) {
+            context.ShowChildrenUI();
+            ImGui.TreePop();
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(MotcamClip))]
+public class MotcamClipHandler : IObjectUIHandler
+{
+    private static MemberInfo[] DisplayedFields = [
+        typeof(MotcamClip).GetField(nameof(MotcamClip.boneIndex))!,
+        typeof(MotcamClip).GetField(nameof(MotcamClip.trackFlags))!,
+        typeof(MotcamClip).GetField(nameof(MotcamClip.uknIndex))!,
+        typeof(MotcamClip).GetField(nameof(MotcamClip.boneHash))!,
+        typeof(MotcamClip).GetField(nameof(MotcamClip.uknFloat))!,
+    ];
+
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<MotcamClip>();
+        if (context.children.Count == 0) {
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(MotcamClip), false, DisplayedFields);
+            context.AddChild<MotcamClip, Track>(nameof(MotcamClip.Translation), instance, TrackHandler.Instance, m => m!.Translation, (m, v) => m.Translation = v);
+            context.AddChild<MotcamClip, Track>(nameof(MotcamClip.Rotation), instance, TrackHandler.Instance, m => m!.Rotation, (m, v) => m.Rotation = v);
+        }
+
+        if (AppImguiHelpers.CopyableTreeNode<MotcamClip>(context)) {
             context.ShowChildrenUI();
             ImGui.TreePop();
         }

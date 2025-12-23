@@ -10,13 +10,13 @@ public class MotListFileLoader : DefaultFileLoader<MotlistFile>
 
     public override bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
-        // force a clean save
         var file = GetFile(handle);
         var dangling = file.FindDanglingMotFiles();
         if (dangling.Length > 0) {
             Logger.Warn("Found mot files without motion IDs. These will get lost after reopening the file unless you give them a motion ID from the Motions list:\n" + string.Join("\n", dangling));
         }
         if (outputPath == handle.Filepath) {
+            // force a clean save
             file.FileHandler.Stream.SetLength(0);
         }
         return base.Save(workspace, handle, outputPath);

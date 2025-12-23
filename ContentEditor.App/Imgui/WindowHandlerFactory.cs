@@ -241,6 +241,8 @@ public static partial class WindowHandlerFactory
                 return new ImguiHandling.Rcol.RcolEditor(env, file);
             case KnownFileFormats.MotionList:
                 return new MotlistEditor(env, file);
+            case KnownFileFormats.MotionCameraList:
+                return new MotionCamListEditor(env, file);
             case KnownFileFormats.Clip:
             case KnownFileFormats.Timeline:
             case KnownFileFormats.UserCurve:

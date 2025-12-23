@@ -449,6 +449,8 @@ public partial class FileTesterWindow : IWindowHandler
             case KnownFileFormats.Effect: return VerifyRewriteEquality<EfxFile>(source.GetFile<EfxFile>(), env);
             case KnownFileFormats.MeshMaterial: return VerifyRewriteEquality<MdfFile>(source.GetFile<MdfFile>(), env);
             case KnownFileFormats.MotionBank: return VerifyRewriteEquality<MotbankFile>(source.GetFile<MotbankFile>(), env);
+            case KnownFileFormats.MotionCameraList: return VerifyRewriteEquality<McamlistFile>(source.GetFile<McamlistFile>(), env);
+            case KnownFileFormats.MotionCamera: return VerifyRewriteEquality<MotcamFile>(source.GetFile<MotcamFile>(), env);
             default: return null;
         }
     }
@@ -567,6 +569,8 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<Submesh>((m) => [m.materialIndex, m.bufferIndex, m.ukn2, m.indicesCount]);
         AddCompareMapper<MeshStreamingInfo>((m) => [m.Entries]);
 
+        AddCompareMapper<McamlistFile>((m) => [m.Header.Name, m.Header.BaseMcamlistPath, m.Header.numMots, m.Header.uknNum, m.Header.uknValue, m.MotFiles, m.Motions]);
+        AddCompareMapper<MotcamFile>((m) => [m.Header.blending, m.Header.frameCount, m.Header.uknFloat, m.Header.uknExtra, m.Clip1, m.Clip2]);
         AddCompareMapper<MotlistFile>((m) => [m.Header.MotListName, m.Header.BaseMotListPath, m.Header.numMots, m.Header.uknNum, m.Header.uknValue, m.MotFiles, m.Motions]);
         AddCompareMapper<MotFile>((m) => [m.Name, m.MotPropertyTracks, m.BoneHeaders, m.BoneClips, m.Clips, m.Bones,
             // ignoring these two for now - end clips because the read is inconsistent, tree because it's massive and also works fine
