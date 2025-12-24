@@ -9,7 +9,7 @@ namespace ContentEditor.App.ImguiHandling;
 
 public class ResourcePathPicker : IObjectUIHandler
 {
-    public string? FileExtensionFilter { get; } = "All files|*.*";
+    public FileFilter[]? FileExtensionFilter { get; } = FileFilters.AllFiles;
     public KnownFileFormats[] FileFormats { get; }
 
     /// <summary>
@@ -33,27 +33,26 @@ public class ResourcePathPicker : IObjectUIHandler
         var isKnownFormats = (allowedFormats.Length > 1 || allowedFormats.Length == 1 && allowedFormats[0] != KnownFileFormats.Unknown);
         FileFormats = isKnownFormats ? allowedFormats : [];
         if (ws != null && isKnownFormats) {
-            FileExtensionFilter = string.Join(
-                "|",
-                allowedFormats.SelectMany(format => ws.Env
-                    .GetFileExtensionsForFormat(format)
-                    .Select(ext => $"{format} .{ext}|*.{ext}.*")));
+            FileExtensionFilter = allowedFormats.SelectMany(format => ws.Env
+                .GetFileExtensionsForFormat(format)
+                .Select(ext => new FileFilter(format.ToString(), [$"*.{ext}.*"])))
+                .ToArray();
         }
     }
 
-    public ResourcePathPicker(ContentWorkspace? ws, string additionalFilter, params KnownFileFormats[] allowedFormats)
+    public ResourcePathPicker(ContentWorkspace? ws, FileFilter[] additionalFilters, params KnownFileFormats[] allowedFormats)
     {
         workspace = ws;
         var isKnownFormats = (allowedFormats.Length > 1 || allowedFormats.Length == 1 && allowedFormats[0] != KnownFileFormats.Unknown);
         FileFormats = isKnownFormats ? allowedFormats : [];
         if (ws != null && isKnownFormats) {
-            FileExtensionFilter = string.Join(
-                "|",
-                allowedFormats.SelectMany(format => ws.Env
-                    .GetFileExtensionsForFormat(format)
-                    .Select(ext => $"{format} .{ext}|*.{ext}.*"))) + "|" + additionalFilter;
+            FileExtensionFilter = allowedFormats.SelectMany(format => ws.Env
+                .GetFileExtensionsForFormat(format)
+                .Select(ext => new FileFilter(format.ToString(), [$"{ext}.*"])))
+                .Concat(additionalFilters)
+                .ToArray();
         } else {
-            FileExtensionFilter = additionalFilter;
+            FileExtensionFilter = additionalFilters;
         }
     }
 
@@ -97,7 +96,7 @@ public class ResourcePathPicker : IObjectUIHandler
                     } else {
                         PlatformUtils.ShowSaveFileDialog(
                             initialFile: Path.GetFileName(resolvedPath),
-                            filter: PathUtils.ParseFileFormat(currentPath).format + "|" + PathUtils.GetFilenameExtensionWithSuffixes(resolvedPath).ToString(),
+                            filter: [new FileFilter(PathUtils.ParseFileFormat(currentPath).format, currentPath)],
                             callback: (outpath) => {
                                 using var file = ws.Env.FindSingleFile(resolvedPath);
                                 using var outfs = File.Create(outpath);
@@ -123,9 +122,9 @@ public class ResourcePathPicker : IObjectUIHandler
                 ImGui.CloseCurrentPopup();
             }
             if (ImGui.Button("Find files ...")) {
-                var exts = FileExtensionFilter?.Split('|').Where((x, i) => i % 2 == 1).Select(x => x.Replace("*.", "").Replace(".*", "")).ToArray() ?? [];
-                var extRegex = string.Join("|", exts);
-                if (exts.Length == 0 || exts.Length == 1 && exts[0] == "*") {
+                var exts = FileExtensionFilter ?? [];
+                var extRegex = string.Join("|", exts.SelectMany(e => e.extensions));
+                if (exts.Length == 0) {
                     EditorWindow.CurrentWindow!.AddSubwindow(new PakBrowser(ws!, null));
                 } else {
                     if (exts.Length > 1) {
@@ -162,7 +161,7 @@ public class ResourcePathPicker : IObjectUIHandler
             }
         }
 
-        if (!DisableWarnings && FileFormats.Length != 0 && !string.IsNullOrEmpty(context.Filter) && !string.IsNullOrEmpty(FileExtensionFilter)) {
+        if (!DisableWarnings && FileFormats.Length != 0 && !string.IsNullOrEmpty(context.Filter) && FileExtensionFilter?.Length > 0) {
             var parsed = PathUtils.ParseFileFormat(context.Filter);
             if (!FileFormats.Contains(parsed.format)) {
                 ImGui.TextColored(Colors.Warning, "The file may be an incorrect type. Expected file types: " + FileExtensionFilter);

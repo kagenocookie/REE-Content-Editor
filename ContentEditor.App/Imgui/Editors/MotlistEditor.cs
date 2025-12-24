@@ -79,7 +79,7 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
                 PlatformUtils.ShowSaveFileDialog((path) => {
                     if (path.EndsWith(ext + ext)) path = path.Replace(ext + ext, ext);
                     mesh.Motlist.WriteTo(path);
-                }, Path.GetFileNameWithoutExtension(Handle.Filename.ToString()), $"MOTLIST ({ext})|*{ext}");
+                }, Path.GetFileNameWithoutExtension(Handle.Filename.ToString()), new FileFilter($"MOTLIST", ext));
             }
             if (Workspace.CurrentBundle != null) {
                 ImGui.SameLine();
@@ -216,7 +216,7 @@ public class MotionCamListEditor : FileEditor, IWorkspaceContainer, IObjectUIHan
                 PlatformUtils.ShowSaveFileDialog((path) => {
                     if (path.EndsWith(ext + ext)) path = path.Replace(ext + ext, ext);
                     mesh.Motlist.WriteTo(path);
-                }, Path.GetFileNameWithoutExtension(Handle.Filename.ToString()), $"MOTLIST ({ext})|*{ext}");
+                }, Path.GetFileNameWithoutExtension(Handle.Filename.ToString()), new FileFilter($"MOTLIST", ext));
             }
             if (Workspace.CurrentBundle != null) {
                 ImGui.SameLine();

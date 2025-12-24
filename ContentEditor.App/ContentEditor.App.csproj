@@ -1,7 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
     <TargetFrameworks>net10.0;net10.0-windows</TargetFrameworks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <TargetFrameworks>net10.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -22,6 +28,7 @@
     <PackageReference Include="Hexa.NET.ImNodes" Version="2.2.9" />
     <PackageReference Include="Silk.NET" Version="2.22.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
+    <PackageReference Include="NativeFileDialogNET" Version="2.0.2" />
   </ItemGroup>
 
   <ItemGroup>

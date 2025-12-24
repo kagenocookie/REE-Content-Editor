@@ -10,56 +10,6 @@ using System.Text;
 
 public class PlatformUtils
 {
-    public static void ShowOpenFile(Action<string[]> callback, string? initialFile = null, string? fileExtension = null, bool allowMultiple = false)
-    {
-        var thread = new Thread(() => {
-            var dlg = new OpenFileDialog {
-                InitialDirectory = !string.IsNullOrEmpty(initialFile) ? Path.GetDirectoryName(initialFile) : Environment.CurrentDirectory,
-                Multiselect = allowMultiple,
-                Filter = fileExtension,
-            };
-            var result = dlg.ShowDialog();
-            if (result == DialogResult.OK) {
-                callback.Invoke(dlg.FileNames);
-            }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-    }
-
-    public static void ShowFolderPicker(Action<string> callback, string? initialFolder = null)
-    {
-        var thread = new Thread(() => {
-            var dlg = new FolderBrowserDialog {
-                InitialDirectory = !string.IsNullOrEmpty(initialFolder) ? Path.GetFullPath(initialFolder) : Environment.CurrentDirectory,
-            };
-            var result = dlg.ShowDialog();
-            if (result == DialogResult.OK) {
-                callback.Invoke(dlg.SelectedPath);
-            }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-    }
-
-    public static void ShowSaveFile(Action<string> callback, string? initialFile = null, string? filter = null)
-    {
-        var thread = new Thread(() => {
-            var dlg = new SaveFileDialog {
-                InitialDirectory = !string.IsNullOrEmpty(initialFile) ? Path.GetDirectoryName(initialFile) : Environment.CurrentDirectory,
-                FileName = Path.GetFileName(initialFile),
-                Filter = filter,
-                SupportMultiDottedExtensions = true,
-            };
-            var result = dlg.ShowDialog();
-            if (result == DialogResult.OK && dlg.FileName != null) {
-                callback.Invoke(dlg.FileName);
-            }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-    }
-
     [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
     private static extern IntPtr GetForegroundWindow();
 

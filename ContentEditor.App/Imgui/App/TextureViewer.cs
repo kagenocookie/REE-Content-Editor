@@ -31,9 +31,6 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
     private TextureChannel currentChannel = TextureChannel.RGBA;
     private static readonly HashSet<string> StandardImageFileExtensions = [".png", ".bmp", ".gif", ".jpg", ".jpeg", ".webp", ".tga", ".tiff", ".qoi", ".dds"];
 
-    public const string OpenFileFilter = "Supported images (.tga, .png, .dds)|*.tga;*.png;*.dds|TGA (*.tga)|*.tga|PNG (*.png)|*.png|DDS (*.dds)|*.dds";
-    public const string SaveFileFilter = "TGA (*.tga)|*.tga|PNG (*.png)|*.png|DDS (*.dds)|*.dds";
-
     private WindowData data = null!;
     protected UIContext context = null!;
 
@@ -296,10 +293,10 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
 
                     if (ImGui.MenuItem("Save As ...")) {
                         var baseName = PathUtils.GetFilepathWithoutExtensionOrVersion(texturePath ?? texture.Path);
-                        var fileFilter = SaveFileFilter;
+                        var fileFilter = FileFilters.TextureFile;
                         var currentTexExt = fileHandle?.Loader is TexFileLoader ? PathUtils.GetFilenameExtensionWithSuffixes(texture.Path).ToString() : null;
                         if (!string.IsNullOrEmpty(currentTexExt)) {
-                            fileFilter += $"|TEX (.{currentTexExt})|*.{currentTexExt}";
+                            fileFilter = fileFilter.Append(new FileFilter("TEX", $"{currentTexExt}")).ToArray();
                         }
 
                         PlatformUtils.ShowSaveFileDialog((file) => {
@@ -383,7 +380,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                             importedFile.Dispose();
                         }
                     });
-                }, lastImportSourcePath, fileExtension: "DDS (*.dds)|*.dds");
+                }, lastImportSourcePath, fileExtension: FileFilters.DDSFile);
             }
         }
 

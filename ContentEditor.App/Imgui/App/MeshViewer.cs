@@ -30,7 +30,6 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     public Scene? Scene => scene;
 
     private const float TopMargin = 64;
-    public const string MeshFilesFilter = "FBX (*.fbx)|*.fbx|GLB (*.glb)|*.glb|GLTF (*.gltf)|*.gltf";
 
     private string? loadedMdf;
     private string? mdfSource;
@@ -460,7 +459,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                     } finally {
                         exportInProgress = false;
                     }
-                }, PathUtils.GetFilenameWithoutExtensionOrVersion(fileHandle.Filename).ToString(), MeshFilesFilter);
+                }, PathUtils.GetFilenameWithoutExtensionOrVersion(fileHandle.Filename).ToString(), FileFilters.MeshFile);
             } else {
                 throw new NotImplementedException();
             }
@@ -482,7 +481,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                             importedFile.Dispose();
                         }
                     });
-                }, lastImportSourcePath, fileExtension: MeshFilesFilter);
+                }, lastImportSourcePath, fileExtension: FileFilters.MeshFilesAll);
             }
         }
         ImGui.SameLine();
@@ -551,7 +550,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             animationPickerContext = context.AddChild<MeshViewer, string>(
                 "Source File",
                 this,
-                new ResourcePathPicker(Workspace, MeshFilesFilter, KnownFileFormats.MotionList, KnownFileFormats.Motion) { UseNativesPath = true, IsPathForIngame = false, DisableWarnings = true },
+                new ResourcePathPicker(Workspace, FileFilters.MeshFilesAll, KnownFileFormats.MotionList, KnownFileFormats.Motion) { UseNativesPath = true, IsPathForIngame = false, DisableWarnings = true },
                 (v) => v!.animationSourceFile,
                 (v, p) => v.animationSourceFile = p ?? "");
         }

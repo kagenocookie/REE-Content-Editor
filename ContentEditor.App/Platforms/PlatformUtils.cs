@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+using NativeFileDialogNET;
 using Silk.NET.Windowing;
 
 namespace ContentEditor.App;
@@ -6,39 +6,92 @@ namespace ContentEditor.App;
 public static class PlatformUtils
 {
     /// <summary>
-    /// Show a native file picker dialog, non-blocking. The callback will likely be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
+    /// Show a native file picker dialog, non-blocking. The callback will be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
     /// </summary>
-    public static void ShowFileDialog(Action<string[]> callback, string? initialFile = null, string? fileExtension = null, bool allowMultiple = false)
+    public static void ShowFileDialog(Action<string[]> callback, string? initialFile = null, FileFilter[]? fileExtension = null, bool allowMultiple = false)
     {
+        var thread = new Thread(() => {
+            using var selectFileDialog = new NativeFileDialog()
+                .SelectFile();
+            if (fileExtension != null) {
+                foreach (var (name, exts) in fileExtension) {
+                    selectFileDialog.AddFilter(name, string.Join(", ", exts));
+                }
+            }
+            if (allowMultiple) selectFileDialog.AllowMultiple();
+
+            var result = selectFileDialog.Open(out string[]? output, !string.IsNullOrEmpty(initialFile) ? Path.GetDirectoryName(initialFile) : Environment.CurrentDirectory);
+            if (result == DialogResult.Okay && output?.Length > 0) {
+                callback.Invoke(output);
+            }
+        });
 #if WINDOWS
-        ContentEditor.App.Windows.PlatformUtils.ShowOpenFile(callback, initialFile, fileExtension, allowMultiple);
-#else
-        Logger.Error("Native file dialogs not supported for the current platform");
+        thread.SetApartmentState(ApartmentState.STA);
 #endif
+        thread.Start();
     }
 
     /// <summary>
-    /// Show a native folder picker dialog, non-blocking. The callback will likely be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
+    /// Show a native folder picker dialog, non-blocking. The callback will be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
     /// </summary>
     public static void ShowFolderDialog(Action<string> callback, string? initialFolder = null)
     {
+        var thread = new Thread(() => {
+            using var selectFolderDialog = new NativeFileDialog()
+                .SelectFolder();
+
+            var result = selectFolderDialog.Open(out string? output, initialFolder);
+            if (result == DialogResult.Okay && output?.Length > 0)
+            {
+                callback.Invoke(output);
+            }
+        });
 #if WINDOWS
-        ContentEditor.App.Windows.PlatformUtils.ShowFolderPicker(callback, initialFolder);
-#else
-        Logger.Error("Native file dialogs not supported for the current platform");
+        thread.SetApartmentState(ApartmentState.STA);
 #endif
+        thread.Start();
     }
 
+    private static bool _saveDlgOpen;
     /// <summary>
-    /// Show a native file save dialog, non-blocking. The callback will likely be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
+    /// Show a native file save dialog, non-blocking. The callback will be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
     /// </summary>
-    public static void ShowSaveFileDialog(Action<string> callback, string? initialFile = null, string? filter = null)
+    public static void ShowSaveFileDialog(Action<string> callback, string? initialFile = null, params FileFilter[] filter)
     {
-#if WINDOWS
-        ContentEditor.App.Windows.PlatformUtils.ShowSaveFile(callback, initialFile, filter);
-#else
-        Logger.Error("Native file dialogs not supported for the current platform");
+#if !WINDOWS
+        if (_saveDlgOpen) {
+            // prevent a possible crash
+            Logger.Error("Save dialog is already open, confirm or close it first.");
+            return;
+        }
 #endif
+        _saveDlgOpen = true;
+        var thread = new Thread(() => {
+            try {
+                using var selectFileDialog = new NativeFileDialog()
+                    .SaveFile();
+                foreach (var (name, exts) in filter) {
+                    foreach (var ext in exts) {
+                        selectFileDialog.AddFilter(name, ext);
+                    }
+                }
+
+                var result = selectFileDialog.Open(
+                    out string? output,
+                    !string.IsNullOrEmpty(initialFile) ? Path.GetDirectoryName(initialFile) : Environment.CurrentDirectory,
+                    Path.GetFileName(initialFile));
+
+                if (result == DialogResult.Okay && !string.IsNullOrEmpty(output)) {
+                    callback.Invoke(output);
+                }
+            } finally {
+                _saveDlgOpen = false;
+            }
+        });
+#if WINDOWS
+        thread.SetApartmentState(ApartmentState.STA);
+#endif
+        thread.Start();
     }
 
     public static void SetupDragDrop(IDragDropTarget target, IWindow window)

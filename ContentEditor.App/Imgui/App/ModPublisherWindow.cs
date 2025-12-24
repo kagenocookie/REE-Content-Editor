@@ -72,7 +72,7 @@ public class ModPublisherWindow : IWindowHandler
                 if (!window.ApplyContentPatches(outputPath, bundle.Name)) {
                     Logger.Error("Publishing failed");
                 }
-            }, null, "PAK file (*.pak)|*.pak");
+            }, null, FileFilters.PakFile);
         }
 
         ImGui.SeparatorText("Content");

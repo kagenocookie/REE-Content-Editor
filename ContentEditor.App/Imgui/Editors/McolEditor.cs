@@ -52,7 +52,7 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
                 window.InvokeFromUIThread(() => {
                     ExportMcolToGlb(File.bvh, fn);
                 });
-            }, lastFilepath ?? Handle.Filename.ToString(), "GLB (*.glb)|*.glb");
+            }, lastFilepath ?? Handle.Filename.ToString(), FileFilters.GlbFile);
         }
         ImGui.SameLine();
         if (ImGui.Button("Import mesh ...")) {
@@ -63,7 +63,7 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
                     ImportGlbIntoMcol(File, fn);
                     context.ClearChildren();
                 });
-            }, lastFilepath ?? Handle.Filename.ToString(), "GLB (*.glb)|*.glb");
+            }, lastFilepath ?? Handle.Filename.ToString(), FileFilters.GlbFile);
         }
 
         ImGui.Spacing();

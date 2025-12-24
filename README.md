@@ -23,7 +23,7 @@ Some files may not fully work for other RE ENGINE games.
 - Clone the repository
 - `git submodule init`
 - `git submodule update`
-- Use the `net10.0-windows` target to make native file dialogs work
+- Use the `net10.0-windows` target to enable windows specific APIs (better drag & drop and GPU tex compression)
 - Build with `dotnet build` or whichever C#-capable IDE's build features (vscode, VS)
 
 ## Features

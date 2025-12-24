@@ -692,6 +692,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         }
     }
 
+#if WINDOWS
     static WindowBase()
     {
         // source: https://github.com/HexaEngine/Hexa.NET.ImGui/issues/35#issuecomment-3172275411
@@ -711,4 +712,5 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     /// <returns> The old setting or <c>-1</c> if an error occurs. </returns>
     [DllImport("ucrtbase.dll", CallingConvention = CallingConvention.Cdecl)]
     private static extern int _set_error_mode(int mode_val);
+#endif
 }

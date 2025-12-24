@@ -241,12 +241,12 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
                         MainLoop.Instance.BackgroundTasks.Queue(new TextureConversionTask(outputTexture.GetAsDDS(), (outDDS) => {
                             PlatformUtils.ShowSaveFileDialog((path) => {
                                 MainLoop.Instance.InvokeFromUIThread(() => outDDS.SaveAs(path));
-                            }, filter: "DDS (*.dds)|*.dds");
+                            }, filter: FileFilters.DDSFile);
                         }, GetOperations()));
                     } else {
                         MainLoop.Instance.InvokeFromUIThread(() => outputTexture?.SaveAs(outpath));
                     }
-                }, filter: TextureViewer.SaveFileFilter);
+                }, filter: FileFilters.TextureFile);
             }
             ImGui.SameLine();
             var save2 = ImGui.Button("Convert ...");
@@ -453,7 +453,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
                     ReplaceSlotTexture(slot, files[0]);
                     isDirty = true;
                 });
-            }, slot.texture?.Path, fileExtension: TextureViewer.OpenFileFilter);
+            }, slot.texture?.Path, fileExtension: FileFilters.TextureFilesAll);
         }
 
         var channelCount = BitOperations.PopCount((uint)slot.outputSwizzle);

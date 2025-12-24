@@ -393,12 +393,12 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             var rszPath = config.GetGameRszJsonPath(game);
             var filelist = config.GetGameFilelist(game);
 
-            if (AppImguiHelpers.InputFilepath("File List", ref filelist, "List file|*.list;*.txt|Any|*.*")) {
+            if (AppImguiHelpers.InputFilepath("File List", ref filelist, FileFilters.ListFile)) {
                 config.SetGameFilelist(game, filelist);
             }
             ImguiHelpers.Tooltip("Defining a custom path here may not be required if it's at least a partially supported game.\nCan also be used in case of issues with automatic downloads.");
 
-            if (AppImguiHelpers.InputFilepath("RSZ Template JSON Path", ref rszPath, "JSON file|*.json")) {
+            if (AppImguiHelpers.InputFilepath("RSZ Template JSON Path", ref rszPath, FileFilters.JsonFile)) {
                 config.SetGameRszJsonPath(game, rszPath);
             }
             if (isCustom) {

@@ -74,7 +74,7 @@ public class FirstTimeSetupHelper : IWindowHandler, IKeepEnabledWhileSaving
             }
             ImguiHelpers.Tooltip("This is the path to the game (where the .exe file is located).");
             if (isCustomGame) {
-                if (AppImguiHelpers.InputFilepath("RSZ JSON File Path", ref rszPath, "*.json") && File.Exists(gamepath)) {
+                if (AppImguiHelpers.InputFilepath("RSZ JSON File Path", ref rszPath, FileFilters.JsonFile) && File.Exists(gamepath)) {
                     AppConfig.Instance.SetGameRszJsonPath(chosenGame, rszPath);
                 }
                 ImguiHelpers.Tooltip("This setting should point to the correct rsz*.json for the chosen game.");

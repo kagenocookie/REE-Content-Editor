@@ -28,14 +28,14 @@ public static class AppImguiHelpers
 
     public unsafe static ImTextureRef AsTextureRef(this Texture texture) => new ImTextureRef(null, new ImTextureID(texture.Handle));
 
-    public static bool InputFilepath(string label, [NotNull] ref string? path, string? extension = null)
+    public static bool InputFilepath(string label, [NotNull] ref string? path, FileFilter[]? extensions = null)
     {
         var id = ImGui.GetID(label);
         var w = ImGui.CalcItemWidth();
         var buttonWidth = ImGui.CalcTextSize("Browse...").X + ImGui.GetStyle().FramePadding.X * 4;
         ImGui.PushID(label);
         if (ImGui.Button("Browse...")) {
-            PlatformUtils.ShowFileDialog((list) => fileBrowseResults[id] = list[0], path, extension, false);
+            PlatformUtils.ShowFileDialog((list) => fileBrowseResults[id] = list[0], path, extensions, false);
         }
         ImGui.SameLine();
         path ??= "";

@@ -96,7 +96,7 @@ public class JsonViewer : IWindowHandler
                         } else {
                             Logger.Error("Failed to load JSON file: " + error);
                         }
-                    }, null, "JSON (*.json)|*.json");
+                    }, null, FileFilters.JsonFile);
                 }
                 ImGui.SameLine();
                 if (ImGui.Button("Compare to file ...")) {

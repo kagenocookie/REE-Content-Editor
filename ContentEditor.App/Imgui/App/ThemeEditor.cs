@@ -56,14 +56,14 @@ public class ThemeEditor : IWindowHandler
             Directory.CreateDirectory(themePath);
             PlatformUtils.ShowSaveFileDialog((path) => {
                 File.WriteAllText(path, themeData);
-            }, initialFile: Path.GetFullPath(Path.Combine(themePath, "custom_theme.theme.txt")), filter: ".theme.txt|*.theme.txt");
+            }, initialFile: Path.GetFullPath(Path.Combine(themePath, "custom_theme.theme.txt")), filter: FileFilters.ThemeFile);
         }
         ImguiHelpers.Tooltip("Save");
         ImGui.SameLine();
         if (ImGui.Button("Open IMGUI Test Window")) {
             EditorWindow.CurrentWindow?.AddUniqueSubwindow(new ImguiTestWindow());
         }
-        
+
         ImGui.SeparatorText("Style Editor");
         ImguiHelpers.Tabs(["Built-in", "Nodes", "Contextual"], ref tab, true);
         ImGui.BeginChild("Styles");

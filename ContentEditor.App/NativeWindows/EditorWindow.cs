@@ -298,7 +298,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                                 this,
                                 (name) => workspace.CreateBundleFromPAK(name, pak[0])
                             ));
-                        }, fileExtension: "PAK file (*.pak)|*.pak", allowMultiple: false);
+                        }, fileExtension: FileFilters.PakFile, allowMultiple: false);
                     }
                     if (ImGui.MenuItem("Create from loose file mod")) {
                         PlatformUtils.ShowFolderDialog((folder) => {
