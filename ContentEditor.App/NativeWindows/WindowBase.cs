@@ -670,6 +670,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     void IDragDropTarget.Drop(DragDropContextObject data, uint keyState, Point position, ref uint effect)
     {
+        DragDropData ??= data;
         fileWasDropped = true;
     }
 
