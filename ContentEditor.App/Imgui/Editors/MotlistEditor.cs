@@ -353,6 +353,7 @@ public class MotFileHandler : IObjectUIHandler
             context.AddChild<MotFile, float>("Start Frame", instance, getter: (m) => m!.Header.startFrame, setter: (m, v) => m!.Header.startFrame = v).AddDefaultHandler<float>();
             context.AddChild<MotFile, float>("End Frame", instance, getter: (m) => m!.Header.endFrame, setter: (m, v) => m!.Header.endFrame = v).AddDefaultHandler<float>();
             context.AddChild<MotFile, ushort>("Ukn Extra", instance, getter: (m) => m!.Header.uknExtra, setter: (m, v) => m!.Header.uknExtra = v).AddDefaultHandler<ushort>();
+            context.AddChild<MotFile, ushort>("Ukn Extra 2", instance, getter: (m) => m!.Header.uknExtra2, setter: (m, v) => m!.Header.uknExtra2 = v).AddDefaultHandler<ushort>();
 
             context.AddChild<MotFile, List<MotBone>>("Bones", instance, getter: (m) => m!.RootBones).AddDefaultHandler();
             context.AddChild<MotFile, List<BoneMotionClip>>("Animation Clips", instance, getter: (m) => m!.BoneClips).AddDefaultHandler();
