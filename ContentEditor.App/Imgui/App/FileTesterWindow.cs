@@ -348,10 +348,46 @@ public partial class FileTesterWindow : IWindowHandler
         return format == KnownFileFormats.Mesh && filepath.StartsWith("natives/stm/streaming");
     }
 
-    private static IEnumerable<(string path, MemoryStream stream)> GetFileList(ContentWorkspace env, KnownFileFormats format)
+    internal IEnumerable<(string path, Stream file)> GetExecutableFiles(GameIdentifier game, string extension, CancellationToken token = default)
+    {
+        Debug.Assert(Workspace != null);
+
+        var env = Workspace.Env;
+        if (game != Workspace.Game) {
+            try {
+                env = WorkspaceManager.Instance.GetWorkspace(game);
+            } catch (Exception) {
+                Logger.Warn("Failed to get workspace for " + game);
+                yield break;
+            }
+        }
+        ContentWorkspace? cw = null;
+        try {
+            cw = new ContentWorkspace(env, new PatchDataContainer("!"));
+            cw.ResourceManager.SetupFileLoaders(typeof(MeshLoader).Assembly);
+            try {
+                cw.Env.PakReader.EnableConsoleLogging = false;
+            } catch {
+                // ignore
+            }
+            foreach (var (path, stream) in GetFileList(cw, format)) {
+                if (token.IsCancellationRequested) yield break;
+                if (ShouldSkipFile(format, path)) continue;
+
+                yield return (path, stream);
+            }
+        } finally {
+            if (env != Workspace.Env) {
+                WorkspaceManager.Instance.Release(env);
+                cw?.Dispose();
+            }
+        }
+    }
+
+    internal static IEnumerable<(string path, MemoryStream stream)> GetFileList(ContentWorkspace env, KnownFileFormats format)
     {
         var exts = env.Env.GetFileExtensionsForFormat(format);
-        if (PakUtils.ScanPakFiles(env.Env.Config.GamePath).Count > 0) {
+        if (!string.IsNullOrEmpty(env.Env.Config.GamePath) && PakUtils.ScanPakFiles(env.Env.Config.GamePath).Count > 0) {
             return exts.SelectMany(ext => env.Env.GetFilesWithExtension(ext));
         }
 
@@ -643,10 +679,12 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<Tmlfsm2File>((m) => [m.BehaviorTrees, m.Clips]);
 
         AddCompareMapper<EfxFile>((m) => [m.Header, m.Entries, m.Strings, m.BoneRelations, m.Bones, m.ExpressionParameters, m.FieldParameterValues, m.UvarGroups, m.parentFile != null]);
-        AddCompareMapper<EfxHeader>((m) => [m.actionCount, m.boneAttributeEntryCount, m.boneCount, m.effectGroupsCount, m.effectGroupsLength, m.entryCount, m.expressionParameterCount, m.fieldParameterCount, m.ukn, m.uknFlag]);
+        // AddCompareMapper<EfxHeader>((m) => [m.actionCount, m.boneAttributeEntryCount, m.boneCount, m.effectGroupsCount, m.effectGroupsLength, m.entryCount, m.expressionParameterCount, m.fieldParameterCount, m.dimensionType, m.propBindingIndexCount]);
+        // we _should_ be safe to ignore some of the counts not being identical becaus we're deduplicting names
+        AddCompareMapper<EfxHeader>((m) => [m.actionCount, m.boneCount, m.entryCount, m.expressionParameterCount, m.fieldParameterCount, m.dimensionType, m.propBindingIndexCount]);
         AddCompareMapper<EFXEntry>((m) => [m.Attributes, m.entryAssignment, m.index, m.name, m.nameHash, m.Groups.Order()]);
         AddCompareMapper<ReeLib.Efx.Strings>((m) => [m.ActionNames, m.BoneNames, m.EfxNames, m.ExpressionParameterNames, m.FieldParameterNames, m.GroupNames.Order()]);
-        AddCompareMapper<EFXExpressionParameter>((m) => [m.expressionParameterNameUTF16Hash, m.expressionParameterNameUTF8Hash, m.name, m.type, m.value1, m.value2, m.value3]);
+        AddCompareMapper<EFXExpressionParameter>((m) => [m.expressionParameterNameUTF16Hash, m.expressionParameterNameUTF8Hash, m.name, m.type, m.ToString()]);
         AddCompareMapper<EFXExpressionList>((m) => [m.ExpressionCount, m.Expressions]);
         AddCompareMapper<EFXMaterialExpressionList>((m) => [m.ExpressionCount, m.Expressions, m.indexCount, m.indices]);
 

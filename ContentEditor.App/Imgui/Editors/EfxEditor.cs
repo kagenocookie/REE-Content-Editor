@@ -296,8 +296,7 @@ public class EfxActionsListEditor : EfxEntriesListEditorBase<EFXAction>
 public class EFXAttributeImguiHandler : IObjectUIHandler
 {
     private static MemberInfo[] BasicFields = [
-        typeof(EFXAttribute).GetField(nameof(EFXAttribute.unknSeqNum))!,
-        typeof(EFXAttribute).GetProperty(nameof(EFXAttribute.NodePosition))!,
+        typeof(EFXAttribute).GetField(nameof(EFXAttribute.UniqueID))!,
     ];
 
     public void OnIMGUI(UIContext context)

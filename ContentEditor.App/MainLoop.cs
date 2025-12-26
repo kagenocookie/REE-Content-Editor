@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using ContentEditor.App.Windowing;
 using ContentEditor.BackgroundTasks;
+using ContentEditor.Reversing;
 
 namespace ContentEditor.App;
 
@@ -47,6 +48,8 @@ internal sealed partial class MainLoop : IDisposable
         var stopwatch = Stopwatch.StartNew();
         float timer = 0;
         windows.First().InitGraphics();
+        ExecDebugTests();
+
         var fpsLimit = new FpsLimiter();
         while (windows.FirstOrDefault()?.IsClosing == false) {
             var deltaTime = fpsLimit.StartFrame();
@@ -85,6 +88,30 @@ internal sealed partial class MainLoop : IDisposable
     {
         RunEventLoop();
         return 0;
+    }
+
+    [Conditional("DEBUG")]
+    private void ExecDebugTests()
+    {
+        if (Environment.CommandLine.Contains("--test")) {
+            var testEnv = Environment.GetCommandLineArgs().IndexOf("--test");
+            var test = Environment.GetCommandLineArgs()[testEnv + 1];
+            Logger.Info($"Running test: {test}");
+            var wnd = MainWindow;
+            var tester = new FileTesterWindow();
+            wnd.AddSubwindow(tester);
+            switch (test) {
+                case "efx":
+                    EfxReversingTools.FileProvider = (game, ext) => tester.GetExecutableFiles(game, ext);
+                    EfxReversingTools.FullReadWriteTest();
+                    break;
+                default:
+                    Logger.Error("Unknown test " + test);
+                    break;
+            }
+
+            Environment.Exit(0);
+        }
     }
 
     private sealed partial class FpsLimiter
