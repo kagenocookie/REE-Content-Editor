@@ -450,9 +450,13 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                         if (!exportAnimations) {
                             assmesh.ExportToFile(exportPath);
                         } else if (exportCurrentAnimationOnly) {
-                            assmesh.ExportToFile(exportPath, singleMot: animator?.ActiveMotion);
+                            assmesh.ExportToFile(exportPath, [animator!.ActiveMotion!]);
                         } else {
-                            assmesh.ExportToFile(exportPath, motlist: animator?.File?.GetFile<MotlistFile>());
+                            if (animator!.File!.Format.format == KnownFileFormats.Motion) {
+                                assmesh.ExportToFile(exportPath, [animator.File.GetFile<MotFile>()]);
+                            } else {
+                                assmesh.ExportToFile(exportPath, animator.File.GetFile<MotlistFile>().MotFiles);
+                            }
                         }
                     } catch (Exception e) {
                         Logger.Error(e, "Mesh export failed");
@@ -582,7 +586,15 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         if (animator?.AnimationCount > 0) {
             var ignoreRoot = animator.IgnoreRootMotion;
             if (ImGui.Button("View Data")) {
-                EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, animator.File!));
+                if (animator.File!.Format.format == KnownFileFormats.Motion) {
+                    var fakeMotlist = new MotlistFile(new FileHandler());
+                    var ff = animator.File.GetFile<MotFile>();
+                    fakeMotlist.MotFiles.Add(ff);
+                    var fakeHandle = FileHandle.CreateEmbedded(new MotListFileLoader(), new BaseFileResource<MotlistFile>(fakeMotlist));
+                    EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, fakeHandle));
+                } else {
+                    EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, animator.File!));
+                }
             }
             ImGui.SameLine();
             if (ImGui.Checkbox("Ignore Root Motion", ref ignoreRoot)) {

@@ -85,14 +85,14 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
         context.ExportFile(scene, filepath, exportFormat);
     }
 
-    public void ExportToFile(string filepath, MotlistFile? motlist = null, MotFile? singleMot = null)
+    public void ExportToFile(string filepath, IEnumerable<MotFileBase>? mots = null)
     {
         using AssimpContext context = new AssimpContext();
 
         var ext = PathUtils.GetExtensionWithoutPeriod(filepath);
         string exportFormat = context.GetFormatIDFromExtension(ext);
         var scene = GetSceneForExport(ext, false);
-        if (motlist == null && singleMot == null) {
+        if (mots == null || !mots.Any()) {
             context.ExportFile(scene, filepath, exportFormat);
             return;
         }
@@ -102,8 +102,11 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
             return;
         }
 
-        if (singleMot != null) AddMotToScene(scene, singleMot, ext);
-        if (motlist != null) AddMotlistToScene(scene, motlist, ext);
+        foreach (var mot in mots) {
+            if (mot is MotFile mm) {
+                AddMotToScene(scene, mm, ext);
+            }
+        }
         context.ExportFile(scene, filepath, exportFormat);
     }
 
