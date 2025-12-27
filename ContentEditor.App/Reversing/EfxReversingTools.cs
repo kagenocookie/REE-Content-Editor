@@ -43,10 +43,10 @@ internal static class EfxReversingTools
         Directory.CreateDirectory(EfxOutputBasePath);
 
         // FullExpressionParseTest();
-        FullReadTest();
-        DumpEfxAttributeUsageList();
+        // FullReadTest();
         // DumpEfxStructValueLists<EFXAttributeSpawn>();
         DumpEfxStructValueLists();
+        DumpEfxAttributeUsageList();
 
         // var unknownHashes = EfxFile.UnknownParameterHashes;
         // var foundHashes = EfxFile.FoundNamedParameterHashes;
@@ -331,7 +331,9 @@ internal static class EfxReversingTools
         var usageSb = new StringBuilder();
         foreach (var (attrType, allValues) in dict) {
             usageSb.Clear();
-            foreach (var (field, versions) in allValues.OrderBy(atu => attrType.GetFields(BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic).Select(f => f.Name).ToList().IndexOf(atu.Key))) {
+            var fieldNames = attrType.GetFields(BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic).Select(f => f.Name).ToList();
+
+            foreach (var (field, versions) in allValues.OrderBy(atu => fieldNames.IndexOf(atu.Key))) {
                 usageSb
                     .AppendLine("----------------------------------")
                     .Append("Field: ").AppendLine(field.ToString())
@@ -341,6 +343,25 @@ internal static class EfxReversingTools
                     usageSb.Append(version.ToString()).Append(": ").AppendLine(string.Join(", ", values));
                 }
                 usageSb.AppendLine();
+            }
+
+            usageSb
+                .AppendLine("------------------------------------------")
+                .AppendLine("------------------------------------------")
+                .AppendLine();
+
+            var efxVersions = allValues.SelectMany(kv => kv.Value.Keys).Distinct().Order().Order();
+            foreach (var gamever in efxVersions) {
+                usageSb
+                    .Append("Game: ").AppendLine(gamever.ToString())
+                    .AppendLine();
+
+                foreach (var (field, versions) in allValues.OrderBy(atu => fieldNames.IndexOf(atu.Key))) {
+                    if (versions.TryGetValue(gamever, out var values)) {
+                        usageSb.Append(field).Append(": ").AppendLine(string.Join(", ", values));
+                    }
+                }
+                usageSb.AppendLine().AppendLine("-------------------------------");
             }
 
             File.WriteAllText(Path.Combine(
