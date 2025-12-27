@@ -40,6 +40,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     private string animationSourceFile = "";
     private Animator? animator;
     private string motFilter = "";
+    private bool isMotFilterMatchCase = false;
     private string? loadedAnimationSource;
     public Animator? Animator => animator;
 
@@ -330,8 +331,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                     ImGui.EndMenu();
                 }
                 ImGui.Text("|");
-                if (ImGui.MenuItem($"{AppIcons.Play} Animations")) showAnimationsMenu = !showAnimationsMenu;
-                if (showAnimationsMenu) ImguiHelpers.HighlightMenuItem($"{AppIcons.Play} Animations");
+                if (ImGui.MenuItem($"{AppIcons.SI_Animation} Animations")) showAnimationsMenu = !showAnimationsMenu;
+                if (showAnimationsMenu) ImguiHelpers.HighlightMenuItem($"{AppIcons.SI_Animation} Animations");
                 ImGui.Text("|");
                 if (ImGui.MenuItem($"{AppIcons.SI_GenericIO} Import / Export")) ImGui.OpenPopup("Export");
 
@@ -489,7 +490,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             }
         }
         ImGui.SameLine();
-        ImguiHelpers.ToggleButton($"{AppIcons.GameObject}", ref showImportSettings, Colors.IconActive);
+        ImguiHelpers.ToggleButton($"{AppIcons.SI_Settings}", ref showImportSettings, Colors.IconActive);
         ImguiHelpers.Tooltip("Show Settings");
 
         if (exportInProgress) {
@@ -548,7 +549,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         }
         if (!UpdateAnimatorMesh(meshComponent)) return;
 
-        ImGui.Checkbox("Show skeleton", ref showSkeleton);
+        ImGui.Checkbox("Show Skeleton", ref showSkeleton);
 
         if (animationPickerContext == null) {
             animationPickerContext = context.AddChild<MeshViewer, string>(
@@ -584,8 +585,10 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         }
 
         if (animator?.AnimationCount > 0) {
+            ImGui.Separator();
+            ImGui.Spacing();
             var ignoreRoot = animator.IgnoreRootMotion;
-            if (ImGui.Button("View Data")) {
+            if (ImGui.Button($"{AppIcons.SI_FileType_MOTLIST}")) {
                 if (animator.File!.Format.format == KnownFileFormats.Motion) {
                     var fakeMotlist = new MotlistFile(new FileHandler());
                     var ff = animator.File.GetFile<MotFile>();
@@ -596,14 +599,30 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                     EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, animator.File!));
                 }
             }
+            ImguiHelpers.Tooltip("Open current motlist in Motlist Editor");
             ImGui.SameLine();
-            if (ImGui.Checkbox("Ignore Root Motion", ref ignoreRoot)) {
-                animator.IgnoreRootMotion = ignoreRoot;
-            }
+            ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_IgnoreRootMotion, ref ignoreRoot, new[] { Colors.IconTertiary, Colors.IconPrimary, Colors.IconPrimary }, Colors.IconActive);
+            ImguiHelpers.Tooltip("Ignore Root Motion");
+            animator.IgnoreRootMotion = ignoreRoot;
 
-            ImGui.InputText("Filter", ref motFilter, 200);
+            ImGui.SameLine();
+            ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isMotFilterMatchCase, Colors.IconActive);
+            ImguiHelpers.Tooltip("Match Case");
+
+            ImGui.SameLine();
+            ImGui.SetNextItemAllowOverlap();
+            ImGui.InputTextWithHint("##MotFilter", $"{AppIcons.SI_GenericMagnifyingGlass} Filter Animations", ref motFilter, 200);
+            if (!string.IsNullOrEmpty(motFilter)) {
+                ImGui.SameLine();
+                ImGui.SetCursorPosX(ImGui.GetCursorPosX() - (ImGui.CalcTextSize($"{AppIcons.SI_GenericClose}").X * 2));
+                ImGui.SetNextItemAllowOverlap();
+                if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
+                    motFilter = string.Empty;
+                }
+            }
+            ImGui.Spacing();
             foreach (var (name, mot) in animator.Animations) {
-                if (!string.IsNullOrEmpty(motFilter) && !name.Contains(motFilter, StringComparison.InvariantCultureIgnoreCase)) continue;
+                if (!string.IsNullOrEmpty(motFilter) && !name.Contains(motFilter, isMotFilterMatchCase ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase)) continue;
 
                 if (ImGui.RadioButton(name, animator.ActiveMotion == mot)) {
                     animator.SetActiveMotion(mot);
