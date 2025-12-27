@@ -105,7 +105,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
 
         try {
             string[] files;
-            if (selectedPath.Contains('*') || selectedPath.Contains('+')) {
+            if (ListFileWrapper.QueryHasPatterns(selectedPath)) {
                 files = extractList.FilterAllFiles(selectedPath);
             } else if (reader.FileExists(selectedPath)) {
                 files = [selectedPath];
@@ -369,7 +369,14 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         } else {
             _editedDir = null;
         }
-        ImguiHelpers.Tooltip("You can use regex to match file patterns (e.g. natives/stm/character/**.mdf2.*)");
+        if (ImGui.BeginItemTooltip()) {
+            ImGui.Text("You can use patterns for more complex matching rules");
+            ImGui.BulletText("Regex patterns: natives/stm/character/**.mdf2.*");
+            ImGui.BulletText("Include rules (path MUST contain the text): +.tex    +cha01");
+            ImGui.BulletText("Exclude rules (path MUST NOT contain the text): !.tex    !/sm00");
+            ImGui.Text("Include and exclude rules must be separated with spaces");
+            ImGui.EndTooltip();
+        }
         ImGui.SameLine();
         if (isBookmarked || _bookmarkManagerDefaults.IsBookmarked(Workspace.Config.Game.name, CurrentDir)) {
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);

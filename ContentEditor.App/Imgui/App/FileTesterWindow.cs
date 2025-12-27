@@ -485,6 +485,7 @@ public partial class FileTesterWindow : IWindowHandler
             case KnownFileFormats.Effect: return VerifyRewriteEquality<EfxFile>(source.GetFile<EfxFile>(), env);
             case KnownFileFormats.MeshMaterial: return VerifyRewriteEquality<MdfFile>(source.GetFile<MdfFile>(), env);
             case KnownFileFormats.MotionBank: return VerifyRewriteEquality<MotbankFile>(source.GetFile<MotbankFile>(), env);
+            case KnownFileFormats.MotionCameraBank: return VerifyRewriteEquality<McamBankFile>(source.GetFile<McamBankFile>(), env);
             case KnownFileFormats.MotionCameraList: return VerifyRewriteEquality<McamlistFile>(source.GetFile<McamlistFile>(), env);
             case KnownFileFormats.MotionCamera: return VerifyRewriteEquality<MotcamFile>(source.GetFile<MotcamFile>(), env);
             default: return null;
