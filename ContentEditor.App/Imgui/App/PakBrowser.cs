@@ -315,8 +315,13 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                         _ => FilterMode.AnyMatch
                     };
                 }
-                ImGui.SameLine();
-                ImguiHelpers.Tooltip("Filter Modes:\nAny = Keep entries with at least one matching tag\nAll = Keep entries containing all active tags\nExact = Keep entries with tags exactly matching the active filters");
+                if (ImGui.BeginItemTooltip()) {
+                    ImGui.SeparatorText("Filter Modes");
+                    ImGui.BulletText("Any: Keep entries with at least one matching tag");
+                    ImGui.BulletText("All: Keep entries containing all active tags");
+                    ImGui.BulletText("Exact: Keep entries with tags exactly matching the active filters");
+                    ImGui.EndTooltip();
+                }
                 ImGui.SameLine();
                 ImGui.Text("Active Filters: ");
 

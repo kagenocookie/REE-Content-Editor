@@ -54,6 +54,7 @@ public static class Colors
     public static Vector4 FileTypeUCURVE => Current.FileTypeUCURVE;
     public static Vector4 FileTypeUCURVELIST => Current.FileTypeUCURVELIST;
     public static Vector4 FileTypeFSM => Current.FileTypeFSM;
+    public static Vector4 FileTypeMSG => Current.FileTypeMSG;
     /// <summary>
     /// Main color for icons, it should be the same as the text color of the current theme
     ///</summary>
@@ -151,6 +152,7 @@ public sealed class AppColors
     public Vector4 FileTypeUCURVE = new Vector4(0.84f, 0.61f, 0.52f, 1);
     public Vector4 FileTypeUCURVELIST = new Vector4(0.84f, 0.61f, 0.52f, 1);
     public Vector4 FileTypeFSM = new Vector4(0.35f, 0.55f, 0.98f, 1);
+    public Vector4 FileTypeMSG = new Vector4(1, 0.78f, 0, 1);
 
     public Vector4 IconPrimary = new Vector4(1, 1, 1, 1);
     public Vector4 IconSecondary = new Vector4(0.114f, 0.6f, 0.93f, 1);

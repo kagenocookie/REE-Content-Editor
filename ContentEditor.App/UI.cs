@@ -343,6 +343,7 @@ public static class AppIcons
     public static readonly char[] SIC_IgnoreRootMotion = { '\ued9a', '\ued9b', '\ued9c' };
     public static readonly char SI_Animation = '\ued9d';
     public static readonly char SI_Animation2 = '\ued9e';
+    public static readonly char SI_FileType_MSG = '\ueda0';
 
     public static string PrependIcon(this string text, object target)
     {
@@ -413,6 +414,7 @@ public static class AppIcons
         KnownFileFormats.Chain or KnownFileFormats.Chain2 => (SI_FileType_CHAIN, Colors.FileTypeCHAIN),
         KnownFileFormats.UserCurve => (SI_FileType_UCURVE, Colors.FileTypeUCURVE),
         KnownFileFormats.UserCurveList => (SI_FileType_UCURVELIST, Colors.FileTypeUCURVELIST),
+        KnownFileFormats.Message => (SI_FileType_MSG, Colors.FileTypeMSG),
         _ => ('\0', Vector4.One),
     };
 }

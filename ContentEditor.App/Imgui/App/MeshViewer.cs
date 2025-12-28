@@ -43,6 +43,18 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     private bool isMotFilterMatchCase = false;
     private string? loadedAnimationSource;
     public Animator? Animator => animator;
+    private float playbackSpeed = 1.0f;
+    private static readonly float[] PlaybackSpeeds =
+    {
+        0.05f,
+        0.25f,
+        0.5f,
+        0.75f,
+        1.0f,
+        1.25f,
+        1.5f,
+        2.0f
+    };
 
     private string exportTemplate;
 
@@ -733,9 +745,9 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         var windowSize = ImGui.GetWindowSize();
         var timestamp = $"{animator.CurrentTime:0.00} / {animator.TotalTime:0.00} ({animator.CurrentFrame:000} / {animator.TotalFrames:000})";
         var timestampSize = ImGui.CalcTextSize(timestamp) + new Vector2(5 * 48, 0);
-        ImGui.SetCursorPos(new Vector2(windowSize.X - timestampSize.X - ImGui.GetStyle().WindowPadding.X * 2 - 42, TopMargin));
+        ImGui.SetCursorPos(new Vector2(windowSize.X - timestampSize.X - ImGui.GetStyle().WindowPadding.X * 2 - 100, TopMargin));
         ImGui.PushStyleColor(ImGuiCol.ChildBg, ImguiHelpers.GetColor(ImGuiCol.WindowBg) with { W = 0.5f });
-        ImGui.BeginChild("PlaybackControls", new Vector2(timestampSize.X, 80), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
+        ImGui.BeginChild("PlaybackControls", new Vector2(timestampSize.X + 50, 80), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
 
         var p = ImGui.GetStyle().FramePadding;
         // the margins are weird on the buttons by default - font issue maybe, either way adding a bit of extra Y here
@@ -748,6 +760,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 animator.Play();
             }
         }
+        ImguiHelpers.Tooltip(animator.IsPlaying ? "Pause" : "Play");
 
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(animator.CurrentTime == 0)) {
@@ -755,13 +768,17 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 animator.Restart();
             }
         }
+        ImguiHelpers.Tooltip("Restart");
 
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(!animator.IsPlaying && !animator.IsActive)) {
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
             if (ImGui.Button(AppIcons.Stop.ToString(), btnHeight)) {
                 animator.Stop();
             }
+            ImGui.PopStyleColor();
         }
+        ImguiHelpers.Tooltip("Stop");
 
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(!animator.IsActive)) {
@@ -771,6 +788,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 animator.Update(0);
             }
         }
+        ImguiHelpers.Tooltip("Previous Frame");
 
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(!animator.IsActive)) {
@@ -780,6 +798,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 animator.Update(0);
             }
         }
+        ImguiHelpers.Tooltip("Next Frame");
 
         ImGui.SameLine();
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 4);
@@ -794,11 +813,25 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 animator.Update(0);
             }
         }
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(75);
+        if (ImGui.BeginCombo("##PlaybackSpeed", $"{playbackSpeed:0.##}x")) {
+            for (int i = 0; i < PlaybackSpeeds.Length; i++) {
+                bool selected = playbackSpeed == PlaybackSpeeds[i];
+                if (ImGui.Selectable($"{PlaybackSpeeds[i]:0.##}x", selected)) {
+                    playbackSpeed = PlaybackSpeeds[i];
+                }
+                if (selected) ImGui.SetItemDefaultFocus();
+            }
+            ImGui.EndCombo();
+        }
+        ImguiHelpers.Tooltip("Playback Speed");
 
         ImGui.EndChild();
         ImGui.PopStyleColor();
 
-        if (animator.IsPlaying) animator.Update(Time.Delta);
+        if (animator.IsPlaying) animator.Update(Time.Delta * playbackSpeed);
+
     }
 
     public void SetAnimation(string animlist)
