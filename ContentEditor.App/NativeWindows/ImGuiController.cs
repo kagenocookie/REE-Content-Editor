@@ -215,7 +215,7 @@ public class ImGuiController : IDisposable
         io.DeltaTime = deltaSeconds; // DeltaTime is in seconds.
     }
 
-    private void UpdateImGuiInput()
+    private unsafe void UpdateImGuiInput()
     {
         var io = global::Hexa.NET.ImGui.ImGui.GetIO();
 
@@ -244,7 +244,36 @@ public class ImGuiController : IDisposable
         io.KeyAlt = _keyboard.IsKeyPressed(Key.AltLeft) || _keyboard.IsKeyPressed(Key.AltRight);
         io.KeyShift = _keyboard.IsKeyPressed(Key.ShiftLeft) || _keyboard.IsKeyPressed(Key.ShiftRight);
         io.KeySuper = _keyboard.IsKeyPressed(Key.SuperLeft) || _keyboard.IsKeyPressed(Key.SuperRight);
+
+#if !WINDOWS && DEBUG
+        // in certain setups, the clipboard does not sync properly between imgui and the desktop system, hack it in manually
+        byte* clipBytesImgui = global::Hexa.NET.ImGui.ImGui.GetClipboardText();
+        string? clipboardImgui = clipBytesImgui == null ? null : global::Hexa.NET.ImGui.ImGui.GetClipboardTextS();
+        string? clipboardNative = null;
+        try {
+            clipboardNative = _keyboard.ClipboardText;
+        } catch {
+            // ignore failures
+        }
+        if (clipboardImgui == "") clipboardImgui = null;
+        if (clipboardNative == "") clipboardNative = null;
+
+        var imguiChanged = clipboardImgui != null && clipboardImgui != _lastClipboardImgui;
+        var nativeChanged = clipboardNative != null && clipboardNative != _lastClipboardNative;
+        if (nativeChanged) {
+            global::Hexa.NET.ImGui.ImGui.SetClipboardText(clipboardImgui = clipboardNative);
+        } else if (imguiChanged) {
+            _keyboard.ClipboardText = clipboardNative = clipboardImgui!;
+        }
+        _lastClipboardImgui = clipboardImgui;
+        if (clipboardNative != null) _lastClipboardNative = clipboardNative;
+#endif
     }
+
+#if !WINDOWS && DEBUG
+    private string? _lastClipboardImgui;
+    private string? _lastClipboardNative;
+#endif
 
     internal void PressChar(char keyChar)
     {
