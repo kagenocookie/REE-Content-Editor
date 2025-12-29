@@ -31,11 +31,13 @@ namespace ContentEditor.App
             }
         }
         public static Dictionary<string, TagInfo> TagInfoMap = new() {
+            ["Animation"] = new TagInfo($"{AppIcons.SI_Animation}", () => new[] { Colors.TagAnimation, Colors.TagAnimationHovered, Colors.TagAnimationSelected }),
             ["Character"] = new TagInfo($"{AppIcons.SI_TagCharacter}", () => new[] { Colors.TagCharacter, Colors.TagCharacterHovered, Colors.TagCharacterSelected }),
             ["DLC"] = new TagInfo($"{AppIcons.SI_TagDLC}", () => new[] { Colors.TagDLC, Colors.TagDLCHovered, Colors.TagDLCSelected }),
             ["Enemy"] = new TagInfo($"{AppIcons.SI_TagCharacter}", () => new[] { Colors.TagEnemy, Colors.TagEnemyHovered, Colors.TagEnemySelected }),
             ["Item"] = new TagInfo($"{AppIcons.SI_TagItem}", () => new[] { Colors.TagItem, Colors.TagItemHovered, Colors.TagItemSelected }),
             ["Misc"] = new TagInfo($"{AppIcons.SI_TagMisc}", () => new[] { Colors.TagMisc, Colors.TagMiscHovered, Colors.TagMiscSelected }),
+            ["Prefab"] = new TagInfo($"{AppIcons.SI_FileType_PFB}", () => new[] { Colors.TagPrefab, Colors.TagPrefabHovered, Colors.TagPrefabSelected }),
             ["Stage"] = new TagInfo($"{AppIcons.SI_FileType_SCN}", () => new[] { Colors.TagStage, Colors.TagStageHovered, Colors.TagStageSelected }),
             ["UI"] = new TagInfo($"{AppIcons.SI_FileType_GUI}", () => new[] { Colors.TagUI, Colors.TagUIHovered, Colors.TagUISelected }),
             ["Weapon"] = new TagInfo($"{AppIcons.SI_TagWeapon}", () => new[] { Colors.TagWeapon, Colors.TagWeaponHovered, Colors.TagWeaponSelected }),

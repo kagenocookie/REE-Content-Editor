@@ -117,7 +117,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
         var msgListHovered = false;
         ImGui.BeginChild("msg_list", new System.Numerics.Vector2(w, size.Y), ImGuiChildFlags.ResizeX);
         var langIndex = (int)selectedLanguage;
-        if (ImGui.BeginTable("Messages", 3, ImGuiTableFlags.Sortable | ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingStretchProp)) {
+        if (ImGui.BeginTable("Messages", 3, ImGuiTableFlags.Sortable | ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingStretchProp | ImGuiTableFlags.RowBg)) {
             ImGui.TableSetupColumn("Index", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize, 60 * UI.UIScale);
             ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 0.3f);
             ImGui.TableSetupColumn("Message", ImGuiTableColumnFlags.WidthStretch, 0.7f);

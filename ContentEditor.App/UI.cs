@@ -340,6 +340,10 @@ public static class AppIcons
     public static readonly char[] SIC_FolderFile = { '\ued93', '\ued94', };
     public static readonly char[] SIC_FolderContain = { '\ued95', '\ued96', };
     public static readonly char[] SIC_FolderContain2 = { '\ued97', '\ued98', '\ued99' };
+    public static readonly char[] SIC_IgnoreRootMotion = { '\ued9a', '\ued9b', '\ued9c' };
+    public static readonly char SI_Animation = '\ued9d';
+    public static readonly char SI_Animation2 = '\ued9e';
+    public static readonly char SI_FileType_MSG = '\ueda0';
 
     public static string PrependIcon(this string text, object target)
     {
@@ -390,27 +394,27 @@ public static class AppIcons
         KnownFileFormats.MotionList => (SI_FileType_MOTLIST, Colors.FileTypeMOTLIST),
         KnownFileFormats.MotionBank => (SI_FileType_MOTBANK, Colors.FileTypeMOTBANK),
         KnownFileFormats.GpuMotionList => (SI_FileType_GPUMOTLIST, Colors.FileTypeGPUMOTLIST),
-        KnownFileFormats.CollisionFilter => (SI_FileType_CFIL, Vector4.One),
-        KnownFileFormats.CollisionDefinition => (SI_FileType_CDEF, Vector4.One),
-        KnownFileFormats.CollisionMaterial => (SI_FileType_CMAT, Vector4.One),
-        KnownFileFormats.Foliage => (SI_FileType_FOL, Vector4.One),
+        KnownFileFormats.CollisionFilter => (SI_FileType_CFIL, Colors.FileTypeCFIL),
+        KnownFileFormats.CollisionDefinition => (SI_FileType_CDEF, Colors.FileTypeCDEF),
+        KnownFileFormats.CollisionMaterial => (SI_FileType_CMAT, Colors.FileTypeCMAT),
+        KnownFileFormats.Foliage => (SI_FileType_FOL,Colors.FileTypeFOL),
         KnownFileFormats.ByteBuffer => (SI_FileType_GPBF, Colors.FileTypeGPBF),
         KnownFileFormats.GpuCloth => (SI_FileType_GPUC, Colors.FileTypeGPUC),
         KnownFileFormats.RenderTexture => (SI_FileType_RTEX, Vector4.One),
-        KnownFileFormats.Effect => (SI_FileType_EFX, Vector4.One),
+        KnownFileFormats.Effect => (SI_FileType_EFX, Colors.FileTypeEFX),
         KnownFileFormats.Timeline => (SI_FileType_TML, Vector4.One),
         KnownFileFormats.Clip => (SI_FileType_CLIP, Vector4.One),
-        KnownFileFormats.GUI => (SI_FileType_GUI, Vector4.One),
-        KnownFileFormats.GUIColorPreset => (SI_FileType_GCP, Vector4.One),
-        KnownFileFormats.GUIStyleList => (SI_FileType_GSTY, Vector4.One),
-        KnownFileFormats.GUIConfig => (SI_FileType_GCF, Vector4.One),
-        KnownFileFormats.Fsm or KnownFileFormats.Fsm2 => (SI_FileType_FSM, Vector4.One),
+        KnownFileFormats.GUI => (SI_FileType_GUI, Colors.FileTypeGUI),
+        KnownFileFormats.GUIColorPreset => (SI_FileType_GCP, Colors.FileTypeGCP),
+        KnownFileFormats.GUIStyleList => (SI_FileType_GSTY, Colors.FileTypeGSTY),
+        KnownFileFormats.GUIConfig => (SI_FileType_GCF, Colors.FileTypeGCF),
+        KnownFileFormats.Fsm or KnownFileFormats.Fsm2 => (SI_FileType_FSM, Colors.FileTypeFSM),
         KnownFileFormats.MotionFsm or KnownFileFormats.MotionFsm2 => (SI_FileType_MOTFSM, Colors.FileTypeMOTFSM),
         KnownFileFormats.TimelineFsm2 => (SI_FileType_TMLFSM2, Vector4.One),
-        KnownFileFormats.Chain => (SI_FileType_CHAIN, Vector4.One),
-        KnownFileFormats.Chain2 => (SI_FileType_CHAIN2, Vector4.One),
-        KnownFileFormats.UserCurve => (SI_FileType_UCURVE, Vector4.One),
-        KnownFileFormats.UserCurveList => (SI_FileType_UCURVELIST, Vector4.One),
+        KnownFileFormats.Chain or KnownFileFormats.Chain2 => (SI_FileType_CHAIN, Colors.FileTypeCHAIN),
+        KnownFileFormats.UserCurve => (SI_FileType_UCURVE, Colors.FileTypeUCURVE),
+        KnownFileFormats.UserCurveList => (SI_FileType_UCURVELIST, Colors.FileTypeUCURVELIST),
+        KnownFileFormats.Message => (SI_FileType_MSG, Colors.FileTypeMSG),
         _ => ('\0', Vector4.One),
     };
 }

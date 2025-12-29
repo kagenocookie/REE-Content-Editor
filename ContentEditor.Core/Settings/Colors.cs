@@ -41,7 +41,20 @@ public static class Colors
     public static Vector4 FileTypeMOTLIST => Current.FileTypeMOTLIST;
     public static Vector4 FileTypeMOTBANK => Current.FileTypeMOTBANK;
     public static Vector4 FileTypeMOTFSM => Current.FileTypeMOTFSM;
-
+    public static Vector4 FileTypeCFIL => Current.FileTypeCFIL;
+    public static Vector4 FileTypeCDEF => Current.FileTypeCDEF;
+    public static Vector4 FileTypeCMAT => Current.FileTypeCMAT;
+    public static Vector4 FileTypeFOL => Current.FileTypeFOL;
+    public static Vector4 FileTypeEFX => Current.FileTypeEFX;
+    public static Vector4 FileTypeGUI => Current.FileTypeGUI;
+    public static Vector4 FileTypeGCP => Current.FileTypeGCP;
+    public static Vector4 FileTypeGSTY => Current.FileTypeGSTY;
+    public static Vector4 FileTypeGCF => Current.FileTypeGCF;
+    public static Vector4 FileTypeCHAIN => Current.FileTypeCHAIN;
+    public static Vector4 FileTypeUCURVE => Current.FileTypeUCURVE;
+    public static Vector4 FileTypeUCURVELIST => Current.FileTypeUCURVELIST;
+    public static Vector4 FileTypeFSM => Current.FileTypeFSM;
+    public static Vector4 FileTypeMSG => Current.FileTypeMSG;
     /// <summary>
     /// Main color for icons, it should be the same as the text color of the current theme
     ///</summary>
@@ -58,6 +71,9 @@ public static class Colors
     /// Active color of icons when used with methods such as ToggleButton etc.
     ///</summary>
     public static Vector4 IconActive => Current.IconActive;
+    public static Vector4 TagAnimation => Current.TagAnimation;
+    public static Vector4 TagAnimationHovered => Current.TagAnimationHovered;
+    public static Vector4 TagAnimationSelected => Current.TagAnimationSelected;
     public static Vector4 TagCharacter => Current.TagCharacter;
     public static Vector4 TagCharacterHovered => Current.TagCharacterHovered;
     public static Vector4 TagCharacterSelected => Current.TagCharacterSelected;
@@ -73,6 +89,9 @@ public static class Colors
     public static Vector4 TagMisc => Current.TagMisc;
     public static Vector4 TagMiscHovered => Current.TagMiscHovered;
     public static Vector4 TagMiscSelected => Current.TagMiscSelected;
+    public static Vector4 TagPrefab => Current.TagPrefab;
+    public static Vector4 TagPrefabHovered => Current.TagPrefabHovered;
+    public static Vector4 TagPrefabSelected => Current.TagPrefabSelected;
     public static Vector4 TagStage => Current.TagStage;
     public static Vector4 TagStageHovered => Current.TagStageHovered;
     public static Vector4 TagStageSelected => Current.TagStageSelected;
@@ -120,12 +139,29 @@ public sealed class AppColors
     public Vector4 FileTypeMOTLIST = new Vector4(0.6f, 0.6f, 1, 1);
     public Vector4 FileTypeMOTBANK = new Vector4(0.6f, 0.6f, 1, 1);
     public Vector4 FileTypeMOTFSM = new Vector4(0.6f, 0.6f, 1, 1);
+    public Vector4 FileTypeCFIL = new Vector4(1, 0.70f, 0.16f, 1);
+    public Vector4 FileTypeCDEF = new Vector4(1, 0.70f, 0.16f, 1);
+    public Vector4 FileTypeCMAT = new Vector4(1, 0.70f, 0.16f, 1);
+    public Vector4 FileTypeFOL = new Vector4(0.15f, 0.65f, 0, 1);
+    public Vector4 FileTypeEFX = new Vector4(0.21f, 0.88f, 0, 1);
+    public Vector4 FileTypeGUI = new Vector4(1, 0.4f, 0.1f, 0.8f);
+    public Vector4 FileTypeGCF = new Vector4(1, 0.4f, 0.1f, 0.8f);
+    public Vector4 FileTypeGCP = new Vector4(1, 0.4f, 0.1f, 0.8f);
+    public Vector4 FileTypeGSTY = new Vector4(1, 0.4f, 0.1f, 0.8f);
+    public Vector4 FileTypeCHAIN = new Vector4(0.16f, 1, 0.76f, 1);
+    public Vector4 FileTypeUCURVE = new Vector4(0.84f, 0.61f, 0.52f, 1);
+    public Vector4 FileTypeUCURVELIST = new Vector4(0.84f, 0.61f, 0.52f, 1);
+    public Vector4 FileTypeFSM = new Vector4(0.35f, 0.55f, 0.98f, 1);
+    public Vector4 FileTypeMSG = new Vector4(1, 0.78f, 0, 1);
 
     public Vector4 IconPrimary = new Vector4(1, 1, 1, 1);
     public Vector4 IconSecondary = new Vector4(0.114f, 0.6f, 0.93f, 1);
     public Vector4 IconTertiary = new Vector4(1, 0.4f, 0.4f, 1);
     public Vector4 IconActive = new Vector4(0.114f, 0.6f, 0.93f, 1);
 
+    public Vector4 TagAnimation = new Vector4(0.6f, 0.6f, 1, 0.5f);
+    public Vector4 TagAnimationHovered = new Vector4(0.6f, 0.6f, 1, 0.8f);
+    public Vector4 TagAnimationSelected = new Vector4(0.6f, 0.6f, 1, 1);
     public Vector4 TagCharacter = new Vector4(0.2f, 0.6f, 1, 0.5f);
     public Vector4 TagCharacterHovered = new Vector4(0.2f, 0.6f, 1, 0.8f);
     public Vector4 TagCharacterSelected = new Vector4(0.2f, 0.6f, 1, 1);
@@ -141,6 +177,9 @@ public sealed class AppColors
     public Vector4 TagMisc = new Vector4(0.9f, 0.8f, 0.2f, 0.5f);
     public Vector4 TagMiscHovered = new Vector4(1, 0.9f, 0.3f, 0.8f);
     public Vector4 TagMiscSelected = new Vector4(0.8f, 0.7f, 0.1f, 1);
+    public Vector4 TagPrefab = new Vector4(0.80f, 0.62f, 0.38f, 0.5f);
+    public Vector4 TagPrefabHovered = new Vector4(0.80f, 0.62f, 0.38f, 0.8f);
+    public Vector4 TagPrefabSelected = new Vector4(0.80f, 0.62f, 0.38f, 1);
     public Vector4 TagStage = new Vector4(0.6f, 0.3f, 0.9f, 0.5f);
     public Vector4 TagStageHovered = new Vector4(0.6f, 0.3f, 0.9f, 0.8f);
     public Vector4 TagStageSelected = new Vector4(0.6f, 0.3f, 0.9f, 1);

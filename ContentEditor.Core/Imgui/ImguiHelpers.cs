@@ -440,7 +440,7 @@ public static class ImguiHelpers
     /// <summary>
     /// Draws an imgui button that behaves like a checkbox.
     /// </summary>
-    public static bool ToggleButton(string label, ref bool value, Vector4? color = null, float frameSize = 2f)
+    public static bool ToggleButton(string label, ref bool value, Vector4? color = null, float frameSize = 2f, Vector2? buttonHeight = null)
     {
         var changed = false;
         if (value && color.HasValue) {
@@ -448,14 +448,14 @@ public static class ImguiHelpers
             ImGui.PushStyleColor(ImGuiCol.Border, color.Value);
             ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, frameSize);
 
-            if (ImGui.Button(label)) {
+            if (buttonHeight.HasValue ? ImGui.Button(label, buttonHeight.Value) : ImGui.Button(label)) {
                 value = !value;
                 changed = true;
             }
             ImGui.PopStyleVar();
             ImGui.PopStyleColor(2);
         } else {
-            if (ImGui.Button(label)) {
+            if (buttonHeight.HasValue ? ImGui.Button(label, buttonHeight.Value) : ImGui.Button(label)) {
                 value = !value;
                 changed = true;
             }
