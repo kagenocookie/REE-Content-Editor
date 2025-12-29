@@ -165,6 +165,9 @@ public partial class CommonMeshResource : IResourceFile
                     boneDict[srcBone.index] = boneNode;
                     boneNode.Transform = Matrix4x4.Transpose(srcBone.localTransform.ToSystem());
                     boneRoot.Children.Add(boneNode);
+                    if (srcBone.useSecondaryWeight) {
+                        boneNode.Children.Add(new Node(SecondaryWeightDummyBonePrefix + srcBone.name, boneNode));
+                    }
                 }
             }
 
@@ -220,8 +223,7 @@ public partial class CommonMeshResource : IResourceFile
                 var aiMesh = new Mesh(PrimitiveType.Triangle);
                 aiMesh.MaterialIndex = sub.materialIndex;
 
-                // aiMesh.Vertices.AddRange(sub.Positions);
-                foreach (var pos in sub.Positions) aiMesh.Vertices.Add(pos);
+                aiMesh.Vertices.AddRange(sub.Positions);
                 aiMesh.BoundingBox = new BoundingBox(file.MeshData.boundingBox.minpos, file.MeshData.boundingBox.maxpos);
                 if (file.MeshBuffer!.UV0 != null) {
                     var uvOut = aiMesh.TextureCoordinateChannels[0];
