@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using ContentEditor;
 using ReeLib;
 using ReeLib.Common;
 
@@ -39,6 +40,10 @@ public static class ExeUtils
 
     public static string? FindGameExecutable(string gamePath, string mostLikelyExeName)
     {
+        if (!Directory.Exists(gamePath)) {
+            Logger.Error("Could not find game folder " + gamePath);
+            return null;
+        }
         var exes = Directory.GetFiles(gamePath, "*.exe");
         var exe = exes.Length == 1 ? exes[0] : exes.FirstOrDefault(e => Path.GetFileNameWithoutExtension(e) == mostLikelyExeName) ?? exes.FirstOrDefault(e =>
             e != System.Reflection.Assembly.GetEntryAssembly()?.Location
