@@ -24,6 +24,7 @@ public class Languages
             nameof(GameName.drdr) => "Dead Rising Deluxe Remaster",
             nameof(GameName.apollo) => "Apollo Justice: Ace Attorney",
             nameof(GameName.gtrick) => "Ghost Trick",
+            nameof(GameName.kunitsu) => "Kunitsu-Gami",
             nameof(GameName.pragmata) => "Pragmata",
             _ => code,
         };

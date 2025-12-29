@@ -460,12 +460,16 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 PlatformUtils.ShowSaveFileDialog((exportPath) => {
                     exportInProgress = true;
                     try {
-                        if (!exportAnimations) {
+                        if (!exportAnimations || animator?.File == null) {
                             assmesh.ExportToFile(exportPath);
                         } else if (exportCurrentAnimationOnly) {
-                            assmesh.ExportToFile(exportPath, [animator!.ActiveMotion!]);
+                            if (animator.ActiveMotion == null) {
+                                assmesh.ExportToFile(exportPath);
+                            } else {
+                                assmesh.ExportToFile(exportPath, [animator.ActiveMotion]);
+                            }
                         } else {
-                            if (animator!.File!.Format.format == KnownFileFormats.Motion) {
+                            if (animator.File.Format.format == KnownFileFormats.Motion) {
                                 assmesh.ExportToFile(exportPath, [animator.File.GetFile<MotFile>()]);
                             } else {
                                 assmesh.ExportToFile(exportPath, animator.File.GetFile<MotlistFile>().MotFiles);
