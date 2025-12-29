@@ -25,7 +25,7 @@ public class DefaultThemes
         if (!Directory.Exists(themePath)) return _availableThemes = list.ToArray();
 
         foreach (var file in Directory.EnumerateFiles(themePath, "*.theme.txt")) {
-            var theme = file.Replace(themePath, "").Replace(".theme.txt", "").Replace("\\", "");
+            var theme = file.Replace(themePath, "").Replace(".theme.txt", "").Replace("\\", "").Replace("/", "");
             list.Add(theme);
         }
         return _availableThemes = list.Distinct().ToArray();
