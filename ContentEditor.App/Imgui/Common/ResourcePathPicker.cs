@@ -123,7 +123,7 @@ public class ResourcePathPicker : IObjectUIHandler
             }
             if (ImGui.Button("Find files ...")) {
                 var exts = FileExtensionFilter ?? [];
-                var extRegex = string.Join("|", exts.SelectMany(e => e.extensions));
+                var extRegex = string.Join("|", exts.SelectMany(e => e.extensions)).Replace(".*", "");
                 if (exts.Length == 0) {
                     EditorWindow.CurrentWindow!.AddSubwindow(new PakBrowser(ws!, null));
                 } else {
