@@ -403,6 +403,23 @@ public partial class CommonMeshResource : IResourceFile
                 var clipHeader = existingClip?.ClipHeader ?? new BoneClipHeader(motver);
                 var clip = existingClip ?? new BoneMotionClip(clipHeader);
 
+                if (channel.NodeName.Contains("_$AssimpFbx$_")) {
+                    // if the bone is supposed to be a specific channel type, drop all other types because they're clearly not supposed to be there for this assimp channel
+                    if (channel.NodeName.Contains("_$AssimpFbx$_Translation")) {
+                        clip.Translation = null;
+                        if (clip.HasRotation) channel.RotationKeys.Clear();
+                        if (clip.HasScale) channel.ScalingKeys.Clear();
+                    } else if (channel.NodeName.Contains("_$AssimpFbx$_Rotation")) {
+                        clip.Rotation = null;
+                        if (clip.HasTranslation) channel.PositionKeys.Clear();
+                        if (clip.HasScale) channel.ScalingKeys.Clear();
+                    } else if (channel.NodeName.Contains("_$AssimpFbx$_Scaling")) {
+                        clip.Scale = null;
+                        if (clip.HasTranslation) channel.PositionKeys.Clear();
+                        if (clip.HasRotation) channel.RotationKeys.Clear();
+                    }
+                }
+
                 MotBone? bone = null;
                 if (boneName.StartsWith("_hash")) {
                     // not much else we can do about these
