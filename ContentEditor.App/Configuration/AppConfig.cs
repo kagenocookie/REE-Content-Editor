@@ -340,7 +340,7 @@ public class AppConfig : Singleton<AppConfig>
             // migrate legacy configs to new path
             Instance.LoadConfigs(IniFile.ReadFile(IniFilename));
         } else {
-        Instance.LoadConfigs(IniFile.ReadFile(IniFilepath));
+            Instance.LoadConfigs(IniFile.ReadFile(IniFilepath));
         }
         Instance.LoadJsonConfig();
     }
@@ -588,6 +588,7 @@ public record ImportSettings
 {
     public float Scale { get; set; } = 1f;
     public bool ForceRootIdentity { get; set; } = true;
+    public bool ConvertZToYUpRootRotation { get; set; } = false;
 }
 
 public record MeshViewerSettings
