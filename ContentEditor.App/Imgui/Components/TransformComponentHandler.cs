@@ -17,7 +17,7 @@ public class TransformComponentHandler : IObjectUIHandler, IUIContextEventHandle
                 context.AddChild(context.label, context.Get<Component>().Data, ChildrenOnlyHandler.Instance);
             }
         }
-        RszInstanceHandler.ShowDefaultContextMenu(context.children[0]);
+        // RszInstanceHandler.ShowDefaultContextMenu(context);
         if (show) {
             var localpos = instance.LocalPosition;
             var localrot = instance.LocalRotation.ToVector4();
