@@ -250,7 +250,9 @@ public class AppConfig : Singleton<AppConfig>
 
     public void SaveJsonConfig()
     {
-        using var fs = File.Create(JsonFilename);
+        var dir = Path.GetDirectoryName(JsonFilepath);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+        using var fs = File.Create(JsonFilepath);
         JsonSerializer.Serialize(fs, JsonSettings, JsonConfig.configJsonOptions);
     }
 

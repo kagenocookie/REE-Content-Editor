@@ -85,6 +85,8 @@ public sealed class IniFile : IDisposable
     public static void WriteToFile(string iniFilepath, IEnumerable<(string key, string value, string? group)> values)
     {
         var tempFilepath = iniFilepath + ".tmp";
+        var dir = Path.GetDirectoryName(iniFilepath);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
         using var fs = new StreamWriter(File.Create(tempFilepath));
 
         string? lastGroup = null;
