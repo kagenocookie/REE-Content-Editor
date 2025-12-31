@@ -344,6 +344,14 @@ public static class AppIcons
     public static readonly char SI_Animation = '\ued9d';
     public static readonly char SI_Animation2 = '\ued9e';
     public static readonly char SI_FileType_MSG = '\ueda0';
+    public static readonly char SI_FileType_MOTCAM = '\ueda1';
+    public static readonly char SI_FileType_MCAMLIST = '\ueda2';
+    public static readonly char SI_FileType_MCAMBANK = '\ueda3';
+    public static readonly char SI_FileType_AIMAP = '\ueda4';
+    public static readonly char SI_FileType_HF = '\ueda5';
+    public static readonly char SI_FileType_CHF = '\ueda6';
+    public static readonly char SI_FileType_BHVT = '\ueda7';
+    public static readonly char SI_FileType_JMAP = '\ueda8';
 
     public static string PrependIcon(this string text, object target)
     {
@@ -415,6 +423,14 @@ public static class AppIcons
         KnownFileFormats.UserCurve => (SI_FileType_UCURVE, Colors.FileTypeUCURVE),
         KnownFileFormats.UserCurveList => (SI_FileType_UCURVELIST, Colors.FileTypeUCURVELIST),
         KnownFileFormats.Message => (SI_FileType_MSG, Colors.FileTypeMSG),
+        KnownFileFormats.MotionCamera => (SI_FileType_MOTCAM, Colors.FileTypeMOTCAM),
+        KnownFileFormats.MotionCameraList => (SI_FileType_MCAMLIST, Colors.FileTypeMCAMLIST),
+        KnownFileFormats.MotionCameraBank => (SI_FileType_MCAMBANK, Colors.FileTypeMCAMBANK),
+        KnownFileFormats.AIMap => (SI_FileType_AIMAP, Colors.FileTypeAIMAP),
+        KnownFileFormats.HeightField => (SI_FileType_HF, Colors.FileTypeHF),
+        KnownFileFormats.CollisionHeightField => (SI_FileType_CHF, Colors.FileTypeCHF),
+        KnownFileFormats.BehaviorTree => (SI_FileType_BHVT, Colors.FileTypeBHVT),
+        KnownFileFormats.JointMap => (SI_FileType_JMAP, Colors.FileTypeJMAP),
         _ => ('\0', Vector4.One),
     };
 }
