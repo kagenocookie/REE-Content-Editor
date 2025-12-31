@@ -47,11 +47,11 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
         OnIMGUI(context, true);
     }
 
-    public static bool ShowDefaultTooltip(UIContext context)
+    public static bool ShowDefaultContextMenu(UIContext context)
     {
         var popupClicked = false;
         if (ImGui.BeginPopupContextItem(context.label)) {
-            if (RszInstanceHandler.ShowTooltipActions(context)) {
+            if (ShowContextMenuItemActions(context)) {
                 ImGui.CloseCurrentPopup();
                 popupClicked = true;
             }
@@ -60,7 +60,7 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
         return popupClicked;
     }
 
-    public static bool ShowTooltipActions(UIContext context)
+    public static bool ShowContextMenuItemActions(UIContext context)
     {
         if (ImGui.Selectable("Copy as JSON")) {
             var ws = context.GetWorkspace();
@@ -138,7 +138,7 @@ public class NestedRszClassnamePickerHandler(string? baseClass = null, string la
         var instance = context.Get<RszInstance?>();
         var show = ImguiHelpers.TreeNodeSuffix(context.label, instance?.ToString() ?? "");
         if (allowCopy && instance != null) {
-            RszInstanceHandler.ShowDefaultTooltip(context);
+            RszInstanceHandler.ShowDefaultContextMenu(context);
         }
         if (show) {
             base.OnIMGUI(context);
@@ -406,7 +406,7 @@ public class NestedRszInstanceHandler : IObjectUIHandler
             ImGui.SetNextItemOpen(true, ImGuiCond.FirstUseEver);
         }
         var show = ImguiHelpers.TreeNodeSuffix(context.label, context.stringFormatter?.GetString(instance) ?? instance.RszClass.name);
-        RszInstanceHandler.ShowDefaultTooltip(context);
+        RszInstanceHandler.ShowDefaultContextMenu(context);
         if (show) {
             if (context.children.Count == 0) {
                 if (instance.RSZUserData != null) {
@@ -423,7 +423,7 @@ public class NestedRszInstanceHandler : IObjectUIHandler
     }
 }
 
-public class ArrayRSZHandler : BaseListHandler, ITooltipHandler
+public class ArrayRSZHandler : BaseListHandler
 {
     private RszField _field;
     public RszField Field => _field;
@@ -434,9 +434,14 @@ public class ArrayRSZHandler : BaseListHandler, ITooltipHandler
         CanCreateRemoveElements = true;
     }
 
-    public bool HandleTooltip(UIContext context)
+    protected override bool ShowContextMenuItems(UIContext context)
     {
-        return RszInstanceHandler.ShowDefaultTooltip(context);
+        if (base.ShowContextMenuItems(context)) return true;
+
+        if (RszInstanceHandler.ShowContextMenuItemActions(context)) {
+            return true;
+        }
+        return false;
     }
 
     protected override UIContext CreateElementContext(UIContext context, IList list, int elementIndex)
