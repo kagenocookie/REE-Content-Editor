@@ -99,7 +99,7 @@ public class DiffPatcher
         // TODO userdata
         var removeIndices = new List<int>();
         var arr = (JsonArray)diff;
-        if (arr.Count > 0 && arr[0]?.GetValueKind() is JsonValueKind.True or JsonValueKind.False or JsonValueKind.Number) {
+        if (arr.Count > 0 && arr[0]?.GetValueKind() is JsonValueKind.True or JsonValueKind.False or JsonValueKind.Number or JsonValueKind.String) {
             // not a diffable array type, apply it as a whole
             list.Clear();
             switch (arr[0]!.GetValueKind()) {
@@ -116,6 +116,9 @@ public class DiffPatcher
                             list.Add(Convert.ChangeType(item!.GetValue<long>(), csType));
                         }
                     }
+                    return list;
+                case JsonValueKind.String:
+                    foreach (var item in arr) list.Add(item?.GetValue<string>() ?? "");
                     return list;
                 default:
                     throw new NotImplementedException("Unsupported diff array element type " + arr[0]!.GetValueKind());

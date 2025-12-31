@@ -531,7 +531,7 @@ public static partial class WindowHandlerFactory
             var subtypes = workspace.Env.TypeCache.GetSubclasses(field.original_type);
             if (subtypes.Count == 0 || subtypes.Count == 1 && subtypes[0] == field.original_type) return new NestedRszInstanceHandler();
 
-            return new NestedUIHandlerStringSuffixed(new RszClassnamePickerHandler(field.original_type));
+            return new NestedRszUIHandlerStringSuffixed(new RszClassnamePickerHandler(field.original_type));
         }
 
         return context.uiHandler = field.type switch {
