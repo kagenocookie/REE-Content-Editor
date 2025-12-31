@@ -74,8 +74,8 @@ public class AppConfig : Singleton<AppConfig>
 
     private static readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
 
-    private const string IniFilepath = "ce_config.ini";
-    private const string JsonFilepath = "ce_config.json";
+    private const string IniFilename = "ce_config.ini";
+    private const string JsonFilename = "ce_config.json";
 
     public static readonly string Version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion ?? "";
     public static bool IsOutdatedVersion { get; internal set; }
@@ -128,6 +128,9 @@ public class AppConfig : Singleton<AppConfig>
     private Dictionary<string, AppGameConfig> gameConfigs = new();
 
     public static readonly string AppDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "REE-Content-Editor");
+
+    private static readonly string IniFilepath = Path.Combine(AppDataPath, IniFilename);
+    private static readonly string JsonFilepath = Path.Combine(AppDataPath, JsonFilename);
 
     public readonly SettingWrapper<int> MaxFps = new SettingWrapper<int>(Keys.MaxFps, _lock, 60);
     public readonly SettingWrapper<int> BackgroundMaxFps = new SettingWrapper<int>(Keys.BackgroundMaxFps, _lock, 30);
@@ -247,15 +250,21 @@ public class AppConfig : Singleton<AppConfig>
 
     public void SaveJsonConfig()
     {
+        var dir = Path.GetDirectoryName(JsonFilepath);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
         using var fs = File.Create(JsonFilepath);
         JsonSerializer.Serialize(fs, JsonSettings, JsonConfig.configJsonOptions);
     }
 
     public void LoadJsonConfig()
     {
-        if (!File.Exists(JsonFilepath)) return;
+        var path = JsonFilepath;
+        if (!File.Exists(path)) {
+            if (!File.Exists(JsonFilename)) return;
+            path = JsonFilename;
+        }
 
-        using var fs = File.OpenRead(JsonFilepath);
+        using var fs = File.OpenRead(path);
         try {
             var settings = JsonSerializer.Deserialize<AppJsonSettings>(fs, JsonConfig.configJsonOptions);
             if (settings == null) throw new Exception("Null settings");
@@ -329,7 +338,12 @@ public class AppConfig : Singleton<AppConfig>
 
     public static void LoadConfigs()
     {
-        Instance.LoadConfigs(IniFile.ReadFile(IniFilepath));
+        if (!File.Exists(IniFilepath)) {
+            // migrate legacy configs to new path
+            Instance.LoadConfigs(IniFile.ReadFile(IniFilename));
+        } else {
+            Instance.LoadConfigs(IniFile.ReadFile(IniFilepath));
+        }
         Instance.LoadJsonConfig();
     }
 
@@ -576,6 +590,7 @@ public record ImportSettings
 {
     public float Scale { get; set; } = 1f;
     public bool ForceRootIdentity { get; set; } = true;
+    public bool ConvertZToYUpRootRotation { get; set; } = false;
 }
 
 public record MeshViewerSettings

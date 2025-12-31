@@ -106,6 +106,18 @@ public class NestedUIHandlerStringSuffixed(IObjectUIHandler nested) : IObjectUIH
         }
     }
 }
+public class NestedRszUIHandlerStringSuffixed(IObjectUIHandler nested) : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, context.GetRaw()?.ToString() ?? string.Empty);
+        RszInstanceHandler.ShowDefaultContextMenu(context);
+        if (show) {
+            nested.OnIMGUI(context);
+            ImGui.TreePop();
+        }
+    }
+}
 public class SameLineHandler : IObjectUIHandler
 {
     public static readonly SameLineHandler Instance = new();

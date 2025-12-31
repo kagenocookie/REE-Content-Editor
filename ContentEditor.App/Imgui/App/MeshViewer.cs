@@ -529,6 +529,12 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 AppConfig.Settings.Save();
             }
             ImguiHelpers.Tooltip("Forces the root bone into the default (Identity) orientation on import.\nUse if you find that your imported mesh skeletons are fully rotated along an axis");
+            var convertYUp = AppConfig.Settings.Import.ConvertZToYUpRootRotation;
+            if (ImGui.Checkbox("Transform Z-Up -> Y-Up root axis for animations", ref convertYUp)) {
+                AppConfig.Settings.Import.ConvertZToYUpRootRotation = convertYUp;
+                AppConfig.Settings.Save();
+            }
+            ImguiHelpers.Tooltip("For modelling apps that don't know how to export with Y axis as up, this might fix the rotations of imported meshes.");
             ImGui.Spacing();
             ImGui.Spacing();
         }

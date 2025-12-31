@@ -16,6 +16,13 @@ public partial class CommonMeshResource : IResourceFile
     private const string ShapekeyPrefix = "SHAPEKEY_";
     private const string SecondaryWeightDummyBonePrefix = "WEIGHT2_DUMMY_";
 
+    private static readonly Matrix4x4 ZUpToYUpRotation = new Matrix4x4(
+        1, 0, 0, 0,
+        0, 0, 1, 0,
+        0, 1, 0, 0,
+        0, 0, 0, 1
+    );
+
     private static MeshFile ImportMeshFromAssimp(Assimp.Scene scene, string versionConfig)
     {
         var serializerVersion = MeshFile.GetSerializerVersion(versionConfig);
@@ -392,6 +399,8 @@ public partial class CommonMeshResource : IResourceFile
             var motIndex = new MotIndex(motlist.Header.version) { MotFile = mot, motNumber = (ushort)motlist.MotFiles.Count };
             motlist.Motions.Add(motIndex);
 
+            var settings = AppConfig.Settings.Import;
+
             double timeScale = targetFps / sourceFps;
 
             // TODO add compression calculation method somewhere
@@ -403,11 +412,28 @@ public partial class CommonMeshResource : IResourceFile
                 var clipHeader = existingClip?.ClipHeader ?? new BoneClipHeader(motver);
                 var clip = existingClip ?? new BoneMotionClip(clipHeader);
 
+                if (channel.NodeName.Contains("_$AssimpFbx$_")) {
+                    // if the bone is supposed to be a specific channel type, drop all other types because they're clearly not supposed to be there for this assimp channel
+                    if (channel.NodeName.Contains("_$AssimpFbx$_Translation")) {
+                        clip.Translation = null;
+                        if (clip.HasRotation) channel.RotationKeys.Clear();
+                        if (clip.HasScale) channel.ScalingKeys.Clear();
+                    } else if (channel.NodeName.Contains("_$AssimpFbx$_Rotation")) {
+                        clip.Rotation = null;
+                        if (clip.HasTranslation) channel.PositionKeys.Clear();
+                        if (clip.HasScale) channel.ScalingKeys.Clear();
+                    } else if (channel.NodeName.Contains("_$AssimpFbx$_Scaling")) {
+                        clip.Scale = null;
+                        if (clip.HasTranslation) channel.PositionKeys.Clear();
+                        if (clip.HasRotation) channel.RotationKeys.Clear();
+                    }
+                }
+
                 MotBone? bone = null;
                 if (boneName.StartsWith("_hash")) {
                     // not much else we can do about these
                     clipHeader.boneName = null;
-                    clipHeader.boneHash = uint.TryParse(boneName.AsSpan().Slice("_hash".Length), out var hash) ? hash : 0;
+                    clipHeader.boneHash = uint.TryParse(boneName.AsSpan("_hash".Length), out var hash) ? hash : 0;
                 } else {
                     clipHeader.boneName = boneName;
                     clipHeader.boneHash = MurMur3HashUtils.GetHash(boneName);
@@ -449,6 +475,14 @@ public partial class CommonMeshResource : IResourceFile
                 }
 
                 if (channel.HasRotationKeys) {
+                    if (settings.ConvertZToYUpRootRotation && (bone != null ? bone.Parent == null : boneName.Equals("root", StringComparison.InvariantCultureIgnoreCase))) {
+                        for (int i = 0; i < channel.RotationKeyCount; ++i) {
+                            var newMat = Matrix4x4.Transform(ZUpToYUpRotation, channel.RotationKeys[i].Value);
+                            var quat = Quaternion.Normalize(Quaternion.CreateFromRotationMatrix(newMat));
+                            channel.RotationKeys[i] = new QuaternionKey(channel.RotationKeys[i].Time, quat);
+                        }
+                    }
+
                     var firstValue = bone != null ? bone.Quaternion : channel.RotationKeys[0].Value;
                     var allEqual = bone != null && !channel.RotationKeys.Any(k => k.Value != firstValue);
                     clipHeader.trackFlags |= TrackFlag.Rotation;

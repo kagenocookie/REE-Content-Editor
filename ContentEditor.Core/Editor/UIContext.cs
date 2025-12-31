@@ -47,6 +47,7 @@ public class UIContext
     public void ResetState()
     {
         State.Clear();
+        foreach (var child in children) child.ResetState();
     }
 
     private unsafe ref T GetStateRef<T>(int id, T defaultValue) where T : class
