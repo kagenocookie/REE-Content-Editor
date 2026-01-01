@@ -1,5 +1,8 @@
 using ContentEditor.App.ImguiHandling;
+using ContentEditor.App.Tooling.Navmesh;
+using ContentEditor.App.Windowing;
 using ContentEditor.Core;
+using ContentPatcher;
 using ReeLib;
 
 namespace ContentEditor.App;
@@ -28,6 +31,9 @@ public class NavmeshEditor : EditModeHandler
     private string filepath = "";
     protected UIContext? context;
     public NavmeshContentType displayedContentTypes = NavmeshContentType.Points|NavmeshContentType.Triangles|NavmeshContentType.AABBs|NavmeshContentType.Walls|NavmeshContentType.MainLinks|NavmeshContentType.SecondaryLinks;
+
+    private string? loadedFilepath;
+    private FileHandle? loadedFile;
 
     private bool firstTimeOnTarget;
 
@@ -84,30 +90,50 @@ public class NavmeshEditor : EditModeHandler
             }
         }
         context.children[1].ShowUI();
+        if (loadedFilepath != filepath) {
+            if (loadedFile != null) {
+                loadedFile.ModifiedChanged -= OnFileChanged;
+                loadedFile = null;
+            }
 
-        if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(filepath, out var file)) {
-            // var rcol = file.GetFile<RcolFile>();
-            // if (ImGui.Button("Open Editor")) {
-            //     OpenEditor(file);
-            // }
-        } else if (!string.IsNullOrEmpty(filepath)) {
-            ImGui.TextColored(Colors.Warning, "File not found");
+            if (Scene.Workspace.ResourceManager.TryResolveGameFile(filepath, out var file)) {
+                loadedFilepath = filepath;
+                loadedFile = file;
+                loadedFile.ModifiedChanged += OnFileChanged;
+            } else if (!string.IsNullOrEmpty(filepath)) {
+                ImGui.TextColored(Colors.Warning, "File not found");
+            }
         }
+
+        if (loadedFile != null) {
+            if (ImGui.Button("Reset preview geometry")) {
+                (Target as AIMapComponentBase)?.ResetPreviewGeometry();
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Bake navmesh ...")) {
+                EditorWindow.CurrentWindow?.AddSubwindow(new NavmeshBakerUI(Scene, loadedFile, context));
+            }
+        }
+    }
+
+    private void OnFileChanged(bool changed)
+    {
+        (Target as AIMapComponentBase)?.ResetPreviewGeometry();
     }
 
     public override void OnIMGUI()
     {
         if (!(Target is AIMapComponentBase comp)) return;
 
-        if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(filepath, out var file)) {
-            var nvm = file.GetFile<AimpFile>();
+        if (loadedFile == null) {
+            comp.SetOverrideFile(null);
+        } else {
+            var nvm = loadedFile.GetFile<AimpFile>();
             if (comp.DisplayedFile != nvm) {
                 comp.SetOverrideFile(nvm);
                 AppConfig.Instance.AddRecentNavmesh(filepath);
             }
             comp.visibleContentTypes = displayedContentTypes;
-        } else {
-            comp.SetOverrideFile(null);
         }
     }
 }

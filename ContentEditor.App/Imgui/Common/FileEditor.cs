@@ -237,7 +237,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         }
     }
 
-    private void OnModifiedChanged(bool changed)
+    protected virtual void OnModifiedChanged(bool changed)
     {
         context.SetChangedNoPropagate(changed);
     }

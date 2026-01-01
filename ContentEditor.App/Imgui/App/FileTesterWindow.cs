@@ -10,6 +10,7 @@ using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Aimp;
 using ReeLib.Bhvt;
 using ReeLib.Clip;
 using ReeLib.Common;
@@ -651,7 +652,7 @@ public partial class FileTesterWindow : IWindowHandler
 
         AddCompareMapper<McolFile>((m) => [m.bvh]);
         AddCompareMapper<CocoFile>((m) => [m.CollisionMeshPaths, m.Trees]);
-        AddCompareMapper<ReeLib.Aimp.AimpHeader>((m) => [m.agentRadWhenBuild, m.guid, m.hash, m.uriHash, m.mapType, m.name, m.uknId, m.sectionType]);
+        AddCompareMapper<ReeLib.Aimp.AimpHeader>((m) => [m.agentRadWhenBuild, m.hash, m.mapId.guid, m.mapType, m.name, m.uknId, m.sectionType]);
 
         AddCompareMapper<Motfsm2File>((m) => [m.BhvtFile, m.TransitionDatas, m.TransitionMaps]);
         AddCompareMapper<BhvtFile>((m) => [m.Header.hash, m.RootNode, m.UserVariables, m.SubVariables, m.GameObjectReferences,
@@ -693,6 +694,9 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<TexHeader>((m) => [m.asciiHash, m.hash, m.texPath, m.texType]);
         AddCompareMapper<ParamHeader>((m) => [m.asciiHash, m.hash, m.componentCount, m.paramName, m.parameter]);
         AddCompareMapper<Quaternion>((m) => [m.X, m.Y, m.Z, m.W]);
+
+        AddCompareMapper<NodeInfo>((m) => [m.index, m.groupIndex, m.attributes, m.flags, m.nextIndex, m.Links]);
+        AddCompareMapper<LinkInfo>((m) => [m.index, m.attributes, m.sourceNodeIndex, m.targetNodeIndex, m.edgeIndex, m.ukn]);
     }
 
     private static Dictionary<Type, Func<object, IEnumerable<object?>>> comparedValueMappers = new();

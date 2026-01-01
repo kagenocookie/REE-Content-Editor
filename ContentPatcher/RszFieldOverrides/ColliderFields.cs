@@ -39,7 +39,7 @@ public static partial class RszFieldCache
             (field) => field.size == 4
         ]).Object("via.physics.Shape");
 
-        public static readonly RszFieldAccessorFirstFallbacks<string> FilterInfo = First<string>([
+        public static readonly RszFieldAccessorFirstFallbacks<RszInstance> FilterInfo = First<RszInstance>([
             (field) => field.original_type == "via.physics.FilterInfo",
             (field) => field.original_type != "via.physics.Shape" && field.type == RszFieldType.Object
         ]).Object("via.physics.FilterInfo").Rename();

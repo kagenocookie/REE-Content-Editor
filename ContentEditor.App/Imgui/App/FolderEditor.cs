@@ -1,14 +1,8 @@
-using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
-using ContentEditor;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
-using ReeLib;
-using ReeLib.Common;
-using ReeLib.Pfb;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -302,13 +296,13 @@ public class FolderNodeEditor : IObjectUIHandler
 
     private static void HandleContextMenu(Folder node, UIContext context)
     {
-        if (node.Scene?.IsActive == true && (node.ChildScene != null || string.IsNullOrEmpty(node.ScenePath)) && ImGui.Button("Focus in 3D view")) {
+        if (node.Scene?.IsActive == true && (node.ChildScene != null || string.IsNullOrEmpty(node.ScenePath)) && ImGui.Selectable("Focus in 3D view")) {
             var focusFolder = node.ChildScene?.RootFolder ?? node;
             node.Scene.ActiveCamera.LookAt(focusFolder, false);
             ImGui.CloseCurrentPopup();
         }
 
-        if (ImGui.Button("New GameObject")) {
+        if (ImGui.Selectable("New GameObject")) {
             var ws = context.GetWorkspace();
             var newgo = new GameObject("New_GameObject", ws!.Env, node, node.Scene);
             UndoRedo.RecordListAdd(context, node.GameObjects, newgo);
@@ -316,7 +310,7 @@ public class FolderNodeEditor : IObjectUIHandler
             context.FindHandlerInParents<IInspectorController>()?.SetPrimaryInspector(newgo);
             ImGui.CloseCurrentPopup();
         }
-        if (ImGui.Button("New folder")) {
+        if (ImGui.Selectable("New folder")) {
             var ws = context.GetWorkspace();
             var newFolder = new Folder("New_Folder", ws!.Env, node.Scene);
             UndoRedo.RecordAddChild(context, newFolder, node);
@@ -326,17 +320,28 @@ public class FolderNodeEditor : IObjectUIHandler
             ImGui.CloseCurrentPopup();
         }
         if (node.Parent != null) {
-            if (ImGui.Button("Delete")) {
+            if (ImGui.Selectable("Delete")) {
                 UndoRedo.RecordRemoveChild(context, node);
                 ImGui.CloseCurrentPopup();
             }
-            if (ImGui.Button("Duplicate")) {
+            if (ImGui.Selectable("Duplicate")) {
                 var clone = node.Clone();
                 UndoRedo.RecordAddChild(context, clone, node.Parent, node.Parent.GetChildIndex(node) + 1);
                 clone.MakeNameUnique();
                 var inspector = context.FindHandlerInParents<IInspectorController>();
                 inspector?.SetPrimaryInspector(clone);
                 ImGui.CloseCurrentPopup();
+            }
+        }
+        if (node.ChildScene?.Folders.Any() == true && ImGui.Selectable("Load subfolders")) {
+            try {
+                foreach (var subfolder in node.ChildScene.Folders) {
+                    if (subfolder.ChildScene != null) continue;
+
+                    subfolder.RequestLoad();
+                }
+            } catch (Exception e) {
+                Logger.Error(e, "Failed to load child scenes");
             }
         }
     }
