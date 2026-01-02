@@ -228,14 +228,20 @@ public static class AppImguiHelpers
         return didDrop;
     }
 
-    public static bool ShowChildrenNestedReorderableUI<T>(this UIContext context, bool allowMigrateAcrossLists) where T : class
+    public static bool ShowChildrenNestedReorderableUI<T>(this UIContext context, bool allowMigrateAcrossLists, Func<UIContext, bool>? contextMenu = null) where T : class
     {
-        return ShowChildrenNestedReorderableUI<T>(context, allowMigrateAcrossLists, out _);
+        return ShowChildrenNestedReorderableUI<T>(context, allowMigrateAcrossLists, out _, contextMenu);
     }
-    public static bool ShowChildrenNestedReorderableUI<T>(this UIContext context, bool allowMigrateAcrossLists, [MaybeNullWhen(false)] out T droppedInstance) where T : class
+    public static bool ShowChildrenNestedReorderableUI<T>(this UIContext context, bool allowMigrateAcrossLists, [MaybeNullWhen(false)] out T droppedInstance, Func<UIContext, bool>? contextMenu = null) where T : class
     {
         var show = ImguiHelpers.TreeNodeSuffix(context.label, context.GetRaw()?.ToString() ?? "");
         var didDrop = AppImguiHelpers.DragDropReorder<T>(context, allowMigrateAcrossLists, out droppedInstance);
+        if (contextMenu != null && ImGui.BeginPopupContextItem(context.label)) {
+            if (contextMenu.Invoke(context)) {
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
         if (show) {
             for (int i = 0; i < context.children.Count; i++) {
                 context.children[i].ShowUI();

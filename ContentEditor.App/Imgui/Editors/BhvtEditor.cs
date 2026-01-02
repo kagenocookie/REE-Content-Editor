@@ -1,3 +1,4 @@
+using System.Collections;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -344,7 +345,18 @@ public class NActionEditor : IObjectUIHandler
             context.AddChild<NAction, uint>("Action EX", file, getter: (f) => f!.ActionEx, setter: (f, v) => f.ActionEx = v).AddDefaultHandler();
             context.AddChild<NAction, RszInstance>("Action", file, new NestedRszClassnamePickerHandler("via.behaviortree.Action"), (f) => f!.Instance, (f, v) => f.Instance = v);
         }
-        context.ShowChildrenNestedReorderableUI<NAction>(false);
+        context.ShowChildrenNestedReorderableUI<NAction>(false, (ctx) => {
+            AppImguiHelpers.ShowVirtualCopyPopupButtons<NAction>(ctx);
+            if (ImGui.Selectable("Duplicate")) {
+                if (ctx.target is IList list) {
+                    var clone = ctx.Get<NAction>().DeepCloneGeneric();
+                    clone.RandomizeActionID();
+                    UndoRedo.RecordListAdd(context.parent!, list, clone);
+                }
+                return true;
+            }
+            return false;
+        });
     }
 }
 
