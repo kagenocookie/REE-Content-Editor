@@ -977,29 +977,15 @@ public class GameObjectRefHandler : Singleton<GameObjectRefHandler>, IObjectUIHa
         if (context.children.Count == 0) {
             context.AddChild<GameObjectRef, Guid>("##Guid", gref, GuidFieldHandler.NoContextMenuInstance, (r) => r!.guid, (r, v) => r.guid = v);
             context.AddChild("_", null, SameLineHandler.Instance);
-            context.AddChild(context.label, gref, new SwappableRszInstanceHandler("via.GameObject", true, context.label + " (GameObjectRef)"), (ctx) => ((GameObjectRef)ctx.target!).target?.Instance, (ctx, v) => {
-                var newInstance = (RszInstance?)v;
-                var gr = (GameObjectRef)ctx.target!;
-                if (newInstance == null) {
-                    UndoRedo.RecordSet(ctx.parent!, new GameObjectRef(), mergeMode: UndoRedoMergeMode.NeverMerge);
-                    ctx.parent!.ClearChildren();
-                    return;
-                }
-
+            context.AddChild<GameObjectRef, IGameObject>(context.label, gref, new InstancePickerHandler<GameObject>(true, (ctx, force) => {
                 var owner = ctx.FindHandlerInParents<ISceneEditor>()?.GetScene();
                 if (owner == null) {
                     Logger.Error("Could not find RSZ data owner");
-                    return;
-                }
-                var newGo = owner.FindGameObjectByInstance(newInstance);
-                if (newGo == null) {
-                    Logger.Error("Could not find target GameObject");
-                    return;
+                    return [];
                 }
 
-                UndoRedo.RecordSet(ctx.parent!, new GameObjectRef(newGo.guid, newGo), mergeMode: UndoRedoMergeMode.NeverMerge);
-                ctx.parent!.ClearChildren();
-            });
+                return owner.GetAllGameObjects();
+            }), getter: (ctx) => context.Get<GameObjectRef>().target, setter: (ctx, newTarget) => context.Get<GameObjectRef>().Set((IGameObject?)newTarget));
         }
         ImGui.PushID(context.label);
         ImGui.PushItemWidth(ImGui.CalcItemWidth() / 2 - ImGui.GetStyle().FramePadding.X);
