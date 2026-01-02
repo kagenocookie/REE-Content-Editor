@@ -31,6 +31,14 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
 
     private readonly List<Scene> childScenes = new();
     internal ReadOnlyCollection<Scene> ChildScenes => childScenes.AsReadOnly();
+    public IEnumerable<Scene> NestedScenes {
+        get {
+            yield return this;
+            foreach (var child in childScenes.SelectMany(cs => cs.NestedScenes)) {
+                yield return child;
+            }
+        }
+    }
 
     public string Name { get; }
     public string InternalPath { get; }

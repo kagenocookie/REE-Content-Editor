@@ -43,7 +43,7 @@ public class TriangleMesh : Mesh
         VertexData = new float[Indices.Length * layout.VertexSize];
 
         BoundingBox = container.bounds;
-        var nodes = container.Nodes.Nodes;
+        var nodes = container.NodeInfo.Nodes;
         var verts = container.Vertices;
         var triangles = data.Nodes;
         var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData.AsSpan());
@@ -67,7 +67,7 @@ public class TriangleMesh : Mesh
     {
         layout = MeshLayout.ColoredPositions;
         var polygons = data.Nodes;
-        var nodes = container.Nodes.Nodes;
+        var nodes = container.NodeInfo.Nodes;
         var verts = container.Vertices;
         BoundingBox = container.bounds;
 
@@ -101,7 +101,7 @@ public class TriangleMesh : Mesh
     {
         layout = MeshLayout.ColoredPositions;
         var polygons = data.Nodes;
-        var nodes = container.Nodes.Nodes;
+        var nodes = container.NodeInfo.Nodes;
         var verts = container.Vertices;
         BoundingBox = container.bounds;
 
@@ -154,7 +154,7 @@ public class TriangleMesh : Mesh
         // I'm not yet sure if we wanna use this one or not... boundary shapes look stupid
         layout = MeshLayout.ColoredPositions;
         var polygons = data.Nodes;
-        var nodes = container.Nodes.Nodes;
+        var nodes = container.NodeInfo.Nodes;
         var verts = container.Vertices;
         BoundingBox = container.bounds;
 

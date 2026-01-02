@@ -119,7 +119,7 @@ public class LineMesh : Mesh
         var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData.AsSpan());
 
         BoundingBox = container.bounds;
-        var nodes = container.Nodes.Nodes;
+        var nodes = container.NodeInfo.Nodes;
         var verts = container.Vertices;
         var triangles = data.Nodes;
 
@@ -143,7 +143,7 @@ public class LineMesh : Mesh
         MeshType = PrimitiveType.Lines;
         layout = MeshLayout.ColoredPositions;
         var polygons = data.Nodes;
-        var nodes = container.Nodes.Nodes;
+        var nodes = container.NodeInfo.Nodes;
         var verts = container.Vertices;
         BoundingBox = container.bounds;
 
@@ -184,9 +184,9 @@ public class LineMesh : Mesh
     {
         MeshType = PrimitiveType.Lines;
         layout = MeshLayout.ColoredPositions;
-        var nodes = container.Nodes.Nodes;
+        var nodes = container.NodeInfo.Nodes;
         var linkCount = nodes.Sum(n => n.Links.Count);
-        var effectiveNodeIndices = container.Nodes.EffectiveNodeIndices;
+        var effectiveNodeIndices = container.NodeInfo.EffectiveNodeIndices;
 
         Indices = new int[linkCount * 2];
         VertexData = new float[Indices.Length * layout.VertexSize];
@@ -194,7 +194,7 @@ public class LineMesh : Mesh
         var pointData = MemoryMarshal.Cast<float, Vector4>(VertexData.AsSpan());
 
         int index = 0;
-        for (int i = 0; i < nodes.Length; i++) {
+        for (int i = 0; i < nodes.Count; i++) {
             var nodeInfo = nodes[i];
             foreach (var link in nodeInfo.Links) {
                 var n1 = nodes[effectiveNodeIndices[link.sourceNodeIndex]];

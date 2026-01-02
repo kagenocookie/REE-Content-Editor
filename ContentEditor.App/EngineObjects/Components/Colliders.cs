@@ -11,7 +11,7 @@ public class Colliders(GameObject gameObject, RszInstance data) : Component(game
     static string IFixedClassnameComponent.Classname => "via.physics.Colliders";
 
     private List<object> CollidersList => RszFieldCache.Colliders.ColliderList.Get(Data);
-    private IEnumerable<RszInstance> EnumerableColliders => CollidersList.OfType<RszInstance>();
+    public IEnumerable<RszInstance> EnumerableColliders => CollidersList.OfType<RszInstance>();
 
     private Material wireMaterial = null!;
     private Material lineMaterial = null!;

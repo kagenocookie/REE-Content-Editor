@@ -52,7 +52,7 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
                 window.InvokeFromUIThread(() => {
                     ExportMcolToGlb(File.bvh, fn);
                 });
-            }, lastFilepath ?? Handle.Filename.ToString(), FileFilters.GlbFile);
+            }, lastFilepath ?? Path.ChangeExtension(Handle.Filename.ToString(), ".glb"), FileFilters.GlbFile);
         }
         ImGui.SameLine();
         if (ImGui.Button("Import mesh ...")) {
@@ -63,7 +63,7 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
                     ImportGlbIntoMcol(File, fn);
                     context.ClearChildren();
                 });
-            }, lastFilepath ?? Handle.Filename.ToString(), FileFilters.GlbFile);
+            }, lastFilepath ?? Path.ChangeExtension(Handle.Filename.ToString(), ".glb"), FileFilters.GlbFile);
         }
 
         ImGui.Spacing();
@@ -213,7 +213,7 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
                 };
 
                 // NOTE: edges ignored for now, because I can't get them right and they don't seem to make a difference either
-                indexData.info.mask = colors != null ? ImGui.ColorConvertFloat4ToU32(colors[vert1]) : uint.MaxValue;
+                indexData.info.mask = colors?.Count > 0 ? ImGui.ColorConvertFloat4ToU32(colors[vert1]) : uint.MaxValue;
                 indexData.info.layerIndex = layerIndex;
                 indexData.info.partId = (int)MathF.Round(uvs[vert1].X * MaxPartId);
                 bvh.AddTriangle(indexData);

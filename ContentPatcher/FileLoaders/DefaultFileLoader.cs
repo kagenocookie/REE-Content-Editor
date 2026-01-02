@@ -9,6 +9,7 @@ public class DefaultFileLoader<TFileType> : IFileLoader, IFileHandleContentProvi
     private readonly Func<ContentWorkspace, FileHandler, TFileType> fileFactory;
 
     protected bool SaveRawStream { get; init; }
+    protected bool ClearStreamOnSave { get; init; }
 
     public DefaultFileLoader(KnownFileFormats format, Func<IResourceFilePatcher>? diffHandler = null)
     {
@@ -42,7 +43,13 @@ public class DefaultFileLoader<TFileType> : IFileLoader, IFileHandleContentProvi
     {
         if (handle.Resource != null) {
             var resource = (BaseFileResource<TFileType>)handle.Resource;
-            if (resource.File.FileHandler.FileSize() == 0 && File.Exists(resource.File.FileHandler.FilePath)) {
+            bool isEmptyOrInvalid = true;
+            try {
+                isEmptyOrInvalid = resource.File.FileHandler.FileSize() > 0;
+            } catch {
+                // ignore - stream was probably disposed at some point, try force reload
+            }
+            if (isEmptyOrInvalid && File.Exists(resource.File.FileHandler.FilePath)) {
                 resource.File.FileHandler = new FileHandler(resource.File.FileHandler.FilePath);
             }
             return resource.File.Read() ? handle.Resource : null;
@@ -69,6 +76,9 @@ public class DefaultFileLoader<TFileType> : IFileLoader, IFileHandleContentProvi
         }
         var file = GetFile(handle);
         if (outputPath == handle.Filepath) {
+            if (ClearStreamOnSave) {
+                file.FileHandler.Stream.SetLength(0);
+            }
             file.Save();
         } else {
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);

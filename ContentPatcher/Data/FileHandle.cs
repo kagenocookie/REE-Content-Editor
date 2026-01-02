@@ -103,6 +103,12 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
         }
     }
 
+    public void EmitChange()
+    {
+        _modified = true;
+        ModifiedChanged?.Invoke(true);
+    }
+
     public bool IsInBundle(ContentWorkspace workspace, Bundle bundle)
     {
         return Filepath.StartsWith(workspace.BundleManager.GetBundleFolder(bundle));

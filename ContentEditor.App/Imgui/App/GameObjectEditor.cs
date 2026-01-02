@@ -91,12 +91,12 @@ public class GameObjectNodeEditor : NodeTreeEditor<GameObject, GameObjectNodeEdi
     protected override void HandleContextMenu(GameObject node, UIContext context)
     {
         if (node.Scene?.RootScene.IsActive == true) {
-            if (ImGui.Button("Focus in 3D view")) {
+            if (ImGui.Selectable("Focus in 3D view")) {
                 node.Scene?.ActiveCamera.LookAt(node, false);
                 ImGui.CloseCurrentPopup();
             }
         }
-        if (ImGui.Button("New GameObject")) {
+        if (ImGui.Selectable("New GameObject")) {
             var ws = context.GetWorkspace();
             var newgo = new GameObject("New_GameObject", ws!.Env, node.Folder, node.Scene);
             UndoRedo.RecordAddChild(context, newgo, node);
@@ -111,11 +111,11 @@ public class GameObjectNodeEditor : NodeTreeEditor<GameObject, GameObjectNodeEdi
             return;
         }
 
-        if (ImGui.Button("Delete")) {
+        if (ImGui.Selectable("Delete")) {
             UndoRedo.RecordRemoveChild(context, node);
             ImGui.CloseCurrentPopup();
         }
-        if (ImGui.Button("Duplicate")) {
+        if (ImGui.Selectable("Duplicate")) {
             var clone = node.Clone();
             UndoRedo.RecordAddChild<GameObject>(context, clone, parent, parent.GetChildIndex(node) + 1);
             clone.MakeNameUnique();

@@ -55,13 +55,14 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
     {
         base.OnFileChanged();
         if (scene != null) {
-            var window = context.GetNativeWindow();
-            window!.SceneManager.UnloadScene(scene);
+            var window = context.GetNativeWindow()!;
             if (!MainLoop.IsMainThread) {
                 window.InvokeFromUIThread(() => {
+                    window!.SceneManager.UnloadScene(scene);
                     scene = LoadScene();
                 });
             } else {
+                window!.SceneManager.UnloadScene(scene);
                 scene = LoadScene();
             }
         }

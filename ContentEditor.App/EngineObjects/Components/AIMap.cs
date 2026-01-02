@@ -92,6 +92,11 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
         UnloadMeshes();
     }
 
+    public void ResetPreviewGeometry()
+    {
+        UnloadMeshes();
+    }
+
     private void UnloadMeshes()
     {
         foreach (var m in navMeshes) {
@@ -253,7 +258,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
         if (!navMeshes.TryGetValue(NavmeshContentType.AABBs, out var mesh)) {
             var isMain = container == overrideFile!.mainContent;
             var builder = new ShapeBuilder(isMain ? ShapeBuilder.GeometryType.Line : ShapeBuilder.GeometryType.Filled, MeshLayout.PositionOnly);
-            var nodes = container.Nodes.Nodes;
+            var nodes = container.NodeInfo.Nodes;
             var polygons = content.Nodes;
             var verts = container.Vertices;
             for (int i = 0; i < content.NodeCount; ++i) {

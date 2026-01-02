@@ -48,4 +48,9 @@ public static class FileSystemUtils
             Logger.Error("File not found: " + file);
         }
     }
+
+    public static void OpenURL(string url)
+    {
+        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+    }
 }

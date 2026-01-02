@@ -367,6 +367,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
     }
 
+    private string openFileFilter = "";
+
     internal void ShowBundleManagement()
     {
         if (workspace == null) return;
@@ -445,7 +447,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                             }
                             ImGui.CloseCurrentPopup();
                         }
+                        ImGui.InputText("Filter", ref openFileFilter, 128);
                         foreach (var file in files) {
+                            if (!string.IsNullOrEmpty(openFileFilter) && !file.Filepath.Contains(openFileFilter, StringComparison.InvariantCultureIgnoreCase)) {
+                                continue;
+                            }
+
                             if (file.Modified) {
                                 ImGui.Bullet();
                             }
@@ -665,11 +672,11 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
 
         if (ImGui.MenuItem("Support development (Ko-Fi)")) {
-            Process.Start(new ProcessStartInfo("https://ko-fi.com/shadowcookie") { UseShellExecute = true });
+            FileSystemUtils.OpenURL("https://ko-fi.com/shadowcookie");
         }
 
         if (AppConfig.IsOutdatedVersion && ImGui.MenuItem($"New version ({AppConfig.Instance.LatestVersion.Get()}) available!")) {
-            Process.Start(new ProcessStartInfo("https://github.com/kagenocookie/REE-Content-Editor/releases/latest") { UseShellExecute = true });
+            FileSystemUtils.OpenURL("https://github.com/kagenocookie/REE-Content-Editor/releases/latest");
         }
 
         ImGui.EndMainMenuBar();
