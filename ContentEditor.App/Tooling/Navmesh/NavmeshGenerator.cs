@@ -282,6 +282,9 @@ public static class NavmeshGenerator
                 polyGroup.Nodes[i].edges.edgeAttributes[linkIndex] = 0;
                 // TODO calculate the traverseCost correctly (whatever correctly means here), for now just leaving it at the default edge len value
             }
+            if (nodeInfo.Links.Count >= 3) {
+                nodeInfo.flags |= 2;
+            }
         }
 
         // build up triangle nodes list
@@ -415,6 +418,9 @@ public static class NavmeshGenerator
                 } else {
                     triInfo.edges.edgeAttributes[2] |= EdgeAttribute.Contour;
                     triInfo.edges.traverseCosts[2] = Vector3.DistanceSquared(p3, p1);
+                }
+                if (nodeInfo.Links.Count == 3) {
+                    nodeInfo.flags |= 2;
                 }
             }
         }
