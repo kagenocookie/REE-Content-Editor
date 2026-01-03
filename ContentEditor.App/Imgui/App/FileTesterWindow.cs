@@ -695,7 +695,7 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<ParamHeader>((m) => [m.asciiHash, m.hash, m.componentCount, m.paramName, m.parameter]);
         AddCompareMapper<Quaternion>((m) => [m.X, m.Y, m.Z, m.W]);
 
-        AddCompareMapper<NodeInfo>((m) => [m.index, m.groupIndex, m.attributes, m.flags, m.nextIndex, m.Links]);
+        AddCompareMapper<NodeInfo>((m) => [m.index, m.groupIndex, m.localIndex, m.attributes, m.flags, m.Links]);
         AddCompareMapper<LinkInfo>((m) => [m.index, m.attributes, m.sourceNodeIndex, m.targetNodeIndex, m.edgeIndex, m.ukn]);
     }
 

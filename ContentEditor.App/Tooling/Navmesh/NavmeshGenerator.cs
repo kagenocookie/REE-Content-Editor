@@ -247,12 +247,12 @@ public static class NavmeshGenerator
             }
             polyGroup.Nodes.Add(poly);
             var nodeInfo = new NodeInfo() {
+                index = polyGroup.NodeInfos.Count,
+                localIndex = polyGroup.NodeInfos.Count,
                 attributes = 0,
                 flags = 0,
-                index = polyGroup.NodeInfos.Count,
                 groupIndex = 0,
                 userdataIndex = 0,
-                nextIndex = polyGroup.NodeInfos.Count + 1,
             };
             polyGroup.NodeInfos.Add(nodeInfo);
         }
@@ -271,7 +271,7 @@ public static class NavmeshGenerator
                 Debug.Assert(otherPolyEdgeIndex != -1);
 
                 nodeInfo.Links.Add(new LinkInfo() {
-                    sourceNodeIndex = nodeInfo.index,
+                    sourceNodeIndex = nodeInfo.localIndex,
                     targetNodeIndex = nei,
                     attributes = 0,
                     index = totalLinkCount++,
@@ -311,16 +311,16 @@ public static class NavmeshGenerator
                 triNode.edges.Init(3);
                 triGroup.Nodes.Add(triNode);
                 var nodeInfo = new NodeInfo() {
+                    index = triGroup.NodeInfos.Count,
+                    localIndex = triGroup.NodeInfos.Count,
                     attributes = 0,
                     flags = 0,
-                    index = triGroup.NodeInfos.Count,
                     groupIndex = 0,
                     userdataIndex = 0,
-                    nextIndex = triGroup.NodeInfos.Count + 1,
                 };
                 triGroup.NodeInfos.Add(nodeInfo);
 
-                triIndices.Add(nodeInfo.index);
+                triIndices.Add(nodeInfo.localIndex);
                 polyTreeIndices.Add(m);
                 nodeInfo.PairNodes.Add(polyNodeInfo);
                 polyNodeInfo.PairNodes.Add(nodeInfo);
@@ -329,8 +329,8 @@ public static class NavmeshGenerator
         }
 
         triGroup.polygonIndices = polyTreeIndices.ToArray();
-        triContent.NodeInfo.maxIndex = triGroup.NodeCount;
-        polyContent.NodeInfo.maxIndex = polyGroup.NodeCount;
+        triContent.NodeInfo.maxIndex = triGroup.NodeCount - 1;
+        polyContent.NodeInfo.maxIndex = polyGroup.NodeCount - 1;
 
         // store triangle neighbor links
         var neighborPolyTriangles = new List<NodeInfo>();
@@ -358,19 +358,19 @@ public static class NavmeshGenerator
                 int num2 = (reference.triBase + f) * 4;
 
                 var nodeInfo = triGroup.NodeInfos[triCount++];
-                var triInfo = triGroup.Nodes[nodeInfo.index];
+                var triInfo = triGroup.Nodes[nodeInfo.localIndex];
 
                 var p1 = triGroup.Vertices![triInfo.index1];
                 var p2 = triGroup.Vertices[triInfo.index2];
                 var p3 = triGroup.Vertices[triInfo.index3];
 
                 // default recast/detour does not give us triangle link infos directly, so we need to figure them out ourselves
-                var (otherTriangle, edgeIndex) = FindTriangleNeighborIndex(triGroup, neighborPolyTriangles, triInfo.index1, triInfo.index2, nodeInfo.index);
+                var (otherTriangle, edgeIndex) = FindTriangleNeighborIndex(triGroup, neighborPolyTriangles, triInfo.index1, triInfo.index2, nodeInfo.localIndex);
                 if (otherTriangle != -1) {
                     nodeInfo.Links.Add(new LinkInfo() {
                         attributes = 0,
                         index = totalLinkCount++,
-                        sourceNodeIndex = nodeInfo.index,
+                        sourceNodeIndex = nodeInfo.localIndex,
                         targetNodeIndex = otherTriangle,
                         SourceNode = nodeInfo,
                         TargetNode = triGroup.NodeInfos[otherTriangle],
@@ -384,12 +384,12 @@ public static class NavmeshGenerator
                     triInfo.edges.traverseCosts[0] = Vector3.DistanceSquared(p1, p2);
                 }
 
-                (otherTriangle, edgeIndex) = FindTriangleNeighborIndex(triGroup, neighborPolyTriangles, triInfo.index2, triInfo.index3, nodeInfo.index);
+                (otherTriangle, edgeIndex) = FindTriangleNeighborIndex(triGroup, neighborPolyTriangles, triInfo.index2, triInfo.index3, nodeInfo.localIndex);
                 if (otherTriangle != -1) {
                     nodeInfo.Links.Add(new LinkInfo() {
                         attributes = 0,
                         index = totalLinkCount++,
-                        sourceNodeIndex = nodeInfo.index,
+                        sourceNodeIndex = nodeInfo.localIndex,
                         targetNodeIndex = otherTriangle,
                         SourceNode = nodeInfo,
                         TargetNode = triGroup.NodeInfos[otherTriangle],
@@ -402,12 +402,12 @@ public static class NavmeshGenerator
                     triInfo.edges.traverseCosts[1] = Vector3.DistanceSquared(p2, p3);
                 }
 
-                (otherTriangle, edgeIndex) = FindTriangleNeighborIndex(triGroup, neighborPolyTriangles, triInfo.index3, triInfo.index1, nodeInfo.index);
+                (otherTriangle, edgeIndex) = FindTriangleNeighborIndex(triGroup, neighborPolyTriangles, triInfo.index3, triInfo.index1, nodeInfo.localIndex);
                 if (otherTriangle != -1) {
                     nodeInfo.Links.Add(new LinkInfo() {
                         attributes = 0,
                         index = totalLinkCount++,
-                        sourceNodeIndex = nodeInfo.index,
+                        sourceNodeIndex = nodeInfo.localIndex,
                         targetNodeIndex = otherTriangle,
                         SourceNode = nodeInfo,
                         TargetNode = triGroup.NodeInfos[otherTriangle],
@@ -433,15 +433,15 @@ public static class NavmeshGenerator
             var local1 = triGroup.Vertices![localIndex1];
             var local2 = triGroup.Vertices[localIndex2];
             foreach (var node in neighbors) {
-                if (node.index == selfNodeIndex) continue;
-                var otherTri = triGroup.Nodes[node.index];
+                if (node.localIndex == selfNodeIndex) continue;
+                var otherTri = triGroup.Nodes[node.localIndex];
                 var match1 = triGroup.Vertices![otherTri.index1] == local1 || triGroup.Vertices![otherTri.index1] == local2;
                 var match2 = triGroup.Vertices![otherTri.index2] == local1 || triGroup.Vertices![otherTri.index2] == local2;
                 var match3 = triGroup.Vertices![otherTri.index3] == local1 || triGroup.Vertices![otherTri.index3] == local2;
 
-                if (match1 && match2) return (node.index, 0);
-                if (match2 && match3) return (node.index, 1);
-                if (match1 && match3) return (node.index, 2);
+                if (match1 && match2) return (node.localIndex, 0);
+                if (match2 && match3) return (node.localIndex, 1);
+                if (match1 && match3) return (node.localIndex, 2);
             }
 
             return (-1, 0);

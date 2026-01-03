@@ -1,6 +1,7 @@
+using ContentPatcher;
 using ReeLib;
 
-namespace ContentPatcher;
+namespace ContentEditor.App.FileLoaders;
 
 public class AimpFileLoader : DefaultFileLoader<AimpFile>
 {

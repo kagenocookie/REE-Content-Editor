@@ -197,11 +197,13 @@ public class LineMesh : Mesh
         for (int i = 0; i < nodes.Count; i++) {
             var nodeInfo = nodes[i];
             foreach (var link in nodeInfo.Links) {
-                var n1 = nodes[effectiveNodeIndices[link.sourceNodeIndex]];
-                var n2 = nodes[effectiveNodeIndices[link.targetNodeIndex]];
+                var index1 = effectiveNodeIndices[link.sourceNodeIndex];
+                var index2 = effectiveNodeIndices[link.targetNodeIndex];
+                var n1 = link.SourceNode!;
+                var n2 = link.TargetNode!;
 
-                var p1 = container.NodeOrigins[n1.index];
-                var p2 = container.NodeOrigins[n2.index];
+                var p1 = container.NodeOrigins[index1];
+                var p2 = container.NodeOrigins[index2];
 
                 // ignore triangle based links here - the web of links becomes an unsightly mess
                 // and yes, we've allocated more data than we needed in that case, shouldn't be an issue

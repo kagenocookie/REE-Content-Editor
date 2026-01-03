@@ -5,10 +5,10 @@ namespace ContentEditor.App.Tooling.Navmesh;
 public class NavmeshBuildParams
 {
     public RcPartition PartitionType { get; set; } = RcPartition.WATERSHED;
-    public float CellSize { get; set; } = 0.25f;
+    public float CellSize { get; set; } = 0.2f;
     public float CellHeight { get; set; } = 0.25f;
     public float AgentHeight { get; set; } = 1.7f;
-    public float AgentRadius { get; set; } = 0.3f;
+    public float AgentRadius { get; set; } = 0.25f;
     public float AgentMaxClimb { get; set; } = 0.3f;
     public float AgentMaxSlopeAngle { get; set; } = 40f;
     public float RegionMinArea { get; set; } = 8;
