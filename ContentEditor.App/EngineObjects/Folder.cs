@@ -144,11 +144,11 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
         }
     }
 
-    public void RequestLoad()
+    public void RequestLoad(Scene.LoadType loadType = Scene.LoadType.Default)
     {
         if (string.IsNullOrEmpty(ScenePath)) return;
 
-        Scene?.RequestLoadChildScene(this);
+        Scene?.RequestLoadChildScene(this, loadType);
     }
 
     private GameObject? FindGameObjectByName(ReadOnlySpan<char> name)

@@ -333,15 +333,26 @@ public class FolderNodeEditor : IObjectUIHandler
                 ImGui.CloseCurrentPopup();
             }
         }
-        if (node.ChildScene?.Folders.Any() == true && ImGui.Selectable("Load subfolders")) {
-            try {
-                foreach (var subfolder in node.ChildScene.Folders) {
-                    if (subfolder.ChildScene != null) continue;
+        if (node.ChildScene?.Folders.Any() == true) {
+            if (ImGui.BeginMenu("Load subfolders")) {
+                var loadType = (Scene.LoadType?)null;
+                if (ImGui.Selectable("Direct children")) loadType = Scene.LoadType.Default;
+                if (ImGui.Selectable("Direct preloaded children")) loadType = Scene.LoadType.PreloadedOnly;
+                if (ImGui.Selectable("All children")) loadType = Scene.LoadType.LoadChildren|Scene.LoadType.IncludeNested;
+                if (ImGui.Selectable("All preloaded children")) loadType = Scene.LoadType.PreloadedOnly|Scene.LoadType.LoadChildren|Scene.LoadType.IncludeNested;
+                if (loadType != null) {
+                    try {
+                        foreach (var subfolder in node.ChildScene.Folders) {
+                            if (subfolder.ChildScene != null) continue;
+                            if ((loadType.Value & Scene.LoadType.PreloadedOnly) != 0 && !subfolder.Standby) continue;
 
-                    subfolder.RequestLoad();
+                            subfolder.RequestLoad(loadType.Value);
+                        }
+                    } catch (Exception e) {
+                        Logger.Error(e, "Failed to load child scenes");
+                    }
                 }
-            } catch (Exception e) {
-                Logger.Error(e, "Failed to load child scenes");
+                ImGui.EndMenu();
             }
         }
     }

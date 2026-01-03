@@ -72,6 +72,15 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     Vector2 IRectWindow.Size => renderContext.ViewportSize;
     Vector2 IRectWindow.Position => renderContext.ViewportOffset + renderContext.UIOffset;
 
+    [Flags]
+    public enum LoadType
+    {
+        Default = 0,
+        LoadChildren = 1,
+        IncludeNested = 2,
+        PreloadedOnly = 4,
+    }
+
     internal Scene(string name, string internalPath, ContentWorkspace workspace, Scene? parentScene = null, Folder? rootFolder = null, GL? gl = null)
     {
         Name = name;
@@ -109,7 +118,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         return null;
     }
 
-    public void RequestLoadChildScene(Folder childFolder)
+    public void RequestLoadChildScene(Folder childFolder, LoadType subfolderLoadType = LoadType.Default)
     {
         if (childFolder.Scene != this || string.IsNullOrEmpty(childFolder.ScenePath)) return;
         if (GetChildScene(childFolder.ScenePath) != null) return;
@@ -123,6 +132,19 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
             var childScene = childSceneRoot.Scene;
             if (childScene == null) {
                 childFolder.ChildScene = SceneManager.CreateScene(envScene, IsActive, this, childSceneRoot);
+            }
+            if ((subfolderLoadType & LoadType.LoadChildren) != 0 && childFolder.ChildScene != null)
+            {
+                var childrenLoadType = subfolderLoadType;
+                if ((childrenLoadType & LoadType.IncludeNested) == 0) childrenLoadType = childrenLoadType & ~LoadType.LoadChildren;
+
+                foreach (var childSubfolder in childFolder.ChildScene.Folders) {
+                    if ((subfolderLoadType & LoadType.PreloadedOnly) != 0 && !childSubfolder.Standby) {
+                        continue;
+                    }
+
+                    childSubfolder.RequestLoad(childrenLoadType);
+                }
             }
         });
     }
