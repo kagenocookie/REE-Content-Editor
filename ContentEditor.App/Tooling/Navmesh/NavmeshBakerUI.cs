@@ -133,6 +133,7 @@ public class NavmeshBakerUI(Scene baseScene, FileHandle mapFileHandle, UIContext
 
         if (ImGui.Button("Bake")) {
             List<IInputGeomProvider> geoList = new();
+            // TODO might need more IInputGeomProviders that can handle other resources (.mesh, RSZ collider shapes, .coco, .hf, .chf, ...)
             foreach (var coll in selectedColliders) {
                 var shape = RszFieldCache.Collider.Shape.Get(coll);
                 switch (shape.RszClass.name) {

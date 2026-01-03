@@ -28,7 +28,6 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         KnownFileFormats.Mesh,
         KnownFileFormats.CollisionMesh,
         KnownFileFormats.RequestSetCollider,
-        KnownFileFormats.Texture,
         KnownFileFormats.MeshMaterial,
     ];
 

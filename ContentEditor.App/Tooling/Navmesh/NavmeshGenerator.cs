@@ -15,9 +15,6 @@ namespace ContentEditor.App.Tooling.Navmesh;
 
 public static class NavmeshGenerator
 {
-    // TODO implement ReEngineInputGeomProviders that can handle a list of input resources (.mcol, .mesh, RSZ collider shapes, .coco, .hf, .chf, ...)
-    // and convert all of them into suitable shape geometry
-
     public static AimpFile RebuildNavmeshFromMesh(AimpFile targetFile, NavmeshBuildParams config, string objFile)
     {
         var geo = SimpleInputGeomProvider.LoadFile(objFile);

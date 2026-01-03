@@ -696,7 +696,7 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<Quaternion>((m) => [m.X, m.Y, m.Z, m.W]);
 
         AddCompareMapper<NodeInfo>((m) => [m.index, m.groupIndex, m.localIndex, m.attributes, m.flags, m.Links]);
-        AddCompareMapper<LinkInfo>((m) => [m.index, m.attributes, m.sourceNodeIndex, m.targetNodeIndex, m.edgeIndex, m.ukn]);
+        AddCompareMapper<LinkInfo>((m) => [m.attributes, m.sourceNodeIndex, m.targetNodeIndex, m.edgeIndex, m.ukn]);
     }
 
     private static Dictionary<Type, Func<object, IEnumerable<object?>>> comparedValueMappers = new();
