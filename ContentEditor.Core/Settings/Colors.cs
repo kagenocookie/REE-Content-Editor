@@ -67,6 +67,8 @@ public static class Colors
     public static Vector4 FileTypeCHF => Current.FileTypeCHF;
     public static Vector4 FileTypeBHVT => Current.FileTypeBHVT;
     public static Vector4 FileTypeJMAP => Current.FileTypeJMAP;
+    public static Vector4 FileTypeSDFTEX => Current.FileTypeSDFTEX;
+    public static Vector4 FileTypeSDF => Current.FileTypeSDF;
     /// <summary>
     /// Main color for icons, it should be the same as the text color of the current theme
     ///</summary>
@@ -177,6 +179,8 @@ public sealed class AppColors
     public Vector4 FileTypeBHVT = new Vector4(0.05f, 0.66f, 0.51f, 1);
     public Vector4 FileTypeHF = new Vector4(0, 0.89f, 0.73f, 1);
     public Vector4 FileTypeJMAP = new Vector4(0.98f, 0.65f, 0.76f, 1);
+    public Vector4 FileTypeSDFTEX = new Vector4(0.46f, 0.73f, 0, 1);
+    public Vector4 FileTypeSDF = new Vector4(0.46f, 0.73f, 0, 1);
 
     public Vector4 IconPrimary = new Vector4(1, 1, 1, 1);
     public Vector4 IconSecondary = new Vector4(0.114f, 0.6f, 0.93f, 1);

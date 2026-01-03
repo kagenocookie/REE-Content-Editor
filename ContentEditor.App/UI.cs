@@ -352,6 +352,8 @@ public static class AppIcons
     public static readonly char SI_FileType_CHF = '\ueda6';
     public static readonly char SI_FileType_BHVT = '\ueda7';
     public static readonly char SI_FileType_JMAP = '\ueda8';
+    public static readonly char SI_FileType_SDFTEX = '\ueda9';
+    public static readonly char SI_FileType_SDF = '\uedaa';
 
     public static string PrependIcon(this string text, object target)
     {
@@ -431,6 +433,8 @@ public static class AppIcons
         KnownFileFormats.CollisionHeightField => (SI_FileType_CHF, Colors.FileTypeCHF),
         KnownFileFormats.BehaviorTree => (SI_FileType_BHVT, Colors.FileTypeBHVT),
         KnownFileFormats.JointMap => (SI_FileType_JMAP, Colors.FileTypeJMAP),
+        KnownFileFormats.SDFTexture => (SI_FileType_SDFTEX, Colors.FileTypeSDFTEX),
+        KnownFileFormats.Shader => (SI_FileType_SDF, Colors.FileTypeSDF),
         _ => ('\0', Vector4.One),
     };
 }
