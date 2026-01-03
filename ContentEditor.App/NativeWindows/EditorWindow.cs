@@ -52,6 +52,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
     protected Vector2 viewportOffset;
 
+    private string openFileFilter = "";
+    private string recentFileFilter = "";
+
     internal EditorWindow(int id, ContentWorkspace? workspace = null) : base(id)
     {
         Ready += OnReady;
@@ -367,8 +370,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
     }
 
-    private string openFileFilter = "";
-
     internal void ShowBundleManagement()
     {
         if (workspace == null) return;
@@ -497,7 +498,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     if (recents == null || recents.Count == 0) {
                         ImGui.MenuItem("No recent files", false);
                     } else {
+                        ImGui.InputText("Filter", ref recentFileFilter, 128);
                         foreach (var file in recents) {
+                            if (!string.IsNullOrEmpty(recentFileFilter) && !file.Contains(recentFileFilter, StringComparison.InvariantCultureIgnoreCase)) {
+                                continue;
+                            }
+
                             if (ImGui.MenuItem(file)) {
                                 this.OnFileDrop([file], new Vector2D<int>());
                                 break;

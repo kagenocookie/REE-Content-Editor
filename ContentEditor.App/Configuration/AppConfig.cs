@@ -190,7 +190,7 @@ public class AppConfig : Singleton<AppConfig>
     public bool HasAnyGameConfigured => _lock.Read(() => gameConfigs.Any(g => !string.IsNullOrEmpty(g.Value?.gamepath)));
     public IEnumerable<string> ConfiguredGames => _lock.Read(() => gameConfigs.Where(kv => !string.IsNullOrEmpty(kv.Value.gamepath)).Select(kv => kv.Key));
 
-    public void AddRecentFile(string file) => AddRecentString(file, JsonSettings.RecentFiles, 25);
+    public void AddRecentFile(string file) => AddRecentString(file, JsonSettings.RecentFiles, 100);
     public void AddRecentBundle(string file) => AddRecentString(file, JsonSettings.RecentBundles, 25);
     public void AddRecentRcol(string file) => AddRecentString(file, JsonSettings.RecentRcols, 15);
     public void AddRecentMotlist(string file) => AddRecentString(file, JsonSettings.RecentMotlists, 15);
