@@ -67,6 +67,7 @@ public class RcolEditMode : EditModeHandler
             if (storedSuggestions.Length > 0) {
                 if (ImguiHelpers.ValueCombo("Component Files", storedSuggestions, storedSuggestions, ref rcolPath)) {
                     AppConfig.Instance.AddRecentRcol(rcolPath);
+                    filePicker?.ResetState();
                 }
             }
         }
@@ -76,6 +77,7 @@ public class RcolEditMode : EditModeHandler
             var options = settings.RecentRcols.ToArray();
             if (ImguiHelpers.ValueCombo("Recent", options, options, ref rcolPath)) {
                 AppConfig.Instance.AddRecentRcol(rcolPath);
+                filePicker?.ResetState();
             }
         }
 

@@ -77,6 +77,7 @@ public class NavmeshEditor : EditModeHandler
                 }
                 if (ImguiHelpers.ValueCombo("Stored Files", storedSuggestions, storedSuggestions, ref filepath)) {
                     AppConfig.Instance.AddRecentNavmesh(filepath);
+                    filePicker?.ResetState();
                 }
             }
             map.visibleContentTypes = displayedContentTypes;
@@ -87,6 +88,7 @@ public class NavmeshEditor : EditModeHandler
             var options = settings.RecentNavmeshes.ToArray();
             if (ImguiHelpers.ValueCombo("Recent", options, options, ref filepath)) {
                 AppConfig.Instance.AddRecentNavmesh(filepath);
+                filePicker?.ResetState();
             }
         }
         context.children[1].ShowUI();
