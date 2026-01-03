@@ -66,6 +66,7 @@ public class BaseListHandler : IObjectUIHandler
             string? filter = null;
             if (Filterable) {
                 ImGui.InputText("Filter", ref context.Filter, 200);
+                ImGui.Spacing();
                 filter = context.Filter;
             }
             for (int i = 0; i < list.Count; ++i) {
@@ -81,7 +82,7 @@ public class BaseListHandler : IObjectUIHandler
                 var child = context.children[i];
                 var remove = false;
                 if (CanCreateRemoveElements) {
-                    remove = ImGui.Button("X");
+                    remove = ImGui.Button($"{AppIcons.SI_GenericClose}");
                     ImGui.SameLine();
                 }
                 child.ShowUI();

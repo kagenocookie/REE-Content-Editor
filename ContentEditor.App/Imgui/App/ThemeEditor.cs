@@ -37,6 +37,7 @@ public class ThemeEditor : IWindowHandler
         ("File Type Icons", StyleGroupID.Icons_FileType, new()),
         ("Tags", StyleGroupID.Tags, new()),
     };
+    private ImNodesContextPtr? nodeCtx;
     public void Init(UIContext context)
     {
         this.context = context;
@@ -63,7 +64,15 @@ public class ThemeEditor : IWindowHandler
         if (ImGui.Button("Open IMGUI Test Window")) {
             EditorWindow.CurrentWindow?.AddUniqueSubwindow(new ImguiTestWindow());
         }
-
+        
+        if (nodeCtx == null) {
+            nodeCtx = UI.InitImNodeContext();
+            ImNodes.SetCurrentContext(nodeCtx.Value);
+            ImNodes.SetNodeEditorSpacePos(0, new Vector2(50, 50));
+            ImNodes.SetNodeEditorSpacePos(1, new Vector2(300, 80));
+        } else {
+            ImNodes.SetCurrentContext(nodeCtx.Value);
+        }
         ImGui.SeparatorText("Style Editor");
         ImguiHelpers.Tabs(["Built-in", "Nodes", "Contextual"], ref tab, true);
         ImGui.BeginChild("Styles");
@@ -77,17 +86,8 @@ public class ThemeEditor : IWindowHandler
         ImGui.EndChild();
     }
 
-    private ImNodesContextPtr? nodeCtx;
     private void ShowNodesStyleEditor()
     {
-        if (nodeCtx == null) {
-            nodeCtx = UI.InitImNodeContext();
-            ImNodes.SetCurrentContext(nodeCtx.Value);
-            ImNodes.SetNodeEditorSpacePos(0, new Vector2(50, 50));
-            ImNodes.SetNodeEditorSpacePos(1, new Vector2(300, 80));
-        } else {
-            ImNodes.SetCurrentContext(nodeCtx.Value);
-        }
         ImGui.Spacing();
         ImGui.Spacing();
         ImGui.SetNextWindowSize(new Vector2(Math.Min(ImGui.GetContentRegionAvail().X / 2, 600 * UI.UIScale), 0));

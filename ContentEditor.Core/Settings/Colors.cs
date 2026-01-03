@@ -55,6 +55,20 @@ public static class Colors
     public static Vector4 FileTypeUCURVELIST => Current.FileTypeUCURVELIST;
     public static Vector4 FileTypeFSM => Current.FileTypeFSM;
     public static Vector4 FileTypeMSG => Current.FileTypeMSG;
+    public static Vector4 FileTypeRTEX => Current.FileTypeRTEX;
+    public static Vector4 FileTypeTML => Current.FileTypeTML;
+    public static Vector4 FileTypeCLIP => Current.FileTypeCLIP;
+    public static Vector4 FileTypeTMLFSM2 => Current.FileTypeTMLFSM2;
+    public static Vector4 FileTypeMOTCAM => Current.FileTypeMOTCAM;
+    public static Vector4 FileTypeMCAMLIST => Current.FileTypeMCAMLIST;
+    public static Vector4 FileTypeMCAMBANK => Current.FileTypeMCAMBANK;
+    public static Vector4 FileTypeAIMAP => Current.FileTypeAIMAP;
+    public static Vector4 FileTypeHF => Current.FileTypeHF;
+    public static Vector4 FileTypeCHF => Current.FileTypeCHF;
+    public static Vector4 FileTypeBHVT => Current.FileTypeBHVT;
+    public static Vector4 FileTypeJMAP => Current.FileTypeJMAP;
+    public static Vector4 FileTypeSDFTEX => Current.FileTypeSDFTEX;
+    public static Vector4 FileTypeSDF => Current.FileTypeSDF;
     /// <summary>
     /// Main color for icons, it should be the same as the text color of the current theme
     ///</summary>
@@ -139,9 +153,13 @@ public sealed class AppColors
     public Vector4 FileTypeMOTLIST = new Vector4(0.6f, 0.6f, 1, 1);
     public Vector4 FileTypeMOTBANK = new Vector4(0.6f, 0.6f, 1, 1);
     public Vector4 FileTypeMOTFSM = new Vector4(0.6f, 0.6f, 1, 1);
+    public Vector4 FileTypeMOTCAM = new Vector4(0.6f, 0.6f, 1, 1);
+    public Vector4 FileTypeMCAMLIST = new Vector4(0.6f, 0.6f, 1, 1);
+    public Vector4 FileTypeMCAMBANK = new Vector4(0.6f, 0.6f, 1, 1);
     public Vector4 FileTypeCFIL = new Vector4(1, 0.70f, 0.16f, 1);
     public Vector4 FileTypeCDEF = new Vector4(1, 0.70f, 0.16f, 1);
     public Vector4 FileTypeCMAT = new Vector4(1, 0.70f, 0.16f, 1);
+    public Vector4 FileTypeCHF = new Vector4(1, 0.70f, 0.16f, 1);
     public Vector4 FileTypeFOL = new Vector4(0.15f, 0.65f, 0, 1);
     public Vector4 FileTypeEFX = new Vector4(0.21f, 0.88f, 0, 1);
     public Vector4 FileTypeGUI = new Vector4(1, 0.4f, 0.1f, 0.8f);
@@ -153,6 +171,16 @@ public sealed class AppColors
     public Vector4 FileTypeUCURVELIST = new Vector4(0.84f, 0.61f, 0.52f, 1);
     public Vector4 FileTypeFSM = new Vector4(0.35f, 0.55f, 0.98f, 1);
     public Vector4 FileTypeMSG = new Vector4(1, 0.78f, 0, 1);
+    public Vector4 FileTypeRTEX = new Vector4(0.98f, 0.36f, 0.57f, 1);
+    public Vector4 FileTypeTML = new Vector4(0.98f, 0.36f, 0.57f, 1);
+    public Vector4 FileTypeCLIP = new Vector4(0.98f, 0.36f, 0.57f, 1);
+    public Vector4 FileTypeTMLFSM2 = new Vector4(0.98f, 0.36f, 0.57f, 1);
+    public Vector4 FileTypeAIMAP = new Vector4(0.05f, 0.66f, 0.51f, 1);
+    public Vector4 FileTypeBHVT = new Vector4(0.05f, 0.66f, 0.51f, 1);
+    public Vector4 FileTypeHF = new Vector4(0, 0.89f, 0.73f, 1);
+    public Vector4 FileTypeJMAP = new Vector4(0.98f, 0.65f, 0.76f, 1);
+    public Vector4 FileTypeSDFTEX = new Vector4(0.46f, 0.73f, 0, 1);
+    public Vector4 FileTypeSDF = new Vector4(0.46f, 0.73f, 0, 1);
 
     public Vector4 IconPrimary = new Vector4(1, 1, 1, 1);
     public Vector4 IconSecondary = new Vector4(0.114f, 0.6f, 0.93f, 1);
