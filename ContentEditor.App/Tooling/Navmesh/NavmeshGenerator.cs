@@ -237,7 +237,14 @@ public static class NavmeshGenerator
             poly.indices = polyIndices.ToArray();
             poly.min = aabb.minpos;
             poly.max = aabb.maxpos;
-            poly.attributes.Init(poly.indices.Length);
+            poly.edges.Init(poly.indices.Length);
+            for (int k = 0; k < poly.indices.Length; ++k) {
+                var p1 = polyGroup.Vertices![poly.indices[k]];
+                var p2 = polyGroup.Vertices![poly.indices[(k + 1) % poly.indices.Length]];
+                // default all edges to contour type, will be reset later if necessary once we go through the polygon links
+                poly.edges.edgeAttributes[k] = EdgeAttribute.Contour;
+                poly.edges.traverseCosts[k] = Vector3.DistanceSquared(p1, p2);
+            }
             polyGroup.Nodes.Add(poly);
             var nodeInfo = new NodeInfo() {
                 attributes = 0,
@@ -259,6 +266,9 @@ public static class NavmeshGenerator
             for (int linkIndex = 0; linkIndex < polyData.neis.Length; linkIndex++) {
                 int nei = polyData.neis[linkIndex];
                 if (nei == 0) continue;
+                var otherNode = polyGroup.NodeInfos[nei - 1];
+                var otherPolyEdgeIndex = tile.data.polys[nei - 1].neis.IndexOf(i + 1);
+                Debug.Assert(otherPolyEdgeIndex != -1);
 
                 nodeInfo.Links.Add(new LinkInfo() {
                     sourceNodeIndex = nodeInfo.index,
@@ -266,9 +276,14 @@ public static class NavmeshGenerator
                     attributes = 0,
                     index = totalLinkCount++,
                     SourceNode = nodeInfo,
-                    TargetNode = polyGroup.NodeInfos[nei - 1],
-                    edgeIndex = linkIndex,
+                    TargetNode = otherNode,
+                    edgeIndex = otherPolyEdgeIndex,
                 });
+                polyGroup.Nodes[i].edges.edgeAttributes[linkIndex] = 0;
+                // TODO calculate the traverseCost correctly (whatever correctly means here), for now just leaving it at the default edge len value
+            }
+            if (nodeInfo.Links.Count >= 3) {
+                nodeInfo.flags |= 2;
             }
         }
 
@@ -280,9 +295,9 @@ public static class NavmeshGenerator
         var polyTreeIndices = new List<int>();
         for (int m = 0; m < detailMesh.nmeshes; ++m) {
             int firstVert = detailMesh.meshes[m * 4];
+            int firstTriangle = detailMesh.meshes[m * 4 + 2];
             var poly = tile.data.polys[m];
             var polyNodeInfo = polyGroup.NodeInfos[m];
-            int firstTriangle = detailMesh.meshes[m * 4 + 2];
             triIndices.Clear();
             for (int f = 0; f < detailMesh.meshes[m * 4 + 3]; f++)
             {
@@ -293,7 +308,7 @@ public static class NavmeshGenerator
                 triNode.index1 = (firstVert + detailMesh.tris[(firstTriangle + f) * 4 + 0]);
                 triNode.index2 = (firstVert + detailMesh.tris[(firstTriangle + f) * 4 + 1]);
                 triNode.index3 = (firstVert + detailMesh.tris[(firstTriangle + f) * 4 + 2]);
-                triNode.attributes.Init(3);
+                triNode.edges.Init(3);
                 triGroup.Nodes.Add(triNode);
                 var nodeInfo = new NodeInfo() {
                     attributes = 0,
@@ -345,6 +360,10 @@ public static class NavmeshGenerator
                 var nodeInfo = triGroup.NodeInfos[triCount++];
                 var triInfo = triGroup.Nodes[nodeInfo.index];
 
+                var p1 = triGroup.Vertices![triInfo.index1];
+                var p2 = triGroup.Vertices[triInfo.index2];
+                var p3 = triGroup.Vertices[triInfo.index3];
+
                 // default recast/detour does not give us triangle link infos directly, so we need to figure them out ourselves
                 var (otherTriangle, edgeIndex) = FindTriangleNeighborIndex(triGroup, neighborPolyTriangles, triInfo.index1, triInfo.index2, nodeInfo.index);
                 if (otherTriangle != -1) {
@@ -358,6 +377,11 @@ public static class NavmeshGenerator
                         edgeIndex = edgeIndex,
                     });
                     Debug.Assert(nodeInfo != triGroup.NodeInfos[otherTriangle]);
+                    // TODO figure out how the distance is supposed to be calculated when there's a neighbor, this is close enough for now
+                    triInfo.edges.traverseCosts[0] = Vector3.DistanceSquared(p1, p2);
+                } else {
+                    triInfo.edges.edgeAttributes[0] |= EdgeAttribute.Contour;
+                    triInfo.edges.traverseCosts[0] = Vector3.DistanceSquared(p1, p2);
                 }
 
                 (otherTriangle, edgeIndex) = FindTriangleNeighborIndex(triGroup, neighborPolyTriangles, triInfo.index2, triInfo.index3, nodeInfo.index);
@@ -372,6 +396,10 @@ public static class NavmeshGenerator
                         edgeIndex = edgeIndex,
                     });
                     Debug.Assert(nodeInfo != triGroup.NodeInfos[otherTriangle]);
+                    triInfo.edges.traverseCosts[1] = Vector3.DistanceSquared(p2, p3);
+                } else {
+                    triInfo.edges.edgeAttributes[1] |= EdgeAttribute.Contour;
+                    triInfo.edges.traverseCosts[1] = Vector3.DistanceSquared(p2, p3);
                 }
 
                 (otherTriangle, edgeIndex) = FindTriangleNeighborIndex(triGroup, neighborPolyTriangles, triInfo.index3, triInfo.index1, nodeInfo.index);
@@ -386,6 +414,13 @@ public static class NavmeshGenerator
                         edgeIndex = edgeIndex,
                     });
                     Debug.Assert(nodeInfo != triGroup.NodeInfos[otherTriangle]);
+                    triInfo.edges.traverseCosts[2] = Vector3.DistanceSquared(p3, p1);
+                } else {
+                    triInfo.edges.edgeAttributes[2] |= EdgeAttribute.Contour;
+                    triInfo.edges.traverseCosts[2] = Vector3.DistanceSquared(p3, p1);
+                }
+                if (nodeInfo.Links.Count == 3) {
+                    nodeInfo.flags |= 2;
                 }
             }
         }

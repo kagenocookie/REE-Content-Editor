@@ -1,5 +1,6 @@
 using System.Numerics;
 using ContentEditor.App.FileLoaders;
+using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -126,6 +127,15 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
 
     private void ShowEditModesMenu()
     {
+        var canReopenScene = !string.IsNullOrEmpty(Scene.InternalPath) || File.Exists(Scene.Name);
+        if (canReopenScene && ImGui.BeginMenu("File")) {
+            if (ImGui.MenuItem("Re-Open Scene Editor")) {
+                EditorWindow.CurrentWindow?.OpenFiles([
+                    File.Exists(Scene.Name) ? Scene.Name : Scene.InternalPath
+                ]);
+            }
+            ImGui.EndMenu();
+        }
         if (Scene.Root.GetAvailableEditModes().Any() == true) {
             var activeEditMode = Scene.Root.ActiveEditMode;
             if (ImGui.BeginMenu(activeEditMode == null ? "Editing: --" : "Editing: " + activeEditMode.DisplayName)) {
