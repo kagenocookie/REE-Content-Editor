@@ -1,16 +1,18 @@
-using System.Drawing;
 using System.Numerics;
+using System.Text.Json;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Common;
 
 namespace ContentEditor.App.ImguiHandling;
 
 public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFocusableFileHandleReferenceHolder, IUIContextEventHandler
 {
     public virtual bool HasUnsavedChanges => context.Changed || Handle.Modified;
+    protected virtual bool AllowJsonCopy => false;
 
     public virtual string HandlerName { get; } = "File";
     public FileHandle Handle { get; private set; }
@@ -95,6 +97,18 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     public void OnIMGUI()
     {
         DrawFileControls(context.Get<WindowData>());
+
+        if (Handle.FileSource != null) {
+            ImGui.TextColored(Colors.Faded,$"File source: {Handle.HandleType} - {Handle.FileSource} ({Handle.NativePath})");
+        } else if (!string.IsNullOrEmpty(Handle.NativePath)) {
+            ImGui.TextColored(Colors.Faded, $"File source: {Handle.HandleType} ({Handle.NativePath})");
+        } else {
+            ImGui.TextColored(Colors.Faded, $"File source: {Handle.HandleType}");
+        }
+        if (ImGui.IsItemClicked()) {
+            EditorWindow.CurrentWindow?.CopyToClipboard(Handle.NativePath ?? Handle.Filepath, "Path copied!");
+        }
+
         DrawFileContents();
     }
 
@@ -169,16 +183,38 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                 Handle.Revert(data.Context.GetWorkspace()!);
             }
         }
+    }
 
-        if (Handle.FileSource != null) {
-            ImGui.TextColored(Colors.Faded,$"File source: {Handle.HandleType} - {Handle.FileSource} ({Handle.NativePath})");
-        } else if (!string.IsNullOrEmpty(Handle.NativePath)) {
-            ImGui.TextColored(Colors.Faded, $"File source: {Handle.HandleType} ({Handle.NativePath})");
-        } else {
-            ImGui.TextColored(Colors.Faded, $"File source: {Handle.HandleType}");
+    protected void ShowFileJsonCopyPasteButtons<T>(JsonSerializerOptions? jsonOptions) where T : BaseFile
+    {
+        if (ImGui.Button("Copy as JSON")) {
+            var data = Handle.GetFile<T>();
+            var json = JsonSerializer.Serialize(data, jsonOptions ?? JsonConfig.jsonOptionsIncludeFields);
+            EditorWindow.CurrentWindow?.CopyToClipboard(json, $"Copied file to JSON!");
+            ImGui.CloseCurrentPopup();
         }
-        if (ImGui.IsItemClicked()) {
-            EditorWindow.CurrentWindow?.CopyToClipboard(Handle.NativePath ?? Handle.Filepath, "Path copied!");
+        ImGui.SameLine();
+        if (ImGui.Button("Paste from JSON (replace)")) {
+            try {
+                var wnd = EditorWindow.CurrentWindow;
+                var data = wnd?.GetClipboard();
+                if (string.IsNullOrEmpty(data)) return;
+
+                var val = JsonSerializer.Deserialize<T>(data, jsonOptions ?? JsonConfig.jsonOptionsIncludeFields);
+                if (val == null) {
+                    Logger.Error($"Failed to deserialize {typeof(T).Name}.");
+                    return;
+                }
+
+                var targetFile = Handle.GetFile<T>();
+                var clone = targetFile.DeepCloneGeneric();
+                UndoRedo.RecordCallback(context, () => DeepCloneUtil<T>.ReplaceFields(val, targetFile), () => DeepCloneUtil<T>.ReplaceFields(clone, targetFile));
+                UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, Reset, wnd);
+            } catch (Exception e) {
+                Logger.Error($"Failed to deserialize {typeof(T).Name}: " + e.Message);
+            }
+
+            ImGui.CloseCurrentPopup();
         }
     }
 

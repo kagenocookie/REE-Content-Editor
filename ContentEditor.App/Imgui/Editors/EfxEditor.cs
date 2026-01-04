@@ -7,7 +7,6 @@ using ReeLib.Common;
 using ReeLib.Efx;
 using ReeLib.Efx.Structs.Basic;
 using ReeLib.Efx.Structs.Common;
-using SmartFormat.Core.Parsing;
 
 namespace ContentEditor.App.ImguiHandling.Efx;
 
@@ -37,6 +36,13 @@ public class EfxEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIns
     {
         base.Reset();
         if (primaryInspector != null) primaryInspector.Target = null!;
+    }
+
+    protected override void DrawFileControls(WindowData data)
+    {
+        base.DrawFileControls(data);
+        ImGui.SameLine();
+        ShowFileJsonCopyPasteButtons<EfxFile>(EfxJsonTypeResolver.jsonOptions);
     }
 
     protected override void DrawFileContents()

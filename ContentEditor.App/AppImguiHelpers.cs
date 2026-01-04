@@ -108,15 +108,15 @@ public static class AppImguiHelpers
         return changed;
     }
 
-    public static void ShowDefaultCopyPopup<T>(ref T value, UIContext context)
+    public static void ShowDefaultCopyPopup<T>(in T value, UIContext context)
     {
         if (ImGui.BeginPopupContextItem(context.label)) {
-            ShowDefaultCopyPopupButtons(ref value, context);
+            ShowDefaultCopyPopupButtons(in value, context);
             ImGui.EndPopup();
         }
     }
 
-    public static void ShowDefaultCopyPopupButtons<T>(ref T value, UIContext context)
+    public static void ShowDefaultCopyPopupButtons<T>(in T value, UIContext context)
     {
         if (ImGui.Selectable("Copy value")) {
             EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(value, JsonConfig.jsonOptionsIncludeFields), $"Copied value of {context.label}!");

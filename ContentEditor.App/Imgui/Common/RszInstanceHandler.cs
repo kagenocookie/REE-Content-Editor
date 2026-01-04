@@ -942,7 +942,7 @@ public class GuidFieldHandler : Singleton<GuidFieldHandler>, IObjectUIHandler
                 ImGui.CloseCurrentPopup();
             }
             ImGui.Separator();
-            AppImguiHelpers.ShowDefaultCopyPopupButtons(ref val, context);
+            AppImguiHelpers.ShowDefaultCopyPopupButtons(val, context);
             ImGui.EndPopup();
         }
     }
