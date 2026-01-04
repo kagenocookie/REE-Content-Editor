@@ -50,9 +50,10 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
             PlatformUtils.ShowSaveFileDialog((fn) => {
                 lastFilepath = fn;
                 window.InvokeFromUIThread(() => {
-                    ExportMcolToGlb(File.bvh, fn);
+                    ExportMcolToMesh(File.bvh, fn);
                 });
-            }, lastFilepath ?? Path.ChangeExtension(Handle.Filename.ToString(), ".glb"), FileFilters.GlbFile);
+            }, lastFilepath ?? Path.ChangeExtension(Handle.Filename.ToString(), ".glb"), FileFilters.MeshFile);
+
         }
         ImGui.SameLine();
         if (ImGui.Button("Import mesh ...")) {
@@ -60,10 +61,10 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
                 var fn = files[0];
                 lastFilepath = fn;
                 window.InvokeFromUIThread(() => {
-                    ImportGlbIntoMcol(File, fn);
+                    ImportMeshIntoMcol(File, fn);
                     context.ClearChildren();
                 });
-            }, lastFilepath ?? Path.ChangeExtension(Handle.Filename.ToString(), ".glb"), FileFilters.GlbFile);
+            }, lastFilepath ?? Path.ChangeExtension(Handle.Filename.ToString(), ".glb"), FileFilters.MeshFile);
         }
 
         ImGui.Spacing();
@@ -93,7 +94,7 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 
     private const float MaxPartId = 256;
 
-    public static void ExportMcolToGlb(BvhData? bvh, string outputFilepath)
+    public static void ExportMcolToMesh(BvhData? bvh, string outputFilepath)
     {
         var scene = GetMeshScene(bvh);
         if (scene == null) {
@@ -107,7 +108,7 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         ctx.ExportFile(scene, outputFilepath, exportFormat);
     }
 
-    public static bool ImportGlbIntoMcol(McolFile file, string meshFilepath)
+    public static bool ImportMeshIntoMcol(McolFile file, string meshFilepath)
     {
         using var ctx = new AssimpContext();
         var scene = ctx.ImportFile(meshFilepath);

@@ -43,7 +43,7 @@ public class TerrainEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
             PlatformUtils.ShowSaveFileDialog((fn) => {
                 lastFilepath = fn;
                 window.InvokeFromUIThread(() => {
-                    McolEditor.ExportMcolToGlb(File.bvh, fn);
+                    McolEditor.ExportMcolToMesh(File.bvh, fn);
                 });
             }, lastFilepath ?? Handle.Filename.ToString(), FileFilters.MeshFile);
         }
