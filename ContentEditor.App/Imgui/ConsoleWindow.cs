@@ -146,7 +146,7 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
 
     private void OnMesageReceived(string msg, LogSeverity severity)
     {
-        if (EditorWindow.CurrentWindow != null && window?.ParentWindow != EditorWindow.CurrentWindow) {
+        if (MainLoop.IsMainThread && EditorWindow.CurrentWindow != null && window?.ParentWindow != EditorWindow.CurrentWindow) {
             return;
         }
         AddMessage(msg, severity);
