@@ -79,7 +79,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         this.context = context;
         data = context.Get<WindowData>();
     }
-    public void OnWindow() => OnIMGUI();
+    public void OnWindow() => this.ShowDefaultWindow(context);
     public void OnIMGUI()
     {
         fullSupportedGames ??= ResourceRepository.RemoteInfo.Resources.Where(kv => kv.Value.IsFullySupported).Select(kv => kv.Key).ToHashSet();
@@ -92,20 +92,16 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
 
     private void ShowSettingsMenu(ref bool isShow)
     {
-        ImGui.SetNextWindowSize(new Vector2(800, 500), ImGuiCond.FirstUseEver);
-        if (ImGui.Begin("Settings", ref isShow)) {
-            ImGui.BeginChild("GroupList", new Vector2(200 * UI.UIScale, 0), ImGuiChildFlags.Borders);
-            ShowGroupList();
-            ImGui.EndChild();
+        ImGui.BeginChild("GroupList", new Vector2(200 * UI.UIScale, 0), ImGuiChildFlags.Borders);
+        ShowGroupList();
+        ImGui.EndChild();
 
-            ImGui.SameLine();
-            ImGui.BeginChild("SubGroupContent", new Vector2(0, 0), ImGuiChildFlags.Borders);
-            if (selectedGroup >= 0) {
-                ShowSubGroupContent(groups[selectedGroup]);
-            }
-            ImGui.EndChild();
+        ImGui.SameLine();
+        ImGui.BeginChild("SubGroupContent", new Vector2(0, 0), ImGuiChildFlags.Borders);
+        if (selectedGroup >= 0) {
+            ShowSubGroupContent(groups[selectedGroup]);
         }
-        ImGui.End();
+        ImGui.EndChild();
     }
     private void ShowGroupList()
     {
@@ -298,31 +294,21 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             ImGui.TextColored(Colors.Warning, "Window transparency change will only be applied after restarting the app");
         }
     }
-    private static void ShowHotkeysGlobalTab()
+    private void ShowHotkeysGlobalTab()
     {
         ImGui.Spacing();
 
-        var key = config.Key_Undo.Get();
-        if (ImguiKeybinding("Undo", ref key, ref filterKey1)) {
-            config.Key_Undo.Set(key);
-        }
-        if (key.Key != ImGuiKey.Z) ImGui.TextColored(Colors.Warning, "While focused, text inputs will not correctly take this setting into account and still use the default layout keys for undo/redo");
+        ImguiKeybinding("Undo", config.Key_Undo);
+        if (config.Key_Undo.Get().Key != ImGuiKey.Z) ImGui.TextColored(Colors.Warning, "While focused, text inputs will not correctly take this setting into account and still use the default layout keys for undo/redo");
 
-        key = config.Key_Redo.Get();
-        if (ImguiKeybinding("Redo", ref key, ref filterKey2)) {
-            config.Key_Redo.Set(key);
-        }
-        if (key.Key != ImGuiKey.Y) ImGui.TextColored(Colors.Warning, "While focused, text inputs will not correctly take this setting into account and still use the default layout keys for undo/redo");
+        ImguiKeybinding("Redo", config.Key_Redo);
+        if (config.Key_Redo.Get().Key != ImGuiKey.Y) ImGui.TextColored(Colors.Warning, "While focused, text inputs will not correctly take this setting into account and still use the default layout keys for undo/redo");
 
-        key = config.Key_Save.Get();
-        if (ImguiKeybinding("Save", ref key, ref filterKey3)) {
-            config.Key_Save.Set(key);
-        }
-        key = config.Key_Back.Get();
-        if (ImguiKeybinding("Back", ref key, ref filterKey4)) {
-            config.Key_Back.Set(key);
-        }
+        ImguiKeybinding("Save Open Files", config.Key_Save);
+        ImguiKeybinding("Back", config.Key_Back);
+        ImguiKeybinding("Close Current Window", config.Key_Close);
     }
+
     private static void ShowGamesResidentEvilTab()
     {
         ImGui.Spacing();
@@ -453,21 +439,29 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         }
         if (tooltip != null) { ImguiHelpers.Tooltip(tooltip); }
     }
-    private static bool ImguiKeybinding(string label, ref KeyBinding binding, ref string filter)
+    private Dictionary<AppConfig.SettingWrapper<KeyBinding>, string> keyfilters = new();
+
+    private bool ImguiKeybinding(string label, AppConfig.SettingWrapper<KeyBinding> setting)
     {
+        var key = setting.Get();
+        var filter = keyfilters.GetValueOrDefault(setting) ?? "";
         ImGui.PushID(label);
         var changed = false;
         ImGui.PushItemWidth(50);
-        changed = ImGui.Checkbox("Ctrl", ref binding.ctrl);
+        changed = ImGui.Checkbox("Ctrl", ref key.ctrl);
         ImGui.SameLine();
-        changed = ImGui.Checkbox("Shift", ref binding.shift) || changed;
+        changed = ImGui.Checkbox("Shift", ref key.shift) || changed;
         ImGui.SameLine();
-        changed = ImGui.Checkbox("Alt", ref binding.alt) || changed;
+        changed = ImGui.Checkbox("Alt", ref key.alt) || changed;
         ImGui.SameLine();
         ImGui.PopItemWidth();
         ImGui.SetNextItemWidth(ImGui.CalcItemWidth() - 150);
-        changed = ImguiHelpers.FilterableCSharpEnumCombo<ImGuiKey>(label, ref binding.Key, ref filter) || changed;
+        changed = ImguiHelpers.FilterableCSharpEnumCombo<ImGuiKey>(label, ref key.Key, ref filter) || changed;
         ImGui.PopID();
+        keyfilters[setting] = filter;
+        if (changed) {
+            setting.Set(key);
+        }
         return changed;
     }
     public bool RequestClose()

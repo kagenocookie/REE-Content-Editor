@@ -20,14 +20,14 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     protected readonly List<IWindowHandler> windowHandlers = new();
 
     /// <summary>
-    /// Get the current IMGUI-rendering window. Should be null outside of the imgui callback
-    /// </summary>
-    public static EditorWindow? CurrentImguiWindow { get; protected set; }
-
-    /// <summary>
     /// Get the currently rendering window. Should never be null during the ImGui render phase, likely to be null in multithreaded contexts.
     /// </summary>
-    public static EditorWindow? CurrentWindow => _currentWindow as EditorWindow;
+    public static EditorWindow? CurrentWindow {
+        get {
+            Debug.Assert(MainLoop.IsMainThread);
+            return _currentWindow as EditorWindow;
+        }
+    }
 
     public ContentWorkspace Workspace => workspace!;
 

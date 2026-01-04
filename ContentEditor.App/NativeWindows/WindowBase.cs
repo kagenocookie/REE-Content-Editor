@@ -74,6 +74,8 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     private OverlaysWindow imguiOverlays = null!;
     public OverlaysWindow Overlays => imguiOverlays;
 
+    public WindowData? FocusedWindow { get; private set; }
+
     protected static readonly HashSet<Type> DefaultWindows = [typeof(OverlaysWindow), typeof(ConsoleWindow)];
 
     private static int nextSubwindowID = 1;
@@ -290,27 +292,36 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
             }
             var isInputting = ImGui.GetIO().WantTextInput;
             if (!isInputting) {
-                var cfg = AppConfig.Instance;
-                if (UndoRedo.CanUndo(this) && cfg.Key_Undo.Get().IsPressed()) {
-                    UndoRedo.Undo(this);
-                }
-                if (UndoRedo.CanRedo(this) && cfg.Key_Redo.Get().IsPressed()) {
-                    UndoRedo.Redo(this);
-                }
-                if ((this as EditorWindow)?.Workspace is ContentWorkspace workspace && cfg.Key_Save.Get().IsPressed()) {
-                    SaveInProgress = true;
-                    Task.Run(() => {
-                        try {
-                            int count = workspace.SaveModifiedFiles(this);
-                            if (count > 0) {
-                                Overlays.ShowTooltip($"Saved {count} files!", 1);
-                            }
-                        } finally {
-                            SaveInProgress = false;
-                        }
-                    });
-                }
+                HandleGlobalHotkeys();
             }
+        }
+    }
+
+    private void HandleGlobalHotkeys()
+    {
+        var cfg = AppConfig.Instance;
+        if (UndoRedo.CanUndo(this) && cfg.Key_Undo.Get().IsPressed()) {
+            UndoRedo.Undo(this);
+        }
+        if (UndoRedo.CanRedo(this) && cfg.Key_Redo.Get().IsPressed()) {
+            UndoRedo.Redo(this);
+        }
+        if ((this as EditorWindow)?.Workspace is ContentWorkspace workspace && cfg.Key_Save.Get().IsPressed()) {
+            SaveInProgress = true;
+            Task.Run(() => {
+                try {
+                    int count = workspace.SaveModifiedFiles(this);
+                    if (count > 0) {
+                        Overlays.ShowTooltip($"Saved {count} files!", 1);
+                    }
+                } finally {
+                    SaveInProgress = false;
+                }
+            });
+        }
+        if (FocusedWindow != null && cfg.Key_Close.Get().IsPressed()) {
+            var window = FocusedWindow;
+            InvokeFromUIThread(() => CloseSubwindow(window));
         }
     }
 
@@ -374,6 +385,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
             windowNotHovered = true;
         }
         _currentWindow = null;
+        FocusedWindow = null;
     }
 
     internal void NotifyCursorMoved()
@@ -532,6 +544,9 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
                     ImGui.PushID(sub.ID);
                     sub.Handler.OnWindow();
                     ImGui.PopID();
+                    if (sub.Context?.StateBool == true) {
+                        FocusedWindow = sub;
+                    }
                 } catch (Exception e) {
                     Logger.Error(e, $"Error occurred in window {sub.Name}");
                 }

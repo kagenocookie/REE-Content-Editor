@@ -56,6 +56,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string Key_Redo = "key_redo";
         public const string Key_Save = "key_save";
         public const string Key_Back = "key_back";
+        public const string Key_Close = "key_close";
 
         public const string Gamepath = "game_path";
         public const string GameExtractPath = "game_extract_path";
@@ -174,6 +175,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<KeyBinding> Key_Redo = new SettingWrapper<KeyBinding>(Keys.Key_Redo, _lock, new KeyBinding(ImGuiKey.Y, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_Save = new SettingWrapper<KeyBinding>(Keys.Key_Save, _lock, new KeyBinding(ImGuiKey.S, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_Back = new SettingWrapper<KeyBinding>(Keys.Key_Back, _lock, new KeyBinding(ImGuiKey.Backspace));
+    public readonly SettingWrapper<KeyBinding> Key_Close = new SettingWrapper<KeyBinding>(Keys.Key_Close, _lock, new KeyBinding(ImGuiKey.W, ctrl: true));
 
     public string ConfigBasePath => GameConfigBaseFilepath.Get() ?? "configs";
 
@@ -318,6 +320,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.Key_Redo, instance.Key_Redo.value.ToString(), "Keys"),
             (Keys.Key_Save, instance.Key_Save.value.ToString(), "Keys"),
             (Keys.Key_Back, instance.Key_Back.value.ToString(), "Keys"),
+            (Keys.Key_Close, instance.Key_Close.value.ToString(), "Keys"),
         };
         foreach (var (game, data) in instance.gameConfigs) {
             if (!string.IsNullOrEmpty(data.gamepath)) {
@@ -476,18 +479,11 @@ public class AppConfig : Singleton<AppConfig>
                     }
                 } else if (group == "Keys") {
                     switch (key) {
-                        case Keys.Key_Undo:
-                            if (KeyBinding.TryParse(value, out var _key)) Key_Undo.value = _key;
-                            break;
-                        case Keys.Key_Redo:
-                            if (KeyBinding.TryParse(value, out _key)) Key_Redo.value = _key;
-                            break;
-                        case Keys.Key_Save:
-                            if (KeyBinding.TryParse(value, out _key)) Key_Save.value = _key;
-                            break;
-                        case Keys.Key_Back:
-                            if (KeyBinding.TryParse(value, out _key)) Key_Back.value = _key;
-                            break;
+                        case Keys.Key_Undo: if (KeyBinding.TryParse(value, out var _key)) Key_Undo.value = _key; break;
+                        case Keys.Key_Redo: if (KeyBinding.TryParse(value, out _key)) Key_Redo.value = _key; break;
+                        case Keys.Key_Save: if (KeyBinding.TryParse(value, out _key)) Key_Save.value = _key; break;
+                        case Keys.Key_Back: if (KeyBinding.TryParse(value, out _key)) Key_Back.value = _key; break;
+                        case Keys.Key_Close: if (KeyBinding.TryParse(value, out _key)) Key_Close.value = _key; break;
                     }
                 } else {
                     var config = gameConfigs.GetValueOrDefault(group);
