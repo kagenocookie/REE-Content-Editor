@@ -201,6 +201,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         return false;
     }
 
+    public bool RemoveComponent(Component component) => Components.Remove(component);
     public Component? RemoveComponent(RszInstance componentData)
     {
         foreach (var comp in Components) {

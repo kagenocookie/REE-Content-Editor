@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using ReeLib;
 
 namespace ContentEditor.App.ImguiHandling;
@@ -39,7 +40,18 @@ public class ComponentListEditor : DictionaryListImguiHandler<string, Component,
             return null;
         }
 
-        Component.Create(gameobj, ws.Env, key);
+        Component? component = null;
+        UndoRedo.RecordCallback(context, () => {
+            if (component == null) {
+                component = Component.Create(gameobj, ws.Env, key);
+            } else {
+                gameobj.AddComponent(component);
+            }
+        }, () => {
+            Debug.Assert(component != null);
+            gameobj.RemoveComponent(component);
+        });
+        UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, () => context.ClearChildren());
         return null;
     }
 
