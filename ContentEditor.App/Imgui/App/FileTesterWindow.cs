@@ -39,6 +39,9 @@ public partial class FileTesterWindow : IWindowHandler
 
     private const int SmokeTestFileLimit = 25;
 
+    private string hashGuessFormat = "It{ID}";
+    private int hashGuessMaxValue = 99999;
+
     private string? hashTest;
     private uint testedHash;
 
@@ -86,7 +89,7 @@ public partial class FileTesterWindow : IWindowHandler
                 ImGui.TreePop();
             }
 
-            if (ImGui.TreeNode("Hash reversing")) {
+            if (ImGui.TreeNode("Hash bruteforce")) {
                 if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Will attempt to match the given UTF16 hash with a wordlist (lowercase, uppercase, capital case variants are attempted)");
                 if (AppImguiHelpers.InputFilepath("Wordlist filepath", ref wordlistFilepath)) {
                     wordlistCache = null;
@@ -94,10 +97,7 @@ public partial class FileTesterWindow : IWindowHandler
                 if (ImguiHelpers.InlineRadioGroup(["UTF-16", "Ascii", "UTF-8"], [0, 1, 2], ref wordlistHashType)) {
                     wordlistCache = null;
                 }
-                var v = testedHash;
-                if (ImGui.InputScalar("Tested hash", ImGuiDataType.U32, &v)) {
-                    testedHash = v;
-                }
+                ImguiHelpers.InputScalar<uint>("Tested hash", ImGuiDataType.U32, ref testedHash);
                 if (!string.IsNullOrEmpty(wordlistFilepath) && ImGui.Button("Find")) {
                     if (testedHash == 2180083513) {
                         Logger.Info("Requested hash is an empty string's hash!");
@@ -121,6 +121,32 @@ public partial class FileTesterWindow : IWindowHandler
                             Logger.Info("Hash lookup finished, no matches found.");
                         }
                     }
+                }
+                ImGui.TreePop();
+            }
+
+            if (ImGui.TreeNode("Enum string hash reversing")) {
+                ImguiHelpers.Tooltip("Attempt to find a hash based on a fixed string (intended for unnamed enum strings)");
+                ImguiHelpers.InputScalar<uint>("Hash", ImGuiDataType.U32, ref testedHash);
+                ImGui.InputText("String Format", ref hashGuessFormat, 100);
+                ImguiHelpers.Tooltip("Use the {ID} placeholder where a 0-padded integer should be (e.g. a fixed length number like 00531)");
+                ImGui.DragInt("Max integer ID", ref hashGuessMaxValue);
+                ImguiHelpers.Tooltip("The highest ID number the string can have. All numbers from 0 to max will be attempted.");
+
+                if (ImGui.Button("Execute")) {
+                    var maxDigits = (int)Math.Ceiling(Math.Log10(hashGuessMaxValue));
+                    var numFormatString = $"D0{maxDigits}";
+                    var found = false;
+                    for (int i = 0; i < hashGuessMaxValue; ++i) {
+                        var str = hashGuessFormat.Replace("{ID}", i.ToString(numFormatString));
+                        var hash1 = MurMur3HashUtils.GetHash(str);
+                        if (hash1 == testedHash) {
+                            Logger.Info($"Found hash match (UTF-16): {str} == {testedHash}");
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) Logger.Info($"String not found for hash {testedHash}");
                 }
                 ImGui.TreePop();
             }
