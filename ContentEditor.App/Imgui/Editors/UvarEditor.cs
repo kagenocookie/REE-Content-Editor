@@ -79,13 +79,13 @@ public class UvarVariableImguiHandler : IObjectUIHandler
 
     public void OnIMGUI(UIContext context)
     {
-        var vv = context.Get<Variable>();
         if (context.children.Count == 0) {
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(Variable), members: DisplayedFields);
             context.children[2].uiHandler = new ValueChangeCallbackUIHandler(context.children[2].uiHandler!, TypeChangeCallback);
             context.children[3].uiHandler = new ValueChangeCallbackUIHandler(context.children[3].uiHandler!, FlagsChangedCallback);
         }
-        if (ImguiHelpers.TreeNodeSuffix(context.label, vv.ToString())) {
+
+        if (AppImguiHelpers.CopyableTreeNode<Variable>(context)) {
             for (int i = 0; i < context.children.Count; i++) {
                 var child = context.children[i];
                 child.ShowUI();
