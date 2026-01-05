@@ -246,7 +246,7 @@ public class ResourcePathPicker : IObjectUIHandler
                 Logger.Info($"Target bundle file {path} already exists, replacing it.");
             }
 
-            if (bundle.TryFindResourceByLocalPath(localFilepath, out var previousListing)) {
+            if (bundle.TryFindResourceByLocalPath(localFilepath, out var previousListing) && previousListing.Target != nativeFilepath) {
                 Logger.Info($"File is already stored in the bundle.json. Re-using existing file's native filepath.");
                 nativeFilepath = previousListing.Target;
             }
