@@ -32,6 +32,7 @@ public class LazyPlainObjectHandler(Type type) : IObjectUIHandler
             ImGui.PushID(context.label);
             if (ImguiHelpers.SameLine() && ImGui.Button("Create")) {
                 context.Set(WindowHandlerFactory.Instantiate(context, Type));
+                context.AddDefaultHandler();
             }
             ImGui.PopID();
             return;
