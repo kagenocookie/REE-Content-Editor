@@ -144,8 +144,8 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                 if (!Handle.IsInBundle(workspace, workspace.CurrentBundle)) {
                     ImGui.SameLine();
                     if (ImGui.Button("Save to bundle")) {
-                        ResourcePathPicker.SaveFileToBundle(workspace, Handle, (bundle, savePath, localPath, nativePath) => {
-                            SaveTo(savePath, true, () => bundle.AddResource(localPath, nativePath, Handle.Format.format.IsDefaultReplacedBundleResource()));
+                        ResourcePathPicker.SaveFileToBundle(workspace, Handle, (savePath, localPath, nativePath) => {
+                            return SaveTo(savePath, true, nativePath: nativePath);
                         });
                     }
                 } else if (workspace.CurrentBundle.ResourceListing == null || !workspace.CurrentBundle.TryFindResourceListing(Handle.NativePath ?? "", out var resourceListing)) {
@@ -223,10 +223,10 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         Handle.Save(context.GetWorkspace()!);
     }
 
-    private void SaveTo(string savePath, bool replaceFileHandle, Action? beforeReplaceAction = null, string? nativePath = null)
+    private bool SaveTo(string savePath, bool replaceFileHandle, Action? beforeReplaceAction = null, string? nativePath = null)
     {
         var workspace = context.GetWorkspace()!;
-        if (!Handle.Save(workspace, savePath)) return;
+        if (!Handle.Save(workspace, savePath)) return false;
 
         Logger.Info("File saved to " + savePath);
         if (replaceFileHandle) {
@@ -244,6 +244,8 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                 OnFileChanged();
             }
         }
+
+        return true;
     }
 
     protected virtual void OnFileChanged()

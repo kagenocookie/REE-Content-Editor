@@ -492,7 +492,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 PlatformUtils.ShowFileDialog((files) => {
                     window.InvokeFromUIThread(() => {
                         lastImportSourcePath = files[0];
-                        if (Workspace.ResourceManager.TryLoadUniqueFile(lastImportSourcePath, out var importedFile)) {
+                        if (Workspace.ResourceManager.TryForceLoadFile(lastImportSourcePath, out var importedFile)) {
                             var importAsset = importedFile.GetResource<CommonMeshResource>();
                             var tmpHandler = new FileHandler(new MemoryStream(), fileHandle.Filepath);
                             importAsset.NativeMesh.WriteTo(tmpHandler);

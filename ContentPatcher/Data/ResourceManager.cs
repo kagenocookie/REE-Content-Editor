@@ -186,7 +186,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         var fullLocalFilepath = Path.Combine(bundleBasepath, localFile);
         if (resourceEntry.Replace) {
             if (File.Exists(fullLocalFilepath)) {
-                if (TryLoadUniqueFile(fullLocalFilepath, out var local, resourceEntry.Target)) {
+                if (TryForceLoadFile(fullLocalFilepath, out var local, resourceEntry.Target)) {
                     local.Modified = true;
                     openFiles[resourceEntry.Target] = local;
                     return true;
@@ -644,7 +644,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     /// Loads a disk file fully ignoring any in-memory, PAK or bundle changes, and does not store the file in the resource manager.
     /// The caller must take care of disposing the file handle.
     /// </summary>
-    public bool TryLoadUniqueFile(string filepath, [MaybeNullWhen(false)] out FileHandle fileHandle, string? nativePathOverride = null)
+    public bool TryForceLoadFile(string filepath, [MaybeNullWhen(false)] out FileHandle fileHandle, string? nativePathOverride = null)
     {
         try {
             using var fs = File.OpenRead(filepath);
