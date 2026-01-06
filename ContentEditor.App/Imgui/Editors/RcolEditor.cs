@@ -309,7 +309,10 @@ public class RcolShapeEditor : IObjectUIHandler
                 setter: (i, v) => i.Instance = v);
         }
 
-        context.ShowChildrenNestedUI();
+        if (AppImguiHelpers.CopyableTreeNode<RcolShape>(context)) {
+            context.ShowChildrenUI();
+            ImGui.TreePop();
+        }
     }
 }
 

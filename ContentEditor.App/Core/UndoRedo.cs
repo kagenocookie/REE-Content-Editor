@@ -143,13 +143,13 @@ public class UndoRedo
         return state;
     }
 
-    public static void RecordClipboardSet<TValue>(UIContext context)
+    public static void RecordClipboardSet<TValue>(UIContext context, JsonSerializerOptions? jsonOptions = null)
     {
         try {
             var data = EditorWindow.CurrentWindow?.GetClipboard();
             if (string.IsNullOrEmpty(data)) return;
 
-            var val = JsonSerializer.Deserialize<TValue>(data, JsonConfig.jsonOptionsIncludeFields);
+            var val = JsonSerializer.Deserialize<TValue>(data, jsonOptions ?? JsonConfig.jsonOptionsIncludeFields);
             if (val == null) {
                 Logger.Error($"Failed to deserialize {typeof(TValue).Name}.");
                 return;
