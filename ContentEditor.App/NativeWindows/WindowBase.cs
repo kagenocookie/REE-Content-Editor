@@ -208,7 +208,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     {
         if (_inputContext.Keyboards.FirstOrDefault() is IKeyboard kb) {
             kb.ClipboardText = text;
-            if (userNotice != null) this.Overlays.ShowTooltip(userNotice, 1.5f);
+            if (userNotice != null) this.Overlays.ShowTooltip(userNotice, 1.5f + userNotice.Length * 0.02f);
         }
     }
 
