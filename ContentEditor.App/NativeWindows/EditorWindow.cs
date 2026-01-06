@@ -254,7 +254,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             .Select(kv => kv.Key)
             .ToHashSet();
 
-        if (ImGui.BeginMenu("Game: " + (env == null ? "<unset>" : env.Config.Game.name))) {
+        if (ImGui.BeginMenu("Game: " + (env == null ? "<unset>" : env.Config.Game.name.ToUpper()))) {
             var games = AppConfig.Instance.GetGamelist();
             foreach (var (game, configured) in games) {
                 if (configured && fullSupportedGames.Contains(game)) {
@@ -278,7 +278,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
 
         if (workspace != null) {
-            if (ImGui.BeginMenu($"Workspace: {workspace.Data.Name ?? "--"}")) {
+            if (ImGui.BeginMenu($"Bundle: {workspace.Data.Name ?? "--"}")) {
                 if (!workspace.BundleManager.IsLoaded) workspace.BundleManager.LoadDataBundles();
                 if (ImGui.BeginMenu($"Active Bundle: {workspace.Data.ContentBundle}")) {
                     if (ImGui.MenuItem("New Bundle")) {
@@ -330,7 +330,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                         ImGui.EndMenu();
                     }
                 }
-
                 if (workspace.CurrentBundle != null && ImGui.MenuItem("Open bundle folder")) {
                     FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
                 }
@@ -522,13 +521,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     ImGui.EndMenu();
                 }
                 ImGui.Separator();
-                ImGui.BeginDisabled(!UndoRedo.CanUndo(this));
-                if (ImGui.MenuItem("Undo")) UndoRedo.Undo(this);
-                ImGui.EndDisabled();
-                ImGui.BeginDisabled(!UndoRedo.CanRedo(this));
-                if (ImGui.MenuItem("Redo")) UndoRedo.Redo(this);
-                ImGui.EndDisabled();
-                ImGui.Separator();
                 if (ImGui.MenuItem("Apply patches (loose file)")) {
                     ApplyContentPatches(null);
                 }
@@ -552,61 +544,16 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             ImGui.EndMenu();
         }
 
-        if (SceneManager.RootMasterScenes.Any() && ImGui.BeginMenu("Scenes")) {
-            foreach (var scene in SceneManager.RootMasterScenes) {
-                // ImGui.Bullet(); TODO scene.Modified
-                if (scene.IsActive) {
-                    ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
-                    if (ImGui.MenuItem(scene.Name)) {
-                        SceneManager.ChangeMasterScene(null);
-                    }
-                    ImGui.PopStyleColor();
-                } else {
-                    if (ImGui.MenuItem(scene.Name)) {
-                        SceneManager.ChangeMasterScene(scene);
-                        scene.Controller.Keyboard = _inputContext.Keyboards[0];
-                        scene.Controller.MoveSpeed = AppConfig.Settings.SceneView.MoveSpeed;
-                        scene.AddWidget<SceneVisibilitySettings>();
-                        scene.AddWidget<SceneCameraControls>();
-                        var data = AddUniqueSubwindow(new SceneView(Workspace, scene));
-                        data.Position = new Vector2(0, viewportOffset.Y);
-                        data.Size = new Vector2(Size.X, Size.Y - viewportOffset.Y);
-                    }
-                }
-            }
-            ImGui.EndMenu();
-        }
+        if (ImGui.BeginMenu("Edit")) {
+            ImGui.BeginDisabled(!UndoRedo.CanUndo(this));
+            if (ImGui.MenuItem("Undo")) UndoRedo.Undo(this);
+            ImGui.EndDisabled();
 
-        ShowGameSelectionMenu();
+            ImGui.BeginDisabled(!UndoRedo.CanRedo(this));
+            if (ImGui.MenuItem("Redo")) UndoRedo.Redo(this);
+            ImGui.EndDisabled();
 
-        if (ImGui.BeginMenu("Windows")) {
-            if (ImGui.MenuItem("Open New Workspace")) {
-                UI.OpenWindow(workspace);
-            }
             ImGui.Separator();
-            if (workspace != null) {
-                if (ImGui.MenuItem("PAK File Browser")) {
-                    AddSubwindow(new PakBrowser(workspace, null));
-                }
-                if (ImGui.MenuItem("Bundle Manager")) {
-                    ShowBundleManagement();
-                }
-                if (workspace.Config.Entities.Any()) {
-                    if (ImGui.MenuItem("Entities")) {
-                        AddSubwindow(new AppContentEditorWindow(workspace));
-                    }
-                }
-                if (ImGui.MenuItem("Data Search")) {
-                    AddSubwindow(new RszDataFinder());
-                }
-                if (ImGui.MenuItem("Texture Channel Packer")) {
-                    AddSubwindow(new TextureChannelPacker()).Size = new Vector2(1280, 800);
-                }
-            }
-            ImGui.EndMenu();
-        }
-
-        if (ImGui.BeginMenu("Tools")) {
             if (ImGui.MenuItem("Settings")) {
                 AddUniqueSubwindow(new SettingsWindowHandler());
             }
@@ -688,6 +635,68 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             }
             ImGui.EndMenu();
         }
+
+        if (ImGui.BeginMenu("Windows")) {
+            if (ImGui.MenuItem("Open New Workspace")) {
+                UI.OpenWindow(workspace);
+            }
+            ImGui.Separator();
+            if (workspace != null) {
+                if (ImGui.MenuItem("PAK File Browser")) {
+                    AddSubwindow(new PakBrowser(workspace, null));
+                }
+                if (ImGui.MenuItem("Bundle Manager")) {
+                    ShowBundleManagement();
+                }
+                if (workspace.Config.Entities.Any()) {
+                    if (ImGui.MenuItem("Entities")) {
+                        AddSubwindow(new AppContentEditorWindow(workspace));
+                    }
+                }
+                if (ImGui.MenuItem("Data Search")) {
+                    AddSubwindow(new RszDataFinder());
+                }
+                if (ImGui.MenuItem("Texture Channel Packer")) {
+                    AddSubwindow(new TextureChannelPacker()).Size = new Vector2(1280, 800);
+                }
+            }
+            ImGui.EndMenu();
+        }
+        ImGui.BeginDisabled();
+        ImGui.MenuItem("|##0");
+        ImGui.EndDisabled();
+
+        ShowGameSelectionMenu();
+
+        using (var _ = ImguiHelpers.Disabled(!SceneManager.RootMasterScenes.Any())) {
+            if (ImGui.BeginMenu("Scenes")) {
+                foreach (var scene in SceneManager.RootMasterScenes) {
+                    // ImGui.Bullet(); TODO scene.Modified
+                    if (scene.IsActive) {
+                        ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
+                        if (ImGui.MenuItem(scene.Name)) {
+                            SceneManager.ChangeMasterScene(null);
+                        }
+                        ImGui.PopStyleColor();
+                    } else {
+                        if (ImGui.MenuItem(scene.Name)) {
+                            SceneManager.ChangeMasterScene(scene);
+                            scene.Controller.Keyboard = _inputContext.Keyboards[0];
+                            scene.Controller.MoveSpeed = AppConfig.Settings.SceneView.MoveSpeed;
+                            scene.AddWidget<SceneVisibilitySettings>();
+                            scene.AddWidget<SceneCameraControls>();
+                            var data = AddUniqueSubwindow(new SceneView(Workspace, scene));
+                            data.Position = new Vector2(0, viewportOffset.Y);
+                            data.Size = new Vector2(Size.X, Size.Y - viewportOffset.Y);
+                        }
+                    }
+                }
+                ImGui.EndMenu();
+            }
+        }
+        ImGui.BeginDisabled();
+        ImGui.MenuItem("|##1");
+        ImGui.EndDisabled();
 
         if (ImGui.MenuItem("Support development (Ko-Fi)")) {
             FileSystemUtils.OpenURL("https://ko-fi.com/shadowcookie");

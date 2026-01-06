@@ -79,10 +79,27 @@ public class BundleManagementUI : IWindowHandler
             return;
         }
         ImGui.SameLine();
+        using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle?.Name == bundle.Name)) {
+            if (ImGui.Button($"{AppIcons.SI_Bundle}")) {
+                EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, bundle.Name);
+            }
+            ImguiHelpers.Tooltip("Set as Active Bundle");
+        }
+        ImGui.SameLine();
+        using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
+            if (ImGui.Button($"{AppIcons.SI_Reset}")) {
+                EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, null);
+            }
+            ImGui.PopStyleColor();
+            ImguiHelpers.Tooltip("Unload current Bundle");
+        }
+        ImGui.SameLine();
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, new[] { Colors.IconSecondary, Colors.IconPrimary})){
             FileSystemUtils.ShowFileInExplorer(bundleManager.ResolveBundleLocalPath(bundle, ""));
         }
-        ImguiHelpers.Tooltip("Open current Bundle folder in Explorer");
+        ImguiHelpers.Tooltip("Open current Bundle folder in File Explorer");
+
         var str = bundle.Author ?? "";
         if (ImGui.InputText("Author", ref str, 100)) {
             bundle.Author = str;
@@ -199,29 +216,30 @@ public class BundleManagementUI : IWindowHandler
         }
         ImguiHelpers.Tooltip("Create Bundle from PAK File");
         ImGui.SameLine();
-        ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleRemove, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconTertiary, Colors.IconTertiary })) {
-            EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, null);
-        }
-        ImGui.PopStyleColor();
-        ImguiHelpers.Tooltip("Unload current Bundle");
-        ImGui.SameLine();
         ImGui.Text("|");
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(bundleManager.GamePath))) {
             if (ImGui.Button($"{AppIcons.SI_FolderOpen}")) {
                 FileSystemUtils.ShowFileInExplorer(bundleManager.GamePath);
             }
-            ImguiHelpers.Tooltip("Open game folder in Explorer");
+            ImguiHelpers.Tooltip("Open game folder in File Explorer");
             ImGui.SameLine();
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderContain, new[] {Colors.IconPrimary, Colors.IconSecondary})) {
                 FileSystemUtils.ShowFileInExplorer(bundleManager.AppBundlePath);
             }
-            ImguiHelpers.Tooltip("Open Bundles folder in Explorer");
+            ImguiHelpers.Tooltip("Open Bundles folder in File Explorer");
         }
         ImGui.SameLine();
         ImGui.Text("|");
-        
+        ImGui.SameLine();
+        using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);
+            if (ImGui.Button($"{AppIcons.SI_GenericExport}")) {
+                EditorWindow.CurrentWindow?.AddUniqueSubwindow(new ModPublisherWindow(EditorWindow.CurrentWindow.Workspace));
+            }
+            ImGui.PopStyleColor();
+            ImguiHelpers.Tooltip("Publish Mod");
+        }
         ShowNewBundleMenu();
     }
     private void ShowNewBundleMenu()
@@ -244,9 +262,19 @@ public class BundleManagementUI : IWindowHandler
                 ImguiHelpers.Tooltip("Create");
             }
             ImGui.SameLine();
-            ImGui.InputText("Bundle Name", ref newBundleName, 100);
+            ImGui.SetNextItemAllowOverlap();
+            ImGui.InputTextWithHint("##BundleName", "Enter Bundle name here...", ref newBundleName, 100);
+            if (!string.IsNullOrEmpty(newBundleName)) {
+                ImGui.SameLine();
+                ImGui.SetCursorPosX(ImGui.GetCursorPosX() - (ImGui.CalcTextSize($"{AppIcons.SI_GenericError}").X * 2));
+                ImGui.SetNextItemAllowOverlap();
+                if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
+                    newBundleName = string.Empty;
+                }
+            }
         }
     }
+
     private int selectedLegacyEntityType = 0;
     private int selectedEntityType = 0;
     private static readonly string[] allOption = ["All"];

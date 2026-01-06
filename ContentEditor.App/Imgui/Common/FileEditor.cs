@@ -134,13 +134,16 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                 PlatformUtils.ShowSaveFileDialog((path) => SaveTo(path, false), Handle.Filepath);
             }
             ImguiHelpers.Tooltip("Save Copy to...");
-            if (Handle.DiffHandler != null && ImguiHelpers.SameLine() && Handle.HandleType is not FileHandleType.Memory && ImGui.Button("See changes")) {
-                var diff = Handle.DiffHandler.FindDiff(Handle);
-                if (diff == null) {
-                    EditorWindow.CurrentWindow?.Overlays.ShowTooltip("No changes detected compared to the base file", 3f);
-                } else {
-                    EditorWindow.CurrentWindow?.AddSubwindow(new JsonViewer(diff, Handle.Filepath, Handle));
+            if (Handle.DiffHandler != null && ImguiHelpers.SameLine() && Handle.HandleType is not FileHandleType.Memory) {
+                if (ImGui.Button($"{AppIcons.SI_FileChanges}")) {
+                    var diff = Handle.DiffHandler.FindDiff(Handle);
+                    if (diff == null) {
+                        EditorWindow.CurrentWindow?.Overlays.ShowTooltip("No changes detected compared to the base file", 3f);
+                    } else {
+                        EditorWindow.CurrentWindow?.AddSubwindow(new JsonViewer(diff, Handle.Filepath, Handle));
+                    }
                 }
+                ImguiHelpers.Tooltip("See changes");
             }
             if (workspace.CurrentBundle != null) {
                 if (!Handle.IsInBundle(workspace, workspace.CurrentBundle)) {
@@ -153,12 +156,12 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                     ImguiHelpers.Tooltip("Save to Bundle");
                 } else if (workspace.CurrentBundle.ResourceListing == null || !workspace.CurrentBundle.TryFindResourceListing(Handle.NativePath ?? "", out var resourceListing)) {
                     if (Handle.NativePath != null) {
-                        if (ImGui.Button("Store in bundle")) {
+                        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
                             workspace.CurrentBundle.ResourceListing ??= new();
                             var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle), Handle.Filepath);
                             workspace.CurrentBundle.AddResource(localPath, Handle.NativePath, Handle.Format.format.IsDefaultReplacedBundleResource());
                         }
-                        ImguiHelpers.Tooltip("File is located in the bundle folder but is not marked as part of the bundle. This will store it into the bundle json.");
+                        ImguiHelpers.Tooltip("Store in bundle\nFile is located in the bundle folder but is not marked as part of the bundle. This will store it into the bundle json.");
                     }
                 } else if (Handle.DiffHandler != null) {
                     ImGui.SameLine();
@@ -173,10 +176,10 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         }
         if (Handle.HandleType is FileHandleType.Disk or FileHandleType.Bundle && System.IO.File.Exists(Handle.Filepath)) {
             if (CanSave) ImGui.SameLine();
-            if (ImGui.Button("Show in file explorer")) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, new[] { Colors.IconSecondary, Colors.IconPrimary })) {
                 FileSystemUtils.ShowFileInExplorer(Handle.Filepath);
             }
-            ImguiHelpers.Tooltip("Filepath: " + Handle.Filepath);
+            ImguiHelpers.Tooltip("Show in File Explorer\nFilepath: " + Handle.Filepath);
         }
         if (HasUnsavedChanges && IsRevertable) {
             ImGui.SameLine();
