@@ -277,49 +277,20 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         if (workspace != null) {
             if (ImGui.BeginMenu($"Workspace: {workspace.Data.Name ?? "--"}")) {
                 if (!workspace.BundleManager.IsLoaded) workspace.BundleManager.LoadDataBundles();
-                if (ImGui.BeginMenu($"Active bundle: {workspace.Data.ContentBundle}")) {
-                    if (ImGui.MenuItem("Create new...")) {
+                if (ImGui.BeginMenu($"Active Bundle: {workspace.Data.ContentBundle}")) {
+                    if (ImGui.MenuItem("New Bundle")) {
                         ShowBundleManagement();
                     }
                     if (ImGui.MenuItem("Create from PAK file")) {
-                        PlatformUtils.ShowFileDialog((pak) => {
-                            var reader = new PakReader();
-                            reader.AddFiles("modinfo.ini");
-                            reader.PakFilePriority = [pak[0]];
-                            var modinfo = reader.FindFiles().FirstOrDefault();
-                            var initialName = Path.GetFileNameWithoutExtension(pak[0]).Replace(".", "_");
-                            if (modinfo.stream != null) {
-                                var modData = new StreamReader(modinfo.stream).ReadToEnd().Split('\n');
-                                var nameEntry = modData.FirstOrDefault(line => line.StartsWith("name") && line.Contains('='));
-                                if (nameEntry != null) initialName = nameEntry.Split('=')[1].Trim();
-                            }
-                            AddSubwindow(new NameInputDialog(
-                                "Bundle creation",
-                                "Select name for the bundle to be created from the PAK file:\n" + pak[0],
-                                initialName,
-                                FilenameRegex(),
-                                this,
-                                (name) => workspace.CreateBundleFromPAK(name, pak[0])
-                            ));
-                        }, fileExtension: FileFilters.PakFile, allowMultiple: false);
+                        PlatformUtils.ShowFileDialog(pak =>
+                            CreateBundleFromPakFile(pak[0]),
+                            fileExtension: FileFilters.PakFile,
+                            allowMultiple: false
+                        );
                     }
                     if (ImGui.MenuItem("Create from loose file mod")) {
-                        PlatformUtils.ShowFolderDialog((folder) => {
-                            var modinfoPath = Path.Combine(folder, "modinfo.ini");
-                            var initialName = Path.GetFileName(folder);
-                            if (File.Exists(modinfoPath)) {
-                                var modData = File.ReadAllLines(modinfoPath);
-                                var nameEntry = modData.FirstOrDefault(line => line.StartsWith("name") && line.Contains('='));
-                                if (nameEntry != null) initialName = nameEntry.Split('=')[1].Trim();
-                            }
-                            AddSubwindow(new NameInputDialog(
-                                "Bundle creation",
-                                "Select name for the bundle to be created from the PAK file:\n" + folder,
-                                initialName,
-                                FilenameRegex(),
-                                this,
-                                (name) => workspace.InitializeUnlabelledBundle(name, folder)
-                            ));
+                        PlatformUtils.ShowFolderDialog(folder => {
+                            CreateBundleFromLooseFileFolder(folder);
                         });
                     }
                     ImGui.Separator();
@@ -338,6 +309,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     }
                     ImGui.EndMenu();
                 }
+                if (ImGui.MenuItem("Bundle Manager")) {
+                    ShowBundleManagement();
+                }
                 if (workspace.BundleManager.UninitializedBundleFolders.Count > 0) {
                     if (ImGui.BeginMenu("* Uninitialized bundle folders")) {
                         foreach (var item in workspace.BundleManager.UninitializedBundleFolders) {
@@ -353,9 +327,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                         ImGui.EndMenu();
                     }
                 }
-                if (ImGui.MenuItem("Bundle management")) {
-                    ShowBundleManagement();
-                }
+
                 if (workspace.CurrentBundle != null && ImGui.MenuItem("Open bundle folder")) {
                     FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
                 }
@@ -377,9 +349,46 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             workspace.BundleManager,
             workspace.CurrentBundle?.Name,
             (path) => OpenFiles([path]),
-            (path, diff) => AddSubwindow(new JsonViewer(diff, path))
+            (path, diff) => AddSubwindow(new JsonViewer(diff, path)),
+            folder => CreateBundleFromLooseFileFolder(folder),
+            pak => CreateBundleFromPakFile(pak)
         ));
     }
+    public void CreateBundleFromLooseFileFolder(string folder)
+    {
+        var modinfoPath = Path.Combine(folder, "modinfo.ini");
+        var initialName = Path.GetFileName(folder);
+        if (File.Exists(modinfoPath)) {
+            var modData = File.ReadAllLines(modinfoPath);
+            var nameEntry = modData.FirstOrDefault(line => line.StartsWith("name") && line.Contains('='));
+            if (nameEntry != null) {
+                initialName = nameEntry.Split('=')[1].Trim();
+            }
+        }
+
+        AddSubwindow(new NameInputDialog("Bundle Creation", "Select name for the bundle to be created from the loose mod:\n" + folder,
+            initialName, FilenameRegex(), this, name => Workspace.InitializeUnlabelledBundle(name, folder)));
+    }
+    public void CreateBundleFromPakFile(string pakPath)
+    {
+        var reader = new PakReader();
+        reader.AddFiles("modinfo.ini");
+        reader.PakFilePriority = [pakPath];
+        var modinfo = reader.FindFiles().FirstOrDefault();
+        var initialName = Path.GetFileNameWithoutExtension(pakPath).Replace(".", "_");
+
+        if (modinfo.stream != null) {
+            var modData = new StreamReader(modinfo.stream).ReadToEnd().Split('\n');
+            var nameEntry = modData.FirstOrDefault(line => line.StartsWith("name") && line.Contains('='));
+            if (nameEntry != null) {
+                initialName = nameEntry.Split('=')[1].Trim();
+            }
+        }
+
+        AddSubwindow(new NameInputDialog("Bundle Creation", "Select name for the bundle to be created from the PAK file:\n" + pakPath,
+            initialName, FilenameRegex(), this, name => Workspace.CreateBundleFromPAK(name, pakPath)));
+    }
+
 
     protected virtual void OnFileOpen(Stream stream, string filename)
     {
@@ -576,13 +585,16 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             }
             ImGui.Separator();
             if (workspace != null) {
+                if (ImGui.MenuItem("PAK File Browser")) {
+                    AddSubwindow(new PakBrowser(workspace, null));
+                }
+                if (ImGui.MenuItem("Bundle Manager")) {
+                    ShowBundleManagement();
+                }
                 if (workspace.Config.Entities.Any()) {
                     if (ImGui.MenuItem("Entities")) {
                         AddSubwindow(new AppContentEditorWindow(workspace));
                     }
-                }
-                if (ImGui.MenuItem("PAK File Browser")) {
-                    AddSubwindow(new PakBrowser(workspace, null));
                 }
                 if (ImGui.MenuItem("Data Search")) {
                     AddSubwindow(new RszDataFinder());
@@ -778,5 +790,5 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     }
 
     [System.Text.RegularExpressions.GeneratedRegex("^[ a-zA-Z0-9_-]+$")]
-    private static partial System.Text.RegularExpressions.Regex FilenameRegex();
+    public static partial System.Text.RegularExpressions.Regex FilenameRegex();
 }

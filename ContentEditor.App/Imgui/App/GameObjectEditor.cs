@@ -111,16 +111,17 @@ public class GameObjectNodeEditor : NodeTreeEditor<GameObject, GameObjectNodeEdi
             return;
         }
 
-        if (ImGui.Selectable("Delete")) {
-            UndoRedo.RecordRemoveChild(context, node);
-            ImGui.CloseCurrentPopup();
-        }
         if (ImGui.Selectable("Duplicate")) {
             var clone = node.Clone();
             UndoRedo.RecordAddChild<GameObject>(context, clone, parent, parent.GetChildIndex(node) + 1);
             clone.MakeNameUnique();
             var inspector = context.FindHandlerInParents<IInspectorController>();
             inspector?.SetPrimaryInspector(clone);
+            ImGui.CloseCurrentPopup();
+        }
+        ImGui.Separator();
+        if (ImGui.Selectable("Delete")) {
+            UndoRedo.RecordRemoveChild(context, node);
             ImGui.CloseCurrentPopup();
         }
     }

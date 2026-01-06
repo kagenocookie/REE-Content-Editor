@@ -102,13 +102,14 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
             scene = LoadScene();
             if (scene == null) return;
         }
-
+        ImGui.Spacing();
         if (context.children.Count == 0) {
             var root = scene.RootFolder;
             // context.AddChild<ScnFile, List<ResourceInfo>>("Resources", File, getter: static (c) => c!.ResourceInfoList, handler: new TooltipUIHandler(new ListHandler(typeof(ResourceInfo)), "List of resources that will be preloaded together with the file ingame.\nShould be updated automatically on save."));
             context.AddChild("Filter", searcher, searcher);
-            context.AddChild(root.Name, root, new TextHeaderUIHandler("Scene objects", new BoxedUIHandler(new FolderNodeEditor())));
+            context.AddChild(root.Name, root, new TextHeaderUIHandler("Scene Objects", new BoxedUIHandler(new FolderNodeEditor())));
         }
+        ImGui.Spacing();
         context.ShowChildrenUI();
         ImGui.PopID();
     }

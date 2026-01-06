@@ -97,18 +97,20 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     public void OnIMGUI()
     {
         DrawFileControls(context.Get<WindowData>());
-
+        ImGui.SameLine();
+        ImGui.Text("|");
+        ImGui.SameLine();
+        ImGui.Button($"SRC"); // SILVER: Icon pending
         if (Handle.FileSource != null) {
-            ImGui.TextColored(Colors.Faded,$"File source: {Handle.HandleType} - {Handle.FileSource} ({Handle.NativePath})");
+            ImguiHelpers.TooltipColored($"File source: {Handle.HandleType} - {Handle.FileSource} ({Handle.NativePath})", Colors.Faded);
         } else if (!string.IsNullOrEmpty(Handle.NativePath)) {
-            ImGui.TextColored(Colors.Faded, $"File source: {Handle.HandleType} ({Handle.NativePath})");
+            ImguiHelpers.TooltipColored($"File source: {Handle.HandleType} ({Handle.NativePath})", Colors.Faded);
         } else {
-            ImGui.TextColored(Colors.Faded, $"File source: {Handle.HandleType}");
+            ImguiHelpers.TooltipColored($"File source: {Handle.HandleType}", Colors.Faded);
         }
         if (ImGui.IsItemClicked()) {
             EditorWindow.CurrentWindow?.CopyToClipboard(Handle.NativePath ?? Handle.Filepath, "Path copied!");
         }
-
         DrawFileContents();
     }
 
@@ -173,15 +175,14 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             if (ImGui.Button("Show in file explorer")) {
                 FileSystemUtils.ShowFileInExplorer(Handle.Filepath);
             }
-            if (ImGui.IsItemHovered()) {
-                ImGui.SetItemTooltip("Filepath: " + Handle.Filepath);
-            }
+            ImguiHelpers.Tooltip("Filepath: " + Handle.Filepath);
         }
         if (HasUnsavedChanges && IsRevertable) {
             ImGui.SameLine();
-            if (ImGui.Button("Revert")) {
+            if (ImGui.Button($"{AppIcons.SI_Reset}")) {
                 Handle.Revert(data.Context.GetWorkspace()!);
             }
+            ImguiHelpers.Tooltip("Revert");
         }
     }
 
@@ -194,7 +195,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             ImGui.CloseCurrentPopup();
         }
         ImGui.SameLine();
-        if (ImGui.Button("Paste from JSON (replace)")) {
+        if (ImGui.Button("Paste from JSON")) {
             try {
                 var wnd = EditorWindow.CurrentWindow;
                 var data = wnd?.GetClipboard();

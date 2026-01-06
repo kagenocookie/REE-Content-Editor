@@ -36,7 +36,7 @@ public class TextHeaderUIHandler(string text, IObjectUIHandler inner) : IObjectU
 {
     public void OnIMGUI(UIContext context)
     {
-        ImGui.Text(text);
+        ImGui.SeparatorText(text);
         inner.OnIMGUI(context);
     }
 }

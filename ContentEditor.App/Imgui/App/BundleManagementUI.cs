@@ -1,3 +1,8 @@
+using ContentEditor.App;
+using ContentEditor.App.Windowing;
+using ContentPatcher;
+using ContentEditor.Core;
+using ReeLib;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text.Json.Nodes;
@@ -10,23 +15,31 @@ public class BundleManagementUI : IWindowHandler
     private readonly string? preselectBundle;
     private readonly Action<string>? openFileCallback;
     private readonly Action<string, JsonNode>? showDiff;
+    public delegate void CreateBundleFromLooseFileFolderDelegate(string folder);
+    public delegate void CreateBundleFromPakDelegate(string pak);
 
-    public BundleManagementUI(BundleManager workspace, string? preselectBundle, Action<string>? openFileCallback, Action<string, JsonNode>? showDiff)
+    public BundleManagementUI(BundleManager workspace, string? preselectBundle, Action<string>? openFileCallback, Action<string, JsonNode>? showDiff,
+        CreateBundleFromLooseFileFolderDelegate? createFromLooseFileFolder, CreateBundleFromPakDelegate? createFromPak)
     {
         this.bundleManager = workspace;
         this.preselectBundle = preselectBundle;
         this.openFileCallback = openFileCallback;
         this.showDiff = showDiff;
+        this.createFromLooseFileFolder = createFromLooseFileFolder;
+        this.createFromPak = createFromPak;
     }
 
-    public string HandlerName => "Bundle manager";
+    public string HandlerName => "Bundle Manager";
     public int FixedID => -10001;
 
     public bool HasUnsavedChanges => false;
     private string newBundleName = "";
+    private bool isNewBundleMenu = false;
 
     private WindowData data = null!;
     protected UIContext context = null!;
+    private readonly CreateBundleFromLooseFileFolderDelegate? createFromLooseFileFolder;
+    private readonly CreateBundleFromPakDelegate? createFromPak;
 
     public void Init(UIContext context)
     {
@@ -41,21 +54,8 @@ public class BundleManagementUI : IWindowHandler
         if (!bundleManager.IsLoaded) {
             bundleManager.LoadDataBundles();
         }
-
-        if (ImGui.TreeNode("New bundle...")) {
-            ImGui.InputText("Bundle name", ref newBundleName, 100);
-            if (!string.IsNullOrEmpty(newBundleName) && ImGui.Button("Create")) {
-                if (bundleManager.CreateBundle(newBundleName) != null) {
-                    data.SetPersistentData("selectedBundle", newBundleName);
-                    newBundleName = "";
-                } else {
-                    WindowManager.Instance.ShowError("Bundle already exists!", data);
-                }
-            }
-            ImGui.TreePop();
-        }
-
-        ImGui.Separator();
+        ShowBundleToolbar();
+        ImGui.SeparatorText("Bundles");
 
         var selectedName = data.GetPersistentData<string>("selectedBundle");
         if (bundleManager.AllBundles.Count == 0) {
@@ -78,7 +78,10 @@ public class BundleManagementUI : IWindowHandler
         if (bundle == null) {
             return;
         }
-
+        ImGui.SameLine();
+        if (ImGui.Button("Open folder in explorer")) {
+            FileSystemUtils.ShowFileInExplorer(bundleManager.ResolveBundleLocalPath(bundle, ""));
+        }
         var str = bundle.Author ?? "";
         if (ImGui.InputText("Author", ref str, 100)) {
             bundle.Author = str;
@@ -128,10 +131,6 @@ public class BundleManagementUI : IWindowHandler
             }
         }
 
-        if (ImGui.Button("Open folder in explorer")) {
-            FileSystemUtils.ShowFileInExplorer(bundleManager.ResolveBundleLocalPath(bundle, ""));
-        }
-
         if (ImGui.TreeNode("Entities")) {
             var types = allOption.Concat(bundle.Entities.Select(e => e.Type).Distinct()).ToArray();
             ImGui.Combo("Type", ref selectedEntityType, types, types.Length);
@@ -174,7 +173,62 @@ public class BundleManagementUI : IWindowHandler
             ImGui.TreePop();
         }
     }
+    private void ShowBundleToolbar()
+    {
+        ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_BundleAdd, ref isNewBundleMenu, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary }, Colors.IconActive);
+        ImguiHelpers.Tooltip("New Bundle");
+        ImGui.SameLine();
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary }, "000") && createFromLooseFileFolder != null) {
+            PlatformUtils.ShowFolderDialog(folder => {
+                createFromLooseFileFolder(folder);
+            });
+        }
+        ImguiHelpers.Tooltip("Create Bundle from Loose Files");
+        ImGui.SameLine();
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary }, "001") && createFromPak != null) {
+            PlatformUtils.ShowFileDialog(pak =>
+                createFromPak(pak[0]),
+                fileExtension: FileFilters.PakFile,
+                allowMultiple: false
+            );
+        }
+        ImguiHelpers.Tooltip("Create Bundle from PAK File");
+        ImGui.SameLine();
+        ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleRemove, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconTertiary, Colors.IconTertiary })) {
+            EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, null);
+        }
+        ImGui.PopStyleColor();
+        ImguiHelpers.Tooltip("Unload current Bundle");
+        // SILVER: Maybe allow users to delete bundles from here as well?
+        ImGui.SameLine();
+        ImGui.Text("|");
 
+        ShowNewBundleMenu();
+    }
+    private void ShowNewBundleMenu()
+    {
+        if (isNewBundleMenu) {
+            ImGui.Spacing();
+            ImGui.Separator();
+            ImGui.Spacing();
+            using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(newBundleName))) {
+                ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);
+                if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
+                    if (bundleManager.CreateBundle(newBundleName) != null) {
+                        data.SetPersistentData("selectedBundle", newBundleName);
+                        newBundleName = "";
+                    } else {
+                        WindowManager.Instance.ShowError("Bundle already exists!", data);
+                    }
+                }
+                ImGui.PopStyleColor();
+                ImguiHelpers.Tooltip("Create");
+            }
+            ImGui.SameLine();
+            ImGui.InputText("Bundle Name", ref newBundleName, 100);
+        }
+    }
     private int selectedLegacyEntityType = 0;
     private int selectedEntityType = 0;
     private static readonly string[] allOption = ["All"];
