@@ -805,7 +805,6 @@ public class ClipEntryHandler : IObjectUIHandler
         typeof(EmbeddedClip).GetProperty(nameof(EmbeddedClip.Guid))!,
         typeof(EmbeddedClip).GetProperty(nameof(EmbeddedClip.Tracks))!,
         typeof(EmbeddedClip).GetProperty(nameof(EmbeddedClip.SpeedPointData))!,
-        typeof(EmbeddedClip).GetProperty(nameof(EmbeddedClip.HermiteData))!,
         typeof(EmbeddedClip).GetProperty(nameof(EmbeddedClip.ClipInfoList))!,
     ];
 
@@ -821,8 +820,15 @@ public class ClipEntryHandler : IObjectUIHandler
     }
 }
 
-[ObjectImguiHandler(typeof(HermiteInterpolationData))]
-public class HermiteInterpolationDataHandler : JsonCopyableTreeUIHandler<HermiteInterpolationData> {}
+public class HermiteInterpolationDataHandler : ConditionalUIHandler
+{
+    public static readonly HermiteInterpolationDataHandler KeyInstance = new(ctx => ctx.parent?.Get<NormalKey>().interpolation == InterpolationType.Hermite);
+    public static readonly HermiteInterpolationDataHandler SpeedPointInstance = new(ctx => ctx.parent?.Get<SpeedPointData>().InterpolationType == InterpolationType.Hermite);
+
+    public HermiteInterpolationDataHandler(Func<UIContext, bool> condition) : base(new JsonCopyableTreeUIHandler<HermiteInterpolationData>(), condition)
+    {
+    }
+}
 
 [ObjectImguiHandler(typeof(ClipTrack))]
 public class CTrackHandler : IObjectUIHandler
@@ -895,7 +901,6 @@ public class KeyHandler : IObjectUIHandler
         typeof(NormalKey).GetField(nameof(NormalKey.interpolation))!,
         typeof(NormalKey).GetField(nameof(NormalKey.flags))!,
         typeof(NormalKey).GetField(nameof(NormalKey.unknown))!,
-        typeof(NormalKey).GetField(nameof(NormalKey.hermiteDataIndex))!,
     ];
 
     public void OnIMGUI(UIContext context)
@@ -904,6 +909,7 @@ public class KeyHandler : IObjectUIHandler
             var instance = context.Get<NormalKey>();
             context.AddChild<NormalKey, string>("Property Type", instance, new ReadOnlyWrapperHandler(StringFieldHandler.Instance), (c) => c!.PropertyType.ToString());
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(NormalKey), false, DisplayedFields);
+            context.AddChild<NormalKey, HermiteInterpolationData>("Hermite Data", instance, HermiteInterpolationDataHandler.KeyInstance, c => (c!.hermiteData ??= new()).Data, (c, v) => (c!.hermiteData ??= new()).Data = v);
         }
 
         if (AppImguiHelpers.CopyableTreeNode<NormalKey>(context)) {

@@ -668,7 +668,7 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<ReeLib.Gui.Element>((m) => [m.Name, m.ClassName, m.ID, m.ContainerID, m.guid3, m.Attributes, m.ExtraAttributes, m.ElementData]);
         AddCompareMapper<ReeLib.Gui.Attribute>((m) => [m.propertyType, m.OrderIndex, m.uknInt, m.Value]);
         AddCompareMapper<ReeLib.Gui.GuiClip>((m) => [m.ID, m.IsDefault, m.name, m.clip]);
-        AddCompareMapper<EmbeddedClip>((m) => [m.Header, m.Bezier3DData, m.ClipInfoList, m.Properties.Count, m.NormalKeys.Count, m.ExtraPropertyData, m.FrameCount, m.Guid, m.HermiteData, m.SpeedPointData, m.Tracks]);
+        AddCompareMapper<EmbeddedClip>((m) => [m.Header, m.Bezier3DData, m.ClipInfoList, m.Properties.Count, m.NormalKeys.Count, m.ExtraPropertyData, m.FrameCount, m.Guid, m.SpeedPointData, m.Tracks]);
         AddCompareMapper<Property>((m) => [
             m.Info.FunctionName, m.Info.arrayIndex, m.Info.ChildMembershipCount, m.ChildProperties, m.Keys,
             m.Info.DataType, m.Info.startFrame, m.Info.endFrame,

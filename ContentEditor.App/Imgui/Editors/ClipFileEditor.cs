@@ -67,7 +67,6 @@ public class TmlFileObjectHandler : IObjectUIHandler
             context.AddChild<ClipFile, List<TimelineSectionTag>>("Sections", file, new ListHandler(typeof(TimelineSectionTag), typeof(List<TimelineSectionTag>)), (m) => m!.Sections);
 
             context.AddChild<ClipFile, List<SpeedPointData>>("Speed Point Data", file, new ListHandler(typeof(SpeedPointData), typeof(List<SpeedPointData>)), (m) => m!.Clip.SpeedPointData);
-            context.AddChild<ClipFile, List<HermiteInterpolationData>>("Hermite Interpolation Data", file, new ListHandler(typeof(HermiteInterpolationData), typeof(List<HermiteInterpolationData>)), (m) => m!.Clip.HermiteData);
             context.AddChild<ClipFile, List<Bezier3DKeys>>("Bezier3D Interpolation Data", file, new ListHandler(typeof(Bezier3DKeys), typeof(List<Bezier3DKeys>)), (m) => m!.Clip.Bezier3DData);
             context.AddChild<ClipFile, List<ClipInfoStruct>>("Clip Info", file, new ListHandler(typeof(ClipInfoStruct), typeof(List<ClipInfoStruct>)), (m) => m!.Clip.ClipInfoList);
 
