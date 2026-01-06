@@ -821,6 +821,9 @@ public class ClipEntryHandler : IObjectUIHandler
     }
 }
 
+[ObjectImguiHandler(typeof(HermiteInterpolationData))]
+public class HermiteInterpolationDataHandler : JsonCopyableTreeUIHandler<HermiteInterpolationData> {}
+
 [ObjectImguiHandler(typeof(ClipTrack))]
 public class CTrackHandler : IObjectUIHandler
 {
