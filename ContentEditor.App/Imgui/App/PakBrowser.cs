@@ -293,7 +293,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
                     bookmarkSearch = string.Empty;
                 }
-            } // SILVER: Maybe move this whole search bar to ImguiHelpers so it can be reused elsewhere
+            }
             if (_activeTagFilter.Count > 0) {
                 if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FilterClear, new[] { Colors.IconTertiary, Colors.IconPrimary })) {
                     _activeTagFilter.Clear();

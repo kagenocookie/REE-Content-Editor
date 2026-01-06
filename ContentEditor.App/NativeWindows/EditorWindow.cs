@@ -330,11 +330,14 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                         ImGui.EndMenu();
                     }
                 }
-                if (workspace.CurrentBundle != null && ImGui.MenuItem("Open bundle folder")) {
-                    FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
-                }
-                if (workspace.CurrentBundle != null && ImGui.MenuItem("Publish mod ...")) {
-                    AddUniqueSubwindow(new ModPublisherWindow(workspace));
+                if (workspace.CurrentBundle != null) {
+                    ImGui.Separator();
+                    if (ImGui.MenuItem("Open current Bundle folder")) {
+                        FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
+                    }
+                    if (ImGui.MenuItem("Publish Mod")) {
+                        AddUniqueSubwindow(new ModPublisherWindow(workspace));
+                    }
                 }
                 ImGui.EndMenu();
             }

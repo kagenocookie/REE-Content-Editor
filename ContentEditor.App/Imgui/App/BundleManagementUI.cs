@@ -56,144 +56,7 @@ public class BundleManagementUI : IWindowHandler
         }
         ShowBundleToolbar();
         ImGui.SeparatorText("Bundles");
-
-        var selectedName = data.GetPersistentData<string>("selectedBundle");
-        if (bundleManager.AllBundles.Count == 0) {
-            ImGui.TextColored(Colors.Info, "No Bundles found!");
-        } else {
-            var filter = data.GetPersistentData<string>("bundleFilter") ?? "";
-            var selectedBundle = bundleManager.GetBundle(selectedName, null);
-            var names = bundleManager.AllBundles.Select(b => b.Name).ToArray();
-            var bundlespan = CollectionsMarshal.AsSpan(bundleManager.AllBundles);
-            if (ImguiHelpers.FilterableCombo("Bundle", names, bundlespan, ref selectedBundle, ref filter)) {
-                selectedName = selectedBundle?.Name;
-                data.SetPersistentData("selectedBundle", selectedName);
-            }
-            data.SetPersistentData("bundleFilter", filter);
-        }
-
-        if (selectedName == null) return;
-
-        var bundle = bundleManager.GetBundle(selectedName, null);
-        if (bundle == null) {
-            return;
-        }
-        ImGui.SameLine();
-        using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle?.Name == bundle.Name)) {
-            if (ImGui.Button($"{AppIcons.SI_Bundle}")) {
-                EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, bundle.Name);
-            }
-            ImguiHelpers.Tooltip("Set as Active Bundle");
-        }
-        ImGui.SameLine();
-        using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
-            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
-            if (ImGui.Button($"{AppIcons.SI_Reset}")) {
-                EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, null);
-            }
-            ImGui.PopStyleColor();
-            ImguiHelpers.Tooltip("Unload current Bundle");
-        }
-        ImGui.SameLine();
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, new[] { Colors.IconSecondary, Colors.IconPrimary})){
-            FileSystemUtils.ShowFileInExplorer(bundleManager.ResolveBundleLocalPath(bundle, ""));
-        }
-        ImguiHelpers.Tooltip("Open current Bundle folder in File Explorer");
-
-        var str = bundle.Author ?? "";
-        if (ImGui.InputText("Author", ref str, 100)) {
-            bundle.Author = str;
-        }
-        str = bundle.Description ?? "";
-        var w = ImGui.CalcItemWidth();
-        if (ImGui.InputTextMultiline("Description", ref str, 1024, new Vector2(w, 120))) {
-            bundle.Description = str;
-        }
-        ImGui.BeginDisabled();
-        string createDate = $"Created at: {bundle.CreatedAt}";
-        string updateDate = $"Updated at: {bundle.UpdatedAt}";
-        ImGui.InputText("##CerationDate", ref createDate, 100);
-        ImGui.InputText("##UpdateDate", ref updateDate, 100);
-        ImGui.EndDisabled();
-
-        var legacyEntityTypes = bundle.LegacyData?
-            .Where(ld => ld.TryGetPropertyValue("type", out _))
-            .Select(ld => ld["type"]!.GetValue<string>())
-            .Distinct();
-
-        if (legacyEntityTypes?.Any() == true) {
-            if (ImGui.TreeNode("Legacy entities")) {
-                var types = allOption.Concat(legacyEntityTypes).ToArray();
-                if (ImGui.Combo("Type", ref selectedLegacyEntityType, types, types.Length)) {
-
-                }
-                var filter = selectedLegacyEntityType > 0 && selectedLegacyEntityType < types.Length ? types[selectedLegacyEntityType] : null;
-                foreach (var e in bundle.LegacyData!) {
-                    if (!e.TryGetPropertyValue("type", out var type)) {
-                        continue;
-                    }
-                    var typeStr = type!.GetValue<string>();
-                    if (filter != null && typeStr != filter) {
-                        continue;
-                    }
-
-                    ImGui.Text(typeStr);
-                    ImGui.SameLine();
-                    var label = e.TryGetPropertyValue("label", out var labelNode) ? labelNode!.GetValue<string>() : null;
-                    if (label == null) {
-                        label = e.TryGetPropertyValue("id", out var idNode) ? idNode!.GetValue<string>() : null;
-                    }
-                    if (label == null) {
-                        ImGui.Text("Unknown legacy entity type");
-                    } else {
-                        ImGui.Text(label);
-                    }
-                }
-                ImGui.TreePop();
-            }
-        }
-
-        if (ImGui.TreeNode("Entities")) {
-            var types = allOption.Concat(bundle.Entities.Select(e => e.Type).Distinct()).ToArray();
-            ImGui.Combo("Type", ref selectedEntityType, types, types.Length);
-            var filter = selectedEntityType > 0 && selectedEntityType < types.Length ? types[selectedEntityType] : null;
-            foreach (var e in bundle.Entities) {
-                if (filter != null && e.Type != filter) continue;
-                ImGui.Text($"{e.Type} {e.Id} : {e.Label}");
-            }
-
-            ImGui.TreePop();
-        }
-
-        if (bundle.ResourceListing != null && ImGui.TreeNode("Files")) {
-            foreach (var e in bundle.ResourceListing) {
-                ImGui.PushID(e.Key);
-                if (openFileCallback != null) {
-                    if (ImGui.Button("Open")) {
-                        var path = bundleManager.ResolveBundleLocalPath(bundle, e.Key);
-                        if (bundle.Name == preselectBundle || !File.Exists(path)) {
-                            openFileCallback.Invoke(e.Value.Target);
-                        } else {
-                            openFileCallback.Invoke(path);
-                        }
-                    }
-                    ImGui.SameLine();
-                }
-                if (e.Value.Diff != null && showDiff != null && (e.Value.Diff is JsonObject odiff && odiff.Count > 1)) {
-                    if (ImGui.Button("Show diff")) {
-                        showDiff.Invoke($"{e.Key} => {e.Value.Target}", e.Value.Diff);
-                    }
-                    if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Partial patch generated at: " + e.Value.DiffTime.ToString("O"));
-                    ImGui.SameLine();
-                }
-                ImGui.Text(e.Key);
-                ImGui.SameLine();
-                ImGui.TextColored(Colors.Faded, e.Value.Target);
-                ImGui.PopID();
-            }
-
-            ImGui.TreePop();
-        }
+        ShowBundlesMenu();
     }
     private void ShowBundleToolbar()
     {
@@ -273,6 +136,174 @@ public class BundleManagementUI : IWindowHandler
                 }
             }
         }
+    }
+    private void ShowBundlesMenu()
+    {
+        var selectedName = data.GetPersistentData<string>("selectedBundle");
+        if (bundleManager.AllBundles.Count == 0) {
+            ImGui.TextColored(Colors.Info, "No Bundles found!");
+        } else {
+            var filter = data.GetPersistentData<string>("bundleFilter") ?? "";
+            var selectedBundle = bundleManager.GetBundle(selectedName, null);
+            var names = bundleManager.AllBundles.Select(b => b.Name).ToArray();
+            var bundlespan = CollectionsMarshal.AsSpan(bundleManager.AllBundles);
+            if (ImguiHelpers.FilterableCombo("Bundle", names, bundlespan, ref selectedBundle, ref filter)) {
+                selectedName = selectedBundle?.Name;
+                data.SetPersistentData("selectedBundle", selectedName);
+            }
+            data.SetPersistentData("bundleFilter", filter);
+        }
+
+        if (selectedName == null) return;
+
+        var bundle = bundleManager.GetBundle(selectedName, null);
+        if (bundle == null) {
+            return;
+        }
+        ImGui.SameLine();
+        using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle?.Name == bundle.Name)) {
+            if (ImGui.Button($"{AppIcons.SI_Bundle}")) {
+                EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, bundle.Name);
+            }
+            ImguiHelpers.Tooltip("Set as Active Bundle");
+        }
+        ImGui.SameLine();
+        using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
+            if (ImGui.Button($"{AppIcons.SI_Reset}")) {
+                EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, null);
+            }
+            ImGui.PopStyleColor();
+            ImguiHelpers.Tooltip("Unload current Bundle");
+        }
+        ImGui.SameLine();
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, new[] { Colors.IconSecondary, Colors.IconPrimary })) {
+            FileSystemUtils.ShowFileInExplorer(bundleManager.ResolveBundleLocalPath(bundle, ""));
+        }
+        ImguiHelpers.Tooltip("Open current Bundle folder in File Explorer");
+
+        var str = bundle.Author ?? "";
+        if (ImGui.InputText("Author", ref str, 100)) {
+            bundle.Author = str;
+        }
+        str = bundle.Description ?? "";
+        var w = ImGui.CalcItemWidth();
+        if (ImGui.InputTextMultiline("Description", ref str, 1024, new Vector2(w, 120))) {
+            bundle.Description = str;
+        }
+        ImGui.BeginDisabled();
+        string createDate = $"Created at: {bundle.CreatedAt}";
+        string updateDate = $"Updated at: {bundle.UpdatedAt}";
+        ImGui.InputText("##CerationDate", ref createDate, 100);
+        ImGui.InputText("##UpdateDate", ref updateDate, 100);
+        ImGui.EndDisabled();
+
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+
+        ImGui.Indent();
+        var legacyEntityTypes = bundle.LegacyData?
+            .Where(ld => ld.TryGetPropertyValue("type", out _))
+            .Select(ld => ld["type"]!.GetValue<string>())
+            .Distinct();
+
+        if (legacyEntityTypes?.Any() == true) {
+            if (ImGui.TreeNode("Legacy entities")) {
+                var types = allOption.Concat(legacyEntityTypes).ToArray();
+                if (ImGui.Combo("Type", ref selectedLegacyEntityType, types, types.Length)) {
+
+                }
+                var filter = selectedLegacyEntityType > 0 && selectedLegacyEntityType < types.Length ? types[selectedLegacyEntityType] : null;
+                foreach (var e in bundle.LegacyData!) {
+                    if (!e.TryGetPropertyValue("type", out var type)) {
+                        continue;
+                    }
+                    var typeStr = type!.GetValue<string>();
+                    if (filter != null && typeStr != filter) {
+                        continue;
+                    }
+
+                    ImGui.Text(typeStr);
+                    ImGui.SameLine();
+                    var label = e.TryGetPropertyValue("label", out var labelNode) ? labelNode!.GetValue<string>() : null;
+                    if (label == null) {
+                        label = e.TryGetPropertyValue("id", out var idNode) ? idNode!.GetValue<string>() : null;
+                    }
+                    if (label == null) {
+                        ImGui.Text("Unknown legacy entity type");
+                    } else {
+                        ImGui.Text(label);
+                    }
+                }
+                ImGui.TreePop();
+            }
+        }
+
+        if (ImGui.TreeNodeEx("Entities", ImGuiTreeNodeFlags.Framed)) {
+            var types = allOption.Concat(bundle.Entities.Select(e => e.Type).Distinct()).ToArray();
+            ImGui.Combo("Type", ref selectedEntityType, types, types.Length);
+            var filter = selectedEntityType > 0 && selectedEntityType < types.Length ? types[selectedEntityType] : null;
+            foreach (var e in bundle.Entities) {
+                if (filter != null && e.Type != filter) continue;
+                ImGui.Text($"{e.Type} {e.Id} : {e.Label}");
+            }
+
+            ImGui.TreePop();
+        }
+        // SILVER: We'll probably need some sorting options here, File Type | Name A-Z/Z-A | File Size?
+        if (bundle.ResourceListing != null && ImGui.TreeNodeEx("Files", ImGuiTreeNodeFlags.Framed)) {
+            if (ImGui.BeginTable("FilesTable", 2, ImGuiTableFlags.Resizable | ImGuiTableFlags.BordersInnerH)) {
+                ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 150f);
+                ImGui.TableSetupColumn("Files", ImGuiTableColumnFlags.WidthStretch);
+                //ImGui.TableSetupColumn("Natives Path", ImGuiTableColumnFlags.WidthStretch);
+
+                foreach (var entry in bundle.ResourceListing) {
+                    ImGui.PushID(entry.Key);
+                    ImGui.TableNextRow();
+                    ImGui.TableSetColumnIndex(0);
+                    if (openFileCallback != null) {
+                        if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
+                            var path = bundleManager.ResolveBundleLocalPath(bundle, entry.Key);
+                            if (bundle.Name == preselectBundle || !File.Exists(path)) {
+                                openFileCallback.Invoke(entry.Value.Target);
+                            } else {
+                                openFileCallback.Invoke(path);
+                            }
+                        }
+                        ImguiHelpers.Tooltip("Open file in Editor");
+                    }
+                    ImGui.SameLine();
+                    ImGui.Button($"{AppIcons.SI_FileSource}");
+                    ImguiHelpers.TooltipColored(entry.Value.Target, Colors.Faded);
+                    ImGui.SameLine();
+                    if (entry.Value.Diff != null && showDiff != null && (entry.Value.Diff is JsonObject odiff && odiff.Count > 1)) {
+                        if (ImGui.Button($"{AppIcons.SI_FileChanges}")) {
+                            showDiff.Invoke($"{entry.Key} => {entry.Value.Target}", entry.Value.Diff);
+                        }
+                        ImguiHelpers.Tooltip("Show changes\nPartial patch generated at: " + entry.Value.DiffTime.ToString("O"));
+                    }
+
+                    ImGui.TableSetColumnIndex(1);
+                    char icon = AppIcons.SI_File;
+                    Vector4 col = ImGui.GetStyle().Colors[(int)ImGuiCol.Text];
+                    if (Path.HasExtension(entry.Key)) {
+                        var (fileIcon, fileCol) = AppIcons.GetIcon(PathUtils.ParseFileFormat(entry.Key).format);
+                        if (fileIcon != '\0') {
+                            icon = fileIcon; col = fileCol;
+                        }
+                    }
+                    ImGui.TextColored(col, $"{icon}");
+                    ImGui.SameLine();
+                    ImGui.Text(entry.Key);
+
+                    ImGui.PopID();
+                }
+                ImGui.EndTable();
+            }
+            ImGui.TreePop();
+        }
+        ImGui.Unindent();
     }
 
     private int selectedLegacyEntityType = 0;
