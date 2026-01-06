@@ -151,17 +151,17 @@ public static class AppImguiHelpers
         }
     }
 
-    public static bool JsonCopyableTreeNode<T>(UIContext context)
+    public static bool JsonCopyableTreeNode<T>(UIContext context, JsonSerializerOptions? jsonOptions = null)
     {
         var value = context.Get<T>()!;
         var show = ImguiHelpers.TreeNodeSuffix(context.label, value.ToString() ?? "NULL");
         if (ImGui.BeginPopupContextItem(context.label)) {
             if (ImGui.Selectable("Copy value")) {
-                EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(value, JsonConfig.jsonOptionsIncludeFields), $"Copied value {value}!");
+                EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(value, jsonOptions?? JsonConfig.jsonOptionsIncludeFields), $"Copied value {value}!");
                 ImGui.CloseCurrentPopup();
             }
             if (ImGui.Selectable("Paste value")) {
-                UndoRedo.RecordClipboardSet<T>(context);
+                UndoRedo.RecordClipboardSet<T>(context, jsonOptions);
                 UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
                 ImGui.CloseCurrentPopup();
             }

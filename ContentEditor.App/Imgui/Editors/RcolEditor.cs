@@ -28,7 +28,6 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
     private readonly List<ObjectInspector> inspectors = new();
     private ObjectInspector? primaryInspector;
     public object? PrimaryTarget => primaryInspector?.Target;
-    private Scene? scene;
 
     private static MemberInfo[] BasicFields = [
         typeof(RcolFile).GetProperty(nameof(RcolFile.IgnoreTags))!,
@@ -46,7 +45,6 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
     {
         Workspace = env;
         _component = component;
-        scene = component.Scene;
     }
 
     public RSZFile GetRSZFile() => File.RSZ;
@@ -59,10 +57,6 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
 
     protected override void DrawFileContents()
     {
-        if (scene == null) {
-            // TODO add mesh picker -> open mesh viewer?
-        }
-
         if (context.children.Count == 0) {
             var child = context.AddChild("Data", File);
             child.uiHandler = new PlainObjectHandler();
@@ -218,20 +212,22 @@ public class RequestSetEditor : IObjectUIHandler
             context.AddChild<RequestSet, string>("KeyName", rset, getter: (i) => i!.Info.KeyName, setter: (i, v) => i.Info.KeyName = v ?? string.Empty).AddDefaultHandler<string>();
             context.AddChild<RequestSet, int>("Status", rset, getter: (i) => i!.Info.status, setter: (i, v) => i.Info.status = v).AddDefaultHandler<int>();
 
-            context.AddChild<RequestSet, RcolGroup>(
+            context.AddChildContextSetter<RequestSet, RcolGroup>(
                 "Group Instance",
                 rset,
                 new InstancePickerHandler<RcolGroup>(false, (ctx, refresh) => {
                     return ctx.FindObjectInspectorParent<RcolEditor>()?.File.Groups ?? [];
                 }) { DisableRefresh = true },
                 (i) => i!.Group,
-                (i, v) => i.Group = v);
+                (ctx, i, v) => {
+                    i.Group = v;
+                    ctx.parent?.ClearChildren();
+                });
             context.AddChild<RequestSet, RcolGroup>(
                 "Group",
                 rset,
-                new NestedUIHandlerStringSuffixed(new RcolGroupEditor()),
-                (i) => i!.Group,
-                (i, v) => i.Group = v);
+                getter: (i) => i!.Group,
+                setter: (i, v) => i.Group = v).AddDefaultHandler<RcolGroup>();
 
             context.AddChild<RequestSet, RszInstance>(
                 "UserData",
@@ -239,7 +235,7 @@ public class RequestSetEditor : IObjectUIHandler
                 new NestedUIHandlerStringSuffixed(new RszClassnamePickerHandler("via.physics.RequestSetColliderUserData")),
                 (i) => i!.Instance,
                 setter: (i, v) => i.Instance = v);
-            context.AddChild<RequestSet, List<RszInstance>>("Shape userdata", rset, getter: (i) => i!.ShapeUserdata, setter: (i, v) => i.ShapeUserdata = v!).AddDefaultHandler<List<RszInstance>>();
+            context.AddChild<RequestSet, List<RszInstance>>("Shape userdata", rset, new RszListInstanceHandler("via.physics.RequestSetColliderUserData"), (i) => i!.ShapeUserdata, (i, v) => i.ShapeUserdata = v!);
         }
 
         var name = rset.Info.Name;
@@ -274,7 +270,10 @@ public class RcolGroupEditor : IObjectUIHandler
             context.AddChild<RcolGroup, List<RcolShape>>("ExtraShapes", group, new ListHandler(typeof(RcolShape)) { CanCreateRemoveElements = true }, getter: (i) => i!.ExtraShapes);
         }
 
-        context.ShowChildrenUI();
+        if (AppImguiHelpers.CopyableTreeNode<RcolGroup>(context)) {
+            context.ShowChildrenUI();
+            ImGui.TreePop();
+        }
     }
 }
 
@@ -309,7 +308,10 @@ public class RcolShapeEditor : IObjectUIHandler
                 setter: (i, v) => i.Instance = v);
         }
 
-        context.ShowChildrenNestedUI();
+        if (AppImguiHelpers.CopyableTreeNode<RcolShape>(context)) {
+            context.ShowChildrenUI();
+            ImGui.TreePop();
+        }
     }
 }
 
