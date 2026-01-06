@@ -395,7 +395,7 @@ public static class AppIcons
 
     public static char GetIcon(object target) => target switch {
         GameObject go => string.IsNullOrEmpty(go.PrefabPath) ? SI_SceneGameObject2 : SI_FileType_PFB,
-        Folder scn => string.IsNullOrEmpty(scn.ScenePath) ? SI_FolderEmpty : SI_Folder,
+        Folder scn => string.IsNullOrEmpty(scn.ScenePath) ? SI_Folder : SI_FolderLink,
         PrefabEditor => SI_FileType_PFB,
         SceneEditor => SI_FileType_SCN,
         EfxEditor => Efx,

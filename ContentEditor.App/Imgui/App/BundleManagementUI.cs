@@ -59,7 +59,7 @@ public class BundleManagementUI : IWindowHandler
 
         var selectedName = data.GetPersistentData<string>("selectedBundle");
         if (bundleManager.AllBundles.Count == 0) {
-            ImGui.TextColored(Colors.Info, "No bundles found");
+            ImGui.TextColored(Colors.Info, "No Bundles found!");
         } else {
             var filter = data.GetPersistentData<string>("bundleFilter") ?? "";
             var selectedBundle = bundleManager.GetBundle(selectedName, null);
@@ -79,9 +79,10 @@ public class BundleManagementUI : IWindowHandler
             return;
         }
         ImGui.SameLine();
-        if (ImGui.Button("Open folder in explorer")) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, new[] { Colors.IconSecondary, Colors.IconPrimary})){
             FileSystemUtils.ShowFileInExplorer(bundleManager.ResolveBundleLocalPath(bundle, ""));
         }
+        ImguiHelpers.Tooltip("Open current Bundle folder in Explorer");
         var str = bundle.Author ?? "";
         if (ImGui.InputText("Author", ref str, 100)) {
             bundle.Author = str;
@@ -91,8 +92,12 @@ public class BundleManagementUI : IWindowHandler
         if (ImGui.InputTextMultiline("Description", ref str, 1024, new Vector2(w, 120))) {
             bundle.Description = str;
         }
-        ImGui.Text($"Created at: {bundle.CreatedAt}");
-        ImGui.Text($"Updated at: {bundle.UpdatedAt}");
+        ImGui.BeginDisabled();
+        string createDate = $"Created at: {bundle.CreatedAt}";
+        string updateDate = $"Updated at: {bundle.UpdatedAt}";
+        ImGui.InputText("##CerationDate", ref createDate, 100);
+        ImGui.InputText("##UpdateDate", ref updateDate, 100);
+        ImGui.EndDisabled();
 
         var legacyEntityTypes = bundle.LegacyData?
             .Where(ld => ld.TryGetPropertyValue("type", out _))
@@ -200,10 +205,23 @@ public class BundleManagementUI : IWindowHandler
         }
         ImGui.PopStyleColor();
         ImguiHelpers.Tooltip("Unload current Bundle");
-        // SILVER: Maybe allow users to delete bundles from here as well?
         ImGui.SameLine();
         ImGui.Text("|");
-
+        ImGui.SameLine();
+        using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(bundleManager.GamePath))) {
+            if (ImGui.Button($"{AppIcons.SI_FolderOpen}")) {
+                FileSystemUtils.ShowFileInExplorer(bundleManager.GamePath);
+            }
+            ImguiHelpers.Tooltip("Open game folder in Explorer");
+            ImGui.SameLine();
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderContain, new[] {Colors.IconPrimary, Colors.IconSecondary})) {
+                FileSystemUtils.ShowFileInExplorer(bundleManager.AppBundlePath);
+            }
+            ImguiHelpers.Tooltip("Open Bundles folder in Explorer");
+        }
+        ImGui.SameLine();
+        ImGui.Text("|");
+        
         ShowNewBundleMenu();
     }
     private void ShowNewBundleMenu()

@@ -100,7 +100,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         ImGui.SameLine();
         ImGui.Text("|");
         ImGui.SameLine();
-        ImGui.Button($"SRC"); // SILVER: Icon pending
+        ImGui.Button($"{AppIcons.SI_FileSource}");
         if (Handle.FileSource != null) {
             ImguiHelpers.TooltipColored($"File source: {Handle.HandleType} - {Handle.FileSource} ({Handle.NativePath})", Colors.Faded);
         } else if (!string.IsNullOrEmpty(Handle.NativePath)) {
@@ -145,11 +145,12 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             if (workspace.CurrentBundle != null) {
                 if (!Handle.IsInBundle(workspace, workspace.CurrentBundle)) {
                     ImGui.SameLine();
-                    if (ImGui.Button("Save to bundle")) {
+                    if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveTo, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
                         ResourcePathPicker.SaveFileToBundle(workspace, Handle, (savePath, localPath, nativePath) => {
                             return SaveTo(savePath, true, nativePath: nativePath);
                         });
                     }
+                    ImguiHelpers.Tooltip("Save to Bundle");
                 } else if (workspace.CurrentBundle.ResourceListing == null || !workspace.CurrentBundle.TryFindResourceListing(Handle.NativePath ?? "", out var resourceListing)) {
                     if (Handle.NativePath != null) {
                         if (ImGui.Button("Store in bundle")) {
