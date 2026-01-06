@@ -372,7 +372,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                 PlatformUtils.ShowFileDialog((files) => {
                     window.InvokeFromUIThread(() => {
                         lastImportSourcePath = files[0];
-                        if (workspace.ResourceManager.TryLoadUniqueFile(lastImportSourcePath, out var importedFile)) {
+                        if (workspace.ResourceManager.TryForceLoadFile(lastImportSourcePath, out var importedFile)) {
                             importedFile.Save(workspace, filepath.ToString());
                             fileHandle.Stream = File.OpenRead(filepath.ToString()).ToMemoryStream();
                             fileHandle.Revert(workspace);

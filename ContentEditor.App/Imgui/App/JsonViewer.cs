@@ -106,7 +106,7 @@ public class JsonViewer : IWindowHandler
                         FileHandle? handle = null;
                         try {
                             var ws = context.GetWorkspace();
-                            if (true == ws?.ResourceManager.TryLoadUniqueFile(file, out handle)) {
+                            if (true == ws?.ResourceManager.TryForceLoadFile(file, out handle)) {
                                 if (handle.Loader != targetFile.Loader) {
                                     Logger.Error($"File format {handle.Format} does not match the source file {targetFile.Format}!");
                                 } else {

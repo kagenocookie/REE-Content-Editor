@@ -46,23 +46,28 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
             ImGui.Unindent(4);
             ImGui.Spacing();
         }
-        if (AllowAdditions && context.children.Count == 0) {
-            var store = new KeyHolder(default(TKey)!);
-            context.AddChild<KeyHolder, TKey>("New item", store, CreateNewItemInput(context),
-                getter: (c) => c!.Key,
-                setter: (c, v) => c.Key = v!);
-        }
-        var newCtx = AllowAdditions ? context.children[0] : null;
-        var indexOffset = AllowAdditions ? 1 : 0;
 
         if (AllowAdditions) {
+            if (context.children.Count == 0) {
+                var store = new KeyHolder(default(TKey)!);
+                context.AddChild<KeyHolder, TKey>("New item", store, CreateNewItemInput(context),
+                    getter: (c) => c!.Key,
+                    setter: (c, v) => c.Key = v!);
+            }
+
+            var newCtx = context.children[0];
             if (ImGui.Button("Add")) {
-                var item = CreateItem(context, newCtx!.Get<TKey>());
+                var item = CreateItem(context, newCtx.Get<TKey>());
                 if (item != null) list.Add(item);
+                if (context.children.Count == 0) {
+                    context.children.Add(newCtx);
+                }
             }
             ImGui.SameLine();
-            newCtx?.ShowUI();
+            newCtx.ShowUI();
         }
+
+        var indexOffset = AllowAdditions ? 1 : 0;
 
         for (int i = 0; i < list.Count; ++i) {
             var item = list[i];
@@ -103,6 +108,10 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
             PostItem(child);
 
             ImGui.PopID();
+            if (context.children.Count < ctxIndex || context.children[ctxIndex] != child) {
+                // this should "cleanly" handle deletes
+                break;
+            }
         }
 
         if (!FlatList) ImGui.TreePop();

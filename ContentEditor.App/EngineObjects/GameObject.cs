@@ -201,9 +201,26 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         return false;
     }
 
-    public void AddComponent<TComponent>(TComponent component) where TComponent : Component
+    public bool RemoveComponent(Component component) => Components.Remove(component);
+    public Component? RemoveComponent(RszInstance componentData)
+    {
+        foreach (var comp in Components) {
+            if (comp.Data == componentData) {
+                Components.Remove(comp);
+                comp.OnDeactivate();
+                return comp;
+            }
+        }
+
+        return null;
+    }
+
+    public void AddComponent(Component component)
     {
         Components.Add(component);
+        if (Scene?.IsActive == true && this.ShouldDraw) {
+            component.OnActivate();
+        }
     }
 
     public TComponent AddComponent<TComponent>() where TComponent : Component, IFixedClassnameComponent

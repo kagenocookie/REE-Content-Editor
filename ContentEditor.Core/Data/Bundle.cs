@@ -121,6 +121,12 @@ public class Bundle
         }
     }
 
+    public bool TryFindResourceByLocalPath(string localPath, [MaybeNullWhen(false)] out ResourceListItem item)
+    {
+        ResourceListing ??= new();
+        return ResourceListing.TryGetValue(localPath, out item);
+    }
+
     public bool TryFindResourceByNativePath(string nativePath, [MaybeNullWhen(false)] out string localPath)
     {
         if (_nativeToLocalResourcePathCache == null) {
