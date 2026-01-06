@@ -63,3 +63,11 @@ public class CopyableTreeUIHandler<T>() : LazyPlainObjectHandler(typeof(T)) wher
         return AppImguiHelpers.CopyableTreeNode<T>(context);
     }
 }
+
+public class JsonCopyableTreeUIHandler<T>() : LazyPlainObjectHandler(typeof(T)) where T : struct
+{
+    protected override bool DoTreeNode(UIContext context, object instance)
+    {
+        return AppImguiHelpers.JsonCopyableTreeNode<T>(context);
+    }
+}

@@ -255,7 +255,7 @@ public class BHVTNodeEditor : IObjectUIHandler
         var show = ImguiHelpers.TreeNodeSuffix(context.label, node.ToString());
         if (ImGui.BeginPopupContextItem(context.label)) {
             if (ImGui.Selectable("Copy Node")) {
-                VirtualClipboard.CopyToClipboard(node.Clone());
+                VirtualClipboard.CopyToClipboard(node.Clone(), "The object must be pasted over a node's Children list");
             }
             ImGui.EndPopup();
         }

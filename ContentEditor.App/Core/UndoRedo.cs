@@ -276,6 +276,11 @@ public class UndoRedo
         GetState(window).AddCommandCallback(type, action);
     }
 
+    public static void AttachClearChildren(CallbackType type, UIContext context, WindowBase? window = null)
+    {
+        GetState(window).AddCommandCallback(type, () => context.ClearChildren());
+    }
+
     #region Undo command types
 
     private static Random random = new Random();

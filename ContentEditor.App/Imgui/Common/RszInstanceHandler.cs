@@ -516,7 +516,7 @@ public class EnumFieldHandler : IObjectUIHandler
         if (ImguiHelpers.FilterableEnumCombo(context.label, enumsrc, ref selected, ref context.Filter)) {
             UndoRedo.RecordSet(context, selected);
         }
-        AppImguiHelpers.ShowDefaultCopyPopup(selected, selected!.GetType(), context);
+        AppImguiHelpers.ShowJsonCopyPopup(selected, selected!.GetType(), context);
     }
 }
 
@@ -583,7 +583,7 @@ public class FlagsEnumFieldHandler : IObjectUIHandler
         }
         ImGui.PopID();
         ImguiHelpers.EndRect(2);
-        AppImguiHelpers.ShowDefaultCopyPopup(value, value.GetType(), context);
+        AppImguiHelpers.ShowJsonCopyPopup(value, value.GetType(), context);
     }
 }
 
@@ -595,7 +595,7 @@ public class RectFieldHandler : Singleton<RectFieldHandler>, IObjectUIHandler
         if (ImGui.DragFloat4(context.label, ref vec, 0.01f)) {
             UndoRedo.RecordSet(context, new Rect(vec.X, vec.Y, vec.Z, vec.W));
         }
-        AppImguiHelpers.ShowDefaultCopyPopup(vec, context);
+        AppImguiHelpers.ShowJsonCopyPopup(vec, context);
     }
 }
 
@@ -607,7 +607,7 @@ public class PositionFieldHandler : Singleton<PositionFieldHandler>, IObjectUIHa
         if (ImGui.DragScalarN(context.label, ImGuiDataType.Double, &val, 4, 0.01f)) {
             UndoRedo.RecordSet(context, val);
         }
-        AppImguiHelpers.ShowDefaultCopyPopup(val, context);
+        AppImguiHelpers.ShowJsonCopyPopup(val, context);
     }
 }
 
@@ -620,7 +620,7 @@ public class Int2FieldHandler : Singleton<Int2FieldHandler>, IObjectUIHandler
         if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, &val, 2, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
-        AppImguiHelpers.ShowDefaultCopyPopup(val, context);
+        AppImguiHelpers.ShowJsonCopyPopup(val, context);
     }
 }
 
@@ -633,7 +633,7 @@ public class Int3FieldHandler : Singleton<Int3FieldHandler>, IObjectUIHandler
         if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, &val, 3, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
-        AppImguiHelpers.ShowDefaultCopyPopup(val, context);
+        AppImguiHelpers.ShowJsonCopyPopup(val, context);
     }
 }
 
@@ -646,7 +646,7 @@ public class Int4FieldHandler : Singleton<Int4FieldHandler>, IObjectUIHandler
         if (ImGui.DragScalarN(context.label, ImGuiDataType.S32, &val, 4, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
-        AppImguiHelpers.ShowDefaultCopyPopup(val, context);
+        AppImguiHelpers.ShowJsonCopyPopup(val, context);
     }
 }
 
@@ -659,7 +659,7 @@ public class Uint2FieldHandler : Singleton<Uint2FieldHandler>, IObjectUIHandler
         if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, &val, 2, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
-        AppImguiHelpers.ShowDefaultCopyPopup(val, context);
+        AppImguiHelpers.ShowJsonCopyPopup(val, context);
     }
 }
 
@@ -672,7 +672,7 @@ public class Uint3FieldHandler : Singleton<Uint3FieldHandler>, IObjectUIHandler
         if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, &val, 3, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
-        AppImguiHelpers.ShowDefaultCopyPopup(val, context);
+        AppImguiHelpers.ShowJsonCopyPopup(val, context);
     }
 }
 
@@ -685,7 +685,7 @@ public class Uint4FieldHandler : Singleton<Uint4FieldHandler>, IObjectUIHandler
         if (ImGui.DragScalarN(context.label, ImGuiDataType.U32, &val, 4, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
-        AppImguiHelpers.ShowDefaultCopyPopup(val, context);
+        AppImguiHelpers.ShowJsonCopyPopup(val, context);
     }
 }
 
@@ -697,7 +697,7 @@ public class RangeFieldHandler : Singleton<RangeFieldHandler>, IObjectUIHandler
         if (ImGui.DragFloatRange2(context.label, ref val.r, ref val.s)) {
             UndoRedo.RecordSet(context, val);
         }
-        AppImguiHelpers.ShowDefaultCopyPopup(val, context);
+        AppImguiHelpers.ShowJsonCopyPopup(val, context);
     }
 }
 
@@ -709,7 +709,7 @@ public class SizeFieldHandler : Singleton<SizeFieldHandler>, IObjectUIHandler
         if (ImGui.DragFloatRange2(context.label, ref val.w, ref val.h)) {
             UndoRedo.RecordSet(context, val);
         }
-        AppImguiHelpers.ShowDefaultCopyPopup(val, context);
+        AppImguiHelpers.ShowJsonCopyPopup(val, context);
     }
 }
 
@@ -958,7 +958,7 @@ public class GuidFieldHandler : Singleton<GuidFieldHandler>, IObjectUIHandler
                 ImGui.CloseCurrentPopup();
             }
             ImGui.Separator();
-            AppImguiHelpers.ShowDefaultCopyPopupButtons(val, context);
+            AppImguiHelpers.ShowJsonCopyPopupButtons(val, context);
             ImGui.EndPopup();
         }
     }
@@ -1050,7 +1050,7 @@ public class TransformStructHandler : IObjectUIHandler
     {
         var data = context.Get<ReeLib.via.Transform>();
         var show = ImguiHelpers.TreeNodeSuffix("Transform", data.ToString()!);
-        AppImguiHelpers.ShowDefaultCopyPopup(data, context);
+        AppImguiHelpers.ShowJsonCopyPopup(data, context);
         if (show) {
             var pos = data.pos;
             var rot = data.rot.ToVector4();
@@ -1089,7 +1089,7 @@ public class SphereStructHandler : IObjectUIHandler
     {
         var sphere = context.Get<ReeLib.via.Sphere>();
         var show = ImguiHelpers.TreeNodeSuffix(context.label, sphere.ToString());
-        AppImguiHelpers.ShowDefaultCopyPopup(sphere, context);
+        AppImguiHelpers.ShowJsonCopyPopup(sphere, context);
         if (show) {
             if (ImGui.DragFloat3("Position", ref sphere.pos, 0.005f)) {
                 UndoRedo.RecordSet(context, sphere, undoId: $"{context.GetHashCode()} pos");
@@ -1109,7 +1109,7 @@ public class Mat4StructHandler : IObjectUIHandler
     {
         var mat = context.Get<ReeLib.via.mat4>();
         var open = ImguiHelpers.TreeNodeSuffix(context.label, mat.ToString());
-        AppImguiHelpers.ShowDefaultCopyPopup(mat, context);
+        AppImguiHelpers.ShowJsonCopyPopup(mat, context);
         if (open) {
             Matrix4X4.Decompose(mat.ToSystem().ToGeneric(), out var scale, out var rot, out var trans);
 
@@ -1152,7 +1152,7 @@ public class OBBStructHandler : IObjectUIHandler
     {
         var box = context.Get<ReeLib.via.OBB>();
         var show = ImguiHelpers.TreeNodeSuffix(context.label, box.ToString());
-        AppImguiHelpers.ShowDefaultCopyPopup(box, context);
+        AppImguiHelpers.ShowJsonCopyPopup(box, context);
         if (show) {
             Matrix4X4.Decompose(box.Coord.ToSystem().ToGeneric(), out var scale, out var rot, out var trans);
 
@@ -1190,7 +1190,7 @@ public class CapsuleStructHandler : IObjectUIHandler
     {
         var capsule = context.Get<ReeLib.via.Capsule>();
         var show = ImguiHelpers.TreeNodeSuffix(context.label, capsule.ToString());
-        AppImguiHelpers.ShowDefaultCopyPopup(capsule, context);
+        AppImguiHelpers.ShowJsonCopyPopup(capsule, context);
         if (show) {
             if (ImGui.DragFloat3("Point 1", ref capsule.p0, 0.005f)) {
                 UndoRedo.RecordSet(context, capsule, undoId: $"{context.GetHashCode()} p0");
@@ -1216,7 +1216,7 @@ public class CylinderStructHandler : IObjectUIHandler
     {
         var cylinder = context.Get<ReeLib.via.Cylinder>();
         var show = ImguiHelpers.TreeNodeSuffix(context.label, cylinder.ToString());
-        AppImguiHelpers.ShowDefaultCopyPopup(cylinder, context);
+        AppImguiHelpers.ShowJsonCopyPopup(cylinder, context);
         if (show) {
             if (ImGui.DragFloat3("Point 1", ref cylinder.p0, 0.005f)) {
                 UndoRedo.RecordSet(context, cylinder, undoId: $"{context.GetHashCode()} p0");
@@ -1242,7 +1242,7 @@ public class AABBStructHandler : IObjectUIHandler
     {
         var aabb = context.Get<ReeLib.via.AABB>();
         var show = ImguiHelpers.TreeNodeSuffix(context.label, aabb.ToString());
-        AppImguiHelpers.ShowDefaultCopyPopup(aabb, context);
+        AppImguiHelpers.ShowJsonCopyPopup(aabb, context);
         if (show) {
             var center = aabb.Center;
             var size = aabb.Size / 2;

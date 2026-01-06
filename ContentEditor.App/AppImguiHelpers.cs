@@ -108,15 +108,15 @@ public static class AppImguiHelpers
         return changed;
     }
 
-    public static void ShowDefaultCopyPopup<T>(in T value, UIContext context)
+    public static void ShowJsonCopyPopup<T>(in T value, UIContext context)
     {
         if (ImGui.BeginPopupContextItem(context.label)) {
-            ShowDefaultCopyPopupButtons(in value, context);
+            ShowJsonCopyPopupButtons(in value, context);
             ImGui.EndPopup();
         }
     }
 
-    public static void ShowDefaultCopyPopupButtons<T>(in T value, UIContext context)
+    public static void ShowJsonCopyPopupButtons<T>(in T value, UIContext context)
     {
         if (ImGui.Selectable("Copy value")) {
             EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(value, JsonConfig.jsonOptionsIncludeFields), $"Copied value of {context.label}!");
@@ -132,7 +132,7 @@ public static class AppImguiHelpers
         }
     }
 
-    public static void ShowDefaultCopyPopup(object? value, Type type, UIContext context)
+    public static void ShowJsonCopyPopup(object? value, Type type, UIContext context)
     {
         if (ImGui.BeginPopupContextItem(context.label)) {
             if (ImGui.Selectable("Copy value")) {
@@ -149,6 +149,25 @@ public static class AppImguiHelpers
             }
             ImGui.EndPopup();
         }
+    }
+
+    public static bool JsonCopyableTreeNode<T>(UIContext context)
+    {
+        var value = context.Get<T>()!;
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, value.ToString() ?? "NULL");
+        if (ImGui.BeginPopupContextItem(context.label)) {
+            if (ImGui.Selectable("Copy value")) {
+                EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(value, JsonConfig.jsonOptionsIncludeFields), $"Copied value {value}!");
+                ImGui.CloseCurrentPopup();
+            }
+            if (ImGui.Selectable("Paste value")) {
+                UndoRedo.RecordClipboardSet<T>(context);
+                UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
+        return show;
     }
 
     public static bool CopyableTreeNode<T>(UIContext context) where T : class
