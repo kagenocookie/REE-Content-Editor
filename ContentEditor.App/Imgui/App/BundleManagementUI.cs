@@ -1,8 +1,9 @@
 using ContentEditor.App;
 using ContentEditor.App.Windowing;
-using ContentPatcher;
 using ContentEditor.Core;
+using ContentPatcher;
 using ReeLib;
+using System;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text.Json.Nodes;
@@ -254,9 +255,9 @@ public class BundleManagementUI : IWindowHandler
         // SILVER: We'll probably need some sorting options here, File Type | Name A-Z/Z-A | File Size?
         if (bundle.ResourceListing != null && ImGui.TreeNodeEx("Files", ImGuiTreeNodeFlags.Framed)) {
             if (ImGui.BeginTable("FilesTable", 2, ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.BordersInnerH)) {
-                ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 175f); // SILVER: Added some extra padding so we don't have 5 icons next to each other 
+                ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 175f);
                 ImGui.TableSetupColumn("Files", ImGuiTableColumnFlags.WidthStretch);
-
+                string? pendingEntryToBeDeleted = null;
                 foreach (var entry in bundle.ResourceListing) {
                     ImGui.PushID(entry.Key);
                     ImGui.TableNextRow();
@@ -324,9 +325,8 @@ public class BundleManagementUI : IWindowHandler
                         var textSize = ImGui.CalcTextSize(confirmText);
                         ImGui.Text(confirmText);
                         ImGui.Separator();
-                        // SILVER: I assume there's no method for this atm?
-                        if (ImGui.Button("Yes (but actually No)", new Vector2(textSize.X / 2, 0))) {
-                            Logger.Info($"Deleted {entry.Key} from {bundle.Name}.");
+                        if (ImGui.Button("Yes", new Vector2(textSize.X / 2, 0))) {
+                            pendingEntryToBeDeleted = entry.Key;
                             ImGui.CloseCurrentPopup();
                         }
                         ImGui.SameLine();
@@ -351,6 +351,22 @@ public class BundleManagementUI : IWindowHandler
 
                     ImGui.PopID();
                 }
+                if (pendingEntryToBeDeleted != null) {
+                    if (bundle.ResourceListing.TryGetValue(pendingEntryToBeDeleted, out var resource)) {
+                        var filePath = bundleManager.ResolveBundleLocalPath(bundle, pendingEntryToBeDeleted);
+                        bundle.ResourceListing.Remove(pendingEntryToBeDeleted);
+
+                        if (File.Exists(filePath)) {
+                             File.Delete(filePath);
+                        } else {
+                            Logger.Error($"Failed to delete file {filePath}!");
+                        }
+                        Logger.Info($"Deleted {pendingEntryToBeDeleted} from {bundle.Name}.");
+                    }
+                    bundleManager.SaveBundle(bundle);
+                    pendingEntryToBeDeleted = null;
+                }
+
                 ImGui.EndTable();
             }
             ImGui.TreePop();
