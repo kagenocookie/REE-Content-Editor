@@ -337,7 +337,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                     ImGui.Text(tag);
                     ImGui.PopStyleColor();
                     ImGui.SameLine();
-                    ImGui.Text("|");
+                    ImguiHelpers.VerticalSeparator();
                     ImGui.PopID();
                 }
             }

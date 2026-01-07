@@ -98,7 +98,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     {
         DrawFileControls(context.Get<WindowData>());
         ImGui.SameLine();
-        ImGui.Text("|");
+        ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
         ImGui.Button($"{AppIcons.SI_FileSource}");
         if (Handle.FileSource != null) {

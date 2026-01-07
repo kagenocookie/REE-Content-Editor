@@ -80,7 +80,7 @@ public class BundleManagementUI : IWindowHandler
         }
         ImguiHelpers.Tooltip("Create Bundle from PAK File");
         ImGui.SameLine();
-        ImGui.Text("|");
+        ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(bundleManager.GamePath))) {
             if (ImGui.Button($"{AppIcons.SI_FolderOpen}")) {
@@ -94,7 +94,7 @@ public class BundleManagementUI : IWindowHandler
             ImguiHelpers.Tooltip("Open Bundles folder in File Explorer");
         }
         ImGui.SameLine();
-        ImGui.Text("|");
+        ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);
@@ -203,7 +203,7 @@ public class BundleManagementUI : IWindowHandler
         ImGui.Separator();
         ImGui.Spacing();
 
-        ImGui.Indent();
+        ImGui.Indent(5);
         var legacyEntityTypes = bundle.LegacyData?
             .Where(ld => ld.TryGetPropertyValue("type", out _))
             .Select(ld => ld["type"]!.GetValue<string>())

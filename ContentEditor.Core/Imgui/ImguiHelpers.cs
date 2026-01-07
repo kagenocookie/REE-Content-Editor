@@ -555,6 +555,19 @@ public static class ImguiHelpers
         pos.X += ImGui.CalcTextSize(icons[0].ToString()).X + ImGui.GetStyle().ItemInnerSpacing.X;
         drawList.AddText(pos, ImGui.GetColorU32(ImGuiCol.Text), label);
     }
+    public static void VerticalSeparator(Vector4? color = null, float width = 2.0f, float padding = 4.0f)
+    {
+        var drawList = ImGui.GetWindowDrawList();
+        var pos = ImGui.GetCursorScreenPos();
+        float height = ImGui.GetFrameHeight();
+        float yMin = pos.Y + padding;
+        float yMax = pos.Y + height - padding;
+
+        color ??= GetColor(ImGuiCol.TextDisabled);
+        drawList.AddRectFilled(new Vector2(pos.X, yMin), new Vector2(pos.X + width, yMax), ImGui.GetColorU32(color.Value));
+
+        ImGui.Dummy(new Vector2(width, 0));
+    }
     /// <summary>
     /// Draws a tooltip when item is hovered.
     /// </summary>
@@ -567,7 +580,7 @@ public static class ImguiHelpers
     /// </summary>
     public static void TooltipColored(string text, Vector4? color = null)
     {
-        color ??= ImguiHelpers.GetColor(ImGuiCol.Text);
+        color ??= GetColor(ImGuiCol.Text);
         ImGui.PushStyleColor(ImGuiCol.Text, color.Value);
         if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(text);
         ImGui.PopStyleColor();

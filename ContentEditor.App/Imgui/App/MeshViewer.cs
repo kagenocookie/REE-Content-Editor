@@ -315,9 +315,8 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
     private bool ShowMenu(MeshComponent meshComponent)
     {
-        ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, ImGui.GetStyle().FramePadding with { Y = ImGui.GetStyle().FramePadding.Y + 4 });
+        
         if (ImGui.BeginMenuBar()) {
-            ImGui.PopStyleVar();
             if (ImGui.MenuItem($"{AppIcons.SI_GenericCamera} Controls")) ImGui.OpenPopup("CameraSettings");
             if (scene != null && ImGui.BeginPopup("CameraSettings")) {
                 scene.Controller.ShowCameraControls();
@@ -334,7 +333,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
             if (!isSynced && previewGameobject != null) {
                 if (ImGui.MenuItem($"{AppIcons.SI_GenericInfo} Mesh Info")) ImGui.OpenPopup("MeshInfo");
-                ImGui.Text("|");
+                ImguiHelpers.VerticalSeparator();
                 if (ImGui.MenuItem($"{AppIcons.SI_MeshViewerMeshGroup} Mesh Groups")) ImGui.OpenPopup("MeshGroups");
                 if (ImGui.MenuItem($"{AppIcons.SI_FileType_MDF} Material")) ImGui.OpenPopup("Material");
                 if (ImGui.BeginMenu($"{AppIcons.SI_FileType_RCOL} RCOL")) {
@@ -342,10 +341,10 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                     rcolEdit?.DrawMainUI();
                     ImGui.EndMenu();
                 }
-                ImGui.Text("|");
+                ImguiHelpers.VerticalSeparator();
                 if (ImGui.MenuItem($"{AppIcons.SI_Animation} Animations")) showAnimationsMenu = !showAnimationsMenu;
                 if (showAnimationsMenu) ImguiHelpers.HighlightMenuItem($"{AppIcons.SI_Animation} Animations");
-                ImGui.Text("|");
+                ImguiHelpers.VerticalSeparator();
                 if (ImGui.MenuItem($"{AppIcons.SI_GenericIO} Import / Export")) ImGui.OpenPopup("Export");
 
                 if (ImGui.BeginPopup("MeshInfo")) {
@@ -373,7 +372,6 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             UpdateMaterial(meshComponent);
             return true;
         } else {
-            ImGui.PopStyleVar();
             UpdateMaterial(meshComponent);
             return false;
         }
