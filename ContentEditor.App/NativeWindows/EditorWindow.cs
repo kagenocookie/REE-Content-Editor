@@ -67,12 +67,15 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     private void SetWorkspace(GameIdentifier game, string? bundle, bool forceReloadEnv)
     {
         // close all subwindows since they won't necessarily have the correct data anymore
-        if (!RequestCloseAllSubwindows()) return;
         if (env != null && (env.Config.Game != game || forceReloadEnv)) {
+            if (!RequestCloseAllSubwindows(true)) return;
             WorkspaceManager.Instance.Release(env);
             env = null;
             workspace = null;
+        } else if (!RequestCloseAllSubwindows(false)) {
+            return;
         }
+
         env ??= WorkspaceManager.Instance.GetWorkspace(game);
 
         var configPath = Path.Combine(AppConfig.Instance.ConfigBasePath, game.name);
@@ -569,7 +572,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             }
             ImGui.Separator();
             if (workspace != null && ImGui.MenuItem("Check for updated game data cache")) {
-                if (RequestCloseAllSubwindows()) {
+                if (RequestCloseAllSubwindows(true)) {
                     ResourceRepository.ResetCache(workspace.Game);
                     ResourceRepository.Initialize(true);
                     SetWorkspace(workspace.Game, workspace.CurrentBundle?.Name, true);
@@ -717,7 +720,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         viewportOffset = new Vector2(0, ImGui.CalcTextSize("a").Y + ImGui.GetStyle().FramePadding.Y * 2);
         BeginDockableBackground(viewportOffset);
         if (Overlays != null) {
-            Overlays.ShowHelp = !_disableIntroGuide && !subwindows.Any(s => !IsDefaultWindow(s)) && !SceneManager.HasActiveMasterScene;
+            Overlays.ShowHelp = !_disableIntroGuide && !subwindows.Any(s => !IsDefaultWindow(s, false)) && !SceneManager.HasActiveMasterScene;
         }
         DrawImguiWindows();
         EndDockableBackground();

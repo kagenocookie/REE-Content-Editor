@@ -416,6 +416,15 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         return newObj;
     }
 
+    protected override void ChangeScene(Scene? newScene)
+    {
+        if (Scene != null) DeactivateComponents();
+        Scene = newScene;
+        foreach (var child in Children) {
+            child.ChangeScene(newScene);
+        }
+    }
+
     protected override void OnParentChanged()
     {
         if (Parent != null) {

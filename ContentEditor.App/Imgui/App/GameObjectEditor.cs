@@ -1,13 +1,5 @@
-using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using ContentEditor;
-using ContentEditor.App.Windowing;
-using ContentEditor.Core;
 using ContentPatcher;
-using ReeLib;
-using ReeLib.Common;
-using ReeLib.Pfb;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -103,6 +95,17 @@ public class GameObjectNodeEditor : NodeTreeEditor<GameObject, GameObjectNodeEdi
             newgo.MakeNameUnique();
             context.FindHandlerInParents<IInspectorController>()?.SetPrimaryInspector(newgo);
             ImGui.CloseCurrentPopup();
+        }
+        if (ImGui.Selectable("Copy GameObject")) {
+            VirtualClipboard.CopyToClipboard(node.Clone());
+            ImGui.CloseCurrentPopup();
+        }
+        if (VirtualClipboard.TryGetFromClipboard<GameObject>(out var clipboardObject) && ImGui.Selectable("Paste as child")) {
+            var clone = clipboardObject.Clone();
+            UndoRedo.RecordAddChild<GameObject>(context, clone, node);
+            clone.MakeNameUnique();
+            clone.Transform.ResetLocalTransform();
+            context.ClearChildren();
         }
 
         var parent = ((INodeObject<GameObject>)node).GetParent();

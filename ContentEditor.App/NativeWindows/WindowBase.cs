@@ -76,7 +76,8 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     public WindowData? FocusedWindow { get; private set; }
 
-    protected static readonly HashSet<Type> DefaultWindows = [typeof(OverlaysWindow), typeof(ConsoleWindow)];
+    protected static readonly HashSet<Type> BaseWindows = [typeof(OverlaysWindow), typeof(ConsoleWindow)];
+    protected static readonly HashSet<Type> WorkspaceSpecificWindows = [typeof(BundleManagementUI)];
 
     private static int nextSubwindowID = 1;
 
@@ -266,10 +267,10 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     {
         removeSubwindows.AddRange(subwindows);
     }
-    public bool RequestCloseAllSubwindows()
+    public bool RequestCloseAllSubwindows(bool workspaceChange)
     {
         bool anyNotClosed = false;
-        foreach (var window in subwindows.Where(sw => !IsDefaultWindow(sw)).ToArray()) {
+        foreach (var window in subwindows.Where(sw => !IsDefaultWindow(sw, workspaceChange)).ToArray()) {
             if (window.Handler?.RequestClose() == true) {
                 anyNotClosed = true;
                 continue;
@@ -595,7 +596,10 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         }
     }
 
-    protected static bool IsDefaultWindow(WindowData data) => data.Handler != null && DefaultWindows.Contains(data.Handler.GetType());
+    protected static bool IsDefaultWindow(WindowData data, bool isWorkspaceChange) => data.Handler != null && (
+        BaseWindows.Contains(data.Handler.GetType())
+        || !isWorkspaceChange && WorkspaceSpecificWindows.Contains(data.Handler.GetType())
+    );
 
     public void InvokeFromUIThread(Action action)
     {
