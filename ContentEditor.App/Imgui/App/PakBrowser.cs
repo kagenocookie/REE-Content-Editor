@@ -243,16 +243,18 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 ImguiHelpers.Tooltip("Clear Custom Bookmarks");
 
                 if (ImGui.BeginPopupModal("Confirm Action", ImGuiWindowFlags.AlwaysAutoResize)) {
-                    ImGui.Text($"Are you sure you want to delete all custom bookmarks for {Workspace.Config.Game.name}?");
+                    string confirmText = $"Are you sure you want to delete all custom bookmarks for {Workspace.Config.Game.name}?";
+                    var textSize = ImGui.CalcTextSize(confirmText);
+                    ImGui.Text(confirmText);
                     ImGui.Separator();
 
-                    if (ImGui.Button("Yes", new Vector2(200, 0))) {
+                    if (ImGui.Button("Yes", new Vector2(textSize.X / 2, 0))) {
                         _bookmarkManager.ClearBookmarks(Workspace.Config.Game.name);
                         Logger.Info($"Cleared custom bookmarks for {Workspace.Config.Game.name}");
                         ImGui.CloseCurrentPopup();
                     }
                     ImGui.SameLine();
-                    if (ImGui.Button("No", new Vector2(200, 0))) {
+                    if (ImGui.Button("No", new Vector2(textSize.X / 2, 0))) {
                         ImGui.CloseCurrentPopup();
                     }
                     ImGui.EndPopup();

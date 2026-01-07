@@ -253,10 +253,9 @@ public class BundleManagementUI : IWindowHandler
         }
         // SILVER: We'll probably need some sorting options here, File Type | Name A-Z/Z-A | File Size?
         if (bundle.ResourceListing != null && ImGui.TreeNodeEx("Files", ImGuiTreeNodeFlags.Framed)) {
-            if (ImGui.BeginTable("FilesTable", 2, ImGuiTableFlags.Resizable | ImGuiTableFlags.BordersInnerH)) {
-                ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 150f);
+            if (ImGui.BeginTable("FilesTable", 2, ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.BordersInnerH)) {
+                ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 175f); // SILVER: Added some extra padding so we don't have 5 icons next to each other 
                 ImGui.TableSetupColumn("Files", ImGuiTableColumnFlags.WidthStretch);
-                //ImGui.TableSetupColumn("Natives Path", ImGuiTableColumnFlags.WidthStretch);
 
                 foreach (var entry in bundle.ResourceListing) {
                     ImGui.PushID(entry.Key);
@@ -274,14 +273,67 @@ public class BundleManagementUI : IWindowHandler
                         ImguiHelpers.Tooltip("Open file in Editor");
                     }
                     ImGui.SameLine();
-                    ImGui.Button($"{AppIcons.SI_FileSource}");
+                    if (ImGui.Button($"{AppIcons.SI_FileSource}")) {
+                        ImGui.OpenPopup("EditNativesPath");
+                    }
                     ImguiHelpers.TooltipColored(entry.Value.Target, Colors.Faded);
+
+                    if (ImGui.BeginPopup("EditNativesPath")) {
+                        string target = entry.Value.Target;
+
+                        ImGui.SeparatorText("Edit Natives Path");
+
+                        var pathSize = ImGui.CalcTextSize(target);
+                        ImGui.SetNextItemWidth(pathSize.X + 15);
+                        if (ImGui.InputText("##target", ref target, 512)) {
+                            entry.Value.Target = target;
+                        }
+                        ImGui.SameLine();
+                        if (ImGui.Button($"{AppIcons.SI_Save}")) {
+                            entry.Value.Target = target;
+                            bundleManager.SaveBundle(bundle);
+                            ImGui.CloseCurrentPopup();
+                        }
+                        ImguiHelpers.Tooltip("Save");
+                        ImGui.SameLine();
+                        if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
+                            ImGui.CloseCurrentPopup();
+                        }
+                        ImguiHelpers.Tooltip("Cancel");
+
+                        ImGui.EndPopup();
+                    }
+
                     ImGui.SameLine();
-                    if (entry.Value.Diff != null && showDiff != null && (entry.Value.Diff is JsonObject odiff && odiff.Count > 1)) {
+                    using (var _ = ImguiHelpers.Disabled(!(entry.Value.Diff != null && showDiff != null && (entry.Value.Diff is JsonObject odiff && odiff.Count > 1)))) {
                         if (ImGui.Button($"{AppIcons.SI_FileChanges}")) {
                             showDiff.Invoke($"{entry.Key} => {entry.Value.Target}", entry.Value.Diff);
                         }
                         ImguiHelpers.Tooltip("Show changes\nPartial patch generated at: " + entry.Value.DiffTime.ToString("O"));
+                    }
+                    ImGui.SameLine();
+                    ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
+                    if (ImGui.Button($"{AppIcons.SI_GenericDelete}")) {
+                        ImGui.OpenPopup("Confirm Action");
+                    }
+                    ImGui.PopStyleColor();
+                    ImguiHelpers.Tooltip("Delete file");
+
+                    if (ImGui.BeginPopupModal("Confirm Action", ImGuiWindowFlags.AlwaysAutoResize)) {
+                        string confirmText = $"Are you sure you want to delete {entry.Key} from {bundle.Name}?";
+                        var textSize = ImGui.CalcTextSize(confirmText);
+                        ImGui.Text(confirmText);
+                        ImGui.Separator();
+                        // SILVER: I assume there's no method for this atm?
+                        if (ImGui.Button("Yes (but actually No)", new Vector2(textSize.X / 2, 0))) {
+                            Logger.Info($"Deleted {entry.Key} from {bundle.Name}.");
+                            ImGui.CloseCurrentPopup();
+                        }
+                        ImGui.SameLine();
+                        if (ImGui.Button("No", new Vector2(textSize.X / 2, 0))) {
+                            ImGui.CloseCurrentPopup();
+                        }
+                        ImGui.EndPopup();
                     }
 
                     ImGui.TableSetColumnIndex(1);
