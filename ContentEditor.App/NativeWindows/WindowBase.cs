@@ -76,7 +76,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     public WindowData? FocusedWindow { get; private set; }
 
-    protected static readonly HashSet<Type> DefaultWindows = [typeof(OverlaysWindow), typeof(ConsoleWindow)];
+    protected static readonly HashSet<Type> IndependentWindows = [typeof(OverlaysWindow), typeof(ConsoleWindow), typeof(BundleManagementUI)];
 
     private static int nextSubwindowID = 1;
 
@@ -595,7 +595,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         }
     }
 
-    protected static bool IsDefaultWindow(WindowData data) => data.Handler != null && DefaultWindows.Contains(data.Handler.GetType());
+    protected static bool IsDefaultWindow(WindowData data) => data.Handler != null && IndependentWindows.Contains(data.Handler.GetType());
 
     public void InvokeFromUIThread(Action action)
     {

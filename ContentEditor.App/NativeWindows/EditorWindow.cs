@@ -665,9 +665,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             }
             ImGui.EndMenu();
         }
-        ImGui.BeginDisabled();
-        ImGui.MenuItem("|##0");
-        ImGui.EndDisabled();
+        ImGui.Separator();
 
         ShowGameSelectionMenu();
 
@@ -697,9 +695,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 ImGui.EndMenu();
             }
         }
-        ImGui.BeginDisabled();
-        ImGui.MenuItem("|##1");
-        ImGui.EndDisabled();
+        ImGui.Separator();
 
         if (ImGui.MenuItem("Support development (Ko-Fi)")) {
             FileSystemUtils.OpenURL("https://ko-fi.com/shadowcookie");
