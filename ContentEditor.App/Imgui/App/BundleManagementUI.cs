@@ -64,14 +64,14 @@ public class BundleManagementUI : IWindowHandler
         ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_BundleAdd, ref isNewBundleMenu, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary }, Colors.IconActive);
         ImguiHelpers.Tooltip("New Bundle");
         ImGui.SameLine();
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary }, "000") && createFromLooseFileFolder != null) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleFromLooseFiles, new[] { Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary }) && createFromLooseFileFolder != null) {
             PlatformUtils.ShowFolderDialog(folder => {
                 createFromLooseFileFolder(folder);
             });
         }
         ImguiHelpers.Tooltip("Create Bundle from Loose Files");
         ImGui.SameLine();
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary }, "001") && createFromPak != null) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleFromPakFile, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary }) && createFromPak != null) {
             PlatformUtils.ShowFileDialog(pak =>
                 createFromPak(pak[0]),
                 fileExtension: FileFilters.PakFile,

@@ -371,6 +371,10 @@ public static class AppIcons
     public static readonly char[] SIC_BundleSaveTo = { '\uedc6', '\uedc7', '\uedc8', '\uedc9', '\uedca' };
     public static readonly char[] SIC_Copy = { '\uedcb', '\uedcc', '\uedcd', '\uedce', '\uedcf', '\uedd0' };
     public static readonly char[] SIC_Paste = { '\uedd1', '\uedd2', '\uedd3', '\uedd4', '\uedd5', '\uedd6', '\uedd7', '\uedd8' };
+    public static readonly char[] SIC_BundleFromLooseFiles = { '\uedd9', '\uedda', '\ueddb', '\ueddc', '\ueddd'};
+    public static readonly char[] SIC_BundleFolder = { '\uedde', '\ueddf', '\uede0', '\uede1'};
+    public static readonly char[] SIC_BundleFolderEmpty = { '\uede2', '\uede3', '\uede4', '\uede5' };
+    public static readonly char[] SIC_BundleFromPakFile = { '\uede6', '\uede7', '\uede8', '\uede9', '\uedea' };
 
     public static string PrependIcon(this string text, object target)
     {
