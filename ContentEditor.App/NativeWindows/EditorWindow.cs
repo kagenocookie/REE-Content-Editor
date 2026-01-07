@@ -254,7 +254,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             .Select(kv => kv.Key)
             .ToHashSet();
 
-        if (ImGui.BeginMenu("Game: " + (env == null ? "<unset>" : env.Config.Game.name))) {
+        if (ImGui.BeginMenu("Game: " + (env == null ? "<unset>" : env.Config.Game.name.ToUpper()))) {
             var games = AppConfig.Instance.GetGamelist();
             foreach (var (game, configured) in games) {
                 if (configured && fullSupportedGames.Contains(game)) {
@@ -271,55 +271,29 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             if (ImGui.MenuItem("Configure games ...")) {
                 AddUniqueSubwindow(new SettingsWindowHandler());
             }
+            if (workspace != null && !string.IsNullOrEmpty(workspace.Env.Config.GamePath) && ImGui.MenuItem("Open game folder")) {
+                FileSystemUtils.ShowFileInExplorer(workspace.Env.Config.GamePath);
+            }
             ImGui.EndMenu();
         }
 
         if (workspace != null) {
-            if (ImGui.BeginMenu($"Workspace: {workspace.Data.Name ?? "--"}")) {
+            if (ImGui.BeginMenu($"Bundle: {workspace.Data.Name ?? "--"}")) {
                 if (!workspace.BundleManager.IsLoaded) workspace.BundleManager.LoadDataBundles();
-                if (ImGui.BeginMenu($"Active bundle: {workspace.Data.ContentBundle}")) {
-                    if (ImGui.MenuItem("Create new...")) {
+                if (ImGui.BeginMenu($"Active Bundle: {workspace.Data.ContentBundle}")) {
+                    if (ImGui.MenuItem("New Bundle")) {
                         ShowBundleManagement();
                     }
                     if (ImGui.MenuItem("Create from PAK file")) {
-                        PlatformUtils.ShowFileDialog((pak) => {
-                            var reader = new PakReader();
-                            reader.AddFiles("modinfo.ini");
-                            reader.PakFilePriority = [pak[0]];
-                            var modinfo = reader.FindFiles().FirstOrDefault();
-                            var initialName = Path.GetFileNameWithoutExtension(pak[0]).Replace(".", "_");
-                            if (modinfo.stream != null) {
-                                var modData = new StreamReader(modinfo.stream).ReadToEnd().Split('\n');
-                                var nameEntry = modData.FirstOrDefault(line => line.StartsWith("name") && line.Contains('='));
-                                if (nameEntry != null) initialName = nameEntry.Split('=')[1].Trim();
-                            }
-                            AddSubwindow(new NameInputDialog(
-                                "Bundle creation",
-                                "Select name for the bundle to be created from the PAK file:\n" + pak[0],
-                                initialName,
-                                FilenameRegex(),
-                                this,
-                                (name) => workspace.CreateBundleFromPAK(name, pak[0])
-                            ));
-                        }, fileExtension: FileFilters.PakFile, allowMultiple: false);
+                        PlatformUtils.ShowFileDialog(pak =>
+                            CreateBundleFromPakFile(pak[0]),
+                            fileExtension: FileFilters.PakFile,
+                            allowMultiple: false
+                        );
                     }
                     if (ImGui.MenuItem("Create from loose file mod")) {
-                        PlatformUtils.ShowFolderDialog((folder) => {
-                            var modinfoPath = Path.Combine(folder, "modinfo.ini");
-                            var initialName = Path.GetFileName(folder);
-                            if (File.Exists(modinfoPath)) {
-                                var modData = File.ReadAllLines(modinfoPath);
-                                var nameEntry = modData.FirstOrDefault(line => line.StartsWith("name") && line.Contains('='));
-                                if (nameEntry != null) initialName = nameEntry.Split('=')[1].Trim();
-                            }
-                            AddSubwindow(new NameInputDialog(
-                                "Bundle creation",
-                                "Select name for the bundle to be created from the PAK file:\n" + folder,
-                                initialName,
-                                FilenameRegex(),
-                                this,
-                                (name) => workspace.InitializeUnlabelledBundle(name, folder)
-                            ));
+                        PlatformUtils.ShowFolderDialog(folder => {
+                            CreateBundleFromLooseFileFolder(folder);
                         });
                     }
                     ImGui.Separator();
@@ -338,6 +312,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     }
                     ImGui.EndMenu();
                 }
+                if (ImGui.MenuItem("Bundle Manager")) {
+                    ShowBundleManagement();
+                }
                 if (workspace.BundleManager.UninitializedBundleFolders.Count > 0) {
                     if (ImGui.BeginMenu("* Uninitialized bundle folders")) {
                         foreach (var item in workspace.BundleManager.UninitializedBundleFolders) {
@@ -353,17 +330,14 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                         ImGui.EndMenu();
                     }
                 }
-                if (ImGui.MenuItem("Bundle management")) {
-                    ShowBundleManagement();
-                }
-                if (workspace.CurrentBundle != null && ImGui.MenuItem("Open bundle folder")) {
-                    FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
-                }
-                if (!string.IsNullOrEmpty(workspace.Env.Config.GamePath) && ImGui.MenuItem("Open game folder")) {
-                    FileSystemUtils.ShowFileInExplorer(workspace.Env.Config.GamePath);
-                }
-                if (workspace.CurrentBundle != null && ImGui.MenuItem("Publish mod ...")) {
-                    AddUniqueSubwindow(new ModPublisherWindow(workspace));
+                if (workspace.CurrentBundle != null) {
+                    ImGui.Separator();
+                    if (ImGui.MenuItem("Open current Bundle folder")) {
+                        FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
+                    }
+                    if (ImGui.MenuItem("Publish Mod")) {
+                        AddUniqueSubwindow(new ModPublisherWindow(workspace));
+                    }
                 }
                 ImGui.EndMenu();
             }
@@ -377,9 +351,46 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             workspace.BundleManager,
             workspace.CurrentBundle?.Name,
             (path) => OpenFiles([path]),
-            (path, diff) => AddSubwindow(new JsonViewer(diff, path))
+            (path, diff) => AddSubwindow(new JsonViewer(diff, path)),
+            folder => CreateBundleFromLooseFileFolder(folder),
+            pak => CreateBundleFromPakFile(pak)
         ));
     }
+    public void CreateBundleFromLooseFileFolder(string folder)
+    {
+        var modinfoPath = Path.Combine(folder, "modinfo.ini");
+        var initialName = Path.GetFileName(folder);
+        if (File.Exists(modinfoPath)) {
+            var modData = File.ReadAllLines(modinfoPath);
+            var nameEntry = modData.FirstOrDefault(line => line.StartsWith("name") && line.Contains('='));
+            if (nameEntry != null) {
+                initialName = nameEntry.Split('=')[1].Trim();
+            }
+        }
+
+        AddSubwindow(new NameInputDialog("Bundle Creation", "Select name for the bundle to be created from the loose mod:\n" + folder,
+            initialName, FilenameRegex(), this, name => Workspace.InitializeUnlabelledBundle(name, folder)));
+    }
+    public void CreateBundleFromPakFile(string pakPath)
+    {
+        var reader = new PakReader();
+        reader.AddFiles("modinfo.ini");
+        reader.PakFilePriority = [pakPath];
+        var modinfo = reader.FindFiles().FirstOrDefault();
+        var initialName = Path.GetFileNameWithoutExtension(pakPath).Replace(".", "_");
+
+        if (modinfo.stream != null) {
+            var modData = new StreamReader(modinfo.stream).ReadToEnd().Split('\n');
+            var nameEntry = modData.FirstOrDefault(line => line.StartsWith("name") && line.Contains('='));
+            if (nameEntry != null) {
+                initialName = nameEntry.Split('=')[1].Trim();
+            }
+        }
+
+        AddSubwindow(new NameInputDialog("Bundle Creation", "Select name for the bundle to be created from the PAK file:\n" + pakPath,
+            initialName, FilenameRegex(), this, name => Workspace.CreateBundleFromPAK(name, pakPath)));
+    }
+
 
     protected virtual void OnFileOpen(Stream stream, string filename)
     {
@@ -513,13 +524,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     ImGui.EndMenu();
                 }
                 ImGui.Separator();
-                ImGui.BeginDisabled(!UndoRedo.CanUndo(this));
-                if (ImGui.MenuItem("Undo")) UndoRedo.Undo(this);
-                ImGui.EndDisabled();
-                ImGui.BeginDisabled(!UndoRedo.CanRedo(this));
-                if (ImGui.MenuItem("Redo")) UndoRedo.Redo(this);
-                ImGui.EndDisabled();
-                ImGui.Separator();
                 if (ImGui.MenuItem("Apply patches (loose file)")) {
                     ApplyContentPatches(null);
                 }
@@ -543,58 +547,16 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             ImGui.EndMenu();
         }
 
-        if (SceneManager.RootMasterScenes.Any() && ImGui.BeginMenu("Scenes")) {
-            foreach (var scene in SceneManager.RootMasterScenes) {
-                // ImGui.Bullet(); TODO scene.Modified
-                if (scene.IsActive) {
-                    ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
-                    if (ImGui.MenuItem(scene.Name)) {
-                        SceneManager.ChangeMasterScene(null);
-                    }
-                    ImGui.PopStyleColor();
-                } else {
-                    if (ImGui.MenuItem(scene.Name)) {
-                        SceneManager.ChangeMasterScene(scene);
-                        scene.Controller.Keyboard = _inputContext.Keyboards[0];
-                        scene.Controller.MoveSpeed = AppConfig.Settings.SceneView.MoveSpeed;
-                        scene.AddWidget<SceneVisibilitySettings>();
-                        scene.AddWidget<SceneCameraControls>();
-                        var data = AddUniqueSubwindow(new SceneView(Workspace, scene));
-                        data.Position = new Vector2(0, viewportOffset.Y);
-                        data.Size = new Vector2(Size.X, Size.Y - viewportOffset.Y);
-                    }
-                }
-            }
-            ImGui.EndMenu();
-        }
+        if (ImGui.BeginMenu("Edit")) {
+            ImGui.BeginDisabled(!UndoRedo.CanUndo(this));
+            if (ImGui.MenuItem("Undo")) UndoRedo.Undo(this);
+            ImGui.EndDisabled();
 
-        ShowGameSelectionMenu();
+            ImGui.BeginDisabled(!UndoRedo.CanRedo(this));
+            if (ImGui.MenuItem("Redo")) UndoRedo.Redo(this);
+            ImGui.EndDisabled();
 
-        if (ImGui.BeginMenu("Windows")) {
-            if (ImGui.MenuItem("Open New Workspace")) {
-                UI.OpenWindow(workspace);
-            }
             ImGui.Separator();
-            if (workspace != null) {
-                if (workspace.Config.Entities.Any()) {
-                    if (ImGui.MenuItem("Entities")) {
-                        AddSubwindow(new AppContentEditorWindow(workspace));
-                    }
-                }
-                if (ImGui.MenuItem("PAK File Browser")) {
-                    AddSubwindow(new PakBrowser(workspace, null));
-                }
-                if (ImGui.MenuItem("Data Search")) {
-                    AddSubwindow(new RszDataFinder());
-                }
-                if (ImGui.MenuItem("Texture Channel Packer")) {
-                    AddSubwindow(new TextureChannelPacker()).Size = new Vector2(1280, 800);
-                }
-            }
-            ImGui.EndMenu();
-        }
-
-        if (ImGui.BeginMenu("Tools")) {
             if (ImGui.MenuItem("Settings")) {
                 AddUniqueSubwindow(new SettingsWindowHandler());
             }
@@ -676,6 +638,68 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             }
             ImGui.EndMenu();
         }
+
+        if (ImGui.BeginMenu("Windows")) {
+            if (ImGui.MenuItem("Open New Workspace")) {
+                UI.OpenWindow(workspace);
+            }
+            ImGui.Separator();
+            if (workspace != null) {
+                if (ImGui.MenuItem("PAK File Browser")) {
+                    AddSubwindow(new PakBrowser(workspace, null));
+                }
+                if (ImGui.MenuItem("Bundle Manager")) {
+                    ShowBundleManagement();
+                }
+                if (workspace.Config.Entities.Any()) {
+                    if (ImGui.MenuItem("Entities")) {
+                        AddSubwindow(new AppContentEditorWindow(workspace));
+                    }
+                }
+                if (ImGui.MenuItem("Data Search")) {
+                    AddSubwindow(new RszDataFinder());
+                }
+                if (ImGui.MenuItem("Texture Channel Packer")) {
+                    AddSubwindow(new TextureChannelPacker()).Size = new Vector2(1280, 800);
+                }
+            }
+            ImGui.EndMenu();
+        }
+        ImGui.BeginDisabled();
+        ImGui.MenuItem("|##0");
+        ImGui.EndDisabled();
+
+        ShowGameSelectionMenu();
+
+        using (var _ = ImguiHelpers.Disabled(!SceneManager.RootMasterScenes.Any())) {
+            if (ImGui.BeginMenu("Scenes")) {
+                foreach (var scene in SceneManager.RootMasterScenes) {
+                    // ImGui.Bullet(); TODO scene.Modified
+                    if (scene.IsActive) {
+                        ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
+                        if (ImGui.MenuItem(scene.Name)) {
+                            SceneManager.ChangeMasterScene(null);
+                        }
+                        ImGui.PopStyleColor();
+                    } else {
+                        if (ImGui.MenuItem(scene.Name)) {
+                            SceneManager.ChangeMasterScene(scene);
+                            scene.Controller.Keyboard = _inputContext.Keyboards[0];
+                            scene.Controller.MoveSpeed = AppConfig.Settings.SceneView.MoveSpeed;
+                            scene.AddWidget<SceneVisibilitySettings>();
+                            scene.AddWidget<SceneCameraControls>();
+                            var data = AddUniqueSubwindow(new SceneView(Workspace, scene));
+                            data.Position = new Vector2(0, viewportOffset.Y);
+                            data.Size = new Vector2(Size.X, Size.Y - viewportOffset.Y);
+                        }
+                    }
+                }
+                ImGui.EndMenu();
+            }
+        }
+        ImGui.BeginDisabled();
+        ImGui.MenuItem("|##1");
+        ImGui.EndDisabled();
 
         if (ImGui.MenuItem("Support development (Ko-Fi)")) {
             FileSystemUtils.OpenURL("https://ko-fi.com/shadowcookie");
@@ -778,5 +802,5 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     }
 
     [System.Text.RegularExpressions.GeneratedRegex("^[ a-zA-Z0-9_-]+$")]
-    private static partial System.Text.RegularExpressions.Regex FilenameRegex();
+    public static partial System.Text.RegularExpressions.Regex FilenameRegex();
 }

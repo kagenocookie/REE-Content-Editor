@@ -354,6 +354,27 @@ public static class AppIcons
     public static readonly char SI_FileType_JMAP = '\ueda8';
     public static readonly char SI_FileType_SDFTEX = '\ueda9';
     public static readonly char SI_FileType_SDF = '\uedaa';
+    public static readonly char SI_GenericAdd = '\uedab';
+    public static readonly char SI_GenericDelete = '\uedac';
+    public static readonly char SI_Folder2 = '\uedad';
+    public static readonly char SI_FolderLink = '\uedae';
+    public static readonly char SI_FileSource = '\uedaf';
+    public static readonly char SI_FileChanges = '\uedb0';
+    public static readonly char SI_Bundle = '\uedb1';
+    public static readonly char SI_Copy = '\uedb2';
+    public static readonly char SI_Paste = '\uedb3';
+    public static readonly char[] SIC_FileDuplicate = { '\uedb4', '\uedb5', '\uedb6' };
+    public static readonly char[] SIC_BundleAdd = { '\uedb7', '\uedb8', '\uedb9', '\uedba' };
+    public static readonly char[] SIC_BundleRemove = { '\uedbb', '\uedbc', '\uedbd', '\uedbe' };
+    public static readonly char[] SIC_BundleDelete = { '\uedbf', '\uedc0', '\uedc1', '\uedc2' };
+    public static readonly char[] SIC_BundleContain = { '\uedc3', '\uedc4', '\uedc5' };
+    public static readonly char[] SIC_BundleSaveTo = { '\uedc6', '\uedc7', '\uedc8', '\uedc9', '\uedca' };
+    public static readonly char[] SIC_Copy = { '\uedcb', '\uedcc', '\uedcd', '\uedce', '\uedcf', '\uedd0' };
+    public static readonly char[] SIC_Paste = { '\uedd1', '\uedd2', '\uedd3', '\uedd4', '\uedd5', '\uedd6', '\uedd7', '\uedd8' };
+    public static readonly char[] SIC_BundleFromLooseFiles = { '\uedd9', '\uedda', '\ueddb', '\ueddc', '\ueddd'};
+    public static readonly char[] SIC_BundleFolder = { '\uedde', '\ueddf', '\uede0', '\uede1'};
+    public static readonly char[] SIC_BundleFolderEmpty = { '\uede2', '\uede3', '\uede4', '\uede5' };
+    public static readonly char[] SIC_BundleFromPakFile = { '\uede6', '\uede7', '\uede8', '\uede9', '\uedea' };
 
     public static string PrependIcon(this string text, object target)
     {
@@ -377,10 +398,10 @@ public static class AppIcons
     }
 
     public static char GetIcon(object target) => target switch {
-        GameObject go => string.IsNullOrEmpty(go.PrefabPath) ? GameObject : Prefab,
-        Folder scn => string.IsNullOrEmpty(scn.ScenePath) ? Folder : FolderLink,
-        PrefabEditor => Prefab,
-        SceneEditor => Folder,
+        GameObject go => string.IsNullOrEmpty(go.PrefabPath) ? SI_SceneGameObject2 : SI_FileType_PFB,
+        Folder scn => string.IsNullOrEmpty(scn.ScenePath) ? SI_Folder : SI_FolderLink,
+        PrefabEditor => SI_FileType_PFB,
+        SceneEditor => SI_FileType_SCN,
         EfxEditor => Efx,
         EFXAction => EfxAction,
         EFXEntry => EfxEntry,

@@ -97,18 +97,20 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     public void OnIMGUI()
     {
         DrawFileControls(context.Get<WindowData>());
-
+        ImGui.SameLine();
+        ImGui.Text("|");
+        ImGui.SameLine();
+        ImGui.Button($"{AppIcons.SI_FileSource}");
         if (Handle.FileSource != null) {
-            ImGui.TextColored(Colors.Faded,$"File source: {Handle.HandleType} - {Handle.FileSource} ({Handle.NativePath})");
+            ImguiHelpers.TooltipColored($"File source: {Handle.HandleType} - {Handle.FileSource} ({Handle.NativePath})", Colors.Faded);
         } else if (!string.IsNullOrEmpty(Handle.NativePath)) {
-            ImGui.TextColored(Colors.Faded, $"File source: {Handle.HandleType} ({Handle.NativePath})");
+            ImguiHelpers.TooltipColored($"File source: {Handle.HandleType} ({Handle.NativePath})", Colors.Faded);
         } else {
-            ImGui.TextColored(Colors.Faded, $"File source: {Handle.HandleType}");
+            ImguiHelpers.TooltipColored($"File source: {Handle.HandleType}", Colors.Faded);
         }
         if (ImGui.IsItemClicked()) {
             EditorWindow.CurrentWindow?.CopyToClipboard(Handle.NativePath ?? Handle.Filepath, "Path copied!");
         }
-
         DrawFileContents();
     }
 
@@ -132,30 +134,34 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                 PlatformUtils.ShowSaveFileDialog((path) => SaveTo(path, false), Handle.Filepath);
             }
             ImguiHelpers.Tooltip("Save Copy to...");
-            if (Handle.DiffHandler != null && ImguiHelpers.SameLine() && Handle.HandleType is not FileHandleType.Memory && ImGui.Button("See changes")) {
-                var diff = Handle.DiffHandler.FindDiff(Handle);
-                if (diff == null) {
-                    EditorWindow.CurrentWindow?.Overlays.ShowTooltip("No changes detected compared to the base file", 3f);
-                } else {
-                    EditorWindow.CurrentWindow?.AddSubwindow(new JsonViewer(diff, Handle.Filepath, Handle));
+            if (Handle.DiffHandler != null && ImguiHelpers.SameLine() && Handle.HandleType is not FileHandleType.Memory) {
+                if (ImGui.Button($"{AppIcons.SI_FileChanges}")) {
+                    var diff = Handle.DiffHandler.FindDiff(Handle);
+                    if (diff == null) {
+                        EditorWindow.CurrentWindow?.Overlays.ShowTooltip("No changes detected compared to the base file", 3f);
+                    } else {
+                        EditorWindow.CurrentWindow?.AddSubwindow(new JsonViewer(diff, Handle.Filepath, Handle));
+                    }
                 }
+                ImguiHelpers.Tooltip("See changes");
             }
             if (workspace.CurrentBundle != null) {
                 if (!Handle.IsInBundle(workspace, workspace.CurrentBundle)) {
                     ImGui.SameLine();
-                    if (ImGui.Button("Save to bundle")) {
+                    if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveTo, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
                         ResourcePathPicker.SaveFileToBundle(workspace, Handle, (savePath, localPath, nativePath) => {
                             return SaveTo(savePath, true, nativePath: nativePath);
                         });
                     }
+                    ImguiHelpers.Tooltip("Save to Bundle");
                 } else if (workspace.CurrentBundle.ResourceListing == null || !workspace.CurrentBundle.TryFindResourceListing(Handle.NativePath ?? "", out var resourceListing)) {
                     if (Handle.NativePath != null) {
-                        if (ImGui.Button("Store in bundle")) {
+                        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
                             workspace.CurrentBundle.ResourceListing ??= new();
                             var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle), Handle.Filepath);
                             workspace.CurrentBundle.AddResource(localPath, Handle.NativePath, Handle.Format.format.IsDefaultReplacedBundleResource());
                         }
-                        ImguiHelpers.Tooltip("File is located in the bundle folder but is not marked as part of the bundle. This will store it into the bundle json.");
+                        ImguiHelpers.Tooltip("Store in bundle\nFile is located in the bundle folder but is not marked as part of the bundle. This will store it into the bundle json.");
                     }
                 } else if (Handle.DiffHandler != null) {
                     ImGui.SameLine();
@@ -170,18 +176,17 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         }
         if (Handle.HandleType is FileHandleType.Disk or FileHandleType.Bundle && System.IO.File.Exists(Handle.Filepath)) {
             if (CanSave) ImGui.SameLine();
-            if (ImGui.Button("Show in file explorer")) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, new[] { Colors.IconSecondary, Colors.IconPrimary })) {
                 FileSystemUtils.ShowFileInExplorer(Handle.Filepath);
             }
-            if (ImGui.IsItemHovered()) {
-                ImGui.SetItemTooltip("Filepath: " + Handle.Filepath);
-            }
+            ImguiHelpers.Tooltip("Show in File Explorer\nFilepath: " + Handle.Filepath);
         }
         if (HasUnsavedChanges && IsRevertable) {
             ImGui.SameLine();
-            if (ImGui.Button("Revert")) {
+            if (ImGui.Button($"{AppIcons.SI_Reset}")) {
                 Handle.Revert(data.Context.GetWorkspace()!);
             }
+            ImguiHelpers.Tooltip("Revert");
         }
     }
 
@@ -194,7 +199,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             ImGui.CloseCurrentPopup();
         }
         ImGui.SameLine();
-        if (ImGui.Button("Paste from JSON (replace)")) {
+        if (ImGui.Button("Paste from JSON")) {
             try {
                 var wnd = EditorWindow.CurrentWindow;
                 var data = wnd?.GetClipboard();

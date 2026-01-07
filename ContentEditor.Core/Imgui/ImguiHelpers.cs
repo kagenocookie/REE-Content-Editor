@@ -511,7 +511,7 @@ public static class ImguiHelpers
 
         return changed;
     }
-    public static bool ButtonMultiColor(char[] icons, Vector4[] colors)
+    public static bool ButtonMultiColor(char[] icons, Vector4[] colors, string? ID = null)
     {
         var iconSize = ImGui.CalcTextSize(icons[0].ToString());
         var padding = ImGui.GetStyle().FramePadding;
@@ -520,7 +520,7 @@ public static class ImguiHelpers
         bool changed = false;
         bool disabled = ImGui.GetStyle().Alpha < 1.0f;
 
-        if (ImGui.Button("##ButtonMultiColor" + string.Join("", icons), size)) {
+        if (ImGui.Button("##ButtonMultiColor" + string.Join("", icons) + ID, size)) {
             changed = true;
         }
 
