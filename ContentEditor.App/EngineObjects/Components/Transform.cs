@@ -139,6 +139,12 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
         LocalRotation = LocalPosition.CreateLookAtQuaternion(target, up).ToSystem();
     }
 
+    public void ResetLocalTransform()
+    {
+        LocalPosition = new Vector3();
+        LocalRotation = Quaternion.Identity;
+    }
+
     public void CopyFrom(Transform transform)
     {
         LocalPosition = transform.LocalPosition;

@@ -113,7 +113,9 @@ public class NodeObject<TNode> : NodeObject, INodeObject<TNode>, IPathedObject
         }
         _parent = parent;
         if (parent != null) {
-            Scene = parent.Scene;
+            if (Scene != parent.Scene) {
+                ChangeScene(parent.Scene);
+            }
             if (!alreadyAddedToChildren) {
                 parent.Children.Add(Unsafe.As<TNode>(this));
             }
@@ -232,6 +234,7 @@ public class NodeObject<TNode> : NodeObject, INodeObject<TNode>, IPathedObject
     }
 
     protected virtual void DeferAction(Action action) { }
+    protected virtual void ChangeScene(Scene? newScene) { }
     protected virtual void OnParentChanged() { }
 
     INodeObject<TNode>? INodeObject<TNode>.GetParent() => _parent;
