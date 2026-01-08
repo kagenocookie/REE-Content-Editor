@@ -384,14 +384,20 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             }
             ImguiHelpers.Tooltip("Defining a custom path here may not be required if it's at least a partially supported game.\nCan also be used in case of issues with automatic downloads.");
 
-            if (AppImguiHelpers.InputFilepath("RSZ Template JSON Path", ref rszPath, FileFilters.JsonFile)) {
+            var isFullySupported = fullSupportedGames?.Contains(game.name) == true;
+            if (AppImguiHelpers.InputFilepath(isFullySupported ? "Custom RSZ JSON Path" : "RSZ Template JSON Path", ref rszPath, FileFilters.JsonFile)) {
                 config.SetGameRszJsonPath(game, rszPath);
+                WindowHandlerFactory.ResetGameTypes(game);
+                Component.ResetGameTypes(game);
             }
+            ImguiHelpers.Tooltip(isFullySupported
+                ? "The default RSZ json file is fetched automatically.\nChange this only if you know what you're doing - mainly for accessing files from older game versions"
+                : "For not yet fully supported games, you may need to manually provide the path to a valid RSZ JSON template before some files can be opened.");
             if (isCustom) {
                 ImGui.PushStyleColor(ImGuiCol.Text, Colors.Warning);
                 ImGui.TextWrapped("*This is a custom defined game. The app may need an upgrade to fully support all files, some files may not load correctly.");
                 ImGui.PopStyleColor();
-            } else if (fullSupportedGames != null && fullSupportedGames.Contains(game.name)) {
+            } else if (isFullySupported) {
                 ImGui.PushStyleColor(ImGuiCol.Text, Colors.Info);
                 ImGui.TextWrapped("*This is a fully supported game, game specific data can be fetched automatically.");
                 ImGui.PopStyleColor();
