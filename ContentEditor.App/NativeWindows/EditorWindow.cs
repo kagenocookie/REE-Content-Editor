@@ -318,6 +318,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem("Bundle Manager")) {
                     ShowBundleManagement();
                 }
+                if (ImGui.MenuItem("Bundle Load Order")) {
+                    AddUniqueSubwindow(new LoadOrderUI(workspace.BundleManager));
+                }
                 if (workspace.BundleManager.UninitializedBundleFolders.Count > 0) {
                     if (ImGui.BeginMenu("* Uninitialized bundle folders")) {
                         foreach (var item in workspace.BundleManager.UninitializedBundleFolders) {
@@ -539,9 +542,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem("Revert patches")) {
                     RevertContentPatches();
                 }
-                if (ImGui.MenuItem("Edit load orders ...")) {
-                    AddUniqueSubwindow(new LoadOrderUI(workspace.BundleManager));
-                }
             }
             ImGui.Separator();
             if (ImGui.MenuItem("Exit")) {
@@ -654,6 +654,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem("Bundle Manager")) {
                     ShowBundleManagement();
                 }
+                if (ImGui.MenuItem("Bundle Load Order")) {
+                    AddUniqueSubwindow(new LoadOrderUI(workspace.BundleManager));
+                }
                 if (workspace.Config.Entities.Any()) {
                     if (ImGui.MenuItem("Entities")) {
                         AddSubwindow(new AppContentEditorWindow(workspace));
@@ -752,7 +755,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
     }
 
-    protected void RevertContentPatches()
+    public void RevertContentPatches()
     {
         if (workspace == null) {
             Logger.Error("Select a game first!");

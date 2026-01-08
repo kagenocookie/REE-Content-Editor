@@ -1,4 +1,3 @@
-using ContentEditor.App;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -8,7 +7,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text.Json.Nodes;
 
-namespace ContentEditor.Core;
+namespace ContentEditor.App;
 
 public class BundleManagementUI : IWindowHandler
 {
@@ -80,6 +79,11 @@ public class BundleManagementUI : IWindowHandler
         }
         ImguiHelpers.Tooltip("Create Bundle from PAK File");
         ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_BundleLoadOrder}")) {
+            EditorWindow.CurrentWindow?.AddUniqueSubwindow(new LoadOrderUI(bundleManager));
+        }
+        ImguiHelpers.Tooltip("Load Order");
+        ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(bundleManager.GamePath))) {
@@ -93,6 +97,7 @@ public class BundleManagementUI : IWindowHandler
             }
             ImguiHelpers.Tooltip("Open Bundles folder in File Explorer");
         }
+
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
@@ -314,7 +319,7 @@ public class BundleManagementUI : IWindowHandler
                     }
                     ImGui.SameLine();
                     ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
-                    if (ImGui.Button($"{AppIcons.SI_GenericDelete}")) {
+                    if (ImGui.Button($"{AppIcons.SI_GenericDelete2}")) {
                         ImGui.OpenPopup("Confirm Action");
                     }
                     ImGui.PopStyleColor();
