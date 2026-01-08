@@ -41,21 +41,27 @@ public class LoadOrderUI : IWindowHandler
     }
     private void ShowBundleLoadOrderToolbar()
     {
-        if (ImGui.Button("Apply patches (loose file)")) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PatchLooseFiles, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, })) {
             EditorWindow.CurrentWindow?.ApplyContentPatches(null);
         }
+        ImguiHelpers.Tooltip("Apply patches (Loose file)");
         ImGui.SameLine();
-        if (ImGui.Button("Apply patches (PAK)")) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PatchPakFile, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, })) {
             EditorWindow.CurrentWindow?.ApplyContentPatches("pak");
         }
+        ImguiHelpers.Tooltip("Apply patches (PAK file)");
         ImGui.SameLine();
-        if (ImGui.Button("Patch to ...")) {
+        if (ImGui.Button($"{AppIcons.SI_PatchTo}")) {
             PlatformUtils.ShowFolderDialog((path) => EditorWindow.CurrentWindow?.ApplyContentPatches(path), EditorWindow.CurrentWindow?.Workspace.Env.Config.GamePath);
         }
+        ImguiHelpers.Tooltip("Patch to...");
         ImGui.SameLine();
-        if (ImGui.Button("Revert patches")) {
+        ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
+        if (ImGui.Button($"{AppIcons.SI_Reset}")) {
             EditorWindow.CurrentWindow?.RevertContentPatches();
         }
+        ImGui.PopStyleColor();
+        ImguiHelpers.Tooltip("Revert patches");
     }
     private unsafe void ShowBundleLoadOrderList()
     {

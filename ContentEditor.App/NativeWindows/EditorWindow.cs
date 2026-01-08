@@ -654,7 +654,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem("Bundle Manager")) {
                     ShowBundleManagement();
                 }
-                if (ImGui.MenuItem("Bundle Load Order")) {
+                if (ImGui.MenuItem("Load Order")) {
                     AddUniqueSubwindow(new LoadOrderUI(workspace.BundleManager));
                 }
                 if (workspace.Config.Entities.Any()) {

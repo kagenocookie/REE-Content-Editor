@@ -383,6 +383,9 @@ public static class AppIcons
     public static readonly char SI_GenericDragDropHandle = '\uedf0';
     public static readonly char SI_BundleSortUp = '\uedf1';
     public static readonly char SI_BundleLoadOrder = '\uedf2';
+    public static readonly char SI_PatchTo = '\uedf3';
+    public static readonly char[] SIC_PatchLooseFiles = { '\uedf4', '\uedf5', '\uedf6' };
+    public static readonly char[] SIC_PatchPakFile = { '\uedf8', '\uedf9', '\uedfa' };
 
     public static string PrependIcon(this string text, object target)
     {
