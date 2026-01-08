@@ -117,14 +117,15 @@ public class GizmoShapeBuilder : IDisposable
         var handleId = -1;
         if (PositionHandles(transform.WorldTransform.ToSystem(), out var newWorldPos, out var hid)) {
             handleId = hid;
-            var parentMatr = transform.GameObject.Parent?.WorldTransform ?? Matrix4X4<float>.Identity;
-            var newLocalPos = Vector3.Transform(newWorldPos, parentMatr.ToSystem());
+            var parentMat = transform.GameObject.Parent?.WorldTransform.ToSystem() ?? Matrix4x4.Identity;
+            Matrix4x4.Invert(parentMat, out parentMat);
+            var newLocalPos = Vector3.Transform(newWorldPos, parentMat);
             UndoRedo.RecordCallbackSetter(null, transform, transform.LocalPosition, newLocalPos, (t, v) => t.LocalPosition = v, $"{transform.GetHashCode()}p");
         }
         if (RotationHandles(transform.WorldTransform.ToSystem(), out var newQuat, out hid)) {
             handleId = hid;
-            var parentMatr = transform.GameObject.Parent?.WorldTransform.ToSystem() ?? Matrix4x4.Identity;
-            var inverse = Quaternion.Inverse(Quaternion.CreateFromRotationMatrix(parentMatr));
+            var parentMat = transform.GameObject.Parent?.WorldTransform.ToSystem() ?? Matrix4x4.Identity;
+            var inverse = Quaternion.Inverse(Quaternion.CreateFromRotationMatrix(parentMat));
             var newRotation = inverse * newQuat;
             UndoRedo.RecordCallbackSetter(null, transform, transform.LocalRotation, newRotation, (t, v) => t.LocalRotation = v, $"{transform.GetHashCode()}r");
         }

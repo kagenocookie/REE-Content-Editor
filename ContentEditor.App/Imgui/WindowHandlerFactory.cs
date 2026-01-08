@@ -145,6 +145,11 @@ public static partial class WindowHandlerFactory
         instantiators[typeof(T)] = instantiator;
     }
 
+    public static void ResetGameTypes(GameIdentifier game)
+    {
+        setupGames.Remove(game);
+    }
+
     public static void SetupTypesForGame(GameIdentifier game, Workspace env)
     {
         if (!setupGames.Add(game)) return;

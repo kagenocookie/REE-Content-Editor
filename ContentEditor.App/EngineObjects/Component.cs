@@ -58,6 +58,14 @@ public class Component(GameObject gameObject, RszInstance data)
     private static readonly Dictionary<RszClass, Func<GameObject, RszInstance, Component>> componentTypes = new();
     private static readonly HashSet<(GameIdentifier, Assembly)> setupGames = new();
 
+    public static void ResetGameTypes(GameIdentifier game)
+    {
+        var gg = setupGames.ToList();
+        foreach (var g in gg) {
+            if (g.Item1 == game) setupGames.Remove(g);
+        }
+    }
+
     public static void SetupTypesForGame(GameIdentifier game, Assembly assembly, Workspace env)
     {
         if (!setupGames.Add((game, assembly))) return;
