@@ -26,6 +26,8 @@ public static class FileFilters
     public static readonly FileFilter[] MeshFile = [new FileFilter("FBX", "fbx"), new FileFilter("GLTF", "gltf"), ..GlbFile];
     public static readonly FileFilter[] MeshFilesAll = [new FileFilter("Any mesh file", "fbx", "glb", "gltf"), ..MeshFile];
 
+    public static readonly FileFilter[] CsvJsonFile = [new FileFilter("CSV", "csv"), new FileFilter("JSON", "json")];
+    public static readonly FileFilter[] CsvJsonFileAll = [new FileFilter("Supported message formats", "csv", "json"), new FileFilter("CSV", "csv"), new FileFilter("JSON", "json")];
     public static readonly FileFilter[] DDSFile = [new FileFilter("DDS", "dds")];
     public static readonly FileFilter[] TextureFile = [new FileFilter("TGA", "tga"), new FileFilter("PNG", "png"), ..DDSFile];
     public static readonly FileFilter[] TextureFilesAll = [new FileFilter("Supported images", "tga", "png", "dds"), ..TextureFile];
