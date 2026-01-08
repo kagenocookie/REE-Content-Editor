@@ -1,6 +1,9 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
+using nietras.SeparatedValues;
 using ReeLib;
 using ReeLib.Msg;
 
@@ -59,6 +62,189 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
 
         return false;
     }
+
+    protected override void DrawFileControls(WindowData data)
+    {
+        base.DrawFileControls(data);
+        ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_GenericExport}")) {
+            PlatformUtils.ShowSaveFileDialog((path) => {
+                try {
+                    if (Path.GetExtension(path).Equals(".json", StringComparison.InvariantCultureIgnoreCase)) {
+                        ExportToJson(path);
+                    } else {
+                        ExportToCsv(path);
+                    }
+                } catch (Exception e) {
+                    Logger.Error("Export failed: " + e.Message);
+                }
+            }, Handle.Filename.ToString() + ".csv", FileFilters.CsvJsonFile);
+        }
+        ImguiHelpers.Tooltip("Export to file");
+        ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_GenericImport}")) {
+            PlatformUtils.ShowFileDialog((files) => {
+                try {
+                    if (Path.GetExtension(files[0]).Equals(".json", StringComparison.InvariantCultureIgnoreCase)) {
+                        ImportFromJson(files[0]);
+                    } else {
+                        ImportFromCsv(files[0]);
+                    }
+                    context.ClearChildren();
+                    Handle.Modified = true;
+                } catch (Exception e) {
+                    Logger.Error("Import failed: " + e.Message);
+                }
+            }, null, FileFilters.CsvJsonFileAll);
+        }
+        ImguiHelpers.Tooltip("Import from file");
+    }
+
+    private void ExportToJson(string path)
+    {
+        var list = new List<JsonNode>();
+        foreach (var entry in File.Entries) {
+            list.Add(new MessageData(entry, null!, null!).ToJson());
+        }
+        using var fs = System.IO.File.Create(path);
+        JsonSerializer.Serialize(fs, list, JsonConfig.jsonOptions);
+    }
+    private void ExportToCsv(string path)
+    {
+        using var writer = Sep.New(';').Writer(o => o with { Escape = true }).ToFile(path);
+        HashSet<Language> langSet = new();
+        foreach (var entry in File.Entries) {
+            for (int i = 0; i < entry.Strings.Length; ++i) {
+                if (string.IsNullOrEmpty(entry.Strings[i])) continue;
+
+                langSet.Add((Language)i);
+            }
+        }
+        var langs = langSet.Order().ToList();
+
+        var langCols = new Dictionary<Language, int>();
+        var attrCols = new Dictionary<int, int>();
+        writer.Header.Add(["GUID", "Name"]);
+        for (int i = 0; i < langs.Count; i++) {
+            Language lang = langs[i];
+            langCols[lang] = 2 + i;
+            writer.Header.Add(lang.ToString());
+        }
+        for (int i = 0; i < File.AttributeItems.Count; i++) {
+            var attr = File.AttributeItems[i];
+            attrCols[i] = 2 + langCols.Count + i;
+            if (string.IsNullOrEmpty(attr.Name)) {
+                writer.Header.Add($"<{i}>");
+            } else {
+                writer.Header.Add($"<{attr.Name}>");
+            }
+        }
+
+        foreach (var entry in File.Entries) {
+            using var row = writer.NewRow();
+            row[0].Set(entry.Guid.ToString());
+            row[1].Set(entry.Name);
+            foreach (var lang in langs) {
+                row[langCols[lang]].Set(entry.GetMessage(lang));
+            }
+            for (int i = 0; i < entry.AttributeItems.Count; i++) {
+                var attr = entry.AttributeItems[i];
+                var val = entry.AttributeValues?[i] ?? "";
+                row[attrCols[i]].Set(val.ToString());
+            }
+        }
+    }
+
+    private void ImportFromJson(string path)
+    {
+        using var fs = System.IO.File.OpenRead(path);
+        var list = JsonSerializer.Deserialize<List<JsonObject>>(fs, JsonConfig.jsonOptions) ?? new();
+        foreach (var node in list) {
+            var item = MessageData.FromJson(node);
+            var entry = File.FindEntryByKey(item.MessageKey);
+            if (entry == null) {
+                entry = File.AddNewEntry(item.MessageKey, item.Guid == Guid.Empty ? Guid.NewGuid() : item.Guid);
+            }
+            item.MessagesToEntry(entry);
+        }
+    }
+
+    private void ImportFromCsv(string path)
+    {
+        using var reader = Sep.Reader(o => o with { Unescape = true }).FromFile(path);
+
+        var langCols = new Dictionary<int, Language>();
+        var attrCols = new Dictionary<int, int>();
+        if (!reader.HasHeader) {
+            Logger.Error("No header!");
+            return;
+        }
+        for (int i = 2; i < reader.Header.ColNames.Count; i++) {
+            var col = reader.Header.ColNames[i];
+            if (col.StartsWith('<')) {
+                // attr
+                var name = col.Replace("<", "").Replace(">", "");
+                if (int.TryParse(name, out var numAttr)) {
+                    attrCols[i] = numAttr;
+                } else {
+                    var index = File.AttributeItems.FindIndex(attr => attr.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+                    if (index == -1) {
+                        Logger.Error("Unknown attribute " + name);
+                        continue;
+                    }
+
+                    attrCols[i] = index;
+                }
+            } else {
+                // lang
+                if (Enum.TryParse<Language>(col, true, out var lang)) {
+                    langCols[i] = lang;
+                } else {
+                    Logger.Error("Unknown column name or language " + col);
+                }
+            }
+        }
+        if (langCols.Count == 0) {
+            Logger.Error("No languages found in imported CSV!");
+            return;
+        }
+
+        foreach (var row in reader) {
+            _ = Guid.TryParse(row[0].Span, out var guid);
+            var name = row[1].Span.ToString();
+            var entry = File.FindEntryByKey(name) ?? File.AddNewEntry(name);
+
+            foreach (var (langCol, lang) in langCols) {
+                entry.Strings[(int)lang] = row[langCol].ToString();
+            }
+
+            foreach (var (attrCol, attr) in attrCols) {
+                var value = row[attrCol].ToString();
+                var attrInfo = File.AttributeItems[attr];
+                entry.AttributeValues ??= new object[File.AttributeItems.Count];
+                switch (attrInfo.ValueType) {
+                    case AttributeValueType.String:
+                        entry.AttributeValues[attr] = value;
+                        break;
+                    case AttributeValueType.Double:
+                        if (double.TryParse(value, out var dd)) {
+                            entry.AttributeValues[attr] = dd;
+                        } else {
+                            entry.AttributeValues[attr] ??= 0.0;
+                        }
+                        break;
+                    case AttributeValueType.Long:
+                        if (long.TryParse(value, out var ll)) {
+                            entry.AttributeValues[attr] = ll;
+                        } else {
+                            entry.AttributeValues[attr] ??= 0L;
+                        }
+                        break;
+                }
+            }
+        }
+    }
+
 
     protected override void DrawFileContents()
     {

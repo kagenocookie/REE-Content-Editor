@@ -16,7 +16,7 @@ public static class PlatformUtils
                 .SelectFile();
             if (fileExtension != null) {
                 foreach (var (name, exts) in fileExtension) {
-                    selectFileDialog.AddFilter(name, string.Join(", ", exts));
+                    selectFileDialog.AddFilter(name, string.Join(",", exts));
                 }
             }
             if (allowMultiple) selectFileDialog.AllowMultiple();

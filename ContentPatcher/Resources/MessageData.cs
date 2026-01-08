@@ -25,12 +25,18 @@ public class MessageData : IContentResource
                 Set((Language)i, str);
             }
         }
+        for (int i = 0; i < entry.AttributeValues?.Length; i++) {
+            var value = entry.AttributeValues[i].ToString();
+            var name = entry.AttributeItems[i].Name;
+            Attributes[string.IsNullOrEmpty(name) ? i.ToString() : name] = value ?? "";
+        }
         ResourceIdentifier = resourceIdentifier;
     }
 
     public Guid Guid { get; set; }
     public required string MessageKey { get; set; } = string.Empty;
     public Dictionary<string, string> Messages { get; set; } = new((int)Language.Max);
+    public Dictionary<string, string> Attributes { get; set; } = new();
 
     public required string ResourceIdentifier { get; set; }
 
@@ -56,15 +62,19 @@ public class MessageData : IContentResource
     public static MessageData FromJson(string json)
     {
         var obj = JsonSerializer.Deserialize<JsonObject>(json);
+        return FromJson(obj);
+    }
 
-        var msg = new MessageData() {
+    public static MessageData FromJson(JsonObject? obj)
+    {
+        return new MessageData() {
             FilePath = "",
             ResourceIdentifier = "",
             MessageKey = obj?[nameof(MessageKey)]?.AsValue()?.GetValue<string>() ?? "",
             Guid = obj?[nameof(Guid)]?.AsValue()?.GetValue<string>() is string str && Guid.TryParse(str, out var gg) ? gg : Guid.NewGuid(),
             Messages = obj?[nameof(Messages)].Deserialize<Dictionary<string, string>>() ?? new(),
+            Attributes = obj?[nameof(Attributes)].Deserialize<Dictionary<string, string>>() ?? new(),
         };
-        return msg;
     }
 
     public void MessagesToEntry(MessageEntry entry)
@@ -72,6 +82,27 @@ public class MessageData : IContentResource
         foreach (var msg in Messages) {
             var index = Enum.Parse<Language>(msg.Key);
             entry.Strings[(int)index] = msg.Value;
+        }
+        foreach (var attr in Attributes) {
+            if (!int.TryParse(attr.Key, out var index)) {
+                index = entry.AttributeItems.FindIndex(it => it.Name == attr.Key);
+            }
+            if (index == -1 || index >= entry.AttributeItems.Count) {
+                continue;
+            }
+
+            entry.AttributeValues ??= new object[entry.AttributeItems.Count];
+            switch (entry.AttributeItems[index].ValueType) {
+                case AttributeValueType.String:
+                    entry.AttributeValues[index] = attr.Value;
+                    break;
+                case AttributeValueType.Long:
+                    entry.AttributeValues[index] = long.TryParse(attr.Value, out var ll) ? ll : 0L;
+                    break;
+                case AttributeValueType.Double:
+                    entry.AttributeValues[index] = double.TryParse(attr.Value, out var dd) ? dd : 0.0;
+                    break;
+            }
         }
     }
 
@@ -82,7 +113,7 @@ public class MessageData : IContentResource
         ?? $"MessageData: {MessageKey}"
         ?? "MessageData";
 
-    public JsonNode ToJson() => JsonSerializer.SerializeToNode(new { MessageKey, Guid, Messages }, JsonConfig.jsonOptions)!;
+    public JsonNode ToJson() => JsonSerializer.SerializeToNode(new { MessageKey, Guid, Messages, Attributes }, JsonConfig.jsonOptions)!;
     public JsonNode ToJson(Workspace env) => ToJson();
 }
 
