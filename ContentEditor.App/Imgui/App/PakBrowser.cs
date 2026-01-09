@@ -175,9 +175,10 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             }
             // TODO handle unknowns properly
         }
-        if (ImGui.Button($"{AppIcons.SI_GenericInfo} PAK Info")) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_InfoPAK, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.Info} )) {
             ImGui.OpenPopup("PAKInfoPopup");
         }
+        ImguiHelpers.Tooltip("PAK Info");
         if (ImGui.BeginPopup("PAKInfoPopup")) {
             ImGui.Text("Total File Count: " + reader.MatchedEntryCount);
             ImGui.SameLine();
@@ -200,6 +201,8 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImGui.PopStyleColor();
             ImguiHelpers.TooltipColored("Invalidated PAK entries have been detected (most likely from Fluffy Mod Manager).\nYou may be unable to open some files.", Colors.Warning);
         }
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_FileOpenPreview}", ref isFilePreviewEnabled, Colors.IconActive);
         ImguiHelpers.Tooltip("Toggle File Preview");

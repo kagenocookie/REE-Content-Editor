@@ -34,13 +34,16 @@ public class LoadOrderUI : IWindowHandler
             bundleManager.LoadDataBundles();
         }
         ShowBundleLoadOrderToolbar();
-        ImGui.Spacing();
         ImGui.SeparatorText("Load Order");
-        ImGui.Spacing();
         ShowBundleLoadOrderList();
     }
     private void ShowBundleLoadOrderToolbar()
     {
+        ImguiHelpers.ButtonMultiColor(AppIcons.SIC_InfoBundle, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.Info });
+        ImguiHelpers.Tooltip($"Total Bundles: {bundleManager.AllBundles.Count} | Active Bundles: {bundleManager.ActiveBundles.Count}");
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator();
+        ImGui.SameLine();
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PatchLooseFiles, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, })) {
             EditorWindow.CurrentWindow?.ApplyContentPatches(null);
         }

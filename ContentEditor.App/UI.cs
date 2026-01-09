@@ -386,6 +386,8 @@ public static class AppIcons
     public static readonly char SI_PatchTo = '\uedf3';
     public static readonly char[] SIC_PatchLooseFiles = { '\uedf4', '\uedf5', '\uedf6' };
     public static readonly char[] SIC_PatchPakFile = { '\uedf8', '\uedf9', '\uedfa' };
+    public static readonly char[] SIC_InfoPAK = { '\uedfb', '\uedfc', '\uedfd' };
+    public static readonly char[] SIC_InfoBundle = { '\uedfe', '\uedff', '\uee00', '\uee01' };
 
     public static string PrependIcon(this string text, object target)
     {
