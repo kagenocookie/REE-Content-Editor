@@ -15,7 +15,12 @@ public abstract class RenderableComponent(GameObject gameObject, RszInstance dat
     private AABB _worldSpaceBounds = AABB.Invalid;
     public AABB WorldSpaceBounds
     {
-        get => IsStatic && !_worldSpaceBounds.IsInvalid ? _worldSpaceBounds : RecomputeWorldAABB();
+        get {
+            if (IsStatic && Transform.IsWorldTransformUpToDate && !_worldSpaceBounds.IsInvalid) {
+                return _worldSpaceBounds;
+            }
+            return RecomputeWorldAABB();
+        }
     }
 
     internal AABB RecomputeWorldAABB()

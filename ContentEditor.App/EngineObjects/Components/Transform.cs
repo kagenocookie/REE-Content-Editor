@@ -61,6 +61,7 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
 
     private Matrix4X4<float> _cachedWorldTransform = Matrix4X4<float>.Identity;
     private bool _worldTransformValid;
+    public bool IsWorldTransformUpToDate => _worldTransformValid;
     public ref readonly Matrix4X4<float> WorldTransform
     {
         get {
