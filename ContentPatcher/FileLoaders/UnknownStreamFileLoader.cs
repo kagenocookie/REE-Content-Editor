@@ -12,6 +12,8 @@ public class UnknownStreamFileLoader : IFileLoader
         return true;
     }
 
+    public IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle) => null;
+
     public IResourceFilePatcher? CreateDiffHandler() => null;
 
     public IResourceFile Load(ContentWorkspace workspace, FileHandle handle)

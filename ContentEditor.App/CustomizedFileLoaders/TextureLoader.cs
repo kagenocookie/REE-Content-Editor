@@ -32,6 +32,8 @@ public class TextureLoader : IFileLoader
         return new BaseFileResource<TexFile>(tex);
     }
 
+    public IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle) => null;
+
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
         var res = handle.GetResource<BaseFileResource<TexFile>>();

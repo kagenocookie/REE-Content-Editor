@@ -23,6 +23,13 @@ public class ScnFileLoader : IFileLoader, IFileHandleContentProvider<ScnFile>
         return new BaseFileResource<ScnFile>(file);
     }
 
+    public IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle)
+    {
+        var file = new ScnFile(workspace.Env.RszFileOption, new FileHandler(handle.Stream, handle.Filepath));
+        file.Write();
+        return new BaseFileResource<ScnFile>(file);
+    }
+
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
         var file = handle.GetFile<ScnFile>();

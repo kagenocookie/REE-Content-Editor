@@ -29,6 +29,13 @@ public class PrefabLoader : IFileLoader,
         return new Prefab(handle, file);
     }
 
+    public IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle)
+    {
+        var file = new PfbFile(workspace.Env.RszFileOption, new FileHandler(handle.Stream, handle.Filepath));
+        file.Write();
+        return new Prefab(handle, file);
+    }
+
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
         var prefab = handle.GetResource<Prefab>();

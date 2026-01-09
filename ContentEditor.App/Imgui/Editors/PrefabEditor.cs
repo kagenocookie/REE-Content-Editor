@@ -59,10 +59,12 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
             if (!MainLoop.IsMainThread) {
                 window.InvokeFromUIThread(() => {
                     window!.SceneManager.UnloadScene(scene);
+                    Reset();
                     scene = LoadScene();
                 });
             } else {
                 window!.SceneManager.UnloadScene(scene);
+                Reset();
                 scene = LoadScene();
             }
         }

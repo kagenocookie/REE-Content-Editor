@@ -61,6 +61,13 @@ public class DefaultFileLoader<TFileType> : IFileLoader, IFileHandleContentProvi
         return new BaseFileResource<TFileType>(file);
     }
 
+    public IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle)
+    {
+        var file = GetFileConstructor().Invoke(workspace, new FileHandler(handle.Stream, handle.Filepath));
+        file.Write();
+        return new BaseFileResource<TFileType>(file);
+    }
+
     public bool CanHandleFile(string filepath, REFileFormat format) => format.format == supportedFormat;
 
     public TFileType GetFile(FileHandle handle) => ((BaseFileResource<TFileType>)handle.Resource).File;

@@ -65,14 +65,16 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
     {
         base.OnFileChanged();
         if (scene != null) {
-            var window = context.GetNativeWindow();
+            var window = context.GetNativeWindow()!;
             if (!MainLoop.IsMainThread) {
-                window!.InvokeFromUIThread(() => {
+                window.InvokeFromUIThread(() => {
                     window.SceneManager.UnloadScene(scene);
+                    Reset();
                     scene = LoadScene();
                 });
             } else {
-                window!.SceneManager.UnloadScene(scene);
+                window.SceneManager.UnloadScene(scene);
+                Reset();
                 scene = LoadScene();
             }
         }

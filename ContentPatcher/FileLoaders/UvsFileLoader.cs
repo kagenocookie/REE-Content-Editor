@@ -22,6 +22,13 @@ public class UvsFileLoader : IFileLoader, IFileHandleContentProvider<UvsFile>
         return new BaseFileResource<UvsFile>(file);
     }
 
+    public IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle)
+    {
+        var file = new UvsFile(new FileHandler(handle.Stream, handle.Filepath));
+        file.Write();
+        return new BaseFileResource<UvsFile>(file);
+    }
+
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
         var file = handle.GetFile<UvsFile>();

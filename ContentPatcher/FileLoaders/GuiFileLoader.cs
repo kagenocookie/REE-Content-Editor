@@ -17,6 +17,13 @@ public class GuiFileLoader : IFileLoader, IFileHandleContentProvider<GuiFile>
         return new BaseFileResource<GuiFile>(file);
     }
 
+    public IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle)
+    {
+        var file = new GuiFile(new FileHandler(handle.Stream, handle.Filepath));
+        file.Write();
+        return new BaseFileResource<GuiFile>(file);
+    }
+
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
         var file = handle.GetFile<GuiFile>();

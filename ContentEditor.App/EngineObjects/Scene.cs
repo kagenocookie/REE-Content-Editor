@@ -93,7 +93,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         if (parentScene == null) {
             Root = new SceneRoot(this);
             Type = SceneType.Main;
-            renderContext.ClearColor = EditorWindow.CurrentWindow?.ClearColor ?? new ReeLib.via.Color();
+            renderContext.ClearColor = AppConfig.Instance.BackgroundColor.Get();
         } else {
             Root = parentScene.Root;
             Type = SceneType.Sub;

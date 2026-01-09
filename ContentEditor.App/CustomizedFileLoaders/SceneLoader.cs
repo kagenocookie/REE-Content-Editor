@@ -27,6 +27,13 @@ public class SceneLoader : IFileLoader,
         return new RawScene(handle, file);
     }
 
+    public IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle)
+    {
+        var file = new ScnFile(workspace.Env.RszFileOption, new FileHandler(handle.Stream, handle.Filepath));
+        file.Write();
+        return new RawScene(handle, file);
+    }
+
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
         var RawScene = handle.GetResource<RawScene>();

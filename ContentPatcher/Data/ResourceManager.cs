@@ -905,6 +905,40 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         }
         return null;
     }
+
+    public FileHandle? CreateNewFile(KnownFileFormats format)
+    {
+        var ext = workspace.Env.GetFileExtensionsForFormat(format).FirstOrDefault();
+        if (ext == null) {
+            Logger.Error($"Unable to create new {format} file");
+            return null;
+        }
+
+        string filename = $"{format}_{Random.Shared.Next().ToString("X")}.{ext}";
+        if (workspace.Env.TryGetFileExtensionVersion(ext, out var version)) {
+            filename += "." + version;
+        }
+        var fmt = new REFileFormat(format, version);
+
+        var loader = GetLoaderForFile(filename, fmt);
+        if (loader == null) {
+            Logger.Error($"No loader available for {format} file .{ext}.{version}");
+            return null;
+        }
+
+        var handle = CreateRawStreamFileHandle(filename, null, new MemoryStream());
+        handle.Loader = loader;
+        var newFileResource = loader.CreateNewFile(workspace, handle);
+        if (newFileResource == null) {
+            return null;
+        }
+
+        openFiles[filename] = handle;
+        handle.Resource = newFileResource;
+        handle.DiffHandler = loader.CreateDiffHandler();
+        return handle;
+    }
+
     private FileHandle? CreateFileHandleInternal(string filepath, string? nativePath, Stream stream, bool allowDisposeStream = true)
     {
         var format = PathUtils.ParseFileFormat(filepath);

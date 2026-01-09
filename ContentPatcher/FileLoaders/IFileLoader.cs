@@ -24,6 +24,10 @@ public interface IFileLoader
     /// Create a partial diff handler for files supported by this file loader. Can return null if this is not supported.
     /// </summary>
     IResourceFilePatcher? CreateDiffHandler();
+    /// <summary>
+    /// Create a fresh new instance of the requested file.
+    /// </summary>
+    IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle);
 }
 
 public interface IFileHandleContentProvider<TFileType> where TFileType : class

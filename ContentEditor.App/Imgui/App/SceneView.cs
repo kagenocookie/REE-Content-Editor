@@ -130,9 +130,7 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
         var canReopenScene = !string.IsNullOrEmpty(Scene.InternalPath) || File.Exists(Scene.Name);
         if (canReopenScene && ImGui.BeginMenu("File")) {
             if (ImGui.MenuItem("Re-Open Scene Editor")) {
-                EditorWindow.CurrentWindow?.OpenFiles([
-                    File.Exists(Scene.Name) ? Scene.Name : Scene.InternalPath
-                ]);
+                EditorWindow.CurrentWindow?.OpenSceneFileEditor(Scene);
             }
             ImGui.EndMenu();
         }

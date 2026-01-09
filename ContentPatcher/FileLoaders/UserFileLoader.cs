@@ -33,6 +33,8 @@ public class UserFileLoader : IFileLoader, IFileHandleContentProvider<UserFile>
         file.RebuildInfoTable();
         return file.SaveOrWriteTo(handle, outputPath);
     }
+
+    public IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle) => null;
 }
 
 public sealed class UserFilePatcher : RszFilePatcherBase, IDisposable

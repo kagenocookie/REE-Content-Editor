@@ -412,6 +412,27 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         AddFileEditor(file);
     }
 
+    public void OpenSceneFileEditor(Scene scene)
+    {
+        if (File.Exists(scene.Name)) {
+            OpenFiles([scene.Name]);
+            return;
+        }
+        if (workspace == null) return;
+
+        if (!string.IsNullOrEmpty(scene.InternalPath)) {
+            if (workspace.ResourceManager.TryGetOrLoadFile(scene.InternalPath, out var file)) {
+                file.Stream.Seek(0, SeekOrigin.Begin);
+                AddFileEditor(file);
+            } else {
+                file = workspace.ResourceManager.GetOpenFiles().FirstOrDefault(ff => ff.InternalPath == scene.InternalPath);
+                if (file != null) {
+                    AddFileEditor(file);
+                }
+            }
+        }
+    }
+
     protected void ShowMainMenuBar()
     {
         ImGui.BeginMainMenuBar();
@@ -672,31 +693,35 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
         ShowGameSelectionMenu();
 
-        using (var _ = ImguiHelpers.Disabled(!SceneManager.RootMasterScenes.Any())) {
-            if (ImGui.BeginMenu("Scenes")) {
-                foreach (var scene in SceneManager.RootMasterScenes) {
-                    // ImGui.Bullet(); TODO scene.Modified
-                    if (scene.IsActive) {
-                        ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
-                        if (ImGui.MenuItem(scene.Name)) {
-                            SceneManager.ChangeMasterScene(null);
-                        }
-                        ImGui.PopStyleColor();
-                    } else {
-                        if (ImGui.MenuItem(scene.Name)) {
-                            SceneManager.ChangeMasterScene(scene);
-                            scene.Controller.Keyboard = _inputContext.Keyboards[0];
-                            scene.Controller.MoveSpeed = AppConfig.Settings.SceneView.MoveSpeed;
-                            scene.AddWidget<SceneVisibilitySettings>();
-                            scene.AddWidget<SceneCameraControls>();
-                            var data = AddUniqueSubwindow(new SceneView(Workspace, scene));
-                            data.Position = new Vector2(0, viewportOffset.Y);
-                            data.Size = new Vector2(Size.X, Size.Y - viewportOffset.Y);
-                        }
+        if (ImGui.BeginMenu("Scenes")) {
+            if (ImGui.Selectable($"{AppIcons.SI_GenericAdd} New scene")) {
+                var file = Workspace.ResourceManager.CreateNewFile(KnownFileFormats.Scene);
+                if (file != null) {
+                    var rawScene = file.GetCustomContent<RawScene>();
+                    var root = rawScene?.GetSharedInstance(Workspace.Env);
+                    var scene = SceneManager.CreateScene(file, true, null, root);
+                    EditorWindow.CurrentWindow?.AddFileEditor(file);
+                    SceneManager.ChangeMasterScene(scene);
+                    SetupSceneRender(scene);
+                }
+            }
+            if (SceneManager.RootMasterScenes.Any()) ImGui.Separator();
+            foreach (var scene in SceneManager.RootMasterScenes) {
+                // ImGui.Bullet(); TODO scene.Modified
+                if (scene.IsActive) {
+                    ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
+                    if (ImGui.MenuItem(scene.Name)) {
+                        SceneManager.ChangeMasterScene(null);
+                    }
+                    ImGui.PopStyleColor();
+                } else {
+                    if (ImGui.MenuItem(scene.Name)) {
+                        SceneManager.ChangeMasterScene(scene);
+                        SetupSceneRender(scene);
                     }
                 }
-                ImGui.EndMenu();
             }
+            ImGui.EndMenu();
         }
         ImGui.Separator();
 
@@ -709,6 +734,17 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
 
         ImGui.EndMainMenuBar();
+    }
+
+    private void SetupSceneRender(Scene scene)
+    {
+        scene.Controller.Keyboard = _inputContext.Keyboards[0];
+        scene.Controller.MoveSpeed = AppConfig.Settings.SceneView.MoveSpeed;
+        scene.AddWidget<SceneVisibilitySettings>();
+        scene.AddWidget<SceneCameraControls>();
+        var data = AddUniqueSubwindow(new SceneView(Workspace, scene));
+        data.Position = new Vector2(0, viewportOffset.Y);
+        data.Size = new Vector2(Size.X, Size.Y - viewportOffset.Y);
     }
 
     protected override void OnIMGUI()

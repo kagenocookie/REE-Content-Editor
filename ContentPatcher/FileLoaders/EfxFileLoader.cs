@@ -19,6 +19,13 @@ public class EfxFileLoader : IFileLoader, IFileHandleContentProvider<EfxFile>
         return new BaseFileResource<EfxFile>(file);
     }
 
+    public IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle)
+    {
+        var file = new EfxFile(new FileHandler(handle.Stream, handle.Filepath));
+        file.Write();
+        return new BaseFileResource<EfxFile>(file);
+    }
+
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
         var file = handle.GetFile<EfxFile>();

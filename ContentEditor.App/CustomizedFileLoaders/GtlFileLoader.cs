@@ -46,6 +46,8 @@ public class GtlFileLoader : IFileLoader, IFileHandleContentProvider<Mesh>
         return new GroundTerrainResourceFile(handle, file);
     }
 
+    public IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle) => null;
+
     public Mesh GetFile(FileHandle handle)
     {
         var res = handle.GetResource<GroundTerrainResourceFile>();

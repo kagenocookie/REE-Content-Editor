@@ -22,6 +22,13 @@ public class PfbFileLoader : IFileLoader, IFileHandleContentProvider<PfbFile>
         return new BaseFileResource<PfbFile>(file);
     }
 
+    public IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle)
+    {
+        var file = new PfbFile(workspace.Env.RszFileOption, new FileHandler(handle.Stream, handle.Filepath));
+        file.Write();
+        return new BaseFileResource<PfbFile>(file);
+    }
+
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
         var file = handle.GetFile<PfbFile>();

@@ -43,6 +43,15 @@ public class MaterialGroupLoader : IFileLoader,
         return new AssimpMaterialResource(mdf, scene);
     }
 
+    public IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle)
+    {
+        var file = new MdfFile(new FileHandler(handle.Stream, handle.Filepath));
+        var scene = new Assimp.Scene();
+        file.Write();
+        file.FileHandler.Seek(0);
+        return Load(workspace, handle);
+    }
+
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);

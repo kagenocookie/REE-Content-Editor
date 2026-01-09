@@ -105,6 +105,8 @@ public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<Motlis
         }
     }
 
+    public IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle) => null;
+
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
         var mesh = handle.GetResource<CommonMeshResource>();

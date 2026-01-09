@@ -17,6 +17,13 @@ public class McolFileLoader : IFileLoader, IFileHandleContentProvider<McolFile>
         return new BaseFileResource<McolFile>(file);
     }
 
+    public IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle)
+    {
+        var file = new McolFile(new FileHandler(handle.Stream, handle.Filepath));
+        file.Write();
+        return new BaseFileResource<McolFile>(file);
+    }
+
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
         var file = handle.GetFile<McolFile>();

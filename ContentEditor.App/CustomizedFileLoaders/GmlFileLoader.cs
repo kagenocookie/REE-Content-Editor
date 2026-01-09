@@ -45,6 +45,8 @@ public class GmlFileLoader : IFileLoader, IFileHandleContentProvider<CommonMeshR
         return new GroundMaterialResourceFile(handle, file, meshdata);
     }
 
+    public IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle) => null;
+
     public CommonMeshResource GetFile(FileHandle handle)
     {
         return handle.GetResource<GroundMaterialResourceFile>().Mesh;
