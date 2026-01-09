@@ -1,11 +1,12 @@
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
+using System.Reflection.Metadata;
 
 namespace ContentEditor.App;
 
@@ -222,6 +223,9 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         ImguiHelpers.AlignElementRight((ImGui.CalcTextSize($"{AppIcons.SI_ViewGridSmall}").X + ImGui.GetStyle().FramePadding.X * 2) * 2 + ImGui.GetStyle().ItemSpacing.X);
         ImguiHelpers.ToggleButton($"{AppIcons.SI_Bookmarks}", ref isShowBookmarks, Colors.IconActive);
         ImguiHelpers.Tooltip("Bookmarks");
+        if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_PakBrowser_OpenBookmarks.Get().IsPressed()) {
+            isShowBookmarks = !isShowBookmarks;
+        }
         ImGui.SameLine();
         if (ImGui.Button(DisplayMode == FileDisplayMode.Grid ? $"{AppIcons.SI_ViewGridSmall}" : $"{AppIcons.SI_ViewList}")) {
             AppConfig.Instance.PakDisplayMode = DisplayMode = DisplayMode == FileDisplayMode.Grid ? FileDisplayMode.List : FileDisplayMode.Grid;
@@ -393,7 +397,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         } else {
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconPrimary);
         }
-        if (ImGui.Button((isBookmarked ? AppIcons.Star : AppIcons.StarEmpty) + "##bookmark")) {
+        if (ImGui.Button((isBookmarked ? AppIcons.Star : AppIcons.StarEmpty) + "##bookmark") || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_PakBrowser_Bookmark.Get().IsPressed()) {
             if (isBookmarked) {
                 _bookmarkManager.RemoveBookmark(Workspace.Config.Game.name, CurrentDir);
             } else {
@@ -742,8 +746,6 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 }
                 ImGui.CloseCurrentPopup();
             }
-
-            ImGui.Spacing();
             if (isBookmarked) {
                 if (ImguiHelpers.ContextMenuItem("##RemoveBookmark", AppIcons.SIC_BookmarkRemove, "Remove from Bookmarks", new[] { Colors.IconPrimary, Colors.IconTertiary })) {
                     _bookmarkManager.RemoveBookmark(Workspace.Config.Game.name, file);
@@ -753,7 +755,6 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                     _bookmarkManager.AddBookmark(Workspace.Config.Game.name, file);
                 }
             }
-            ImGui.Spacing();
             if (Path.HasExtension(file)) {
                 if (ImguiHelpers.ContextMenuItem("##JumpToContainingFolder", AppIcons.SIC_FolderContain, "Jump to Containing Folder", new[] { Colors.IconPrimary, Colors.IconSecondary })) {
                     string currFolder = Path.GetDirectoryName(file)!;

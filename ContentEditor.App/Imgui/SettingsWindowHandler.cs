@@ -29,6 +29,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         Display_General,
         Display_Theme,
         Hotkeys_Global,
+        Hotkeys_PakBrowser,
         Games_ResidentEvil,
         Games_MonsterHunter,
         Games_Other,
@@ -59,8 +60,8 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         },
         new SettingGroup { Name = "Hotkeys", SubGroups = {
                 new SettingSubGroup { Name = "Global", ID = SubGroupID.Hotkeys_Global},
+                new SettingSubGroup { Name = "Pak Browser", ID = SubGroupID.Hotkeys_PakBrowser},
                 // SILVER: More of a TODO thing but there should be contextual hotkeys for the editors
-                //new SettingSubGroup { Name = "Pak Browser"},
                 //new SettingSubGroup { Name = "Mesh Viewer"},
                 //new SettingSubGroup { Name = "Texture Viewer"},
             }
@@ -173,6 +174,9 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                             break;
                         case SubGroupID.Hotkeys_Global:
                             ShowHotkeysGlobalTab();
+                            break;
+                        case SubGroupID.Hotkeys_PakBrowser:
+                            ShowHotkeysPakBrowserTab();
                             break;
                         case SubGroupID.Games_ResidentEvil:
                             ShowGamesResidentEvilTab();
@@ -308,7 +312,12 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImguiKeybinding("Back", config.Key_Back);
         ImguiKeybinding("Close Current Window", config.Key_Close);
     }
-
+    private void ShowHotkeysPakBrowserTab()
+    {
+        ImGui.Spacing();
+        ImguiKeybinding("Open Bookmarks", config.Key_PakBrowser_OpenBookmarks);
+        ImguiKeybinding("Bookmark Current Path", config.Key_PakBrowser_Bookmark);
+    }
     private static void ShowGamesResidentEvilTab()
     {
         ImGui.Spacing();
