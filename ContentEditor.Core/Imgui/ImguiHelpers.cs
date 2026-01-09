@@ -540,21 +540,43 @@ public static class ImguiHelpers
 
         return changed;
     }
-    public static void DrawMultiColorIconWithText(char[] icons, string label, Vector4[] colors)
+    private static bool ContextMenuItemInternal( string id, ReadOnlySpan<char> icons, string label, ReadOnlySpan<Vector4> iconColors,  float iconPadding, float separatorPadding, float separatorWidth)
     {
+        var style = ImGui.GetStyle();
         var drawList = ImGui.GetWindowDrawList();
-        var pos = ImGui.GetItemRectMin();
-        var size = ImGui.GetItemRectSize();
-        pos.Y += (size.Y - ImGui.CalcTextSize(icons[0].ToString()).Y) * 0.5f;
-        pos.X += ImGui.CalcTextSize(icons[0].ToString()).X * 0.25f;
+        float fontSize = ImGui.GetFontSize();
+        float rowHeight = ImGui.GetFrameHeight();
+        float iconWidth = fontSize;
+        Vector2 start = ImGui.GetCursorScreenPos();
+
+        bool activated = ImGui.Selectable($"{id}", false, ImGuiSelectableFlags.None, new Vector2(0, rowHeight));
+
+        Vector2 min = ImGui.GetItemRectMin();
+        Vector2 max = ImGui.GetItemRectMax();
+        float textY = min.Y + (rowHeight - fontSize) * 0.5f;
+        float x = min.X + style.FramePadding.X;
+        float iconX = x + (iconWidth - fontSize) * 0.5f;
 
         for (int i = 0; i < icons.Length; i++) {
-            drawList.AddText(pos, ImGui.ColorConvertFloat4ToU32(colors[i]), icons[i].ToString());
+            drawList.AddText(new Vector2(iconX, textY), ImGui.ColorConvertFloat4ToU32(iconColors[i]), icons[i].ToString());
         }
+        x += iconWidth + iconPadding;
+        drawList.AddRectFilled(new Vector2(x, min.Y + separatorPadding), new Vector2(x + separatorWidth, max.Y - separatorPadding), ImGui.GetColorU32(ImGuiCol.TextDisabled));
 
-        pos.X += ImGui.CalcTextSize(icons[0].ToString()).X + ImGui.GetStyle().ItemInnerSpacing.X;
-        drawList.AddText(pos, ImGui.GetColorU32(ImGuiCol.Text), label);
+        x += separatorWidth + iconPadding;
+        drawList.AddText( new Vector2(x, textY), ImGui.GetColorU32(ImGuiCol.Text), label);
+
+        return activated;
     }
+    public static bool ContextMenuItem( string id, char icon, string label, Vector4 iconColor, float iconPadding = 6f, float separatorPadding = 4f, float separatorWidth = 2f)
+    {
+        return ContextMenuItemInternal(id, new ReadOnlySpan<char>(new[] { icon }), label, new ReadOnlySpan<Vector4>(new[] { iconColor }), iconPadding, separatorPadding, separatorWidth);
+    }
+    public static bool ContextMenuItem( string id, char[] icons, string label, Vector4[] iconColors, float iconPadding = 6f, float separatorPadding = 4f, float separatorWidth = 2f)
+    {
+        return ContextMenuItemInternal(id, icons, label, iconColors, iconPadding, separatorPadding, separatorWidth);
+    }
+
     public static void VerticalSeparator(Vector4? color = null, float width = 2.0f, float padding = 4.0f)
     {
         var drawList = ImGui.GetWindowDrawList();

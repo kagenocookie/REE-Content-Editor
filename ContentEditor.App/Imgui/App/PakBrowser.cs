@@ -482,7 +482,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
         GetPageFiles(baseList, (short)gridSortColumn, gridSortDir, ref sortedEntries);
         if (sortedEntries.Length == 0) return;
-
+        sortedEntries = sortedEntries.OrderByDescending(e => !Path.HasExtension(e)).ToArray();
         previewGenerator ??= new(contentWorkspace, EditorWindow.CurrentWindow?.GLContext!);
 
         var style = ImGui.GetStyle();
@@ -578,6 +578,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImGui.TableSetupScrollFreeze(0, 1);
             var sort = ImGui.TableGetSortSpecs();
             GetPageFiles(baseList, sort.Specs.ColumnIndex, sort.Specs.SortDirection, ref sortedEntries);
+            sortedEntries = sortedEntries.OrderByDescending(e => !Path.HasExtension(e)).ToArray();
             ImGui.TableHeadersRow();
             ImGui.TableNextColumn();
             foreach (var file in sortedEntries.Skip(itemsPerPage * pagination.page).Take(itemsPerPage)) {
@@ -717,13 +718,11 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
 
         ImGui.SetNextWindowSize(new Vector2(250, 0));
         if (ImGui.BeginPopupContextItem()) {
-            if (ImGui.Selectable($"{AppIcons.SI_FileCopyPath} | Copy Path")) {
+            if (ImguiHelpers.ContextMenuItem("##CopyPath", AppIcons.SI_FileCopyPath, "Copy Path", Colors.IconPrimary)) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(file);
-                ImGui.CloseCurrentPopup();
             }
-            ImGui.Spacing();
             var isFolder = !Path.HasExtension(file);
-            if (ImGui.Selectable("##ExtractFileTo")) {
+            if (ImguiHelpers.ContextMenuItem("##Extract", AppIcons.SIC_FileExtractTo, isFolder ? "Extract Folder to..." : "Extract File to...", new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary})) {
                 if (isFolder) {
                     // show folder unpack dialog instead
                     PlatformUtils.ShowFolderDialog((output) => {
@@ -743,30 +742,23 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 }
                 ImGui.CloseCurrentPopup();
             }
-            ImGui.SameLine();
-            ImguiHelpers.DrawMultiColorIconWithText(AppIcons.SIC_FileExtractTo, isFolder ? "| Extract Folder to..." : "| Extract File to...", new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary });
+
             ImGui.Spacing();
             if (isBookmarked) {
-                if (ImGui.Selectable("##RemoveBookmark")) {
+                if (ImguiHelpers.ContextMenuItem("##RemoveBookmark", AppIcons.SIC_BookmarkRemove, "Remove from Bookmarks", new[] { Colors.IconPrimary, Colors.IconTertiary })) {
                     _bookmarkManager.RemoveBookmark(Workspace.Config.Game.name, file);
                 }
-                ImGui.SameLine();
-                ImguiHelpers.DrawMultiColorIconWithText(AppIcons.SIC_BookmarkRemove, "| Remove from Bookmarks", new[] { Colors.IconPrimary, Colors.IconTertiary });
             } else {
-                if (ImGui.Selectable("##AddBookmark")) {
+                if (ImguiHelpers.ContextMenuItem("##AddBookmark", AppIcons.SIC_BookmarkAdd, "Add to Bookmarks", new[] { Colors.IconPrimary, Colors.IconSecondary })) {
                     _bookmarkManager.AddBookmark(Workspace.Config.Game.name, file);
                 }
-                ImGui.SameLine();
-                ImguiHelpers.DrawMultiColorIconWithText(AppIcons.SIC_BookmarkAdd, "| Add to Bookmarks", new[] { Colors.IconPrimary, Colors.IconSecondary });
             }
             ImGui.Spacing();
             if (Path.HasExtension(file)) {
-                if (ImGui.Selectable("##JumpToContainingFolder")) {
+                if (ImguiHelpers.ContextMenuItem("##JumpToContainingFolder", AppIcons.SIC_FolderContain, "Jump to Containing Folder", new[] { Colors.IconPrimary, Colors.IconSecondary })) {
                     string currFolder = Path.GetDirectoryName(file)!;
                     _currentDir = PathUtils.NormalizeFilepath(currFolder);
                 }
-                ImGui.SameLine();
-                ImguiHelpers.DrawMultiColorIconWithText(AppIcons.SIC_FolderContain, "| Jump to Containing Folder", new[] { Colors.IconPrimary, Colors.IconSecondary });
             }
             if (showSort) {
                 ImGui.Spacing();
@@ -856,7 +848,6 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                     }
 
                     if (manager == _bookmarkManager) {
-                        // SILVER: Maybe drag & drop would be neater for this...
                         ImGui.TableSetColumnIndex(3);
                         int idx = bookmarks.IndexOf(bm);
                         int uniqueId = bm.GetHashCode();
@@ -909,22 +900,16 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
 
     private void ShowBookmarksContextMenu(BookmarkManager manager, BookmarkManager.BookmarkEntry bm)
     {
-        if (ImGui.Selectable("##JumptoLocation")) {
-            CurrentDir = bm.Path;
-        }
-        ImGui.SameLine();
-        ImguiHelpers.DrawMultiColorIconWithText(AppIcons.SIC_FileJumpTo, "| Jump to Location", new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary });
-        ImGui.Spacing();
-        if (ImGui.Selectable($"{AppIcons.SI_FileCopyPath} | Copy Path")) {
+
+        if (ImguiHelpers.ContextMenuItem("##CopyPath", AppIcons.SI_FileCopyPath, "Copy Path", Colors.IconPrimary)) {
             EditorWindow.CurrentWindow?.CopyToClipboard(bm.Path);
         }
-        ImGui.Spacing();
-        if (ImGui.Selectable("##RemoveBookmarks")) {
+        if (ImguiHelpers.ContextMenuItem("##JumptoLocation", AppIcons.SIC_FileJumpTo, "Jump to file Location", new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary })) {
+            CurrentDir = bm.Path;
+        }
+        if (ImguiHelpers.ContextMenuItem("##RemoveBookmarks", AppIcons.SIC_BookmarkRemove, "Remove from Bookmarks", new[] { Colors.IconPrimary, Colors.IconTertiary })) {
             manager.RemoveBookmark(Workspace.Config.Game.name, bm.Path);
         }
-        ImGui.SameLine();
-        ImguiHelpers.DrawMultiColorIconWithText(AppIcons.SIC_BookmarkRemove, "| Remove from Bookmarks", new[] { Colors.IconPrimary, Colors.IconTertiary });
-        ImGui.Spacing();
         if (ImGui.BeginMenu($"{AppIcons.SI_GenericTag} | Tags")) {
             ImGui.PushItemFlag(ImGuiItemFlags.AutoClosePopups, false);
             foreach (var tag in BookmarkManager.TagInfoMap.Keys) {
@@ -948,7 +933,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImGui.EndMenu();
         }
         string comment = bm.Comment;
-        if (ImGui.InputText("Edit Comment", ref comment, 64, ImGuiInputTextFlags.EnterReturnsTrue)) {
+        if (ImGui.InputTextWithHint("Edit Comment", "Press Enter to save", ref comment, 64, ImGuiInputTextFlags.EnterReturnsTrue)) {
             bm.Comment = comment;
             manager.SaveBookmarks();
         }
