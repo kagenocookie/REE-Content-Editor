@@ -375,6 +375,20 @@ public static class AppIcons
     public static readonly char[] SIC_BundleFolder = { '\uedde', '\ueddf', '\uede0', '\uede1'};
     public static readonly char[] SIC_BundleFolderEmpty = { '\uede2', '\uede3', '\uede4', '\uede5' };
     public static readonly char[] SIC_BundleFromPakFile = { '\uede6', '\uede7', '\uede8', '\uede9', '\uedea' };
+    public static readonly char SI_GenericDelete2 = '\uedeb';
+    public static readonly char SI_FileType_PAK = '\uedec';
+    public static readonly char SI_SortSizeDown = '\ueded';
+    public static readonly char SI_SortSizeUp = '\uedee';
+    public static readonly char SI_BundleSortDown = '\uedef';
+    public static readonly char SI_GenericDragDropHandle = '\uedf0';
+    public static readonly char SI_BundleSortUp = '\uedf1';
+    public static readonly char SI_BundleLoadOrder = '\uedf2';
+    public static readonly char SI_PatchTo = '\uedf3';
+    public static readonly char[] SIC_PatchLooseFiles = { '\uedf4', '\uedf5', '\uedf6' };
+    public static readonly char[] SIC_PatchPakFile = { '\uedf8', '\uedf9', '\uedfa' };
+    public static readonly char[] SIC_InfoPAK = { '\uedfb', '\uedfc', '\uedfd' };
+    public static readonly char[] SIC_InfoBundle = { '\uedfe', '\uedff', '\uee00', '\uee01' };
+    public static readonly char SI_GenericReorder = '\uee02';
 
     public static string PrependIcon(this string text, object target)
     {
