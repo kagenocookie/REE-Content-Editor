@@ -15,7 +15,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     protected virtual bool AllowJsonCopy => false;
 
     public virtual string HandlerName { get; } = "File";
-    public FileHandle Handle { get; private set; }
+    public FileHandle Handle { get; protected set; }
     char IWindowHandler.Icon => AppIcons.GetIcon(this, Handle.Resource);
 
     protected virtual bool CanSave => true;
@@ -94,7 +94,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         ImGui.End();
     }
 
-    public void OnIMGUI()
+    public virtual void OnIMGUI()
     {
         DrawFileControls(context.Get<WindowData>());
         ImGui.SameLine();

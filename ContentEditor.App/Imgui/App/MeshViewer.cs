@@ -12,14 +12,11 @@ using ReeLib.via;
 
 namespace ContentEditor.App;
 
-public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleReferenceHolder
+public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReferenceHolder
 {
-    public bool HasUnsavedChanges => false;
+    public override bool HasUnsavedChanges => Handle.Modified;
 
-    public string HandlerName => $"Mesh Viewer";
-
-    public bool CanClose => true;
-    public bool CanFocus => true;
+    public override string HandlerName => $"Mesh Viewer";
 
     IRectWindow? IFileHandleReferenceHolder.Parent => data.ParentWindow;
 
@@ -60,12 +57,9 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
     private CommonMeshResource? mesh;
     private string? meshPath;
-    private FileHandle fileHandle;
-
     public CommonMeshResource? Mesh => mesh;
 
     private WindowData data = null!;
-    protected UIContext context = null!;
 
     private bool isDragging;
     private const float pitchLimit = MathF.PI / 2 - 0.01f;
@@ -92,10 +86,17 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
     private bool showImportSettings;
 
-    public MeshViewer(ContentWorkspace workspace, FileHandle file)
+    protected override void Reset()
     {
+        base.Reset();
+        ChangeMesh();
+    }
+
+    public MeshViewer(ContentWorkspace workspace, FileHandle file) : base(file)
+    {
+        windowFlags = ImGuiWindowFlags.MenuBar;
         Workspace = workspace;
-        ChangeMesh(fileHandle = file);
+        ChangeMesh();
 
         exportTemplate = mesh?.NativeMesh.CurrentVersionConfig ?? MeshFile.AllVersionConfigs.Last();
     }
@@ -106,21 +107,15 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             mdfVersion = -1;
         }
 
-        var meshBasePath = PathUtils.GetFilepathWithoutExtensionOrVersion(fileHandle.Filepath).ToString();
+        var meshBasePath = PathUtils.GetFilepathWithoutExtensionOrVersion(Handle.Filepath).ToString();
         var ext = ".mdf2";
         if (mdfVersion != -1) ext += "." + mdfVersion;
 
         var mdfPath = meshBasePath + ext;
         if (!File.Exists(mdfPath)) mdfPath = meshBasePath + "_Mat" + ext;
 
-        // if (Path.IsPathRooted(meshBasePath)) {
-        //     mdfPath = Directory.EnumerateFiles(Path.GetDirectoryName(meshBasePath!).ToString(), Path.GetFileName(meshBasePath).ToString() + ".mdf2.*").FirstOrDefault();
-        // } else {
-        //     if (mdfVersion != -1) mdfPath += "." + mdfVersion;
-        // }
-
-        if (!File.Exists(mdfPath) && fileHandle.NativePath != null) {
-            meshBasePath = PathUtils.GetFilepathWithoutExtensionOrVersion(fileHandle.NativePath).ToString();
+        if (!File.Exists(mdfPath) && Handle.NativePath != null) {
+            meshBasePath = PathUtils.GetFilepathWithoutExtensionOrVersion(Handle.NativePath).ToString();
             if (Workspace.ResourceManager.TryResolveGameFile(meshBasePath + ext, out _)) {
                 mdfPath = meshBasePath + ext;
             } else if (Workspace.ResourceManager.TryResolveGameFile(meshBasePath + "_Mat" + ext, out _)) {
@@ -129,45 +124,32 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 mdfPath = "";
             }
         }
-        this.mdfSource = mdfPath;
-        this.originalMDF = mdfPath;
+        mdfSource = mdfPath;
+        originalMDF = mdfPath;
         loadedMdf = null;
-    }
-
-    public void Focus()
-    {
-        var data = context.Get<WindowData>();
-        ImGui.SetWindowFocus(data.Name ?? $"{data.Handler}##{data.ID}");
-    }
-
-    public void Close()
-    {
-        var data = context.Get<WindowData>();
-        EditorWindow.CurrentWindow?.CloseSubwindow(data);
-    }
-
-    public void Init(UIContext context)
-    {
-        this.context = context;
-        data = context.Get<WindowData>();
     }
 
     public void ChangeMesh(string newMesh)
     {
-        if (Workspace.ResourceManager.TryResolveGameFile(newMesh, out var newFile) && newFile != fileHandle) {
+        if (Workspace.ResourceManager.TryResolveGameFile(newMesh, out var newFile) && newFile != Handle) {
             ChangeMesh(newFile);
         }
     }
 
-    private void ChangeMesh(FileHandle newFile)
+    public void ChangeMesh(FileHandle newHandle)
     {
-        fileHandle?.References.Remove(this);
-        fileHandle = newFile;
-        meshPath = fileHandle.Filepath;
-        fileHandle.References.Add(this);
-        mesh = fileHandle.GetResource<CommonMeshResource>();
+        Handle.References.Remove(this);
+        Handle = newHandle;
+        ChangeMesh();
+    }
+
+    private void ChangeMesh()
+    {
+        meshPath = Handle.Filepath;
+        if (!Handle.References.Contains(this)) Handle.References.Add(this);
+        mesh = Handle.GetResource<CommonMeshResource>();
         if (mesh == null) {
-            if (fileHandle.Filepath.Contains("streaming/")) {
+            if (Handle.Filepath.Contains("streaming/")) {
                 Logger.Error("Can't directly open streaming meshes. Open the non-streaming file instead.");
             }
             return;
@@ -175,25 +157,13 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         TryGuessMdfFilepath();
 
         var meshComponent = previewGameobject?.GetComponent<MeshComponent>();
-        if (meshComponent != null) {
-            meshComponent.SetMesh(fileHandle, fileHandle);
-        }
+        meshComponent?.Transform.InvalidateTransform();
+        meshComponent?.SetMesh(Handle, Handle);
         if (mesh.HasAnimations && string.IsNullOrEmpty(animationSourceFile)) {
-            animationSourceFile = newFile.Filepath;
+            animationSourceFile = Handle.Filepath;
         }
     }
 
-    public void OnWindow()
-    {
-        if (!ImguiHelpers.BeginWindow(data, flags: ImGuiWindowFlags.MenuBar)) {
-            WindowManager.Instance.CloseWindow(data);
-            return;
-        }
-        ImGui.BeginGroup();
-        OnIMGUI();
-        ImGui.EndGroup();
-        ImGui.End();
-    }
     private void CenterCameraToSceneObject()
     {
         if (previewGameobject == null || scene == null) return;
@@ -202,16 +172,19 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         scene.ActiveCamera.OrthoSize = previewGameobject.GetWorldSpaceBounds().Size.Length() * 0.7f;
     }
 
-    public void OnIMGUI()
+    protected override void DrawFileContents() => throw new NotImplementedException();
+
+    public override void OnIMGUI()
     {
         if (scene == null) {
-            scene = EditorWindow.CurrentWindow!.SceneManager.CreateScene(fileHandle, true);
+            scene = EditorWindow.CurrentWindow!.SceneManager.CreateScene(Handle, true);
             scene.Type = SceneType.Independent;
             scene.Root.Controller.Keyboard = EditorWindow.CurrentWindow.LastKeyboard;
             scene.Root.Controller.MoveSpeed = AppConfig.Settings.MeshViewer.MoveSpeed;
             scene.OwnRenderContext.AddDefaultSceneGizmos();
             scene.AddWidget<SceneVisibilitySettings>();
         }
+        data ??= context.Get<WindowData>();
 
         MeshComponent meshComponent;
         if (previewGameobject == null) {
@@ -223,7 +196,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
         if (!meshComponent.HasMesh) {
             meshComponent.IsStreamingTex = true;
-            meshComponent.SetMesh(fileHandle, fileHandle);
+            meshComponent.SetMesh(Handle, Handle);
             scene.ActiveCamera.ProjectionMode = AppConfig.Settings.MeshViewer.DefaultProjection;
             CenterCameraToSceneObject();
         }
@@ -398,10 +371,10 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
 
     private void ShowMeshInfo()
     {
-        ImGui.Text($"Path: {fileHandle.Filepath} ({fileHandle.HandleType})");
+        ImGui.Text($"Path: {Handle.Filepath} ({Handle.HandleType})");
         if (ImGui.BeginPopupContextItem("##filepath")) {
             if (ImGui.Selectable("Copy path")) {
-                EditorWindow.CurrentWindow?.CopyToClipboard(fileHandle.Filepath);
+                EditorWindow.CurrentWindow?.CopyToClipboard(Handle.Filepath);
                 ImGui.CloseCurrentPopup();
             }
             ImGui.EndPopup();
@@ -417,6 +390,9 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                 meshCtx = context.AddChild("Raw Mesh Data", mesh.NativeMesh, new MeshFileHandler());
             }
             meshCtx.ShowUI();
+            if (meshCtx.Changed && !Handle.Modified) {
+                Handle.Modified = true;
+            }
             ImGui.TreePop();
         }
     }
@@ -451,10 +427,14 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
     {
         if (mesh == null) return;
 
+        if (Handle.Format.format == KnownFileFormats.Mesh) {
+            DrawFileControls(data);
+        }
+
         using var _ = ImguiHelpers.Disabled(exportInProgress);
         if (ImGui.Button($"{AppIcons.SI_GenericExport} Export Mesh")) {
             // potential export enhancement: include (embed) textures
-            if (fileHandle.Resource is CommonMeshResource assmesh) {
+            if (Handle.Resource is CommonMeshResource assmesh) {
                 PlatformUtils.ShowSaveFileDialog((exportPath) => {
                     exportInProgress = true;
                     try {
@@ -478,26 +458,27 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
                     } finally {
                         exportInProgress = false;
                     }
-                }, PathUtils.GetFilenameWithoutExtensionOrVersion(fileHandle.Filename).ToString(), FileFilters.MeshFile);
+                }, PathUtils.GetFilenameWithoutExtensionOrVersion(Handle.Filename).ToString(), FileFilters.MeshFile);
             } else {
                 throw new NotImplementedException();
             }
         }
-        if (fileHandle.HandleType is FileHandleType.Bundle or FileHandleType.Disk && File.Exists(fileHandle.Filepath) && fileHandle.Format.format == KnownFileFormats.Mesh) {
+        if (Handle.Format.format == KnownFileFormats.Mesh) {
             ImGui.SameLine();
-            if (ImGui.Button($"{AppIcons.SI_GenericImport} Import From File...")) {
+            if (ImGui.Button($"{AppIcons.SI_GenericImport} Import From File")) {
                 var window = EditorWindow.CurrentWindow!;
                 PlatformUtils.ShowFileDialog((files) => {
                     window.InvokeFromUIThread(() => {
                         lastImportSourcePath = files[0];
                         if (Workspace.ResourceManager.TryForceLoadFile(lastImportSourcePath, out var importedFile)) {
+                            using var _ = importedFile;
                             var importAsset = importedFile.GetResource<CommonMeshResource>();
-                            var tmpHandler = new FileHandler(new MemoryStream(), fileHandle.Filepath);
-                            importAsset.NativeMesh.WriteTo(tmpHandler);
-                            fileHandle.Stream = tmpHandler.Stream.ToMemoryStream(disposeStream: false, forceCopy: true);
-                            fileHandle.Revert(Workspace);
-                            ChangeMesh(fileHandle);
-                            importedFile.Dispose();
+                            var tmpHandler = new FileHandler(new MemoryStream(), Handle.Filepath);
+                            importAsset.NativeMesh.WriteTo(tmpHandler, false);
+                            Handle.Stream = tmpHandler.Stream.ToMemoryStream(disposeStream: false, forceCopy: true);
+                            Handle.Revert(Workspace);
+                            Handle.Modified = true;
+                            ChangeMesh();
                         }
                     });
                 }, lastImportSourcePath, fileExtension: FileFilters.MeshFilesAll);
@@ -542,11 +523,11 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         ImguiHelpers.Tooltip("Convert");
         ImGui.SameLine();
         ImguiHelpers.ValueCombo("Mesh Version", MeshFile.AllVersionConfigsWithExtension, MeshFile.AllVersionConfigs, ref exportTemplate);
-        var bundleConvert = Workspace.CurrentBundle != null && ImguiHelpers.SameLine() && ImGui.Button("Save to bundle ...");
+        var bundleConvert = Workspace.CurrentBundle != null && ImguiHelpers.SameLine() && ImGui.Button("Convert to bundle ...");
         if (conv1 || bundleConvert) {
             var ver = MeshFile.GetFileExtension(exportTemplate);
             var ext = $".mesh.{ver}";
-            var defaultFilename = PathUtils.GetFilenameWithoutExtensionOrVersion(fileHandle.Filepath).ToString() + ext;
+            var defaultFilename = PathUtils.GetFilenameWithoutExtensionOrVersion(Handle.Filepath).ToString() + ext;
             if (mesh.NativeMesh.Header.version == 0) {
                 mesh.NativeMesh.ChangeVersion(exportTemplate);
             }
@@ -554,7 +535,7 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             exportMesh.ChangeVersion(exportTemplate);
             if (bundleConvert) {
                 var tempres = new CommonMeshResource(defaultFilename, Workspace.Env) { NativeMesh = exportMesh };
-                ResourcePathPicker.ShowSaveToBundle(fileHandle.Loader, tempres, Workspace, defaultFilename, fileHandle.NativePath);
+                ResourcePathPicker.ShowSaveToBundle(Handle.Loader, tempres, Workspace, defaultFilename, Handle.NativePath);
             } else {
                 PlatformUtils.ShowSaveFileDialog((path) => exportMesh.SaveAs(path), defaultFilename);
             }
@@ -718,12 +699,14 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
             loadedMdf = mdfSource;
             isMDFUpdateRequest = false;
             if (string.IsNullOrEmpty(mdfSource)) {
-                meshComponent.SetMesh(fileHandle, fileHandle);
+                meshComponent.SetMesh(Handle, Handle);
             } else if (Workspace.ResourceManager.TryResolveGameFile(mdfSource, out var mdfHandle)) {
-                meshComponent.SetMesh(fileHandle, mdfHandle);
+                meshComponent.SetMesh(Handle, mdfHandle);
             } else {
-                meshComponent.SetMesh(fileHandle, fileHandle);
-                Logger.Error("Could not locate mdf2 file " + mdfSource);
+                meshComponent.SetMesh(Handle, Handle);
+                if (mdfSource != originalMDF) {
+                    Logger.Error("Could not locate mdf2 file " + mdfSource);
+                }
             }
         }
     }
@@ -871,13 +854,9 @@ public class MeshViewer : IWindowHandler, IDisposable, IFocusableFileHandleRefer
         return MeshLoader.StandardFileExtensions.Contains(Path.GetExtension(filepathOrExtension).ToLowerInvariant());
     }
 
-    public bool RequestClose()
+    protected override void Dispose(bool disposing)
     {
-        return false;
-    }
-    public void Dispose()
-    {
-        fileHandle?.References.Remove(this);
+        Handle?.References.Remove(this);
         if (scene != null) {
             _skeletonBuilder?.Dispose();
             _skeletonBuilder = null;
