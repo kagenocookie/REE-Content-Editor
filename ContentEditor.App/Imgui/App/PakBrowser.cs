@@ -474,7 +474,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 1 => cacheKey.SortDirection == ImGuiSortDirection.Ascending ? files.OrderBy(e => reader!.GetSize(e)) : files.OrderByDescending(e => reader!.GetSize(e)),
                 _ => cacheKey.SortDirection == ImGuiSortDirection.Ascending ? files : files.Reverse(),
             };
-            cachedResults[cacheKey] = sortedEntries = sorted.ToArray();
+            cachedResults[cacheKey] = sortedEntries = sorted.OrderByDescending(e => !Path.HasExtension(e)).ToArray();
         }
         pagination.maxPage = (int)Math.Floor((float)sortedEntries.Length / itemsPerPage);
         pagination.totalCount = sortedEntries.Length;
@@ -486,7 +486,6 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
         GetPageFiles(baseList, (short)gridSortColumn, gridSortDir, ref sortedEntries);
         if (sortedEntries.Length == 0) return;
-        sortedEntries = sortedEntries.OrderByDescending(e => !Path.HasExtension(e)).ToArray();
         previewGenerator ??= new(contentWorkspace, EditorWindow.CurrentWindow?.GLContext!);
 
         var style = ImGui.GetStyle();
@@ -582,7 +581,6 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImGui.TableSetupScrollFreeze(0, 1);
             var sort = ImGui.TableGetSortSpecs();
             GetPageFiles(baseList, sort.Specs.ColumnIndex, sort.Specs.SortDirection, ref sortedEntries);
-            sortedEntries = sortedEntries.OrderByDescending(e => !Path.HasExtension(e)).ToArray();
             ImGui.TableHeadersRow();
             ImGui.TableNextColumn();
             foreach (var file in sortedEntries.Skip(itemsPerPage * pagination.page).Take(itemsPerPage)) {
