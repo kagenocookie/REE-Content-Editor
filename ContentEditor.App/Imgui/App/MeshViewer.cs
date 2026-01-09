@@ -157,6 +157,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         TryGuessMdfFilepath();
 
         var meshComponent = previewGameobject?.GetComponent<MeshComponent>();
+        meshComponent?.Transform.InvalidateTransform();
         meshComponent?.SetMesh(Handle, Handle);
         if (mesh.HasAnimations && string.IsNullOrEmpty(animationSourceFile)) {
             animationSourceFile = Handle.Filepath;
