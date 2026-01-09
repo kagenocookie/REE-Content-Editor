@@ -83,7 +83,7 @@ public class LoadOrderUI : IWindowHandler
             ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, borderSize);
             ImGui.PushStyleColor(ImGuiCol.Text, dragHandleColor);
             ImGui.PushStyleColor(ImGuiCol.Border, dragHandleColor);
-            ImGui.Button($"{AppIcons.SI_GenericDragDropHandle}");
+            ImGui.Button($"{AppIcons.SI_GenericReorder}");
             ImGui.PopStyleVar();
             ImGui.PopStyleColor(2);
 
