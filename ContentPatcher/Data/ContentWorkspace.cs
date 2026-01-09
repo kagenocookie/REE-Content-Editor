@@ -96,11 +96,9 @@ public sealed class ContentWorkspace : IDisposable
         try {
             foreach (var file in ResourceManager.GetModifiedResourceFiles()) {
                 lastFile = file.Filepath;
-                if (file.Modified) {
-                    if (parent == null || file.References.Any(ff => ff.Parent == parent)) {
-                        if (file.Save(this)) {
-                            count++;
-                        }
+                if (parent == null || file.References.Any(ff => ff.Parent == parent)) {
+                    if (file.Save(this)) {
+                        count++;
                     }
                 }
             }
