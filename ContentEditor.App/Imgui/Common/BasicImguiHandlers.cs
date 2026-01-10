@@ -11,6 +11,19 @@ public class NumericFieldHandler<T>(ImGuiDataType type) : IObjectUIHandler where
 {
     public static readonly NumericFieldHandler<T> FloatInstance = new NumericFieldHandler<T>(ImGuiDataType.Float);
 
+    private static readonly Dictionary<Type, IObjectUIHandler> handlerTypes = new() {
+        { typeof(int), new NumericFieldHandler<int>(ImGuiDataType.S32) },
+        { typeof(uint), new NumericFieldHandler<uint>(ImGuiDataType.U32) },
+        { typeof(long), new NumericFieldHandler<long>(ImGuiDataType.S64) },
+        { typeof(ulong), new NumericFieldHandler<ulong>(ImGuiDataType.U64) },
+        { typeof(short), new NumericFieldHandler<short>(ImGuiDataType.S16) },
+        { typeof(ushort), new NumericFieldHandler<ushort>(ImGuiDataType.U16) },
+        { typeof(sbyte), new NumericFieldHandler<sbyte>(ImGuiDataType.S8) },
+        { typeof(byte), new NumericFieldHandler<byte>(ImGuiDataType.U8) },
+    };
+
+    public static IObjectUIHandler GetHandlerForType(Type type) => handlerTypes[type];
+
     public unsafe void OnIMGUI(UIContext context)
     {
         var num = (T)context.Get<object>();
@@ -50,7 +63,7 @@ public class Vector2FieldHandler : Singleton<Vector2FieldHandler>, IObjectUIHand
     {
         var val = context.Get<Vector2>();
         if (ImGui.DragFloat2(context.label, ref val, 0.01f)) UndoRedo.RecordSet(context, val);
-        AppImguiHelpers.ShowJsonCopyPopup(ref val, context);
+        AppImguiHelpers.ShowJsonCopyPopup(in val, context);
     }
 }
 
@@ -60,7 +73,7 @@ public class Vector3FieldHandler : Singleton<Vector3FieldHandler>, IObjectUIHand
     {
         var val = context.Get<Vector3>();
         if (ImGui.DragFloat3(context.label, ref val, 0.01f)) UndoRedo.RecordSet(context, val);
-        AppImguiHelpers.ShowJsonCopyPopup(ref val, context);
+        AppImguiHelpers.ShowJsonCopyPopup(in val, context);
     }
 }
 
@@ -72,7 +85,7 @@ public class PaddedVec3FieldHandler : IObjectUIHandler
         var val = context.Get<PaddedVec3>();
         var valVec = val.Vector3;
         if (ImGui.DragFloat3(context.label, ref valVec, 0.01f)) UndoRedo.RecordSet(context, new PaddedVec3(valVec.X, valVec.Y, valVec.Z));
-        AppImguiHelpers.ShowJsonCopyPopup(ref val, context);
+        AppImguiHelpers.ShowJsonCopyPopup(in val, context);
     }
 }
 
@@ -82,7 +95,7 @@ public class Vector4FieldHandler : Singleton<Vector4FieldHandler>, IObjectUIHand
     {
         var val = context.Get<Vector4>();
         if (ImGui.DragFloat4(context.label, ref val, 0.01f)) UndoRedo.RecordSet(context, val);
-        AppImguiHelpers.ShowJsonCopyPopup(ref val, context);
+        AppImguiHelpers.ShowJsonCopyPopup(in val, context);
     }
 }
 
@@ -94,7 +107,7 @@ public class IntRangeFieldHandler : Singleton<IntRangeFieldHandler>, IObjectUIHa
         if (ImGui.DragIntRange2(context.label, ref val.r, ref val.s, 0.05f)) {
             UndoRedo.RecordSet(context, val);
         }
-        AppImguiHelpers.ShowJsonCopyPopup(ref val, context);
+        AppImguiHelpers.ShowJsonCopyPopup(in val, context);
     }
 }
 
@@ -108,7 +121,7 @@ public class QuaternionFieldHandler : Singleton<QuaternionFieldHandler>, IObject
             val = Quaternion.Normalize(new Quaternion(vec.X, vec.Y, vec.Z, vec.W));
             UndoRedo.RecordSet(context, val);
         }
-        AppImguiHelpers.ShowJsonCopyPopup(ref val, context);
+        AppImguiHelpers.ShowJsonCopyPopup(in val, context);
     }
 }
 
@@ -161,6 +174,6 @@ public class ColorFieldHandler : Singleton<ColorFieldHandler>, IObjectUIHandler
         if (ImGui.ColorEdit4(context.label, ref vec, ImGuiColorEditFlags.Uint8)) {
             UndoRedo.RecordSet(context, Color.FromVector4(vec));
         }
-        AppImguiHelpers.ShowJsonCopyPopup(ref val, context);
+        AppImguiHelpers.ShowJsonCopyPopup(in val, context);
     }
 }

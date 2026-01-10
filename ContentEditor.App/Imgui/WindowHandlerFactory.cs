@@ -499,7 +499,7 @@ public static partial class WindowHandlerFactory
                 if (enumdesc.IsFlags) {
                     return new FlagsEnumFieldHandler(workspace.Env.TypeCache.GetEnumDescriptor(fieldClassname));
                 } else {
-                    return new EnumFieldHandler(workspace.Env.TypeCache.GetEnumDescriptor(fieldClassname));
+                    return new RszEnumFieldHandler(workspace.Env.TypeCache.GetEnumDescriptor(fieldClassname));
                 }
             }
             return null;

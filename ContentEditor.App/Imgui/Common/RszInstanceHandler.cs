@@ -520,6 +520,56 @@ public class EnumFieldHandler : IObjectUIHandler
     }
 }
 
+public class RszEnumFieldHandler : IObjectUIHandler
+{
+    private EnumDescriptor enumDescriptor;
+
+    public RszEnumFieldHandler(EnumDescriptor enumDescriptor)
+    {
+        this.enumDescriptor = enumDescriptor;
+    }
+
+    private struct RszEnumSource : IEnumDataSource
+    {
+        public EnumDescriptor descriptor;
+        public string[] GetLabels() => descriptor.GetDisplayLabels();
+        public object[] GetValues() => descriptor.GetValues();
+    }
+
+    public unsafe void OnIMGUI(UIContext context)
+    {
+        var selected = context.GetRaw();
+        var enumsrc = new RszEnumSource { descriptor = enumDescriptor };
+        if (!context.HasBoolState) {
+            var isMatchedValue = !string.IsNullOrEmpty(enumDescriptor.GetLabel(selected!));
+            context.StateBool = !isMatchedValue;
+        }
+        var useCustomValueInput = context.StateBool;
+        ImGui.PushID(context.label);
+        var w = ImGui.CalcItemWidth();
+        ImGui.SetNextItemWidth(UI.FontSize);
+        if (ImguiHelpers.ToggleButton(useCustomValueInput ? "#" : "a", ref useCustomValueInput, useCustomValueInput ? Colors.IconActive : null)) {
+            context.StateBool = useCustomValueInput;
+            // adding an undo entry for this isn't very meaningful by itself, but it kinda needs to be there
+            // the enum-style and value-style handlers use different undo record types (boxed vs direct type) and don't allow merging
+            UndoRedo.RecordCallback(null, () => context.StateBool = useCustomValueInput, () => context.StateBool = !useCustomValueInput);
+        }
+        ImguiHelpers.Tooltip("Use Custom Value Input");
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(w - UI.FontSize);
+        var valueType = selected!.GetType();
+        if (useCustomValueInput) {
+            NumericFieldHandler<int>.GetHandlerForType(valueType).OnIMGUI(context);
+        } else {
+            if (ImguiHelpers.FilterableEnumCombo(context.label, enumsrc, ref selected, ref context.Filter)) {
+                UndoRedo.RecordSet(context, selected);
+            }
+        }
+        AppImguiHelpers.ShowJsonCopyPopup(selected, valueType, context);
+        ImGui.PopID();
+    }
+}
+
 public class FlagsEnumFieldHandler : IObjectUIHandler
 {
     private EnumDescriptor enumDescriptor;

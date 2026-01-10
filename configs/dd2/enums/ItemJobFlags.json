@@ -1,0 +1,16 @@
+{
+    "enumName": "ce.ItemJobFlags",
+    "backingType": "System.Int32",
+    "flags": true,
+    "values": {
+        "Job01_Fighter": 2,
+        "Job02_Archer": 4,
+        "Job03_Mage": 8,
+        "Job04_Thief": 16,
+        "Job05_Warrior": 32,
+        "Job06_Sorcerer": 64,
+        "Job07_MysticSpearhand": 128,
+        "Job08_MagickArcher": 256,
+        "Job09_Trickster": 512
+    }
+}
