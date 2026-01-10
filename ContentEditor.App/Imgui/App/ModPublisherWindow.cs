@@ -41,12 +41,15 @@ public class ModPublisherWindow : IWindowHandler
 
         ImGui.Text("Active bundle: " + bundle.Name);
         ImGui.Text("Author: " + bundle.Author);
+        ImGui.Text("Version: " + bundle.Version);
+        if (!string.IsNullOrEmpty(bundle.Homepage)) ImGui.Text("Homepage: " + bundle.Homepage);
         ImGui.Text("Description: " + bundle.Description);
         ImGui.Text("Created at: " + bundle.CreatedAt);
 
         if (ImGui.Button("Edit metadata")) {
             window.ShowBundleManagement();
         }
+        var bundlePath = Workspace.BundleManager.GetBundleFolder(bundle);
         ImGui.SameLine();
         if (ImGui.Button("Publish as loose files ...")) {
             PlatformUtils.ShowFolderDialog((outputPath) => {
@@ -54,6 +57,11 @@ public class ModPublisherWindow : IWindowHandler
                 if (!File.Exists(modconfig)) {
                     File.WriteAllText(modconfig, bundle.ToModConfigIni());
                     Logger.Info("Created modinfo.ini in " + modconfig);
+                } else {
+                    Logger.Warn("modinfo.ini already exists, keeping existing file in " + modconfig);
+                }
+                if (!string.IsNullOrEmpty(bundle.ImagePath) && File.Exists(Path.Combine(bundlePath, bundle.ImagePath))) {
+                    File.Copy(Path.Combine(bundlePath, bundle.ImagePath), Path.Combine(outputPath, bundle.ImagePath), true);
                 }
                 if (window.ApplyContentPatches(outputPath, bundle.Name)) {
                     File.WriteAllText(Path.Combine(outputPath, "bundle.json"), JsonSerializer.Serialize(bundle, JsonConfig.jsonOptions));
@@ -68,6 +76,11 @@ public class ModPublisherWindow : IWindowHandler
                 if (!File.Exists(modconfig)) {
                     File.WriteAllText(modconfig, bundle.ToModConfigIni());
                     Logger.Info("Created modinfo.ini in " + modconfig);
+                } else {
+                    Logger.Warn("modinfo.ini already exists, keeping existing file in " + modconfig);
+                }
+                if (!string.IsNullOrEmpty(bundle.ImagePath) && File.Exists(Path.Combine(bundlePath, bundle.ImagePath))) {
+                    File.Copy(Path.Combine(bundlePath, bundle.ImagePath), Path.Combine(outputPath, bundle.ImagePath), true);
                 }
                 if (!window.ApplyContentPatches(outputPath, bundle.Name)) {
                     Logger.Error("Publishing failed");

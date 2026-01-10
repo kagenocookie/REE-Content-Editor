@@ -26,6 +26,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     {
         Preferences_General,
         Preferences_Editing,
+        Preferences_Bundles,
         Display_General,
         Display_Theme,
         Hotkeys_Global,
@@ -51,6 +52,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         new SettingGroup { Name = "Preferences", SubGroups = {
                 new SettingSubGroup { Name = "General", ID = SubGroupID.Preferences_General},
                 new SettingSubGroup { Name = "Editing", ID = SubGroupID.Preferences_Editing},
+                new SettingSubGroup { Name = "Bundles", ID = SubGroupID.Preferences_Bundles},
             }
         },
         new SettingGroup { Name = "Display", SubGroups = {
@@ -166,6 +168,9 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                         case SubGroupID.Preferences_Editing:
                             ShowPreferencesEditingTab();
                             break;
+                        case SubGroupID.Preferences_Bundles:
+                            ShowBundlesEditingTab();
+                            break;
                         case SubGroupID.Display_General:
                             ShowDisplayGeneralTab();
                             break;
@@ -246,6 +251,30 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             config.MaxUndoSteps.Set(maxUndo);
         }
         ImguiHelpers.Tooltip("The maximum number of steps you can undo. Higher number means a bit higher memory usage after longer sessions.");
+    }
+
+    private static void ShowBundlesEditingTab()
+    {
+        ImGui.Spacing();
+        var defaults = config.JsonSettings.BundleDefaults;
+
+        var str = defaults.Author ?? "";
+        if (ImGui.InputText("Author", ref str, 100)) {
+            defaults.Author = str;
+            config.SaveJsonConfig();
+        }
+
+        str = defaults.Description ?? "";
+        if (ImGui.InputText("Description", ref str, 100)) {
+            defaults.Description = str;
+            config.SaveJsonConfig();
+        }
+
+        str = defaults.Homepage ?? "";
+        if (ImGui.InputText("Homepage", ref str, 100)) {
+            defaults.Homepage = str;
+            config.SaveJsonConfig();
+        }
     }
     private static void ShowDisplayGeneralTab()
     {

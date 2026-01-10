@@ -295,6 +295,7 @@ public class BundleManager
             Author = GetEditorRootSetting("author_name")?.GetString() ?? "<unknown>",
             Description = GetEditorRootSetting("author_description")?.GetString() ?? "<unknown>",
             GameVersion = VersionHash,
+            Version = "v1.0.0"
         };
         bundle.Touch();
         AllBundles.Add(bundle);

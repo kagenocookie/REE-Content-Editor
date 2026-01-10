@@ -16,6 +16,15 @@ public class Bundle
     [JsonPropertyName("description")]
     public string? Description { get; set; }
 
+    [JsonPropertyName("homepage")]
+    public string? Homepage { get; set; }
+
+    [JsonPropertyName("version")]
+    public string? Version { get; set; }
+
+    [JsonPropertyName("image")]
+    public string? ImagePath { get; set; }
+
     [JsonPropertyName("created_at")]
     public string? CreatedAt { get; set; }
 
@@ -152,10 +161,18 @@ public class Bundle
 
     public string ToModConfigIni()
     {
+        var desc = Description;
+        if (!string.IsNullOrEmpty(Homepage)) {
+            desc = "Homepage: " + Homepage + "\n\n" + desc;
+        }
+
+        desc = (desc ?? "").Trim();
         return $"""
             name={Name}
-            description={Description?.Replace("\n", "\\n")}
+            version={Version}
+            description={desc.Replace("\n", "\\n")}
             author={Author}
+            {(string.IsNullOrEmpty(ImagePath) ? "" : $"screenshot={ImagePath}")}
             """;
     }
 

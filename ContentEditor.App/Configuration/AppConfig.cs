@@ -575,6 +575,7 @@ public class AppJsonSettings
 {
     public SceneViewSettings SceneView { get; init; } = new();
     public MeshViewerSettings MeshViewer { get; init; } = new();
+    public BundleDefaults BundleDefaults { get; init; } = new();
     public ImportSettings Import { get; init; } = new();
     public List<string> RecentBundles { get; init; } = new();
     public List<string> RecentFiles { get; init; } = new();
@@ -601,4 +602,11 @@ public record MeshViewerSettings
 {
     public CameraProjection DefaultProjection { get; set; } = CameraProjection.Orthographic;
     public float MoveSpeed { get; set; } = 5f;
+}
+
+public class BundleDefaults
+{
+    public string? Author { get; set; }
+    public string? Description { get; set; }
+    public string? Homepage { get; set; }
 }

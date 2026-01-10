@@ -31,6 +31,7 @@ public static class FileFilters
     public static readonly FileFilter[] DDSFile = [new FileFilter("DDS", "dds")];
     public static readonly FileFilter[] TextureFile = [new FileFilter("TGA", "tga"), new FileFilter("PNG", "png"), ..DDSFile];
     public static readonly FileFilter[] TextureFilesAll = [new FileFilter("Supported images", "tga", "png", "dds"), ..TextureFile];
+    public static readonly FileFilter[] ImageFiles = [new FileFilter("Supported images", "jpg", "png", "jpeg", "bmp"), new FileFilter("PNG", "png"), new FileFilter("JPG", "jpg", "jpeg"), new FileFilter("BMP", "bmp")];
 
     public static readonly FileFilter[] ThemeFile = [new FileFilter("Theme File", "theme.txt")];
 }

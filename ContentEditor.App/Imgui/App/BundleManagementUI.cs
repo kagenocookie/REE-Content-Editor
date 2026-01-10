@@ -1,3 +1,4 @@
+using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -17,6 +18,8 @@ public class BundleManagementUI : IWindowHandler
     private readonly Action<string, JsonNode>? showDiff;
     public delegate void CreateBundleFromLooseFileFolderDelegate(string folder);
     public delegate void CreateBundleFromPakDelegate(string pak);
+
+    private Texture? loadedThumbnail;
 
     public BundleManagementUI(BundleManager workspace, string? preselectBundle, Action<string>? openFileCallback, Action<string, JsonNode>? showDiff,
         CreateBundleFromLooseFileFolderDelegate? createFromLooseFileFolder, CreateBundleFromPakDelegate? createFromPak)
@@ -120,8 +123,13 @@ public class BundleManagementUI : IWindowHandler
             using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(newBundleName))) {
                 ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);
                 if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
-                    if (bundleManager.CreateBundle(newBundleName) != null) {
+                    var newBundle = bundleManager.CreateBundle(newBundleName);
+                    if (newBundle != null) {
                         data.SetPersistentData("selectedBundle", newBundleName);
+                        newBundle.Author = AppConfig.Settings.BundleDefaults.Author ?? "";
+                        newBundle.Description = AppConfig.Settings.BundleDefaults.Description ?? "";
+                        newBundle.Homepage = AppConfig.Settings.BundleDefaults.Homepage ?? "";
+                        bundleManager.SaveBundle(newBundle);
                         newBundleName = "";
                     } else {
                         WindowManager.Instance.ShowError("Bundle already exists!", data);
@@ -183,6 +191,12 @@ public class BundleManagementUI : IWindowHandler
             ImguiHelpers.Tooltip("Unload current Bundle");
         }
         ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_Save}")) {
+            bundleManager.SaveBundle(bundle);
+            EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Saved!", 1f);
+        }
+        ImguiHelpers.Tooltip("Save bundle metadata");
+        ImGui.SameLine();
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, new[] { Colors.IconSecondary, Colors.IconPrimary })) {
             FileSystemUtils.ShowFileInExplorer(bundleManager.ResolveBundleLocalPath(bundle, ""));
         }
@@ -192,15 +206,80 @@ public class BundleManagementUI : IWindowHandler
         if (ImGui.InputText("Author", ref str, 100)) {
             bundle.Author = str;
         }
+        str = bundle.Homepage ?? "";
+        if (ImGui.InputText("Homepage", ref str, 100)) {
+            bundle.Homepage = str;
+        }
+        str = bundle.Version ?? "";
+        if (ImGui.InputText("Version", ref str, 100)) {
+            bundle.Version = str;
+        }
         str = bundle.Description ?? "";
         var w = ImGui.CalcItemWidth();
         if (ImGui.InputTextMultiline("Description", ref str, 1024, new Vector2(w, 120))) {
             bundle.Description = str;
         }
+        str = bundle.ImagePath ?? "";
+        var bundleFolder = bundleManager.GetBundleFolder(bundle);
+        if (AppImguiHelpers.InputFilepath("Image", ref str, FileFilters.ImageFiles)) {
+            if (File.Exists(str)) {
+                var localImageFilepath = str;
+                if (!string.IsNullOrEmpty(bundle.SaveFilepath)) {
+                    if (!str.StartsWith(bundle.SaveFilepath)) {
+                        var srcPath = str;
+                        str = Path.Combine(bundleFolder, Path.GetFileName(str));
+                        try {
+                            File.Copy(srcPath, str, true);
+                            EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Image copied to bundle folder", 4);
+                        } catch(Exception e) {
+                            Logger.Error("Unable to copy file into bundle: " + e.Message);
+                        }
+                    }
+                    localImageFilepath = Path.GetRelativePath(bundleFolder, str);
+                }
+                bundle.ImagePath = localImageFilepath;
+            } else {
+                bundle.ImagePath = str;
+            }
+        }
+        var resolvedBundleFilepath = "";
+        if (!string.IsNullOrEmpty(bundle.ImagePath) && !Path.IsPathFullyQualified(bundle.ImagePath)) {
+            var p = Path.Combine(bundleFolder, bundle.ImagePath);
+            if (File.Exists(p)) resolvedBundleFilepath = p;
+        }
+
+        if (loadedThumbnail?.Path != resolvedBundleFilepath || !File.Exists(resolvedBundleFilepath)) {
+            loadedThumbnail?.Dispose();
+            loadedThumbnail = null;
+        }
+
+        if (File.Exists(resolvedBundleFilepath)) {
+            if (loadedThumbnail == null) {
+                loadedThumbnail = new Texture();
+                loadedThumbnail.LoadFromFile(resolvedBundleFilepath);
+            }
+        }
+
+        if (loadedThumbnail != null) {
+            ImGui.SetNextItemOpen(true, ImGuiCond.Appearing);
+            if (ImGui.TreeNode("Preview")) {
+                var h = w * (loadedThumbnail.Height / (float)loadedThumbnail.Width);
+                ImGui.Image(loadedThumbnail.AsTextureRef(), new Vector2(w, h));
+                if (ImGui.Button("Reload")) {
+                    // wait until next frame before unloading so it doesn't glitch out
+                    MainLoop.Instance.InvokeFromUIThread(() => {
+                        loadedThumbnail?.Dispose();
+                        loadedThumbnail = null;
+                    });
+                }
+                ImGui.TreePop();
+            }
+        }
+
         ImGui.BeginDisabled();
         string createDate = $"Created at: {bundle.CreatedAt}";
         string updateDate = $"Updated at: {bundle.UpdatedAt}";
-        ImGui.InputText("##CerationDate", ref createDate, 100);
+        ImGui.InputText("##CreationDate", ref createDate, 100);
         ImGui.InputText("##UpdateDate", ref updateDate, 100);
         ImGui.EndDisabled();
 
@@ -313,7 +392,7 @@ public class BundleManagementUI : IWindowHandler
                     ImGui.SameLine();
                     using (var _ = ImguiHelpers.Disabled(!(entry.Value.Diff != null && showDiff != null && (entry.Value.Diff is JsonObject odiff && odiff.Count > 1)))) {
                         if (ImGui.Button($"{AppIcons.SI_FileChanges}")) {
-                            showDiff.Invoke($"{entry.Key} => {entry.Value.Target}", entry.Value.Diff);
+                            showDiff!.Invoke($"{entry.Key} => {entry.Value.Target}", entry.Value.Diff!);
                         }
                         ImguiHelpers.Tooltip("Show changes\nPartial patch generated at: " + entry.Value.DiffTime.ToString("O"));
                     }
