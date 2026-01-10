@@ -1025,6 +1025,7 @@ public class PrefabRefHandler : IObjectUIHandler
                 getter: (inst) => inst?.Values[1] as string,
                 setter: (inst, str) => inst.Values[1] = str ?? string.Empty);
         }
+        ImGui.PushID(context.label);
 
         var preloadType = instance.Values[0].GetType();
         var preload = instance.Values[0] is bool b ? b : (byte)instance.Values[0] != 0;
@@ -1040,6 +1041,7 @@ public class PrefabRefHandler : IObjectUIHandler
         ImGui.SameLine();
         ImGui.SetNextItemWidth(nextW);
         context.ShowChildrenUI();
+        ImGui.PopID();
     }
 }
 
