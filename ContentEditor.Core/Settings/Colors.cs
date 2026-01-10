@@ -85,6 +85,8 @@ public static class Colors
     /// Active color of icons when used with methods such as ToggleButton etc.
     ///</summary>
     public static Vector4 IconActive => Current.IconActive;
+    public static Vector4 IconOverlay => Current.IconOverlay;
+    public static Vector4 IconOverlayBackground => Current.IconOverlayBackground;
     public static Vector4 TagAnimation => Current.TagAnimation;
     public static Vector4 TagAnimationHovered => Current.TagAnimationHovered;
     public static Vector4 TagAnimationSelected => Current.TagAnimationSelected;
@@ -186,6 +188,8 @@ public sealed class AppColors
     public Vector4 IconSecondary = new Vector4(0.114f, 0.6f, 0.93f, 1);
     public Vector4 IconTertiary = new Vector4(1, 0.4f, 0.4f, 1);
     public Vector4 IconActive = new Vector4(0.114f, 0.6f, 0.93f, 1);
+    public Vector4 IconOverlay = new Vector4(0.114f, 0.6f, 0.93f, 1);
+    public Vector4 IconOverlayBackground = new Vector4(0.1f, 0.1f, 0.1f, 0.8f);
 
     public Vector4 TagAnimation = new Vector4(0.6f, 0.6f, 1, 0.5f);
     public Vector4 TagAnimationHovered = new Vector4(0.6f, 0.6f, 1, 0.8f);
