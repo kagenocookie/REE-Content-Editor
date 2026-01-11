@@ -16,6 +16,8 @@ public class Patcher : IDisposable
     private string runtimeEnumsPath = string.Empty;
     private string nativesPath = string.Empty;
 
+    private const string EnumsRelativePath = "reframework/data/injected_enums/";
+
     public Workspace Env => env;
     private GameConfig config => env.Config;
 
@@ -61,7 +63,7 @@ public class Patcher : IDisposable
             // 2. load game-specific patch config / overrides
             workspace = new ContentWorkspace(env, new PatchDataContainer(configPath));
         }
-        runtimeEnumsPath = Path.Combine(config.GamePath, "reframework/data/usercontent/enums/");
+        runtimeEnumsPath = Path.Combine(config.GamePath, EnumsRelativePath);
         nativesPath = Path.Combine(config.GamePath, env.BasePath);
 
         Logger.Info("Setup workspace in", sw.Elapsed.TotalSeconds);
@@ -169,6 +171,27 @@ public class Patcher : IDisposable
             Logger.Info("Patch saved to PAK file: " + outfile);
             patch.PakSize = new FileInfo(outfile).Length;
         }
+        foreach (var bundle in workspace.BundleManager.ActiveBundles) {
+            if (!(bundle.Enums?.Count > 0)) continue;
+
+            // if the output is PAK, output any custom enums into a reframework dir next to it
+            var outputBaseDir = Path.GetExtension(outfile) == ".pak" ? Path.GetDirectoryName(outfile)! : outfile;
+            var enumFile = Path.Combine(outputBaseDir, EnumsRelativePath, bundle.Name + ".txt");
+            Directory.CreateDirectory(Path.GetDirectoryName(enumFile)!);
+            var enumData = new StringBuilder();
+            foreach (var data in bundle.Enums) {
+                enumData.Append('@').AppendLine(data.Key);
+                foreach (var (key, val) in data.Value) {
+                    enumData.Append(key).Append('=').AppendLine(val.ToString());
+                }
+                enumData.AppendLine();
+            }
+            File.WriteAllText(enumFile, enumData.ToString());
+            patch.Resources[enumFile] = new PatchedResourceMetadata() {
+                TargetFilepath = enumFile,
+                SourceFilepath = enumFile,
+            };
+        }
         return patch;
     }
 
@@ -177,18 +200,7 @@ public class Patcher : IDisposable
         // note: if we implement patch-to-PAK, this won't be always needed, then we just find our PAK file
         var loosePatchMetaFile = workspace!.BundleManager.ResourcePatchLogPath;
         if (File.Exists(loosePatchMetaFile)) {
-            if (TryDeserialize<PatchInfo>(loosePatchMetaFile, out var data)) {
-                Logger.Info("Clearing previous patch data based on metadata in " + loosePatchMetaFile);
-                foreach (var file in data.Resources) {
-                    // var looseFilePath = Path.Combine(config.GamePath, file.Key);
-                    if (File.Exists(file.Value.TargetFilepath)) {
-                        Logger.Info("Deleting", file.Value.TargetFilepath);
-                        File.Delete(file.Value.TargetFilepath);
-                    }
-                }
-                File.Delete(loosePatchMetaFile);
-                Logger.Info("Cleared previous patch data");
-            }
+            DeletePatchInfoResources(loosePatchMetaFile);
         }
 
         var pak = FindActivePatchPak();
@@ -196,8 +208,25 @@ public class Patcher : IDisposable
             Logger.Info("Deleting previous patch PAK: " + pak);
             File.Delete(pak);
             if (File.Exists(pak + ".patch_metadata.json")) {
+                DeletePatchInfoResources(pak + ".patch_metadata.json");
                 File.Delete(pak + ".patch_metadata.json");
             }
+        }
+    }
+
+    private static void DeletePatchInfoResources(string loosePatchMetaFile)
+    {
+        if (TryDeserialize<PatchInfo>(loosePatchMetaFile, out var data)) {
+            Logger.Info("Clearing previous patch data based on metadata in " + loosePatchMetaFile);
+            foreach (var file in data.Resources) {
+                // var looseFilePath = Path.Combine(config.GamePath, file.Key);
+                if (File.Exists(file.Value.TargetFilepath)) {
+                    Logger.Info("Deleting", file.Value.TargetFilepath);
+                    File.Delete(file.Value.TargetFilepath);
+                }
+            }
+            File.Delete(loosePatchMetaFile);
+            Logger.Info("Cleared previous patch data");
         }
     }
 

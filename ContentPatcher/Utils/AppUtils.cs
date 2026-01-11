@@ -35,7 +35,7 @@ public static partial class AppUtils
             var pakRelativepath = Path.GetRelativePath(gamePath, pak).Replace("\\", "/");
             pakHash = unchecked(pakHash * 31 + MurMur3HashUtils.GetHash(pakRelativepath));
         }
-        hash += "-" + pakHash.ToString("X8");
+        hash += "-" + ((uint)pakHash).ToString("X8");
         return hash;
     }
 

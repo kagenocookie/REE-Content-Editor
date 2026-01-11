@@ -518,7 +518,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         foreach (var sourceEntity in activeBundle.GetEntities(type)) {
             if (!data.instances.TryGetValue(sourceEntity.Id, out var entity)) {
                 entity = new ResourceEntity(sourceEntity, data.config);
-                data.instances[sourceEntity.Id] = entity = new ResourceEntity(sourceEntity, data.config);
+                data.instances[sourceEntity.Id] = entity;
             } else {
                 entity.Data = sourceEntity.Data;
             }

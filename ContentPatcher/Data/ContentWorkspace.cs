@@ -3,6 +3,7 @@ using ContentEditor;
 using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher.FileFormats;
+using ContentPatcher.StringFormatting;
 using ReeLib;
 
 namespace ContentPatcher;
@@ -154,10 +155,23 @@ public sealed class ContentWorkspace : IDisposable
         }
 
         var deletes = new List<int>();
+        var enums = bundle.Enums ??= new Dictionary<string, Dictionary<string, JsonElement>>();
+        enums.Clear();
         for (int i = 0; i < bundle.Entities.Count; i++) {
             var entity = bundle.Entities[i];
-            if (entity is not ResourceEntity) {
+            if (entity is not ResourceEntity resEntity) {
                 // if it wasn't updated to a ResourceEntity, no resources were activated, therefore nothing was changed
+                if (entity.Enums != null) {
+                    // we do need to make sure to keep their enums though
+                    foreach (var (en, ee) in entity.Enums) {
+                        if (!enums.TryGetValue(en, out var eo)) {
+                            enums[en] = eo = new Dictionary<string, JsonElement>();
+                        }
+                        foreach (var (k, v) in ee) {
+                            eo[k] = v.Clone();
+                        }
+                    }
+                }
                 continue;
             }
 
@@ -173,6 +187,29 @@ public sealed class ContentWorkspace : IDisposable
                 continue;
             }
 
+            if (resEntity.Config.Enums?.Length > 0) {
+                resEntity.Enums = new();
+                // store any expected custom enum entries into the bundle so the patcher can just use them as-is without needing to re-evaluate
+                var enumFormatter = FormatterSettings.CreateFullEntityFormatter(resEntity.Config, this);
+                foreach (var enumInfo in resEntity.Config.Enums) {
+                    if (string.IsNullOrEmpty(enumInfo.format)) continue;
+
+                    if (!enums.TryGetValue(enumInfo.name, out var enumData)) {
+                        enums[enumInfo.name] = enumData = new Dictionary<string, JsonElement>();
+                    }
+                    var localEnum = resEntity.Enums[enumInfo.name] = new Dictionary<string, JsonElement>();
+
+                    var fmt = new StringFormatter(enumInfo.format, enumFormatter);
+
+                    var label = fmt.GetString(entity);
+                    var value = JsonSerializer.SerializeToElement(entity.Id);
+                    enumData[label] = value;
+                    localEnum[label] = value.Clone();
+                }
+            } else {
+                resEntity.Enums = null;
+            }
+
             Logger.Debug($"Saving modified entity {entity.Label}");
         }
 
@@ -182,6 +219,9 @@ public sealed class ContentWorkspace : IDisposable
             bundle.Entities.RemoveAt(del);
         }
         bundle.GameVersion = VersionHash;
+        if (enums.Count == 0) {
+            bundle.Enums = null;
+        }
 
         (EditedBundleManager ?? BundleManager).SaveBundle(bundle);
     }

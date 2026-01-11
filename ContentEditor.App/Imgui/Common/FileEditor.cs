@@ -155,12 +155,21 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                     }
                     ImguiHelpers.Tooltip("Save to Bundle");
                 } else if (workspace.CurrentBundle.ResourceListing == null || !workspace.CurrentBundle.TryFindResourceListing(Handle.NativePath ?? "", out var resourceListing)) {
-                    if (Handle.NativePath != null) {
+                    if (string.IsNullOrEmpty(Handle.NativePath) && Handle.Modified) {
+                        Logger.Warn("File has unsaved changes. Please save the file first before storing in bundle.");
+                    } else {
                         ImGui.SameLine();
                         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
                             workspace.CurrentBundle.ResourceListing ??= new();
                             var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle), Handle.Filepath);
-                            workspace.CurrentBundle.AddResource(localPath, Handle.NativePath, Handle.Format.format.IsDefaultReplacedBundleResource());
+                            var nativePath = !string.IsNullOrEmpty(Handle.NativePath) ? Handle.NativePath : workspace.Env.PrependBasePath(localPath);
+                            workspace.CurrentBundle.AddResource(localPath, nativePath, Handle.Format.format.IsDefaultReplacedBundleResource());
+                            if (string.IsNullOrEmpty(Handle.NativePath)) {
+                                // force reopen the file so we get the updated native path
+                                workspace.ResourceManager.CloseFile(Handle);
+                                context.GetNativeWindow()?.OpenFiles([Handle.Filepath]);
+                            }
+                            workspace.BundleManager.SaveBundle(workspace.CurrentBundle);
                         }
                         ImguiHelpers.Tooltip("Store in bundle\nFile is located in the bundle folder but is not marked as part of the bundle. This will store it into the bundle json.");
                     }
