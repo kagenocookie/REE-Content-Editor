@@ -60,11 +60,11 @@ public class PatchDataContainer(string filepath)
         };
     }
 
-    private static void LoadEnums(Workspace env, string filepath)
+    private static void LoadEnums(Workspace env, string sourceFolder)
     {
-        if (!Directory.Exists(filepath)) return;
+        if (!Directory.Exists(sourceFolder)) return;
 
-        foreach (var file in Directory.EnumerateFiles(filepath, "*.json")) {
+        foreach (var file in Directory.EnumerateFiles(sourceFolder, "*.json")) {
             var fs = File.OpenRead(file);
             EnumConfig data;
             try {
@@ -77,9 +77,20 @@ public class PatchDataContainer(string filepath)
             }
 
             var desc = env.TypeCache.GetEnumDescriptor(data.EnumName);
-            if (desc == EnumDescriptor<int>.Default) {
-                // TODO unknown / virtual enum
-                continue;
+            if (desc.IsEmpty) {
+                if (data.BackingType == null) continue;
+
+                // custom "virtual" enums
+                desc = env.TypeCache.CreateEnum(data.EnumName, data.BackingType);
+                if (desc == null) continue;
+
+                desc.IsFlags = data.IsFlags;
+            }
+
+            if (data.Values?.Count > 0) {
+                foreach (var (name, val) in data.Values) {
+                    desc.AddValue(name, val);
+                }
             }
 
             desc.SetDisplayLabels(data.DisplayLabels);

@@ -520,6 +520,56 @@ public class EnumFieldHandler : IObjectUIHandler
     }
 }
 
+public class RszEnumFieldHandler : IObjectUIHandler
+{
+    public EnumDescriptor EnumDescriptor { get; set; }
+
+    public RszEnumFieldHandler(EnumDescriptor enumDescriptor)
+    {
+        this.EnumDescriptor = enumDescriptor;
+    }
+
+    private struct RszEnumSource : IEnumDataSource
+    {
+        public EnumDescriptor descriptor;
+        public string[] GetLabels() => descriptor.GetDisplayLabels();
+        public object[] GetValues() => descriptor.GetValues();
+    }
+
+    public unsafe void OnIMGUI(UIContext context)
+    {
+        var selected = context.GetRaw();
+        if (!context.HasBoolState) {
+            var isMatchedValue = !string.IsNullOrEmpty(EnumDescriptor.GetLabel(selected!));
+            context.StateBool = !isMatchedValue;
+        }
+        var useCustomValueInput = context.StateBool;
+        ImGui.PushID(context.label);
+        var w = ImGui.CalcItemWidth();
+        ImGui.SetNextItemWidth(UI.FontSize);
+        if (ImguiHelpers.ToggleButton(useCustomValueInput ? "#" : "a", ref useCustomValueInput, useCustomValueInput ? Colors.IconActive : null)) {
+            context.StateBool = useCustomValueInput;
+            // adding an undo entry for this isn't very meaningful by itself, but it kinda needs to be there
+            // the enum-style and value-style handlers use different undo record types (boxed vs direct type) and don't allow merging
+            UndoRedo.RecordCallback(null, () => context.StateBool = useCustomValueInput, () => context.StateBool = !useCustomValueInput);
+        }
+        ImguiHelpers.Tooltip("Use Custom Value Input");
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(w - UI.FontSize);
+        var valueType = selected!.GetType();
+        if (useCustomValueInput) {
+            NumericFieldHandler<int>.GetHandlerForType(valueType).OnIMGUI(context);
+        } else {
+            var enumsrc = new RszEnumSource { descriptor = EnumDescriptor };
+            if (ImguiHelpers.FilterableEnumCombo(context.label, enumsrc, ref selected, ref context.Filter)) {
+                UndoRedo.RecordSet(context, selected);
+            }
+        }
+        AppImguiHelpers.ShowJsonCopyPopup(selected, valueType, context);
+        ImGui.PopID();
+    }
+}
+
 public class FlagsEnumFieldHandler : IObjectUIHandler
 {
     private EnumDescriptor enumDescriptor;
@@ -993,9 +1043,15 @@ public class GameObjectRefHandler : Singleton<GameObjectRefHandler>, IObjectUIHa
         if (context.children.Count == 0) {
             context.AddChild<GameObjectRef, Guid>("##Guid", gref, GuidFieldHandler.NoContextMenuInstance, (r) => r!.guid, (r, v) => r.guid = v);
             context.AddChild("_", null, SameLineHandler.Instance);
-            context.AddChild<GameObjectRef, IGameObject>(context.label, gref, new InstancePickerHandler<GameObject>(true, (ctx, force) => {
+            context.AddChild<GameObjectRef, IGameObject>(context.label, gref, new InstancePickerHandler<IGameObject>(true, (ctx, force) => {
                 var owner = ctx.FindHandlerInParents<ISceneEditor>()?.GetScene();
                 if (owner == null) {
+                    var bhvtHandler = ctx.FindParentContextByHandler<BhvtFileEditor>();
+                    if (bhvtHandler != null) {
+                        var bhvt = bhvtHandler.Get<BhvtFile>();
+                        return bhvt.GameObjectReferences;
+                    }
+
                     Logger.Error("Could not find RSZ data owner");
                     return [];
                 }

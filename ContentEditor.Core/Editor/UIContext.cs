@@ -28,6 +28,7 @@ public class UIContext
         get => (bool)GetStateValue<bool>(1, false).value!;
         set => GetStateValue<bool>(1, value).value = value;
     }
+    public bool HasBoolState => GetStateOrNull(1) != null;
     public ref string Filter => ref GetStateRef<string>(2, "");
     public ref string InputClassname => ref GetStateRef<string>(3, "");
     public ref string ClassnameFilter => ref GetStateRef<string>(4, "");

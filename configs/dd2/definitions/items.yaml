@@ -123,7 +123,7 @@ classes:
       _UseAttr: { enum: app.ItemUseAttrBits }
   app.ItemWeaponParam:
     fields:
-      _Job: { enum: ItemJobFlags }
+      _Job: { enum: ce.ItemJobFlags }
   app.WeaponCatalogData.Data:
     id: [ID]
     patcher:
