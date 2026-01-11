@@ -77,7 +77,7 @@ public class PatchDataContainer(string filepath)
             }
 
             var desc = env.TypeCache.GetEnumDescriptor(data.EnumName);
-            if (desc == EnumDescriptor<int>.Default) {
+            if (desc.IsEmpty) {
                 if (data.BackingType == null) continue;
 
                 // custom "virtual" enums

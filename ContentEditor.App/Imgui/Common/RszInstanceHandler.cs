@@ -539,7 +539,6 @@ public class RszEnumFieldHandler : IObjectUIHandler
     public unsafe void OnIMGUI(UIContext context)
     {
         var selected = context.GetRaw();
-        var enumsrc = new RszEnumSource { descriptor = enumDescriptor };
         if (!context.HasBoolState) {
             var isMatchedValue = !string.IsNullOrEmpty(enumDescriptor.GetLabel(selected!));
             context.StateBool = !isMatchedValue;
@@ -561,6 +560,7 @@ public class RszEnumFieldHandler : IObjectUIHandler
         if (useCustomValueInput) {
             NumericFieldHandler<int>.GetHandlerForType(valueType).OnIMGUI(context);
         } else {
+            var enumsrc = new RszEnumSource { descriptor = EnumDescriptor };
             if (ImguiHelpers.FilterableEnumCombo(context.label, enumsrc, ref selected, ref context.Filter)) {
                 UndoRedo.RecordSet(context, selected);
             }
@@ -1043,9 +1043,15 @@ public class GameObjectRefHandler : Singleton<GameObjectRefHandler>, IObjectUIHa
         if (context.children.Count == 0) {
             context.AddChild<GameObjectRef, Guid>("##Guid", gref, GuidFieldHandler.NoContextMenuInstance, (r) => r!.guid, (r, v) => r.guid = v);
             context.AddChild("_", null, SameLineHandler.Instance);
-            context.AddChild<GameObjectRef, IGameObject>(context.label, gref, new InstancePickerHandler<GameObject>(true, (ctx, force) => {
+            context.AddChild<GameObjectRef, IGameObject>(context.label, gref, new InstancePickerHandler<IGameObject>(true, (ctx, force) => {
                 var owner = ctx.FindHandlerInParents<ISceneEditor>()?.GetScene();
                 if (owner == null) {
+                    var bhvtHandler = ctx.FindParentContextByHandler<BhvtFileEditor>();
+                    if (bhvtHandler != null) {
+                        var bhvt = bhvtHandler.Get<BhvtFile>();
+                        return bhvt.GameObjectReferences;
+                    }
+
                     Logger.Error("Could not find RSZ data owner");
                     return [];
                 }
