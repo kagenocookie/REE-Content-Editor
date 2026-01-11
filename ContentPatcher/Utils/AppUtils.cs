@@ -1,11 +1,12 @@
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using ContentEditor;
 using ReeLib;
 using ReeLib.Common;
 
 namespace ContentPatcher;
 
-public static class ExeUtils
+public static partial class AppUtils
 {
     /// <summary>
     /// Calculates a hash string based on an exe's metadata file version and detected PAK files.
@@ -56,5 +57,25 @@ public static class ExeUtils
         }
 
         return null;
+    }
+
+
+    [GeneratedRegex(@"(\P{Ll})(\P{Ll}\p{Ll})")]
+    private static partial Regex PascalCaseFixerRegex1();
+
+    [GeneratedRegex(@"(\p{Ll})(\P{Ll})")]
+    private static partial Regex PascalCaseFixerRegex2();
+
+    [GeneratedRegex(@"(?:^| )(\p{Ll})")]
+    private static partial Regex CapitalizeRegex();
+
+    public static string PrettyPrint(this string name)
+    {
+        // https://stackoverflow.com/a/5796793/4721768
+        name = name.TrimStart('_');
+        name = PascalCaseFixerRegex1().Replace(name, "$1 $2");
+        name = PascalCaseFixerRegex2().Replace(name, "$1 $2");
+        name = CapitalizeRegex().Replace(name.Replace("_", ""), static f => f.Value.ToUpperInvariant());
+        return name;
     }
 }

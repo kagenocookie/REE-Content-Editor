@@ -30,7 +30,7 @@ public class OpenFileContext
     }
 }
 
-public static partial class WindowHandlerFactory
+public static class WindowHandlerFactory
 {
     private static Dictionary<Type, Func<CustomField, IObjectUIHandler>>? customFieldImguiHandlers;
 
@@ -803,12 +803,6 @@ public static partial class WindowHandlerFactory
         };
     }
 
-    [GeneratedRegex(@"(\P{Ll})(\P{Ll}\p{Ll})")]
-    private static partial Regex PascalCaseFixerRegex1();
-
-    [GeneratedRegex(@"(\p{Ll})(\P{Ll})")]
-    private static partial Regex PascalCaseFixerRegex2();
-
     private static string GetFieldLabel(string name)
     {
         if (!showPrettyLabels) return name;
@@ -817,11 +811,6 @@ public static partial class WindowHandlerFactory
             return label;
         }
 
-        // https://stackoverflow.com/a/5796793/4721768
-        label = name.TrimStart('_');
-        label = PascalCaseFixerRegex1().Replace(label, "$1 $2");
-        label = PascalCaseFixerRegex2().Replace(label, "$1 $2");
-        prettyLabels[name] = label;
-        return label;
+        return prettyLabels[name] = name.PrettyPrint();
     }
 }

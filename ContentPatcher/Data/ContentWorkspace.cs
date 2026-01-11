@@ -44,7 +44,7 @@ public sealed class ContentWorkspace : IDisposable
             }
             if (valid) patchConfig.Load(this);
         }
-        VersionHash = string.IsNullOrEmpty(env.Config.GamePath) ? "0000" : ExeUtils.GetGameVersionHash(env.Config);
+        VersionHash = string.IsNullOrEmpty(env.Config.GamePath) ? "0000" : AppUtils.GetGameVersionHash(env.Config);
         ResourceManager.Setup(this);
     }
 
