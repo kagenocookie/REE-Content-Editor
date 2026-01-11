@@ -135,7 +135,7 @@ void ExecutePatcher()
     Logger.Info($"Patching finished in {sw.Elapsed.TotalSeconds} s");
     if (launchAfterPatch) {
         Logger.Info($"Attempting to launch game...");
-        var exe = ExeUtils.FindGameExecutable(patcher.Env.Config.GamePath, game);
+        var exe = AppUtils.FindGameExecutable(patcher.Env.Config.GamePath, game);
         if (exe != null) {
             Logger.Info("Launching exe " + exe);
             Process.Start(new ProcessStartInfo(exe) {

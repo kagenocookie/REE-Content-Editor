@@ -57,7 +57,7 @@ public class NullFallbackSource : ISource
 {
     public bool TryEvaluateSelector(ISelectorInfo selectorInfo)
     {
-        return selectorInfo.CurrentValue == null && selectorInfo.SelectorOperator.StartsWith('?');
+        return selectorInfo.CurrentValue == null && (selectorInfo.SelectorOperator.StartsWith('?') || selectorInfo.SelectorOperator.EndsWith('?'));
     }
 }
 public class RszFieldStringFormatterSource : ISource
@@ -105,7 +105,7 @@ public class RszFieldArrayStringFormatterSource : ISource
 
         int index = selectorInfo.SelectorText == "*" ? 0 : -1;
         if (index >= 0 || int.TryParse(selectorInfo.SelectorText, out index)) {
-            if (index < 0 || index > instances.Count) {
+            if (index < 0 || index >= instances.Count) {
                 selectorInfo.Result = null;
             } else {
                 selectorInfo.Result = instances[index];
@@ -144,6 +144,8 @@ public class EntityStringFormatterSource(EntityConfig config) : ISource
             selectorInfo.Result = entity.Get(selectorInfo.SelectorText);
             return true;
         }
+
+        if (selectorInfo.SelectorOperator.Contains('?')) return false;
 
         throw new Exception($"Invalid field {selectorInfo.SelectorText} for entity type {entity.Type}");
     }

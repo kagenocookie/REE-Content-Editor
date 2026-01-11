@@ -124,6 +124,9 @@ classes:
   app.ItemWeaponParam:
     fields:
       _Job: { enum: ce.ItemJobFlags }
+  app.ItemArmorParam:
+    fields:
+      _StyleNo: { handler: DD2.ArmorStyle }
   app.WeaponCatalogData.Data:
     id: [ID]
     patcher:

@@ -18,6 +18,7 @@ public class PatchDataContainer(string filepath)
     private readonly Dictionary<string, ClassConfig> configs = new();
     private readonly Dictionary<string, EntityConfig> entities = new();
     private readonly Dictionary<string, CustomTypeConfig> customTypes = new();
+    private readonly List<IEntitySetup> entitySetups = new();
 
     private string DefinitionFilepath { get; } = Path.Combine(filepath, "definitions");
     private string EnumFilepath { get; } = Path.Combine(filepath, "enums");
@@ -42,14 +43,26 @@ public class PatchDataContainer(string filepath)
 
     public void Load(ContentWorkspace workspace)
     {
+        if (entitySetups.Count == 0) {
+            var setupTypes = typeof(IEntitySetup).Assembly.GetTypes()
+                .Where(t => !t.IsAbstract && t.IsAssignableTo(typeof(IEntitySetup)));
+            entitySetups.AddRange(setupTypes.Select(t => (IEntitySetup)Activator.CreateInstance(t)!)!);
+        }
         IsLoaded = true;
         configs.Clear();
+        foreach (var setup in entitySetups) {
+            if (setup.SupportedGames?.Length > 0 && !setup.SupportedGames.Contains(workspace.Game.name)) {
+                continue;
+            }
+
+            try {
+                setup.Setup(workspace);
+            } catch (Exception e) {
+                Logger.Error(e, $"Failed to execute setup {setup.GetType().Name}");
+            }
+        }
         AddDefaultConfigs();
         LoadPatchConfigs(workspace);
-        if (!string.IsNullOrEmpty(workspace.Env.Config.GamePath)) {
-            var runtimeEnumConfigsPath = Path.Combine(workspace.Env.Config.GamePath, "reframework/data/usercontent/enums");
-            LoadEnums(workspace.Env, runtimeEnumConfigsPath);
-        }
         LoadEnums(workspace.Env, EnumFilepath);
     }
 
@@ -85,6 +98,10 @@ public class PatchDataContainer(string filepath)
                 if (desc == null) continue;
 
                 desc.IsFlags = data.IsFlags;
+            } else {
+                if (data.IsFlags) {
+                    desc.IsFlags = data.IsFlags;
+                }
             }
 
             if (data.Values?.Count > 0) {

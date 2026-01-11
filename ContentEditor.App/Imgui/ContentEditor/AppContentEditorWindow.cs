@@ -66,7 +66,7 @@ public class AppContentEditorWindow : IWindowHandler, IWorkspaceContainer
         int i = 0;
         while (curLevelList != null) {
             int index = i >= selectedTabIndexes.Count ? -1 : selectedTabIndexes[i];
-            if (ImguiHelpers.Tabs(curLevelList.Names, ref index)) {
+            if (ImguiHelpers.Tabs(curLevelList.FriendlyNames, ref index)) {
                 selectedTabIndexes.RemoveAtAfter(i);
                 if (i >= selectedTabIndexes.Count) {
                     selectedTabIndexes.Add(index);

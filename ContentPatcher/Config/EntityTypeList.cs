@@ -13,6 +13,13 @@ public class EntityTypeList(string name)
             return _names;
         }
     }
+    private string[]? _friendlyNames;
+    public string[] FriendlyNames {
+        get {
+            if (_friendlyNames == null) _friendlyNames = Names.Select(n => n.PrettyPrint()).ToArray();
+            return _friendlyNames;
+        }
+    }
 
     private object[]? _values;
     public object[] Items {

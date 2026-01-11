@@ -1,7 +1,12 @@
 entities:
   items.style.TopsStyle:
     group: styles
-    to_string: "Style {data[0]._TopsStyle:enum(app.TopsStyle)}"
+    enums:
+    - name: ce.TopsStyleNo
+      format: "Tops_{id:03}"
+      primary: true
+    - name: app.TopsStyle
+    to_string: "Style {data[0].?_TopsStyle:enum(app.TopsStyle)}"
     custom_id_range: [10000, 32700] #_StyleNo on the armor data is a signed short so we need to limit to that range
     fields:
       data:
@@ -10,6 +15,70 @@ entities:
         required: true
         param:
           classname: app.TopsSwapItem
+  items.style.PantsStyle:
+    group: styles
+    enums:
+    - name: ce.PantsStyleNo
+      format: "Pants_{id:03}"
+      primary: true
+    - name: app.PantsStyle
+    to_string: "Style {data[0].?_PantsStyle:enum(app.PantsStyle)}"
+    custom_id_range: [10000, 32700]
+    fields:
+      data:
+        type: objectArray
+        label: Data
+        required: true
+        param:
+          classname: app.PantsSwapItem
+  items.style.HelmStyle:
+    group: styles
+    enums:
+    - name: ce.HelmStyleNo
+      format: "Helm_{id:03}"
+      primary: true
+    - name: app.HelmStyle
+    to_string: "Style {data[0].?_HelmStyle:enum(app.HelmStyle)}"
+    custom_id_range: [10000, 32700]
+    fields:
+      data:
+        type: objectArray
+        label: Data
+        required: true
+        param:
+          classname: app.HelmSwapItem
+  items.style.MantleStyle:
+    group: styles
+    enums:
+    - name: ce.MantleStyleNo
+      format: "Mantle_{id:03}"
+      primary: true
+    - name: app.MantleStyle
+    to_string: "Style {data[0].?_MantleStyle:enum(app.MantleStyle)}"
+    custom_id_range: [10000, 32700]
+    fields:
+      data:
+        type: objectArray
+        label: Data
+        required: true
+        param:
+          classname: app.MantleSwapItem
+  items.style.FacewearStyle:
+    group: styles
+    enums:
+    - name: ce.FacewearStyleNo
+      format: "Facewear_{id:03}"
+      primary: true
+    - name: app.FacewearStyle
+    to_string: "Style {data[0].?_Style:enum(app.FacewearStyle)}"
+    custom_id_range: [10000, 32700]
+    fields:
+      data:
+        type: objectArray
+        label: Data
+        required: true
+        param:
+          classname: app.FacewearSwapItem
 
 classes:
   app.TopsSwapItem:
@@ -20,3 +89,36 @@ classes:
     patcher:
       type: array-file
       file: natives/stm/appsystem/charaedit/ch000/swapdata/topsswapdata.user.2
+  app.PantsSwapItem:
+    id: [_PantsStyle]
+    subId: [_Gender]
+    to_string: "{class_shortname} {_PantsStyle:enum(app.PantsStyle)} {_Gender:enum(app.Gender)}"
+    group: item
+    patcher:
+      type: array-file
+      file: natives/stm/appsystem/charaedit/ch000/swapdata/pantsswapdata.user.2
+  app.HelmSwapItem:
+    id: [_HelmStyle]
+    subId: [_Gender]
+    to_string: "{class_shortname} {_HelmStyle:enum(app.HelmStyle)} {_Gender:enum(app.Gender)}"
+    group: item
+    patcher:
+      type: array-file
+      file: natives/stm/appsystem/charaedit/ch000/swapdata/Helmswapdata.user.2
+  app.MantleSwapItem:
+    id: [_MantleStyle]
+    subId: [_Gender]
+    to_string: "{class_shortname} {_MantleStyle:enum(app.MantleStyle)} {_Gender:enum(app.Gender)}"
+    group: item
+    patcher:
+      type: array-file
+      file: natives/stm/appsystem/charaedit/ch000/swapdata/mantleswapdata.user.2
+  app.FacewearSwapItem:
+    id: [_Style]
+    subId: [_Gender]
+    to_string: "{class_shortname} {_Style:enum(app.FacewearStyle)} {_Gender:enum(app.Gender)}"
+    group: item
+    patcher:
+      type: array-file
+      file: natives/stm/appsystem/charaedit/ch000/swapdata/Facewearswapdata.user.2
+
