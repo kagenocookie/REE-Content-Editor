@@ -522,11 +522,11 @@ public class EnumFieldHandler : IObjectUIHandler
 
 public class RszEnumFieldHandler : IObjectUIHandler
 {
-    private EnumDescriptor enumDescriptor;
+    public EnumDescriptor EnumDescriptor { get; set; }
 
     public RszEnumFieldHandler(EnumDescriptor enumDescriptor)
     {
-        this.enumDescriptor = enumDescriptor;
+        this.EnumDescriptor = enumDescriptor;
     }
 
     private struct RszEnumSource : IEnumDataSource
@@ -540,7 +540,7 @@ public class RszEnumFieldHandler : IObjectUIHandler
     {
         var selected = context.GetRaw();
         if (!context.HasBoolState) {
-            var isMatchedValue = !string.IsNullOrEmpty(enumDescriptor.GetLabel(selected!));
+            var isMatchedValue = !string.IsNullOrEmpty(EnumDescriptor.GetLabel(selected!));
             context.StateBool = !isMatchedValue;
         }
         var useCustomValueInput = context.StateBool;
