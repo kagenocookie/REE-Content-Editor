@@ -93,6 +93,7 @@ public static partial class WindowHandlerFactory
     private static readonly HashSet<GameIdentifier> setupGames = new();
     private static readonly Dictionary<RszClass, List<Func<UIContext, bool>>> classActions = new();
     private static readonly Dictionary<RszClass, Func<IObjectUIHandler>> classHandlers = new();
+    private static readonly Dictionary<string, Func<IObjectUIHandler>> customHandlers = new();
     private static readonly Dictionary<Type, Func<UIContext, object>> instantiators = new();
 
     static WindowHandlerFactory()
@@ -205,6 +206,19 @@ public static partial class WindowHandlerFactory
                     }
 
                     classHandlers[cls] = () => (IObjectUIHandler)Activator.CreateInstance(type)!;
+                }
+            }
+
+            if (type.GetCustomAttribute<CustomUIHandlerTypeAttribute>() != null) {
+                if (!type.IsAssignableTo(typeof(IObjectUIHandler))) {
+                    Logger.Error($"{nameof(CustomUIHandlerTypeAttribute)} annotated class must implement {nameof(IObjectUIHandler)} (type {type.FullName})");
+                    continue;
+                }
+
+                foreach (var attr in type.GetCustomAttributes<CustomUIHandlerTypeAttribute>()) {
+                    if (attr.SupportedGames?.Length > 0 && !attr.SupportedGames.Contains(game.name)) continue;
+
+                    customHandlers[attr.Name] = () => (IObjectUIHandler)Activator.CreateInstance(type)!;
                 }
             }
         }
@@ -512,7 +526,9 @@ public static partial class WindowHandlerFactory
             if (context.parent?.target is RszInstance parent) {
                 fieldConfig = ws.Config.Get(parent.RszClass.name, field.name);
                 if (fieldConfig != null) {
-                    if (fieldConfig.Enum != null) {
+                    if (fieldConfig.Handler != null && customHandlers.TryGetValue(fieldConfig.Handler, out var customhandler)) {
+                        return context.uiHandler = customhandler.Invoke();
+                    } else if (fieldConfig.Enum != null) {
                         context.uiHandler = TryCreateEnumHandler(ws, fieldConfig.Enum, field.type);
                         if (context.uiHandler != null) return context.uiHandler;
                     }

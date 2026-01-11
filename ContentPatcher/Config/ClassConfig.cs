@@ -97,6 +97,7 @@ public partial class FieldConfig
     public string? Label;
     public string? TranslateGuid;
     public string? TranslateFallbackEnum;
+    public string? Handler;
     public bool ReadOnly;
     public Dictionary<string, string?>? OneOf { get; set; }
 }

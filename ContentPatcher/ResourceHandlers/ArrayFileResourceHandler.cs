@@ -21,7 +21,22 @@ public class ArrayFileResourceHandler : ResourceHandler
     {
         if (config.SubIDFields?.Length > 0) {
             var list = new RSZObjectListResource(ResourceKey, file!);
-            workspace.Diff.ApplyDiff(list.Instances, initialData, ResourceKey);
+            if (initialData is JsonArray arr) {
+                foreach (var srcItem in arr) {
+                    var inst = RszInstance.CreateInstance(workspace.Env.RszParser, workspace.Env.RszParser.GetRSZClass(ResourceKey)!);
+                    workspace.Diff.ApplyDiff(inst, srcItem);
+                    if (config.IDFields?.Length == 1) {
+                        var idField = inst.RszClass.fields[config.IDFields[0]];
+                        var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
+                        inst.SetFieldValue(config.IDFields[0], Convert.ChangeType(entity.Id, fieldType));
+                    } else {
+                        throw new NotImplementedException("Unsupported rsz object id combination");
+                    }
+                    list.Instances.Add(inst);
+                }
+            } else {
+                workspace.Diff.ApplyDiff(list.Instances, initialData, ResourceKey);
+            }
             return (entity.Id, list);
         } else {
             var inst = RszInstance.CreateInstance(workspace.Env.RszParser, workspace.Env.RszParser.GetRSZClass(ResourceKey)!);
