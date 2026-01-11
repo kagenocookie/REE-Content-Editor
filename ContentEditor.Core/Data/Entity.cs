@@ -1,5 +1,6 @@
 namespace ContentEditor.Core;
 
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
@@ -16,6 +17,9 @@ public class Entity
 
     [JsonPropertyName("data")]
     public Dictionary<string, JsonNode?>? Data { get; set; }
+
+    [JsonPropertyName("enums")]
+    public Dictionary<string, Dictionary<string, JsonElement>>? Enums { get; set; }
 
     public override string ToString() => $"[{Type} {Id}]:{Label}";
 }

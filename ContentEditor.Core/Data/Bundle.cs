@@ -2,6 +2,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
@@ -50,7 +51,7 @@ public class Bundle
     public SortedDictionary<string, ResourceListItem>? ResourceListing { get; set; }
 
     [JsonPropertyName("enums")]
-    public Dictionary<string, object>? Enums { get; set; }
+    public Dictionary<string, Dictionary<string, JsonElement>>? Enums { get; set; }
 
     [JsonPropertyName("game_version")]
     public string? GameVersion { get; set; }

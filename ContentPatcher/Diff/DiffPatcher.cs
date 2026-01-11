@@ -135,6 +135,9 @@ public class DiffPatcher
             var actionType = ReadPatchAction(itemObj);
             int index;
             switch (actionType) {
+                case 0: // if no action type, assume add (because the base most likely didn't have this array at all)
+                    list.Add(item.Deserialize(csType, env.JsonOptions)!);
+                    break;
                 case DiffPatchActionTypes.Added:
                     list.Add(item["$item"].Deserialize(csType, env.JsonOptions)!);
                     break;
