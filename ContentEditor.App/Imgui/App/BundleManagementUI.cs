@@ -349,7 +349,8 @@ public class BundleManagementUI : IWindowHandler
                     if (openFileCallback != null) {
                         if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
                             var path = bundleManager.ResolveBundleLocalPath(bundle, entry.Key);
-                            if (bundle.Name == preselectBundle || !File.Exists(path)) {
+                            if (!File.Exists(path)) {
+                                Logger.Warn("File not found in bundle folder, opening base file " + entry.Value.Target);
                                 openFileCallback.Invoke(entry.Value.Target);
                             } else {
                                 openFileCallback.Invoke(path);
