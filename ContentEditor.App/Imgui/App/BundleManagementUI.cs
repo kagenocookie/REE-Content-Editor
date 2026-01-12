@@ -1,8 +1,10 @@
 using ContentEditor.App.Graphics;
+using ContentEditor.App.Widgets;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Aimp;
 using System;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -341,167 +343,41 @@ public class BundleManagementUI : IWindowHandler
         }
 
         if (bundle.ResourceListing != null && ImGui.TreeNodeEx("Files", ImGuiTreeNodeFlags.Framed)) {
-            ImGui.Indent(-ImGui.GetStyle().IndentSpacing); // SILVER: :slight_smile:
+            ImGui.Indent(-ImGui.GetStyle().IndentSpacing);
             ImGui.Spacing();
             ImGui.PushStyleVar(ImGuiStyleVar.TreeLinesSize, 1.5f);
             if (ImGui.TreeNodeEx($"{AppIcons.SI_Bundle} " + bundle.Name, ImGuiTreeNodeFlags.DrawLinesFull | ImGuiTreeNodeFlags.DefaultOpen)) {
-                var tree = BuildHierarchyFileTree(bundle.ResourceListing.Select(e => e.Key));
-                DrawHierarchyFileTreeWidget(tree, node => ShowHierarchyFileTreeActionButtons(node, bundle));
+                var tree = HierarchyTreeWidget.Build(bundle.ResourceListing.Select(e => e.Key));
+                HierarchyTreeWidget.Draw(tree, node => ShowHierarchyFileTreeActionButtons(node, bundle));
+
                 ImGui.TreePop();
             }
             ImGui.PopStyleVar();
             ImGui.Unindent();
             ImGui.TreePop();
         }
-
     }
-    // TODO SILVER: CLASS TO BE MOVED
-    class HierarchyTreeWidget
-    {
-        public string Name = string.Empty;
-        public string? EntryKey;
-        public Dictionary<string, HierarchyTreeWidget> Children = new();
-    }
-    const float ActionColumnOffset = 30f; // SILVER: The amount we offset the action buttons from the left side of the tab
-    const float ActionColumnWidth = 150f; // SILVER: The space we set for the action buttons
-    static HierarchyTreeWidget BuildHierarchyFileTree(IEnumerable<string> entries)
-    {
-        var root = new HierarchyTreeWidget();
-
-        foreach (var key in entries) {
-            var parts = key.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            var current = root;
-
-            for (int i = 0; i < parts.Length; i++) {
-                string part = parts[i];
-                bool isFile = Path.HasExtension(part);
-
-                if (!current.Children.TryGetValue(part, out var node)) {
-                    node = new HierarchyTreeWidget { Name = part, EntryKey = isFile ? key : null};
-                    current.Children[part] = node;
-                }
-                current = node;
-            }
-        }
-        return root;
-    }
-
-    static void DrawHierarchyFileTreeWidget(HierarchyTreeWidget node, Action<HierarchyTreeWidget>? drawActions = null, int hierarchyLayer = 0)
-    {
-        foreach (var child in node.Children.Values.OrderBy(c => c.EntryKey != null).ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)) {
-
-            ImGui.PushID(child.Name);
-
-            bool isActionHovered = false;
-            float rowY = ImGui.GetCursorPosY() + 5f;
-            float contentX = ImGui.GetCursorPosX();
-            ImGui.SetCursorPosX(ActionColumnOffset);
-            ImGui.BeginChild("##actions", new Vector2(ActionColumnWidth, ImGui.GetTextLineHeight() + 10f), ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
-            if (!(hierarchyLayer == 0 && child.EntryKey == null)) {
-                drawActions?.Invoke(child);
-                
-            }
-            ImGui.EndChild();
-            isActionHovered = ImGui.IsItemHovered();
-
-            ImGui.SetCursorPos(new Vector2(contentX + ActionColumnWidth, rowY));
-            if (child.EntryKey != null) {
-                char icon = AppIcons.SI_File;
-                Vector4 col = ImGui.GetStyle().Colors[(int)ImGuiCol.Text];
-
-                if (Path.HasExtension(child.Name)) {
-                    var (fileIcon, fileCol) = AppIcons.GetIcon(PathUtils.ParseFileFormat(child.Name).format);
-
-                    if (fileIcon != '\0') {
-                        icon = fileIcon;
-                        col = fileCol;
-                    }
-                }
-                ImGui.Dummy(new Vector2(5f, 0));
-                ImGui.SameLine();
-                ImGui.TextColored(col, $"{icon}");
-                ImGui.SameLine();
-                ImGui.PushStyleColor(ImGuiCol.Text, isActionHovered ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text));
-                ImGui.Selectable(child.Name);
-                ImGui.PopStyleColor();
-            } else {
-                bool isNestedFolder = ImGui.TreeNodeEx($"{AppIcons.SI_FolderEmpty} " + child.Name,  ImGuiTreeNodeFlags.DrawLinesToNodes | ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanAllColumns);
-                if (isNestedFolder) {
-                    DrawHierarchyFileTreeWidget(child, drawActions, hierarchyLayer + 1);
-                    ImGui.TreePop();
-                }
-            }
-            ImGui.PopID();
-        }
-    }
-    // TODO SILVER: Clean up this method
     private void ShowHierarchyFileTreeActionButtons(HierarchyTreeWidget node, Bundle bundle)
     {
 
-        bundle.ResourceListing.TryGetValue(node.EntryKey ?? "", out var entry);
+        var hasKey = node.EntryKey != null;
+        bundle.ResourceListing.TryGetValue(node.EntryKey ?? string.Empty, out var entry);
+        bool hasEntry = entry != null;
 
         ImGui.PushID(node.EntryKey ?? node.Name);
-
         using (var _ = ImguiHelpers.Disabled(entry == null)) {
-            if (openFileCallback != null) {
-                if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
-                    var path = bundleManager.ResolveBundleLocalPath(bundle, node.EntryKey);
-                    if (!File.Exists(path)) {
-                        Logger.Warn("File not found in bundle folder, opening base file " + entry.Target);
-                        openFileCallback.Invoke(entry.Target);
-                    } else {
-                        openFileCallback.Invoke(path);
-                    }
-                }
-                ImguiHelpers.Tooltip(entry != null ? "Open file in Editor" : "Lorem Ipsum");
-            }
 
+            ShowOpenInEditorButton(node, bundle, entry);
             ImGui.SameLine();
-            if (ImGui.Button($"{AppIcons.SI_FileSource}")) {
-                ImGui.OpenPopup("EditNativesPath");
-            }
-            ImguiHelpers.TooltipColored(entry?.Target ?? "Lorem Ipsum Vol.2", Colors.Faded);
-
-            if (ImGui.BeginPopup("EditNativesPath")) {
-                string target = entry.Target;
-
-                ImGui.SeparatorText("Edit Natives Path");
-
-                var pathSize = ImGui.CalcTextSize(target);
-                ImGui.SetNextItemWidth(pathSize.X + 15);
-
-                if (ImGui.InputText("##target", ref target, 512)) {
-                    entry.Target = target;
-                }
-
-                ImGui.SameLine();
-                if (ImGui.Button($"{AppIcons.SI_Save}")) {
-                    entry.Target = target;
-                    bundleManager.SaveBundle(bundle);
-                    ImGui.CloseCurrentPopup();
-                }
-                ImguiHelpers.Tooltip("Save");
-
-                ImGui.SameLine();
-                if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
-                    ImGui.CloseCurrentPopup();
-                }
-                ImguiHelpers.Tooltip("Cancel");
-
-                ImGui.EndPopup();
-            }
-
+            ShowEditNativesPathButton(entry, bundle);
             ImGui.SameLine();
             using (var __ = ImguiHelpers.Disabled(!(entry?.Diff != null && showDiff != null && entry.Diff is JsonObject odiff && odiff.Count > 1))) {
                 if (ImGui.Button($"{AppIcons.SI_FileChanges}")) {
                     showDiff!.Invoke($"{node.EntryKey} => {entry.Target}", entry.Diff!);
                 }
-
                 ImguiHelpers.Tooltip("Show changes\nPartial patch generated at: " + entry?.DiffTime.ToString("O"));
             }
-
             ImGui.SameLine();
-
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
             if (ImGui.Button($"{AppIcons.SI_GenericDelete2}")) {
                 ImGui.OpenPopup("ConfirmDelete");
@@ -542,7 +418,65 @@ public class BundleManagementUI : IWindowHandler
         }
         ImGui.PopID();
     }
+    private void ShowOpenInEditorButton(HierarchyTreeWidget node, Bundle bundle, object? entry)
+    {
+        bool hasEntry = entry is { };
+        string? target = hasEntry ? ((dynamic)entry).Target : null;
 
+        using (var _ = ImguiHelpers.Disabled(!hasEntry)) {
+            if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}") && openFileCallback != null) {
+                var path = bundleManager.ResolveBundleLocalPath(bundle, node.EntryKey);
+
+                if (!File.Exists(path)) {
+                    Logger.Warn("File not found in bundle folder, opening base file " + target);
+                    openFileCallback!(target!);
+                } else {
+                    openFileCallback!(path);
+                }
+            }
+            ImguiHelpers.Tooltip("Open file in Editor");
+        }
+    }
+    private void ShowEditNativesPathButton(object? entry, Bundle bundle)
+    {
+        bool hasEntry = entry is { };
+        string? target = hasEntry ? ((dynamic)entry).Target : null;
+        using (var _ = ImguiHelpers.Disabled(!hasEntry)) {
+            if (ImGui.Button($"{AppIcons.SI_FileSource}")) {
+                ImGui.OpenPopup("EditNativesPath");
+            }
+            ImguiHelpers.TooltipColored(target, Colors.Faded);
+        }
+
+        ShowEditNativesPathPopup(entry, bundle);
+    }
+    private void ShowEditNativesPathPopup(object? entry, Bundle bundle)
+    {
+        if (entry is not { } e) return;
+
+        dynamic d = e;
+        string target = d.Target;
+        if (ImGui.BeginPopup("EditNativesPath")) {
+            ImGui.SeparatorText("Edit Natives Path");
+            ImGui.SetNextItemWidth(ImGui.CalcTextSize(target).X + 15);
+            if (ImGui.InputText("##target", ref target, 512)) {
+                d.Target = target;
+            }
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.SI_Save}")) {
+                d.Target = target;
+                bundleManager.SaveBundle(bundle);
+                ImGui.CloseCurrentPopup();
+            }
+            ImguiHelpers.Tooltip("Save");
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
+                ImGui.CloseCurrentPopup();
+            }
+            ImguiHelpers.Tooltip("Cancel");
+            ImGui.EndPopup();
+        }
+    }
 
     public bool RequestClose()
     {
