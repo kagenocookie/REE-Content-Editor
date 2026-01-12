@@ -344,8 +344,8 @@ public class BundleManagementUI : IWindowHandler
             ImGui.Indent(-ImGui.GetStyle().IndentSpacing); // SILVER: :slight_smile:
             ImGui.PushStyleVar(ImGuiStyleVar.TreeLinesSize, 1.5f);
             if (ImGui.TreeNodeEx($"{AppIcons.SI_Bundle} " + bundle.Name, ImGuiTreeNodeFlags.DrawLinesFull | ImGuiTreeNodeFlags.DefaultOpen)) {
-                var tree = BuildFileTree(bundle.ResourceListing.Select(e => e.Key));
-                DrawFancyTreeWidget(tree, node => ShowFileTreeActionsButtons(node, bundle));
+                var tree = BuildHierarchyFileTree(bundle.ResourceListing.Select(e => e.Key));
+                DrawHierarchyFileTreeWidget(tree, node => ShowHierarchyFileTreeActionButtons(node, bundle));
                 ImGui.TreePop();
             }
             ImGui.PopStyleVar();
@@ -354,7 +354,7 @@ public class BundleManagementUI : IWindowHandler
         }
 
     }
-    // TODO SILVER: CLASS TO BE MOVED probably to widgets?
+    // TODO SILVER: CLASS TO BE MOVED
     class FancyTreeWidget
     {
         public string Name = string.Empty;
@@ -363,12 +363,12 @@ public class BundleManagementUI : IWindowHandler
     }
     const float ActionColumnOffset = 30f; // SILVER: The amount we offset the action buttons from the left side of the tab
     const float ActionColumnWidth = 150f; // SILVER: The space we set for the action buttons
-    static FancyTreeWidget BuildFileTree(IEnumerable<string> entries)
+    static FancyTreeWidget BuildHierarchyFileTree(IEnumerable<string> entries)
     {
         var root = new FancyTreeWidget();
 
         foreach (var key in entries) {
-            var parts = PathUtils.IsNativePath(key) ? key.Replace('/', '\\').Split('\\', StringSplitOptions.RemoveEmptyEntries) : new[] { key };
+            var parts = key.Split('/', StringSplitOptions.RemoveEmptyEntries);
             var current = root;
 
             for (int i = 0; i < parts.Length; i++) {
@@ -385,7 +385,7 @@ public class BundleManagementUI : IWindowHandler
         return root;
     }
 
-    static void DrawFancyTreeWidget(FancyTreeWidget node, Action<FancyTreeWidget>? drawActions = null)
+    static void DrawHierarchyFileTreeWidget(FancyTreeWidget node, Action<FancyTreeWidget>? drawActions = null, int hierarchyLayer = 0)
     {
         foreach (var child in node.Children.Values) {
             ImGui.PushID(child.Name);
@@ -393,7 +393,7 @@ public class BundleManagementUI : IWindowHandler
             float contentX = ImGui.GetCursorPosX();
             ImGui.SetCursorPosX(ActionColumnOffset);
             ImGui.BeginChild("##actions", new Vector2(ActionColumnWidth, ImGui.GetTextLineHeight() + 10f), ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
-            if (child.Name != "natives") {
+            if (!(hierarchyLayer == 0 && child.EntryKey == null)) {
                 drawActions?.Invoke(child);
             }
             ImGui.EndChild();
@@ -419,7 +419,7 @@ public class BundleManagementUI : IWindowHandler
             } else {
                 bool isNestedFolder = ImGui.TreeNodeEx($"{AppIcons.SI_FolderEmpty} " + child.Name,  ImGuiTreeNodeFlags.DrawLinesToNodes | ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanAllColumns);
                 if (isNestedFolder) {
-                    DrawFancyTreeWidget(child, drawActions);
+                    DrawHierarchyFileTreeWidget(child, drawActions, hierarchyLayer + 1);
                     ImGui.TreePop();
                 }
             }
@@ -427,7 +427,7 @@ public class BundleManagementUI : IWindowHandler
         }
     }
     // TODO SILVER: Clean up this method
-    private void ShowFileTreeActionsButtons(FancyTreeWidget node, Bundle bundle)
+    private void ShowHierarchyFileTreeActionButtons(FancyTreeWidget node, Bundle bundle)
     {
 
         bundle.ResourceListing.TryGetValue(node.EntryKey ?? "", out var entry);
