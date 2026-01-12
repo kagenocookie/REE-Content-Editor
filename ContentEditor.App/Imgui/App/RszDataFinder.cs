@@ -141,6 +141,8 @@ public class RszDataFinder : IWindowHandler
             ImGui.Separator();
             ImGui.Text($"Last search results: ({matches.Count} matches)");
             if (ImguiHelpers.SameLine() && ImGui.Button("Clear")) matches.Clear();
+            if (ImguiHelpers.SameLine() && ImGui.Button("Copy all matches")) EditorWindow.CurrentWindow?.CopyToClipboard(string.Join("\n", matches));
+            if (ImguiHelpers.SameLine() && ImGui.Button("Copy filenames")) EditorWindow.CurrentWindow?.CopyToClipboard(string.Join("\n", matches.Select(m => m.file).Distinct()));
         } else {
             return;
         }
@@ -238,8 +240,8 @@ public class RszDataFinder : IWindowHandler
         }
 
         RszField? field = null;
-        ImGui.Checkbox("Search class instance only", ref searchClassOnly);
-        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Search for any instance of this class, regardless of what fields it contains");
+        ImGui.Checkbox("Search references only", ref searchClassOnly);
+        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Search for any reference to this class, regardless of what fields or values it contains");
         object? value = null;
         if (!searchClassOnly) {
             var fields = cls.fields.Select(f => f.name).ToArray();
@@ -555,7 +557,8 @@ public class RszDataFinder : IWindowHandler
                 foreach (var inRsz in rszList) {
                     foreach (var inst in inRsz.InstanceList) {
                         if (context.Token.IsCancellationRequested) return;
-                        if (inst.RszClass == cls && inst.RSZUserData == null) {
+                        if (inst.RSZUserData != null) continue;
+                        if (inst.RszClass == cls) {
                             if (value == null) {
                                 AddMatch(context, FindPathToRszObject(inRsz, inst, file), path);
                                 break;
@@ -572,6 +575,12 @@ public class RszDataFinder : IWindowHandler
                             } else {
                                 if (equalityComparer(fieldValue, value)) {
                                     AddMatch(context, FindPathToRszObject(inRsz, inst, file), path);
+                                }
+                            }
+                        } else {
+                            foreach (var field in inst.Fields) {
+                                if (field.original_type == cls.name) {
+                                    AddMatch(context, FindPathToRszObject(inRsz, inst, file) + "." + field.name, path);
                                 }
                             }
                         }
