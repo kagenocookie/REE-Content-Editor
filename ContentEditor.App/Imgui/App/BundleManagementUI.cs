@@ -39,6 +39,10 @@ public class BundleManagementUI : IWindowHandler
     private string newBundleName = "";
     private bool isNewBundleMenu = false;
 
+    private int selectedLegacyEntityType = 0;
+    private int selectedEntityType = 0;
+    private static readonly string[] allOption = ["All"];
+
     private WindowData data = null!;
     protected UIContext context = null!;
     private readonly CreateBundleFromLooseFileFolderDelegate? createFromLooseFileFolder;
@@ -287,7 +291,6 @@ public class BundleManagementUI : IWindowHandler
         ImGui.Separator();
         ImGui.Spacing();
 
-        ImGui.Indent(5);
         var legacyEntityTypes = bundle.LegacyData?
             .Where(ld => ld.TryGetPropertyValue("type", out _))
             .Select(ld => ld["type"]!.GetValue<string>())
@@ -336,132 +339,202 @@ public class BundleManagementUI : IWindowHandler
 
             ImGui.TreePop();
         }
-        // SILVER: We'll probably need some sorting options here, File Type | Name A-Z/Z-A | File Size?
-        if (bundle.ResourceListing != null && ImGui.TreeNodeEx("Files", ImGuiTreeNodeFlags.Framed)) {
-            if (ImGui.BeginTable("FilesTable", 2, ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.BordersInnerH)) {
-                ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 175f);
-                ImGui.TableSetupColumn("Files", ImGuiTableColumnFlags.WidthStretch);
-                string? pendingEntryToBeDeleted = null;
-                foreach (var entry in bundle.ResourceListing) {
-                    ImGui.PushID(entry.Key);
-                    ImGui.TableNextRow();
-                    ImGui.TableSetColumnIndex(0);
-                    if (openFileCallback != null) {
-                        if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
-                            var path = bundleManager.ResolveBundleLocalPath(bundle, entry.Key);
-                            if (!File.Exists(path)) {
-                                Logger.Warn("File not found in bundle folder, opening base file " + entry.Value.Target);
-                                openFileCallback.Invoke(entry.Value.Target);
-                            } else {
-                                openFileCallback.Invoke(path);
-                            }
-                        }
-                        ImguiHelpers.Tooltip("Open file in Editor");
-                    }
-                    ImGui.SameLine();
-                    if (ImGui.Button($"{AppIcons.SI_FileSource}")) {
-                        ImGui.OpenPopup("EditNativesPath");
-                    }
-                    ImguiHelpers.TooltipColored(entry.Value.Target, Colors.Faded);
 
-                    if (ImGui.BeginPopup("EditNativesPath")) {
-                        string target = entry.Value.Target;
-
-                        ImGui.SeparatorText("Edit Natives Path");
-
-                        var pathSize = ImGui.CalcTextSize(target);
-                        ImGui.SetNextItemWidth(pathSize.X + 15);
-                        if (ImGui.InputText("##target", ref target, 512)) {
-                            entry.Value.Target = target;
-                        }
-                        ImGui.SameLine();
-                        if (ImGui.Button($"{AppIcons.SI_Save}")) {
-                            entry.Value.Target = target;
-                            bundleManager.SaveBundle(bundle);
-                            ImGui.CloseCurrentPopup();
-                        }
-                        ImguiHelpers.Tooltip("Save");
-                        ImGui.SameLine();
-                        if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
-                            ImGui.CloseCurrentPopup();
-                        }
-                        ImguiHelpers.Tooltip("Cancel");
-
-                        ImGui.EndPopup();
-                    }
-
-                    ImGui.SameLine();
-                    using (var _ = ImguiHelpers.Disabled(!(entry.Value.Diff != null && showDiff != null && (entry.Value.Diff is JsonObject odiff && odiff.Count > 1)))) {
-                        if (ImGui.Button($"{AppIcons.SI_FileChanges}")) {
-                            showDiff!.Invoke($"{entry.Key} => {entry.Value.Target}", entry.Value.Diff!);
-                        }
-                        ImguiHelpers.Tooltip("Show changes\nPartial patch generated at: " + entry.Value.DiffTime.ToString("O"));
-                    }
-                    ImGui.SameLine();
-                    ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
-                    if (ImGui.Button($"{AppIcons.SI_GenericDelete2}")) {
-                        ImGui.OpenPopup("Confirm Action");
-                    }
-                    ImGui.PopStyleColor();
-                    ImguiHelpers.Tooltip("Delete file");
-
-                    if (ImGui.BeginPopupModal("Confirm Action", ImGuiWindowFlags.AlwaysAutoResize)) {
-                        string confirmText = $"Are you sure you want to delete {entry.Key} from {bundle.Name}?";
-                        var textSize = ImGui.CalcTextSize(confirmText);
-                        ImGui.Text(confirmText);
-                        ImGui.Separator();
-                        if (ImGui.Button("Yes", new Vector2(textSize.X / 2, 0))) {
-                            pendingEntryToBeDeleted = entry.Key;
-                            ImGui.CloseCurrentPopup();
-                        }
-                        ImGui.SameLine();
-                        if (ImGui.Button("No", new Vector2(textSize.X / 2, 0))) {
-                            ImGui.CloseCurrentPopup();
-                        }
-                        ImGui.EndPopup();
-                    }
-
-                    ImGui.TableSetColumnIndex(1);
-                    char icon = AppIcons.SI_File;
-                    Vector4 col = ImGui.GetStyle().Colors[(int)ImGuiCol.Text];
-                    if (Path.HasExtension(entry.Key)) {
-                        var (fileIcon, fileCol) = AppIcons.GetIcon(PathUtils.ParseFileFormat(entry.Key).format);
-                        if (fileIcon != '\0') {
-                            icon = fileIcon; col = fileCol;
-                        }
-                    }
-                    ImGui.TextColored(col, $"{icon}");
-                    ImGui.SameLine();
-                    ImGui.Text(entry.Key);
-
-                    ImGui.PopID();
-                }
-                if (pendingEntryToBeDeleted != null) {
-                    if (bundle.ResourceListing.TryGetValue(pendingEntryToBeDeleted, out var resource)) {
-                        var filePath = bundleManager.ResolveBundleLocalPath(bundle, pendingEntryToBeDeleted);
-                        bundle.ResourceListing.Remove(pendingEntryToBeDeleted);
-
-                        if (File.Exists(filePath)) {
-                             File.Delete(filePath);
-                        } else {
-                            Logger.Error($"Failed to delete file {filePath}!");
-                        }
-                        Logger.Info($"Deleted {pendingEntryToBeDeleted} from {bundle.Name}.");
-                    }
-                    bundleManager.SaveBundle(bundle);
-                    pendingEntryToBeDeleted = null;
-                }
-
-                ImGui.EndTable();
+        if (bundle.ResourceListing != null && ImGui.TreeNodeEx("Files", ImGuiTreeNodeFlags.Framed | ImGuiTreeNodeFlags.DefaultOpen)) {
+            ImGui.Indent(-ImGui.GetStyle().IndentSpacing); // SILVER: :slight_smile:
+            ImGui.PushStyleVar(ImGuiStyleVar.TreeLinesSize, 1.5f);
+            if (ImGui.TreeNodeEx($"{AppIcons.SI_Bundle} " + bundle.Name, ImGuiTreeNodeFlags.DrawLinesFull | ImGuiTreeNodeFlags.DefaultOpen)) {
+                var tree = BuildFileTree(bundle.ResourceListing.Select(e => e.Key));
+                DrawFancyTreeWidget(tree, node => ShowFileTreeActionsButtons(node, bundle));
+                ImGui.TreePop();
             }
+            ImGui.PopStyleVar();
+            ImGui.Unindent();
             ImGui.TreePop();
         }
-        ImGui.Unindent();
+
+    }
+    // TODO SILVER: CLASS TO BE MOVED probably to widgets?
+    class FancyTreeWidget
+    {
+        public string Name = string.Empty;
+        public string? EntryKey;
+        public Dictionary<string, FancyTreeWidget> Children = new();
+    }
+    const float ActionColumnOffset = 30f; // SILVER: The amount we offset the action buttons from the left side of the tab
+    const float ActionColumnWidth = 150f; // SILVER: The space we set for the action buttons
+    static FancyTreeWidget BuildFileTree(IEnumerable<string> entries)
+    {
+        var root = new FancyTreeWidget();
+
+        foreach (var key in entries) {
+            var parts = PathUtils.IsNativePath(key) ? key.Replace('/', '\\').Split('\\', StringSplitOptions.RemoveEmptyEntries) : new[] { key };
+            var current = root;
+
+            for (int i = 0; i < parts.Length; i++) {
+                string part = parts[i];
+                bool isFile = Path.HasExtension(part);
+
+                if (!current.Children.TryGetValue(part, out var node)) {
+                    node = new FancyTreeWidget { Name = part, EntryKey = isFile ? key : null};
+                    current.Children[part] = node;
+                }
+                current = node;
+            }
+        }
+        return root;
     }
 
-    private int selectedLegacyEntityType = 0;
-    private int selectedEntityType = 0;
-    private static readonly string[] allOption = ["All"];
+    static void DrawFancyTreeWidget(FancyTreeWidget node, Action<FancyTreeWidget>? drawActions = null)
+    {
+        foreach (var child in node.Children.Values) {
+            ImGui.PushID(child.Name);
+            float rowY = ImGui.GetCursorPosY() + 5f;
+            float contentX = ImGui.GetCursorPosX();
+            ImGui.SetCursorPosX(ActionColumnOffset);
+            ImGui.BeginChild("##actions", new Vector2(ActionColumnWidth, ImGui.GetTextLineHeight() + 10f), ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+            if (child.Name != "natives") {
+                drawActions?.Invoke(child);
+            }
+            ImGui.EndChild();
+
+            ImGui.SetCursorPos(new Vector2(contentX + ActionColumnWidth, rowY));
+            if (child.EntryKey != null) {
+                char icon = AppIcons.SI_File;
+                Vector4 col = ImGui.GetStyle().Colors[(int)ImGuiCol.Text];
+
+                if (Path.HasExtension(child.Name)) {
+                    var (fileIcon, fileCol) = AppIcons.GetIcon(PathUtils.ParseFileFormat(child.Name).format);
+
+                    if (fileIcon != '\0') {
+                        icon = fileIcon;
+                        col = fileCol;
+                    }
+                }
+                ImGui.Dummy(new Vector2(5f, 0));
+                ImGui.SameLine();
+                ImGui.TextColored(col, $"{icon}");
+                ImGui.SameLine();
+                ImGui.Selectable(child.Name);
+            } else {
+                bool isNestedFolder = ImGui.TreeNodeEx($"{AppIcons.SI_FolderEmpty} " + child.Name,  ImGuiTreeNodeFlags.DrawLinesToNodes | ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanAllColumns);
+                if (isNestedFolder) {
+                    DrawFancyTreeWidget(child, drawActions);
+                    ImGui.TreePop();
+                }
+            }
+            ImGui.PopID();
+        }
+    }
+    // TODO SILVER: Clean up this method
+    private void ShowFileTreeActionsButtons(FancyTreeWidget node, Bundle bundle)
+    {
+
+        bundle.ResourceListing.TryGetValue(node.EntryKey ?? "", out var entry);
+
+        ImGui.PushID(node.EntryKey ?? node.Name);
+
+        using (var _ = ImguiHelpers.Disabled(entry == null)) {
+            if (openFileCallback != null) {
+                if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
+                    var path = bundleManager.ResolveBundleLocalPath(bundle, node.EntryKey);
+                    if (!File.Exists(path)) {
+                        Logger.Warn("File not found in bundle folder, opening base file " + entry.Target);
+                        openFileCallback.Invoke(entry.Target);
+                    } else {
+                        openFileCallback.Invoke(path);
+                    }
+                }
+                ImguiHelpers.Tooltip(entry != null ? "Open file in Editor" : "Lorem Ipsum");
+            }
+
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.SI_FileSource}")) {
+                ImGui.OpenPopup("EditNativesPath");
+            }
+            ImguiHelpers.TooltipColored(entry?.Target ?? "Lorem Ipsum Vol.2", Colors.Faded);
+
+            if (ImGui.BeginPopup("EditNativesPath")) {
+                string target = entry.Target;
+
+                ImGui.SeparatorText("Edit Natives Path");
+
+                var pathSize = ImGui.CalcTextSize(target);
+                ImGui.SetNextItemWidth(pathSize.X + 15);
+
+                if (ImGui.InputText("##target", ref target, 512)) {
+                    entry.Target = target;
+                }
+
+                ImGui.SameLine();
+                if (ImGui.Button($"{AppIcons.SI_Save}")) {
+                    entry.Target = target;
+                    bundleManager.SaveBundle(bundle);
+                    ImGui.CloseCurrentPopup();
+                }
+                ImguiHelpers.Tooltip("Save");
+
+                ImGui.SameLine();
+                if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
+                    ImGui.CloseCurrentPopup();
+                }
+                ImguiHelpers.Tooltip("Cancel");
+
+                ImGui.EndPopup();
+            }
+
+            ImGui.SameLine();
+            using (var __ = ImguiHelpers.Disabled(!(entry?.Diff != null && showDiff != null && entry.Diff is JsonObject odiff && odiff.Count > 1))) {
+                if (ImGui.Button($"{AppIcons.SI_FileChanges}")) {
+                    showDiff!.Invoke($"{node.EntryKey} => {entry.Target}", entry.Diff!);
+                }
+
+                ImguiHelpers.Tooltip("Show changes\nPartial patch generated at: " + entry?.DiffTime.ToString("O"));
+            }
+
+            ImGui.SameLine();
+
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
+            if (ImGui.Button($"{AppIcons.SI_GenericDelete2}")) {
+                ImGui.OpenPopup("ConfirmDelete");
+            }
+            ImGui.PopStyleColor();
+            ImguiHelpers.Tooltip("Delete file");
+
+            if (ImGui.BeginPopupModal("ConfirmDelete", ImGuiWindowFlags.AlwaysAutoResize)) {
+                string confirmText = $"Are you sure you want to delete {node.EntryKey} from {bundle.Name}?";
+                var textSize = ImGui.CalcTextSize(confirmText);
+                ImGui.Text(confirmText);
+                ImGui.Separator();
+
+                if (ImGui.Button("Yes", new Vector2(textSize.X / 2, 0))) {
+                    var filePath = bundleManager.ResolveBundleLocalPath(bundle, node.EntryKey);
+
+                    bundle.ResourceListing.Remove(node.EntryKey);
+
+                    if (File.Exists(filePath)) {
+                        File.Delete(filePath);
+                    } else {
+                        Logger.Error($"Failed to delete file {filePath}!");
+                    }
+
+                    Logger.Info($"Deleted {node.EntryKey} from {bundle.Name}.");
+                    bundleManager.SaveBundle(bundle);
+
+                    ImGui.CloseCurrentPopup();
+                }
+
+                ImGui.SameLine();
+                if (ImGui.Button("No", new Vector2(textSize.X / 2, 0))) {
+                    ImGui.CloseCurrentPopup();
+                }
+
+                ImGui.EndPopup();
+            }
+        }
+        ImGui.PopID();
+    }
+
 
     public bool RequestClose()
     {
