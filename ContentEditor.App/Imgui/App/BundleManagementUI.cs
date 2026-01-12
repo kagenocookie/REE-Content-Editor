@@ -340,8 +340,9 @@ public class BundleManagementUI : IWindowHandler
             ImGui.TreePop();
         }
 
-        if (bundle.ResourceListing != null && ImGui.TreeNodeEx("Files", ImGuiTreeNodeFlags.Framed | ImGuiTreeNodeFlags.DefaultOpen)) {
+        if (bundle.ResourceListing != null && ImGui.TreeNodeEx("Files", ImGuiTreeNodeFlags.Framed)) {
             ImGui.Indent(-ImGui.GetStyle().IndentSpacing); // SILVER: :slight_smile:
+            ImGui.Spacing();
             ImGui.PushStyleVar(ImGuiStyleVar.TreeLinesSize, 1.5f);
             if (ImGui.TreeNodeEx($"{AppIcons.SI_Bundle} " + bundle.Name, ImGuiTreeNodeFlags.DrawLinesFull | ImGuiTreeNodeFlags.DefaultOpen)) {
                 var tree = BuildHierarchyFileTree(bundle.ResourceListing.Select(e => e.Key));
@@ -355,17 +356,17 @@ public class BundleManagementUI : IWindowHandler
 
     }
     // TODO SILVER: CLASS TO BE MOVED
-    class FancyTreeWidget
+    class HierarchyTreeWidget
     {
         public string Name = string.Empty;
         public string? EntryKey;
-        public Dictionary<string, FancyTreeWidget> Children = new();
+        public Dictionary<string, HierarchyTreeWidget> Children = new();
     }
     const float ActionColumnOffset = 30f; // SILVER: The amount we offset the action buttons from the left side of the tab
     const float ActionColumnWidth = 150f; // SILVER: The space we set for the action buttons
-    static FancyTreeWidget BuildHierarchyFileTree(IEnumerable<string> entries)
+    static HierarchyTreeWidget BuildHierarchyFileTree(IEnumerable<string> entries)
     {
-        var root = new FancyTreeWidget();
+        var root = new HierarchyTreeWidget();
 
         foreach (var key in entries) {
             var parts = key.Split('/', StringSplitOptions.RemoveEmptyEntries);
@@ -376,7 +377,7 @@ public class BundleManagementUI : IWindowHandler
                 bool isFile = Path.HasExtension(part);
 
                 if (!current.Children.TryGetValue(part, out var node)) {
-                    node = new FancyTreeWidget { Name = part, EntryKey = isFile ? key : null};
+                    node = new HierarchyTreeWidget { Name = part, EntryKey = isFile ? key : null};
                     current.Children[part] = node;
                 }
                 current = node;
@@ -385,18 +386,23 @@ public class BundleManagementUI : IWindowHandler
         return root;
     }
 
-    static void DrawHierarchyFileTreeWidget(FancyTreeWidget node, Action<FancyTreeWidget>? drawActions = null, int hierarchyLayer = 0)
+    static void DrawHierarchyFileTreeWidget(HierarchyTreeWidget node, Action<HierarchyTreeWidget>? drawActions = null, int hierarchyLayer = 0)
     {
-        foreach (var child in node.Children.Values) {
+        foreach (var child in node.Children.Values.OrderBy(c => c.EntryKey != null).ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)) {
+
             ImGui.PushID(child.Name);
+
+            bool isActionHovered = false;
             float rowY = ImGui.GetCursorPosY() + 5f;
             float contentX = ImGui.GetCursorPosX();
             ImGui.SetCursorPosX(ActionColumnOffset);
             ImGui.BeginChild("##actions", new Vector2(ActionColumnWidth, ImGui.GetTextLineHeight() + 10f), ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
             if (!(hierarchyLayer == 0 && child.EntryKey == null)) {
                 drawActions?.Invoke(child);
+                
             }
             ImGui.EndChild();
+            isActionHovered = ImGui.IsItemHovered();
 
             ImGui.SetCursorPos(new Vector2(contentX + ActionColumnWidth, rowY));
             if (child.EntryKey != null) {
@@ -415,7 +421,9 @@ public class BundleManagementUI : IWindowHandler
                 ImGui.SameLine();
                 ImGui.TextColored(col, $"{icon}");
                 ImGui.SameLine();
+                ImGui.PushStyleColor(ImGuiCol.Text, isActionHovered ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text));
                 ImGui.Selectable(child.Name);
+                ImGui.PopStyleColor();
             } else {
                 bool isNestedFolder = ImGui.TreeNodeEx($"{AppIcons.SI_FolderEmpty} " + child.Name,  ImGuiTreeNodeFlags.DrawLinesToNodes | ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanAllColumns);
                 if (isNestedFolder) {
@@ -427,7 +435,7 @@ public class BundleManagementUI : IWindowHandler
         }
     }
     // TODO SILVER: Clean up this method
-    private void ShowHierarchyFileTreeActionButtons(FancyTreeWidget node, Bundle bundle)
+    private void ShowHierarchyFileTreeActionButtons(HierarchyTreeWidget node, Bundle bundle)
     {
 
         bundle.ResourceListing.TryGetValue(node.EntryKey ?? "", out var entry);
