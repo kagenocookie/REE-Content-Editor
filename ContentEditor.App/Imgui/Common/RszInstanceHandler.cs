@@ -224,8 +224,25 @@ public class RszClassnamePickerHandler(string? baseClass = null, string label = 
     }
 }
 
-public class RszListInstanceHandler(string baseClass) : ListHandlerTyped<RszInstance>
+public class RszListInstanceHandler : ListHandlerTyped<RszInstance>
 {
+    private readonly string baseClass;
+
+    public RszListInstanceHandler(string baseClass)
+    {
+        this.baseClass = baseClass;
+        Filterable = true;
+    }
+
+    protected override bool MatchesFilter(object? obj, string filter)
+    {
+        if (obj is not RszInstance rsz) return false;
+        if (filter[0] == '!') {
+            return rsz.GetString().Contains(filter.Substring(1), StringComparison.InvariantCultureIgnoreCase) != true;
+        }
+        return rsz.GetString().Contains(filter, StringComparison.InvariantCultureIgnoreCase) == true;
+    }
+
     protected override object? CreateNewElement(UIContext context)
     {
         var ws = context.GetWorkspace()!;
@@ -448,6 +465,16 @@ public class ArrayRSZHandler : BaseListHandler
     {
         this._field = field;
         CanCreateRemoveElements = true;
+        Filterable = true;
+    }
+
+    protected override bool MatchesFilter(object? obj, string filter)
+    {
+        if (obj is not RszInstance rsz) return false;
+        if (filter[0] == '!') {
+            return rsz.GetString().Contains(filter.Substring(1), StringComparison.InvariantCultureIgnoreCase) != true;
+        }
+        return rsz.GetString().Contains(filter, StringComparison.InvariantCultureIgnoreCase) == true;
     }
 
     protected override bool ShowContextMenuItems(UIContext context)

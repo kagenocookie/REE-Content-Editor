@@ -64,7 +64,7 @@ public class BaseListHandler : IObjectUIHandler
         }
         if (show) {
             string? filter = null;
-            if (Filterable) {
+            if (Filterable && list.Count > 0) {
                 ImGui.InputText("Filter", ref context.Filter, 200);
                 ImGui.Spacing();
                 filter = context.Filter;
