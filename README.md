@@ -27,11 +27,12 @@ Some files may not fully work for other RE ENGINE games.
 - Build with `dotnet build` or whichever C#-capable IDE's build features (vscode, VS)
 
 ## Features
-- Most common files are supported for viewing and editing
-- 3D view for all supported meshes, scene and prefab files (via the "Scenes" menu after compatible files are opened)
-- Preview any 3D animation through the mesh viewer
-- Load files directly from the PAK files, meaning you can just access whatever you need without having to extract everything first
-- Data search tool for easily finding things you might need for mod development: find messages by their guids or content, or arbitrary fields by their value
+- Most of the important files are supported for both viewing and editing
+- 3D view for all supported meshes, scene and prefab files (via the "Scenes" menu)
+- Full 3D animation preview and import/export support
+- Interactive 3D collider shape editor for scenes and collider resource files
+- Load files directly from the PAK files, access what you need directly without having to extract anything
+- Data search tool for easily finding things you might need for mod development: field values, classnames, message text
 - Partial patching of files in case multiple mods would need to modify the same shared file (e.g. content catalog files)
 - Streamlined editors for game-specific content (these need to be researched and set up per game so the feature may not be available for all games - mostly configurable through yaml files)
 - Full undo/redo system
@@ -103,6 +104,8 @@ Serves as both a general resource editing tool, while also providing specialized
 
 #### Content Patcher
 Contains tools for evaluating, generating, and applying resource file patches. Can be used as a CLI tool for only updating patches without any of the UI overhead.
+
+The patcher also outputs separate .txt files into the `reframework/data/injected_enums` folder containing any custom enum entries needed by entities, intended for usage with [REE-Enum-Injector](https://github.com/kagenocookie/REE-Enum-Injector).
 
 ## Patching architecture
 All the patching logic is based on 3 layers of modifications: files, resource objects and entities, each built on top of the previous layers.
