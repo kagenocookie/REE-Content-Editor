@@ -155,10 +155,12 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                     }
                     ImguiHelpers.Tooltip("Save to Bundle");
                 } else if (workspace.CurrentBundle.ResourceListing == null || !workspace.CurrentBundle.TryFindResourceListing(Handle.NativePath ?? "", out var resourceListing)) {
+                    ImGui.SameLine();
                     if (string.IsNullOrEmpty(Handle.NativePath) && Handle.Modified) {
-                        Logger.Warn("File has unsaved changes. Please save the file first before storing in bundle.");
+                        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
+                            Logger.Warn("File has unsaved changes. Please save the file first before storing in bundle.");
+                        }
                     } else {
-                        ImGui.SameLine();
                         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
                             workspace.CurrentBundle.ResourceListing ??= new();
                             var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle), Handle.Filepath);
