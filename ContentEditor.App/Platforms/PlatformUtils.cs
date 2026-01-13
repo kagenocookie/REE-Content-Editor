@@ -53,46 +53,35 @@ public static class PlatformUtils
         thread.Start();
     }
 
-    private static bool _saveDlgOpen;
     /// <summary>
     /// Show a native file save dialog, non-blocking. The callback will be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
     /// </summary>
     public static void ShowSaveFileDialog(Action<string> callback, string? initialFile = null, params FileFilter[] filter)
     {
-#if !WINDOWS
-        if (_saveDlgOpen) {
-            // prevent a possible crash
-            Logger.Error("Save dialog is already open, confirm or close it first.");
-            return;
-        }
-#endif
-        _saveDlgOpen = true;
-        var thread = new Thread(() => {
-            try {
-                using var selectFileDialog = new NativeFileDialog()
-                    .SaveFile();
-                foreach (var (name, exts) in filter) {
-                    foreach (var ext in exts) {
-                        selectFileDialog.AddFilter(name, ext);
-                    }
-                }
-
-                var result = selectFileDialog.Open(
-                    out string? output,
-                    !string.IsNullOrEmpty(initialFile) ? Path.GetDirectoryName(initialFile) : Environment.CurrentDirectory,
-                    Path.GetFileName(initialFile));
-
-                if (result == DialogResult.Okay && !string.IsNullOrEmpty(output)) {
-                    callback.Invoke(output);
-                }
-            } finally {
-                _saveDlgOpen = false;
-            }
-        });
 #if WINDOWS
-        thread.SetApartmentState(ApartmentState.STA);
+        var thread = new Thread(() => {
 #endif
+            using var selectFileDialog = new NativeFileDialog()
+                .SaveFile();
+            foreach (var (name, exts) in filter) {
+                foreach (var ext in exts) {
+                    selectFileDialog.AddFilter(name, ext);
+                }
+            }
+
+            var result = selectFileDialog.Open(
+                out string? output,
+                !string.IsNullOrEmpty(initialFile) ? Path.GetDirectoryName(initialFile) : Environment.CurrentDirectory,
+                Path.GetFileName(initialFile));
+
+            if (result == DialogResult.Okay && !string.IsNullOrEmpty(output)) {
+                callback.Invoke(output);
+            }
+#if WINDOWS
+        });
+        thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
+#endif
     }
 
     public static void SetupDragDrop(IDragDropTarget target, IWindow window)
