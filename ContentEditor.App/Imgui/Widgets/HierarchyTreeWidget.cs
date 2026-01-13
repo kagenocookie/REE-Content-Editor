@@ -13,7 +13,7 @@ public class HierarchyTreeWidget
     public Dictionary<string, HierarchyTreeWidget> Children = new();
     // SILVER: These should be calculated dynamically but that sounds like a future problem to me
     const float ActionColumnOffset = 30f;
-    const float ActionColumnWidth = 150f;
+    const float ActionColumnWidth = 160f;
     public static HierarchyTreeWidget Build(IEnumerable<string> entries)
     {
         var root = new HierarchyTreeWidget();
