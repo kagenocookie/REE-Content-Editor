@@ -16,12 +16,7 @@ public partial class CommonMeshResource : IResourceFile
     private const string ShapekeyPrefix = "SHAPEKEY_";
     private const string SecondaryWeightDummyBonePrefix = "WEIGHT2_DUMMY_";
 
-    private static readonly Matrix4x4 ZUpToYUpRotation = new Matrix4x4(
-        1, 0, 0, 0,
-        0, 0, 1, 0,
-        0, 1, 0, 0,
-        0, 0, 0, 1
-    );
+    private static readonly Quaternion ZUpToYUpRotation = new Quaternion(-0.70710677f, 0, 0, 0.70710677f);
 
     private static MeshFile ImportMeshFromAssimp(Assimp.Scene scene, string versionConfig)
     {
@@ -477,8 +472,7 @@ public partial class CommonMeshResource : IResourceFile
                 if (channel.HasRotationKeys) {
                     if (settings.ConvertZToYUpRootRotation && (bone != null ? bone.Parent == null : boneName.Equals("root", StringComparison.InvariantCultureIgnoreCase))) {
                         for (int i = 0; i < channel.RotationKeyCount; ++i) {
-                            var newMat = Matrix4x4.Transform(ZUpToYUpRotation, channel.RotationKeys[i].Value);
-                            var quat = Quaternion.Normalize(Quaternion.CreateFromRotationMatrix(newMat));
+                            var quat = Quaternion.Multiply(ZUpToYUpRotation, channel.RotationKeys[i].Value);
                             channel.RotationKeys[i] = new QuaternionKey(channel.RotationKeys[i].Time, quat);
                         }
                     }
