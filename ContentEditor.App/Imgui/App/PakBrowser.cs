@@ -268,23 +268,57 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 }
             }
             ImGui.SameLine();
-            if (ImGui.Button($"{AppIcons.SI_Filter}")) {
-                ImGui.OpenPopup("TagFilterDropdown");
-            }
-            ImguiHelpers.Tooltip("Filters");
+            string filterModeName = _filterMode switch {
+                FilterMode.AnyMatch => "Any",
+                FilterMode.AllMatch => "All",
+                FilterMode.ExactMatch => "Exact",
+                _ => "?"
+            };
+            string filterLabelDisplayText = _activeTagFilter.Count == 0 ? $"{AppIcons.SI_Filter}" : $"{AppIcons.SI_Filter} : " + _activeTagFilter.Count.ToString();
+            Vector2 filterLabelSize = ImGui.CalcTextSize(filterLabelDisplayText);
+            float filterComboWidth = filterLabelSize.X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
+            ImGui.SetNextItemWidth(filterComboWidth);
+            if (ImGui.BeginCombo("##TagFilterCombo", filterLabelDisplayText)) {
+                ImGui.TextDisabled("Filter Mode:");
+                ImGui.SameLine();
 
-            if (ImGui.BeginPopup("TagFilterDropdown")) {
+                if (ImGui.SmallButton(filterModeName)) {
+                    _filterMode = _filterMode switch {
+                        FilterMode.AnyMatch => FilterMode.AllMatch,
+                        FilterMode.AllMatch => FilterMode.ExactMatch,
+                        FilterMode.ExactMatch => FilterMode.AnyMatch,
+                        _ => FilterMode.AnyMatch
+                    };
+                }
+
+                if (ImGui.BeginItemTooltip()) {
+                    ImGui.SeparatorText("Filter Modes");
+                    ImGui.BulletText("Any: Keep entries with at least one matching tag");
+                    ImGui.BulletText("All: Keep entries containing all active tags");
+                    ImGui.BulletText("Exact: Keep entries with tags exactly matching the active filters");
+                    ImGui.EndTooltip();
+                }
+                ImGui.Separator();
+
                 foreach (var tag in BookmarkManager.TagInfoMap.Keys) {
-                    bool hasTag = _activeTagFilter.Contains(tag);
-                    if (ImGui.Selectable(tag)) {
-                        if (hasTag) {
-                            _activeTagFilter.Remove(tag);
-                        } else {
+                    bool isSelected = _activeTagFilter.Contains(tag);
+                    if (ImGui.Checkbox(tag, ref isSelected)) {
+                        if (isSelected) {
                             _activeTagFilter.Add(tag);
+                        } else {
+                            _activeTagFilter.Remove(tag);
                         }
                     }
                 }
-                ImGui.EndPopup();
+                ImGui.EndCombo();
+            }
+            ImguiHelpers.Tooltip("Filters");
+            ImGui.SameLine();
+            using (var _ = ImguiHelpers.Disabled(_activeTagFilter.Count == 0)) {
+                if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FilterClear, new[] { Colors.IconTertiary, Colors.IconPrimary })) {
+                    _activeTagFilter.Clear();
+                }
+                ImguiHelpers.Tooltip("Clear Filters");
             }
             ImGui.SameLine();
             ImguiHelpers.AlignElementRight(300f);
@@ -301,51 +335,6 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 ImGui.SetNextItemAllowOverlap();
                 if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
                     bookmarkSearch = string.Empty;
-                }
-            }
-            if (_activeTagFilter.Count > 0) {
-                if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FilterClear, new[] { Colors.IconTertiary, Colors.IconPrimary })) {
-                    _activeTagFilter.Clear();
-                }
-                ImguiHelpers.Tooltip("Clear Filters");
-                ImGui.SameLine();
-                string filterModeName = _filterMode switch {
-                    FilterMode.AnyMatch => "Any",
-                    FilterMode.AllMatch => "All",
-                    FilterMode.ExactMatch => "Exact",
-                    _ => "?"
-                };
-
-                if (ImGui.Button($"Filter Mode: {filterModeName}")) {
-                    _filterMode = _filterMode switch {
-                        FilterMode.AnyMatch => FilterMode.AllMatch,
-                        FilterMode.AllMatch => FilterMode.ExactMatch,
-                        FilterMode.ExactMatch => FilterMode.AnyMatch,
-                        _ => FilterMode.AnyMatch
-                    };
-                }
-                if (ImGui.BeginItemTooltip()) {
-                    ImGui.SeparatorText("Filter Modes");
-                    ImGui.BulletText("Any: Keep entries with at least one matching tag");
-                    ImGui.BulletText("All: Keep entries containing all active tags");
-                    ImGui.BulletText("Exact: Keep entries with tags exactly matching the active filters");
-                    ImGui.EndTooltip();
-                }
-                ImGui.SameLine();
-                ImGui.Text("Active Filters: ");
-
-                foreach (var tag in _activeTagFilter) {
-                    ImGui.PushID("ActiveTag_" + tag);
-                    if (BookmarkManager.TagInfoMap.TryGetValue(tag, out var info)) {
-                        var cols = info.Colors();
-                        ImGui.PushStyleColor(ImGuiCol.Text, cols[1]);
-                    }
-                    ImGui.SameLine();
-                    ImGui.Text(tag);
-                    ImGui.PopStyleColor();
-                    ImGui.SameLine();
-                    ImguiHelpers.VerticalSeparator();
-                    ImGui.PopID();
                 }
             }
             if (_bookmarkManagerDefaults.GetBookmarks(Workspace.Config.Game.name).Count > 0 && !_bookmarkManagerDefaults.IsHideBookmarks) {
