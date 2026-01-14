@@ -288,7 +288,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     private bool ShowMenu(MeshComponent meshComponent)
     {
-        
         if (ImGui.BeginMenuBar()) {
             if (ImGui.MenuItem($"{AppIcons.SI_GenericCamera} Controls")) ImGui.OpenPopup("CameraSettings");
             if (scene != null && ImGui.BeginPopup("CameraSettings")) {
