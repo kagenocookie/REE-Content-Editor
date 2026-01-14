@@ -180,22 +180,14 @@ public class BundleManagementUI : IWindowHandler
         if (bundle == null) {
             return;
         }
-        ImGui.SameLine();
-        using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle?.Name == bundle.Name)) {
-            if (ImGui.Button($"{AppIcons.SI_Bundle}")) {
+        var previousSelectedName = data.GetPersistentData<string>("activeBundleObserved");
+        if (selectedName != previousSelectedName) {
+            data.SetPersistentData("activeBundleObserved", selectedName);
+            if (bundle != null && EditorWindow.CurrentWindow?.Workspace.CurrentBundle?.Name != bundle.Name) {
                 EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, bundle.Name);
             }
-            ImguiHelpers.Tooltip("Set as Active Bundle");
         }
-        ImGui.SameLine();
-        using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
-            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
-            if (ImGui.Button($"{AppIcons.SI_Reset}")) {
-                EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, null);
-            }
-            ImGui.PopStyleColor();
-            ImguiHelpers.Tooltip("Unload current Bundle");
-        }
+
         ImGui.SameLine();
         if (ImGui.Button($"{AppIcons.SI_Save}")) {
             bundleManager.SaveBundle(bundle);
@@ -207,7 +199,15 @@ public class BundleManagementUI : IWindowHandler
             FileSystemUtils.ShowFileInExplorer(bundleManager.ResolveBundleLocalPath(bundle, ""));
         }
         ImguiHelpers.Tooltip("Open current Bundle folder in File Explorer");
-
+        ImGui.SameLine();
+        using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
+            if (ImGui.Button($"{AppIcons.SI_Reset}")) {
+                EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, null);
+            }
+            ImGui.PopStyleColor();
+            ImguiHelpers.Tooltip("Unload current Bundle");
+        }
         var str = bundle.Author ?? "";
         if (ImGui.InputText("Author", ref str, 100)) {
             bundle.Author = str;
