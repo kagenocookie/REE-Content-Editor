@@ -347,6 +347,15 @@ public class BundleManager
         manager.Enums.AddRange(Enums);
         return manager;
     }
+    public HashSet<string> GetActiveBundleFiles(string? bundleName)
+    {
+        if (string.IsNullOrEmpty(bundleName)) return new HashSet<string>();
+
+        var bundle = GetBundle(bundleName, null);
+        if (bundle?.ResourceListing == null) return new HashSet<string>();
+
+        return new HashSet<string>(bundle.ResourceListing.Values.Select(v => v.ToString()));
+    }
 
     private JsonElement? GetEditorRootSetting(string propName) => settings?.IngameEditor?.RootElement.TryGetProperty(propName, out var prop) == true ? prop : null;
 }

@@ -487,11 +487,13 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         GetPageFiles(baseList, (short)gridSortColumn, gridSortDir, ref sortedEntries);
         if (sortedEntries.Length == 0) return;
         previewGenerator ??= new(contentWorkspace, EditorWindow.CurrentWindow?.GLContext!);
+        var currentBundleFiles = EditorWindow.CurrentWindow?.Workspace.BundleManager.GetActiveBundleFiles(EditorWindow.CurrentWindow?.Workspace.CurrentBundle?.Name);
 
         var style = ImGui.GetStyle();
         var btnSize = new Vector2(120 * UI.UIScale, 100 * UI.UIScale);
         var iconPadding = new Vector2(32, 14) * UI.UIScale;
         var availableSize = ImGui.GetWindowWidth() - style.WindowPadding.X;
+        
         ImGui.BeginChild("FileGrid", new Vector2(availableSize, remainingHeight));
 
         int i = 0;
@@ -544,6 +546,9 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             } else {
                 ImGui.GetWindowDrawList().AddText(pos + iconPadding, 0xffffffff, $"{AppIcons.SI_FolderEmpty}");
             }
+            if (currentBundleFiles != null && currentBundleFiles.Contains(file)) {
+                ImguiHelpers.DrawOverlayIcon($"{AppIcons.SI_Bundle}", 0.4f, -1f, -1f, ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), Colors.IconOverlay, Colors.IconOverlayBackground);
+            }
             ImGui.PopFont();
             if (ImGui.IsItemHovered()) {
                 var tt = file;
@@ -574,6 +579,8 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         if (isFilePreviewEnabled) {
             previewGenerator ??= new(contentWorkspace, EditorWindow.CurrentWindow?.GLContext!);
         }
+
+        var currentBundleFiles = EditorWindow.CurrentWindow?.Workspace.BundleManager.GetActiveBundleFiles(EditorWindow.CurrentWindow?.Workspace.CurrentBundle?.Name);
         var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
         if (ImGui.BeginTable("List", 2, ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingStretchProp | ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.Sortable, new Vector2(0, remainingHeight))) {
             ImGui.TableSetupColumn("Path", ImGuiTableColumnFlags.WidthStretch, 0.9f);
@@ -594,21 +601,24 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                     ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.Text]);
                 }
 
-                {
-                    if (Path.HasExtension(file)) {
-                        var (icon, col) = AppIcons.GetIcon(PathUtils.ParseFileFormat(file).format);
-                        if (icon == '\0') {
-                            ImGui.Text($"{AppIcons.SI_File}");
-                        } else if (icon == AppIcons.SI_FolderEmpty) {
-                            ImGui.TextColored(col, $"{AppIcons.FolderLink}");
-                        } else {
-                            ImGui.TextColored(col, $"{icon}");
-                        }
+                if (Path.HasExtension(file)) {
+                    var (icon, col) = AppIcons.GetIcon(PathUtils.ParseFileFormat(file).format);
+                    if (icon == '\0') {
+                        ImGui.Text($"{AppIcons.SI_File}");
+                    } else if (icon == AppIcons.SI_FolderEmpty) {
+                        ImGui.TextColored(col, $"{AppIcons.SI_FolderLink}");
                     } else {
-                        ImGui.Text($"{AppIcons.SI_FolderEmpty}");
+                        ImGui.TextColored(col, $"{icon}");
                     }
-                    ImGui.SameLine();
+                } else {
+                    ImGui.Text($"{AppIcons.SI_FolderEmpty}");
                 }
+                if (currentBundleFiles != null && currentBundleFiles.Contains(file)) {
+                    ImGui.SameLine();
+                    ImguiHelpers.DrawOverlayIcon($"{AppIcons.SI_Bundle}", 0.6f, 2f, 1.5f, ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), Colors.IconOverlay, Colors.IconOverlayBackground);
+                }
+
+                ImGui.SameLine();
                 if (ImGui.Selectable(displayName, false, ImGuiSelectableFlags.SpanAllColumns)) {
                     bool wasFile = HandleFileClick(baseList, file);
                     if (!wasFile) {
@@ -647,7 +657,6 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         }
         pagination.displayedCount = i;
     }
-
     private string? GetFileSizeString(string file)
     {
         var size = reader!.GetSize(file);
@@ -954,7 +963,6 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         var remainingParts = parts[2..];
         return string.Join("/", remainingParts);
     }
-
     public bool RequestClose()
     {
         return false;

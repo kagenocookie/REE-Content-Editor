@@ -1,8 +1,10 @@
 using ContentEditor.App.Graphics;
+using ContentEditor.App.Widgets;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Aimp;
 using System;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -38,6 +40,10 @@ public class BundleManagementUI : IWindowHandler
     public bool HasUnsavedChanges => false;
     private string newBundleName = "";
     private bool isNewBundleMenu = false;
+
+    private int selectedLegacyEntityType = 0;
+    private int selectedEntityType = 0;
+    private static readonly string[] allOption = ["All"];
 
     private WindowData data = null!;
     protected UIContext context = null!;
@@ -174,22 +180,14 @@ public class BundleManagementUI : IWindowHandler
         if (bundle == null) {
             return;
         }
-        ImGui.SameLine();
-        using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle?.Name == bundle.Name)) {
-            if (ImGui.Button($"{AppIcons.SI_Bundle}")) {
+        var previousSelectedName = data.GetPersistentData<string>("activeBundleObserved");
+        if (selectedName != previousSelectedName) {
+            data.SetPersistentData("activeBundleObserved", selectedName);
+            if (bundle != null && EditorWindow.CurrentWindow?.Workspace.CurrentBundle?.Name != bundle.Name) {
                 EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, bundle.Name);
             }
-            ImguiHelpers.Tooltip("Set as Active Bundle");
         }
-        ImGui.SameLine();
-        using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
-            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
-            if (ImGui.Button($"{AppIcons.SI_Reset}")) {
-                EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, null);
-            }
-            ImGui.PopStyleColor();
-            ImguiHelpers.Tooltip("Unload current Bundle");
-        }
+
         ImGui.SameLine();
         if (ImGui.Button($"{AppIcons.SI_Save}")) {
             bundleManager.SaveBundle(bundle);
@@ -201,7 +199,15 @@ public class BundleManagementUI : IWindowHandler
             FileSystemUtils.ShowFileInExplorer(bundleManager.ResolveBundleLocalPath(bundle, ""));
         }
         ImguiHelpers.Tooltip("Open current Bundle folder in File Explorer");
-
+        ImGui.SameLine();
+        using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
+            if (ImGui.Button($"{AppIcons.SI_Reset}")) {
+                EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, null);
+            }
+            ImGui.PopStyleColor();
+            ImguiHelpers.Tooltip("Unload current Bundle");
+        }
         var str = bundle.Author ?? "";
         if (ImGui.InputText("Author", ref str, 100)) {
             bundle.Author = str;
@@ -287,7 +293,6 @@ public class BundleManagementUI : IWindowHandler
         ImGui.Separator();
         ImGui.Spacing();
 
-        ImGui.Indent(5);
         var legacyEntityTypes = bundle.LegacyData?
             .Where(ld => ld.TryGetPropertyValue("type", out _))
             .Select(ld => ld["type"]!.GetValue<string>())
@@ -336,132 +341,155 @@ public class BundleManagementUI : IWindowHandler
 
             ImGui.TreePop();
         }
-        // SILVER: We'll probably need some sorting options here, File Type | Name A-Z/Z-A | File Size?
+
         if (bundle.ResourceListing != null && ImGui.TreeNodeEx("Files", ImGuiTreeNodeFlags.Framed)) {
-            if (ImGui.BeginTable("FilesTable", 2, ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.BordersInnerH)) {
-                ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 175f);
-                ImGui.TableSetupColumn("Files", ImGuiTableColumnFlags.WidthStretch);
-                string? pendingEntryToBeDeleted = null;
-                foreach (var entry in bundle.ResourceListing) {
-                    ImGui.PushID(entry.Key);
-                    ImGui.TableNextRow();
-                    ImGui.TableSetColumnIndex(0);
-                    if (openFileCallback != null) {
-                        if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
-                            var path = bundleManager.ResolveBundleLocalPath(bundle, entry.Key);
-                            if (!File.Exists(path)) {
-                                Logger.Warn("File not found in bundle folder, opening base file " + entry.Value.Target);
-                                openFileCallback.Invoke(entry.Value.Target);
-                            } else {
-                                openFileCallback.Invoke(path);
-                            }
-                        }
-                        ImguiHelpers.Tooltip("Open file in Editor");
-                    }
-                    ImGui.SameLine();
-                    if (ImGui.Button($"{AppIcons.SI_FileSource}")) {
-                        ImGui.OpenPopup("EditNativesPath");
-                    }
-                    ImguiHelpers.TooltipColored(entry.Value.Target, Colors.Faded);
-
-                    if (ImGui.BeginPopup("EditNativesPath")) {
-                        string target = entry.Value.Target;
-
-                        ImGui.SeparatorText("Edit Natives Path");
-
-                        var pathSize = ImGui.CalcTextSize(target);
-                        ImGui.SetNextItemWidth(pathSize.X + 15);
-                        if (ImGui.InputText("##target", ref target, 512)) {
-                            entry.Value.Target = target;
-                        }
-                        ImGui.SameLine();
-                        if (ImGui.Button($"{AppIcons.SI_Save}")) {
-                            entry.Value.Target = target;
-                            bundleManager.SaveBundle(bundle);
-                            ImGui.CloseCurrentPopup();
-                        }
-                        ImguiHelpers.Tooltip("Save");
-                        ImGui.SameLine();
-                        if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
-                            ImGui.CloseCurrentPopup();
-                        }
-                        ImguiHelpers.Tooltip("Cancel");
-
-                        ImGui.EndPopup();
-                    }
-
-                    ImGui.SameLine();
-                    using (var _ = ImguiHelpers.Disabled(!(entry.Value.Diff != null && showDiff != null && (entry.Value.Diff is JsonObject odiff && odiff.Count > 1)))) {
-                        if (ImGui.Button($"{AppIcons.SI_FileChanges}")) {
-                            showDiff!.Invoke($"{entry.Key} => {entry.Value.Target}", entry.Value.Diff!);
-                        }
-                        ImguiHelpers.Tooltip("Show changes\nPartial patch generated at: " + entry.Value.DiffTime.ToString("O"));
-                    }
-                    ImGui.SameLine();
-                    ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
-                    if (ImGui.Button($"{AppIcons.SI_GenericDelete2}")) {
-                        ImGui.OpenPopup("Confirm Action");
-                    }
-                    ImGui.PopStyleColor();
-                    ImguiHelpers.Tooltip("Delete file");
-
-                    if (ImGui.BeginPopupModal("Confirm Action", ImGuiWindowFlags.AlwaysAutoResize)) {
-                        string confirmText = $"Are you sure you want to delete {entry.Key} from {bundle.Name}?";
-                        var textSize = ImGui.CalcTextSize(confirmText);
-                        ImGui.Text(confirmText);
-                        ImGui.Separator();
-                        if (ImGui.Button("Yes", new Vector2(textSize.X / 2, 0))) {
-                            pendingEntryToBeDeleted = entry.Key;
-                            ImGui.CloseCurrentPopup();
-                        }
-                        ImGui.SameLine();
-                        if (ImGui.Button("No", new Vector2(textSize.X / 2, 0))) {
-                            ImGui.CloseCurrentPopup();
-                        }
-                        ImGui.EndPopup();
-                    }
-
-                    ImGui.TableSetColumnIndex(1);
-                    char icon = AppIcons.SI_File;
-                    Vector4 col = ImGui.GetStyle().Colors[(int)ImGuiCol.Text];
-                    if (Path.HasExtension(entry.Key)) {
-                        var (fileIcon, fileCol) = AppIcons.GetIcon(PathUtils.ParseFileFormat(entry.Key).format);
-                        if (fileIcon != '\0') {
-                            icon = fileIcon; col = fileCol;
-                        }
-                    }
-                    ImGui.TextColored(col, $"{icon}");
-                    ImGui.SameLine();
-                    ImGui.Text(entry.Key);
-
-                    ImGui.PopID();
-                }
-                if (pendingEntryToBeDeleted != null) {
-                    if (bundle.ResourceListing.TryGetValue(pendingEntryToBeDeleted, out var resource)) {
-                        var filePath = bundleManager.ResolveBundleLocalPath(bundle, pendingEntryToBeDeleted);
-                        bundle.ResourceListing.Remove(pendingEntryToBeDeleted);
-
-                        if (File.Exists(filePath)) {
-                             File.Delete(filePath);
-                        } else {
-                            Logger.Error($"Failed to delete file {filePath}!");
-                        }
-                        Logger.Info($"Deleted {pendingEntryToBeDeleted} from {bundle.Name}.");
-                    }
-                    bundleManager.SaveBundle(bundle);
-                    pendingEntryToBeDeleted = null;
-                }
-
-                ImGui.EndTable();
+            ImGui.Indent(-ImGui.GetStyle().IndentSpacing);
+            ImGui.Spacing();
+            ImGui.PushStyleVar(ImGuiStyleVar.TreeLinesSize, 1.5f);
+            if (ImGui.TreeNodeEx($"{AppIcons.SI_Bundle} " + bundle.Name, ImGuiTreeNodeFlags.DrawLinesFull | ImGuiTreeNodeFlags.DefaultOpen)) {
+                var tree = HierarchyTreeWidget.Build(bundle.ResourceListing.Select(e => e.Key));
+                HierarchyTreeWidget.Draw(tree, node => ShowHierarchyFileTreeActionButtons(node, bundle), node => OpenFileFromNode(node, bundle));
+                ImGui.TreePop();
             }
+            ImGui.PopStyleVar();
+            ImGui.Unindent();
             ImGui.TreePop();
         }
-        ImGui.Unindent();
     }
+    private void ShowHierarchyFileTreeActionButtons(HierarchyTreeWidget node, Bundle bundle)
+    {
 
-    private int selectedLegacyEntityType = 0;
-    private int selectedEntityType = 0;
-    private static readonly string[] allOption = ["All"];
+        var hasKey = node.EntryKey != null;
+        bundle.ResourceListing.TryGetValue(node.EntryKey ?? string.Empty, out var entry);
+        bool hasEntry = entry != null;
+
+        ImGui.PushID(node.EntryKey ?? node.Name);
+        using (var _ = ImguiHelpers.Disabled(entry == null)) {
+
+            ShowOpenInEditorButton(node, bundle, entry);
+            ImGui.SameLine();
+            ShowEditNativesPathButton(entry, bundle);
+            ImGui.SameLine();
+            using (var __ = ImguiHelpers.Disabled(!(entry?.Diff != null && showDiff != null && entry.Diff is JsonObject odiff && odiff.Count > 1))) {
+                if (ImGui.Button($"{AppIcons.SI_FileChanges}")) {
+                    showDiff!.Invoke($"{node.EntryKey} => {entry.Target}", entry.Diff!);
+                }
+                ImguiHelpers.Tooltip("Show changes\nPartial patch generated at: " + entry?.DiffTime.ToString("O"));
+            }
+            ImGui.SameLine();
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
+            if (ImGui.Button($"{AppIcons.SI_GenericDelete2}")) {
+                ImGui.OpenPopup("ConfirmDelete");
+            }
+            ImGui.PopStyleColor();
+            ImguiHelpers.Tooltip("Delete file");
+
+            if (ImGui.BeginPopupModal("ConfirmDelete", ImGuiWindowFlags.AlwaysAutoResize)) {
+                string confirmText = $"Are you sure you want to delete {node.EntryKey} from {bundle.Name}?";
+                var textSize = ImGui.CalcTextSize(confirmText);
+                ImGui.Text(confirmText);
+                ImGui.Separator();
+
+                if (ImGui.Button("Yes", new Vector2(textSize.X / 2, 0))) {
+                    var filePath = bundleManager.ResolveBundleLocalPath(bundle, node.EntryKey);
+
+                    bundle.ResourceListing.Remove(node.EntryKey);
+
+                    if (File.Exists(filePath)) {
+                        File.Delete(filePath);
+                    } else {
+                        Logger.Error($"Failed to delete file {filePath}!");
+                    }
+
+                    Logger.Info($"Deleted {node.EntryKey} from {bundle.Name}.");
+                    bundleManager.SaveBundle(bundle);
+
+                    ImGui.CloseCurrentPopup();
+                }
+
+                ImGui.SameLine();
+                if (ImGui.Button("No", new Vector2(textSize.X / 2, 0))) {
+                    ImGui.CloseCurrentPopup();
+                }
+
+                ImGui.EndPopup();
+            }
+        }
+        ImGui.PopID();
+    }
+    private void ShowOpenInEditorButton(HierarchyTreeWidget node, Bundle bundle, object? entry)
+    {
+        bool hasEntry = entry is { };
+        string? target = hasEntry ? ((dynamic)entry).Target : null;
+
+        using (var _ = ImguiHelpers.Disabled(!hasEntry)) {
+            if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}") && openFileCallback != null) {
+                var path = bundleManager.ResolveBundleLocalPath(bundle, node.EntryKey);
+
+                if (!File.Exists(path)) {
+                    Logger.Warn("File not found in bundle folder, opening base file " + target);
+                    openFileCallback!(target!);
+                } else {
+                    openFileCallback!(path);
+                }
+            }
+            ImguiHelpers.Tooltip("Open file in Editor");
+        }
+    }
+    private void ShowEditNativesPathButton(object? entry, Bundle bundle)
+    {
+        bool hasEntry = entry is { };
+        string? target = hasEntry ? ((dynamic)entry).Target : null;
+        using (var _ = ImguiHelpers.Disabled(!hasEntry)) {
+            if (ImGui.Button($"{AppIcons.SI_FileSource}")) {
+                ImGui.OpenPopup("EditNativesPath");
+            }
+            ImguiHelpers.TooltipColored(target, Colors.Faded);
+        }
+
+        ShowEditNativesPathPopup(entry, bundle);
+    }
+    private void ShowEditNativesPathPopup(object? entry, Bundle bundle)
+    {
+        if (entry is not { } e) return;
+
+        dynamic d = e;
+        string target = d.Target;
+        if (ImGui.BeginPopup("EditNativesPath")) {
+            ImGui.SeparatorText("Edit Natives Path");
+            ImGui.SetNextItemWidth(ImGui.CalcTextSize(target).X + 15);
+            if (ImGui.InputText("##target", ref target, 512)) {
+                d.Target = target;
+            }
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.SI_Save}")) {
+                d.Target = target;
+                bundleManager.SaveBundle(bundle);
+                ImGui.CloseCurrentPopup();
+            }
+            ImguiHelpers.Tooltip("Save");
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
+                ImGui.CloseCurrentPopup();
+            }
+            ImguiHelpers.Tooltip("Cancel");
+            ImGui.EndPopup();
+        }
+    }
+    private void OpenFileFromNode(HierarchyTreeWidget node, Bundle bundle)
+    {
+        if (node.EntryKey == null || openFileCallback == null) return;
+
+        var path = bundleManager.ResolveBundleLocalPath(bundle, node.EntryKey);
+        bundle.ResourceListing.TryGetValue(node.EntryKey, out var entry);
+
+        if (!File.Exists(path)) {
+            Logger.Warn("File not found in bundle folder, opening base file " + ((dynamic?)entry)?.Target);
+            openFileCallback!(((dynamic)entry!).Target);
+        } else {
+            openFileCallback!(path);
+        }
+    }
 
     public bool RequestClose()
     {

@@ -590,6 +590,20 @@ public static class ImguiHelpers
 
         ImGui.Dummy(new Vector2(width, 0));
     }
+    public static unsafe void DrawOverlayIcon(string icon, float iconScale, float iconPosX, float iconPosY, Vector2 iconMin, Vector2 iconMax, Vector4 iconColor, Vector4 bgColor)
+    {
+        var drawList = ImGui.GetWindowDrawList();
+        float fontSize = ImGui.GetFontSize();
+        float overlayFontSize = fontSize * iconScale;
+        float bgPadding = 1f;
+        Vector2 overlaySize = ImGui.CalcTextSize(icon) * iconScale;
+        Vector2 overlayPos = new(iconMax.X - overlaySize.X + iconPosX, iconMin.Y - iconPosY);
+        Vector2 bgMin = overlayPos - new Vector2(bgPadding, bgPadding);
+        Vector2 bgMax = overlayPos + overlaySize + new Vector2(bgPadding, bgPadding);
+
+        drawList.AddRectFilled(bgMin, bgMax, ImGui.GetColorU32(bgColor));
+        drawList.AddText(ImGui.GetFont(), overlayFontSize, overlayPos, ImGui.GetColorU32(iconColor), icon);
+    }
     /// <summary>
     /// Draws a tooltip when item is hovered.
     /// </summary>

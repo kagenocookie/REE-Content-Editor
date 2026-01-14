@@ -244,8 +244,6 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     {
         ImGui.Spacing();
 
-        ShowSetting(config.BundleDefaultSaveFullPath, "Save bundle files with full path", "When checked, will always default to saving with the full relative path instead of the root bundle folder when adding new files to the active bundle.");
-
         var maxUndo = config.MaxUndoSteps.Get();
         if (ImGui.DragInt("Max undo steps", ref maxUndo, 0.25f, 0)) {
             config.MaxUndoSteps.Set(maxUndo);
@@ -256,6 +254,8 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     private static void ShowBundlesEditingTab()
     {
         ImGui.Spacing();
+        ShowSetting(config.BundleDefaultSaveFullPath, "Save bundle files with full path", "When checked, will always default to saving with the full relative path instead of the root bundle folder when adding new files to the active bundle.");
+
         var defaults = config.JsonSettings.BundleDefaults;
 
         var str = defaults.Author ?? "";
