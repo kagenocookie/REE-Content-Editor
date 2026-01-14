@@ -348,8 +348,7 @@ public class BundleManagementUI : IWindowHandler
             ImGui.PushStyleVar(ImGuiStyleVar.TreeLinesSize, 1.5f);
             if (ImGui.TreeNodeEx($"{AppIcons.SI_Bundle} " + bundle.Name, ImGuiTreeNodeFlags.DrawLinesFull | ImGuiTreeNodeFlags.DefaultOpen)) {
                 var tree = HierarchyTreeWidget.Build(bundle.ResourceListing.Select(e => e.Key));
-                HierarchyTreeWidget.Draw(tree, node => ShowHierarchyFileTreeActionButtons(node, bundle));
-
+                HierarchyTreeWidget.Draw(tree, node => ShowHierarchyFileTreeActionButtons(node, bundle), node => OpenFileFromNode(node, bundle));
                 ImGui.TreePop();
             }
             ImGui.PopStyleVar();
@@ -475,6 +474,20 @@ public class BundleManagementUI : IWindowHandler
             }
             ImguiHelpers.Tooltip("Cancel");
             ImGui.EndPopup();
+        }
+    }
+    private void OpenFileFromNode(HierarchyTreeWidget node, Bundle bundle)
+    {
+        if (node.EntryKey == null || openFileCallback == null) return;
+
+        var path = bundleManager.ResolveBundleLocalPath(bundle, node.EntryKey);
+        bundle.ResourceListing.TryGetValue(node.EntryKey, out var entry);
+
+        if (!File.Exists(path)) {
+            Logger.Warn("File not found in bundle folder, opening base file " + ((dynamic?)entry)?.Target);
+            openFileCallback!(((dynamic)entry!).Target);
+        } else {
+            openFileCallback!(path);
         }
     }
 

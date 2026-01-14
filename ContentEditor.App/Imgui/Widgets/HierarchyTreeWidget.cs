@@ -36,7 +36,7 @@ public class HierarchyTreeWidget
         return root;
     }
 
-    public static void Draw(HierarchyTreeWidget node, Action<HierarchyTreeWidget>? drawActions = null, int hierarchyLayer = 0)
+    public static void Draw(HierarchyTreeWidget node, Action<HierarchyTreeWidget>? drawActions = null, Action<HierarchyTreeWidget>? onOpenFile = null, int hierarchyLayer = 0)
     {
         foreach (var child in node.Children.Values.OrderBy(c => c.EntryKey != null).ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)) {
 
@@ -49,7 +49,6 @@ public class HierarchyTreeWidget
             ImGui.BeginChild("##actions", new Vector2(ActionColumnWidth, ImGui.GetTextLineHeight() + 10f), ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
             if (!(hierarchyLayer == 0 && child.EntryKey == null)) {
                 drawActions?.Invoke(child);
-
             }
             ImGui.EndChild();
             isActionHovered = ImGui.IsItemHovered();
@@ -72,12 +71,14 @@ public class HierarchyTreeWidget
                 ImGui.TextColored(col, $"{icon}");
                 ImGui.SameLine();
                 ImGui.PushStyleColor(ImGuiCol.Text, isActionHovered ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text));
-                ImGui.Selectable(child.Name);
+                if (ImGui.Selectable(child.Name)) {
+                    onOpenFile?.Invoke(child);
+                }
                 ImGui.PopStyleColor();
             } else {
                 bool isNestedFolder = ImGui.TreeNodeEx($"{AppIcons.SI_FolderEmpty} " + child.Name, ImGuiTreeNodeFlags.DrawLinesToNodes | ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.SpanAllColumns);
                 if (isNestedFolder) {
-                    Draw(child, drawActions, hierarchyLayer + 1);
+                    Draw(child, drawActions, onOpenFile, hierarchyLayer + 1);
                     ImGui.TreePop();
                 }
             }
