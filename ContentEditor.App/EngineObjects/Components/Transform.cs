@@ -115,7 +115,7 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
 
     public void TranslateForwardAligned(Vector3 offset)
     {
-        LocalPosition += Vector3D.Transform(offset.ToGeneric(), SilkLocalRotation).ToSystem();
+        LocalPosition += Vector3.Transform(offset, LocalRotation);
     }
 
     public void ComponentInit()
@@ -124,10 +124,9 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
         LocalScale = Vector3.One;
     }
 
-    public void Rotate(Quaternion<float> quaternion)
+    public void Rotate(Quaternion quaternion)
     {
-        var newQuat = SilkLocalRotation * quaternion;
-        LocalRotation = newQuat.ToSystem();
+        LocalRotation = LocalRotation * quaternion;
     }
 
     public void LookAt(Vector3 target)
