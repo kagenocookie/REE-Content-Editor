@@ -44,7 +44,7 @@ public partial class CommonMeshResource : IResourceFile
             var boneNode = nodeDict.GetValueOrDefault(header.boneHash);
             channel.NodeName = header.boneName
                 ?? header.OriginalName
-                ?? mot.GetBoneByHash(header.boneHash)?.Name
+                ?? mot.GetBoneByHash(header.boneHash)?.boneName
                 ?? boneNode?.Name;
 
             if (boneNode == null || channel.NodeName == null) {
@@ -58,14 +58,14 @@ public partial class CommonMeshResource : IResourceFile
                     // try and match the closest parent bone
                     var parent = motBone;
                     while (parent != null) {
-                        targetNode = nodeDict.GetValueOrDefault(parent.Header.boneHash);
+                        targetNode = nodeDict.GetValueOrDefault(parent.boneHash);
                         if (targetNode != null) break;
                         parent = parent.Parent;
                     }
                 }
 
                 var rootNode = targetNode
-                    ?? nodeDict.GetValueOrDefault(mot.RootBones.First().Header.boneHash)
+                    ?? nodeDict.GetValueOrDefault(mot.RootBones.First().boneHash)
                     ?? scene.RootNode.Children.FirstOrDefault(n => n.Name.Equals("root", StringComparison.InvariantCultureIgnoreCase));
                 if (rootNode == null) {
                     Logger.Error($"Animation {mot.Name} contains an unnamed bone {header.boneHash} and no viable root bone was not found.");
@@ -75,8 +75,8 @@ public partial class CommonMeshResource : IResourceFile
                 Logger.Warn($"Animation {mot.Name} contains an unnamed bone {header.boneHash} that the mesh or the motlist file does not specify. It will get exported as placeholder 'hash{header.boneHash}' and may not be fully correct.");
                 rootNode.Children.Add(new Node(channel.NodeName, rootNode) {
                     Transform = Matrix4x4.Transpose(Transform.GetMatrixFromTransforms(
-                        motBone?.Translation.ToGeneric() ?? Vector3D<float>.Zero,
-                        motBone?.Quaternion.ToGeneric() ?? Quaternion<float>.Identity,
+                        motBone?.translation.ToGeneric() ?? Vector3D<float>.Zero,
+                        motBone?.quaternion.ToGeneric() ?? Quaternion<float>.Identity,
                         Vector3D<float>.One).ToSystem())
                 });
                 foreach (var mesh in scene.Meshes) {
@@ -97,7 +97,7 @@ public partial class CommonMeshResource : IResourceFile
             } else {
                 // some blender fbx importer versions don't work unless we also add at least one position key to everything
                 // unsure if the assimp exporter does something weird or blender's importer being bad
-                var rest = mot.GetBoneByHash(header.boneHash)?.Header.translation ?? new Vector3(boneNode.Transform.M14, boneNode.Transform.M24, boneNode.Transform.M34);
+                var rest = mot.GetBoneByHash(header.boneHash)?.translation ?? new Vector3(boneNode.Transform.M14, boneNode.Transform.M24, boneNode.Transform.M34);
                 channel.PositionKeys.Add(new VectorKey(0, rest));
             }
             if (clip.HasRotation) {
@@ -111,7 +111,7 @@ public partial class CommonMeshResource : IResourceFile
             } else {
                 // some blender fbx importer versions don't work unless we also add at least one rotation key to everything
                 // unsure if the assimp exporter does something weird or blender's importer being bad
-                var rest = mot.GetBoneByHash(header.boneHash)?.Header.quaternion ?? Quaternion.CreateFromRotationMatrix(Matrix4x4.Transpose(boneNode.Transform));
+                var rest = mot.GetBoneByHash(header.boneHash)?.quaternion ?? Quaternion.CreateFromRotationMatrix(Matrix4x4.Transpose(boneNode.Transform));
                 channel.RotationKeys.Add(new QuaternionKey(0, rest));
             }
             if (clip.HasScale) {

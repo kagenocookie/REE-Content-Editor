@@ -636,12 +636,12 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<McamlistFile>((m) => [m.Header.Name, m.Header.BaseMcamlistPath, m.Header.numMots, m.Header.uknNum, m.Header.uknValue, m.MotFiles, m.Motions]);
         AddCompareMapper<MotcamFile>((m) => [m.Header.blending, m.Header.frameCount, m.Header.uknFloat, m.Header.uknExtra, m.Clip1, m.Clip2]);
         AddCompareMapper<MotlistFile>((m) => [m.Header.MotListName, m.Header.BaseMotListPath, m.Header.numMots, m.Header.uknNum, m.Header.uknValue, m.MotFiles, m.Motions]);
-        AddCompareMapper<MotFile>((m) => [m.Name, m.MotPropertyTracks, m.BoneHeaders, m.BoneClips, m.Clips, m.Bones,
+        AddCompareMapper<MotFile>((m) => [m.Name, m.MotPropertyTracks, m.BoneClips, m.Clips, m.Bones,
             // ignoring these two for now - end clips because the read is inconsistent, tree because it's massive and also works fine
             // m.EndClips, m.PropertyTree
         ]);
         AddCompareMapper<MotTreeFile>((m) => [m.Name, m.MotionIDRemaps, m.expandedMotionsCount, m.uknCount1, m.uknCount2]);
-        AddCompareMapper<MotBone>((m) => [m.Name, m.Header.boneHash, m.Children.Count, m.Index, m.Quaternion, m.Translation, m.Parent?.Name, m.Header.uknValue1, m.Header.uknValue2]);
+        AddCompareMapper<MotBone>((m) => [m.boneName, m.boneHash, m.Children.Count, m.Index, m.quaternion, m.translation, m.Parent?.boneName, m.uknValue1, m.uknValue2]);
         AddCompareMapper<Track>((m) => [m.translations, m.rotations, m.flags, m.floats, m.frameIndexes, m.keyCount, m.maxFrame, m.frameRate]);
         AddCompareMapper<BoneClipHeader>((m) => [m.boneHash, m.boneIndex, m.boneName, m.trackFlags, m.uknFloat, m.uknIndex]);
         AddCompareMapper<MotIndex>((m) => m.data.Cast<object>().Concat(new object[] { m.extraClipCount, m.motNumber }), true);

@@ -342,15 +342,14 @@ public partial class CommonMeshResource : IResourceFile
         {
             foreach (var node in children) {
                 if (boneNames.Contains(node.Name)) {
-                    var header = new BoneHeader() { boneName = node.Name, boneHash = MurMur3HashUtils.GetHash(node.Name), Index = bones.Count };
-                    var bone = new MotBone(header);
+                    var bone = new MotBone(){ boneName = node.Name, boneHash = MurMur3HashUtils.GetHash(node.Name), Index = bones.Count };
                     var localMatrix = Matrix4x4.Transpose(node.Transform);
-                    if (!Matrix4x4.Decompose(localMatrix, out _, out header.quaternion, out header.translation)) {
+                    if (!Matrix4x4.Decompose(localMatrix, out _, out bone.quaternion, out bone.translation)) {
                         Logger.Error("Failed to decompose bone offset");
                     }
-                    header.translation *= scale;
-                    if (header.quaternion.W < 0) {
-                        header.quaternion = Quaternion.Negate(header.quaternion);
+                    bone.translation *= scale;
+                    if (bone.quaternion.W < 0) {
+                        bone.quaternion = Quaternion.Negate(bone.quaternion);
                     }
 
                     bones.Add(bone);
@@ -366,8 +365,7 @@ public partial class CommonMeshResource : IResourceFile
         List<MotBone> motBones = new();
         AddRecursiveBones(motBones, scene.RootNode.Children, boneNames, null, scale);
         var rootBones = motBones.Where(b => b.Parent == null).ToList();
-        List<BoneHeader> boneHeaders = motBones.Select(b => b.Header).ToList();
-        List<string> orderedBoneNames = motBones.Select(b => b.Header.boneName).ToList();
+        List<string> orderedBoneNames = motBones.Select(b => b.boneName).ToList();
 
         foreach (var aiAnim in scene.Animations) {
             if (!aiAnim.HasNodeAnimations) continue;
@@ -377,7 +375,6 @@ public partial class CommonMeshResource : IResourceFile
             mot.Header.version = motver;
             mot.Bones.AddRange(motBones);
             mot.RootBones.AddRange(rootBones);
-            mot.BoneHeaders = boneHeaders;
             if (mot.Name.Contains("_loop")) {
                 mot.Header.blending = 0;
             }
@@ -436,7 +433,7 @@ public partial class CommonMeshResource : IResourceFile
                     clipHeader.boneIndex = (ushort)(bone?.Index ?? 0); // would we need these to be remap index?
                 }
                 if (channel.HasPositionKeys) {
-                    var firstValue = bone != null ? bone.Translation : channel.PositionKeys[0].Value;
+                    var firstValue = bone != null ? bone.translation : channel.PositionKeys[0].Value;
                     var allEqual = bone != null && !channel.PositionKeys.Any(k => Vector3.DistanceSquared(k.Value, firstValue) > 0.000001f);
                     var track = new Track(motver, TrackValueType.Vector3);
                     clipHeader.trackFlags |= TrackFlag.Translation;
@@ -477,7 +474,7 @@ public partial class CommonMeshResource : IResourceFile
                         }
                     }
 
-                    var firstValue = bone != null ? bone.Quaternion : channel.RotationKeys[0].Value;
+                    var firstValue = bone != null ? bone.quaternion : channel.RotationKeys[0].Value;
                     var allEqual = bone != null && !channel.RotationKeys.Any(k => k.Value != firstValue);
                     clipHeader.trackFlags |= TrackFlag.Rotation;
                     var track = clip.Rotation = new Track(motver, TrackValueType.Quaternion);

@@ -411,26 +411,6 @@ public class MotcamFileHandler : IObjectUIHandler
     }
 }
 
-[ObjectImguiHandler(typeof(MotBone))]
-public class MotBoneHandler : IObjectUIHandler
-{
-    private static MemberInfo[] DisplayedFields = [
-        typeof(MotBone).GetProperty(nameof(MotBone.Header))!,
-        typeof(MotBone).GetProperty(nameof(MotBone.Children))!,
-    ];
-
-    public void OnIMGUI(UIContext context)
-    {
-        var instance = context.Get<MotBone>();
-        if (context.children.Count == 0) {
-            var ws = context.GetWorkspace();
-            WindowHandlerFactory.SetupObjectUIContext(context, typeof(BoneHeader), false, DisplayedFields);
-        }
-
-        context.ShowChildrenUI();
-    }
-}
-
 [ObjectImguiHandler(typeof(Track), Stateless = true)]
 public class TrackHandler : IObjectUIHandler
 {
@@ -588,33 +568,48 @@ public class BoneMotionClipListHandler : ListHandler
     }
 }
 
-[ObjectImguiHandler(typeof(BoneHeader))]
-public class MotBoneHeaderHandler : IObjectUIHandler
+[ObjectImguiHandler(typeof(MotBone))]
+public class MotBoneHandler : IObjectUIHandler
 {
     private static MemberInfo[] DisplayedFields = [
-        typeof(BoneHeader).GetField(nameof(BoneHeader.boneName))!,
-        typeof(BoneHeader).GetField(nameof(BoneHeader.Index))!,
-        typeof(BoneHeader).GetField(nameof(BoneHeader.translation))!,
-        typeof(BoneHeader).GetField(nameof(BoneHeader.quaternion))!,
-        typeof(BoneHeader).GetField(nameof(BoneHeader.uknValue1))!,
-        typeof(BoneHeader).GetField(nameof(BoneHeader.uknValue2))!,
+        typeof(MotBone).GetField(nameof(MotBone.boneName))!,
+        typeof(MotBone).GetField(nameof(MotBone.Index))!,
+        typeof(MotBone).GetField(nameof(MotBone.translation))!,
+        typeof(MotBone).GetField(nameof(MotBone.quaternion))!,
+        typeof(MotBone).GetField(nameof(MotBone.uknValue1))!,
+        typeof(MotBone).GetField(nameof(MotBone.uknValue2))!,
+        typeof(MotBone).GetProperty(nameof(MotBone.Children))!,
     ];
 
     public void OnIMGUI(UIContext context)
     {
-        var instance = context.Get<BoneHeader>();
+        var instance = context.Get<MotBone>();
         if (context.children.Count == 0) {
             var ws = context.GetWorkspace();
-            WindowHandlerFactory.SetupObjectUIContext(context, typeof(BoneHeader), false, DisplayedFields);
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(MotBone), false, DisplayedFields);
         }
 
         var show = ImguiHelpers.TreeNodeSuffix("Bone", instance.ToString());
+        if (ImGui.BeginPopupContextItem("Bone")) {
+            var boneCtx = context.FindParentContextByValue<MotBone>();
+            if (boneCtx != null && ImGui.Selectable("Copy")) {
+                VirtualClipboard.CopyToClipboard(boneCtx);
+            }
+            if (boneCtx != null && VirtualClipboard.TryGetFromClipboard<MotBone>(out var newClip) && ImGui.Selectable("Paste (replace)")) {
+                UndoRedo.RecordSet(boneCtx, newClip.DeepCloneGeneric<MotBone>());
+                context.ClearChildren();
+            }
+            ImGui.EndPopup();
+        }
         if (show) {
-            context.ShowChildrenUI();
+            foreach (var c in context.children.Take(context.children.Count - 1)) {
+                c.ShowUI();
+            }
             ImGui.TreePop();
         } else {
             ImGui.SameLine();
         }
+        context.children[^1].ShowUI();
     }
 }
 
@@ -754,11 +749,11 @@ public class MotBoneListHandler : ListHandler
         }
         var mot = context.FindValueInParentValues<MotFile>();
         var newIndex = mot == null || mot.Bones.Count == 0 ? 0 : (mot.Bones.Max(b => b.Index) + 1);
-        var bone = new MotBone(new BoneHeader() {
-            boneName = "New_bone".GetUniqueName((n) => true == mot?.Bones.Any(b => b.Name == n)),
+        var bone = new MotBone() {
+            boneName = "New_bone".GetUniqueName((n) => true == mot?.Bones.Any(b => b.boneName == n)),
             Index = newIndex,
             quaternion = Quaternion.Identity,
-        });
+        };
 
         bone.Parent = context.FindValueInParentValues<MotBone>();
         if (mot == null) return bone;
