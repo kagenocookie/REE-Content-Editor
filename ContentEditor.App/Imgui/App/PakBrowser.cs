@@ -48,6 +48,8 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
     private List<string> _activeTagFilter = new();
     private string bookmarkSearch = string.Empty;
     private bool isBookmarkSearchMatchCase = false;
+    private string customBookmarkComment = "";
+    private string? editingCustomBookmark = null;
     private enum FilterMode
     {
         AnyMatch,
@@ -930,10 +932,14 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImGui.PopItemFlag();
             ImGui.EndMenu();
         }
-        string comment = bm.Comment;
-        if (ImGui.InputTextWithHint("Edit Comment", "Press Enter to save", ref comment, 64, ImGuiInputTextFlags.EnterReturnsTrue)) {
-            bm.Comment = comment;
+        if (editingCustomBookmark != bm.Path) {
+            editingCustomBookmark = bm.Path;
+            customBookmarkComment = bm.Comment;
+        }
+        if (ImGui.InputTextWithHint("Edit Comment", "Press Enter to save", ref customBookmarkComment, 64, ImGuiInputTextFlags.EnterReturnsTrue)) {
+            bm.Comment = customBookmarkComment;
             manager.SaveBookmarks();
+            editingCustomBookmark = null;
         }
     }
 
