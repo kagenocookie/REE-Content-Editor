@@ -277,6 +277,24 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             string filterLabelDisplayText = _activeTagFilter.Count == 0 ? $"{AppIcons.SI_Filter}" : $"{AppIcons.SI_Filter} : " + _activeTagFilter.Count.ToString();
             Vector2 filterLabelSize = ImGui.CalcTextSize(filterLabelDisplayText);
             float filterComboWidth = filterLabelSize.X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
+            float searchBarWidth = 260f;
+            ImguiHelpers.AlignElementRight(((ImGui.CalcTextSize($"{AppIcons.SI_GenericClose}").X + ImGui.GetStyle().FramePadding.X * 2) + ImGui.GetStyle().ItemSpacing.X) * 2 + filterComboWidth + searchBarWidth + ImGui.GetStyle().ItemSpacing.X);
+            ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isBookmarkSearchMatchCase, Colors.IconActive);
+            ImguiHelpers.Tooltip("Match Case");
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(searchBarWidth);
+            ImGui.SetNextItemAllowOverlap();
+            ImGui.InputTextWithHint("##BookmarkSearch", $"{AppIcons.SI_GenericMagnifyingGlass} Search Comments", ref bookmarkSearch, 64);
+            var bookmarkSearchQuery = isBookmarkSearchMatchCase ? bookmarkSearch.Trim() : bookmarkSearch.Trim().ToLowerInvariant();
+            if (!string.IsNullOrEmpty(bookmarkSearch)) {
+                ImGui.SameLine();
+                ImGui.SetCursorPosX(ImGui.GetCursorPosX() - (ImGui.CalcTextSize($"{AppIcons.SI_GenericError}").X * 2));
+                ImGui.SetNextItemAllowOverlap();
+                if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
+                    bookmarkSearch = string.Empty;
+                }
+            }
+            ImGui.SameLine();
             ImGui.SetNextItemWidth(filterComboWidth);
             if (ImGui.BeginCombo("##TagFilterCombo", filterLabelDisplayText)) {
                 ImGui.TextDisabled("Filter Mode:");
@@ -319,23 +337,6 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                     _activeTagFilter.Clear();
                 }
                 ImguiHelpers.Tooltip("Clear Filters");
-            }
-            ImGui.SameLine();
-            ImguiHelpers.AlignElementRight(300f);
-            ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isBookmarkSearchMatchCase, Colors.IconActive);
-            ImguiHelpers.Tooltip("Match Case");
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(260f);
-            ImGui.SetNextItemAllowOverlap();
-            ImGui.InputTextWithHint("##BookmarkSearch", $"{AppIcons.SI_GenericMagnifyingGlass} Search Comments", ref bookmarkSearch, 64);
-            var bookmarkSearchQuery = isBookmarkSearchMatchCase ? bookmarkSearch.Trim() : bookmarkSearch.Trim().ToLowerInvariant();
-            if (!string.IsNullOrEmpty(bookmarkSearch)) {
-                ImGui.SameLine();
-                ImGui.SetCursorPosX(ImGui.GetCursorPosX() - (ImGui.CalcTextSize($"{AppIcons.SI_GenericError}").X * 2));
-                ImGui.SetNextItemAllowOverlap();
-                if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
-                    bookmarkSearch = string.Empty;
-                }
             }
             if (_bookmarkManagerDefaults.GetBookmarks(Workspace.Config.Game.name).Count > 0 && !_bookmarkManagerDefaults.IsHideBookmarks) {
                 ShowBookmarksTable("Default", 3, _bookmarkManagerDefaults, _activeTagFilter, bookmarkSearchQuery);
