@@ -159,7 +159,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         }
 
         if (texture != null) {
-            if (ImGui.Button("Path") && texture.Path != null) {
+            if (ImGui.Button($"{AppIcons.SI_FileSource}") && texture.Path != null) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(texture.Path);
             }
             ImguiHelpers.Tooltip($"{texture.Path}");
