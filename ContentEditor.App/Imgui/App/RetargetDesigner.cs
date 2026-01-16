@@ -219,7 +219,7 @@ public class RetargetDesigner : BaseWindowHandler
         ImGui.BeginChild("retargetBones", new Vector2(0, 200));
         var targetBones = unmappedName.Concat(mesh2.NativeMesh.BoneData.Bones.Select(b => b.name)).ToArray();
         var srcBones = mesh1.NativeMesh.BoneData.Bones.Select(b => b.name);
-        if (selectedMotion != null) srcBones = srcBones.Concat(selectedMotion.Bones.Select(b => b.Name)).Distinct();
+        if (selectedMotion != null) srcBones = srcBones.Concat(selectedMotion.Bones.Select(b => b.boneName)).Distinct();
         if (ImGui.BeginTable("##retarget_bones", 5, ImGuiTableFlags.Resizable | ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY)) {
             ImGui.TableSetupColumn("Source", ImGuiTableColumnFlags.WidthStretch, 0.075f);
             ImGui.TableSetupColumn("Target", ImGuiTableColumnFlags.WidthStretch, 0.075f);
@@ -360,12 +360,12 @@ public class RetargetDesigner : BaseWindowHandler
         var boneHashes = bonemap.ToDictionary(kv => MurMur3HashUtils.GetHash(kv.Key), kv => kv.Value);
         var renames = new List<string>();
 
-        if (mot.BoneHeaders == null) {
+        if (mot.Bones.Count == 0) {
             Logger.Error("Mot file contains no bone data");
             return renames;
         }
 
-        foreach (var bone in mot.BoneHeaders) {
+        foreach (var bone in mot.Bones) {
             if (bonemap.TryGetValue(bone.boneName, out var newName) || boneHashes.TryGetValue(bone.boneHash, out newName)) {
                 renames.Add((bone.boneName ?? bone.boneHash.ToString()) + " => " + newName);
                 if (direction == 1) {

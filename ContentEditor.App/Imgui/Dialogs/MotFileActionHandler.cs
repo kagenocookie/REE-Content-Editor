@@ -61,7 +61,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
         var clipData = EditorWindow.CurrentWindow?.GetClipboard();
         if (!string.IsNullOrEmpty(clipData)) {
             var paste = ImGui.Selectable("Paste motion data");
-            var pasteRetarget = ImGui.Selectable("Paste motion data (Retargeting) ...");
+            var pasteRetarget = ImGui.Selectable("Paste motion data (Customize) ...");
             paste = paste || pasteRetarget;
             if (paste) {
                 if (MotionDataResource.TryDeserialize(clipData, out var motData, out var error)) {
@@ -87,7 +87,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                     if (pasteRetarget) {
                         retargetWindow = new MotlistRetargetWindow(motlist, prevMot, newMot, editor);
                     } else {
-                        ConfirmPaste(motlist, prevMot, newMot, editor);
+                        ConfirmPaste(motlist, prevMot, newMot, editor, false);
                     }
                 } else {
                     Logger.Error("Failed to deserialize motion data: " + error);
@@ -117,7 +117,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
 
     private class MotlistRetargetWindow(MotlistFile motlist, MotFileBase replacedFile, MotFileBase newFile, MotlistEditor? editor)
     {
-        public static readonly string WindowName = "Motion Retargeting";
+        public static readonly string WindowName = "Motion Paste Settings";
         private bool hasShown;
 
         private Dictionary<string, MotRetargetConfig> configs = null!;
@@ -143,6 +143,8 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
             MapTypes = configs.Select(c => c.Key).Distinct().ToArray();
         }
 
+        private bool overwriteBoneList;
+
         public bool Show()
         {
             if (!hasShown) {
@@ -157,13 +159,25 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                 if (newFile == replacedFile) {
                     ImGui.Text("Retarget mot " + newFile);
                 } else {
-                    ImGui.Text("Attempting to retarget mot " + newFile + " over mot " + replacedFile);
+                    ImGui.Text("Attempting to paste mot " + newFile + " over mot " + replacedFile);
                 }
                 ImGui.Spacing();
                 ImGui.Spacing();
                 ImGui.Spacing();
                 if (ImguiHelpers.ValueCombo("Armature Type", MapTypes, MapTypes, ref selectedArmatureType)) {
                     lastSelectedType = selectedArmatureType;
+                }
+
+                if (newFile != replacedFile) {
+                    if (newFile is MotFile m1 && replacedFile is MotFile m2 && !m1.Bones.Select(b => b.boneHash).Order().SequenceEqual(m2.Bones.Select(x => x.boneHash).Order())) {
+                        ImGui.SeparatorText("Bone list replacement");
+                        ImGui.Checkbox("Overwrite bone list", ref overwriteBoneList);
+                        ImGui.TextColored(Colors.Note, "The bone list between the two animations is different. This option will overwrite the target bone list with the source one.");
+                        if (MotlistFile.HasSharedBoneList(m2.Header.version)) {
+                            ImGui.TextColored(Colors.Danger, "The target mot's file format version only contains one set of bones for all animations in the motlist.");
+                            ImGui.TextColored(Colors.Danger, "Replacing it may affect other animations. When using this, make sure all the required bones are present in the source mesh.");
+                        }
+                    }
                 }
 
                 if (!string.IsNullOrEmpty(selectedArmatureType) && configs.TryGetValue(selectedArmatureType, out var config)) {
@@ -238,7 +252,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                     ImGui.Spacing();
                     if (ImGui.Button("Confirm Replace", new Vector2(170, 0))) {
                         if (replacedFile != newFile) {
-                            ConfirmPaste(motlist, replacedFile, newFile, editor);
+                            ConfirmPaste(motlist, replacedFile, newFile, editor, overwriteBoneList);
                         }
                         keepShowing = false;
                     }
@@ -276,12 +290,12 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
             var renames = new List<string>();
 
             if (newFile is MotFile mot) {
-                if (mot.BoneHeaders == null) {
+                if (mot.Bones.Count == 0) {
                     Logger.Error("Mot file contains no bone data");
                     return;
                 }
 
-                foreach (var bone in mot.BoneHeaders) {
+                foreach (var bone in mot.Bones) {
                     if (bone.boneName != null && remapConfig.Parents.TryGetValue(bone.boneName, out var newName) || boneHashes.TryGetValue(bone.boneHash, out newName)) {
                         renames.Add((bone.boneName ?? bone.boneHash.ToString()) + " => " + newName);
                         // bone.boneName = newName;
@@ -300,7 +314,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
         }
     }
 
-    private static void ConfirmPaste(MotlistFile motlist, MotFileBase prevMot, MotFileBase newMot, MotlistEditor? editor)
+    private static void ConfirmPaste(MotlistFile motlist, MotFileBase prevMot, MotFileBase newMot, MotlistEditor? editor, bool replaceBoneList)
     {
         if (prevMot.GetType() != newMot.GetType()) {
             // fully replace instance
@@ -317,7 +331,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                     clip.ClipHeader.boneHash = MurMur3HashUtils.GetHash(clip.ClipHeader.boneName);
                 }
             }
-            motTarget.CopyValuesFrom(motSrc, false);
+            motTarget.CopyValuesFrom(motSrc, false, replaceBoneList);
             if (motlist != null) {
                 // ensure unique name
                 motTarget.Header.motName = motTarget.Header.motName
