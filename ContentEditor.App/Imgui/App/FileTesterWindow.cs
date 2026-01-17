@@ -31,7 +31,7 @@ public partial class FileTesterWindow : IWindowHandler
     public bool HasUnsavedChanges => false;
     int IWindowHandler.FixedID => -2312;
 
-    private KnownFileFormats format;
+    private KnownFileFormats format = AppConfig.Settings.Dev.LastFileTestFormat;
     private string formatFilter = "";
     private bool allVersions;
     private bool testRewrite;
@@ -178,7 +178,10 @@ public partial class FileTesterWindow : IWindowHandler
             FormatLabels = list.Select(kv => $"{kv.Item2} ({kv.Item1})").ToArray();
         }
 
-        ImguiHelpers.FilterableCombo("File type", FormatLabels, Formats, ref format, ref formatFilter);
+        if (ImguiHelpers.FilterableCombo("File type", FormatLabels, Formats, ref format, ref formatFilter)) {
+            AppConfig.Settings.Dev.LastFileTestFormat = format;
+            AppConfig.Settings.Save();
+        }
         ImGui.Checkbox("Try all configured games", ref allVersions);
         ImGui.SameLine();
         ImGui.Checkbox("Execute read/write test", ref testRewrite);
@@ -515,6 +518,7 @@ public partial class FileTesterWindow : IWindowHandler
             case KnownFileFormats.MotionCameraBank: return VerifyRewriteEquality<McamBankFile>(source.GetFile<McamBankFile>(), env);
             case KnownFileFormats.MotionCameraList: return VerifyRewriteEquality<McamlistFile>(source.GetFile<McamlistFile>(), env);
             case KnownFileFormats.MotionCamera: return VerifyRewriteEquality<MotcamFile>(source.GetFile<MotcamFile>(), env);
+            case KnownFileFormats.JointMap: return VerifyRewriteEquality<JmapFile>(source.GetFile<JmapFile>(), env);
             default: return null;
         }
     }

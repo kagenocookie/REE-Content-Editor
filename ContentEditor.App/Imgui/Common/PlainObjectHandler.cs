@@ -14,6 +14,7 @@ public class PlainObjectHandler : IObjectUIHandler
     }
 }
 
+public class LazyPlainObjectHandler<T>() : LazyPlainObjectHandler(typeof(T)) { }
 public class LazyPlainObjectHandler(Type type) : IObjectUIHandler
 {
     public ImGuiCond AutoOpen { get; set; }
