@@ -77,6 +77,8 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     private bool exportAnimations = true;
     private bool exportCurrentAnimationOnly;
     private bool exportInProgress;
+    private bool exportLods = false;
+    private bool exportOcclusion = true;
 
     private string? lastImportSourcePath;
 
@@ -437,21 +439,18 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 PlatformUtils.ShowSaveFileDialog((exportPath) => {
                     exportInProgress = true;
                     try {
-                        if (!exportAnimations || animator?.File == null) {
-                            assmesh.ExportToFile(exportPath);
-                        } else if (exportCurrentAnimationOnly) {
-                            if (animator.ActiveMotion == null) {
-                                assmesh.ExportToFile(exportPath);
+                        IEnumerable<MotFileBase>? mots = null;
+                        if (exportAnimations && animator?.File != null) {
+                            if (exportCurrentAnimationOnly && animator.ActiveMotion != null) {
+                                mots = [animator.ActiveMotion];
+                            } else if (animator.File.Format.format == KnownFileFormats.Motion) {
+                                mots = [animator.File.GetFile<MotFile>()];
                             } else {
-                                assmesh.ExportToFile(exportPath, [animator.ActiveMotion]);
-                            }
-                        } else {
-                            if (animator.File.Format.format == KnownFileFormats.Motion) {
-                                assmesh.ExportToFile(exportPath, [animator.File.GetFile<MotFile>()]);
-                            } else {
-                                assmesh.ExportToFile(exportPath, animator.File.GetFile<MotlistFile>().MotFiles);
+                                mots = animator.File.GetFile<MotlistFile>().MotFiles;
                             }
                         }
+
+                        assmesh.ExportToFile(exportPath, exportLods, exportOcclusion, mots);
                     } catch (Exception e) {
                         Logger.Error(e, "Mesh export failed");
                     } finally {
@@ -494,6 +493,8 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
         if (animator?.File != null) ImGui.Checkbox("Include animations", ref exportAnimations);
         if (animator?.File != null && exportAnimations) ImGui.Checkbox("Selected animation only", ref exportCurrentAnimationOnly);
+        if (mesh.NativeMesh.MeshData?.LODs.Count > 1 || mesh.NativeMesh.ShadowMesh?.LODs.Count > 0) ImGui.Checkbox("Include LODs and Shadow Mesh", ref exportLods);
+        if (mesh.NativeMesh.OccluderMesh?.MeshGroups.Count > 0) ImGui.Checkbox("Include Occlusion Mesh", ref exportOcclusion);
         if (showImportSettings) {
             ImGui.SeparatorText("Import Settings");
             var scale = AppConfig.Settings.Import.Scale * 100;
