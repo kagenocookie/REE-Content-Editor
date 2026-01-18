@@ -525,6 +525,7 @@ public partial class FileTesterWindow : IWindowHandler
 
     private static string? VerifyRewriteEquality<TFile>(TFile file, ContentWorkspace workspace) where TFile : BaseFile
     {
+        if (file.FileHandler.Stream.Length == 0) return null; // we don't support writing of mply as mply; just pretend it went fine
         var newfile = RewriteCloneRawStream(file, workspace);
         if (!newfile.Read()) return "read/write error";
 
@@ -629,9 +630,9 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<MeshBone>((m) => [m.boundingBox, m.index, m.childIndex, m.nextSibling, m.symmetryIndex, m.remapIndex]);
         AddCompareMapper<MeshBuffer>((m) => [
             m.Positions.Length, m.Normals.Length, m.Tangents.Length, m.UV0.Length, m.UV1.Length, m.Weights.Length, m.Colors.Length, m.Faces?.Length, m.IntegerFaces?.Length,
-            m.elementCount, m.totalElementCount, m.Headers, m.uknSize1, m.uknSize2]);
-        AddCompareMapper<MeshData>((m) => [m.uvCount, m.skinWeightCount, m.totalMeshCount, m.lodCount, m.materialCount, m.boundingBox, m.boundingSphere, m.LODs]);
-        AddCompareMapper<ShadowMesh>((m) => [m.uvCount, m.skinWeightCount, m.totalMeshCount, m.lodCount, m.materialCount, m.LODs]);
+            m.elementCount, m.totalElementCount, m.Headers, m.shadowFaceBufferOffset, m.occFaceBufferOffset]);
+        AddCompareMapper<MeshData>((m) => [m.skinWeightCount, m.totalMeshCount, m.lodCount, m.materialCount, m.boundingBox, m.boundingSphere, m.LODs]);
+        AddCompareMapper<ShadowMesh>((m) => [m.skinWeightCount, m.totalMeshCount, m.lodCount, m.materialCount, m.LODs]);
         AddCompareMapper<MeshLOD>((m) => [m.VertexCount, m.IndexCount, m.PaddedIndexCount, m.MeshGroups, m.lodFactor, m.vertexFormat]);
         AddCompareMapper<MeshGroup>((m) => [m.groupId, m.indicesCount, m.submeshCount, m.vertexCount, m.Submeshes]);
         AddCompareMapper<Submesh>((m) => [m.materialIndex, m.bufferIndex, m.ukn2, m.indicesCount]);

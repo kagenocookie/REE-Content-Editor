@@ -206,12 +206,17 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
         var handle = new MeshResourceHandle(MeshRefs.NextInstanceID);
         var meshFile = meshResource.NativeMesh;
-        if (meshFile.MeshData == null || meshResource.PreloadedMeshes == null && !(meshFile.MeshBuffer?.Positions.Length > 0) || meshFile.MeshData.LODs.Count == 0) {
-            // TODO occluder meshes
-            return handle;
+        if (meshResource.PreloadedMeshes == null && meshResource.OcclusionMeshes == null) {
+            if (!(meshFile.MeshData?.LODs.Count > 0) && !(meshFile.OccluderMesh?.MeshGroups.Count > 0)) {
+                return handle;
+            }
         }
 
-        var mainLod = meshFile.MeshData.LODs[0];
+        var mainLod = meshFile.MeshData?.LODs.FirstOrDefault();
+        if (mainLod == null) {
+            // TODO support occ mesh display and some sort of user toggle
+            return handle;
+        }
         MeshBoneHierarchy? boneList = null;
         if (meshFile.BoneData?.Bones.Count > 0) {
             boneList = meshFile.BoneData;
@@ -230,7 +235,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             meshResource.PreloadedMeshes = meshlist;
         }
 
-        // because the PreloadedMeshes list is shared globally per file, we can't reuse it directly because references are counted per rendercontext
+        // because the preloaded mesh list is shared globally per file, we can't reuse it directly because references are counted per rendercontext
         // if this method got called, it means we definitely didn't have it locally yet, therefore always Clone() here
         int meshIdx = 0;
         foreach (var group in mainLod.MeshGroups) {

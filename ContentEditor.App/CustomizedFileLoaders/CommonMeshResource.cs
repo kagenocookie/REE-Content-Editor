@@ -12,12 +12,13 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
     private MotlistFile? _motlist;
 
     public List<Graphics.Mesh>? PreloadedMeshes { get; set; }
+    public List<Graphics.Mesh>? OcclusionMeshes { get; set; }
 
     public GameName GameVersion = GameName.dd2;
 
     public Assimp.Scene Scene
     {
-        get => _scene ??= ConvertMeshToAssimpScene(NativeMesh, Name, false);
+        get => _scene ??= ConvertMeshToAssimpScene(NativeMesh, Name, false, false, false, false);
         set => _scene = value;
     }
 
@@ -76,22 +77,16 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
 
     public void WriteTo(string filepath)
     {
-        using AssimpContext context = new AssimpContext();
-
-        var ext = PathUtils.GetExtensionWithoutPeriod(filepath);
-        var exportFormat = context.GetFormatIDFromExtension(ext);
-
-        var scene = GetSceneForExport(ext, true);
-        context.ExportFile(scene, filepath, exportFormat);
+        NativeMesh.WriteTo(filepath);
     }
 
-    public void ExportToFile(string filepath, IEnumerable<MotFileBase>? mots = null)
+    public void ExportToFile(string filepath, bool includeLodsShadows, bool includeOcc, IEnumerable<MotFileBase>? mots = null)
     {
         using AssimpContext context = new AssimpContext();
 
         var ext = PathUtils.GetExtensionWithoutPeriod(filepath);
         string exportFormat = context.GetFormatIDFromExtension(ext);
-        var scene = GetSceneForExport(ext, false);
+        var scene = GetSceneForExport(ext, false, includeLodsShadows, includeOcc);
         if (mots == null || !mots.Any()) {
             context.ExportFile(scene, filepath, exportFormat);
             return;
@@ -112,28 +107,40 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
 
     internal void PreloadMeshBuffers()
     {
-        if (PreloadedMeshes != null) return;
+        if (PreloadedMeshes != null || OcclusionMeshes != null) return;
 
-        PreloadedMeshes = new();
         var mesh = NativeMesh;
-        if (mesh.MeshData == null || mesh.MeshData.LODs.Count == 0) return;
-
-        var mainLod = mesh.MeshData!.LODs[0];
-        foreach (var group in mainLod.MeshGroups) {
-            foreach (var sub in group.Submeshes) {
-                var newMesh = new TriangleMesh(mesh, sub);
-                newMesh.MeshGroup = group.groupId;
-                PreloadedMeshes.Add(newMesh);
+        if (mesh.MeshData?.LODs.Count > 0) {
+            PreloadedMeshes = new();
+            var mainLod = mesh.MeshData!.LODs[0];
+            foreach (var group in mainLod.MeshGroups) {
+                foreach (var sub in group.Submeshes) {
+                    var newMesh = new TriangleMesh(mesh, sub);
+                    newMesh.MeshGroup = group.groupId;
+                    PreloadedMeshes.Add(newMesh);
+                }
             }
         }
+
+        if (mesh.OccluderMesh?.MeshGroups.Count > 0) {
+            OcclusionMeshes = new();
+            foreach (var group in mesh.OccluderMesh.MeshGroups) {
+                foreach (var sub in group.Submeshes) {
+                    var newMesh = new TriangleMesh(mesh, sub, mesh.OccluderMesh.TargetBuffer);
+                    newMesh.MeshGroup = group.groupId;
+                    OcclusionMeshes.Add(newMesh);
+                }
+            }
+        }
+
     }
 
-    private Assimp.Scene GetSceneForExport(string targetFileExtension, bool allowCache)
+    private Assimp.Scene GetSceneForExport(string targetFileExtension, bool allowCache, bool includeLodsShadows, bool includeOcc)
     {
         var isGltf = targetFileExtension == "glb" || targetFileExtension == "gltf";
         if (allowCache && _scene != null && !isGltf) return _scene;
 
-        Assimp.Scene scene = ConvertMeshToAssimpScene(NativeMesh, Name, isGltf);
+        Assimp.Scene scene = ConvertMeshToAssimpScene(NativeMesh, Name, isGltf, includeLodsShadows, includeLodsShadows, includeOcc);
         if (allowCache) _scene = scene;
         return scene;
     }

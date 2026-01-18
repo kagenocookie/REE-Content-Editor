@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using ReeLib;
 using ReeLib.Aimp;
+using ReeLib.Mesh;
 using ReeLib.via;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
@@ -31,9 +32,9 @@ public class TriangleMesh : Mesh
         UpdateBuffers();
     }
 
-    public TriangleMesh(MeshFile sourceMesh, ReeLib.Mesh.Submesh submesh)
+    public TriangleMesh(MeshFile sourceMesh, ReeLib.Mesh.Submesh submesh, MeshBuffer? buffer = null)
     {
-        PrepareMeshVertexBufferData(sourceMesh, submesh);
+        PrepareMeshVertexBufferData(sourceMesh, submesh, buffer);
     }
 
     public TriangleMesh(AimpFile file, ContentGroupContainer container, ContentGroupTriangle data)
@@ -201,21 +202,23 @@ public class TriangleMesh : Mesh
         }
     }
 
-    private void PrepareMeshVertexBufferData(MeshFile sourceMesh, ReeLib.Mesh.Submesh submesh)
+    private void PrepareMeshVertexBufferData(MeshFile sourceMesh, ReeLib.Mesh.Submesh submesh, MeshBuffer? buffer = null)
     {
-        if (sourceMesh.MeshBuffer == null)
+        buffer ??= sourceMesh.MeshBuffer;
+        if (buffer == null)
         {
             return;
         }
 
         var integerIndices = sourceMesh.MeshData?.integerFaces ?? false;
-        var hasTan = sourceMesh.MeshBuffer.Tangents.Length != 0;
+        var hasTan = buffer.Tangents.Length != 0;
         var hasWeights = sourceMesh.BoneData?.Bones.Count > 0;
-        var hasNormals = sourceMesh.MeshBuffer.Normals.Length > 0;
+        var hasUV = buffer.UV0.Length > 0;
+        var hasNormals = buffer.Normals.Length > 0;
         layout = MeshLayout.Get(MeshAttributeFlag.Triangles | (hasWeights ? MeshAttributeFlag.Weight : 0));
 
         var meshVerts = submesh.Positions;
-        var meshUV = submesh.UV0;
+        var meshUV = hasUV ? submesh.UV0 : default;
         var meshNormals = hasNormals ? submesh.Normals : default;
         var meshTangents = hasTan ? submesh.Tangents : default;
         var meshWeights = hasWeights ? submesh.Weights : default;
@@ -233,7 +236,7 @@ public class TriangleMesh : Mesh
             var vert = integerIndices ? indicesInt[index] : indicesShort[index];
             Indices[index] = vert;
             var pos = meshVerts[vert];
-            var uv = meshUV[vert];
+            var uv = hasUV ? meshUV[vert] : new Vector2();
             var norm = hasNormals ? meshNormals[vert] : Vector3.UnitX;
             var vertOffset = index * attrs;
             VertexData[vertOffset + 0] = pos.X;
@@ -267,7 +270,22 @@ public class TriangleMesh : Mesh
             }
         }
 
-        BoundingBox = sourceMesh.MeshData?.boundingBox ?? default;
+        if (sourceMesh.MeshData != null) {
+            BoundingBox = sourceMesh.MeshData.boundingBox;
+        } else {
+            RecomputeBounds();
+        }
+    }
+
+    private void RecomputeBounds()
+    {
+        BoundingBox = AABB.MaxMin;
+        var vertSize = layout.VertexSize;
+        var verts = VertexData.Length / vertSize;
+        for (int i = 0; i < verts; ++i) {
+            var vec = new Vector3(VertexData[i * vertSize + 0], VertexData[i * vertSize + 1], VertexData[i * vertSize + 2]);
+            BoundingBox = BoundingBox.Extend(vec);
+        }
     }
 
     public override Mesh Clone()

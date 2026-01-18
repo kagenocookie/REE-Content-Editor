@@ -23,46 +23,48 @@ public partial class CommonMeshResource : IResourceFile
         var serializerVersion = MeshFile.GetSerializerVersion(versionConfig);
         var mesh = new MeshFile(new FileHandler());
         var srcMeshes = scene.Meshes;
-        var totalVertCount = srcMeshes.Sum(m => m.VertexCount);
-        var totalFaceCount = srcMeshes.Sum(m => m.FaceCount);
-        var totalTriCount = totalFaceCount * 3;
-        var paddedTriCount = totalTriCount + srcMeshes.Count(m => (m.FaceCount * 3) % 2 != 0);
-
-        float scale = AppConfig.Settings.Import.Scale;
+        var scale = AppConfig.Settings.Import.Scale;
         if (scale <= 0) scale = 1;
 
         mesh.Header.BufferCount = 1;
 
-        var buffer = new MeshBuffer();
-        var meshData = mesh.MeshData = new MeshData(buffer);
-        mesh.MeshBuffer = buffer;
+        var mainBuffer = new MeshBuffer();
+        mesh.MeshBuffer = mainBuffer;
 
-        buffer.Positions = new Vector3[totalVertCount];
-        mesh.Header.flags |= ContentFlags.EnableRebraiding2;
-        if (srcMeshes.All(m => m.HasNormals && m.HasTangentBasis)) {
-            buffer.Normals = new Vector3[totalVertCount];
-            buffer.Tangents = new Vector3[totalVertCount];
-            buffer.BiTangentSigns = new sbyte[totalVertCount];
+        var occMeshes = srcMeshes.Where(m => m.Name.StartsWith("occ_")).ToList();
+        var shadowMeshes = srcMeshes.Where(m => m.Name.StartsWith("shadow_lod")).ToList();
+        var mainMeshes = srcMeshes.Where(m => !occMeshes.Contains(m) && !shadowMeshes.Contains(m)).ToList();
+        if (shadowMeshes.Count > 0 || mainMeshes.Count > 0) {
+            mesh.MeshData = new MeshData(mainBuffer);
+            mesh.MeshData.boundingBox = AABB.Combine(scene.Meshes.Select(m => new AABB(m.BoundingBox.Min, m.BoundingBox.Max)));
+            // TODO: sphere bounds not fully accurate
+            mesh.MeshData.boundingSphere = new Sphere(mesh.MeshData.boundingBox.Center, Math.Max(mesh.MeshData.boundingBox.Size.X, Math.Max(mesh.MeshData.boundingBox.Size.Y, mesh.MeshData.boundingBox.Size.Z)) / 2);
+            PreAllocateMeshBuffer(versionConfig, mesh, mainMeshes, mainBuffer);
         }
-        if (srcMeshes.All(m => m.HasTextureCoords(0))) buffer.UV0 = new Vector2[totalVertCount];
-        if (srcMeshes.All(m => m.HasTextureCoords(1))) buffer.UV1 = new Vector2[totalVertCount];
-        if (srcMeshes.All(m => m.Bones.Count > 0 && m.Bones.Any(b => b.HasVertexWeights))) {
-            buffer.Weights = new VertexBoneWeights[totalVertCount];
-            mesh.Header.flags |= ContentFlags.IsSkinning|ContentFlags.HasJoint;
+        bool reuseBufferForShadows = false;
+        if (shadowMeshes.Count > 0) {
+            var shadowBuffer = new MeshBuffer();
+            PreAllocateMeshBuffer(versionConfig, mesh, shadowMeshes, shadowBuffer);
+            if (shadowBuffer.Positions.Length == mainBuffer.Positions.Length && shadowBuffer.Faces?.Length == mainBuffer.Faces?.Length && shadowBuffer.IntegerFaces?.Length == mainBuffer.IntegerFaces?.Length) {
+                Logger.Info("Shadow meshes contain same amount of vertices and faces as main mesh. Assuming identical and reusing main mesh buffer instead.");
+                reuseBufferForShadows = true;
+            } else {
+                mainBuffer.AdditionalBuffers.Add(shadowBuffer);
+            }
         }
-        if (srcMeshes.Any(m => m.Bones.Any(b => b.Name.StartsWith(ShapekeyPrefix)))) {
-            buffer.ShapeKeyWeights = new VertexBoneWeights[totalVertCount];
-            mesh.Header.flags |= ContentFlags.HasVertexGroup;
+
+        if (occMeshes.Count > 0) {
+            var occVertCount = occMeshes.Sum(m => m.VertexCount);
+            var occFaceCount = occMeshes.Sum(m => m.FaceCount);
+            var occBuffer = new MeshBuffer();
+            occBuffer.Positions = new Vector3[occVertCount];
+            occBuffer.Faces = new ushort[occFaceCount * 3];
+            mainBuffer.AdditionalBuffers.Add(occBuffer);
         }
-        if (srcMeshes.All(m => m.HasVertexColors(0))) {
-            buffer.Colors = new Color[totalVertCount];
-            mesh.Header.flags |= ContentFlags.HasVertexColor;
-        }
+
         var maxWeights = MeshFile.GetWeightLimit(versionConfig);
         var isSixWeight = maxWeights % 6 == 0;
-        var allowExtraWeights = maxWeights > 8;
-
-        buffer.Faces = new ushort[paddedTriCount];
+        bool allowExtraWeights = maxWeights > 8;
 
         var orderedMeshes = srcMeshes.OrderBy(m => (MeshLoader.GetMeshIndexFromName(m.Name), MeshLoader.GetMeshGroupFromName(m.Name), MeshLoader.GetSubMeshIndexFromName(m.Name)));
 
@@ -70,19 +72,13 @@ public partial class CommonMeshResource : IResourceFile
             if (string.IsNullOrEmpty(mat.Name)) continue;
             mesh.MaterialNames.Add(mat.Name);
         }
-        if (mesh.MaterialNames.Count == 0) mesh.MaterialNames.Add("default");
-
-        var lod0Mesh = new MeshLOD(buffer);
-        meshData.LODs.Add(lod0Mesh);
-        int vertOffset = 0;
-        int indicesOffset = 0;
-        meshData.boundingBox = AABB.Combine(scene.Meshes.Select(m => new AABB(m.BoundingBox.Min, m.BoundingBox.Max)));
-        // TODO: sphere bounds not fully accurate
-        meshData.boundingSphere = new Sphere(meshData.boundingBox.Center, Math.Max(meshData.boundingBox.Size.X, Math.Max(meshData.boundingBox.Size.Y, meshData.boundingBox.Size.Z)) / 2);
+        if (occMeshes.Count > 0 && shadowMeshes.Count == 0 && mainMeshes.Count == 0) {
+            mesh.MaterialNames.Clear();
+        }
 
         var boneIndexMap = new Dictionary<string, int>();
         var deformBones = new SortedList<int, MeshBone>();
-        if (buffer.Weights.Length > 0) {
+        if (mainBuffer.Weights.Length > 0) {
             var boneNames = srcMeshes.SelectMany(m => m.Bones.Select(b => b.Name)).ToHashSet();
             static void AddRecursiveBones(MeshFile file, NodeCollection children, HashSet<string> boneNames, MeshBone? parentBone, ImportSettings settings)
             {
@@ -150,13 +146,71 @@ public partial class CommonMeshResource : IResourceFile
             boneIndexMap = mesh.BoneData!.Bones.ToDictionary(b => b.name, b => b.index);
         }
 
-        var warnedBones = new HashSet<string>();
+        int vertOffset = 0;
+        int indicesOffset = 0;
 
-        foreach (var aiMesh in srcMeshes) {
+        var warnedBones = new HashSet<string>();
+        var sortedMeshes = srcMeshes.Order(new FuncComparer<Mesh>((a, b) => {
+            var type1 = occMeshes.Contains(a) ? 2 : shadowMeshes.Contains(a) ? 1 : 0;
+            var type2 = occMeshes.Contains(b) ? 2 : shadowMeshes.Contains(b) ? 1 : 0;
+
+            return type1.CompareTo(type2) * 10000 + a.Name.CompareTo(b.Name);
+        })).ToList();
+
+        foreach (var aiMesh in sortedMeshes) {
             var groupIdx = MeshLoader.GetMeshGroupFromName(aiMesh.Name);
             var meshIdx = MeshLoader.GetMeshIndexFromName(aiMesh.Name);
             var subIdx = MeshLoader.GetSubMeshIndexFromName(aiMesh.Name);
 
+            var buffer = mainBuffer;
+
+            MeshLOD meshLod;
+            int lod = 0;
+            if (shadowMeshes.Contains(aiMesh)) {
+                if (mesh.ShadowMesh == null) {
+                    vertOffset = 0;
+                    indicesOffset = 0;
+                    mesh.ShadowMesh = new ShadowMesh(mainBuffer);
+                }
+                if (reuseBufferForShadows) continue;
+
+                buffer = mainBuffer.AdditionalBuffers.First();
+                var subscorePos = aiMesh.Name.IndexOf('_');
+                if (subscorePos == -1 || !int.TryParse(aiMesh.Name.AsSpan().Slice("shadow_lod".Length, subscorePos), out lod)) {
+                    lod = 0;
+                }
+                while (lod >= mesh.ShadowMesh.LODs.Count) {
+                    mesh.ShadowMesh.LODs.Add(new MeshLOD(mainBuffer));
+                }
+                meshLod = mesh.ShadowMesh.LODs[lod];
+
+            } else if (occMeshes.Contains(aiMesh)) {
+                buffer = mainBuffer.AdditionalBuffers.Last();
+                if (mesh.OccluderMesh == null) {
+                    // restart offsets since this is a different buffer now
+                    // we can safely do this because we sorted the input meshes by type (main>shadow>occ)
+                    vertOffset = 0;
+                    indicesOffset = 0;
+                    mesh.OccluderMesh = new OccluderMesh(mainBuffer) { TargetBuffer = buffer };
+                }
+                meshLod = mesh.OccluderMesh;
+            } else if (aiMesh.Name.StartsWith("lod")) {
+                var subscorePos = aiMesh.Name.IndexOf('_');
+                if (subscorePos == -1 || !int.TryParse(aiMesh.Name.AsSpan().Slice("lod".Length, subscorePos), out lod)) {
+                    lod = 0;
+                }
+                while (lod >= mesh.MeshData!.LODs.Count) {
+                    mesh.MeshData.LODs.Add(new MeshLOD(mainBuffer));
+                }
+                meshLod = mesh.MeshData.LODs[lod];
+            } else {
+                if (mesh.MeshData!.LODs.Count == 0) {
+                    mesh.MeshData.LODs.Add(new MeshLOD(mainBuffer));
+                }
+                meshLod = mesh.MeshData.LODs[0];
+            }
+
+            var totalVertCount = buffer.Positions.Length;
             var vertCount = aiMesh.VertexCount;
             var faceCount = aiMesh.FaceCount;
             var indicesCount = faceCount * 3;
@@ -164,9 +218,9 @@ public partial class CommonMeshResource : IResourceFile
             // note: vert limit check shouldn't be needed here, we're letting assimp handling splitting automatically
             if (meshIdx > 0) throw new NotImplementedException($"Only one mesh per file is currently supported.");
 
-            var group = lod0Mesh.MeshGroups.FirstOrDefault(grp => grp.groupId == groupIdx);
+            var group = meshLod.MeshGroups.FirstOrDefault(grp => grp.groupId == groupIdx);
             if (group == null) {
-                lod0Mesh.MeshGroups.Add(group = new MeshGroup(buffer));
+                meshLod.MeshGroups.Add(group = new MeshGroup(buffer));
                 group.groupId = (byte)groupIdx;
             }
 
@@ -179,7 +233,6 @@ public partial class CommonMeshResource : IResourceFile
             newSub.indicesCount = indicesCount;
             newSub.materialIndex = (ushort)aiMesh.MaterialIndex;
 
-            meshData.totalMeshCount++;
             group.submeshCount++;
             group.Submeshes.Add(newSub);
 
@@ -216,7 +269,7 @@ public partial class CommonMeshResource : IResourceFile
                 var face = aiMesh.Faces[i];
                 // note: assimp should've forced triangulation already, therefore always assume 3 indices
 
-                buffer.Faces[indicesOffset + i * 3 + 0] = (ushort)face.Indices[0];
+                buffer.Faces![indicesOffset + i * 3 + 0] = (ushort)face.Indices[0];
                 buffer.Faces[indicesOffset + i * 3 + 1] = (ushort)face.Indices[1];
                 buffer.Faces[indicesOffset + i * 3 + 2] = (ushort)face.Indices[2];
             }
@@ -280,24 +333,57 @@ public partial class CommonMeshResource : IResourceFile
             indicesOffset += indicesCount;
         }
 
-        if (buffer.Weights.Length > 0) {
+        if (mainBuffer.Weights.Length > 0) {
             int remapIndex = 0;
             foreach (var (remap, bone) in deformBones) {
                 bone.remapIndex = remapIndex++;
                 mesh.BoneData!.DeformBones.Add(bone);
             }
 
-            RemapDeformBones(buffer.Weights, deformBones);
+            RemapDeformBones(mainBuffer.Weights, deformBones);
 
-            if (buffer.ExtraWeights != null) RemapDeformBones(buffer.ExtraWeights, deformBones);
+            if (mainBuffer.ExtraWeights != null) RemapDeformBones(mainBuffer.ExtraWeights, deformBones);
         }
 
-        // mesh.ShadowMesh = new ShadowMesh(buffer);
-        // mesh.ShadowMesh.LODs.AddRange(mesh.MeshData.LODs);
+        if (reuseBufferForShadows && mesh.ShadowMesh != null) {
+            for (int lod = 0; lod < mesh.ShadowMesh.LODs.Count; ++lod) {
+                mesh.ShadowMesh.LODs[lod] = mesh.MeshData!.LODs[lod];
+            }
+        }
 
         mesh.ChangeVersion(versionConfig);
 
         return mesh;
+    }
+
+    private static void PreAllocateMeshBuffer(string versionConfig, MeshFile mesh, List<Mesh> srcMeshes, MeshBuffer mainBuffer)
+    {
+        var totalVertCount = srcMeshes.Sum(m => m.VertexCount);
+        var totalFaceCount = srcMeshes.Sum(m => m.FaceCount);
+        var totalTriCount = totalFaceCount * 3;
+        var paddedTriCount = totalTriCount + srcMeshes.Count(m => (m.FaceCount * 3) % 2 != 0);
+        mainBuffer.Positions = new Vector3[totalVertCount];
+        mesh.Header.flags |= ContentFlags.EnableRebraiding2;
+        if (srcMeshes.All(m => m.HasNormals && m.HasTangentBasis)) {
+            mainBuffer.Normals = new Vector3[totalVertCount];
+            mainBuffer.Tangents = new Vector3[totalVertCount];
+            mainBuffer.BiTangentSigns = new sbyte[totalVertCount];
+        }
+        if (srcMeshes.All(m => m.HasTextureCoords(0))) mainBuffer.UV0 = new Vector2[totalVertCount];
+        if (srcMeshes.All(m => m.HasTextureCoords(1))) mainBuffer.UV1 = new Vector2[totalVertCount];
+        if (srcMeshes.All(m => m.Bones.Count > 0 && m.Bones.Any(b => b.HasVertexWeights))) {
+            mainBuffer.Weights = new VertexBoneWeights[totalVertCount];
+            mesh.Header.flags |= ContentFlags.IsSkinning | ContentFlags.HasJoint;
+        }
+        if (srcMeshes.Any(m => m.Bones.Any(b => b.Name.StartsWith(ShapekeyPrefix)))) {
+            mainBuffer.ShapeKeyWeights = new VertexBoneWeights[totalVertCount];
+            mesh.Header.flags |= ContentFlags.HasVertexGroup;
+        }
+        if (srcMeshes.All(m => m.HasVertexColors(0))) {
+            mainBuffer.Colors = new Color[totalVertCount];
+            mesh.Header.flags |= ContentFlags.HasVertexColor;
+        }
+        mainBuffer.Faces = new ushort[paddedTriCount];
     }
 
     private static void RemapDeformBones(VertexBoneWeights[] weights, SortedList<int, MeshBone> deformBones)

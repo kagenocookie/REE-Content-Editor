@@ -5,6 +5,7 @@ using ContentPatcher;
 using ReeLib;
 using ReeLib.Common;
 using ReeLib.Mesh;
+using ReeLib.via;
 using Silk.NET.Maths;
 
 namespace ContentEditor.App.FileLoaders;
@@ -128,7 +129,7 @@ public partial class CommonMeshResource : IResourceFile
         scene.Animations.Add(anim);
     }
 
-    private static Assimp.Scene ConvertMeshToAssimpScene(MeshFile file, string rootName, bool isGltf)
+    private static Assimp.Scene ConvertMeshToAssimpScene(MeshFile file, string rootName, bool isGltf, bool includeAllLods, bool includeShadows, bool includeOcclusion)
     {
         // NOTE: every matrix needs to be transposed, assimp expects them transposed compared to default System.Numeric.Matrix4x4 for some shit ass reason
         // NOTE2: assimp currently forces vert deduplication for gltf export so we may lose some vertices (https://github.com/assimp/assimp/issues/6349)
@@ -194,7 +195,8 @@ public partial class CommonMeshResource : IResourceFile
                     // add shape key specific bone nodes
                     var boneNames = bones.Select(b => b.name).ToHashSet();
                     var deformBones = file.BoneData!.DeformBones.Select(b => b.name).ToHashSet();
-                    static void RecursiveDuplicateShapeBones(Node parent, HashSet<string> boneNames, HashSet<string> deformBones) {
+                    static void RecursiveDuplicateShapeBones(Node parent, HashSet<string> boneNames, HashSet<string> deformBones)
+                    {
                         foreach (var child in parent.Children.ToArray()) {
                             if (boneNames.Contains(child.Name)) {
                                 if (deformBones.Contains(child.Name)) {
@@ -213,45 +215,72 @@ public partial class CommonMeshResource : IResourceFile
             }
         }
 
-        var meshes = new Dictionary<(int meshIndex, int meshGroup), Node>();
-        if (file.MeshData == null) return scene;
+        if (file.MeshData != null) {
+            for (int i = 0; i < file.MeshData.LODs.Count; i++) {
+                var lod = file.MeshData.LODs[i];
+                if (i == 0) {
+                    ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, includeAllLods ? "lod0_" : "");
+                    if (!includeAllLods) break;
+                } else {
+                    ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, $"lod{i}_");
+                }
+            }
+        }
+        if (includeShadows && file.ShadowMesh != null) {
+            for (int i = 0; i < file.ShadowMesh.LODs.Count; i++) {
+                var lod = file.ShadowMesh.LODs[i];
+                ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, $"shadow_lod{i}_");
+            }
+        }
+        if (includeOcclusion && file.OccluderMesh != null) {
+            if (scene.MaterialCount == 0) {
+                scene.Materials.Add(new Material() { Name = "default" });
+            }
+            ExportLod(file, isGltf, scene, bones, includeShapeKeys, file.OccluderMesh, $"occ_");
+        }
 
-        var lod = 0;
-        foreach (var mesh in file.MeshData.LODs[lod].MeshGroups) {
+        return scene;
+    }
+
+    private static void ExportLod(MeshFile file, bool isGltf, Assimp.Scene scene, List<MeshBone>? bones, bool includeShapeKeys, MeshLOD lod, string namePrefix)
+    {
+        var bounds = file.MeshData?.boundingBox ?? new AABB();
+        foreach (var mesh in lod.MeshGroups) {
             int subId = 0;
             foreach (var sub in mesh.Submeshes) {
                 var aiMesh = new Mesh(PrimitiveType.Triangle);
                 aiMesh.MaterialIndex = sub.materialIndex;
 
+
                 aiMesh.Vertices.AddRange(sub.Positions);
-                aiMesh.BoundingBox = new BoundingBox(file.MeshData.boundingBox.minpos, file.MeshData.boundingBox.maxpos);
-                if (file.MeshBuffer!.UV0 != null) {
+                aiMesh.BoundingBox = new BoundingBox(bounds.minpos, bounds.maxpos);
+                if (sub.Buffer.UV0.Length > 0) {
                     var uvOut = aiMesh.TextureCoordinateChannels[0];
                     uvOut.EnsureCapacity(sub.UV0.Length);
                     foreach (var uv in sub.UV0) uvOut.Add(new System.Numerics.Vector3(uv.X, uv.Y, 0));
                     aiMesh.UVComponentCount[0] = 2;
                 }
-                if (file.MeshBuffer.UV1.Length > 0) {
+                if (sub.Buffer.UV1.Length > 0) {
                     var uvOut = aiMesh.TextureCoordinateChannels[1];
                     uvOut.EnsureCapacity(sub.UV1.Length);
                     foreach (var uv in sub.UV1) uvOut.Add(new System.Numerics.Vector3(uv.X, uv.Y, 0));
                     aiMesh.UVComponentCount[1] = 2;
                 }
-                if (file.MeshBuffer.Normals.Length > 0) {
+                if (sub.Buffer.Normals.Length > 0) {
                     aiMesh.Normals.AddRange(sub.Normals);
                 }
-                if (file.MeshBuffer.Tangents.Length > 0) {
+                if (sub.Buffer.Tangents.Length > 0) {
                     aiMesh.Tangents.AddRange(sub.Tangents);
                     for (int i = 0; i < sub.BiTangents.Length; ++i) {
                         aiMesh.BiTangents.Add(sub.GetBiTangent(i));
                     }
                 }
-                if (file.MeshBuffer.Colors.Length > 0) {
+                if (sub.Buffer.Colors.Length > 0) {
                     var colOut = aiMesh.VertexColorChannels[0];
                     colOut.EnsureCapacity(sub.Colors.Length);
                     foreach (var col in sub.Colors) colOut.Add(col.ToVector4());
                 }
-                if (bones?.Count > 0 && file.MeshBuffer.Weights.Length > 0) {
+                if (bones?.Count > 0 && sub.Buffer.Weights.Length > 0) {
                     foreach (var srcBone in bones) {
                         var bone = new Bone();
                         bone.Name = srcBone.name;
@@ -280,7 +309,7 @@ public partial class CommonMeshResource : IResourceFile
                         }
                     }
 
-                    if (file.MeshBuffer.ExtraWeights != null) {
+                    if (sub.Buffer.ExtraWeights != null) {
                         for (int vertId = 0; vertId < sub.ExtraWeights.Length; ++vertId) {
                             var vd = sub.ExtraWeights[vertId];
                             for (int i = 0; i < vd.boneIndices.Length; ++i) {
@@ -346,14 +375,12 @@ public partial class CommonMeshResource : IResourceFile
                 }
 
                 // each submesh needs to have a unique node so they don't get merged together
-                var meshNode = new Node($"Group_{mesh.groupId.ToString(CultureInfo.InvariantCulture)}_sub{subId++}", scene.RootNode);
+                var meshNode = new Node($"{namePrefix}Group_{mesh.groupId.ToString(CultureInfo.InvariantCulture)}_sub{subId++}", scene.RootNode);
                 scene.RootNode.Children.Add(meshNode);
                 aiMesh.Name = meshNode.Name;
                 meshNode.MeshIndices.Add(scene.Meshes.Count);
                 scene.Meshes.Add(aiMesh);
             }
         }
-
-        return scene;
     }
 }

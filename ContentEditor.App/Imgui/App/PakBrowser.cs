@@ -6,7 +6,6 @@ using ReeLib;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
-using System.Reflection.Metadata;
 
 namespace ContentEditor.App;
 
@@ -42,7 +41,8 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
     private CachedMemoryPakReader? reader;
     private WindowData data = null!;
     protected UIContext context = null!;
-    private ListFileWrapper? matchedList;
+    private ListFileWrapper? currentList;
+    private ListFileWrapper? activeListFile;
     private BookmarkManager _bookmarkManagerDefaults = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "app/default_bookmarks_pak.json"));
     private BookmarkManager _bookmarkManager = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "user/bookmarks_pak.json"));
     private List<string> _activeTagFilter = new();
@@ -73,6 +73,9 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
     private bool isFilePreviewEnabled = AppConfig.Instance.UsePakFilePreviewWindow.Get();
     private PageState pagination;
 
+    private bool includeBasegameFiles = true;
+    private bool includeBundleFiles = true;
+
     private struct PageState
     {
         public int maxPage;
@@ -96,12 +99,12 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
     {
         if (unpacker != null) return;
 
-        if (matchedList == null || reader == null) {
+        if (currentList == null || reader == null) {
             Logger.Error("File list missing");
             return;
         }
 
-        var extractList = matchedList;
+        var extractList = currentList;
         if (selectedPath.StartsWith(PakReader.UnknownFilePathPrefix)) {
             extractList = new ListFileWrapper(reader.UnknownFilePaths);
         }
@@ -139,22 +142,29 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             Logger.Error(e, "Extraction failed.");
         }
     }
+    private static ListFileWrapper? LocalizeListFile(ContentWorkspace workspace)
+    {
+        var list = workspace.Env.ListFile;
+        if (list == null || workspace.CurrentBundle?.ResourceListing == null) return list;
+
+        return new ListFileWrapper(list.Files.Concat(workspace.CurrentBundle.ResourceListing.Values.Select(v => v.Target)));
+    }
     public void OnIMGUI()
     {
-        var list = Workspace.ListFile;
-        if (list == null || list.Files.Length == 0) {
-            list ??= new ListFileWrapper(Array.Empty<string>());
+        activeListFile ??= LocalizeListFile(contentWorkspace);
+        if (activeListFile == null || activeListFile.Files.Length == 0) {
             ImGui.TextColored(Colors.Warning, $"List file not found for game {Workspace.Config.Game}");
+            return;
         }
 
         if (reader == null) {
             if (PakFilePath == null) {
                 // all files - use default pak reader data, but make a clone just so we don't mess with the original stuff
                 Workspace.PakReader.IncludeUnknownFilePaths = true;
-                Workspace.PakReader.AddFiles(list.Files);
+                Workspace.PakReader.AddFiles(activeListFile.Files);
                 Workspace.PakReader.CacheEntries(true);
                 reader = Workspace.PakReader.Clone();
-                matchedList = list;
+                currentList = activeListFile;
                 hasInvalidatedPaks = reader.FileExists(0);
             } else {
                 // single file
@@ -165,10 +175,10 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 try {
                     reader = new CachedMemoryPakReader() { IncludeUnknownFilePaths = true };
                     if (!reader.TryReadManifestFileList(PakFilePath)) {
-                        reader.AddFiles(list.Files);
+                        reader.AddFiles(activeListFile.Files);
                     }
                     reader.CacheEntries(true);
-                    matchedList = new ListFileWrapper(reader.CachedPaths);
+                    currentList = new ListFileWrapper(reader.CachedPaths);
                     hasInvalidatedPaks = reader.FileExists(0);
                 } catch (Exception e) {
                     reader = null;
@@ -219,6 +229,16 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         }
         ImguiHelpers.Tooltip("Toggle Compact File Paths");
         ImGui.SameLine();
+        if (contentWorkspace.CurrentBundle?.ResourceListing != null) {
+            var resetCache = ImguiHelpers.ToggleButton($"{AppIcons.SI_FileType_PAK}", ref includeBasegameFiles, Colors.IconActive);
+            ImguiHelpers.Tooltip("Show base game files");
+            ImGui.SameLine();
+            resetCache = ImguiHelpers.ToggleButton($"{AppIcons.SI_Bundle}", ref includeBundleFiles, Colors.IconActive) || resetCache;
+            ImguiHelpers.Tooltip("Show files from active bundle");
+            if (resetCache) {
+                cachedResults.Clear();
+            }
+        }
         bool isHideDefaults = _bookmarkManagerDefaults.IsHideBookmarks;
         bool isHideCustoms = _bookmarkManager.IsHideBookmarks;
         bool isBookmarked = _bookmarkManager.IsBookmarked(Workspace.Config.Game.name, CurrentDir);
@@ -466,6 +486,11 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 1 => cacheKey.SortDirection == ImGuiSortDirection.Ascending ? files.OrderBy(e => reader!.GetSize(e)) : files.OrderByDescending(e => reader!.GetSize(e)),
                 _ => cacheKey.SortDirection == ImGuiSortDirection.Ascending ? files : files.Reverse(),
             };
+            if (!includeBasegameFiles || !includeBundleFiles) {
+                if (!includeBasegameFiles && !includeBundleFiles) sorted = [];
+                else if (!includeBasegameFiles) sorted = sorted.Where(IsFileOrFolderInBundle);
+                else if (!includeBundleFiles) sorted = sorted.Where(IsFileOrFolderInBaseGame);
+            }
             cachedResults[cacheKey] = sortedEntries = sorted.OrderByDescending(e => !Path.HasExtension(e)).ToArray();
         }
         pagination.maxPage = (int)Math.Floor((float)sortedEntries.Length / itemsPerPage);
@@ -474,18 +499,17 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
 
     private void ShowFileGrid([NotNull] ref string[]? sortedEntries, float remainingHeight)
     {
-        var baseList = matchedList!;
+        var baseList = currentList!;
         var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
         GetPageFiles(baseList, (short)gridSortColumn, gridSortDir, ref sortedEntries);
         if (sortedEntries.Length == 0) return;
         previewGenerator ??= new(contentWorkspace, EditorWindow.CurrentWindow?.GLContext!);
-        var currentBundleFiles = EditorWindow.CurrentWindow?.Workspace.BundleManager.GetActiveBundleFiles(EditorWindow.CurrentWindow?.Workspace.CurrentBundle?.Name);
 
         var style = ImGui.GetStyle();
         var btnSize = new Vector2(120 * UI.UIScale, 100 * UI.UIScale);
         var iconPadding = new Vector2(32, 14) * UI.UIScale;
         var availableSize = ImGui.GetWindowWidth() - style.WindowPadding.X;
-        
+
         ImGui.BeginChild("FileGrid", new Vector2(availableSize, remainingHeight));
 
         int i = 0;
@@ -538,7 +562,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             } else {
                 ImGui.GetWindowDrawList().AddText(pos + iconPadding, 0xffffffff, $"{AppIcons.SI_FolderEmpty}");
             }
-            if (currentBundleFiles != null && currentBundleFiles.Contains(file)) {
+            if (includeBundleFiles && IsFileOrFolderInBundle(file)) {
                 ImguiHelpers.DrawOverlayIcon($"{AppIcons.SI_Bundle}", 0.4f, -1f, -1f, ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), Colors.IconOverlay, Colors.IconOverlayBackground);
             }
             ImGui.PopFont();
@@ -566,13 +590,12 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
     private void ShowFileList([NotNull] ref string[]? sortedEntries, float remainingHeight)
     {
         sortedEntries ??= [];
-        var baseList = matchedList!;
+        var baseList = currentList!;
         int i = 0;
         if (isFilePreviewEnabled) {
             previewGenerator ??= new(contentWorkspace, EditorWindow.CurrentWindow?.GLContext!);
         }
 
-        var currentBundleFiles = EditorWindow.CurrentWindow?.Workspace.BundleManager.GetActiveBundleFiles(EditorWindow.CurrentWindow?.Workspace.CurrentBundle?.Name);
         var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
         if (ImGui.BeginTable("List", 2, ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingStretchProp | ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.Sortable, new Vector2(0, remainingHeight))) {
             ImGui.TableSetupColumn("Path", ImGuiTableColumnFlags.WidthStretch, 0.9f);
@@ -605,7 +628,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 } else {
                     ImGui.Text($"{AppIcons.SI_FolderEmpty}");
                 }
-                if (currentBundleFiles != null && currentBundleFiles.Contains(file)) {
+                if (includeBundleFiles && IsFileOrFolderInBundle(file)) {
                     ImGui.SameLine();
                     ImguiHelpers.DrawOverlayIcon($"{AppIcons.SI_Bundle}", 0.6f, 2f, 1.5f, ImGui.GetItemRectMin(), ImGui.GetItemRectMax(), Colors.IconOverlay, Colors.IconOverlayBackground);
                 }
@@ -681,6 +704,13 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             CurrentDir = file;
             pagination.page = 0;
             return false;
+        }
+
+        if (IsFileOrFolderInBundle(file)) {
+            if (contentWorkspace.ResourceManager.TryResolveGameFile(file, out var targetFile)) {
+                EditorWindow.CurrentWindow?.AddFileEditor(targetFile);
+                return true;
+            }
         }
 
         if (!reader!.FileExists(file)) {
@@ -941,6 +971,22 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             manager.SaveBookmarks();
             editingCustomBookmark = null;
         }
+    }
+
+    private bool IsFileOrFolderInBundle(string path)
+    {
+        if (Path.HasExtension(path)) {
+            return contentWorkspace.CurrentBundle?.TryFindResourceByNativePath(path, out _) == true;
+        }
+        return contentWorkspace.CurrentBundle?.ResourceListing?.Any(p => p.Value.Target.StartsWith(path)) == true;
+    }
+
+    private bool IsFileOrFolderInBaseGame(string path)
+    {
+        if (Path.HasExtension(path)) {
+            return reader?.FileExists(path) == true;
+        }
+        return Workspace.ListFile?.GetFilesInFolder(path)?.Length > 0;
     }
 
     private static string CompactFilePath(string path)
