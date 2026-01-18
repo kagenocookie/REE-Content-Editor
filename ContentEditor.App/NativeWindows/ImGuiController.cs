@@ -561,6 +561,11 @@ public class ImGuiController : IDisposable
 
         // Restore modified GL state
         _gl.UseProgram((uint)lastProgram);
+        var err = _gl.GetError();
+        if (err != GLEnum.None) {
+            // lastProgram can be invalid after closing windows, reset it
+            _gl.UseProgram(0);
+        }
         _gl.BindTexture(GLEnum.Texture2D, (uint)lastTexture);
 
         _gl.BindSampler(0, (uint)lastSampler);
