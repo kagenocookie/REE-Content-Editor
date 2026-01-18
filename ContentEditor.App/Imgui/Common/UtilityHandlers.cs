@@ -177,7 +177,7 @@ public class ConditionalUIHandler(IObjectUIHandler inner, Func<UIContext, bool> 
     }
 }
 
-public class InstanceTypePickerHandler<T>(Type?[] classOptions, Func<UIContext, Type, T>? factory = null, bool filterable = true) : IObjectUIHandler
+public class InstanceTypePickerHandler<T>(Type?[] classOptions, Func<UIContext, Type, T>? factory = null, bool filterable = true, IObjectUIHandler? innerHandler = null) : IObjectUIHandler
 {
     private Type? chosenType;
     private bool wasInit;
@@ -208,12 +208,20 @@ public class InstanceTypePickerHandler<T>(Type?[] classOptions, Func<UIContext, 
                     newInstance = factory.Invoke(context, chosenType);
                 }
                 UndoRedo.RecordSet(context, newInstance, mergeMode: UndoRedoMergeMode.NeverMerge);
+                if (innerHandler != null) {
+                    UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
+                }
             }
 
             ImGui.SameLine();
             if (ImGui.Button("Cancel")) {
                 chosenType = null;
             }
+        }
+        if (instance != null) {
+            ImGui.PushID(context.label + "##instance");
+            innerHandler?.OnIMGUI(context);
+            ImGui.PopID();
         }
     }
 }

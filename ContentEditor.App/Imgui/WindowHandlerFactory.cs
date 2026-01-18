@@ -297,6 +297,8 @@ public static class WindowHandlerFactory
                 return new TmlFsm2FileEditor(env, file);
             case KnownFileFormats.WwiseAudioRSZ:
                 return new RawRSZFileEditor(env, file);
+            case KnownFileFormats.JointMap:
+                return new JmapFileEditor(env, file);
         }
 
         if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {

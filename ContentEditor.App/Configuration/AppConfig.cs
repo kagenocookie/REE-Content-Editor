@@ -577,6 +577,7 @@ public class AppJsonSettings
     public MeshViewerSettings MeshViewer { get; init; } = new();
     public BundleDefaults BundleDefaults { get; init; } = new();
     public ImportSettings Import { get; init; } = new();
+    public DevSettings Dev { get; init; } = new();
     public List<string> RecentBundles { get; init; } = new();
     public List<string> RecentFiles { get; init; } = new();
     public List<string> RecentRcols { get; init; } = new();
@@ -589,6 +590,10 @@ public class AppJsonSettings
 public record SceneViewSettings
 {
     public float MoveSpeed { get; set; } = 8f;
+}
+public record DevSettings
+{
+    public KnownFileFormats LastFileTestFormat { get; set; }
 }
 
 public record ImportSettings
