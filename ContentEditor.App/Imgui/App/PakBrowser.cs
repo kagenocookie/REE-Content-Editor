@@ -714,6 +714,13 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             return false;
         }
 
+        if (IsFileOrFolderInBundle(file)) {
+            if (contentWorkspace.ResourceManager.TryResolveGameFile(file, out var targetFile)) {
+                EditorWindow.CurrentWindow?.AddFileEditor(targetFile);
+                return true;
+            }
+        }
+
         if (!reader!.FileExists(file)) {
             var hasLooseFile = File.Exists(Path.Combine(Workspace.Config.GamePath, file));
             if (hasLooseFile) {
