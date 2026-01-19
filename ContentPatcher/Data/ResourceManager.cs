@@ -1121,7 +1121,9 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     {
         var files = openFiles.Keys.ToList();
         foreach (var file in files) {
-            CloseFile(openFiles[file]);
+            if (openFiles.TryGetValue(file, out var fh)) {
+                CloseFile(fh);
+            }
         }
     }
 

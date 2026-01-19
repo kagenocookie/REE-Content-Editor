@@ -8,6 +8,7 @@ using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Common;
 using ReeLib.via;
 
 namespace ContentEditor.App;
@@ -145,7 +146,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         ChangeMesh();
     }
 
-    private void ChangeMesh()
+    private void ChangeMesh(bool resetMdf = true)
     {
         meshPath = Handle.Filepath;
         if (!Handle.References.Contains(this)) Handle.References.Add(this);
@@ -156,11 +157,19 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             }
             return;
         }
-        TryGuessMdfFilepath();
+        if (resetMdf) TryGuessMdfFilepath();
 
         var meshComponent = previewGameobject?.GetComponent<MeshComponent>();
-        meshComponent?.Transform.InvalidateTransform();
-        meshComponent?.SetMesh(Handle, Handle);
+        if (meshComponent != null) {
+
+            meshComponent.Transform.InvalidateTransform();
+            if (!string.IsNullOrEmpty(mdfSource)) {
+                isMDFUpdateRequest = true;
+                UpdateMaterial(meshComponent);
+            } else {
+                meshComponent.SetMesh(Handle, Handle);
+            }
+        }
         if (mesh.HasAnimations && string.IsNullOrEmpty(animationSourceFile)) {
             animationSourceFile = Handle.Filepath;
         }
@@ -310,6 +319,12 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 ImguiHelpers.VerticalSeparator();
                 if (ImGui.MenuItem($"{AppIcons.SI_MeshViewerMeshGroup} Mesh Groups")) ImGui.OpenPopup("MeshGroups");
                 if (ImGui.MenuItem($"{AppIcons.SI_FileType_MDF} Material")) ImGui.OpenPopup("Material");
+                var mdfErrors = GetMdfErrors();
+                if (mdfErrors != null) {
+                    using var _ = ImguiHelpers.OverrideStyleCol(ImGuiCol.Text, Colors.Warning);
+                    ImGui.MenuItem($"{AppIcons.SI_GenericWarning}");
+                    ImguiHelpers.Tooltip(mdfErrors);
+                }
                 if (ImGui.BeginMenu($"{AppIcons.SI_FileType_RCOL} RCOL")) {
                     var rcolEdit = Scene!.Root.SetEditMode(previewGameobject.GetOrAddComponent<RequestSetColliderComponent>());
                     rcolEdit?.DrawMainUI();
@@ -398,6 +413,26 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
     }
 
+    private string? GetMdfErrors()
+    {
+        var meshComponent = previewGameobject?.GetComponent<MeshComponent>();
+        if (meshComponent?.MeshHandle == null || mesh == null || string.IsNullOrEmpty(mdfSource)) return null;
+
+        if (mesh != null && meshComponent.MeshHandle?.Material != null) {
+            var mdfMats = meshComponent.MeshHandle.Material.Materials;
+            var matNames = mesh.NativeMesh.MaterialNames;
+            var nameMismatch = matNames.Any(name => !mdfMats.Select(m => m.name).Contains(name));
+            if (mdfMats.Count != mesh.NativeMesh.MaterialNames.Count) {
+                return "Mesh material count does not match MDF2 material count. Textures won't display correctly ingame.\nEnsure that both counts match.";
+            }
+            if (nameMismatch) {
+                return "Mesh references material names that are not present in the selected MDF2.";
+            }
+        }
+
+        return null;
+    }
+
     private void ShowMaterialSettings(MeshComponent meshComponent)
     {
         bool useHighRes = textureMode == TextureMode.HighRes;
@@ -422,6 +457,69 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 (v, p) => v.mdfSource = p ?? "");
         }
         mdfPickerContext.ShowUI();
+        if (mesh != null && meshComponent.MeshHandle?.Material != null) {
+            var mdfMats = meshComponent.MeshHandle.Material.Materials;
+            var matNames = mesh.NativeMesh.MaterialNames;
+            var nameMismatch = matNames.Any(name => !mdfMats.Select(m => m.name).Contains(name));
+            var error = GetMdfErrors();
+            if (error != null) {
+                ImGui.TextColored(Colors.Warning, error);
+            }
+
+            if (mesh.NativeMesh.MaterialNames.Count < mdfMats.Count && !string.IsNullOrEmpty(mdfSource)) {
+                if (ImGui.Button("Add missing materials from selected MDF2")) {
+                    AlignMatNamesToMdf();
+                }
+            }
+
+            ImGui.SeparatorText("Material mapping");
+            for (int i = 0; i < mesh.NativeMesh.MaterialNames.Count; i++) {
+                var matName = mesh.NativeMesh.MaterialNames[i];
+                if (ImGui.Button($"{AppIcons.SI_GenericDelete}##{i}")) {
+                    var i_backup = i--;
+                    UndoRedo.RecordCallback(null, () => matNames.RemoveAt(i_backup), () => matNames.Insert(i_backup, matName));
+                    UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, ApplyMeshChanges);
+                    continue;
+                }
+                ImGui.SameLine();
+                ImGui.Text(i.ToString());
+                ImGui.SameLine();
+                if (ImGui.InputText($"##{i}", ref matName, 48)) {
+                    var prevName = mesh.NativeMesh.MaterialNames[i];
+                    int i_backup = i;
+                    UndoRedo.RecordCallbackSetter(null, mesh.NativeMesh.MaterialNames, prevName, matName, (o, v) => o[i_backup] = v, $"MatName{i}_{Handle.Filepath}");
+                    UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, ApplyMeshChanges);
+                }
+            }
+            if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
+                var newName = "NewMaterial".GetUniqueName(s => matNames.Contains(s));
+                UndoRedo.RecordCallback(null, () => matNames.Add(newName), () => matNames.Remove(newName));
+                UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, ApplyMeshChanges);
+            }
+        }
+    }
+
+    private void ApplyMeshChanges()
+    {
+        Handle.Modified = true;
+        ChangeMesh(false);
+    }
+
+    private void AlignMatNamesToMdf()
+    {
+        var meshComponent = previewGameobject?.GetComponent<MeshComponent>();
+        if (meshComponent?.MeshHandle == null || mesh == null) return;
+
+        var mdfMats = meshComponent.MeshHandle.Material.Materials;
+        var matNames = mesh.NativeMesh.MaterialNames;
+        if (matNames.Count < mdfMats.Count) {
+            var missingMats = mdfMats.Select(m => m.name).Where(m => !matNames.Contains(m));
+            foreach (var mat in missingMats) {
+                if (matNames.Count >= mdfMats.Count) break;
+                matNames.Add(mat);
+            }
+        }
+        Handle.Modified = true;
     }
 
     private void ShowImportExportMenu()
@@ -477,6 +575,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                             Handle.Revert(Workspace);
                             Handle.Modified = true;
                             ChangeMesh();
+                            AlignMatNamesToMdf();
                         }
                     });
                 }, lastImportSourcePath, fileExtension: FileFilters.MeshFilesAll);
