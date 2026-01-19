@@ -72,7 +72,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         if (!builtInMaterials.TryGetValue((BuiltInMaterials.Wireframe, flags), out var material)) {
             material = new(GL, GetShader("Shaders/GLSL/wireframe.glsl", flags));
             material.SetParameter("_OuterColor", new Color(0, 0, 0, 5));
-            material.SetParameter("_InnerColor", Colors.FileTypeMCOL with { Y = 1});
+            material.SetParameter("_InnerColor", Colors.FileTypeMCOL);
             material.name = "wire";
         }
         return material.Clone();
