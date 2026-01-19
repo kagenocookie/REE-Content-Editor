@@ -95,12 +95,12 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
         if (inactiveMaterial == null) {
             var mat = Scene.RenderContext
                 .GetMaterialBuilder(BuiltInMaterials.MonoColor)
-                .Color("_MainColor", Color.FromVector4(Colors.RequestSetColliders));
+                .Color("_MainColor", Color.FromVector4(Colors.FileTypeRCOL));
             activeMaterial = mat.Blend(Silk.NET.OpenGL.BlendingFactor.SrcAlpha, Silk.NET.OpenGL.BlendingFactor.SrcAlpha).Create("rcol_active");
 
             (inactiveMaterial, obscuredMaterial) = mat.Blend().Create2("rcol", "rcol_obscured");
-            obscuredMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.RequestSetColliders) with { A = 90 });
-            inactiveMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.RequestSetColliders) with { A = 56 });
+            obscuredMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.FileTypeRCOL) with { A = 95 });
+            inactiveMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.FileTypeRCOL) with { A = 90 });
         }
 
         gizmo ??= new(RootScene!, this);
