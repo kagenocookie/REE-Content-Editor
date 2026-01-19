@@ -1,17 +1,18 @@
-using System.Numerics;
-using System.Reflection;
+using Assimp;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Common;
 using ReeLib.Mdf;
 using ReeLib.via;
+using System.Numerics;
+using System.Reflection;
 
 namespace ContentEditor.App.ImguiHandling.Mdf2;
 
 public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 {
-    public override string HandlerName => "Mdf2";
+    public override string HandlerName => "MDF Editor";
 
     public RszInstance? Instance { get; private set; }
     public string Filename => Handle.Filepath;
@@ -28,7 +29,6 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 
     protected override void DrawFileContents()
     {
-        var isEmpty = context.children.Count == 0;
         if (context.children.Count == 0) {
             context.AddChild("Data", File, new MdfFileImguiHandler());
         }
@@ -41,16 +41,197 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     }
 }
 
-[ObjectImguiHandler(typeof(MdfFile), Stateless = true)]
+[ObjectImguiHandler(typeof(MdfFile), Stateless = false)]
 public class MdfFileImguiHandler : IObjectUIHandler
 {
+    private int selectedIDX = 0;
+    private int activeTabIDX = 0;
+    private string newMaterialName = string.Empty;
+    private bool isNewMaterialMenu = false;
+    private string materialSearch = string.Empty;
     public void OnIMGUI(UIContext context)
     {
-        if (context.children.Count == 0) {
-            var file = context.Get<MdfFile>();
-            context.AddChild("Data", file.Materials).AddDefaultHandler<List<MaterialData>>();
+        var file = context.Get<MdfFile>();
+
+        ImGui.BeginChild("##MaterialList", new Vector2(300f, ImGui.GetContentRegionAvail().Y));
+        ShowMaterialList(context, file);
+        ImGui.EndChild();
+
+        ImGui.SameLine();
+
+        ImGui.BeginChild("##MaterialData");
+        ShowSelectedMaterialData(context, file);
+        ImGui.EndChild();
+    }
+
+    private void ShowMaterialList(UIContext context, MdfFile file)
+    {
+        var list = file.Materials;
+        
+        ImGui.TextColored(Colors.Faded, "Material List");
+        ImGui.Separator();
+        ImguiHelpers.ToggleButton($"{AppIcons.SI_FileType_MDF}", ref isNewMaterialMenu, Colors.IconActive);
+        ImguiHelpers.Tooltip("Add new Material");
+        ImGui.SameLine();
+        using (var __ = ImguiHelpers.Disabled(!VirtualClipboard.TryGetFromClipboard<MaterialData>(out _))) {
+            if (ImGui.Button($"{AppIcons.SI_Paste}")) {
+                if (VirtualClipboard.TryGetFromClipboard<MaterialData>(out var pasted)) {
+                    var clone = pasted.Clone();
+                    clone.Header.matName = clone.Header.matName.GetUniqueName(str => list.Any(l => l.Header.matName == str));
+                    UndoRedo.RecordListAdd(context, list, clone);
+                    selectedIDX = list.Count - 1;
+                    activeTabIDX = 0;
+                    context.children.Clear();
+                }
+            }
+            ImguiHelpers.Tooltip("Paste Material from clipboard");
         }
-        context.ShowChildrenUI();
+        ImGui.SameLine();
+        ImGui.SetNextItemAllowOverlap();
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+        ImGui.InputTextWithHint("##MaterialSearch", $"{AppIcons.SI_GenericMagnifyingGlass} Search", ref materialSearch, 64);
+        if (!string.IsNullOrEmpty(materialSearch)) {
+            ImGui.SameLine();
+            ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
+            ImGui.SetNextItemAllowOverlap();
+            if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
+                materialSearch = string.Empty;
+            }
+        }
+        if (isNewMaterialMenu) {
+            ImGui.Separator();
+            using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(newMaterialName))) {
+                bool isInvalidName = list.Any(m => m.Header.matName.Equals(newMaterialName, StringComparison.OrdinalIgnoreCase));
+                ImGui.PushStyleColor(ImGuiCol.Text, isInvalidName ? Colors.IconTertiary : Colors.IconActive);
+                if (!isInvalidName) {
+                    if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
+                        var mat = new MaterialData(new MaterialHeader { matName = newMaterialName });
+                        UndoRedo.RecordListAdd(context, list, mat);
+                        selectedIDX = list.Count - 1;
+                        context.children.Clear();
+                        newMaterialName = "";
+                    }
+                    ImGui.PopStyleColor();
+                    ImguiHelpers.Tooltip("Add");
+                } else {
+                    ImGui.Button($"{AppIcons.SI_GenericClose}");
+                    ImguiHelpers.Tooltip("A Material with the same name already exists");
+                    ImGui.PopStyleColor();
+                }
+            }
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+            ImGui.InputText("##NewMaterialNameField", ref newMaterialName, 64);
+        }
+
+        ImGui.Separator();
+        for (int i = 0; i < list.Count; i++) {
+            var mat = list[i];
+            if (!string.IsNullOrEmpty(materialSearch) && !mat.Header.matName.Contains(materialSearch, StringComparison.OrdinalIgnoreCase)) {
+                continue;
+            }
+
+            bool selected = i == selectedIDX;
+            ImGui.PushStyleColor(ImGuiCol.Text, selected ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text));
+            if (ImGui.Selectable(mat.Header.matName, selected)) {
+                selectedIDX = i;
+                activeTabIDX = 0;
+                context.children.Clear();
+            }
+            ImGui.PopStyleColor();
+
+            if (ImGui.BeginPopupContextItem($"##MaterialID{i}")) {
+                ShowMaterialContextMenu(context,file.Materials, mat, newIndex => { selectedIDX = newIndex;  context.children.Clear(); });
+                ImGui.EndPopup();
+            }
+        }
+        ImGui.Separator();
+    }
+
+    private void ShowSelectedMaterialData(UIContext context, MdfFile file)
+    {
+        var mat = file.Materials[selectedIDX];
+
+        if (ImGui.BeginTabBar("##MaterialDataTabs")) {
+            ShowMaterialDataTab(context, mat, "General", 0, () => ShowMaterialDataTabContent(context, "General", mat.Header));
+            ShowMaterialDataTab(context, mat, "Textures", 1, () => ShowMaterialDataTabContent(context, "Textures", mat.Textures));
+            ShowMaterialDataTab(context, mat, "Parameters", 2, () => ShowMaterialDataTabContent(context, "Parameters", mat.Parameters));
+            ShowMaterialDataTab(context, mat, "GPU Buffers", 3, () =>  ShowMaterialDataTabContent(context, "GPU Buffers", mat.GpuBuffers));
+            ImGui.EndTabBar();
+        }
+    }
+    private void ShowMaterialDataTab(UIContext context, MaterialData mat, string label, int index, Action drawTab)
+    {
+        bool tabLabel = ImGui.BeginTabItem(label);
+        if (tabLabel) {
+            if (activeTabIDX != index) {
+                activeTabIDX = index;
+                context.children.Clear();
+            }
+            drawTab();
+            ImGui.EndTabItem();
+        }
+    }
+
+    private static void ShowMaterialDataTabContent(UIContext context, string label, object data)
+    {
+        UIContext child;
+
+        if (context.children.Count == 0 || context.children[0].label != label) {
+            context.children.Clear();
+            child = context.AddChild(label, data);
+            AssignHandler(child, data);
+        } else {
+            child = context.children[0];
+        }
+        ImGui.SetNextItemOpen(true, ImGuiCond.Always);
+        child.ShowUI();
+    }
+    private static void AssignHandler(UIContext context, object data)
+    {
+        switch (data) {
+            case MaterialHeader:
+                context.uiHandler = new MatHeaderImguiHandler();
+                break;
+            case List<TexHeader>:
+                context.uiHandler = new TexHeaderListImguiHandler();
+                break;
+            case List<ParamHeader>:
+                context.uiHandler = new ParamHeaderListImguiHandler();
+                break;
+            case List<GpuBufferEntry>: context.AddDefaultHandler<List<GpuBufferEntry>>();
+                break;
+        }
+    }
+
+    private static void ShowMaterialContextMenu(UIContext context, List<MaterialData> list, MaterialData mat, Action<int>? onSelectIndexChanged = null)
+    {
+        if (ImGui.MenuItem("Duplicate")) {
+            var clone = mat.Clone();
+            clone.Header.matName = $"{mat.Header.matName}_copy".GetUniqueName(str => list.Any(l => l.Header.matName == str));
+            UndoRedo.RecordListAdd(context, list, clone);
+            onSelectIndexChanged?.Invoke(list.Count - 1);
+        }
+        if (ImGui.MenuItem("Copy")) {
+            VirtualClipboard.CopyToClipboard(mat.Clone());
+        }
+        using (var i = ImguiHelpers.Disabled(!VirtualClipboard.TryGetFromClipboard<MaterialData>(out _))) {
+            if (ImGui.MenuItem("Paste")) {
+                if (VirtualClipboard.TryGetFromClipboard<MaterialData>(out var pasted)) {
+                    var clone = pasted.Clone();
+                    clone.Header.matName = clone.Header.matName.GetUniqueName(str => list.Any(l => l.Header.matName == str));
+                    UndoRedo.RecordListAdd(context, list, clone);
+                    onSelectIndexChanged?.Invoke(list.Count - 1);
+                }
+            }
+        }
+        ImGui.Separator();
+        if (ImGui.MenuItem("Delete")) {
+            int index = list.IndexOf(mat);
+            UndoRedo.RecordListRemove(context, list, mat);
+            int newIndex = Math.Clamp(index - 1, 0, list.Count - 1);
+            onSelectIndexChanged?.Invoke(newIndex);
+        }
     }
 }
 

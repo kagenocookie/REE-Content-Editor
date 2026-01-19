@@ -11,7 +11,7 @@ namespace ContentEditor.App;
 
 public class RcolEditMode : EditModeHandler
 {
-    public override string DisplayName => $"{AppIcons.Mesh} RCOL";
+    public override string DisplayName => $"{AppIcons.SI_FileType_RCOL} RCOL";
 
     public RcolEditor? PrimaryEditor { get; private set; }
 
