@@ -312,6 +312,8 @@ public class MatHeaderImguiHandler : IObjectUIHandler
             var tex = context.Get<MaterialHeader>();
             var ws = context.GetWorkspace();
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(MaterialHeader), members: DisplayedFields);
+            context.GetChildByValue<MaterialFlags1>()?.uiHandler = new CsharpFlagsEnumFieldHandler<MaterialFlags1, int>() { HideNumberInput = true };
+            context.GetChildByValue<MaterialFlags2>()?.uiHandler = new CsharpFlagsEnumFieldHandler<MaterialFlags2, int>() { HideNumberInput = true };
             context.AddChildContextSetter<MaterialHeader, string>(
                 "MMTR path",
                 tex,

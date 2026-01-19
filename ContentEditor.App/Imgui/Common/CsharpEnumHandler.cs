@@ -96,6 +96,7 @@ public class CsharpFlagsEnumFieldHandler<T, TUnderlying>() : IObjectUIHandler
         ImguiHelpers.BeginRect();
         if (HideNumberInput) {
             ImGui.Text(context.label + ": ");
+            AppImguiHelpers.ShowJsonCopyPopup<T>(value, context);
         } else if (ImGui.InputScalar(context.label, scalarType, &value)) {
             UndoRedo.RecordSet(context, value);
         }
