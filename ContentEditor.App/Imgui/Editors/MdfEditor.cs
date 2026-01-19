@@ -180,30 +180,13 @@ public class MdfFileImguiHandler : IObjectUIHandler
         if (context.children.Count == 0 || context.children[0].label != label) {
             context.children.Clear();
             child = context.AddChild(label, data);
-            AssignHandler(child, data);
+            child.AddDefaultHandler();
         } else {
             child = context.children[0];
         }
         ImGui.SetNextItemOpen(true, ImGuiCond.Always);
         child.ShowUI();
     }
-    private static void AssignHandler(UIContext context, object data)
-    {
-        switch (data) {
-            case MaterialHeader:
-                context.uiHandler = new MatHeaderImguiHandler();
-                break;
-            case List<TexHeader>:
-                context.uiHandler = new TexHeaderListImguiHandler();
-                break;
-            case List<ParamHeader>:
-                context.uiHandler = new ParamHeaderListImguiHandler();
-                break;
-            case List<GpuBufferEntry>: context.AddDefaultHandler<List<GpuBufferEntry>>();
-                break;
-        }
-    }
-
     private static void ShowMaterialContextMenu(UIContext context, List<MaterialData> list, MaterialData mat, Action<int>? onSelectIndexChanged = null)
     {
         if (ImGui.MenuItem("Duplicate")) {
