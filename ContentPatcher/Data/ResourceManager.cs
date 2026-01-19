@@ -330,7 +330,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
         if (fieldResource.FilePath == null) {
             // ignore - there's no file here
-        } else if (openFiles.TryGetValue(fieldResource.FilePath, out var file)) {
+        } else if (openFiles.TryGetValue(fieldResource.FilePath.ToLowerInvariant(), out var file)) {
             file.Modified = true;
         } else {
             throw new Exception("New resource file should've been opened, wtf?");
@@ -746,6 +746,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     {
         var rawStream = workspace.Env.FindSingleFile(streamingNativePath, out var resolvedPath);
         if (rawStream != null && resolvedPath != null) {
+            resolvedPath = resolvedPath.ToLowerInvariant();
             if (openFiles.TryGetValue(resolvedPath, out file)) {
                 rawStream.Dispose();
                 return true;
@@ -775,7 +776,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     {
         filepath = filepath.NormalizeFilepath();
         nativePath ??= PreprocessNativeFilepath(filepath);
-        if (openFiles.TryGetValue(nativePath ?? filepath, out var handle)) {
+        if (openFiles.TryGetValue(nativePath ?? filepath.ToLowerInvariant(), out var handle)) {
             return handle;
         }
 
@@ -786,13 +787,13 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     {
         filepath = filepath.NormalizeFilepath();
         filepath = workspace.Env.PrependBasePath(filepath);
-        if (activeBundle?.ResourceListing != null && Path.IsPathFullyQualified(filepath) && filepath.StartsWith(workspace.BundleManager.GetBundleFolder(activeBundle))) {
+        if (activeBundle?.ResourceListing != null && Path.IsPathFullyQualified(filepath) && filepath.StartsWith(workspace.BundleManager.GetBundleFolder(activeBundle), StringComparison.InvariantCultureIgnoreCase)) {
             var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(activeBundle), filepath);
             if (activeBundle.ResourceListing.TryGetValue(localPath, out var resourceList)) {
                 return resourceList.Target;
             }
         }
-        return filepath.IsNativePath() ? filepath : null;
+        return filepath.IsNativePath() ? filepath.ToLowerInvariant() : null;
     }
 
     private FileHandle? ReadFileResource(string filepath, string? nativePath, bool includeActiveBundle)
@@ -805,7 +806,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             handle = CreateFileHandleInternal(filepath, nativePath, file);
             if (handle == null) return null;
 
-            openFiles.TryAdd(handle.NativePath ?? handle.Filepath, handle);
+            openFiles.TryAdd(handle.NativePath ?? handle.Filepath.ToLowerInvariant(), handle);
             return handle;
         }
 
@@ -839,7 +840,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         }
 
         if (handle == null) return null;
-        openFiles.TryAdd(handle.NativePath ?? handle.Filepath, handle);
+        openFiles.TryAdd(handle.NativePath ?? handle.Filepath.ToLowerInvariant(), handle);
         return handle;
     }
 
@@ -933,7 +934,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             return null;
         }
 
-        openFiles[filename] = handle;
+        openFiles[filename.ToLowerInvariant()] = handle;
         handle.Resource = newFileResource;
         handle.DiffHandler = loader.CreateDiffHandler();
         return handle;
@@ -1019,7 +1020,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         if (handle == null) {
             throw new NotSupportedException();
         }
-        string filekey = handle.NativePath ?? handle.Filepath;
+        string filekey = handle.NativePath ?? handle.Filepath.ToLowerInvariant();
         if (keepFileReference && !openFiles.TryAdd(filekey, handle)) {
             var prev = openFiles[filekey];
             CloseFile(prev);
@@ -1069,7 +1070,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     public void MarkFileResourceModified(string filepath, bool markModified)
     {
         filepath = PreprocessNativeFilepath(filepath) ?? filepath;
-        if (openFiles.TryGetValue(filepath, out var fileResource)) {
+        if (openFiles.TryGetValue(filepath.ToLowerInvariant(), out var fileResource)) {
             fileResource.Modified = markModified;
         }
     }
@@ -1082,7 +1083,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     public TFileType? GetOpenFile<TFileType>(string filepath, bool markModified = false) where TFileType : BaseFile
     {
         filepath = PreprocessNativeFilepath(filepath) ?? filepath;
-        if (openFiles?.TryGetValue(filepath, out var handle) == true) {
+        if (openFiles?.TryGetValue(filepath.ToLowerInvariant(), out var handle) == true) {
             var file = handle.GetFile<TFileType>();
             if (markModified) {
                 handle.Modified = true;
@@ -1107,7 +1108,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
     public void CloseFile(FileHandle file)
     {
-        if (!openFiles.Remove(file.Filepath, out _) && file.NativePath != null) {
+        if (!openFiles.Remove(file.Filepath.ToLowerInvariant(), out _) && file.NativePath != null) {
             openFiles.Remove(file.NativePath, out _);
         }
         foreach (var rf in file.References) {
@@ -1120,7 +1121,9 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     {
         var files = openFiles.Keys.ToList();
         foreach (var file in files) {
-            CloseFile(openFiles[file]);
+            if (openFiles.TryGetValue(file, out var fh)) {
+                CloseFile(fh);
+            }
         }
     }
 

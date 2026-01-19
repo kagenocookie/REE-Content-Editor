@@ -459,7 +459,7 @@ public class BundleManagementUI : IWindowHandler
             ImGui.SeparatorText("Edit Natives Path");
             ImGui.SetNextItemWidth(ImGui.CalcTextSize(target).X + 15);
             if (ImGui.InputText("##target", ref target, 512)) {
-                d.Target = target;
+                d.Target = target.ToLowerInvariant();
             }
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_Save}")) {
