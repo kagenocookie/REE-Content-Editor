@@ -46,7 +46,6 @@ public class MaterialGroupLoader : IFileLoader,
     public IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle)
     {
         var file = new MdfFile(new FileHandler(handle.Stream, handle.Filepath));
-        var scene = new Assimp.Scene();
         file.Write();
         file.FileHandler.Seek(0);
         return Load(workspace, handle);
@@ -54,11 +53,9 @@ public class MaterialGroupLoader : IFileLoader,
 
     public bool Save(ContentWorkspace workspace, FileHandle handle, string outputPath)
     {
+        var res = handle.GetResource<AssimpMaterialResource>();
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
-        using var fs = File.Create(outputPath);
-        if (handle.Stream.CanSeek) handle.Stream.Seek(0, SeekOrigin.Begin);
-        handle.Stream.CopyTo(fs);
-        return true;
+        return res.File.WriteTo(outputPath);
     }
 
     Assimp.Scene IFileHandleContentProvider<Assimp.Scene>.GetFile(FileHandle handle) => handle.GetResource<AssimpMaterialResource>().Scene;
