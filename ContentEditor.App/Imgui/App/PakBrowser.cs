@@ -1,5 +1,6 @@
 using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
+using ContentEditor.App.ImguiHandling;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
@@ -783,6 +784,14 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             } else {
                 if (ImguiHelpers.ContextMenuItem("##AddBookmark", AppIcons.SIC_BookmarkAdd, "Add to Bookmarks", new[] { Colors.IconPrimary, Colors.IconSecondary })) {
                     _bookmarkManager.AddBookmark(Workspace.Config.Game.name, file);
+                }
+            }
+            if (Path.HasExtension(file) && contentWorkspace.CurrentBundle != null) {
+                var handle = contentWorkspace.ResourceManager.GetFileHandle(file);
+                if (ImguiHelpers.ContextMenuItem("##SaveToBundle", AppIcons.SIC_BundleSaveTo, "Save to Bundle", new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
+                    if (handle != null) {
+                        ResourcePathPicker.SaveFileToBundle(contentWorkspace, handle, (savePath, localPath, nativePath) => handle.Save(contentWorkspace, savePath));
+                    }
                 }
             }
             if (Path.HasExtension(file)) {
