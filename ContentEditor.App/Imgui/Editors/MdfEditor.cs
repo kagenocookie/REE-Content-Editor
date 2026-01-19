@@ -1,11 +1,12 @@
-using System.Numerics;
-using System.Reflection;
+using Assimp;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Common;
 using ReeLib.Mdf;
 using ReeLib.via;
+using System.Numerics;
+using System.Reflection;
 
 namespace ContentEditor.App.ImguiHandling.Mdf2;
 
@@ -52,7 +53,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
     {
         var file = context.Get<MdfFile>();
 
-        ImGui.BeginChild("##MaterialList", new Vector2(250f, ImGui.GetContentRegionAvail().Y));
+        ImGui.BeginChild("##MaterialList", new Vector2(300f, ImGui.GetContentRegionAvail().Y));
         ShowMaterialList(context, file);
         ImGui.EndChild();
 
@@ -69,14 +70,26 @@ public class MdfFileImguiHandler : IObjectUIHandler
         
         ImGui.TextColored(Colors.Faded, "Material List");
         ImGui.Separator();
-        ImguiHelpers.ToggleButton($"{AppIcons.SI_FileType_MDF}", ref isNewMaterialMenu, Colors.IconActive);// SILVER: Icon pending
+        ImguiHelpers.ToggleButton($"{AppIcons.SI_FileType_MDF}", ref isNewMaterialMenu, Colors.IconActive);
         ImguiHelpers.Tooltip("Add new Material");
         ImGui.SameLine();
-        ImGui.Button($"{AppIcons.SI_FileType_MMTR}"); // SILVER: Icon pending vol.2, paste mat from clipboard button should be disabled when clipboard is empty
+        using (var __ = ImguiHelpers.Disabled(!VirtualClipboard.TryGetFromClipboard<MaterialData>(out _))) {
+            if (ImGui.Button($"{AppIcons.SI_Paste}")) {
+                if (VirtualClipboard.TryGetFromClipboard<MaterialData>(out var pasted)) {
+                    var clone = pasted.Clone();
+                    clone.Header.matName = clone.Header.matName.GetUniqueName(str => list.Any(l => l.Header.matName == str));
+                    UndoRedo.RecordListAdd(context, list, clone);
+                    selectedIDX = list.Count - 1;
+                    activeTabIDX = 0;
+                    context.children.Clear();
+                }
+            }
+            ImguiHelpers.Tooltip("Paste Material from clipboard");
+        }
         ImGui.SameLine();
         ImGui.SetNextItemAllowOverlap();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-        ImGui.InputTextWithHint("##MaterialSearch", $"{AppIcons.SI_GenericMagnifyingGlass} Search", ref materialSearch, 64); // SILVER: we don't have the space here for case matching
+        ImGui.InputTextWithHint("##MaterialSearch", $"{AppIcons.SI_GenericMagnifyingGlass} Search", ref materialSearch, 64);
         if (!string.IsNullOrEmpty(materialSearch)) {
             ImGui.SameLine();
             ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
@@ -199,14 +212,26 @@ public class MdfFileImguiHandler : IObjectUIHandler
             UndoRedo.RecordListAdd(context, list, clone);
             onSelectIndexChanged?.Invoke(list.Count - 1);
         }
-
+        if (ImGui.MenuItem("Copy")) {
+            VirtualClipboard.CopyToClipboard(mat.Clone());
+        }
+        using (var i = ImguiHelpers.Disabled(!VirtualClipboard.TryGetFromClipboard<MaterialData>(out _))) {
+            if (ImGui.MenuItem("Paste")) {
+                if (VirtualClipboard.TryGetFromClipboard<MaterialData>(out var pasted)) {
+                    var clone = pasted.Clone();
+                    clone.Header.matName = clone.Header.matName.GetUniqueName(str => list.Any(l => l.Header.matName == str));
+                    UndoRedo.RecordListAdd(context, list, clone);
+                    onSelectIndexChanged?.Invoke(list.Count - 1);
+                }
+            }
+        }
+        ImGui.Separator();
         if (ImGui.MenuItem("Delete")) {
             int index = list.IndexOf(mat);
             UndoRedo.RecordListRemove(context, list, mat);
             int newIndex = Math.Clamp(index - 1, 0, list.Count - 1);
             onSelectIndexChanged?.Invoke(newIndex);
         }
-        // TODO SILVER: Allow copypasting mats from different MDFs
     }
 }
 
