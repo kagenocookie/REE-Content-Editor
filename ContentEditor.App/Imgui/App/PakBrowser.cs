@@ -239,6 +239,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 cachedResults.Clear();
             }
         }
+        ImGui.SameLine();
         bool isHideDefaults = _bookmarkManagerDefaults.IsHideBookmarks;
         bool isHideCustoms = _bookmarkManager.IsHideBookmarks;
         bool isBookmarked = _bookmarkManager.IsBookmarked(Workspace.Config.Game.name, CurrentDir);

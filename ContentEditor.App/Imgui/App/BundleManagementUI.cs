@@ -38,7 +38,7 @@ public class BundleManagementUI : IWindowHandler
     public int FixedID => -10001;
 
     public bool HasUnsavedChanges => false;
-    private string newBundleName = "";
+    private string newBundleName = string.Empty;
     private bool isNewBundleMenu = false;
 
     private int selectedLegacyEntityType = 0;
