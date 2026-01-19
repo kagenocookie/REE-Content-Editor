@@ -44,6 +44,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string UsePakCompactFilePaths = "use_pak_compact_file_paths";
         public const string PakDisplayMode = "pak_display_mode";
         public const string ThumbnailCacheFilepath = "thumbnail_cache_path";
+        public const string CacheFilepath = "cache_path";
         public const string WindowRect = "window_rect";
 
         public const string RenderAxis = "render_axis";
@@ -142,6 +143,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly ClassSettingWrapper<string> BlenderPath = new ClassSettingWrapper<string>(Keys.BlenderPath, _lock);
     public readonly ClassSettingWrapper<string> RemoteDataSource = new ClassSettingWrapper<string>(Keys.RemoteDataSource, _lock);
     public readonly ClassSettingWrapper<string> GameConfigBaseFilepath = new ClassSettingWrapper<string>(Keys.GameConfigBaseFilepath, _lock);
+    public readonly ClassSettingWrapper<string> CacheFilepath = new ClassSettingWrapper<string>(Keys.CacheFilepath, _lock, () => Path.Combine(AppDataPath, "cache"));
     public readonly ClassSettingWrapper<string> ThumbnailCacheFilepath = new ClassSettingWrapper<string>(Keys.ThumbnailCacheFilepath, _lock, () => Path.Combine(AppDataPath, "thumbs"));
     public readonly ClassSettingWrapper<string> Theme = new ClassSettingWrapper<string>(Keys.Theme, _lock, () => "default");
     public readonly SettingWrapper<int> UnpackMaxThreads = new SettingWrapper<int>(Keys.UnpackMaxThreads, _lock, 4);
@@ -297,6 +299,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.UnpackMaxThreads, instance.UnpackMaxThreads.value.ToString(), null),
             (Keys.RemoteDataSource, instance.RemoteDataSource.value?.ToString() ?? "", null),
             (Keys.GameConfigBaseFilepath, instance.GameConfigBaseFilepath.value?.ToString() ?? "", null),
+            (Keys.CacheFilepath, instance.CacheFilepath.value?.ToString() ?? "", null),
             (Keys.ThumbnailCacheFilepath, instance.ThumbnailCacheFilepath.value?.ToString() ?? "", null),
             (Keys.Theme, instance.Theme.value?.ToString() ?? "", null),
             (Keys.BackgroundColor, instance.BackgroundColor.value.ToString(), null),
@@ -404,6 +407,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.ThumbnailCacheFilepath:
                             ThumbnailCacheFilepath.value = ReadString(value);
+                            break;
+                        case Keys.CacheFilepath:
+                            CacheFilepath.value = ReadString(value);
                             break;
                         case Keys.Theme:
                             Theme.value = string.IsNullOrEmpty(value) ? "default" : value;

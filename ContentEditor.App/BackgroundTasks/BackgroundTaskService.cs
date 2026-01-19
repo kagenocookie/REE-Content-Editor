@@ -23,14 +23,22 @@ public sealed class BackgroundTaskService : IDisposable
 
     public int PendingTasks => waitingTasks.Count + (workers.Count - freeWorkers.Count);
     public int ActiveWorkerCount => workers.Count - freeWorkers.Count;
-    public IEnumerable<string> CurrentJobs {
+    public IEnumerable<(string status, float progress)> CurrentJobs {
         get {
-            var list = new List<string>();
+            var list = new List<(string, float)>();
             for (int i = 0; i < workers.Count; ++i) {
                 var worker = workers[i];
-                if (worker.CurrentTask != null) {
-                    var task = worker.CurrentTask?.Status ?? "Finalizing";
-                    list.Add(task + " | " + worker.ToString());
+                var task = worker.CurrentTask;
+                if (task != null) {
+                    var status = task.Status ?? "Finalizing";
+                    var pct = task.Progress;
+                    if (pct > 1) {
+                        list.Add(($"{status} | {Math.Round(pct * 10) / 10} | {worker}", pct));
+                    } else if (pct >= 0) {
+                        list.Add(($"{status} | {Math.Round(pct * 100)}% | {worker}", pct));
+                    } else {
+                        list.Add(($"{status} | {worker}", -1));
+                    }
                 }
             }
             return list;
@@ -109,6 +117,8 @@ public sealed class BackgroundTaskService : IDisposable
             worker.Dispose();
         }
     }
+
+    public bool HasPendingTask<T>() => workers.Any(w => w.CurrentTask is T) || waitingTasks.Any(t => t is T);
 
     private class BackgroundTaskWorker : BackgroundWorker, IDisposable
     {
@@ -191,6 +201,7 @@ public interface IBackgroundTask
 {
     bool IsCancelled { get; internal set; }
     string? Status { get; }
+    float Progress => -1;
 
     void Execute(CancellationToken token = default);
 }

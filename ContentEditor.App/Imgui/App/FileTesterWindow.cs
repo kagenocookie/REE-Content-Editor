@@ -471,6 +471,7 @@ public partial class FileTesterWindow : IWindowHandler
 
         foreach (var other in AppConfig.Instance.ConfiguredGames) {
             if (other == current.Game) continue;
+            // if (other == "re7") continue;
 
             var env = WorkspaceManager.Instance.GetWorkspace(other);
             ContentWorkspace? cw = null;

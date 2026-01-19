@@ -1,12 +1,12 @@
-using Assimp;
+using System.Numerics;
+using System.Reflection;
+using ContentEditor.BackgroundTasks;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Common;
 using ReeLib.Mdf;
 using ReeLib.via;
-using System.Numerics;
-using System.Reflection;
 
 namespace ContentEditor.App.ImguiHandling.Mdf2;
 
@@ -27,8 +27,93 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         Workspace = env;
     }
 
+    private MmtrTemplateDB? mmtrTemplateDB;
+    internal MmtrTemplateDB? MaterialTemplateDB => mmtrTemplateDB;
+    private bool _requestedMmtrDb;
+
+    public MaterialData ReplaceMaterialParams(string mmtr, MaterialData material)
+    {
+        if (mmtrTemplateDB?.Templates.TryGetValue(mmtr, out var template) == true) {
+            var hasPreviousData = material.Parameters.Count > 0 || material.Textures.Count > 0;
+            foreach (var existingParam in material.Parameters.ToList()) {
+                var matchingParam = template.Parameters.FirstOrDefault(pp => pp.Name == existingParam.paramName);
+                if (matchingParam == null) {
+                    material.Parameters.Remove(existingParam);
+                } else if (matchingParam.Components != existingParam.componentCount) {
+                    existingParam.componentCount = matchingParam.Components;
+                }
+            }
+
+            foreach (var param in template.Parameters) {
+                if (hasPreviousData && material.Parameters.Any(pp => pp.paramName == param.Name)) continue;
+                material.Parameters.Add(new ParamHeader() {
+                    paramName = param.Name,
+                    componentCount = param.Components
+                });
+            }
+
+            foreach (var existingTex in material.Textures.ToList()) {
+                if (!template.TextureNames.Contains(existingTex.texType)) {
+                    material.Textures.Remove(existingTex);
+                }
+            }
+
+            foreach (var param in template.TextureNames) {
+                if (hasPreviousData && material.Textures.Any(pp => pp.texType == param)) continue;
+
+                material.Textures.Add(new TexHeader() {
+                    texType = param,
+                    texPath = template.TextureDefaults.GetValueOrDefault(param)
+                });
+            }
+
+            if (hasPreviousData) {
+                material.Parameters.Sort((a, b) =>
+                    template.Parameters.FindIndex(p => p.Name == a.paramName)
+                    .CompareTo(template.Parameters.FindIndex(p => p.Name == b.paramName)));
+
+                material.Textures.Sort((a, b) =>
+                    template.TextureNames.IndexOf(a.texType)
+                    .CompareTo(template.TextureNames.IndexOf(b.texType)));
+            }
+        }
+        return material;
+    }
+
+    public MaterialData CreateMaterial(string mmtr)
+    {
+        var mat = new MaterialData();
+        ReplaceMaterialParams(mmtr, mat);
+        return mat;
+    }
+
     protected override void DrawFileContents()
     {
+        if (mmtrTemplateDB == null) {
+            var cachePath = MaterialParamCacheTask.GetCachePath(Workspace.Game);
+            if (!_requestedMmtrDb) {
+                _requestedMmtrDb = true;
+                if (!System.IO.File.Exists(cachePath)) {
+                    // OK
+                } else if (!cachePath.TryDeserializeJsonFile<MmtrTemplateDB>(out var db, out var error)) {
+                    Logger.Warn("Could not load previous mmtr parameter cache from path " + cachePath + ":\n" + error);
+                } else if (db.GameDataHash == Workspace.VersionHash) {
+                    mmtrTemplateDB = db;
+                }
+
+                if (mmtrTemplateDB == null) {
+                    MainLoop.Instance.BackgroundTasks.Queue(new MaterialParamCacheTask(Workspace.Env));
+                }
+            } else {
+                if (!MainLoop.Instance.BackgroundTasks.HasPendingTask<MaterialParamCacheTask>() &&
+                    System.IO.File.Exists(cachePath) &&
+                    cachePath.TryDeserializeJsonFile<MmtrTemplateDB>(out var db, out var error)) {
+                    mmtrTemplateDB = db;
+                }
+            }
+        }
+
+        var isEmpty = context.children.Count == 0;
         if (context.children.Count == 0) {
             context.AddChild("Data", File, new MdfFileImguiHandler());
         }
@@ -67,7 +152,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
     private void ShowMaterialList(UIContext context, MdfFile file)
     {
         var list = file.Materials;
-        
+
         ImGui.TextColored(Colors.Faded, "Material List");
         ImGui.Separator();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_FileType_MDF}", ref isNewMaterialMenu, Colors.IconActive);
@@ -153,14 +238,14 @@ public class MdfFileImguiHandler : IObjectUIHandler
         var mat = file.Materials[selectedIDX];
 
         if (ImGui.BeginTabBar("##MaterialDataTabs")) {
-            ShowMaterialDataTab(context, mat, "General", 0, () => ShowMaterialDataTabContent(context, "General", mat.Header));
-            ShowMaterialDataTab(context, mat, "Textures", 1, () => ShowMaterialDataTabContent(context, "Textures", mat.Textures));
-            ShowMaterialDataTab(context, mat, "Parameters", 2, () => ShowMaterialDataTabContent(context, "Parameters", mat.Parameters));
-            ShowMaterialDataTab(context, mat, "GPU Buffers", 3, () =>  ShowMaterialDataTabContent(context, "GPU Buffers", mat.GpuBuffers));
+            ShowMaterialDataTab(context, mat, "General", 0, (c) => mat.Header);
+            ShowMaterialDataTab(context, mat, "Textures", 1, (c) => mat.Textures);
+            ShowMaterialDataTab(context, mat, "Parameters", 2, (c) => mat.Parameters);
+            ShowMaterialDataTab(context, mat, "GPU Buffers", 3, (c) => mat.GpuBuffers);
             ImGui.EndTabBar();
         }
     }
-    private void ShowMaterialDataTab(UIContext context, MaterialData mat, string label, int index, Action drawTab)
+    private void ShowMaterialDataTab<T>(UIContext context, MaterialData mat, string label, int index, Func<UIContext, T> getter)
     {
         bool tabLabel = ImGui.BeginTabItem(label);
         if (tabLabel) {
@@ -168,25 +253,15 @@ public class MdfFileImguiHandler : IObjectUIHandler
                 activeTabIDX = index;
                 context.children.Clear();
             }
-            drawTab();
+            if (context.children.Count == 0 || context.children[0].label != label) {
+                context.AddChild(label, mat, getter: (c) => (object)getter(c)!).AddDefaultHandler<T>();
+            }
+            ImGui.SetNextItemOpen(true, ImGuiCond.Always);
+            context.ShowChildrenUI();
             ImGui.EndTabItem();
         }
     }
 
-    private static void ShowMaterialDataTabContent(UIContext context, string label, object data)
-    {
-        UIContext child;
-
-        if (context.children.Count == 0 || context.children[0].label != label) {
-            context.children.Clear();
-            child = context.AddChild(label, data);
-            child.AddDefaultHandler();
-        } else {
-            child = context.children[0];
-        }
-        ImGui.SetNextItemOpen(true, ImGuiCond.Always);
-        child.ShowUI();
-    }
     private static void ShowMaterialContextMenu(UIContext context, List<MaterialData> list, MaterialData mat, Action<int>? onSelectIndexChanged = null)
     {
         if (ImGui.MenuItem("Duplicate")) {
@@ -237,7 +312,19 @@ public class MatHeaderImguiHandler : IObjectUIHandler
             var tex = context.Get<MaterialHeader>();
             var ws = context.GetWorkspace();
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(MaterialHeader), members: DisplayedFields);
-            context.AddChild<MaterialHeader, string>("MMTR path", tex, new ResourcePathPicker(ws, KnownFileFormats.MasterMaterial), (p) => p!.mmtrPath, (p, v) => p.mmtrPath = v);
+            context.AddChildContextSetter<MaterialHeader, string>(
+                "MMTR path",
+                tex,
+                new ResourcePathPicker(ws, KnownFileFormats.MasterMaterial),
+                (p) => p!.mmtrPath,
+                (c, p, v) => {
+                    p.mmtrPath = v;
+                    var mat = c.FindParentContextByValue<MaterialHeader>()?.target as MaterialData;
+                    var root = c.FindHandlerInParents<MdfEditor>();
+                    if (mat != null && root != null && !string.IsNullOrEmpty(v)) {
+                        root.ReplaceMaterialParams(v, mat);
+                    }
+                });
         }
         ImGui.SetNextItemOpen(true, ImGuiCond.Always);
         context.ShowChildrenUI();
@@ -290,19 +377,24 @@ public class MdfMaterialListImguiHandler : DictionaryListImguiHandler<string, Ma
     protected override string GetKey(MaterialData item) => item.Header.matName;
 
     protected override MaterialData CreateItem(UIContext context, string key)
-        => new MaterialData(new MaterialHeader() { matName = key });
+    {
+        var baseMat = context.Get<List<MaterialData>>().FirstOrDefault();
+        var mat = baseMat?.Clone() ?? new MaterialData(new MaterialHeader());
+        mat.Header.matName = key;
+        return mat;
+    }
 
     protected override void InitChildContext(UIContext itemContext)
     {
         if (itemContext.GetRaw() != null) {
-            itemContext.uiHandler = new MdfMaterialLazyPlainObjectHandler(typeof(MaterialData));
+            itemContext.uiHandler = new MdfMaterialLazyPlainObjectHandler();
         }
     }
 }
 
 public class MdfMaterialLazyPlainObjectHandler : LazyPlainObjectHandler
 {
-    public MdfMaterialLazyPlainObjectHandler(Type type) : base(type)
+    public MdfMaterialLazyPlainObjectHandler() : base(typeof(MaterialData))
     {
     }
 

@@ -82,9 +82,9 @@ public class OverlaysWindow : IWindowHandler
                 ImGui.Text("Pending background tasks: " + runningTasks);
 
                 var jobSize = new Vector2(ImGui.GetWindowWidth() - ImGui.GetStyle().WindowPadding.X * 2, 30);
-                foreach (var job in bg.CurrentJobs) {
+                foreach (var (job, progress) in bg.CurrentJobs) {
                     ImGui.Separator();
-                    ImGui.ProgressBar(-1 * (float)ImGui.GetTime(), jobSize);
+                    ImGui.ProgressBar(progress >= 0 && progress <= 1 ? progress : -1 * (float)ImGui.GetTime(), jobSize);
                     ImGui.TextWrapped(job);
                 }
             }
