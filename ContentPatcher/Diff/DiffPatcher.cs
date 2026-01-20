@@ -3,6 +3,7 @@ namespace ContentPatcher;
 using System.Collections;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using ContentEditor;
 using ReeLib;
 
 public class DiffPatcher
@@ -41,6 +42,48 @@ public class DiffPatcher
                 instance.Values[fieldIndex] = CreateOrApplyRSZDiff(value as RszInstance, diffprop.Value, field.original_type, env);
             } else if (field.type is RszFieldType.String or RszFieldType.RuntimeType or RszFieldType.Resource) {
                 instance.Values[fieldIndex] = diffprop.Value?.GetValue<string>() ?? instance.Values[fieldIndex] ?? string.Empty;
+            } else if (field.type is RszFieldType.UserData) {
+                if (env.IsEmbeddedUserdata || env.IsEmbeddedInstanceInfoUserdata) {
+                    if (diffprop.Value == null) continue;
+
+                    RSZFile rsz;
+                    if ((instance.Values[fieldIndex] as RszInstance)?.RSZUserData is RSZUserDataInfo_TDB_LE_67 previousUserdataInfo && previousUserdataInfo.EmbeddedRSZ != null) {
+                        rsz = previousUserdataInfo.EmbeddedRSZ;
+                    } else {
+                        rsz = new RSZFile(env.RszFileOption, new FileHandler());
+                    }
+
+                    var newCls = (diffprop.Value as JsonObject)?.TryGetPropertyValue("$type", out var clsNode) == true ? clsNode?.ToString() : null;
+                    if (rsz.ObjectList.Count == 0 || rsz.ObjectList[0].RszClass.name != newCls) {
+                        var userdataRoot = diffprop.Value.Deserialize<RszInstance>(env.JsonOptions);
+                        if (userdataRoot == null) {
+                            // probably shouldn't happen?
+                            continue;
+                        }
+
+                        rsz.AddToObjectTable(userdataRoot);
+                        instance.Values[fieldIndex] = new RszInstance(userdataRoot.RszClass, new RSZUserDataInfo_TDB_LE_67() {
+                            EmbeddedRSZ = rsz,
+                        });
+                    } else {
+                        var subInst = rsz.ObjectList[0];
+                        ApplyRSZObjectDiff(ref subInst, diffprop.Value, env);
+                    }
+                    rsz.RebuildInstanceList();
+                    rsz.RebuildInstanceInfo();
+                } else if (diffprop.Value is JsonObject obj && obj.TryGetPropertyValue("class", out var udCls) && obj.TryGetPropertyValue("path", out var udPath) && udCls != null && udPath != null) {
+                    var newInstance = value as RszInstance;
+                    if (newInstance?.RSZUserData is not RSZUserDataInfo user) {
+                        user = new RSZUserDataInfo();
+                    }
+                    user.ClassName = udCls.ToString();
+                    user.Path = udPath.ToString();
+                    newInstance ??= new RszInstance(env.RszParser.GetRSZClass(user.ClassName)!, user);
+                    instance.Values[fieldIndex] = newInstance;
+                } else {
+                    // does this happen? maybe?
+                    Logger.Warn($"Found missing data or unsupported userdata field {field.name} in {cls.name}. Ignoring.");
+                }
             } else {
                 var csType = RszInstance.RszFieldTypeToCSharpType(field.type);
                 instance.Values[fieldIndex] = diffprop.Value.Deserialize(csType, env.JsonOptions) ?? Activator.CreateInstance(csType)!;
