@@ -245,7 +245,7 @@ public class Animator(ContentWorkspace Workspace)
                 break;
             }
         }
-        if (t2 <= 0) return keyframes.Length > 0 && frame > keyframes[^1] ? (keyframes.Length - 1, 0, 0) : (0, 0, 0);
+        if (t2 <= 0) return keyframes.Length > 0 && frame >= keyframes[^1] ? (keyframes.Length - 1, 0, 0) : (0, 0, 0);
 
         var t1 = t2 - 1;
 
