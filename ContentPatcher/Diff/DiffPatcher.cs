@@ -112,6 +112,10 @@ public class DiffPatcher
                     foreach (var item in arr) {
                         if (type == RszFieldType.U64) {
                             list.Add(Convert.ChangeType(item!.GetValue<ulong>(), csType));
+                        } else if (type == RszFieldType.F32) {
+                            list.Add(Convert.ChangeType(item!.GetValue<float>(), csType));
+                        } else if (type == RszFieldType.F64) {
+                            list.Add(Convert.ChangeType(item!.GetValue<double>(), csType));
                         } else {
                             list.Add(Convert.ChangeType(item!.GetValue<long>(), csType));
                         }
