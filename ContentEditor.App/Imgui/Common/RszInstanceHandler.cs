@@ -78,7 +78,14 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
                         var newJson = JsonSerializer.Deserialize<JsonNode>(clipboard, env.JsonOptions)!;
                         var prevJson = instance.ToJson(env);
                         UndoRedo.RecordCallbackSetter(context, context, prevJson, newJson, (ctx, json) => {
-                            ctx.Set(ws.Diff.OverrideInstance(ctx.Get<RszInstance>(), json));
+                            var pasted = ws.Diff.OverrideInstance(ctx.Get<RszInstance>(), json);
+                            try {
+                                ctx.Set(pasted);
+                            } catch (Exception e) {
+                                if (pasted != ctx.Get<RszInstance>()) {
+                                    Logger.Error("Failed to paste object: " + e.Message);
+                                }
+                            }
                             ctx.ResetState();
                         });
                     } catch (Exception e) {
