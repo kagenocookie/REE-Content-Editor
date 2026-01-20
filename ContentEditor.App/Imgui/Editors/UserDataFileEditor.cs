@@ -39,7 +39,7 @@ public class RawRSZFileEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor,
     public ContentWorkspace Workspace { get; }
 
     private UIContext? fileContext;
-    protected override bool IsRevertable => context.Changed;
+    protected override bool IsRevertable => context.Changed && (!Workspace.Env.IsEmbeddedUserdataAny || Handle.HandleType != FileHandleType.Embedded);
 
     public RawRSZFileEditor(ContentWorkspace env, FileHandle file) : base (file)
     {

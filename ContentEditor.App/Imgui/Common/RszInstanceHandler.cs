@@ -822,7 +822,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                         ImGui.Text(context.label + ": NULL (unable to create new instance)");
                         return;
                     }
-                    if (ws.Env.IsEmbeddedUserdata || ws.Env.IsEmbeddedInstanceInfoUserdata) {
+                    if (ws.Env.IsEmbeddedUserdataAny) {
                         // TODO recheck re7 userdata
                         ImGui.PushID(context.label);
                         ImguiHelpers.BeginRect();
