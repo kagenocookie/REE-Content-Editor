@@ -54,6 +54,11 @@ public class BackgroundResources : IDisposable
             return false;
         }
 
+        if (!AppConfig.Instance.EnableGpuTexCompression.Get()) {
+            d3dDevicePtr = IntPtr.Zero;
+            return false;
+        }
+
         if (PlatformUtils.CreateD3D11Context(out var device)) {
             d3dDevice = d3dDevicePtr = device;
             return true;
