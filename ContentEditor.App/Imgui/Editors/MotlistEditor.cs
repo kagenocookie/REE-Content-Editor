@@ -695,7 +695,7 @@ public class MotFileListHandler : ListHandler
         WindowHandlerFactory.DefineInstantiator<MotFile>((context) => {
             var editor = context.FindHandlerInParents<MotlistEditor>();
             if (editor == null) {
-                Logger.Error("Could not found motlist editor context");
+                Logger.Error("Could not find motlist editor context");
                 return new MotFile(new FileHandler());
             }
 
