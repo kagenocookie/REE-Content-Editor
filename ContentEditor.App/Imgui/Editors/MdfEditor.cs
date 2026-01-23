@@ -176,7 +176,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
         if (ImGui.Button($"{AppIcons.SI_GenericImport}")) {
             PlatformUtils.ShowFileDialog(paths => { var path = paths[0];
                 ImportMatParamsFromEMVJson(path, file, context);
-            }, fileExtension: new[] { new FileFilter("JSON", new[] { "json" }) });
+            }, fileExtension: [new FileFilter("JSON", ["json"])]);
         }
         ImguiHelpers.Tooltip("Import Material parameters from EMV JSON");
         ImGui.SameLine();
@@ -314,25 +314,29 @@ public class MdfFileImguiHandler : IObjectUIHandler
         var jsonData = File.ReadAllText(path);
         var root = JsonSerializer.Deserialize<EMVMaterialJson>(jsonData);
         if (root == null || root.m == null) return;
+        bool wasChanged = false;
 
         foreach (var mat in file.Materials) {
             if (!root.m.TryGetValue(mat.Header.matName, out var matParamDict)) continue;
+            wasChanged = true;
 
             foreach (var param in mat.Parameters) {
                 if (!matParamDict.TryGetValue(param.paramName, out var jsonValue)) continue;
 
-                if (jsonValue.ValueKind == JsonValueKind.Number) {
-                    param.parameter = new Vector4(jsonValue.GetSingle(), 0, 0, 0);
-                } else if (jsonValue.ValueKind == JsonValueKind.String) {
-                    var str = jsonValue.GetString()!;
-                    if (str.StartsWith("vec:")) {
-                        param.parameter = ParseEMVMatVec4(str);
-                    }
+                switch (jsonValue.ValueKind) {
+                    case JsonValueKind.Number:
+                        param.parameter = new Vector4(jsonValue.GetSingle(), 0, 0, 0);
+                        break;
+                    case JsonValueKind.String when jsonValue.GetString()!.StartsWith("vec:"):
+                        param.parameter = ParseEMVMatVec4(jsonValue.GetString()!);
+                        break;
                 }
             }
         }
+        if (!wasChanged) return;
         context.Changed = true;
         context.children.Clear();
+        Logger.Info("Material Parameter data imported from: " + path);
     }
 }
 
