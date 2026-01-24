@@ -234,6 +234,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                 ImGui.GetIO().ConfigFlags &= ~ImGuiConfigFlags.NavEnableKeyboard;
             }
         }
+        ShowSetting(config.EnableGpuTexCompression, "Enable GPU texture compression", "Whether to enable using the much faster GPU-based compression method.\nCurrently only available on Windows.\nCan be disabled in case of issues, so that CPU-based compression is used instead.");
         ShowSetting(config.LogToFile, "Output logs to file", $"If checked, any logging will also be output to file {FileLogger.DefaultLogFilePath}.\nChanging this setting requires a restart of the app.");
         ShowSetting(config.LoadFromNatives, "Load files from natives/ folder", $"If checked, the app will prefer to load loose files from the active game's natives folder instead of packed files, similar to how the game would.");
         var logLevel = config.LogLevel.Get();

@@ -35,7 +35,7 @@ public static class WindowHandlerFactory
     private static Dictionary<Type, Func<CustomField, IObjectUIHandler>>? customFieldImguiHandlers;
 
     private static HashSet<string> NonEnumIntegerTypes = [
-        "System.Int8", "System.UInt8",
+        "System.Byte", "System.SByte",
         "System.Int16", "System.UInt16",
         "System.Int32", "System.UInt32",
         "System.Int64", "System.UInt64",
@@ -566,11 +566,12 @@ public static class WindowHandlerFactory
 
             RszFieldType.UserData => new UserDataReferenceHandler(field.original_type),
 
-            RszFieldType.S8 => new NumericFieldHandler<sbyte>(ImGuiDataType.S8),
+            RszFieldType.S8  => TryCreateEnumHandler(ws, field.array ? RszInstance.GetElementType(field.original_type) : field.original_type, field.type) ?? new NumericFieldHandler<sbyte>(ImGuiDataType.S8),
             RszFieldType.S16 => TryCreateEnumHandler(ws, field.array ? RszInstance.GetElementType(field.original_type) : field.original_type, field.type) ?? new NumericFieldHandler<short>(ImGuiDataType.S16),
             RszFieldType.S32 => TryCreateEnumHandler(ws, field.array ? RszInstance.GetElementType(field.original_type) : field.original_type, field.type) ?? new NumericFieldHandler<int>(ImGuiDataType.S32),
             RszFieldType.S64 => TryCreateEnumHandler(ws, field.array ? RszInstance.GetElementType(field.original_type) : field.original_type, field.type) ?? new NumericFieldHandler<long>(ImGuiDataType.S64),
-            RszFieldType.U8 or RszFieldType.UByte => new NumericFieldHandler<byte>(ImGuiDataType.U8),
+            RszFieldType.U8 or RszFieldType.UByte
+                             => TryCreateEnumHandler(ws, field.array ? RszInstance.GetElementType(field.original_type) : field.original_type, field.type) ?? new NumericFieldHandler<byte>(ImGuiDataType.U8),
             RszFieldType.U16 => TryCreateEnumHandler(ws, field.array ? RszInstance.GetElementType(field.original_type) : field.original_type, field.type) ?? new NumericFieldHandler<ushort>(ImGuiDataType.U16),
             RszFieldType.U32 => TryCreateEnumHandler(ws, field.array ? RszInstance.GetElementType(field.original_type) : field.original_type, field.type) ?? new NumericFieldHandler<uint>(ImGuiDataType.U32),
             RszFieldType.U64 => TryCreateEnumHandler(ws, field.array ? RszInstance.GetElementType(field.original_type) : field.original_type, field.type) ?? new NumericFieldHandler<ulong>(ImGuiDataType.U64),

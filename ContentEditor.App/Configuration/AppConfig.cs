@@ -37,6 +37,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string LatestVersion = "latest_version";
         public const string EnableUpdateCheck = "enable_update_check";
         public const string EnableKeyboardNavigation = "enable_keyboard_nav";
+        public const string EnableGpuTexCompression = "enable_gpu_tex_compression";
         public const string LastUpdateCheck = "last_update_check";
         public const string AutoExpandFieldsCount = "auto_expand_fields_count";
         public const string FontSize = "font_size";
@@ -155,6 +156,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<int> FontSize = new SettingWrapper<int>(Keys.FontSize, _lock, 20);
     public readonly SettingWrapper<bool> EnableUpdateCheck = new SettingWrapper<bool>(Keys.EnableUpdateCheck, _lock, true);
     public readonly SettingWrapper<bool> EnableKeyboardNavigation = new SettingWrapper<bool>(Keys.EnableKeyboardNavigation, _lock, true);
+    public readonly SettingWrapper<bool> EnableGpuTexCompression = new SettingWrapper<bool>(Keys.EnableGpuTexCompression, _lock, true);
     public readonly SettingWrapper<bool> UsePakFilePreviewWindow = new SettingWrapper<bool>(Keys.UsePakFilePreviewWindow, _lock, true);
     public readonly SettingWrapper<bool> UsePakCompactFilePaths = new SettingWrapper<bool>(Keys.UsePakCompactFilePaths, _lock, true);
     public readonly SettingWrapper<bool> ShowFps = new SettingWrapper<bool>(Keys.ShowFps, _lock, false);
@@ -312,6 +314,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.LatestVersion, instance.LatestVersion.value?.ToString() ?? "", null),
             (Keys.EnableUpdateCheck, instance.EnableUpdateCheck.value.ToString(), null),
             (Keys.EnableKeyboardNavigation, instance.EnableKeyboardNavigation.value.ToString(), null),
+            (Keys.EnableGpuTexCompression, instance.EnableGpuTexCompression.value.ToString(), null),
             (Keys.UsePakFilePreviewWindow, instance.UsePakFilePreviewWindow.value.ToString(), null),
             (Keys.UsePakCompactFilePaths, instance.UsePakCompactFilePaths.value.ToString(), null),
             (Keys.PakDisplayMode, instance.PakDisplayModeValue.value.ToString(), null),
@@ -443,6 +446,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.EnableKeyboardNavigation:
                             EnableKeyboardNavigation.value = ReadBool(value);
+                            break;
+                        case Keys.EnableGpuTexCompression:
+                            EnableGpuTexCompression.value = ReadBool(value);
                             break;
                         case Keys.UsePakFilePreviewWindow:
                             UsePakFilePreviewWindow.value = ReadBool(value);
