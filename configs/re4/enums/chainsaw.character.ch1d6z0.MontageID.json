@@ -1,0 +1,13 @@
+{
+    "enumName": "chainsaw.character.ch1d6z0.MontageID",
+    "displayLabels": {
+        "Default": "Default Armor with the big left shoulder (same as gold strong threat armor model just not gold obviously)",
+        "Armor01": "Armor01 Slightly different helmet and no big left shoulder (smaller & lower shoulders)",
+        "Armor02": "Armor02 Red skirt & red feathers",
+        "Armor03": "Armor03 Golden lines & more square helmet",
+        "StrDefault": "StrDefault Golden Strong threat (Armor with the big left shoulder)", 
+        "StrArmor01": "StrArmor01 Slightly different helmet and no big left shoulder (Yellow)", 
+        "StrArmor02": "StrArmor02 Red skirt & red feathers (Yellow)", 
+        "StrArmor03": "StrArmor03 Golden lines & more square helmet (Yellow)" 
+    }
+}
