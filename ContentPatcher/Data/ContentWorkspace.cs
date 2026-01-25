@@ -338,7 +338,7 @@ public sealed class ContentWorkspace : IDisposable
             if (localFile.StartsWith("natives/")) {
                 bundle.ResourceListing ??= new();
                 bundle.ResourceListing[localFile] = new ResourceListItem() {
-                    Target = localFile,
+                    Target = localFile.ToLowerInvariant(),
                 };
             } else if (localFile.StartsWith("reframework/data/usercontent/bundles/") && localFile.EndsWith(".json")) {
                 Logger.Error("Found nested bundle file, the mod was not installed correctly. Aborting.\nFile: " + file);
@@ -363,7 +363,7 @@ public sealed class ContentWorkspace : IDisposable
                 }
                 bundle.ResourceListing ??= new();
                 bundle.ResourceListing[localFile] = new ResourceListItem() {
-                    Target = nativePath,
+                    Target = nativePath.ToLowerInvariant(),
                 };
                 if (!isProbablyCorrect) {
                     Logger.Warn("Resource file at the bundle root. Unable to guarantee correctly determined native path. Please recheck the generated bundle json.\nFile: " + localFile);
