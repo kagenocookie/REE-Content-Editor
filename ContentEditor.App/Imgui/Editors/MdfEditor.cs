@@ -178,7 +178,14 @@ public class MdfFileImguiHandler : IObjectUIHandler
                 ImportMatParamsFromEMVJson(path, file, context);
             }, fileExtension: [new FileFilter("JSON", ["json"])]);
         }
-        ImguiHelpers.Tooltip("Import Material parameters from EMV JSON");
+        if (ImGui.IsItemHovered() && ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && ImGui.IsMouseClicked(ImGuiMouseButton.Right)) {
+            FileSystemUtils.OpenURL("https://github.com/SilverEzredes/EMV-Engine-SILVER");
+        }
+        if (ImGui.BeginItemTooltip()) {
+            ImGui.Text("Import Material parameters from EMV JSON");
+            ImGui.TextColored(Colors.Info, "REECE compatible JSON files can only be saved using\nEMV Engine Silver (right-click to open link)");
+            ImGui.EndTooltip();
+        }
         ImGui.SameLine();
         ImGui.SetNextItemAllowOverlap();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
