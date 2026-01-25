@@ -1,0 +1,27 @@
+{
+    "enumName": "chainsaw.StageID",
+    "displayLabels": {
+        "st00_000": "st00_000 Startup Scene",
+        "st48_000": "st48_000 Main Menu 1 (Forest)",
+        "st48_001": "st48_001 Main Menu 2 (Village)",
+        "st40_500": "st40_500 Before Village",
+        "st40_200": "st40_200 Village",
+        "st40_201": "st40_201 Farm",
+        "st50_100": "st50_100 Castle Begin",
+        "st50_601": "st50_601 Water Hall",
+        "st51_101": "st51_101 Before Maze",
+        "st51_503": "st51_503 First Spider Plaga Appearance",
+        "st51_610": "st51_610 Sun and Moon Area",
+        "st51_404": "st51_404 Gloria Las Plagas Wine Cellar",
+		"st52_202": "st52_202 Armour Trap",
+		"st53_101": "st53_101 Ashley Map",
+		"st53_302": "st53_302 Golden Armor Ashley",
+		"st54_300": "st54_300 Two Garradors",
+		"st55_200": "st55_200 Two El Gigante",
+		"st56_850": "st56_850 Cruchers",
+		"st56_102": "st56_102 Salazar Clock Tower",
+		"st60_800": "st60_800 Lasers",
+		"st61_400": "st61_400 Regenerator Area 1",
+		"st68_102": "st68_102 Leon Illusion Map"
+    }
+}
