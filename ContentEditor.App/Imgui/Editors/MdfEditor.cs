@@ -1,5 +1,3 @@
-using System.Numerics;
-using System.Reflection;
 using ContentEditor.BackgroundTasks;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -7,6 +5,9 @@ using ReeLib;
 using ReeLib.Common;
 using ReeLib.Mdf;
 using ReeLib.via;
+using System.Numerics;
+using System.Reflection;
+using System.Text.Json;
 
 namespace ContentEditor.App.ImguiHandling.Mdf2;
 
@@ -172,6 +173,20 @@ public class MdfFileImguiHandler : IObjectUIHandler
             ImguiHelpers.Tooltip("Paste Material from clipboard");
         }
         ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_GenericImport}")) {
+            PlatformUtils.ShowFileDialog(paths => { var path = paths[0];
+                ImportMatParamsFromEMVJson(path, file, context);
+            }, fileExtension: [new FileFilter("JSON", ["json"])]);
+        }
+        if (ImGui.IsItemHovered() && ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && ImGui.IsMouseClicked(ImGuiMouseButton.Right)) {
+            FileSystemUtils.OpenURL("https://github.com/SilverEzredes/EMV-Engine-SILVER");
+        }
+        if (ImGui.BeginItemTooltip()) {
+            ImGui.Text("Import Material parameters from EMV JSON");
+            ImGui.TextColored(Colors.Info, "REECE compatible JSON files can only be saved using\nEMV Engine Silver (right-click to open link)");
+            ImGui.EndTooltip();
+        }
+        ImGui.SameLine();
         ImGui.SetNextItemAllowOverlap();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
         ImGui.InputTextWithHint("##MaterialSearch", $"{AppIcons.SI_GenericMagnifyingGlass} Search", ref materialSearch, 64);
@@ -290,6 +305,45 @@ public class MdfFileImguiHandler : IObjectUIHandler
             int newIndex = Math.Clamp(index - 1, 0, list.Count - 1);
             onSelectIndexChanged?.Invoke(newIndex);
         }
+    }
+    private class EMVMaterialJson
+    {
+        public Dictionary<string, Dictionary<string, JsonElement>> m { get; set; } = new();
+    }
+
+    private static Vector4 ParseEMVMatVec4(string vecString)
+    {
+        var parts = vecString.Replace("vec:", "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return new Vector4( float.Parse(parts[0]), float.Parse(parts[1]), float.Parse(parts[2]), float.Parse(parts[3]));
+    }
+    private static void ImportMatParamsFromEMVJson(string path, MdfFile file, UIContext context)
+    {
+        var jsonData = File.ReadAllText(path);
+        var root = JsonSerializer.Deserialize<EMVMaterialJson>(jsonData);
+        if (root == null || root.m == null) return;
+        bool wasChanged = false;
+
+        foreach (var mat in file.Materials) {
+            if (!root.m.TryGetValue(mat.Header.matName, out var matParamDict)) continue;
+            wasChanged = true;
+
+            foreach (var param in mat.Parameters) {
+                if (!matParamDict.TryGetValue(param.paramName, out var jsonValue)) continue;
+
+                switch (jsonValue.ValueKind) {
+                    case JsonValueKind.Number:
+                        param.parameter = new Vector4(jsonValue.GetSingle(), 0, 0, 0);
+                        break;
+                    case JsonValueKind.String when jsonValue.GetString()!.StartsWith("vec:"):
+                        param.parameter = ParseEMVMatVec4(jsonValue.GetString()!);
+                        break;
+                }
+            }
+        }
+        if (!wasChanged) return;
+        context.Changed = true;
+        context.children.Clear();
+        Logger.Info("Material Parameter data imported from: " + path);
     }
 }
 

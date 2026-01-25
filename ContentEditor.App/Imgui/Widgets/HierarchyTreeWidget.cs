@@ -35,7 +35,7 @@ public class HierarchyTreeWidget
 
     public static void Draw(HierarchyTreeWidget node, Action<HierarchyTreeWidget>? drawActions = null, Action<HierarchyTreeWidget>? onOpenFile = null, int hierarchyLayer = 0, int actionButtonCount = 4)
     {
-        foreach (var child in node.Children.Values.OrderBy(c => c.EntryKey != null).ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)) {
+        foreach (var child in node.Children.Values.OrderBy(c => c.EntryKey != null).ThenBy(c => c.Name, StringComparer.CurrentCultureIgnoreCase)) {
 
             ImGui.PushID(child.Name);
 
