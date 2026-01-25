@@ -242,13 +242,42 @@ public class EfxEntriesListEditorBase<TType> : DictionaryListImguiHandler<string
         if (ImGui.BeginPopupContextItem(itemContext.label)) {
             var item = itemContext.Get<TType>();
             var list = itemContext.parent!.Get<List<TType>>();
-            if (ImGui.Button("Duplicate")) {
+            if (ImGui.Selectable("Copy")) {
+                VirtualClipboard.CopyToClipboard(item.DeepCloneGeneric<TType>());
+                ImGui.CloseCurrentPopup();
+            }
+            if (VirtualClipboard.TryGetFromClipboard<TType>(out var pasteSource)) {
+                if (pasteSource.Version != item.Version) {
+                    ImGui.BeginDisabled();
+                    ImGui.Selectable("Paste unavailable due to source EFX version mismatch");
+                    ImGui.EndDisabled();
+                } else {
+                    if (ImGui.Selectable("Paste (replace)")) {
+                        var clone = pasteSource.DeepCloneGeneric<TType>();
+                        clone.name = item.name;
+                        UndoRedo.RecordSet(itemContext, clone);
+                        itemContext.ClearChildren();
+                        itemContext.parent.FindHandlerInParents<EfxEditor>()?.SetPrimaryInspector(clone);
+                        ImGui.CloseCurrentPopup();
+                    }
+                    if (ImGui.Selectable("Paste (new)")) {
+                        var clone = pasteSource.DeepCloneGeneric<TType>();
+                        clone.name = (clone.name ?? "New_entry").GetUniqueName((x) => list.Any(e => e.name == x), "copy");
+                        UndoRedo.RecordListInsert(itemContext.parent, list, clone, list.IndexOf(item) + 1);
+                        itemContext.parent.ClearChildren();
+                        itemContext.parent.FindHandlerInParents<EfxEditor>()?.SetPrimaryInspector(clone);
+                        ImGui.CloseCurrentPopup();
+                    }
+                }
+            }
+            if (ImGui.Selectable("Duplicate")) {
                 var clone = item.Clone();
                 clone.name = (clone.name ?? "New_entry").GetUniqueName((x) => list.Any(e => e.name == x), "copy");
                 UndoRedo.RecordListInsert(itemContext.parent, list, clone, list.IndexOf(item) + 1);
+                itemContext.parent.FindHandlerInParents<EfxEditor>()?.SetPrimaryInspector(clone);
                 ImGui.CloseCurrentPopup();
             }
-            if (ImGui.Button("Delete")) {
+            if (ImGui.Selectable("Delete")) {
                 UndoRedo.RecordListRemove(itemContext.parent, list, item);
                 ImGui.CloseCurrentPopup();
             }
