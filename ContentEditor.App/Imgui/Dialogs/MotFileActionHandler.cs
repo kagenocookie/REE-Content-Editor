@@ -87,7 +87,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                     if (pasteRetarget) {
                         retargetWindow = new MotlistRetargetWindow(motlist, prevMot, newMot, editor);
                     } else {
-                        ConfirmPaste(motlist, prevMot, newMot, editor, false);
+                        ConfirmPaste(motlist, prevMot, newMot, editor, false, false);
                     }
                 } else {
                     Logger.Error("Failed to deserialize motion data: " + error);
@@ -144,6 +144,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
         }
 
         private bool overwriteBoneList;
+        private bool maintainExistingChannelsOnly;
 
         public bool Show()
         {
@@ -168,9 +169,11 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                     lastSelectedType = selectedArmatureType;
                 }
 
+                ImGui.SeparatorText("Additional options");
+                ImGui.Checkbox("Only paste already existing channels", ref maintainExistingChannelsOnly);
+                ImguiHelpers.Tooltip("Only channels that already exist in the target motion will be kept, while the rest are ignored.\nCan be used to make pure edits and avoid modifying bones that should not be modified by the animation.");
                 if (newFile != replacedFile) {
                     if (newFile is MotFile m1 && replacedFile is MotFile m2 && !m1.Bones.Select(b => b.boneHash).Order().SequenceEqual(m2.Bones.Select(x => x.boneHash).Order())) {
-                        ImGui.SeparatorText("Bone list replacement");
                         ImGui.Checkbox("Overwrite bone list", ref overwriteBoneList);
                         ImGui.TextColored(Colors.Note, "The bone list between the two animations is different. This option will overwrite the target bone list with the source one.");
                         if (MotlistFile.HasSharedBoneList(m2.Header.version)) {
@@ -252,7 +255,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                     ImGui.Spacing();
                     if (ImGui.Button("Confirm Replace", new Vector2(170, 0))) {
                         if (replacedFile != newFile) {
-                            ConfirmPaste(motlist, replacedFile, newFile, editor, overwriteBoneList);
+                            ConfirmPaste(motlist, replacedFile, newFile, editor, overwriteBoneList, maintainExistingChannelsOnly);
                         }
                         keepShowing = false;
                     }
@@ -314,7 +317,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
         }
     }
 
-    private static void ConfirmPaste(MotlistFile motlist, MotFileBase prevMot, MotFileBase newMot, MotlistEditor? editor, bool replaceBoneList)
+    private static void ConfirmPaste(MotlistFile motlist, MotFileBase prevMot, MotFileBase newMot, MotlistEditor? editor, bool replaceBoneList, bool maintainExistingChannelsOnly)
     {
         if (prevMot.GetType() != newMot.GetType()) {
             // fully replace instance
@@ -331,7 +334,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                     clip.ClipHeader.boneHash = MurMur3HashUtils.GetHash(clip.ClipHeader.boneName);
                 }
             }
-            motTarget.CopyValuesFrom(motSrc, false, replaceBoneList);
+            motTarget.CopyValuesFrom(motSrc, false, replaceBoneList, maintainExistingChannelsOnly);
             if (motlist != null) {
                 // ensure unique name
                 motTarget.Header.motName = motTarget.Header.motName
