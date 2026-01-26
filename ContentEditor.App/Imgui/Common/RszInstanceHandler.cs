@@ -557,6 +557,7 @@ public class EnumFieldHandler : IObjectUIHandler
 public class RszEnumFieldHandler : IObjectUIHandler
 {
     public EnumDescriptor EnumDescriptor { get; set; }
+    public Type? BackingConvertType { get; init; }
 
     public RszEnumFieldHandler(EnumDescriptor enumDescriptor)
     {
@@ -573,6 +574,7 @@ public class RszEnumFieldHandler : IObjectUIHandler
     public unsafe void OnIMGUI(UIContext context)
     {
         var selected = context.GetRaw();
+        if (BackingConvertType != null) selected = Convert.ChangeType(selected, EnumDescriptor.BackingType);
         if (!context.HasBoolState) {
             var isMatchedValue = !string.IsNullOrEmpty(EnumDescriptor.GetLabel(selected!));
             context.StateBool = !isMatchedValue;
@@ -584,7 +586,7 @@ public class RszEnumFieldHandler : IObjectUIHandler
         if (ImguiHelpers.ToggleButton(useCustomValueInput ? "#" : "a", ref useCustomValueInput, useCustomValueInput ? Colors.IconActive : null)) {
             context.StateBool = useCustomValueInput;
             // adding an undo entry for this isn't very meaningful by itself, but it kinda needs to be there
-            // the enum-style and value-style handlers use different undo record types (boxed vs direct type) and don't allow merging
+            // the enum-style and value-style handlers use different undo record types (boxed vs direct type) and can't allow merging
             UndoRedo.RecordCallback(null, () => context.StateBool = useCustomValueInput, () => context.StateBool = !useCustomValueInput);
         }
         ImguiHelpers.Tooltip("Use Custom Value Input");
@@ -596,6 +598,7 @@ public class RszEnumFieldHandler : IObjectUIHandler
         } else {
             var enumsrc = new RszEnumSource { descriptor = EnumDescriptor };
             if (ImguiHelpers.FilterableEnumCombo(context.label, enumsrc, ref selected, ref context.Filter)) {
+                if (BackingConvertType != null) selected = Convert.ChangeType(selected, BackingConvertType);
                 UndoRedo.RecordSet(context, selected);
             }
         }

@@ -508,17 +508,27 @@ public static class WindowHandlerFactory
     #region RSZ based handlers
     public static IObjectUIHandler CreateRSZFieldElementHandlerRaw(UIContext context, RszField field, out FieldConfig? fieldConfig, out ClassConfig? patchConfig)
     {
-        static IObjectUIHandler? TryCreateEnumHandler(ContentWorkspace? workspace, string fieldClassname, RszFieldType fallbackType)
+        static IObjectUIHandler? TryCreateEnumHandlerRaw(ContentWorkspace? workspace, string fieldClassname, RszFieldType fallbackType)
         {
             if (!string.IsNullOrEmpty(fieldClassname) && workspace != null && !NonEnumIntegerTypes.Contains(fieldClassname)) {
                 var enumdesc = workspace.Env.TypeCache.GetEnumDescriptor(fieldClassname, fallbackType);
+                var expectedBackingType = RszInstance.RszFieldTypeToCSharpType(fallbackType);
+                Type? convertType = null;
+                if (expectedBackingType != enumdesc.BackingType) {
+                    convertType = expectedBackingType;
+                }
                 if (enumdesc.IsFlags) {
                     return new FlagsEnumFieldHandler(enumdesc);
                 } else {
-                    return new RszEnumFieldHandler(enumdesc);
+                    return new RszEnumFieldHandler(enumdesc) { BackingConvertType = convertType };
                 }
             }
             return null;
+        }
+        static IObjectUIHandler? TryCreateEnumHandler(ContentWorkspace? workspace, RszField field)
+        {
+            var fieldClassname = field.array ? RszInstance.GetElementType(field.original_type) : field.original_type;
+            return TryCreateEnumHandlerRaw(workspace, fieldClassname, field.type);
         }
         fieldConfig = null;
         patchConfig = null;
@@ -531,7 +541,7 @@ public static class WindowHandlerFactory
                     if (fieldConfig.Handler != null && customHandlers.TryGetValue(fieldConfig.Handler, out var customhandler)) {
                         return context.uiHandler = customhandler.Invoke();
                     } else if (fieldConfig.Enum != null) {
-                        context.uiHandler = TryCreateEnumHandler(ws, fieldConfig.Enum, field.type);
+                        context.uiHandler = TryCreateEnumHandlerRaw(ws, fieldConfig.Enum, field.type);
                         if (context.uiHandler != null) return context.uiHandler;
                     }
                 }
@@ -566,15 +576,15 @@ public static class WindowHandlerFactory
 
             RszFieldType.UserData => new UserDataReferenceHandler(field.original_type),
 
-            RszFieldType.S8  => TryCreateEnumHandler(ws, field.array ? RszInstance.GetElementType(field.original_type) : field.original_type, field.type) ?? new NumericFieldHandler<sbyte>(ImGuiDataType.S8),
-            RszFieldType.S16 => TryCreateEnumHandler(ws, field.array ? RszInstance.GetElementType(field.original_type) : field.original_type, field.type) ?? new NumericFieldHandler<short>(ImGuiDataType.S16),
-            RszFieldType.S32 => TryCreateEnumHandler(ws, field.array ? RszInstance.GetElementType(field.original_type) : field.original_type, field.type) ?? new NumericFieldHandler<int>(ImGuiDataType.S32),
-            RszFieldType.S64 => TryCreateEnumHandler(ws, field.array ? RszInstance.GetElementType(field.original_type) : field.original_type, field.type) ?? new NumericFieldHandler<long>(ImGuiDataType.S64),
+            RszFieldType.S8  => TryCreateEnumHandler(ws, field) ?? new NumericFieldHandler<sbyte>(ImGuiDataType.S8),
+            RszFieldType.S16 => TryCreateEnumHandler(ws, field) ?? new NumericFieldHandler<short>(ImGuiDataType.S16),
+            RszFieldType.S32 => TryCreateEnumHandler(ws, field) ?? new NumericFieldHandler<int>(ImGuiDataType.S32),
+            RszFieldType.S64 => TryCreateEnumHandler(ws, field) ?? new NumericFieldHandler<long>(ImGuiDataType.S64),
             RszFieldType.U8 or RszFieldType.UByte
-                             => TryCreateEnumHandler(ws, field.array ? RszInstance.GetElementType(field.original_type) : field.original_type, field.type) ?? new NumericFieldHandler<byte>(ImGuiDataType.U8),
-            RszFieldType.U16 => TryCreateEnumHandler(ws, field.array ? RszInstance.GetElementType(field.original_type) : field.original_type, field.type) ?? new NumericFieldHandler<ushort>(ImGuiDataType.U16),
-            RszFieldType.U32 => TryCreateEnumHandler(ws, field.array ? RszInstance.GetElementType(field.original_type) : field.original_type, field.type) ?? new NumericFieldHandler<uint>(ImGuiDataType.U32),
-            RszFieldType.U64 => TryCreateEnumHandler(ws, field.array ? RszInstance.GetElementType(field.original_type) : field.original_type, field.type) ?? new NumericFieldHandler<ulong>(ImGuiDataType.U64),
+                             => TryCreateEnumHandler(ws, field) ?? new NumericFieldHandler<byte>(ImGuiDataType.U8),
+            RszFieldType.U16 => TryCreateEnumHandler(ws, field) ?? new NumericFieldHandler<ushort>(ImGuiDataType.U16),
+            RszFieldType.U32 => TryCreateEnumHandler(ws, field) ?? new NumericFieldHandler<uint>(ImGuiDataType.U32),
+            RszFieldType.U64 => TryCreateEnumHandler(ws, field) ?? new NumericFieldHandler<ulong>(ImGuiDataType.U64),
             RszFieldType.F32 => new NumericFieldHandler<float>(ImGuiDataType.Float),
             RszFieldType.F64 => new NumericFieldHandler<double>(ImGuiDataType.Double),
             RszFieldType.Bool => BoolFieldHandler.Instance,
