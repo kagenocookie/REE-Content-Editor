@@ -308,7 +308,7 @@ public class MotFileBaseHandler : IObjectUIHandler
             var isMcamlist = context.FindHandlerInParents<MotionCamListEditor>() != null;
             Type?[] instanceTypes = isMcamlist
                 ? [null, typeof(MotcamFile)]
-                : [null, typeof(MotFile), typeof(MotTreeFile)];
+                : [null, typeof(MotFile), typeof(MotTreeFile), typeof(MotFileLink)];
             context.AddChild("Motion type", instance, new InstanceTypePickerHandler<MotFileBase>(instanceTypes, filterable: false, factory: (ctx, newType) => {
                 var motlist = ctx.FindHandlerInParents<MotlistEditor>()?.File;
                 var newInstance = (MotFileBase)WindowHandlerFactory.Instantiate(context, newType);
@@ -387,6 +387,21 @@ public class MotTreeFileHandler : IObjectUIHandler
         context.ShowChildrenUI();
     }
 }
+[ObjectImguiHandler(typeof(MotFileLink))]
+public class MotLinkFileHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<MotFileLink>();
+        if (context.children.Count == 0) {
+            var ws = context.GetWorkspace();
+            context.AddChild<MotFileLink, string>("Path", instance, new ResourcePathPicker(context.GetWorkspace(), KnownFileFormats.Motion), (m) => m!.Path, (m, v) => m!.Path = v ?? string.Empty);
+        }
+
+        context.ShowChildrenUI();
+    }
+}
+
 [ObjectImguiHandler(typeof(MotcamFile))]
 public class MotcamFileHandler : IObjectUIHandler
 {
