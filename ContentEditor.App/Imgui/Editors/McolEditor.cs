@@ -62,6 +62,7 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
                 lastFilepath = fn;
                 window.InvokeFromUIThread(() => {
                     ImportMeshIntoMcol(File, fn);
+                    Handle.Modified = true;
                     context.ClearChildren();
                 });
             }, lastFilepath ?? Path.ChangeExtension(Handle.Filename.ToString(), ".glb"), FileFilters.MeshFile);
