@@ -46,10 +46,16 @@ public static class UI
 
         fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/NotoSans-Regular.ttf"), normalIcons);
         normalIcons.MergeMode = true;
-        fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/NotoSansJP-Regular.ttf"), normalIcons);
-        fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/appicons.ttf"), normalIcons);
-        fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/silver_icons.ttf"), normalIcons);
-        fonts.AddFontFromFileTTF(Path.Combine(AppContext.BaseDirectory, "fonts/silver_icons_color.ttf"), normalIcons);
+
+        foreach (var fontFile in Directory.EnumerateFiles(Path.Combine(AppContext.BaseDirectory, "fonts"), "*.ttf")) {
+            var fn = Path.GetFileName(fontFile);
+            if (fn.Equals("NotoSans-Regular.ttf", StringComparison.InvariantCultureIgnoreCase)) {
+                continue;
+            }
+
+            fonts.AddFontFromFileTTF(fontFile, normalIcons);
+        }
+
         fonts.AddFontDefault();
         normalIcons.Destroy();
         io.ConfigErrorRecoveryEnableAssert = false;
