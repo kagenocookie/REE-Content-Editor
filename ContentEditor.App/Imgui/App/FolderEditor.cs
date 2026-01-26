@@ -302,7 +302,7 @@ public class FolderNodeEditor : IObjectUIHandler
             ImGui.CloseCurrentPopup();
         }
 
-        if (ImGui.Selectable("New GameObject")) {
+        if (string.IsNullOrEmpty(node.ScenePath) && ImGui.Selectable("New GameObject")) {
             var ws = context.GetWorkspace();
             var newgo = new GameObject("New_GameObject", ws!.Env, node, node.Scene);
             UndoRedo.RecordListAdd(context, node.GameObjects, newgo);
@@ -310,7 +310,7 @@ public class FolderNodeEditor : IObjectUIHandler
             context.FindHandlerInParents<IInspectorController>()?.SetPrimaryInspector(newgo);
             ImGui.CloseCurrentPopup();
         }
-        if (ImGui.Selectable("New folder")) {
+        if (string.IsNullOrEmpty(node.ScenePath) && ImGui.Selectable("New folder")) {
             var ws = context.GetWorkspace();
             var newFolder = new Folder("New_Folder", ws!.Env, node.Scene);
             UndoRedo.RecordAddChild(context, newFolder, node);
