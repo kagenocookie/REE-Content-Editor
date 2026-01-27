@@ -108,7 +108,7 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
             PostItem(child);
 
             ImGui.PopID();
-            if (context.children.Count < ctxIndex || context.children[ctxIndex] != child) {
+            if (context.children.Count <= ctxIndex || context.children[ctxIndex] != child) {
                 // this should "cleanly" handle deletes
                 break;
             }

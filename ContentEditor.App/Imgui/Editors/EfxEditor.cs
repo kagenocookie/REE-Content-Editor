@@ -393,7 +393,13 @@ public class EfxAttributeListEditor : DictionaryListImguiHandler<EfxAttributeTyp
 
         // add it directly so it gets placed at the right index and not at the end
         if (entry.AddAttribute(newAttr)) {
-            context.children.RemoveAtAfter(entry.Attributes.IndexOf(newAttr) + 1);
+            var index = entry.Attributes.IndexOf(newAttr) + 1;
+            UndoRedo.RecordCallback(context, () => {
+                if (!entry.Attributes.Contains(newAttr)) {
+                    entry.AddAttribute(newAttr);
+                }
+            }, () => entry.Attributes.Remove(newAttr));
+            UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, () => context.children.RemoveAtAfter(index));
         }
         return null;
     }
