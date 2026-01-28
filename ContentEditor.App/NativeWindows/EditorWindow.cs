@@ -167,7 +167,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
         foreach (var filename in filenames) {
             if (filename.EndsWith(".pak")) {
-                AppConfig.Instance.AddRecentFile(filename);
+                AppConfig.Instance.AddRecentFile($"{Workspace.Game}|{filename}");
                 AddSubwindow(new PakBrowser(workspace, filename));
                 continue;
             }
@@ -241,7 +241,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         var handler = WindowHandlerFactory.CreateFileResourceHandler(workspace, file);
         if (handler != null) {
             if (file.HandleType != FileHandleType.Embedded) {
-                AppConfig.Instance.AddRecentFile(file.Filepath);
+                AppConfig.Instance.AddRecentFile($"{workspace.Game}|{file.Filepath}");
             }
             AddSubwindow(handler);
         } else {
@@ -543,7 +543,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                             }
 
                             if (ImGui.MenuItem(file)) {
-                                this.OnFileDrop([file], new Vector2D<int>());
+                                var sep = file.IndexOf('|');
+                                var fileToOpen = sep == -1 ? file : file.Substring(sep + 1);
+                                this.OnFileDrop([fileToOpen], new Vector2D<int>());
                                 break;
                             }
                         }
