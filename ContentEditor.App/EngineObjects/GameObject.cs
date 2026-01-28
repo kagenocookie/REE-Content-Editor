@@ -432,7 +432,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         }
         if (!IsInTree) {
             Folder = null;
-            DeactivateComponents();
+            if (Scene != null) DeactivateComponents();
             foreach (var child in Children) {
                 child.OnParentChanged();
             }
