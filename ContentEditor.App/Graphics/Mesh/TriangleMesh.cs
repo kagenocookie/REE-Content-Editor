@@ -212,7 +212,7 @@ public class TriangleMesh : Mesh
 
         var integerIndices = sourceMesh.MeshData?.integerFaces ?? false;
         var hasTan = buffer.Tangents.Length != 0;
-        var hasWeights = sourceMesh.BoneData?.Bones.Count > 0;
+        var hasWeights = sourceMesh.BoneData?.DeformBones.Count > 0;
         var hasUV = buffer.UV0.Length > 0;
         var hasNormals = buffer.Normals.Length > 0;
         layout = MeshLayout.Get(MeshAttributeFlag.Triangles | (hasWeights ? MeshAttributeFlag.Weight : 0));

@@ -298,7 +298,9 @@ public partial class CommonMeshResource : IResourceFile
                         for (int i = 0; i < vd.boneIndices.Length; ++i) {
                             var weight = vd.boneWeights[i];
                             if (weight > 0) {
-                                var srcBone = file.BoneData!.DeformBones[vd.boneIndices[i]];
+                                var srcBone = file.BoneData!.DeformBones.Count == 0
+                                    ? file.BoneData.RootBones[0]
+                                    : file.BoneData.DeformBones[vd.boneIndices[i]];
                                 var bone = aiMesh.Bones[srcBone.index];
                                 bone.VertexWeights.Add(new VertexWeight(vertId, weight));
                                 if (isGltf && i > 4) {
