@@ -274,7 +274,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 ImguiHelpers.Tooltip("Clear Custom Bookmarks");
 
                 if (ImGui.BeginPopupModal("Confirm Action", ImGuiWindowFlags.AlwaysAutoResize)) {
-                    string confirmText = $"Are you sure you want to delete all custom bookmarks for {Workspace.Config.Game.name.ToUpper()}?";
+                    string confirmText = $"Are you sure you want to delete all custom bookmarks for {Languages.TranslateGame(Workspace.Config.Game.name)}?";
                     var textSize = ImGui.CalcTextSize(confirmText);
                     ImGui.Text(confirmText);
                     ImGui.Separator();

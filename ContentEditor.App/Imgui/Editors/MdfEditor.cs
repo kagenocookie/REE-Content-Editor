@@ -326,7 +326,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
             }
             ImguiHelpers.Tooltip("Clear material parameter bookmarks");
             if (ImGui.BeginPopupModal("Confirm Action", ImGuiWindowFlags.AlwaysAutoResize)) {
-                string confirmText = $"Are you sure you want to delete all material parameter bookmarks for {workspace.Game.name.ToUpper()}?";
+                string confirmText = $"Are you sure you want to delete all material parameter bookmarks for {Languages.TranslateGame(workspace.Game.name)}?";
                 var textSize = ImGui.CalcTextSize(confirmText);
                 ImGui.Text(confirmText);
                 ImGui.Separator();
