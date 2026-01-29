@@ -395,6 +395,7 @@ public static class AppIcons
     public static readonly char[] SIC_InfoPAK = { '\uedfb', '\uedfc', '\uedfd' };
     public static readonly char[] SIC_InfoBundle = { '\uedfe', '\uedff', '\uee00', '\uee01' };
     public static readonly char SI_GenericReorder = '\uee02';
+    public static readonly char[] SIC_BookmarkClear = { '\uee03', '\uee04' };
 
     public static string PrependIcon(this string text, object target)
     {
