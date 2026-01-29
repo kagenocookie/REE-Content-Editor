@@ -333,6 +333,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
 
                 if (ImGui.Button("Yes", new Vector2(textSize.X / 2, 0))) {
                     mdfBookmarks?.ClearBookmarks(workspace.Game.name);
+                    isShowOnlyBookmarkedParams = false;
                     Logger.Info($"Cleared material parameter bookmarks for {workspace.Game.name}");
                     ImGui.CloseCurrentPopup();
                 }
