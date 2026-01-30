@@ -160,11 +160,11 @@ public class MdfFileImguiHandler : IObjectUIHandler
 
         ImGui.TextColored(Colors.Faded, "Material List");
         ImGui.Separator();
-        ImguiHelpers.ToggleButton($"{AppIcons.SI_FileType_MDF}", ref isNewMaterialMenu, Colors.IconActive);
+        ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_MaterialAdd, ref isNewMaterialMenu, new[] { Colors.IconPrimary, Colors.IconSecondary }, Colors.IconActive);
         ImguiHelpers.Tooltip("Add new Material");
         ImGui.SameLine();
         using (var __ = ImguiHelpers.Disabled(!VirtualClipboard.TryGetFromClipboard<MaterialData>(out _))) {
-            if (ImGui.Button($"{AppIcons.SI_Paste}")) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_MaterialPaste, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary})) {
                 if (VirtualClipboard.TryGetFromClipboard<MaterialData>(out var pasted)) {
                     var clone = pasted.Clone();
                     clone.Header.matName = clone.Header.matName.GetUniqueName(str => list.Any(l => l.Header.matName == str));
@@ -317,9 +317,9 @@ public class MdfFileImguiHandler : IObjectUIHandler
     {
         var workspace = context.GetWorkspace();
         var mdfBookmarks = context.FindHandlerInParents<MdfEditor>()?.MDFBookmarks;
+        ImguiHelpers.ToggleButton($"{AppIcons.SI_Bookmark}", ref isShowOnlyBookmarkedParams, Colors.IconActive);
+        ImguiHelpers.Tooltip("Show only bookmarked parameters");
         using (var _ = ImguiHelpers.Disabled(mdfBookmarks?.GetBookmarks(workspace.Game.name).Count == 0)) {
-            ImguiHelpers.ToggleButton($"{AppIcons.SI_Bookmark}", ref isShowOnlyBookmarkedParams, Colors.IconActive);
-            ImguiHelpers.Tooltip("Show only bookmarked parameters");
             ImGui.SameLine();
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BookmarkClear, new[] { Colors.IconPrimary, Colors.IconTertiary })) {
                 ImGui.OpenPopup("Confirm Action");
