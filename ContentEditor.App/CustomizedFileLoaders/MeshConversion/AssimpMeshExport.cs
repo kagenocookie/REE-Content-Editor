@@ -38,7 +38,8 @@ public partial class CommonMeshResource : IResourceFile
         // fbx is stupid and we need to do this for the keyframes to read correctly
         var timescale = exportFormat == "fbx" ? mot.Header.FrameRate / 24f : 1;
 
-        var nodeDict = FlatNodes(scene.RootNode).ToDictionary(n => MurMur3HashUtils.GetHash(n.Name));
+        var nodeDict = FlatNodes(scene.RootNode)
+            .ToDictionary(n => n.Name.StartsWith("_hash") && uint.TryParse(n.Name.AsSpan("_hash".Length), out var hash) ? hash : MurMur3HashUtils.GetHash(n.Name));
         foreach (var clip in mot.BoneClips) {
             var header = clip.ClipHeader;
             var channel = new NodeAnimationChannel();
