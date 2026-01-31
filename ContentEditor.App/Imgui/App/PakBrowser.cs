@@ -45,7 +45,10 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
     private ListFileWrapper? currentList;
     private ListFileWrapper? activeListFile;
     private BookmarkManager _bookmarkManagerDefaults = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "global/default_bookmarks_pak.json"));
-    private BookmarkManager _bookmarkManager = new BookmarkManager(Path.Combine(AppConfig.Instance.BookmarksFilepath.Get()!, "bookmarks_pak.json"));
+    private BookmarkManager _bookmarkManager = new BookmarkManager(
+        Path.Combine(AppConfig.Instance.BookmarksFilepath.Get()!, "bookmarks_pak.json"),
+        Path.Combine(AppConfig.Instance.ConfigBasePath, "user/bookmarks_pak.json")
+    );
     private List<string> _activeTagFilter = new();
     private string bookmarkSearch = string.Empty;
     private bool isBookmarkSearchMatchCase = false;

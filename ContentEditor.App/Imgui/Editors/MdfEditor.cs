@@ -31,8 +31,12 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     private MmtrTemplateDB? mmtrTemplateDB;
     internal MmtrTemplateDB? MaterialTemplateDB => mmtrTemplateDB;
     private bool _requestedMmtrDb;
-
-    private BookmarkManager _mdfBookmarkManager = new BookmarkManager(Path.Combine(AppConfig.Instance.BookmarksFilepath.Get()!, "bookmarks_mdf.json"));
+    private BookmarkManager _mdfBookmarkManagerDefaults = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "global/default_bookmarks_mdf.json")); // TODO SILVER: Add more mat param descriptions
+    private BookmarkManager _mdfBookmarkManager = new BookmarkManager(
+        Path.Combine(AppConfig.Instance.BookmarksFilepath.Get()!, "bookmarks_mdf.json"),
+        Path.Combine(AppConfig.Instance.ConfigBasePath, "user/bookmarks_mdf.json")
+    );
+    public BookmarkManager MDFDefaultBookmarks => _mdfBookmarkManagerDefaults;
     public BookmarkManager MDFBookmarks => _mdfBookmarkManager;
 
     public MaterialData ReplaceMaterialParams(string mmtr, MaterialData material)
@@ -561,8 +565,18 @@ public class ParamHeaderImguiHandler : IObjectUIHandler
         var param = context.Get<ParamHeader>();
         var workspace = context.GetWorkspace();
         var mdfBookmarks = context.FindHandlerInParents<MdfEditor>()?.MDFBookmarks;
+        var mdfDefaultBookmarks = context.FindHandlerInParents<MdfEditor>()?.MDFDefaultBookmarks;
         bool isBookmarked = mdfBookmarks.IsBookmarked(workspace.Game.name, param.paramName);
         bool showOnlyBookmarked = context.FindHandlerInParents<MdfFileImguiHandler>().isShowOnlyBookmarkedParams;
+
+        BookmarkManager.BookmarkEntry? paramEntry = null;
+        foreach (var b in mdfDefaultBookmarks.GetBookmarks(workspace.Game.name)) {
+            if (b.Path == param.paramName) {
+                paramEntry = b;
+                break;
+            }
+        }
+        bool hasDefaultComment = paramEntry != null && !string.IsNullOrWhiteSpace(paramEntry.Comment);
 
         if (showOnlyBookmarked && !isBookmarked) return;
 
@@ -578,12 +592,18 @@ public class ParamHeaderImguiHandler : IObjectUIHandler
             ImGui.SameLine();
             ImGui.PopStyleColor();
             ImguiHelpers.Tooltip(isBookmarked ? "Remove parameter from bookmarks": "Add parameter to bookmarks");
+
+            using (var _ = ImguiHelpers.Disabled(!hasDefaultComment)) {
+                ImGui.Button($"{AppIcons.SI_GenericQmark}");
+                ImguiHelpers.Tooltip(hasDefaultComment ? paramEntry!.Comment : "To be documented");
+                ImGui.SameLine();
+            }
         }
+
         if (!showOnlyBookmarked) {
             ImGui.PushStyleColor(ImGuiCol.Border, isBookmarked ? Colors.IconActive : Vector4.Zero);
             ImguiHelpers.BeginRect();
         }
-
         if (context.children.Count == 0) {
             switch (param.componentCount) {
                 case 1:
