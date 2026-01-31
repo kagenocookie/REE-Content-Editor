@@ -129,7 +129,7 @@ public class DiffMaker
 
         if (baseClass == null) {
             // for now, just fully store all non-objects if there's any differences
-            if (source.Count > 0 && source[0]!.GetValueKind() != JsonValueKind.Object || target.Count > 0 && target[0]!.GetValueKind() != JsonValueKind.Object) {
+            if (source.Count > 0 && source[0] != null && source[0]!.GetValueKind() != JsonValueKind.Object || target.Count > 0 && target[0] != null && target[0]!.GetValueKind() != JsonValueKind.Object) {
                 if (source.Count != target.Count) {
                     return source.DeepClone();
                 }
@@ -143,7 +143,7 @@ public class DiffMaker
                 return null;
             }
 
-            baseClass = source[0]!["$type"]?.GetValue<string>() ?? target[0]!["$type"]?.GetValue<string>();
+            baseClass = source[0]?["$type"]?.GetValue<string>() ?? target[0]?["$type"]?.GetValue<string>();
         }
 
         if (baseClass != null && IDGenerators.TryGetValue(baseClass, out var idgen)) {

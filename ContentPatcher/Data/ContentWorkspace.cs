@@ -241,11 +241,15 @@ public sealed class ContentWorkspace : IDisposable
     {
         if (file.NativePath != null && bundle.TryFindResourceByNativePath(file.NativePath, out var localPath) && file.DiffHandler != null) {
             var resourceListing = bundle.ResourceListing![localPath];
-            var newdiff = file.DiffHandler.FindDiff(file);
-            if (newdiff?.ToJsonString() != resourceListing.Diff?.ToJsonString()) {
-                resourceListing.Diff = newdiff;
+            try {
+                var newdiff = file.DiffHandler.FindDiff(file);
+                if (newdiff?.ToJsonString() != resourceListing.Diff?.ToJsonString()) {
+                    resourceListing.Diff = newdiff;
+                }
+                resourceListing.DiffTime = DateTime.UtcNow;
+            } catch (Exception e) {
+                Logger.Error(e, $"Failed to generate file diff {file.NativePath} (bundle local path: {localPath})");
             }
-            resourceListing.DiffTime = DateTime.UtcNow;
         }
     }
 

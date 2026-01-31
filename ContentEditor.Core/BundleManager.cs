@@ -76,7 +76,7 @@ public class BundleManager
         foreach (var entry in Directory.EnumerateDirectories(AppBundlePath)) {
             string bundleJsonFile = Path.Combine(entry, "bundle.json");
             if (!File.Exists(bundleJsonFile)) {
-                if (Directory.EnumerateFiles(entry).Any()) {
+                if (Directory.EnumerateFileSystemEntries(entry).Any()) {
                     UninitializedBundleFolders.Add(entry);
                 }
                 continue;
