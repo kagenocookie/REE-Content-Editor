@@ -1,0 +1,879 @@
+{
+  "re8": [
+    {
+      "Path": "natives/stm/character/ch",
+      "Tags": ["Character"],
+      "Comment": "Base game characters"
+    },
+    {
+      "Path": "natives/stm/_ge/character/ch",
+      "Tags": ["Character"],
+      "Comment": "Gold Edition' characters"
+    },
+    {
+      "Path": "natives/stm/character/it",
+      "Tags": ["Weapon", "Item"],
+      "Comment": "Base game weapons and items"
+    }
+  ],
+  "dd2": [
+    {
+      "Path": "natives/stm/character/wp",
+      "Tags": ["Weapon", "Item"],
+      "Comment": "Weapon meshes"
+    },
+    {
+      "Path": "natives/stm/appsystem/equipment",
+      "Tags": ["Weapon", "Item"],
+      "Comment": "Equipment prefabs"
+    },
+    {
+      "Path": "natives/stm/character/_kit/_equipment",
+      "Tags": ["Item"],
+      "Comment": "Player equipment"
+    },
+    {
+      "Path": "natives/stm/character/_kit",
+      "Tags": ["Character"],
+      "Comment": "Human customization parts"
+    },
+    {
+      "Path": "natives/stm/appdata/field",
+      "Tags": ["Stage"],
+      "Comment": "Open world field scenes"
+    },
+    {
+      "Path": "natives/stm/appdata/contents",
+      "Tags": ["Stage"],
+      "Comment": "Towns & dungeons"
+    },
+    {
+      "Path": "natives/stm/appdata/generate",
+      "Tags": ["Misc"],
+      "Comment": "Spawn data"
+    },
+    {
+      "Path": "natives/stm/appdata/quest",
+      "Tags": ["Misc"],
+      "Comment": "Quests"
+    },
+    {
+      "Path": "natives/stm/appdata/maincontents.scn.20",
+      "Tags": ["Stage"],
+      "Comment": "Main world stage"
+    }
+  ],
+  "re4": [
+    {
+      "Path": "natives/stm/_chainsaw/character/wp",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Weapons"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ac/ac00",
+      "Tags": [
+        "Misc"
+      ],
+      "Comment": "Accessories"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Characters"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/authoring/campaign1001",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Main campaign root scene"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/appsystem/scene/optimized/stage/st40",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Optimized static stage scenes"
+    }
+  ],
+  "re2": [
+    {
+      "Path": "natives/x64/sectionroot/character",
+      "Tags": [
+        "Character",
+        "Weapon"
+      ],
+      "Comment": "Character and weapon meshes"
+    },
+    {
+      "Path": "natives/x64/objectroot/scene/location",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Location scenes"
+    },
+    {
+      "Path": "natives/x64/objectroot/prefab/character/survivor/parts",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Player costume prefabs"
+    }
+  ],
+  "re2rt": [
+    {
+      "Path": "natives/stm/sectionroot/character",
+      "Tags": [
+        "Character",
+        "Weapon"
+      ],
+      "Comment": "Character and weapon meshes"
+    },
+    {
+      "Path": "natives/stm/objectroot/scene/location",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Location scenes"
+    },
+    {
+      "Path": "natives/stm/objectroot/prefab/character/survivor/parts",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Player costume prefabs"
+    }
+  ],
+  "re3": [
+    {
+      "Path": "natives/stm/escape/character",
+      "Tags": [
+        "Character",
+        "Weapon"
+      ],
+      "Comment": "Character and weapon meshes"
+    },
+    {
+      "Path": "natives/stm/escape/scene/location",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Main locations"
+    }
+  ],
+  "re3rt": [
+    {
+      "Path": "natives/stm/escape/character",
+      "Tags": [
+        "Character",
+        "Weapon"
+      ],
+      "Comment": "Character and weapon meshes"
+    },
+    {
+      "Path": "natives/stm/escape/scene/location",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Main locations"
+    }
+  ],
+  "re7rt": [
+    {
+      "Path": "natives/stm/character/player/pl0000",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Ethan Winters"
+    },
+    {
+      "Path": "natives/stm/character/player/pl2000",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Mia Winters (Flashback)"
+    },
+    {
+      "Path": "natives/stm/character/player/pl2100",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Mia Winters"
+    },
+    {
+      "Path": "natives/stm/character/player/pl3000",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Clancy Jarvis"
+    },
+    {
+      "Path": "natives/stm/character/player/pl3100",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Clancy Jarvis (21)"
+    },
+    {
+      "Path": "natives/stm/character/player/pl3400",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Zoe Baker (Daughters)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em2000",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Mia Winters (Infected)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em2300/em2300",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Mia Winters (Denim Jacket)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em2800",
+      "Tags": [
+        "Enemy",
+        "DLC"
+      ],
+      "Comment": "Eveline (Daughters)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3000",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Jack Baker"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3100",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Marguerite Baker"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3200",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Lucas Baker"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3300",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Eveline (Elderly)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3400",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Zoe Baker"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3500",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Eveline"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3600",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Marguerite Baker (Mutated)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3700",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Jack Baker (Daughters)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3800",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Marguerite Baker (Daughters)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em3900",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Lucas Baker (Daughters)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em4000",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Molded"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em4100",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Molded (Crawler)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em4200",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Molded (Fat)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em6000",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Alan Droney"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em6100",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Police Deputy"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em6200",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Andre Stickland"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em6500",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Police Deputy (Molded)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em7300",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Blue Umbrella Soldier"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em8000",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Jack Baker (Chainsaw Fight)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em8100/em8100",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Jack Baker (Mutated)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em8900",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Eveline (Final Boss)"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em9200",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Pete Walken"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em9600",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Shipworker"
+    },
+    {
+      "Path": "natives/stm/character/enemy/em9700",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Shipworker (Molded)"
+    },
+    {
+      "Path": "natives/stm/ch8/character/enemy/em4400",
+      "Tags": [
+        "Enemy",
+        "DLC"
+      ],
+      "Comment": "Mama Mold (Not a Hero)"
+    },
+    {
+      "Path": "natives/stm/ch8/character/enemy/em4500",
+      "Tags": [
+        "Enemy",
+        "DLC"
+      ],
+      "Comment": "Lucas Baker - Mutated (Not a Hero)"
+    },
+    {
+      "Path": "natives/stm/ch8/character/enemy/em4600",
+      "Tags": [
+        "Enemy",
+        "DLC"
+      ],
+      "Comment": "Fumer (Not a Hero)"
+    },
+    {
+      "Path": "natives/stm/ch8/character/enemy/em9100",
+      "Tags": [
+        "Enemy",
+        "DLC"
+      ],
+      "Comment": "Blue Umbrella Soldier #1 (Not a Hero)"
+    },
+    {
+      "Path": "natives/stm/ch8/character/enemy/em9400",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Blue Umbrella Soldier #2 (Not a Hero)"
+    },
+    {
+      "Path": "natives/stm/ch8/character/player/pl1000",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Chris Redfield (Not a Hero)"
+    },
+    {
+      "Path": "natives/stm/ch8/weapon/wp1330_chrisshotgun",
+      "Tags": [
+        "Weapon",
+        "DLC"
+      ],
+      "Comment": "Thor\u0027s Hammer - AW Model-02 Shotgun"
+    },
+    {
+      "Path": "natives/stm/ch8/weapon/wp1340_chrishandgun",
+      "Tags": [
+        "Weapon",
+        "DLC"
+      ],
+      "Comment": "Samurai Edge - AW Model-01 Handgun"
+    },
+    {
+      "Path": "natives/stm/ch8/weapon/wp1390_chrisknife",
+      "Tags": [
+        "Weapon",
+        "DLC"
+      ],
+      "Comment": "Tactical Knife (Chris)"
+    },
+    {
+      "Path": "natives/stm/ch8/weapon/wp3000_grenadebomb",
+      "Tags": [
+        "Weapon",
+        "DLC"
+      ],
+      "Comment": "Grenade"
+    },
+    {
+      "Path": "natives/stm/ch8/weapon/wp3010_thermatebomb",
+      "Tags": [
+        "Weapon",
+        "DLC"
+      ],
+      "Comment": "Incendiary Grenade"
+    },
+    {
+      "Path": "natives/stm/ch8/weapon/wp3020_stangrenadebomb",
+      "Tags": [
+        "Weapon",
+        "DLC"
+      ],
+      "Comment": "Neuro-Stun Grenade"
+    },
+    {
+      "Path": "natives/stm/ch9/character/enemy/em6400",
+      "Tags": [
+        "Enemy",
+        "DLC"
+      ],
+      "Comment": "Jack Baker - Swamp Man (End of Zoe)"
+    },
+    {
+      "Path": "natives/stm/ch9/character/enemy/em6800",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Zoe Baker - Crystalized (End of Zoe)"
+    },
+    {
+      "Path": "natives/stm/ch9/character/enemy/em7500/em7500",
+      "Tags": [
+        "Enemy",
+        "DLC"
+      ],
+      "Comment": "Alligator (End of Zoe)"
+    },
+    {
+      "Path": "natives/stm/ch9/character/enemy/em7700",
+      "Tags": [
+        "Enemy",
+        "DLC"
+      ],
+      "Comment": "Molded - Twin Blade (End of Zoe)"
+    },
+    {
+      "Path": "natives/stm/ch9/character/player/pl9000",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Joe Baker (End of Zoe)"
+    },
+    {
+      "Path": "natives/stm/props/sm1800_herb00a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Herb"
+    },
+    {
+      "Path": "natives/stm/props/sm1852_antisepticsolutionmedium",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "First Aid Med"
+    },
+    {
+      "Path": "natives/stm/props/sm1853_antisepticsolutionstrong",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Strong First Aid Med"
+    },
+    {
+      "Path": "natives/stm/props/sm1927_stimulant",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Steroids"
+    },
+    {
+      "Path": "natives/stm/props/sm1928_depressant",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Stabilizer"
+    },
+    {
+      "Path": "natives/stm/props/sm2025_flower01a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Supplements"
+    },
+    {
+      "Path": "natives/stm/props/sm2026_alcohol01a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Solid Fuel"
+    },
+    {
+      "Path": "natives/stm/props/sm2036_chemicals01a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Chem Fluid"
+    },
+    {
+      "Path": "natives/stm/props/sm2037_chemicalm01a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Strong Chem Fluid"
+    },
+    {
+      "Path": "natives/stm/props/sm2038_chemicall01a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Separating Agent"
+    },
+    {
+      "Path": "natives/stm/props/sm2179_psychostimulant01a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Psychostimulants"
+    },
+    {
+      "Path": "natives/stm/props/sm2183_gunpowder01a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Gunpowder"
+    },
+    {
+      "Path": "natives/stm/props/sm2290_repairkit01a",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Repair Kit"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1001_gascan",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Burner Fuel"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1011_handgunbullet",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Handgun Ammo"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1013_handgunbulletstrong",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Enhanced Handgun Ammo"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1031_shotgunbullet",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Shotgun Shells"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1111_flamebullet",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Flame Rounds"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1112_acidbullet",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Neuro Rounds"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1141_magnumbullet",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "44 Mag Ammo"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1161_machinegunbullet",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Machine Gun Ammo"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1019_brokenhandgun",
+      "Tags": [
+        "Item",
+        "Weapon"
+      ],
+      "Comment": "Broken Handgun"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1039_brokenshotgun",
+      "Tags": [
+        "Item",
+        "Weapon"
+      ],
+      "Comment": "Broken Shotgun"
+    },
+    {
+      "Path": "natives/stm/weapon/wp0040_axe",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Axe"
+    },
+    {
+      "Path": "natives/stm/weapon/wp0060_chainsaw",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Chainsaw"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1000_gasburner",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Burner / Flamethrower"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1010_handgun",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "M19 Handgun"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1030_shotgun",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "M21 Shotgun"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1110_portablecannon",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Grenade Launcher"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1140_magnum",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "44 MAG"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1160_machinegun",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "P19 Machine Gun"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1190_knife",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Knife (Ethan)"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1210_handgun",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "G17 Handgun"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1230_pumpshotgun",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "M37 Shotgun"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1240_miahandgun",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "MPM Handgun (Mia)"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1340_chrishandgun",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Albert-01R Handgun"
+    },
+    {
+      "Path": "natives/stm/weapon/wp1390_chrisknife",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Tactical Knife (Chris)"
+    }
+  ],
+  "pragmata": [
+    {
+      "Path": "natives/stm/character/ch/ch00/ch0000",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Hugh Williams (Delphi)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch00/ch0012/00",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Hugh Williams (Scribble)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0100",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana"
+    },
+    {
+      "Path": "natives/stm/item/model/it00010/wp7100",
+      "Tags": [
+        "Item"
+      ],
+      "Comment": "Repair Kit"
+    },
+    {
+      "Path": "natives/stm/item/model/it01000/wp0900/00",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Grip Gun"
+    },
+    {
+      "Path": "natives/stm/item/model/it01300/wp1510",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Stasis Net"
+    },
+    {
+      "Path": "natives/stm/item/model/it01400/wp1400/00",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Charge Piercer"
+    },
+    {
+      "Path": "natives/stm/item/model/it03100/wp1300/00",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Shockwave Gun"
+    }
+  ]
+}

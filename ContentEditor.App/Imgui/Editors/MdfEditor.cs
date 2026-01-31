@@ -32,7 +32,7 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     internal MmtrTemplateDB? MaterialTemplateDB => mmtrTemplateDB;
     private bool _requestedMmtrDb;
 
-    private BookmarkManager _mdfBookmarkManager = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "user/bookmarks_mdf.json"));
+    private BookmarkManager _mdfBookmarkManager = new BookmarkManager(Path.Combine(AppConfig.Instance.BookmarksFilepath.Get()!, "bookmarks_mdf.json"));
     public BookmarkManager MDFBookmarks => _mdfBookmarkManager;
 
     public MaterialData ReplaceMaterialParams(string mmtr, MaterialData material)
