@@ -516,6 +516,9 @@ public class ArrayRSZHandler : BaseListHandler
 
     protected override object? CreateNewElement(UIContext context)
     {
+        if (_field.type is RszFieldType.Resource or RszFieldType.String) {
+            return "";
+        }
         var env = context.GetWorkspace();
         if (env == null) return null;
         string? classname = GetElementClassnameType(context);
