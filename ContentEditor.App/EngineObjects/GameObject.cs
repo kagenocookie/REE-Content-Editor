@@ -95,7 +95,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         Scene = scene;
     }
 
-    public GameObject(PfbGameObject source, Scene? scene = null)
+    public GameObject(PfbGameObject source, Scene? scene = null, Workspace? workspace = null)
     {
         instance = source.Instance!;
         ImportInstanceFields();
@@ -109,7 +109,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
             }
         }
         if (Transform == null) {
-            Transform = CreateTransformComponent();
+            Transform = CreateTransformComponent(workspace);
         }
 
         foreach (var sourceChild in source.Children) {
@@ -124,7 +124,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         }
     }
 
-    public GameObject(ScnGameObject source, Folder folder, IList<ScnPrefabInfo>? prefabs = null, Scene? scene = null)
+    public GameObject(ScnGameObject source, Folder folder, IList<ScnPrefabInfo>? prefabs = null, Scene? scene = null, Workspace? workspace = null)
     {
         instance = source.Instance!;
         ImportInstanceFields();
@@ -141,7 +141,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
             }
         }
         if (Transform == null) {
-            Transform = CreateTransformComponent();
+            Transform = CreateTransformComponent(workspace);
         }
 
         foreach (var sourceChild in source.Children) {
@@ -156,13 +156,13 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         }
     }
 
-    private Transform CreateTransformComponent()
+    private Transform CreateTransformComponent(Workspace? workspace)
     {
-        var workspace = Scene?.Workspace ?? Folder?.Scene?.Workspace;
+        workspace ??= (Scene?.Workspace ?? Folder?.Scene?.Workspace)?.Env;
         if (workspace == null) {
             throw new Exception("Could not create GameObject - no transform component was given and no root workspace is accessible");
         }
-        var transform = new Transform(this, RszInstance.CreateInstance(workspace.Env.RszParser, workspace.Env.Classes.Transform));
+        var transform = new Transform(this, RszInstance.CreateInstance(workspace.RszParser, workspace.Classes.Transform));
         Components.Insert(0, transform);
         return transform;
     }

@@ -79,7 +79,7 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
         }
 
         foreach (var gobj in gameObjects) {
-            var obj = new GameObject(gobj, this, prefabs, scene);
+            var obj = new GameObject(gobj, this, prefabs, scene, workspace);
             GameObjects.Add(obj);
         }
     }
@@ -98,7 +98,7 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
         }
 
         foreach (var gobj in source.GameObjects) {
-            var obj = new GameObject(gobj, this, prefabs, scene);
+            var obj = new GameObject(gobj, this, prefabs, scene, workspace);
             GameObjects.Add(obj);
         }
     }
