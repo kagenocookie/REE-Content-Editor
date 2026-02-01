@@ -20,6 +20,7 @@ public class RszDataFinder : IWindowHandler
 
     public bool HasUnsavedChanges => false;
     private string? classname = "";
+    private string _enumFilter = "";
     private string valueString = "";
     private int selectedFieldIndex;
     private bool searchUserFiles = true;
@@ -97,6 +98,8 @@ public class RszDataFinder : IWindowHandler
             case 0:
                 ImGui.Checkbox("Search by specific class", ref searchByClass);
                 if (searchByClass) {
+                    RszClassInfo(workspace.Env);
+                    ImGui.Separator();
                     ShowRszClassSearch(workspace.Env);
                 } else {
                     ShowRszFieldSearch(workspace.Env);
@@ -214,6 +217,70 @@ public class RszDataFinder : IWindowHandler
         }
     }
 
+    private void RszClassInfo(Workspace env)
+    {
+        if (string.IsNullOrEmpty(classname)) return;
+        if (!ImGui.TreeNode("Class Info")) return;
+
+        var subs = env.TypeCache.GetSubclasses(classname);
+        var rszClass = env.RszParser.GetRSZClass(classname);
+        if (rszClass == null) {
+            ImGui.TextColored(Colors.Error, "Class not found");
+            ImGui.TreePop();
+            return;
+        }
+
+        if (ImGui.TreeNode("Fields: " + rszClass.fields.Length)) {
+            for (int i = 0; i < rszClass.fields.Length; ++i) {
+                var field = rszClass.fields[i];
+                var text = string.IsNullOrEmpty(field.original_type) ? $"{i}: {field.type} {field.name}" : $"{i}: {field.type} {field.name} (\"{field.original_type}\")";
+                ImGui.Text(text);
+                if (ImGui.BeginPopupContextItem(text)) {
+                    if (ImGui.Selectable("Copy name")) {
+                        EditorWindow.CurrentWindow?.CopyToClipboard(field.name);
+                        ImGui.CloseCurrentPopup();
+                    }
+                    if (!string.IsNullOrEmpty(field.original_type) && ImGui.Selectable("Copy classname")) {
+                        EditorWindow.CurrentWindow?.CopyToClipboard(field.original_type);
+                        ImGui.CloseCurrentPopup();
+                    }
+                    ImGui.EndPopup();
+                }
+            }
+            ImGui.TreePop();
+        }
+
+        // TODO find base classes list
+
+        if (env.TypeCache.enums.TryGetValue(classname, out var enumDesc)) {
+            var values = enumDesc.GetValues();
+            var strings = values.Select(val => $"{enumDesc.GetLabel(val)} ({val})").ToArray();
+            var tmp = Activator.CreateInstance(enumDesc.BackingType);
+            if (ImguiHelpers.FilterableCombo($"Enum Values ({values.Length})", strings, strings, ref tmp, ref _enumFilter)) {
+                EditorWindow.CurrentWindow?.CopyToClipboard(tmp?.ToString() ?? "", $"Copied: {tmp}");
+            }
+        } else if (subs.Count > 1) {
+            if (ImGui.TreeNode($"Subclasses ({subs.Count - 1})")) {
+                foreach (var s in subs) {
+                    if (s == classname) continue;
+                    ImGui.Text(s);
+                    if (ImGui.BeginPopupContextItem(s)) {
+                        if (ImGui.Selectable("Copy")) {
+                            EditorWindow.CurrentWindow?.CopyToClipboard(s);
+                            ImGui.CloseCurrentPopup();
+                        }
+                        ImGui.EndPopup();
+                    }
+                }
+                ImGui.TreePop();
+            }
+        } else {
+            ImGui.Text("No subclasses");
+        }
+
+        ImGui.TreePop();
+    }
+
     private void ShowRszClassSearch(Workspace env)
     {
         ImGui.InputText("Classname", ref classname, 1024);
@@ -256,6 +323,8 @@ public class RszDataFinder : IWindowHandler
             field = selectedFieldIndex >= 0 && selectedFieldIndex < cls.fields.Length ? cls.fields[selectedFieldIndex] : null;
             value = RszValueInput(field?.type);
         }
+
+        ImGui.Separator();
 
         ImGui.Checkbox("Search user files", ref searchUserFiles);
         ImGui.Checkbox("Search SCN files", ref searchScn);
@@ -577,7 +646,7 @@ public class RszDataFinder : IWindowHandler
                                     AddMatch(context, FindPathToRszObject(inRsz, inst, file), path);
                                 }
                             }
-                        } else {
+                        } else if (value is not string) {
                             foreach (var field in inst.Fields) {
                                 if (field.original_type == cls.name) {
                                     AddMatch(context, FindPathToRszObject(inRsz, inst, file) + "." + field.name, path);
