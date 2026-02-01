@@ -4,58 +4,59 @@ using ReeLib.via;
 
 namespace ContentEditor.App;
 
-public abstract class BaseSingleMeshComponent(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data)
+public abstract class BaseMultiMeshComponent(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data)
 {
-    protected MeshHandle? mesh;
-    protected MaterialGroup? material;
+    protected readonly List<MeshHandle> meshes = new();
+    protected readonly List<MaterialGroup> materials = new();
 
-    public override AABB LocalBounds => mesh?.BoundingBox ?? default;
+    public override AABB LocalBounds => AABB.Combine(meshes.Select(m => m.BoundingBox));
 
-    public bool HasMesh => mesh?.Meshes.Any() == true;
+    public bool HasMesh => meshes.Count > 0;
 
     internal override void OnActivate()
     {
         base.OnActivate();
 
         if (!AppConfig.Instance.RenderMeshes.Get()) return;
-        UnloadMesh();
+        UnloadMeshes();
         RefreshMesh();
     }
 
     internal override void OnDeactivate()
     {
         base.OnDeactivate();
-        UnloadMesh();
+        UnloadMeshes();
     }
 
     protected abstract void RefreshMesh();
 
-    public void SetMesh(string meshFilepath, string? materialFilepath)
+    protected MeshHandle? AddMesh(string meshFilepath, string? materialFilepath)
     {
-        UnloadMesh();
-        // note - when loading material groups from the mesh file, we receive a placeholder material with just a default shader and white texture
-        material = string.IsNullOrEmpty(materialFilepath)
+        var material = string.IsNullOrEmpty(materialFilepath)
             ? Scene!.RenderContext.LoadMaterialGroup(meshFilepath)
             : Scene!.RenderContext.LoadMaterialGroup(materialFilepath);
-        mesh = Scene.RenderContext.LoadMesh(meshFilepath);
+        var mesh = Scene.RenderContext.LoadMesh(meshFilepath);
+
+        if (mesh != null) meshes.Add(mesh);
+        if (material != null) materials.Add(material);
+
         if (mesh != null && material != null) {
             Scene.RenderContext.SetMeshMaterial(mesh, material);
         }
+        return mesh;
     }
 
-    protected void UnloadMesh()
+    protected void UnloadMeshes()
     {
-        if (mesh == null || Scene == null) return;
-
-        if (mesh != null) {
-            // TODO: would we rather just store the render context inside mesh refs / material groups, and have them be IDispoable?
+        if (Scene == null) return;
+        foreach (var mesh in meshes) {
             Scene.RenderContext.UnloadMesh(mesh);
-            mesh = null;
         }
-        if (material != null) {
-            Scene.RenderContext.UnloadMaterialGroup(material);
-            material = null;
+        meshes.Clear();
+        foreach (var mat in materials) {
+            Scene.RenderContext.UnloadMaterialGroup(mat);
         }
+        materials.Clear();
     }
 
     protected virtual bool IsMeshUpToDate() => true;
@@ -67,12 +68,14 @@ public abstract class BaseSingleMeshComponent(GameObject gameObject, RszInstance
         if (!render) {
             return;
         }
-        if (mesh == null || !IsMeshUpToDate()) {
+        if (meshes.Count == 0 || !IsMeshUpToDate()) {
             RefreshMesh();
         }
-        if (mesh != null) {
+        if (meshes.Count != 0) {
             ref readonly var transform = ref GameObject.Transform.WorldTransform;
-            context.RenderSimple(mesh, transform);
+            foreach (var mesh in meshes) {
+                context.RenderSimple(mesh, transform);
+            }
         }
     }
 }

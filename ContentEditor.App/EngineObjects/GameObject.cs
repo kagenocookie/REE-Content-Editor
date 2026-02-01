@@ -246,6 +246,15 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         return Components.OfType<TComponent>().FirstOrDefault();
     }
 
+    public Component? GetComponent(string classname)
+    {
+        foreach (var c in Components) {
+            if (c.Classname == classname) return c;
+        }
+
+        return null;
+    }
+
     public TComponent RequireComponent<TComponent>() where TComponent : Component
     {
         return Components.OfType<TComponent>().First();

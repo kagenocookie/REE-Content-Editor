@@ -257,6 +257,9 @@ public static partial class RszFieldCache
     private static RszFieldAccessorLastFallbacks<T> Last<T>(Func<RszField, bool>[] conditions, [CallerMemberName] string name = "")
         => new RszFieldAccessorLastFallbacks<T>(conditions, name);
 
+    private static RszFieldAccessorFirst<List<object>> Array([CallerMemberName] string name = "")
+        => new RszFieldAccessorFirst<List<object>>(static (field) => field.array, name);
+
     private static RszFieldAccessorFieldList<T> FromList<T>(Func<IEnumerable<(RszField field, int index)>, int> conditions, [CallerMemberName] string name = "")
         => new RszFieldAccessorFieldList<T>(conditions, name);
 

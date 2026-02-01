@@ -72,6 +72,9 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
         }
         var instance = value as RszInstance;
         if (instance != null) {
+            if (ImGui.Selectable("Copy classname")) {
+                EditorWindow.CurrentWindow?.CopyToClipboard(instance.RszClass.name);
+            }
             var clipboard = EditorWindow.CurrentWindow?.GetClipboard();
             if (!string.IsNullOrEmpty(clipboard)) {
                 if (ImGui.Selectable("Paste JSON (replace values)")) {

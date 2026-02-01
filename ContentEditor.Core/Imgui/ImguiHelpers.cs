@@ -164,23 +164,13 @@ public static class ImguiHelpers
 
         var count = labels.Length;
         var changed = false;
-        if (string.IsNullOrEmpty(filter)) {
-            for (int i = 0; i < count; ++i) {
-                var text = string.IsNullOrEmpty(labels[i]) ? "<empty>##" + i : labels[i];
-                if (ImGui.Selectable(text, selected != null && selected.Equals(values[i]))) {
-                    selected = values[i];
-                    changed = true;
-                }
-            }
-        } else {
-            for (int i = 0; i < count; ++i) {
-                var text = string.IsNullOrEmpty(labels[i]) ? "<empty>##" + i : labels[i];
-                if (!text.Contains(filter, StringComparison.InvariantCultureIgnoreCase)) continue;
+        for (int i = 0; i < count; ++i) {
+            var text = string.IsNullOrEmpty(labels[i]) ? "<empty>##" + i : labels[i];
+            if (!string.IsNullOrEmpty(filter) && !text.Contains(filter, StringComparison.InvariantCultureIgnoreCase)) continue;
 
-                if (ImGui.Selectable(text, selected != null && selected.Equals(values[i]))) {
-                    selected = values[i];
-                    changed = true;
-                }
+            if (ImGui.Selectable(text, selected != null && selected.Equals(values[i]))) {
+                selected = values[i];
+                changed = true;
             }
         }
 

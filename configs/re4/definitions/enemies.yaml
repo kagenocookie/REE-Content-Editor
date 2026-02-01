@@ -1,0 +1,3 @@
+classes:
+  chainsaw.CostumePresetCatalogUserData.Data:
+    to_string: "CostumePresetCatalogUserData {_KindID:enum(chainsaw.CharacterKindID)}"

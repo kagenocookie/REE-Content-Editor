@@ -54,6 +54,14 @@ public class MeshHandle
         if (enabled) DisabledParts.Remove(index);
         else DisabledParts.Add(index);
     }
+    public void SetAllPartsEnabled(bool enabled)
+    {
+        if (enabled) {
+            DisabledParts.Clear();
+        } else {
+            for (int i = 0; i < 255; i++) DisabledParts.Add(i);
+        }
+    }
 
     /// <summary>
     /// For dynamic meshes, this will make the mesh list and / or geometry update.
