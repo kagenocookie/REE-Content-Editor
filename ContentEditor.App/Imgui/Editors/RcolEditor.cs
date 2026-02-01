@@ -180,18 +180,38 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
         protected void HandleContextMenu(UIContext context)
         {
             if (ImGui.BeginPopupContextItem(context.label)) {
-                if (ImGui.Button("Delete")) {
+                var item = context.Get<RequestSet>();
+                if (ImGui.Selectable("Delete")) {
                     var list = context.parent!.Get<List<RequestSet>>();
                     UndoRedo.RecordListRemove(context.parent, list, context.Get<RequestSet>());
-                    ImGui.CloseCurrentPopup();
                 }
-                if (ImGui.Button("Duplicate")) {
+                if (ImGui.Selectable("Duplicate")) {
                     var list = context.parent!.Get<List<RequestSet>>();
-                    var item = context.Get<RequestSet>();
                     var clone = item.Clone();
                     clone.Info.ID = clone.Info.ID + 1; // TODO verify unique
                     UndoRedo.RecordListInsert(context.parent, list, clone, list.IndexOf(item) + 1);
-                    ImGui.CloseCurrentPopup();
+                }
+                if (ImGui.Selectable("Copy")) {
+                    VirtualClipboard.CopyToClipboard(item.Clone());
+                }
+                if (VirtualClipboard.TryGetFromClipboard<RequestSet>(out var newSet)) {
+                    if (ImGui.Selectable("Paste (replace)")) {
+                        var rcol = context.FindHandlerInParents<RcolEditor>()?.File;
+                        var groupExists = newSet.Group != null && rcol?.Groups.Contains(newSet.Group) == true;
+                        var clone = newSet.Clone(!groupExists);
+                        if (!groupExists) rcol?.Groups.Add(clone.Group!);
+                        UndoRedo.RecordSet(context, clone);
+                        UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
+                    }
+                    if (ImGui.Selectable("Paste (new)")) {
+                        var list = context.parent!.Get<List<RequestSet>>();
+                        var rcol = context.FindHandlerInParents<RcolEditor>()?.File;
+                        var groupExists = newSet.Group != null && rcol?.Groups.Contains(newSet.Group) == true;
+                        var clone = newSet.Clone(!groupExists);
+                        if (!groupExists) rcol?.Groups.Add(clone.Group!);
+                        UndoRedo.RecordListInsert(context.parent, list, clone, list.IndexOf(item) + 1);
+                        UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context.parent);
+                    }
                 }
                 ImGui.EndPopup();
             }
