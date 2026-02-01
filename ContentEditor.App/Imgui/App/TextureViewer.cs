@@ -435,6 +435,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                 tex.LoadDataFromDDS(dds);
                 var texLoader = fileHandle.Loader as TextureLoader ?? new TextureLoader();
                 var tmpHandle = FileHandle.CreateEmbedded(texLoader, new BaseFileResource<TexFile>(tex), defaultFilename, null);
+                tmpHandle.Stream = tex.FileHandler.Stream;
                 // note: potential memory leak if the user doesn't confirm the save dialog. Surely nobody will have issues because of it...
                 if (bundleConvert) {
                     var tempres = new BaseFileResource<TexFile>(tex);
