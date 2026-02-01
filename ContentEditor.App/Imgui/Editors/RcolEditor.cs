@@ -196,21 +196,34 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
                 }
                 if (VirtualClipboard.TryGetFromClipboard<RequestSet>(out var newSet)) {
                     if (ImGui.Selectable("Paste (replace)")) {
-                        var rcol = context.FindHandlerInParents<RcolEditor>()?.File;
+                        var editor = context.FindHandlerInParents<RcolEditor>();
+                        var rcol = editor?.File;
                         var groupExists = newSet.Group != null && rcol?.Groups.Contains(newSet.Group) == true;
                         var clone = newSet.Clone(!groupExists);
                         if (!groupExists) rcol?.Groups.Add(clone.Group!);
                         UndoRedo.RecordSet(context, clone);
                         UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
+                        UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Do, () => {
+                            if (editor?.PrimaryTarget == item) {
+                                editor.SetPrimaryInspector(clone);
+                            }
+                        });
+                        UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Undo, () => {
+                            if (editor?.PrimaryTarget == clone) {
+                                editor.SetPrimaryInspector(item);
+                            }
+                        });
                     }
                     if (ImGui.Selectable("Paste (new)")) {
                         var list = context.parent!.Get<List<RequestSet>>();
-                        var rcol = context.FindHandlerInParents<RcolEditor>()?.File;
+                        var editor = context.FindHandlerInParents<RcolEditor>();
+                        var rcol = editor?.File;
                         var groupExists = newSet.Group != null && rcol?.Groups.Contains(newSet.Group) == true;
                         var clone = newSet.Clone(!groupExists);
                         if (!groupExists) rcol?.Groups.Add(clone.Group!);
                         UndoRedo.RecordListInsert(context.parent, list, clone, list.IndexOf(item) + 1);
                         UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context.parent);
+                        editor?.SetPrimaryInspector(clone);
                     }
                 }
                 ImGui.EndPopup();
