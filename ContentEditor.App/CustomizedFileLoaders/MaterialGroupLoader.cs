@@ -1,6 +1,8 @@
 using Assimp;
+using ContentEditor.App.Graphics;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Mdf;
 
 namespace ContentEditor.App.FileLoaders;
 
@@ -16,7 +18,9 @@ public class MaterialGroupLoader : IFileLoader,
 
     public IResourceFilePatcher? CreateDiffHandler() => null;
 
-    private static readonly HashSet<string> AlbedoTextures = ["BaseDielectricMap", "ALBD", "ALBDmap", "BackMap", "BaseMetalMap", "BaseDielectricMapBase", "BaseAlphaMap"];
+    public static readonly HashSet<string> AlbedoTextureNames = ["BaseDielectricMap", "ALBD", "ALBDmap", "BackMap", "BaseMetalMap", "BaseDielectricMapBase", "BaseAlphaMap"];
+    public static readonly HashSet<string> NormalTextureNames = ["NormalRoughnessMap"];
+    public static readonly HashSet<string> ATXXTextureNames = ["AlphaTranslucentOcclusionCavityMap"];
 
     public IResourceFile? Load(ContentWorkspace workspace, FileHandle handle)
     {
@@ -28,7 +32,7 @@ public class MaterialGroupLoader : IFileLoader,
         foreach (var srcMat in mdf.Materials) {
             var newMat = new Assimp.Material();
             newMat.Name = srcMat.Header.matName;
-            var diffuseCandidates = srcMat.Textures.Where(tex => AlbedoTextures.Contains(tex.texType));
+            var diffuseCandidates = srcMat.Textures.Where(tex => AlbedoTextureNames.Contains(tex.texType));
             var diffuse = diffuseCandidates.FirstOrDefault(tex => tex.texPath?.Contains("null", StringComparison.InvariantCultureIgnoreCase) == false)
                 ?? diffuseCandidates.FirstOrDefault();
             if (diffuse?.texPath != null) {
@@ -56,6 +60,39 @@ public class MaterialGroupLoader : IFileLoader,
         var res = handle.GetResource<AssimpMaterialResource>();
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
         return res.File.WriteTo(outputPath);
+    }
+
+    public static void ExportTextures(ContentWorkspace env, MdfFile mdf2, string outputFolder, bool useTga, Func<string, TexHeader, bool>? exportCondition = null)
+    {
+        Texture? tempTexture = null;
+        if (useTga) {
+            tempTexture = new Texture();
+        }
+        exportCondition ??= (mat, param) => AlbedoTextureNames.Contains(param.texType) || NormalTextureNames.Contains(param.texType) || ATXXTextureNames.Contains(param.texType);
+        foreach (var mat in mdf2.Materials) {
+            var matPath = Path.Combine(outputFolder, mat.Header.matName);
+            foreach (var param in mat.Textures) {
+                if (string.IsNullOrEmpty(param.texPath) || !exportCondition.Invoke(mat.Header.matName, param)) {
+                    continue;
+                }
+
+                if (!env.ResourceManager.TryResolveGameFile(param.texPath, out var file)) {
+                    continue;
+                }
+                var tex = file.GetFile<TexFile>();
+
+                var texOutPath = Path.Combine(matPath, PathUtils.GetFilenameWithoutExtensionOrVersion(param.texPath).ToString());
+                if (useTga) {
+                    texOutPath += ".tga";
+                    tempTexture!.LoadFromTex(tex);
+                    tempTexture.SaveAs(texOutPath);
+                } else {
+                    texOutPath += ".dds";
+                    var dds = tex.ConvertToDDS();
+                    dds.FileHandler.SaveAs(texOutPath);
+                }
+            }
+        }
     }
 
     Assimp.Scene IFileHandleContentProvider<Assimp.Scene>.GetFile(FileHandle handle) => handle.GetResource<AssimpMaterialResource>().Scene;

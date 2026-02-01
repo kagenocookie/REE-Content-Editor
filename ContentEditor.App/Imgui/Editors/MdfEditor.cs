@@ -1,3 +1,5 @@
+using ContentEditor.App.FileLoaders;
+using ContentEditor.App.Windowing;
 using ContentEditor.BackgroundTasks;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -143,6 +145,11 @@ public class MdfFileImguiHandler : IObjectUIHandler
     private bool isNewMaterialMenu = false;
     private string materialSearch = string.Empty;
     public bool isShowOnlyBookmarkedParams = false;
+
+    private Dictionary<string, HashSet<string>>? _exportTextures;
+    private string? _exportSelectedMat;
+    private bool _exportTga;
+
     public void OnIMGUI(UIContext context)
     {
         var file = context.Get<MdfFile>();
@@ -180,6 +187,11 @@ public class MdfFileImguiHandler : IObjectUIHandler
             }
             ImguiHelpers.Tooltip("Paste Material from clipboard");
         }
+        ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_GenericExport}")) {
+            ImGui.OpenPopup("MdfTexExport");
+        }
+        ImguiHelpers.Tooltip("Export Textures");
         ImGui.SameLine();
         if (ImGui.Button($"{AppIcons.SI_GenericImport}")) {
             PlatformUtils.ShowFileDialog(paths => { var path = paths[0];
@@ -254,6 +266,96 @@ public class MdfFileImguiHandler : IObjectUIHandler
             }
         }
         ImGui.Separator();
+
+        if (ImGui.BeginPopupModal("MdfTexExport")) {
+            ShowTexExportWindow(file);
+            ImGui.EndPopup();
+        }
+    }
+
+    private void ShowTexExportWindow(MdfFile file)
+    {
+        if (_exportTextures == null) {
+            _exportTextures = new();
+            foreach (var mat in file.Materials) {
+                var data = _exportTextures[mat.Header.matName] = new ();
+                foreach (var tex in mat.Textures) {
+                    if (string.IsNullOrEmpty(tex.texPath)) continue;
+                    if (MaterialGroupLoader.AlbedoTextureNames.Contains(tex.texType)
+                        || MaterialGroupLoader.NormalTextureNames.Contains(tex.texType)
+                        || MaterialGroupLoader.ATXXTextureNames.Contains(tex.texType)) {
+                        data.Add(tex.texPath);
+                    }
+                }
+            }
+        }
+        ImGui.SeparatorText("Material texture export");
+        var mats = file.Materials.Select(m => m.Header.matName).ToArray();
+        ImGui.Checkbox("Export as TGA", ref _exportTga);
+        ImguiHelpers.Tooltip("If unchecked, files will be exported as raw DDS");
+        if (ImguiHelpers.SameLine() && ImGui.Button("Select All")) {
+            foreach (var mat in file.Materials) {
+                var data = _exportTextures[mat.Header.matName] = new ();
+                foreach (var tex in mat.Textures) {
+                    if (string.IsNullOrEmpty(tex.texPath)) continue;
+                    data.Add(tex.texPath);
+                }
+            }
+        }
+        if (ImguiHelpers.SameLine() && ImGui.Button("Clear Selection")) {
+            _exportTextures.Clear();
+        }
+        if (ImguiHelpers.SameLine() && ImGui.Button("Reset Selection")) {
+            _exportTextures = null;
+        }
+        ImguiHelpers.ValueCombo("Material", mats, mats, ref _exportSelectedMat);
+        if (!string.IsNullOrEmpty(_exportSelectedMat)) {
+            ImGui.Separator();
+            var mat = file.Materials.FirstOrDefault(mm => mm.Header.matName == _exportSelectedMat);
+            if (mat != null) {
+                var area = ImGui.GetContentRegionAvail() - new Vector2(0, 32 * UI.UIScale + ImGui.GetStyle().FramePadding.Y);
+                var data = _exportTextures?.GetValueOrDefault(_exportSelectedMat) ?? new();
+                ImGui.BeginChild("TexList", area);
+                foreach (var tex in mat.Textures) {
+                    var selected = data.Contains(tex.texPath ?? "");
+                    if (ImGui.Checkbox("##" + tex.texType, ref selected)) {
+                        if (selected) {
+                            data.Add(tex.texPath!);
+                        } else {
+                            data.Remove(tex.texPath!);
+                        }
+                        (_exportTextures ??= new())[_exportSelectedMat] = data;
+                    }
+                    ImGui.SameLine();
+                    ImGui.Text($"{tex.texType} | {tex.texPath}");
+                }
+                ImGui.EndChild();
+            }
+        } else {
+            ImGui.Dummy(new Vector2(200, 100));
+        }
+        ImGui.Separator();
+        if (ImGui.Button("Cancel")) {
+            _exportTextures = null;
+            ImGui.CloseCurrentPopup();
+        }
+        ImGui.SameLine();
+        if (ImGui.Button("Export")) {
+            var wnd = EditorWindow.CurrentWindow;
+            PlatformUtils.ShowFolderDialog((target) => {
+                wnd!.InvokeFromUIThread(() => {
+                    if (_exportTextures == null) return;
+
+                    MaterialGroupLoader.ExportTextures(wnd.Workspace, file, target, _exportTga, (mat, param) => {
+                        return param.texPath != null && _exportTextures.GetValueOrDefault(mat)?.Contains(param.texPath) == true;
+                    });
+                    FileSystemUtils.ShowFileInExplorer(target);
+
+                    _exportTextures = null;
+                });
+            });
+            ImGui.CloseCurrentPopup();
+        }
     }
 
     private void ShowSelectedMaterialData(UIContext context, MdfFile file)
@@ -319,7 +421,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
     }
     private void ShowMaterialParameterToolbar(UIContext context)
     {
-        var workspace = context.GetWorkspace();
+        var workspace = context.GetWorkspace()!;
         var mdfBookmarks = context.FindHandlerInParents<MdfEditor>()?.MDFBookmarks;
         ImguiHelpers.ToggleButton($"{AppIcons.SI_Bookmark}", ref isShowOnlyBookmarkedParams, Colors.IconActive);
         ImguiHelpers.Tooltip("Show only bookmarked parameters");
@@ -450,7 +552,7 @@ public class MeshGpbfImguiHandler : IObjectUIHandler
     {
         if (context.children.Count == 0) {
             var tex = context.Get<GpuBufferEntry>();
-            context.AddChild<GpuBufferEntry, string>("Name", tex, new StringFieldHandler(), (p) => p.name, (p, v) => p.name = v ?? string.Empty);
+            context.AddChild<GpuBufferEntry, string>("Name", tex, new StringFieldHandler(), (p) => p!.name, (p, v) => p.name = v ?? string.Empty);
             context.AddChild<GpuBufferEntry, string>("Path", tex, new ResourcePathPicker(context.GetWorkspace(), KnownFileFormats.ByteBuffer), (p) => p!.path, (p, v) => p.path = v ?? string.Empty);
         }
 
@@ -563,11 +665,11 @@ public class ParamHeaderImguiHandler : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var param = context.Get<ParamHeader>();
-        var workspace = context.GetWorkspace();
-        var mdfBookmarks = context.FindHandlerInParents<MdfEditor>()?.MDFBookmarks;
-        var mdfDefaultBookmarks = context.FindHandlerInParents<MdfEditor>()?.MDFDefaultBookmarks;
+        var workspace = context.GetWorkspace()!;
+        var mdfBookmarks = context.FindHandlerInParents<MdfEditor>()?.MDFBookmarks!;
+        var mdfDefaultBookmarks = context.FindHandlerInParents<MdfEditor>()?.MDFDefaultBookmarks!;
         bool isBookmarked = mdfBookmarks.IsBookmarked(workspace.Game.name, param.paramName);
-        bool showOnlyBookmarked = context.FindHandlerInParents<MdfFileImguiHandler>().isShowOnlyBookmarkedParams;
+        bool showOnlyBookmarked = context.FindHandlerInParents<MdfFileImguiHandler>()?.isShowOnlyBookmarkedParams ?? false;
 
         BookmarkManager.BookmarkEntry? paramEntry = null;
         foreach (var b in mdfDefaultBookmarks.GetBookmarks(workspace.Game.name)) {

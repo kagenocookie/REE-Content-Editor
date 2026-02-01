@@ -7,11 +7,13 @@ namespace ContentEditor.App;
 public static class PlatformUtils
 {
     /// <summary>
-    /// Show a native file picker dialog, non-blocking. The callback will be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
+    /// Show a native file picker dialog. The callback will be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
     /// </summary>
     public static void ShowFileDialog(Action<string[]> callback, string? initialFile = null, FileFilter[]? fileExtension = null, bool allowMultiple = false)
     {
+#if WINDOWS
         var thread = new Thread(() => {
+#endif
             using var selectFileDialog = new NativeFileDialog()
                 .SelectFile();
             if (fileExtension != null) {
@@ -25,19 +27,21 @@ public static class PlatformUtils
             if (result == DialogResult.Okay && output?.Length > 0) {
                 callback.Invoke(output);
             }
-        });
 #if WINDOWS
+        });
         thread.SetApartmentState(ApartmentState.STA);
-#endif
         thread.Start();
+#endif
     }
 
     /// <summary>
-    /// Show a native folder picker dialog, non-blocking. The callback will be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
+    /// Show a native folder picker dialog. The callback will be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
     /// </summary>
     public static void ShowFolderDialog(Action<string> callback, string? initialFolder = null)
     {
+#if WINDOWS
         var thread = new Thread(() => {
+#endif
             using var selectFolderDialog = new NativeFileDialog()
                 .SelectFolder();
 
@@ -46,15 +50,15 @@ public static class PlatformUtils
             {
                 callback.Invoke(output);
             }
-        });
 #if WINDOWS
+        });
         thread.SetApartmentState(ApartmentState.STA);
-#endif
         thread.Start();
+#endif
     }
 
     /// <summary>
-    /// Show a native file save dialog, non-blocking. The callback will be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
+    /// Show a native file save dialog. The callback will be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
     /// </summary>
     public static void ShowSaveFileDialog(Action<string> callback, string? initialFile = null, params FileFilter[] filter)
     {

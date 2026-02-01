@@ -340,6 +340,7 @@ public class Texture : IDisposable
         if (image == null) return;
 
         string ext = System.IO.Path.GetExtension(filepath).ToLowerInvariant();
+        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(filepath)!);
 
         if (ext == ".tga") {
             image.Save(filepath, new SixLabors.ImageSharp.Formats.Tga.TgaEncoder {
