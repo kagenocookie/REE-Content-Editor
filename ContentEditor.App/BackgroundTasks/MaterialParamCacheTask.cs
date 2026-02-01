@@ -20,7 +20,7 @@ public class MaterialParamCacheTask : IBackgroundTask
 
     public MaterialParamCacheTask(Workspace workspace)
     {
-        Status = "Starting";
+        Status = "Processing";
         Workspace = workspace;
     }
 

@@ -61,28 +61,33 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
         return popupClicked;
     }
 
-    public static bool ShowContextMenuItemActions(UIContext context)
+    public static bool ShowContextMenuItemActions(UIContext context, Func<UIContext, object>? valueGetter = null, Action<UIContext, object>? valueSetter = null)
     {
         var ws = context.GetWorkspace()!;
         var env = ws.Env;
+        var value = valueGetter?.Invoke(context) ?? context.GetRaw();
         if (ImGui.Selectable("Copy as JSON")) {
-            EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(context.GetRaw(), env.JsonOptions)!, "Copied!");
+            EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(value, env.JsonOptions)!, "Copied!");
             return true;
         }
-        var instance = context.Cast<RszInstance>();
+        var instance = value as RszInstance;
         if (instance != null) {
             var clipboard = EditorWindow.CurrentWindow?.GetClipboard();
             if (!string.IsNullOrEmpty(clipboard)) {
-                if (ImGui.Selectable("Paste JSON (replace value)")) {
+                if (ImGui.Selectable("Paste JSON (replace values)")) {
                     try {
                         var newJson = JsonSerializer.Deserialize<JsonNode>(clipboard, env.JsonOptions)!;
                         var prevJson = instance.ToJson(env);
                         UndoRedo.RecordCallbackSetter(context, context, prevJson, newJson, (ctx, json) => {
-                            var pasted = ws.Diff.OverrideInstance(ctx.Get<RszInstance>(), json);
+                            var pasted = ws.Diff.OverrideInstance(valueGetter?.Invoke(ctx) as RszInstance ?? ctx.Get<RszInstance>(), json);
                             try {
-                                ctx.Set(pasted);
+                                if (valueSetter != null) {
+                                    valueSetter.Invoke(context, pasted);
+                                } else {
+                                    ctx.Set(pasted);
+                                }
                             } catch (Exception e) {
-                                if (pasted != ctx.Get<RszInstance>()) {
+                                if (pasted != (valueGetter?.Invoke(ctx) as RszInstance ?? ctx.Get<RszInstance>())) {
                                     Logger.Error("Failed to paste object: " + e.Message);
                                 }
                             }
@@ -95,7 +100,7 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
                 }
             }
             var gameObjectCtx = context.FindParentContextByValue<GameObject>();
-            if (gameObjectCtx != null && env.TypeCache.IsAssignableTo(instance.RszClass.name, "via.Component")) {
+            if (gameObjectCtx != null && env.TypeCache.IsAssignableTo(instance.RszClass.name, "via.Component") && instance.RszClass.name != "via.Transform") {
                 if (ImGui.Selectable("Remove")) {
                     var gameObject = gameObjectCtx.Get<GameObject>();
                     Component? component = null;
@@ -113,7 +118,7 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
                 }
             }
         }
-        if (context.parent?.uiHandler is ArrayRSZHandler array && instance != null) {
+        if (valueSetter == null && context.parent?.uiHandler is ArrayRSZHandler array && instance != null) {
             if (ImGui.Selectable("Duplicate")) {
                 var clone = instance.Clone();
                 var parentList = context.parent.Get<IList>();
@@ -121,7 +126,7 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
                 return true;
             }
         }
-        if (context.uiHandler is ArrayRSZHandler thisArray && context.TryCast<IList>(out var list)) {
+        if (valueSetter == null && context.uiHandler is ArrayRSZHandler thisArray && context.TryCast<IList>(out var list)) {
             var elementType = thisArray.GetElementClassnameType(context);
             // note: UserData copy is not supported atm because it behaves differently from plain RszInstances
             var type = thisArray.Field.type == RszFieldType.UserData ? null : RszInstance.RszFieldTypeToRuntimeCSharpType(thisArray.Field.type);

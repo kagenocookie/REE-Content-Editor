@@ -132,6 +132,30 @@ public static class AppImguiHelpers
         }
     }
 
+    public static void ShowJsonCopyManualSet<TVal>(in TVal value, UIContext context, Action<UIContext, TVal> setter, string? mergeId)
+    {
+        if (ImGui.Selectable("Copy value")) {
+            EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(value, JsonConfig.jsonOptionsIncludeFields), $"Copied value of {context.label}!");
+            ImGui.CloseCurrentPopup();
+        }
+        if (ImGui.Selectable("Paste value")) {
+            try {
+                var data = EditorWindow.CurrentWindow?.GetClipboard();
+                if (string.IsNullOrEmpty(data)) return;
+
+                var val = JsonSerializer.Deserialize<TVal>(data, JsonConfig.jsonOptionsIncludeFields);
+                if (val == null) {
+                    Logger.Error($"Failed to deserialize {typeof(TVal).Name}.");
+                    return;
+                }
+                UndoRedo.RecordCallbackSetter<UIContext, TVal>(context, context, value, val, setter, mergeId);
+            } catch (Exception e) {
+                Logger.Error($"Failed to deserialize {typeof(TVal).Name}: " + e.Message);
+            }
+            ImGui.CloseCurrentPopup();
+        }
+    }
+
     public static void ShowJsonCopyPopup(object? value, Type type, UIContext context)
     {
         if (ImGui.BeginPopupContextItem(context.label)) {
