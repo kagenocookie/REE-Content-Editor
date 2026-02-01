@@ -9,38 +9,52 @@ public static partial class RszFieldCache
 {
     public static class RE4
     {
+        [RszAccessor("chainsaw.Ch1b5z1SpawnParam", nameof(GameIdentifier.re4))]
+        [RszAccessor("chainsaw.Ch1b7z0SpawnParam", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1c0SpawnParamCommon", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1c0z0SpawnParam", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1c0z0SpawnParam_AO", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1c0z0SpawnParam_AO_G", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1c0z0SpawnParamMercenaries", nameof(GameIdentifier.re4))]
-        [RszAccessor("chainsaw.Ch1c0z1SpawnParam", nameof(GameIdentifier.re4))]
-        [RszAccessor("chainsaw.Ch1c0z1SpawnParamMercenaries", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1c0z2SpawnParam", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1c0z2SpawnParamMercenaries", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1c0z2SpawnParam_AO", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1c8z0SpawnParam", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1c8z0SpawnParamMercenaries", nameof(GameIdentifier.re4))]
-        [RszAccessor("chainsaw.Ch1d0z0SpawnParam", nameof(GameIdentifier.re4))]
-        [RszAccessor("chainsaw.Ch1d0z0SpawnParamMercenaries", nameof(GameIdentifier.re4))]
+        [RszAccessor("chainsaw.Ch1d1z1SpawnParam", nameof(GameIdentifier.re4))]
+        [RszAccessor("chainsaw.Ch1d1z1SpawnParamMercenaries", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1d2z0SpawnParam", nameof(GameIdentifier.re4))]
-        [RszAccessor("chainsaw.Ch1d3z0SpawnParam", nameof(GameIdentifier.re4))]
-        [RszAccessor("chainsaw.Ch1d3z0SpawnParamMercenaries", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1d4z0SpawnParam", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1d6z0SpawnParam", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1e0z0SpawnParam", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1e0z0SpawnParamMercenaries", nameof(GameIdentifier.re4))]
-        [RszAccessor("chainsaw.Ch1f0z0SpawnParam", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1f1z0SpawnParam", nameof(GameIdentifier.re4))]
-        [RszAccessor("chainsaw.Ch1f2z0SpawnParam", nameof(GameIdentifier.re4))]
+        [RszAccessor("chainsaw.Ch1f4z1SpawnParam", nameof(GameIdentifier.re4))]
+        [RszAccessor("chainsaw.Ch1f5z1SpawnParam", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1f6z0SpawnParam", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1f7z0SpawnParam", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch1f8z0SpawnParam", nameof(GameIdentifier.re4))]
+        [RszAccessor("chainsaw.Ch4fez0SpawnParam", nameof(GameIdentifier.re4))]
+        [RszAccessor("chainsaw.Ch7k0z0SpawnParam", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch8g3z0SpawnParam", nameof(GameIdentifier.re4))]
         [RszAccessor("chainsaw.Ch8gaz0SpawnParam", nameof(GameIdentifier.re4))]
-        public static class Ch1xxxSpawnParam
+        [RszAccessor("chainsaw.Ch8g2z0SpawnParam", nameof(GameIdentifier.re4))]
+        public static class EnemySpawnParam
         {
             public static readonly RszFieldAccessorName<uint> _MontageID = Name<uint>();
+        }
+
+        [RszAccessor("chainsaw.Ch1c0z1SpawnParam", nameof(GameIdentifier.re4))]
+        [RszAccessor("chainsaw.Ch1c0z1SpawnParamMercenaries", nameof(GameIdentifier.re4))]
+        public static class Ch1c0z1SpawnParam
+        {
+            public static readonly RszFieldAccessorName<uint> _Ch1c0z1MontageID = Name<uint>();
+        }
+
+        [RszAccessor("chainsaw.Ch1c0z2SpawnParam", nameof(GameIdentifier.re4))]
+        public static class Ch1c0z2SpawnParam
+        {
+            public static readonly RszFieldAccessorName<uint> _Ch1c0z2MontageID = Name<uint>();
         }
 
         [RszAccessor("chainsaw.CostumePresetCatalogUserData", nameof(GameIdentifier.re4))]

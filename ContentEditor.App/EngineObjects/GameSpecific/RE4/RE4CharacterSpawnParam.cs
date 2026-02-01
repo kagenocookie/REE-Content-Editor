@@ -6,6 +6,12 @@ using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 
+// TODO (??)
+// chainsaw.Ch4**SpawnParam
+// chainsaw.Ch7k0z0SpawnParam
+
+[RszComponentClass("chainsaw.Ch1b5z1SpawnParam", nameof(GameIdentifier.re4))]
+[RszComponentClass("chainsaw.Ch1b7z0SpawnParam", nameof(GameIdentifier.re4))]
 [RszComponentClass("chainsaw.Ch1c0SpawnParamCommon", nameof(GameIdentifier.re4))]
 [RszComponentClass("chainsaw.Ch1c0z0SpawnParam", nameof(GameIdentifier.re4))]
 [RszComponentClass("chainsaw.Ch1c0z0SpawnParam_AO", nameof(GameIdentifier.re4))]
@@ -20,6 +26,8 @@ namespace ContentEditor.App;
 [RszComponentClass("chainsaw.Ch1c8z0SpawnParamMercenaries", nameof(GameIdentifier.re4))]
 [RszComponentClass("chainsaw.Ch1d0z0SpawnParam", nameof(GameIdentifier.re4))]
 [RszComponentClass("chainsaw.Ch1d0z0SpawnParamMercenaries", nameof(GameIdentifier.re4))]
+[RszComponentClass("chainsaw.Ch1d1z1SpawnParam", nameof(GameIdentifier.re4))]
+[RszComponentClass("chainsaw.Ch1d1z1SpawnParamMercenaries", nameof(GameIdentifier.re4))]
 [RszComponentClass("chainsaw.Ch1d2z0SpawnParam", nameof(GameIdentifier.re4))]
 [RszComponentClass("chainsaw.Ch1d3z0SpawnParam", nameof(GameIdentifier.re4))]
 [RszComponentClass("chainsaw.Ch1d3z0SpawnParamMercenaries", nameof(GameIdentifier.re4))]
@@ -30,15 +38,46 @@ namespace ContentEditor.App;
 [RszComponentClass("chainsaw.Ch1f0z0SpawnParam", nameof(GameIdentifier.re4))]
 [RszComponentClass("chainsaw.Ch1f1z0SpawnParam", nameof(GameIdentifier.re4))]
 [RszComponentClass("chainsaw.Ch1f2z0SpawnParam", nameof(GameIdentifier.re4))]
+[RszComponentClass("chainsaw.Ch1f4z1SpawnParam", nameof(GameIdentifier.re4))]
+[RszComponentClass("chainsaw.Ch1f5z1SpawnParam", nameof(GameIdentifier.re4))]
 [RszComponentClass("chainsaw.Ch1f6z0SpawnParam", nameof(GameIdentifier.re4))]
 [RszComponentClass("chainsaw.Ch1f7z0SpawnParam", nameof(GameIdentifier.re4))]
 [RszComponentClass("chainsaw.Ch1f8z0SpawnParam", nameof(GameIdentifier.re4))]
+[RszComponentClass("chainsaw.Ch2b0z0SpawnParam", nameof(GameIdentifier.re4))]
+[RszComponentClass("chainsaw.Ch4d7z0SpawnParam", nameof(GameIdentifier.re4))]
+[RszComponentClass("chainsaw.Ch4faz0SpawnParam", nameof(GameIdentifier.re4))]
+[RszComponentClass("chainsaw.Ch4faz1SpawnParam", nameof(GameIdentifier.re4))]
+[RszComponentClass("chainsaw.Ch4fbz0SpawnParam", nameof(GameIdentifier.re4))]
+[RszComponentClass("chainsaw.Ch4fez0SpawnParam", nameof(GameIdentifier.re4))]
+[RszComponentClass("chainsaw.Ch7k0z0SpawnParam", nameof(GameIdentifier.re4))]
 [RszComponentClass("chainsaw.Ch8g3z0SpawnParam", nameof(GameIdentifier.re4))]
 [RszComponentClass("chainsaw.Ch8gaz0SpawnParam", nameof(GameIdentifier.re4))]
+[RszComponentClass("chainsaw.Ch8g2z0SpawnParam", nameof(GameIdentifier.re4))]
 public class RE4CharacterSpawnParam(GameObject gameObject, RszInstance data) : BaseMultiMeshComponent(gameObject, data)
 {
     private uint lastEnemyId = uint.MaxValue;
-    private uint CurrentEnemyID => Data.Get(RszFieldCache.RE4.Ch1xxxSpawnParam._MontageID);
+    private uint CurrentEnemyID {
+        get {
+            if (Data.RszClass.name.Contains("Ch1c0z1SpawnParam")) return Data.Get(RszFieldCache.RE4.Ch1c0z1SpawnParam._Ch1c0z1MontageID);
+            if (Data.RszClass.name.Contains("Ch1c0z2SpawnParam")) return Data.Get(RszFieldCache.RE4.Ch1c0z2SpawnParam._Ch1c0z2MontageID);
+            if (FixedMontageIDs.TryGetValue(Data.RszClass.name, out var fixedId)) {
+                return fixedId;
+            }
+            return Data.Get(RszFieldCache.RE4.EnemySpawnParam._MontageID);
+        }
+    }
+
+    private static readonly Dictionary<string, uint> FixedMontageIDs = new() {
+
+        { "chainsaw.Ch1d0z0SpawnParam", 1106175613 }, // TODO 781676956 also exists - how is it selected?
+        { "chainsaw.Ch1d0z0SpawnParamMercenaries", 1106175613 },
+        { "chainsaw.Ch1d3z0SpawnParam", 1106175613 },
+        { "chainsaw.Ch1d3z0SpawnParamMercenaries", 1106175613 },
+        { "chainsaw.Ch1f0z0SpawnParam", 1106175613 }, // TODO 781676956 also exists - how is it selected?
+        { "chainsaw.Ch1f2z0SpawnParam", 1106175613 },
+        { "chainsaw.Ch1f6z0SpawnParam", 1106175613 }, // TODO 148554940 also exists
+        { "chainsaw.Ch2b0z0SpawnParam", 160198385 }, // TODO 2384654012 also exists
+    };
 
     protected override bool IsMeshUpToDate() => lastEnemyId == CurrentEnemyID;
 
@@ -46,25 +85,23 @@ public class RE4CharacterSpawnParam(GameObject gameObject, RszInstance data) : B
     {
         UnloadMeshes();
         var enemyId = CurrentEnemyID;
-        if (enemyId > 0 && enemyId < uint.MaxValue) {
-            var kindIdEnum = (EnumDescriptor<int>)Scene!.Workspace.Env.TypeCache.GetEnumDescriptor("chainsaw.CharacterKindID");
-            var kindSpan = Data.RszClass.name.AsSpan()[("chainsaw.".Length)..(Data.RszClass.name.IndexOf("SpawnParam"))];
-            var kindStr = string.Concat(kindSpan.Slice(0, 3), "_", kindSpan.Slice(3)).ToLowerInvariant();
-            if (!kindStr.Contains('z')) {
-                var zoneId = 0; // TODO determine zone properly (based on loc id?)
-                kindStr = kindStr + "z" + zoneId;
-            }
-
-            var kindId = kindIdEnum.LabelToValues.GetValueOrDefault(kindStr, -1);
-            if (kindId != -1) {
-                SetEnemyID(kindId, enemyId);
-                return;
-            }
-
-            Logger.Debug("Failed to find RE4 character kind ID from classname " + Data.RszClass.name);
+        var kindIdEnum = (EnumDescriptor<int>)Scene!.Workspace.Env.TypeCache.GetEnumDescriptor("chainsaw.CharacterKindID");
+        var kindSpan = Data.RszClass.name.AsSpan()[("chainsaw.".Length)..(Data.RszClass.name.IndexOf("SpawnParam"))];
+        var kindStr = string.Concat(kindSpan.Slice(0, 3), "_", kindSpan.Slice(3)).ToLowerInvariant();
+        if (!kindStr.Contains('z')) {
+            var zoneId = 0; // TODO RE4 determine enemy zone properly (based on loc id?)
+            kindStr = kindStr + "z" + zoneId;
         }
 
-        lastEnemyId = uint.MaxValue;
+        var kindId = kindIdEnum.LabelToValues.GetValueOrDefault(kindStr, -1);
+        if (kindId != -1) {
+            SetEnemyID(kindId, enemyId);
+            return;
+        }
+
+        Logger.Debug("Failed to find RE4 character kind ID from classname " + Data.RszClass.name);
+
+        lastEnemyId = enemyId;
     }
 
     private void SetEnemyID(int kindId, uint enemyId)
@@ -102,9 +139,12 @@ public class RE4CharacterSpawnParam(GameObject gameObject, RszInstance data) : B
 
         var costumePresetData = user.GetFile<UserFile>().Instance;
 
-        var costumePreset = costumePresetData?.Get(RszFieldCache.RE4.CostumePresetUserData._DataTable)
-            .Cast<RszInstance>()
-            .FirstOrDefault(preset => preset.Get(RszFieldCache.RE4.CostumePresetUserData.Data._ID) == characterId);
+        var presets = costumePresetData?.Get(RszFieldCache.RE4.CostumePresetUserData._DataTable)
+            .Cast<RszInstance>();
+
+        var costumePreset = characterId == 0 || characterId == uint.MaxValue ?
+            presets?.FirstOrDefault()
+            : presets?.FirstOrDefault(preset => preset.Get(RszFieldCache.RE4.CostumePresetUserData.Data._ID) == characterId);
 
         if (costumePreset == null) {
             Logger.Debug("Could not resolve character costume preset " + characterId);
