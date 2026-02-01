@@ -38,9 +38,14 @@ public class TextureLoader : IFileLoader
     {
         var res = handle.GetResource<BaseFileResource<TexFile>>();
         var tex = res.File;
+        return SaveTo(tex, outputPath);
+    }
+
+    public static bool SaveTo(TexFile tex, string outputPath)
+    {
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
         using var fs = File.Create(outputPath);
-        var texStream = handle.Stream;
+        var texStream = tex.FileHandler.Stream;
         if (tex.MustBeCompressed) {
             texStream = tex.CompressGDeflate(static (data, level, fileHandler) => {
                 using var compressed = GDeflateNet.GDeflate.Compress(data, level, out var size);

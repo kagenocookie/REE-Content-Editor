@@ -236,17 +236,17 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
             var save1 = ImGui.Button("Save As ...");
             ImguiHelpers.Tooltip("Save the current texture to a standard file format");
             if (save1) {
-                PlatformUtils.ShowSaveFileDialog((outpath) => {
+                PlatformUtils.ShowSaveFileDialog((outpath) => MainLoop.Instance.InvokeFromUIThread(() => {
                     if (Path.GetExtension(outpath) == ".dds") {
                         MainLoop.Instance.BackgroundTasks.Queue(new TextureConversionTask(outputTexture.GetAsDDS(), (outDDS) => {
-                            PlatformUtils.ShowSaveFileDialog((path) => {
-                                MainLoop.Instance.InvokeFromUIThread(() => outDDS.SaveAs(path));
-                            }, filter: FileFilters.DDSFile);
+                            using var fs = File.Create(outpath);
+                            outDDS.FileHandler.Seek(0);
+                            outDDS.FileHandler.Stream.CopyTo(fs);
                         }, GetOperations()));
                     } else {
-                        MainLoop.Instance.InvokeFromUIThread(() => outputTexture?.SaveAs(outpath));
+                        outputTexture?.SaveAs(outpath);
                     }
-                }, filter: FileFilters.TextureFile);
+                }), filter: FileFilters.TextureFile);
             }
             ImGui.SameLine();
             var save2 = ImGui.Button("Convert ...");
@@ -262,7 +262,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
                     tex.LoadDataFromDDS(outDDS);
                     PlatformUtils.ShowSaveFileDialog((path) => {
                         MainLoop.Instance.InvokeFromUIThread(() => {
-                            tex.SaveAs(path);
+                            TextureLoader.SaveTo(tex, path);
                             dds.Dispose();
                             tex.Dispose();
                         });
