@@ -100,7 +100,7 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
 
             (inactiveMaterial, obscuredMaterial) = mat.Blend().Create2("rcol", "rcol_obscured");
             obscuredMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.FileTypeRCOL) with { A = 95 });
-            inactiveMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.FileTypeRCOL) with { A = 90 });
+            inactiveMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.FileTypeRCOL) with { A = 45 });
         }
 
         gizmo ??= new(RootScene!, this);
