@@ -44,8 +44,11 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
     protected UIContext context = null!;
     private ListFileWrapper? currentList;
     private ListFileWrapper? activeListFile;
-    private BookmarkManager _bookmarkManagerDefaults = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "app/default_bookmarks_pak.json"));
-    private BookmarkManager _bookmarkManager = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "user/bookmarks_pak.json"));
+    private BookmarkManager _bookmarkManagerDefaults = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "global/default_bookmarks_pak.json"));
+    private BookmarkManager _bookmarkManager = new BookmarkManager(
+        Path.Combine(AppConfig.Instance.BookmarksFilepath.Get()!, "bookmarks_pak.json"),
+        Path.Combine(AppConfig.Instance.ConfigBasePath, "user/bookmarks_pak.json")
+    );
     private List<string> _activeTagFilter = new();
     private string bookmarkSearch = string.Empty;
     private bool isBookmarkSearchMatchCase = false;
@@ -274,7 +277,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 ImguiHelpers.Tooltip("Clear Custom Bookmarks");
 
                 if (ImGui.BeginPopupModal("Confirm Action", ImGuiWindowFlags.AlwaysAutoResize)) {
-                    string confirmText = $"Are you sure you want to delete all custom bookmarks for {Workspace.Config.Game.name}?";
+                    string confirmText = $"Are you sure you want to delete all custom bookmarks for {Languages.TranslateGame(Workspace.Config.Game.name)}?";
                     var textSize = ImGui.CalcTextSize(confirmText);
                     ImGui.Text(confirmText);
                     ImGui.Separator();

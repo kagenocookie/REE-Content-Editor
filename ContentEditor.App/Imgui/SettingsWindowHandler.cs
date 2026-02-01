@@ -63,7 +63,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         new SettingGroup { Name = "Hotkeys", SubGroups = {
                 new SettingSubGroup { Name = "Global", ID = SubGroupID.Hotkeys_Global},
                 new SettingSubGroup { Name = "Pak Browser", ID = SubGroupID.Hotkeys_PakBrowser},
-                // SILVER: More of a TODO thing but there should be contextual hotkeys for the editors
+                // TODO SILVER: There should be contextual hotkeys for the editors
                 //new SettingSubGroup { Name = "Mesh Viewer"},
                 //new SettingSubGroup { Name = "Texture Viewer"},
             }
@@ -159,7 +159,6 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                 bool open = true;
                 var sub = group.SubGroups[i];
                 var tabFlags = (selectedSubGroup == i) ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.NoCloseWithMiddleMouseButton;
-                // This overload forces the close button onto tabs... annoying...
                 if (ImGui.BeginTabItem(sub.Name, ref open, tabFlags)) {
                     switch (sub.ID) {
                         case SubGroupID.Preferences_General:
@@ -224,6 +223,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
 
         ShowFolderSetting(config.CacheFilepath, "Cache file path", "The folder to use for general file caching. Must not be empty.");
         ShowFolderSetting(config.ThumbnailCacheFilepath, "Thumbnail cache file path", "The folder that cached thumbnails should be stored in. Must not be empty.");
+        ShowFolderSetting(config.BookmarksFilepath, "Bookmarks file path", "The folder in which user created bookmarks should be stored. Must not be empty.");
         ShowSlider(config.UnpackMaxThreads, "Max unpack threads", 1, 64, "The maximum number of threads to be used when unpacking.\nThe actual thread count is determined automatically by the .NET runtime.");
 
         var navchanged = ShowSetting(config.EnableKeyboardNavigation, "Enable keyboard navigation", "Whether to enable navigating between fields using arrow keys.");

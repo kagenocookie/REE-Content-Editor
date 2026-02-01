@@ -13,7 +13,7 @@ namespace ContentEditor.App.ImguiHandling.Mdf2;
 
 public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 {
-    public override string HandlerName => "MDF Editor";
+    public override string HandlerName => $"{AppIcons.SI_FileType_MDF} MDF Editor";
 
     public RszInstance? Instance { get; private set; }
     public string Filename => Handle.Filepath;
@@ -31,6 +31,13 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     private MmtrTemplateDB? mmtrTemplateDB;
     internal MmtrTemplateDB? MaterialTemplateDB => mmtrTemplateDB;
     private bool _requestedMmtrDb;
+    private BookmarkManager _mdfBookmarkManagerDefaults = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "global/default_bookmarks_mdf.json")); // TODO SILVER: Add more mat param descriptions
+    private BookmarkManager _mdfBookmarkManager = new BookmarkManager(
+        Path.Combine(AppConfig.Instance.BookmarksFilepath.Get()!, "bookmarks_mdf.json"),
+        Path.Combine(AppConfig.Instance.ConfigBasePath, "user/bookmarks_mdf.json")
+    );
+    public BookmarkManager MDFDefaultBookmarks => _mdfBookmarkManagerDefaults;
+    public BookmarkManager MDFBookmarks => _mdfBookmarkManager;
 
     public MaterialData ReplaceMaterialParams(string mmtr, MaterialData material)
     {
@@ -135,6 +142,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
     private string newMaterialName = string.Empty;
     private bool isNewMaterialMenu = false;
     private string materialSearch = string.Empty;
+    public bool isShowOnlyBookmarkedParams = false;
     public void OnIMGUI(UIContext context)
     {
         var file = context.Get<MdfFile>();
@@ -156,11 +164,11 @@ public class MdfFileImguiHandler : IObjectUIHandler
 
         ImGui.TextColored(Colors.Faded, "Material List");
         ImGui.Separator();
-        ImguiHelpers.ToggleButton($"{AppIcons.SI_FileType_MDF}", ref isNewMaterialMenu, Colors.IconActive);
+        ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_MaterialAdd, ref isNewMaterialMenu, new[] { Colors.IconPrimary, Colors.IconSecondary }, Colors.IconActive);
         ImguiHelpers.Tooltip("Add new Material");
         ImGui.SameLine();
         using (var __ = ImguiHelpers.Disabled(!VirtualClipboard.TryGetFromClipboard<MaterialData>(out _))) {
-            if (ImGui.Button($"{AppIcons.SI_Paste}")) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_MaterialPaste, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary})) {
                 if (VirtualClipboard.TryGetFromClipboard<MaterialData>(out var pasted)) {
                     var clone = pasted.Clone();
                     clone.Header.matName = clone.Header.matName.GetUniqueName(str => list.Any(l => l.Header.matName == str));
@@ -271,6 +279,9 @@ public class MdfFileImguiHandler : IObjectUIHandler
             if (context.children.Count == 0 || context.children[0].label != label) {
                 context.AddChild(label, mat, getter: (c) => (object)getter(c)!).AddDefaultHandler<T>();
             }
+            if (label == "Parameters") {
+                ShowMaterialParameterToolbar(context);
+            }
             ImGui.SetNextItemOpen(true, ImGuiCond.Always);
             context.ShowChildrenUI();
             ImGui.EndTabItem();
@@ -304,6 +315,38 @@ public class MdfFileImguiHandler : IObjectUIHandler
             UndoRedo.RecordListRemove(context, list, mat);
             int newIndex = Math.Clamp(index - 1, 0, list.Count - 1);
             onSelectIndexChanged?.Invoke(newIndex);
+        }
+    }
+    private void ShowMaterialParameterToolbar(UIContext context)
+    {
+        var workspace = context.GetWorkspace();
+        var mdfBookmarks = context.FindHandlerInParents<MdfEditor>()?.MDFBookmarks;
+        ImguiHelpers.ToggleButton($"{AppIcons.SI_Bookmark}", ref isShowOnlyBookmarkedParams, Colors.IconActive);
+        ImguiHelpers.Tooltip("Show only bookmarked parameters");
+        using (var _ = ImguiHelpers.Disabled(mdfBookmarks?.GetBookmarks(workspace.Game.name).Count == 0)) {
+            ImGui.SameLine();
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BookmarkClear, new[] { Colors.IconPrimary, Colors.IconTertiary })) {
+                ImGui.OpenPopup("Confirm Action");
+            }
+            ImguiHelpers.Tooltip("Clear material parameter bookmarks");
+            if (ImGui.BeginPopupModal("Confirm Action", ImGuiWindowFlags.AlwaysAutoResize)) {
+                string confirmText = $"Are you sure you want to delete all material parameter bookmarks for {Languages.TranslateGame(workspace.Game.name)}?";
+                var textSize = ImGui.CalcTextSize(confirmText);
+                ImGui.Text(confirmText);
+                ImGui.Separator();
+
+                if (ImGui.Button("Yes", new Vector2(textSize.X / 2, 0))) {
+                    mdfBookmarks?.ClearBookmarks(workspace.Game.name);
+                    isShowOnlyBookmarkedParams = false;
+                    Logger.Info($"Cleared material parameter bookmarks for {workspace.Game.name}");
+                    ImGui.CloseCurrentPopup();
+                }
+                ImGui.SameLine();
+                if (ImGui.Button("No", new Vector2(textSize.X / 2, 0))) {
+                    ImGui.CloseCurrentPopup();
+                }
+                ImGui.EndPopup();
+            }
         }
     }
     private class EMVMaterialJson
@@ -519,8 +562,49 @@ public class ParamHeaderImguiHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
+        var param = context.Get<ParamHeader>();
+        var workspace = context.GetWorkspace();
+        var mdfBookmarks = context.FindHandlerInParents<MdfEditor>()?.MDFBookmarks;
+        var mdfDefaultBookmarks = context.FindHandlerInParents<MdfEditor>()?.MDFDefaultBookmarks;
+        bool isBookmarked = mdfBookmarks.IsBookmarked(workspace.Game.name, param.paramName);
+        bool showOnlyBookmarked = context.FindHandlerInParents<MdfFileImguiHandler>().isShowOnlyBookmarkedParams;
+
+        BookmarkManager.BookmarkEntry? paramEntry = null;
+        foreach (var b in mdfDefaultBookmarks.GetBookmarks(workspace.Game.name)) {
+            if (b.Path == param.paramName) {
+                paramEntry = b;
+                break;
+            }
+        }
+        bool hasDefaultComment = paramEntry != null && !string.IsNullOrWhiteSpace(paramEntry.Comment);
+
+        if (showOnlyBookmarked && !isBookmarked) return;
+
+        if (mdfBookmarks != null) {
+            ImGui.PushStyleColor(ImGuiCol.Text, isBookmarked ? Colors.IconActive : ImguiHelpers.GetColor(ImGuiCol.Text));
+            if (ImGui.Button(isBookmarked ? $"{AppIcons.Star}" : $"{AppIcons.StarEmpty}")) {
+                if (isBookmarked) {
+                    mdfBookmarks.RemoveBookmark(workspace.Game.name, param.paramName);
+                } else {
+                    mdfBookmarks.AddBookmark(workspace.Game.name, param.paramName);
+                }
+            }
+            ImGui.SameLine();
+            ImGui.PopStyleColor();
+            ImguiHelpers.Tooltip(isBookmarked ? "Remove parameter from bookmarks": "Add parameter to bookmarks");
+
+            using (var _ = ImguiHelpers.Disabled(!hasDefaultComment)) {
+                ImGui.Button($"{AppIcons.SI_GenericQmark}");
+                ImguiHelpers.Tooltip(hasDefaultComment ? paramEntry!.Comment : "To be documented");
+                ImGui.SameLine();
+            }
+        }
+
+        if (!showOnlyBookmarked) {
+            ImGui.PushStyleColor(ImGuiCol.Border, isBookmarked ? Colors.IconActive : Vector4.Zero);
+            ImguiHelpers.BeginRect();
+        }
         if (context.children.Count == 0) {
-            var param = context.Get<ParamHeader>();
             switch (param.componentCount) {
                 case 1:
                     context.AddChild<ParamHeader, float>(param.paramName, param, new NumericFieldHandler<float>(ImGuiDataType.Float), (p) => p!.parameter.X, (p, v) => p.parameter = new Vector4(v, 0, 0, 0));
@@ -542,5 +626,9 @@ public class ParamHeaderImguiHandler : IObjectUIHandler
             }
         }
         context.children[0].ShowUI();
+        if (!showOnlyBookmarked) {
+            ImguiHelpers.EndRect();
+            ImGui.PopStyleColor();
+        }
     }
 }

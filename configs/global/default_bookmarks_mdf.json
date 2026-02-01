@@ -1,0 +1,9 @@
+{
+  "re2rt": [
+    {
+      "Path": "BaseColor",
+      "Tags": [],
+      "Comment": "Tint color for Albedo"
+    }
+  ]
+}
