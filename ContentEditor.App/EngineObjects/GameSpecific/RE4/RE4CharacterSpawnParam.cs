@@ -68,7 +68,7 @@ public class RE4CharacterSpawnParam(GameObject gameObject, RszInstance data) : B
     }
 
     private static readonly Dictionary<string, uint> FixedMontageIDs = new() {
-
+        // note: 1106175613 == "Default"
         { "chainsaw.Ch1d0z0SpawnParam", 1106175613 }, // TODO 781676956 also exists - how is it selected?
         { "chainsaw.Ch1d0z0SpawnParamMercenaries", 1106175613 },
         { "chainsaw.Ch1d3z0SpawnParam", 1106175613 },
@@ -77,6 +77,8 @@ public class RE4CharacterSpawnParam(GameObject gameObject, RszInstance data) : B
         { "chainsaw.Ch1f2z0SpawnParam", 1106175613 },
         { "chainsaw.Ch1f6z0SpawnParam", 1106175613 }, // TODO 148554940 also exists
         { "chainsaw.Ch2b0z0SpawnParam", 160198385 }, // TODO 2384654012 also exists
+
+        { "chainsaw.Ch4d7z0SpawnParam", 1106175613 }, // TODO 3935730826 also exists
     };
 
     protected override bool IsMeshUpToDate() => lastEnemyId == CurrentEnemyID;
@@ -104,22 +106,22 @@ public class RE4CharacterSpawnParam(GameObject gameObject, RszInstance data) : B
         lastEnemyId = enemyId;
     }
 
+    private static string[] PresetCatalogPaths = [
+        "natives/stm/_chainsaw/appsystem/catalog/character/costumepresetcatalog_1st.user.2",
+        "natives/stm/_chainsaw/appsystem/catalog/character/costumepresetcatalog_2nd.user.2",
+        "natives/stm/_anotherorder/appsystem/catalog/maincontents/costumepresetcatalog_ao.user.2",
+        "natives/stm/_mercenaries/appsystem/catalog/maincontents/costumepresetcatalog_mc_2nd.user.2",
+    ];
     private void SetEnemyID(int kindId, uint enemyId)
     {
         lastEnemyId = enemyId;
-        if (Scene!.Workspace.ResourceManager.TryResolveGameFile("natives/stm/_chainsaw/appsystem/catalog/character/costumepresetcatalog_1st.user.2", out var user)) {
-            var list = (user.GetFile<UserFile>().Instance?.Values[0] as List<object>)?.Cast<RszInstance>();
-            var data = list?.FirstOrDefault(d => d.Get(RszFieldCache.RE4.CostumePresetCatalogUserData.Data._KindID) == kindId);
-            if (ApplyCostumePreset(enemyId, data)) {
-                return;
-            }
-        }
-
-        if (Scene!.Workspace.ResourceManager.TryResolveGameFile("natives/stm/_chainsaw/appsystem/catalog/character/costumepresetcatalog_2nd.user.2", out user)) {
-            var list = (user.GetFile<UserFile>().Instance?.Values[0] as List<object>)?.Cast<RszInstance>();
-            var data = list?.FirstOrDefault(d => d.Get(RszFieldCache.RE4.CostumePresetCatalogUserData.Data._KindID) == kindId);
-            if (ApplyCostumePreset(enemyId, data)) {
-                return;
+        foreach (var catalogPath in PresetCatalogPaths) {
+            if (Scene!.Workspace.ResourceManager.TryResolveGameFile(catalogPath, out var user)) {
+                var list = (user.GetFile<UserFile>().Instance?.Values[0] as List<object>)?.Cast<RszInstance>();
+                var data = list?.FirstOrDefault(d => d.Get(RszFieldCache.RE4.CostumePresetCatalogUserData.Data._KindID) == kindId);
+                if (ApplyCostumePreset(enemyId, data)) {
+                    return;
+                }
             }
         }
     }
