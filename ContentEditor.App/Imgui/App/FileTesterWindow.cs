@@ -400,7 +400,8 @@ public partial class FileTesterWindow : IWindowHandler
             } catch {
                 // ignore
             }
-            foreach (var (path, stream) in GetFileList(cw, format)) {
+            var format = env.GetFileFormatFromExtension(extension);
+            foreach (var (path, stream) in GetFileList(cw, [extension], format)) {
                 if (token.IsCancellationRequested) yield break;
                 if (ShouldSkipFile(format, path)) continue;
 
@@ -416,7 +417,12 @@ public partial class FileTesterWindow : IWindowHandler
 
     internal static IEnumerable<(string path, MemoryStream stream)> GetFileList(ContentWorkspace env, KnownFileFormats format)
     {
-        var exts = env.Env.GetFileExtensionsForFormat(format);
+        var exts = env.Env.GetFileExtensionsForFormat(format).ToArray();
+        return GetFileList(env, exts, format);
+    }
+
+    internal static IEnumerable<(string path, MemoryStream stream)> GetFileList(ContentWorkspace env, string[] exts, KnownFileFormats format)
+    {
         if (!string.IsNullOrEmpty(env.Env.Config.GamePath) && PakUtils.ScanPakFiles(env.Env.Config.GamePath).Count > 0) {
             return exts.SelectMany(ext => env.Env.GetFilesWithExtension(ext));
         }
@@ -655,8 +661,8 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<RszInstance>((m) => m.Values.Append(m.RszClass.crc), true);
         AddCompareMapper<RSZFile>((m) => []);
 
-        AddCompareMapper<RcolFile>((m) => [m.Header, m.Groups, m.RequestSets, m.IgnoreTags, m.AutoGenerateJointDescs]);
-        AddCompareMapper<GroupInfo>((m) => [m.guid, m.LayerGuid, m.LayerIndex, m.MaskBits, m.NameHash, m.NumShapes, m.NumMaskGuids, m.NumExtraShapes]);
+        AddCompareMapper<RcolFile>((m) => [m.Header, m.Groups, m.RequestSets, m.IgnoreTags, m.AutoGenerateJointDescs, m.RSZ.ObjectList]);
+        AddCompareMapper<GroupInfo>((m) => [m.guid, m.LayerGuid, m.LayerIndex, m.MaskBits, m.MaskGuids, m.Name, m.NameHash]);
 
         AddCompareMapper<UVarFile>((m) => [m.Header.embedCount, m.Header.magic, m.Header.name, m.Header.ukn, m.Header.UVARhash, m.Header.variableCount, m.EmbeddedUVARs, m.Variables]);
         AddCompareMapper<ReeLib.UVar.Variable>((m) => [m.guid, m.Value, m.Expression, m.flags, m.Name, m.nameHash]);

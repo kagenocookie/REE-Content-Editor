@@ -190,6 +190,8 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
                     var clone = item.Clone();
                     clone.Info.ID = clone.Info.ID + 1; // TODO verify unique
                     UndoRedo.RecordListInsert(context.parent, list, clone, list.IndexOf(item) + 1);
+                    var rcol = context.FindHandlerInParents<RcolEditor>()!.File;
+                    UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Do, () => rcol.InsertNewRequestSet(clone));
                 }
                 if (ImGui.Selectable("Copy")) {
                     VirtualClipboard.CopyToClipboard(item.Clone());
@@ -207,6 +209,7 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
                             if (editor?.PrimaryTarget == item) {
                                 editor.SetPrimaryInspector(clone);
                             }
+                            rcol?.InsertNewRequestSet(clone);
                         });
                         UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Undo, () => {
                             if (editor?.PrimaryTarget == clone) {
@@ -224,6 +227,7 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
                         UndoRedo.RecordListInsert(context.parent, list, clone, list.IndexOf(item) + 1);
                         UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context.parent);
                         editor?.SetPrimaryInspector(clone);
+                        UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Do, () => rcol?.InsertNewRequestSet(clone));
                     }
                 }
                 ImGui.EndPopup();
@@ -293,12 +297,6 @@ public class RcolGroupEditor : IObjectUIHandler
             context.AddChild<RcolGroup, Guid>("GUID", group, getter: (i) => i!.Info.guid, setter: (i, v) => i.Info.guid = v).AddDefaultHandler<Guid>();
             context.AddChild<RcolGroup, Guid>("Layer", group, getter: (i) => i!.Info.LayerGuid, setter: (i, v) => i.Info.LayerGuid = v).AddDefaultHandler<Guid>();
             context.AddChild<RcolGroup, List<Guid>>("Masks", group, new ListHandler(typeof(Guid), typeof(List<Guid>)) { CanCreateRemoveElements = true }, (i) => i!.Info.MaskGuids, (i, v) => i.Info.MaskGuids = v);
-            context.AddChild<RcolGroup, RszInstance>(
-                "UserData",
-                group,
-                new NestedUIHandlerStringSuffixed(new SwappableRszInstanceHandler("via.physics.RequestSetColliderUserData")),
-                (i) => i!.Info.UserData,
-                setter: (i, v) => i.Info.UserData = v);
             context.AddChild<RcolGroup, List<RcolShape>>("Shapes", group, new ListHandler(typeof(RcolShape)) { CanCreateRemoveElements = true }, getter: (i) => i!.Shapes);
             context.AddChild<RcolGroup, List<RcolShape>>("ExtraShapes", group, new ListHandler(typeof(RcolShape)) { CanCreateRemoveElements = true }, getter: (i) => i!.ExtraShapes);
         }
@@ -337,8 +335,8 @@ public class RcolShapeEditor : IObjectUIHandler
                 "UserData",
                 group,
                 new NestedUIHandlerStringSuffixed(new SwappableRszInstanceHandler("via.physics.RequestSetColliderUserData")),
-                (i) => i!.Instance,
-                setter: (i, v) => i.Instance = v);
+                (i) => i!.DefaultInstance,
+                setter: (i, v) => i.DefaultInstance = v);
         }
 
         if (AppImguiHelpers.CopyableTreeNode<RcolShape>(context)) {

@@ -74,8 +74,8 @@ internal static class EfxReversingTools
         Debug.Assert(FileProvider != null);
         foreach (var game in EfxSupportedGames) {
             try {
-                foreach (var (file, path) in FileProvider.Invoke(game, fileExt)) {
-                    func.Invoke(game, file, path);
+                foreach (var (path, stream) in FileProvider.Invoke(game, fileExt)) {
+                    func.Invoke(game, path, stream);
                 }
             } catch (Exception e) {
                 Logger.Warn($"Failed to handle files for {game}: {e.Message}");

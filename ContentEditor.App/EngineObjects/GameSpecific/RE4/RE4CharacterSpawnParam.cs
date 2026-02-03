@@ -6,10 +6,6 @@ using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 
-// TODO (??)
-// chainsaw.Ch4**SpawnParam
-// chainsaw.Ch7k0z0SpawnParam
-
 [RszComponentClass("chainsaw.Ch1b5z1SpawnParam", nameof(GameIdentifier.re4))]
 [RszComponentClass("chainsaw.Ch1b7z0SpawnParam", nameof(GameIdentifier.re4))]
 [RszComponentClass("chainsaw.Ch1c0SpawnParamCommon", nameof(GameIdentifier.re4))]
@@ -186,21 +182,6 @@ public class RE4CharacterSpawnParam(GameObject gameObject, RszInstance data) : B
 
         // TODO RE4 handle custom spawn areas properly (and see if there's other similar components)
         return GameObject.Transform.WorldTransform;
-    }
-
-    internal override unsafe void Render(RenderContext context)
-    {
-        base.Render(context);
-        // var render = AppConfig.Instance.RenderMeshes.Get();
-        // if (!render) {
-        //     return;
-        // }
-        // if (mesh == null || !IsMeshUpToDate()) {
-        //     RefreshMesh();
-        // }
-        // if (mesh != null) {
-        //     context.RenderSimple(mesh, GetSpawnPosition());
-        // }
     }
 }
 

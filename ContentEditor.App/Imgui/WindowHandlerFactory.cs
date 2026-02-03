@@ -801,7 +801,12 @@ public static class WindowHandlerFactory
 
     public static string GetString(this RszInstance instance)
     {
-        return classFormatters.TryGetValue(instance.RszClass, out var fmt) ? fmt.GetString(instance) : instance.Name;
+        if (classFormatters.TryGetValue(instance.RszClass, out var fmt)) return fmt.GetString(instance);
+#if DEBUG
+        return instance.Name;
+#else
+        return instance.RszClass.name;
+#endif
     }
 
     public static StringFormatter? GetStringFormatter(RszInstance instance)
