@@ -13,7 +13,12 @@ public class MotListFileLoader : DefaultFileLoader<MotlistFile>
         var file = GetFile(handle);
         var dangling = file.FindDanglingMotFiles();
         if (dangling.Length > 0) {
-            Logger.Warn("Found mot files without motion IDs. These will get lost after reopening the file unless you give them a motion ID from the Motions list:\n" + string.Join("\n", dangling));
+            Logger.Warn("Found mot files without motion IDs. Assigning them to blank new motion IDs. Remove both the motion IDs and mot files if they should get deleted.");
+        }
+        foreach (var mot in dangling) {
+            var lastId = file.Motions.Count == 0 ? 1 : Math.Max(10000, file.Motions.Max(m => m.motNumber + 1));
+            file.Motions.Add(new ReeLib.Motlist.MotIndex(file.Header.version) { MotFile = mot, motNumber = (ushort)lastId });
+            Logger.Warn($"Added motion ID {lastId} for mot {file.MotFiles.IndexOf(mot)} \"{mot.Name}\"");
         }
         if (outputPath == handle.Filepath) {
             // force a clean save
