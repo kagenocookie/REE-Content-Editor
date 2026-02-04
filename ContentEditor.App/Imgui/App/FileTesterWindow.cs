@@ -653,9 +653,9 @@ public partial class FileTesterWindow : IWindowHandler
             // m.EndClips, m.PropertyTree
         ]);
         AddCompareMapper<MotTreeFile>((m) => [m.Name, m.MotionIDRemaps, m.expandedMotionsCount, m.uknCount1, m.uknCount2]);
-        AddCompareMapper<MotBone>((m) => [m.boneName, m.boneHash, m.Children.Count, m.Index, m.quaternion, m.translation, m.Parent?.boneName, m.uknValue1, m.uknValue2]);
+        AddCompareMapper<MotBone>((m) => [m.boneName, m.boneHash, m.Children.Count, m.Index, m.quaternion, m.translation, m.Parent?.boneName, m.attributes1, m.attributes2]);
         AddCompareMapper<Track>((m) => [m.translations, m.rotations, m.flags, m.floats, m.frameIndexes, m.keyCount, m.maxFrame, m.frameRate]);
-        AddCompareMapper<BoneClipHeader>((m) => [m.boneHash, m.boneIndex, m.boneName, m.trackFlags, m.uknFloat, m.uknIndex]);
+        AddCompareMapper<BoneClipHeader>((m) => [m.boneHash, m.boneIndex, m.boneName, m.trackFlags, m.weight]);
         AddCompareMapper<MotIndex>((m) => m.data.Cast<object>().Concat(new object[] { m.extraClipCount, m.motNumber }), true);
 
         AddCompareMapper<RszInstance>((m) => m.Values.Append(m.RszClass.crc), true);
