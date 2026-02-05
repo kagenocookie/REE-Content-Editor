@@ -772,7 +772,10 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         return false;
     }
 
-    private FileHandle? ReadOrGetFileResource(string filepath, string? nativePath)
+    /// <summary>
+    /// Attempt to load a file from the given file path and assume the set native path for its base file. File path can be a disk path, a native or internal path.
+    /// </summary>
+    public FileHandle? ReadOrGetFileResource(string filepath, string? nativePath)
     {
         filepath = filepath.NormalizeFilepath();
         nativePath ??= PreprocessNativeFilepath(filepath);

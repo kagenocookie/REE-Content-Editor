@@ -688,6 +688,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem("Texture Channel Packer")) {
                     AddSubwindow(new TextureChannelPacker()).Size = new Vector2(1280, 800);
                 }
+                if (ImGui.MenuItem("File Upgrader")) {
+                    AddSubwindow(new FileUpgrader()).Size = new Vector2(1280, 800);
+                }
             }
             ImGui.EndMenu();
         }

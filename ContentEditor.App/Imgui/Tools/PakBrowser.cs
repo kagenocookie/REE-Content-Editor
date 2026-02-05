@@ -158,6 +158,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         activeListFile ??= LocalizeListFile(contentWorkspace);
         if (activeListFile == null || activeListFile.Files.Length == 0) {
             ImGui.TextColored(Colors.Warning, $"List file not found for game {Workspace.Config.Game}");
+            // TODO add a "scan file list" option
             return;
         }
 
