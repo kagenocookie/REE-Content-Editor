@@ -241,7 +241,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
             }
             ImGui.SameLine();
             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-            ImGui.InputText("##NewMaterialNameField", ref newMaterialName, 64);
+            ImGui.InputTextWithHint("##NewMaterialNameField", "Enter material name here...", ref newMaterialName, 64);
         }
 
         ImGui.Separator();

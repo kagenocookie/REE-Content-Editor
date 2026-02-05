@@ -315,7 +315,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             var bookmarkSearchQuery = isBookmarkSearchMatchCase ? bookmarkSearch.Trim() : bookmarkSearch.Trim().ToLowerInvariant();
             if (!string.IsNullOrEmpty(bookmarkSearch)) {
                 ImGui.SameLine();
-                ImGui.SetCursorPosX(ImGui.GetCursorPosX() - (ImGui.CalcTextSize($"{AppIcons.SI_GenericError}").X * 2));
+                ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
                 ImGui.SetNextItemAllowOverlap();
                 if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
                     bookmarkSearch = string.Empty;
@@ -323,7 +323,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             }
             ImGui.SameLine();
             ImGui.SetNextItemWidth(filterComboWidth);
-            if (ImGui.BeginCombo("##TagFilterCombo", filterLabelDisplayText)) {
+            if (ImGui.BeginCombo("##TagFilterCombo", filterLabelDisplayText, ImGuiComboFlags.HeightLargest)) {
                 ImGui.TextDisabled("Filter Mode:");
                 ImGui.SameLine();
 
