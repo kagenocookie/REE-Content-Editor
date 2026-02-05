@@ -30,10 +30,10 @@ public class FileUpgrader : BaseWindowHandler
 
     public override void OnIMGUI()
     {
-        AppImguiHelpers.InputFilepath("Source Version RSZ JSON", ref sourceRszJsonPath);
+        AppImguiHelpers.InputFilepath("Source Version RSZ JSON", ref sourceRszJsonPath, FileFilters.JsonFile);
         ImguiHelpers.Tooltip("The RSZ JSON of the source file game version. If unspecified, the currently active one will be used.");
 
-        AppImguiHelpers.InputFilepath("Target Version RSZ JSON", ref targetRszJsonPath);
+        AppImguiHelpers.InputFilepath("Target Version RSZ JSON", ref targetRszJsonPath, FileFilters.JsonFile);
         ImguiHelpers.Tooltip("The RSZ JSON of the upgraded game version. If unspecified, the currently active one will be used.");
 
         var sourceChanged = AppImguiHelpers.InputFolder("Source Folder", ref sourceFolder);
@@ -43,6 +43,11 @@ public class FileUpgrader : BaseWindowHandler
         ImguiHelpers.Tooltip("The folder into which to store the upgraded files.");
 
         if (string.IsNullOrEmpty(sourceFolder)) {
+            return;
+        }
+
+        if (sourceFolder == destinationFolder) {
+            ImGui.TextColored(Colors.Warning, "The source and target folders should not be the same.");
             return;
         }
 
