@@ -20,6 +20,7 @@ public class Languages
             nameof(GameName.sf6) => "Street Fighter 6",
             nameof(GameName.mhrise) => "Monster Hunter Rise",
             nameof(GameName.mhwilds) => "Monster Hunter Wilds",
+            nameof(GameName.mhsto3) => "Monster Hunter Stories 3",
             nameof(GameName.oni2) => "Onimusha 2",
             nameof(GameName.drdr) => "Dead Rising Deluxe Remaster",
             nameof(GameName.apollo) => "Apollo Justice: Ace Attorney",
