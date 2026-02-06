@@ -251,6 +251,8 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             config.MaxUndoSteps.Set(maxUndo);
         }
         ImguiHelpers.Tooltip("The maximum number of steps you can undo. Higher number means a bit higher memory usage after longer sessions.");
+
+        ShowSetting(config.ShowQuaternionsAsEuler, "Use Euler angles for quaternions", "Whether quaternions should be displayed as euler angles");
     }
 
     private static void ShowBundlesEditingTab()

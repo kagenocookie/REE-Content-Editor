@@ -1260,19 +1260,29 @@ public class OBBStructHandler : IObjectUIHandler
         var show = ImguiHelpers.TreeNodeSuffix(context.label, box.ToString());
         AppImguiHelpers.ShowJsonCopyPopup(box, context);
         if (show) {
-            Matrix4X4.Decompose(box.Coord.ToSystem().ToGeneric(), out var scale, out var rot, out var trans);
+            Matrix4x4.Decompose(box.Coord.ToSystem(), out var scale, out var rot, out var trans);
 
-            if (ImGui.DragFloat3("Offset", ref Unsafe.As<Vector3D<float>, Vector3>(ref trans), 0.005f)) {
-                box.Coord = Transform.GetMatrixFromTransforms(trans, rot, scale).ToSystem();
+            if (ImGui.DragFloat3("Offset", ref trans, 0.005f)) {
+                box.Coord = Transform.GetMatrixFromTransforms(trans, rot, scale);
                 UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} offset");
             }
-            if (ImGui.DragFloat4("Rotation", ref Unsafe.As<Quaternion<float>, Vector4>(ref rot), 0.005f)) {
-                rot = Quaternion<float>.Normalize(rot);
-                box.Coord = Transform.GetMatrixFromTransforms(trans, rot, scale).ToSystem();
+            if (!context.HasBoolState) context.StateBool = AppConfig.Instance.ShowQuaternionsAsEuler.Get();
+            if (QuaternionFieldHandler.HandleQuaternion("Rotation", ref rot, context.StateBool)) {
+                box.Coord = Transform.GetMatrixFromTransforms(trans, rot, scale);
                 UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} rotation");
             }
-            if (ImGui.DragFloat3("Scale", ref Unsafe.As<Vector3D<float>, Vector3>(ref scale), 0.005f)) {
-                box.Coord = Transform.GetMatrixFromTransforms(trans, rot, scale).ToSystem();
+            if (ImGui.BeginPopupContextItem("Rotation")) {
+                if (QuaternionFieldHandler.DefaultContextItems("Rotation", ref rot)) {
+                    box.Coord = Transform.GetMatrixFromTransforms(trans, rot, scale);
+                    UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} rotation");
+                }
+                if (ImGui.Selectable("Toggle quaternion/euler display")) {
+                    context.StateBool = !context.StateBool;
+                }
+                ImGui.EndPopup();
+            }
+            if (ImGui.DragFloat3("Scale", ref scale, 0.005f)) {
+                box.Coord = Transform.GetMatrixFromTransforms(trans, rot, scale);
                 UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} scale");
             }
             if (MathF.Abs(scale.X - 1) > 0.001f || MathF.Abs(scale.Y - 1) > 0.001f || MathF.Abs(scale.Z - 1) > 0.001f) {

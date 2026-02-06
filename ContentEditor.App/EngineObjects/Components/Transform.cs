@@ -108,6 +108,11 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
         return Matrix4X4.CreateScale<float>(scale) * Matrix4X4.CreateFromQuaternion(rot) * Matrix4X4.CreateTranslation(pos);
     }
 
+    public static Matrix4x4 GetMatrixFromTransforms(Vector3 pos, Quaternion rot, Vector3 scale)
+    {
+        return Matrix4x4.CreateScale(scale) * Matrix4x4.CreateFromQuaternion(rot) * Matrix4x4.CreateTranslation(pos);
+    }
+
     public void Translate(Vector3 offset)
     {
         LocalPosition += offset;

@@ -30,6 +30,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string ShowFps = "show_fps";
         public const string MaxUndoSteps = "max_undo_steps";
         public const string PrettyLabels = "pretty_labels";
+        public const string QuaternionsAsEuler = "quaternions_as_euler";
         public const string RecentFiles = "recent_files";
         public const string LoadFromNatives = "load_natives";
         public const string BundleDefaultSaveFullPath = "bundle_save_full_path";
@@ -152,6 +153,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<int> UnpackMaxThreads = new SettingWrapper<int>(Keys.UnpackMaxThreads, _lock, 4);
     public readonly SettingWrapper<ReeLib.via.Color> BackgroundColor = new SettingWrapper<ReeLib.via.Color>(Keys.BackgroundColor, _lock, new ReeLib.via.Color(115, 140, 153, 255));
     public readonly SettingWrapper<bool> PrettyFieldLabels = new SettingWrapper<bool>(Keys.PrettyLabels, _lock, true);
+    public readonly SettingWrapper<bool> ShowQuaternionsAsEuler = new SettingWrapper<bool>(Keys.QuaternionsAsEuler, _lock, true);
     public readonly SettingWrapper<int> LogLevel = new SettingWrapper<int>(Keys.LogLevel, _lock, 1);
     public readonly SettingWrapper<int> MaxUndoSteps = new SettingWrapper<int>(Keys.MaxUndoSteps, _lock, 250);
     public readonly SettingWrapper<int> AutoExpandFieldsCount = new SettingWrapper<int>(Keys.AutoExpandFieldsCount, _lock, 3);
@@ -322,6 +324,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.UsePakCompactFilePaths, instance.UsePakCompactFilePaths.value.ToString(), null),
             (Keys.PakDisplayMode, instance.PakDisplayModeValue.value.ToString(), null),
             (Keys.PrettyLabels, instance.PrettyFieldLabels.value.ToString(), null),
+            (Keys.QuaternionsAsEuler, instance.ShowQuaternionsAsEuler.value.ToString(), null),
 
             (Keys.RenderAxis, instance.RenderAxis.value.ToString(), null),
             (Keys.RenderMeshes, instance.RenderMeshes.value.ToString(), null),
@@ -443,6 +446,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.PrettyLabels:
                             PrettyFieldLabels.value = ReadBool(value);
+                            break;
+                        case Keys.QuaternionsAsEuler:
+                            ShowQuaternionsAsEuler.value = ReadBool(value);
                             break;
                         case Keys.RecentFiles:
                             JsonSettings.RecentFiles.AddRange(value.Split('|', StringSplitOptions.RemoveEmptyEntries));
