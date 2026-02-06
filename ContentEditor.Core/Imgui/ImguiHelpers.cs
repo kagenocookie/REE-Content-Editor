@@ -150,14 +150,9 @@ public static class ImguiHelpers
             return false;
         }
 
-        var pos = ImGui.GetCursorScreenPos();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
         if (ImGui.IsWindowAppearing()) ImGui.SetKeyboardFocusHere();
-        ImGui.InputText($"##filter", ref filter, 48);
-        // show placeholder
-        if (string.IsNullOrEmpty(filter)) {
-            ImGui.GetWindowDrawList().AddText(pos + ImGui.GetStyle().FramePadding, ImguiHelpers.GetColorU32(ImGuiCol.TextDisabled), "Filter...");
-        }
+        ImGui.InputTextWithHint("##filter"u8, "Filter..."u8, ref filter, 48);
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.Spacing();

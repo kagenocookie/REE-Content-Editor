@@ -6,6 +6,9 @@ namespace ContentEditor.App;
 
 public static class TransformExtensions
 {
+    public const float Rad2Deg = 180f / MathF.PI;
+    public const float Deg2Rad = MathF.PI / 180f;
+
     public static Quaternion<float> ToSilkNet(this Quaternion quat) => new Quaternion<float>(quat.X, quat.Y, quat.Z, quat.W);
     public static Vector3D<float> ToSilkNet(this Vector3 vec) => new Vector3D<float>(vec.X, vec.Y, vec.Z);
 
@@ -98,29 +101,37 @@ public static class TransformExtensions
     }
 
     /// <summary>
-    /// Returns the euler angles of the given quaternion (order: pitch, yaw, roll) in radians.
+    /// Returns the euler angles of the given quaternion (order: pitch, yaw, roll) in degrees.
     /// </summary>
-    public static Vector3 ToEuler(this Quaternion<float> q)
+    public static Vector3 ToEuler(this Quaternion q)
     {
-        var euler = new Vector3();
+        // https://stackoverflow.com/a/12122899/4721768
 
-        // roll (Z)
-        float sinr_cosp = 2 * (q.W * q.X + q.Y * q.Z);
-        float cosr_cosp = 1 - 2 * (q.X * q.X + q.Y * q.Y);
-        euler.Z = MathF.Atan2(sinr_cosp, cosr_cosp);
+        float sqw = q.W * q.W;
+        float sqx = q.X * q.X;
+        float sqy = q.Y * q.Y;
+        float sqz = q.Z * q.Z;
+        float unit = sqx + sqy + sqz + sqw; // if normalised is one, otherwise is correction factor
+        float test = q.X * q.W - q.Y * q.Z;
+        Vector3 v;
 
-        // pitch (X)
-        float sinp = 2 * (q.W * q.X - q.Y * q.Z);
-        if (MathF.Abs(sinp) >= 1)
-            euler.X = MathF.CopySign(MathF.PI / 2, sinp); // clamp to 90°
-        else
-            euler.X = MathF.Asin(sinp);
+        if (test > 0.4995f * unit) { // singularity at north pole
+            v.Y = 2f * MathF.Atan2(q.Y, q.X);
+            v.X = MathF.PI / 2;
+            v.Z = 0;
+            return v * Rad2Deg;
+        }
+        if (test < -0.4995f * unit) { // singularity at south pole
+            v.Y = -2f * MathF.Atan2(q.Y, q.X);
+            v.X = -MathF.PI / 2;
+            v.Z = 0;
+            return v * Rad2Deg;
+        }
 
-        // yaw (Y)
-        float siny_cosp = 2 * (q.W * q.Z + q.X * q.Y);
-        float cosy_cosp = 1 - 2 * (q.Y * q.Y + q.Z * q.Z);
-        euler.Y = MathF.Atan2(siny_cosp, cosy_cosp);
+        v.Y = (float)Math.Atan2(2f * q.W * q.Y + 2f * q.Z * q.X, 1 - 2f * (q.X * q.X + q.Y * q.Y));     // Yaw
+        v.X = (float)Math.Asin(2f * (q.W * q.X - q.Y * q.Z));                             // Pitch
+        v.Z = (float)Math.Atan2(2f * q.W * q.Z + 2f * q.X * q.Y, 1 - 2f * (q.Z * q.Z + q.X * q.X));      // Roll
+        return v * Rad2Deg;
 
-        return euler;
     }
 }

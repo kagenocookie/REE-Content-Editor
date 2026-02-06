@@ -1,7 +1,8 @@
 using System.Numerics;
+using System.Text.Json;
 using ContentEditor.App.Windowing;
+using ContentEditor.Core;
 using ContentPatcher;
-using ReeLib.Aimp;
 using ReeLib.Common;
 using ReeLib.via;
 
@@ -116,12 +117,73 @@ public class QuaternionFieldHandler : Singleton<QuaternionFieldHandler>, IObject
     public void OnIMGUI(UIContext context)
     {
         var val = context.Get<Quaternion>();
-        var vec = new Vector4(val.X, val.Y, val.Z, val.W);
-        if (ImGui.DragFloat4(context.label, ref vec, 0.001f)) {
-            val = Quaternion.Normalize(new Quaternion(vec.X, vec.Y, vec.Z, vec.W));
+        if (!context.HasBoolState) {
+            context.StateBool = AppConfig.Instance.ShowQuaternionsAsEuler.Get();
+        }
+
+        if (HandleQuaternion(context.label, ref val, context.StateBool)) {
             UndoRedo.RecordSet(context, val);
         }
-        AppImguiHelpers.ShowJsonCopyPopup(in val, context);
+        if (ImGui.BeginPopupContextItem(context.label)) {
+            if (DefaultContextItems(context.label, ref val)) {
+                UndoRedo.RecordSet(context, val);
+            }
+            if (ImGui.Selectable("Toggle quaternion/euler display")) {
+                context.StateBool = !context.StateBool;
+            }
+            ImGui.EndPopup();
+        }
+    }
+
+    public static bool HandleQuaternion(string label, ref Quaternion val, bool useEuler)
+    {
+        var changed = false;
+        if (useEuler) {
+            var euler = val.ToEuler();
+            if (ImGui.DragFloat3("Local Rotation", ref euler, 0.25f)) {
+                euler *= TransformExtensions.Deg2Rad;
+                val = Quaternion.CreateFromYawPitchRoll(euler.Y, euler.X, euler.Z);
+                changed = true;
+            }
+        } else {
+            var vec = new Vector4(val.X, val.Y, val.Z, val.W);
+            if (ImGui.DragFloat4(label, ref vec, 0.001f)) {
+                if (vec == Vector4.Zero) vec = new Vector4(0, 0, 0, 1);
+                val = Quaternion.Normalize(new Quaternion(vec.X, vec.Y, vec.Z, vec.W));
+                changed = true;
+            }
+        }
+        // AppImguiHelpers.ShowJsonCopyPopup(in val, context);
+        return changed;
+    }
+
+    public static bool DefaultContextItems(string label, ref Quaternion val)
+    {
+        var changed = false;
+        if (ImGui.Selectable("Copy euler angles")) {
+            EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(val.ToEuler(), JsonConfig.jsonOptionsIncludeAllFields), $"Copied value of {label}!");
+        }
+        if (ImGui.Selectable("Copy quaternion")) {
+            EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(val, JsonConfig.jsonOptionsIncludeAllFields), $"Copied value of {label}!");
+        }
+        if (ImGui.Selectable("Copy field name")) {
+            EditorWindow.CurrentWindow?.CopyToClipboard(label, $"Copied {label}!");
+        }
+        if (ImGui.Selectable("Paste as euler angles")) {
+            if (EditorWindow.CurrentWindow?.GetClipboard()?.TryDeserializeJson<Vector3>(out var vec, out var err, JsonConfig.jsonOptionsIncludeAllFields) == true) {
+                vec *= TransformExtensions.Deg2Rad;
+                val = Quaternion.CreateFromYawPitchRoll(vec.Y, vec.X, vec.Z);
+                changed = true;
+            }
+        }
+        if (ImGui.Selectable("Paste as quaternion")) {
+            if (EditorWindow.CurrentWindow?.GetClipboard()?.TryDeserializeJson<Quaternion>(out var vec, out var err, JsonConfig.jsonOptionsIncludeAllFields) == true) {
+                val = vec;
+                changed = true;
+            }
+        }
+
+        return changed;
     }
 }
 
