@@ -875,5 +875,714 @@
       ],
       "Comment": "Shockwave Gun"
     }
+  ],
+  "mhsto3": [
+    {
+      "Path": "natives/stm/art/model/character/ch02/001_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Leather Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/002_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Hunter Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/003_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Bone Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/013_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Kadachi Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/020_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Anja Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/021_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Rathian Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/021_1000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Rath Heart Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/024_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Lumu Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/082_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Brachydios Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/086_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Tentacle Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/217_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Bnahabra Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/227_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Ludroth Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/244_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Edel Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/356_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Espinas Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/600_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Ranger Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/611_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Plesioth Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/611_1000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Plesioth U Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/613_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Kut-Ku Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/613_1000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Kut-Ku U Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/614_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Gypceros Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/614_1000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Gypceros U Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/617_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Nerscylla Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch02/650_0000",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Chatacabra Armor (M)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/001_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Leather Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/002_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Hunter Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/003_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Bone Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/013_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Kadachi Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/020_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Anja Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/021_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Rathian Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/021_1010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Rath Heart Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/024_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Lumu Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/082_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Brachydios Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/086_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Tentacle Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/217_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Bnahabra Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/227_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Ludroth Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/244_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Edel Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/356_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Espinas Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/600_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Ranger Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/611_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Plesioth Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/611_1010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Plesioth U Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/613_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Kut-Ku Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/613_1010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Kut-Ku U Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/614_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Gypceros Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/614_1010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Gypceros U Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/617_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Nerscylla Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/character/ch03/650_0010",
+      "Tags": [
+        "Armor"
+      ],
+      "Comment": "Chatacabra Armor (F)"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it00/00_0059",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Iron Sword"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it00/00_0063",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Frozen Speartuna"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it00/00_0065",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Cat\u0027s Soul"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it00/00_0072",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Valkyrie Blade"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it00/00_0117",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Rosenbrett"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it00/00_0134",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Azure Serpentblade"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it00/00_0135",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Scylla Blade"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it00/01_0139",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Flammenzahn"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it00/01_0141",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Chicken Decapitator"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it03/00_0003",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Wyvern Blade \u0022Verde\u0022"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it03/00_0016",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Hydra Tornaria"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it03/00_0019",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Iron Katana"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it03/00_0032",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Spark Slicer"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it03/00_0047",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Dios Katana"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it03/00_0074",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Drowning Shaft"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it03/00_0134",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Plesioth Splasher"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it03/00_0135",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Bone Katana \u0022Wolf\u0022"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it03/00_0137",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Blood Cry"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it04/00_0013",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Dios Tailhammer"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it04/00_0063",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Bone Hammer"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it04/00_0072",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Ludroth Splashhammer"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it04/00_0118",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Rosenhammer"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it04/00_0131",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Kut-Ku Pick"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it04/00_0132",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Plesioth Head"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it04/00_0134",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Venom Monster"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it04/00_0137",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Cluster Hammer"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it04/00_0142",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Chata Clobberer"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it05/00_0007",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Lumu Horn"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it05/00_0020",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Bone Horn"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it05/00_0034",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Anjanath Hum"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it05/00_0046",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Hydros Horn"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it05/00_0061",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Magia Charm"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it05/00_0131",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Kut-Ku\u0027s Song"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it05/00_0132",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Poisoned Capri"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it05/01_0139",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Vicello Nulo"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it07/00_0001",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Princess Panoply"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it07/00_0005",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Kadachi Striker"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it07/00_0015",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Hydra Ephyra"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it07/00_0018",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Iron Gunlance"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it07/00_0047",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Dios Gunlance"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it07/00_0067",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Ludroth Harpoon"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it07/00_0119",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Rosenkanone"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it07/00_0131",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Marine Fisher"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it07/00_0134",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Hard Hitter"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it07/00_0136",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Shell Gunbird"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it07/01_0144",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Fiore Nulo"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it11/00_0006",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Kadachi Strikebow"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it11/00_0016",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Hydra Planula"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it11/00_0019",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Iron Bow"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it11/00_0038",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Flammenbogen"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it11/00_0062",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Felyne Bow"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it11/00_0073",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Spongia Bow"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it11/00_0131",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Seahorse Harp"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it11/00_0134",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Kut-Ku Stave"
+    },
+    {
+      "Path": "natives/stm/art/model/item/it11/01_0140",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Arko Nulo"
+    }
   ]
 }

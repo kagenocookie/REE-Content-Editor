@@ -164,7 +164,13 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
             }
             ImguiHelpers.Tooltip($"{texture.Path}");
             ImGui.SameLine();
-            ImGui.Text($"| Size: {texture.Width} x {texture.Height} | Format: {texture.Format}");
+            ImguiHelpers.VerticalSeparator();
+            ImGui.SameLine();
+            ImGui.Text($"Size: {texture.Width} x {texture.Height}");
+            ImGui.SameLine();
+            ImguiHelpers.VerticalSeparator();
+            ImGui.SameLine();
+            ImGui.Text($"Format: {texture.Format}");
             ImGui.Text("Channels:");
             ImGui.SameLine();
             if (ImGui.RadioButton("RGBA", currentChannel == TextureChannel.RGBA)) {
