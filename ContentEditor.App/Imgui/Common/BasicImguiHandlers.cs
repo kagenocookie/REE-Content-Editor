@@ -140,7 +140,7 @@ public class QuaternionFieldHandler : Singleton<QuaternionFieldHandler>, IObject
         var changed = false;
         if (useEuler) {
             var euler = val.ToEuler();
-            if (ImGui.DragFloat3("Local Rotation", ref euler, 0.002f)) {
+            if (ImGui.DragFloat3("Local Rotation", ref euler, 0.25f)) {
                 euler *= TransformExtensions.Deg2Rad;
                 val = Quaternion.CreateFromYawPitchRoll(euler.Y, euler.X, euler.Z);
                 changed = true;

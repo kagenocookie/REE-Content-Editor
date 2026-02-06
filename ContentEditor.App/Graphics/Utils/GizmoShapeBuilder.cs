@@ -199,7 +199,7 @@ public class GizmoShapeBuilder : IDisposable
         var rightAxis = Vector3.Normalize(Vector3.TransformNormal(Vector3.UnitX, localToWorldMatrix));
         var fwdAxis = Vector3.Normalize(Vector3.TransformNormal(-Vector3.UnitZ, localToWorldMatrix));
         handleId = -1;
-        var rotation = Quaternion.CreateFromRotationMatrix(localToWorldMatrix);
+        Matrix4x4.Decompose(localToWorldMatrix, out _, out var rotation, out _);
 
         if (state.RotationHandle(worldPosition, ref rotation, out var hid, upAxis, GizmoState.Axis.Y, handleSize)) {
             handleId = hid;
