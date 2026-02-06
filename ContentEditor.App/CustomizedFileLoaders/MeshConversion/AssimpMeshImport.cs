@@ -252,12 +252,12 @@ public partial class CommonMeshResource : IResourceFile
 
             if (buffer.UV0.Length > 0) {
                 var uv = aiMesh.TextureCoordinateChannels[0];
-                for (int i = 0; i < vertCount; ++i) buffer.UV0[vertOffset + i] = new Vector2(uv[i].X, uv[i].Y);
+                for (int i = 0; i < vertCount; ++i) buffer.UV0[vertOffset + i] = new Vector2(uv[i].X, 1 - uv[i].Y);
             }
 
             if (buffer.UV1.Length > 0) {
                 var uv = aiMesh.TextureCoordinateChannels[1];
-                for (int i = 0; i < vertCount; ++i) buffer.UV1[vertOffset + i] = new Vector2(uv[i].X, uv[i].Y);
+                for (int i = 0; i < vertCount; ++i) buffer.UV1[vertOffset + i] = new Vector2(uv[i].X, 1 - uv[i].Y);
             }
 
             if (buffer.Colors.Length > 0) {
