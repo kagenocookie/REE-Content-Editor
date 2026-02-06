@@ -90,6 +90,9 @@ public static class Colors
     public static Vector4 TagAnimation => Current.TagAnimation;
     public static Vector4 TagAnimationHovered => Current.TagAnimationHovered;
     public static Vector4 TagAnimationSelected => Current.TagAnimationSelected;
+    public static Vector4 TagArmor => Current.TagArmor;
+    public static Vector4 TagArmorHovered => Current.TagArmorHovered;
+    public static Vector4 TagArmorSelected => Current.TagArmorSelected;
     public static Vector4 TagCharacter => Current.TagCharacter;
     public static Vector4 TagCharacterHovered => Current.TagCharacterHovered;
     public static Vector4 TagCharacterSelected => Current.TagCharacterSelected;
@@ -194,6 +197,9 @@ public sealed class AppColors
     public Vector4 TagAnimation = new Vector4(0.6f, 0.6f, 1, 0.5f);
     public Vector4 TagAnimationHovered = new Vector4(0.6f, 0.6f, 1, 0.8f);
     public Vector4 TagAnimationSelected = new Vector4(0.6f, 0.6f, 1, 1);
+    public Vector4 TagArmor = new Vector4(0, 0.8f, 0.8f, 0.5f);
+    public Vector4 TagArmorHovered = new Vector4(0, 0.85f, 0.85f, 0.8f);
+    public Vector4 TagArmorSelected = new Vector4(0, 0.9f, 0.9f, 1);
     public Vector4 TagCharacter = new Vector4(0.2f, 0.6f, 1, 0.5f);
     public Vector4 TagCharacterHovered = new Vector4(0.2f, 0.6f, 1, 0.8f);
     public Vector4 TagCharacterSelected = new Vector4(0.2f, 0.6f, 1, 1);

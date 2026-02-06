@@ -398,6 +398,7 @@ public static class AppIcons
     public static readonly char[] SIC_BookmarkClear = { '\uee03', '\uee04' };
     public static readonly char[] SIC_MaterialAdd = { '\uee05', '\uee06' };
     public static readonly char[] SIC_MaterialPaste = { '\uee07', '\uee08', '\uee09' };
+    public static readonly char SI_TagArmor = '\uee0a';
 
     public static string PrependIcon(this string text, object target)
     {
