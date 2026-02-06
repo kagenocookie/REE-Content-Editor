@@ -1,11 +1,12 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using nietras.SeparatedValues;
 using ReeLib;
 using ReeLib.Msg;
+using System.Numerics;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -13,7 +14,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
 {
     public override bool HasUnsavedChanges => context.Changed;
 
-    public override string HandlerName => "Msg";
+    public override string HandlerName => $"{AppIcons.SI_FileType_MSG} Message";
     public string Filename => Handle.Filepath;
 
     public MsgFile File { get; }
@@ -23,6 +24,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
     private Language selectedLanguage = Language.English; // TODO user-defined default language
     private int selectedRow = -1;
     private string filter = string.Empty;
+    private bool isMessageSearchMatchCase = false;
 
     private bool scrollToSelected;
 
@@ -52,10 +54,10 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
     {
         var filter = this.filter.Trim();
         if (string.IsNullOrEmpty(filter)) return true;
-        if (entry.Name.Contains(filter, StringComparison.InvariantCultureIgnoreCase)) return true;
+        var caseMatch = isMessageSearchMatchCase ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase;
+        if (entry.Name.Contains(filter, caseMatch)) return true;
         var str = entry.Strings[(int)selectedLanguage];
-        if (str.Contains(filter, StringComparison.InvariantCultureIgnoreCase)) return true;
-
+        if (str.Contains(filter, caseMatch)) return true;
         if (Guid.TryParse(filter, out var guid) && guid == entry.Guid) {
             return true;
         }
@@ -252,8 +254,9 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
         if (File.Entries.Count == 0) {
             File.Read();
         }
-
-        if (ImGui.Button("Create new entry")) {
+        ImGui.Separator();
+        ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);
+        if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
             var entry = File.AddNewEntry();
             UndoRedo.RecordCallback(
                 context,
@@ -264,8 +267,10 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
             scrollToSelected = true;
             filter = string.Empty;
         }
+        ImGui.PopStyleColor();
+        ImguiHelpers.Tooltip("Create new entry");
         ImGui.SameLine();
-        if (ImGui.Button("Paste as new entry")) {
+        if (ImGui.Button($"{AppIcons.SI_Paste}")) {
             var clipboard = EditorWindow.CurrentWindow?.GetClipboard();
             if (clipboard != null) {
                 try {
@@ -291,20 +296,34 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
                 }
             }
         }
+        ImguiHelpers.Tooltip("Paste as new entry");
         ImGui.SameLine();
         ImGui.SetNextItemWidth(Math.Min(300, ImGui.CalcItemWidth()));
         ImguiHelpers.ValueCombo("Language", LangOptions, LangValues, ref selectedLanguage);
         ImGui.SameLine();
+        ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isMessageSearchMatchCase, Colors.IconActive);
+        ImguiHelpers.Tooltip("Match Case");
+        ImGui.SameLine();
+        ImGui.SetNextItemAllowOverlap();
         ImGui.SetNextItemWidth(Math.Min(400, ImGui.CalcItemWidth() - ImGui.GetCursorPosX()));
-        ImGui.InputText("Filter", ref filter, 128);
+        ImGui.InputTextWithHint("##MessageFilter", $"{AppIcons.SI_GenericMagnifyingGlass} Filter", ref filter, 64);
+        if (!string.IsNullOrEmpty(filter)) {
+            ImGui.SameLine();
+            ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
+            ImGui.SetNextItemAllowOverlap();
+            if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
+                filter = string.Empty;
+            }
+        }
+        ImguiHelpers.Tooltip("Filter by Name, Message content or GUID");
 
         var size = ImGui.GetWindowSize() - ImGui.GetCursorPos();
         var w = size.X;
         var msgListHovered = false;
         ImGui.BeginChild("msg_list", new System.Numerics.Vector2(w, size.Y), ImGuiChildFlags.ResizeX);
         var langIndex = (int)selectedLanguage;
-        if (ImGui.BeginTable("Messages", 3, ImGuiTableFlags.Sortable | ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.SizingStretchProp | ImGuiTableFlags.RowBg)) {
-            ImGui.TableSetupColumn("Index", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize, 60 * UI.UIScale);
+        if (ImGui.BeginTable("Messages", 3, ImGuiTableFlags.Sortable | ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.RowBg)) {
+            ImGui.TableSetupColumn(" Index", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize, 60 * UI.UIScale);
             ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 0.3f);
             ImGui.TableSetupColumn("Message", ImGuiTableColumnFlags.WidthStretch, 0.7f);
             ImGui.TableSetupScrollFreeze(0, 1);
@@ -355,19 +374,32 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
             var selected = File.Entries[selectedRow];
             ImGui.SameLine();
             ImGui.BeginChild("Message " + selected.Header.entryName);
-            if (ImGui.Button("Delete entry")) {
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
+            if (ImGui.Button($"{AppIcons.SI_GenericDelete2}")) {
                 ShowDeleteConfirm(selectedRow);
             }
+            ImGui.PopStyleColor();
+            ImguiHelpers.Tooltip("Delete entry");
             ImGui.SameLine();
-            if (ImGui.Button("Copy entry")) {
+            if (ImGui.Button($"{AppIcons.SI_Copy}")) {
                 var data = new MessageData(selected, Filename, "");
                 EditorWindow.CurrentWindow?.CopyToClipboard(data.ToJson().ToJsonString(), "Entry copied!");
             }
-            ImGui.Text("Guid: " + selected.Header.guid);
+            ImguiHelpers.Tooltip("Copy entry");
+
+            ImGui.Separator();
+            ImGui.Spacing();
+
+            ImGui.BeginDisabled();
+            string entryGUID = selected.Header.guid.ToString();
+            ImGui.InputText("##GUID", ref entryGUID, 128);
+            ImGui.EndDisabled();
             ImGui.SameLine();
-            if (ImGui.Button("Copy")) {
+            if (ImGui.Button($"{AppIcons.SI_Copy}##0")) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(selected.Header.guid.ToString(), "GUID copied!");
             }
+            ImguiHelpers.Tooltip("Copy GUID");
+
             var prevname = selected.Header.entryName;
             if (ImGui.InputText("Name", ref selected.Header.entryName, 128)) {
                 UndoRedo.RecordCallbackSetter(context,

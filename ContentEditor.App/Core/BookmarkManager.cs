@@ -33,6 +33,7 @@ namespace ContentEditor.App
         }
         public static Dictionary<string, TagInfo> TagInfoMap = new() {
             ["Animation"] = new TagInfo($"{AppIcons.SI_Animation}", () => new[] { Colors.TagAnimation, Colors.TagAnimationHovered, Colors.TagAnimationSelected }),
+            ["Armor"] = new TagInfo($"{AppIcons.SI_TagArmor}", () => new[] { Colors.TagArmor, Colors.TagArmorHovered, Colors.TagArmorSelected }),
             ["Character"] = new TagInfo($"{AppIcons.SI_TagCharacter}", () => new[] { Colors.TagCharacter, Colors.TagCharacterHovered, Colors.TagCharacterSelected }),
             ["DLC"] = new TagInfo($"{AppIcons.SI_TagDLC}", () => new[] { Colors.TagDLC, Colors.TagDLCHovered, Colors.TagDLCSelected }),
             ["Enemy"] = new TagInfo($"{AppIcons.SI_TagCharacter}", () => new[] { Colors.TagEnemy, Colors.TagEnemyHovered, Colors.TagEnemySelected }),
