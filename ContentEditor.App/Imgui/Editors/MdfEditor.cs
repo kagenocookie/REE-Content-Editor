@@ -537,8 +537,16 @@ public class TexHeaderImguiHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
+        var tex = context.Get<TexHeader>();
+        var workspace = context.GetWorkspace()!;
+        if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}") && tex.texPath != null) {
+            if (workspace.ResourceManager.TryResolveGameFile(tex.texPath, out var texHandle)) {
+                EditorWindow.CurrentWindow?.AddSubwindow( new TextureViewer(workspace, texHandle));
+            }
+        }
+        ImguiHelpers.Tooltip("Open Texture");
+        ImGui.SameLine();
         if (context.children.Count == 0) {
-            var tex = context.Get<TexHeader>();
             context.AddChild<TexHeader, string>(tex.texType, tex, new ResourcePathPicker(), (p) => p!.texPath, (p, v) => p.texPath = v);
         }
         context.children[0].ShowUI();
