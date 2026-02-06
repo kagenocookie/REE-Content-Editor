@@ -118,6 +118,7 @@ public class QuaternionFieldHandler : Singleton<QuaternionFieldHandler>, IObject
         var val = context.Get<Quaternion>();
         var vec = new Vector4(val.X, val.Y, val.Z, val.W);
         if (ImGui.DragFloat4(context.label, ref vec, 0.001f)) {
+            if (vec == Vector4.Zero) vec = new Vector4(0, 0, 0, 1);
             val = Quaternion.Normalize(new Quaternion(vec.X, vec.Y, vec.Z, vec.W));
             UndoRedo.RecordSet(context, val);
         }

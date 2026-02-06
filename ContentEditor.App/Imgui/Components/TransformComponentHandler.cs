@@ -43,6 +43,7 @@ public class TransformComponentHandler : IObjectUIHandler, IUIContextEventHandle
             ImGui.SetNextItemWidth(w * 0.25f - ImGui.GetStyle().FramePadding.X * 2);
             ImGui.LabelText("Local Position", "##labelP"u8);
             if (ImGui.DragFloat4("Local Rotation", ref localrot, 0.002f)) {
+                if (localrot == Vector4.Zero) localrot = new Vector4(0, 0, 0, 1);
                 var newQ = Quaternion.Normalize(localrot.ToQuaternion());
                 UndoRedo.RecordCallbackSetter(context, instance, (Quaternion)data.Values[1], newQ, static (inst, value) => inst.LocalRotation = value, $"{instance.GetHashCode()} LocalRot");
             }
