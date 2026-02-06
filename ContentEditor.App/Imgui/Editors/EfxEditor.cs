@@ -221,6 +221,12 @@ public class EfxEntriesListEditorBase<TType> : DictionaryListImguiHandler<string
         }
     }
 
+    protected override void InitChildContext(UIContext itemContext)
+    {
+        base.InitChildContext(itemContext);
+        itemContext.label = $"[{itemContext.parent!.Get<List<TType>>().IndexOf(itemContext.Get<TType>())}] {itemContext.label}";
+    }
+
     protected override string GetKey(TType item)
     {
         return item.name ?? "New entry";
