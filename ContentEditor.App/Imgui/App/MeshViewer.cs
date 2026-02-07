@@ -624,7 +624,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         ImguiHelpers.ValueCombo("Mesh Version", MeshFile.AllVersionConfigsWithExtension, MeshFile.AllVersionConfigs, ref exportTemplate);
         var bundleConvert = Workspace.CurrentBundle != null && ImguiHelpers.SameLine() && ImGui.Button("Convert to bundle ...");
         if (conv1 || bundleConvert) {
-            var ver = MeshFile.GetFileExtension(exportTemplate);
+            var ver = MeshFile.GetFilePathVersion(exportTemplate);
             var ext = $".mesh.{ver}";
             var defaultFilename = PathUtils.GetFilenameWithoutExtensionOrVersion(Handle.Filepath).ToString() + ext;
             if (mesh.NativeMesh.Header.version == 0) {

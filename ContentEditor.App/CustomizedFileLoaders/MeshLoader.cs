@@ -9,7 +9,9 @@ using ReeLib.Common;
 
 namespace ContentEditor.App.FileLoaders;
 
-public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<MotlistFile>
+public partial class MeshLoader : IFileLoader,
+    IFileHandleContentProvider<MeshFile>,
+    IFileHandleContentProvider<MotlistFile>
 {
     int IFileLoader.Priority => 30;
 
@@ -149,7 +151,7 @@ public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<Motlis
         return 0;
     }
 
-    public MotlistFile GetFile(FileHandle handle)
+    MotlistFile IFileHandleContentProvider<MotlistFile>.GetFile(FileHandle handle)
     {
         var mr = handle.GetResource<CommonMeshResource>();
         if (mr.HasAnimations) {
@@ -158,5 +160,10 @@ public partial class MeshLoader : IFileLoader, IFileHandleContentProvider<Motlis
 
         Logger.Error("Mesh does not contain animations: " + handle.Filepath);
         return new MotlistFile(new FileHandler());
+    }
+
+    public MeshFile GetFile(FileHandle handle)
+    {
+        return handle.GetResource<CommonMeshResource>().NativeMesh;
     }
 }
