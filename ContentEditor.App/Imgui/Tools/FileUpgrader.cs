@@ -76,7 +76,7 @@ public class FileUpgrader : BaseWindowHandler
                         converter.Init(workspace);
                     }
                 }
-                sourceFormats.TryAdd(format, converter);
+                if (format.format != KnownFileFormats.Unknown) sourceFormats.TryAdd(format, converter);
                 if (converter == null) {
                     notUpgradeableFileList.Add(relativePath);
                 } else {
