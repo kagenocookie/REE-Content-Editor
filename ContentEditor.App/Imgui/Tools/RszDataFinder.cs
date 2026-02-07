@@ -233,16 +233,16 @@ public class RszDataFinder : IWindowHandler
         if (ImGui.TreeNode("Fields: " + rszClass.fields.Length)) {
             for (int i = 0; i < rszClass.fields.Length; ++i) {
                 var field = rszClass.fields[i];
-                var text = string.IsNullOrEmpty(field.original_type) ? $"{i}: {field.type} {field.name}" : $"{i}: {field.type} {field.name} (\"{field.original_type}\")";
+                var text = string.IsNullOrEmpty(field.original_type)
+                    ? $"{i}: {field.type}{(field.array ? "[]" : "")} {field.name}"
+                    : $"{i}: {field.type}{(field.array ? "[]" : "")} {field.name} (\"{field.original_type}\")";
                 ImGui.Text(text);
                 if (ImGui.BeginPopupContextItem(text)) {
                     if (ImGui.Selectable("Copy name")) {
                         EditorWindow.CurrentWindow?.CopyToClipboard(field.name);
-                        ImGui.CloseCurrentPopup();
                     }
                     if (!string.IsNullOrEmpty(field.original_type) && ImGui.Selectable("Copy classname")) {
                         EditorWindow.CurrentWindow?.CopyToClipboard(field.original_type);
-                        ImGui.CloseCurrentPopup();
                     }
                     ImGui.EndPopup();
                 }
@@ -250,7 +250,19 @@ public class RszDataFinder : IWindowHandler
             ImGui.TreePop();
         }
 
-        // TODO find base classes list
+        string[] parents = env.TypeCache.GetParentClasses(classname);
+        if (parents.Length > 0 && ImGui.TreeNode($"Parent classes ({parents.Length})")) {
+            foreach (var parent in parents) {
+                ImGui.Text(parent);
+                if (ImGui.BeginPopupContextItem(parent)) {
+                    if (ImGui.Selectable("Copy")) {
+                        EditorWindow.CurrentWindow?.CopyToClipboard(parent);
+                    }
+                    ImGui.EndPopup();
+                }
+            }
+            ImGui.TreePop();
+        }
 
         if (env.TypeCache.enums.TryGetValue(classname, out var enumDesc)) {
             var values = enumDesc.GetValues();
@@ -267,7 +279,6 @@ public class RszDataFinder : IWindowHandler
                     if (ImGui.BeginPopupContextItem(s)) {
                         if (ImGui.Selectable("Copy")) {
                             EditorWindow.CurrentWindow?.CopyToClipboard(s);
-                            ImGui.CloseCurrentPopup();
                         }
                         ImGui.EndPopup();
                     }
