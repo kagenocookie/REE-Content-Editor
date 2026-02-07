@@ -219,10 +219,25 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
 
     internal void Render(float deltaTime)
     {
-        if (!HasRenderables) return;
-
-        var cam = ActiveCamera;
         var rctx = RenderContext;
+        var cam = ActiveCamera;
+        if (!HasRenderables) {
+            if (rctx == this.renderContext) {
+                // if root, at least render the empty scene
+                cam.Update(rctx.ViewportSize);
+                rctx.ViewMatrix = cam.ViewMatrix;
+                rctx.ProjectionMatrix = cam.ProjectionMatrix;
+                rctx.ViewProjectionMatrix = cam.ViewProjectionMatrix;
+
+                rctx.DeltaTime = deltaTime;
+                rctx.BeforeRender();
+                Root.Render();
+                rctx.ExecuteRender();
+                rctx.AfterRender();
+            }
+            return;
+        }
+
         if (rctx != this.renderContext) {
             foreach (var render in Renderable.components) {
                 if (!render.GameObject.ShouldDraw) continue;

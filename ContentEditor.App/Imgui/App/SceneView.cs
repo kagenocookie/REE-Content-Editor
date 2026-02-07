@@ -103,6 +103,12 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
         var meshClick = ImGui.IsItemClicked(ImGuiMouseButton.Right) || ImGui.IsItemClicked(ImGuiMouseButton.Left);
         var hoveredMesh = ImGui.IsItemHovered();
 
+        if (!Scene.HasRenderables) {
+            var text = $"Scene {Scene.InternalPath ?? Scene.Name} has no 3D content";
+            var textSize = ImGui.CalcTextSize(text);
+            ImGui.GetWindowDrawList().AddText(cc + new Vector2(expectedSize.X / 2 - textSize.X / 2, 0), ImGui.ColorConvertFloat4ToU32(Colors.Warning), $"Scene {Scene.InternalPath ?? Scene.Name} has no 3D content");
+        }
+
         if (meshClick) {
             if (!isDragging) {
                 isDragging = true;
