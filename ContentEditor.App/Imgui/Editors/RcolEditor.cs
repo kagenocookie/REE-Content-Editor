@@ -185,9 +185,11 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
                     var list = context.parent!.Get<List<RequestSet>>();
                     UndoRedo.RecordListRemove(context.parent, list, context.Get<RequestSet>());
                 }
-                if (ImGui.Selectable("Duplicate")) {
+                var dup1 = ImGui.Selectable("Duplicate");
+                var dup2 = ImGui.Selectable("Duplicate (reuse group)");
+                if (dup1 || dup2) {
                     var list = context.parent!.Get<List<RequestSet>>();
-                    var clone = item.Clone();
+                    var clone = item.Clone(dup1);
                     clone.Info.ID = clone.Info.ID + 1; // TODO verify unique
                     UndoRedo.RecordListInsert(context.parent, list, clone, list.IndexOf(item) + 1);
                     var rcol = context.FindHandlerInParents<RcolEditor>()!.File;
