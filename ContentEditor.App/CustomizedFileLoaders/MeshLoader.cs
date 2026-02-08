@@ -65,6 +65,7 @@ public partial class MeshLoader : IFileLoader,
                 // }
 
                 var mesh = mply.ConvertToMergedClassicMesh();
+                mesh.FileHandler = mply.FileHandler;
 
                 var resource = new CommonMeshResource(name, workspace.Env) {
                     NativeMesh = mesh,

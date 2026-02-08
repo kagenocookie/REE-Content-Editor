@@ -301,6 +301,13 @@ public class FolderNodeEditor : IObjectUIHandler
             node.Scene.ActiveCamera.LookAt(focusFolder, false);
             ImGui.CloseCurrentPopup();
         }
+        if (node.Scene?.IsActive == true) {
+            if (ImGui.MenuItem("Toggle children Visibility")) {
+                var visible = node.Children.FirstOrDefault()?.ShouldDrawSelf ?? node.GameObjects.FirstOrDefault()?.ShouldDrawSelf ?? false;
+                foreach (var child in node.Children) child.ShouldDrawSelf = !visible;
+                foreach (var child in node.GameObjects) child.ShouldDrawSelf = !visible;
+            }
+        }
 
         if (string.IsNullOrEmpty(node.ScenePath) && ImGui.Selectable("New GameObject")) {
             var ws = context.GetWorkspace();

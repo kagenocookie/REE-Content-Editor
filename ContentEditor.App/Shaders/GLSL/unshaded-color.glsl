@@ -33,6 +33,7 @@ void main()
         colorMult = clamp(1 - length(uCameraPosition - worldPos) / _FadeMaxDistance, 0, 1);
     }
     FragColor = _MainColor * colorMult;
+    if (FragColor.a <= 0) discard;
 }
 
 #endif

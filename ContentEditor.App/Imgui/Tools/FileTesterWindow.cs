@@ -532,7 +532,7 @@ public partial class FileTesterWindow : IWindowHandler
 
     private static string? VerifyRewriteEquality<TFile>(TFile file, ContentWorkspace workspace) where TFile : BaseFile
     {
-        if (file.FileHandler.Stream.Length == 0) return null; // we don't support writing of mply as mply; just pretend it went fine
+        if (file.FileHandler.ReadInt(0) == MplyMeshFile.Magic) return null; // we don't support writing of mply as mply; just pretend it went fine
         var newfile = RewriteCloneRawStream(file, workspace);
         if (!newfile.Read()) return "read/write error";
 
