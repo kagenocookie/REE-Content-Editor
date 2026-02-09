@@ -321,6 +321,7 @@ public class NodeChildrenListHandler : ListHandlerTyped<NChild>
                 Logger.Error("Parent node not found");
                 return true;
             }
+            newNode = newNode.Clone();
             if (file != null) {
                 newNode.MakeUnique(file);
             }
