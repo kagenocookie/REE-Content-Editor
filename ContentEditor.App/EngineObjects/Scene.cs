@@ -22,6 +22,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
 {
     public readonly Folder RootFolder;
     public IEnumerable<Folder> Folders => RootFolder.Children;
+    public IEnumerable<Folder> AllFolders => RootFolder.GetAllChildren();
     public IEnumerable<GameObject> GameObjects => RootFolder.GameObjects;
 
     public SceneType Type { get; set; }
@@ -138,7 +139,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
                 var childrenLoadType = subfolderLoadType;
                 if ((childrenLoadType & LoadType.IncludeNested) == 0) childrenLoadType = childrenLoadType & ~LoadType.LoadChildren;
 
-                foreach (var childSubfolder in childFolder.ChildScene.Folders) {
+                foreach (var childSubfolder in childFolder.ChildScene.AllFolders) {
                     if ((subfolderLoadType & LoadType.PreloadedOnly) != 0 && !childSubfolder.Standby) {
                         continue;
                     }
