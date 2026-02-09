@@ -70,7 +70,7 @@ public class TmlFileObjectHandler : IObjectUIHandler
             context.AddChild<ClipFile, List<Bezier3DKeys>>("Bezier3D Interpolation Data", file, new ListHandler(typeof(Bezier3DKeys), typeof(List<Bezier3DKeys>)), (m) => m!.Clip.Bezier3DData);
             context.AddChild<ClipFile, List<ClipInfoStruct>>("Clip Info", file, new ListHandler(typeof(ClipInfoStruct), typeof(List<ClipInfoStruct>)), (m) => m!.Clip.ClipInfoList);
 
-            context.AddChild<ClipFile, List<NormalKey>>("Keys", file, getter: (m) => m!.Clip.NormalKeys).AddDefaultHandler();
+            // context.AddChild<ClipFile, List<NormalKey>>("Keys", file, getter: (m) => m!.Clip.NormalKeys).AddDefaultHandler();
         }
         context.ShowChildrenUI();
     }
