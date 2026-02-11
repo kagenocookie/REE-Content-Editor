@@ -29,6 +29,7 @@ public static class Colors
     public static Vector4 FileTypeRCOL => Current.FileTypeRCOL;
     public static Vector4 FileTypeMDF => Current.FileTypeMDF;
     public static Vector4 FileTypeMMTR => Current.FileTypeMMTR;
+    public static Vector4 FileTypeRTMR => Current.FileTypeRTMR;
     public static Vector4 FileTypeGPUMOTLIST => Current.FileTypeGPUMOTLIST;
     public static Vector4 FileTypeGPBF => Current.FileTypeGPBF;
     public static Vector4 FileTypeGPUC => Current.FileTypeGPUC;
@@ -66,9 +67,22 @@ public static class Colors
     public static Vector4 FileTypeHF => Current.FileTypeHF;
     public static Vector4 FileTypeCHF => Current.FileTypeCHF;
     public static Vector4 FileTypeBHVT => Current.FileTypeBHVT;
+    public static Vector4 FileTypeJCNS => Current.FileTypeJCNS;
     public static Vector4 FileTypeJMAP => Current.FileTypeJMAP;
     public static Vector4 FileTypeSDFTEX => Current.FileTypeSDFTEX;
     public static Vector4 FileTypeSDF => Current.FileTypeSDF;
+    public static Vector4 FileTypeOFT => Current.FileTypeOFT;
+    public static Vector4 FileTypeIFT => Current.FileTypeIFT;
+    public static Vector4 FileTypeFSLT => Current.FileTypeFSLT;
+    public static Vector4 FileTypeDLG => Current.FileTypeDLG;
+    public static Vector4 FileTypeDLGCF => Current.FileTypeDLGCF;
+    public static Vector4 FileTypeDLGLIST => Current.FileTypeDLGLIST;
+    public static Vector4 FileTypeDLGTML => Current.FileTypeDLGTML;
+    public static Vector4 FileTypeDLGTMLLIST => Current.FileTypeDLGTMLLIST;
+    public static Vector4 FileTypeSTAR => Current.FileTypeSTAR;
+    public static Vector4 FileTypeRMESH => Current.FileTypeRMESH;
+    public static Vector4 FileTypeMOV => Current.FileTypeMOV;
+
     /// <summary>
     /// Main color for icons, it should be the same as the text color of the current theme
     ///</summary>
@@ -146,6 +160,7 @@ public sealed class AppColors
     public Vector4 FileTypeRCOL = new Vector4(0.85f, 0.27f, 0.25f, 1);
     public Vector4 FileTypeMDF = new Vector4(0.93f, 0.55f, 0.07f, 1);
     public Vector4 FileTypeMMTR = new Vector4(0.93f, 0.55f, 0.07f, 1);
+    public Vector4 FileTypeRTMR = new Vector4(0.93f, 0.55f, 0.07f, 1);
     public Vector4 FileTypeGPUMOTLIST = new Vector4(0.46f, 0.73f, 0, 1);
     public Vector4 FileTypeGPBF = new Vector4(0.46f, 0.73f, 0, 1);
     public Vector4 FileTypeGPUC = new Vector4(0.46f, 0.73f, 0, 1);
@@ -184,8 +199,20 @@ public sealed class AppColors
     public Vector4 FileTypeBHVT = new Vector4(0.05f, 0.66f, 0.51f, 1);
     public Vector4 FileTypeHF = new Vector4(0, 0.89f, 0.73f, 1);
     public Vector4 FileTypeJMAP = new Vector4(0.98f, 0.65f, 0.76f, 1);
+    public Vector4 FileTypeJCNS = new Vector4(0.98f, 0.65f, 0.76f, 1);
     public Vector4 FileTypeSDFTEX = new Vector4(0.46f, 0.73f, 0, 1);
     public Vector4 FileTypeSDF = new Vector4(0.46f, 0.73f, 0, 1);
+    public Vector4 FileTypeOFT = new Vector4(0.24f, 0.36f, 0.84f, 1);
+    public Vector4 FileTypeIFT = new Vector4(0.49f, 0.57f, 0.89f, 1);
+    public Vector4 FileTypeFSLT = new Vector4(0.35f, 0.55f, 0.98f, 1);
+    public Vector4 FileTypeDLG = new Vector4(0, 0.5f, 0.984f, 1);
+    public Vector4 FileTypeDLGCF = new Vector4(0, 0.5f, 0.984f, 1);
+    public Vector4 FileTypeDLGLIST = new Vector4(0, 0.5f, 0.984f, 1);
+    public Vector4 FileTypeDLGTML = new Vector4(0, 0.5f, 0.984f, 1);
+    public Vector4 FileTypeDLGTMLLIST = new Vector4(0, 0.5f, 0.984f, 1);
+    public Vector4 FileTypeSTAR = new Vector4(1, 0.85f, 0, 1);
+    public Vector4 FileTypeRMESH = new Vector4(0.97f, 0.38f, 1, 1);
+    public Vector4 FileTypeMOV = new Vector4(0.77f, 0.77f, 0.77f, 1);
 
     public Vector4 IconPrimary = new Vector4(1, 1, 1, 1);
     public Vector4 IconSecondary = new Vector4(0.114f, 0.6f, 0.93f, 1);
