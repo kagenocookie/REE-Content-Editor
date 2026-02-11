@@ -299,6 +299,8 @@ public static class WindowHandlerFactory
                 return new RawRSZFileEditor(env, file);
             case KnownFileFormats.JointMap:
                 return new JmapFileEditor(env, file);
+            case KnownFileFormats.EventList:
+                return new WelEditor(env, file);
         }
 
         if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {
