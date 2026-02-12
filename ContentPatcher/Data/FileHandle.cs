@@ -94,8 +94,8 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
                     workspace.SaveBundleFileDiff(this);
                 }
                 Modified = false;
-                Saved?.Invoke();
             }
+            Saved?.Invoke();
             return true;
         } catch (Exception e) {
             Logger.Error(e, "Failed to save file " + Filepath);

@@ -14,7 +14,22 @@ public class PlainObjectHandler : IObjectUIHandler
     }
 }
 
-public class LazyPlainObjectHandler<T>() : LazyPlainObjectHandler(typeof(T)) { }
+public class LazyPlainObjectHandler<T>() : LazyPlainObjectHandler(typeof(T)) where T : class
+{
+    public bool AllowReorder { get; set; }
+
+    protected override bool DoTreeNode(UIContext context, object instance)
+    {
+        var show = base.DoTreeNode(context, instance);
+        if (AllowReorder) {
+            if (AppImguiHelpers.DragDropReorder<T>(context, false, out var dropped)) {
+                context.ClearChildren();
+            }
+        }
+        return show;
+    }
+}
+
 public class LazyPlainObjectHandler(Type type) : IObjectUIHandler
 {
     public ImGuiCond AutoOpen { get; set; }
