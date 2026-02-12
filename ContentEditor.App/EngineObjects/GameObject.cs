@@ -27,7 +27,7 @@ public enum SceneFlags
     All = Draw|Selectable|Update,
 }
 
-public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObject, INodeObject<GameObject>
+public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjectWithGuid, INodeObject<GameObject>
 {
     public string Tags = string.Empty;
     public bool Update;
@@ -70,6 +70,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
     private RszInstance instance;
 
     string? IGameObject.Name => Name;
+    Guid IGameObjectWithGuid.Guid => guid;
     public RszInstance? Instance => instance;
     IList<RszInstance> IGameObject.Components => Components.Select(c => c.Data).ToList();
     IEnumerable<IGameObject> IGameObject.GetChildren() => Children;
@@ -403,30 +404,23 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
             _parent = parent,
             PrefabPath = PrefabPath,
         };
+        if (guid != Guid.Empty) newObj.guid = Guid.NewGuid();
+
+        RszInstance.StoreClonedGameObject(this, newObj);
+        // note: cloning children first so any component reference to children get resolved during the component clone
+        // may not work if there's children referencing the parents?
+        // if so, would need to migrate GameObjectRefs as a separate step
+        foreach (var child in Children) {
+            child.DoClone(newObj);
+        }
+
         foreach (var comp in Components) {
             if (comp is Transform) continue;
 
             comp.CloneTo(newObj);
         }
-        foreach (var child in Children) {
-            child.DoClone(newObj);
-        }
         if (parent != null) {
             parent._BaseChildren.Add(newObj);
-        }
-        if (guid != Guid.Empty) {
-            newObj.guid = Guid.NewGuid();
-
-            foreach (var comp in newObj.Components) {
-                foreach (var childObj in comp.Data.GetChildren()) {
-                    for (int f = 0; f < childObj.Values.Length; ++f) {
-                        var value = childObj.Values[f];
-                        if (value is GameObjectRef goref && goref.guid == guid) {
-                            ((GameObjectRef)childObj.Values[f]).Set(newObj.guid, newObj);
-                        }
-                    }
-                }
-            }
         }
 
         return newObj;
