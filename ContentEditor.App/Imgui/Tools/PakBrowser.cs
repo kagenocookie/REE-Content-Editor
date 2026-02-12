@@ -472,7 +472,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         ImGui.SameLine();
         ImGui.Text($"Displaying: {pagination.page * itemsPerPage + Math.Sign(fileCount)}-{pagination.page * itemsPerPage + pagination.displayedCount}");
         ImGui.SameLine();
-        ImguiHelpers.AlignElementRight((ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.X));
+        ImguiHelpers.AlignElementRight((ImGui.GetFrameHeight()));
         if (ImGui.ArrowButton("##JumpToPageTop", ImGuiDir.Up)) {
             jumpToPageTop = true;
         }
@@ -1030,7 +1030,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         var parts = path.Replace('\\', '/').Split('/');
         if (parts.Length <= 2) return path;
 
-        return ".../" + parts[^1];
+        return parts[^1];
     }
 
     private static string LessCompactFilePath(string path)
