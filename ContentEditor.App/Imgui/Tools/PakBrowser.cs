@@ -54,6 +54,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
     private bool isBookmarkSearchMatchCase = false;
     private string customBookmarkComment = "";
     private string? editingCustomBookmark = null;
+    private bool jumpToPageTop = false;
     private enum FilterMode
     {
         AnyMatch,
@@ -382,6 +383,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
 
         if (ImGui.ArrowButton("##left", ImGuiDir.Left) || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_Back.Get().IsPressed()) {
             CurrentDir = Path.GetDirectoryName(CurrentDir)?.Replace('\\', '/') ?? string.Empty;
+            pagination.page = 0;
         }
         ImguiHelpers.Tooltip("Back");
         ImGui.SameLine();
@@ -394,6 +396,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         ImGui.SameLine();
 
         _editedDir ??= CurrentDir;
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - (ImGui.CalcTextSize("Path").X + (ImGui.CalcTextSize($"{AppIcons.SI_GenericClose}").X + ImGui.GetStyle().ItemSpacing.X * 2) * 2 + ImGui.GetStyle().FramePadding.X * 2));
         if (ImGui.InputText("Path", ref _editedDir, 250)) {
             if (_editedDir.EndsWith('/')) _editedDir = _editedDir[0..^1];
             CurrentDir = _editedDir;
@@ -447,6 +450,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         using (var _ = ImguiHelpers.Disabled(pagination.page <= 0)) {
             if (ImGui.ArrowButton("##prev", ImGuiDir.Left)) {
                 pagination.page--;
+                jumpToPageTop = true;
                 previewGenerator?.CancelCurrentQueue();
             }
         }
@@ -457,11 +461,22 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         using (var _ = ImguiHelpers.Disabled(pagination.page >= pagination.maxPage)) {
             if (ImGui.ArrowButton("##next", ImGuiDir.Right)) {
                 pagination.page++;
+                jumpToPageTop = true;
                 previewGenerator?.CancelCurrentQueue();
             }
         }
         ImGui.SameLine();
-        ImGui.Text($"Total matches: {fileCount} | Displaying: {pagination.page * itemsPerPage + Math.Sign(fileCount)}-{pagination.page * itemsPerPage + pagination.displayedCount}");
+        ImGui.Text($"Total matches: {fileCount}");
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator();
+        ImGui.SameLine();
+        ImGui.Text($"Displaying: {pagination.page * itemsPerPage + Math.Sign(fileCount)}-{pagination.page * itemsPerPage + pagination.displayedCount}");
+        ImGui.SameLine();
+        ImguiHelpers.AlignElementRight((ImGui.CalcTextSize($"{AppIcons.SI_GenericClear}").X + ImGui.GetStyle().ItemSpacing.X));
+        if (ImGui.ArrowButton("##JumpToPageTop", ImGuiDir.Up)) {
+            jumpToPageTop = true;
+        }
+        ImguiHelpers.Tooltip("Jump to page top");
         ImGui.EndChild();
     }
 
@@ -517,7 +532,10 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         var availableSize = ImGui.GetWindowWidth() - style.WindowPadding.X;
 
         ImGui.BeginChild("FileGrid", new Vector2(availableSize, remainingHeight));
-
+        if (jumpToPageTop) {
+            ImGui.SetScrollY(0);
+            jumpToPageTop = false;
+        }
         int i = 0;
         var curX = 0f;
         ImGui.PushStyleVar(ImGuiStyleVar.ButtonTextAlign, new Vector2(0.5f, 1f));
@@ -611,6 +629,10 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             GetPageFiles(baseList, sort.Specs.ColumnIndex, sort.Specs.SortDirection, ref sortedEntries);
             ImGui.TableHeadersRow();
             ImGui.TableNextColumn();
+            if (jumpToPageTop) {
+                ImGui.SetScrollY(0);
+                jumpToPageTop = false;
+            }
             foreach (var file in sortedEntries.Skip(itemsPerPage * pagination.page).Take(itemsPerPage)) {
                 ImGui.PushID(i);
                 i++;
