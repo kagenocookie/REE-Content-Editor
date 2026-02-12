@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Numerics;
 using ContentEditor.App.Windowing;
 using ContentPatcher;
 using ReeLib;
@@ -65,7 +66,9 @@ public class Texture : IDisposable
     {
         fixed (void* d = &data[0]) {
             _gl.TexImage2D(TextureTarget.Texture2D, 0, (int)InternalFormat.Rgba, width, height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, d);
-            SetDefaultParameters();
+            Width = (int)width;
+            Height = (int)height;
+            SetNonTextureParameters();
         }
         return this;
     }
@@ -123,7 +126,7 @@ public class Texture : IDisposable
         Width = img.Width;
         Height = img.Height;
 
-        SetDefaultParameters();
+        SetNonTextureParameters();
         return this;
     }
 
@@ -193,6 +196,7 @@ public class Texture : IDisposable
             }
         }
         _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, mips - 1);
+        SetCommonParameters();
     }
 
     private unsafe void LoadUncompressedDDSMipMaps(ref DDSFile.DdsMipMapIterator iterator, DxgiFormat format)
@@ -208,6 +212,7 @@ public class Texture : IDisposable
             }
         }
         _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, mips - 1);
+        SetCommonParameters();
     }
 
     private unsafe void LoadCompressedTexMipMaps(ref TexFile.TexMipMapIterator iterator, DxgiFormat compressedFormat)
@@ -222,6 +227,7 @@ public class Texture : IDisposable
             }
         }
         _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, mips - 1);
+        SetCommonParameters();
     }
     private unsafe void LoadUncompressedTexMipMaps(ref TexFile.TexMipMapIterator iterator, DxgiFormat compressedFormat)
     {
@@ -234,6 +240,7 @@ public class Texture : IDisposable
             }
         }
         _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, mips - 1);
+        SetCommonParameters();
     }
 
     public unsafe Image<Rgba32> GetAsImage()
@@ -376,15 +383,20 @@ public class Texture : IDisposable
     }
 
 
-    private void SetDefaultParameters()
+    private void SetCommonParameters()
     {
         _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)GLEnum.ClampToEdge);
         _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)GLEnum.ClampToEdge);
         _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)GLEnum.LinearMipmapLinear);
         _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)GLEnum.Linear);
-        _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBaseLevel, 0);
-        _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, 8);
+    }
+
+    private void SetNonTextureParameters()
+    {
+        var level = BitOperations.Log2(BitOperations.RoundUpToPowerOf2((uint)Math.Max(Width, Height)));
+        _gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, level);
         _gl.GenerateMipmap(TextureTarget.Texture2D);
+        SetCommonParameters();
     }
 
     public void SetChannel(TextureChannel channel)
