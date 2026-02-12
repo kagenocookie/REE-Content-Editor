@@ -41,9 +41,9 @@ public class Component(GameObject gameObject, RszInstance data)
     public string Classname => Data.RszClass.name;
     public override string ToString() => $"{GameObject} [{Data}]";
 
-    public virtual void CloneTo(GameObject target)
+    public virtual void CloneTo(GameObject target, bool deduplicateInstances = true)
     {
-        Component.Create(target, Data.Clone());
+        Component.Create(target, deduplicateInstances ? Data.CloneCached() : Data.Clone());
     }
 
     /// <summary>

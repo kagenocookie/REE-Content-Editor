@@ -390,6 +390,13 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
 
     public GameObject Clone(GameObject? parent = null)
     {
+        var clone = DoClone(parent);
+        RszInstance.CleanCloneCache();
+        return clone;
+    }
+
+    private GameObject DoClone(GameObject? parent = null)
+    {
         ExportInstanceFields();
         var newObj = new GameObject(instance.Clone(), Transform.Data.Clone()) {
             Scene = parent?.Scene,
@@ -402,7 +409,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
             comp.CloneTo(newObj);
         }
         foreach (var child in Children) {
-            child.Clone(newObj);
+            child.DoClone(newObj);
         }
         if (parent != null) {
             parent._BaseChildren.Add(newObj);
