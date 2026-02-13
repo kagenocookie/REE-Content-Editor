@@ -6,7 +6,7 @@ using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 
-public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder>, INodeObject<GameObject>
+public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder>, INodeObject<GameObject>, IVisibilityTarget
 {
     public readonly List<GameObject> GameObjects = new();
 
@@ -44,6 +44,9 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
     }
 
     IEnumerable<GameObject> INodeObject<GameObject>.Children => GameObjects;
+
+    IVisibilityTarget? IVisibilityTarget.Parent => Parent;
+    IEnumerable<IVisibilityTarget> IVisibilityTarget.VisibilityChildren => ((IEnumerable<object>)Children).Append(GameObjects).Cast<IVisibilityTarget>();
 
     private Folder(RszInstance instance)
     {
@@ -273,7 +276,7 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
         foreach (var child in GameObjects) {
             var clone = child.Clone();
             clone.MoveToScene(Scene);
-            GameObjects.Add(clone);
+            newObj.GameObjects.Add(clone);
         }
         parent?.AddChild(newObj);
 
@@ -295,12 +298,12 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
 
     public void AddGameObject(GameObject gameObject, int index = -1)
     {
+        gameObject.MoveToFolder(this);
         if (index < 0 || index >= GameObjects.Count) {
             GameObjects.Add(gameObject);
         } else {
             GameObjects.Insert(index, gameObject);
         }
-        gameObject.MoveToFolder(this);
     }
 
     void INodeObject<GameObject>.AddChild(GameObject child, int index) => AddGameObject(child, index);

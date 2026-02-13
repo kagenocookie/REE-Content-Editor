@@ -46,6 +46,15 @@ public interface INodeObject<T> : INodeObject
     }
 }
 
+public interface IVisibilityTarget
+{
+    bool ShouldDrawSelf { get; set; }
+    bool ShouldDraw { get; }
+    Scene? Scene { get; }
+    IVisibilityTarget? Parent { get; }
+    IEnumerable<IVisibilityTarget> VisibilityChildren { get; }
+}
+
 public class NodeObject<TNode> : NodeObject, INodeObject<TNode>, IPathedObject
     where TNode : NodeObject<TNode>
 {

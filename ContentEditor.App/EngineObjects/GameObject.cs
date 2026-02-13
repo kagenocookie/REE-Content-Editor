@@ -27,7 +27,7 @@ public enum SceneFlags
     All = Draw|Selectable|Update,
 }
 
-public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjectWithGuid, INodeObject<GameObject>
+public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjectWithGuid, INodeObject<GameObject>, IVisibilityTarget
 {
     public string Tags = string.Empty;
     public bool Update;
@@ -47,7 +47,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
 
     public SceneFlags SceneFlags { get; set; } = SceneFlags.All;
 
-    public bool ShouldDraw => (SceneFlags & SceneFlags.Draw) != 0 && (Parent == null ? Folder?.ShouldDraw != false : Parent?.ShouldDraw != false);
+    public bool ShouldDraw => (SceneFlags & SceneFlags.Draw) != 0 && (Parent == null ? Folder?.ShouldDraw != false : Parent.ShouldDraw);
     public bool ShouldDrawSelf
     {
         get => (SceneFlags & SceneFlags.Draw) != 0;
@@ -74,6 +74,9 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
     public RszInstance? Instance => instance;
     IList<RszInstance> IGameObject.Components => Components.Select(c => c.Data).ToList();
     IEnumerable<IGameObject> IGameObject.GetChildren() => Children;
+
+    IVisibilityTarget? IVisibilityTarget.Parent => Parent as IVisibilityTarget ?? Folder;
+    IEnumerable<IVisibilityTarget> IVisibilityTarget.VisibilityChildren => Children;
 
     private GameObject(RszInstance instance, RszInstance transformInstance)
     {

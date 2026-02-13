@@ -280,6 +280,10 @@ public class UndoRedo
     {
         GetState(window).AddCommandCallback(type, () => context.ClearChildren());
     }
+    public static void AttachClearState(UIContext context, CallbackType type = CallbackType.Both, WindowBase? window = null)
+    {
+        GetState(window).AddCommandCallback(type, () => context.ResetState());
+    }
 
     #region Undo command types
 
