@@ -71,6 +71,7 @@ public static class Colors
     public static Vector4 FileTypeJMAP => Current.FileTypeJMAP;
     public static Vector4 FileTypeSDFTEX => Current.FileTypeSDFTEX;
     public static Vector4 FileTypeSDF => Current.FileTypeSDF;
+    public static Vector4 FileTypeSTS => Current.FileTypeSTS;
     public static Vector4 FileTypeOFT => Current.FileTypeOFT;
     public static Vector4 FileTypeIFT => Current.FileTypeIFT;
     public static Vector4 FileTypeFSLT => Current.FileTypeFSLT;
@@ -82,6 +83,8 @@ public static class Colors
     public static Vector4 FileTypeSTAR => Current.FileTypeSTAR;
     public static Vector4 FileTypeRMESH => Current.FileTypeRMESH;
     public static Vector4 FileTypeMOV => Current.FileTypeMOV;
+    public static Vector4 FileTypeVSDF => Current.FileTypeVSDF;
+    public static Vector4 FileTypeNCF => Current.FileTypeNCF;
 
     /// <summary>
     /// Main color for icons, it should be the same as the text color of the current theme
@@ -202,6 +205,7 @@ public sealed class AppColors
     public Vector4 FileTypeJCNS = new Vector4(0.98f, 0.65f, 0.76f, 1);
     public Vector4 FileTypeSDFTEX = new Vector4(0.46f, 0.73f, 0, 1);
     public Vector4 FileTypeSDF = new Vector4(0.46f, 0.73f, 0, 1);
+    public Vector4 FileTypeSTS = new Vector4(0.46f, 0.73f, 0, 1);
     public Vector4 FileTypeOFT = new Vector4(0.24f, 0.36f, 0.84f, 1);
     public Vector4 FileTypeIFT = new Vector4(0.49f, 0.57f, 0.89f, 1);
     public Vector4 FileTypeFSLT = new Vector4(0.35f, 0.55f, 0.98f, 1);
@@ -213,6 +217,8 @@ public sealed class AppColors
     public Vector4 FileTypeSTAR = new Vector4(1, 0.85f, 0, 1);
     public Vector4 FileTypeRMESH = new Vector4(0.97f, 0.38f, 1, 1);
     public Vector4 FileTypeMOV = new Vector4(0.77f, 0.77f, 0.77f, 1);
+    public Vector4 FileTypeVSDF = new Vector4(0.21f, 0.88f, 0, 1);
+    public Vector4 FileTypeNCF = new Vector4(0.25f, 0.8f, 1, 1);
 
     public Vector4 IconPrimary = new Vector4(1, 1, 1, 1);
     public Vector4 IconSecondary = new Vector4(0.114f, 0.6f, 0.93f, 1);

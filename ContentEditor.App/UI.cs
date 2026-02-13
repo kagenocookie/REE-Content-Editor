@@ -412,6 +412,9 @@ public static class AppIcons
     public static readonly char SI_FileType_STAR = '\uee15';
     public static readonly char SI_FileType_RMESH = '\uee16';
     public static readonly char SI_FileType_MOV = '\uee17';
+    public static readonly char SI_FileType_STS = '\uee18';
+    public static readonly char SI_FileType_NCF = '\uee19';
+    public static readonly char SI_FileType_VSDF = '\uee1a';
 
     public static string PrependIcon(this string text, object target)
     {
@@ -506,6 +509,9 @@ public static class AppIcons
         KnownFileFormats.StarCatalogue => (SI_FileType_STAR, Colors.FileTypeSTAR),
         KnownFileFormats.RigidBodyMesh => (SI_FileType_RMESH, Colors.FileTypeRMESH),
         KnownFileFormats.Movie => (SI_FileType_MOV, Colors.FileTypeMOV),
+        KnownFileFormats.ShaderTimer => (SI_FileType_STS, Colors.FileTypeSTS),
+        KnownFileFormats.NetworkConfig => (SI_FileType_NCF, Colors.FileTypeNCF),
+        KnownFileFormats.VfxShader => (SI_FileType_VSDF, Colors.FileTypeVSDF),
         _ => ('\0', Vector4.One),
     };
 }
