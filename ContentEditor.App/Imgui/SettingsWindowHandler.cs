@@ -31,6 +31,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         Display_Theme,
         Hotkeys_Global,
         Hotkeys_PakBrowser,
+        Hotkeys_MeshViewer,
         Games_ResidentEvil,
         Games_MonsterHunter,
         Games_Other,
@@ -63,8 +64,8 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         new SettingGroup { Name = "Hotkeys", SubGroups = {
                 new SettingSubGroup { Name = "Global", ID = SubGroupID.Hotkeys_Global},
                 new SettingSubGroup { Name = "Pak Browser", ID = SubGroupID.Hotkeys_PakBrowser},
+                new SettingSubGroup { Name = "Mesh Viewer", ID = SubGroupID.Hotkeys_MeshViewer},
                 // TODO SILVER: There should be contextual hotkeys for the editors
-                //new SettingSubGroup { Name = "Mesh Viewer"},
                 //new SettingSubGroup { Name = "Texture Viewer"},
             }
         },
@@ -182,6 +183,9 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                         case SubGroupID.Hotkeys_PakBrowser:
                             ShowHotkeysPakBrowserTab();
                             break;
+                        case SubGroupID.Hotkeys_MeshViewer:
+                            ShowHotkeysMeshViewerTab();
+                            break;
                         case SubGroupID.Games_ResidentEvil:
                             ShowGamesResidentEvilTab();
                             break;
@@ -252,7 +256,8 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         }
         ImguiHelpers.Tooltip("The maximum number of steps you can undo. Higher number means a bit higher memory usage after longer sessions.");
 
-        ShowSetting(config.ShowQuaternionsAsEuler, "Use Euler angles for quaternions", "Whether quaternions should be displayed as euler angles");
+        ShowSetting(config.ShowQuaternionsAsEuler, "Use Euler angles for quaternions", "Whether quaternions should be displayed as euler angles.");
+        ShowSetting(config.PauseAnimPlayerOnSeek, "Pause Animation Player on Seek", "Whether to pause the animation player while seeking with the slider.");
     }
 
     private static void ShowBundlesEditingTab()
@@ -350,6 +355,15 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImGui.Spacing();
         ImguiKeybinding("Open Bookmarks", config.Key_PakBrowser_OpenBookmarks);
         ImguiKeybinding("Bookmark Current Path", config.Key_PakBrowser_Bookmark);
+        ImguiKeybinding("Jump to page Top", config.Key_PakBrowser_JumpToPageTop);
+    }
+    private void ShowHotkeysMeshViewerTab()
+    {
+        ImGui.Spacing();
+        ImGui.SeparatorText("Animator");
+        ImguiKeybinding("Pause/Play", config.Key_MeshViewer_PauseAnim);
+        ImguiKeybinding("Next Frame", config.Key_MeshViewer_NextAnimFrame);
+        ImguiKeybinding("Previous Frame", config.Key_MeshViewer_PrevAnimFrame);
     }
     private static void ShowGamesResidentEvilTab()
     {

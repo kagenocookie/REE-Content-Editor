@@ -473,7 +473,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         ImGui.Text($"Displaying: {pagination.page * itemsPerPage + Math.Sign(fileCount)}-{pagination.page * itemsPerPage + pagination.displayedCount}");
         ImGui.SameLine();
         ImguiHelpers.AlignElementRight((ImGui.GetFrameHeight()));
-        if (ImGui.ArrowButton("##JumpToPageTop", ImGuiDir.Up)) {
+        if (ImGui.ArrowButton("##JumpToPageTop", ImGuiDir.Up) || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_PakBrowser_JumpToPageTop.Get().IsPressed()) {
             jumpToPageTop = true;
         }
         ImguiHelpers.Tooltip("Jump to page top");

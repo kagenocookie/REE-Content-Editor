@@ -49,6 +49,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string CacheFilepath = "cache_path";
         public const string BookmarksFilepath = "bookmarks_path";
         public const string WindowRect = "window_rect";
+        public const string PauseAnimPlayerOnSeek = "pause_anim_player_on_seek";
 
         public const string RenderAxis = "render_axis";
         public const string RenderMeshes = "render_meshes";
@@ -63,6 +64,10 @@ public class AppConfig : Singleton<AppConfig>
         public const string Key_Close = "key_close";
         public const string Key_PakBrowser_Bookmark = "key_pakbrowser_bookmark";
         public const string Key_PakBrowser_OpenBookmarks = "key_pakbrowser_openbookmarks";
+        public const string Key_PakBrowser_JumpToPageTop = "key_pakbrowser_jumptopagetop";
+        public const string Key_MeshViewer_PauseAnim = "key_meshviewer_pauseanim";
+        public const string Key_MeshViewer_NextAnimFrame = "key_meshviewer_nextanimframe";
+        public const string Key_MeshViewer_PrevAnimFrame = "key_meshviewer_prevanimframe";
 
         public const string Gamepath = "game_path";
         public const string GameExtractPath = "game_extract_path";
@@ -171,6 +176,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<Vector4> WindowRect = new SettingWrapper<Vector4>(Keys.WindowRect, _lock, new Vector4(50, 50, 1280, 720));
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
     public readonly ClassSettingWrapper<string> LatestVersion = new ClassSettingWrapper<string>(Keys.LatestVersion, _lock);
+    public readonly SettingWrapper<bool> PauseAnimPlayerOnSeek = new SettingWrapper<bool>(Keys.PauseAnimPlayerOnSeek, _lock, true);
 
     public readonly SettingWrapper<int> PakDisplayModeValue = new SettingWrapper<int>(Keys.LogToFile, _lock, (int)FileDisplayMode.List);
     public FileDisplayMode PakDisplayMode { get => (FileDisplayMode)PakDisplayModeValue.Get(); set => PakDisplayModeValue.Set((int)value); }
@@ -188,6 +194,10 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<KeyBinding> Key_Close = new SettingWrapper<KeyBinding>(Keys.Key_Close, _lock, new KeyBinding(ImGuiKey.W, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_PakBrowser_Bookmark = new SettingWrapper<KeyBinding>(Keys.Key_PakBrowser_Bookmark, _lock, new KeyBinding(ImGuiKey.D, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_PakBrowser_OpenBookmarks = new SettingWrapper<KeyBinding>(Keys.Key_PakBrowser_OpenBookmarks, _lock, new KeyBinding(ImGuiKey.B, ctrl: true, shift: true));
+    public readonly SettingWrapper<KeyBinding> Key_PakBrowser_JumpToPageTop = new SettingWrapper<KeyBinding>(Keys.Key_PakBrowser_JumpToPageTop, _lock, new KeyBinding(ImGuiKey.Home));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_PauseAnim = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_PauseAnim, _lock, new KeyBinding(ImGuiKey.Space));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_NextAnimFrame = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_NextAnimFrame, _lock, new KeyBinding(ImGuiKey.RightArrow));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_PrevAnimFrame = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_PrevAnimFrame, _lock, new KeyBinding(ImGuiKey.LeftArrow));
 
     public string ConfigBasePath => GameConfigBaseFilepath.Get() ?? "configs";
 
@@ -325,6 +335,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.PakDisplayMode, instance.PakDisplayModeValue.value.ToString(), null),
             (Keys.PrettyLabels, instance.PrettyFieldLabels.value.ToString(), null),
             (Keys.QuaternionsAsEuler, instance.ShowQuaternionsAsEuler.value.ToString(), null),
+            (Keys.PauseAnimPlayerOnSeek, instance.PauseAnimPlayerOnSeek.value.ToString(), null),
 
             (Keys.RenderAxis, instance.RenderAxis.value.ToString(), null),
             (Keys.RenderMeshes, instance.RenderMeshes.value.ToString(), null),
@@ -339,6 +350,11 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.Key_Close, instance.Key_Close.value.ToString(), "Keys"),
             (Keys.Key_PakBrowser_Bookmark, instance.Key_PakBrowser_Bookmark.value.ToString(), "Keys"),
             (Keys.Key_PakBrowser_OpenBookmarks, instance.Key_PakBrowser_OpenBookmarks.value.ToString(), "Keys"),
+            (Keys.Key_PakBrowser_OpenBookmarks, instance.Key_PakBrowser_OpenBookmarks.value.ToString(), "Keys"),
+            (Keys.Key_PakBrowser_JumpToPageTop, instance.Key_PakBrowser_JumpToPageTop.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_PauseAnim, instance.Key_MeshViewer_PauseAnim.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_NextAnimFrame, instance.Key_MeshViewer_NextAnimFrame.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_PrevAnimFrame, instance.Key_MeshViewer_PrevAnimFrame.value.ToString(), "Keys"),
         };
         foreach (var (game, data) in instance.gameConfigs) {
             if (!string.IsNullOrEmpty(data.gamepath)) {
@@ -450,6 +466,9 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.QuaternionsAsEuler:
                             ShowQuaternionsAsEuler.value = ReadBool(value);
                             break;
+                        case Keys.PauseAnimPlayerOnSeek:
+                            PauseAnimPlayerOnSeek.value = ReadBool(value);
+                            break;
                         case Keys.RecentFiles:
                             JsonSettings.RecentFiles.AddRange(value.Split('|', StringSplitOptions.RemoveEmptyEntries));
                             break;
@@ -516,6 +535,10 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.Key_Close: if (KeyBinding.TryParse(value, out _key)) Key_Close.value = _key; break;
                         case Keys.Key_PakBrowser_Bookmark: if (KeyBinding.TryParse(value, out _key)) Key_PakBrowser_Bookmark.value = _key; break;
                         case Keys.Key_PakBrowser_OpenBookmarks: if (KeyBinding.TryParse(value, out _key)) Key_PakBrowser_OpenBookmarks.value = _key; break;
+                        case Keys.Key_PakBrowser_JumpToPageTop: if (KeyBinding.TryParse(value, out _key)) Key_PakBrowser_JumpToPageTop.value = _key; break;
+                        case Keys.Key_MeshViewer_PauseAnim: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_PauseAnim.value = _key; break;
+                        case Keys.Key_MeshViewer_NextAnimFrame: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_NextAnimFrame.value = _key; break;
+                        case Keys.Key_MeshViewer_PrevAnimFrame: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_PrevAnimFrame.value = _key; break;
                     }
                 } else {
                     var config = gameConfigs.GetValueOrDefault(group);
