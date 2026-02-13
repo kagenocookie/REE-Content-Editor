@@ -47,11 +47,6 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
             return;
         }
 
-        var icon = AppIcons.GetIcon(_target);
-        if (icon != '\0') {
-            ImGui.Text(icon.ToString());
-            ImGui.SameLine();
-        }
         if (Target is IPathedObject pathed) {
             ImGui.TextColored(Colors.Faded, $"Target: [{Target?.GetType().Name}] {Target}: {pathed.Path}");
         } else {
@@ -70,7 +65,18 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
     public void OnWindow()
     {
         var data = context.Get<WindowData>();
-        if (!ImguiHelpers.BeginWindow(data, name: $"{HandlerName}##{data.ID}")) {
+        bool show;
+        if (_target == null) {
+            show = ImguiHelpers.BeginWindow(data, name: $"Inspector###Inspector{data.ID}");
+        } else {
+            var icon = AppIcons.GetIcon(_target);
+            if (icon == '\0') {
+                show = ImguiHelpers.BeginWindow(data, name: $"{_target}###Inspector{data.ID}");
+            } else {
+                show = ImguiHelpers.BeginWindow(data, name: $"{icon} {_target}###Inspector{data.ID}");
+            }
+        }
+        if (!show) {
             WindowManager.Instance.CloseWindow(data);
             return;
         }

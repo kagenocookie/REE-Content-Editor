@@ -215,9 +215,11 @@ public class ConfirmedStringFieldHandler : Singleton<ConfirmedStringFieldHandler
         context.InitFilterDefault(curString);
         if (ImGui.InputText(context.label, ref context.Filter, 255, ImGuiInputTextFlags.EnterReturnsTrue)) {
             UndoRedo.RecordSet(context, context.Filter);
+            UndoRedo.AttachClearState(context);
         } else if (context.Filter != curString) {
             if (ImGui.Button("Confirm")) {
                 UndoRedo.RecordSet(context, context.Filter);
+                UndoRedo.AttachClearState(context);
             }
             ImGui.SameLine();
             if (ImGui.Button("Cancel")) {

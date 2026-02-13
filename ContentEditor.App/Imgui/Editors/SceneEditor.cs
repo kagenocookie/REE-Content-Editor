@@ -16,6 +16,7 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
 
     public ContentWorkspace Workspace { get; }
     public SceneEditor? ParentEditor { get; }
+    public SceneTreeEditor? Tree => context.GetChildHandler<SceneTreeEditor>();
 
     private ObjectInspector? primaryInspector;
     private Scene? scene;
@@ -28,6 +29,8 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
     public object? MatchedObject { get => searcher.MatchedObject; set => searcher.MatchedObject = value; }
 
     private readonly List<ObjectInspector> inspectors = new();
+
+    public SceneEditor RootSceneEditor => ParentEditor?.RootSceneEditor ?? this;
 
     public SceneEditor(ContentWorkspace env, FileHandle file, SceneEditor? parent = null) : base(file)
     {
@@ -97,22 +100,30 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
         return scene;
     }
 
-    protected override void DrawFileContents()
+    internal void EnsureUIInit()
     {
-        ImGui.PushID(Filename);
         if (scene == null) {
             scene = LoadScene();
             if (scene == null) return;
         }
-        ImGui.Spacing();
         if (context.children.Count == 0) {
             var root = scene.RootFolder;
             // context.AddChild<ScnFile, List<ResourceInfo>>("Resources", File, getter: static (c) => c!.ResourceInfoList, handler: new TooltipUIHandler(new ListHandler(typeof(ResourceInfo)), "List of resources that will be preloaded together with the file ingame.\nShould be updated automatically on save."));
             context.AddChild("Filter", searcher, searcher);
-            context.AddChild(root.Name, root, new TextHeaderUIHandler("Scene Objects", new BoxedUIHandler(new FolderNodeEditor())));
+            context.AddChild(root.Name, root, new SceneTreeEditor());
         }
+    }
+
+    protected override void DrawFileContents()
+    {
+        ImGui.PushID(Filename);
+        EnsureUIInit();
         ImGui.Spacing();
-        context.ShowChildrenUI();
+        var depth = Tree?.InheritedDepth ?? 0;
+        ImGui.Indent(depth * 20);
+        context.children[0].ShowUI(); // filter
+        ImGui.Unindent(depth * 20);
+        context.children[1].ShowUI(); // scene tree
         ImGui.PopID();
     }
 

@@ -96,7 +96,14 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
         if (ImGui.InputText("Filter", ref filter, 200)) {
             SetQuery(filter);
         }
-        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Search by object name.\nCan use \"c:\" prefix to search by a GameObject component, e.g. \"c:render.mesh\"");
+        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("""
+            Search by object name.
+            Can use "c:" prefix to search by a GameObject component, e.g. "c:render.mesh"
+            """);
+        // TODO support field/value filtering
+        // Can use "f:" prefix to search by a field name, e.g. "f:itemID"
+        // Can use "v:" prefix to search by a field value, e.g. "v:sm34.mesh"
+        // TODO support proper UI for advanced filtering
         shouldDeleteSearch = MatchedObject != null;
     }
 }
