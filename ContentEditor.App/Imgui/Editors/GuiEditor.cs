@@ -33,6 +33,11 @@ public class GuiEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
             var instance = new Element(version);
             return instance;
         });
+        WindowHandlerFactory.DefineInstantiator<AttributeOverride>(ctx => {
+            var version = ctx.FindHandlerInParents<GuiEditor>()?.File.Header.GuiVersion ?? GuiVersion.RE4;
+            var instance = new AttributeOverride(version);
+            return instance;
+        });
     }
 
     public GuiEditor(ContentWorkspace env, FileHandle file) : base (file)
