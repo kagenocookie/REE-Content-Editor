@@ -398,6 +398,22 @@ public static class AppIcons
     public static readonly char[] SIC_MaterialAdd = { '\uee05', '\uee06' };
     public static readonly char[] SIC_MaterialPaste = { '\uee07', '\uee08', '\uee09' };
     public static readonly char SI_TagArmor = '\uee0a';
+    public static readonly char SI_FileType_DLG = '\uee0b';
+    public static readonly char SI_FileType_JCNS = '\uee0c';
+    public static readonly char SI_FileType_OFT = '\uee0d';
+    public static readonly char SI_FileType_IFT = '\uee0e';
+    public static readonly char SI_FileType_FSLT = '\uee0f';
+    public static readonly char SI_FileType_RTMR = '\uee10';
+    public static readonly char SI_FileType_DLGCF = '\uee11';
+    public static readonly char SI_FileType_DLGLIST = '\uee12';
+    public static readonly char SI_FileType_DLGTML = '\uee13';
+    public static readonly char SI_FileType_DLGTMLLIST = '\uee14';
+    public static readonly char SI_FileType_STAR = '\uee15';
+    public static readonly char SI_FileType_RMESH = '\uee16';
+    public static readonly char SI_FileType_MOV = '\uee17';
+    public static readonly char SI_FileType_STS = '\uee18';
+    public static readonly char SI_FileType_NCF = '\uee19';
+    public static readonly char SI_FileType_VSDF = '\uee1a';
 
     public static string PrependIcon(this string text, object target)
     {
@@ -479,6 +495,22 @@ public static class AppIcons
         KnownFileFormats.JointMap => (SI_FileType_JMAP, Colors.FileTypeJMAP),
         KnownFileFormats.SDFTexture => (SI_FileType_SDFTEX, Colors.FileTypeSDFTEX),
         KnownFileFormats.Shader => (SI_FileType_SDF, Colors.FileTypeSDF),
+        KnownFileFormats.JointConstraints => (SI_FileType_JCNS, Colors.FileTypeJCNS),
+        KnownFileFormats.RayTraceMaterialRedirect => (SI_FileType_RTMR, Colors.FileTypeRTMR),
+        KnownFileFormats.OutlineFont => (SI_FileType_OFT, Colors.FileTypeOFT),
+        KnownFileFormats.IconFont => (SI_FileType_IFT, Colors.FileTypeIFT),
+        KnownFileFormats.FontSlot => (SI_FileType_FSLT, Colors.FileTypeFSLT),
+        KnownFileFormats.Dialogue => (SI_FileType_DLG, Colors.FileTypeDLG),
+        KnownFileFormats.DialogueConfig => (SI_FileType_DLGCF, Colors.FileTypeDLGCF),
+        KnownFileFormats.DialogueList => (SI_FileType_DLGLIST, Colors.FileTypeDLGLIST),
+        KnownFileFormats.DialogueTimeline => (SI_FileType_DLGTML, Colors.FileTypeDLGTML),
+        KnownFileFormats.DialogueTimelineList => (SI_FileType_DLGTMLLIST, Colors.FileTypeDLGTMLLIST),
+        KnownFileFormats.StarCatalogue => (SI_FileType_STAR, Colors.FileTypeSTAR),
+        KnownFileFormats.RigidBodyMesh => (SI_FileType_RMESH, Colors.FileTypeRMESH),
+        KnownFileFormats.Movie => (SI_FileType_MOV, Colors.FileTypeMOV),
+        KnownFileFormats.ShaderTimer => (SI_FileType_STS, Colors.FileTypeSTS),
+        KnownFileFormats.NetworkConfig => (SI_FileType_NCF, Colors.FileTypeNCF),
+        KnownFileFormats.VfxShader => (SI_FileType_VSDF, Colors.FileTypeVSDF),
         _ => ('\0', Vector4.One),
     };
 }

@@ -39,6 +39,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     private Animator? animator;
     private string motFilter = "";
     private bool isMotFilterMatchCase = false;
+    private bool isMotFilterActive = false;
     private string? loadedAnimationSource;
     public Animator? Animator => animator;
     private float playbackSpeed = 1.0f;
@@ -650,7 +651,17 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (!UpdateAnimatorMesh(meshComponent)) return;
 
         ImGui.Checkbox("Show Skeleton", ref showSkeleton);
-
+        ImGui.Spacing();
+        using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(animationSourceFile))) {
+            if (ImGui.Button($"{AppIcons.SI_Update}") && animator.File != null) {
+                Workspace.ResourceManager.CloseFile(animator.File);
+                animator.Unload();
+                loadedAnimationSource = null;
+            }
+            ImguiHelpers.Tooltip("Force reload");
+        }
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Source File").X - ImGui.GetStyle().FramePadding.X);
         if (animationPickerContext == null) {
             animationPickerContext = context.AddChild<MeshViewer, string>(
                 "Source File",
@@ -660,15 +671,12 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 (v, p) => v.animationSourceFile = p ?? "");
         }
         animationPickerContext.ShowUI();
-        if (!string.IsNullOrEmpty(animationSourceFile) && animator.File != null && ImGui.Button("Force reload")) {
-            Workspace.ResourceManager.CloseFile(animator.File);
-            animator.Unload();
-            loadedAnimationSource = null;
-        }
+        
         var settings = AppConfig.Settings;
         if (settings.RecentMotlists.Count > 0) {
             var selection = animationSourceFile;
             var options = settings.RecentMotlists.ToArray();
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Recent files").X - ImGui.GetStyle().FramePadding.X);
             if (ImguiHelpers.ValueCombo("Recent files", options, options, ref selection)) {
                 animationSourceFile = selection;
                 animationPickerContext.ResetState();
@@ -688,7 +696,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             ImGui.Separator();
             ImGui.Spacing();
             var ignoreRoot = animator.IgnoreRootMotion;
-            if (ImGui.Button($"{AppIcons.SI_FileType_MOTLIST}")) {
+            if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
                 if (animator.File!.Format.format == KnownFileFormats.Motion) {
                     var fakeMotlist = new MotlistFile(new FileHandler());
                     var ff = animator.File.GetFile<MotFile>();
@@ -711,15 +719,19 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
             ImGui.SameLine();
             ImGui.SetNextItemAllowOverlap();
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
             ImGui.InputTextWithHint("##MotFilter", $"{AppIcons.SI_GenericMagnifyingGlass} Filter Animations", ref motFilter, 200);
+            isMotFilterActive = ImGui.IsItemActive();
             if (!string.IsNullOrEmpty(motFilter)) {
                 ImGui.SameLine();
-                ImGui.SetCursorPosX(ImGui.GetCursorPosX() - (ImGui.CalcTextSize($"{AppIcons.SI_GenericClose}").X * 2));
+                ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
                 ImGui.SetNextItemAllowOverlap();
                 if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
                     motFilter = string.Empty;
                 }
             }
+            
+
             ImGui.Spacing();
             foreach (var (name, mot) in animator.Animations) {
                 if (!string.IsNullOrEmpty(motFilter) && !name.Contains(motFilter, isMotFilterMatchCase ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase)) continue;
@@ -839,11 +851,8 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         ImGui.PushStyleColor(ImGuiCol.ChildBg, ImguiHelpers.GetColor(ImGuiCol.WindowBg) with { W = 0.5f });
         ImGui.BeginChild("PlaybackControls", new Vector2(timestampSize.X + 50, 80), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
 
-        var p = ImGui.GetStyle().FramePadding;
-        // the margins are weird on the buttons by default - font issue maybe, either way adding a bit of extra Y here
-        var btnHeight = new Vector2(0, UI.FontSize + p.Y);
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
-        if (ImGui.Button((animator.IsPlaying ? AppIcons.Pause : AppIcons.Play).ToString(), btnHeight)) {
+        if (ImGui.Button((animator.IsPlaying ? AppIcons.Pause : AppIcons.Play).ToString()) || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_MeshViewer_PauseAnim.Get().IsPressed() && !isMotFilterActive) {
             if (animator.IsPlaying) {
                 animator.Pause();
             } else {
@@ -854,7 +863,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(animator.CurrentTime == 0)) {
-            if (ImGui.Button(AppIcons.SeekStart.ToString(), btnHeight)) {
+            if (ImGui.Button(AppIcons.SeekStart.ToString())) {
                 animator.Restart();
             }
         }
@@ -863,7 +872,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(!animator.IsPlaying && !animator.IsActive)) {
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
-            if (ImGui.Button(AppIcons.Stop.ToString(), btnHeight)) {
+            if (ImGui.Button(AppIcons.Stop.ToString())) {
                 animator.Stop();
             }
             ImGui.PopStyleColor();
@@ -872,7 +881,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(!animator.IsActive)) {
-            if (ImGui.Button(AppIcons.Previous.ToString(), btnHeight)) {
+            if (ImGui.Button(AppIcons.Previous.ToString()) || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_MeshViewer_PrevAnimFrame.Get().IsPressed()) {
                 animator.Pause();
                 animator.Seek((animator.CurrentFrame - 1) * animator.FrameDuration);
                 animator.Update(0);
@@ -882,7 +891,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(!animator.IsActive)) {
-            if (ImGui.Button(AppIcons.Next.ToString(), btnHeight)) {
+            if (ImGui.Button(AppIcons.Next.ToString()) || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_MeshViewer_NextAnimFrame.Get().IsPressed()) {
                 animator.Pause();
                 animator.Seek((animator.CurrentFrame + 1) * animator.FrameDuration);
                 animator.Update(0);
@@ -898,12 +907,25 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             int frame = animator.CurrentFrame;
             ImGui.SetNextItemWidth(325);
             if (ImGui.SliderInt("##AnimFrameSlider", ref frame, 0, animator.TotalFrames)) {
-                animator.Pause();
+                if (AppConfig.Instance.PauseAnimPlayerOnSeek) {
+                    animator.Pause();
+                }
                 animator.Seek(frame * animator.FrameDuration);
                 animator.Update(0);
             }
         }
         ImGui.SameLine();
+        if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)) {
+            int idx = Array.IndexOf(PlaybackSpeeds, playbackSpeed);
+
+            if (AppConfig.Instance.Key_MeshViewer_IncreaseAnimSpeed.Get().IsPressed() && idx < PlaybackSpeeds.Length - 1) {
+                playbackSpeed = PlaybackSpeeds[idx + 1];
+            }
+
+            if (AppConfig.Instance.Key_MeshViewer_DecreaseAnimSpeed.Get().IsPressed() && idx > 0) {
+                playbackSpeed = PlaybackSpeeds[idx - 1];
+            }
+        }
         ImGui.SetNextItemWidth(75);
         if (ImGui.BeginCombo("##PlaybackSpeed", $"{playbackSpeed:0.##}x")) {
             for (int i = 0; i < PlaybackSpeeds.Length; i++) {
