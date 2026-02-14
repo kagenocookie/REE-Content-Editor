@@ -31,7 +31,7 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
 
     public Vector3D<float> OffsetSilk => new Vector3D<float>((float)_offset.x, (float)_offset.y, (float)_offset.z);
 
-    private RszInstance instance;
+    public RszInstance Instance { get; }
 
     public SceneFlags SceneFlags { get; set; } = SceneFlags.All;
     public Scene? ChildScene { get; set; }
@@ -55,13 +55,13 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
 
     private Folder(RszInstance instance)
     {
-        this.instance = instance;
+        this.Instance = instance;
         ImportInstanceFields();
     }
 
     public Folder(string name, Workspace workspace, Scene? scene = null)
     {
-        instance = RszInstance.CreateInstance(workspace.RszParser, workspace.Classes.Folder);
+        Instance = RszInstance.CreateInstance(workspace.RszParser, workspace.Classes.Folder);
         Name = name;
         Scene = scene;
         ExportInstanceFields();
@@ -74,7 +74,7 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
         IList<ScnPrefabInfo> prefabs,
         Scene? scene = null)
     {
-        instance = RszInstance.CreateInstance(workspace.RszParser, workspace.Classes.Folder);
+        Instance = RszInstance.CreateInstance(workspace.RszParser, workspace.Classes.Folder);
         Name = name;
         Scene = scene;
         ExportInstanceFields();
@@ -94,7 +94,7 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
 
     public Folder(ScnFolderData source, Workspace workspace, IList<ScnPrefabInfo> prefabs, Scene? scene = null)
     {
-        instance = source.Instance!;
+        Instance = source.Instance!;
         ImportInstanceFields();
         Scene = scene;
 
@@ -171,24 +171,24 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
 
     private void ImportInstanceFields()
     {
-        Name = RszFieldCache.Folder.Name.Get(instance);
-        Tags = RszFieldCache.Folder.Tags.Get(instance);
-        Draw = RszFieldCache.Folder.Draw.Get(instance);
-        Update = RszFieldCache.Folder.Update.Get(instance);
-        Standby = RszFieldCache.Folder.Standby.Get(instance);
-        ScenePath = RszFieldCache.Folder.ScenePath.Get(instance);
-        _offset = RszFieldCache.Folder.UniversalOffset.Get(instance);
+        Name = RszFieldCache.Folder.Name.Get(Instance);
+        Tags = RszFieldCache.Folder.Tags.Get(Instance);
+        Draw = RszFieldCache.Folder.Draw.Get(Instance);
+        Update = RszFieldCache.Folder.Update.Get(Instance);
+        Standby = RszFieldCache.Folder.Standby.Get(Instance);
+        ScenePath = RszFieldCache.Folder.ScenePath.Get(Instance);
+        _offset = RszFieldCache.Folder.UniversalOffset.Get(Instance);
     }
 
     private void ExportInstanceFields()
     {
-        RszFieldCache.Folder.Name.Set(instance, Name);
-        RszFieldCache.Folder.Tags.Set(instance, Tags);
-        RszFieldCache.Folder.Draw.Set(instance, Draw);
-        RszFieldCache.Folder.Update.Set(instance, Update);
-        RszFieldCache.Folder.Standby.Set(instance, Standby);
-        RszFieldCache.Folder.ScenePath.Set(instance, ScenePath ?? string.Empty);
-        RszFieldCache.Folder.UniversalOffset.Set(instance, _offset);
+        RszFieldCache.Folder.Name.Set(Instance, Name);
+        RszFieldCache.Folder.Tags.Set(Instance, Tags);
+        RszFieldCache.Folder.Draw.Set(Instance, Draw);
+        RszFieldCache.Folder.Update.Set(Instance, Update);
+        RszFieldCache.Folder.Standby.Set(Instance, Standby);
+        RszFieldCache.Folder.ScenePath.Set(Instance, ScenePath ?? string.Empty);
+        RszFieldCache.Folder.UniversalOffset.Set(Instance, _offset);
     }
 
     public AABB GetWorldSpaceBounds()
@@ -234,7 +234,7 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
         ExportInstanceFields();
 
         var scn = new ScnFolderData() {
-            Instance = instance,
+            Instance = Instance,
         };
         if (!string.IsNullOrEmpty(ScenePath)) {
             return scn;
@@ -272,7 +272,7 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
     public Folder Clone(Folder? parent = null)
     {
         ExportInstanceFields();
-        var newObj = new Folder(instance.Clone()) {
+        var newObj = new Folder(Instance.Clone()) {
             Scene = parent?.Scene ?? Scene,
         };
         foreach (var child in Children) {

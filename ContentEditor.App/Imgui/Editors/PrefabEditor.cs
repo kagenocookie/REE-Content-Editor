@@ -117,10 +117,11 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
         if (context.children.Count == 0) {
             var root = scene.RootFolder.GameObjects.First();
             // context.AddChild<PfbFile, List<ResourceInfo>>("Resources", File, getter: static (c) => c!.ResourceInfoList, handler: new TooltipUIHandler(new ListHandler(typeof(ResourceInfo)), "List of resources that will be preloaded together with the file ingame.\nShould be updated automatically on save."));
-            context.AddChild(root.Name, root, new FullWindowWidthUIHandler(-50, new TextHeaderUIHandler("Children", new BoxedUIHandler(new GameObjectTreeEditor()))));
+            context.AddChild(root.Name, root, new GameObjectTreeEditor());
         }
         searcher.ShowFileEditorInline();
         ImGui.Spacing();
+        ImGui.Separator();
         context.ShowChildrenUI();
         ImGui.PopID();
     }

@@ -1,15 +1,6 @@
-using System.Collections;
-using System.Numerics;
-using System.Reflection;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using ContentEditor.App.Windowing;
 using ContentEditor.Core;
-using ContentPatcher;
 using ReeLib;
-using ReeLib.Il2cpp;
 using ReeLib.via;
-using ZstdSharp.Unsafe;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -19,6 +10,8 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
 
     private string componentMatch = "";
     private string nameMatch = "";
+    private string valueMatch = "";
+    private string fieldMatch = "";
 
     public string? QueryError { get; private set; }
 
@@ -36,33 +29,48 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
         }
 
         Query = query;
+        componentMatch = "";
+        nameMatch = "";
+        valueMatch = "";
+        fieldMatch = "";
+
         var split = query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        var compQuery = split.FirstOrDefault(c => c.StartsWith("c:") && c.Length > 2);
-        if (compQuery != null) {
-            split = split.Except([compQuery]).ToArray();
-            componentMatch = compQuery.Substring(2);
-        } else {
-            componentMatch = "";
+        foreach (var part in split) {
+            if (part.StartsWith("c:")) {
+                componentMatch = part.Substring(2);
+            } else if (part.StartsWith("v:")) {
+                valueMatch = part.Substring(2);
+            } else if (part.StartsWith("f:")) {
+                fieldMatch = part.Substring(2);
+            } else if (string.IsNullOrEmpty(nameMatch)) {
+                nameMatch = part;
+            } else {
+                QueryError = "Multiple names in search are not supported";
+            }
         }
-
-        if (split.Length > 1) {
-            QueryError = "Multiple names in search are not supported";
-        }
-
-        nameMatch = split.Length >= 1 ? split[0] : "";
     }
 
     public bool IsMatch(object? obj)
     {
         if (obj == null) return false;
-        if (string.IsNullOrEmpty(nameMatch) && string.IsNullOrEmpty(componentMatch)) {
+        if (string.IsNullOrEmpty(nameMatch) && string.IsNullOrEmpty(componentMatch) && string.IsNullOrEmpty(valueMatch) && string.IsNullOrEmpty(fieldMatch)) {
             return true;
         }
 
         if (obj is Folder f) {
             if (!string.IsNullOrEmpty(componentMatch)) return false;
 
-            return nameMatch == null ? true : f.Name.Contains(nameMatch, StringComparison.InvariantCultureIgnoreCase);
+            if (!string.IsNullOrEmpty(nameMatch) && !f.Name.Contains(nameMatch, StringComparison.InvariantCultureIgnoreCase)) {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(valueMatch)) {
+                return TryMatchRszInstanceValue(f.Instance, valueMatch, fieldMatch);
+            } else if (!string.IsNullOrEmpty(fieldMatch)) {
+                // TODO field name only check
+            }
+
+            return true;
         }
         if (obj is GameObject o) {
             if (!string.IsNullOrEmpty(nameMatch) && !o.Name.Contains(nameMatch, StringComparison.InvariantCultureIgnoreCase)) {
@@ -73,16 +81,118 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
                 return false;
             }
 
+            if (!string.IsNullOrEmpty(valueMatch)) {
+                return TryMatchGameObjectRszValue(o, valueMatch, fieldMatch);
+            }
+
             return true;
         }
         if (obj is RszInstance r) {
             var clsMatcher = !string.IsNullOrEmpty(componentMatch) ? componentMatch : nameMatch!;
-            if (r.RszClass.name.Contains(clsMatcher, StringComparison.InvariantCultureIgnoreCase)) {
+            if (!string.IsNullOrEmpty(clsMatcher)) {
+                if (!r.RszClass.name.Contains(clsMatcher, StringComparison.InvariantCultureIgnoreCase)) {
+                    return false;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(valueMatch)) {
+                return TryMatchRszInstanceValue(r, valueMatch, fieldMatch);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool TryMatchGameObjectRszValue(GameObject gameObject, string value, string? fieldFilter)
+    {
+        if (gameObject.Instance != null && TryMatchRszInstanceValue(gameObject.Instance, valueMatch, fieldFilter)) {
+            return true;
+        }
+
+        foreach (var comp in gameObject.Components) {
+            if (TryMatchRszInstanceValue(comp.Data, value, fieldFilter)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private bool TryMatchRszInstanceValue(RszInstance instance, string value, string? fieldFilter)
+    {
+        if (instance.Values.Length == 0) return false;
+
+        var fields = instance.RszClass.fields;
+        for (int i = 0; i < fields.Length; ++i) {
+            var type = fields[i].type;
+
+            if (!string.IsNullOrEmpty(fieldFilter) && !(type is RszFieldType.Object or RszFieldType.Struct)) {
+                if (!fields[i].name.Contains(fieldFilter, StringComparison.InvariantCultureIgnoreCase)) continue;
+            }
+
+            if (fields[i].array) {
+                var list = (List<object>)instance.Values[i];
+                foreach (var v in list) {
+                    if (TryMatchRszSingleValue(v, type, value, fieldFilter)) {
+                        return true;
+                    }
+                }
+            } else {
+                if (TryMatchRszSingleValue(instance.Values[i], type, value, fieldFilter)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private bool TryMatchRszSingleValue(object value, RszFieldType type, string comparison, string? fieldFilter)
+    {
+        switch (type) {
+            case RszFieldType.Guid: {
+                    return Guid.TryParse(comparison, out var g) && (Guid)value == g;
+                }
+            case RszFieldType.GameObjectRef:
+            case RszFieldType.Uri: {
+                    return Guid.TryParse(comparison, out var g) && ((GameObjectRef)value).guid == g;
+                }
+            case RszFieldType.U8:
+            case RszFieldType.S8:
+            case RszFieldType.U16:
+            case RszFieldType.S16:
+            case RszFieldType.U32:
+            case RszFieldType.S32:
+            case RszFieldType.S64: {
+                    return long.TryParse(comparison, out var s64) && Convert.ToInt64(value) == s64;
+                }
+            case RszFieldType.U64: {
+                    return ulong.TryParse(comparison, out var u64) && (ulong)value == u64;
+                }
+            case RszFieldType.String:
+            case RszFieldType.Resource:
+            case RszFieldType.RuntimeType:
+                return CompareSubstring((string)value, comparison);
+            case RszFieldType.F32: {
+                    return float.TryParse(comparison, out var f) && Math.Abs((float)value - f) < 0.0001f;
+                }
+            case RszFieldType.F64: {
+                    return double.TryParse(comparison, out var f) && Math.Abs((double)value - f) < 0.0001;
+                }
+            case RszFieldType.Object:
+            case RszFieldType.Struct:
+                return TryMatchRszInstanceValue((RszInstance)value, comparison, fieldFilter);
+        }
+
+        return false;
+    }
+
+    private bool CompareSubstring(string text, string substr)
+    {
+        // TODO case sensitivity, full match, regex setting
+        return text.Contains(substr, StringComparison.InvariantCultureIgnoreCase);
     }
 
     private bool showSearch;
@@ -137,10 +247,10 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
         if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("""
             Search by object name.
             Can use "c:" prefix to search by a GameObject component, e.g. "c:render.mesh"
-            """);
-        // TODO support field/value filtering
-        // Can use "f:" prefix to search by a field name, e.g. "f:itemID"
-        // Can use "v:" prefix to search by a field value, e.g. "v:sm34.mesh"
+            Can use "v:" prefix to search by a field value, e.g. "v:sm34.mesh"
+            Can use "f:" prefix to filter values by field name, e.g. "f:itemID"
+            """u8);
+
         shouldDeleteSearch = MatchedObject != null;
     }
 
@@ -153,11 +263,23 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
         if (ImGui.InputText("Component", ref componentMatch, 200)) {
             changed = true;
         }
+        if (ImGui.InputText("Field Name", ref fieldMatch, 200)) {
+            changed = true;
+        }
+        if (ImGui.InputText("Value", ref valueMatch, 200)) {
+            changed = true;
+        }
 
         if (changed) {
             var matchStr = nameMatch;
             if (!string.IsNullOrEmpty(componentMatch)) {
                 matchStr += $" c:{componentMatch}";
+            }
+            if (!string.IsNullOrEmpty(valueMatch)) {
+                matchStr += $" v:{valueMatch}";
+            }
+            if (!string.IsNullOrEmpty(fieldMatch)) {
+                matchStr += $" f:{fieldMatch}";
             }
             SetQuery(matchStr);
         }
