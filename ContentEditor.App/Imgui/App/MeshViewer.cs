@@ -907,6 +907,17 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             }
         }
         ImGui.SameLine();
+        if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)) {
+            int idx = Array.IndexOf(PlaybackSpeeds, playbackSpeed);
+
+            if (AppConfig.Instance.Key_MeshViewer_IncreaseAnimSpeed.Get().IsPressed() && idx < PlaybackSpeeds.Length - 1) {
+                playbackSpeed = PlaybackSpeeds[idx + 1];
+            }
+
+            if (AppConfig.Instance.Key_MeshViewer_DecreaseAnimSpeed.Get().IsPressed() && idx > 0) {
+                playbackSpeed = PlaybackSpeeds[idx - 1];
+            }
+        }
         ImGui.SetNextItemWidth(75);
         if (ImGui.BeginCombo("##PlaybackSpeed", $"{playbackSpeed:0.##}x")) {
             for (int i = 0; i < PlaybackSpeeds.Length; i++) {

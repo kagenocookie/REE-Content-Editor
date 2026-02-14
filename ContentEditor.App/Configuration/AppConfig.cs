@@ -68,6 +68,8 @@ public class AppConfig : Singleton<AppConfig>
         public const string Key_MeshViewer_PauseAnim = "key_meshviewer_pauseanim";
         public const string Key_MeshViewer_NextAnimFrame = "key_meshviewer_nextanimframe";
         public const string Key_MeshViewer_PrevAnimFrame = "key_meshviewer_prevanimframe";
+        public const string Key_MeshViewer_IncreaseAnimSpeed = "key_meshviewer_increaseanimspeed";
+        public const string Key_MeshViewer_DecreaseAnimSpeed = "key_meshviewer_decreaseanimspeed";
 
         public const string Gamepath = "game_path";
         public const string GameExtractPath = "game_extract_path";
@@ -198,6 +200,8 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<KeyBinding> Key_MeshViewer_PauseAnim = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_PauseAnim, _lock, new KeyBinding(ImGuiKey.Space));
     public readonly SettingWrapper<KeyBinding> Key_MeshViewer_NextAnimFrame = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_NextAnimFrame, _lock, new KeyBinding(ImGuiKey.RightArrow));
     public readonly SettingWrapper<KeyBinding> Key_MeshViewer_PrevAnimFrame = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_PrevAnimFrame, _lock, new KeyBinding(ImGuiKey.LeftArrow));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_IncreaseAnimSpeed = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_IncreaseAnimSpeed, _lock, new KeyBinding(ImGuiKey.UpArrow));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_DecreaseAnimSpeed = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_DecreaseAnimSpeed, _lock, new KeyBinding(ImGuiKey.DownArrow));
 
     public string ConfigBasePath => GameConfigBaseFilepath.Get() ?? "configs";
 
@@ -355,6 +359,8 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.Key_MeshViewer_PauseAnim, instance.Key_MeshViewer_PauseAnim.value.ToString(), "Keys"),
             (Keys.Key_MeshViewer_NextAnimFrame, instance.Key_MeshViewer_NextAnimFrame.value.ToString(), "Keys"),
             (Keys.Key_MeshViewer_PrevAnimFrame, instance.Key_MeshViewer_PrevAnimFrame.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_IncreaseAnimSpeed, instance.Key_MeshViewer_IncreaseAnimSpeed.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_DecreaseAnimSpeed, instance.Key_MeshViewer_DecreaseAnimSpeed.value.ToString(), "Keys"),
         };
         foreach (var (game, data) in instance.gameConfigs) {
             if (!string.IsNullOrEmpty(data.gamepath)) {
@@ -539,6 +545,8 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.Key_MeshViewer_PauseAnim: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_PauseAnim.value = _key; break;
                         case Keys.Key_MeshViewer_NextAnimFrame: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_NextAnimFrame.value = _key; break;
                         case Keys.Key_MeshViewer_PrevAnimFrame: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_PrevAnimFrame.value = _key; break;
+                        case Keys.Key_MeshViewer_IncreaseAnimSpeed: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_IncreaseAnimSpeed.value = _key; break;
+                        case Keys.Key_MeshViewer_DecreaseAnimSpeed: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_DecreaseAnimSpeed.value = _key; break;
                     }
                 } else {
                     var config = gameConfigs.GetValueOrDefault(group);

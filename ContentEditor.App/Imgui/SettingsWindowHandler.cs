@@ -364,6 +364,8 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImguiKeybinding("Pause/Play", config.Key_MeshViewer_PauseAnim);
         ImguiKeybinding("Next Frame", config.Key_MeshViewer_NextAnimFrame);
         ImguiKeybinding("Previous Frame", config.Key_MeshViewer_PrevAnimFrame);
+        ImguiKeybinding("Increase Playback Speed", config.Key_MeshViewer_IncreaseAnimSpeed);
+        ImguiKeybinding("Decrease Playback Speed", config.Key_MeshViewer_DecreaseAnimSpeed);
     }
     private static void ShowGamesResidentEvilTab()
     {
