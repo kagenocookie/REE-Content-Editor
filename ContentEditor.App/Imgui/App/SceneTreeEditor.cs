@@ -238,7 +238,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
         if (vis.Scene?.RootScene.IsActive != true) return;
 
         var drawSelf = vis.ShouldDrawSelf;
-        if (vis.Parent != null && !vis.Parent.ShouldDraw) {
+        if (vis.Parent != null && !vis.Parent.ShouldDraw || (vis is Folder ff && !string.IsNullOrEmpty(ff.ScenePath) && ff.ChildScene == null)) {
             ImGui.BeginDisabled();
             ImGui.Button((drawSelf ? AppIcons.Eye : AppIcons.EyeBlocked) + "##" + context.label);
             ImGui.EndDisabled();

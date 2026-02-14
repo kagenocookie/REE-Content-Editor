@@ -36,10 +36,10 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
     public SceneFlags SceneFlags { get; set; } = SceneFlags.All;
     public Scene? ChildScene { get; set; }
 
-    public bool ShouldDraw => (SceneFlags & SceneFlags.Draw) != 0 && Parent?.ShouldDraw != false && Scene?.IsActive != false;
+    public bool ShouldDraw => ShouldDrawSelf && Parent?.ShouldDraw != false && Scene?.IsActive != false;
     public bool ShouldDrawSelf
     {
-        get => (SceneFlags & SceneFlags.Draw) != 0;
+        get => (SceneFlags & SceneFlags.Draw) != 0 && (string.IsNullOrEmpty(ScenePath) || ChildScene != null);
         set {
             SceneFlags = (value ? SceneFlags|SceneFlags.Draw : SceneFlags&~SceneFlags.Draw);
             if (ChildScene != null && value != ChildScene.IsActive) {
