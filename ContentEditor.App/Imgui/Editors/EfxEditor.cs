@@ -119,16 +119,17 @@ public class EfxEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIns
 public class EfxFileImguiHandler : IObjectUIHandler
 {
     private static MemberInfo[] DisplayedFieldsRoot = [
-        typeof(EfxFile).GetField(nameof(EfxFile.ExpressionParameters))!,
-        typeof(EfxFile).GetField(nameof(EfxFile.FieldParameterValues))!,
-        typeof(EfxFile).GetField(nameof(EfxFile.UvarGroups))!,
+        typeof(EfxFile).GetProperty(nameof(EfxFile.ExpressionParameters))!,
+        typeof(EfxFile).GetProperty(nameof(EfxFile.FieldParameterValues))!,
+        typeof(EfxFile).GetProperty(nameof(EfxFile.UvarGroups))!,
         typeof(EfxFile).GetProperty(nameof(EfxFile.Bones))!,
-        typeof(EfxFile).GetField(nameof(EfxFile.Actions))!,
+        typeof(EfxFile).GetProperty(nameof(EfxFile.EffectGroups))!,
+        typeof(EfxFile).GetProperty(nameof(EfxFile.Actions))!,
         typeof(EfxFile).GetProperty(nameof(EfxFile.Entries))!,
     ];
 
     private static MemberInfo[] DisplayedFieldsSub = [
-        typeof(EfxFile).GetField(nameof(EfxFile.FieldParameterValues))!,
+        typeof(EfxFile).GetProperty(nameof(EfxFile.FieldParameterValues))!,
         typeof(EfxFile).GetProperty(nameof(EfxFile.Bones))!,
         typeof(EfxFile).GetProperty(nameof(EfxFile.Entries))!,
     ];
@@ -443,6 +444,18 @@ public class EfxAttributeListEditor : DictionaryListImguiHandler<EfxAttributeTyp
                 ImGui.EndPopup();
             }
         }
+    }
+}
+
+[ObjectImguiHandler(typeof(EffectGroup), Stateless = true)]
+public class EffectGroupHandler() : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        if (context.children.Count == 0) {
+            context.AddChild(context.label, context.Get<EffectGroup>(), new StringFieldHandler(), g => g!.groupName, (g, v) => g.groupName = v ?? "");
+        }
+        context.ShowChildrenUI();
     }
 }
 

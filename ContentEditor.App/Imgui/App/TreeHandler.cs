@@ -12,7 +12,13 @@ public abstract class TreeHandler<TBaseNode> : IObjectUIHandler where TBaseNode 
     private readonly List<TBaseNode> _selectedHierarchy = new();
 
     protected abstract IEnumerable<TBaseNode> GetRootChildren(UIContext context);
-    protected abstract IEnumerable<TBaseNode> GetChildren(TBaseNode node);
+    /// <summary>
+    /// Get all children of the given node.
+    /// </summary>
+    /// <param name="node">The node to get children of.</param>
+    /// <param name="expandContents">Whether or not any non-tree inner content should be resolved.</param>
+    /// <returns></returns>
+    protected abstract IEnumerable<TBaseNode> GetChildren(TBaseNode node, bool expandContents = false);
     protected virtual bool IsExpandable(TBaseNode node) => GetChildren(node).Any();
 
     /// <summary>
@@ -71,13 +77,14 @@ public abstract class TreeHandler<TBaseNode> : IObjectUIHandler where TBaseNode 
 
         int handledCount = 0;
         var indent = ImGui.GetStyle().IndentSpacing;
+        var framePadding = ImGui.GetStyle().FramePadding;
+        var windowPadding = ImGui.GetStyle().WindowPadding;
 
         var sizeX = ImGui.GetContentRegionAvail().X;
-        var framePadding = ImGui.GetStyle().FramePadding;
         var lineHeight = UI.FontSize + framePadding.Y * 2;
         var buttonRect = new Vector2(lineHeight + framePadding.Y * 2);
-        var fixedLeftMargin = ImGui.GetStyle().WindowPadding.X;
-        var prefixStartIndent = ImGui.GetStyle().WindowPadding.X;
+        var fixedLeftMargin = windowPadding.X;
+        var prefixStartIndent = windowPadding.X;
 
         var filter = context.FindHandlerInParents<IFilterRoot>();
 
@@ -106,15 +113,15 @@ public abstract class TreeHandler<TBaseNode> : IObjectUIHandler where TBaseNode 
 
             var pos = ImGui.GetCursorScreenPos();
             if (handledCount++ % 2 != 0) {
-                ImGui.GetWindowDrawList().AddRectFilled(pos, new System.Numerics.Vector2(pos.X + sizeX, pos.Y + lineHeight), ImguiHelpers.GetColorU32(ImGuiCol.TableRowBgAlt));
+                ImGui.GetWindowDrawList().AddRectFilled(pos, new System.Numerics.Vector2(pos.X + sizeX + framePadding.X, pos.Y + lineHeight), ImguiHelpers.GetColorU32(ImGuiCol.TableRowBgAlt));
             }
             if (_selectedHierarchy.Contains(node)) {
                 // would we want a dedicated selected / selected-hierarchy color?
                 var selectedColor = ImguiHelpers.GetColor(ImGuiCol.FrameBgActive);
                 if (_selectedHierarchy[0] == node) {
-                    ImGui.GetWindowDrawList().AddRectFilled(pos, new System.Numerics.Vector2(pos.X + sizeX, pos.Y + lineHeight), ImGui.ColorConvertFloat4ToU32(selectedColor));
+                    ImGui.GetWindowDrawList().AddRectFilled(pos, new System.Numerics.Vector2(pos.X + sizeX + framePadding.X, pos.Y + lineHeight), ImGui.ColorConvertFloat4ToU32(selectedColor));
                 } else {
-                    ImGui.GetWindowDrawList().AddRectFilled(pos, new System.Numerics.Vector2(pos.X + sizeX, pos.Y + lineHeight), ImGui.ColorConvertFloat4ToU32(selectedColor with { W = selectedColor.W * 0.2f }));
+                    ImGui.GetWindowDrawList().AddRectFilled(pos, new System.Numerics.Vector2(pos.X + sizeX + framePadding.X, pos.Y + lineHeight), ImGui.ColorConvertFloat4ToU32(selectedColor with { W = selectedColor.W * 0.2f }));
                 }
             }
 
@@ -156,7 +163,7 @@ public abstract class TreeHandler<TBaseNode> : IObjectUIHandler where TBaseNode 
 
             i = 0;
             // ensure the child contexts always match the nodes, delete anything if there's changes
-            foreach (var c in GetChildren(node)) {
+            foreach (var c in GetChildren(node, true)) {
                 if (ctx.children.Count <= i) {
                     var child = ctx.AddChild($"{c}##{i}", c);
                     SetupNodeItemContext(child, c);
