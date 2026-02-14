@@ -57,6 +57,11 @@ public class ComponentListEditor : DictionaryListImguiHandler<string, Component,
 
     protected override string GetKey(Component item)
     {
-        return item.Classname;
+        if (!ComponentKeyCache.TryGetValue(item.Data.RszClass, out var cc)) {
+            ComponentKeyCache[item.Data.RszClass] = cc = $"{item.Data.RszClass.ShortName}##{item.Classname}";
+        }
+        return cc;
     }
+
+    private static readonly Dictionary<RszClass, string> ComponentKeyCache = new();
 }

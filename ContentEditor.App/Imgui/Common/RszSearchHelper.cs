@@ -234,6 +234,7 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
     public bool ShowAdvancedSearchButton()
     {
         ImguiHelpers.ToggleButton($"{AppIcons.SI_Settings}##filter_adv", ref showSearch, Colors.IconActive);
+        ImguiHelpers.Tooltip("Advanced filtering"u8);
         return showSearch;
     }
 

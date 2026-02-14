@@ -12,7 +12,7 @@ public class TransformComponentHandler : IObjectUIHandler, IUIContextEventHandle
     {
         var instance = context.Get<Transform>();
         var data = instance.Data;
-        var show = ImGui.TreeNode("via.Transform"u8);
+        var show = ImGui.TreeNode("Transform"u8);
         if (ImGui.IsItemHovered()) {
             if (context.children.Count == 0) {
                 context.AddChild(context.label, context.Get<Component>().Data, ChildrenOnlyHandler.Instance);
