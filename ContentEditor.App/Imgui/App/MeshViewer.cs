@@ -651,7 +651,17 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (!UpdateAnimatorMesh(meshComponent)) return;
 
         ImGui.Checkbox("Show Skeleton", ref showSkeleton);
-
+        ImGui.Spacing();
+        using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(animationSourceFile))) {
+            if (ImGui.Button($"{AppIcons.SI_Update}") && animator.File != null) {
+                Workspace.ResourceManager.CloseFile(animator.File);
+                animator.Unload();
+                loadedAnimationSource = null;
+            }
+            ImguiHelpers.Tooltip("Force reload");
+        }
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Source File").X - ImGui.GetStyle().FramePadding.X);
         if (animationPickerContext == null) {
             animationPickerContext = context.AddChild<MeshViewer, string>(
                 "Source File",
@@ -661,15 +671,12 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 (v, p) => v.animationSourceFile = p ?? "");
         }
         animationPickerContext.ShowUI();
-        if (!string.IsNullOrEmpty(animationSourceFile) && animator.File != null && ImGui.Button("Force reload")) {
-            Workspace.ResourceManager.CloseFile(animator.File);
-            animator.Unload();
-            loadedAnimationSource = null;
-        }
+        
         var settings = AppConfig.Settings;
         if (settings.RecentMotlists.Count > 0) {
             var selection = animationSourceFile;
             var options = settings.RecentMotlists.ToArray();
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Recent files").X - ImGui.GetStyle().FramePadding.X);
             if (ImguiHelpers.ValueCombo("Recent files", options, options, ref selection)) {
                 animationSourceFile = selection;
                 animationPickerContext.ResetState();
@@ -712,6 +719,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
             ImGui.SameLine();
             ImGui.SetNextItemAllowOverlap();
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
             ImGui.InputTextWithHint("##MotFilter", $"{AppIcons.SI_GenericMagnifyingGlass} Filter Animations", ref motFilter, 200);
             isMotFilterActive = ImGui.IsItemActive();
             if (!string.IsNullOrEmpty(motFilter)) {

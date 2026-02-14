@@ -257,7 +257,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImguiHelpers.Tooltip("The maximum number of steps you can undo. Higher number means a bit higher memory usage after longer sessions.");
 
         ShowSetting(config.ShowQuaternionsAsEuler, "Use Euler angles for quaternions", "Whether quaternions should be displayed as euler angles.");
-        ShowSetting(config.PauseAnimPlayerOnSeek, "Pause Animation Player on Seek", "Whether to pause the animation player while seeking with the slider.");
+        ShowSetting(config.PauseAnimPlayerOnSeek, "Pause Animation Player on seek", "Whether to pause the animation player while seeking with the slider.");
     }
 
     private static void ShowBundlesEditingTab()
