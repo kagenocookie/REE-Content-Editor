@@ -7,17 +7,17 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
 {
     private Dictionary<Scene, SceneEditor> _nestedScenes = new();
 
-    private SceneEditor? GetRootEditor(UIContext context) => context.FindHandlerInParents<SceneEditor>()?.RootSceneEditor;
+    private static SceneEditor? GetRootSceneEditor(UIContext context) => context.FindHandlerInParents<SceneEditor>()?.RootSceneEditor;
+    private static IInspectorController? GetRootInspector(UIContext context) => GetRootSceneEditor(context) ?? context.FindHandlerInParents<IInspectorController>();
 
-    protected override IEnumerable<IVisibilityTarget> GetChildren(IVisibilityTarget? node)
+    protected override IEnumerable<IVisibilityTarget> GetChildren(IVisibilityTarget? node, bool expandContents = false)
     {
         if (node is GameObject go) return go.Children;
         if (node is Folder fo) {
             if (!string.IsNullOrEmpty(fo.ScenePath)) {
-                if (fo.ChildScene == null) {
+                if (expandContents && fo.ChildScene == null) {
                     fo.RequestLoad();
                     ImGui.TextColored(Colors.Info, "Loading scene ...");
-                    return [];
                 }
 
                 return [];
@@ -57,7 +57,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
 
     protected override IEnumerable<IVisibilityTarget> GetSelectedItemHierarchy(UIContext context)
     {
-        var target = GetRootEditor(context)?.PrimaryTarget;
+        var target = GetRootInspector(context)?.PrimaryTarget;
         if (target == null) yield break;
 
         if (target is GameObject go) {
@@ -85,7 +85,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
     protected override void ShowNode(IVisibilityTarget node, UIContext context)
     {
         // ideally: find highest priority component and use that type's icon + GameObject/prefab overlay icon
-        var rootEditor = GetRootEditor(context);
+        var rootEditor = GetRootInspector(context);
         var folder = node as Folder;
         var scene = (node as IVisibilityTarget)?.Scene;
 
@@ -106,14 +106,12 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
         middleClick = click && ImGui.IsKeyDown(ImGuiKey.ModCtrl) || !click && ImGui.IsItemClicked(ImGuiMouseButton.Middle);
 
         if (ImGui.BeginPopupContextItem(label)) {
-            if (scene?.RootScene.IsActive == true) {
+            if (scene?.IsActive == true) {
                 if (ImGui.Selectable($"{AppIcons.Search} Focus in 3D view")) {
                     if (node is Folder f) scene?.ActiveCamera.LookAt(f, false);
                     else if (node is GameObject go) scene?.ActiveCamera.LookAt(go, false);
                 }
-            }
 
-            if (scene?.IsActive == true) {
                 if (ImGui.MenuItem($"{AppIcons.Eye} Toggle children Visibility")) {
                     var visible = node.VisibilityChildren.FirstOrDefault()?.ShouldDrawSelf == true;
                     foreach (var child in node.VisibilityChildren) child.ShouldDrawSelf = !visible;
@@ -144,29 +142,26 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                 }
 
                 var parent = ((INodeObject<GameObject>)gameObject).GetParent();
-                if (parent == null) {
-                    // the sole root instance mustn't be deleted or duplicated (pfb)
-                    return;
+                // the sole root instance mustn't be deleted or duplicated (pfb)
+                if (parent != null) {
+                    if (ImGui.Selectable($"{AppIcons.SI_FileExtractTo} Duplicate")) {
+                        var clone = gameObject.Clone();
+                        UndoRedo.RecordAddChild<GameObject>(context, clone, parent, parent.GetChildIndex(gameObject) + 1);
+                        clone.MakeNameUnique();
+                        rootEditor?.SetPrimaryInspector(clone);
+                    }
+                    if (ImGui.Selectable($"{AppIcons.SI_GenericDelete} Delete")) {
+                        UndoRedo.RecordRemoveChild(context, gameObject);
+                    }
                 }
 
-                if (ImGui.Selectable($"{AppIcons.SI_FileExtractTo} Duplicate")) {
-                    var clone = gameObject.Clone();
-                    UndoRedo.RecordAddChild<GameObject>(context, clone, parent, parent.GetChildIndex(gameObject) + 1);
-                    clone.MakeNameUnique();
-                    rootEditor?.SetPrimaryInspector(clone);
-                    ImGui.CloseCurrentPopup();
-                }
-                if (ImGui.Selectable($"{AppIcons.SI_GenericDelete} Delete")) {
-                    UndoRedo.RecordRemoveChild(context, gameObject);
-                    ImGui.CloseCurrentPopup();
-                }
             } else if (folder != null) {
                 if (string.IsNullOrEmpty(folder.ScenePath) && ImGui.Selectable($"{AppIcons.SI_Folder} New folder")) {
                     var ws = context.GetWorkspace();
                     var newFolder = new Folder("New_Folder", ws!.Env, scene);
                     UndoRedo.RecordAddChild(context, newFolder, folder);
                     newFolder.MakeNameUnique();
-                    GetRootEditor(context)?.SetPrimaryInspector(newFolder);
+                    GetRootInspector(context)?.SetPrimaryInspector(newFolder);
                 }
 
                 if (folder.Parent != null) {
@@ -231,8 +226,9 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
             ImGui.Spacing();
         }
         if (!string.IsNullOrEmpty(folder?.ScenePath)) {
-            var min = new Vector2(ImGui.GetWindowPos().X + ImGui.GetStyle().WindowPadding.X, startPos.Y);
-            var max = new Vector2(ImGui.GetWindowPos().X + ImGui.GetContentRegionAvail().X, ImGui.GetItemRectMax().Y) + ImGui.GetStyle().FramePadding;
+            var windowPadding = ImGui.GetStyle().WindowPadding.X;
+            var min = new Vector2(ImGui.GetWindowPos().X + windowPadding, startPos.Y);
+            var max = new Vector2(ImGui.GetWindowPos().X + ImGui.GetContentRegionAvail().X + windowPadding, ImGui.GetItemRectMax().Y) + ImGui.GetStyle().FramePadding;
             ImGui.GetWindowDrawList().AddRect(min, max, ImGui.GetColorU32(ImGuiCol.Border), ImGui.GetStyle().FrameRounding, ImDrawFlags.RoundCornersAll, 1.0f);
         }
     }
@@ -263,7 +259,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                 var newFolder = new Folder("New_Folder", ws!.Env, folder.Scene);
                 UndoRedo.RecordAddChild(context, newFolder, folder);
                 newFolder.MakeNameUnique();
-                GetRootEditor(context)?.SetPrimaryInspector(newFolder);
+                GetRootInspector(context)?.SetPrimaryInspector(newFolder);
             }
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_GenericAdd} Add GameObject")) {
@@ -271,7 +267,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                 var newgo = new GameObject("New_GameObject", ws!.Env, folder, folder.Scene);
                 UndoRedo.RecordAddChild(context, newgo, (INodeObject<GameObject>)folder);
                 newgo.MakeNameUnique();
-                GetRootEditor(context)?.SetPrimaryInspector(newgo);
+                GetRootInspector(context)?.SetPrimaryInspector(newgo);
             }
         }
     }
@@ -316,7 +312,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                     var match = bisectTemp[node].pending.First();
                     Logger.Info($"Found match: {match} (index {children.IndexOf(match)} / {children.Count}");
                     match.ShouldDrawSelf = true;
-                    GetRootEditor(context)?.SetPrimaryInspector(match);
+                    GetRootInspector(context)?.SetPrimaryInspector(match);
                     ImGui.CloseCurrentPopup();
                     foreach (var pending in bisectTemp[node].rejects) pending.ShouldDrawSelf = true;
                     bisectTemp.Clear();

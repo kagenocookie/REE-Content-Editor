@@ -494,7 +494,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         }
     }
 
-    INodeObject<GameObject>? INodeObject<GameObject>.GetParent() => (INodeObject<GameObject>?)_parent ?? Folder;
+    INodeObject<GameObject>? INodeObject<GameObject>.GetParent() => _parent as INodeObject<GameObject> ?? Folder;
 
     public override string ToString() => Name;
 }
