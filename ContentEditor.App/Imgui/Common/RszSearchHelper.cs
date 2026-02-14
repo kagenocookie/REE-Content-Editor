@@ -8,7 +8,8 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
 {
     public string? Query { get; private set; }
 
-    private string componentMatch = "";
+    private string classnameMatch = "";
+    private bool classnameComponentOnly;
     private string nameMatch = "";
     private string valueMatch = "";
     private string fieldMatch = "";
@@ -23,13 +24,13 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
     public void SetQuery(string? query)
     {
         if (string.IsNullOrEmpty(query)) {
-            componentMatch = nameMatch = "";
+            classnameMatch = nameMatch = "";
             Query = null;
             return;
         }
 
         Query = query;
-        componentMatch = "";
+        classnameMatch = "";
         nameMatch = "";
         valueMatch = "";
         fieldMatch = "";
@@ -37,7 +38,11 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
         var split = query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         foreach (var part in split) {
             if (part.StartsWith("c:")) {
-                componentMatch = part.Substring(2);
+                classnameMatch = part.Substring(2);
+                classnameComponentOnly = false;
+            } else if (part.StartsWith("cc:")) {
+                classnameMatch = part.Substring(3);
+                classnameComponentOnly = true;
             } else if (part.StartsWith("v:")) {
                 valueMatch = part.Substring(2);
             } else if (part.StartsWith("f:")) {
@@ -45,7 +50,7 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
             } else if (string.IsNullOrEmpty(nameMatch)) {
                 nameMatch = part;
             } else {
-                QueryError = "Multiple names in search are not supported";
+                nameMatch += " " + part;
             }
         }
     }
@@ -53,18 +58,18 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
     public bool IsMatch(object? obj)
     {
         if (obj == null) return false;
-        if (string.IsNullOrEmpty(nameMatch) && string.IsNullOrEmpty(componentMatch) && string.IsNullOrEmpty(valueMatch) && string.IsNullOrEmpty(fieldMatch)) {
+        if (string.IsNullOrEmpty(nameMatch) && string.IsNullOrEmpty(classnameMatch) && string.IsNullOrEmpty(valueMatch) && string.IsNullOrEmpty(fieldMatch)) {
             return true;
         }
 
         if (obj is Folder f) {
-            if (!string.IsNullOrEmpty(componentMatch)) return false;
+            if (!string.IsNullOrEmpty(classnameMatch)) return false;
 
             if (!string.IsNullOrEmpty(nameMatch) && !f.Name.Contains(nameMatch, StringComparison.InvariantCultureIgnoreCase)) {
                 return false;
             }
 
-            if (!string.IsNullOrEmpty(valueMatch)) {
+            if (!string.IsNullOrEmpty(valueMatch) && (string.IsNullOrEmpty(classnameMatch) || CompareSubstring("via.Folder", classnameMatch))) {
                 return TryMatchRszInstanceValue(f.Instance, valueMatch, fieldMatch);
             } else if (!string.IsNullOrEmpty(fieldMatch)) {
                 // TODO field name only check
@@ -73,29 +78,37 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
             return true;
         }
         if (obj is GameObject o) {
-            if (!string.IsNullOrEmpty(nameMatch) && !o.Name.Contains(nameMatch, StringComparison.InvariantCultureIgnoreCase)) {
-                return false;
+            if (!string.IsNullOrEmpty(nameMatch)) {
+                if (!o.Name.Contains(nameMatch, StringComparison.InvariantCultureIgnoreCase) && (!Guid.TryParse(nameMatch, out var guid) || o.guid != guid)) {
+                    return false;
+                }
             }
 
-            if (!string.IsNullOrEmpty(componentMatch) && !o.Components.Any(c => c.Classname.Contains(componentMatch, StringComparison.InvariantCultureIgnoreCase))) {
-                return false;
+            var defaultShow = true;
+            if (!string.IsNullOrEmpty(classnameMatch)) {
+                var hasComponentMatch = o.Components.Any(c => c.Classname.Contains(classnameMatch, StringComparison.InvariantCultureIgnoreCase));
+                if (classnameComponentOnly && !hasComponentMatch) {
+                    return false;
+                }
+
+                defaultShow = hasComponentMatch;
             }
 
             if (!string.IsNullOrEmpty(valueMatch)) {
                 return TryMatchGameObjectRszValue(o, valueMatch, fieldMatch);
             }
 
-            return true;
+            return defaultShow;
         }
         if (obj is RszInstance r) {
-            var clsMatcher = !string.IsNullOrEmpty(componentMatch) ? componentMatch : nameMatch!;
+            var clsMatcher = !string.IsNullOrEmpty(classnameMatch) ? classnameMatch : nameMatch!;
             if (!string.IsNullOrEmpty(clsMatcher)) {
                 if (!r.RszClass.name.Contains(clsMatcher, StringComparison.InvariantCultureIgnoreCase)) {
                     return false;
                 }
             }
 
-            if (!string.IsNullOrEmpty(valueMatch)) {
+            if (!string.IsNullOrEmpty(valueMatch) && (string.IsNullOrEmpty(classnameMatch))) {
                 return TryMatchRszInstanceValue(r, valueMatch, fieldMatch);
             }
 
@@ -107,11 +120,17 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
 
     private bool TryMatchGameObjectRszValue(GameObject gameObject, string value, string? fieldFilter)
     {
-        if (gameObject.Instance != null && TryMatchRszInstanceValue(gameObject.Instance, valueMatch, fieldFilter)) {
+        if (gameObject.Instance != null
+            && (string.IsNullOrEmpty(classnameMatch) || CompareSubstring("via.GameObject", classnameMatch))
+            && TryMatchRszInstanceValue(gameObject.Instance, valueMatch, fieldFilter)) {
             return true;
         }
 
         foreach (var comp in gameObject.Components) {
+            if (classnameComponentOnly && !string.IsNullOrEmpty(classnameMatch) && !CompareSubstring(comp.Classname, classnameMatch)) {
+                continue;
+            }
+
             if (TryMatchRszInstanceValue(comp.Data, value, fieldFilter)) {
                 return true;
             }
@@ -125,6 +144,11 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
         if (instance.Values.Length == 0) return false;
 
         var fields = instance.RszClass.fields;
+        bool isInsideAllowedClassname = true;
+        if (!classnameComponentOnly && !string.IsNullOrEmpty(classnameMatch)) {
+            isInsideAllowedClassname = CompareSubstring(instance.RszClass.name, classnameMatch);
+        }
+
         for (int i = 0; i < fields.Length; ++i) {
             var type = fields[i].type;
 
@@ -135,12 +159,12 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
             if (fields[i].array) {
                 var list = (List<object>)instance.Values[i];
                 foreach (var v in list) {
-                    if (TryMatchRszSingleValue(v, type, value, fieldFilter)) {
+                    if (TryMatchRszSingleValue(v, type, value, fieldFilter, isInsideAllowedClassname)) {
                         return true;
                     }
                 }
             } else {
-                if (TryMatchRszSingleValue(instance.Values[i], type, value, fieldFilter)) {
+                if (TryMatchRszSingleValue(instance.Values[i], type, value, fieldFilter, isInsideAllowedClassname)) {
                     return true;
                 }
             }
@@ -149,8 +173,16 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
         return false;
     }
 
-    private bool TryMatchRszSingleValue(object value, RszFieldType type, string comparison, string? fieldFilter)
+    private bool TryMatchRszSingleValue(object value, RszFieldType type, string comparison, string? fieldFilter, bool isInsideAllowedClassname)
     {
+        if (type is RszFieldType.Object or RszFieldType.Struct) {
+            return TryMatchRszInstanceValue((RszInstance)value, comparison, fieldFilter);
+        }
+
+        if (!isInsideAllowedClassname) {
+            return false;
+        }
+
         switch (type) {
             case RszFieldType.Guid: {
                     return Guid.TryParse(comparison, out var g) && (Guid)value == g;
@@ -181,9 +213,6 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
             case RszFieldType.F64: {
                     return double.TryParse(comparison, out var f) && Math.Abs((double)value - f) < 0.0001;
                 }
-            case RszFieldType.Object:
-            case RszFieldType.Struct:
-                return TryMatchRszInstanceValue((RszInstance)value, comparison, fieldFilter);
         }
 
         return false;
@@ -241,7 +270,7 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
     public void ShowFilterInput()
     {
         var filter = Query ?? "";
-        if (ImGui.InputTextWithHint("##Filter", $"{AppIcons.Search}", ref filter, 200)) {
+        if (ImGui.InputTextWithHint("##Filter"u8, $"{AppIcons.Search}", ref filter, 200)) {
             SetQuery(filter);
         }
         if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("""
@@ -257,23 +286,24 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
     public void ShowAdvancedFilterSettings()
     {
         var changed = false;
-        if (ImGui.InputText("Name", ref nameMatch, 200)) {
-            changed = true;
-        }
-        if (ImGui.InputText("Component", ref componentMatch, 200)) {
-            changed = true;
-        }
-        if (ImGui.InputText("Field Name", ref fieldMatch, 200)) {
-            changed = true;
-        }
-        if (ImGui.InputText("Value", ref valueMatch, 200)) {
-            changed = true;
-        }
+        changed |= ImGui.InputText("Name"u8, ref nameMatch, 200);
+        changed |= ImGui.InputText("##Classname"u8, ref classnameMatch, 200);
 
+        ImGui.SameLine();
+        changed |= ImguiHelpers.ToggleButton($"{AppIcons.SI_FileType_CFIL}", ref classnameComponentOnly, Colors.IconActive);
+        ImguiHelpers.Tooltip("""
+            Match GameObject components only.
+            Otherwise, will consider it a match if any nested object has a matching classname.
+            """u8);
+        ImGui.SameLine();
+        ImGui.Text("Classname");
+
+        changed |= ImGui.InputText("Field Name"u8, ref fieldMatch, 200);
+        changed |= ImGui.InputText("Value"u8, ref valueMatch, 200);
         if (changed) {
             var matchStr = nameMatch;
-            if (!string.IsNullOrEmpty(componentMatch)) {
-                matchStr += $" c:{componentMatch}";
+            if (!string.IsNullOrEmpty(classnameMatch)) {
+                matchStr += classnameComponentOnly ? $" cc:{classnameMatch}" : $" c:{classnameMatch}";
             }
             if (!string.IsNullOrEmpty(valueMatch)) {
                 matchStr += $" v:{valueMatch}";

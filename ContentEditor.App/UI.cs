@@ -145,7 +145,6 @@ public static class UI
     public static unsafe void ApplyImNodesTheme(IEnumerable<(string key, string value, string? group)> ini)
     {
         var style = ImNodes.GetStyle();
-        //Colors.Current = AppColors.GetDarkThemeColors(); //SILVER: Calling this here resets some of the colors of the current theme to default
         foreach (var kv in ini) {
             if (kv.key.StartsWith("nodes_col ")) {
                 var name = kv.key.Replace("nodes_col ", "");

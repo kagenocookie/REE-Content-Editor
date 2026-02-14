@@ -662,6 +662,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             if (ImGui.MenuItem("File testing")) {
                 AddUniqueSubwindow(new FileTesterWindow());
             }
+            if (ImGui.MenuItem("Icon List")) {
+                AddUniqueSubwindow(new IconListWindow());
+            }
             ImGui.EndMenu();
         }
 

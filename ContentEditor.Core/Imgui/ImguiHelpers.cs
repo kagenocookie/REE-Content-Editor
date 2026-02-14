@@ -597,6 +597,13 @@ public static class ImguiHelpers
         if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(text);
     }
     /// <summary>
+    /// Draws a tooltip when item is hovered.
+    /// </summary>
+    public static void Tooltip(ReadOnlySpan<byte> text)
+    {
+        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(text);
+    }
+    /// <summary>
     /// Draws a colored tooltip when item is hovered.
     /// </summary>
     public static void TooltipColored(string text, Vector4? color = null)
