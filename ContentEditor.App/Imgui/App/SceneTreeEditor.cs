@@ -161,15 +161,6 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                     ImGui.CloseCurrentPopup();
                 }
             } else if (folder != null) {
-                //
-                // if (string.IsNullOrEmpty(node.ScenePath) && ImGui.Selectable("New GameObject")) {
-                //     var ws = context.GetWorkspace();
-                //     var newgo = new GameObject("New_GameObject", ws!.Env, node, node.Scene);
-                //     UndoRedo.RecordListAdd(context, node.GameObjects, newgo);
-                //     newgo.MakeNameUnique();
-                //     GetRootEditor(context)?.SetPrimaryInspector(newgo);
-                //     ImGui.CloseCurrentPopup();
-                // }
                 if (string.IsNullOrEmpty(folder.ScenePath) && ImGui.Selectable($"{AppIcons.SI_Folder} New folder")) {
                     var ws = context.GetWorkspace();
                     var newFolder = new Folder("New_Folder", ws!.Env, scene);

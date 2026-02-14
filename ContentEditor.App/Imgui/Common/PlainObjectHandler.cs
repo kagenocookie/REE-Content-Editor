@@ -1,3 +1,4 @@
+using System.Reflection;
 using ContentEditor.Core;
 
 namespace ContentEditor.App.ImguiHandling;
@@ -13,6 +14,18 @@ public class PlainObjectHandler : IObjectUIHandler
         }
     }
 }
+
+public class ReflectionObjectHandler<T>(MemberInfo[] members) : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        if (context.children.Count == 0) {
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(T), members: members);
+        }
+        context.ShowChildrenUI();
+    }
+}
+
 
 public class LazyPlainObjectHandler<T>() : LazyPlainObjectHandler(typeof(T)) where T : class
 {
