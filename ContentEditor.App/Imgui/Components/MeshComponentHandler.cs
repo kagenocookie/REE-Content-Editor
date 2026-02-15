@@ -19,3 +19,15 @@ public class MeshComponentHandler : BaseComponentEditor, IUIContextEventHandler
         return true;
     }
 }
+
+[ObjectImguiHandler(typeof(CompositeMesh), Stateless = true, Priority = 0)]
+public class CompositeMeshComponentHandler : BaseComponentEditor, IUIContextEventHandler
+{
+    public bool HandleEvent(UIContext context, EditorUIEvent eventData)
+    {
+        if (eventData.type is UIContextEvent.Changed or UIContextEvent.Reverted or UIContextEvent.Updated) {
+            context.Get<CompositeMesh>().UpdateInstanceTransforms();
+        }
+        return true;
+    }
+}

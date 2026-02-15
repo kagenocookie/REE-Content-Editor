@@ -119,7 +119,7 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
         UpdateInstanceTransforms();
     }
 
-    private void UpdateInstanceTransforms()
+    internal void UpdateInstanceTransforms()
     {
         ref readonly var transform = ref GameObject.Transform.WorldTransform;
         var instances = RszFieldCache.CompositeMesh.InstanceGroups.Get(Data);
