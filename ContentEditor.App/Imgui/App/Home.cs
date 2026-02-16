@@ -1,5 +1,6 @@
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
+using ReeLib;
 using Silk.NET.Maths;
 using System.Numerics;
 
@@ -12,6 +13,7 @@ public class HomeWindow : IWindowHandler
     public int FixedID => -123164;
     private WindowData data = null!;
     protected UIContext context = null!;
+    private static HashSet<string>? fullSupportedGames;
     private string recentFileFilter = string.Empty;
     private bool isRecentFileFilterMatchCase = false;
     public void Init(UIContext context)
@@ -75,26 +77,41 @@ public class HomeWindow : IWindowHandler
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.Spacing();
-        ImGui.Selectable("Resident Evil 2");
-        ImGui.Selectable("Resident Evil 3");
+        // TODO SILVER: Add overlayed pak browser button for active game, push it to the right
+        fullSupportedGames ??= ResourceRepository.RemoteInfo.Resources.Where(kv => kv.Value.IsFullySupported).Select(kv => kv.Key).ToHashSet();
+        var games = AppConfig.Instance.GetGamelist();
+        var currentActiveGame = EditorWindow.CurrentWindow?.Workspace.Env.Config.Game.name;
+        foreach (var fullySupported in new[] { true, false }) {
+            foreach (var (game, configured) in games) {
+                if (!configured || fullSupportedGames.Contains(game) != fullySupported)
+                    continue;
+
+                var color = currentActiveGame == game ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text);
+                ImGui.PushStyleColor(ImGuiCol.Text, color);
+                if (ImGui.Selectable(Languages.TranslateGame(game))) {
+                    EditorWindow.CurrentWindow?.SetWorkspace(game, null);
+                }
+                ImGui.PopStyleColor();
+            }
+            if (fullySupported) ImGui.Separator();
+        }
+
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.Spacing();
-        ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);
-        ImGui.Selectable($"{AppIcons.SI_GenericAdd}");
-        ImGui.PopStyleColor();
-        ImGui.SameLine();
-        ImGui.Text("Add Game");
-        ImGui.Spacing();
-        ImGui.Separator();
-        ImGui.Spacing();
-        ImGui.Text("Ko-fi Link");
+
+        float footerHeight = 0;
+        float remainingSpace = ImGui.GetContentRegionAvail().Y;
+        footerHeight += ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.Y * 2 + ImGui.GetTextLineHeightWithSpacing() * 4;
+        if (remainingSpace > footerHeight) ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (remainingSpace - footerHeight));
+
+        ImGui.Button("Support development", new Vector2(ImGui.GetContentRegionAvail().X, 0));
         ImGui.Text("Github Link");
         ImGui.Text("Wiki Link");
         ImGui.Text("Discord Link");
-        ImGui.Text("^As icon buttons on the same line");
+        ImGui.Separator();
         ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);
-        ImGui.Text("[App Version/Update date Here]");
+        ImGui.Text("[UpdateTime]");
         ImGui.PopStyleColor();
     }
     private static void ShowWelcomeText()
@@ -117,6 +134,7 @@ public class HomeWindow : IWindowHandler
     {
         if (ImGui.BeginTabBar("HomeTabs")) {
             if (ImGui.BeginTabItem("Bundles")) {
+                // TODO SILVER
                 ImGui.Text("In a grid with the app logo being used as the image/icon.\nCould be color coded by game.");
                 ImGui.EndTabItem();
             }

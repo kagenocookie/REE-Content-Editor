@@ -2,7 +2,6 @@ using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Themes;
-using DotRecast.Recast;
 using Hexa.NET.ImNodes;
 using System.Globalization;
 using System.Numerics;
