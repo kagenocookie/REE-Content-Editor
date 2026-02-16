@@ -99,19 +99,26 @@ public class HomeWindow : IWindowHandler
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.Spacing();
-
         float footerHeight = 0;
         float remainingSpace = ImGui.GetContentRegionAvail().Y;
-        footerHeight += ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.Y * 2 + ImGui.GetTextLineHeightWithSpacing() * 4;
+        footerHeight += ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.Y + ImGui.GetTextLineHeightWithSpacing() * 3;
         if (remainingSpace > footerHeight) ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (remainingSpace - footerHeight));
+        if (ImGui.Button("Support development", new Vector2(ImGui.GetContentRegionAvail().X, 0))) {
+            FileSystemUtils.OpenURL("https://ko-fi.com/shadowcookie");
+        }
+        var availSpace = ImGui.GetContentRegionAvail().X;
+        ImGui.Button("Github Link");
+        ImGui.SameLine();
+        ImGui.Button("Wiki Link");
+        ImGui.SameLine();
+        ImGui.Button("Discord Link");
 
-        ImGui.Button("Support development", new Vector2(ImGui.GetContentRegionAvail().X, 0));
-        ImGui.Text("Github Link");
-        ImGui.Text("Wiki Link");
-        ImGui.Text("Discord Link");
+        ImGui.Spacing();
         ImGui.Separator();
+        ImGui.Spacing();
         ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);
-        ImGui.Text("[UpdateTime]");
+        // SILVER: Maybe even a notification when a new version is up?
+        ImGui.Text("[AppVersion/UpdateTime]");
         ImGui.PopStyleColor();
     }
     private static void ShowWelcomeText()
@@ -134,7 +141,7 @@ public class HomeWindow : IWindowHandler
     {
         if (ImGui.BeginTabBar("HomeTabs")) {
             if (ImGui.BeginTabItem("Bundles")) {
-                // TODO SILVER
+                // TODO SILVER: I of course totally know how to do this 100% ref: https://github.com/WolvenKit/WolvenKit?tab=readme-ov-file#screenshots
                 ImGui.Text("In a grid with the app logo being used as the image/icon.\nCould be color coded by game.");
                 ImGui.EndTabItem();
             }
