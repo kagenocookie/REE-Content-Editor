@@ -2,6 +2,7 @@ using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Themes;
+using DotRecast.Recast;
 using Hexa.NET.ImNodes;
 using System.Globalization;
 using System.Numerics;
@@ -64,7 +65,12 @@ public class ThemeEditor : IWindowHandler
         if (ImGui.Button("Open IMGUI Test Window")) {
             EditorWindow.CurrentWindow?.AddUniqueSubwindow(new ImguiTestWindow());
         }
-        
+        var theme = AppConfig.Instance.Theme.Get();
+        if (ImguiHelpers.ValueCombo("Theme", DefaultThemes.AvailableThemes, DefaultThemes.AvailableThemes, ref theme)) {
+            UI.ApplyTheme(theme!);
+            AppConfig.Instance.Theme.Set(theme);
+        }
+
         if (nodeCtx == null) {
             nodeCtx = UI.InitImNodeContext();
             ImNodes.SetCurrentContext(nodeCtx.Value);

@@ -414,6 +414,7 @@ public static class AppIcons
     public static readonly char SI_FileType_STS = '\uee18';
     public static readonly char SI_FileType_NCF = '\uee19';
     public static readonly char SI_FileType_VSDF = '\uee1a';
+    public static readonly char[] REECE_LogoFull = { '\uee1b', '\uee1c', '\uee1d', '\uee1e', '\uee1f' };
 
     public static string PrependIcon(this string text, object target)
     {

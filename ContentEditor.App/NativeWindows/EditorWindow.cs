@@ -694,6 +694,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem("File Upgrader")) {
                     AddSubwindow(new FileUpgrader()).Size = new Vector2(1280, 800);
                 }
+                if (ImGui.MenuItem("Home")) {
+                    AddUniqueSubwindow(new HomeWindow());
+                }
             }
             ImGui.EndMenu();
         }
