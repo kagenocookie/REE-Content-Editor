@@ -1,3 +1,4 @@
+using System.Numerics;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
@@ -16,7 +17,7 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
     private readonly List<MeshHandle> meshes = new();
     private readonly List<MaterialGroup> materials = new();
 
-    private readonly List<List<Matrix4X4<float>>> _transformsCache = new();
+    private readonly List<List<Matrix4x4>> _transformsCache = new();
 
     public override AABB LocalBounds {
         get {
@@ -33,13 +34,13 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
                     foreach (var inst in transforms.Cast<RszInstance>()) {
                         if (!RszFieldCache.CompositeMesh.TransformController.Enabled.Get(inst)) continue;
 
-                        var pos = RszFieldCache.CompositeMesh.TransformController.LocalPosition.Get(inst).ToGeneric();
-                        var rot = RszFieldCache.CompositeMesh.TransformController.LocalRotation.Get(inst).ToGeneric();
-                        // var scl = RszFieldCache.CompositeMesh.TransformController.LocalScale.Get(inst).ToGeneric();
-                        var instanceMat = ContentEditor.App.Transform.GetMatrixFromTransforms(pos, rot, Vector3D<float>.One);
+                        var pos = RszFieldCache.CompositeMesh.TransformController.LocalPosition.Get(inst);
+                        var rot = RszFieldCache.CompositeMesh.TransformController.LocalRotation.Get(inst);
+                        // var scl = RszFieldCache.CompositeMesh.TransformController.LocalScale.Get(inst);
+                        var instanceMat = ContentEditor.App.Transform.GetMatrixFromTransforms(pos, rot, Vector3.One);
                         bounds = bounds
-                            .Extend(Vector3D.Transform(meshBounds.minpos.ToGeneric(), instanceMat).ToSystem())
-                            .Extend(Vector3D.Transform(meshBounds.maxpos.ToGeneric(), instanceMat).ToSystem());
+                            .Extend(Vector3.Transform(meshBounds.minpos, instanceMat))
+                            .Extend(Vector3.Transform(meshBounds.maxpos, instanceMat));
                     }
                 }
             }
@@ -133,19 +134,19 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
             }
 
             var transforms = RszFieldCache.CompositeMesh.InstanceGroup.Transforms.Get(group);
-            List<Matrix4X4<float>> matrices;
+            List<Matrix4x4> matrices;
             if (_transformsCache.Count > i) {
                 matrices = _transformsCache[i];
                 matrices.Clear();
             } else {
-                _transformsCache.Add(matrices = new List<Matrix4X4<float>>(transforms.Count));
+                _transformsCache.Add(matrices = new List<Matrix4x4>(transforms.Count));
             }
             foreach (var inst in transforms.Cast<RszInstance>()) {
                 if (!RszFieldCache.CompositeMesh.TransformController.Enabled.Get(inst)) continue;
 
-                var pos = RszFieldCache.CompositeMesh.TransformController.LocalPosition.Get(inst).ToGeneric();
-                var rot = RszFieldCache.CompositeMesh.TransformController.LocalRotation.Get(inst).ToGeneric();
-                var scl = RszFieldCache.CompositeMesh.TransformController.LocalScale.Get(inst).ToGeneric();
+                var pos = RszFieldCache.CompositeMesh.TransformController.LocalPosition.Get(inst);
+                var rot = RszFieldCache.CompositeMesh.TransformController.LocalRotation.Get(inst);
+                var scl = RszFieldCache.CompositeMesh.TransformController.LocalScale.Get(inst);
                 var instanceMat = transform * ContentEditor.App.Transform.GetMatrixFromTransforms(pos, rot, scl);
                 matrices.Add(instanceMat);
             }
@@ -176,8 +177,7 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
     {
         gizmo ??= new GizmoContainer(RootScene!, this);
 
-        ref readonly var transformOg = ref GameObject.Transform.WorldTransform;
-        var transform = transformOg.ToSystem();
+        ref readonly var transform = ref GameObject.Transform.WorldTransform;
         var instances = RszFieldCache.CompositeMesh.InstanceGroups.Get(Data);
         for (int i = 0; i < instances.Count; i++) {
             var group = instances[i] as RszInstance;

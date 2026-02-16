@@ -1,6 +1,5 @@
 using System.Numerics;
 using ReeLib.via;
-using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
 namespace ContentEditor.App.Graphics;
@@ -9,7 +8,7 @@ public class GridGizmo : Gizmo
 {
     private const float GridCellSpacing = 5f;
 
-    private Matrix4X4<float> position;
+    private Matrix4x4 position;
 
     public GridGizmo(GL gl) : base(gl)
     {
@@ -45,15 +44,15 @@ public class GridGizmo : Gizmo
 
     public override void Update(OpenGLRenderContext context, float deltaTime)
     {
-        Vector3D<float> campos;
-        if (Matrix4X4.Invert(context.ViewMatrix, out var inverted)) {
-            campos = inverted.Row4.ToSystem().ToSilkNetVec3() with { Y = 0 };
+        Vector3 campos;
+        if (Matrix4x4.Invert(context.ViewMatrix, out var inverted)) {
+            campos = inverted.Translation with { Y = 0 };
         } else {
             campos = new();
         }
         campos.X = MathF.Round(campos.X / GridCellSpacing) * GridCellSpacing;
         campos.Z = MathF.Round(campos.Z / GridCellSpacing) * GridCellSpacing;
-        position = Matrix4X4.CreateTranslation<float>(campos);
+        position = Matrix4x4.CreateTranslation(campos);
     }
 
     public override void Render(OpenGLRenderContext context)

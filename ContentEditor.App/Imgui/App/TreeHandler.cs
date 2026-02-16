@@ -28,7 +28,7 @@ public abstract class TreeHandler<TBaseNode> : IObjectUIHandler where TBaseNode 
 
     protected abstract void ShowPrefixColumn(TBaseNode node, UIContext context);
 
-    protected virtual void ShowNodeDisabled(TBaseNode node, UIContext context)
+    protected virtual void ShowNodeDisabled(TBaseNode node, UIContext context, Vector2 startScreenPos)
     {
         ImGui.TextColored(Colors.Faded, GetNodeText(node));
     }
@@ -41,7 +41,7 @@ public abstract class TreeHandler<TBaseNode> : IObjectUIHandler where TBaseNode 
             return $"{icon} {node}";
         }
     }
-    protected virtual void ShowNode(TBaseNode node, UIContext context)
+    protected virtual void ShowNode(TBaseNode node, UIContext context, Vector2 startScreenPos)
     {
         if (context.uiHandler != null) {
             context.ShowUI();
@@ -49,6 +49,7 @@ public abstract class TreeHandler<TBaseNode> : IObjectUIHandler where TBaseNode 
     }
     protected int CurrentIndent { get; private set; }
     protected float prefixColWidth;
+    protected float TreeLineHeight { get; private set; }
 
     public void OnIMGUI(UIContext context)
     {
@@ -77,12 +78,14 @@ public abstract class TreeHandler<TBaseNode> : IObjectUIHandler where TBaseNode 
 
         int handledCount = 0;
         var indent = ImGui.GetStyle().IndentSpacing;
+        var itemSpacing = ImGui.GetStyle().ItemSpacing;
         var framePadding = ImGui.GetStyle().FramePadding;
         var windowPadding = ImGui.GetStyle().WindowPadding;
 
         var sizeX = ImGui.GetContentRegionAvail().X;
-        var lineHeight = UI.FontSize + framePadding.Y * 2;
-        var buttonRect = new Vector2(lineHeight + framePadding.Y * 2);
+        var lineHeight = UI.FontSize + framePadding.Y + itemSpacing.Y;
+        TreeLineHeight = UI.FontSize + 2;
+        var buttonRect = new Vector2(UI.FontSize + framePadding.Y * 2 + itemSpacing.X, UI.FontSize + framePadding.Y * 2 + framePadding.Y * 2);
         var fixedLeftMargin = windowPadding.X;
         var prefixStartIndent = windowPadding.X;
 
@@ -107,9 +110,6 @@ public abstract class TreeHandler<TBaseNode> : IObjectUIHandler where TBaseNode 
                     continue;
                 }
             }
-
-            // undo the default frame padding to give the appearance of a zero-spacing table
-            if (handledCount != 0) ImGui.SetCursorPosY(ImGui.GetCursorPosY() - framePadding.Y);
 
             var pos = ImGui.GetCursorScreenPos();
             if (handledCount++ % 2 != 0) {
@@ -149,15 +149,19 @@ public abstract class TreeHandler<TBaseNode> : IObjectUIHandler where TBaseNode 
                 if (prefixColWidth == 0) {
                     // note: a bit of a hack to ensure we get consistent Y padding whether or not the scene is enabled
                     // the assumption is that if there's any prefix UI, it's got at least a button, or is otherwise consistently sized
-                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + framePadding.Y);
+                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + itemSpacing.Y);
                 }
             }
 
+            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 1); // don't ask why, it just works
             if (filteredChild) {
-                ShowNodeDisabled(node, ctx);
+                ShowNodeDisabled(node, ctx, pos);
             } else {
-                ShowNode(node, ctx);
+                ShowNode(node, ctx, pos);
             }
+            // undo the default frame padding to give the appearance of a zero-spacing table
+            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - framePadding.Y);
+
             ImGui.PopID();
             if (!showChildren) continue;
 

@@ -43,7 +43,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
     private List<GameObject> _BaseChildren => base.Children;
     public new IEnumerable<GameObject> Children => base.Children;
 
-    public Matrix4X4<float> WorldTransform => Transform.WorldTransform;
+    public Matrix4x4 WorldTransform => Transform.WorldTransform;
 
     public SceneFlags SceneFlags { get; set; } = SceneFlags.All;
 
@@ -390,6 +390,9 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         if (folder != null && folder.Scene != Scene) {
             MoveToScene(folder.Scene);
         }
+
+        // call invalidate on self only instead of the usual recursive one, since we're calling the current method recursively already
+        Transform.InvalidateTransformSelf();
     }
 
     public GameObject Clone(GameObject? parent = null)

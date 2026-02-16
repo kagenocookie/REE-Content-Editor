@@ -48,7 +48,7 @@ public sealed class GizmoManager(Scene scene) : IDisposable
             if (!comp.IsEnabled || !((Component)comp).GameObject.ShouldDraw) continue;
             var localBounds = comp.Bounds;
             if (!localBounds.IsInvalid) {
-                var aabb = localBounds.ToWorldBounds(((Component)comp).Transform.WorldTransform.ToSystem());
+                var aabb = localBounds.ToWorldBounds(((Component)comp).Transform.WorldTransform);
                 if (!cam.IsVisible(aabb)) continue;
             }
 

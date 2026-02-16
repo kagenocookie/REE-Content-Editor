@@ -174,14 +174,5 @@ public class RE4CharacterSpawnParam(GameObject gameObject, RszInstance data) : B
 
         return anyLoaded;
     }
-
-    private Matrix4X4<float> GetSpawnPosition()
-    {
-        var spawnArea = GameObject.Parent?.GetComponent("chainsaw.CharacterArea");
-        if (spawnArea == null) return GameObject.Transform.WorldTransform;
-
-        // TODO RE4 handle custom spawn areas properly (and see if there's other similar components)
-        return GameObject.Transform.WorldTransform;
-    }
 }
 

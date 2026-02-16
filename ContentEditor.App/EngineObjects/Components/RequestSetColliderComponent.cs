@@ -107,7 +107,7 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
 
         var parentMesh = GameObject.GetComponent<MeshComponent>()?.MeshHandle as AnimatedMeshHandle;
 
-        var transform = GameObject.Transform.WorldTransform.ToSystem();
+        ref readonly var transform = ref GameObject.Transform.WorldTransform;
 
         Matrix4x4 shapeMatrix = Matrix4x4.Identity;
         foreach (var rcol in rcols) {

@@ -10,6 +10,8 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
     private static SceneEditor? GetRootSceneEditor(UIContext context) => context.FindHandlerInParents<SceneEditor>()?.RootSceneEditor;
     private static IInspectorController? GetRootInspector(UIContext context) => GetRootSceneEditor(context) ?? context.FindHandlerInParents<IInspectorController>();
 
+    private IVisibilityTarget? dragSource;
+
     protected override IEnumerable<IVisibilityTarget> GetChildren(IVisibilityTarget? node, bool expandContents = false)
     {
         if (node is GameObject go) return go.Children;
@@ -82,27 +84,30 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
         }
     }
 
-    protected override void ShowNode(IVisibilityTarget node, UIContext context)
+    protected override void ShowNode(IVisibilityTarget node, UIContext context, Vector2 startScreenPos)
     {
         // ideally: find highest priority component and use that type's icon + GameObject/prefab overlay icon
         var rootEditor = GetRootInspector(context);
         var folder = node as Folder;
         var scene = (node as IVisibilityTarget)?.Scene;
 
-        var startPos = ImGui.GetCursorScreenPos();
+        var framePadding = ImGui.GetStyle().FramePadding;
+        var itemSpacing = ImGui.GetStyle().ItemSpacing;
         string label = GetNodeText(node);
 
         bool click, middleClick;
-
         if (!string.IsNullOrEmpty(folder?.ScenePath)) {
             ImGui.BeginGroup();
-            click = ImGui.Selectable(label);
+            click = ImGui.Selectable(label, new Vector2(0, TreeLineHeight));
+            HandleDragDrop(node, context, startScreenPos);
             ImGui.SameLine();
             ImGui.TextColored(Colors.Faded, folder.ScenePath);
             ImGui.EndGroup();
         } else {
-            click = ImGui.Selectable(label);
+            click = ImGui.Selectable(label, new Vector2(0, TreeLineHeight));
+            HandleDragDrop(node, context, startScreenPos);
         }
+
         middleClick = click && ImGui.IsKeyDown(ImGuiKey.ModCtrl) || !click && ImGui.IsItemClicked(ImGuiMouseButton.Middle);
 
         if (ImGui.BeginPopupContextItem(label)) {
@@ -184,8 +189,8 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                         var loadType = (Scene.LoadType?)null;
                         if (ImGui.Selectable("Direct children")) loadType = Scene.LoadType.Default;
                         if (ImGui.Selectable("Direct preloaded children")) loadType = Scene.LoadType.PreloadedOnly;
-                        if (ImGui.Selectable("All children")) loadType = Scene.LoadType.LoadChildren|Scene.LoadType.IncludeNested;
-                        if (ImGui.Selectable("All preloaded children")) loadType = Scene.LoadType.PreloadedOnly|Scene.LoadType.LoadChildren|Scene.LoadType.IncludeNested;
+                        if (ImGui.Selectable("All children")) loadType = Scene.LoadType.LoadChildren | Scene.LoadType.IncludeNested;
+                        if (ImGui.Selectable("All preloaded children")) loadType = Scene.LoadType.PreloadedOnly | Scene.LoadType.LoadChildren | Scene.LoadType.IncludeNested;
                         if (loadType != null) {
                             try {
                                 foreach (var subfolder in folder.ChildScene.Folders) {
@@ -227,9 +232,116 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
         }
         if (!string.IsNullOrEmpty(folder?.ScenePath)) {
             var windowPadding = ImGui.GetStyle().WindowPadding.X;
-            var min = new Vector2(ImGui.GetWindowPos().X + windowPadding, startPos.Y);
+            var min = new Vector2(ImGui.GetWindowPos().X + windowPadding, startScreenPos.Y);
             var max = new Vector2(ImGui.GetWindowPos().X + ImGui.GetContentRegionAvail().X + windowPadding, ImGui.GetItemRectMax().Y) + ImGui.GetStyle().FramePadding;
             ImGui.GetWindowDrawList().AddRect(min, max, ImGui.GetColorU32(ImGuiCol.Border), ImGui.GetStyle().FrameRounding, ImDrawFlags.RoundCornersAll, 1.0f);
+        }
+    }
+
+    private unsafe void HandleDragDrop(IVisibilityTarget node, UIContext context, Vector2 startPos)
+    {
+        var lineHeight = UI.FontSize + ImGui.GetStyle().FramePadding.Y + ImGui.GetStyle().ItemSpacing.Y;
+        if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.AcceptNoDrawDefaultRect)) {
+            ImGui.SetDragDropPayload(node.GetType().Name, null, 0);
+            var icon = AppIcons.GetIcon(node);
+            dragSource = node;
+            ImGui.Text("Moving: " + (icon == '\0' ? node.ToString() : icon + " " + node.ToString()));
+            ImGui.EndDragDropSource();
+            ImGui.GetWindowDrawList().AddRect(
+                startPos,
+                startPos + new Vector2(ImGui.GetContentRegionAvail().X, lineHeight),
+                ImguiHelpers.GetColorU32(ImGuiCol.ButtonActive));
+        }
+        if (ImGui.BeginDragDropTarget()) {
+            if ((dragSource is Folder && node is GameObject)) {
+                ImGui.SetMouseCursor(ImGuiMouseCursor.NotAllowed);
+                ImGui.EndDragDropTarget();
+                return;
+            }
+
+            // nothing can be dropped inside of a scene link folder
+            var canDropInside = !(node is Folder nf && !string.IsNullOrEmpty(nf.ScenePath));
+            var canDropSibling = !(dragSource is GameObject && node is Folder);
+
+            var lineCenter = startPos.Y + lineHeight / 2;
+            var dropTypeMargin = canDropInside ? lineHeight * 0.7f : 1f;
+            var dropY = Math.Sign(Math.Round((ImGui.GetMousePos().Y - lineCenter) / dropTypeMargin));
+            if (dropY == 0 && !canDropInside) dropY = 1;
+            if (dropY != 0 && !canDropSibling) dropY = 0;
+
+            if (dropY == -1) {
+                // above
+                var lineStart = startPos;
+                lineStart.X = 0;
+                ImGui.GetWindowDrawList().AddLine(lineStart, lineStart + new Vector2(ImGui.GetContentRegionAvail().X, 2), ImguiHelpers.GetColorU32(ImGuiCol.DragDropTarget));
+            } else if (dropY == 1) {
+                // below
+                var lineStart = startPos + new Vector2(0, lineHeight);
+                lineStart.X = 0;
+                ImGui.GetWindowDrawList().AddLine(lineStart, lineStart + new Vector2(ImGui.GetContentRegionAvail().X, 2), ImguiHelpers.GetColorU32(ImGuiCol.DragDropTarget));
+            } else {
+                ImGui.GetWindowDrawList().AddRect(
+                    startPos,
+                    startPos + new Vector2(ImGui.GetContentRegionAvail().X, lineHeight),
+                    ImguiHelpers.GetColorU32(ImGuiCol.DragDropTarget));
+            }
+
+            var payload = ImGui.GetDragDropPayload();
+            var isValid = false;
+            if (payload.Handle != null && dragSource != null) {
+                if (dragSource is GameObject movedGo) {
+                    isValid = true;
+                    if (ImGui.AcceptDragDropPayload(payload.DataType).Handle != null) {
+                        var dropNode = (INodeObject<GameObject>)node;
+                        var dropParent = dropNode.GetParent();
+                        if (dropY == 0) {
+                            UndoRedo.RecordMoveChild(context, movedGo, dropNode);
+                        } else if (dropParent != null) {
+                            var targetIndex = dropParent.GetChildIndex((GameObject)dropNode);
+                            if (dropParent != dragSource.Parent) {
+                                if (dropY == 1) targetIndex += 1;
+                            } else if (dropY == -1) {
+                                if (targetIndex > dropParent.GetChildIndex(movedGo)) targetIndex -= 1;
+                            } else if (dropY == 1) {
+                                if (targetIndex < dropParent.GetChildIndex(movedGo)) targetIndex += 1;
+                            }
+
+                            UndoRedo.RecordMoveChild(context, movedGo, dropParent, targetIndex);
+                        } else {
+                            Logger.Error("Failed to handle game object drop");
+                        }
+                    }
+                } else if (dragSource is Folder movedFolder) {
+                    // folders can have gameobject or folder children
+                    if (payload.IsDataType(nameof(Folder))) {
+                        isValid = true;
+                        if (ImGui.AcceptDragDropPayload(payload.DataType).Handle != null) {
+                            var dropNode = (INodeObject<Folder>)node;
+                            var dropParent = dropNode.GetParent();
+                            if (dropY == 0) {
+                                UndoRedo.RecordMoveChild(context, movedFolder, dropNode);
+                            } else if (dropParent != null) {
+                                var targetIndex = dropParent.GetChildIndex((Folder)dropNode);
+                                if (dropParent != dragSource.Parent) {
+                                    if (dropY == 1) targetIndex += 1;
+                                } else if (dropY == -1) {
+                                    if (targetIndex > dropParent.GetChildIndex(movedFolder)) targetIndex -= 1;
+                                } else if (dropY == 1) {
+                                    if (targetIndex < dropParent.GetChildIndex(movedFolder)) targetIndex += 1;
+                                }
+
+                                UndoRedo.RecordMoveChild(context, movedFolder, dropParent, targetIndex);
+                            } else {
+                            Logger.Error("Failed to handle folder drop");
+                            }
+                        }
+                    }
+                }
+            }
+            if (!isValid) {
+                ImGui.SetMouseCursor(ImGuiMouseCursor.NotAllowed);
+            }
+            ImGui.EndDragDropTarget();
         }
     }
 
@@ -254,6 +366,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
     protected override void DrawEndTree(UIContext context)
     {
         if (context.TryCast<Folder>(out var folder)) {
+            ImGui.Spacing();
             if (ImGui.Button($"{AppIcons.SI_GenericAdd} Add Folder")) {
                 var ws = context.GetWorkspace();
                 var newFolder = new Folder("New_Folder", ws!.Env, folder.Scene);

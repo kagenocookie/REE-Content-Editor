@@ -59,18 +59,18 @@ public static class TransformExtensions
         return (Vector3.Dot(axis, cross) < 0) ? -angle : angle;
     }
 
-    public static Quaternion<float> CreateLookAtQuaternion(this Vector3 from, Vector3 to, Vector3 up)
+    public static Quaternion CreateLookAtQuaternion(this Vector3 from, Vector3 to, Vector3 up)
     {
         var fwd = Vector3.Normalize(from - to);
         var right = Vector3.Normalize(Vector3.Cross(up, fwd));
         var newUp = Vector3.Cross(fwd, right);
-        var lookAt = new Matrix4X4<float>(
+        var lookAt = new Matrix4x4(
             right.X, right.Y, right.Z, 0,
             newUp.X, newUp.Y, newUp.Z, 0,
             fwd.X, fwd.Y, fwd.Z, 0,
             0, 0, 0, 1
         );
-        return Quaternion<float>.CreateFromRotationMatrix(lookAt);
+        return Quaternion.CreateFromRotationMatrix(lookAt);
     }
 
     public static Quaternion<float> CreateFromToQuaternion(this Vector3 from, Vector3 to)

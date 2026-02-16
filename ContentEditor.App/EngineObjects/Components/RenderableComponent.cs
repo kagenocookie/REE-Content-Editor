@@ -29,7 +29,7 @@ public abstract class RenderableComponent(GameObject gameObject, RszInstance dat
         if (local.IsInvalid) {
             _worldSpaceBounds = AABB.Invalid;
         } else {
-            var world = Transform.WorldTransform.ToSystem();
+            var world = Transform.WorldTransform;
             _worldSpaceBounds = local.ToWorldBounds(world);
         }
         OnUpdateTransform();

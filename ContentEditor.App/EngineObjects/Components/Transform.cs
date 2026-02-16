@@ -1,9 +1,6 @@
 using System.Numerics;
-using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
-using ReeLib.via;
-using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 
@@ -48,21 +45,26 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
 
     public Vector3 LocalForward => Vector3.Transform(-Vector3.UnitZ, LocalRotation);
 
-    public Vector3 Position => WorldTransform.Row4.ToSystem().ToVec3();
-    public Quaternion Rotation => Quaternion.CreateFromRotationMatrix(WorldTransform.ToSystem());
+    public Vector3 Position {
+        get => WorldTransform.Translation;
+    }
+
+    public Quaternion Rotation {
+        get => Matrix4x4.Decompose(WorldTransform, out _, out var rot, out _) ? rot : Quaternion.Identity;
+    }
+
+    public Vector3 Scale {
+        get => Matrix4x4.Decompose(WorldTransform, out var scale, out _, out _) ? scale : Vector3.One;
+    }
 
     public Vector3 Forward => Vector3.Normalize(Vector3.Transform(-Vector3.UnitZ, Rotation));
     public Vector3 Right => Vector3.Normalize(Vector3.Transform(Vector3.UnitX, Rotation));
     public Vector3 Up => Vector3.Normalize(Vector3.Transform(Vector3.UnitY, Rotation));
 
-    public Vector3D<float> SilkLocalPosition => ((Vector3)Data.Values[0]).ToGeneric();
-    public Quaternion<float> SilkLocalRotation => ((Quaternion)Data.Values[1]).ToGeneric();
-    public Vector3D<float> SilkLocalScale => ((Vector3)Data.Values[2]).ToGeneric();
-
-    private Matrix4X4<float> _cachedWorldTransform = Matrix4X4<float>.Identity;
+    private Matrix4x4 _cachedWorldTransform = Matrix4x4.Identity;
     private bool _worldTransformValid;
     public bool IsWorldTransformUpToDate => _worldTransformValid;
-    public ref readonly Matrix4X4<float> WorldTransform
+    public ref readonly Matrix4x4 WorldTransform
     {
         get {
             if (_worldTransformValid) return ref _cachedWorldTransform;
@@ -72,13 +74,13 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
                 if (absoluteScale) {
                     // if true, parent scale does not affect self scale (position/rotation still affected) (see DD2 Env_1557 ladder)
                     _cachedWorldTransform = ComputeLocalTransformMatrix() * GameObject.Parent.WorldTransform;
-                    Matrix4X4.Decompose(_cachedWorldTransform, out _, out var rot, out var pos);
-                    _cachedWorldTransform = Matrix4X4.CreateScale<float>(SilkLocalScale) * Matrix4X4.CreateFromQuaternion(rot) * Matrix4X4.CreateTranslation(pos);
+                    Matrix4x4.Decompose(_cachedWorldTransform, out _, out var rot, out var pos);
+                    _cachedWorldTransform = Matrix4x4.CreateScale(LocalScale) * Matrix4x4.CreateFromQuaternion(rot) * Matrix4x4.CreateTranslation(pos);
                 } else {
                     _cachedWorldTransform = ComputeLocalTransformMatrix() * GameObject.Parent.WorldTransform;
                 }
             } else if (GameObject.Folder != null) {
-                _cachedWorldTransform = ComputeLocalTransformMatrix() * Matrix4X4.CreateTranslation<float>(GameObject.Folder.OffsetSilk);
+                _cachedWorldTransform = ComputeLocalTransformMatrix() * Matrix4x4.CreateTranslation(GameObject.Folder.Offset.AsVector3);
             } else {
                 _cachedWorldTransform = ComputeLocalTransformMatrix();
             }
@@ -98,14 +100,14 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
         }
     }
 
-    public Matrix4X4<float> ComputeLocalTransformMatrix()
+    internal void InvalidateTransformSelf()
     {
-        return GetMatrixFromTransforms(SilkLocalPosition, SilkLocalRotation, SilkLocalScale);
+        _worldTransformValid = false;
     }
 
-    public static Matrix4X4<float> GetMatrixFromTransforms(Vector3D<float> pos, Quaternion<float> rot, Vector3D<float> scale)
+    public Matrix4x4 ComputeLocalTransformMatrix()
     {
-        return Matrix4X4.CreateScale<float>(scale) * Matrix4X4.CreateFromQuaternion(rot) * Matrix4X4.CreateTranslation(pos);
+        return GetMatrixFromTransforms(LocalPosition, LocalRotation, LocalScale);
     }
 
     public static Matrix4x4 GetMatrixFromTransforms(Vector3 pos, Quaternion rot, Vector3 scale)
@@ -141,7 +143,7 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
 
     public void LookAt(Vector3 target, Vector3 up)
     {
-        LocalRotation = LocalPosition.CreateLookAtQuaternion(target, up).ToSystem();
+        LocalRotation = LocalPosition.CreateLookAtQuaternion(target, up);
     }
 
     public void ResetLocalTransform()
@@ -155,5 +157,32 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
         LocalPosition = transform.LocalPosition;
         LocalRotation = transform.LocalRotation;
         LocalScale = transform.LocalScale;
+    }
+
+    public void SetGlobalTransform(Matrix4x4 matrix)
+    {
+        Matrix4x4.Decompose(matrix, out var scale, out var rot, out var pos);
+        SetGlobalTransform(pos, rot, scale);
+    }
+
+    public void SetGlobalTransform(Vector3 position, Quaternion rotation, Vector3 scale)
+    {
+        if (GameObject.Parent == null) {
+            LocalRotation = rotation;
+            LocalScale = scale;
+            LocalPosition = position;
+        } else {
+            var parent = GameObject.Parent.Transform;
+            var parentScale = parent.Scale;
+            var invParentRot = Quaternion.Inverse(parent.Rotation);
+
+            var relativePos = position - parent.Position;
+            relativePos = Vector3.Transform(relativePos, invParentRot);
+            relativePos /= parentScale;
+
+            LocalPosition = relativePos;
+            LocalRotation = invParentRot * rotation;
+            LocalScale = scale / parentScale;
+        }
     }
 }

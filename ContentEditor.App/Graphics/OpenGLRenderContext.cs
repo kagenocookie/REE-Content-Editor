@@ -131,22 +131,22 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         if (_globalUniformBuffer == 0) {
             _globalUniformBuffer = GL.GenBuffer();
             GL.BindBuffer(BufferTargetARB.UniformBuffer, _globalUniformBuffer);
-            GL.BufferData(BufferTargetARB.UniformBuffer, (uint)(sizeof(Matrix4X4<float>) * 3 + sizeof(Vector3)), null, BufferUsageARB.StaticDraw);
+            GL.BufferData(BufferTargetARB.UniformBuffer, (uint)(sizeof(Matrix4x4) * 3 + sizeof(Vector3)), null, BufferUsageARB.StaticDraw);
             GL.BindBuffer(BufferTargetARB.UniformBuffer, 0);
         }
 
         GL.BindBuffer(BufferTargetARB.UniformBuffer, _globalUniformBuffer);
         int offset = 0;
-        SetUniformBufferMatrix(ref offset, sizeof(Matrix4X4<float>), ViewMatrix);
-        SetUniformBufferMatrix(ref offset, sizeof(Matrix4X4<float>), ProjectionMatrix);
-        SetUniformBufferMatrix(ref offset, sizeof(Matrix4X4<float>), ViewProjectionMatrix);
-        Matrix4X4.Invert(ViewMatrix, out var viewInverted);
-        SetUniformBufferVec3(ref offset, sizeof(Vector3), viewInverted.Row4.ToSystem().ToVec3());
+        SetUniformBufferMatrix(ref offset, sizeof(Matrix4x4), ViewMatrix);
+        SetUniformBufferMatrix(ref offset, sizeof(Matrix4x4), ProjectionMatrix);
+        SetUniformBufferMatrix(ref offset, sizeof(Matrix4x4), ViewProjectionMatrix);
+        Matrix4x4.Invert(ViewMatrix, out var viewInverted);
+        SetUniformBufferVec3(ref offset, sizeof(Vector3), viewInverted.GetRow(3).ToVec3());
         GL.BindBufferBase(BufferTargetARB.UniformBuffer, 0, _globalUniformBuffer);
         GL.BindBuffer(BufferTargetARB.UniformBuffer, 0);
     }
 
-    private unsafe void SetUniformBufferMatrix(ref int offset, int size, Matrix4X4<float> value)
+    private unsafe void SetUniformBufferMatrix(ref int offset, int size, Matrix4x4 value)
     {
         GL.BufferSubData(BufferTargetARB.UniformBuffer, (nint)offset, (uint)size, (float*)&value);
         offset += size;
@@ -375,7 +375,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         return group;
     }
 
-    public override unsafe void RenderSimple(MeshHandle handle, in Matrix4X4<float> transform)
+    public override unsafe void RenderSimple(MeshHandle handle, in Matrix4x4 transform)
     {
         for (int i = 0; i < handle.Handle.Meshes.Count; i++) {
             var mesh = handle.Handle.Meshes[i];
@@ -387,7 +387,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         }
     }
 
-    public override void RenderInstanced(MeshHandle handle, List<Matrix4X4<float>> transforms)
+    public override void RenderInstanced(MeshHandle handle, List<Matrix4x4> transforms)
     {
         for (int i = 0; i < handle.Handle.Meshes.Count; i++) {
             var mesh = handle.Handle.Meshes[i];

@@ -123,7 +123,7 @@ public class Colliders(GameObject gameObject, RszInstance data) : Component(game
                 case "via.physics.MeshShape": {
                         var mcolPath = RszFieldCache.MeshShape.Mesh.Get(shape);
                         var mtx = RszFieldCache.MeshShape.TransformMatrix.Get(shape);
-                        gizmo.Mesh(RszFieldCache.MeshShape.Mesh.Get(shape), mtx.ToGeneric() * transform, wireMaterial);
+                        gizmo.Mesh(RszFieldCache.MeshShape.Mesh.Get(shape), mtx.ToSystem() * transform, wireMaterial);
                         break;
                     }
                 case "via.physics.StaticCompoundShape": {
