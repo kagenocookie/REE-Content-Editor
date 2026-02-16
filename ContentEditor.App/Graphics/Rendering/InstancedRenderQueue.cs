@@ -1,6 +1,6 @@
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
 namespace ContentEditor.App.Graphics;
@@ -11,7 +11,7 @@ public sealed class InstancedRenderQueue(GL gl) : RenderQueue<InstancedRenderBat
     private const int BufferMatrixCount = 16384;
     private const int BufferSize = BufferMatrixCount * MatrixSize;
 
-    private readonly Matrix4X4<float>[] matrixBatch = new Matrix4X4<float>[BufferMatrixCount];
+    private readonly Matrix4x4[] matrixBatch = new Matrix4x4[BufferMatrixCount];
 
     private readonly List<DrawArraysIndirectCommand> drawCommands = new();
 
@@ -132,11 +132,11 @@ public readonly struct InstancedRenderBatchItem : RenderQueueItem
 {
     public readonly Material material;
     public readonly Mesh mesh;
-    public readonly List<Matrix4X4<float>> matrices;
+    public readonly List<Matrix4x4> matrices;
 
     public readonly ulong SortingKey => unchecked((ulong)material.Shader.ID << 48) | ((ulong)material.Hash << 24) | (mesh.ID & 0xffffff);
 
-    public InstancedRenderBatchItem(Material material, Mesh mesh, List<Matrix4X4<float>> matrices) : this()
+    public InstancedRenderBatchItem(Material material, Mesh mesh, List<Matrix4x4> matrices) : this()
     {
         this.material = material;
         this.mesh = mesh;

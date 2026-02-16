@@ -1,10 +1,10 @@
+using System.Numerics;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.via;
-using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 
@@ -16,7 +16,7 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
     private readonly List<MeshHandle> meshes = new();
     private readonly List<MaterialGroup> materials = new();
 
-    private readonly List<List<Matrix4X4<float>>> _transformsCache = new();
+    private readonly List<List<Matrix4x4>> _transformsCache = new();
 
     public override AABB LocalBounds {
         get {
@@ -32,10 +32,10 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
                 if (group == null) continue;
 
                 foreach (var inst in group.transforms!) {
-                    var instanceMat = ContentEditor.App.Transform.GetMatrixFromTransforms(inst.pos.ToGeneric(), inst.rot.ToGeneric(), inst.scale.ToGeneric());
+                    var instanceMat = ContentEditor.App.Transform.GetMatrixFromTransforms(inst.pos, inst.rot, inst.scale);
                     bounds = bounds
-                        .Extend(Vector3D.Transform(meshBounds.minpos.ToGeneric(), instanceMat).ToSystem())
-                        .Extend(Vector3D.Transform(meshBounds.maxpos.ToGeneric(), instanceMat).ToSystem());
+                        .Extend(Vector3.Transform(meshBounds.minpos, instanceMat))
+                        .Extend(Vector3.Transform(meshBounds.maxpos, instanceMat));
                 }
             }
             return bounds;
@@ -125,16 +125,16 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
         for (int i = 0; i < meshes.Count; i++) {
             var group = file.InstanceGroups[i];
 
-            List<Matrix4X4<float>> matrices;
+            List<Matrix4x4> matrices;
             if (_transformsCache.Count > i) {
                 matrices = _transformsCache[i];
                 matrices.Clear();
             } else {
-                _transformsCache.Add(matrices = new List<Matrix4X4<float>>(group.transforms!.Length));
+                _transformsCache.Add(matrices = new List<Matrix4x4>(group.transforms!.Length));
             }
 
             foreach (var inst in group.transforms!) {
-                var instanceMat = transform * ContentEditor.App.Transform.GetMatrixFromTransforms(inst.pos.ToGeneric(), inst.rot.ToGeneric(), inst.scale.ToGeneric());
+                var instanceMat = transform * ContentEditor.App.Transform.GetMatrixFromTransforms(inst.pos, inst.rot, inst.scale);
                 matrices.Add(instanceMat);
             }
         }
@@ -164,8 +164,7 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
         if (file == null) return null;
         gizmo ??= new GizmoContainer(RootScene!, this);
 
-        ref readonly var transformOg = ref GameObject.Transform.WorldTransform;
-        var transform = transformOg.ToSystem();
+        ref readonly var transform = ref GameObject.Transform.WorldTransform;
 
         for (int i = 0; i < meshes.Count; i++) {
             var group = file.InstanceGroups[i];

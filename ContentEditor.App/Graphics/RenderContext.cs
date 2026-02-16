@@ -11,9 +11,9 @@ namespace ContentEditor.App.Graphics;
 public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
 {
     public float DeltaTime { get; internal set; }
-    internal Matrix4X4<float> ViewMatrix { get; set; } = Matrix4X4<float>.Identity;
-    internal Matrix4X4<float> ProjectionMatrix { get; set; } = Matrix4X4<float>.Identity;
-    internal Matrix4X4<float> ViewProjectionMatrix { get; set; } = Matrix4X4<float>.Identity;
+    internal Matrix4x4 ViewMatrix { get; set; } = Matrix4x4.Identity;
+    internal Matrix4x4 ProjectionMatrix { get; set; } = Matrix4x4.Identity;
+    internal Matrix4x4 ViewProjectionMatrix { get; set; } = Matrix4x4.Identity;
 
     protected Material? defaultMaterial;
 
@@ -64,8 +64,8 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
     /// <summary>
     /// Render a simple mesh (static, single mesh with no animation)
     /// </summary>
-    public abstract void RenderSimple(MeshHandle handle, in Matrix4X4<float> transform);
-    public abstract void RenderInstanced(MeshHandle handle, List<Matrix4X4<float>> transforms);
+    public abstract void RenderSimple(MeshHandle handle, in Matrix4x4 transform);
+    public abstract void RenderInstanced(MeshHandle handle, List<Matrix4x4> transforms);
 
     public abstract MaterialGroup LoadMaterialGroup(FileHandle file, ShaderFlags flags = ShaderFlags.None);
     public abstract Material GetBuiltInMaterial(BuiltInMaterials material, ShaderFlags flags = ShaderFlags.None);

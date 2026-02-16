@@ -11,7 +11,6 @@ using ReeLib;
 using ReeLib.Common;
 using ReeLib.Il2cpp;
 using ReeLib.via;
-using Silk.NET.Maths;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -1217,26 +1216,26 @@ public class Mat4StructHandler : IObjectUIHandler
         var open = ImguiHelpers.TreeNodeSuffix(context.label, mat.ToString());
         AppImguiHelpers.ShowJsonCopyPopup(mat, context);
         if (open) {
-            Matrix4X4.Decompose(mat.ToSystem().ToGeneric(), out var scale, out var rot, out var trans);
+            Matrix4x4.Decompose(mat.ToSystem(), out var scale, out var rot, out var trans);
 
             var w = ImGui.CalcItemWidth();
             ImGui.SetNextItemWidth(w * 0.75f);
-            if (ImGui.DragFloat3("##Offset", ref Unsafe.As<Vector3D<float>, Vector3>(ref trans), 0.005f)) {
-                mat = Transform.GetMatrixFromTransforms(trans, rot, scale).ToSystem();
+            if (ImGui.DragFloat3("##Offset", ref trans, 0.005f)) {
+                mat = Transform.GetMatrixFromTransforms(trans, rot, scale);
                 UndoRedo.RecordSet(context, mat, undoId: $"{context.GetHashCode()} offset");
             }
             ImGui.SameLine();
             ImGui.SetNextItemWidth(w * 0.25f - ImGui.GetStyle().FramePadding.X * 2);
             ImGui.LabelText("Offset", "##labelP");
 
-            if (ImGui.DragFloat4("Rotation", ref Unsafe.As<Quaternion<float>, Vector4>(ref rot), 0.005f)) {
-                rot = Quaternion<float>.Normalize(rot);
-                mat = Transform.GetMatrixFromTransforms(trans, rot, scale).ToSystem();
+            if (ImGui.DragFloat4("Rotation", ref Unsafe.As<Quaternion, Vector4>(ref rot), 0.005f)) {
+                rot = Quaternion.Normalize(rot);
+                mat = Transform.GetMatrixFromTransforms(trans, rot, scale);
                 UndoRedo.RecordSet(context, mat, undoId: $"{context.GetHashCode()} rotation");
             }
             ImGui.SetNextItemWidth(w * 0.75f);
-            if (ImGui.DragFloat3("##Scale", ref Unsafe.As<Vector3D<float>, Vector3>(ref scale), 0.005f)) {
-                mat = Transform.GetMatrixFromTransforms(trans, rot, scale).ToSystem();
+            if (ImGui.DragFloat3("##Scale", ref scale, 0.005f)) {
+                mat = Transform.GetMatrixFromTransforms(trans, rot, scale);
                 UndoRedo.RecordSet(context, mat, undoId: $"{context.GetHashCode()} scale");
             }
             ImGui.SameLine();

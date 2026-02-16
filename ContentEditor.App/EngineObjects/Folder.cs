@@ -29,8 +29,6 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
         }
     }
 
-    public Vector3D<float> OffsetSilk => new Vector3D<float>((float)_offset.x, (float)_offset.y, (float)_offset.z);
-
     public RszInstance Instance { get; }
 
     public SceneFlags SceneFlags { get; set; } = SceneFlags.All;

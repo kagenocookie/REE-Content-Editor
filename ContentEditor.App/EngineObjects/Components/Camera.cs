@@ -24,9 +24,9 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
 
     public float AspectRatio => Scene!.RenderContext.ViewportSize.X / Scene.RenderContext.ViewportSize.Y;
 
-    public Matrix4X4<float> ViewMatrix { get; private set; } = Matrix4X4<float>.Identity;
-    public Matrix4X4<float> ProjectionMatrix { get; private set; } = Matrix4X4<float>.Identity;
-    public Matrix4X4<float> ViewProjectionMatrix { get; private set; } = Matrix4X4<float>.Identity;
+    public Matrix4x4 ViewMatrix { get; private set; } = Matrix4x4.Identity;
+    public Matrix4x4 ProjectionMatrix { get; private set; } = Matrix4x4.Identity;
+    public Matrix4x4 ViewProjectionMatrix { get; private set; } = Matrix4x4.Identity;
     public CameraProjection ProjectionMode { get; set; }
     private Frustum _frustum;
 
@@ -171,10 +171,10 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
         return new Ray() { from = Transform.Position, dir = dir };
     }
 
-    private static Vector4 Project(in Matrix4X4<float> viewProjection, Vector2 viewportSize, Vector3 position)
+    private static Vector4 Project(in Matrix4x4 viewProjection, Vector2 viewportSize, Vector3 position)
     {
         Vector4 vec = new Vector4(position, 1);
-        vec = Vector4.Transform(vec, viewProjection.ToSystem());
+        vec = Vector4.Transform(vec, viewProjection);
 
         if (vec.W > float.Epsilon || vec.W < float.Epsilon)
         {
@@ -190,7 +190,7 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
         );
     }
 
-    private static Vector3 Unproject(in Matrix4X4<float> viewProjection, Vector2 viewportSize, Vector3 position)
+    private static Vector3 Unproject(in Matrix4x4 viewProjection, Vector2 viewportSize, Vector3 position)
     {
         Vector4 vec;
         vec.X =  2.0f * position.X / (float)viewportSize.X - 1;
@@ -198,8 +198,8 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
         vec.Z = position.Z;
         vec.W = 1.0f;
 
-        Matrix4X4.Invert(viewProjection, out var inverted);
-        vec = Vector4.Transform(vec, inverted.ToSystem());
+        Matrix4x4.Invert(viewProjection, out var inverted);
+        vec = Vector4.Transform(vec, inverted);
 
         if (vec.W > float.Epsilon || vec.W < float.Epsilon)
         {
@@ -212,18 +212,18 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
 
     public void Update(Vector2 size)
     {
-        if (Matrix4X4.Invert(GameObject.WorldTransform, out var inverted)) {
+        if (Matrix4x4.Invert(GameObject.WorldTransform, out var inverted)) {
             ViewMatrix = inverted;
         } else {
-            ViewMatrix = Matrix4X4<float>.Identity;
+            ViewMatrix = Matrix4x4.Identity;
         }
 
         if (ProjectionMode == CameraProjection.Perspective) {
-            ProjectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView(FieldOfView, size.X / size.Y, NearPlane, FarPlane);
+            ProjectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(FieldOfView, size.X / size.Y, NearPlane, FarPlane);
         } else {
             float halfW = OrthoSize * size.X / size.Y * 0.5f;
             float halfH = OrthoSize * 0.5f;
-            ProjectionMatrix = Matrix4X4.CreateOrthographicOffCenter(-halfW, halfW, -halfH, halfH, NearPlane, FarPlane);
+            ProjectionMatrix = Matrix4x4.CreateOrthographicOffCenter(-halfW, halfW, -halfH, halfH, NearPlane, FarPlane);
         }
         ViewProjectionMatrix = ViewMatrix * ProjectionMatrix;
         var p = ViewProjectionMatrix;

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Numerics;
 using System.Text.Json;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
@@ -234,14 +235,23 @@ public class UndoRedo
         state.SetCommandDisposable(() => node.Dispose(), null);
     }
 
-    public static void RecordMoveChild<TNode>(UIContext context, TNode node, TNode newParent, int newIndex = -1, WindowBase? window = null)
-        where TNode : class, INodeObject<TNode>, IDisposable
+    public static void RecordMoveChild<TNode>(UIContext context, TNode node, INodeObject<TNode> newParent, int newIndex = -1, WindowBase? window = null)
+        where TNode : class, INodeObject<TNode>
     {
         var prevParent = node.GetParent();
         if (Logger.ErrorIf(prevParent == null, "Cannot remove node without parent")) return;
         var prevIndex = prevParent.GetChildIndex(node);
+        var originalGlobalTransform = (node as GameObject)?.WorldTransform ?? Matrix4x4.Identity;
         GetState(window).Push(
-            new CallbackUndoRedo(context, () => newParent.AddChild(node, newIndex), () => prevParent.AddChild(node, prevIndex), $"Move node {node.GetHashCode()}"),
+            new CallbackUndoRedo(context, () => {
+                prevParent.RemoveChild(node);
+                newParent.AddChild(node, newIndex);
+                (node as GameObject)?.Transform.SetGlobalTransform(originalGlobalTransform);
+            }, () => {
+                newParent.RemoveChild(node);
+                prevParent.AddChild(node, prevIndex);
+                (node as GameObject)?.Transform.SetGlobalTransform(originalGlobalTransform);
+            }, $"Move node {node.GetHashCode()}"),
             UndoRedoMergeMode.NeverMerge);
     }
 

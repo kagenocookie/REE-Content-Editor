@@ -77,9 +77,9 @@ public partial class CommonMeshResource : IResourceFile
                 Logger.Warn($"Animation {mot.Name} contains an unnamed bone {header.boneHash} that the mesh or the motlist file does not specify. It will get exported as placeholder 'hash{header.boneHash}' and may not be fully correct.");
                 rootNode.Children.Add(new Node(channel.NodeName, rootNode) {
                     Transform = Matrix4x4.Transpose(Transform.GetMatrixFromTransforms(
-                        motBone?.translation.ToGeneric() ?? Vector3D<float>.Zero,
-                        motBone?.quaternion.ToGeneric() ?? Quaternion<float>.Identity,
-                        Vector3D<float>.One).ToSystem())
+                        motBone?.translation ?? Vector3.Zero,
+                        motBone?.quaternion ?? Quaternion.Identity,
+                        Vector3.One))
                 });
                 foreach (var mesh in scene.Meshes) {
                     if (mesh.Bones.Count == 0) continue;

@@ -1,6 +1,6 @@
 using System.Diagnostics;
+using System.Numerics;
 using ReeLib.via;
-using Silk.NET.Maths;
 
 namespace ContentEditor.App.Graphics;
 
@@ -123,7 +123,7 @@ public class GizmoContainer : IDisposable
         ownedMeshes.Clear();
     }
 
-    public void Mesh(string meshPath, in Matrix4X4<float> transform, Material? materialOverride = null)
+    public void Mesh(string meshPath, in Matrix4x4 transform, Material? materialOverride = null)
     {
         if (!ownedMeshes.TryGetValue(meshPath, out var mesh)) {
             mesh = scene.RenderContext.LoadMesh(meshPath);
@@ -145,7 +145,7 @@ public class GizmoContainer : IDisposable
             meshDraws.Add(new GizmoRenderBatchItem(material, sub, transform));
         }
     }
-    public void Mesh(MeshHandle mesh, in Matrix4X4<float> transform)
+    public void Mesh(MeshHandle mesh, in Matrix4x4 transform)
     {
         int i = 0;
         foreach (var m in mesh.Meshes) {
@@ -153,21 +153,21 @@ public class GizmoContainer : IDisposable
         }
     }
 
-    public void Mesh(MeshHandle mesh, in Matrix4X4<float> transform, Material material)
+    public void Mesh(MeshHandle mesh, in Matrix4x4 transform, Material material)
     {
         foreach (var m in mesh.Meshes) {
             meshDraws.Add(new GizmoRenderBatchItem(material, m, transform));
         }
     }
 
-    public void Mesh(MeshHandle mesh, in Matrix4X4<float> transform, Material material, Material obscuredMaterial)
+    public void Mesh(MeshHandle mesh, in Matrix4x4 transform, Material material, Material obscuredMaterial)
     {
         foreach (var m in mesh.Meshes) {
             meshDraws.Add(new GizmoRenderBatchItem(material, m, transform, obscuredMaterial));
         }
     }
 
-    public void Mesh(Mesh mesh, in Matrix4X4<float> transform, Material material, Material? obscuredMaterial = null)
+    public void Mesh(Mesh mesh, in Matrix4x4 transform, Material material, Material? obscuredMaterial = null)
     {
         meshDraws.Add(new GizmoRenderBatchItem(material, mesh, transform, obscuredMaterial));
     }

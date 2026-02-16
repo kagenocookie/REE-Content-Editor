@@ -9,11 +9,13 @@ using ContentEditor.App.ImguiHandling;
 using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher;
+using Silk.NET.Core;
 using Silk.NET.GLFW;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
+using SixLabors.ImageSharp.PixelFormats;
 using SilkWindow = Silk.NET.Windowing.Window;
 
 namespace ContentEditor.App.Windowing;
@@ -60,6 +62,8 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     private readonly ConcurrentQueue<Action> renderThreadActions = new();
     private readonly ConcurrentQueue<Action> uiThreadActions = new();
     private static Thread mainThread = Thread.CurrentThread;
+
+    private static RawImage _appIcon;
 
     protected bool _disableIntroGuide;
     protected static WindowBase? _currentWindow;
@@ -356,6 +360,27 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     private void OnLoad()
     {
+        if (_appIcon.Pixels.Length > 0) {
+            _window.SetWindowIcon(ref _appIcon);
+            return;
+        }
+
+        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ContentEditor.App.images.app_icon_light.png");
+        if (stream == null) return;
+
+        using var img = SixLabors.ImageSharp.Image.Load<Rgba32>(stream);
+        using var mstream = new MemoryStream(img.Width * img.Height * 4);
+        img.ProcessPixelRows(accessor => {
+            for (int y = 0; y < accessor.Height; y++) {
+                var row = accessor.GetRowSpan(y);
+                var rowBytes = MemoryMarshal.AsBytes(row);
+                mstream.Write(rowBytes);
+            }
+        });
+
+        var bytes = mstream.GetBuffer().AsSpan().Slice(0, (int)mstream.Length).ToArray();
+        _appIcon = new RawImage(img.Width, img.Height, bytes);
+        _window.SetWindowIcon(ref _appIcon);
     }
 
     private void OnFrameBufferResize(Vector2D<int> size)

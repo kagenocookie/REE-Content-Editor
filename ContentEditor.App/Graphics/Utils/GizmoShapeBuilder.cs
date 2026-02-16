@@ -79,11 +79,11 @@ public class GizmoShapeBuilder : IDisposable
     {
         newShape = null;
         switch (shape) {
-            case AABB obj: if (EditableAABB(offset.ToGeneric(), ref obj, out handleId)) { newShape = obj; return true; } return false;
-            case OBB obj: if (EditableOBB(offset.ToGeneric(), ref obj, out handleId)) { newShape = obj; return true; } return false;
-            case Sphere obj: if (EditableSphere(offset.ToGeneric(), ref obj, out handleId)) { newShape = obj; return true; } return false;
-            case Capsule obj: if (EditableCapsule(offset.ToGeneric(), ref obj, out handleId)) { newShape = obj; return true; } return false;
-            case Cylinder obj: if (EditableCylinder(offset.ToGeneric(), ref obj, out handleId)) { newShape = obj; return true; } return false;
+            case AABB obj: if (EditableAABB(offset, ref obj, out handleId)) { newShape = obj; return true; } return false;
+            case OBB obj: if (EditableOBB(offset, ref obj, out handleId)) { newShape = obj; return true; } return false;
+            case Sphere obj: if (EditableSphere(offset, ref obj, out handleId)) { newShape = obj; return true; } return false;
+            case Capsule obj: if (EditableCapsule(offset, ref obj, out handleId)) { newShape = obj; return true; } return false;
+            case Cylinder obj: if (EditableCylinder(offset, ref obj, out handleId)) { newShape = obj; return true; } return false;
             default:
                 Logger.Error("Unsupported shape type " + (shape?.GetType().Name ?? "NULL"));
                 handleId = -1;
@@ -91,21 +91,21 @@ public class GizmoShapeBuilder : IDisposable
         }
     }
 
-    public bool EditableSphere(in Matrix4X4<float> offsetMatrix, ref Sphere sphere, out int handleId)
+    public bool EditableSphere(in Matrix4x4 offsetMatrix, ref Sphere sphere, out int handleId)
     {
         Add(in offsetMatrix, sphere);
-        var handlePoint = Vector3.Transform(sphere.pos + sphere.r * Vector3.UnitY, offsetMatrix.ToSystem());
+        var handlePoint = Vector3.Transform(sphere.pos + sphere.r * Vector3.UnitY, offsetMatrix);
         handleId = -1;
         if (state.PointHandle(ref handlePoint, out var hid, 10f)) {
             handleId = hid;
-            var worldPos = Vector3.Transform(sphere.pos, offsetMatrix.ToSystem());
+            var worldPos = Vector3.Transform(sphere.pos, offsetMatrix);
             var newRadius = (handlePoint - worldPos).Length();
             sphere.r = newRadius;
         }
 
-        if (PositionHandles(Matrix4x4.CreateTranslation(sphere.pos) * offsetMatrix.ToSystem(), out var newpos, out hid)) {
+        if (PositionHandles(Matrix4x4.CreateTranslation(sphere.pos) * offsetMatrix, out var newpos, out hid)) {
             handleId = hid;
-            Matrix4x4.Invert(offsetMatrix.ToSystem(), out var inverse);
+            Matrix4x4.Invert(offsetMatrix, out var inverse);
             sphere.pos = Vector3.Transform(newpos, inverse);
         }
 
@@ -115,16 +115,16 @@ public class GizmoShapeBuilder : IDisposable
     public bool TransformHandle(Transform transform)
     {
         var handleId = -1;
-        if (PositionHandles(transform.WorldTransform.ToSystem(), out var newWorldPos, out var hid)) {
+        if (PositionHandles(transform.WorldTransform, out var newWorldPos, out var hid)) {
             handleId = hid;
-            var parentMat = transform.GameObject.Parent?.WorldTransform.ToSystem() ?? Matrix4x4.Identity;
+            var parentMat = transform.GameObject.Parent?.WorldTransform ?? Matrix4x4.Identity;
             Matrix4x4.Invert(parentMat, out parentMat);
             var newLocalPos = Vector3.Transform(newWorldPos, parentMat);
             UndoRedo.RecordCallbackSetter(null, transform, transform.LocalPosition, newLocalPos, (t, v) => t.LocalPosition = v, $"{transform.GetHashCode()}p");
         }
-        if (RotationHandles(transform.WorldTransform.ToSystem(), out var newQuat, out hid)) {
+        if (RotationHandles(transform.WorldTransform, out var newQuat, out hid)) {
             handleId = hid;
-            var parentMat = transform.GameObject.Parent?.WorldTransform.ToSystem() ?? Matrix4x4.Identity;
+            var parentMat = transform.GameObject.Parent?.WorldTransform ?? Matrix4x4.Identity;
             var inverse = Quaternion.Inverse(Quaternion.CreateFromRotationMatrix(parentMat));
             var newRotation = inverse * newQuat;
             UndoRedo.RecordCallbackSetter(null, transform, transform.LocalRotation, newRotation, (t, v) => t.LocalRotation = v, $"{transform.GetHashCode()}r");
@@ -218,13 +218,13 @@ public class GizmoShapeBuilder : IDisposable
         }
     }
 
-    public unsafe bool EditableAABB(in Matrix4X4<float> offsetMatrix, ref AABB aabb, out int handleId)
+    public unsafe bool EditableAABB(in Matrix4x4 offsetMatrix, ref AABB aabb, out int handleId)
     {
-        Matrix4x4.Decompose(offsetMatrix.ToSystem(), out _, out _, out var offset);
+        Matrix4x4.Decompose(offsetMatrix, out _, out _, out var offset);
 
         Add(aabb + offset);
         var center = aabb.Center;
-        var worldCenter = Vector3.Transform(Vector3.Zero, offsetMatrix.ToSystem()) + center;
+        var worldCenter = Vector3.Transform(Vector3.Zero, offsetMatrix) + center;
         var size = aabb.Size / 2;
         var pts = stackalloc Vector3[6];
         pts[0] = worldCenter + size * UnitDirections[0];
@@ -259,15 +259,15 @@ public class GizmoShapeBuilder : IDisposable
         return handleId != -1;
     }
 
-    public unsafe bool EditableOBB(in Matrix4X4<float> offsetMatrix, ref OBB box, out int handleId)
+    public unsafe bool EditableOBB(in Matrix4x4 offsetMatrix, ref OBB box, out int handleId)
     {
         Add(in offsetMatrix, box);
 
         var localCenter = box.Coord.Row3.ToVec3();
-        var worldCenter = Vector3.Transform(localCenter, offsetMatrix.ToSystem());
+        var worldCenter = Vector3.Transform(localCenter, offsetMatrix);
         var size = box.Extent;
         var pts = stackalloc Vector3[6];
-        var pointMtx = box.Coord.ToSystem() * offsetMatrix.ToSystem();
+        var pointMtx = box.Coord.ToSystem() * offsetMatrix;
         pts[0] = Vector3.Transform(size * UnitDirections[0], pointMtx);
         pts[1] = Vector3.Transform(size * UnitDirections[1], pointMtx);
         pts[2] = Vector3.Transform(size * UnitDirections[2], pointMtx);
@@ -291,9 +291,9 @@ public class GizmoShapeBuilder : IDisposable
             }
         }
 
-        var posMatrix = Matrix4x4.CreateTranslation(localCenter) * offsetMatrix.ToSystem();
+        var posMatrix = Matrix4x4.CreateTranslation(localCenter) * offsetMatrix;
         if (PositionHandles(posMatrix, out var newCenter, out var posHandle)) {
-            Matrix4x4.Invert(offsetMatrix.ToSystem(), out var invMat);
+            Matrix4x4.Invert(offsetMatrix, out var invMat);
             var localNewCenter = Vector3.Transform(newCenter, invMat);
             box.Coord = box.Coord.ToSystem() * Matrix4x4.CreateTranslation(localNewCenter - localCenter);
             handleId = posHandle;
@@ -310,7 +310,7 @@ public class GizmoShapeBuilder : IDisposable
         return handleId != -1;
     }
 
-    public bool EditableCapsule(in Matrix4X4<float> offsetMatrix, ref Capsule cap, out int handleId)
+    public bool EditableCapsule(in Matrix4x4 offsetMatrix, ref Capsule cap, out int handleId)
     {
         Add(in offsetMatrix, cap);
         var cyl = new Cylinder(cap.p0, cap.p1, cap.R);
@@ -322,7 +322,7 @@ public class GizmoShapeBuilder : IDisposable
         return false;
     }
 
-    public bool EditableCylinder(in Matrix4X4<float> offsetMatrix, ref Cylinder cap, out int handleId)
+    public bool EditableCylinder(in Matrix4x4 offsetMatrix, ref Cylinder cap, out int handleId)
     {
         Add(in offsetMatrix, cap);
         var radius = MathF.Max(cap.r, 0.0001f);
@@ -336,21 +336,21 @@ public class GizmoShapeBuilder : IDisposable
         }
 
         handleId = -1;
-        var handleTop = Vector3.Transform(cap.p1, offsetMatrix.ToSystem());
-        var handleBot = Vector3.Transform(cap.p0, offsetMatrix.ToSystem());
-        var handleSide = Vector3.Transform((cap.p0 + cap.p1) * 0.5f + right, offsetMatrix.ToSystem());
+        var handleTop = Vector3.Transform(cap.p1, offsetMatrix);
+        var handleBot = Vector3.Transform(cap.p0, offsetMatrix);
+        var handleSide = Vector3.Transform((cap.p0 + cap.p1) * 0.5f + right, offsetMatrix);
         if (state.PointHandle(ref handleTop, out var hid, 10f, handleTop - handleBot, ImGui.IsKeyDown(ImGuiKey.LeftShift))) {
-            Matrix4X4.Invert(offsetMatrix, out var inverted);
-            cap.p1 = Vector3.Transform(handleTop, inverted.ToSystem());
+            Matrix4x4.Invert(offsetMatrix, out var inverted);
+            cap.p1 = Vector3.Transform(handleTop, inverted);
             handleId = hid;
         }
         if (state.PointHandle(ref handleBot, out hid, 10f, handleTop - handleBot, ImGui.IsKeyDown(ImGuiKey.LeftShift))) {
-            Matrix4X4.Invert(offsetMatrix, out var inverted);
-            cap.p0 = Vector3.Transform(handleBot, inverted.ToSystem());
+            Matrix4x4.Invert(offsetMatrix, out var inverted);
+            cap.p0 = Vector3.Transform(handleBot, inverted);
             handleId = hid;
         }
         if (state.PointHandle(ref handleSide, out hid, 10f, handleSide - (handleBot + handleTop) * 0.5f, true)) {
-            var center = Vector3.Transform((cap.p0 + cap.p1) * 0.5f, offsetMatrix.ToSystem());
+            var center = Vector3.Transform((cap.p0 + cap.p1) * 0.5f, offsetMatrix);
             var newRadius = (handleSide - center).Length();
             cap.r = newRadius;
             handleId = hid;
@@ -369,32 +369,32 @@ public class GizmoShapeBuilder : IDisposable
 
     public void AddCircle(Vector3 position, Vector3 forward, float handleSize) => builder.AddCircle(position, forward, handleSize);
 
-    public void Add(in Matrix4X4<float> offsetMatrix, LineSegment shape)
-        => builder.Add(new LineSegment(Vector3.Transform(shape.start, offsetMatrix.ToSystem()), Vector3.Transform(shape.end, offsetMatrix.ToSystem())));
-    public void Add(in Matrix4X4<float> offsetMatrix, AABB shape)
+    public void Add(in Matrix4x4 offsetMatrix, LineSegment shape)
+        => builder.Add(new LineSegment(Vector3.Transform(shape.start, offsetMatrix), Vector3.Transform(shape.end, offsetMatrix)));
+    public void Add(in Matrix4x4 offsetMatrix, AABB shape)
     {
         // AABBs don't rotate, must only apply the offset position here
-        Matrix4X4.Decompose(offsetMatrix, out _, out _, out var offset);
-        builder.Add(shape + offset.ToSystem());
+        Matrix4x4.Decompose(offsetMatrix, out _, out _, out var offset);
+        builder.Add(shape + offset);
     }
-    public void Add(in Matrix4X4<float> offsetMatrix, OBB shape)
-        => builder.Add(new OBB(shape.Coord.ToSystem() * offsetMatrix.ToSystem(), shape.Extent));
-    public void Add(in Matrix4X4<float> offsetMatrix, Sphere shape)
-        => builder.Add(new Sphere(Vector3.Transform(shape.pos, offsetMatrix.ToSystem()), shape.r));
-    public void Add(in Matrix4X4<float> offsetMatrix, Capsule shape)
-        => builder.Add(new Capsule(Vector3.Transform(shape.p0, offsetMatrix.ToSystem()), Vector3.Transform(shape.p1, offsetMatrix.ToSystem()), shape.R));
-    public void Add(in Matrix4X4<float> offsetMatrix, Cylinder shape)
-        => builder.Add(new Cylinder(Vector3.Transform(shape.p0, offsetMatrix.ToSystem()), Vector3.Transform(shape.p1, offsetMatrix.ToSystem()), shape.r));
+    public void Add(in Matrix4x4 offsetMatrix, OBB shape)
+        => builder.Add(new OBB(shape.Coord.ToSystem() * offsetMatrix, shape.Extent));
+    public void Add(in Matrix4x4 offsetMatrix, Sphere shape)
+        => builder.Add(new Sphere(Vector3.Transform(shape.pos, offsetMatrix), shape.r));
+    public void Add(in Matrix4x4 offsetMatrix, Capsule shape)
+        => builder.Add(new Capsule(Vector3.Transform(shape.p0, offsetMatrix), Vector3.Transform(shape.p1, offsetMatrix), shape.R));
+    public void Add(in Matrix4x4 offsetMatrix, Cylinder shape)
+        => builder.Add(new Cylinder(Vector3.Transform(shape.p0, offsetMatrix), Vector3.Transform(shape.p1, offsetMatrix), shape.r));
 
     public void AddBoxed(object shape) => builder.AddBoxed(shape);
     public void AddBoxed(in Matrix4x4 offsetMatrix, object shape)
     {
         switch (shape) {
-            case AABB obj: Add(offsetMatrix.ToGeneric(), obj); return;
-            case OBB obj: Add(offsetMatrix.ToGeneric(), obj); return;
-            case Sphere obj: Add(offsetMatrix.ToGeneric(), obj); return;
-            case Capsule obj: Add(offsetMatrix.ToGeneric(), obj); return;
-            case Cylinder obj: Add(offsetMatrix.ToGeneric(), obj); return;
+            case AABB obj: Add(offsetMatrix, obj); return;
+            case OBB obj: Add(offsetMatrix, obj); return;
+            case Sphere obj: Add(offsetMatrix, obj); return;
+            case Capsule obj: Add(offsetMatrix, obj); return;
+            case Cylinder obj: Add(offsetMatrix, obj); return;
             default:
                 Logger.Error("Unsupported shape type " + (shape?.GetType().Name ?? "NULL"));
                 break;
