@@ -13,6 +13,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <VersionPrefix>0.0.0</VersionPrefix>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <ApplicationIcon>images/app_icon_light.ico</ApplicationIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' != 'Release'">
@@ -43,6 +44,10 @@
   <ItemGroup>
     <ProjectReference Include="..\RE-Engine-Lib\REE-Lib.Tools\REE-Lib.Tools.csproj" />
     <ProjectReference Include="..\GDeflateNet\GDeflateNet\GDeflateNet.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="images/app_icon*" />
   </ItemGroup>
 
   <ItemGroup>
