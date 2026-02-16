@@ -55,6 +55,11 @@ public class HomeWindow : IWindowHandler
     }
     private static void ShowGameList()
     {
+        if (ImGui.Button($"{AppIcons.SI_FileType_PAK}") && EditorWindow.CurrentWindow?.Workspace != null) {
+            EditorWindow.CurrentWindow?.AddSubwindow(new PakBrowser(EditorWindow.CurrentWindow.Workspace, null));
+        }
+        ImguiHelpers.Tooltip("Browse Game Files");
+        ImGui.SameLine();
         if (ImGui.Button("Open File")) {
             PlatformUtils.ShowFileDialog((files) => {
                 MainLoop.Instance.MainWindow.InvokeFromUIThread(() => {
@@ -77,7 +82,6 @@ public class HomeWindow : IWindowHandler
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.Spacing();
-        // TODO SILVER: Add overlayed pak browser button for active game, push it to the right
         fullSupportedGames ??= ResourceRepository.RemoteInfo.Resources.Where(kv => kv.Value.IsFullySupported).Select(kv => kv.Key).ToHashSet();
         var games = AppConfig.Instance.GetGamelist();
         var currentActiveGame = EditorWindow.CurrentWindow?.Workspace.Env.Config.Game.name;
@@ -93,7 +97,10 @@ public class HomeWindow : IWindowHandler
                 }
                 ImGui.PopStyleColor();
             }
-            if (fullySupported) ImGui.Separator();
+            if (fullySupported) {
+                ImGui.Spacing();
+                ImGui.Separator();
+            }
         }
 
         ImGui.Spacing();
@@ -103,15 +110,24 @@ public class HomeWindow : IWindowHandler
         float remainingSpace = ImGui.GetContentRegionAvail().Y;
         footerHeight += ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.Y + ImGui.GetTextLineHeightWithSpacing() * 3;
         if (remainingSpace > footerHeight) ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (remainingSpace - footerHeight));
-        if (ImGui.Button("Support development", new Vector2(ImGui.GetContentRegionAvail().X, 0))) {
+        if (ImGui.Button($"{AppIcons.SI_GenericHeart} Support Development", new Vector2(ImGui.GetContentRegionAvail().X, 0))) {
             FileSystemUtils.OpenURL("https://ko-fi.com/shadowcookie");
         }
-        var availSpace = ImGui.GetContentRegionAvail().X;
-        ImGui.Button("Github Link");
+        var availSpace = ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X * 2;
+        if (ImGui.Button($"{AppIcons.SI_Github}", new Vector2(availSpace / 3, 0))) {
+            FileSystemUtils.OpenURL("https://github.com/kagenocookie/REE-Content-Editor");
+        }
+        ImguiHelpers.Tooltip("GitHub");
         ImGui.SameLine();
-        ImGui.Button("Wiki Link");
+        if (ImGui.Button($"{AppIcons.SI_GenericWiki}", new Vector2(availSpace / 3, 0))) {
+            FileSystemUtils.OpenURL("https://github.com/kagenocookie/REE-Content-Editor/wiki");
+        }
+        ImguiHelpers.Tooltip("Wiki");
         ImGui.SameLine();
-        ImGui.Button("Discord Link");
+        if (ImGui.Button($"{AppIcons.SI_Discord}", new Vector2(availSpace / 3, 0))) {
+            FileSystemUtils.OpenURL("https://discord.gg/9Vr2SJ3");
+        }
+        ImguiHelpers.Tooltip("Discord");
 
         ImGui.Spacing();
         ImGui.Separator();
@@ -146,9 +162,6 @@ public class HomeWindow : IWindowHandler
                 ImGui.EndTabItem();
             }
             if (ImGui.BeginTabItem("Update Notes")) {
-                ImGui.EndTabItem();
-            }
-            if (ImGui.BeginTabItem("Lorem Ipsum")) {
                 ImGui.EndTabItem();
             }
             ImGui.EndTabBar();
