@@ -42,7 +42,7 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
         }
         if (Filterable) {
             ImGui.Indent(4);
-            ImGui.InputText("Filter", ref context.Filter, 120);
+            ImGui.InputTextWithHint("Filter", $"{AppIcons.Search}", ref context.Filter, 120);
             ImGui.Unindent(4);
             ImGui.Spacing();
         }

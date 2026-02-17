@@ -218,8 +218,14 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         }
     }
 
-    public string? GetClipboard()
+    public unsafe string? GetClipboard()
     {
+#if WINDOWS
+        // on windows, if we poll the clipboard every frame via IKeyboard, it ends up blocking all other copy operations
+        // imgui clipboard doesn't do that for some reason.
+        byte* clipBytesImgui = global::Hexa.NET.ImGui.ImGui.GetClipboardText();
+        return clipBytesImgui == null ? null : global::Hexa.NET.ImGui.ImGui.GetClipboardTextS();
+#else
         if (_inputContext.Keyboards.FirstOrDefault() is IKeyboard kb) {
             try {
                 return kb.ClipboardText;
@@ -229,6 +235,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
             }
         }
         return null;
+#endif
     }
 
     public bool HasSubwindow<THandlerType>([MaybeNullWhen(false)] out WindowData window, Func<WindowData, bool>? condition = null) where THandlerType : IWindowHandler
