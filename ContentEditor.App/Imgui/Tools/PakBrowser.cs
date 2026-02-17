@@ -383,7 +383,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         }
         var unpackedFiles = unpacker?.unpackedFileCount;
         if (unpackedFiles != null) {
-            var w = ImGui.GetWindowSize().X - ImGui.GetStyle().FramePadding.X * 2;
+            var w = ImGui.GetWindowSize().X - (ImGui.GetStyle().ItemSpacing.X * 2);
             var total = unpackExpectedFiles;
             ImGui.ProgressBar((float)unpackedFiles.Value / total, new Vector2(w, UI.FontSize + ImGui.GetStyle().FramePadding.Y * 2), $"{unpackedFiles.Value}/{total}");
         }
@@ -433,11 +433,12 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         }
         ImGui.PopStyleColor();
         ImGui.SameLine();
-
-        if (ImGui.Button($"{AppIcons.SI_ArchiveExtractTo}")) {
-            PlatformUtils.ShowFolderDialog(ExtractCurrentList, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
+        using (var _ = ImguiHelpers.Disabled(unpackedFiles != null)) {
+            if (ImGui.Button($"{AppIcons.SI_ArchiveExtractTo}")) {
+                PlatformUtils.ShowFolderDialog(ExtractCurrentList, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
+            }
+            ImguiHelpers.Tooltip("Extract To...");
         }
-        ImguiHelpers.Tooltip("Extract To...");
         DrawContents();
     }
 

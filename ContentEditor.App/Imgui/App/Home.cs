@@ -33,11 +33,11 @@ public class HomeWindow : IWindowHandler
     public void OnWindow() => this.ShowDefaultWindow(context);
     public void OnIMGUI()
     {
-        ImGui.BeginChild("Logo", new Vector2(250, 250 * UI.UIScale), ImGuiChildFlags.Borders);
+        ImGui.BeginChild("Logo", new Vector2(250, 250 * UI.UIScale));
         ShowLogo();
         ImGui.EndChild();
         ImGui.SameLine();
-        ImGui.BeginChild("WelcomeText", new Vector2(0, 250 * UI.UIScale), ImGuiChildFlags.Borders);
+        ImGui.BeginChild("WelcomeText", new Vector2(0, 250 * UI.UIScale));
         ShowWelcomeText();
         ImGui.EndChild();
 
@@ -63,6 +63,21 @@ public class HomeWindow : IWindowHandler
         ImguiHelpers.ButtonMultiColor(AppIcons.REECE_LogoFull, new[] { Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary, Colors.IconSecondary });
         ImGui.PopFont();
         ImGui.PopStyleColor(3);
+    }
+    private static void ShowWelcomeText()
+    {
+        ImGui.PushFont(null, UI.FontSizeLarge + 100 * UI.UIScale);
+        string text = "Welcome to Content Editor";
+        var textSize = ImGui.CalcTextSize(text);
+        var availSpace = ImGui.GetContentRegionAvail();
+        var posX = (availSpace.X - textSize.X) * 0.5f;
+        var posY = (availSpace.Y - textSize.Y) * 0.5f;
+
+        if (posX > 0) ImGui.SetCursorPosX(ImGui.GetCursorPosX() + posX);
+        if (posY > 0) ImGui.SetCursorPosY(ImGui.GetCursorPosY() + posY);
+
+        ImGui.Text(text);
+        ImGui.PopFont();
     }
     private static void ShowGameList()
     {
@@ -148,21 +163,6 @@ public class HomeWindow : IWindowHandler
         // SILVER: Maybe even a notification when a new version is up or should that be its own tab?
         ImGui.Text("Version: " + AppConfig.Version);
         ImGui.PopStyleColor();
-    }
-    private static void ShowWelcomeText()
-    {
-        ImGui.PushFont(null, UI.FontSizeLarge + 100);
-        string text = "Welcome to Content Editor";
-        var textSize = ImGui.CalcTextSize(text);
-        var availSpace = ImGui.GetContentRegionAvail();
-        var posX = (availSpace.X - textSize.X) * 0.5f;
-        var posY = (availSpace.Y - textSize.Y) * 0.5f;
-
-        if (posX > 0) ImGui.SetCursorPosX(ImGui.GetCursorPosX() + posX);
-        if (posY > 0) ImGui.SetCursorPosY(ImGui.GetCursorPosY() + posY);
-
-        ImGui.Text(text);
-        ImGui.PopFont();
     }
 
     private void ShowTabs()
