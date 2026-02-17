@@ -145,6 +145,7 @@ public abstract class TreeHandler<TBaseNode> : IObjectUIHandler where TBaseNode 
                 }
                 ImGui.SameLine();
             } else {
+                showChildren = false;
                 ImGui.SetCursorPosX(contentOffset + buttonRect.X);
                 if (prefixColWidth == 0) {
                     // note: a bit of a hack to ensure we get consistent Y padding whether or not the scene is enabled
@@ -159,8 +160,8 @@ public abstract class TreeHandler<TBaseNode> : IObjectUIHandler where TBaseNode 
             } else {
                 ShowNode(node, ctx, pos);
             }
-            // undo the default frame padding to give the appearance of a zero-spacing table
-            ImGui.SetCursorPosY(ImGui.GetCursorPosY() - framePadding.Y);
+            // undo the default frame padding to give the appearance of a zero-spacing table, except when it's the single last item
+            if (_stack.Any() || showChildren) ImGui.SetCursorPosY(ImGui.GetCursorPosY() - framePadding.Y);
 
             ImGui.PopID();
             if (!showChildren) continue;
