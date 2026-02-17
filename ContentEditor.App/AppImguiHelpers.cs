@@ -294,6 +294,31 @@ public static class AppImguiHelpers
         return didDrop;
     }
 
+    public static bool ShowRecentFiles(RecentFileList files, ref string selectedPath)
+    {
+        var options = files.ToArray();
+
+        ImGui.SetNextItemAllowOverlap();
+        var w = ImGui.CalcItemWidth();
+
+        if (ImguiHelpers.ValueCombo("Recent files", options, options, ref selectedPath)) {
+            files.AddRecent(selectedPath);
+            return true;
+        }
+
+        ImGui.SameLine();
+        ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMin().X + w - (ImGui.GetFrameHeight() * 2 + ImGui.GetStyle().FramePadding.X), ImGui.GetItemRectMin().Y));
+        ImGui.SetNextItemAllowOverlap();
+        if (ImGui.Button($"{AppIcons.SI_BookmarkClear}")) {
+            files.Clear();
+            if (!string.IsNullOrEmpty(selectedPath)) {
+                files.AddRecent(selectedPath);
+            }
+        }
+        ImguiHelpers.Tooltip("Clear recent files");
+        return false;
+    }
+
     public static void RedirectMouseInputToScene(Scene scene, bool isHovered)
     {
         var absPos = ImGui.GetMousePos();

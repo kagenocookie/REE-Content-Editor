@@ -218,27 +218,6 @@ public class AppConfig : Singleton<AppConfig>
     public bool HasAnyGameConfigured => _lock.Read(() => gameConfigs.Any(g => !string.IsNullOrEmpty(g.Value?.gamepath)));
     public IEnumerable<string> ConfiguredGames => _lock.Read(() => gameConfigs.Where(kv => !string.IsNullOrEmpty(kv.Value.gamepath)).Select(kv => kv.Key));
 
-    public void AddRecentFile(string file) => AddRecentString(file, JsonSettings.RecentFiles, 100);
-    public void AddRecentBundle(string file) => AddRecentString(file, JsonSettings.RecentBundles, 25);
-    public void AddRecentRcol(string file) => AddRecentString(file, JsonSettings.RecentRcols, 15);
-    public void AddRecentMotlist(string file) => AddRecentString(file, JsonSettings.RecentMotlists, 15);
-    public void AddRecentNavmesh(string file) => AddRecentString(file, JsonSettings.RecentNavmeshes, 15);
-    private void AddRecentString(string file, List<string> list, int maxEntries)
-    {
-        var prevIndex = list.IndexOf(file);
-        if (prevIndex == 0) return;
-
-        if (prevIndex != -1) {
-            list.RemoveAt(prevIndex);
-            list.Insert(0, file);
-        } else {
-            list.Insert(0, file);
-            if (list.Count > maxEntries) {
-                list.RemoveAt(list.Count - 1);
-            }
-        }
-        SaveJsonConfig();
-    }
 
     public List<(string name, bool supported)> GetGamelist()
     {
@@ -633,13 +612,55 @@ public class AppJsonSettings
     public BundleDefaults BundleDefaults { get; init; } = new();
     public ImportSettings Import { get; init; } = new();
     public DevSettings Dev { get; init; } = new();
-    public List<string> RecentBundles { get; init; } = new();
-    public List<string> RecentFiles { get; init; } = new();
-    public List<string> RecentRcols { get; init; } = new();
-    public List<string> RecentMotlists { get; init; } = new();
-    public List<string> RecentNavmeshes { get; init; } = new();
+    public RecentFileList RecentBundles { get; init; } = new() { Limit = 50 };
+    public RecentFileList RecentFiles { get; init; } = new() { Limit = 100 };
+    public RecentFileList RecentRcols { get; init; } = new();
+    public RecentFileList RecentMotlists { get; init; } = new();
+    public RecentFileList RecentNavmeshes { get; init; } = new();
 
     public void Save() => AppConfig.Instance.SaveJsonConfig();
+}
+
+public class RecentFileList : List<string>
+{
+    public int Limit { get; set; } = 25;
+
+    public new void Clear()
+    {
+        base.Clear();
+        AppConfig.Instance.SaveJsonConfig();
+    }
+
+    public void AddRecent(string path)
+    {
+        AddRecentString(path, this, Limit);
+    }
+
+    public int FindPrefixedIndex(string path)
+    {
+        for (int i = 0; i < Count; i++) {
+            if (this[i].GetStringAfterDelimiter('|') == path) return i;
+        }
+
+        return -1;
+    }
+
+    private static void AddRecentString(string file, List<string> list, int maxEntries)
+    {
+        var prevIndex = list.IndexOf(file);
+        if (prevIndex == 0) return;
+
+        if (prevIndex != -1) {
+            list.RemoveAt(prevIndex);
+            list.Insert(0, file);
+        } else {
+            list.Insert(0, file);
+            if (list.Count > maxEntries) {
+                list.RemoveAt(list.Count - 1);
+            }
+        }
+        AppConfig.Instance.SaveJsonConfig();
+    }
 }
 
 public record SceneViewSettings
