@@ -88,7 +88,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         GameChanged?.Invoke();
         SceneManager.ChangeWorkspace(workspace);
         if (bundle != null && workspace.CurrentBundle != null) {
-            AppConfig.Instance.AddRecentBundle(bundle);
+            AppConfig.Instance.AddRecentBundle($"{game}|{bundle}");
         }
     }
 
@@ -304,8 +304,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                         SetWorkspace(workspace.Env.Config.Game, null);
                     }
                     var foundUnusedBundle = false;
-                    foreach (var b in workspace.BundleManager.AllBundles.OrderBy(bb => (uint)AppConfig.Settings.RecentBundles.IndexOf(bb.Name))) {
-                        if (!foundUnusedBundle && AppConfig.Settings.RecentBundles.IndexOf(b.Name) == -1) {
+                    foreach (var b in workspace.BundleManager.AllBundles.OrderBy(bb => (uint)AppConfig.Settings.RecentBundles.FindIndex(p => p.GetStringAfterDelimiter('|') == bb.Name))) {
+                        if (!foundUnusedBundle && !AppConfig.Settings.RecentBundles.Any(p => p.GetStringAfterDelimiter('|') == b.Name)) {
                             foundUnusedBundle = true;
                             ImGui.Separator();
                         }
