@@ -439,11 +439,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     protected void ShowMainMenuBar()
     {
         ImGui.BeginMainMenuBar();
-        ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
         if (ImGui.MenuItem($"{AppIcons.REECE_LogoSimple}")) {
             AddUniqueSubwindow(new HomeWindow());
         }
-        ImGui.PopStyleColor();
         ImguiHelpers.VerticalSeparator();
         var hasUnsavedFiles = HasUnsavedChanges;
         if (hasUnsavedFiles) {

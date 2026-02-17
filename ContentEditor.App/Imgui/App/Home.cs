@@ -17,6 +17,7 @@ public class HomeWindow : IWindowHandler
     private static HashSet<string>? fullSupportedGames;
     private string recentFileFilter = string.Empty;
     private bool isRecentFileFilterMatchCase = false;
+    private readonly HashSet<string> _activeRecentGameFilters = new();
     private static string[] gameNames = null!;
     private static string[] gameNameCodes = null!;
     private string chosenGame = "";
@@ -25,8 +26,9 @@ public class HomeWindow : IWindowHandler
     {
         this.context = context;
         data = context.Get<WindowData>();
-        gameNameCodes = AppConfig.Instance.GetGamelist().Select(gs => gs.name).ToArray();
-        gameNames = gameNameCodes.Select(code => Languages.TranslateGame(code)).ToArray();
+        var games = AppConfig.Instance.GetGamelist().Select(gs => gs.name).Select(code => new { Code = code, Name = Languages.TranslateGame(code)}).OrderBy(x => x.Name).ToArray();
+        gameNameCodes = games.Select(g => g.Code).ToArray();
+        gameNames = games.Select(g => g.Name).ToArray();
     }
     public void OnWindow() => this.ShowDefaultWindow(context);
     public void OnIMGUI()
@@ -140,7 +142,7 @@ public class HomeWindow : IWindowHandler
         ImGui.Separator();
         ImGui.Spacing();
         ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
-        // SILVER: Maybe even a notification when a new version is up?
+        // SILVER: Maybe even a notification when a new version is up or should that be its own tab?
         ImGui.Text("Version: " + AppConfig.Version);
         ImGui.PopStyleColor();
     }
@@ -261,10 +263,14 @@ public class HomeWindow : IWindowHandler
     private void ShowRecentFilesList()
     {
         var recents = AppConfig.Settings.RecentFiles;
+        string filterLabelDisplayText = _activeRecentGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} : " + "All Games" : $"{AppIcons.SI_Filter} : " + $"{_activeRecentGameFilters.Count} Selected";
+        Vector2 filterLabelSize = ImGui.CalcTextSize(filterLabelDisplayText);
+        float filterComboWidth = filterLabelSize.X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isRecentFileFilterMatchCase, Colors.IconActive);
         ImguiHelpers.Tooltip("Match Case");
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+        // SILVER: UI designers go to a special kind of hell, this one to be specific...
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - (((filterComboWidth + ImGui.GetStyle().ItemSpacing.X) + (ImGui.GetStyle().FramePadding.X + ImGui.GetStyle().ItemSpacing.X) * 2) + ImGui.GetStyle().FramePadding.X * 2));
         ImGui.SetNextItemAllowOverlap();
         ImGui.InputTextWithHint("##RecentFileFilter", $"{AppIcons.SI_GenericMagnifyingGlass} Search Recent Files", ref recentFileFilter, 128);
         if (!string.IsNullOrEmpty(recentFileFilter)) {
@@ -275,7 +281,34 @@ public class HomeWindow : IWindowHandler
                 recentFileFilter = string.Empty;
             }
         }
-        // TODO SILVER: Add filters based on game name and maybe file type copy style from Pak Browser
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(filterComboWidth);
+        if (ImGui.BeginCombo("##RecentGameFilterCombo", filterLabelDisplayText, ImGuiComboFlags.HeightLargest)) {
+            for (int i = 0; i < gameNameCodes.Length; i++) {
+                var code = gameNameCodes[i];
+                var displayName = gameNames[i];
+                bool isSelected = _activeRecentGameFilters.Contains(code);
+
+                if (ImGui.Checkbox(displayName, ref isSelected)) {
+                    if (isSelected) {
+                        _activeRecentGameFilters.Add(code);
+                    } else {
+                        _activeRecentGameFilters.Remove(code);
+                    }
+                }
+            }
+            ImGui.EndCombo();
+        }
+
+        ImGui.SameLine();
+        using (var _ = ImguiHelpers.Disabled(_activeRecentGameFilters.Count == 0)) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FilterClear,
+                new[] { Colors.IconTertiary, Colors.IconPrimary })) {
+                _activeRecentGameFilters.Clear();
+            }
+            ImguiHelpers.Tooltip("Clear Game Filters");
+        }
+
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.Spacing();
@@ -284,12 +317,17 @@ public class HomeWindow : IWindowHandler
         } else {
             ImGui.BeginChild("RecentFileList");
             foreach (var file in recents) {
+                var sep = file.IndexOf('|');
+                var game = sep == -1 ? null : file.Substring(0, sep);
+                var fileToOpen = sep == -1 ? file : file.Substring(sep + 1);
+
+                if (_activeRecentGameFilters.Count > 0 && (game == null || !_activeRecentGameFilters.Contains(game))) {
+                    continue;
+                }
                 if (!string.IsNullOrEmpty(recentFileFilter) && !file.Contains(recentFileFilter, isRecentFileFilterMatchCase ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase)) {
                     continue;
                 }
                 if (ImGui.Selectable(file)) {
-                    var sep = file.IndexOf('|');
-                    var fileToOpen = sep == -1 ? file : file.Substring(sep + 1);
                     EditorWindow.CurrentWindow?.OpenFiles(new[] { fileToOpen });
                     break;
                 }
