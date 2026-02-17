@@ -270,7 +270,7 @@ public class HomeWindow : IWindowHandler
         ImguiHelpers.Tooltip("Match Case");
         ImGui.SameLine();
         // SILVER: UI designers go to a special kind of hell, this one to be specific...
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - (((filterComboWidth + ImGui.GetStyle().ItemSpacing.X) + (ImGui.GetStyle().FramePadding.X + ImGui.GetStyle().ItemSpacing.X) * 2) + ImGui.GetStyle().FramePadding.X * 2));
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - (((filterComboWidth + ImGui.GetStyle().ItemSpacing.X) + (ImGui.GetStyle().FramePadding.X + ImGui.GetStyle().ItemSpacing.X) * 3)));
         ImGui.SetNextItemAllowOverlap();
         ImGui.InputTextWithHint("##RecentFileFilter", $"{AppIcons.SI_GenericMagnifyingGlass} Search Recent Files", ref recentFileFilter, 128);
         if (!string.IsNullOrEmpty(recentFileFilter)) {
