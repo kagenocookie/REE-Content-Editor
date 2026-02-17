@@ -17,7 +17,7 @@ public class HomeWindow : IWindowHandler
     private static HashSet<string>? fullSupportedGames;
     private string recentFileFilter = string.Empty;
     private bool isRecentFileFilterMatchCase = false;
-    private readonly HashSet<string> _activeRecentGameFilters = new();
+    private readonly HashSet<string> _activeRecentFileGameFilters = new();
     private static string[] gameNames = null!;
     private static string[] gameNameCodes = null!;
     private string chosenGame = "";
@@ -263,7 +263,7 @@ public class HomeWindow : IWindowHandler
     private void ShowRecentFilesList()
     {
         var recents = AppConfig.Settings.RecentFiles;
-        string filterLabelDisplayText = _activeRecentGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} : " + "All Games" : $"{AppIcons.SI_Filter} : " + $"{_activeRecentGameFilters.Count} Selected";
+        string filterLabelDisplayText = _activeRecentFileGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} : " + "All Games" : $"{AppIcons.SI_Filter} : " + $"{_activeRecentFileGameFilters.Count} Selected";
         Vector2 filterLabelSize = ImGui.CalcTextSize(filterLabelDisplayText);
         float filterComboWidth = filterLabelSize.X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isRecentFileFilterMatchCase, Colors.IconActive);
@@ -287,13 +287,13 @@ public class HomeWindow : IWindowHandler
             for (int i = 0; i < gameNameCodes.Length; i++) {
                 var code = gameNameCodes[i];
                 var displayName = gameNames[i];
-                bool isSelected = _activeRecentGameFilters.Contains(code);
+                bool isSelected = _activeRecentFileGameFilters.Contains(code);
 
                 if (ImGui.Checkbox(displayName, ref isSelected)) {
                     if (isSelected) {
-                        _activeRecentGameFilters.Add(code);
+                        _activeRecentFileGameFilters.Add(code);
                     } else {
-                        _activeRecentGameFilters.Remove(code);
+                        _activeRecentFileGameFilters.Remove(code);
                     }
                 }
             }
@@ -301,10 +301,9 @@ public class HomeWindow : IWindowHandler
         }
 
         ImGui.SameLine();
-        using (var _ = ImguiHelpers.Disabled(_activeRecentGameFilters.Count == 0)) {
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FilterClear,
-                new[] { Colors.IconTertiary, Colors.IconPrimary })) {
-                _activeRecentGameFilters.Clear();
+        using (var _ = ImguiHelpers.Disabled(_activeRecentFileGameFilters.Count == 0)) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FilterClear, new[] { Colors.IconTertiary, Colors.IconPrimary })) {
+                _activeRecentFileGameFilters.Clear();
             }
             ImguiHelpers.Tooltip("Clear Game Filters");
         }
@@ -312,28 +311,29 @@ public class HomeWindow : IWindowHandler
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.Spacing();
-        if (recents == null || recents.Count == 0) {
-            ImGui.TextDisabled("There are no recent files.");
-        } else {
-            ImGui.BeginChild("RecentFileList");
-            foreach (var file in recents) {
-                var sep = file.IndexOf('|');
-                var game = sep == -1 ? null : file.Substring(0, sep);
-                var fileToOpen = sep == -1 ? file : file.Substring(sep + 1);
+        bool foundMatchingFile = false;
+        ImGui.BeginChild("RecentFileList");
+        foreach (var file in recents) {
+            var sep = file.IndexOf('|');
+            var game = sep == -1 ? null : file.Substring(0, sep);
+            var fileToOpen = sep == -1 ? file : file.Substring(sep + 1);
 
-                if (_activeRecentGameFilters.Count > 0 && (game == null || !_activeRecentGameFilters.Contains(game))) {
-                    continue;
-                }
-                if (!string.IsNullOrEmpty(recentFileFilter) && !file.Contains(recentFileFilter, isRecentFileFilterMatchCase ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase)) {
-                    continue;
-                }
-                if (ImGui.Selectable(file)) {
-                    EditorWindow.CurrentWindow?.OpenFiles(new[] { fileToOpen });
-                    break;
-                }
+            if (_activeRecentFileGameFilters.Count > 0 && (game == null || !_activeRecentFileGameFilters.Contains(game))) {
+                continue;
             }
-            ImGui.EndChild();
+            if (!string.IsNullOrEmpty(recentFileFilter) && !file.Contains(recentFileFilter, isRecentFileFilterMatchCase ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase)) {
+                continue;
+            }
+            foundMatchingFile = true;
+            if (ImGui.Selectable(file)) {
+                EditorWindow.CurrentWindow?.OpenFiles(new[] { fileToOpen });
+                break;
+            }
         }
+        if (!foundMatchingFile) {
+            ImGui.TextDisabled(!string.IsNullOrEmpty(recentFileFilter) || _activeRecentFileGameFilters.Count > 0 ? "No files match the current filters." : "There are no recent files.");
+        }
+        ImGui.EndChild();
     }
     public bool RequestClose()
     {
