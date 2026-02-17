@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using ContentPatcher;
 using ReeLib;
 
 namespace ContentEditor.App.ImguiHandling;
@@ -14,7 +15,7 @@ public class ComponentListEditor : DictionaryListImguiHandler<string, Component,
     protected override bool Filter(UIContext context, string filter)
     {
         var comp = context.Get<Component>();
-        return (comp.Classname.Contains(filter, StringComparison.OrdinalIgnoreCase));
+        return (comp.Classname.Contains(filter.Replace(" ", ""), StringComparison.OrdinalIgnoreCase));
     }
 
     protected override IObjectUIHandler CreateNewItemInput(UIContext context)
@@ -58,7 +59,7 @@ public class ComponentListEditor : DictionaryListImguiHandler<string, Component,
     protected override string GetKey(Component item)
     {
         if (!ComponentKeyCache.TryGetValue(item.Data.RszClass, out var cc)) {
-            ComponentKeyCache[item.Data.RszClass] = cc = $"{item.Data.RszClass.ShortName}##{item.Classname}";
+            ComponentKeyCache[item.Data.RszClass] = cc = $"{item.Data.RszClass.ShortName.PrettyPrint()}##{item.Classname}";
         }
         return cc;
     }
