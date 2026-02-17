@@ -35,7 +35,8 @@ public class HomeWindow : IWindowHandler
     {
         ShowLogo();
         ImGui.SameLine();
-        ImGui.BeginChild("WelcomeText", new Vector2(0, 250 * UI.UIScale));
+        float availSpace2 = ImGui.GetContentRegionAvail().X - ((250 - ImGui.GetStyle().FramePadding.X * 2) - ImGui.GetStyle().ItemSpacing.X);
+        ImGui.BeginChild("WelcomeText", new Vector2(availSpace2, 250 * UI.UIScale));
         ShowWelcomeText();
         ImGui.EndChild();
 
@@ -249,8 +250,11 @@ public class HomeWindow : IWindowHandler
             }
             if (!AppConfig.Instance.IsFirstTime) {
                 if (ImGui.BeginTabItem("Bundles")) {
-                    // TODO SILVER: I of course totally know how to do this 100% ref: https://github.com/WolvenKit/WolvenKit?tab=readme-ov-file#screenshots
-                    ImGui.Text("In a grid with the app logo being used as the image/icon.\nCould be color coded by game.");
+                    var recents = AppConfig.Settings.RecentBundles;
+                    foreach (var file in recents) {
+                        ImGui.Selectable(file);
+                    }
+                     // TODO SILVER: I of course totally know how to do this 100% ref: https://github.com/WolvenKit/WolvenKit?tab=readme-ov-file#screenshots
                     ImGui.EndTabItem();
                 }
                 if (ImGui.BeginTabItem("Updates")) {
