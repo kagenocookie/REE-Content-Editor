@@ -33,10 +33,11 @@ public class HomeWindow : IWindowHandler
     public void OnWindow() => this.ShowDefaultWindow(context);
     public void OnIMGUI()
     {
+        ImGui.BeginChild("Logo", new Vector2(250, 250 * UI.UIScale), ImGuiChildFlags.Borders);
         ShowLogo();
+        ImGui.EndChild();
         ImGui.SameLine();
-        float availSpace2 = ImGui.GetContentRegionAvail().X - ((250 - ImGui.GetStyle().FramePadding.X * 2) - ImGui.GetStyle().ItemSpacing.X);
-        ImGui.BeginChild("WelcomeText", new Vector2(availSpace2, 250 * UI.UIScale));
+        ImGui.BeginChild("WelcomeText", new Vector2(0, 250 * UI.UIScale), ImGuiChildFlags.Borders);
         ShowWelcomeText();
         ImGui.EndChild();
 
@@ -98,8 +99,9 @@ public class HomeWindow : IWindowHandler
         var currentActiveGame = EditorWindow.CurrentWindow?.Workspace.Env.Config.Game.name;
         foreach (var fullySupported in new[] { true, false }) {
             foreach (var (game, configured) in games) {
-                if (!configured || fullSupportedGames.Contains(game) != fullySupported)
+                if (!configured || fullSupportedGames.Contains(game) != fullySupported) {
                     continue;
+                }
 
                 var color = currentActiveGame == game ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text);
                 ImGui.PushStyleColor(ImGuiCol.Text, color);
