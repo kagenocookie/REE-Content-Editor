@@ -486,7 +486,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                             }
                             ImGui.CloseCurrentPopup();
                         }
-                        ImGui.InputText("Filter", ref openFileFilter, 128);
+                        ImGui.InputTextWithHint("Filter", $"{AppIcons.Search}", ref openFileFilter, 128);
                         foreach (var file in files) {
                             if (!string.IsNullOrEmpty(openFileFilter) && !file.Filepath.Contains(openFileFilter, StringComparison.InvariantCultureIgnoreCase)) {
                                 continue;
@@ -536,7 +536,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     if (recents == null || recents.Count == 0) {
                         ImGui.MenuItem("No recent files", false);
                     } else {
-                        ImGui.InputText("Filter", ref recentFileFilter, 128);
+                        ImGui.InputTextWithHint("Filter", $"{AppIcons.Search}", ref recentFileFilter, 128);
+                        ImGui.SameLine();
+                        if (ImGui.Button("Clear recent files")) {
+                            AppConfig.Settings.RecentFiles.Clear();
+                            AppConfig.Instance.SaveJsonConfig();
+                        }
                         foreach (var file in recents) {
                             if (!string.IsNullOrEmpty(recentFileFilter) && !file.Contains(recentFileFilter, StringComparison.InvariantCultureIgnoreCase)) {
                                 continue;
