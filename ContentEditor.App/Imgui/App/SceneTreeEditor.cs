@@ -261,7 +261,8 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
 
             // nothing can be dropped inside of a scene link folder
             var canDropInside = !(node is Folder nf && !string.IsNullOrEmpty(nf.ScenePath));
-            var canDropSibling = !(dragSource is GameObject && node is Folder);
+            // can't drop a GameObject next to a scene, or next to a .pfb root object
+            var canDropSibling = !(dragSource is GameObject && node is Folder || node is GameObject && node.Parent == null);
 
             var lineCenter = startPos.Y + lineHeight / 2;
             var dropTypeMargin = canDropInside ? lineHeight * 0.7f : 1f;
