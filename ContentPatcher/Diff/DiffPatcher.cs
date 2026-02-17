@@ -25,7 +25,7 @@ public class DiffPatcher
                 var newClass = env.RszParser.GetRSZClass(newClassname.GetValue<string>())
                     ?? throw new Exception("Invalid RSZ class " + newClassname.GetValue<string>());
 
-                instance = new RszInstance(newClass);
+                instance = RszInstance.CreateInstance(env.RszParser, newClass);
             }
         }
         var cls = instance.RszClass;

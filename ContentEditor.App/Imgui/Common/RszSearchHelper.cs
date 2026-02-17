@@ -4,6 +4,13 @@ using ReeLib.via;
 
 namespace ContentEditor.App.ImguiHandling;
 
+public interface IFilterRoot
+{
+    bool HasFilterActive { get; }
+    bool IsMatch(object? obj);
+    object? MatchedObject { get; set; }
+}
+
 public class RszSearchHelper : IObjectUIHandler, IFilterRoot
 {
     public string? Query { get; private set; }
