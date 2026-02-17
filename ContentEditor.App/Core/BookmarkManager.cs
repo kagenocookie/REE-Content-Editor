@@ -92,7 +92,10 @@ namespace ContentEditor.App
             if (!_bookmarks.TryGetValue(game, out var list)) {
                 return false;
             }
-            return list.Any(b => b.Path.Equals(path, StringComparison.OrdinalIgnoreCase));
+            foreach (var f in list) {
+                if (f.Path.Equals(path, StringComparison.OrdinalIgnoreCase)) return true;
+            }
+            return false;
         }
         private void LoadBookmarks()
         {
