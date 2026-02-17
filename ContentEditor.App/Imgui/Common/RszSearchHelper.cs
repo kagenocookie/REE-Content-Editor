@@ -295,7 +295,7 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
     {
         var changed = false;
         changed |= ImGui.InputText("Name"u8, ref nameMatch, 200);
-        changed |= ImGui.InputText("##Classname"u8, ref classnameMatch, 200);
+        changed |= ImGui.InputText("##Classname"u8, ref classnameMatch, 200, ImGuiInputTextFlags.CharsNoBlank);
 
         ImGui.SameLine();
         changed |= ImguiHelpers.ToggleButton($"{AppIcons.SI_FileType_CFIL}", ref classnameComponentOnly, Colors.IconActive);
@@ -306,8 +306,8 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
         ImGui.SameLine();
         ImGui.Text("Classname");
 
-        changed |= ImGui.InputText("Field Name"u8, ref fieldMatch, 200);
-        changed |= ImGui.InputText("Value"u8, ref valueMatch, 200);
+        changed |= ImGui.InputText("Field Name"u8, ref fieldMatch, 200, ImGuiInputTextFlags.CharsNoBlank);
+        changed |= ImGui.InputText("Value"u8, ref valueMatch, 200, ImGuiInputTextFlags.CharsNoBlank);
         if (changed) {
             var matchStr = nameMatch;
             if (!string.IsNullOrEmpty(classnameMatch)) {
