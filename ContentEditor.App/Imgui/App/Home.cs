@@ -66,7 +66,7 @@ public class HomeWindow : IWindowHandler
     }
     private static void ShowWelcomeText()
     {
-        ImGui.PushFont(null, UI.FontSizeLarge + 100 * UI.UIScale);
+        ImGui.PushFont(null, UI.FontSizeLarge + 100);
         string text = "Welcome to Content Editor";
         var textSize = ImGui.CalcTextSize(text);
         var availSpace = ImGui.GetContentRegionAvail();
@@ -252,11 +252,37 @@ public class HomeWindow : IWindowHandler
             }
             if (!AppConfig.Instance.IsFirstTime) {
                 if (ImGui.BeginTabItem("Bundles")) {
-                    var recents = AppConfig.Settings.RecentBundles;
-                    foreach (var file in recents) {
-                        ImGui.Selectable(file);
+                    var recentBundles = AppConfig.Settings.RecentBundles;
+                    ImGui.Spacing();
+                    if (ImGui.Button($"{AppIcons.SI_Bundle} Bundle Manager")) {
+                        EditorWindow.CurrentWindow?.ShowBundleManagement();
                     }
-                     // TODO SILVER: I of course totally know how to do this 100% ref: https://github.com/WolvenKit/WolvenKit?tab=readme-ov-file#screenshots
+                    ImGui.SameLine();
+                    if (ImGui.Button($"{AppIcons.SI_BundleLoadOrder} Load Order") && EditorWindow.CurrentWindow?.Workspace != null) {
+                        EditorWindow.CurrentWindow?.AddUniqueSubwindow(new LoadOrderUI(EditorWindow.CurrentWindow.Workspace.BundleManager));
+                    }
+                    ImGui.SameLine();
+                    ImguiHelpers.VerticalSeparator();
+                    ImGui.SameLine();
+                    ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
+                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, Vector4.Zero);
+                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, Vector4.Zero);
+                    ImguiHelpers.ButtonMultiColor(AppIcons.SIC_InfoBundle, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.Info });
+                    ImGui.PopStyleColor(3);
+                    ImGui.SameLine();
+                    ImGui.Text($"Total Bundles: {recentBundles.Count} | Active Bundles: {EditorWindow.CurrentWindow?.Workspace.BundleManager.ActiveBundles.Count}");
+                    ImGui.SameLine();
+                    ImguiHelpers.VerticalSeparator();
+
+                    ImGui.Spacing();
+                    ImGui.Separator();
+                    ImGui.Spacing();
+                    ImGui.BeginChild("BundleList");
+                    foreach (var bundle in recentBundles) {
+                        if (ImGui.Selectable(bundle)) {
+                        }
+                    }
+                    ImGui.EndChild();
                     ImGui.EndTabItem();
                 }
                 if (ImGui.BeginTabItem("Updates")) {
@@ -269,12 +295,11 @@ public class HomeWindow : IWindowHandler
     private void ShowRecentFilesList()
     {
         var recents = AppConfig.Settings.RecentFiles;
-        string filterLabelDisplayText = _activeRecentFileGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} : " + "All Games" : $"{AppIcons.SI_Filter} : " + $"{_activeRecentFileGameFilters.Count} Selected";
-        Vector2 filterLabelSize = ImGui.CalcTextSize(filterLabelDisplayText);
-        float filterComboWidth = filterLabelSize.X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isRecentFileFilterMatchCase, Colors.IconActive);
         ImguiHelpers.Tooltip("Match Case");
         ImGui.SameLine();
+        string filterLabelDisplayText = _activeRecentFileGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} : " + "All Games" : $"{AppIcons.SI_Filter} : " + $"{_activeRecentFileGameFilters.Count} Selected";
+        float filterComboWidth = ImGui.CalcTextSize(filterLabelDisplayText).X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
         // SILVER: UI designers go to a special kind of hell, this one to be specific...
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - (((filterComboWidth + ImGui.GetStyle().ItemSpacing.X) + (ImGui.GetStyle().FramePadding.X + ImGui.GetStyle().ItemSpacing.X) * 3)));
         ImGui.SetNextItemAllowOverlap();
