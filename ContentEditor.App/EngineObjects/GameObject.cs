@@ -205,7 +205,15 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         return false;
     }
 
-    public bool RemoveComponent(Component component) => Components.Remove(component);
+    public bool RemoveComponent(Component component)
+    {
+        if (!Components.Remove(component)) return false;
+
+        if (Scene?.IsActive == true && ShouldDraw) {
+            component.OnDeactivate();
+        }
+        return true;
+    }
     public Component? RemoveComponent(RszInstance componentData)
     {
         foreach (var comp in Components) {
@@ -222,7 +230,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
     public void AddComponent(Component component)
     {
         Components.Add(component);
-        if (Scene?.IsActive == true && this.ShouldDraw) {
+        if (Scene?.IsActive == true && ShouldDraw) {
             component.OnActivate();
         }
     }

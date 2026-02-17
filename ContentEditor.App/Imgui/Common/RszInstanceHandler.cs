@@ -102,8 +102,8 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
                 }
             }
             var gameObjectCtx = context.FindParentContextByValue<GameObject>();
-            if (gameObjectCtx != null && env.TypeCache.IsAssignableTo(instance.RszClass.name, "via.Component") && instance.RszClass.name != "via.Transform") {
-                if (ImGui.Selectable("Remove")) {
+            if (gameObjectCtx != null && env.TypeCache.IsAssignableTo(instance.RszClass.name, "via.Component")) {
+                if (instance.RszClass.name != "via.Transform" && ImGui.Selectable("Remove")) {
                     var gameObject = gameObjectCtx.Get<GameObject>();
                     Component? component = null;
                     UndoRedo.RecordCallback(gameObjectCtx, () => {
@@ -118,8 +118,30 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
                     });
                     UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, () => gameObjectCtx.ClearChildren());
                 }
+
+                if (EditorWindow.CurrentWindow?.GetClipboard()?.TryDeserializeJson<JsonNode>(out var pasteJson, out _, env.JsonOptions) == true) {
+                    if (pasteJson is JsonObject pasteObj && pasteObj.TryGetPropertyValue("$type", out var pasteClassnameStr)) {
+                        var gameObject = gameObjectCtx.Get<GameObject>();
+                        var classname = pasteClassnameStr?.ToString();
+                        var isValidComponentClassname = !string.IsNullOrEmpty(classname) && env.TypeCache.IsAssignableTo(classname, "via.Component") && !gameObject.HasComponent(classname);
+                        if (isValidComponentClassname && ImGui.Selectable("Paste as new component")) {
+                            Component? comp = null;
+                            UndoRedo.RecordCallback(context, () => {
+                                if (comp == null) {
+                                    comp = gameObject.AddComponent(classname!);
+                                    ws.Diff.OverrideInstance(comp.Data, pasteJson);
+                                } else {
+                                    gameObject.AddComponent(comp);
+                                }
+                            }, () => {
+                                gameObject.RemoveComponent(comp!);
+                            });
+                        }
+                    }
+                }
             }
         }
+
         if (valueSetter == null && context.parent?.uiHandler is ArrayRSZHandler array && instance != null) {
             if (ImGui.Selectable("Duplicate")) {
                 var clone = instance.Clone();

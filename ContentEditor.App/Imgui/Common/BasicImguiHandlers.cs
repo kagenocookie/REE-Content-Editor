@@ -27,7 +27,7 @@ public class NumericFieldHandler<T>(ImGuiDataType type) : IObjectUIHandler where
 
     public unsafe void OnIMGUI(UIContext context)
     {
-        var num = (T)context.Get<object>();
+        var num = (T)context.GetRaw()!;
         if (ImGui.DragScalar(context.label, type, &num, type is ImGuiDataType.Float or ImGuiDataType.Double ? 0.01f : 0.05f)) {
             UndoRedo.RecordSet(context, num);
         }
