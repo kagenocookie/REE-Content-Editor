@@ -90,6 +90,8 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     private bool showImportSettings;
 
+    private bool? _hasTooManyWeightsForRender;
+
     protected override void Reset()
     {
         base.Reset();
@@ -149,6 +151,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     private void ChangeMesh(bool resetMdf = true)
     {
+        _hasTooManyWeightsForRender = null;
         meshPath = Handle.Filepath;
         if (!Handle.References.Contains(this)) Handle.References.Add(this);
         mesh = Handle.GetResource<CommonMeshResource>();
@@ -323,7 +326,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 var mdfErrors = GetMdfErrors();
                 if (mdfErrors != null) {
                     using var _ = ImguiHelpers.OverrideStyleCol(ImGuiCol.Text, Colors.Warning);
-                    ImGui.MenuItem($"{AppIcons.SI_GenericWarning}");
+                    ImGui.MenuItem($"{AppIcons.SI_GenericWarning}##mdf");
                     ImguiHelpers.Tooltip(mdfErrors);
                 }
                 if (ImGui.BeginMenu($"{AppIcons.SI_FileType_RCOL} RCOL")) {
@@ -334,6 +337,12 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 ImguiHelpers.VerticalSeparator();
                 if (ImGui.MenuItem($"{AppIcons.SI_Animation} Animations")) showAnimationsMenu = !showAnimationsMenu;
                 if (showAnimationsMenu) ImguiHelpers.HighlightMenuItem($"{AppIcons.SI_Animation} Animations");
+                var animWarns = GetAnimErrors();
+                if (animWarns != null) {
+                    using var _ = ImguiHelpers.OverrideStyleCol(ImGuiCol.Text, Colors.Warning);
+                    ImGui.MenuItem($"{AppIcons.SI_GenericWarning}##mesh");
+                    ImguiHelpers.Tooltip(animWarns);
+                }
                 ImguiHelpers.VerticalSeparator();
                 if (ImGui.MenuItem($"{AppIcons.SI_GenericIO} Import / Export")) ImGui.OpenPopup("Export");
 
@@ -429,6 +438,36 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             if (nameMismatch) {
                 return "Mesh references material names that are not present in the selected MDF2.";
             }
+        }
+
+        return null;
+    }
+
+    private string? GetAnimErrors()
+    {
+        if (mesh == null || !(mesh.NativeMesh.BoneData?.DeformBones.Count > 0) || animator?.File == null) return null;
+
+        if (mesh.NativeMesh.BoneData.DeformBones.Count > 255) {
+            return """
+                Some animations might not be fully accurate in the preview.
+                Mesh has more than 255 deform bones, the rest will not animate in the preview.
+                To view full animations, export them to an external mesh editor.
+
+                This is NOT an issue ingame, with the mesh itself, or the animation, but a REE Content Editor rendering limitation.
+                """;
+        }
+
+        if (_hasTooManyWeightsForRender == null) {
+            _hasTooManyWeightsForRender = mesh.NativeMesh.MeshBuffer != null && mesh.NativeMesh.MeshBuffer.Weights.Any(w => w.boneWeights.Count(w => w > 0) > 4);
+        }
+        if (_hasTooManyWeightsForRender ?? false) {
+            return """
+                Some animations might not be fully accurate in the preview.
+                Some vertices have more than 4 bone weights, only the first 4 are currently supported for preview.
+                To view full animations, export them to an external mesh editor.
+
+                This is NOT an issue ingame, with the mesh itself, or the animation, but a REE Content Editor rendering limitation.
+                """;
         }
 
         return null;
@@ -671,7 +710,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 (v, p) => v.animationSourceFile = p ?? "");
         }
         animationPickerContext.ShowUI();
-        
+
         var settings = AppConfig.Settings;
         if (settings.RecentMotlists.Count > 0) {
             var selection = animationSourceFile;
@@ -730,7 +769,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                     motFilter = string.Empty;
                 }
             }
-            
 
             ImGui.Spacing();
             foreach (var (name, mot) in animator.Animations) {
