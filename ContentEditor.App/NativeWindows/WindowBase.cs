@@ -223,8 +223,8 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 #if WINDOWS
         // on windows, if we poll the clipboard every frame via IKeyboard, it ends up blocking all other copy operations
         // imgui clipboard doesn't do that for some reason.
-        byte* clipBytesImgui = global::Hexa.NET.ImGui.ImGui.GetClipboardText();
-        return clipBytesImgui == null ? null : global::Hexa.NET.ImGui.ImGui.GetClipboardTextS();
+        byte* clipBytesImgui = ImGui.GetClipboardText();
+        return clipBytesImgui == null ? null : HexaGen.Runtime.Utils.DecodeStringUTF8(clipBytesImgui);
 #else
         if (_inputContext.Keyboards.FirstOrDefault() is IKeyboard kb) {
             try {

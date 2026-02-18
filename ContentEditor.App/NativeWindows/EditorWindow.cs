@@ -88,7 +88,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         GameChanged?.Invoke();
         SceneManager.ChangeWorkspace(workspace);
         if (bundle != null && workspace.CurrentBundle != null) {
-            AppConfig.Instance.AddRecentBundle(bundle);
+            AppConfig.Settings.RecentBundles.AddRecent($"{game}|{bundle}");
         }
     }
 
@@ -167,7 +167,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
         foreach (var filename in filenames) {
             if (filename.EndsWith(".pak")) {
-                AppConfig.Instance.AddRecentFile($"{Workspace.Game}|{filename}");
+                AppConfig.Settings.RecentFiles.AddRecent($"{Workspace.Game}|{filename}");
                 AddSubwindow(new PakBrowser(workspace, filename));
                 continue;
             }
@@ -241,7 +241,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         var handler = WindowHandlerFactory.CreateFileResourceHandler(workspace, file);
         if (handler != null) {
             if (file.HandleType != FileHandleType.Embedded) {
-                AppConfig.Instance.AddRecentFile($"{workspace.Game}|{file.Filepath}");
+                AppConfig.Settings.RecentFiles.AddRecent($"{workspace.Game}|{file.Filepath}");
             }
             AddSubwindow(handler);
         } else {
@@ -304,8 +304,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                         SetWorkspace(workspace.Env.Config.Game, null);
                     }
                     var foundUnusedBundle = false;
-                    foreach (var b in workspace.BundleManager.AllBundles.OrderBy(bb => (uint)AppConfig.Settings.RecentBundles.IndexOf(bb.Name))) {
-                        if (!foundUnusedBundle && AppConfig.Settings.RecentBundles.IndexOf(b.Name) == -1) {
+                    foreach (var b in workspace.BundleManager.AllBundles.OrderBy(bb => (uint)AppConfig.Settings.RecentBundles.FindPrefixedIndex(bb.Name))) {
+                        if (!foundUnusedBundle && AppConfig.Settings.RecentBundles.FindPrefixedIndex(b.Name) == -1) {
                             foundUnusedBundle = true;
                             ImGui.Separator();
                         }
@@ -490,7 +490,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                             }
                             ImGui.CloseCurrentPopup();
                         }
-                        ImGui.InputText("Filter", ref openFileFilter, 128);
+                        ImGui.InputTextWithHint("Filter", $"{AppIcons.Search}", ref openFileFilter, 128);
                         foreach (var file in files) {
                             if (!string.IsNullOrEmpty(openFileFilter) && !file.Filepath.Contains(openFileFilter, StringComparison.InvariantCultureIgnoreCase)) {
                                 continue;
@@ -540,7 +540,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     if (recents == null || recents.Count == 0) {
                         ImGui.MenuItem("No recent files", false);
                     } else {
-                        ImGui.InputText("Filter", ref recentFileFilter, 128);
+                        ImGui.InputTextWithHint("Filter", $"{AppIcons.Search}", ref recentFileFilter, 128);
+                        ImGui.SameLine();
+                        if (ImGui.Button("Clear recent files")) {
+                            AppConfig.Settings.RecentFiles.Clear();
+                            AppConfig.Instance.SaveJsonConfig();
+                        }
                         foreach (var file in recents) {
                             if (!string.IsNullOrEmpty(recentFileFilter) && !file.Contains(recentFileFilter, StringComparison.InvariantCultureIgnoreCase)) {
                                 continue;

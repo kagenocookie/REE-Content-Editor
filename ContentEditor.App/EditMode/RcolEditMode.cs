@@ -66,7 +66,7 @@ public class RcolEditMode : EditModeHandler
             var storedSuggestions = rcolTarget.StoredResources?.ToArray() ?? [];
             if (storedSuggestions.Length > 0) {
                 if (ImguiHelpers.ValueCombo("Component Files", storedSuggestions, storedSuggestions, ref rcolPath)) {
-                    AppConfig.Instance.AddRecentRcol(rcolPath);
+                    AppConfig.Settings.RecentRcols.AddRecent(rcolPath);
                     filePicker?.ResetState();
                 }
             }
@@ -75,8 +75,7 @@ public class RcolEditMode : EditModeHandler
         var settings = AppConfig.Settings;
         if (settings.RecentRcols.Count > 0) {
             var options = settings.RecentRcols.ToArray();
-            if (ImguiHelpers.ValueCombo("Recent", options, options, ref rcolPath)) {
-                AppConfig.Instance.AddRecentRcol(rcolPath);
+            if (AppImguiHelpers.ShowRecentFiles(settings.RecentRcols, ref rcolPath)) {
                 filePicker?.ResetState();
             }
         }
@@ -99,7 +98,7 @@ public class RcolEditMode : EditModeHandler
             var rcol = file.GetFile<RcolFile>();
             if (!comp.ActiveRcolFiles.Contains(rcol)) {
                 comp.SetOverrideFile(rcol);
-                AppConfig.Instance.AddRecentRcol(rcolPath);
+                AppConfig.Settings.RecentRcols.AddRecent(rcolPath);
             }
         } else {
             comp.SetOverrideFile(null);

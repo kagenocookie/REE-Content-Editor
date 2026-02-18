@@ -76,7 +76,7 @@ public class NavmeshEditor : EditModeHandler
                     firstTimeOnTarget = false;
                 }
                 if (ImguiHelpers.ValueCombo("Stored Files", storedSuggestions, storedSuggestions, ref filepath)) {
-                    AppConfig.Instance.AddRecentNavmesh(filepath);
+                    AppConfig.Settings.RecentNavmeshes.AddRecent(filepath);
                     filePicker?.ResetState();
                 }
             }
@@ -85,9 +85,7 @@ public class NavmeshEditor : EditModeHandler
 
         var settings = AppConfig.Settings;
         if (settings.RecentNavmeshes.Count > 0) {
-            var options = settings.RecentNavmeshes.ToArray();
-            if (ImguiHelpers.ValueCombo("Recent", options, options, ref filepath)) {
-                AppConfig.Instance.AddRecentNavmesh(filepath);
+            if (AppImguiHelpers.ShowRecentFiles(settings.RecentNavmeshes, ref filepath)) {
                 filePicker?.ResetState();
             }
         }
@@ -133,7 +131,7 @@ public class NavmeshEditor : EditModeHandler
             var nvm = loadedFile.GetFile<AimpFile>();
             if (comp.DisplayedFile != nvm) {
                 comp.SetOverrideFile(nvm);
-                AppConfig.Instance.AddRecentNavmesh(filepath);
+                AppConfig.Settings.RecentNavmeshes.AddRecent(filepath);
             }
             comp.visibleContentTypes = displayedContentTypes;
         }

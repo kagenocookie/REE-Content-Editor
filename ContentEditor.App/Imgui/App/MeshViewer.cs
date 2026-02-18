@@ -713,18 +713,15 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
         var settings = AppConfig.Settings;
         if (settings.RecentMotlists.Count > 0) {
-            var selection = animationSourceFile;
-            var options = settings.RecentMotlists.ToArray();
             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Recent files").X - ImGui.GetStyle().FramePadding.X);
-            if (ImguiHelpers.ValueCombo("Recent files", options, options, ref selection)) {
-                animationSourceFile = selection;
+            if (AppImguiHelpers.ShowRecentFiles(settings.RecentMotlists, ref animationSourceFile)) {
                 animationPickerContext.ResetState();
             }
         }
         if (animationSourceFile != loadedAnimationSource) {
             if (!string.IsNullOrEmpty(animationSourceFile)) {
                 animator.LoadAnimationList(loadedAnimationSource = animationSourceFile);
-                AppConfig.Instance.AddRecentMotlist(animationSourceFile);
+                settings.RecentMotlists.AddRecent(animationSourceFile);
             } else {
                 animator.Unload();
                 loadedAnimationSource = animationSourceFile;
