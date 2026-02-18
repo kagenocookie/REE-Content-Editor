@@ -140,6 +140,7 @@ public class HomeWindow : IWindowHandler
         if (ImGui.Button($"{AppIcons.SI_GenericHeart} Support Development", new Vector2(ImGui.GetContentRegionAvail().X, 0))) {
             FileSystemUtils.OpenURL("https://ko-fi.com/shadowcookie");
         }
+        ImGui.Spacing();
         var availSpace = ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X * 2;
         if (ImGui.Button($"{AppIcons.SI_Github}", new Vector2(availSpace / 3, 0))) {
             FileSystemUtils.OpenURL("https://github.com/kagenocookie/REE-Content-Editor");
@@ -282,8 +283,8 @@ public class HomeWindow : IWindowHandler
                     ImGui.Separator();
                     ImGui.Spacing();
                     ImGui.BeginChild("BundleList");
-                    string? bundleToOpen = null;
                     string? gameToSet = null;
+                    string? bundleToOpen = null;
                     var availSpace = ImGui.GetContentRegionAvail();
                     var buttonSize = new Vector2(((availSpace.X - (ImGui.GetStyle().ItemSpacing.X * 2 + ImGui.GetStyle().FramePadding.X)) / 3) * UI.UIScale, 175 * UI.UIScale);
                     var curX = 0f;
@@ -293,21 +294,63 @@ public class HomeWindow : IWindowHandler
                         var bundleName = sep == -1 ? bundle : bundle.Substring(sep + 1);
                         if (curX > 0) {
                             if (curX > availSpace.X - buttonSize.X) {
+                                ImGui.Spacing();
                                 curX = 0;
                             } else {
                                 ImGui.SameLine();
                             }
                         }
                         curX += buttonSize.X + ImGui.GetStyle().ItemSpacing.X;
-                        ImGui.PushStyleColor(ImGuiCol.Border, Colors.IconActive);
-                        ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                        ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 2f);
-                        if (ImGui.Button(bundle, buttonSize) && gamePrefix != null) {
+
+                        bool clicked = ImGui.InvisibleButton(bundle, buttonSize);
+                        bool hovered = ImGui.IsItemHovered();
+                        var min = ImGui.GetItemRectMin();
+                        var max = ImGui.GetItemRectMax();
+                        var size = max - min;
+                        var drawList = ImGui.GetWindowDrawList();
+
+                        drawList.AddRect(min, max, ImGui.GetColorU32(Colors.TextActive), 0f, ImDrawFlags.None, 2f);
+
+                        ImGui.PushFont(null, UI.FontSizeLarge + 75);
+                        var iconChars = AppIcons.SIC_BundleContain;
+                        var iconSize = ImGui.CalcTextSize(iconChars[0].ToString());
+                        var iconPos = new Vector2(min.X + ImGui.GetStyle().ItemSpacing.X, min.Y + ((size.Y - iconSize.Y) + ImGui.GetStyle().ItemSpacing.Y * 2) * 0.5f);
+                        var colors = hovered ? new[] { Colors.IconActive, Colors.IconActive, Colors.IconActive } : new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary };
+                        for (int i = 0; i < iconChars.Length; i++) {
+                            var c = colors[i];
+                            drawList.AddText(iconPos, ImGui.ColorConvertFloat4ToU32(c), iconChars[i].ToString());
+                        }
+                        ImGui.PopFont();
+
+                        var textSize = ImGui.CalcTextSize(bundleName);
+                        float textOffset = iconSize.X + ImGui.GetStyle().ItemSpacing.X * 2;
+                        float availableTextWidth = max.X - (min.X + textOffset) - ImGui.GetStyle().ItemSpacing.X * 2;
+                        string bundleDisplayName = bundleName;
+                        if (ImGui.CalcTextSize(bundleDisplayName).X > availableTextWidth) {
+                            const string ellipsis = "...";
+                            float ellipsisWidth = ImGui.CalcTextSize(ellipsis).X;
+
+                            for (int i = bundleDisplayName.Length - 1; i > 0; i--) {
+                                string adjustedBundleDisplayName = string.Concat(bundleDisplayName.AsSpan(0, i), ellipsis);
+
+                                if (ImGui.CalcTextSize(adjustedBundleDisplayName).X <= availableTextWidth) {
+                                    bundleDisplayName = adjustedBundleDisplayName;
+                                    break;
+                                }
+                            }
+                        }
+                        var textPos = new Vector2(min.X + textOffset, iconPos.Y);
+                        drawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), bundleDisplayName);
+
+                        string gameDisplay = gamePrefix != null ? Languages.TranslateGame(gamePrefix): "";
+                        var gameTextSize = ImGui.CalcTextSize(gameDisplay);
+                        var gameTextPos = new Vector2(min.X + textOffset, iconPos.Y + ImGui.GetFrameHeight());
+                        drawList.AddText(gameTextPos, ImGui.GetColorU32(ImGuiCol.TextDisabled), gameDisplay);
+
+                        if (clicked && gamePrefix != null) {
                             gameToSet = gamePrefix;
                             bundleToOpen = bundleName;
                         }
-                        ImGui.PopStyleVar();
-                        ImGui.PopStyleColor(2);
                     }
                     if (gameToSet != null && bundleToOpen != null) {
                         EditorWindow.CurrentWindow?.SetWorkspace(gameToSet, bundleToOpen);
@@ -339,7 +382,6 @@ public class HomeWindow : IWindowHandler
         ImGui.SameLine();
         string filterLabelDisplayText = _activeRecentFileGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} " + "All Games" : $"{AppIcons.SI_Filter} " + $"{_activeRecentFileGameFilters.Count} Selected";
         float filterComboWidth = ImGui.CalcTextSize(filterLabelDisplayText).X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
-        // SILVER: UI designers go to a special kind of hell, this one to be specific...
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - (((filterComboWidth + ImGui.GetStyle().ItemSpacing.X) + (ImGui.GetStyle().FramePadding.X + ImGui.GetStyle().ItemSpacing.X) * 3)));
         ImGui.SetNextItemAllowOverlap();
         ImGui.InputTextWithHint("##RecentFileFilter", $"{AppIcons.SI_GenericMagnifyingGlass} Search Recent Files", ref recentFileFilter, 128);
