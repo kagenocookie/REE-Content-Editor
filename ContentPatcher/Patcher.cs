@@ -124,23 +124,36 @@ public class Patcher : IDisposable
         workspace!.SetBundle(null);
         workspace!.ResourceManager.ClearInstances();
         workspace!.ResourceManager.LoadBaseBundleData();
-        string outputDir;
+        string outputDirMain;
+        string outputDirSub;
 
         var outfile = OutputFilepath;
         var isPak = Path.GetExtension(OutputFilepath) == ".pak";
         if (isPak) {
-            outputDir = Path.Combine(config.GamePath, ".content-patcher-staging");
+            var outputDir = Path.Combine(config.GamePath, ".content-patcher-staging");
+            outputDirMain = Path.Combine(outputDir, "main");
+            outputDirSub = Path.Combine(outputDir, "sub");
             if (Directory.Exists(outputDir)) {
                 Directory.Delete(outputDir, true);
             }
             outfile = OutputFilepath!;
         } else {
-            outputDir = OutputFilepath ?? config.GamePath;
-            outfile = outputDir;
+            outputDirMain = OutputFilepath ?? config.GamePath;
+            outfile = outputDirMain;
+            outputDirSub = Path.Combine(outputDirMain, "sub");
         }
+        var needsSubPak = Env.RequiresSubPaksForTextures;
+        var hasTextures = false;
         foreach (var file in workspace!.ResourceManager.GetModifiedResourceFiles()) {
             var nativePath = file.NativePath ?? file.Filepath;
-            var fileOutput = Path.Combine(outputDir, nativePath);
+            string fileOutput;
+            if (needsSubPak && file.Format.format == KnownFileFormats.Texture) {
+                hasTextures = true;
+                fileOutput = Path.Combine(outputDirSub, nativePath);
+            } else {
+                fileOutput = Path.Combine(outputDirMain, nativePath);
+            }
+
             Directory.CreateDirectory(Path.GetDirectoryName(fileOutput)!);
             file.Loader.Save(workspace, file, fileOutput);
             patch.Resources[nativePath] = new PatchedResourceMetadata() {
@@ -149,14 +162,14 @@ public class Patcher : IDisposable
             };
         }
         if (isPak) {
-            if (!Directory.Exists(outputDir))
+            if (!Directory.Exists(outputDirMain) && !Directory.Exists(outputDirSub))
             {
                 Logger.Error("No files have been modified by the active bundles");
                 return null;
             }
 
             var writer = new PakWriter();
-            writer.AddFilesFromDirectory(outputDir, true);
+            writer.AddFilesFromDirectory(outputDirMain, true);
             if (IsPublishingMod && workspace.BundleManager.ActiveBundles.LastOrDefault() != null) {
                 var bundle = workspace.BundleManager.ActiveBundles.Last();
                 var modConfigPath = Path.Combine(workspace.BundleManager.GetBundleFolder(bundle), "modinfo.ini");
@@ -193,6 +206,22 @@ public class Patcher : IDisposable
                 SourceFilepath = enumFile,
             };
         }
+
+        if (needsSubPak && hasTextures) {
+            string subOutFile = PakUtils.GetNextSubPakFilepath(Path.HasExtension(outfile) ? Path.GetDirectoryName(outfile)! : outfile);
+            var writerSub = new PakWriter();
+            writerSub.AddFilesFromDirectory(outputDirSub, true);
+            writerSub.SaveTo(subOutFile);
+            Logger.Info("Sub pak saved to file: " + outfile);
+            patch.SubPakSize = new FileInfo(subOutFile).Length;
+
+            // store the sub pak as a separate file so it gets cleaned up on revert
+            patch.Resources[subOutFile] = new PatchedResourceMetadata() {
+                TargetFilepath = subOutFile,
+                SourceFilepath = subOutFile,
+            };
+        }
+
         return patch;
     }
 
@@ -266,6 +295,7 @@ public class Patcher : IDisposable
     {
         public DateTime PatchTimeUtc { get; set; }
         public long PakSize { get; set; }
+        public long SubPakSize { get; set; }
 
         public Dictionary<string, PatchedResourceMetadata> Resources { get; set; } = new();
     }
