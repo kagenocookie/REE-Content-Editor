@@ -81,8 +81,8 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     public WindowData? FocusedWindow { get; private set; }
 
-    protected static readonly HashSet<Type> BaseWindows = [typeof(OverlaysWindow), typeof(ConsoleWindow)];
-    protected static readonly HashSet<Type> WorkspaceSpecificWindows = [typeof(BundleManagementUI)];
+    protected static readonly HashSet<Type> BaseWindows = [typeof(OverlaysWindow), typeof(ConsoleWindow), typeof(HomeWindow)];
+    protected static readonly HashSet<Type> WorkspaceSpecificWindows = [typeof(BundleManagementUI), typeof(HomeWindow)];
 
     private static int nextSubwindowID = 1;
 
