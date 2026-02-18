@@ -264,28 +264,59 @@ public class HomeWindow : IWindowHandler
                     ImGui.SameLine();
                     ImguiHelpers.VerticalSeparator();
                     ImGui.SameLine();
-                    ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
-                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, Vector4.Zero);
-                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, Vector4.Zero);
-                    ImguiHelpers.ButtonMultiColor(AppIcons.SIC_InfoBundle, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.Info });
-                    ImGui.PopStyleColor(3);
+                    if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderContain, new[] { Colors.IconPrimary, Colors.IconSecondary })) {
+                        FileSystemUtils.ShowFileInExplorer(EditorWindow.CurrentWindow?.Workspace.BundleManager.AppBundlePath);
+                    }
+                    ImguiHelpers.Tooltip("Open Bundles folder in File Explorer");
                     ImGui.SameLine();
-                    ImGui.Text($"Total Bundles: {recentBundles.Count} | Active Bundles: {EditorWindow.CurrentWindow?.Workspace.BundleManager.ActiveBundles.Count}");
+                    if (ImGui.Button($"{AppIcons.SI_GenericClear}")) {
+                        AppConfig.Settings.RecentBundles.Clear();
+                        AppConfig.Instance.SaveJsonConfig();
+                    }
+                    ImguiHelpers.Tooltip("Clear recent bundles list");
                     ImGui.SameLine();
                     ImguiHelpers.VerticalSeparator();
-
+                    ImGui.SameLine();
+                    // TODO SILVER: Filters
                     ImGui.Spacing();
                     ImGui.Separator();
                     ImGui.Spacing();
                     ImGui.BeginChild("BundleList");
-                    foreach (var bundle in recentBundles) {
-                        if (ImGui.Selectable(bundle)) {
+                    string? bundleToOpen = null;
+                    string? gameToSet = null;
+                    var availSpace = ImGui.GetContentRegionAvail();
+                    var buttonSize = new Vector2(((availSpace.X - (ImGui.GetStyle().ItemSpacing.X * 2 + ImGui.GetStyle().FramePadding.X)) / 3) * UI.UIScale, 175 * UI.UIScale);
+                    var curX = 0f;
+                    foreach (var bundle in recentBundles.ToList()) {
+                        var sep = bundle.IndexOf('|');
+                        var gamePrefix = sep == -1 ? null : bundle.Substring(0, sep);
+                        var bundleName = sep == -1 ? bundle : bundle.Substring(sep + 1);
+                        if (curX > 0) {
+                            if (curX > availSpace.X - buttonSize.X) {
+                                curX = 0;
+                            } else {
+                                ImGui.SameLine();
+                            }
                         }
+                        curX += buttonSize.X + ImGui.GetStyle().ItemSpacing.X;
+                        ImGui.PushStyleColor(ImGuiCol.Border, Colors.IconActive);
+                        ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
+                        ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 2f);
+                        if (ImGui.Button(bundle, buttonSize) && gamePrefix != null) {
+                            gameToSet = gamePrefix;
+                            bundleToOpen = bundleName;
+                        }
+                        ImGui.PopStyleVar();
+                        ImGui.PopStyleColor(2);
+                    }
+                    if (gameToSet != null && bundleToOpen != null) {
+                        EditorWindow.CurrentWindow?.SetWorkspace(gameToSet, bundleToOpen);
                     }
                     ImGui.EndChild();
                     ImGui.EndTabItem();
                 }
                 if (ImGui.BeginTabItem("Updates")) {
+                    ImGui.Text("Some good update info here, fixed every bug or something.\nButtons to update the different resources?");
                     ImGui.EndTabItem();
                 }
             }
@@ -295,10 +326,18 @@ public class HomeWindow : IWindowHandler
     private void ShowRecentFilesList()
     {
         var recents = AppConfig.Settings.RecentFiles;
+        if (ImGui.Button($"{AppIcons.SI_GenericClear}")) {
+            AppConfig.Settings.RecentFiles.Clear();
+            AppConfig.Instance.SaveJsonConfig();
+        }
+        ImguiHelpers.Tooltip("Clear recent files");
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator();
+        ImGui.SameLine();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isRecentFileFilterMatchCase, Colors.IconActive);
         ImguiHelpers.Tooltip("Match Case");
         ImGui.SameLine();
-        string filterLabelDisplayText = _activeRecentFileGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} : " + "All Games" : $"{AppIcons.SI_Filter} : " + $"{_activeRecentFileGameFilters.Count} Selected";
+        string filterLabelDisplayText = _activeRecentFileGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} " + "All Games" : $"{AppIcons.SI_Filter} " + $"{_activeRecentFileGameFilters.Count} Selected";
         float filterComboWidth = ImGui.CalcTextSize(filterLabelDisplayText).X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
         // SILVER: UI designers go to a special kind of hell, this one to be specific...
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - (((filterComboWidth + ImGui.GetStyle().ItemSpacing.X) + (ImGui.GetStyle().FramePadding.X + ImGui.GetStyle().ItemSpacing.X) * 3)));

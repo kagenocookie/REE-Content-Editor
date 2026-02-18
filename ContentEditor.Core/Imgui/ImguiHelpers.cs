@@ -562,7 +562,7 @@ public static class ImguiHelpers
         return ContextMenuItemInternal(id, icons, label, iconColors, iconPadding, separatorPadding, separatorWidth);
     }
 
-    public static void VerticalSeparator(Vector4? color = null, float width = 2.0f,  float padding = 4.0f, float? heightOverride = null)
+    public static void VerticalSeparator(Vector4? color = null, float width = 2.0f, float padding = 4.0f, float? heightOverride = null)
     {
         var drawList = ImGui.GetWindowDrawList();
         var pos = ImGui.GetCursorScreenPos();
