@@ -26,6 +26,7 @@ public class ThemeEditor : IWindowHandler
     {
         General,
         Icons_App,
+        Icons_Bundle,
         Icons_FileType,
         Tags,
     }
@@ -34,6 +35,7 @@ public class ThemeEditor : IWindowHandler
     {
         ("General", StyleGroupID.General, new()),
         ("App Icons", StyleGroupID.Icons_App, new()),
+        ("Bundle Icons", StyleGroupID.Icons_Bundle, new()),
         ("File Type Icons", StyleGroupID.Icons_FileType, new()),
         ("Tags", StyleGroupID.Tags, new()),
     };
@@ -206,6 +208,9 @@ public class ThemeEditor : IWindowHandler
                         case StyleGroupID.Icons_App:
                             ShowColorFields(tab.Fields);
                             break;
+                        case StyleGroupID.Icons_Bundle:
+                            ShowColorFields(tab.Fields);
+                            break;
                         case StyleGroupID.Icons_FileType:
                             ShowColorFields(tab.Fields);
                             break;
@@ -234,6 +239,7 @@ public class ThemeEditor : IWindowHandler
                 var name when name.StartsWith("Icon", StringComparison.OrdinalIgnoreCase) => StyleGroupID.Icons_App,
                 var name when name.StartsWith("FileType", StringComparison.OrdinalIgnoreCase) => StyleGroupID.Icons_FileType,
                 var name when name.StartsWith("Tag", StringComparison.OrdinalIgnoreCase) => StyleGroupID.Tags,
+                var name when name.StartsWith("Game_", StringComparison.OrdinalIgnoreCase) => StyleGroupID.Icons_Bundle,
                 _ => StyleGroupID.General
             };
             tabs.Find(x => x.ID == tabId).Fields.Add(field);

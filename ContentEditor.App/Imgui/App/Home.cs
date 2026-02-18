@@ -18,10 +18,18 @@ public class HomeWindow : IWindowHandler
     private string recentFileFilter = string.Empty;
     private bool isRecentFileFilterMatchCase = false;
     private readonly HashSet<string> _activeRecentFileGameFilters = new();
+    private string bundleFilter = string.Empty;
+    private bool isBundleFilterMatchCase = false;
+    private readonly HashSet<string> _activeBundleGameFilters = new();
     private static string[] gameNames = null!;
     private static string[] gameNameCodes = null!;
     private string chosenGame = "";
     private bool customGame;
+    private static readonly Dictionary<string, Vector4[]> GameColors = new()
+    {
+        { "re2", new[] { Colors.Game_RE2Primary, Colors.Game_RE2Secondary, Colors.Game_RE2Tertiary }},
+        { "re2rt", new[] { Colors.Game_RE2RTPrimary, Colors.Game_RE2RTSecondary, Colors.Game_RE2RTTertiary }}, // TODO SILVER: Add the reset of the games
+    };
     public void Init(UIContext context)
     {
         this.context = context;
@@ -117,7 +125,6 @@ public class HomeWindow : IWindowHandler
                 if (!configured || fullSupportedGames.Contains(game) != fullySupported) {
                     continue;
                 }
-
                 var color = currentActiveGame == game ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text);
                 ImGui.PushStyleColor(ImGuiCol.Text, color);
                 if (ImGui.Selectable(Languages.TranslateGame(game))) {
@@ -253,7 +260,6 @@ public class HomeWindow : IWindowHandler
             }
             if (!AppConfig.Instance.IsFirstTime) {
                 if (ImGui.BeginTabItem("Bundles")) {
-                    var recentBundles = AppConfig.Settings.RecentBundles;
                     ImGui.Spacing();
                     if (ImGui.Button($"{AppIcons.SI_Bundle} Bundle Manager")) {
                         EditorWindow.CurrentWindow?.ShowBundleManagement();
@@ -278,7 +284,47 @@ public class HomeWindow : IWindowHandler
                     ImGui.SameLine();
                     ImguiHelpers.VerticalSeparator();
                     ImGui.SameLine();
-                    // TODO SILVER: Filters
+                    ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isBundleFilterMatchCase, Colors.IconActive);
+                    ImguiHelpers.Tooltip("Match Case");
+                    ImGui.SameLine();
+                    string filterLabelDisplayText = _activeBundleGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} " + "All Games" : $"{AppIcons.SI_Filter} " + $"{_activeBundleGameFilters.Count} Selected";
+                    float filterComboWidth = ImGui.CalcTextSize(filterLabelDisplayText).X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
+                    ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - (((filterComboWidth + ImGui.GetStyle().ItemSpacing.X) + (ImGui.GetStyle().FramePadding.X + ImGui.GetStyle().ItemSpacing.X) * 3)));
+                    ImGui.SetNextItemAllowOverlap();
+                    ImGui.InputTextWithHint("##BundleFilter", $"{AppIcons.SI_GenericMagnifyingGlass} Search Bundles", ref bundleFilter, 128);
+                    if (!string.IsNullOrEmpty(bundleFilter)) {
+                        ImGui.SameLine();
+                        ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
+                        ImGui.SetNextItemAllowOverlap();
+                        if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
+                            bundleFilter = string.Empty;
+                        }
+                    }
+                    ImGui.SameLine();
+                    ImGui.SetNextItemWidth(filterComboWidth);
+                    if (ImGui.BeginCombo("##BundleGameFilterCombo", filterLabelDisplayText, ImGuiComboFlags.HeightLargest)) {
+                        for (int i = 0; i < gameNameCodes.Length; i++) {
+                            var code = gameNameCodes[i];
+                            var displayName = gameNames[i];
+                            bool isSelected = _activeBundleGameFilters.Contains(code);
+
+                            if (ImGui.Checkbox(displayName, ref isSelected)) {
+                                if (isSelected) {
+                                    _activeBundleGameFilters.Add(code);
+                                } else {
+                                    _activeBundleGameFilters.Remove(code);
+                                }
+                            }
+                        }
+                        ImGui.EndCombo();
+                    }
+                    ImGui.SameLine();
+                    using (var _ = ImguiHelpers.Disabled(_activeBundleGameFilters.Count == 0)) {
+                        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FilterClear, new[] { Colors.IconTertiary, Colors.IconPrimary })) {
+                            _activeBundleGameFilters.Clear();
+                        }
+                        ImguiHelpers.Tooltip("Clear Game Filters");
+                    }
                     ImGui.Spacing();
                     ImGui.Separator();
                     ImGui.Spacing();
@@ -288,7 +334,7 @@ public class HomeWindow : IWindowHandler
                     var availSpace = ImGui.GetContentRegionAvail();
                     var buttonSize = new Vector2(((availSpace.X - (ImGui.GetStyle().ItemSpacing.X * 2 + ImGui.GetStyle().FramePadding.X)) / 3) * UI.UIScale, 175 * UI.UIScale);
                     var curX = 0f;
-                    foreach (var bundle in recentBundles.ToList()) {
+                    foreach (var bundle in AppConfig.Settings.RecentBundles.ToList()) {
                         var sep = bundle.IndexOf('|');
                         var gamePrefix = sep == -1 ? null : bundle.Substring(0, sep);
                         var bundleName = sep == -1 ? bundle : bundle.Substring(sep + 1);
@@ -302,6 +348,12 @@ public class HomeWindow : IWindowHandler
                         }
                         curX += buttonSize.X + ImGui.GetStyle().ItemSpacing.X;
 
+                        if (_activeBundleGameFilters.Count > 0 && (gamePrefix == null || !_activeBundleGameFilters.Contains(gamePrefix))) {
+                            continue;
+                        }
+                        if (!string.IsNullOrEmpty(bundleFilter) && !bundle.Contains(bundleFilter, isBundleFilterMatchCase ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase)) {
+                            continue;
+                        }
                         bool clicked = ImGui.InvisibleButton(bundle, buttonSize);
                         bool hovered = ImGui.IsItemHovered();
                         var min = ImGui.GetItemRectMin();
@@ -315,7 +367,7 @@ public class HomeWindow : IWindowHandler
                         var iconChars = AppIcons.SIC_BundleContain;
                         var iconSize = ImGui.CalcTextSize(iconChars[0].ToString());
                         var iconPos = new Vector2(min.X + ImGui.GetStyle().ItemSpacing.X, min.Y + ((size.Y - iconSize.Y) + ImGui.GetStyle().ItemSpacing.Y * 2) * 0.5f);
-                        var colors = hovered ? new[] { Colors.IconActive, Colors.IconActive, Colors.IconActive } : new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary };
+                        var colors = GetGameColors(gamePrefix, hovered);
                         for (int i = 0; i < iconChars.Length; i++) {
                             var c = colors[i];
                             drawList.AddText(iconPos, ImGui.ColorConvertFloat4ToU32(c), iconChars[i].ToString());
@@ -447,6 +499,20 @@ public class HomeWindow : IWindowHandler
         }
         ImGui.EndChild();
     }
+    private static Vector4[] GetGameColors(string? prefix, bool hovered)
+    {
+        if (hovered) {
+            return new[] { Colors.IconActive, Colors.IconActive, Colors.IconActive };
+        }
+        if (string.IsNullOrEmpty(prefix)) {
+            return new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary };
+        }
+        if (GameColors.TryGetValue($"{prefix.ToLowerInvariant()}", out var colors)) {
+            return colors;
+        }
+        return new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary };
+    }
+
     public bool RequestClose()
     {
         return false;

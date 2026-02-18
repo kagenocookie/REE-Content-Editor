@@ -137,6 +137,12 @@ public static class Colors
     public static Vector4 TagWeapon => Current.TagWeapon;
     public static Vector4 TagWeaponHovered => Current.TagWeaponHovered;
     public static Vector4 TagWeaponSelected => Current.TagWeaponSelected;
+    public static Vector4 Game_RE2Primary => Current.Game_RE2Primary;
+    public static Vector4 Game_RE2Secondary => Current.Game_RE2Secondary;
+    public static Vector4 Game_RE2Tertiary => Current.Game_RE2Tertiary;
+    public static Vector4 Game_RE2RTPrimary => Current.Game_RE2RTPrimary;
+    public static Vector4 Game_RE2RTSecondary => Current.Game_RE2RTSecondary;
+    public static Vector4 Game_RE2RTTertiary => Current.Game_RE2RTTertiary;
 }
 
 public sealed class AppColors
@@ -260,6 +266,13 @@ public sealed class AppColors
     public Vector4 TagWeapon = new Vector4(0.9f, 0.3f, 0.3f, 0.5f);
     public Vector4 TagWeaponHovered = new Vector4(1, 0.4f, 0.4f, 0.8f);
     public Vector4 TagWeaponSelected = new Vector4(0.8f, 0.2f, 0.2f, 1);
+    // SILVER: Temp colors
+    public Vector4 Game_RE2Primary = new Vector4(0.8f, 0.2f, 0.2f, 1);
+    public Vector4 Game_RE2Secondary = new Vector4(0.8f, 0.2f, 0.2f, 1);
+    public Vector4 Game_RE2Tertiary = new Vector4(0.8f, 0.2f, 0.2f, 1);
+    public Vector4 Game_RE2RTPrimary = new Vector4(0.8f, 0.2f, 0.2f, 1);
+    public Vector4 Game_RE2RTSecondary = new Vector4(0.8f, 0.2f, 0.2f, 1);
+    public Vector4 Game_RE2RTTertiary = new Vector4(0.8f, 0.2f, 0.2f, 1);
     public static AppColors GetDarkThemeColors() => new AppColors();
 
     public static AppColors GetLightThemeColors() => new AppColors() {
