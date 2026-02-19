@@ -41,6 +41,7 @@ public class TextureConversionTask : IBackgroundTask
 #if WINDOWS
         ScratchImage? image = null;
         ScratchImage? tmpImage = null;
+        DirectXTexNet.TexMetadata meta;
 #else
         var image = DirectXTex.CreateScratchImage();
         var tmpImage = DirectXTex.CreateScratchImage();
@@ -134,7 +135,7 @@ public class TextureConversionTask : IBackgroundTask
                         // GPU happy path
                         Status = "Compressing (GPU)";
 #if WINDOWS
-                        tmpImage = image.Compress(d3dDevice, convFormat, TEX_COMPRESS_FLAGS.DEFAULT, 0.5f);
+                        tmpImage = image.Compress(d3dDevice, (DXGI_FORMAT)convFormat, TEX_COMPRESS_FLAGS.DEFAULT, 0.5f);
 #else
                         throw new NotSupportedException();
 #endif
@@ -142,7 +143,7 @@ public class TextureConversionTask : IBackgroundTask
                         // CPU fallback
                         Status = "Compressing (CPU)";
 #if WINDOWS
-                        tmpImage = image.Compress(convFormat, TEX_COMPRESS_FLAGS.DEFAULT, 0.5f);
+                        tmpImage = image.Compress((DXGI_FORMAT)convFormat, TEX_COMPRESS_FLAGS.DEFAULT, 0.5f);
 #else
                         DirectXTex.Compress(image.GetImages(), (int)convFormat, TexCompressFlags.Default, 0.5f, ref tmpImage).ThrowIf();
 #endif
@@ -150,7 +151,7 @@ public class TextureConversionTask : IBackgroundTask
                 } else {
                     Status = "Converting format";
 #if WINDOWS
-                    tmpImage = image.Convert(convFormat, TEX_FILTER_FLAGS.DEFAULT, 0.5f);
+                    tmpImage = image.Convert((DXGI_FORMAT)convFormat, TEX_FILTER_FLAGS.DEFAULT, 0.5f);
 #else
                     DirectXTex.Convert(image.GetImages(), (int)convFormat, (int)TexCompressFlags.Default, 0.5f, ref tmpImage).ThrowIf();
 #endif
