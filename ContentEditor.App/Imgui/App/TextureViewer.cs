@@ -277,7 +277,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                 if (texture != null) {
                     if (fileHandle?.Modified == true && File.Exists(texturePath)) {
                         if (ImGui.MenuItem("Save")) {
-                            if (fileHandle.Loader is TexFileLoader) {
+                            if (fileHandle.Loader is TextureLoader) {
                                 fileHandle.Save(workspace);
                             } else {
                                 texture.SaveAs(texturePath);
@@ -287,7 +287,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                         if (ImGui.MenuItem("Revert")) {
                             fileHandle.Stream.Dispose();
                             fileHandle.Stream = File.OpenRead(texturePath).ToMemoryStream();
-                            if (fileHandle.Loader is TexFileLoader) {
+                            if (fileHandle.Loader is TextureLoader) {
                                 fileHandle.GetFile<TexFile>().FileHandler = new FileHandler(fileHandle.Stream, fileHandle.Filepath);
                             } else if (fileHandle.Resource is BaseFileResource<DDSFile> dds) {
                                 dds.File.FileHandler = new FileHandler(fileHandle.Stream, fileHandle.Filepath);
@@ -300,7 +300,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                     if (ImGui.MenuItem("Save As ...")) {
                         var baseName = PathUtils.GetFilepathWithoutExtensionOrVersion(texturePath ?? texture.Path);
                         var fileFilter = FileFilters.TextureFile;
-                        var currentTexExt = fileHandle?.Loader is TexFileLoader ? PathUtils.GetFilenameExtensionWithSuffixes(texture.Path).ToString() : null;
+                        var currentTexExt = fileHandle?.Loader is TextureLoader ? PathUtils.GetFilenameExtensionWithSuffixes(texture.Path).ToString() : null;
                         if (!string.IsNullOrEmpty(currentTexExt)) {
                             fileFilter = fileFilter.Append(new FileFilter("TEX", $"{currentTexExt}")).ToArray();
                         }
@@ -372,24 +372,6 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         var isDds = !isTex && Path.GetExtension(texturePath) == ".dds";
         var filepath = texturePath;
 
-        if (fileHandle.HandleType is FileHandleType.Bundle or FileHandleType.Disk && File.Exists(filepath) && fileHandle.Format.format == KnownFileFormats.Mesh) {
-            if (ImGui.Selectable($"{AppIcons.SI_GenericImport} Import From DDS...")) {
-                var window = EditorWindow.CurrentWindow!;
-                PlatformUtils.ShowFileDialog((files) => {
-                    window.InvokeFromUIThread(() => {
-                        lastImportSourcePath = files[0];
-                        if (workspace.ResourceManager.TryForceLoadFile(lastImportSourcePath, out var importedFile)) {
-                            importedFile.Save(workspace, filepath.ToString());
-                            fileHandle.Stream = File.OpenRead(filepath.ToString()).ToMemoryStream();
-                            fileHandle.Revert(workspace);
-                            SetImageSource(fileHandle);
-                            importedFile.Dispose();
-                        }
-                    });
-                }, lastImportSourcePath, fileExtension: FileFilters.DDSFile);
-            }
-        }
-
         ImGui.SeparatorText("Convert TEX");
         ImguiHelpers.ValueCombo("Tex Version", TexFile.AllVersionConfigsWithExtension, TexFile.AllVersionConfigs, ref exportTemplate);
 
@@ -416,9 +398,10 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         }
         ImGui.Spacing();
         var conv1 = ImGui.Button($"{AppIcons.SI_GenericConvert} Convert");
-        if (fileHandle.Loader is TexFileLoader) {
+        if (fileHandle.Loader is TextureLoader) {
             ImGui.SameLine();
-            if (ImGui.Button($"{AppIcons.SI_UpdateTexture} Update Current")) {
+            var isStoredTex = fileHandle.HandleType is FileHandleType.Bundle or FileHandleType.Disk && File.Exists(filepath);
+            if (ImGui.Button(isStoredTex ? $"{AppIcons.SI_Save} Save" : $"{AppIcons.SI_UpdateTexture} Update Settings")) {
                 var defaultFilename = GetTexFilenameSuggestion();
                 var tex = fileHandle.GetFile<TexFile>();
                 ProcessTexture(defaultFilename, (dds) => {
@@ -428,6 +411,28 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                         fileHandle.Modified = true;
                     });
                 });
+            }
+
+            if (isStoredTex) {
+                ImGui.SameLine();
+                if (ImGui.Button($"{AppIcons.SI_GenericImport} Import From File")) {
+                    var window = EditorWindow.CurrentWindow!;
+                    PlatformUtils.ShowFileDialog((files) => {
+                        window.InvokeFromUIThread(() => {
+                            lastImportSourcePath = files[0];
+                            DDSFile dds;
+                            if (Path.GetExtension(lastImportSourcePath) == ".dds") {
+                                dds = new DDSFile(new FileHandler(lastImportSourcePath));
+                                dds.Read();
+                            } else {
+                                var tempTex = new Texture().LoadFromFile(lastImportSourcePath);
+                                dds = tempTex.GetAsDDS(generateMissingMipMaps: this.mipMapOption == MipGenOptions.Generate);
+                            }
+                            texture.LoadFromDDS(dds);
+                            fileHandle.Modified = true;
+                        });
+                    }, lastImportSourcePath, fileExtension: FileFilters.TextureFilesAll);
+                }
             }
         }
 
