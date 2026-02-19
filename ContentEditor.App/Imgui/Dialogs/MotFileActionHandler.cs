@@ -71,16 +71,14 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
 
                     var prevMot = context.Get<MotFileBase>();
                     MotFileBase newMot;
-                    try {
-                        newMot = motData.ToMotFile()!;
-                        if (newMot == null) throw new NullReferenceException("File is null");
-                    } catch (Exception e) {
-                        Logger.Warn($"Pasted data is invalid ({e.Message}), attempting virtual clipboard...");
-                        if (!VirtualClipboard.TryGetById(motData.VerificationId, out newMot!)) {
-                            Logger.Error($"Pasted data is invalid.");
+                    if (!VirtualClipboard.TryGetById(motData.VerificationId, out newMot!)) {
+                        try {
+                            newMot = motData.ToMotFile()!;
+                            if (newMot == null) throw new NullReferenceException("Deserialized file is null");
+                        } catch (Exception e) {
+                            Logger.Warn($"Pasted data is invalid ({e.Message})");
                             return true;
                         }
-                        Logger.Info($"Virtual clipboard worked OK, disregard last warning.");
                     }
                     if (newMot == null) return true;
 

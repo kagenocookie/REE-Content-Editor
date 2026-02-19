@@ -10,7 +10,8 @@ internal static class VirtualClipboard
 
     public static int Store(object data)
     {
-        var id = nextId++;
+        // add a bit of RNG to make it less likely to have conflicts across launches for objects where we also include full data in addition to the virtual clipboard ID
+        var id = (nextId++) | (System.Random.Shared.Next(0, 0x7fff) << 16);
         Entries[id] = data;
         return id;
     }
