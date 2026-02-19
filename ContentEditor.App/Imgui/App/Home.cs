@@ -14,6 +14,7 @@ public class HomeWindow : IWindowHandler
     public int FixedID => -123164;
     private WindowData data = null!;
     protected UIContext context = null!;
+
     private static HashSet<string>? fullSupportedGames;
     private string recentFileFilter = string.Empty;
     private bool isRecentFileFilterMatchCase = false;
@@ -21,19 +22,28 @@ public class HomeWindow : IWindowHandler
     private string bundleFilter = string.Empty;
     private bool isBundleFilterMatchCase = false;
     private readonly HashSet<string> _activeBundleGameFilters = new();
+
     private static string[] gameNames = null!;
     private static string[] gameNameCodes = null!;
     private string chosenGame = "";
     private bool customGame;
-    private static readonly Dictionary<string, Vector4[]> GameColors = new()
+
+    private static Dictionary<string, Func<Vector4[]>> GameColors = new() // TODO SILVER: Add the reset of the games
     {
-        { "re2", new[] { Colors.Game_RE2Primary, Colors.Game_RE2Secondary, Colors.Game_RE2Tertiary }},
-        { "re2rt", new[] { Colors.Game_RE2RTPrimary, Colors.Game_RE2RTSecondary, Colors.Game_RE2RTTertiary }}, // TODO SILVER: Add the reset of the games
+        { "re2", () => new[] { Colors.Game_RE2Primary, Colors.Game_RE2Secondary, Colors.Game_RE2Secondary }},
+        { "re2rt", () => new[] { Colors.Game_RE2RTPrimary, Colors.Game_RE2RTSecondary, Colors.Game_RE2RTSecondary }},
+        { "re3", () => new[] { Colors.Game_RE3Primary, Colors.Game_RE3Secondary, Colors.Game_RE3Secondary }},
+        { "re3rt", () => new[] { Colors.Game_RE3RTPrimary, Colors.Game_RE3RTSecondary, Colors.Game_RE3RTSecondary }},
+        { "re4", () => new[] { Colors.Game_RE4Primary, Colors.Game_RE4Secondary, Colors.Game_RE4Secondary }},
+        { "re7", () => new[] { Colors.Game_RE7Primary, Colors.Game_RE7Secondary, Colors.Game_RE7Secondary }},
+        { "re7rt", () => new[] { Colors.Game_RE7RTPrimary, Colors.Game_RE7RTSecondary, Colors.Game_RE7RTSecondary }},
+        { "re8", () => new[] { Colors.Game_RE8Primary, Colors.Game_RE8Secondary, Colors.Game_RE8Secondary }},
+        { "re9", () => new[] { Colors.Game_RE9Primary, Colors.Game_RE9Secondary, Colors.Game_RE9Secondary }},
     };
+
     public void Init(UIContext context)
     {
         this.context = context;
-        data = context.Get<WindowData>();
         var games = AppConfig.Instance.GetGamelist().Select(gs => gs.name).Select(code => new { Code = code, Name = Languages.TranslateGame(code)}).OrderBy(x => x.Name).ToArray();
         gameNameCodes = games.Select(g => g.Code).ToArray();
         gameNames = games.Select(g => g.Name).ToArray();
@@ -355,7 +365,7 @@ public class HomeWindow : IWindowHandler
                             continue;
                         }
                         bool clicked = ImGui.InvisibleButton(bundle, buttonSize);
-                        bool hovered = ImGui.IsItemHovered();
+                        bool isHovered = ImGui.IsItemHovered();
                         var min = ImGui.GetItemRectMin();
                         var max = ImGui.GetItemRectMax();
                         var size = max - min;
@@ -367,7 +377,7 @@ public class HomeWindow : IWindowHandler
                         var iconChars = AppIcons.SIC_BundleContain;
                         var iconSize = ImGui.CalcTextSize(iconChars[0].ToString());
                         var iconPos = new Vector2(min.X + ImGui.GetStyle().ItemSpacing.X, min.Y + ((size.Y - iconSize.Y) + ImGui.GetStyle().ItemSpacing.Y * 2) * 0.5f);
-                        var colors = GetGameColors(gamePrefix, hovered);
+                        var colors = GetGameColors(gamePrefix, isHovered);
                         for (int i = 0; i < iconChars.Length; i++) {
                             var c = colors[i];
                             drawList.AddText(iconPos, ImGui.ColorConvertFloat4ToU32(c), iconChars[i].ToString());
@@ -392,7 +402,9 @@ public class HomeWindow : IWindowHandler
                             }
                         }
                         var textPos = new Vector2(min.X + textOffset, iconPos.Y);
+                        ImGui.PushStyleColor(ImGuiCol.Text, isHovered ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text));
                         drawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), bundleDisplayName);
+                        ImGui.PopStyleColor();
 
                         string gameDisplay = gamePrefix != null ? Languages.TranslateGame(gamePrefix): "";
                         var gameTextSize = ImGui.CalcTextSize(gameDisplay);
@@ -507,8 +519,8 @@ public class HomeWindow : IWindowHandler
         if (string.IsNullOrEmpty(prefix)) {
             return new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary };
         }
-        if (GameColors.TryGetValue($"{prefix.ToLowerInvariant()}", out var colors)) {
-            return colors;
+        if (GameColors.TryGetValue($"{prefix}", out var colors)) {
+            return colors();
         }
         return new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary };
     }
