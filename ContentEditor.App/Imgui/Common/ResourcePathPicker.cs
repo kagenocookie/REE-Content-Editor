@@ -192,7 +192,7 @@ public class ResourcePathPicker : IObjectUIHandler
 
     public static void ShowSaveToBundle(IFileLoader loader, IResourceFile resource, ContentWorkspace workspace, string initialFilename, string? nativePath = null, Action? callback = null)
     {
-        if (!string.IsNullOrEmpty(nativePath)) nativePath = Path.Combine(Path.GetDirectoryName(nativePath)!, initialFilename).Replace('\\', '/').ToLowerInvariant();
+        if (!string.IsNullOrEmpty(nativePath) && !Path.IsPathFullyQualified(initialFilename)) nativePath = Path.Combine(Path.GetDirectoryName(nativePath)!, initialFilename).Replace('\\', '/').ToLowerInvariant();
 
         var tempHandle = FileHandle.CreateEmbedded(loader, resource, initialFilename, nativePath);
 

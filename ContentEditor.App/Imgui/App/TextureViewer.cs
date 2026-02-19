@@ -7,7 +7,6 @@ using ContentEditor.BackgroundTasks;
 using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher;
-using DirectXTexNet;
 using ReeLib;
 using ReeLib.DDS;
 using static ContentEditor.App.Graphics.Texture;
@@ -159,6 +158,52 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         }
 
         if (texture != null) {
+            using (var _ = ImguiHelpers.Disabled(fileHandle?.Modified != true || !File.Exists(texturePath))) {
+                if (ImGui.Button($"{AppIcons.SI_Save}")) {
+                    if (fileHandle!.Loader is TextureLoader) {
+                        fileHandle.Save(workspace);
+                    } else {
+                        texture.SaveAs(texturePath!);
+                    }
+                    fileHandle.Modified = false;
+                }
+                ImguiHelpers.Tooltip("Save");
+            }
+            ImGui.SameLine();
+
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_SaveAs, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary })) {
+                var baseName = PathUtils.GetFilepathWithoutExtensionOrVersion(texturePath ?? texture.Path);
+                var fileFilter = FileFilters.TextureFile;
+                var currentTexExt = fileHandle?.Loader is TextureLoader ? PathUtils.GetFilenameExtensionWithSuffixes(texture.Path).ToString() : null;
+                if (!string.IsNullOrEmpty(currentTexExt)) {
+                    fileFilter = fileFilter.Append(new FileFilter("TEX", $"{currentTexExt}")).ToArray();
+                }
+
+                PlatformUtils.ShowSaveFileDialog((file) => {
+                    MainLoop.Instance.InvokeFromUIThread(() => SaveTextureToFile(file));
+                }, baseName.ToString(), filter: fileFilter);
+            }
+            ImguiHelpers.Tooltip("Save As...");
+
+            ImGui.SameLine();
+            using (var _ = ImguiHelpers.Disabled(fileHandle?.Modified != true || !File.Exists(texturePath))) {
+                if (ImGui.Button($"{AppIcons.SI_Reset}")) {
+                    fileHandle!.Stream.Dispose();
+                    fileHandle.Stream = File.OpenRead(texturePath!).ToMemoryStream();
+                    if (fileHandle.Loader is TextureLoader) {
+                        fileHandle.GetFile<TexFile>().FileHandler = new FileHandler(fileHandle.Stream, fileHandle.Filepath);
+                    } else if (fileHandle.Resource is BaseFileResource<DDSFile> dds) {
+                        dds.File.FileHandler = new FileHandler(fileHandle.Stream, fileHandle.Filepath);
+                    }
+                    fileHandle.Revert(workspace);
+                    SetImageSource(fileHandle);
+                }
+                ImguiHelpers.Tooltip("Revert");
+            }
+
+            ImGui.SameLine();
+            ImguiHelpers.VerticalSeparator();
+            ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_FileSource}") && texture.Path != null) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(texture.Path);
             }
@@ -266,56 +311,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
     private void ShowMenu()
     {
         if (ImGui.BeginMenuBar()) {
-            if (ImGui.BeginMenu("File")) {
-                if (ImGui.MenuItem("Open")) {
-                    var window = EditorWindow.CurrentWindow!;
-                    PlatformUtils.ShowFileDialog((files) => {
-                        window.InvokeFromUIThread(() => SetImageSource(files[0]));
-                    });
-                }
-
-                if (texture != null) {
-                    if (fileHandle?.Modified == true && File.Exists(texturePath)) {
-                        if (ImGui.MenuItem("Save")) {
-                            if (fileHandle.Loader is TextureLoader) {
-                                fileHandle.Save(workspace);
-                            } else {
-                                texture.SaveAs(texturePath);
-                            }
-                            fileHandle.Modified = false;
-                        }
-                        if (ImGui.MenuItem("Revert")) {
-                            fileHandle.Stream.Dispose();
-                            fileHandle.Stream = File.OpenRead(texturePath).ToMemoryStream();
-                            if (fileHandle.Loader is TextureLoader) {
-                                fileHandle.GetFile<TexFile>().FileHandler = new FileHandler(fileHandle.Stream, fileHandle.Filepath);
-                            } else if (fileHandle.Resource is BaseFileResource<DDSFile> dds) {
-                                dds.File.FileHandler = new FileHandler(fileHandle.Stream, fileHandle.Filepath);
-                            }
-                            fileHandle.Revert(workspace);
-                            SetImageSource(fileHandle);
-                        }
-                    }
-
-                    if (ImGui.MenuItem("Save As ...")) {
-                        var baseName = PathUtils.GetFilepathWithoutExtensionOrVersion(texturePath ?? texture.Path);
-                        var fileFilter = FileFilters.TextureFile;
-                        var currentTexExt = fileHandle?.Loader is TextureLoader ? PathUtils.GetFilenameExtensionWithSuffixes(texture.Path).ToString() : null;
-                        if (!string.IsNullOrEmpty(currentTexExt)) {
-                            fileFilter = fileFilter.Append(new FileFilter("TEX", $"{currentTexExt}")).ToArray();
-                        }
-
-                        PlatformUtils.ShowSaveFileDialog((file) => {
-                            MainLoop.Instance.InvokeFromUIThread(() => SaveTextureToFile(file));
-                        }, baseName.ToString(), filter: fileFilter);
-                    }
-                }
-
-
-                ImGui.EndMenu();
-            }
-
-            if (ImGui.BeginMenu("Convert")) {
+            if (ImGui.BeginMenu($"{AppIcons.SI_GenericIO} Import / Export")) {
                 ShowExportMenu();
                 ImGui.EndMenu();
             }
@@ -401,7 +397,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         if (fileHandle.Loader is TextureLoader) {
             ImGui.SameLine();
             var isStoredTex = fileHandle.HandleType is FileHandleType.Bundle or FileHandleType.Disk && File.Exists(filepath);
-            if (ImGui.Button(isStoredTex ? $"{AppIcons.SI_Save} Save" : $"{AppIcons.SI_UpdateTexture} Update Settings")) {
+            if (ImGui.Button($"{AppIcons.SI_UpdateTexture} Update")) {
                 var defaultFilename = GetTexFilenameSuggestion();
                 var tex = fileHandle.GetFile<TexFile>();
                 ProcessTexture(defaultFilename, (dds) => {
@@ -428,6 +424,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                                 var tempTex = new Texture().LoadFromFile(lastImportSourcePath);
                                 dds = tempTex.GetAsDDS(generateMissingMipMaps: this.mipMapOption == MipGenOptions.Generate);
                             }
+                            fileHandle.GetFile<TexFile>().LoadDataFromDDS(dds);
                             texture.LoadFromDDS(dds);
                             fileHandle.Modified = true;
                         });
@@ -436,7 +433,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
             }
         }
 
-        var bundleConvert = workspace.CurrentBundle != null && ImguiHelpers.SameLine() && ImGui.Button("Save to bundle ...");
+        var bundleConvert = workspace.CurrentBundle != null && ImguiHelpers.SameLine() && ImGui.Button($"{AppIcons.SI_Bundle} Save to bundle ...");
         if (conv1 || bundleConvert) {
             var defaultFilename = GetTexFilenameSuggestion();
 
@@ -444,21 +441,23 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                 var tex = new TexFile(new FileHandler(new MemoryStream(), defaultFilename));
                 tex.ChangeVersion(exportTemplate);
                 tex.LoadDataFromDDS(dds);
-                // note: potential memory leak if the user doesn't confirm the save dialog. Surely nobody will have issues because of it...
-                if (bundleConvert) {
-                    var texLoader = fileHandle.Loader as TextureLoader ?? new TextureLoader();
-                    var tempres = new BaseFileResource<TexFile>(tex);
-                    ResourcePathPicker.ShowSaveToBundle(texLoader, tempres, workspace, defaultFilename, fileHandle.NativePath, () => {
-                        dds.Dispose();
-                        tex.Dispose();
-                    });
-                } else {
-                    PlatformUtils.ShowSaveFileDialog((path) => {
-                        TextureLoader.SaveTo(tex, path);
-                        dds.Dispose();
-                        tex.Dispose();
-                    }, defaultFilename);
-                }
+                MainLoop.Instance.InvokeFromUIThread(() => {
+                    // note: potential memory leak if the user doesn't confirm the save dialog. Surely nobody will have issues because of it...
+                    if (bundleConvert) {
+                        var texLoader = fileHandle.Loader as TextureLoader ?? new TextureLoader();
+                        var tempres = new BaseFileResource<TexFile>(tex);
+                        ResourcePathPicker.ShowSaveToBundle(texLoader, tempres, workspace, defaultFilename, fileHandle.NativePath, () => {
+                            dds.Dispose();
+                            tex.Dispose();
+                        });
+                    } else {
+                        PlatformUtils.ShowSaveFileDialog((path) => {
+                            TextureLoader.SaveTo(tex, path);
+                            dds.Dispose();
+                            tex.Dispose();
+                        }, defaultFilename);
+                    }
+                });
             });
         }
     }
