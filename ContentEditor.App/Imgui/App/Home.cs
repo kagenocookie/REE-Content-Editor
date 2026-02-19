@@ -27,6 +27,11 @@ public class HomeWindow : IWindowHandler
     private static string[] gameNameCodes = null!;
     private string chosenGame = "";
     private bool customGame;
+    private enum BundleDisplayMode {
+        Grid,
+        List
+    }
+    private BundleDisplayMode _bundleDisplayMode = BundleDisplayMode.Grid;
 
     private static Dictionary<string, Func<Vector4[]>> GameColors = new() // TODO SILVER: Add the reset of the games
     {
@@ -178,7 +183,6 @@ public class HomeWindow : IWindowHandler
         ImGui.Separator();
         ImGui.Spacing();
         ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
-        // SILVER: Maybe even a notification when a new version is up or should that be its own tab?
         ImGui.Text("Version: " + AppConfig.Version);
         ImGui.PopStyleColor();
     }
@@ -299,7 +303,7 @@ public class HomeWindow : IWindowHandler
                     ImGui.SameLine();
                     string filterLabelDisplayText = _activeBundleGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} " + "All Games" : $"{AppIcons.SI_Filter} " + $"{_activeBundleGameFilters.Count} Selected";
                     float filterComboWidth = ImGui.CalcTextSize(filterLabelDisplayText).X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
-                    ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - (((filterComboWidth + ImGui.GetStyle().ItemSpacing.X) + (ImGui.GetStyle().FramePadding.X + ImGui.GetStyle().ItemSpacing.X) * 3)));
+                    ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - (((filterComboWidth + ImGui.GetStyle().ItemSpacing.X) + (ImGui.GetStyle().FramePadding.X + ImGui.GetStyle().ItemSpacing.X) * 3) + (ImGui.GetStyle().ItemSpacing.X) * 6));
                     ImGui.SetNextItemAllowOverlap();
                     ImGui.InputTextWithHint("##BundleFilter", $"{AppIcons.SI_GenericMagnifyingGlass} Search Bundles", ref bundleFilter, 128);
                     if (!string.IsNullOrEmpty(bundleFilter)) {
@@ -335,6 +339,13 @@ public class HomeWindow : IWindowHandler
                         }
                         ImguiHelpers.Tooltip("Clear Game Filters");
                     }
+                    ImGui.SameLine();
+                    ImguiHelpers.VerticalSeparator();
+                    ImGui.SameLine();
+                    if (ImGui.Button(_bundleDisplayMode == BundleDisplayMode.Grid ? $"{AppIcons.SI_ViewGridSmall}" : $"{AppIcons.List}")) {
+                        _bundleDisplayMode = _bundleDisplayMode == BundleDisplayMode.Grid ? BundleDisplayMode.List : BundleDisplayMode.Grid; // SILVER: We should probably save this to config
+                    }
+                    ImguiHelpers.Tooltip(_bundleDisplayMode == BundleDisplayMode.Grid ? "Grid View"u8 : "List View"u8);
                     ImGui.Spacing();
                     ImGui.Separator();
                     ImGui.Spacing();
@@ -348,72 +359,82 @@ public class HomeWindow : IWindowHandler
                         var sep = bundle.IndexOf('|');
                         var gamePrefix = sep == -1 ? null : bundle.Substring(0, sep);
                         var bundleName = sep == -1 ? bundle : bundle.Substring(sep + 1);
-                        if (curX > 0) {
-                            if (curX > availSpace.X - buttonSize.X) {
-                                ImGui.Spacing();
-                                curX = 0;
-                            } else {
-                                ImGui.SameLine();
-                            }
-                        }
-                        curX += buttonSize.X + ImGui.GetStyle().ItemSpacing.X;
-
+                        string gameDisplay = gamePrefix != null ? Languages.TranslateGame(gamePrefix) : "";
                         if (_activeBundleGameFilters.Count > 0 && (gamePrefix == null || !_activeBundleGameFilters.Contains(gamePrefix))) {
                             continue;
                         }
                         if (!string.IsNullOrEmpty(bundleFilter) && !bundle.Contains(bundleFilter, isBundleFilterMatchCase ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase)) {
                             continue;
                         }
-                        bool clicked = ImGui.InvisibleButton(bundle, buttonSize);
-                        bool isHovered = ImGui.IsItemHovered();
-                        var min = ImGui.GetItemRectMin();
-                        var max = ImGui.GetItemRectMax();
-                        var size = max - min;
-                        var drawList = ImGui.GetWindowDrawList();
-
-                        drawList.AddRect(min, max, ImGui.GetColorU32(Colors.TextActive), 0f, ImDrawFlags.None, 2f);
-
-                        ImGui.PushFont(null, UI.FontSizeLarge + 75);
-                        var iconChars = AppIcons.SIC_BundleContain;
-                        var iconSize = ImGui.CalcTextSize(iconChars[0].ToString());
-                        var iconPos = new Vector2(min.X + ImGui.GetStyle().ItemSpacing.X, min.Y + ((size.Y - iconSize.Y) + ImGui.GetStyle().ItemSpacing.Y * 2) * 0.5f);
-                        var colors = GetGameColors(gamePrefix, isHovered);
-                        for (int i = 0; i < iconChars.Length; i++) {
-                            var c = colors[i];
-                            drawList.AddText(iconPos, ImGui.ColorConvertFloat4ToU32(c), iconChars[i].ToString());
-                        }
-                        ImGui.PopFont();
-
-                        var textSize = ImGui.CalcTextSize(bundleName);
-                        float textOffset = iconSize.X + ImGui.GetStyle().ItemSpacing.X * 2;
-                        float availableTextWidth = max.X - (min.X + textOffset) - ImGui.GetStyle().ItemSpacing.X * 2;
-                        string bundleDisplayName = bundleName;
-                        if (ImGui.CalcTextSize(bundleDisplayName).X > availableTextWidth) {
-                            const string ellipsis = "...";
-                            float ellipsisWidth = ImGui.CalcTextSize(ellipsis).X;
-
-                            for (int i = bundleDisplayName.Length - 1; i > 0; i--) {
-                                string adjustedBundleDisplayName = string.Concat(bundleDisplayName.AsSpan(0, i), ellipsis);
-
-                                if (ImGui.CalcTextSize(adjustedBundleDisplayName).X <= availableTextWidth) {
-                                    bundleDisplayName = adjustedBundleDisplayName;
-                                    break;
+                        if (_bundleDisplayMode == BundleDisplayMode.Grid) {
+                            if (curX > 0) {
+                                if (curX > availSpace.X - buttonSize.X) {
+                                    ImGui.Spacing();
+                                    curX = 0;
+                                } else {
+                                    ImGui.SameLine();
                                 }
                             }
-                        }
-                        var textPos = new Vector2(min.X + textOffset, iconPos.Y);
-                        ImGui.PushStyleColor(ImGuiCol.Text, isHovered ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text));
-                        drawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), bundleDisplayName);
-                        ImGui.PopStyleColor();
+                            curX += buttonSize.X + ImGui.GetStyle().ItemSpacing.X;
+                            bool clicked = ImGui.InvisibleButton(bundle, buttonSize);
+                            bool isHovered = ImGui.IsItemHovered();
+                            var min = ImGui.GetItemRectMin();
+                            var max = ImGui.GetItemRectMax();
+                            var size = max - min;
+                            var drawList = ImGui.GetWindowDrawList();
 
-                        string gameDisplay = gamePrefix != null ? Languages.TranslateGame(gamePrefix): "";
-                        var gameTextSize = ImGui.CalcTextSize(gameDisplay);
-                        var gameTextPos = new Vector2(min.X + textOffset, iconPos.Y + ImGui.GetFrameHeight());
-                        drawList.AddText(gameTextPos, ImGui.GetColorU32(ImGuiCol.TextDisabled), gameDisplay);
+                            drawList.AddRect(min, max, ImGui.GetColorU32(Colors.TextActive), 0f, ImDrawFlags.None, 2f);
 
-                        if (clicked && gamePrefix != null) {
-                            gameToSet = gamePrefix;
-                            bundleToOpen = bundleName;
+                            ImGui.PushFont(null, UI.FontSizeLarge + 75);
+                            var iconChars = AppIcons.SIC_BundleContain;
+                            var iconSize = ImGui.CalcTextSize(iconChars[0].ToString());
+                            var iconPos = new Vector2(min.X + ImGui.GetStyle().ItemSpacing.X, min.Y + ((size.Y - iconSize.Y) + ImGui.GetStyle().ItemSpacing.Y * 2) * 0.5f);
+                            var colors = GetGameColors(gamePrefix, isHovered);
+                            for (int i = 0; i < iconChars.Length; i++) {
+                                var c = colors[i];
+                                drawList.AddText(iconPos, ImGui.ColorConvertFloat4ToU32(c), iconChars[i].ToString());
+                            }
+                            ImGui.PopFont();
+
+                            var textSize = ImGui.CalcTextSize(bundleName);
+                            float textOffset = iconSize.X + ImGui.GetStyle().ItemSpacing.X * 2;
+                            float availableTextWidth = max.X - (min.X + textOffset) - ImGui.GetStyle().ItemSpacing.X * 2;
+                            string bundleDisplayName = bundleName;
+                            if (ImGui.CalcTextSize(bundleDisplayName).X > availableTextWidth) {
+                                const string ellipsis = "...";
+                                float ellipsisWidth = ImGui.CalcTextSize(ellipsis).X;
+
+                                for (int i = bundleDisplayName.Length - 1; i > 0; i--) {
+                                    string adjustedBundleDisplayName = string.Concat(bundleDisplayName.AsSpan(0, i), ellipsis);
+
+                                    if (ImGui.CalcTextSize(adjustedBundleDisplayName).X <= availableTextWidth) {
+                                        bundleDisplayName = adjustedBundleDisplayName;
+                                        break;
+                                    }
+                                }
+                            }
+                            var textPos = new Vector2(min.X + textOffset, iconPos.Y);
+                            ImGui.PushStyleColor(ImGuiCol.Text, isHovered ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text));
+                            drawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), bundleDisplayName);
+                            ImGui.PopStyleColor();
+
+                            var gameTextSize = ImGui.CalcTextSize(gameDisplay);
+                            var gameTextPos = new Vector2(min.X + textOffset, iconPos.Y + ImGui.GetFrameHeight());
+                            drawList.AddText(gameTextPos, ImGui.GetColorU32(ImGuiCol.TextDisabled), gameDisplay);
+
+                            if (clicked && gamePrefix != null) {
+                                gameToSet = gamePrefix;
+                                bundleToOpen = bundleName;
+                            }
+                        } else {
+                            if (ImguiHelpers.ContextMenuItem($"##{gamePrefix}{bundleName}", AppIcons.SIC_BundleContain, bundleName, GetGameColors(gamePrefix, false))) {
+                                if (gamePrefix != null) {
+                                    gameToSet = gamePrefix;
+                                    bundleToOpen = bundleName;
+                                }
+                            }
+                            ImGui.SameLine(ImGui.GetContentRegionAvail().X - (ImGui.CalcTextSize($"{gameDisplay}").X + ImGui.GetStyle().FramePadding.X));
+                            ImGui.TextColored(ImguiHelpers.GetColor(ImGuiCol.TextDisabled), gameDisplay);
                         }
                     }
                     if (gameToSet != null && bundleToOpen != null) {

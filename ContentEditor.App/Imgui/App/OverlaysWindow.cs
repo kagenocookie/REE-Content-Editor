@@ -42,7 +42,7 @@ public class OverlaysWindow : IWindowHandler
         } else if (context.GetWorkspace() == null) {
             helptext = "Activate the game you wish to edit in the menu";
         } else if (ShowHelp) {
-            helptext = "Drag & drop a supported RE Engine resource file here or use the menu to open one.\nYou can access the game files directly using the Windows > PAK File Browser option.";
+            //helptext = "Drag & drop a supported RE Engine resource file here or use the menu to open one.\nYou can access the game files directly using the Windows > PAK File Browser option.";
         }
         var editorWindow = data.ParentWindow as EditorWindow;
         if (helptext != null) {
