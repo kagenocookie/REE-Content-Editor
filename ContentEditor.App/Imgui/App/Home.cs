@@ -88,7 +88,7 @@ public class HomeWindow : IWindowHandler
         string text = "Welcome to Content Editor";
         var textSize = ImGui.CalcTextSize(text);
         var availSpace = ImGui.GetContentRegionAvail();
-        var posX = (availSpace.X - textSize.X) * 0.5f;
+        var posX = (availSpace.X - textSize.X - 250 - ImGui.GetStyle().ItemSpacing.X) * 0.5f;
         var posY = (availSpace.Y - textSize.Y) * 0.5f;
 
         if (posX > 0) ImGui.SetCursorPosX(ImGui.GetCursorPosX() + posX);
