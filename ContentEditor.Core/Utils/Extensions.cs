@@ -47,6 +47,12 @@ public static class Extensions
     }
     public static bool TryDeserializeJson<T>(this string json, [MaybeNullWhen(false)] out T result, out string? error, JsonSerializerOptions? options = null)
     {
+        if (string.IsNullOrEmpty(json) || json[0] != '{' || json[^1] != '}') {
+            result = default;
+            error = null;
+            return false;
+        }
+
         try {
             var obj = JsonSerializer.Deserialize<T>(json, options);
             result = obj;

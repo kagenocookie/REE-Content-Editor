@@ -22,6 +22,7 @@ public class UIContext
     public readonly List<UIContext> children = new();
     public StringFormatter? stringFormatter;
     private bool wasChanged;
+    public bool IsChanged => wasChanged;
 
     public bool HasChildren => children.Count != 0;
     public bool StateBool {
