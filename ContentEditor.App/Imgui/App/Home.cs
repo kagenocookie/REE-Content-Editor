@@ -420,7 +420,18 @@ public class HomeWindow : IWindowHandler
                             ImGui.PushStyleColor(ImGuiCol.Text, isHovered ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text));
                             drawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), bundleDisplayName);
                             ImGui.PopStyleColor();
+                            if (ImGui.CalcTextSize(gameDisplay).X > availableTextWidth) {
+                                for (int i = gameDisplay.Length - 1; i > 0; i--) {
+                                    if (gamePrefix != null) {
+                                        string adjustedGameDisplayName = gamePrefix.ToUpper();
 
+                                        if (ImGui.CalcTextSize(adjustedGameDisplayName).X <= availableTextWidth) {
+                                            gameDisplay = adjustedGameDisplayName;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
                             var gameTextSize = ImGui.CalcTextSize(gameDisplay);
                             var gameTextPos = new Vector2(min.X + textOffset, iconPos.Y + ImGui.GetFrameHeight());
                             drawList.AddText(gameTextPos, ImGui.GetColorU32(ImGuiCol.TextDisabled), gameDisplay);
