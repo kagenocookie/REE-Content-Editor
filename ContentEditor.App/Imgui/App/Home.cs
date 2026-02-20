@@ -403,16 +403,21 @@ public class HomeWindow : IWindowHandler
                             float textOffset = iconSize.X + ImGui.GetStyle().ItemSpacing.X * 2;
                             float availableTextWidth = max.X - (min.X + textOffset) - ImGui.GetStyle().ItemSpacing.X * 2;
                             string bundleDisplayName = bundleName;
-                            if (ImGui.CalcTextSize(bundleDisplayName).X > availableTextWidth) {
+                            if (availableTextWidth <= 0) {
+                                bundleDisplayName = string.Empty;
+                            } else if (ImGui.CalcTextSize(bundleDisplayName).X > availableTextWidth) {
                                 const string ellipsis = "...";
                                 float ellipsisWidth = ImGui.CalcTextSize(ellipsis).X;
 
-                                for (int i = bundleDisplayName.Length - 1; i > 0; i--) {
-                                    string adjustedBundleDisplayName = string.Concat(bundleDisplayName.AsSpan(0, i), ellipsis);
-
-                                    if (ImGui.CalcTextSize(adjustedBundleDisplayName).X <= availableTextWidth) {
-                                        bundleDisplayName = adjustedBundleDisplayName;
-                                        break;
+                                if (ellipsisWidth > availableTextWidth) {
+                                    bundleDisplayName = string.Empty;
+                                } else {
+                                    for (int i = bundleDisplayName.Length - 1; i > 0; i--) {
+                                        string adjusted = string.Concat(bundleDisplayName.AsSpan(0, i), ellipsis);
+                                        if (ImGui.CalcTextSize(adjusted).X <= availableTextWidth) {
+                                            bundleDisplayName = adjusted;
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -420,9 +425,15 @@ public class HomeWindow : IWindowHandler
                             ImGui.PushStyleColor(ImGuiCol.Text, isHovered ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text));
                             drawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), bundleDisplayName);
                             ImGui.PopStyleColor();
-                            if (ImGui.CalcTextSize(gameDisplay).X > availableTextWidth) {
-                                for (int i = gameDisplay.Length - 1; i > 0; i--) {
-                                    if (gamePrefix != null) {
+                            if (availableTextWidth <= 0) {
+                                gameDisplay = string.Empty;
+                            } else if (ImGui.CalcTextSize(gameDisplay).X > availableTextWidth && gamePrefix != null) {
+                                float gamePrefixWidth = ImGui.CalcTextSize(gamePrefix.ToUpper()).X;
+
+                                if (gamePrefixWidth > availableTextWidth) {
+                                    gameDisplay = string.Empty;
+                                } else {
+                                    for (int i = gameDisplay.Length - 1; i > 0; i--) {
                                         string adjustedGameDisplayName = gamePrefix.ToUpper();
 
                                         if (ImGui.CalcTextSize(adjustedGameDisplayName).X <= availableTextWidth) {
@@ -432,7 +443,6 @@ public class HomeWindow : IWindowHandler
                                     }
                                 }
                             }
-                            var gameTextSize = ImGui.CalcTextSize(gameDisplay);
                             var gameTextPos = new Vector2(min.X + textOffset, iconPos.Y + ImGui.GetFrameHeight());
                             drawList.AddText(gameTextPos, ImGui.GetColorU32(ImGuiCol.TextDisabled), gameDisplay);
 
