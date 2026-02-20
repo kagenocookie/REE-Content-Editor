@@ -6,7 +6,11 @@ using Silk.NET.Maths;
 using System.Numerics;
 
 namespace ContentEditor.App;
-
+public enum BundleDisplayMode
+{
+    Grid,
+    List
+}
 public class HomeWindow : IWindowHandler
 {
     public string HandlerName => "Home";
@@ -27,13 +31,9 @@ public class HomeWindow : IWindowHandler
     private static string[] gameNameCodes = null!;
     private string chosenGame = "";
     private bool customGame;
-    private enum BundleDisplayMode {
-        Grid,
-        List
-    }
-    private BundleDisplayMode _bundleDisplayMode = BundleDisplayMode.Grid;
+    public BundleDisplayMode DisplayMode { get; set; } = AppConfig.Instance.BundleDisplayMode;
 
-    private static Dictionary<string, Func<Vector4[]>> GameColors = new() // TODO SILVER: Add the reset of the games
+    private static Dictionary<string, Func<Vector4[]>> GameColors = new() // TODO SILVER: Add the rest of the games
     {
         { "re2", () => new[] { Colors.Game_RE2Primary, Colors.Game_RE2Secondary, Colors.Game_RE2Secondary }},
         { "re2rt", () => new[] { Colors.Game_RE2RTPrimary, Colors.Game_RE2RTSecondary, Colors.Game_RE2RTSecondary }},
@@ -44,6 +44,9 @@ public class HomeWindow : IWindowHandler
         { "re7rt", () => new[] { Colors.Game_RE7RTPrimary, Colors.Game_RE7RTSecondary, Colors.Game_RE7RTSecondary }},
         { "re8", () => new[] { Colors.Game_RE8Primary, Colors.Game_RE8Secondary, Colors.Game_RE8Secondary }},
         { "re9", () => new[] { Colors.Game_RE9Primary, Colors.Game_RE9Secondary, Colors.Game_RE9Secondary }},
+        { "mhsto3", () => new[] { Colors.Game_MHSTO3Primary, Colors.Game_MHSTO3Secondary, Colors.Game_MHSTO3Secondary }},
+        { "mhrise", () => new[] { Colors.Game_MHRISEPrimary, Colors.Game_MHRISESecondary, Colors.Game_MHRISESecondary }},
+        { "mhwilds", () => new[] { Colors.Game_MHWILDSPrimary, Colors.Game_MHWILDSSecondary, Colors.Game_MHWILDSSecondary }},
     };
 
     public void Init(UIContext context)
@@ -342,10 +345,10 @@ public class HomeWindow : IWindowHandler
                     ImGui.SameLine();
                     ImguiHelpers.VerticalSeparator();
                     ImGui.SameLine();
-                    if (ImGui.Button(_bundleDisplayMode == BundleDisplayMode.Grid ? $"{AppIcons.SI_ViewGridSmall}" : $"{AppIcons.List}")) {
-                        _bundleDisplayMode = _bundleDisplayMode == BundleDisplayMode.Grid ? BundleDisplayMode.List : BundleDisplayMode.Grid; // SILVER: We should probably save this to config
+                    if (ImGui.Button(DisplayMode == BundleDisplayMode.Grid ? $"{AppIcons.SI_ViewGridSmall}" : $"{AppIcons.List}")) {
+                        AppConfig.Instance.BundleDisplayMode = DisplayMode = DisplayMode == BundleDisplayMode.Grid ? BundleDisplayMode.List : BundleDisplayMode.Grid;
                     }
-                    ImguiHelpers.Tooltip(_bundleDisplayMode == BundleDisplayMode.Grid ? "Grid View"u8 : "List View"u8);
+                    ImguiHelpers.Tooltip(DisplayMode == BundleDisplayMode.Grid ? "Grid View"u8 : "List View"u8);
                     ImGui.Spacing();
                     ImGui.Separator();
                     ImGui.Spacing();
@@ -366,7 +369,7 @@ public class HomeWindow : IWindowHandler
                         if (!string.IsNullOrEmpty(bundleFilter) && !bundle.Contains(bundleFilter, isBundleFilterMatchCase ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase)) {
                             continue;
                         }
-                        if (_bundleDisplayMode == BundleDisplayMode.Grid) {
+                        if (DisplayMode == BundleDisplayMode.Grid) {
                             if (curX > 0) {
                                 if (curX > availSpace.X - buttonSize.X) {
                                     ImGui.Spacing();
@@ -445,6 +448,8 @@ public class HomeWindow : IWindowHandler
                 }
                 if (ImGui.BeginTabItem("Updates")) {
                     ImGui.Text("Some good update info here, fixed every bug or something.\nButtons to update the different resources?");
+                    ImGui.Spacing();
+                    ImGui.Text("The overlay help texts are currently drawn on top of the Home Page, but I don't think we should delete them.\nMaybe just move them to a Tips child window, kinda like 010's startup page?");
                     ImGui.EndTabItem();
                 }
             }

@@ -155,6 +155,12 @@ public static class Colors
     public static Vector4 Game_RE8Secondary => Current.Game_RE8Secondary;
     public static Vector4 Game_RE9Primary => Current.Game_RE9Primary;
     public static Vector4 Game_RE9Secondary => Current.Game_RE9Secondary;
+    public static Vector4 Game_MHSTO3Primary => Current.Game_MHSTO3Primary;
+    public static Vector4 Game_MHSTO3Secondary => Current.Game_MHSTO3Secondary;
+    public static Vector4 Game_MHRISEPrimary => Current.Game_MHRISEPrimary;
+    public static Vector4 Game_MHRISESecondary => Current.Game_MHRISESecondary;
+    public static Vector4 Game_MHWILDSPrimary => Current.Game_MHWILDSPrimary;
+    public static Vector4 Game_MHWILDSSecondary => Current.Game_MHWILDSSecondary;
 }
 
 public sealed class AppColors
@@ -297,6 +303,12 @@ public sealed class AppColors
     public Vector4 Game_RE8Secondary = new Vector4(0.53f, 0.29f, 0.91f, 1);
     public Vector4 Game_RE9Primary = new Vector4(0.93f, 0.95f, 0.96f, 1);
     public Vector4 Game_RE9Secondary = new Vector4(1, 0.71f, 0, 1);
+    public Vector4 Game_MHSTO3Primary = new Vector4(0.93f, 0.73f, 0.2f, 1);
+    public Vector4 Game_MHSTO3Secondary = new Vector4(0, 0.64f, 1, 1);
+    public Vector4 Game_MHRISEPrimary = new Vector4(0.93f, 0.73f, 0.2f, 1);
+    public Vector4 Game_MHRISESecondary = new Vector4(0.8f, 0.2f, 0.2f, 1);
+    public Vector4 Game_MHWILDSPrimary = new Vector4(0.93f, 0.73f, 0.2f, 1);
+    public Vector4 Game_MHWILDSSecondary = new Vector4(0, 0.77f, 0.47f, 1);
     public static AppColors GetDarkThemeColors() => new AppColors();
 
     public static AppColors GetLightThemeColors() => new AppColors() {

@@ -45,6 +45,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string UsePakFilePreviewWindow = "use_pak_preview_window";
         public const string UsePakCompactFilePaths = "use_pak_compact_file_paths";
         public const string PakDisplayMode = "pak_display_mode";
+        public const string BundleDisplayMode = "bundle_display_mode";
         public const string ThumbnailCacheFilepath = "thumbnail_cache_path";
         public const string CacheFilepath = "cache_path";
         public const string BookmarksFilepath = "bookmarks_path";
@@ -183,6 +184,9 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<int> PakDisplayModeValue = new SettingWrapper<int>(Keys.LogToFile, _lock, (int)FileDisplayMode.List);
     public FileDisplayMode PakDisplayMode { get => (FileDisplayMode)PakDisplayModeValue.Get(); set => PakDisplayModeValue.Set((int)value); }
 
+    public readonly SettingWrapper<int> BundleDisplayModeValue = new SettingWrapper<int>(Keys.LogToFile, _lock, (int)BundleDisplayMode.Grid);
+    public BundleDisplayMode BundleDisplayMode { get => (BundleDisplayMode)BundleDisplayModeValue.Get(); set => BundleDisplayModeValue.Set((int)value); }
+
     public readonly SettingWrapper<bool> RenderAxis = new SettingWrapper<bool>(Keys.RenderAxis, _lock, true);
     public readonly SettingWrapper<bool> RenderMeshes = new SettingWrapper<bool>(Keys.RenderMeshes, _lock, true);
     public readonly SettingWrapper<bool> RenderColliders = new SettingWrapper<bool>(Keys.RenderColliders, _lock, true);
@@ -316,6 +320,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.UsePakFilePreviewWindow, instance.UsePakFilePreviewWindow.value.ToString(), null),
             (Keys.UsePakCompactFilePaths, instance.UsePakCompactFilePaths.value.ToString(), null),
             (Keys.PakDisplayMode, instance.PakDisplayModeValue.value.ToString(), null),
+            (Keys.BundleDisplayMode, instance.BundleDisplayModeValue.value.ToString(), null),
             (Keys.PrettyLabels, instance.PrettyFieldLabels.value.ToString(), null),
             (Keys.QuaternionsAsEuler, instance.ShowQuaternionsAsEuler.value.ToString(), null),
             (Keys.PauseAnimPlayerOnSeek, instance.PauseAnimPlayerOnSeek.value.ToString(), null),
@@ -471,6 +476,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.PakDisplayMode:
                             if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsed)) PakDisplayModeValue.value = Math.Clamp(parsed, (int)FileDisplayMode.List, (int)FileDisplayMode.Grid);
+                            break;
+                        case Keys.BundleDisplayMode:
+                            if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsed)) BundleDisplayModeValue.value = Math.Clamp(parsed, (int)BundleDisplayMode.Grid, (int)BundleDisplayMode.List);
                             break;
                         case Keys.UsePakCompactFilePaths:
                             UsePakCompactFilePaths.value = ReadBool(value);
