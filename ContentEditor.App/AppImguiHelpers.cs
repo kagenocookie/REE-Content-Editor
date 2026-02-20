@@ -108,7 +108,7 @@ public static class AppImguiHelpers
         return changed;
     }
 
-    public static void ShowJsonCopyPopup<T>(in T value, UIContext context)
+    public static void ShowValueContextMenu<T>(in T value, UIContext context)
     {
         if (ImGui.BeginPopupContextItem(context.label)) {
             ShowJsonCopyPopupButtons(in value, context);
@@ -129,6 +129,9 @@ public static class AppImguiHelpers
         if (ImGui.Selectable("Paste value")) {
             UndoRedo.RecordClipboardSet<T>(context);
             ImGui.CloseCurrentPopup();
+        }
+        if (context.IsChanged && ImGui.Selectable("Revert to saved value")) {
+            context.Revert();
         }
     }
 
@@ -170,6 +173,9 @@ public static class AppImguiHelpers
             if (ImGui.Selectable("Paste value")) {
                 UndoRedo.RecordClipboardSet(context, type);
                 ImGui.CloseCurrentPopup();
+            }
+            if (context.IsChanged && ImGui.Selectable("Revert to saved value")) {
+                context.Revert();
             }
             ImGui.EndPopup();
         }
