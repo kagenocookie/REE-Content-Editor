@@ -508,7 +508,7 @@ public class HomeWindow : IWindowHandler
     private void ShowUpdateLog()
     {
         using (var _ = ImguiHelpers.Disabled(AutoUpdater.UpdateCheckInProgress)) {
-            if (ImGui.Button("Check for updates")) {
+            if (ImGui.Button($"{AppIcons.SI_Update} Check for updates")) {
                 AutoUpdater.CheckForUpdateInBackground();
             }
         }
@@ -524,21 +524,26 @@ public class HomeWindow : IWindowHandler
             if (!string.IsNullOrEmpty(release.TagName)) {
                 ImGui.PushFont(null, UI.FontSize * 2);
                 ImGui.Text("Version " + release.TagName);
-
                 ImGui.PopFont();
+
                 ImGui.TextColored(Colors.Faded, $"Release date: {release.CreatedAt.ToString()}");
 
                 if (release.TagName == AppConfig.Version) {
                     ImGui.SameLine();
                     ImGui.TextColored(Colors.Success, "(Current version)");
                 } else {
-                    var downloadLink = release.Assets.FirstOrDefault(asset => asset.Name == "ContentEditor.zip")?.BrowserDownloadUrl;
-                    if (downloadLink != null) {
-                        ImGui.SameLine();
-                        if (ImGui.Button("Download this version")) {
-                            FileSystemUtils.OpenURL(downloadLink);
-                        }
+                    ImGui.SameLine();
+                    if (ImGui.Button($"{AppIcons.Download}")) {
+                        var downloadLink = release.Assets.FirstOrDefault(asset => asset.Name == "ContentEditor.zip")?.BrowserDownloadUrl;
+                        if (string.IsNullOrEmpty(downloadLink)) downloadLink = GithubApi.LatestReleaseUrl;
+                        FileSystemUtils.OpenURL(downloadLink);
                     }
+                    ImguiHelpers.Tooltip("Download this version");
+                    ImGui.SameLine();
+                    if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
+                        FileSystemUtils.OpenURL(release.HtmlUrl ?? GithubApi.LatestReleaseUrl);
+                    }
+                    ImguiHelpers.Tooltip("Open release details in browser");
                 }
 
                 ImGui.Spacing();
