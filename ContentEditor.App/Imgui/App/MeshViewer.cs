@@ -259,11 +259,11 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
 
         if (showAnimationsMenu) {
-            ImGui.SetCursorPos(new Vector2(17, TopMargin));
+            ImGui.SetCursorPos(new Vector2(20, TopMargin));
             ImGui.PushStyleColor(ImGuiCol.ChildBg, 0);
-            ImGui.BeginChild("OverlayControlsContainer", new Vector2(480, ImGui.GetContentRegionAvail().Y - ImGui.GetStyle().WindowPadding.Y), 0, ImGuiWindowFlags.NoMove);
+            ImGui.BeginChild("OverlayControlsContainer", new Vector2(500, ImGui.GetContentRegionAvail().Y - ImGui.GetStyle().WindowPadding.Y), ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AlwaysAutoResize, ImGuiWindowFlags.NoMove);
             ImGui.PushStyleColor(ImGuiCol.ChildBg, ImguiHelpers.GetColor(ImGuiCol.WindowBg) with { W = 0.5f });
-            ImGui.BeginChild("OverlayControls", new Vector2(480, 0), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
+            ImGui.BeginChild("OverlayControls", new Vector2(480, AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().Y - 80 : 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders);
 
             ImGui.SameLine();
             ShowAnimationMenu(meshComponent);
@@ -882,9 +882,14 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         var windowSize = ImGui.GetWindowSize();
         var timestamp = $"{animator.CurrentTime:0.00} / {animator.TotalTime:0.00} ({animator.CurrentFrame:000} / {animator.TotalFrames:000})";
         var timestampSize = ImGui.CalcTextSize(timestamp) + new Vector2(5 * 48, 0);
-        ImGui.SetCursorPos(new Vector2(windowSize.X - timestampSize.X - ImGui.GetStyle().WindowPadding.X * 2 - 100, TopMargin));
+        if (AppConfig.Instance.UseFullscreenAnimPlayback) {
+            ImGui.SetCursorPos(new Vector2(20, ImGui.GetWindowHeight() - ImGui.GetContentRegionAvail().Y - ImGui.GetStyle().WindowPadding.Y - 80));
+        } else {
+            ImGui.SetCursorPos(new Vector2(windowSize.X - timestampSize.X - ImGui.GetStyle().WindowPadding.X * 2 - 100, TopMargin));
+        }
+
         ImGui.PushStyleColor(ImGuiCol.ChildBg, ImguiHelpers.GetColor(ImGuiCol.WindowBg) with { W = 0.5f });
-        ImGui.BeginChild("PlaybackControls", new Vector2(timestampSize.X + 50, 80), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
+        ImGui.BeginChild("PlaybackControls", new Vector2(AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().X - ImGui.GetStyle().WindowPadding.X : timestampSize.X + 50, 80), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
 
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
         if (ImGui.Button((animator.IsPlaying ? AppIcons.Pause : AppIcons.Play).ToString()) || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_MeshViewer_PauseAnim.Get().IsPressed() && !isMotFilterActive) {
@@ -940,7 +945,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
         using (var _ = ImguiHelpers.Disabled(!animator.IsActive)) {
             int frame = animator.CurrentFrame;
-            ImGui.SetNextItemWidth(325);
+            ImGui.SetNextItemWidth(AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X - 75: 325);
             if (ImGui.SliderInt("##AnimFrameSlider", ref frame, 0, animator.TotalFrames)) {
                 if (AppConfig.Instance.PauseAnimPlayerOnSeek) {
                     animator.Pause();

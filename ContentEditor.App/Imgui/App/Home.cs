@@ -412,7 +412,7 @@ public class HomeWindow : IWindowHandler
                                 if (ellipsisWidth > availableTextWidth) {
                                     bundleDisplayName = string.Empty;
                                 } else {
-                                    for (int i = bundleDisplayName.Length - 1; i > 0; i--) {
+                                    for (int i = bundleDisplayName.Length - 1; i >= 0; i--) {
                                         string adjusted = string.Concat(bundleDisplayName.AsSpan(0, i), ellipsis);
                                         if (ImGui.CalcTextSize(adjusted).X <= availableTextWidth) {
                                             bundleDisplayName = adjusted;

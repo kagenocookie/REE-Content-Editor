@@ -306,6 +306,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
 
         ShowSlider(config.MaxFps, "Max FPS", 10, 240, "The maximum FPS for rendering.");
         ShowSlider(config.BackgroundMaxFps, "Max FPS in background", 5, config.MaxFps.Get(), "The maximum FPS when the editor window is not focused.");
+        ShowSetting(config.UseFullscreenAnimPlayback, "Fullscreen Animation Playback Overlay", "Whether to keep the animation playback overlay in the top-right corner of the Mesh Viewer or make it fullscreen.");
     }
     private static void ShowDisplayThemeTab()
     {
