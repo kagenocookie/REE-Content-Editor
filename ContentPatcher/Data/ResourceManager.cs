@@ -755,15 +755,11 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             AttemptResolveBundleFile(ref file, streamingNativePath, streamingNativePath, streamingNativePath);
             return true;
         }
-        foreach (var candidate in workspace.Env.FindPossibleFilepaths(streamingNativePath)) {
-            if (openFiles.TryGetValue(candidate, out file)) {
-                return true;
-            }
 
-            file = ReadOrGetFileResource(candidate, null);
+        if (Path.IsPathFullyQualified(filepath) && File.Exists(filepath)) {
+            file = CreateRawStreamFileHandle(filepath, streamingNativePath, File.OpenRead(filepath), true);
             if (file != null) {
-                AttemptResolveBundleFile(ref file, filepath, candidate, candidate);
-                openFiles[candidate] = file;
+                openFiles[filepath] = file;
                 return true;
             }
         }
