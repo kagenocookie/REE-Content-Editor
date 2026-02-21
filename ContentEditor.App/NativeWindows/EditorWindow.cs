@@ -440,8 +440,14 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     protected void ShowMainMenuBar()
     {
         ImGui.BeginMainMenuBar();
-        if (ImGui.MenuItem($"{AppIcons.REECE_LogoSimple}")) {
-            AddUniqueSubwindow(new HomeWindow());
+
+        bool isHomePageDrawn = HasSubwindow<HomeWindow>(out var homePageData);
+        if (ImGui.MenuItem($"{AppIcons.REECE_LogoSimple}", isHomePageDrawn)) {
+            if (isHomePageDrawn && homePageData != null) {
+                CloseSubwindow(homePageData);
+            } else {
+                AddUniqueSubwindow(new HomeWindow());
+            }
         }
         ImguiHelpers.VerticalSeparator();
         var hasUnsavedFiles = HasUnsavedChanges;
