@@ -143,12 +143,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         var console = AddSubwindow(new ConsoleWindow());
         console.Size = new Vector2(Size.X, 200);
         console.Position = new Vector2(0, Size.Y - 200);
-        if (AppConfig.Instance.IsFirstTime) {
-            var data = AddSubwindow(new FirstTimeSetupHelper());
-            data.Size = new Vector2(Math.Min(800, Size.X - 60), Math.Min(400, Size.X - 60));
-            data.Position = new Vector2((Size.X - data.Size.X) / 2, 50);
-            //AppConfig.Instance.IsFirstTime.Set(false);
-        }
         _window.Move += OnResize;
         _window.FramebufferResize += OnResize;
     }

@@ -1,23 +1,24 @@
+using System.Numerics;
 using ContentEditor.App.Github;
 using ContentEditor.App.Internal;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Themes;
 using ReeLib;
-using System.Numerics;
 
 namespace ContentEditor.App;
+
 public enum BundleDisplayMode
 {
     Grid,
     List
 }
+
 public class HomeWindow : IWindowHandler
 {
     public string HandlerName => "Home";
     public bool HasUnsavedChanges => false;
     public int FixedID => -123164;
-    private WindowData data = null!;
     protected UIContext context = null!;
 
     private static HashSet<string>? fullSupportedGames;

@@ -418,7 +418,7 @@ public class DefaultThemes
         style.Colors[(int)ImGuiCol.Button] = new Vector4(0.2000000029802322f, 0.2000000029802322f, 0.2156862765550613f, 1.0f);
         style.Colors[(int)ImGuiCol.ButtonHovered] = new Vector4(0.272f, 0.315f, 0.610f, 1.000f);
         style.Colors[(int)ImGuiCol.ButtonActive] = new Vector4(0.1137254908680916f, 0.5921568870544434f, 0.9254902005195618f, 1.0f);
-        style.Colors[(int)ImGuiCol.Header] = new Vector4(0.2000000029802322f, 0.2000000029802322f, 0.2156862765550613f, 1.0f);
+        style.Colors[(int)ImGuiCol.Header] = new Vector4(0.253f, 0.480f, 0.788f, 0.510f);
         style.Colors[(int)ImGuiCol.HeaderHovered] = new Vector4(0.207f, 0.323f, 0.546f, 1.000f);
         style.Colors[(int)ImGuiCol.HeaderActive] = new Vector4(0.0f, 0.4666666686534882f, 0.7843137383460999f, 1.0f);
         style.Colors[(int)ImGuiCol.Separator] = new Vector4(0.3058823645114899f, 0.3058823645114899f, 0.3058823645114899f, 1.0f);

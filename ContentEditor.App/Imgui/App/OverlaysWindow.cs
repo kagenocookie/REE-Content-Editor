@@ -50,7 +50,7 @@ public class OverlaysWindow : IWindowHandler
             var wndSize = new Vector2(Math.Min(600, size.X), Math.Min(20 + linecount * 20, size.Y)) * UI.UIScale;
             ImGui.SetNextWindowPos(new Vector2((size.X - wndSize.X) / 2, (size.Y - wndSize.Y) / 2));
             ImGui.SetNextWindowSize(wndSize);
-            ImGui.Begin("Guide", ImGuiWindowFlags.NoTitleBar|ImGuiWindowFlags.NoResize|ImGuiWindowFlags.NoMove|ImGuiWindowFlags.NoScrollbar|ImGuiWindowFlags.NoCollapse);
+            ImGui.Begin("Guide", ImGuiWindowFlags.NoTitleBar|ImGuiWindowFlags.NoResize|ImGuiWindowFlags.NoMove|ImGuiWindowFlags.NoScrollbar|ImGuiWindowFlags.NoCollapse|ImGuiWindowFlags.NoFocusOnAppearing|ImGuiWindowFlags.NoBringToFrontOnFocus);
             ImguiHelpers.TextCentered(helptext);
             if (editorWindow != null && ImGui.IsItemClicked()) {
                 PlatformUtils.ShowFileDialog((files) => {

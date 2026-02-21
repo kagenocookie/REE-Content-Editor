@@ -17,7 +17,6 @@ internal sealed partial class MainLoop : IDisposable
 
     public BackgroundTaskService BackgroundTasks { get; } = new(BackgroundTaskConfig.Default);
 
-    private readonly List<IUpdateable> updateables = new();
     private readonly Time time = new Time();
 
     private static MainLoop? _instance;
@@ -49,6 +48,9 @@ internal sealed partial class MainLoop : IDisposable
         float timer = 0;
         windows.First().InitGraphics();
         ExecDebugTests();
+        if (AppConfig.Instance.IsFirstTime) {
+            windows.First().AddUniqueSubwindow(new HomeWindow());
+        }
 
         var fpsLimit = new FpsLimiter();
         while (windows.FirstOrDefault()?.IsClosing == false) {
@@ -178,11 +180,6 @@ internal sealed partial class MainLoop : IDisposable
             }
         }
         return 0;
-    }
-
-    internal void Register(IUpdateable updateable)
-    {
-        updateables.Add(updateable);
     }
 
     public void OpenNewWindow(WindowBase window)
