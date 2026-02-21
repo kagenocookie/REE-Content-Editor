@@ -1,8 +1,9 @@
+using System.Numerics;
+using ContentEditor.App.Internal;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Themes;
 using ReeLib;
-using System.Numerics;
 
 namespace ContentEditor.App;
 
@@ -216,6 +217,12 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImGui.Spacing();
 
         ShowSetting(config.EnableUpdateCheck, "Automatically check for Updates", "Will occasionally check GitHub for new releases.");
+        ImGui.SameLine();
+        using (var _ = ImguiHelpers.Disabled(AutoUpdater.UpdateCheckInProgress)) {
+            if (ImGui.Button("Check now")) {
+                AutoUpdater.CheckForUpdateInBackground();
+            }
+        }
 
         var configPath = config.GameConfigBaseFilepath.Get();
         if (AppImguiHelpers.InputFolder("Game Config Base Path", ref configPath)) {

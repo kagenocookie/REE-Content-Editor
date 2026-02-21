@@ -1,8 +1,6 @@
 ﻿namespace ContentEditor.App;
 
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+using ContentEditor.App.Internal;
 using ContentEditor.App.Windowing;
 using ContentEditor.Editor;
 using ReeLib;
@@ -18,7 +16,7 @@ sealed class Program
             SetupConfigs();
             loop = new MainLoop();
             if (AppConfig.Instance.EnableUpdateCheck) {
-                Task.Run(CheckForUpdate);
+                AutoUpdater.QueueAutoUpdateCheck();
             }
             var result = loop.Run();
             loop.Dispose();
@@ -32,49 +30,6 @@ sealed class Program
             }
             return 1;
         }
-    }
-
-    private static async Task CheckForUpdate()
-    {
-        try {
-            var config = AppConfig.Instance;
-            if (AppConfig.Version == "0.0.0") {
-                config.LatestVersion.Set(null);
-                return;
-            }
-            if ((DateTime.UtcNow - config.LastUpdateCheck.Get()) < TimeSpan.FromHours(4)) {
-                AppConfig.IsOutdatedVersion = config.LatestVersion.Get() != null && config.LatestVersion.Get() != AppConfig.Version;
-                return;
-            }
-            var http = new HttpClient();
-            var request = new HttpRequestMessage(HttpMethod.Get, new Uri("https://api.github.com/repos/kagenocookie/REE-Content-Editor/releases/latest"));
-
-            request.Headers.Add("Accept", "application/json");
-            request.Headers.Add("User-Agent", $"REE-Content-Editor/{AppConfig.Version}");
-            var response = await http.SendAsync(request);
-            if (response.StatusCode == System.Net.HttpStatusCode.OK) {
-                var content = await response.Content.ReadAsStringAsync();
-                config.LastUpdateCheck.Set(DateTime.UtcNow);
-                try {
-                    var data = JsonSerializer.Deserialize<GithubReleaseInfo>(content);
-                    var remoteTag = data?.TagName?.Replace("v", "");
-                    config.LatestVersion.Set(remoteTag);
-                    if (remoteTag != null && remoteTag != AppConfig.Version) {
-                        AppConfig.IsOutdatedVersion = true;
-                    }
-                } catch (Exception) {
-                    // ignore
-                }
-            }
-        } catch (Exception e) {
-            Logger.Warn("Automatic update check failed: " + e.Message);
-        }
-    }
-
-    private sealed class GithubReleaseInfo
-    {
-        [JsonPropertyName("tag_name")]
-        public string? TagName { get; set; }
     }
 
     private static void HandleUnhandledExceptions(object sender, UnhandledExceptionEventArgs e)

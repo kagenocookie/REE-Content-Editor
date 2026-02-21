@@ -3,7 +3,9 @@ using System.Globalization;
 using System.Numerics;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using ContentEditor.App;
+using ContentEditor.App.Github;
 using ContentEditor.Core;
 using ContentPatcher;
 using ContentPatcher.FileFormats;
@@ -35,7 +37,6 @@ public class AppConfig : Singleton<AppConfig>
         public const string LoadFromNatives = "load_natives";
         public const string BundleDefaultSaveFullPath = "bundle_save_full_path";
         public const string Theme = "theme";
-        public const string LatestVersion = "latest_version";
         public const string EnableUpdateCheck = "enable_update_check";
         public const string EnableKeyboardNavigation = "enable_keyboard_nav";
         public const string EnableGpuTexCompression = "enable_gpu_tex_compression";
@@ -94,6 +95,13 @@ public class AppConfig : Singleton<AppConfig>
     private const string JsonFilename = "ce_config.json";
 
     public static readonly string Version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion ?? "";
+
+    #if DEBUG
+    public static readonly bool IsDebugBuild = true;
+    #else
+    public static readonly bool IsDebugBuild = false;
+    #endif
+
     public static bool IsOutdatedVersion { get; internal set; }
     public static AppJsonSettings Settings => Instance.JsonSettings;
 
@@ -179,7 +187,6 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<bool> BundleDefaultSaveFullPath = new SettingWrapper<bool>(Keys.BundleDefaultSaveFullPath, _lock, false);
     public readonly SettingWrapper<Vector4> WindowRect = new SettingWrapper<Vector4>(Keys.WindowRect, _lock, new Vector4(50, 50, 1280, 720));
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
-    public readonly ClassSettingWrapper<string> LatestVersion = new ClassSettingWrapper<string>(Keys.LatestVersion, _lock);
     public readonly SettingWrapper<bool> PauseAnimPlayerOnSeek = new SettingWrapper<bool>(Keys.PauseAnimPlayerOnSeek, _lock, true);
     public readonly SettingWrapper<bool> UseFullscreenAnimPlayback = new SettingWrapper<bool>(Keys.UseFullscreenAnimPlayback, _lock, false);
 
@@ -315,7 +322,6 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.FontSize, instance.FontSize.value.ToString(), null),
             (Keys.WindowRect, instance.WindowRect.value.ToString("", CultureInfo.InvariantCulture).Replace("<", "").Replace(">", ""), null),
             (Keys.LastUpdateCheck, instance.LastUpdateCheck.value.ToString("O"), null),
-            (Keys.LatestVersion, instance.LatestVersion.value?.ToString() ?? "", null),
             (Keys.EnableUpdateCheck, instance.EnableUpdateCheck.value.ToString(), null),
             (Keys.EnableKeyboardNavigation, instance.EnableKeyboardNavigation.value.ToString(), null),
             (Keys.EnableGpuTexCompression, instance.EnableGpuTexCompression.value.ToString(), null),
@@ -505,9 +511,6 @@ public class AppConfig : Singleton<AppConfig>
                                 }
                                 break;
                             }
-                        case Keys.LatestVersion:
-                            LatestVersion.value = ReadString(value);
-                            break;
 
                         case Keys.RenderAxis:
                             RenderAxis.value = ReadBool(value);
@@ -632,6 +635,8 @@ public class AppJsonSettings
     public RecentFileList RecentMotlists { get; init; } = new();
     public RecentFileList RecentNavmeshes { get; init; } = new();
 
+    public ChangelogData Changelogs { get; init; } = new();
+
     public void Save() => AppConfig.Instance.SaveJsonConfig();
 }
 
@@ -684,6 +689,52 @@ public record SceneViewSettings
 public record DevSettings
 {
     public KnownFileFormats LastFileTestFormat { get; set; }
+}
+
+public record ChangelogData
+{
+    public List<GithubReleaseInfo> Releases { get; set; } = new();
+
+    [JsonIgnore] public string? LatestReleaseVersion => Releases.FirstOrDefault()?.TagName?.Replace("v", "");
+
+    public List<GithubReleaseInfo> FindCurrentReleaseList()
+    {
+        var list = new List<GithubReleaseInfo>();
+        if (AppConfig.IsDebugBuild) {
+            if (Releases.Count > 0) list.Add(Releases.First());
+            return list;
+        }
+
+        var current = new Version(AppConfig.Version);
+        foreach (var release in Releases) {
+            if (string.IsNullOrEmpty(release.TagName)) continue;
+            var versionString = release.TagName.Replace("v", "");
+
+            var relVer = new Version(versionString);
+            if (relVer >= current) {
+                list.Add(release);
+            } else {
+                break;
+            }
+        }
+
+        return list;
+    }
+
+    internal void StoreReleaseInfo(GithubReleaseInfo release)
+    {
+        if (string.IsNullOrEmpty(release.TagName)) return;
+
+        var exists = Releases.FirstOrDefault(r => r.TagName == release.TagName);
+        if (exists == null) {
+            Releases.Insert(0, release);
+            AppConfig.Settings.Save();
+        } else if (exists.Assets.Count != release.Assets.Count || exists.Body != release.Body) {
+            exists.Assets = release.Assets;
+            exists.CreatedAt = release.CreatedAt;
+            AppConfig.Settings.Save();
+        }
+    }
 }
 
 public record ImportSettings

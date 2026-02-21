@@ -1,8 +1,9 @@
+using ContentEditor.App.Github;
+using ContentEditor.App.Internal;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Themes;
 using ReeLib;
-using Silk.NET.Maths;
 using System.Numerics;
 
 namespace ContentEditor.App;
@@ -184,12 +185,12 @@ public class HomeWindow : IWindowHandler
             ImGui.Spacing();
             var availSpace = ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X * 2;
             if (ImGui.Button($"{AppIcons.SI_Github}", new Vector2(availSpace / 3, 0))) {
-                FileSystemUtils.OpenURL("https://github.com/kagenocookie/REE-Content-Editor");
+                FileSystemUtils.OpenURL(GithubApi.MainRepositoryUrl);
             }
             ImguiHelpers.Tooltip("GitHub");
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_GenericWiki}", new Vector2(availSpace / 3, 0))) {
-                FileSystemUtils.OpenURL("https://github.com/kagenocookie/REE-Content-Editor/wiki");
+                FileSystemUtils.OpenURL(GithubApi.WikiUrl);
             }
             ImguiHelpers.Tooltip("Wiki");
             ImGui.SameLine();
@@ -201,17 +202,17 @@ public class HomeWindow : IWindowHandler
             ImGui.Spacing();
             ImGui.Separator();
             ImGui.Spacing();
-           
+
             ImGui.Text("Version: " + AppConfig.Version);
             if (AppConfig.IsOutdatedVersion) {
                 ImGui.SameLine();
                 ImguiHelpers.AlignElementRight(ImGui.GetContentRegionAvail().X - (ImGui.GetItemRectMax().X - ImGui.GetStyle().FramePadding.X));
                 ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);
                 if (ImGui.Button($"{AppIcons.SI_Update}")) {
-                    FileSystemUtils.OpenURL("https://github.com/kagenocookie/REE-Content-Editor/releases/latest");
+                    FileSystemUtils.OpenURL(GithubApi.LatestReleaseUrl);
                 }
                 ImGui.PopStyleColor();
-                ImguiHelpers.Tooltip($"New version ({AppConfig.Instance.LatestVersion.Get()}) available!");
+                ImguiHelpers.Tooltip($"New version ({AppConfig.Settings.Changelogs.LatestReleaseVersion}) available!");
             }
         }
     }
@@ -493,16 +494,90 @@ public class HomeWindow : IWindowHandler
                     ImGui.EndChild();
                     ImGui.EndTabItem();
                 }
-                if (ImGui.BeginTabItem("Updates")) {
-                    ImGui.Text("Some good update info here, fixed every bug or something.\nButtons to update the different resources?");
-                    ImGui.Spacing();
-                    ImGui.Text("The overlay help texts are currently drawn on top of the Home Page, but I don't think we should delete them.\nMaybe just move them to a Tips child window, kinda like 010's startup page?");
+                if (ImGui.BeginTabItem(AppConfig.IsOutdatedVersion ? "Updates *" : "Updates")) {
+                    ShowUpdateLog();
                     ImGui.EndTabItem();
                 }
             }
             ImGui.EndTabBar();
         }
     }
+
+    private static readonly Dictionary<string, string[]> ChangelogRenderData = new();
+    private void ShowUpdateLog()
+    {
+        using (var _ = ImguiHelpers.Disabled(AutoUpdater.UpdateCheckInProgress)) {
+            if (ImGui.Button("Check for updates")) {
+                AutoUpdater.CheckForUpdateInBackground();
+            }
+        }
+        var releases = AppConfig.Settings.Changelogs.FindCurrentReleaseList();
+        if (releases.Count == 0) {
+            ImGui.Text($"No release data is currently available. You can manually check the repository for changes: {GithubApi.MainRepositoryUrl}");
+            if (ImGui.Button("Open in browser")) {
+                FileSystemUtils.OpenURL(GithubApi.MainRepositoryUrl);
+            }
+            return;
+        }
+        foreach (var release in releases) {
+            if (!string.IsNullOrEmpty(release.TagName)) {
+                ImGui.PushFont(null, UI.FontSize * 2);
+                ImGui.Text("Version " + release.TagName);
+
+                ImGui.PopFont();
+                ImGui.TextColored(Colors.Faded, $"Release date: {release.CreatedAt.ToString()}");
+
+                if (release.TagName == AppConfig.Version) {
+                    ImGui.SameLine();
+                    ImGui.TextColored(Colors.Success, "(Current version)");
+                } else {
+                    var downloadLink = release.Assets.FirstOrDefault(asset => asset.Name == "ContentEditor.zip")?.BrowserDownloadUrl;
+                    if (downloadLink != null) {
+                        ImGui.SameLine();
+                        if (ImGui.Button("Download this version")) {
+                            FileSystemUtils.OpenURL(downloadLink);
+                        }
+                    }
+                }
+
+                ImGui.Spacing();
+
+                if (!ChangelogRenderData.TryGetValue(release.TagName, out var renderData)) {
+                    ChangelogRenderData[release.TagName] = renderData = release.Body?.Split("\n", StringSplitOptions.TrimEntries).ToArray() ?? [];
+                }
+                if (renderData.Length == 0) {
+                    ImGui.Text("No changelog data available for this release");
+                } else {
+                    foreach (var line in renderData) {
+                        if (line == "") {
+                            ImGui.Spacing();
+                            ImGui.Spacing();
+                        } else if (line.StartsWith("## ")) {
+                            ImGui.PushFont(null, UI.FontSize * 1.5f);
+                            ImGui.Text(line.AsSpan(3).Trim().ToString());
+                            ImGui.PopFont();
+                        } else if (line.StartsWith("- ") || line.StartsWith("* ")) {
+                            ImGui.BulletText(line.AsSpan(2).Trim().ToString());
+                        } else {
+                            ImGui.Text(line);
+                        }
+                        if (line.Contains("https://") && ImGui.IsItemClicked(ImGuiMouseButton.Left)) {
+                            var url = line.Substring(line.IndexOf("https://"));
+                            FileSystemUtils.OpenURL(url);
+                            EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Opening URL in browser: " + url, 3f);
+                        }
+                        if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {
+                            EditorWindow.CurrentWindow?.CopyToClipboard(line);
+                        }
+                    }
+                }
+                ImGui.Separator();
+                ImGui.Spacing();
+                ImGui.Spacing();
+            }
+        }
+    }
+
     private void ShowRecentFilesList()
     {
         var recents = AppConfig.Settings.RecentFiles;

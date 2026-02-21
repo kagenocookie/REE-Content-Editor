@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.Numerics;
 using ContentEditor.App.FileLoaders;
+using ContentEditor.App.Github;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -753,8 +754,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             FileSystemUtils.OpenURL("https://ko-fi.com/shadowcookie");
         }
 
-        if (AppConfig.IsOutdatedVersion && ImGui.MenuItem($"New version ({AppConfig.Instance.LatestVersion.Get()}) available!")) {
-            FileSystemUtils.OpenURL("https://github.com/kagenocookie/REE-Content-Editor/releases/latest");
+        if (AppConfig.IsOutdatedVersion && AppConfig.Instance.EnableUpdateCheck && ImGui.MenuItem($"New version ({AppConfig.Settings.Changelogs.LatestReleaseVersion}) available!")) {
+            FileSystemUtils.OpenURL(GithubApi.MainRepositoryUrl);
         }
 
         ImGui.EndMainMenuBar();
