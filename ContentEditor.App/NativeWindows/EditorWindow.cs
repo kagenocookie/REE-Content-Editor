@@ -145,7 +145,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             var data = AddSubwindow(new FirstTimeSetupHelper());
             data.Size = new Vector2(Math.Min(800, Size.X - 60), Math.Min(400, Size.X - 60));
             data.Position = new Vector2((Size.X - data.Size.X) / 2, 50);
-            AppConfig.Instance.IsFirstTime.Set(false);
+            //AppConfig.Instance.IsFirstTime.Set(false);
         }
         _window.Move += OnResize;
         _window.FramebufferResize += OnResize;

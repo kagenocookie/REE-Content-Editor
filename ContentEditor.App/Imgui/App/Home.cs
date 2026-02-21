@@ -107,87 +107,92 @@ public class HomeWindow : IWindowHandler
     }
     private static void ShowGameList()
     {
-        if (ImGui.Button($"{AppIcons.SI_FileType_PAK}") && EditorWindow.CurrentWindow?.Workspace != null) {
-            EditorWindow.CurrentWindow?.AddSubwindow(new PakBrowser(EditorWindow.CurrentWindow.Workspace, null));
-        }
-        ImguiHelpers.Tooltip("Browse Game Files");
-        ImGui.SameLine();
-        if (ImGui.Button("Open File")) {
-            PlatformUtils.ShowFileDialog((files) => {
-                MainLoop.Instance.MainWindow.InvokeFromUIThread(() => {
-                    Logger.Info(string.Join("\n", files));
-                    EditorWindow.CurrentWindow?.OpenFiles(files);
-                });
-            });
-        }
-        ImGui.SameLine();
-        ImguiHelpers.AlignElementRight((ImGui.CalcTextSize($"{AppIcons.SI_Settings}").X + ImGui.GetStyle().FramePadding.X * 2) * 2 + ImGui.GetStyle().ItemSpacing.X);
-        if (ImGui.Button($"{AppIcons.Pencil}")) {
-            EditorWindow.CurrentWindow?.AddUniqueSubwindow(new ThemeEditor());
-        }
-        ImguiHelpers.Tooltip("Theme Editor");
-        ImGui.SameLine();
-        if (ImGui.Button($"{AppIcons.SI_Settings}")) {
-            EditorWindow.CurrentWindow?.AddUniqueSubwindow(new SettingsWindowHandler());
-        }
-        ImguiHelpers.Tooltip("Settings");
-        ImGui.Spacing();
-        ImGui.Separator();
-        ImGui.Spacing();
-
-        fullSupportedGames ??= ResourceRepository.RemoteInfo.Resources.Where(kv => kv.Value.IsFullySupported).Select(kv => kv.Key).ToHashSet();
-        var games = AppConfig.Instance.GetGamelist();
-        var currentActiveGame = EditorWindow.CurrentWindow?.Workspace.Env.Config.Game.name;
-        foreach (var fullySupported in new[] { true, false }) {
-            foreach (var (game, configured) in games) {
-                if (!configured || fullSupportedGames.Contains(game) != fullySupported) {
-                    continue;
-                }
-                var color = currentActiveGame == game ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text);
-                ImGui.PushStyleColor(ImGuiCol.Text, color);
-                if (ImGui.Selectable(Languages.TranslateGame(game))) {
-                    EditorWindow.CurrentWindow?.SetWorkspace(game, null);
-                }
-                ImGui.PopStyleColor();
+        using (var _ = ImguiHelpers.Disabled(AppConfig.Instance.IsFirstTime)) {
+            if (ImGui.Button($"{AppIcons.SI_FileType_PAK}") && EditorWindow.CurrentWindow?.Workspace != null) {
+                EditorWindow.CurrentWindow?.AddSubwindow(new PakBrowser(EditorWindow.CurrentWindow.Workspace, null));
             }
-            if (fullySupported) {
+            ImguiHelpers.Tooltip("Browse Game Files");
+            ImGui.SameLine();
+            if (ImGui.Button("Open File")) {
+                PlatformUtils.ShowFileDialog((files) => {
+                    MainLoop.Instance.MainWindow.InvokeFromUIThread(() => {
+                        Logger.Info(string.Join("\n", files));
+                        EditorWindow.CurrentWindow?.OpenFiles(files);
+                    });
+                });
+            }
+            ImGui.SameLine();
+            ImguiHelpers.AlignElementRight((ImGui.CalcTextSize($"{AppIcons.SI_Settings}").X + ImGui.GetStyle().FramePadding.X * 2) * 2 + ImGui.GetStyle().ItemSpacing.X);
+            if (ImGui.Button($"{AppIcons.Pencil}")) {
+                EditorWindow.CurrentWindow?.AddUniqueSubwindow(new ThemeEditor());
+            }
+            ImguiHelpers.Tooltip("Theme Editor");
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.SI_Settings}")) {
+                EditorWindow.CurrentWindow?.AddUniqueSubwindow(new SettingsWindowHandler());
+            }
+            ImguiHelpers.Tooltip("Settings");
+            ImGui.Spacing();
+            ImGui.Separator();
+            ImGui.Spacing();
+            if (!AppConfig.Instance.IsFirstTime) {
+                fullSupportedGames ??= ResourceRepository.RemoteInfo.Resources.Where(kv => kv.Value.IsFullySupported).Select(kv => kv.Key).ToHashSet();
+                var games = AppConfig.Instance.GetGamelist();
+                var currentActiveGame = EditorWindow.CurrentWindow?.Workspace?.Env.Config.Game.name;
+                foreach (var fullySupported in new[] { true, false }) {
+                    foreach (var (game, configured) in games) {
+                        if (!configured || fullSupportedGames.Contains(game) != fullySupported) {
+                            continue;
+                        }
+                        var color = currentActiveGame == game ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text);
+                        ImGui.PushStyleColor(ImGuiCol.Text, color);
+                        if (ImGui.Selectable(Languages.TranslateGame(game))) {
+                            EditorWindow.CurrentWindow?.SetWorkspace(game, null);
+                        }
+                        ImGui.PopStyleColor();
+                    }
+                    if (fullySupported) {
+                        ImGui.Spacing();
+                        ImGui.Separator();
+                    }
+                }
                 ImGui.Spacing();
                 ImGui.Separator();
+                ImGui.Spacing();
+            } else {
+                ImGui.TextWrapped("Complete the First Time Setup to select a game.");
             }
-        }
-        ImGui.Spacing();
-        ImGui.Separator();
-        ImGui.Spacing();
 
-        float remainingSpace = ImGui.GetContentRegionAvail().Y;
-        float footerHeight = ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.Y + ImGui.GetTextLineHeightWithSpacing() * 3;
-        if (remainingSpace > footerHeight) ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (remainingSpace - footerHeight));
-        if (ImGui.Button($"{AppIcons.SI_GenericHeart} Support Development", new Vector2(ImGui.GetContentRegionAvail().X, 0))) {
-            FileSystemUtils.OpenURL("https://ko-fi.com/shadowcookie");
-        }
-        ImGui.Spacing();
-        var availSpace = ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X * 2;
-        if (ImGui.Button($"{AppIcons.SI_Github}", new Vector2(availSpace / 3, 0))) {
-            FileSystemUtils.OpenURL("https://github.com/kagenocookie/REE-Content-Editor");
-        }
-        ImguiHelpers.Tooltip("GitHub");
-        ImGui.SameLine();
-        if (ImGui.Button($"{AppIcons.SI_GenericWiki}", new Vector2(availSpace / 3, 0))) {
-            FileSystemUtils.OpenURL("https://github.com/kagenocookie/REE-Content-Editor/wiki");
-        }
-        ImguiHelpers.Tooltip("Wiki");
-        ImGui.SameLine();
-        if (ImGui.Button($"{AppIcons.SI_Discord}", new Vector2(availSpace / 3, 0))) {
-            FileSystemUtils.OpenURL("https://discord.gg/9Vr2SJ3");
-        }
-        ImguiHelpers.Tooltip("Discord");
+            float remainingSpace = ImGui.GetContentRegionAvail().Y;
+            float footerHeight = ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.Y + ImGui.GetTextLineHeightWithSpacing() * 3;
+            if (remainingSpace > footerHeight) ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (remainingSpace - footerHeight));
+            if (ImGui.Button($"{AppIcons.SI_GenericHeart} Support Development", new Vector2(ImGui.GetContentRegionAvail().X, 0))) {
+                FileSystemUtils.OpenURL("https://ko-fi.com/shadowcookie");
+            }
+            ImGui.Spacing();
+            var availSpace = ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X * 2;
+            if (ImGui.Button($"{AppIcons.SI_Github}", new Vector2(availSpace / 3, 0))) {
+                FileSystemUtils.OpenURL("https://github.com/kagenocookie/REE-Content-Editor");
+            }
+            ImguiHelpers.Tooltip("GitHub");
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.SI_GenericWiki}", new Vector2(availSpace / 3, 0))) {
+                FileSystemUtils.OpenURL("https://github.com/kagenocookie/REE-Content-Editor/wiki");
+            }
+            ImguiHelpers.Tooltip("Wiki");
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.SI_Discord}", new Vector2(availSpace / 3, 0))) {
+                FileSystemUtils.OpenURL("https://discord.gg/9Vr2SJ3");
+            }
+            ImguiHelpers.Tooltip("Discord");
 
-        ImGui.Spacing();
-        ImGui.Separator();
-        ImGui.Spacing();
-        ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
-        ImGui.Text("Version: " + AppConfig.Version);
-        ImGui.PopStyleColor();
+            ImGui.Spacing();
+            ImGui.Separator();
+            ImGui.Spacing();
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
+            ImGui.Text("Version: " + AppConfig.Version);
+            ImGui.PopStyleColor();
+        }
     }
 
     private void ShowTabs()
