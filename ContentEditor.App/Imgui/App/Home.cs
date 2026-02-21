@@ -71,12 +71,11 @@ public class HomeWindow : IWindowHandler
         ShowGameList();
         ImGui.EndChild();
         ImGui.SameLine();
-        float availSpace = ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X;
-        ImGui.BeginChild("Tabs", new Vector2(availSpace / 3 * 2, 0), ImGuiChildFlags.Borders);
+        ImGui.BeginChild("Tabs", new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 3 * 2, 0), ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX);
         ShowTabs();
         ImGui.EndChild();
         ImGui.SameLine();
-        ImGui.BeginChild("RecentFiles", new Vector2(availSpace / 3 * 1, 0), ImGuiChildFlags.Borders);
+        ImGui.BeginChild("RecentFiles", new Vector2(ImGui.GetContentRegionAvail().X, 0), ImGuiChildFlags.Borders);
         ShowRecentFilesList();
         ImGui.EndChild();
     }
