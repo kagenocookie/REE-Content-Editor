@@ -768,9 +768,11 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             }
 
             ImGui.Spacing();
-            foreach (var (name, mot) in animator.Animations) {
+            foreach (var mot in animator.Animations) {
+                var name = mot.Name;
                 if (!string.IsNullOrEmpty(motFilter) && !name.Contains(motFilter, isMotFilterMatchCase ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase)) continue;
 
+                ImGui.PushID(mot.GetHashCode());
                 if (ImGui.RadioButton(name, animator.ActiveMotion == mot)) {
                     animator.SetActiveMotion(mot);
                 }
@@ -781,6 +783,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                     }
                     ImGui.EndPopup();
                 }
+                ImGui.PopID();
             }
         } else if (animator?.File != null) {
             ImGui.TextColored(Colors.Note, "Selected file contains no playable animations");
@@ -988,8 +991,8 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
         animator.LoadAnimationList(animlist);
         var firstAnim = animator.Animations.FirstOrDefault();
-        if (firstAnim.Value != null) {
-            animator.SetActiveMotion(firstAnim.Value);
+        if (firstAnim != null) {
+            animator.SetActiveMotion(firstAnim);
         }
     }
 

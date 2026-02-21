@@ -12,7 +12,7 @@ namespace ContentEditor.App.Graphics;
 public class Animator(ContentWorkspace Workspace)
 {
     private FileHandle? animationFile;
-    private readonly Dictionary<string, MotFileBase> motions = new();
+    private readonly List<MotFileBase> motions = new();
     public MotFile? ActiveMotion { get; private set; }
     private float currentTime;
     private float clipFramerate;
@@ -32,8 +32,8 @@ public class Animator(ContentWorkspace Workspace)
     public bool IgnoreRootMotion { get; set; } = true;
 
     public int AnimationCount => motions.Count;
-    public IEnumerable<string> AnimationNames => motions.Keys;
-    public IEnumerable<KeyValuePair<string, MotFileBase>> Animations => motions.OrderBy(k => k.Key);
+    public IEnumerable<string> AnimationNames => motions.Select(m => m.Name);
+    public IReadOnlyList<MotFileBase> Animations => motions.AsReadOnly();
 
     public float CurrentTime => currentTime;
     public float TotalTime => clipDuration;
@@ -85,9 +85,19 @@ public class Animator(ContentWorkspace Workspace)
         this.mesh = mesh;
     }
 
+    public bool SetActiveMotion(int index)
+    {
+        if (index < 0 || index >= motions.Count) {
+            return false;
+        }
+
+        SetActiveMotion(motions[index]);
+        return true;
+    }
     public bool SetActiveMotion(string name)
     {
-        if (motions.TryGetValue(name, out var mot)) {
+        var mot = motions.FirstOrDefault(m => m.Name == name);
+        if (mot != null) {
             SetActiveMotion(mot);
             return true;
         }
@@ -130,15 +140,15 @@ public class Animator(ContentWorkspace Workspace)
             if (file.Resource is BaseFileResource<MotlistFile> motlist) {
                 foreach (var submot in motlist.File.MotFiles) {
                     if (submot is MotFile mmo) {
-                        motions.Add(mmo.Header.motName, mmo);
+                        motions.Add(mmo);
                     }
                 }
             } else if (file.Resource is BaseFileResource<MotFile> mot) {
-                motions.Add(file.Filename.ToString(), mot.File);
+                motions.Add(mot.File);
             } else if (file.GetFile<MotlistFile>() is MotlistFile customMotlist) {
                 foreach (var submot in customMotlist.MotFiles) {
                     if (submot is MotFile mmo) {
-                        motions.Add(mmo.Header.motName, mmo);
+                        motions.Add(mmo);
                     }
                 }
             } else {
