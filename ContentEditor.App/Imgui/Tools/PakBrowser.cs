@@ -257,7 +257,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             isShowBookmarks = !isShowBookmarks;
         }
         ImGui.SameLine();
-        if (ImGui.Button(DisplayMode == FileDisplayMode.Grid ? $"{AppIcons.SI_ViewGridSmall}" : $"{AppIcons.SI_ViewList}")) {
+        if (ImGui.Button(DisplayMode == FileDisplayMode.Grid ? $"{AppIcons.SI_ViewGridSmall}" : $"{AppIcons.List}")) {
             AppConfig.Instance.PakDisplayMode = DisplayMode = DisplayMode == FileDisplayMode.Grid ? FileDisplayMode.List : FileDisplayMode.Grid;
             previewGenerator?.CancelCurrentQueue();
         }
@@ -381,7 +381,12 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             ImGui.Separator();
             ImGui.Spacing();
         }
-
+        var unpackedFiles = unpacker?.unpackedFileCount;
+        if (unpackedFiles != null) {
+            var w = ImGui.GetWindowSize().X - (ImGui.GetStyle().ItemSpacing.X * 2);
+            var total = unpackExpectedFiles;
+            ImGui.ProgressBar((float)unpackedFiles.Value / total, new Vector2(w, UI.FontSize + ImGui.GetStyle().FramePadding.Y * 2), $"{unpackedFiles.Value}/{total}");
+        }
         if (ImGui.ArrowButton("##left"u8, ImGuiDir.Left) || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_Back.Get().IsPressed()) {
             CurrentDir = Path.GetDirectoryName(CurrentDir)?.Replace('\\', '/') ?? string.Empty;
             pagination.page = 0;
@@ -428,17 +433,12 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         }
         ImGui.PopStyleColor();
         ImGui.SameLine();
-
-        var unpackedFiles = unpacker?.unpackedFileCount;
-        if (unpackedFiles != null) {
-            var style = ImGui.GetStyle();
-            var w = ImGui.GetWindowSize().X - ImGui.GetCursorPos().X - style.WindowPadding.X;
-            var total = unpackExpectedFiles;
-            ImGui.ProgressBar((float)unpackedFiles.Value / total, new Vector2(w, UI.FontSize + style.FramePadding.Y * 2), $"{unpackedFiles.Value}/{total}");
-        } else if (ImGui.Button($"{AppIcons.SI_ArchiveExtractTo}")) {
-            PlatformUtils.ShowFolderDialog(ExtractCurrentList, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
+        using (var _ = ImguiHelpers.Disabled(unpackedFiles != null)) {
+            if (ImGui.Button($"{AppIcons.SI_ArchiveExtractTo}")) {
+                PlatformUtils.ShowFolderDialog(ExtractCurrentList, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
+            }
+            ImguiHelpers.Tooltip("Extract To...");
         }
-        ImguiHelpers.Tooltip("Extract To...");
         DrawContents();
     }
 

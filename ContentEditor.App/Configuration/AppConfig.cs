@@ -45,11 +45,13 @@ public class AppConfig : Singleton<AppConfig>
         public const string UsePakFilePreviewWindow = "use_pak_preview_window";
         public const string UsePakCompactFilePaths = "use_pak_compact_file_paths";
         public const string PakDisplayMode = "pak_display_mode";
+        public const string BundleDisplayMode = "bundle_display_mode";
         public const string ThumbnailCacheFilepath = "thumbnail_cache_path";
         public const string CacheFilepath = "cache_path";
         public const string BookmarksFilepath = "bookmarks_path";
         public const string WindowRect = "window_rect";
         public const string PauseAnimPlayerOnSeek = "pause_anim_player_on_seek";
+        public const string UseFullscreenAnimPlayback = "use_fullscreen_anim_playback";
 
         public const string RenderAxis = "render_axis";
         public const string RenderMeshes = "render_meshes";
@@ -179,9 +181,13 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
     public readonly ClassSettingWrapper<string> LatestVersion = new ClassSettingWrapper<string>(Keys.LatestVersion, _lock);
     public readonly SettingWrapper<bool> PauseAnimPlayerOnSeek = new SettingWrapper<bool>(Keys.PauseAnimPlayerOnSeek, _lock, true);
+    public readonly SettingWrapper<bool> UseFullscreenAnimPlayback = new SettingWrapper<bool>(Keys.UseFullscreenAnimPlayback, _lock, false);
 
     public readonly SettingWrapper<int> PakDisplayModeValue = new SettingWrapper<int>(Keys.LogToFile, _lock, (int)FileDisplayMode.List);
     public FileDisplayMode PakDisplayMode { get => (FileDisplayMode)PakDisplayModeValue.Get(); set => PakDisplayModeValue.Set((int)value); }
+
+    public readonly SettingWrapper<int> BundleDisplayModeValue = new SettingWrapper<int>(Keys.LogToFile, _lock, (int)BundleDisplayMode.Grid);
+    public BundleDisplayMode BundleDisplayMode { get => (BundleDisplayMode)BundleDisplayModeValue.Get(); set => BundleDisplayModeValue.Set((int)value); }
 
     public readonly SettingWrapper<bool> RenderAxis = new SettingWrapper<bool>(Keys.RenderAxis, _lock, true);
     public readonly SettingWrapper<bool> RenderMeshes = new SettingWrapper<bool>(Keys.RenderMeshes, _lock, true);
@@ -316,9 +322,11 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.UsePakFilePreviewWindow, instance.UsePakFilePreviewWindow.value.ToString(), null),
             (Keys.UsePakCompactFilePaths, instance.UsePakCompactFilePaths.value.ToString(), null),
             (Keys.PakDisplayMode, instance.PakDisplayModeValue.value.ToString(), null),
+            (Keys.BundleDisplayMode, instance.BundleDisplayModeValue.value.ToString(), null),
             (Keys.PrettyLabels, instance.PrettyFieldLabels.value.ToString(), null),
             (Keys.QuaternionsAsEuler, instance.ShowQuaternionsAsEuler.value.ToString(), null),
             (Keys.PauseAnimPlayerOnSeek, instance.PauseAnimPlayerOnSeek.value.ToString(), null),
+            (Keys.UseFullscreenAnimPlayback, instance.UseFullscreenAnimPlayback.value.ToString(), null),
 
             (Keys.RenderAxis, instance.RenderAxis.value.ToString(), null),
             (Keys.RenderMeshes, instance.RenderMeshes.value.ToString(), null),
@@ -454,6 +462,9 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.PauseAnimPlayerOnSeek:
                             PauseAnimPlayerOnSeek.value = ReadBool(value);
                             break;
+                        case Keys.UseFullscreenAnimPlayback:
+                            UseFullscreenAnimPlayback.value = ReadBool(value);
+                            break;
                         case Keys.RecentFiles:
                             JsonSettings.RecentFiles.AddRange(value.Split('|', StringSplitOptions.RemoveEmptyEntries));
                             break;
@@ -471,6 +482,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.PakDisplayMode:
                             if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsed)) PakDisplayModeValue.value = Math.Clamp(parsed, (int)FileDisplayMode.List, (int)FileDisplayMode.Grid);
+                            break;
+                        case Keys.BundleDisplayMode:
+                            if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsed)) BundleDisplayModeValue.value = Math.Clamp(parsed, (int)BundleDisplayMode.Grid, (int)BundleDisplayMode.List);
                             break;
                         case Keys.UsePakCompactFilePaths:
                             UsePakCompactFilePaths.value = ReadBool(value);

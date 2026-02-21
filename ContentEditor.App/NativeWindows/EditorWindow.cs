@@ -51,6 +51,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     public IKeyboard LastKeyboard { get; private set; } = null!;
 
     protected Vector2 viewportOffset;
+    public Vector2 ViewportOffset => viewportOffset;
 
     private string openFileFilter = "";
     private string recentFileFilter = "";
@@ -145,7 +146,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             var data = AddSubwindow(new FirstTimeSetupHelper());
             data.Size = new Vector2(Math.Min(800, Size.X - 60), Math.Min(400, Size.X - 60));
             data.Position = new Vector2((Size.X - data.Size.X) / 2, 50);
-            AppConfig.Instance.IsFirstTime.Set(false);
+            //AppConfig.Instance.IsFirstTime.Set(false);
         }
         _window.Move += OnResize;
         _window.FramebufferResize += OnResize;
@@ -439,6 +440,16 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     protected void ShowMainMenuBar()
     {
         ImGui.BeginMainMenuBar();
+
+        bool isHomePageDrawn = HasSubwindow<HomeWindow>(out var homePageData);
+        if (ImGui.MenuItem($"{AppIcons.REECE_LogoSimple}", isHomePageDrawn)) {
+            if (isHomePageDrawn && homePageData != null) {
+                CloseSubwindow(homePageData);
+            } else {
+                AddUniqueSubwindow(new HomeWindow());
+            }
+        }
+        ImguiHelpers.VerticalSeparator();
         var hasUnsavedFiles = HasUnsavedChanges;
         if (hasUnsavedFiles) {
             ImGui.Bullet();

@@ -137,6 +137,30 @@ public static class Colors
     public static Vector4 TagWeapon => Current.TagWeapon;
     public static Vector4 TagWeaponHovered => Current.TagWeaponHovered;
     public static Vector4 TagWeaponSelected => Current.TagWeaponSelected;
+    public static Vector4 Game_RE2Primary => Current.Game_RE2Primary;
+    public static Vector4 Game_RE2Secondary => Current.Game_RE2Secondary;
+    public static Vector4 Game_RE2RTPrimary => Current.Game_RE2RTPrimary;
+    public static Vector4 Game_RE2RTSecondary => Current.Game_RE2RTSecondary;
+    public static Vector4 Game_RE3Primary => Current.Game_RE3Primary;
+    public static Vector4 Game_RE3Secondary => Current.Game_RE3Secondary;
+    public static Vector4 Game_RE3RTPrimary => Current.Game_RE3RTPrimary;
+    public static Vector4 Game_RE3RTSecondary => Current.Game_RE3RTSecondary;
+    public static Vector4 Game_RE4Primary => Current.Game_RE4Primary;
+    public static Vector4 Game_RE4Secondary => Current.Game_RE4Secondary;
+    public static Vector4 Game_RE7Primary => Current.Game_RE7Primary;
+    public static Vector4 Game_RE7Secondary => Current.Game_RE7Secondary;
+    public static Vector4 Game_RE7RTPrimary => Current.Game_RE7RTPrimary;
+    public static Vector4 Game_RE7RTSecondary => Current.Game_RE7RTSecondary;
+    public static Vector4 Game_RE8Primary => Current.Game_RE8Primary;
+    public static Vector4 Game_RE8Secondary => Current.Game_RE8Secondary;
+    public static Vector4 Game_RE9Primary => Current.Game_RE9Primary;
+    public static Vector4 Game_RE9Secondary => Current.Game_RE9Secondary;
+    public static Vector4 Game_MHSTO3Primary => Current.Game_MHSTO3Primary;
+    public static Vector4 Game_MHSTO3Secondary => Current.Game_MHSTO3Secondary;
+    public static Vector4 Game_MHRISEPrimary => Current.Game_MHRISEPrimary;
+    public static Vector4 Game_MHRISESecondary => Current.Game_MHRISESecondary;
+    public static Vector4 Game_MHWILDSPrimary => Current.Game_MHWILDSPrimary;
+    public static Vector4 Game_MHWILDSSecondary => Current.Game_MHWILDSSecondary;
 }
 
 public sealed class AppColors
@@ -260,6 +284,31 @@ public sealed class AppColors
     public Vector4 TagWeapon = new Vector4(0.9f, 0.3f, 0.3f, 0.5f);
     public Vector4 TagWeaponHovered = new Vector4(1, 0.4f, 0.4f, 0.8f);
     public Vector4 TagWeaponSelected = new Vector4(0.8f, 0.2f, 0.2f, 1);
+
+    public Vector4 Game_RE2Primary = new Vector4(0.93f, 0.95f, 0.96f, 1);
+    public Vector4 Game_RE2Secondary = new Vector4(0.2f, 0.6f, 0.2f, 0.8f);
+    public Vector4 Game_RE2RTPrimary = new Vector4(0.93f, 0.95f, 0.96f, 1);
+    public Vector4 Game_RE2RTSecondary = new Vector4(0.2f, 0.6f, 1, 1);
+    public Vector4 Game_RE3Primary = new Vector4(0.93f, 0.95f, 0.96f, 1);
+    public Vector4 Game_RE3Secondary = new Vector4(0.27f, 1, 0, 0.8f);
+    public Vector4 Game_RE3RTPrimary = new Vector4(0.93f, 0.95f, 0.96f, 1);
+    public Vector4 Game_RE3RTSecondary = new Vector4(0.27f, 1, 0, 1);
+    public Vector4 Game_RE4Primary = new Vector4(0.93f, 0.95f, 0.96f, 1);
+    public Vector4 Game_RE4Secondary = new Vector4(0.8f, 0.2f, 0.2f, 1);
+    public Vector4 Game_RE7Primary = new Vector4(0.93f, 0.95f, 0.96f, 1);
+    public Vector4 Game_RE7Secondary = new Vector4(1, 0.53f, 0, 0.8f);
+    public Vector4 Game_RE7RTPrimary = new Vector4(0.93f, 0.95f, 0.96f, 1);
+    public Vector4 Game_RE7RTSecondary = new Vector4(1, 0.53f, 0, 1);
+    public Vector4 Game_RE8Primary = new Vector4(0.93f, 0.95f, 0.96f, 1);
+    public Vector4 Game_RE8Secondary = new Vector4(0.53f, 0.29f, 0.91f, 1);
+    public Vector4 Game_RE9Primary = new Vector4(0.93f, 0.95f, 0.96f, 1);
+    public Vector4 Game_RE9Secondary = new Vector4(1, 0.71f, 0, 1);
+    public Vector4 Game_MHSTO3Primary = new Vector4(0.93f, 0.73f, 0.2f, 1);
+    public Vector4 Game_MHSTO3Secondary = new Vector4(0, 0.64f, 1, 1);
+    public Vector4 Game_MHRISEPrimary = new Vector4(0.93f, 0.73f, 0.2f, 1);
+    public Vector4 Game_MHRISESecondary = new Vector4(0.8f, 0.2f, 0.2f, 1);
+    public Vector4 Game_MHWILDSPrimary = new Vector4(0.93f, 0.73f, 0.2f, 1);
+    public Vector4 Game_MHWILDSSecondary = new Vector4(0, 0.77f, 0.47f, 1);
     public static AppColors GetDarkThemeColors() => new AppColors();
 
     public static AppColors GetLightThemeColors() => new AppColors() {

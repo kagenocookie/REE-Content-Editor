@@ -562,18 +562,18 @@ public static class ImguiHelpers
         return ContextMenuItemInternal(id, icons, label, iconColors, iconPadding, separatorPadding, separatorWidth);
     }
 
-    public static void VerticalSeparator(Vector4? color = null, float width = 2.0f, float padding = 4.0f)
+    public static void VerticalSeparator(Vector4? color = null, float width = 2.0f, float padding = 4.0f, float? heightOverride = null)
     {
         var drawList = ImGui.GetWindowDrawList();
         var pos = ImGui.GetCursorScreenPos();
-        float height = ImGui.GetFrameHeight();
+        float height = heightOverride ?? ImGui.GetFrameHeight();
         float yMin = pos.Y + padding;
         float yMax = pos.Y + height - padding;
 
         color ??= GetColor(ImGuiCol.TextDisabled);
         drawList.AddRectFilled(new Vector2(pos.X, yMin), new Vector2(pos.X + width, yMax), ImGui.GetColorU32(color.Value));
 
-        ImGui.Dummy(new Vector2(width, 0));
+        ImGui.Dummy(new Vector2(width, height));
     }
     public static unsafe void DrawOverlayIcon(string icon, float iconScale, float iconPosX, float iconPosY, Vector2 iconMin, Vector2 iconMax, Vector4 iconColor, Vector4 bgColor)
     {
