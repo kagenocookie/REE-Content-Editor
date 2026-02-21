@@ -51,6 +51,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     public IKeyboard LastKeyboard { get; private set; } = null!;
 
     protected Vector2 viewportOffset;
+    public Vector2 ViewportOffset => viewportOffset;
 
     private string openFileFilter = "";
     private string recentFileFilter = "";

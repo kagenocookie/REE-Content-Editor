@@ -56,7 +56,20 @@ public class HomeWindow : IWindowHandler
         gameNameCodes = games.Select(g => g.Code).ToArray();
         gameNames = games.Select(g => g.Name).ToArray();
     }
-    public void OnWindow() => this.ShowDefaultWindow(context);
+    public void OnWindow()
+    {
+        var data = context.Get<WindowData>();
+        var offset = EditorWindow.CurrentWindow?.ViewportOffset ?? new();
+        ImGui.SetNextWindowPos(offset, ImGuiCond.Always);
+        ImGui.SetNextWindowSize(ImGui.GetWindowViewport().Size - offset, ImGuiCond.Always);
+        ImGui.Begin(HandlerName, ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize);
+        if (data.Context != null) {
+            data.Context.StateBool = ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows);
+        }
+
+        OnIMGUI();
+        ImGui.End();
+    }
     public void OnIMGUI()
     {
         ImGui.BeginChild("Logo", new Vector2(250, 250 * UI.UIScale));
@@ -188,9 +201,18 @@ public class HomeWindow : IWindowHandler
             ImGui.Spacing();
             ImGui.Separator();
             ImGui.Spacing();
-            ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
+           
             ImGui.Text("Version: " + AppConfig.Version);
-            ImGui.PopStyleColor();
+            if (AppConfig.IsOutdatedVersion) {
+                ImGui.SameLine();
+                ImguiHelpers.AlignElementRight(ImGui.GetContentRegionAvail().X - (ImGui.GetItemRectMax().X - ImGui.GetStyle().FramePadding.X));
+                ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);
+                if (ImGui.Button($"{AppIcons.SI_Update}")) {
+                    FileSystemUtils.OpenURL("https://github.com/kagenocookie/REE-Content-Editor/releases/latest");
+                }
+                ImGui.PopStyleColor();
+                ImguiHelpers.Tooltip($"New version ({AppConfig.Instance.LatestVersion.Get()}) available!");
+            }
         }
     }
 
