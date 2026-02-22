@@ -303,9 +303,17 @@ public class RcolGroupEditor : IObjectUIHandler
             context.AddChild<RcolGroup, List<RcolShape>>("ExtraShapes", group, new ListHandler(typeof(RcolShape)) { CanCreateRemoveElements = true }, getter: (i) => i!.ExtraShapes);
         }
 
-        if (AppImguiHelpers.CopyableTreeNode<RcolGroup>(context)) {
+        if (AppImguiHelpers.CopyableTreeNode<RcolGroup>(context, out var pasted)) {
             context.ShowChildrenUI();
             ImGui.TreePop();
+        }
+
+        if (pasted) {
+            var group = context.Get<RcolGroup>();
+            var rcol = context.FindHandlerInParents<RcolEditor>();
+            if (rcol != null && !rcol.File.Groups.Contains(group)) {
+                rcol.File.Groups.Add(group);
+            }
         }
     }
 }

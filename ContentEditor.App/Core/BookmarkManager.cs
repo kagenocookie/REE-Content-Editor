@@ -17,7 +17,7 @@ namespace ContentEditor.App
             }
         }
         private readonly string _jsonFilePath;
-        private readonly string _legacyFilePath;
+        private readonly string? _legacyFilePath;
         private Dictionary<string, List<BookmarkEntry>> _bookmarks = new();
         public bool IsHideBookmarks { get; set; } = false;
         public struct TagInfo

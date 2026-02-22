@@ -20,7 +20,6 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     private int selectedSubGroup = -1;
     private static bool? _wasOriginallyAlphaBg;
     private static readonly string[] LogLevels = ["Debug", "Info", "Error"];
-    private static string filterKey1 = "", filterKey2 = "", filterKey3 = "", filterKey4 = "";
     private string customGameNameInput = "", customGameFilepath = "";
     private static HashSet<string>? fullSupportedGames;
     private enum SubGroupID
