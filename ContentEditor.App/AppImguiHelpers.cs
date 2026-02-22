@@ -202,17 +202,24 @@ public static class AppImguiHelpers
 
     public static bool CopyableTreeNode<T>(UIContext context) where T : class
     {
+        return CopyableTreeNode<T>(context, out _);
+    }
+
+    public static bool CopyableTreeNode<T>(UIContext context, out bool didPaste) where T : class
+    {
         var instance = context.Get<T>()!;
         var show = ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString() ?? "NULL");
         if (ImGui.BeginPopupContextItem(context.label)) {
-            ShowVirtualCopyPopupButtons<T>(instance, context);
+            didPaste = ShowVirtualCopyPopupButtons<T>(instance, context);
             ImGui.EndPopup();
+        } else {
+            didPaste = false;
         }
         return show;
     }
 
-    public static void ShowVirtualCopyPopupButtons<T>(UIContext context) where T : class => ShowVirtualCopyPopupButtons<T>(context.Get<T>(), context);
-    public static void ShowVirtualCopyPopupButtons<T>(T target, UIContext context) where T : class
+    public static bool ShowVirtualCopyPopupButtons<T>(UIContext context) where T : class => ShowVirtualCopyPopupButtons<T>(context.Get<T>(), context);
+    public static bool ShowVirtualCopyPopupButtons<T>(T target, UIContext context) where T : class
     {
         if (ImGui.Selectable("Copy")) {
             VirtualClipboard.CopyToClipboard(target.DeepCloneGeneric<T>());
@@ -220,7 +227,9 @@ public static class AppImguiHelpers
         if (VirtualClipboard.TryGetFromClipboard<T>(out var newClip) && ImGui.Selectable("Paste (replace)")) {
             UndoRedo.RecordSet(context, newClip.DeepCloneGeneric<T>());
             context.ClearChildren();
+            return true;
         }
+        return false;
     }
 
     private static IList? _dragDropSourceList;
