@@ -153,25 +153,34 @@ public class HomeWindow : IWindowHandler
                 EditorWindow.CurrentWindow?.CloseSubwindow(data);
             }
             ImguiHelpers.Tooltip("Settings");
-            ImGui.Spacing();
-            ImGui.Separator();
-            ImGui.Spacing();
+
             if (!AppConfig.Instance.IsFirstTime) {
-                fullSupportedGames ??= ResourceRepository.RemoteInfo.Resources.Where(kv => kv.Value.IsFullySupported).Select(kv => kv.Key).ToHashSet();
                 var games = AppConfig.Instance.GetGamelist();
+                var orderedGames = games.Where(g => g.supported)
+                    .OrderBy(g => {
+                        var key = g.name;
+                        if (key.StartsWith("re")) return 0;
+                        if (key.StartsWith("mh")) return 1;
+                        return 2;
+                    }).ThenBy(g => g.name, StringComparer.OrdinalIgnoreCase);
+
                 var currentActiveGame = EditorWindow.CurrentWindow?.Workspace?.Env.Config.Game.name;
-                foreach (var fullySupported in new[] { true, false }) {
-                    foreach (var (game, configured) in games) {
-                        if (!configured || fullSupportedGames.Contains(game) != fullySupported) {
-                            continue;
-                        }
-                        var color = currentActiveGame == game ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text);
-                        ImGui.PushStyleColor(ImGuiCol.Text, color);
-                        if (ImGui.Selectable(Languages.TranslateGame(game))) {
-                            EditorWindow.CurrentWindow?.SetWorkspace(game, null);
-                        }
-                        ImGui.PopStyleColor();
+                int? lastGroup = null;
+                foreach (var (game, configured) in orderedGames) {
+                    int currentGroup = game.StartsWith("re") ? 0 : game.StartsWith("mh") ? 1 : 2;
+                    var color = currentActiveGame == game ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text);
+                    if (lastGroup == null || currentGroup != lastGroup) {
+                        ImGui.Spacing();
+                        ImGui.Separator();
+                        ImGui.Spacing();
                     }
+                    lastGroup = currentGroup;
+
+                    ImGui.PushStyleColor(ImGuiCol.Text, color);
+                    if (ImGui.Selectable(Languages.TranslateGame(game))) {
+                        EditorWindow.CurrentWindow?.SetWorkspace(game, null);
+                    }
+                    ImGui.PopStyleColor();
                 }
                 ImGui.Spacing();
                 ImGui.Separator();
