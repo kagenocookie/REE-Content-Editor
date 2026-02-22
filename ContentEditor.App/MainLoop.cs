@@ -48,9 +48,7 @@ internal sealed partial class MainLoop : IDisposable
         float timer = 0;
         windows.First().InitGraphics();
         ExecDebugTests();
-        if (AppConfig.Instance.IsFirstTime) {
-            windows.First().AddUniqueSubwindow(new HomeWindow());
-        }
+        windows.First().AddUniqueSubwindow(new HomeWindow());
 
         var fpsLimit = new FpsLimiter();
         while (windows.FirstOrDefault()?.IsClosing == false) {
