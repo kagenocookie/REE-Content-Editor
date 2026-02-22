@@ -172,10 +172,6 @@ public class HomeWindow : IWindowHandler
                         }
                         ImGui.PopStyleColor();
                     }
-                    if (fullySupported) {
-                        ImGui.Spacing();
-                        ImGui.Separator();
-                    }
                 }
                 ImGui.Spacing();
                 ImGui.Separator();
