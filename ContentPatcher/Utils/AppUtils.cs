@@ -63,8 +63,11 @@ public static partial class AppUtils
     [GeneratedRegex(@"(\P{Ll})(\P{Ll}\p{Ll})")]
     private static partial Regex PascalCaseFixerRegex1();
 
-    [GeneratedRegex(@"(\p{Ll})(\P{Ll})")]
+    [GeneratedRegex(@"(\p{Ll})(\p{Lu})")]
     private static partial Regex PascalCaseFixerRegex2();
+
+    [GeneratedRegex(@"(\d)(\p{Ll})")]
+    private static partial Regex PascalCaseFixerRegex3();
 
     [GeneratedRegex(@"(?:^| )(\p{Ll})")]
     private static partial Regex CapitalizeRegex();
@@ -74,7 +77,8 @@ public static partial class AppUtils
         // https://stackoverflow.com/a/5796793/4721768
         name = name.TrimStart('_');
         name = PascalCaseFixerRegex1().Replace(name, "$1 $2");
-        name = PascalCaseFixerRegex2().Replace(name, "$1 $2");
+        name = PascalCaseFixerRegex2().Replace(name, "$1 $2"); // add spaces to aA letter sequences
+        name = PascalCaseFixerRegex3().Replace(name, "$1 $2"); // add spaces after numbers
         name = CapitalizeRegex().Replace(name.Replace("_", ""), static f => f.Value.ToUpperInvariant());
         return name;
     }
