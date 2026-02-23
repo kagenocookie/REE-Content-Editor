@@ -51,12 +51,28 @@ public class HomeWindow : IWindowHandler
         { "mhwilds", () => new[] { Colors.Game_MHWILDSPrimary, Colors.Game_MHWILDSSecondary, Colors.Game_MHWILDSSecondary }},
     };
 
+    private int currentTipsIDX = 0;
+    private static readonly Random randomTipsIDX = new();
+
+    private readonly string[] tips = // SILVER: Probably not the best place/way to store these?
+    {
+        "Hotkeys for the different editors can be customized by clicking Edit > Settings > Hotkeys",
+        "Hold Left Shift to speed up camera movement in 3D scenes.",
+        "Content Editor supports both orthographic and perspective camera projections.",
+        "Drag & drop a supported RE Engine resource file directly onto Content Editor, or use the menu to open one.",
+        "To configure game(s), go to Edit > Settings > Games.",
+        "Switch to Grid View in the PAK File Browser to quickly preview textures and models.",
+        "You can modify or create new custom themes through Edit > Theme Editor.",
+        "You can change the 3D scene background color at any time in Edit > Settings > Display > Theme."
+    };
+
     public void Init(UIContext context)
     {
         this.context = context;
         var games = AppConfig.Instance.GetGamelist().Select(gs => gs.name).Select(code => new { Code = code, Name = Languages.TranslateGame(code)}).OrderBy(x => x.Name).ToArray();
         gameNameCodes = games.Select(g => g.Code).ToArray();
         gameNames = games.Select(g => g.Name).ToArray();
+        if (tips.Length > 0) currentTipsIDX = randomTipsIDX.Next(tips.Length);
     }
     public void OnWindow()
     {
@@ -87,13 +103,23 @@ public class HomeWindow : IWindowHandler
         ImGui.EndChild();
         ImGui.SameLine();
         float minTabsWidth = 500f * UI.UIScale;
+        float tabsFooterHeight = ImGui.GetFrameHeight() + ImGui.GetTextLineHeightWithSpacing() - ImGui.GetStyle().ItemSpacing.Y * 2;
         ImGui.SetNextWindowSizeConstraints(new Vector2(minTabsWidth, 0), new Vector2(float.MaxValue, float.MaxValue));
-        ImGui.BeginChild("Tabs", new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 3 * 2, 0), ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX);
+        ImGui.BeginChild("Tabs", new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 3 * 2, ImGui.GetContentRegionAvail().Y - tabsFooterHeight - ImGui.GetStyle().ItemSpacing.Y * 2), ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX);
+        float currentTabsWidth = ImGui.GetWindowWidth();
         ShowTabs(context);
         ImGui.EndChild();
         ImGui.SameLine();
         ImGui.BeginChild("RecentFiles", new Vector2(ImGui.GetContentRegionAvail().X, 0), ImGuiChildFlags.Borders);
         ShowRecentFilesList();
+        ImGui.EndChild();
+        ImGui.SameLine();
+
+        ImGui.SetCursorPosX(250 * UI.UIScale + ImGui.GetStyle().ItemSpacing.X * 2);
+        float remainingTabsSpace = ImGui.GetContentRegionAvail().Y;
+        if (remainingTabsSpace > tabsFooterHeight) ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (remainingTabsSpace - tabsFooterHeight));
+        ImGui.BeginChild("Tips", new Vector2(currentTabsWidth, tabsFooterHeight), ImGuiChildFlags.Borders);
+        ShowTips();
         ImGui.EndChild();
     }
     private static void ShowLogo()
@@ -688,6 +714,24 @@ public class HomeWindow : IWindowHandler
             ImGui.TextDisabled(!string.IsNullOrEmpty(recentFileFilter) || _activeRecentFileGameFilters.Count > 0 ? "No files match the current filters." : "There are no recent files.");
         }
         ImGui.EndChild();
+    }
+    private void ShowTips()
+    {
+        if (ImGui.ArrowButton("##previous", ImGuiDir.Left)) {
+            currentTipsIDX--;
+            if (currentTipsIDX < 0) {
+                currentTipsIDX = tips.Length - 1;
+            }
+        }
+        ImGui.SameLine();
+        if (ImGui.ArrowButton("##next", ImGuiDir.Right)) {
+            currentTipsIDX++;
+            if (currentTipsIDX >= tips.Length) {
+                currentTipsIDX = 0;
+            }
+        }
+        ImGui.SameLine();
+        ImGui.Text(tips[currentTipsIDX]);
     }
     private static Vector4[] GetGameColors(string? prefix, bool hovered)
     {
