@@ -20,7 +20,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
     public override AABB LocalBounds => mesh?.BoundingBox ?? AABB.Invalid;
 
     public bool HasMesh => mesh != null;
-    public bool IsStreamingTex = false;
+    public bool UseStreamingTex = false;
     private bool invalidMesh;
 
     public void ComponentInit()
@@ -63,7 +63,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         UnloadMesh();
         mesh = Scene!.RenderContext.LoadMesh(meshFilepath);
         var shaderFlags = ShaderFlags.None;
-        if (IsStreamingTex) {
+        if (UseStreamingTex) {
             shaderFlags = ShaderFlags.EnableStreamingTex;
         }
         if (mesh?.HasArmature == true) {
@@ -98,7 +98,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         UnloadMesh();
         mesh = Scene!.RenderContext.LoadMesh(meshFile);
         var shaderFlags = ShaderFlags.None;
-        if (IsStreamingTex) {
+        if (UseStreamingTex) {
             shaderFlags = ShaderFlags.EnableStreamingTex;
         }
         if (mesh?.HasArmature == true) {

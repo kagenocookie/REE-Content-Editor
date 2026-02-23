@@ -1,4 +1,6 @@
 using System.Numerics;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.ImguiHandling;
@@ -23,25 +25,22 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     public ContentWorkspace Workspace { get; }
     private Scene? scene;
-    private GameObject? previewGameobject;
 
     public Scene? Scene => scene;
 
     private const float TopMargin = 64;
 
-    private string? loadedMdf;
-    private string? mdfSource;
-    private string? originalMDF;
-    private UIContext? mdfPickerContext;
 
     private UIContext? animationPickerContext;
     private string animationSourceFile = "";
-    private Animator? animator;
     private string motFilter = "";
     private bool isMotFilterMatchCase = false;
     private bool isMotFilterActive = false;
     private string? loadedAnimationSource;
-    public Animator? Animator => animator;
+    // private Animator? animator;
+    // public Animator? Animator => meshContexts.FirstOrDefault()?.Animator;
+    public Animator? PrimaryAnimator => meshContexts.FirstOrDefault()?.Animator;
+    public IEnumerable<Animator> Animators => meshContexts.Select(m => m.Animator!).Where(a => a != null);
     private float playbackSpeed = 1.0f;
     private static readonly float[] PlaybackSpeeds =
     {
@@ -57,21 +56,12 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     private string exportTemplate;
 
-    private CommonMeshResource? mesh;
-    private string? meshPath;
-    public CommonMeshResource? Mesh => mesh;
+    public CommonMeshResource? Mesh => meshContexts.FirstOrDefault()?.MeshFile;
 
     private WindowData data = null!;
 
     private bool isDragging;
     private const float pitchLimit = MathF.PI / 2 - 0.01f;
-    private enum TextureMode
-    {
-        HighRes,
-        LowRes
-    }
-    private bool isMDFUpdateRequest = false;
-    private TextureMode textureMode = TextureMode.HighRes;
 
     private bool showAnimationsMenu = false;
     private bool isSynced;
@@ -92,88 +82,53 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     private bool? _hasTooManyWeightsForRender;
 
+    private List<MeshViewerContext> meshContexts = new();
+
     protected override void Reset()
     {
         base.Reset();
-        ChangeMesh();
+        ChangeMainMesh();
     }
 
     public MeshViewer(ContentWorkspace workspace, FileHandle file) : base(file)
     {
         windowFlags = ImGuiWindowFlags.MenuBar;
         Workspace = workspace;
-        ChangeMesh();
-
-        exportTemplate = mesh?.NativeMesh.CurrentVersionConfig ?? MeshFile.AllVersionConfigs.Last();
+        exportTemplate = file.GetResource<CommonMeshResource>()?.NativeMesh.CurrentVersionConfig ?? MeshFile.AllVersionConfigs.Last();
     }
 
-    private void TryGuessMdfFilepath()
-    {
-        if (!Workspace.Env.TryGetFileExtensionVersion("mdf2", out var mdfVersion)) {
-            mdfVersion = -1;
-        }
-
-        var meshBasePath = PathUtils.GetFilepathWithoutExtensionOrVersion(Handle.Filepath).ToString();
-        var ext = ".mdf2";
-        if (mdfVersion != -1) ext += "." + mdfVersion;
-
-        var mdfPath = meshBasePath + ext;
-        if (!File.Exists(mdfPath)) mdfPath = meshBasePath + "_Mat" + ext;
-
-        if (!File.Exists(mdfPath) && Handle.NativePath != null) {
-            meshBasePath = PathUtils.GetFilepathWithoutExtensionOrVersion(Handle.NativePath).ToString();
-            if (Workspace.ResourceManager.TryResolveGameFile(meshBasePath + ext, out _)) {
-                mdfPath = meshBasePath + ext;
-            } else if (Workspace.ResourceManager.TryResolveGameFile(meshBasePath + "_Mat" + ext, out _)) {
-                mdfPath = meshBasePath + "_Mat" + ext;
-            } else {
-                mdfPath = "";
-            }
-        }
-        mdfSource = mdfPath;
-        originalMDF = mdfPath;
-        loadedMdf = null;
-    }
-
-    public void ChangeMesh(string newMesh)
+    public void ChangeMainMesh(string newMesh)
     {
         if (Workspace.ResourceManager.TryResolveGameFile(newMesh, out var newFile) && newFile != Handle) {
-            ChangeMesh(newFile);
+            ChangeMainMesh(newFile);
         }
     }
 
-    public void ChangeMesh(FileHandle newHandle)
+    public void ChangeMainMesh(FileHandle newHandle)
     {
         Handle.References.Remove(this);
         Handle = newHandle;
-        ChangeMesh();
+        ChangeMainMesh();
     }
 
-    private void ChangeMesh(bool resetMdf = true)
+    private MeshViewerContext CreateAdditionalMesh(FileHandle mesh)
+    {
+        var go = new GameObject($"_preview_{meshContexts.Count}", Workspace.Env, scene?.RootFolder, scene);
+        scene?.Add(go);
+        var ctx = new MeshViewerContext(this, context.AddChild(go.Name, go), mesh);
+        meshContexts.Add(ctx);
+        return ctx;
+    }
+
+    private void ChangeMainMesh(bool resetMdf = true)
     {
         _hasTooManyWeightsForRender = null;
-        meshPath = Handle.Filepath;
+        var ctx = meshContexts.FirstOrDefault() ?? CreateAdditionalMesh(Handle);
         if (!Handle.References.Contains(this)) Handle.References.Add(this);
-        mesh = Handle.GetResource<CommonMeshResource>();
-        if (mesh == null) {
-            if (Handle.Filepath.Contains("streaming/")) {
-                Logger.Error("Can't directly open streaming meshes. Open the non-streaming file instead.");
-            }
-            return;
-        }
-        if (resetMdf) TryGuessMdfFilepath();
+        ctx.ChangeMesh(resetMdf);
 
-        var meshComponent = previewGameobject?.GetComponent<MeshComponent>();
-        if (meshComponent != null) {
+        var mesh = ctx.MeshFile;
 
-            meshComponent.Transform.InvalidateTransform();
-            if (!string.IsNullOrEmpty(mdfSource)) {
-                isMDFUpdateRequest = true;
-                UpdateMaterial(meshComponent);
-            } else {
-                meshComponent.SetMesh(Handle, Handle);
-            }
-        }
         if (mesh.HasAnimations && string.IsNullOrEmpty(animationSourceFile)) {
             animationSourceFile = Handle.Filepath;
         }
@@ -181,10 +136,11 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     private void CenterCameraToSceneObject()
     {
-        if (previewGameobject == null || scene == null) return;
+        var go = meshContexts.FirstOrDefault()?.GameObject;
+        if (go == null || scene == null) return;
 
-        scene.ActiveCamera.LookAt(previewGameobject, true);
-        scene.ActiveCamera.OrthoSize = previewGameobject.GetWorldSpaceBounds().Size.Length() * 0.7f;
+        scene.ActiveCamera.LookAt(go, true);
+        scene.ActiveCamera.OrthoSize = go.GetWorldSpaceBounds().Size.Length() * 0.7f;
     }
 
     protected override void DrawFileContents() => throw new NotImplementedException();
@@ -201,32 +157,29 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
         data ??= context.Get<WindowData>();
 
-        MeshComponent meshComponent;
-        if (previewGameobject == null) {
-            scene.Add(previewGameobject = new GameObject("_preview", Workspace.Env, null, scene));
-            meshComponent = previewGameobject.AddComponent<MeshComponent>();
-        } else {
-            meshComponent = previewGameobject.RequireComponent<MeshComponent>();
-        }
-
-        if (!meshComponent.HasMesh) {
-            meshComponent.IsStreamingTex = true;
-            meshComponent.SetMesh(Handle, Handle);
+        var mainCtx = meshContexts.FirstOrDefault();
+        if (mainCtx == null) {
+            ChangeMainMesh();
+            mainCtx = meshContexts.First();
             scene.ActiveCamera.ProjectionMode = AppConfig.Settings.MeshViewer.DefaultProjection;
             CenterCameraToSceneObject();
         }
+
+        var meshComponent = mainCtx.Component;
+        var mesh = mainCtx.MeshFile;
 
         if (mesh == null) {
             ImGui.Text("No mesh selected");
             return;
         }
 
-        if (showSkeleton) {
-            RenderSkeleton();
+        if (showSkeleton && meshContexts.Count > 0) {
+            // TODO render fbxskel instead when available
+            RenderSkeleton(mainCtx);
         }
 
         Vector2? embeddedMenuPos = null;
-        if (!ShowMenu(meshComponent) && !isSynced) {
+        if (!ShowMenu(mainCtx) && !isSynced) {
             embeddedMenuPos = ImGui.GetCursorPos();
         }
         var expectedSize = ImGui.GetWindowSize() - ImGui.GetCursorPos() - ImGui.GetStyle().WindowPadding;
@@ -301,7 +254,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
     }
 
-    private bool ShowMenu(MeshComponent meshComponent)
+    private bool ShowMenu(MeshViewerContext mainCtx)
     {
         if (ImGui.BeginMenuBar()) {
             if (ImGui.MenuItem($"{AppIcons.SI_GenericCamera} Controls")) ImGui.OpenPopup("CameraSettings");
@@ -318,23 +271,24 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 ImGui.EndPopup();
             }
 
-            if (!isSynced && previewGameobject != null) {
+            if (!isSynced && mainCtx.GameObject != null) {
                 if (ImGui.MenuItem($"{AppIcons.SI_GenericInfo} Mesh Info")) ImGui.OpenPopup("MeshInfo");
                 ImguiHelpers.VerticalSeparator();
+                if (ImGui.MenuItem($"{AppIcons.SI_SceneGameObject4} Mesh Collection")) ImGui.OpenPopup("MeshList");
                 if (ImGui.MenuItem($"{AppIcons.SI_MeshViewerMeshGroup} Mesh Groups")) ImGui.OpenPopup("MeshGroups");
                 if (ImGui.MenuItem($"{AppIcons.SI_FileType_MDF} Material")) ImGui.OpenPopup("Material");
-                var mdfErrors = GetMdfErrors();
+                var mdfErrors = mainCtx.GetMdfErrors();
                 if (mdfErrors != null) {
                     using var _ = ImguiHelpers.OverrideStyleCol(ImGuiCol.Text, Colors.Warning);
                     ImGui.MenuItem($"{AppIcons.SI_GenericWarning}##mdf");
                     ImguiHelpers.Tooltip(mdfErrors);
                 }
+                ImguiHelpers.VerticalSeparator();
                 if (ImGui.BeginMenu($"{AppIcons.SI_FileType_RCOL} RCOL")) {
-                    var rcolEdit = Scene!.Root.SetEditMode(previewGameobject.GetOrAddComponent<RequestSetColliderComponent>());
+                    var rcolEdit = Scene!.Root.SetEditMode(mainCtx.GameObject.GetOrAddComponent<RequestSetColliderComponent>());
                     rcolEdit?.DrawMainUI();
                     ImGui.EndMenu();
                 }
-                ImguiHelpers.VerticalSeparator();
                 if (ImGui.MenuItem($"{AppIcons.SI_Animation} Animations")) showAnimationsMenu = !showAnimationsMenu;
                 if (showAnimationsMenu) ImguiHelpers.HighlightMenuItem($"{AppIcons.SI_Animation} Animations");
                 var animWarns = GetAnimErrors();
@@ -347,15 +301,19 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 if (ImGui.MenuItem($"{AppIcons.SI_GenericIO} Import / Export")) ImGui.OpenPopup("Export");
 
                 if (ImGui.BeginPopup("MeshInfo")) {
-                    ShowMeshInfo();
+                    ShowMeshInfo(mainCtx, true);
+                    ImGui.EndPopup();
+                }
+                if (ImGui.BeginPopup("MeshList")) {
+                    ShowMeshCollections();
                     ImGui.EndPopup();
                 }
                 if (ImGui.BeginPopup("Material")) {
-                    ShowMaterialSettings(meshComponent);
+                    mainCtx.ShowMaterialSettings();
                     ImGui.EndPopup();
                 }
                 if (ImGui.BeginPopup("MeshGroups")) {
-                    ShowMeshGroupSettings(meshComponent);
+                    ShowMeshGroupSettings(mainCtx.Component);
                     ImGui.EndPopup();
                 }
                 if (ImGui.BeginPopup("Export")) {
@@ -363,25 +321,131 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                     ImGui.EndPopup();
                 }
                 if (ImGui.BeginPopup("Animations")) {
-                    ShowAnimationMenu(meshComponent);
+                    ShowAnimationMenu(mainCtx.Component);
                     ImGui.EndPopup();
                 }
             }
             ImGui.EndMenuBar();
-            UpdateMaterial(meshComponent);
+            foreach (var c in meshContexts) c.UpdateMaterial();
             return true;
         } else {
-            UpdateMaterial(meshComponent);
+            foreach (var c in meshContexts) c.UpdateMaterial();
             return false;
         }
     }
 
+    private void RemoveSubmesh(MeshViewerContext ctx)
+    {
+        meshContexts.Remove(ctx);
+        context.RemoveChild(ctx.UI);
+        (scene?.RootFolder as INodeObject<GameObject>)?.RemoveChild(ctx.GameObject);
+        ctx.GameObject.Dispose();
+    }
+
+    private void ShowMeshCollections()
+    {
+        foreach (var ctx in meshContexts) {
+            if (ImGui.BeginMenu(ctx.Handle.Filename.ToString())) {
+                if (ctx != meshContexts[0] && ImGui.Selectable($"{AppIcons.SI_GenericDelete} Remove")) {
+                    RemoveSubmesh(ctx);
+                    ImGui.EndMenu();
+                    break;
+                }
+                if (ImGui.BeginMenu($"{AppIcons.SI_GenericInfo} Info")) {
+                    ShowMeshInfo(ctx, false);
+                    ImGui.EndMenu();
+                }
+                if (ctx.IsAnimatable && ImGui.BeginMenu($"{AppIcons.SI_TagCharacter} Skeleton")) {
+                    ctx.ShowSkeletonPicker();
+                    ImGui.EndMenu();
+                }
+                if (ImGui.BeginMenu($"{AppIcons.SI_MeshViewerMeshGroup} Mesh Groups")) {
+                    ShowMeshGroupSettings(ctx.Component);
+                    ImGui.EndMenu();
+                }
+                if (ImGui.BeginMenu($"{AppIcons.SI_FileType_MDF} Material")) {
+                    ctx.ShowMaterialSettings();
+                    ImGui.EndMenu();
+                }
+                if (ImGui.MenuItem($"{AppIcons.SI_WindowOpenNew} Open In Standalone Window")) {
+                    EditorWindow.CurrentWindow?.AddFileEditor(ctx.Handle);
+                }
+                ImGui.EndMenu();
+            }
+        }
+
+        ImGui.SeparatorText("Add Mesh");
+        if (addCollectionCtx == null) {
+            addCollectionCtx = context.AddChild<MeshViewer, string>(
+                "Source File",
+                this,
+                new ResourcePathPicker(Workspace, FileFilters.MeshFile, KnownFileFormats.Mesh) { UseNativesPath = true, IsPathForIngame = false, DisableWarnings = true },
+                (v) => v!.addCollectionPath,
+                (v, p) => v.addCollectionPath = p ?? "");
+        }
+        addCollectionCtx.ShowUI();
+
+        if (AppImguiHelpers.ShowRecentFiles(AppConfig.Settings.RecentMeshes, Workspace.Game, ref addCollectionPath)) {
+            addCollectionCtx.ResetState();
+        }
+        if (!string.IsNullOrEmpty(addCollectionPath) &&
+            Workspace.ResourceManager.TryResolveGameFile(addCollectionPath, out var resolvedFile) &&
+            resolvedFile.Format.format == KnownFileFormats.Mesh &&
+            !meshContexts.Any(c => c.Handle == resolvedFile)
+        ) {
+            if (ImGui.Selectable($"{AppIcons.SI_GenericAdd} Add", ImGuiSelectableFlags.NoAutoClosePopups)) {
+                AppConfig.Settings.RecentMeshes.AddRecent(Workspace.Game, addCollectionPath);
+                CreateAdditionalMesh(resolvedFile).ChangeMesh(true);
+            }
+        }
+
+        ImGui.SeparatorText("Manage Collection");
+        if (ImGui.Selectable($"{AppIcons.SI_Save} Save collection")) {
+            var arr = new JsonArray();
+            foreach (var c in meshContexts) arr.Add(c.ToJson());
+            var jsonStr = arr.ToJsonString();
+            var collectionsDir = Path.Combine(AppConfig.Instance.GetGameUserPath(Workspace.Game), "mesh_collections");
+            Directory.CreateDirectory(collectionsDir);
+            PlatformUtils.ShowSaveFileDialog((path) => {
+                using var fs = File.Create(path);
+                JsonSerializer.Serialize(fs, arr, JsonConfig.configJsonOptions);
+            }, Path.Combine(collectionsDir, Handle.Filename.ToString() + ".collection.json"), FileFilters.CollectionJsonFile);
+        }
+        if (ImGui.Selectable($"{AppIcons.SI_GenericImport} Load collection")) {
+            var collectionsDir = Path.Combine(AppConfig.Instance.GetGameUserPath(Workspace.Game), "mesh_collections/");
+            PlatformUtils.ShowFileDialog((files) => {
+                try {
+                    using var fs = File.OpenRead(files[0]);
+                    var arr = JsonSerializer.Deserialize<JsonArray>(fs);
+                    if (arr == null || arr.Count == 0) return;
+                    while (meshContexts.Count > 1) {
+                        RemoveSubmesh(meshContexts.Last());
+                    }
+                    meshContexts[0].LoadFromJson((JsonObject)arr[0]!);
+                    for (int i = 1; i < arr.Count; i++) {
+                        CreateAdditionalMesh(Handle).LoadFromJson((JsonObject)arr[i]!);
+                    }
+                } catch (Exception e) {
+                    Logger.Error("Failed to load mesh collection: " + e.Message);
+                }
+            }, collectionsDir, FileFilters.CollectionJsonFile);
+        }
+        if (ImGui.Selectable($"{AppIcons.SI_GenericClear} Remove all additional meshes")) {
+            while (meshContexts.Count > 1) {
+                RemoveSubmesh(meshContexts.Last());
+            }
+        }
+    }
+
+    private UIContext? addCollectionCtx;
+    private string addCollectionPath = "";
+
     private void ShowMeshGroupSettings(MeshComponent meshComponent)
     {
-        var meshGroupIds = mesh!.GroupIDs.ToList();
+        var meshGroupIds = meshComponent.MeshHandle?.Meshes.Select(m => m.MeshGroup).Order().Distinct();
         var parts = RszFieldCache.Mesh.PartsEnable.Get(meshComponent.Data);
-        if (parts == null) {
-            ImGui.TextColored(Colors.Error, "Could not resolve enabled parts field for current game.");
+        if (meshGroupIds == null || parts == null) {
+            ImGui.TextColored(Colors.Error, "Could not resolve enabled parts for current game.");
             return;
         }
         foreach (var group in meshGroupIds) {
@@ -395,57 +459,41 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
     }
 
-    private void ShowMeshInfo()
+    private static void ShowMeshInfo(MeshViewerContext ctx, bool allowEditing)
     {
-        ImGui.Text($"Path: {Handle.Filepath} ({Handle.HandleType})");
+        var handle = ctx.Handle;
+        ImGui.Text($"Path: {handle.Filepath} ({handle.HandleType})");
         if (ImGui.BeginPopupContextItem("##filepath")) {
             if (ImGui.Selectable("Copy path")) {
-                EditorWindow.CurrentWindow?.CopyToClipboard(Handle.Filepath);
+                EditorWindow.CurrentWindow?.CopyToClipboard(handle.Filepath);
                 ImGui.CloseCurrentPopup();
             }
             ImGui.EndPopup();
         }
-        ImGui.Text("Total Vertices: " + mesh!.VertexCount);
+        var mesh = ctx.MeshFile;
+        ImGui.Text("Total Vertices: " + mesh.VertexCount);
         ImGui.Text("Total Polygons: " + mesh.PolyCount);
         ImGui.Text("Sub Meshes: " + mesh.MeshCount);
         ImGui.Text("Materials: " + mesh.MaterialCount);
         ImGui.Text("Bones: " + mesh.BoneCount);
-        if (ImGui.TreeNode("Raw Data")) {
-            var meshCtx = context.GetChild<MeshFileHandler>();
+
+        if (allowEditing && ImGui.TreeNode("Raw Data")) {
+            var meshCtx = ctx.UI.GetChild<MeshFileHandler>();
             if (meshCtx == null) {
-                meshCtx = context.AddChild("Raw Mesh Data", mesh.NativeMesh, new MeshFileHandler());
+                meshCtx = ctx.UI.AddChild("Raw Mesh Data", mesh.NativeMesh, new MeshFileHandler());
             }
             meshCtx.ShowUI();
-            if (meshCtx.Changed && !Handle.Modified) {
-                Handle.Modified = true;
+            if (meshCtx.Changed && !handle.Modified) {
+                handle.Modified = true;
             }
             ImGui.TreePop();
         }
     }
 
-    private string? GetMdfErrors()
-    {
-        var meshComponent = previewGameobject?.GetComponent<MeshComponent>();
-        if (meshComponent?.MeshHandle == null || mesh == null || string.IsNullOrEmpty(mdfSource)) return null;
-
-        if (mesh != null && meshComponent.MeshHandle?.Material != null) {
-            var mdfMats = meshComponent.MeshHandle.Material.Materials;
-            var matNames = mesh.NativeMesh.MaterialNames;
-            var nameMismatch = matNames.Any(name => !mdfMats.Select(m => m.name).Contains(name));
-            if (mdfMats.Count != mesh.NativeMesh.MaterialNames.Count) {
-                return "Mesh material count does not match MDF2 material count. Textures won't display correctly ingame.\nEnsure that both counts match.";
-            }
-            if (nameMismatch) {
-                return "Mesh references material names that are not present in the selected MDF2.";
-            }
-        }
-
-        return null;
-    }
-
     private string? GetAnimErrors()
     {
-        if (mesh == null || !(mesh.NativeMesh.BoneData?.DeformBones.Count > 0) || animator?.File == null) return null;
+        var mesh = meshContexts.First().MeshFile;
+        if (mesh == null || !(mesh.NativeMesh.BoneData?.DeformBones.Count > 0) || !Animators.Any()) return null;
 
         if (mesh.NativeMesh.BoneData.DeformBones.Count > 255) {
             return """
@@ -473,85 +521,14 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         return null;
     }
 
-    private void ShowMaterialSettings(MeshComponent meshComponent)
+    private void AlignMatNamesToMdf(MeshViewerContext ctx)
     {
-        bool useHighRes = textureMode == TextureMode.HighRes;
-        if (ImGui.Checkbox("Textures: " + (useHighRes ? "Hi-Res" : "Low-Res"), ref useHighRes)) {
-            textureMode = useHighRes ? TextureMode.HighRes : TextureMode.LowRes;
-            isMDFUpdateRequest = true;
-            meshComponent.IsStreamingTex = useHighRes;
-            UpdateMaterial(meshComponent);
-        }
-        ImGui.SameLine();
-        if (ImGui.Button($"{AppIcons.SI_ResetMaterial}")) {
-            mdfSource = originalMDF;
-            UpdateMaterial(meshComponent);
-        }
-        ImguiHelpers.Tooltip("Reset MDF");
-        if (mdfPickerContext == null) {
-            mdfPickerContext = context.AddChild<MeshViewer, string>(
-                "MDF2 Material",
-                this,
-                new ResourcePathPicker(Workspace, Workspace.Env.TypeCache.GetResourceSubtypes(KnownFileFormats.MeshMaterial)) { UseNativesPath = true, IsPathForIngame = false },
-                (v) => v!.mdfSource,
-                (v, p) => v.mdfSource = p ?? "");
-        }
-        mdfPickerContext.ShowUI();
-        if (mesh != null && meshComponent.MeshHandle?.Material != null) {
-            var mdfMats = meshComponent.MeshHandle.Material.Materials;
-            var matNames = mesh.NativeMesh.MaterialNames;
-            var nameMismatch = matNames.Any(name => !mdfMats.Select(m => m.name).Contains(name));
-            var error = GetMdfErrors();
-            if (error != null) {
-                ImGui.TextColored(Colors.Warning, error);
-            }
+        var meshComponent = ctx.Component;
+        var mesh = ctx.Mesh;
+        if (meshComponent.MeshHandle == null || mesh == null) return;
 
-            if (mesh.NativeMesh.MaterialNames.Count < mdfMats.Count && !string.IsNullOrEmpty(mdfSource)) {
-                if (ImGui.Button("Add missing materials from selected MDF2")) {
-                    AlignMatNamesToMdf();
-                }
-            }
-
-            ImGui.SeparatorText("Material mapping");
-            for (int i = 0; i < mesh.NativeMesh.MaterialNames.Count; i++) {
-                var matName = mesh.NativeMesh.MaterialNames[i];
-                if (ImGui.Button($"{AppIcons.SI_GenericDelete}##{i}")) {
-                    var i_backup = i--;
-                    UndoRedo.RecordCallback(null, () => matNames.RemoveAt(i_backup), () => matNames.Insert(i_backup, matName));
-                    UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, ApplyMeshChanges);
-                    continue;
-                }
-                ImGui.SameLine();
-                ImGui.Text(i.ToString());
-                ImGui.SameLine();
-                if (ImGui.InputText($"##{i}", ref matName, 48)) {
-                    var prevName = mesh.NativeMesh.MaterialNames[i];
-                    int i_backup = i;
-                    UndoRedo.RecordCallbackSetter(null, mesh.NativeMesh.MaterialNames, prevName, matName, (o, v) => o[i_backup] = v, $"MatName{i}_{Handle.Filepath}");
-                    UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, ApplyMeshChanges);
-                }
-            }
-            if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
-                var newName = "NewMaterial".GetUniqueName(s => matNames.Contains(s));
-                UndoRedo.RecordCallback(null, () => matNames.Add(newName), () => matNames.Remove(newName));
-                UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, ApplyMeshChanges);
-            }
-        }
-    }
-
-    private void ApplyMeshChanges()
-    {
-        Handle.Modified = true;
-        ChangeMesh(false);
-    }
-
-    private void AlignMatNamesToMdf()
-    {
-        var meshComponent = previewGameobject?.GetComponent<MeshComponent>();
-        if (meshComponent?.MeshHandle == null || mesh == null) return;
-
-        var mdfMats = meshComponent.MeshHandle.Material.Materials;
-        var matNames = mesh.NativeMesh.MaterialNames;
+        var mdfMats = mesh.Material.Materials;
+        var matNames = ctx.MeshFile.NativeMesh.MaterialNames;
         if (matNames.Count < mdfMats.Count) {
             var missingMats = mdfMats.Select(m => m.name).Where(m => !matNames.Contains(m));
             foreach (var mat in missingMats) {
@@ -564,6 +541,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     private void ShowImportExportMenu()
     {
+        var mesh = meshContexts.First().MeshFile;
         if (mesh == null) return;
 
         if (Handle.Format.format == KnownFileFormats.Mesh) {
@@ -572,11 +550,12 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
         using var _ = ImguiHelpers.Disabled(exportInProgress);
         if (ImGui.Button($"{AppIcons.SI_GenericExport} Export Mesh")) {
-            // potential export enhancement: include (embed) textures
+            // potential export enhancement: include (embed?) textures
             if (Handle.Resource is CommonMeshResource assmesh) {
                 PlatformUtils.ShowSaveFileDialog((exportPath) => {
                     exportInProgress = true;
                     try {
+                        var animator = PrimaryAnimator;
                         IEnumerable<MotFileBase>? mots = null;
                         if (exportAnimations && animator?.File != null) {
                             if (exportCurrentAnimationOnly && animator.ActiveMotion != null) {
@@ -614,8 +593,8 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                             Handle.Stream = tmpHandler.Stream.ToMemoryStream(disposeStream: false, forceCopy: true);
                             Handle.Revert(Workspace);
                             Handle.Modified = true;
-                            ChangeMesh();
-                            AlignMatNamesToMdf();
+                            ChangeMainMesh();
+                            meshContexts.First().AlignMatNamesToMdf();
                         }
                     });
                 }, lastImportSourcePath, fileExtension: FileFilters.MeshFilesAll);
@@ -630,8 +609,10 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             // we have no way of showing any progress from assimp's side (which is 99% of the export duration) so this is the best we can do
             ImGui.TextWrapped($"Exporting in progress. This may take a while for large files and for many animations...");
         }
-        if (animator?.File != null) ImGui.Checkbox("Include animations", ref exportAnimations);
-        if (animator?.File != null && exportAnimations) ImGui.Checkbox("Selected animation only", ref exportCurrentAnimationOnly);
+        if (PrimaryAnimator?.File != null) {
+            ImGui.Checkbox("Include animations", ref exportAnimations);
+            if (exportAnimations) ImGui.Checkbox("Selected animation only", ref exportCurrentAnimationOnly);
+        }
         if (mesh.NativeMesh.MeshData?.LODs.Count > 1 || mesh.NativeMesh.ShadowMesh?.LODs.Count > 0) ImGui.Checkbox("Include LODs and Shadow Mesh", ref exportLods);
         if (mesh.NativeMesh.OccluderMesh?.MeshGroups.Count > 0) ImGui.Checkbox("Include Occlusion Mesh", ref exportOcclusion);
         if (showImportSettings) {
@@ -681,20 +662,35 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
     }
 
+    private bool UpdateAnimData()
+    {
+        foreach (var c in meshContexts) {
+            var anim = c.Animator ?? c.SetupAnimator();
+            // allow customizable owners? (e.g. paired animations like in pragmata)
+            if (c != meshContexts[0]) {
+                anim.owner = meshContexts[0].Animator;
+            }
+            if (!UpdateAnimatorMesh(c.Component)) return false;
+        }
+        return true;
+    }
+
     private void ShowAnimationMenu(MeshComponent meshComponent)
     {
         ImGui.SeparatorText("Animations");
-        if (animator == null) {
-            animator = new(Workspace);
+        if (!UpdateAnimData()) {
+            return;
         }
-        if (!UpdateAnimatorMesh(meshComponent)) return;
+
+        var animator = PrimaryAnimator;
+        if (animator == null) return;
 
         ImGui.Checkbox("Show Skeleton", ref showSkeleton);
         ImGui.Spacing();
         using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(animationSourceFile))) {
             if (ImGui.Button($"{AppIcons.SI_Update}") && animator.File != null) {
                 Workspace.ResourceManager.CloseFile(animator.File);
-                animator.Unload();
+                foreach (var c in meshContexts) c.Animator?.Unload();
                 loadedAnimationSource = null;
             }
             ImguiHelpers.Tooltip("Force reload");
@@ -714,16 +710,17 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         var settings = AppConfig.Settings;
         if (settings.RecentMotlists.Count > 0) {
             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Recent files").X - ImGui.GetStyle().FramePadding.X);
-            if (AppImguiHelpers.ShowRecentFiles(settings.RecentMotlists, ref animationSourceFile)) {
+            if (AppImguiHelpers.ShowRecentFiles(settings.RecentMotlists, Workspace.Game, ref animationSourceFile)) {
                 animationPickerContext.ResetState();
             }
         }
         if (animationSourceFile != loadedAnimationSource) {
             if (!string.IsNullOrEmpty(animationSourceFile)) {
-                animator.LoadAnimationList(loadedAnimationSource = animationSourceFile);
-                settings.RecentMotlists.AddRecent(animationSourceFile);
+                loadedAnimationSource = animationSourceFile;
+                foreach (var c in meshContexts) c.Animator?.LoadAnimationList(loadedAnimationSource);
+                settings.RecentMotlists.AddRecent(Workspace.Game, animationSourceFile);
             } else {
-                animator.Unload();
+                foreach (var c in meshContexts) c.Animator?.Unload();
                 loadedAnimationSource = animationSourceFile;
             }
         }
@@ -747,7 +744,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             ImGui.SameLine();
             ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_IgnoreRootMotion, ref ignoreRoot, new[] { Colors.IconTertiary, Colors.IconPrimary, Colors.IconPrimary }, Colors.IconActive);
             ImguiHelpers.Tooltip("Ignore Root Motion");
-            animator.IgnoreRootMotion = ignoreRoot;
+            foreach (var c in meshContexts) c.Animator?.IgnoreRootMotion = ignoreRoot;
 
             ImGui.SameLine();
             ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isMotFilterMatchCase, Colors.IconActive);
@@ -774,7 +771,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
                 ImGui.PushID(mot.GetHashCode());
                 if (ImGui.RadioButton(name, animator.ActiveMotion == mot)) {
-                    animator.SetActiveMotion(mot);
+                    SetAnimation((MotFile)mot);
                 }
                 if (ImGui.BeginPopupContextItem(name)) {
                     if (ImGui.Selectable("Copy name")) {
@@ -790,10 +787,10 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
     }
 
-    private void RenderSkeleton()
+    private void RenderSkeleton(MeshViewerContext ctx)
     {
-        var mcomp = previewGameobject?.GetComponent<MeshComponent>();
-        var mesh = mcomp?.MeshHandle as AnimatedMeshHandle;
+        var mcomp = ctx.Component;
+        var mesh = ctx.Mesh;
         if (mesh == null || scene == null || mcomp == null) return;
 
         if (_skeletonBuilder == null) {
@@ -841,30 +838,13 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             .Add(new GizmoRenderBatchItem(gizmoMeshHandle.GetMaterial(0), gizmoMeshHandle.GetMesh(0), Matrix4x4.Identity, gizmoMeshHandle.GetMaterial(0)));
     }
 
-    private void UpdateMaterial(MeshComponent meshComponent)
-    {
-        var mesh = meshComponent.MeshHandle;
-        if (loadedMdf != mdfSource || isMDFUpdateRequest) {
-            loadedMdf = mdfSource;
-            isMDFUpdateRequest = false;
-            if (string.IsNullOrEmpty(mdfSource)) {
-                meshComponent.SetMesh(Handle, Handle);
-            } else if (Workspace.ResourceManager.TryResolveGameFile(mdfSource, out var mdfHandle)) {
-                meshComponent.SetMesh(Handle, mdfHandle);
-            } else {
-                meshComponent.SetMesh(Handle, Handle);
-                if (mdfSource != originalMDF) {
-                    Logger.Error("Could not locate mdf2 file " + mdfSource);
-                }
-            }
-        }
-    }
-
     private bool UpdateAnimatorMesh(MeshComponent meshComponent)
     {
-        if (animator == null) return false;
         var mesh = meshComponent.MeshHandle;
-        if (animator.Mesh != mesh) {
+        var motion = meshComponent.GameObject.GetComponent<Motion>();
+        var animator = motion?.Animator;
+        // note: this should probably be handled directly within Motion component?
+        if (animator != null && animator.Mesh != mesh) {
             if (mesh is not AnimatedMeshHandle anim) {
                 ImGui.BeginChild("PlaybackError", new Vector2(300, 42), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
                 ImGui.TextColored(Colors.Error, "Mesh is not animatable");
@@ -879,6 +859,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     private void ShowPlaybackControls(MeshComponent meshComponent)
     {
+        var animator = PrimaryAnimator;
         if (animator?.ActiveMotion == null) return;
         if (!UpdateAnimatorMesh(meshComponent)) return;
 
@@ -897,9 +878,9 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
         if (ImGui.Button((animator.IsPlaying ? AppIcons.Pause : AppIcons.Play).ToString()) || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_MeshViewer_PauseAnim.Get().IsPressed() && !isMotFilterActive) {
             if (animator.IsPlaying) {
-                animator.Pause();
+                foreach (var c in meshContexts) c.Animator?.Pause();
             } else {
-                animator.Play();
+                foreach (var c in meshContexts) c.Animator?.Play();
             }
         }
         ImguiHelpers.Tooltip(animator.IsPlaying ? "Pause" : "Play");
@@ -907,7 +888,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(animator.CurrentTime == 0)) {
             if (ImGui.Button(AppIcons.SeekStart.ToString())) {
-                animator.Restart();
+                foreach (var c in meshContexts) c.Animator?.Restart();
             }
         }
         ImguiHelpers.Tooltip("Restart");
@@ -916,7 +897,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         using (var _ = ImguiHelpers.Disabled(!animator.IsPlaying && !animator.IsActive)) {
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
             if (ImGui.Button(AppIcons.Stop.ToString())) {
-                animator.Stop();
+                foreach (var c in meshContexts) c.Animator?.Stop();
             }
             ImGui.PopStyleColor();
         }
@@ -925,9 +906,13 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(!animator.IsActive)) {
             if (ImGui.Button(AppIcons.Previous.ToString()) || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_MeshViewer_PrevAnimFrame.Get().IsPressed()) {
-                animator.Pause();
-                animator.Seek((animator.CurrentFrame - 1) * animator.FrameDuration);
-                animator.Update(0);
+                foreach (var c in meshContexts) {
+                    var anim = c.Animator;
+                    if (anim == null) continue;
+                    anim.Pause();
+                    anim.Seek((anim.CurrentFrame - 1) * anim.FrameDuration);
+                    anim.Update(0);
+                }
             }
         }
         ImguiHelpers.Tooltip("Previous Frame");
@@ -935,9 +920,13 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(!animator.IsActive)) {
             if (ImGui.Button(AppIcons.Next.ToString()) || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_MeshViewer_NextAnimFrame.Get().IsPressed()) {
-                animator.Pause();
-                animator.Seek((animator.CurrentFrame + 1) * animator.FrameDuration);
-                animator.Update(0);
+                foreach (var c in meshContexts) {
+                    var anim = c.Animator;
+                    if (anim == null) continue;
+                    anim.Pause();
+                    anim.Seek((anim.CurrentFrame + 1) * anim.FrameDuration);
+                    anim.Update(0);
+                }
             }
         }
         ImguiHelpers.Tooltip("Next Frame");
@@ -950,11 +939,16 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             int frame = animator.CurrentFrame;
             ImGui.SetNextItemWidth(AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X - 75: 325);
             if (ImGui.SliderInt("##AnimFrameSlider", ref frame, 0, animator.TotalFrames)) {
-                if (AppConfig.Instance.PauseAnimPlayerOnSeek) {
-                    animator.Pause();
+                foreach (var c in meshContexts) {
+                    var anim = c.Animator;
+                    if (anim == null) continue;
+
+                    if (AppConfig.Instance.PauseAnimPlayerOnSeek) {
+                        anim.Pause();
+                    }
+                    anim.Seek(frame * anim.FrameDuration);
+                    anim.Update(0);
                 }
-                animator.Seek(frame * animator.FrameDuration);
-                animator.Update(0);
             }
         }
         ImGui.SameLine();
@@ -985,28 +979,32 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         ImGui.EndChild();
         ImGui.PopStyleColor();
 
-        if (animator.IsPlaying) animator.Update(Time.Delta * playbackSpeed);
-
+        if (animator.IsPlaying && UpdateAnimData()) {
+            foreach (var c in meshContexts) {
+                c.Animator?.Update(Time.Delta * playbackSpeed);
+            }
+        }
     }
 
     public void SetAnimation(string animlist)
     {
-        if (animator == null) {
-            animator = new(Workspace);
-        }
-        animator.LoadAnimationList(animlist);
-        var firstAnim = animator.Animations.FirstOrDefault();
-        if (firstAnim != null) {
-            animator.SetActiveMotion(firstAnim);
+        UpdateAnimData();
+        foreach (var c in meshContexts) {
+            var anim = c.Animator ?? c.SetupAnimator();
+            anim.LoadAnimationList(animlist);
+            if (anim.Animations.Any()) {
+                anim.SetActiveMotion(anim.Animations[0]);
+            }
         }
     }
 
     public void SetAnimation(MotFile mot)
     {
-        if (animator == null) {
-            animator = new(Workspace);
+        UpdateAnimData();
+        foreach (var c in meshContexts) {
+            var anim = c.Animator ?? c.SetupAnimator();
+            anim.SetActiveMotion(mot);
         }
-        animator.SetActiveMotion(mot);
     }
 
     public static bool IsSupportedFileExtension(string filepathOrExtension)
@@ -1027,7 +1025,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             EditorWindow.CurrentWindow?.SceneManager.UnloadScene(scene);
             scene = null;
         }
-        mesh = null;
+        meshContexts.Clear();
     }
     public void SyncFromScene(MeshViewer other, bool ignoreMotionClip)
     {
@@ -1040,23 +1038,296 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         scene.ActiveCamera.FieldOfView = other.scene.ActiveCamera.FieldOfView;
         scene.ActiveCamera.OrthoSize = other.scene.ActiveCamera.OrthoSize;
 
-        if (other.animator != null) {
-            if (animator == null) {
-                animator = new Animator(Workspace);
+        var mainCtx = meshContexts.FirstOrDefault();
+        var otherAnimator = other.PrimaryAnimator;
+        if (otherAnimator != null && mainCtx != null) {
+            var animator = PrimaryAnimator ?? mainCtx.SetupAnimator();
+            if (!ignoreMotionClip && animator.ActiveMotion != otherAnimator.ActiveMotion && otherAnimator.ActiveMotion != null) {
+                animator.SetActiveMotion(otherAnimator.ActiveMotion);
             }
-            if (!ignoreMotionClip && animator.ActiveMotion != other.animator.ActiveMotion && other.animator.ActiveMotion != null) {
-                animator.SetActiveMotion(other.animator.ActiveMotion);
-            }
-            if (other.animator.IsPlaying != animator.IsPlaying) {
-                if (other.animator.IsPlaying) {
+            if (otherAnimator.IsPlaying != animator.IsPlaying) {
+                if (otherAnimator.IsPlaying) {
                     animator.Play();
                 } else {
                     animator.Pause();
                 }
             }
-            animator.Seek(other.animator.CurrentTime);
+            animator.Seek(otherAnimator.CurrentTime);
         }
 
         isSynced = true;
+    }
+}
+
+internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle file)
+{
+    private string? loadedMdf;
+    private string? mdfSource;
+    private string? originalMDF;
+    private string skeletonPath = "";
+    private UIContext? mdfPickerContext;
+    private bool useHighResTextures = true;
+
+    public UIContext UI { get; } = ui;
+    public FileHandle Handle { get; set; } = file;
+    private ContentWorkspace Workspace => viewer.Workspace;
+
+    public GameObject GameObject { get; } = ui.Get<GameObject>();
+    public MeshComponent Component { get; } = ui.Get<GameObject>().GetOrAddComponent<MeshComponent>();
+    public Motion Motion { get; } = ui.Get<GameObject>().GetOrAddComponent<Motion>();
+    public AnimatedMeshHandle? Mesh => Component.MeshHandle as AnimatedMeshHandle;
+    public CommonMeshResource MeshFile => Handle.GetResource<CommonMeshResource>() ?? throw new Exception("invalid mesh");
+    public Animator? Animator => GameObject.GetComponent<Motion>()?.Animator;
+    public bool IsAnimatable => Mesh != null;
+
+    public override string ToString() => Handle.Filepath;
+
+    public Animator SetupAnimator()
+    {
+        var mot = Motion;
+        if (mot.Animator != null) return mot.Animator;
+        mot.InitAnimation();
+        return mot.Animator!;
+    }
+
+    public void UpdateMaterial(bool force = false)
+    {
+        var meshComponent = Component;
+        var mesh = meshComponent.MeshHandle;
+        if (loadedMdf != mdfSource || force) {
+            loadedMdf = mdfSource;
+            if (string.IsNullOrEmpty(mdfSource)) {
+                meshComponent.SetMesh(Handle, Handle);
+            } else if (viewer.Workspace.ResourceManager.TryResolveGameFile(mdfSource, out var mdfHandle)) {
+                meshComponent.SetMesh(Handle, mdfHandle);
+            } else {
+                meshComponent.SetMesh(Handle, Handle);
+                if (mdfSource != originalMDF) {
+                    Logger.Error("Could not locate mdf2 file " + mdfSource);
+                }
+            }
+        }
+    }
+
+    public void TryGuessMdfFilepath()
+    {
+        if (!viewer.Workspace.Env.TryGetFileExtensionVersion("mdf2", out var mdfVersion)) {
+            mdfVersion = -1;
+        }
+
+        var meshBasePath = PathUtils.GetFilepathWithoutExtensionOrVersion(Handle.Filepath).ToString();
+        var ext = ".mdf2";
+        if (mdfVersion != -1) ext += "." + mdfVersion;
+
+        var mdfPath = meshBasePath + ext;
+        if (!File.Exists(mdfPath)) mdfPath = meshBasePath + "_Mat" + ext;
+
+        if (!File.Exists(mdfPath) && Handle.NativePath != null) {
+            meshBasePath = PathUtils.GetFilepathWithoutExtensionOrVersion(Handle.NativePath).ToString();
+            if (viewer.Workspace.ResourceManager.TryResolveGameFile(meshBasePath + ext, out _)) {
+                mdfPath = meshBasePath + ext;
+            } else if (viewer.Workspace.ResourceManager.TryResolveGameFile(meshBasePath + "_Mat" + ext, out _)) {
+                mdfPath = meshBasePath + "_Mat" + ext;
+            } else {
+                mdfPath = "";
+            }
+        }
+        mdfSource = mdfPath;
+        originalMDF = mdfPath;
+        loadedMdf = null;
+    }
+
+    private void ApplyMeshChanges()
+    {
+        Handle.Modified = true;
+        ChangeMesh(false);
+    }
+
+    public void ShowMaterialSettings()
+    {
+        var meshComponent = Component;
+        if (ImGui.Checkbox("Textures: " + (useHighResTextures ? "Hi-Res" : "Low-Res"), ref useHighResTextures)) {
+            meshComponent.UseStreamingTex = useHighResTextures;
+            UpdateMaterial(true);
+        }
+        ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_ResetMaterial}")) {
+            mdfSource = originalMDF;
+            UpdateMaterial();
+        }
+        ImguiHelpers.Tooltip("Reset MDF");
+        if (mdfPickerContext == null) {
+            mdfPickerContext = UI.AddChild<MeshViewerContext, string>(
+                "MDF2 Material",
+                this,
+                new ResourcePathPicker(viewer.Workspace, KnownFileFormats.MeshMaterial) { UseNativesPath = true, IsPathForIngame = false },
+                (v) => v!.mdfSource,
+                (v, p) => v.mdfSource = p ?? "");
+        }
+        mdfPickerContext.ShowUI();
+        var mesh = MeshFile;
+        if (mesh != null && meshComponent.MeshHandle?.Material != null) {
+            var mdfMats = meshComponent.MeshHandle.Material.Materials;
+            var matNames = mesh.NativeMesh.MaterialNames;
+            var nameMismatch = matNames.Any(name => !mdfMats.Select(m => m.name).Contains(name));
+            var error = GetMdfErrors();
+            if (error != null) {
+                ImGui.TextColored(Colors.Warning, error);
+            }
+
+            if (mesh.NativeMesh.MaterialNames.Count < mdfMats.Count && !string.IsNullOrEmpty(mdfSource)) {
+                if (ImGui.Button("Add missing materials from selected MDF2")) {
+                    AlignMatNamesToMdf();
+                }
+            }
+
+            ImGui.SeparatorText("Material mapping");
+            for (int i = 0; i < mesh.NativeMesh.MaterialNames.Count; i++) {
+                var matName = mesh.NativeMesh.MaterialNames[i];
+                if (ImGui.Button($"{AppIcons.SI_GenericDelete}##{i}")) {
+                    var i_backup = i--;
+                    UndoRedo.RecordCallback(null, () => matNames.RemoveAt(i_backup), () => matNames.Insert(i_backup, matName));
+                    UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, ApplyMeshChanges);
+                    continue;
+                }
+                ImGui.SameLine();
+                ImGui.Text(i.ToString());
+                ImGui.SameLine();
+                if (ImGui.InputText($"##{i}", ref matName, 48)) {
+                    var prevName = mesh.NativeMesh.MaterialNames[i];
+                    int i_backup = i;
+                    UndoRedo.RecordCallbackSetter(null, mesh.NativeMesh.MaterialNames, prevName, matName, (o, v) => o[i_backup] = v, $"MatName{i}_{Handle.Filepath}");
+                    UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, ApplyMeshChanges);
+                }
+            }
+            if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
+                var newName = "NewMaterial".GetUniqueName(s => matNames.Contains(s));
+                UndoRedo.RecordCallback(null, () => matNames.Add(newName), () => matNames.Remove(newName));
+                UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, ApplyMeshChanges);
+            }
+        }
+    }
+
+    public string? GetMdfErrors()
+    {
+        var meshComponent = Component;
+        var mesh = MeshFile;
+        if (meshComponent?.MeshHandle == null || mesh == null || string.IsNullOrEmpty(mdfSource)) return null;
+
+        if (mesh != null && meshComponent.MeshHandle?.Material != null) {
+            var mdfMats = meshComponent.MeshHandle.Material.Materials;
+            var matNames = mesh.NativeMesh.MaterialNames;
+            var nameMismatch = matNames.Any(name => !mdfMats.Select(m => m.name).Contains(name));
+            if (mdfMats.Count != mesh.NativeMesh.MaterialNames.Count) {
+                return "Mesh material count does not match MDF2 material count. Textures won't display correctly ingame.\nEnsure that both counts match.";
+            }
+            if (nameMismatch) {
+                return "Mesh references material names that are not present in the selected MDF2.";
+            }
+        }
+
+        return null;
+    }
+
+    public void AlignMatNamesToMdf()
+    {
+        var meshComponent = Component;
+        var mesh = Mesh;
+        if (meshComponent.MeshHandle == null || mesh == null) return;
+
+        var mdfMats = mesh.Material.Materials;
+        var matNames = MeshFile.NativeMesh.MaterialNames;
+        if (matNames.Count < mdfMats.Count) {
+            var missingMats = mdfMats.Select(m => m.name).Where(m => !matNames.Contains(m));
+            foreach (var mat in missingMats) {
+                if (matNames.Count >= mdfMats.Count) break;
+                matNames.Add(mat);
+            }
+        }
+        Handle.Modified = true;
+    }
+    public void ChangeMesh(bool resetMdf = true)
+    {
+        if (!Handle.References.Contains(viewer)) Handle.References.Add(viewer);
+        var isInitial = !Component.HasMesh;
+        var mesh = MeshFile;
+        if (mesh == null) {
+            if (Handle.Filepath.Contains("streaming/")) {
+                Logger.Error("Can't directly open streaming meshes. Open the non-streaming file instead.");
+            }
+            return;
+        }
+        if (resetMdf) TryGuessMdfFilepath();
+
+        var meshComponent = Component;
+        if (isInitial) {
+            meshComponent.UseStreamingTex = true;
+        }
+
+        meshComponent.Transform.InvalidateTransform();
+        if (!string.IsNullOrEmpty(mdfSource)) {
+            UpdateMaterial(true);
+        } else {
+            meshComponent.SetMesh(Handle, Handle);
+        }
+    }
+
+    public void ShowSkeletonPicker()
+    {
+        var animator = Animator;
+        if (animator == null) return;
+        var ctx = UI.GetChild("Skeleton") ?? UI.AddChild("Skeleton", this,
+            new ResourcePathPicker(viewer.Workspace, KnownFileFormats.Skeleton, KnownFileFormats.FbxSkeleton, KnownFileFormats.RefSkeleton) { DisableWarnings = true, IsPathForIngame = false, UseNativesPath = true },
+            (v) => v!.skeletonPath,
+            (v, p) => v.skeletonPath = p ?? ""
+        );
+
+        ctx.ShowUI();
+
+        if (AppImguiHelpers.ShowRecentFiles(AppConfig.Settings.RecentSkeletons, viewer.Workspace.Game, ref skeletonPath)) {
+            ctx.ResetState();
+        }
+
+        if (string.IsNullOrEmpty(skeletonPath)) {
+            if (animator.skeleton != null) {
+                animator.SetSkeleton(null);
+            }
+        } else if (Workspace.ResourceManager.TryResolveGameFile(skeletonPath, out var resolvedFile) &&
+            resolvedFile.GetFile<FbxSkelFile>() != animator.skeleton
+        ) {
+            AppConfig.Settings.RecentSkeletons.AddRecent(viewer.Workspace.Game, skeletonPath);
+            animator.SetSkeleton(resolvedFile.GetFile<FbxSkelFile>());
+        }
+    }
+
+    public JsonObject ToJson()
+    {
+        return new JsonObject([
+            new("mesh", JsonValue.Create(Handle.Filepath)),
+            new("skeleton", JsonValue.Create(skeletonPath)),
+            new("material", JsonValue.Create(loadedMdf))
+        ]);
+    }
+
+    public void LoadFromJson(JsonObject obj)
+    {
+        var mesh = obj["mesh"]?.GetValue<string>();
+        var skeleton = obj["skeleton"]?.GetValue<string>();
+        var material = obj["material"]?.GetValue<string>();
+        if (!string.IsNullOrEmpty(mesh) && Workspace.ResourceManager.TryResolveGameFile(mesh, out var meshFile) && meshFile != Handle) {
+            Handle = meshFile;
+        }
+        if (!string.IsNullOrEmpty(material) && material != loadedMdf) {
+            mdfSource = material;
+        }
+        if (!string.IsNullOrEmpty(skeleton) && skeleton != skeletonPath) {
+            var anim = Animator ?? SetupAnimator();
+            skeletonPath = skeleton;
+            if (Workspace.ResourceManager.TryResolveGameFile(skeletonPath, out var skel)) {
+                anim.skeleton = skel.GetFile<FbxSkelFile>();
+            }
+        }
+
+        ChangeMesh(false);
     }
 }

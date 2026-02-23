@@ -89,7 +89,7 @@ public class RetargetDesigner : BaseWindowHandler
                 meshViewer1 = new MeshViewer(workspace, fh);
                 meshViewer1.Init(context);
             } else {
-                meshViewer1.ChangeMesh(mesh1);
+                meshViewer1.ChangeMainMesh(mesh1);
             }
         }
 
@@ -100,7 +100,7 @@ public class RetargetDesigner : BaseWindowHandler
                     meshViewer2 = new MeshViewer(workspace, fh);
                     meshViewer2.Init(context);
                 } else {
-                    meshViewer2.ChangeMesh(mesh2);
+                    meshViewer2.ChangeMainMesh(mesh2);
                 }
             } else {
                 meshViewer2?.Dispose();
@@ -113,20 +113,20 @@ public class RetargetDesigner : BaseWindowHandler
                 ImGui.TextColored(Colors.Note, "Please select a valid mot or motlist file");
             } else if (meshViewer1 != null && loadedMotlist != sampleMotlist) {
                 loadedMotlist = sampleMotlist;
-                if (meshViewer1.Animator == null) {
+                if (meshViewer1.PrimaryAnimator == null) {
                     meshViewer1.SetAnimation(sampleMotlist);
                 } else {
-                    meshViewer1.Animator!.LoadAnimationList(sampleMotlist);
+                    meshViewer1.PrimaryAnimator!.LoadAnimationList(sampleMotlist);
                 }
 
-                motFileOptions = meshViewer1.Animator!.AnimationNames.ToArray();
+                motFileOptions = meshViewer1.PrimaryAnimator!.AnimationNames.ToArray();
             }
         }
         if (!hideSetup && motFileOptions?.Length > 0) {
             if (ImguiHelpers.ValueCombo("Sample motion", motFileOptions, motFileOptions, ref motFile)) {
-                meshViewer1!.Animator!.SetActiveMotion(motFile);
-                if (meshViewer1!.Animator.ActiveMotion != null) {
-                    meshViewer2?.SetAnimation(meshViewer1!.Animator.ActiveMotion);
+                meshViewer1!.PrimaryAnimator!.SetActiveMotion(motFile);
+                if (meshViewer1!.PrimaryAnimator.ActiveMotion != null) {
+                    meshViewer2?.SetAnimation(meshViewer1!.PrimaryAnimator.ActiveMotion);
                 }
             }
         }
@@ -176,10 +176,12 @@ public class RetargetDesigner : BaseWindowHandler
 
         if (meshViewer1 != null && meshViewer2 != null) {
             meshViewer1.SyncFromScene(meshViewer2, true);
-            if (meshViewer1.Animator == null || meshViewer2.Animator == null) return;
+            var anim1 = meshViewer1.PrimaryAnimator;
+            var anim2 = meshViewer2.PrimaryAnimator;
+            if (anim1 == null || anim2 == null) return;
 
-            if (meshViewer1.Animator.ActiveMotion != null && (updateRetargets || selectedMotion != meshViewer1.Animator.ActiveMotion)) {
-                selectedMotion = meshViewer1.Animator.ActiveMotion;
+            if (anim1.ActiveMotion != null && (updateRetargets || selectedMotion != anim1.ActiveMotion)) {
+                selectedMotion = anim1.ActiveMotion;
                 retargetedMotion?.Dispose();
                 retargetedMotion = null;
                 retargetedMotion = selectedMotion.RewriteClone(workspace);
@@ -187,10 +189,10 @@ public class RetargetDesigner : BaseWindowHandler
                     ExecuteRemap(retargetedMotion, selectedRemap, selectedRemap.Version1.First(), 2);
                 }
                 forceRefreshConfig = false;
-                var time = meshViewer2.Animator.CurrentTime;
-                meshViewer2.Animator.SetActiveMotion(retargetedMotion);
-                meshViewer2.Animator.Seek(time);
-                meshViewer2.Animator.Update(0);
+                var time = anim2.CurrentTime;
+                anim2.SetActiveMotion(retargetedMotion);
+                anim2.Seek(time);
+                anim2.Update(0);
             }
             meshViewer1.SyncFromScene(meshViewer2, true);
         }

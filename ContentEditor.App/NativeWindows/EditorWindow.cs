@@ -90,7 +90,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         GameChanged?.Invoke();
         SceneManager.ChangeWorkspace(workspace);
         if (bundle != null && workspace.CurrentBundle != null) {
-            AppConfig.Settings.RecentBundles.AddRecent($"{game}|{bundle}");
+            AppConfig.Settings.RecentBundles.AddRecent(game, bundle);
         }
     }
 
@@ -163,7 +163,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
         foreach (var filename in filenames) {
             if (filename.EndsWith(".pak")) {
-                AppConfig.Settings.RecentFiles.AddRecent($"{Workspace.Game}|{filename}");
+                AppConfig.Settings.RecentFiles.AddRecent(Workspace.Game, filename);
                 AddSubwindow(new PakBrowser(workspace, filename));
                 continue;
             }
@@ -237,7 +237,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         var handler = WindowHandlerFactory.CreateFileResourceHandler(workspace, file);
         if (handler != null) {
             if (file.HandleType != FileHandleType.Embedded) {
-                AppConfig.Settings.RecentFiles.AddRecent($"{workspace.Game}|{file.Filepath}");
+                AppConfig.Settings.RecentFiles.AddRecent(workspace.Game, file.Filepath);
+                AppConfig.Settings.GetRecentForFormat(file.Format.format)?.AddRecent(workspace.Game, file.Filepath);
             }
             AddSubwindow(handler);
         } else {
@@ -437,7 +438,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         ImGui.BeginMainMenuBar();
 
         bool isHomePageDrawn = HasSubwindow<HomeWindow>(out var homePageData);
-        if (ImGui.MenuItem($"{AppIcons.REECE_LogoSimple}", isHomePageDrawn)) {
+        var toggleHome = ImGui.MenuItem($"{AppIcons.REECE_LogoSimple}", isHomePageDrawn) || AppConfig.Instance.Key_HomePage.Get().IsPressed();
+        if (toggleHome) {
             if (isHomePageDrawn && homePageData != null) {
                 CloseSubwindow(homePageData);
             } else {
@@ -545,8 +547,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                         ImGui.InputTextWithHint("Filter", $"{AppIcons.Search}", ref recentFileFilter, 128);
                         ImGui.SameLine();
                         if (ImGui.Button("Clear recent files")) {
-                            AppConfig.Settings.RecentFiles.Clear();
-                            AppConfig.Instance.SaveJsonConfig();
+                            recents.Clear();
                         }
                         foreach (var file in recents) {
                             if (!string.IsNullOrEmpty(recentFileFilter) && !file.Contains(recentFileFilter, StringComparison.InvariantCultureIgnoreCase)) {

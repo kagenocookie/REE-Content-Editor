@@ -41,6 +41,9 @@ public class Component(GameObject gameObject, RszInstance data)
     public string Classname => Data.RszClass.name;
     public override string ToString() => $"{GameObject} [{Data}]";
 
+    protected T? GetComponent<T>() where T : Component => GameObject.GetComponent<T>();
+    protected T RequireComponent<T>() where T : Component => GameObject.RequireComponent<T>();
+
     public virtual void CloneTo(GameObject target, bool deduplicateInstances = true)
     {
         Component.Create(target, deduplicateInstances ? Data.CloneCached() : Data.Clone());

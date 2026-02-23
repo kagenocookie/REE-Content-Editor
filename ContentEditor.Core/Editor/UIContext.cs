@@ -127,6 +127,13 @@ public class UIContext
     }
 
     public UIContext? GetChild(int index) => index >= 0 && index < children.Count ? children[index] : null;
+    public UIContext? GetChild(string label)
+    {
+        foreach (var child in children) {
+            if (child.label == label) return child;
+        }
+        return null;
+    }
     public UIContext? GetChild(object target)
     {
         foreach (var child in children) {

@@ -20,6 +20,7 @@ public static class FileFilters
 
     public static readonly FileFilter[] PakFile = [new FileFilter("PAK File", "pak")];
     public static readonly FileFilter[] JsonFile = [new FileFilter("JSON", "json")];
+    public static readonly FileFilter[] CollectionJsonFile = [new FileFilter("Mesh Collection JSON", "collection.json")];
     public static readonly FileFilter[] ListFile = [new FileFilter("List file", "list"), new FileFilter("Any", "*")];
     public static readonly FileFilter[] Motlist = [new FileFilter("MOTLIST", "motlist")];
     public static readonly FileFilter[] GlbFile = [new FileFilter("GLB", "glb")];
