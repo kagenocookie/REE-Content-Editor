@@ -46,5 +46,24 @@
         "crc": "5",
         "fields": [],
         "name": "via.Camera"
+    },
+    "6": {
+        "crc": "6",
+        "fields": [],
+        "name": "via.motion.Motion"
+    },
+    "7": {
+        "crc": "7",
+        "fields": [
+            { "name": "RequestSetGroups", "type": "Object", "size": 4, "align": 4, "original_type": "via.physics.RequestSetCollider.RequestSetGroup" }
+        ],
+        "name": "via.physics.RequestSetCollider"
+    },
+    "8": {
+        "crc": "8",
+        "fields": [
+            { "name": "Resource", "type": "Resource", "size": 4, "align": 4, "original_type": "via.physics.RequestSetColliderResourceHolder" }
+        ],
+        "name": "via.physics.RequestSetCollider.RequestSetGroup"
     }
 }

@@ -230,6 +230,9 @@ public class AppConfig : Singleton<AppConfig>
     public void SetGameRszJsonPath(GameIdentifier game, string path) => SetForGameAndSave(game.name, path, (cfg, val) => cfg.rszJson = val);
     public string? GetGameFilelist(GameIdentifier game) => _lock.Read(() => gameConfigs.GetValueOrDefault(game.name)?.filelist);
     public void SetGameFilelist(GameIdentifier game, string path) => SetForGameAndSave(game.name, path, (cfg, val) => cfg.filelist = val);
+
+    public string GetGameUserPath(GameIdentifier game) => Path.Combine(BookmarksFilepath.Get() ?? Path.Combine(AppDataPath, "thumbs"), game.name);
+
     public bool HasAnyGameConfigured => _lock.Read(() => gameConfigs.Any(g => !string.IsNullOrEmpty(g.Value?.gamepath)));
     public IEnumerable<string> ConfiguredGames => _lock.Read(() => gameConfigs.Where(kv => !string.IsNullOrEmpty(kv.Value.gamepath)).Select(kv => kv.Key));
 
@@ -639,8 +642,23 @@ public class AppJsonSettings
     public RecentFileList RecentRcols { get; init; } = new();
     public RecentFileList RecentMotlists { get; init; } = new();
     public RecentFileList RecentNavmeshes { get; init; } = new();
+    public RecentFileList RecentMeshes { get; init; } = new();
+    public RecentFileList RecentSkeletons { get; init; } = new();
 
     public ChangelogData Changelogs { get; init; } = new();
+
+    public RecentFileList? GetRecentForFormat(KnownFileFormats format)
+    {
+        return format switch {
+            KnownFileFormats.Mesh => RecentMeshes,
+            KnownFileFormats.AIMap => RecentNavmeshes,
+            KnownFileFormats.RequestSetCollider => RecentRcols,
+            KnownFileFormats.MotionList => RecentMotlists,
+            KnownFileFormats.Motion => RecentMotlists,
+            KnownFileFormats.Skeleton => RecentSkeletons,
+            _ => null,
+        };
+    }
 
     public void Save() => AppConfig.Instance.SaveJsonConfig();
 }
@@ -655,9 +673,9 @@ public class RecentFileList : List<string>
         AppConfig.Instance.SaveJsonConfig();
     }
 
-    public void AddRecent(string path)
+    public void AddRecent(GameIdentifier game, string path)
     {
-        AddRecentString(path, this, Limit);
+        AddRecentString($"{game}|{path}", this, Limit);
     }
 
     public int FindPrefixedIndex(string path)

@@ -35,7 +35,7 @@ public class ResourcePathPicker : IObjectUIHandler
         if (ws != null && isKnownFormats) {
             FileExtensionFilter = allowedFormats.SelectMany(format => ws.Env
                 .GetFileExtensionsForFormat(format)
-                .Select(ext => new FileFilter(format.ToString(), [$"*.{ext}.*"])))
+                .Select(ext => new FileFilter(format.ToString(), [$"{ext}.*"])))
                 .ToArray();
         }
     }

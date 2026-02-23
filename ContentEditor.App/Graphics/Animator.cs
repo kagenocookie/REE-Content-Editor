@@ -23,6 +23,10 @@ public class Animator(ContentWorkspace Workspace)
 
     public FileHandle? File => animationFile;
 
+    public FbxSkelFile? skeleton;
+    public Animator? owner;
+    public FbxSkelFile? ActiveSkeleton => skeleton ?? owner?.ActiveSkeleton;
+
     /// <summary>
     /// Whether there is an animation currently active. Should be true at any time the mesh is not in its default mesh pose, whether currently playing or not.
     /// </summary>
@@ -63,6 +67,11 @@ public class Animator(ContentWorkspace Workspace)
     {
         currentTime = 0;
         Update(0);
+    }
+
+    public void SetSkeleton(FbxSkelFile? skeleton)
+    {
+        this.skeleton = skeleton;
     }
 
     public void Seek(float time)
@@ -177,10 +186,11 @@ public class Animator(ContentWorkspace Workspace)
             if (currentTime > clipDuration) {
                 currentTime -= clipDuration;
             }
+            var skel = ActiveSkeleton;
             var frame = (currentTime * clipFramerate);
             foreach (var bone in animMesh.Bones.Bones) {
 
-                if (IgnoreRootMotion && bone.parentIndex == -1) {
+                if (IgnoreRootMotion && bone.parentIndex == -1 && bone.name.Equals("root", StringComparison.OrdinalIgnoreCase)) {
                     transformCache[bone.index] = Matrix4x4.Identity;
                     continue;
                 }
@@ -193,6 +203,18 @@ public class Animator(ContentWorkspace Workspace)
                 if (motBone != null) {
                     localPos = motBone.translation;
                     localRot = motBone.quaternion;
+                }
+
+                if (skel != null) {
+                    var skelBone = skel.FindBoneByHash(boneHash);
+                    if (skelBone != null) {
+                        localPos = skelBone.position;
+                        localRot = skelBone.rotation;
+                        localScale = skelBone.scale;
+                    } else {
+                        // ignore clip, since I think having a ref skeleton means other bones don't animate at all ingame...
+                        clip = null;
+                    }
                 }
 
                 if (clip?.HasTranslation == true && clip.Translation!.frameIndexes != null) {
@@ -218,7 +240,24 @@ public class Animator(ContentWorkspace Workspace)
 
                 var localTransform = Matrix4x4.CreateScale(localScale) * Matrix4x4.CreateFromQuaternion(localRot) * Matrix4x4.CreateTranslation(localPos);
 
-                var worldMat = bone.Parent == null ? localTransform : localTransform * transformCache[bone.Parent.index];
+                Matrix4x4 worldMat;
+                if (bone.Parent != null) {
+                    worldMat = localTransform * transformCache[bone.Parent.index];
+                } else if (owner != null && skel != null) {
+                    // might not be 100% correct for all cases
+                    // what if root mesh's skeleton doesn't itself have a bone for the parent?
+                    worldMat = localTransform;
+                    var skelBone = skel.FindBoneByHash(boneHash);
+                    if (skelBone != null && skelBone.parentIndex != -1) {
+                        var skelParent = skel.Bones[skelBone.parentIndex];
+                        var ownerParentBone = owner.mesh?.Bones?.GetByHash(skelParent.nameHash);
+                        if (ownerParentBone != null) {
+                            worldMat = localTransform * owner.mesh!.BoneMatrices[ownerParentBone.index];
+                        }
+                    }
+                } else {
+                    worldMat = localTransform;
+                }
                 transformCache[bone.index] = worldMat;
 
                 if (bone.remapIndex != -1) {

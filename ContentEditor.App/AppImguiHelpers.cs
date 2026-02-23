@@ -8,6 +8,7 @@ using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using Hexa.NET.ImNodes;
+using ReeLib;
 using ReeLib.Common;
 
 namespace ContentEditor.App;
@@ -309,15 +310,20 @@ public static class AppImguiHelpers
         return didDrop;
     }
 
-    public static bool ShowRecentFiles(RecentFileList files, ref string selectedPath)
+    public static bool ShowRecentFiles(RecentFileList files, GameIdentifier game, ref string selectedPath)
     {
+        if (files.Count == 0) {
+            return false;
+        }
+
         var options = files.ToArray();
 
         ImGui.SetNextItemAllowOverlap();
         var w = ImGui.CalcItemWidth();
 
         if (ImguiHelpers.ValueCombo("Recent files", options, options, ref selectedPath)) {
-            files.AddRecent(selectedPath);
+            selectedPath = selectedPath.GetStringAfterDelimiter('|').ToString();
+            files.AddRecent(game, selectedPath);
             return true;
         }
 
@@ -327,7 +333,7 @@ public static class AppImguiHelpers
         if (ImGui.Button($"{AppIcons.SI_BookmarkClear}")) {
             files.Clear();
             if (!string.IsNullOrEmpty(selectedPath)) {
-                files.AddRecent(selectedPath);
+                files.AddRecent(game, selectedPath);
             }
         }
         ImguiHelpers.Tooltip("Clear recent files");
