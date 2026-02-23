@@ -130,7 +130,7 @@ public partial class CommonMeshResource : IResourceFile
         scene.Animations.Add(anim);
     }
 
-    private static Assimp.Scene ConvertMeshToAssimpScene(MeshFile file, string rootName, bool isGltf, bool includeAllLods, bool includeShadows, bool includeOcclusion)
+    private static Assimp.Scene ConvertMeshToAssimpScene(MeshFile file, string rootName, bool isGltf, bool includeAllLods, bool includeShadows, bool includeOcclusion, FbxSkelFile? skeleton)
     {
         // NOTE: every matrix needs to be transposed, assimp expects them transposed compared to default System.Numeric.Matrix4x4 for some shit ass reason
         // NOTE2: assimp currently forces vert deduplication for gltf export so we may lose some vertices (https://github.com/assimp/assimp/issues/6349)
@@ -151,6 +151,7 @@ public partial class CommonMeshResource : IResourceFile
         var bones = file.BoneData?.Bones;
 
         var includeShapeKeys = false;
+        var extraBones = new List<Node>();
         if (bones?.Count > 0 && file.MeshBuffer!.Weights.Length > 0) {
             // insert root bones first to ensure all parents exist
             Node boneRoot = scene.RootNode;
@@ -189,6 +190,27 @@ public partial class CommonMeshResource : IResourceFile
                 parentBone.Children.Add(boneNode);
             }
 
+            if (skeleton != null) {
+                foreach (var refBone in skeleton.Bones) {
+                    var (exportId, exportBone) = boneDict.FirstOrDefault(bb => bb.Value.Name == refBone.name);
+                    if (exportBone == null) {
+                        var parentRef = refBone.parentIndex == -1 ? null : skeleton.Bones[refBone.parentIndex];
+                        Node? parent = null;
+                        if (parentRef != null) {
+                            parent = boneRoot.FindNode(parentRef.name);
+                            if (parent == null) {
+                                throw new NotImplementedException("Unordered ref skel bones currently not supported");
+                            }
+                        }
+                        exportBone = new Node(refBone.name, parent);
+                        parent?.Children.Add(exportBone);
+                        extraBones.Add(exportBone);
+                    }
+
+                    exportBone.Transform = Matrix4x4.Transpose(Matrix4x4.CreateScale(refBone.scale) * Matrix4x4.CreateFromQuaternion(refBone.rotation) * Matrix4x4.CreateTranslation(refBone.position));
+                }
+            }
+
             if (includeShapeKeys) {
                 if (isGltf) {
                     Logger.Warn($"GLTF exporter does not support enough bones to include shape keys. Mesh will not behave correctly when re-imported. Consider using a different file format.");
@@ -220,30 +242,30 @@ public partial class CommonMeshResource : IResourceFile
             for (int i = 0; i < file.MeshData.LODs.Count; i++) {
                 var lod = file.MeshData.LODs[i];
                 if (i == 0) {
-                    ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, includeAllLods ? "lod0_" : "");
+                    ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, includeAllLods ? "lod0_" : "", extraBones);
                     if (!includeAllLods) break;
                 } else {
-                    ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, $"lod{i}_");
+                    ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, $"lod{i}_", extraBones);
                 }
             }
         }
         if (includeShadows && file.ShadowMesh != null) {
             for (int i = 0; i < file.ShadowMesh.LODs.Count; i++) {
                 var lod = file.ShadowMesh.LODs[i];
-                ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, $"shadow_lod{i}_");
+                ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, $"shadow_lod{i}_", extraBones);
             }
         }
         if (includeOcclusion && file.OccluderMesh != null) {
             if (scene.MaterialCount == 0) {
                 scene.Materials.Add(new Material() { Name = "default" });
             }
-            ExportLod(file, isGltf, scene, bones, includeShapeKeys, file.OccluderMesh, $"occ_");
+            ExportLod(file, isGltf, scene, bones, includeShapeKeys, file.OccluderMesh, $"occ_", extraBones);
         }
 
         return scene;
     }
 
-    private static void ExportLod(MeshFile file, bool isGltf, Assimp.Scene scene, List<MeshBone>? bones, bool includeShapeKeys, MeshLOD lod, string namePrefix)
+    private static void ExportLod(MeshFile file, bool isGltf, Assimp.Scene scene, List<MeshBone>? bones, bool includeShapeKeys, MeshLOD lod, string namePrefix, List<Node> extraBones)
     {
         var bounds = file.MeshData?.boundingBox ?? new AABB();
         foreach (var mesh in lod.MeshGroups) {
@@ -310,6 +332,19 @@ public partial class CommonMeshResource : IResourceFile
                                 }
                             }
                         }
+                    }
+                    foreach (var extraBone in extraBones) {
+                        var parentTx = Matrix4x4.Identity;
+                        var parent = extraBone.Parent;
+                        while (parent != null) {
+                            parentTx = parentTx * Matrix4x4.Transpose(parent.Transform);
+                            parent = parent.Parent;
+                        }
+
+                        Matrix4x4.Invert(parentTx, out parentTx);
+                        var newBone = new Bone() { Name = extraBone.Name };
+                        newBone.OffsetMatrix = Matrix4x4.Transpose(parentTx);
+                        aiMesh.Bones.Add(newBone);
                     }
 
                     if (sub.Buffer.ExtraWeights != null) {
