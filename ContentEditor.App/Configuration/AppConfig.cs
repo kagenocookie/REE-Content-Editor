@@ -65,6 +65,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string Key_Save = "key_save";
         public const string Key_Back = "key_back";
         public const string Key_Close = "key_close";
+        public const string Key_HomePage = "key_homepage";
         public const string Key_PakBrowser_Bookmark = "key_pakbrowser_bookmark";
         public const string Key_PakBrowser_OpenBookmarks = "key_pakbrowser_openbookmarks";
         public const string Key_PakBrowser_JumpToPageTop = "key_pakbrowser_jumptopagetop";
@@ -207,6 +208,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<KeyBinding> Key_Save = new SettingWrapper<KeyBinding>(Keys.Key_Save, _lock, new KeyBinding(ImGuiKey.S, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_Back = new SettingWrapper<KeyBinding>(Keys.Key_Back, _lock, new KeyBinding(ImGuiKey.Backspace));
     public readonly SettingWrapper<KeyBinding> Key_Close = new SettingWrapper<KeyBinding>(Keys.Key_Close, _lock, new KeyBinding(ImGuiKey.W, ctrl: true));
+    public readonly SettingWrapper<KeyBinding> Key_HomePage = new SettingWrapper<KeyBinding>(Keys.Key_HomePage, _lock, new KeyBinding(ImGuiKey.H, ctrl: true, shift: true));
     public readonly SettingWrapper<KeyBinding> Key_PakBrowser_Bookmark = new SettingWrapper<KeyBinding>(Keys.Key_PakBrowser_Bookmark, _lock, new KeyBinding(ImGuiKey.D, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_PakBrowser_OpenBookmarks = new SettingWrapper<KeyBinding>(Keys.Key_PakBrowser_OpenBookmarks, _lock, new KeyBinding(ImGuiKey.B, ctrl: true, shift: true));
     public readonly SettingWrapper<KeyBinding> Key_PakBrowser_JumpToPageTop = new SettingWrapper<KeyBinding>(Keys.Key_PakBrowser_JumpToPageTop, _lock, new KeyBinding(ImGuiKey.Home));
@@ -345,6 +347,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.Key_Save, instance.Key_Save.value.ToString(), "Keys"),
             (Keys.Key_Back, instance.Key_Back.value.ToString(), "Keys"),
             (Keys.Key_Close, instance.Key_Close.value.ToString(), "Keys"),
+            (Keys.Key_HomePage, instance.Key_HomePage.value.ToString(), "Keys"),
             (Keys.Key_PakBrowser_Bookmark, instance.Key_PakBrowser_Bookmark.value.ToString(), "Keys"),
             (Keys.Key_PakBrowser_OpenBookmarks, instance.Key_PakBrowser_OpenBookmarks.value.ToString(), "Keys"),
             (Keys.Key_PakBrowser_OpenBookmarks, instance.Key_PakBrowser_OpenBookmarks.value.ToString(), "Keys"),
@@ -535,6 +538,7 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.Key_Save: if (KeyBinding.TryParse(value, out _key)) Key_Save.value = _key; break;
                         case Keys.Key_Back: if (KeyBinding.TryParse(value, out _key)) Key_Back.value = _key; break;
                         case Keys.Key_Close: if (KeyBinding.TryParse(value, out _key)) Key_Close.value = _key; break;
+                        case Keys.Key_HomePage: if (KeyBinding.TryParse(value, out _key)) Key_HomePage.value = _key; break;
                         case Keys.Key_PakBrowser_Bookmark: if (KeyBinding.TryParse(value, out _key)) Key_PakBrowser_Bookmark.value = _key; break;
                         case Keys.Key_PakBrowser_OpenBookmarks: if (KeyBinding.TryParse(value, out _key)) Key_PakBrowser_OpenBookmarks.value = _key; break;
                         case Keys.Key_PakBrowser_JumpToPageTop: if (KeyBinding.TryParse(value, out _key)) Key_PakBrowser_JumpToPageTop.value = _key; break;

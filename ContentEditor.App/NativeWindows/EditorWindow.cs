@@ -437,7 +437,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         ImGui.BeginMainMenuBar();
 
         bool isHomePageDrawn = HasSubwindow<HomeWindow>(out var homePageData);
-        if (ImGui.MenuItem($"{AppIcons.REECE_LogoSimple}", isHomePageDrawn)) {
+        var toggleHome = ImGui.MenuItem($"{AppIcons.REECE_LogoSimple}", isHomePageDrawn) || AppConfig.Instance.Key_HomePage.Get().IsPressed();
+        if (toggleHome) {
             if (isHomePageDrawn && homePageData != null) {
                 CloseSubwindow(homePageData);
             } else {
