@@ -414,20 +414,22 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (ImGui.Selectable($"{AppIcons.SI_GenericImport} Load collection")) {
             var collectionsDir = Path.Combine(AppConfig.Instance.GetGameUserPath(Workspace.Game), "mesh_collections/");
             PlatformUtils.ShowFileDialog((files) => {
-                try {
-                    using var fs = File.OpenRead(files[0]);
-                    var arr = JsonSerializer.Deserialize<JsonArray>(fs);
-                    if (arr == null || arr.Count == 0) return;
-                    while (meshContexts.Count > 1) {
-                        RemoveSubmesh(meshContexts.Last());
+                MainLoop.Instance.InvokeFromUIThread(() => {
+                    try {
+                        using var fs = File.OpenRead(files[0]);
+                        var arr = JsonSerializer.Deserialize<JsonArray>(fs);
+                        if (arr == null || arr.Count == 0) return;
+                        while (meshContexts.Count > 1) {
+                            RemoveSubmesh(meshContexts.Last());
+                        }
+                        meshContexts[0].LoadFromJson((JsonObject)arr[0]!);
+                        for (int i = 1; i < arr.Count; i++) {
+                            CreateAdditionalMesh(Handle).LoadFromJson((JsonObject)arr[i]!);
+                        }
+                    } catch (Exception e) {
+                        Logger.Error("Failed to load mesh collection: " + e.Message);
                     }
-                    meshContexts[0].LoadFromJson((JsonObject)arr[0]!);
-                    for (int i = 1; i < arr.Count; i++) {
-                        CreateAdditionalMesh(Handle).LoadFromJson((JsonObject)arr[i]!);
-                    }
-                } catch (Exception e) {
-                    Logger.Error("Failed to load mesh collection: " + e.Message);
-                }
+                });
             }, collectionsDir, FileFilters.CollectionJsonFile);
         }
         if (ImGui.Selectable($"{AppIcons.SI_GenericClear} Remove all additional meshes")) {
