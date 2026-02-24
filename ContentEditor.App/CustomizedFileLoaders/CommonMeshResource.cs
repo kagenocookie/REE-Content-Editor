@@ -119,7 +119,7 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
                 PrintTree(child, depth + 1);
             }
         }
-        PrintTree(scene.RootNode, 0);
+        // PrintTree(scene.RootNode, 0);
         context.ExportFile(scene, filepath, exportFormat);
     }
 
