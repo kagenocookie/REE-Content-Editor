@@ -18,7 +18,7 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
 
     public Assimp.Scene Scene
     {
-        get => _scene ??= ConvertMeshToAssimpScene(NativeMesh, Name, false, false, false, false, null);
+        get => _scene ??= AddMeshToScene(new Assimp.Scene(), NativeMesh, Name, false, false, false, false, null);
         set => _scene = value;
     }
 
@@ -93,7 +93,7 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
 
         var ext = PathUtils.GetExtensionWithoutPeriod(filepath);
         string exportFormat = context.GetFormatIDFromExtension(ext);
-        var scene = GetSceneForExport(ext, false, includeLodsShadows, includeOcc, skeleton);
+        var scene = AddMeshToScene(new Assimp.Scene(), ext, false, includeLodsShadows, includeOcc, skeleton);
 
         if (_mesh == null) {
             Logger.Error("Missing mesh file, can't export");
@@ -109,10 +109,17 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
         }
         if (additionalMeshes?.Any() == true) {
             foreach (var addm in additionalMeshes) {
-                var extra = addm.GetSceneForExport(ext, false, includeLodsShadows, includeOcc, skeleton);
-                scene.Meshes.AddRange(extra.Meshes);
+                addm.AddMeshToScene(scene, ext, false, includeLodsShadows, includeOcc, skeleton);
             }
         }
+        void PrintTree(Node node, int depth)
+        {
+            Logger.Info(new string(' ', depth * 2) + node.Name);
+            foreach (var child in node.Children) {
+                PrintTree(child, depth + 1);
+            }
+        }
+        PrintTree(scene.RootNode, 0);
         context.ExportFile(scene, filepath, exportFormat);
     }
 
@@ -146,12 +153,12 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
 
     }
 
-    private Assimp.Scene GetSceneForExport(string targetFileExtension, bool allowCache, bool includeLodsShadows, bool includeOcc, FbxSkelFile? skeleton = null)
+    private Assimp.Scene AddMeshToScene(Assimp.Scene scene, string targetFileExtension, bool allowCache, bool includeLodsShadows, bool includeOcc, FbxSkelFile? skeleton = null)
     {
         var isGltf = targetFileExtension == "glb" || targetFileExtension == "gltf";
         if (allowCache && _scene != null && !isGltf) return _scene;
 
-        Assimp.Scene scene = ConvertMeshToAssimpScene(NativeMesh, Name, isGltf, includeLodsShadows, includeLodsShadows, includeOcc, skeleton);
+        AddMeshToScene(scene, NativeMesh, Name, isGltf, includeLodsShadows, includeLodsShadows, includeOcc, skeleton);
         if (allowCache) _scene = scene;
         return scene;
     }
