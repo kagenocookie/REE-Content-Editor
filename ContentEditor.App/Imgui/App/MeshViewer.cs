@@ -67,6 +67,8 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     private bool isSynced;
 
     private bool exportAnimations = true;
+    private bool exportFbxskel = true;
+    private bool exportFullCollection = true;
     private bool exportCurrentAnimationOnly;
     private bool exportInProgress;
     private bool exportLods = false;
@@ -414,20 +416,22 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (ImGui.Selectable($"{AppIcons.SI_GenericImport} Load collection")) {
             var collectionsDir = Path.Combine(AppConfig.Instance.GetGameUserPath(Workspace.Game), "mesh_collections/");
             PlatformUtils.ShowFileDialog((files) => {
-                try {
-                    using var fs = File.OpenRead(files[0]);
-                    var arr = JsonSerializer.Deserialize<JsonArray>(fs);
-                    if (arr == null || arr.Count == 0) return;
-                    while (meshContexts.Count > 1) {
-                        RemoveSubmesh(meshContexts.Last());
+                MainLoop.Instance.InvokeFromUIThread(() => {
+                    try {
+                        using var fs = File.OpenRead(files[0]);
+                        var arr = JsonSerializer.Deserialize<JsonArray>(fs);
+                        if (arr == null || arr.Count == 0) return;
+                        while (meshContexts.Count > 1) {
+                            RemoveSubmesh(meshContexts.Last());
+                        }
+                        meshContexts[0].LoadFromJson((JsonObject)arr[0]!);
+                        for (int i = 1; i < arr.Count; i++) {
+                            CreateAdditionalMesh(Handle).LoadFromJson((JsonObject)arr[i]!);
+                        }
+                    } catch (Exception e) {
+                        Logger.Error("Failed to load mesh collection: " + e.Message);
                     }
-                    meshContexts[0].LoadFromJson((JsonObject)arr[0]!);
-                    for (int i = 1; i < arr.Count; i++) {
-                        CreateAdditionalMesh(Handle).LoadFromJson((JsonObject)arr[i]!);
-                    }
-                } catch (Exception e) {
-                    Logger.Error("Failed to load mesh collection: " + e.Message);
-                }
+                });
             }, collectionsDir, FileFilters.CollectionJsonFile);
         }
         if (ImGui.Selectable($"{AppIcons.SI_GenericClear} Remove all additional meshes")) {
@@ -567,7 +571,8 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                             }
                         }
 
-                        assmesh.ExportToFile(exportPath, exportLods, exportOcclusion, mots);
+                        // exportFullCollection ? meshContexts.Skip(1).Select(c => c.MeshFile) :
+                        assmesh.ExportToFile(exportPath, exportLods, exportOcclusion, exportFbxskel ? PrimaryAnimator?.skeleton : null, mots, null);
                     } catch (Exception e) {
                         Logger.Error(e, "Mesh export failed");
                     } finally {
@@ -612,7 +617,9 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (PrimaryAnimator?.File != null) {
             ImGui.Checkbox("Include animations", ref exportAnimations);
             if (exportAnimations) ImGui.Checkbox("Selected animation only", ref exportCurrentAnimationOnly);
+            if (PrimaryAnimator?.skeleton != null) ImGui.Checkbox("Export with merged skeleton", ref exportFbxskel);
         }
+        // if (meshContexts.Count > 1) ImGui.Checkbox("Export all meshes", ref exportFullCollection);
         if (mesh.NativeMesh.MeshData?.LODs.Count > 1 || mesh.NativeMesh.ShadowMesh?.LODs.Count > 0) ImGui.Checkbox("Include LODs and Shadow Mesh", ref exportLods);
         if (mesh.NativeMesh.OccluderMesh?.MeshGroups.Count > 0) ImGui.Checkbox("Include Occlusion Mesh", ref exportOcclusion);
         if (showImportSettings) {
@@ -659,6 +666,35 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             } else {
                 PlatformUtils.ShowSaveFileDialog((path) => exportMesh.SaveAs(path), defaultFilename);
             }
+        }
+        if (mesh.NativeMesh.BoneData?.Bones.Count > 0) {
+            ImGui.SeparatorText("Convert Skeleton");
+            if (ImGui.Button($"{AppIcons.SI_GenericConvert} Save Skeleton")) {
+                var hasVersion = Workspace.Env.TryGetFileExtensionVersion("fbxskel", out var version)
+                    || Workspace.Env.TryGetFileExtensionVersion("skeleton", out version)
+                    || Workspace.Env.TryGetFileExtensionVersion("refskel", out version);
+                if (!hasVersion) {
+                    Logger.Warn("Could not determine correct skeleton format version. You might need to manually specify the correct version.");
+                    version = 8;
+                }
+
+                var skeleton = new FbxSkelFile(new FileHandler());
+                foreach (var bone in mesh.NativeMesh.BoneData.Bones.OrderBy(b => b.index)) {
+                    Matrix4x4.Decompose(bone.localTransform.ToSystem(), out var scale, out var rot, out var pos);
+                    skeleton.Bones.Add(new ReeLib.FbxSkel.RefBone() {
+                        name = bone.name,
+                        position = pos,
+                        rotation = rot,
+                        scale = scale,
+                        symmetryIndex = (short)(bone.Symmetry?.index ?? bone.index),
+                        parentIndex = (short)(bone.Parent?.index ?? -1),
+                    });
+                }
+                PlatformUtils.ShowSaveFileDialog((file) => {
+                    skeleton.WriteTo(file);
+                }, null, new FileFilter("Skeleton File", $"skeleton.{version}", $"fbxskel.{version}", $"refskel.{version}"));
+            }
+            ImGui.SameLine();
         }
     }
 

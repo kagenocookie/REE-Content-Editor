@@ -18,7 +18,7 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
 
     public Assimp.Scene Scene
     {
-        get => _scene ??= ConvertMeshToAssimpScene(NativeMesh, Name, false, false, false, false);
+        get => _scene ??= ConvertMeshToAssimpScene(NativeMesh, Name, false, false, false, false, null);
         set => _scene = value;
     }
 
@@ -80,26 +80,37 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
         NativeMesh.WriteTo(filepath);
     }
 
-    public void ExportToFile(string filepath, bool includeLodsShadows, bool includeOcc, IEnumerable<MotFileBase>? mots = null)
+    public void ExportToFile(
+        string filepath,
+        bool includeLodsShadows,
+        bool includeOcc,
+        FbxSkelFile? skeleton = null,
+        IEnumerable<MotFileBase>? mots = null,
+        IEnumerable<CommonMeshResource>? additionalMeshes = null
+    )
     {
         using AssimpContext context = new AssimpContext();
 
         var ext = PathUtils.GetExtensionWithoutPeriod(filepath);
         string exportFormat = context.GetFormatIDFromExtension(ext);
-        var scene = GetSceneForExport(ext, false, includeLodsShadows, includeOcc);
-        if (mots == null || !mots.Any()) {
-            context.ExportFile(scene, filepath, exportFormat);
-            return;
-        }
+        var scene = GetSceneForExport(ext, false, includeLodsShadows, includeOcc, skeleton);
 
         if (_mesh == null) {
             Logger.Error("Missing mesh file, can't export");
             return;
         }
 
-        foreach (var mot in mots) {
-            if (mot is MotFile mm) {
-                AddMotToScene(scene, mm, ext);
+        if (mots != null) {
+            foreach (var mot in mots) {
+                if (mot is MotFile mm) {
+                    AddMotToScene(scene, mm, ext);
+                }
+            }
+        }
+        if (additionalMeshes?.Any() == true) {
+            foreach (var addm in additionalMeshes) {
+                var extra = addm.GetSceneForExport(ext, false, includeLodsShadows, includeOcc, skeleton);
+                scene.Meshes.AddRange(extra.Meshes);
             }
         }
         context.ExportFile(scene, filepath, exportFormat);
@@ -135,12 +146,12 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
 
     }
 
-    private Assimp.Scene GetSceneForExport(string targetFileExtension, bool allowCache, bool includeLodsShadows, bool includeOcc)
+    private Assimp.Scene GetSceneForExport(string targetFileExtension, bool allowCache, bool includeLodsShadows, bool includeOcc, FbxSkelFile? skeleton = null)
     {
         var isGltf = targetFileExtension == "glb" || targetFileExtension == "gltf";
         if (allowCache && _scene != null && !isGltf) return _scene;
 
-        Assimp.Scene scene = ConvertMeshToAssimpScene(NativeMesh, Name, isGltf, includeLodsShadows, includeLodsShadows, includeOcc);
+        Assimp.Scene scene = ConvertMeshToAssimpScene(NativeMesh, Name, isGltf, includeLodsShadows, includeLodsShadows, includeOcc, skeleton);
         if (allowCache) _scene = scene;
         return scene;
     }
