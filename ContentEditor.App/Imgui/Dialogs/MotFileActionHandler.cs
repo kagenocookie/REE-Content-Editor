@@ -163,9 +163,6 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                 ImGui.Spacing();
                 ImGui.Spacing();
                 ImGui.Spacing();
-                if (ImguiHelpers.ValueCombo("Armature Type", MapTypes, MapTypes, ref selectedArmatureType)) {
-                    lastSelectedType = selectedArmatureType;
-                }
 
                 ImGui.SeparatorText("Additional options");
                 ImGui.Checkbox("Only paste already existing channels", ref maintainExistingChannelsOnly);
@@ -179,6 +176,11 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                             ImGui.TextColored(Colors.Danger, "Replacing it may affect other animations. When using this, make sure all the required bones are present in the source mesh.");
                         }
                     }
+                }
+
+                ImGui.SeparatorText("Skeleton adjustments");
+                if (ImguiHelpers.ValueCombo("Armature Type", MapTypes, MapTypes, ref selectedArmatureType)) {
+                    lastSelectedType = selectedArmatureType;
                 }
 
                 if (!string.IsNullOrEmpty(selectedArmatureType) && configs.TryGetValue(selectedArmatureType, out var config)) {
