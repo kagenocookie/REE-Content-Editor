@@ -46,10 +46,10 @@ public class CompositeMeshInstanceGroupHandler : NestedRszInstanceHandler
             if (ImguiHelpers.ToggleButton(isFocused ? $"{AppIcons.Star}" : $"{AppIcons.StarEmpty}", ref isFocused, Colors.IconActive)) {
                 if (isFocused) {
                     component.focusedGroup = instance;
-                    component.focusedGroupElementIndex = -1;
                 } else {
                     component.focusedGroup = null;
                 }
+                component.focusedGroupElementIndex = -1;
             }
             ImguiHelpers.Tooltip("Focus on this mesh group gizmo");
             ImGui.SameLine();
