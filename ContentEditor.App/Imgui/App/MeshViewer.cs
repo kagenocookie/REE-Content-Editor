@@ -467,31 +467,32 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     private static void ShowMeshInfo(MeshViewerContext ctx, bool allowEditing)
     {
         var handle = ctx.Handle;
-        ImGui.Text($"Path: {handle.Filepath} ({handle.HandleType})");
-        if (ImGui.BeginPopupContextItem("##filepath")) {
-            if (ImGui.Selectable("Copy path")) {
-                EditorWindow.CurrentWindow?.CopyToClipboard(handle.Filepath);
-                ImGui.CloseCurrentPopup();
-            }
-            ImGui.EndPopup();
+        string filepath = handle.Filepath;
+        ImGui.InputText("Path", ref filepath, 255, ImGuiInputTextFlags.AutoSelectAll);
+        if (ImGui.IsItemClicked()) {
+            EditorWindow.CurrentWindow?.CopyToClipboard(handle.Filepath);
         }
+        ImGui.SameLine();
+        ImGui.TextDisabled($"({handle.HandleType})");
         var mesh = ctx.MeshFile;
-        ImGui.Text("Total Vertices: " + mesh.VertexCount);
-        ImGui.Text("Total Polygons: " + mesh.PolyCount);
-        ImGui.Text("Sub Meshes: " + mesh.MeshCount);
-        ImGui.Text("Materials: " + mesh.MaterialCount);
-        ImGui.Text("Bones: " + mesh.BoneCount);
-
-        if (allowEditing && ImGui.TreeNode("Raw Data")) {
-            var meshCtx = ctx.UI.GetChild<MeshFileHandler>();
-            if (meshCtx == null) {
-                meshCtx = ctx.UI.AddChild("Raw Mesh Data", mesh.NativeMesh, new MeshFileHandler());
+        ImGui.Text($"Total Vertices: {mesh.VertexCount}");
+        ImGui.Text($"Total Polygons: {mesh.PolyCount}");
+        ImGui.Text($"Sub Meshes: {mesh.MeshCount}");
+        ImGui.Text($"Materials: {mesh.MaterialCount}");
+        ImGui.Text($"Bones: {mesh.BoneCount}");
+        if (allowEditing) {
+            ImGui.Separator();
+            if (ImGui.TreeNode("Raw Data")) {
+                var meshCtx = ctx.UI.GetChild<MeshFileHandler>();
+                if (meshCtx == null) {
+                    meshCtx = ctx.UI.AddChild("Raw Mesh Data", mesh.NativeMesh, new MeshFileHandler());
+                }
+                meshCtx.ShowUI();
+                if (meshCtx.Changed && !handle.Modified) {
+                    handle.Modified = true;
+                }
+                ImGui.TreePop();
             }
-            meshCtx.ShowUI();
-            if (meshCtx.Changed && !handle.Modified) {
-                handle.Modified = true;
-            }
-            ImGui.TreePop();
         }
     }
 
