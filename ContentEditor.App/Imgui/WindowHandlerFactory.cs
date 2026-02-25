@@ -657,18 +657,20 @@ public static class WindowHandlerFactory
         }
 
         var ws = context.GetWorkspace();
-        var config = ws?.Config.Get(instance.RszClass.name);
-        // if (config?.FieldOrder != null) {
-        //     // TODO support and use custom rsz field order
-        // }
+        // var config = ws?.Config.Get(instance.RszClass.name);
         if (classFormatters.TryGetValue(instance.RszClass, out var fmt)) {
             context.stringFormatter = fmt;
         }
         if (classHandlers.TryGetValue(instance.RszClass, out var handlerFact)) {
             context.uiHandler = handlerFact.Invoke();
-            return;
+            // note: we  _might_ at some point want to not automatically include rsz children
+            // for now, I think we can always include all
         } else if (context.uiHandler == null) {
-            context.uiHandler = RszInstanceHandler.Instance;
+            if (ws?.Env.TypeCache.IsComponent(instance.RszClass.name) == true) {
+                context.uiHandler = new ComponentDataHandler(instance.RszClass.name);
+            } else {
+                context.uiHandler = RszInstanceHandler.Instance;
+            }
         }
 
         AddRszInstanceFieldChildren(instance, context, 0);

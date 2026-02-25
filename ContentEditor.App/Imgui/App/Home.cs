@@ -251,7 +251,11 @@ public class HomeWindow : IWindowHandler
                     FileSystemUtils.OpenURL(GithubApi.LatestReleaseUrl);
                 }
                 ImGui.PopStyleColor();
-                ImguiHelpers.Tooltip($"New version ({AppConfig.Settings.Changelogs.LatestReleaseVersion}) available!");
+                if (AppConfig.IsDebugBuild) {
+                    ImguiHelpers.Tooltip($"New version available!");
+                } else {
+                    ImguiHelpers.Tooltip($"New version ({AppConfig.Settings.Changelogs.LatestReleaseVersion}) available!");
+                }
             }
         }
     }
@@ -270,6 +274,10 @@ public class HomeWindow : IWindowHandler
                 }
                 if (ImGui.BeginTabItem(AppConfig.IsOutdatedVersion ? "Updates *" : "Updates")) {
                     ShowUpdateLog();
+                    ImGui.EndTabItem();
+                }
+                if (AppConfig.Settings.Changelogs.Commits.Count > 0 && ImGui.BeginTabItem("Latest changes")) {
+                    ShowCommitLog();
                     ImGui.EndTabItem();
                 }
             }
@@ -562,7 +570,7 @@ public class HomeWindow : IWindowHandler
                 AutoUpdater.CheckForUpdateInBackground();
             }
         }
-        var releases = AppConfig.Settings.Changelogs.FindCurrentReleaseList();
+        var releases = AppConfig.Settings.Changelogs.FindCurrentAndNewReleaseList();
         if (releases.Count == 0) {
             ImGui.Text($"No release data is currently available. You can manually check the repository for changes: {GithubApi.MainRepositoryUrl}");
             if (ImGui.Button("Open in browser")) {
@@ -576,7 +584,7 @@ public class HomeWindow : IWindowHandler
                 ImGui.Text("Version " + release.TagName);
                 ImGui.PopFont();
 
-                ImGui.TextColored(Colors.Faded, $"Release date: {release.CreatedAt.ToString()}");
+                ImGui.TextColored(Colors.Faded, $"Release date: {release.ReleaseDate.ToLocalTime().ToString()}");
 
                 if (release.TagName == AppConfig.Version) {
                     ImGui.SameLine();
@@ -631,6 +639,27 @@ public class HomeWindow : IWindowHandler
                 ImGui.Spacing();
                 ImGui.Spacing();
             }
+        }
+    }
+
+    private void ShowCommitLog()
+    {
+        ImGui.TextColored(Colors.Info, "The latest changes are always available in the debug builds.\nThese might not yet be fully tested and some features may be incomplete.\nA GitHub account is required to download."u8);
+        if (ImGui.Button("View debug builds")) {
+            FileSystemUtils.OpenURL("https://github.com/kagenocookie/REE-Content-Editor/actions");
+        }
+        ImGui.Separator();
+
+        var commits = AppConfig.Settings.Changelogs.FindCurrentAndNewCommits();
+        foreach (var commit in commits) {
+            ImGui.TextColored(Colors.Faded, commit.Commit.Author?.Date.ToLocalTime().ToString() ?? "[unknown time]");
+            ImGui.SameLine();
+            ImGui.Text(commit.Commit.Message ?? "<no message>");
+            if (AppConfig.RevisionHash != null && commit.Sha?.StartsWith(AppConfig.RevisionHash) == true) {
+                ImGui.SameLine();
+                ImGui.TextColored(Colors.Success, "(current)");
+            }
+            ImGui.Spacing();
         }
     }
 

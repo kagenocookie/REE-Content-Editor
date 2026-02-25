@@ -19,6 +19,11 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
 
     private readonly List<List<Matrix4x4>> _transformsCache = new();
 
+    public IEnumerable<RszInstance> Groups => Data.Get(RszFieldCache.CompositeMesh.InstanceGroups).Cast<RszInstance>();
+
+    public RszInstance? focusedGroup;
+    public int focusedGroupElementIndex = -1;
+
     public override AABB LocalBounds {
         get {
             if (!meshes.Any(m => m != null)) return default;
@@ -184,9 +189,12 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
             if (group == null) {
                 continue;
             }
+            if (focusedGroup != null && focusedGroup != group) continue;
 
             var transforms = RszFieldCache.CompositeMesh.InstanceGroup.Transforms.Get(group);
+            int index = 0;
             foreach (var inst in transforms.Cast<RszInstance>()) {
+                if (focusedGroupElementIndex != -1 && index++ != focusedGroupElementIndex) continue;
                 if (!RszFieldCache.CompositeMesh.TransformController.Enabled.Get(inst)) continue;
 
                 var pos = RszFieldCache.CompositeMesh.TransformController.LocalPosition.Get(inst);

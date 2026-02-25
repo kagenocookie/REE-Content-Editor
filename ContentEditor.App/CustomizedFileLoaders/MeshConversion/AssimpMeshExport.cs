@@ -130,17 +130,15 @@ public partial class CommonMeshResource : IResourceFile
         scene.Animations.Add(anim);
     }
 
-    private static Assimp.Scene ConvertMeshToAssimpScene(MeshFile file, string rootName, bool isGltf, bool includeAllLods, bool includeShadows, bool includeOcclusion, FbxSkelFile? skeleton)
+    private static Assimp.Scene AddMeshToScene(Assimp.Scene scene, MeshFile file, string rootName, bool isGltf, bool includeAllLods, bool includeShadows, bool includeOcclusion, FbxSkelFile? skeleton)
     {
         // NOTE: every matrix needs to be transposed, assimp expects them transposed compared to default System.Numeric.Matrix4x4 for some shit ass reason
         // NOTE2: assimp currently forces vert deduplication for gltf export so we may lose some vertices (https://github.com/assimp/assimp/issues/6349)
         // NOTE3: weights > 4 will get get lost for gltf because we can't tell it to write more weights (AI_CONFIG_EXPORT_GLTF_UNLIMITED_SKINNING_BONES_PER_VERTEX)
-        // we'd either need access to assim's Exporter class directly, or have the ExportFile method modified on the assimp side
-        // TODO: export extra dummy nodes to ensure materials with no meshes (possibly used by LODs only) don't get dropped? (see dd2 ch20_000.mesh.240423143)
-        // also: lods read and export?
+        // we'd either need access to assimp's Exporter class directly, or have the ExportFile method modified on the assimp side
 
-        var scene = new Assimp.Scene();
-        scene.RootNode = new Node(rootName);
+        scene.RootNode ??= new Node(rootName);
+        var matIndexOffset = scene.Materials.Count;
         foreach (var name in file.MaterialNames) {
             var aiMat = new Material();
             aiMat.Name = name;
@@ -152,6 +150,10 @@ public partial class CommonMeshResource : IResourceFile
 
         var includeShapeKeys = false;
         var extraBones = new List<Node>();
+        var existingNodes = FlatNodes(scene.RootNode);
+        var nodeDict = new Dictionary<string, Node>();
+        foreach (var ext in existingNodes) nodeDict.TryAdd(ext.Name, ext);
+
         if (bones?.Count > 0 && file.MeshBuffer!.Weights.Length > 0) {
             // insert root bones first to ensure all parents exist
             Node boneRoot = scene.RootNode;
@@ -164,13 +166,19 @@ public partial class CommonMeshResource : IResourceFile
             }
             foreach (var srcBone in bones) {
                 if (srcBone.parentIndex == -1) {
-                    var boneNode = new Node(srcBone.name, boneRoot);
+                    if (nodeDict.TryGetValue(srcBone.name, out var boneNode)) {
+                        boneDict[srcBone.index] = boneNode;
+                        continue;
+                    }
+
+                    boneNode = new Node(srcBone.name, boneRoot);
                     boneDict[srcBone.index] = boneNode;
                     boneNode.Transform = Matrix4x4.Transpose(srcBone.localTransform.ToSystem());
                     boneRoot.Children.Add(boneNode);
                     if (srcBone.useSecondaryWeight) {
                         boneNode.Children.Add(new Node(SecondaryWeightDummyBonePrefix + srcBone.name, boneNode));
                     }
+                    nodeDict[srcBone.name] = boneNode;
                 }
             }
 
@@ -181,18 +189,25 @@ public partial class CommonMeshResource : IResourceFile
                     pendingBones.Enqueue(srcBone);
                     continue;
                 }
-                var boneNode = new Node(srcBone.name, parentBone);
+
+                if (nodeDict.TryGetValue(srcBone.name, out var boneNode)) {
+                    boneDict[srcBone.index] = boneNode;
+                    continue;
+                }
+
+                boneNode = new Node(srcBone.name, parentBone);
                 boneDict[srcBone.index] = boneNode;
                 boneNode.Transform = Matrix4x4.Transpose(srcBone.localTransform.ToSystem());
                 if (srcBone.useSecondaryWeight) {
                     boneNode.Children.Add(new Node(SecondaryWeightDummyBonePrefix + srcBone.name, boneNode));
                 }
                 parentBone.Children.Add(boneNode);
+                nodeDict[srcBone.name] = boneNode;
             }
 
             if (skeleton != null) {
                 foreach (var refBone in skeleton.Bones) {
-                    var (exportId, exportBone) = boneDict.FirstOrDefault(bb => bb.Value.Name == refBone.name);
+                    var exportBone = nodeDict.GetValueOrDefault(refBone.name);
                     if (exportBone == null) {
                         var parentRef = refBone.parentIndex == -1 ? null : skeleton.Bones[refBone.parentIndex];
                         Node? parent = null;
@@ -242,37 +257,37 @@ public partial class CommonMeshResource : IResourceFile
             for (int i = 0; i < file.MeshData.LODs.Count; i++) {
                 var lod = file.MeshData.LODs[i];
                 if (i == 0) {
-                    ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, includeAllLods ? "lod0_" : "", extraBones);
+                    ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, includeAllLods ? "lod0_" : "", extraBones, matIndexOffset);
                     if (!includeAllLods) break;
                 } else {
-                    ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, $"lod{i}_", extraBones);
+                    ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, $"lod{i}_", extraBones, matIndexOffset);
                 }
             }
         }
         if (includeShadows && file.ShadowMesh != null) {
             for (int i = 0; i < file.ShadowMesh.LODs.Count; i++) {
                 var lod = file.ShadowMesh.LODs[i];
-                ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, $"shadow_lod{i}_", extraBones);
+                ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, $"shadow_lod{i}_", extraBones, matIndexOffset);
             }
         }
         if (includeOcclusion && file.OccluderMesh != null) {
             if (scene.MaterialCount == 0) {
                 scene.Materials.Add(new Material() { Name = "default" });
             }
-            ExportLod(file, isGltf, scene, bones, includeShapeKeys, file.OccluderMesh, $"occ_", extraBones);
+            ExportLod(file, isGltf, scene, bones, includeShapeKeys, file.OccluderMesh, $"occ_", extraBones, matIndexOffset);
         }
 
         return scene;
     }
 
-    private static void ExportLod(MeshFile file, bool isGltf, Assimp.Scene scene, List<MeshBone>? bones, bool includeShapeKeys, MeshLOD lod, string namePrefix, List<Node> extraBones)
+    private static void ExportLod(MeshFile file, bool isGltf, Assimp.Scene scene, List<MeshBone>? bones, bool includeShapeKeys, MeshLOD lod, string namePrefix, List<Node> extraBones, int matIndexOffset)
     {
         var bounds = file.MeshData?.boundingBox ?? new AABB();
         foreach (var mesh in lod.MeshGroups) {
             int subId = 0;
             foreach (var sub in mesh.Submeshes) {
                 var aiMesh = new Mesh(PrimitiveType.Triangle);
-                aiMesh.MaterialIndex = sub.materialIndex;
+                aiMesh.MaterialIndex = sub.materialIndex + matIndexOffset;
 
 
                 aiMesh.Vertices.AddRange(sub.Positions);

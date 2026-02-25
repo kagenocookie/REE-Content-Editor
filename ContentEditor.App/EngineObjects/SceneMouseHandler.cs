@@ -18,6 +18,7 @@ public class SceneMouseHandler(Scene scene)
     public Vector2 MouseViewportPosition { get; private set; }
     public Vector2 MouseScreenPosition => MouseViewportPosition + ViewportOffset;
 
+    public bool IsViewportHovered { get; private set; }
     public bool IsLeftDown => IsDown(ImGuiMouseButton.Left);
     public bool IsRightDown => IsDown(ImGuiMouseButton.Right);
     public bool IsMiddleDown => IsDown(ImGuiMouseButton.Middle);
@@ -114,12 +115,13 @@ public class SceneMouseHandler(Scene scene)
 
     private MouseButtonFlags DownFlags => (downLB ? MouseButtonFlags.Left : 0) | (downRB ? MouseButtonFlags.Right : 0) | (downMB ? MouseButtonFlags.Middle : 0);
 
-    public void UpdateMouseState(IMouse mouse, bool leftDown, bool rightDown, bool middleDown, bool allowDown, Vector2 mouseScreenPos)
+    public void UpdateMouseState(IMouse mouse, bool leftDown, bool rightDown, bool middleDown, bool isHovered, Vector2 mouseScreenPos)
     {
+        IsViewportHovered = isHovered;
         if (leftDown != downLB) {
             if (!leftDown) {
                 HandleMouseUp(mouse, ImGuiMouseButton.Left, mouseScreenPos);
-            } else if (allowDown) {
+            } else if (isHovered) {
                 HandleMouseDown(ImGuiMouseButton.Left, mouseScreenPos);
             }
         }
@@ -127,7 +129,7 @@ public class SceneMouseHandler(Scene scene)
         if (rightDown != downRB) {
             if (!rightDown) {
                 HandleMouseUp(mouse, ImGuiMouseButton.Right, mouseScreenPos);
-            } else if (allowDown) {
+            } else if (isHovered) {
                 HandleMouseDown(ImGuiMouseButton.Right, mouseScreenPos);
             }
         }
@@ -135,7 +137,7 @@ public class SceneMouseHandler(Scene scene)
         if (middleDown != downMB) {
             if (middleDown) {
                 HandleMouseUp(mouse, ImGuiMouseButton.Middle, mouseScreenPos);
-            } else if (allowDown) {
+            } else if (isHovered) {
                 HandleMouseDown(ImGuiMouseButton.Middle, mouseScreenPos);
             }
         }
@@ -143,7 +145,7 @@ public class SceneMouseHandler(Scene scene)
         if (lastMousePos != mouseScreenPos - ViewportOffset) {
             HandleMouseMove(mouse, mouseScreenPos);
         }
-        if (allowDown) {
+        if (isHovered) {
             MouseWheelDelta = new Vector2(0, ImGui.GetIO().MouseWheel);
         } else {
             MouseWheelDelta = Vector2.Zero;

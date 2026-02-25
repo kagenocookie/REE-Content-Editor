@@ -358,6 +358,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                     ImGui.EndMenu();
                 }
                 if (ctx.IsAnimatable && ImGui.BeginMenu($"{AppIcons.SI_TagCharacter} Skeleton")) {
+                    if (ctx.Animator == null) ctx.SetupAnimator();
                     ctx.ShowSkeletonPicker();
                     ImGui.EndMenu();
                 }
@@ -571,8 +572,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                             }
                         }
 
-                        // exportFullCollection ? meshContexts.Skip(1).Select(c => c.MeshFile) :
-                        assmesh.ExportToFile(exportPath, exportLods, exportOcclusion, exportFbxskel ? PrimaryAnimator?.skeleton : null, mots, null);
+                        assmesh.ExportToFile(exportPath, exportLods, exportOcclusion, exportFbxskel ? PrimaryAnimator?.skeleton : null, mots, exportFullCollection ? meshContexts.Skip(1).Select(c => c.MeshFile) : null);
                     } catch (Exception e) {
                         Logger.Error(e, "Mesh export failed");
                     } finally {
@@ -617,9 +617,15 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (PrimaryAnimator?.File != null) {
             ImGui.Checkbox("Include animations", ref exportAnimations);
             if (exportAnimations) ImGui.Checkbox("Selected animation only", ref exportCurrentAnimationOnly);
-            if (PrimaryAnimator?.skeleton != null) ImGui.Checkbox("Export with merged skeleton", ref exportFbxskel);
         }
-        // if (meshContexts.Count > 1) ImGui.Checkbox("Export all meshes", ref exportFullCollection);
+        if (PrimaryAnimator?.skeleton != null) {
+            ImGui.Checkbox("Export with merged skeleton", ref exportFbxskel);
+            ImguiHelpers.Tooltip("Whether to merge the mesh skeleton with the currently active skeleton file");
+        }
+        if (meshContexts.Count > 1) {
+            ImGui.Checkbox("Export all meshes", ref exportFullCollection);
+            ImguiHelpers.Tooltip("Whether to include all currently open meshes in the exported file");
+        }
         if (mesh.NativeMesh.MeshData?.LODs.Count > 1 || mesh.NativeMesh.ShadowMesh?.LODs.Count > 0) ImGui.Checkbox("Include LODs and Shadow Mesh", ref exportLods);
         if (mesh.NativeMesh.OccluderMesh?.MeshGroups.Count > 0) ImGui.Checkbox("Include Occlusion Mesh", ref exportOcclusion);
         if (showImportSettings) {

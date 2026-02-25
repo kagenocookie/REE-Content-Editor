@@ -1,5 +1,7 @@
 using System.Reflection;
+using ContentEditor.Core;
 using ContentPatcher;
+using ReeLib;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -54,11 +56,44 @@ public class BaseComponentEditor : IObjectUIHandler
     {
         if (context.children.Count == 0) {
             var child = context.AddChild(context.label, context.Get<Component>().Data);
-            child.AddDefaultHandler();
-            if (child.uiHandler is NestedRszInstanceHandler nrsz) {
-                nrsz.ForceDefaultClose = true;
-            }
+            WindowHandlerFactory.SetupRSZInstanceHandler(child);
         }
         context.children[0].ShowUI();
+    }
+}
+
+public class ComponentDataHandler : IObjectUIHandler
+{
+    private readonly string classname;
+
+    public ComponentDataHandler(string classname)
+    {
+        this.classname = classname;
+    }
+
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<RszInstance>();
+        context.stringFormatter ??= WindowHandlerFactory.GetStringFormatter(instance);
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, context.stringFormatter?.GetString(instance) ?? instance.RszClass.name);
+        RszInstanceHandler.ShowDefaultContextMenu(context);
+        if (show) {
+            if (context.children.Count == 0) {
+                if (instance.RSZUserData != null) {
+                    context.AddChild(context.label, instance, new UserDataReferenceHandler());
+                } else {
+                    WindowHandlerFactory.SetupRSZInstanceHandler(context);
+                }
+            }
+            ImGui.PushID(context.GetRaw()!.GetHashCode());
+            ShowContents(context);
+            ImGui.PopID();
+            ImGui.TreePop();
+        }
+    }
+
+    protected virtual void ShowContents(UIContext context)
+    {
+        RszInstanceHandler.OnIMGUI(context, false);
     }
 }

@@ -692,19 +692,19 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem("Bundle Manager")) {
                     ShowBundleManagement();
                 }
-                if (workspace.Config.Entities.Any()) {
-                    if (ImGui.MenuItem("Entities")) {
-                        AddSubwindow(new AppContentEditorWindow(workspace));
-                    }
-                }
-                if (ImGui.MenuItem("Data Search")) {
-                    AddSubwindow(new RszDataFinder());
+                if (ImGui.MenuItem("File Search")) {
+                    AddSubwindow(new FileSearchWindow());
                 }
                 if (ImGui.MenuItem("Texture Channel Packer")) {
                     AddSubwindow(new TextureChannelPacker()).Size = new Vector2(1280, 800);
                 }
                 if (ImGui.MenuItem("File Upgrader")) {
                     AddSubwindow(new FileUpgrader()).Size = new Vector2(1280, 800);
+                }
+                if (workspace.Config.Entities.Any()) {
+                    if (ImGui.MenuItem("Entities")) {
+                        AddSubwindow(new AppContentEditorWindow(workspace));
+                    }
                 }
             }
             ImGui.EndMenu();
@@ -749,7 +749,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             FileSystemUtils.OpenURL("https://ko-fi.com/shadowcookie");
         }
 
-        if (AppConfig.IsOutdatedVersion && AppConfig.Instance.EnableUpdateCheck && ImGui.MenuItem($"New version ({AppConfig.Settings.Changelogs.LatestReleaseVersion}) available!")) {
+        if (AppConfig.IsOutdatedVersion && AppConfig.Instance.EnableUpdateCheck && ImGui.MenuItem(AppConfig.IsDebugBuild ? "New version available!" : $"New version ({AppConfig.Settings.Changelogs.LatestReleaseVersion}) available!")) {
             FileSystemUtils.OpenURL(GithubApi.MainRepositoryUrl);
         }
 

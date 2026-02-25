@@ -14,9 +14,9 @@ using ReeLib.UVar;
 
 namespace ContentEditor.App;
 
-public class RszDataFinder : IWindowHandler
+public class FileSearchWindow : IWindowHandler
 {
-    public string HandlerName => "Data Finder";
+    public string HandlerName => "File Search";
 
     public bool HasUnsavedChanges => false;
     private string? classname = "";
@@ -46,6 +46,8 @@ public class RszDataFinder : IWindowHandler
 
     private string guiSearch = "";
 
+    private string mdf2Search = "";
+
     private CancellationTokenSource? cancellationTokenSource;
     private int searchedFiles;
     private bool SearchInProgress => cancellationTokenSource != null;
@@ -61,7 +63,7 @@ public class RszDataFinder : IWindowHandler
     private int findType;
 
     private string[]? classNames;
-    private static readonly string[] FindTypes = ["RSZ Data", "Messages", "EFX", "Uvar", "Mot", "GUI"];
+    private static readonly string[] FindTypes = ["RSZ Data", "Messages", "EFX", "Uvar", "Mot", "GUI", "MDF2"];
     private static readonly Dictionary<string, RszFieldType[]> RszFilterableFields = new () {
         { "String / Resource", [RszFieldType.String, RszFieldType.Resource, RszFieldType.RuntimeType] },
         { "Userdata Reference", [RszFieldType.UserData] },
@@ -119,6 +121,9 @@ public class RszDataFinder : IWindowHandler
                 break;
             case 5:
                 ShowGuiFind(workspace.Env);
+                break;
+            case 6:
+                ShowMdf2Find(workspace.Env);
                 break;
         }
         if (searching) {
@@ -551,6 +556,28 @@ public class RszDataFinder : IWindowHandler
             Task.Run(() => {
                 foreach (var ee in GetWorkspaces(env)) {
                     InvokeSearchGui(CreateContext(ee, env), guiSearch);
+                }
+                cancellationTokenSource?.Cancel();
+                cancellationTokenSource = null;
+            });
+        }
+    }
+
+    private void ShowMdf2Find(Workspace env)
+    {
+        ImGui.InputText("Query", ref mdf2Search, 100);
+        ImGui.TextColored(Colors.Note, "MDF2 search is supported for partial match of MMTR or texture paths");
+
+        if (string.IsNullOrEmpty(mdf2Search)) return;
+
+        if (ImGui.Button("Search")) {
+            matches.Clear();
+            cancellationTokenSource = new();
+            var token = cancellationTokenSource.Token;
+            searchedFiles = 0;
+            Task.Run(() => {
+                foreach (var ee in GetWorkspaces(env)) {
+                    InvokeSearchMdf2(CreateContext(ee, env), mdf2Search);
                 }
                 cancellationTokenSource?.Cancel();
                 cancellationTokenSource = null;
@@ -1000,14 +1027,14 @@ public class RszDataFinder : IWindowHandler
                 }
 
                 foreach (var prop in file.Parameters) {
-                    if (hasGuid && prop.guid == guid || prop.name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
+                    if (prop.name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
                         AddMatch(context, $"Parameter Declaration \"{prop.name}\"", path);
                         continue;
                     }
                 }
 
                 foreach (var prop in file.ParameterReferences) {
-                    if (hasGuid && prop.guid == guid || prop.path.Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
+                    if (prop.path.Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
                         AddMatch(context, $"Parameter Reference \"{prop.path}\"", path);
                         continue;
                     }
@@ -1044,6 +1071,33 @@ public class RszDataFinder : IWindowHandler
                             AddMatch(context, $"Element GUID3 - {container.Info.Name}/{elem.Name}", path);
                             continue;
                         }
+                    }
+                }
+            } catch (Exception e) {
+                context.Window.InvokeFromUIThread(() => Logger.Error(e, "File read failed " + path));
+            }
+        }
+    }
+
+    private void InvokeSearchMdf2(SearchContext context, string query)
+    {
+        foreach (var (path, stream) in context.Env.GetFilesWithExtension("mdf2", context.Token)) {
+
+            try {
+                if (context.Token.IsCancellationRequested) return;
+                Interlocked.Increment(ref searchedFiles);
+                var file = new MdfFile(new FileHandler(stream, path));
+                file.Read();
+
+                foreach (var mat in file.Materials) {
+                    foreach (var tex in mat.Textures) {
+                        if (tex.texPath != null && tex.texPath.Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
+                            AddMatch(context, $"Material {mat.Header.matName} / Texture {tex.texType}", path);
+                            break;
+                        }
+                    }
+                    if (mat.Header.mmtrPath?.Contains(query, StringComparison.InvariantCultureIgnoreCase) == true) {
+                        AddMatch(context, $"MMTR of material {mat.Header.matName}", path);
                     }
                 }
             } catch (Exception e) {

@@ -115,7 +115,7 @@ public class GizmoState(Scene scene, GizmoContainer container)
         if (activeHandle == null || !isHandleActive) {
             var mouse = Scene.Mouse.MouseScreenPosition;
             if (!Scene.Mouse.IsDragging) {
-                if (CheckOverlapLine2D(pos1, pos2, screenRadius, mouse)) {
+                if (Scene.Mouse.IsViewportHovered && CheckOverlapLine2D(pos1, pos2, screenRadius, mouse)) {
                     ReserveHandle(current.id, handleId);
                     container.PushMaterial((GizmoMaterialPreset)(axisType + (int)GizmoMaterialPreset.AxisX_Highlight), ShapeBuilder.GeometryType.Filled);
                     if (Scene.Mouse.IsLeftDown) {
@@ -167,7 +167,7 @@ public class GizmoState(Scene scene, GizmoContainer container)
             var mouse = Scene.Mouse.MouseScreenPosition;
             if (!Scene.Mouse.IsDragging) {
                 var screenPosition = Scene.ActiveCamera.WorldToScreenPosition(position);
-                if (Scene.ActiveCamera.IsPointInViewport(screenPosition) && CheckOverlapProjectedCircle(position, axis, mouse, handleSize, handleSize * 0.1f)) {
+                if (Scene.Mouse.IsViewportHovered && Scene.ActiveCamera.IsPointInViewport(screenPosition) && CheckOverlapProjectedCircle(position, axis, mouse, handleSize, handleSize * 0.1f)) {
                     ReserveHandle(current.id, handleId);
                     container.PushMaterial((GizmoMaterialPreset)(axisType + (int)GizmoMaterialPreset.AxisX_Highlight), ShapeBuilder.GeometryType.Line);
                     if (Scene.Mouse.IsLeftDown) {
@@ -225,7 +225,7 @@ public class GizmoState(Scene scene, GizmoContainer container)
         var screenPosition = Scene.ActiveCamera.WorldToScreenPosition(position);
         if (container.CanActivate && (activeHandle == null || !isHandleActive)) {
             var mouse = Scene.Mouse.MouseScreenPosition;
-            if ((mouse - screenPosition).LengthSquared() < handleSize * handleSize && !Scene.Mouse.IsDragging) {
+            if (Scene.Mouse.IsViewportHovered && (mouse - screenPosition).LengthSquared() < handleSize * handleSize && !Scene.Mouse.IsDragging) {
                 ReserveHandle(current.id, handleId);
                 // TODO not ideal - needless allocations - optimize later
                 DrawListQueue.Add(() => {

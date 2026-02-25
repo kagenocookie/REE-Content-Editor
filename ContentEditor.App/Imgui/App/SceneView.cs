@@ -117,7 +117,7 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
             isDragging = false;
         }
 
-        if (isDragging || hoveredMesh) {
+        if (isDragging || hoveredMesh || Scene.Mouse.IsViewportHovered && !hoveredMesh) {
             AppImguiHelpers.RedirectMouseInputToScene(Scene, hoveredMesh);
         }
     }
