@@ -651,8 +651,9 @@ public class HomeWindow : IWindowHandler
         ImGui.Separator();
 
         var commits = AppConfig.Settings.Changelogs.FindCurrentAndNewCommits();
+        ImGui.BeginChild("CommitLog");
         foreach (var commit in commits) {
-            ImGui.TextColored(Colors.Faded, commit.Commit.Author?.Date.ToLocalTime().ToString() ?? "[unknown time]");
+            ImGui.TextColored(Colors.Faded, commit.Commit.Author?.Date.ToLocalTime().ToString("MM-dd-yyyy hh:mm tt") ?? "[unknown time]");
             ImGui.SameLine();
             ImGui.Text(commit.Commit.Message ?? "<no message>");
             if (AppConfig.RevisionHash != null && commit.Sha?.StartsWith(AppConfig.RevisionHash) == true) {
@@ -661,6 +662,7 @@ public class HomeWindow : IWindowHandler
             }
             ImGui.Spacing();
         }
+        ImGui.EndChild();
     }
 
     private void ShowRecentFilesList()
