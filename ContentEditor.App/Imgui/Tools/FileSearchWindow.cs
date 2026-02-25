@@ -14,9 +14,9 @@ using ReeLib.UVar;
 
 namespace ContentEditor.App;
 
-public class RszDataFinder : IWindowHandler
+public class FileSearchWindow : IWindowHandler
 {
-    public string HandlerName => "Data Finder";
+    public string HandlerName => "File Search";
 
     public bool HasUnsavedChanges => false;
     private string? classname = "";
