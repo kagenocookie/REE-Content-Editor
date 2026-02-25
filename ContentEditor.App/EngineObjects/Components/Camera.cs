@@ -41,8 +41,8 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
     public void LookAt(GameObject target, bool resetPosition)
     {
         var bounds = target.GetWorldSpaceBounds();
-        if (bounds.IsInvalid) {
-            bounds = new AABB(target.Transform.Position, target.Transform.Position + new Vector3(0.5f));
+        if (bounds.IsInvalid || bounds.minpos == Vector3.Zero && bounds.maxpos == Vector3.Zero) {
+            bounds = new AABB(target.Transform.Position - new Vector3(0.5f), target.Transform.Position + new Vector3(0.5f));
         }
         LookAt(bounds, resetPosition);
     }
