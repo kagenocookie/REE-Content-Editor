@@ -193,7 +193,6 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                     return;
                 }
             }
-            // TODO handle unknowns properly
         }
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_InfoPAK, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.Info} )) {
             ImGui.OpenPopup("PAKInfoPopup"u8);
@@ -496,12 +495,15 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
     {
         var cacheKey = (CurrentDir, ColumnIndex, SortDirection);
         if (!cachedResults.TryGetValue(cacheKey, out sortedEntries)) {
-            var files = baseList.GetFiles(CurrentDir);
+            string[] files;
+            if (CurrentDir.StartsWith(PakReader.UnknownFilePathPrefix)) {
+                files = ListFileWrapper.FilterFiles(reader?.UnknownFilePaths ?? [], CurrentDir);
+            } else {
+                files = baseList.GetFiles(CurrentDir);
+            }
             if (string.IsNullOrEmpty(CurrentDir) && reader!.ContainsUnknownFiles) {
                 Array.Resize(ref files, files.Length + 1);
                 files[^1] = PakReader.UnknownFilePathPrefix;
-            } else if (CurrentDir.StartsWith(PakReader.UnknownFilePathPrefix)) {
-                files = reader!.UnknownFilePaths;
             }
             var sorted = cacheKey.ColumnIndex switch {
                 0 => cacheKey.SortDirection == ImGuiSortDirection.Ascending ? files : files.Reverse(),
@@ -797,7 +799,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                     }, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
                 } else {
                     PlatformUtils.ShowSaveFileDialog((savePath) => {
-                        var stream = reader!.GetFile(file);
+                        var stream = file.StartsWith(PakReader.UnknownFilePathPrefix) ? reader!.GetUnknownFile(file) : reader!.GetFile(file);
                         if (stream == null) {
                             Logger.Error("Could not find file " + file + " in selected PAK files");
                             return;
