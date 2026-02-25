@@ -96,6 +96,7 @@ public class AppConfig : Singleton<AppConfig>
     private const string JsonFilename = "ce_config.json";
 
     public static readonly string Version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion ?? "";
+    public static readonly string? RevisionHash = Version.Contains("-r") ? Version.Substring(Version.IndexOf("-r")+2) : null;
 
     #if DEBUG
     public static readonly bool IsDebugBuild = true;
@@ -717,10 +718,11 @@ public record DevSettings
 public record ChangelogData
 {
     public List<GithubReleaseInfo> Releases { get; set; } = new();
+    public List<GithubCommit> Commits { get; set; } = new();
 
     [JsonIgnore] public string? LatestReleaseVersion => Releases.FirstOrDefault()?.TagName?.Replace("v", "");
 
-    public List<GithubReleaseInfo> FindCurrentReleaseList()
+    public List<GithubReleaseInfo> FindCurrentAndNewReleaseList()
     {
         var list = new List<GithubReleaseInfo>();
         if (AppConfig.IsDebugBuild) {
@@ -744,6 +746,26 @@ public record ChangelogData
         return list;
     }
 
+    public List<GithubCommit> FindCurrentAndNewCommits()
+    {
+        var releaseBuildDate = AppConfig.IsDebugBuild ? null : FindCurrentAndNewReleaseList().LastOrDefault()?.ReleaseDate;
+
+        var list = new List<GithubCommit>();
+        foreach (var commit in Commits) {
+            if (!AppConfig.IsDebugBuild && commit.Commit.Author?.Date < releaseBuildDate) {
+                break;
+            }
+
+            list.Add(commit);
+            if (AppConfig.IsDebugBuild) {
+                if (!string.IsNullOrEmpty(AppConfig.RevisionHash) && !string.IsNullOrEmpty(commit.Sha) && commit.Sha.StartsWith(AppConfig.RevisionHash)) {
+                    break;
+                }
+            }
+        }
+
+        return list;
+    }
     internal void StoreReleaseInfo(GithubReleaseInfo release)
     {
         if (string.IsNullOrEmpty(release.TagName)) return;
@@ -752,9 +774,9 @@ public record ChangelogData
         if (exists == null) {
             Releases.Insert(0, release);
             AppConfig.Settings.Save();
-        } else if (exists.Assets.Count != release.Assets.Count || exists.Body != release.Body) {
+        } else if (exists.Assets.Count != release.Assets.Count || exists.Body != release.Body || exists.PublishedAt == DateTime.MinValue) {
             exists.Assets = release.Assets;
-            exists.CreatedAt = release.CreatedAt;
+            exists.PublishedAt = release.PublishedAt;
             AppConfig.Settings.Save();
         }
     }

@@ -20,17 +20,28 @@ public class GithubApi
             try {
                 var data = JsonSerializer.Deserialize<GithubReleaseInfo>(content);
                 return data;
-            } catch (Exception) {
-                // ignore
+            } catch (Exception e) {
+                Logger.Debug("Failed to fetch release info: " + e.Message);
             }
         }
         return null;
     }
 
-    public async Task<GithubReleaseInfo?> FetchCommits()
+    public async Task<List<GithubCommit>?> FetchCommits()
     {
         var (http, request) = CreateRequest($"https://api.github.com/repos/{RepoPath}/commits");
-        throw new NotImplementedException();
+
+        var response = await http.SendAsync(request);
+        if (response.StatusCode == System.Net.HttpStatusCode.OK) {
+            var content = await response.Content.ReadAsStringAsync();
+            try {
+                var data = JsonSerializer.Deserialize<List<GithubCommit>>(content);
+                return data;
+            } catch (Exception e) {
+                Logger.Debug("Failed to fetch commit info: " + e.Message);
+            }
+        }
+        return null;
     }
 
 
@@ -63,6 +74,11 @@ public sealed class GithubReleaseInfo
     [JsonPropertyName("created_at")]
     public DateTime CreatedAt { get; set; }
 
+    [JsonPropertyName("published_at")]
+    public DateTime PublishedAt { get; set; }
+
+    [JsonIgnore] public DateTime ReleaseDate => PublishedAt == DateTime.MinValue ? CreatedAt : PublishedAt;
+
     [JsonPropertyName("assets")]
     public List<GithubReleaseAsset> Assets { get; set; } = new();
 }
@@ -80,4 +96,31 @@ public sealed class GithubReleaseAsset
 
     [JsonPropertyName("created_at")]
     public DateTime CreatedAt { get; set; }
+}
+
+public sealed class GithubCommit
+{
+    [JsonPropertyName("sha")]
+    public string? Sha { get; set; }
+
+    [JsonPropertyName("commit")]
+    public GithubCommitInfo Commit { get; set; } = new();
+}
+
+public sealed class GithubCommitInfo
+{
+    [JsonPropertyName("message")]
+    public string? Message { get; set; }
+
+    [JsonPropertyName("author")]
+    public GithubCommitAuthor? Author { get; set; }
+}
+
+public sealed class GithubCommitAuthor
+{
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    [JsonPropertyName("date")]
+    public DateTime Date { get; set; }
 }

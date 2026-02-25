@@ -749,7 +749,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             FileSystemUtils.OpenURL("https://ko-fi.com/shadowcookie");
         }
 
-        if (AppConfig.IsOutdatedVersion && AppConfig.Instance.EnableUpdateCheck && ImGui.MenuItem($"New version ({AppConfig.Settings.Changelogs.LatestReleaseVersion}) available!")) {
+        if (AppConfig.IsOutdatedVersion && AppConfig.Instance.EnableUpdateCheck && ImGui.MenuItem(AppConfig.IsDebugBuild ? "New version available!" : $"New version ({AppConfig.Settings.Changelogs.LatestReleaseVersion}) available!")) {
             FileSystemUtils.OpenURL(GithubApi.MainRepositoryUrl);
         }
 
