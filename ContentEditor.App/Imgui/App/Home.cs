@@ -99,7 +99,7 @@ public class HomeWindow : IWindowHandler
         ImGui.EndChild();
 
         ImGui.BeginChild("GameList", new Vector2(250 * UI.UIScale, 0), ImGuiChildFlags.Borders);
-        ShowGameList(context);
+        ShowGameList(this.context);
         ImGui.EndChild();
         ImGui.SameLine();
         float minTabsWidth = 500f * UI.UIScale;
@@ -107,7 +107,7 @@ public class HomeWindow : IWindowHandler
         ImGui.SetNextWindowSizeConstraints(new Vector2(minTabsWidth, 0), new Vector2(float.MaxValue, float.MaxValue));
         ImGui.BeginChild("Tabs", new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 3 * 2, ImGui.GetContentRegionAvail().Y - tabsFooterHeight - ImGui.GetStyle().ItemSpacing.Y * 2), ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX);
         float currentTabsWidth = ImGui.GetWindowWidth();
-        ShowTabs(context);
+        ShowTabs(this.context);
         ImGui.EndChild();
         ImGui.SameLine();
         ImGui.BeginChild("RecentFiles", new Vector2(ImGui.GetContentRegionAvail().X, 0), ImGuiChildFlags.Borders);
@@ -135,7 +135,7 @@ public class HomeWindow : IWindowHandler
     private static void ShowWelcomeText()
     {
         ImGui.PushFont(null, UI.FontSizeLarge + 100);
-        string text = "Welcome to Content Editor";
+        const string text = "Welcome to Content Editor";
         var textSize = ImGui.CalcTextSize(text);
         var availSpace = ImGui.GetContentRegionAvail();
         var posX = (availSpace.X - textSize.X - 250 - ImGui.GetStyle().ItemSpacing.X) * 0.5f;
@@ -155,9 +155,9 @@ public class HomeWindow : IWindowHandler
                 EditorWindow.CurrentWindow?.AddSubwindow(new PakBrowser(EditorWindow.CurrentWindow.Workspace, null));
                 EditorWindow.CurrentWindow?.CloseSubwindow(data);
             }
-            ImguiHelpers.Tooltip("Browse Game Files");
+            ImguiHelpers.Tooltip("Browse Game Files"u8);
             ImGui.SameLine();
-            if (ImGui.Button("Open File")) {
+            if (ImGui.Button("Open File"u8)) {
                 PlatformUtils.ShowFileDialog((files) => {
                     MainLoop.Instance.MainWindow.InvokeFromUIThread(() => {
                         Logger.Info(string.Join("\n", files));
@@ -172,13 +172,13 @@ public class HomeWindow : IWindowHandler
                 EditorWindow.CurrentWindow?.AddUniqueSubwindow(new ThemeEditor());
                 EditorWindow.CurrentWindow?.CloseSubwindow(data);
             }
-            ImguiHelpers.Tooltip("Theme Editor");
+            ImguiHelpers.Tooltip("Theme Editor"u8);
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_Settings}")) {
                 EditorWindow.CurrentWindow?.AddUniqueSubwindow(new SettingsWindowHandler());
                 EditorWindow.CurrentWindow?.CloseSubwindow(data);
             }
-            ImguiHelpers.Tooltip("Settings");
+            ImguiHelpers.Tooltip("Settings"u8);
 
             if (!AppConfig.Instance.IsFirstTime) {
                 var games = AppConfig.Instance.GetGamelist();
@@ -226,17 +226,17 @@ public class HomeWindow : IWindowHandler
             if (ImGui.Button($"{AppIcons.SI_Github}", new Vector2(availSpace / 3, 0))) {
                 FileSystemUtils.OpenURL(GithubApi.MainRepositoryUrl);
             }
-            ImguiHelpers.Tooltip("GitHub");
+            ImguiHelpers.Tooltip("GitHub"u8);
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_GenericWiki}", new Vector2(availSpace / 3, 0))) {
                 FileSystemUtils.OpenURL(GithubApi.WikiUrl);
             }
-            ImguiHelpers.Tooltip("Wiki");
+            ImguiHelpers.Tooltip("Wiki"u8);
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_Discord}", new Vector2(availSpace / 3, 0))) {
                 FileSystemUtils.OpenURL("https://discord.gg/9Vr2SJ3");
             }
-            ImguiHelpers.Tooltip("Discord");
+            ImguiHelpers.Tooltip("Discord"u8);
 
             ImGui.Spacing();
             ImGui.Separator();
@@ -284,7 +284,7 @@ public class HomeWindow : IWindowHandler
             UI.ApplyTheme(theme!);
             AppConfig.Instance.Theme.Set(theme);
         }
-        ImguiHelpers.Tooltip("You can modify or create new custom themes through Edit > Theme Editor.");
+        ImguiHelpers.Tooltip("You can modify or create new custom themes through Edit > Theme Editor."u8);
 
         var color = AppConfig.Instance.BackgroundColor.Get().ToVector4();
         if (ImGui.ColorEdit4("Scene Background Color", ref color)) {
@@ -294,12 +294,12 @@ public class HomeWindow : IWindowHandler
                 wnd.ClearColor = newColor;
             }
         }
-        ImguiHelpers.Tooltip("You can change this color at any time in Settings > Display > Theme.");
+        ImguiHelpers.Tooltip("You can change this color at any time in Settings > Display > Theme."u8);
 
         ImGui.SeparatorText("Choose the game you wish to mod");
 
         ImGui.Checkbox("Custom Game", ref customGame);
-        ImguiHelpers.Tooltip("Select this if you wish to configure a game outside of the predefined list.\nCustom games may not fully work.");
+        ImguiHelpers.Tooltip("Select this if you wish to configure a game outside of the predefined list.\nCustom games may not fully work."u8);
         if (customGame) {
 
             if (!string.IsNullOrEmpty(chosenGame) && !Enum.TryParse<GameName>(chosenGame, out _)) {
@@ -326,7 +326,7 @@ public class HomeWindow : IWindowHandler
             if (AppImguiHelpers.InputFolder("Game Path", ref gamepath) && Directory.Exists(gamepath)) {
                 AppConfig.Instance.SetGamePath(chosenGame, gamepath);
             }
-            ImguiHelpers.Tooltip("This is the path to the game (where the .exe file is located).");
+            ImguiHelpers.Tooltip("This is the path to the game (where the .exe file is located)."u8);
             ImGui.SameLine();
             ImGui.TextColored(Colors.TextActive, "*");
 
@@ -334,17 +334,17 @@ public class HomeWindow : IWindowHandler
                 if (AppImguiHelpers.InputFilepath("RSZ JSON File Path", ref rszPath, FileFilters.JsonFile) && File.Exists(gamepath)) {
                     AppConfig.Instance.SetGameRszJsonPath(chosenGame, rszPath);
                 }
-                ImguiHelpers.Tooltip("This setting should point to the correct rsz*.json for the chosen game.");
+                ImguiHelpers.Tooltip("This setting should point to the correct rsz*.json for the chosen game."u8);
 
                 if (AppImguiHelpers.InputFilepath("File List Path", ref filelist) && File.Exists(gamepath)) {
                     AppConfig.Instance.SetGameFilelist(chosenGame, filelist);
                 }
-                ImguiHelpers.Tooltip("This setting should point to a filepath containing a list of all files used by the game.");
+                ImguiHelpers.Tooltip("This setting should point to a filepath containing a list of all files used by the game."u8);
 
                 if (AppImguiHelpers.InputFilepath("File Extraction Path", ref extractPath) && File.Exists(gamepath)) {
                     AppConfig.Instance.SetGameExtractPath(chosenGame, extractPath);
                 }
-                ImguiHelpers.Tooltip("This is the default path used when extracting files. Can be left empty.");
+                ImguiHelpers.Tooltip("This is the default path used when extracting files. Can be left empty."u8);
             }
         }
         ImGui.SameLine();
@@ -377,18 +377,18 @@ public class HomeWindow : IWindowHandler
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderContain, new[] { Colors.IconPrimary, Colors.IconSecondary })) {
             FileSystemUtils.ShowFileInExplorer(EditorWindow.CurrentWindow?.Workspace.BundleManager.AppBundlePath);
         }
-        ImguiHelpers.Tooltip("Open Bundles folder in File Explorer");
+        ImguiHelpers.Tooltip("Open Bundles folder in File Explorer"u8);
         ImGui.SameLine();
         if (ImGui.Button($"{AppIcons.SI_GenericClear}")) {
             AppConfig.Settings.RecentBundles.Clear();
             AppConfig.Instance.SaveJsonConfig();
         }
-        ImguiHelpers.Tooltip("Clear recent bundles list");
+        ImguiHelpers.Tooltip("Clear recent bundles list"u8);
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isBundleFilterMatchCase, Colors.IconActive);
-        ImguiHelpers.Tooltip("Match Case");
+        ImguiHelpers.Tooltip("Match Case"u8);
         ImGui.SameLine();
         string filterLabelDisplayText = _activeBundleGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} " + "All Games" : $"{AppIcons.SI_Filter} " + $"{_activeBundleGameFilters.Count} Selected";
         float filterComboWidth = ImGui.CalcTextSize(filterLabelDisplayText).X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
@@ -426,7 +426,7 @@ public class HomeWindow : IWindowHandler
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FilterClear, new[] { Colors.IconTertiary, Colors.IconPrimary })) {
                 _activeBundleGameFilters.Clear();
             }
-            ImguiHelpers.Tooltip("Clear Game Filters");
+            ImguiHelpers.Tooltip("Clear Game Filters"u8);
         }
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
@@ -588,12 +588,12 @@ public class HomeWindow : IWindowHandler
                         if (string.IsNullOrEmpty(downloadLink)) downloadLink = GithubApi.LatestReleaseUrl;
                         FileSystemUtils.OpenURL(downloadLink);
                     }
-                    ImguiHelpers.Tooltip("Download this version");
+                    ImguiHelpers.Tooltip("Download this version"u8);
                     ImGui.SameLine();
                     if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
                         FileSystemUtils.OpenURL(release.HtmlUrl ?? GithubApi.LatestReleaseUrl);
                     }
-                    ImguiHelpers.Tooltip("Open release details in browser");
+                    ImguiHelpers.Tooltip("Open release details in browser"u8);
                 }
 
                 ImGui.Spacing();
@@ -641,12 +641,12 @@ public class HomeWindow : IWindowHandler
             AppConfig.Settings.RecentFiles.Clear();
             AppConfig.Instance.SaveJsonConfig();
         }
-        ImguiHelpers.Tooltip("Clear recent files");
+        ImguiHelpers.Tooltip("Clear recent files"u8);
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isRecentFileFilterMatchCase, Colors.IconActive);
-        ImguiHelpers.Tooltip("Match Case");
+        ImguiHelpers.Tooltip("Match Case"u8);
         ImGui.SameLine();
         string filterLabelDisplayText = _activeRecentFileGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} " + "All Games" : $"{AppIcons.SI_Filter} " + $"{_activeRecentFileGameFilters.Count} Selected";
         float filterComboWidth = ImGui.CalcTextSize(filterLabelDisplayText).X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
@@ -685,7 +685,7 @@ public class HomeWindow : IWindowHandler
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FilterClear, new[] { Colors.IconTertiary, Colors.IconPrimary })) {
                 _activeRecentFileGameFilters.Clear();
             }
-            ImguiHelpers.Tooltip("Clear Game Filters");
+            ImguiHelpers.Tooltip("Clear Game Filters"u8);
         }
 
         ImGui.Spacing();
@@ -707,6 +707,7 @@ public class HomeWindow : IWindowHandler
             foundMatchingFile = true;
             if (ImGui.Selectable(file)) {
                 EditorWindow.CurrentWindow?.OpenFiles(new[] { fileToOpen });
+                EditorWindow.CurrentWindow?.CloseSubwindow(this.context.Get<WindowData>());
                 break;
             }
         }
