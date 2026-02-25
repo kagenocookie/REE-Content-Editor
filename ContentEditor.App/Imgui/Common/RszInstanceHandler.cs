@@ -16,7 +16,7 @@ namespace ContentEditor.App.ImguiHandling;
 
 public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandler
 {
-    public void OnIMGUI(UIContext context, bool showLabel)
+    public static void OnIMGUI(UIContext context, bool showLabel)
     {
         var instance = context.Get<RszInstance>();
         if (instance == null) {
@@ -478,7 +478,7 @@ public class NestedRszInstanceHandler : IObjectUIHandler
         if (!ForceDefaultClose && instance.Fields.Length <= AppConfig.Instance.AutoExpandFieldsCount) {
             ImGui.SetNextItemOpen(true, ImGuiCond.FirstUseEver);
         }
-        var show = ImguiHelpers.TreeNodeSuffix(context.label, context.stringFormatter?.GetString(instance) ?? instance.RszClass.name);
+        var show = ShowTree(context, instance);
         RszInstanceHandler.ShowDefaultContextMenu(context);
         if (show) {
             if (context.children.Count == 0) {
@@ -489,10 +489,15 @@ public class NestedRszInstanceHandler : IObjectUIHandler
                 }
             }
             ImGui.PushID(context.GetRaw()!.GetHashCode());
-            RszInstanceHandler.Instance.OnIMGUI(context, false);
+            RszInstanceHandler.OnIMGUI(context, false);
             ImGui.PopID();
             ImGui.TreePop();
         }
+    }
+
+    protected virtual bool ShowTree(UIContext context, RszInstance instance)
+    {
+        return ImguiHelpers.TreeNodeSuffix(context.label, context.stringFormatter?.GetString(instance) ?? instance.RszClass.name);
     }
 }
 
