@@ -1,10 +1,10 @@
-using System.Numerics;
 using ContentEditor.App.Github;
 using ContentEditor.App.Internal;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Themes;
 using ReeLib;
+using System.Numerics;
 
 namespace ContentEditor.App;
 
@@ -33,6 +33,7 @@ public class HomeWindow : IWindowHandler
     private static string[] gameNameCodes = null!;
     private string chosenGame = "";
     private bool customGame;
+    private static string timeFormat => AppConfig.Instance.ClockFormat.Get() ? " hh:mm tt" : " HH:mm";
     public BundleDisplayMode DisplayMode { get; set; } = AppConfig.Instance.BundleDisplayMode;
 
     private static Dictionary<string, Func<Vector4[]>> GameColors = new() // TODO SILVER: Add the rest of the games
@@ -583,8 +584,7 @@ public class HomeWindow : IWindowHandler
                 ImGui.PushFont(null, UI.FontSize * 2);
                 ImGui.Text("Version " + release.TagName);
                 ImGui.PopFont();
-
-                ImGui.TextColored(Colors.Faded, $"Release date: {release.ReleaseDate.ToLocalTime().ToString("yyyy/MM/dd hh:mm tt")}");
+                ImGui.TextColored(Colors.Faded, $"Release date: {release.ReleaseDate.ToLocalTime().ToString(Time.dateFormat + timeFormat)}");
 
                 if (release.TagName == AppConfig.Version) {
                     ImGui.SameLine();
@@ -653,7 +653,7 @@ public class HomeWindow : IWindowHandler
         var commits = AppConfig.Settings.Changelogs.FindCurrentAndNewCommits();
         ImGui.BeginChild("CommitLog");
         foreach (var commit in commits) {
-            ImGui.TextColored(Colors.Faded, commit.Commit.Author?.Date.ToLocalTime().ToString("yyyy/MM/dd hh:mm tt") ?? "[unknown time]");
+            ImGui.TextColored(Colors.Faded, commit.Commit.Author?.Date.ToLocalTime().ToString(Time.dateFormat + timeFormat) ?? "[unknown time]");
             ImGui.SameLine();
             ImGui.Text(commit.Commit.Message ?? "<no message>");
             if (AppConfig.RevisionHash != null && commit.Sha?.StartsWith(AppConfig.RevisionHash) == true) {

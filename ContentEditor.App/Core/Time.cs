@@ -16,6 +16,13 @@ public class Time
 
     internal Time() { mainThread = Thread.CurrentThread; }
 
+    private static readonly string[] DateFormats =
+    [
+        "dd/MM/yyyy",
+        "MM/dd/yyyy",
+        "yyyy/MM/dd"
+    ];
+    public static string dateFormat => DateFormats[Math.Clamp(AppConfig.Instance.DateFormat.Get(), 0, DateFormats.Length - 1)];
     internal void Init()
     {
 

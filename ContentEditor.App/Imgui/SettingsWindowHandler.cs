@@ -20,6 +20,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     private int selectedSubGroup = -1;
     private static bool? _wasOriginallyAlphaBg;
     private static readonly string[] LogLevels = ["Debug", "Info", "Error"];
+    private static readonly string[] DateFormats = ["DD/MM/YYYY [ EU ]", "MM/DD/YYYY [ US ]", "YYYY/MM/DD [ JP ]"];
     private string customGameNameInput = "", customGameFilepath = "";
     private static HashSet<string>? fullSupportedGames;
     private enum SubGroupID
@@ -313,6 +314,12 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ShowSlider(config.MaxFps, "Max FPS", 10, 240, "The maximum FPS for rendering.");
         ShowSlider(config.BackgroundMaxFps, "Max FPS in background", 5, config.MaxFps.Get(), "The maximum FPS when the editor window is not focused.");
         ShowSetting(config.UseFullscreenAnimPlayback, "Fullscreen Animation Playback Overlay", "Whether to keep the animation playback overlay in the top-right corner of the Mesh Viewer or make it fullscreen.");
+        ImGui.SeparatorText("Date & Time");
+        var dateFormat = config.DateFormat.Get();
+        if (ImGui.Combo("Date Format", ref dateFormat, DateFormats, DateFormats.Length)) {
+            config.DateFormat.Set(dateFormat);
+        }
+        ShowSetting(config.ClockFormat, "12-hour Clock", "Switch the time format from 24-hour to 12-hour clock.");
     }
     private static void ShowDisplayThemeTab()
     {

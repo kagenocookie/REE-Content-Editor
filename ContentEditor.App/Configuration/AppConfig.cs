@@ -53,6 +53,8 @@ public class AppConfig : Singleton<AppConfig>
         public const string WindowRect = "window_rect";
         public const string PauseAnimPlayerOnSeek = "pause_anim_player_on_seek";
         public const string UseFullscreenAnimPlayback = "use_fullscreen_anim_playback";
+        public const string DateFormat = "date_format";
+        public const string ClockFormat = "clock_format";
 
         public const string RenderAxis = "render_axis";
         public const string RenderMeshes = "render_meshes";
@@ -191,6 +193,8 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
     public readonly SettingWrapper<bool> PauseAnimPlayerOnSeek = new SettingWrapper<bool>(Keys.PauseAnimPlayerOnSeek, _lock, true);
     public readonly SettingWrapper<bool> UseFullscreenAnimPlayback = new SettingWrapper<bool>(Keys.UseFullscreenAnimPlayback, _lock, false);
+    public readonly SettingWrapper<int> DateFormat = new SettingWrapper<int>(Keys.DateFormat, _lock, 0);
+    public readonly SettingWrapper<bool> ClockFormat = new SettingWrapper<bool>(Keys.ClockFormat, _lock, false);
 
     public readonly SettingWrapper<int> PakDisplayModeValue = new SettingWrapper<int>(Keys.LogToFile, _lock, (int)FileDisplayMode.List);
     public FileDisplayMode PakDisplayMode { get => (FileDisplayMode)PakDisplayModeValue.Get(); set => PakDisplayModeValue.Set((int)value); }
@@ -339,6 +343,8 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.QuaternionsAsEuler, instance.ShowQuaternionsAsEuler.value.ToString(), null),
             (Keys.PauseAnimPlayerOnSeek, instance.PauseAnimPlayerOnSeek.value.ToString(), null),
             (Keys.UseFullscreenAnimPlayback, instance.UseFullscreenAnimPlayback.value.ToString(), null),
+            (Keys.DateFormat, instance.DateFormat.value.ToString(), null),
+            (Keys.ClockFormat, instance.ClockFormat.value.ToString(), null),
 
             (Keys.RenderAxis, instance.RenderAxis.value.ToString(), null),
             (Keys.RenderMeshes, instance.RenderMeshes.value.ToString(), null),
@@ -452,10 +458,13 @@ public class AppConfig : Singleton<AppConfig>
                             if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)) UnpackMaxThreads.value = Math.Clamp(parsed, 1, 64);
                             break;
                         case Keys.BackgroundColor:
-                            if (ReeLib.via.Color.TryParse(value, out var _col)) BackgroundColor.value =  _col;
+                            if (ReeLib.via.Color.TryParse(value, out var _col)) BackgroundColor.value = _col;
                             break;
                         case Keys.LogLevel:
-                            if (int.TryParse(value, out var _intvalue)) LogLevel.value =  _intvalue;
+                            if (int.TryParse(value, out var _intvalue)) LogLevel.value = _intvalue;
+                            break;
+                        case Keys.DateFormat:
+                            if (int.TryParse(value, out _intvalue)) DateFormat.value = _intvalue;
                             break;
                         case Keys.MaxUndoSteps:
                             if (int.TryParse(value, out _intvalue)) MaxUndoSteps.value = Math.Max(_intvalue, 0);
@@ -477,6 +486,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.UseFullscreenAnimPlayback:
                             UseFullscreenAnimPlayback.value = ReadBool(value);
+                            break;
+                        case Keys.ClockFormat:
+                            ClockFormat.value = ReadBool(value);
                             break;
                         case Keys.RecentFiles:
                             JsonSettings.RecentFiles.AddRange(value.Split('|', StringSplitOptions.RemoveEmptyEntries));

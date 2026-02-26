@@ -6,6 +6,7 @@ using ContentPatcher;
 using ReeLib;
 using ReeLib.Aimp;
 using System;
+using System.Globalization;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text.Json.Nodes;
@@ -49,6 +50,7 @@ public class BundleManagementUI : IWindowHandler
     protected UIContext context = null!;
     private readonly CreateBundleFromLooseFileFolderDelegate? createFromLooseFileFolder;
     private readonly CreateBundleFromPakDelegate? createFromPak;
+    private static string timeFormat => AppConfig.Instance.ClockFormat.Get() ? " hh:mm:ss tt" : " HH:mm:ss";
 
     public void Init(UIContext context)
     {
@@ -283,8 +285,8 @@ public class BundleManagementUI : IWindowHandler
         }
 
         ImGui.BeginDisabled();
-        string createDate = $"Created at: {bundle.CreatedAt}";
-        string updateDate = $"Updated at: {bundle.UpdatedAt}";
+        string createDate = "Created at: " + FormatUTCString(bundle.CreatedAt);
+        string updateDate = "Updated at: " + FormatUTCString(bundle.UpdatedAt);
         ImGui.InputText("##CreationDate", ref createDate, 100);
         ImGui.InputText("##UpdateDate", ref updateDate, 100);
         ImGui.EndDisabled();
@@ -491,7 +493,14 @@ public class BundleManagementUI : IWindowHandler
             openFileCallback!(path);
         }
     }
-
+    private string FormatUTCString(string utcString)
+    {
+        utcString = utcString.Replace("UTC", "").Trim();
+        if (DateTime.TryParseExact(utcString, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var utc)) {
+            return utc.ToLocalTime().ToString(Time.dateFormat + timeFormat, CultureInfo.InvariantCulture);
+        }
+        return utcString;
+    }
     public bool RequestClose()
     {
         return false;
