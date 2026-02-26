@@ -1,4 +1,4 @@
-﻿namespace ContentEditor.Core;
+namespace ContentEditor.Core;
 
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -69,7 +69,7 @@ public class Bundle
 
     public void Touch()
     {
-        UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss \\U\\T\\C");
+        UpdatedAt = DateTime.UtcNow.ToString("yyyy/MM/dd hh:mm:ss tt");
         UpdatedAtTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         if (CreatedAt == null) CreatedAt = UpdatedAt;
         _nativeToLocalResourcePathCache = null;

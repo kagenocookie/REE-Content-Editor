@@ -584,7 +584,7 @@ public class HomeWindow : IWindowHandler
                 ImGui.Text("Version " + release.TagName);
                 ImGui.PopFont();
 
-                ImGui.TextColored(Colors.Faded, $"Release date: {release.ReleaseDate.ToLocalTime().ToString()}");
+                ImGui.TextColored(Colors.Faded, $"Release date: {release.ReleaseDate.ToLocalTime().ToString("yyyy/MM/dd hh:mm tt")}");
 
                 if (release.TagName == AppConfig.Version) {
                     ImGui.SameLine();
@@ -653,7 +653,7 @@ public class HomeWindow : IWindowHandler
         var commits = AppConfig.Settings.Changelogs.FindCurrentAndNewCommits();
         ImGui.BeginChild("CommitLog");
         foreach (var commit in commits) {
-            ImGui.TextColored(Colors.Faded, commit.Commit.Author?.Date.ToLocalTime().ToString("MM/dd/yyyy hh:mm tt") ?? "[unknown time]");
+            ImGui.TextColored(Colors.Faded, commit.Commit.Author?.Date.ToLocalTime().ToString("yyyy/MM/dd hh:mm tt") ?? "[unknown time]");
             ImGui.SameLine();
             ImGui.Text(commit.Commit.Message ?? "<no message>");
             if (AppConfig.RevisionHash != null && commit.Sha?.StartsWith(AppConfig.RevisionHash) == true) {
