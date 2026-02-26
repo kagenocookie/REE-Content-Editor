@@ -1,4 +1,4 @@
-﻿namespace ContentEditor.Core;
+namespace ContentEditor.Core;
 
 using System;
 using System.Diagnostics.CodeAnalysis;
