@@ -147,7 +147,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
 
         ImGui.SliderFloat("Image scale", ref imageScale, 0.05f, 5f);
 
-        var seqlist = Enumerable.Range(0, File.Sequences.Count).Select(n => n.ToString()).ToArray();
+        var seqlist = Enumerable.Range(0, File.Sequences.Count).Select(n => $"  {n}  ").ToArray();
         if (ImguiHelpers.Tabs(seqlist, ref selectedSequenceIndex, false, "Sequences")) {
             selectedPattern = null;
         }
@@ -180,57 +180,15 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             if (ImguiHelpers.SameLine() && ImGui.Button("Add pattern")) {
                 UndoRedo.RecordListAdd(context, sequence.patterns, new UvsPattern());
             }
-            if (ImGui.TreeNode("Arrangement")) {
-                var arrange = seqCtx.GetChildValue<SequencePatternArrangementHelper>();
-                if (arrange == null) {
-                    arrange = new SequencePatternArrangementHelper();
-                    seqCtx.AddChild("Arrangement", arrange);
-                    arrange.Infer(sequence);
-                }
 
-                arrange.OnIMGUI(sequence);
+            ImGui.SetNextItemOpen(true, ImGuiCond.Appearing);
+            if (ImGui.TreeNode("Overview")) {
+                ShowOverview(sequence);
                 ImGui.TreePop();
             }
 
-            if (ImGui.TreeNode("Overview")) {
-                foreach (var texId in sequence.patterns.Select(p => p.textureIndex).Distinct()) {
-                    var texPath = File.Textures[texId].path;
-                    var tex = GetOrLoadTexture(texPath);
-                    if (tex == null) {
-                        ImGui.TextColored(Colors.Warning, "Could not find texture " + texPath);
-                    } else {
-                        ImGui.Text(texPath);
-                        var maxwidth = ImGui.GetWindowSize().X - ImGui.GetCursorPosX() - 40;
-                        var scale = (maxwidth / tex.Width);
-                        var size = new System.Numerics.Vector2(maxwidth, scale * tex.Height);
-                        var imageStart = ImGui.GetCursorScreenPos();
-                        ImguiHelpers.BeginRect();
-                        ImGui.Image(tex.AsTextureRef(), size);
-                        ImguiHelpers.EndRect(0);
-                        var afterImagePos = ImGui.GetCursorPos();
-
-                        var drawlist = ImGui.GetWindowDrawList();
-                        var pi = 0;
-                        foreach (var pattern in sequence.patterns) {
-                            if (pattern.textureIndex != texId) continue;
-
-                            var (uv0, uv1) = pattern.GetBoundingPoints();
-                            drawlist.AddRect(imageStart + size * uv0, imageStart + size * uv1, (ImguiHelpers.GetColor(ImGuiCol.Border) with { W = 0.3f }).ToArgb());
-                            ImGui.SetCursorScreenPos(imageStart + size * uv0);
-
-                            ImGui.BeginGroup();
-                            var patSize = new System.Numerics.Vector2(tex.Width * scale * (uv1.X - uv0.X), tex.Height * scale * (uv1.Y - uv0.Y));
-                            using var btncol = ImguiHelpers.OverrideStyleCol(ImGuiCol.Button, 0);
-                            using var hovcol = ImguiHelpers.OverrideStyleCol(ImGuiCol.ButtonHovered, ImguiHelpers.GetColor(ImGuiCol.ButtonHovered) with { W = 0.25f });
-                            if (ImGui.Button($"##{pi++}", patSize)) {
-                                selectedPattern = pattern;
-                            }
-                            ImGui.EndGroup();
-                        }
-
-                        ImGui.SetCursorPos(afterImagePos);
-                    }
-                }
+            if (ImGui.TreeNode("Grid Arrangement")) {
+                ShowArrangement(sequence, seqCtx);
                 ImGui.TreePop();
             }
 
@@ -271,6 +229,60 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             ImGui.EndChild();
         }
         ImGui.PopID();
+    }
+
+    private static void ShowArrangement(SequenceBlock sequence, UIContext seqCtx)
+    {
+        var arrange = seqCtx.GetChildValue<SequencePatternArrangementHelper>();
+        if (arrange == null) {
+            arrange = new SequencePatternArrangementHelper();
+            seqCtx.AddChild("Arrangement", arrange);
+            arrange.Infer(sequence);
+        }
+
+        arrange.OnIMGUI(sequence);
+    }
+
+    private void ShowOverview(SequenceBlock sequence)
+    {
+        foreach (var texId in sequence.patterns.Select(p => p.textureIndex).Distinct()) {
+            var texPath = File.Textures[texId].path;
+            var tex = GetOrLoadTexture(texPath);
+            if (tex == null) {
+                ImGui.TextColored(Colors.Warning, "Could not find texture " + texPath);
+            } else {
+                ImGui.Text(texPath);
+                var maxwidth = ImGui.GetWindowSize().X - ImGui.GetCursorPosX() - 40;
+                var scale = (maxwidth / tex.Width);
+                var size = new System.Numerics.Vector2(maxwidth, scale * tex.Height);
+                var imageStart = ImGui.GetCursorScreenPos();
+                ImguiHelpers.BeginRect();
+                ImGui.Image(tex.AsTextureRef(), size);
+                ImguiHelpers.EndRect(0);
+                var afterImagePos = ImGui.GetCursorPos();
+
+                var drawlist = ImGui.GetWindowDrawList();
+                var pi = 0;
+                foreach (var pattern in sequence.patterns) {
+                    if (pattern.textureIndex != texId) continue;
+
+                    var (uv0, uv1) = pattern.GetBoundingPoints();
+                    drawlist.AddRect(imageStart + size * uv0, imageStart + size * uv1, (ImguiHelpers.GetColor(ImGuiCol.Border) with { W = 0.3f }).ToArgb());
+                    ImGui.SetCursorScreenPos(imageStart + size * uv0);
+
+                    ImGui.BeginGroup();
+                    var patSize = new System.Numerics.Vector2(tex.Width * scale * (uv1.X - uv0.X), tex.Height * scale * (uv1.Y - uv0.Y));
+                    using var btncol = ImguiHelpers.OverrideStyleCol(ImGuiCol.Button, 0);
+                    using var hovcol = ImguiHelpers.OverrideStyleCol(ImGuiCol.ButtonHovered, ImguiHelpers.GetColor(ImGuiCol.ButtonHovered) with { W = 0.25f });
+                    if (ImGui.Button($"##{pi++}", patSize)) {
+                        selectedPattern = pattern;
+                    }
+                    ImGui.EndGroup();
+                }
+
+                ImGui.SetCursorPos(afterImagePos);
+            }
+        }
     }
 
     private bool shouldAnimate;
