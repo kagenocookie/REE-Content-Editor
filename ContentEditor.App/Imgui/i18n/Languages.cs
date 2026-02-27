@@ -17,6 +17,7 @@ public class Languages
             nameof(GameName.re7) => "Resident Evil 7",
             nameof(GameName.re7rt) => "Resident Evil 7 (RT)",
             nameof(GameName.re8) => "Resident Evil 8",
+            nameof(GameName.re9) => "Resident Evil 9",
             nameof(GameName.sf6) => "Street Fighter 6",
             nameof(GameName.mhrise) => "Monster Hunter Rise",
             nameof(GameName.mhwilds) => "Monster Hunter Wilds",

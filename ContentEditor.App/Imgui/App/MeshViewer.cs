@@ -1171,6 +1171,8 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
                 mdfPath = meshBasePath + ext;
             } else if (viewer.Workspace.ResourceManager.TryResolveGameFile(meshBasePath + "_Mat" + ext, out _)) {
                 mdfPath = meshBasePath + "_Mat" + ext;
+            } else if (viewer.Workspace.ResourceManager.TryResolveGameFile(meshBasePath + "_00" + ext, out _)) {
+                mdfPath = meshBasePath + "_00" + ext;
             } else {
                 mdfPath = "";
             }
