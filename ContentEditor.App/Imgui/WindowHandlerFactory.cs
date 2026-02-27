@@ -301,6 +301,8 @@ public static class WindowHandlerFactory
                 return new JmapFileEditor(env, file);
             case KnownFileFormats.EventList:
                 return new WelEditor(env, file);
+            case KnownFileFormats.MotionPack:
+                return new MotpackEditor(env, file);
         }
 
         if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {

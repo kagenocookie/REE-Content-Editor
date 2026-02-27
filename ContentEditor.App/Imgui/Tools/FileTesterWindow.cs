@@ -647,7 +647,7 @@ public partial class FileTesterWindow : IWindowHandler
 
         AddCompareMapper<McamlistFile>((m) => [m.Header.Name, m.Header.BaseMcamlistPath, m.Header.numMots, m.Header.uknNum, m.Header.uknValue, m.MotFiles, m.Motions]);
         AddCompareMapper<MotcamFile>((m) => [m.Header.blending, m.Header.frameCount, m.Header.uknFloat, m.Header.uknExtra, m.Clip1, m.Clip2]);
-        AddCompareMapper<MotlistFile>((m) => [m.Header.MotListName, m.Header.BaseMotListPath, m.Header.numMots, m.Header.uknNum, m.Header.uknValue, m.MotFiles, m.Motions]);
+        AddCompareMapper<MotlistFile>((m) => [m.Header.MotListName, m.Header.BaseMotListPath, m.Header.motpackFilepath, m.Header.numMots, m.Header.uknNum, m.Header.uknValue, m.MotFiles, m.Motions]);
         AddCompareMapper<MotFile>((m) => [m.Name, m.MotPropertyTracks, m.BoneClips, m.Clips, m.Bones,
             // ignoring these two for now - end clips because the read is inconsistent, tree because it's massive and also works fine
             // m.EndClips, m.PropertyTree

@@ -65,6 +65,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
             paste = paste || pasteRetarget;
             if (paste) {
                 if (MotionDataResource.TryDeserialize(clipData, out var motData, out var error)) {
+                    // TODO motpack support
                     var editor = context.FindHandlerInParents<MotlistEditor>();
                     var motlist = editor?.File;
                     if (Logger.ErrorIf(motlist == null, "Could not find parent motlist")) return true;

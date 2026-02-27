@@ -12,6 +12,7 @@ using ReeLib.Mcamlist;
 using ReeLib.Mot;
 using ReeLib.Motcam;
 using ReeLib.Motlist;
+using ReeLib.Motpack;
 using ReeLib.MotTree;
 using ReeLib.Tml;
 
@@ -97,11 +98,57 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     protected override void DrawFileContents()
     {
         if (context.children.Count == 0) {
+            var ws = context.GetWorkspace();
             context.AddChild<MotlistFile, string>("Motlist Name", File, getter: (m) => m!.Header.MotListName, setter: (m, n) => m.Header.MotListName = n ?? string.Empty).AddDefaultHandler<string>();
-            context.AddChild<MotlistFile, string>("Base Motlist Path", File, getter: (m) => m!.Header.BaseMotListPath, setter: (m, n) => m.Header.BaseMotListPath = n ?? string.Empty).AddDefaultHandler<string>();
+            context.AddChild<MotlistFile, string>("Base Motlist Path", File, new ResourcePathPicker(ws, KnownFileFormats.MotionList), (m) => m!.Header.BaseMotListPath, (m, n) => m.Header.BaseMotListPath = n ?? string.Empty);
+            context.AddChild<MotlistFile, string>("Motpack Path", File, new ResourcePathPicker(ws, KnownFileFormats.MotionPack), (m) => m!.Header.motpackFilepath, (m, n) => m.Header.motpackFilepath = n ?? string.Empty);
             context.AddChild<MotlistFile, short>("HeaderNum", File, getter: (m) => m!.Header.uknNum, setter: (m, n) => m.Header.uknNum = n).AddDefaultHandler();
             context.AddChild<MotlistFile, List<MotFileBase>>("Motion Files", File, getter: (m) => m!.MotFiles).AddDefaultHandler<List<MotFileBase>>();
             context.AddChild<MotlistFile, List<MotIndex>>("Motions", File, getter: (m) => m!.Motions).AddDefaultHandler<List<MotIndex>>();
+        }
+        context.ShowChildrenUI();
+    }
+
+    void IObjectUIHandler.OnIMGUI(UIContext context)
+    {
+        OnIMGUI();
+    }
+
+    internal void RefreshUI()
+    {
+        context.GetChildByValue<List<MotFileBase>>()?.ClearChildren();
+    }
+}
+
+public class MotpackEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
+{
+    public ContentWorkspace Workspace { get; }
+    public MotpackFile File { get; private set; }
+
+    public override string HandlerName => "MotionPack";
+
+    static MotpackEditor()
+    {
+        typeof(MotlistEditor).TypeInitializer?.Invoke(null, null);
+    }
+
+    public MotpackEditor(ContentWorkspace env, FileHandle file) : base(file)
+    {
+        Workspace = env;
+        File = file.GetFile<MotpackFile>();
+    }
+
+    protected override void OnFileReverted()
+    {
+        base.OnFileReverted();
+        context.ClearChildren();
+        File = Handle.GetFile<MotpackFile>();
+    }
+
+    protected override void DrawFileContents()
+    {
+        if (context.children.Count == 0) {
+            context.AddChild<MotpackFile, List<MotpackItem>>("Motions", File, getter: (m) => m!.Motions).AddDefaultHandler<List<MotpackItem>>();
         }
         context.ShowChildrenUI();
     }
@@ -364,6 +411,28 @@ public class MotFileHandler : IObjectUIHandler
         }
 
         context.ShowChildrenUI();
+    }
+}
+[ObjectImguiHandler(typeof(MotpackItem))]
+public class MotpackItemHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<MotpackItem>();
+        if (context.children.Count == 0) {
+            var ws = context.GetWorkspace();
+            context.AddChild<MotpackItem, int>("Index", instance, getter: (m) => m!.index, setter: (m, v) => m!.index = v).AddDefaultHandler();
+            var motChild = context.AddChild<MotpackItem, MotFile>("Motion", instance, getter: (m) => m!.motion, setter: (m, v) => m!.motion = v);
+            motChild.AddDefaultHandler<MotFile>();
+            // TODO add copy/paste support
+            // motChild.uiHandler = new MotFileActionHandler(motChild.uiHandler!);
+        }
+
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString());
+        if (show) {
+            context.ShowChildrenUI();
+            ImGui.TreePop();
+        }
     }
 }
 
@@ -744,6 +813,31 @@ public class MotFileListHandler : ListHandler
     protected override object? CreateNewElement(UIContext context)
     {
         return WindowHandlerFactory.Instantiate<MotFile>(context)!;
+    }
+}
+
+[ObjectImguiHandler(typeof(List<MotpackItem>))]
+public class MotpackItemListHandler : ListHandler
+{
+    public MotpackItemListHandler() : base(typeof(MotpackItem), typeof(List<MotpackItem>))
+    {
+        CanCreateRemoveElements = true;
+        Filterable = true;
+    }
+
+    static MotpackItemListHandler()
+    {
+        typeof(MotFileListHandler)?.TypeInitializer?.Invoke(null, null);
+    }
+
+    protected override bool MatchesFilter(object? obj, string filter)
+    {
+        return obj is MotpackItem mot && mot.motion?.Name.Contains(filter, StringComparison.InvariantCultureIgnoreCase) == true;
+    }
+
+    protected override object? CreateNewElement(UIContext context)
+    {
+        return new MotpackItem(WindowHandlerFactory.Instantiate<MotFile>(context)!);
     }
 }
 

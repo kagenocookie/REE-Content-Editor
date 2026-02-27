@@ -63,6 +63,7 @@ public class ResourcePathPicker : IObjectUIHandler
 
     public void OnIMGUI(UIContext context)
     {
+        ImGui.PushID(context.label);
         var currentPath = context.Get<string>();
         var newPath = context.InitFilterDefault(currentPath);
         if (AppImguiHelpers.InputFilepath(context.label, ref newPath, FileExtensionFilter)) {
@@ -133,13 +134,13 @@ public class ResourcePathPicker : IObjectUIHandler
             ImGui.EndPopup();
         }
 
-        if (newPath != currentPath) {
+        if (newPath != currentPath && (!string.IsNullOrEmpty(newPath) || !string.IsNullOrEmpty(currentPath))) {
             if (ImGui.Button("Update path")) {
                 ApplyPathChange(context, newPath);
             }
             if (ImguiHelpers.SameLine() && ImGui.Button("Cancel change")) {
                 context.Changed = false;
-                context.Filter = currentPath;
+                context.Filter = currentPath ?? "";
             }
         }
 
@@ -159,11 +160,12 @@ public class ResourcePathPicker : IObjectUIHandler
         if (!DisableWarnings && FileFormats.Length != 0 && !string.IsNullOrEmpty(context.Filter) && FileExtensionFilter?.Length > 0) {
             var parsed = PathUtils.ParseFileFormat(context.Filter);
             if (!FileFormats.Contains(parsed.format)) {
-                ImGui.TextColored(Colors.Warning, "The file may be an incorrect type. Expected file types: " + FileExtensionFilter);
+                ImGui.TextColored(Colors.Warning, "The file may be an incorrect type. Expected file types: " + string.Join(", ", FileExtensionFilter.SelectMany(x => x.extensions)).Replace(".*", ""));
             }
         }
 
         // TODO expandable resource preview
+        ImGui.PopID();
     }
 
     private void ApplyPathChange(UIContext context, string newPath, WindowBase? window = null)

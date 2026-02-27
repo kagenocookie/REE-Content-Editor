@@ -152,13 +152,26 @@ public class Animator(ContentWorkspace Workspace)
                         motions.Add(mmo);
                     }
                 }
+                if (!string.IsNullOrEmpty(motlist.File.Header.motpackFilepath)) {
+                    // note: maybe try opening the motpack automatically?
+                    Logger.Warn("Motlist contains a motpack path. You may need to view the motpack directly to view any animations: " + motlist.File.Header.motpackFilepath);
+                }
             } else if (file.Resource is BaseFileResource<MotFile> mot) {
                 motions.Add(mot.File);
+            } else if (file.Resource is BaseFileResource<MotpackFile> motpack) {
+                foreach (var submot in motpack.File.Motions) {
+                    if (submot.motion is MotFile mmo) {
+                        motions.Add(mmo);
+                    }
+                }
             } else if (file.GetFile<MotlistFile>() is MotlistFile customMotlist) {
                 foreach (var submot in customMotlist.MotFiles) {
                     if (submot is MotFile mmo) {
                         motions.Add(mmo);
                     }
+                }
+                if (!string.IsNullOrEmpty(customMotlist.Header.motpackFilepath)) {
+                    Logger.Warn("Motlist contains a motpack path. You may need to view the motpack directly to view any animations: " + customMotlist.Header.motpackFilepath);
                 }
             } else {
                 Logger.Error("Unsupported animation source file " + fileSource);
