@@ -230,6 +230,7 @@ public sealed class FilePreviewGenerator : IDisposable
         var basePath = PathUtils.GetFilepathWithoutExtensionOrVersion(mainPath).ToString();
         workspace.ResourceManager.TryGetOrLoadFile(basePath + ".mdf2", out var mdfHandle);
         if (mdfHandle == null) workspace.ResourceManager.TryGetOrLoadFile(basePath + "_Mat.mdf2", out mdfHandle);
+        if (mdfHandle == null) workspace.ResourceManager.TryGetOrLoadFile(basePath + "_00.mdf2", out mdfHandle);
 
         comp.SetMesh(mainPath, mdfHandle?.Filepath);
         if (comp.MeshHandle == null) {
