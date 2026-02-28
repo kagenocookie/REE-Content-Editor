@@ -68,7 +68,7 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
         ?? -1;
 
     public int BoneCount => _mesh?.BoneData?.Bones.Count
-        ?? _scene?.Meshes[0].BoneCount
+        ?? _scene?.Meshes.FirstOrDefault()?.BoneCount
         ?? -1;
 
     public int MeshCount => _mesh?.MeshData?.totalMeshCount
