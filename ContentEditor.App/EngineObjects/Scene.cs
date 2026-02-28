@@ -130,10 +130,8 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
             if (scene == null) return;
 
             var childSceneRoot = scene.GetSharedInstance(Workspace.Env);
-            var childScene = childSceneRoot.Scene;
-            if (childScene == null) {
-                childFolder.ChildScene = SceneManager.CreateScene(envScene, IsActive, this, childSceneRoot);
-            }
+            childFolder.ChildScene = childSceneRoot.Scene ?? SceneManager.CreateScene(envScene, IsActive, this, childSceneRoot);
+
             if ((subfolderLoadType & LoadType.LoadChildren) != 0 && childFolder.ChildScene != null)
             {
                 var childrenLoadType = subfolderLoadType;
