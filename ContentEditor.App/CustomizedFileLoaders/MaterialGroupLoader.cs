@@ -35,7 +35,7 @@ public class MaterialGroupLoader : IFileLoader,
             var diffuseCandidates = srcMat.Textures.Where(tex => AlbedoTextureNames.Contains(tex.texType));
             var diffuse = diffuseCandidates.FirstOrDefault(tex => tex.texPath?.Contains("null", StringComparison.InvariantCultureIgnoreCase) == false)
                 ?? diffuseCandidates.FirstOrDefault();
-            if (diffuse?.texPath != null) {
+            if (diffuse?.texPath != null && PathUtils.ParseFileFormat(diffuse.texPath).format != KnownFileFormats.RenderTexture) {
                 newMat.TextureDiffuse = new TextureSlot(diffuse.texPath, TextureType.Diffuse, 0, TextureMapping.FromUV, 0, 1, TextureOperation.Multiply, TextureWrapMode.Wrap, TextureWrapMode.Wrap, 0);
                 // preload the texture since we'll probably need it
                 workspace.ResourceManager.TryResolveGameFile(diffuse.texPath, out _);
