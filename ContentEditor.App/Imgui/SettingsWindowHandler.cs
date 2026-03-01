@@ -87,7 +87,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     public void OnWindow() => this.ShowDefaultWindow(context);
     public void OnIMGUI()
     {
-        fullSupportedGames ??= ResourceRepository.RemoteInfo.Resources.Where(kv => kv.Value.IsFullySupported).Select(kv => kv.Key).ToHashSet();
+        fullSupportedGames ??= ResourceRepository.RemoteInfo.Resources.Where(kv => kv.Value.IsRSZFullySupported).Select(kv => kv.Key).ToHashSet();
 
         ShowSettingsMenu(ref isShow);
         if (!isShow) {

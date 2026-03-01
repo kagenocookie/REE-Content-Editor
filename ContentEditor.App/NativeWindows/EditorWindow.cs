@@ -250,7 +250,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     protected void ShowGameSelectionMenu()
     {
         fullSupportedGames ??= ResourceRepository.RemoteInfo.Resources
-            .Where(kv => kv.Value.IsFullySupported)
+            .Where(kv => kv.Value.IsRSZFullySupported)
             .Select(kv => kv.Key)
             .ToHashSet();
 

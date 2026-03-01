@@ -27,6 +27,12 @@ public abstract class CustomField
     public bool IsRequired { get; set; }
 
     /// <summary>
+    /// Whether the field can, by its own, be considered enough to create an entity.
+    /// If true, the value will be ignored if we haven't already found another important main field for this ID.
+    /// </summary>
+    public bool IsNotStandaloneValue { get; set; }
+
+    /// <summary>
     /// Try and fetch a resource instance for the entity's field value from the resource manager.
     /// </summary>
     /// <param name="resources"></param>
@@ -110,6 +116,8 @@ public partial class CustomFieldSerialized
     public bool isRequired;
     [YamlMember("display_after")]
     public string? displayAfter;
+    [YamlMember("not_standalone")]
+    public bool IsNotStandalone;
     public Dictionary<string, object>? param;
 }
 

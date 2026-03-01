@@ -16,7 +16,6 @@ public class SingleMsgHandler : ResourceHandler
         var msg = workspace.ResourceManager.ReadFileResource<MsgFile>(file!);
 
         var langs = msg.Languages!;
-        if (msg.AttributeItems.Count > 0) throw new NotImplementedException("Message files with attributes not yet supported");
         foreach (var entry in msg.Entries) {
             var id = entry.Header.EntryHash;
             var msgData = new MessageData() { ResourceIdentifier = file!, FilePath = file!, MessageKey = entry.Name, Guid = entry.Guid };
@@ -26,6 +25,14 @@ public class SingleMsgHandler : ResourceHandler
 
                 var lang = langs[i];
                 msgData.Messages[lang.ToString()] = str;
+            }
+            if (entry.AttributeValues != null) {
+                for (int i = 0; i < entry.AttributeValues.Length; ++i) {
+                    var attr = entry.AttributeItems[i];
+                    var attrVal = entry.AttributeValues[i];
+
+                    msgData.Attributes[attr.Name] = attrVal?.ToString() ?? "";
+                }
             }
             dict[id] = msgData;
         }

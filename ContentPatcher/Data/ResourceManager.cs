@@ -436,6 +436,10 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
             foreach (var (id, instance) in mainField.FetchInstances(this)) {
                 if (!dict.TryGetValue(id, out var entity)) {
+                    if (field.IsNotStandaloneValue) {
+                        continue;
+                    }
+
                     dict[id] = entity = new ResourceEntity(id, type, data.config);
                     newEntities ??= new();
                     newEntities.Add(entity);

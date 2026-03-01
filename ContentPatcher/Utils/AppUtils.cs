@@ -79,7 +79,7 @@ public static partial class AppUtils
         name = PascalCaseFixerRegex1().Replace(name, "$1 $2");
         name = PascalCaseFixerRegex2().Replace(name, "$1 $2"); // add spaces to aA letter sequences
         name = PascalCaseFixerRegex3().Replace(name, "$1 $2"); // add spaces after numbers
-        name = CapitalizeRegex().Replace(name.Replace("_", ""), static f => f.Value.ToUpperInvariant());
+        name = CapitalizeRegex().Replace(name.Replace("_", " "), static f => f.Value.ToUpperInvariant());
         return name;
     }
 }

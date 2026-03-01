@@ -24,6 +24,9 @@ public static class FormatterSettings
         fmt.AddExtensions(new EntityStringFormatterSource(config));
         ApplyDefaultFormatters(fmt);
         if (workspace != null) ApplyWorkspaceFormatters(fmt, workspace);
+        else {
+            fmt.AddExtensions(new RszFieldStringFormatterSource(null));
+        }
         fmt.AddExtensions(new NullFallbackSource());
         return fmt;
     }
@@ -33,12 +36,13 @@ public static class FormatterSettings
         var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
         ApplyDefaultFormatters(fmt);
         ApplyWorkspaceFormatters(fmt, workspace);
+        fmt.AddExtensions(new NullFallbackSource());
         return fmt;
     }
 
     private static SmartFormatter ApplyDefaultFormatters(SmartFormatter formatter)
     {
-        formatter.AddExtensions(new RszFieldStringFormatterSource(), new RszFieldArrayStringFormatterSource());
+        formatter.AddExtensions(new RszFieldArrayStringFormatterSource());
         formatter.AddExtensions(new DefaultFormatter(), new NullFormatter(), LowerCaseFormatter.Instance, UpperCaseFormatter.Instance);
         // @: used for RszFieldStringFormatterSource classname filtering
         formatter.Settings.Parser.AddCustomSelectorChars(['@']);
@@ -47,7 +51,8 @@ public static class FormatterSettings
 
     private static SmartFormatter ApplyWorkspaceFormatters(SmartFormatter formatter, ContentWorkspace workspace)
     {
-        formatter.AddExtensions(new TranslateGuidFormatter(workspace.Messages), new EnumLabelFormatter(workspace.Env), new EnumNameFormatter(workspace.Env));
+        formatter.AddExtensions(new RszFieldStringFormatterSource(workspace));
+        formatter.AddExtensions(new TranslateGuidFormatter(workspace.Messages), new EnumLabelFormatter(workspace.Env), new EnumNameFormatter(workspace.Env), new TranslateFormattedString(workspace.Messages));
         formatter.AddExtensions(new EntityReverseLookupFormatter(workspace));
         return formatter;
     }
@@ -57,10 +62,14 @@ public class NullFallbackSource : ISource
 {
     public bool TryEvaluateSelector(ISelectorInfo selectorInfo)
     {
-        return selectorInfo.CurrentValue == null && (selectorInfo.SelectorOperator.StartsWith('?') || selectorInfo.SelectorOperator.EndsWith('?'));
+        if (selectorInfo.CurrentValue == null || selectorInfo.CurrentValue as string == "" || selectorInfo.SelectorOperator.Contains('?')) {
+            selectorInfo.Result = null;
+            return true;
+        }
+        return false;
     }
 }
-public class RszFieldStringFormatterSource : ISource
+public class RszFieldStringFormatterSource(ContentWorkspace? workspace) : ISource
 {
     public bool TryEvaluateSelector(ISelectorInfo selectorInfo)
     {
@@ -87,11 +96,22 @@ public class RszFieldStringFormatterSource : ISource
             }
             field = selectorInfo.SelectorText[0..at];
         }
-        if (instance.TryGetFieldValue(field, out var value)) {
-            selectorInfo.Result = value;
+        var fieldIndex = instance.RszClass.IndexOfField(field);
+        if (fieldIndex != -1) {
+            var value = instance.Values[fieldIndex];
+            if (workspace != null && value is RszInstance rszValue && !string.IsNullOrEmpty(rszValue?.RSZUserData?.Path)) {
+                if (workspace.ResourceManager.TryResolveGameFile(rszValue.RSZUserData.Path, out var resolved)) {
+                    selectorInfo.Result = resolved.GetFile<UserFile>().Instance;
+                } else {
+                    selectorInfo.Result = value;
+                }
+            } else {
+                selectorInfo.Result = value;
+            }
             return true;
         }
 
+        if (selectorInfo.SelectorOperator.Contains('?')) return false;
         throw new Exception($"Invalid field {selectorInfo.SelectorText} for class {instance.RszClass.name}");
     }
 }
@@ -166,6 +186,32 @@ public class TranslateGuidFormatter(MessageManager msg) : IFormatter
 
         var text = msg.GetText(guid);
         if (text != null) {
+            formattingInfo.Write(text);
+        }
+
+        return true;
+    }
+}
+
+public class TranslateFormattedString(MessageManager msg) : IFormatter
+{
+    public string Name { get; set; } = "translate_fmt";
+    public bool CanAutoDetect { get; set; } = false;
+
+    public bool TryEvaluateFormat(IFormattingInfo formattingInfo)
+    {
+        var str = formattingInfo.CurrentValue?.ToString();
+        if (string.IsNullOrEmpty(str)) {
+            formattingInfo.Write(str ?? "");
+            return true;
+        }
+
+        var fmt = formattingInfo.FormatterOptions;
+        var formatted = fmt.Replace("$0", str);
+        var text = msg.GetText(formatted);
+        if (string.IsNullOrEmpty(text)) {
+            formattingInfo.Write(str);
+        } else {
             formattingInfo.Write(text);
         }
 

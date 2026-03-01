@@ -24,10 +24,22 @@ public partial class CustomTypeConfigSerialized
         foreach (var (name, data) in Fields) {
             var newfield = CustomTypeConfigSerialized.CreateField(name, data);
             fieldlist.Add(newfield);
+            displaylist.Add(newfield);
+        }
+
+        foreach (var (name, data) in Fields) {
+            var curIndex = fieldlist.FindIndex(f => f.name == name);
+            var field = fieldlist[curIndex];
             if (data.displayAfter != null) {
-                displaylist.Insert(displaylist.FindIndex(dl => dl.name == data.displayAfter) + 1, newfield);
-            } else {
-                displaylist.Add(newfield);
+                var otherIndex = displaylist.FindIndex(dl => dl.name == data.displayAfter);
+                if (otherIndex != -1) {
+                    if (otherIndex == Fields.Count) {
+                        displaylist.Add(field);
+                    } else {
+                        displaylist.Insert(otherIndex + 1, field);
+                    }
+                    displaylist.RemoveAt(curIndex);
+                }
             }
         }
 
@@ -45,6 +57,7 @@ public partial class CustomTypeConfigSerialized
             field.Condition = new WhenClassnameCondition(data.whenClassname.field, data.whenClassname.classname);
         }
         field.IsRequired = data.isRequired;
+        field.IsNotStandaloneValue = data.IsNotStandalone;
         return field;
     }
 

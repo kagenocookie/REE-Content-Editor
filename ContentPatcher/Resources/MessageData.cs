@@ -110,8 +110,7 @@ public class MessageData : IContentResource
         => Messages.GetValueOrDefault(Language.English.ToString())
         ?? Messages.GetValueOrDefault(Language.Japanese.ToString())
         ?? Messages.Values.FirstOrDefault()
-        ?? $"MessageData: {MessageKey}"
-        ?? "MessageData";
+        ?? (!string.IsNullOrEmpty(MessageKey) ? MessageKey : "MessageData");
 
     public JsonNode ToJson() => JsonSerializer.SerializeToNode(new { MessageKey, Guid, Messages, Attributes }, JsonConfig.jsonOptions)!;
     public JsonNode ToJson(Workspace env) => ToJson();

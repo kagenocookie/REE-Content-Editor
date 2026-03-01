@@ -11,7 +11,7 @@ public class ObjectCustomField : CustomField, IMainField, IDiffableField
 
     public override void LoadParams(string fieldName, Dictionary<string, object>? param)
     {
-        ArgumentNullException.ThrowIfNull(param);
+        ArgumentNullException.ThrowIfNull(param, nameof(param));
         classname = (string)param["classname"];
         if (param.TryGetValue("nested", out var nested)) forceNested = (bool)nested;
     }
