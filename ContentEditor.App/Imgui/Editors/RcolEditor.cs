@@ -340,6 +340,7 @@ public class RcolShapeEditor : IObjectUIHandler
             context.AddChild<RcolShape, uint>("IgnoreTag Bits", group, getter: (i) => i!.Info.IgnoreTagBits, setter: (i, v) => i.Info.IgnoreTagBits = v).AddDefaultHandler<uint>();
             context.AddChild<RcolShape, string>("Primary Joint", group, getter: (i) => i!.Info.primaryJointNameStr, setter: (i, v) => i.Info.primaryJointNameStr = v ?? string.Empty).AddDefaultHandler<string>();
             context.AddChild<RcolShape, string>("Secondary Joint", group, getter: (i) => i!.Info.secondaryJointNameStr, setter: (i, v) => i.Info.secondaryJointNameStr = v ?? string.Empty).AddDefaultHandler<string>();
+            context.AddChild<RcolShape, string>("Collision Material", group, new ResourcePathPicker(context.GetWorkspace(), KnownFileFormats.CollisionMaterial), (i) => i!.Info.cmatPath, (i, v) => i.Info.cmatPath = v ?? string.Empty);
             context.AddChild("Shape", group, getter: (i) => ((RcolShape)i.target!).shape, setter: (i, s) => ((RcolShape)i.target!).shape = s).AddDefaultHandler();
             context.AddChild<RcolShape, RszInstance>(
                 "UserData",
