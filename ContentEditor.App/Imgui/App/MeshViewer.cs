@@ -346,40 +346,47 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     private void ShowMeshCollections()
     {
-        foreach (var ctx in meshContexts) {
-            if (ImGui.BeginMenu(ctx.ShortName)) {
-                if (ctx != meshContexts[0] && ImGui.Selectable($"{AppIcons.SI_GenericDelete} Remove")) {
-                    RemoveSubmesh(ctx);
-                    ImGui.EndMenu();
-                    break;
-                }
-                if (ImGui.BeginMenu($"{AppIcons.SI_GenericInfo} Info")) {
-                    ShowMeshInfo(ctx, false);
-                    ImGui.EndMenu();
-                }
-                if (ctx.IsAnimatable && ImGui.BeginMenu($"{AppIcons.SI_TagCharacter} Skeleton")) {
-                    EnsureAnimationsInit();
-                    ctx.ShowSkeletonPicker();
-                    ImGui.EndMenu();
-                }
-                if (ctx.IsAnimatable && ImGui.BeginMenu($"{AppIcons.SI_Animation} Animation")) {
-                    EnsureAnimationsInit();
-                    ctx.ShowAnimSettings(meshContexts);
-                    ImGui.EndMenu();
-                }
-                if (ImGui.BeginMenu($"{AppIcons.SI_MeshViewerMeshGroup} Mesh Groups")) {
-                    ShowMeshGroupSettings(ctx.Component);
-                    ImGui.EndMenu();
-                }
-                if (ImGui.BeginMenu($"{AppIcons.SI_FileType_MDF} Material")) {
-                    ctx.ShowMaterialSettings();
-                    ImGui.EndMenu();
-                }
-                if (ImGui.MenuItem($"{AppIcons.SI_WindowOpenNew} Open In Standalone Window")) {
-                    EditorWindow.CurrentWindow?.AddFileEditor(ctx.Handle);
-                }
-                ImGui.EndMenu();
+        int groupId = 0;
+        foreach (var ctxGroup in meshContexts.GroupBy(c => c.Animator?.owner)) {
+            if (groupId == 1) {
+                ImGui.Separator();
             }
+            foreach (var ctx in ctxGroup) {
+                if (ImGui.BeginMenu(ctx.Animator != null && ctx.Animator?.owner == ctx.Animator ? $"{ctx.ShortName} *###{ctx.ShortName}" : $"###{ctx.ShortName}")) {
+                    if (ctx != meshContexts[0] && ImGui.Selectable($"{AppIcons.SI_GenericDelete} Remove")) {
+                        RemoveSubmesh(ctx);
+                        ImGui.EndMenu();
+                        break;
+                    }
+                    if (ImGui.BeginMenu($"{AppIcons.SI_GenericInfo} Info")) {
+                        ShowMeshInfo(ctx, false);
+                        ImGui.EndMenu();
+                    }
+                    if (ctx.IsAnimatable && ImGui.BeginMenu($"{AppIcons.SI_TagCharacter} Skeleton")) {
+                        EnsureAnimationsInit();
+                        ctx.ShowSkeletonPicker();
+                        ImGui.EndMenu();
+                    }
+                    if (ctx.IsAnimatable && ImGui.BeginMenu($"{AppIcons.SI_Animation} Animation")) {
+                        EnsureAnimationsInit();
+                        ctx.ShowAnimSettings(meshContexts);
+                        ImGui.EndMenu();
+                    }
+                    if (ImGui.BeginMenu($"{AppIcons.SI_MeshViewerMeshGroup} Mesh Groups")) {
+                        ShowMeshGroupSettings(ctx.Component);
+                        ImGui.EndMenu();
+                    }
+                    if (ImGui.BeginMenu($"{AppIcons.SI_FileType_MDF} Material")) {
+                        ctx.ShowMaterialSettings();
+                        ImGui.EndMenu();
+                    }
+                    if (ImGui.MenuItem($"{AppIcons.SI_WindowOpenNew} Open In Standalone Window")) {
+                        EditorWindow.CurrentWindow?.AddFileEditor(ctx.Handle);
+                    }
+                    ImGui.EndMenu();
+                }
+            }
+            if (groupId++ >= 1) ImGui.Separator();
         }
 
         ImGui.SeparatorText("Add Mesh");
