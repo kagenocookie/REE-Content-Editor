@@ -593,6 +593,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                         lastImportSourcePath = files[0];
                         if (Workspace.ResourceManager.TryForceLoadFile(lastImportSourcePath, out var importedFile)) {
                             using var _ = importedFile;
+                            var lodData = new MeshLodData().Read(meshContexts.FirstOrDefault()?.MeshFile.NativeMesh);
                             var importAsset = importedFile.GetResource<CommonMeshResource>();
                             var tmpHandler = new FileHandler(new MemoryStream(), Handle.Filepath);
                             importAsset.NativeMesh.WriteTo(tmpHandler, false);
@@ -600,7 +601,9 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                             Handle.Revert(Workspace);
                             Handle.Modified = true;
                             ChangeMainMesh();
-                            meshContexts.First().AlignMatNamesToMdf();
+                            var ctx = meshContexts.First();
+                            ctx.AlignMatNamesToMdf();
+                            lodData.Apply(ctx.MeshFile.NativeMesh);
                         }
                     });
                 }, lastImportSourcePath, fileExtension: FileFilters.MeshFilesAll);
@@ -1099,6 +1102,37 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
 
         isSynced = true;
+    }
+
+    private class MeshLodData
+    {
+        public uint lodHash;
+        public List<float> lodFactors = new();
+        public List<float> shadowLodFactors = new();
+
+        public MeshLodData()
+        {
+        }
+
+        public MeshLodData Read(MeshFile? mesh)
+        {
+            if (mesh == null) return this;
+            lodHash = mesh.Header.lodHash;
+            lodFactors = mesh.MeshData?.LODs.Select(lod => lod.lodFactor).ToList() ?? new();
+            shadowLodFactors = mesh.ShadowMesh?.LODs.Select(lod => lod.lodFactor).ToList() ?? new();
+            return this;
+        }
+
+        public void Apply(MeshFile mesh)
+        {
+            mesh.Header.lodHash = lodHash;
+            for (int i = 0; i < lodFactors.Count && i < mesh.MeshData?.LODs.Count; i++) {
+                mesh.MeshData.LODs[i].lodFactor = lodFactors[i];
+            }
+            for (int i = 0; i < lodFactors.Count && i < mesh.ShadowMesh?.LODs.Count; i++) {
+                mesh.ShadowMesh.LODs[i].lodFactor = lodFactors[i];
+            }
+        }
     }
 }
 
