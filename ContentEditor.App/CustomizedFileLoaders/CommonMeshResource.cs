@@ -100,16 +100,16 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
             return;
         }
 
+        if (additionalMeshes?.Any() == true) {
+            foreach (var addm in additionalMeshes) {
+                addm.AddMeshToScene(scene, ext, false, includeLodsShadows, includeOcc, skeleton);
+            }
+        }
         if (mots != null) {
             foreach (var mot in mots) {
                 if (mot is MotFile mm) {
                     AddMotToScene(scene, mm, ext);
                 }
-            }
-        }
-        if (additionalMeshes?.Any() == true) {
-            foreach (var addm in additionalMeshes) {
-                addm.AddMeshToScene(scene, ext, false, includeLodsShadows, includeOcc, skeleton);
             }
         }
         void PrintTree(Node node, int depth)
