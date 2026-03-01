@@ -31,14 +31,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     private const float TopMargin = 64;
 
 
-    private UIContext? animationPickerContext;
-    private string animationSourceFile = "";
-    private string motFilter = "";
-    private bool isMotFilterMatchCase = false;
-    private bool isMotFilterActive = false;
-    private string? loadedAnimationSource;
-    // private Animator? animator;
-    // public Animator? Animator => meshContexts.FirstOrDefault()?.Animator;
     public Animator? PrimaryAnimator => meshContexts.FirstOrDefault()?.Animator;
     public IEnumerable<Animator> Animators => meshContexts.Select(m => m.Animator!).Where(a => a != null);
     private float playbackSpeed = 1.0f;
@@ -131,8 +123,8 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
         var mesh = ctx.MeshFile;
 
-        if (mesh.HasAnimations && string.IsNullOrEmpty(animationSourceFile)) {
-            animationSourceFile = Handle.Filepath;
+        if (mesh.HasAnimations && string.IsNullOrEmpty(ctx.animationSourceFile)) {
+            ctx.animationSourceFile = Handle.Filepath;
         }
     }
 
@@ -221,7 +213,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             ImGui.BeginChild("OverlayControls", new Vector2(480, AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().Y - 80 : 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders);
 
             ImGui.SameLine();
-            ShowAnimationMenu(meshComponent);
+            ShowAnimationMenu(mainCtx);
 
             ImGui.PopStyleColor(2);
             ImGui.EndChild();
@@ -323,7 +315,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                     ImGui.EndPopup();
                 }
                 if (ImGui.BeginPopup("Animations")) {
-                    ShowAnimationMenu(mainCtx.Component);
+                    ShowAnimationMenu(mainCtx);
                     ImGui.EndPopup();
                 }
             }
@@ -344,10 +336,18 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         ctx.GameObject.Dispose();
     }
 
+    private void EnsureAnimationsInit()
+    {
+        foreach (var c in meshContexts) {
+            var anim = c.Animator ?? c.SetupAnimator();
+            anim.owner ??= meshContexts[0].Animator;
+        }
+    }
+
     private void ShowMeshCollections()
     {
         foreach (var ctx in meshContexts) {
-            if (ImGui.BeginMenu(ctx.Handle.Filename.ToString())) {
+            if (ImGui.BeginMenu(ctx.ShortName)) {
                 if (ctx != meshContexts[0] && ImGui.Selectable($"{AppIcons.SI_GenericDelete} Remove")) {
                     RemoveSubmesh(ctx);
                     ImGui.EndMenu();
@@ -358,8 +358,13 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                     ImGui.EndMenu();
                 }
                 if (ctx.IsAnimatable && ImGui.BeginMenu($"{AppIcons.SI_TagCharacter} Skeleton")) {
-                    if (ctx.Animator == null) ctx.SetupAnimator();
+                    EnsureAnimationsInit();
                     ctx.ShowSkeletonPicker();
+                    ImGui.EndMenu();
+                }
+                if (ctx.IsAnimatable && ImGui.BeginMenu($"{AppIcons.SI_Animation} Animation")) {
+                    EnsureAnimationsInit();
+                    ctx.ShowAnimSettings(meshContexts);
                     ImGui.EndMenu();
                 }
                 if (ImGui.BeginMenu($"{AppIcons.SI_MeshViewerMeshGroup} Mesh Groups")) {
@@ -405,7 +410,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         ImGui.SeparatorText("Manage Collection");
         if (ImGui.Selectable($"{AppIcons.SI_Save} Save collection")) {
             var arr = new JsonArray();
-            foreach (var c in meshContexts) arr.Add(c.ToJson());
+            foreach (var c in meshContexts) arr.Add(c.ToJson(meshContexts));
             var jsonStr = arr.ToJsonString();
             var collectionsDir = Path.Combine(AppConfig.Instance.GetGameUserPath(Workspace.Game), "mesh_collections");
             Directory.CreateDirectory(collectionsDir);
@@ -428,6 +433,16 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                         meshContexts[0].LoadFromJson((JsonObject)arr[0]!);
                         for (int i = 1; i < arr.Count; i++) {
                             CreateAdditionalMesh(Handle).LoadFromJson((JsonObject)arr[i]!);
+                        }
+                        for (int i = 0; i < arr.Count; i++) {
+                            var ownerName = ((JsonObject)arr[i]!)["owner"]?.GetValue<string>();
+                            if (!string.IsNullOrEmpty(ownerName)) {
+                                EnsureAnimationsInit();
+                                var anim = meshContexts[i].Animator!;
+                                anim.owner = meshContexts.FirstOrDefault(c => c.ShortName == ownerName)?.Animator ?? meshContexts[0].Animator;
+                            }
+
+                            meshContexts[i].Animator?.owner ??= meshContexts[0].Animator;
                         }
                     } catch (Exception e) {
                         Logger.Error("Failed to load mesh collection: " + e.Message);
@@ -710,18 +725,14 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     private bool UpdateAnimData()
     {
+        EnsureAnimationsInit();
         foreach (var c in meshContexts) {
-            var anim = c.Animator ?? c.SetupAnimator();
-            // allow customizable owners? (e.g. paired animations like in pragmata)
-            if (c != meshContexts[0]) {
-                anim.owner = meshContexts[0].Animator;
-            }
             if (!UpdateAnimatorMesh(c.Component)) return false;
         }
         return true;
     }
 
-    private void ShowAnimationMenu(MeshComponent meshComponent)
+    private void ShowAnimationMenu(MeshViewerContext ctx)
     {
         ImGui.SeparatorText("Animations");
         if (!UpdateAnimData()) {
@@ -733,104 +744,16 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
         ImGui.Checkbox("Show Skeleton", ref showSkeleton);
         ImGui.Spacing();
-        using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(animationSourceFile))) {
+        using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(ctx.animationSourceFile))) {
             if (ImGui.Button($"{AppIcons.SI_Update}") && animator.File != null) {
                 Workspace.ResourceManager.CloseFile(animator.File);
                 foreach (var c in meshContexts) c.Animator?.Unload();
-                loadedAnimationSource = null;
             }
             ImguiHelpers.Tooltip("Force reload");
         }
         ImGui.SameLine();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Source File").X - ImGui.GetStyle().FramePadding.X);
-        if (animationPickerContext == null) {
-            animationPickerContext = context.AddChild<MeshViewer, string>(
-                "Source File",
-                this,
-                new ResourcePathPicker(Workspace, FileFilters.MeshFilesAll, KnownFileFormats.MotionList, KnownFileFormats.Motion) { UseNativesPath = true, IsPathForIngame = false, DisableWarnings = true },
-                (v) => v!.animationSourceFile,
-                (v, p) => v.animationSourceFile = p ?? "");
-        }
-        animationPickerContext.ShowUI();
-
-        var settings = AppConfig.Settings;
-        if (settings.RecentMotlists.Count > 0) {
-            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Recent files").X - ImGui.GetStyle().FramePadding.X);
-            if (AppImguiHelpers.ShowRecentFiles(settings.RecentMotlists, Workspace.Game, ref animationSourceFile)) {
-                animationPickerContext.ResetState();
-            }
-        }
-        if (animationSourceFile != loadedAnimationSource) {
-            if (!string.IsNullOrEmpty(animationSourceFile)) {
-                loadedAnimationSource = animationSourceFile;
-                foreach (var c in meshContexts) c.Animator?.LoadAnimationList(loadedAnimationSource);
-                settings.RecentMotlists.AddRecent(Workspace.Game, animationSourceFile);
-            } else {
-                foreach (var c in meshContexts) c.Animator?.Unload();
-                loadedAnimationSource = animationSourceFile;
-            }
-        }
-
-        if (animator?.AnimationCount > 0) {
-            ImGui.Separator();
-            ImGui.Spacing();
-            var ignoreRoot = animator.IgnoreRootMotion;
-            if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
-                if (animator.File!.Format.format == KnownFileFormats.Motion) {
-                    var fakeMotlist = new MotlistFile(new FileHandler());
-                    var ff = animator.File.GetFile<MotFile>();
-                    fakeMotlist.MotFiles.Add(ff);
-                    var fakeHandle = FileHandle.CreateEmbedded(new MotListFileLoader(), new BaseFileResource<MotlistFile>(fakeMotlist));
-                    EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, fakeHandle));
-                } else {
-                    EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, animator.File!));
-                }
-            }
-            ImguiHelpers.Tooltip("Open current motlist in Motlist Editor");
-            ImGui.SameLine();
-            ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_IgnoreRootMotion, ref ignoreRoot, new[] { Colors.IconTertiary, Colors.IconPrimary, Colors.IconPrimary }, Colors.IconActive);
-            ImguiHelpers.Tooltip("Ignore Root Motion");
-            foreach (var c in meshContexts) c.Animator?.IgnoreRootMotion = ignoreRoot;
-
-            ImGui.SameLine();
-            ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isMotFilterMatchCase, Colors.IconActive);
-            ImguiHelpers.Tooltip("Match Case");
-
-            ImGui.SameLine();
-            ImGui.SetNextItemAllowOverlap();
-            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-            ImGui.InputTextWithHint("##MotFilter", $"{AppIcons.SI_GenericMagnifyingGlass} Filter Animations", ref motFilter, 200);
-            isMotFilterActive = ImGui.IsItemActive();
-            if (!string.IsNullOrEmpty(motFilter)) {
-                ImGui.SameLine();
-                ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
-                ImGui.SetNextItemAllowOverlap();
-                if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
-                    motFilter = string.Empty;
-                }
-            }
-
-            ImGui.Spacing();
-            foreach (var mot in animator.Animations) {
-                var name = mot.Name;
-                if (!string.IsNullOrEmpty(motFilter) && !name.Contains(motFilter, isMotFilterMatchCase ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase)) continue;
-
-                ImGui.PushID(mot.GetHashCode());
-                if (ImGui.RadioButton(name, animator.ActiveMotion == mot)) {
-                    SetAnimation((MotFile)mot);
-                }
-                if (ImGui.BeginPopupContextItem(name)) {
-                    if (ImGui.Selectable("Copy name")) {
-                        EditorWindow.CurrentWindow?.CopyToClipboard(name, $"Copied name: {name}");
-                        ImGui.CloseCurrentPopup();
-                    }
-                    ImGui.EndPopup();
-                }
-                ImGui.PopID();
-            }
-        } else if (animator?.File != null) {
-            ImGui.TextColored(Colors.Note, "Selected file contains no playable animations");
-        }
+        ctx.ShowAnimSettings(meshContexts);
     }
 
     private void RenderSkeleton(MeshViewerContext ctx)
@@ -922,7 +845,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         ImGui.BeginChild("PlaybackControls", new Vector2(AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().X - ImGui.GetStyle().WindowPadding.X : timestampSize.X + 50, 80), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
 
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
-        if (ImGui.Button((animator.IsPlaying ? AppIcons.Pause : AppIcons.Play).ToString()) || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_MeshViewer_PauseAnim.Get().IsPressed() && !isMotFilterActive) {
+        if (ImGui.Button((animator.IsPlaying ? AppIcons.Pause : AppIcons.Play).ToString()) || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_MeshViewer_PauseAnim.Get().IsPressed() && !ImGui.GetIO().WantCaptureKeyboard) {
             if (animator.IsPlaying) {
                 foreach (var c in meshContexts) c.Animator?.Pause();
             } else {
@@ -1034,9 +957,10 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     public void SetAnimation(string animlist)
     {
+        EnsureAnimationsInit();
         UpdateAnimData();
         foreach (var c in meshContexts) {
-            var anim = c.Animator ?? c.SetupAnimator();
+            var anim = c.Animator!;
             anim.LoadAnimationList(animlist);
             if (anim.Animations.Any()) {
                 anim.SetActiveMotion(anim.Animations[0]);
@@ -1046,9 +970,10 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     public void SetAnimation(MotFile mot)
     {
+        EnsureAnimationsInit();
         UpdateAnimData();
         foreach (var c in meshContexts) {
-            var anim = c.Animator ?? c.SetupAnimator();
+            var anim = c.Animator!;
             anim.SetActiveMotion(mot);
         }
     }
@@ -1155,7 +1080,9 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
     public AnimatedMeshHandle? Mesh => Component.MeshHandle as AnimatedMeshHandle;
     public CommonMeshResource MeshFile => Handle.GetResource<CommonMeshResource>() ?? throw new Exception("invalid mesh");
     public Animator? Animator => GameObject.GetComponent<Motion>()?.Animator;
+    public MeshViewerContext? FindOwner(IEnumerable<MeshViewerContext> ctx) => Animator?.owner == null ? null : ctx.FirstOrDefault(c => c.Animator == Animator?.owner);
     public bool IsAnimatable => Mesh != null;
+    public string ShortName => Handle.Filename.ToString();
 
     public override string ToString() => Handle.Filepath;
 
@@ -1379,12 +1306,13 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
         }
     }
 
-    public JsonObject ToJson()
+    public JsonObject ToJson(IEnumerable<MeshViewerContext> meshContexts)
     {
         return new JsonObject([
             new("mesh", JsonValue.Create(Handle.Filepath)),
             new("skeleton", JsonValue.Create(skeletonPath)),
-            new("material", JsonValue.Create(loadedMdf))
+            new("material", JsonValue.Create(loadedMdf)),
+            new("owner", JsonValue.Create(FindOwner(meshContexts)?.ShortName ?? null))
         ]);
     }
 
@@ -1408,5 +1336,137 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
         }
 
         ChangeMesh(false);
+    }
+
+    private UIContext? animationPickerContext;
+    internal string animationSourceFile = "";
+    private string? loadedAnimationSource;
+    private string motFilter = "";
+    private bool isMotFilterMatchCase = false;
+    private void ChangeAnim(List<MeshViewerContext> meshContexts, MotFileBase activeAnim)
+    {
+        foreach (var mc in meshContexts) {
+            if (mc.Animator?.owner == Animator) {
+                mc.Animator!.SetActiveMotion(activeAnim);
+            }
+        }
+    }
+    public void ShowAnimSettings(List<MeshViewerContext> meshContexts)
+    {
+        if (Animator == null) return;
+
+        if (meshContexts[0] != this) {
+            string parentLabel = "Animation Controller";
+            if (Animator.owner != Animator) {
+                parentLabel = "Parent: " + FindOwner(meshContexts)?.ShortName;
+            }
+            if (ImGui.BeginMenu(parentLabel)) {
+                foreach (var other in meshContexts) {
+                    if (other == this || other.Animator?.owner != other.Animator) continue;
+                    if (ImGui.Selectable(other.ShortName, other.Animator == Animator, ImGuiSelectableFlags.NoAutoClosePopups)) {
+                        Animator.owner = other.Animator;
+                    }
+                }
+                if (Animator.owner != Animator && ImGui.Selectable("[Make controller]", ImGuiSelectableFlags.NoAutoClosePopups)) {
+                    Animator.owner = Animator;
+                }
+                ImGui.EndMenu();
+            }
+            ImGui.Separator();
+        }
+
+        if (Animator.owner != Animator) return;
+
+        animationPickerContext ??= UI.AddChild<MeshViewerContext, string>(
+            "Animation File",
+            this,
+            new ResourcePathPicker(Workspace, FileFilters.MeshFilesAll, KnownFileFormats.MotionList, KnownFileFormats.Motion) { UseNativesPath = true, IsPathForIngame = false, DisableWarnings = true },
+            (v) => v!.animationSourceFile,
+            (v, p) => v.animationSourceFile = p ?? "");
+
+        animationPickerContext.ShowUI();
+
+        var settings = AppConfig.Settings;
+        if (settings.RecentMotlists.Count > 0) {
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Recent files").X - ImGui.GetStyle().FramePadding.X);
+            if (AppImguiHelpers.ShowRecentFiles(settings.RecentMotlists, Workspace.Game, ref animationSourceFile)) {
+                animationPickerContext.ResetState();
+            }
+        }
+        if (animationSourceFile != loadedAnimationSource) {
+            if (!string.IsNullOrEmpty(animationSourceFile)) {
+                loadedAnimationSource = animationSourceFile;
+                foreach (var c in meshContexts) {
+                    if (c == this || c.Animator?.owner == Animator) c.Animator?.LoadAnimationList(loadedAnimationSource);
+                }
+                settings.RecentMotlists.AddRecent(Workspace.Game, animationSourceFile);
+            } else {
+                foreach (var c in meshContexts) {
+                    if (c == this || c.Animator?.owner == Animator) c.Animator?.Unload();
+                }
+                loadedAnimationSource = animationSourceFile;
+            }
+        }
+
+        var animator = Animator;
+        if (animator?.AnimationCount > 0) {
+            ImGui.Separator();
+            ImGui.Spacing();
+            var ignoreRoot = animator.IgnoreRootMotion;
+            if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
+                if (animator.File!.Format.format == KnownFileFormats.Motion) {
+                    var fakeMotlist = new MotlistFile(new FileHandler());
+                    var ff = animator.File.GetFile<MotFile>();
+                    fakeMotlist.MotFiles.Add(ff);
+                    var fakeHandle = FileHandle.CreateEmbedded(new MotListFileLoader(), new BaseFileResource<MotlistFile>(fakeMotlist));
+                    EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, fakeHandle));
+                } else {
+                    EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, animator.File!));
+                }
+            }
+            ImguiHelpers.Tooltip("Open current motlist in Motlist Editor");
+            ImGui.SameLine();
+            ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_IgnoreRootMotion, ref ignoreRoot, new[] { Colors.IconTertiary, Colors.IconPrimary, Colors.IconPrimary }, Colors.IconActive);
+            ImguiHelpers.Tooltip("Ignore Root Motion");
+            foreach (var c in meshContexts) c.Animator?.IgnoreRootMotion = ignoreRoot;
+
+            ImGui.SameLine();
+            ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isMotFilterMatchCase, Colors.IconActive);
+            ImguiHelpers.Tooltip("Match Case");
+
+            ImGui.SameLine();
+            ImGui.SetNextItemAllowOverlap();
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+            ImGui.InputTextWithHint("##MotFilter", $"{AppIcons.SI_GenericMagnifyingGlass} Filter Animations", ref motFilter, 200);
+            if (!string.IsNullOrEmpty(motFilter)) {
+                ImGui.SameLine();
+                ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
+                ImGui.SetNextItemAllowOverlap();
+                if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
+                    motFilter = string.Empty;
+                }
+            }
+
+            ImGui.Spacing();
+            foreach (var mot in animator.Animations) {
+                var name = mot.Name;
+                if (!string.IsNullOrEmpty(motFilter) && !name.Contains(motFilter, isMotFilterMatchCase ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase)) continue;
+
+                ImGui.PushID(mot.GetHashCode());
+                if (ImGui.RadioButton(name, animator.ActiveMotion == mot)) {
+                    ChangeAnim(meshContexts, (MotFile)mot);
+                }
+                if (ImGui.BeginPopupContextItem(name)) {
+                    if (ImGui.Selectable("Copy name")) {
+                        EditorWindow.CurrentWindow?.CopyToClipboard(name, $"Copied name: {name}");
+                        ImGui.CloseCurrentPopup();
+                    }
+                    ImGui.EndPopup();
+                }
+                ImGui.PopID();
+            }
+        } else if (animator?.File != null) {
+            ImGui.TextColored(Colors.Note, "Selected file contains no playable animations");
+        }
     }
 }

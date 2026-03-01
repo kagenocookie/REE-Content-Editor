@@ -25,7 +25,8 @@ public class Animator(ContentWorkspace Workspace)
 
     public FbxSkelFile? skeleton;
     public Animator? owner;
-    public FbxSkelFile? ActiveSkeleton => skeleton ?? owner?.ActiveSkeleton;
+    private Animator? ActiveOwner => (owner == this ? null : owner);
+    public FbxSkelFile? ActiveSkeleton => skeleton ?? ActiveOwner?.ActiveSkeleton;
 
     /// <summary>
     /// Whether there is an animation currently active. Should be true at any time the mesh is not in its default mesh pose, whether currently playing or not.
@@ -256,16 +257,16 @@ public class Animator(ContentWorkspace Workspace)
                 Matrix4x4 worldMat;
                 if (bone.Parent != null) {
                     worldMat = localTransform * transformCache[bone.Parent.index];
-                } else if (owner != null && skel != null) {
+                } else if (ActiveOwner != null && skel != null) {
                     // might not be 100% correct for all cases
                     // what if root mesh's skeleton doesn't itself have a bone for the parent?
                     worldMat = localTransform;
                     var skelBone = skel.FindBoneByHash(boneHash);
                     if (skelBone != null && skelBone.parentIndex != -1) {
                         var skelParent = skel.Bones[skelBone.parentIndex];
-                        var ownerParentBone = owner.mesh?.Bones?.GetByHash(skelParent.nameHash);
+                        var ownerParentBone = ActiveOwner.mesh?.Bones?.GetByHash(skelParent.nameHash);
                         if (ownerParentBone != null) {
-                            worldMat = localTransform * owner.mesh!.BoneMatrices[ownerParentBone.index];
+                            worldMat = localTransform * ActiveOwner.mesh!.BoneMatrices[ownerParentBone.index];
                         }
                     }
                 } else {

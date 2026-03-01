@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -107,7 +108,7 @@ public static class ImguiHelpers
         return changed;
     }
 
-    public static bool ValueCombo<TValue>(string label, string[] labels, TValue[] values, ref TValue selected, int height = -1)
+    public static bool ValueCombo<TValue>(string label, string[] labels, TValue[] values, [AllowNull] ref TValue selected, int height = -1)
     {
         var selectedIndex = Array.IndexOf(values, selected);
         if (ImGui.Combo(label, ref selectedIndex, labels, labels.Length, height)) {
