@@ -1331,7 +1331,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
         var isInitial = !Component.HasMesh;
         var mesh = MeshFile;
         if (mesh == null) {
-            if (Handle.Filepath.Contains("streaming/")) {
+            if (Handle.Filepath.Contains("streaming/", StringComparison.OrdinalIgnoreCase)) {
                 Logger.Error("Can't directly open streaming meshes. Open the non-streaming file instead.");
             }
             return;

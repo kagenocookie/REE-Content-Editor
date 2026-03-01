@@ -762,7 +762,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
         try {
             if (PathUtils.ParseFileFormat(file).format == KnownFileFormats.Mesh && file.Contains("/streaming")) {
                 Logger.Warn("Attempted to open streaming mesh. Opening the main non-streaming mesh instead.");
-                file = file.Replace("/streaming/", "/");
+                file = file.Replace("/streaming/", "/", StringComparison.OrdinalIgnoreCase);
             }
 
             if (PakFilePath == null) {

@@ -734,9 +734,15 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             file = null;
             return false;
         }
-        sourceNativePath = sourceNativePath.Replace("natives/stm/", "natives/stm/streaming/");
+        sourceNativePath = sourceNativePath.Replace("natives/stm/", "natives/stm/streaming/", StringComparison.OrdinalIgnoreCase);
 
-        return TryResolveStreamingBufferFile(sourceNativePath, mainFile.Filepath.Replace("natives/stm/", "natives/stm/streaming/"), out file);
+        var filepathStreaming = mainFile.Filepath;
+        var filepathNativesIndex = mainFile.Filepath.IndexOf("natives/stm/", StringComparison.OrdinalIgnoreCase);
+        if (filepathNativesIndex != -1) {
+            var internalStartIndex = filepathNativesIndex + "natives/stm/".Length;
+            filepathStreaming = string.Concat(filepathStreaming.AsSpan(0, internalStartIndex), "streaming/", filepathStreaming.AsSpan(internalStartIndex));
+        }
+        return TryResolveStreamingBufferFile(sourceNativePath, filepathStreaming, out file);
     }
 
     /// <summary>

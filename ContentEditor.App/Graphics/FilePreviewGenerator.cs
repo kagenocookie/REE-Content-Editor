@@ -218,7 +218,7 @@ public sealed class FilePreviewGenerator : IDisposable
     private void GenerateMeshThumbnail(string path)
     {
         _statuses[path] = PreviewImageStatus.Loading;
-        var mainPath = path.Replace("/streaming/", "/").Replace("\\streaming\\", "\\");
+        var mainPath = path.Replace("/streaming/", "/", StringComparison.OrdinalIgnoreCase).Replace("\\streaming\\", "\\", StringComparison.OrdinalIgnoreCase);
         var outPath = GetThumbnailPath(path);
 
         using var tmpScene = new Scene("_preview", "", workspace, null, null, _threadGL);
