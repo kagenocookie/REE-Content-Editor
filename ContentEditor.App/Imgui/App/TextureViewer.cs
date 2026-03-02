@@ -137,7 +137,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
             ImGui.SetNextWindowSize(new Vector2(texture.Width, texture.Height + ImGui.GetFrameHeight()));
         }
         if (!ImguiHelpers.BeginWindow(data, null, ImGuiWindowFlags.MenuBar)) {
-            WindowManager.Instance.CloseWindow(data);
+            EditorWindow.CurrentWindow?.CloseSubwindow(data, true);
             return;
         }
         ShowMenu();

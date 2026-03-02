@@ -55,6 +55,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string UseFullscreenAnimPlayback = "use_fullscreen_anim_playback";
         public const string DateFormat = "date_format";
         public const string ClockFormat = "clock_format";
+        public const string DisableFileCloseWarning = "disable_close_warning";
 
         public const string RenderAxis = "render_axis";
         public const string RenderMeshes = "render_meshes";
@@ -195,6 +196,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<bool> UseFullscreenAnimPlayback = new SettingWrapper<bool>(Keys.UseFullscreenAnimPlayback, _lock, false);
     public readonly SettingWrapper<int> DateFormat = new SettingWrapper<int>(Keys.DateFormat, _lock, 0);
     public readonly SettingWrapper<bool> ClockFormat = new SettingWrapper<bool>(Keys.ClockFormat, _lock, false);
+    public readonly SettingWrapper<bool> DisableFileCloseWarning = new SettingWrapper<bool>(Keys.DisableFileCloseWarning, _lock, false);
 
     public readonly SettingWrapper<int> PakDisplayModeValue = new SettingWrapper<int>(Keys.LogToFile, _lock, (int)FileDisplayMode.List);
     public FileDisplayMode PakDisplayMode { get => (FileDisplayMode)PakDisplayModeValue.Get(); set => PakDisplayModeValue.Set((int)value); }
@@ -345,6 +347,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.UseFullscreenAnimPlayback, instance.UseFullscreenAnimPlayback.value.ToString(), null),
             (Keys.DateFormat, instance.DateFormat.value.ToString(), null),
             (Keys.ClockFormat, instance.ClockFormat.value.ToString(), null),
+            (Keys.DisableFileCloseWarning, instance.DisableFileCloseWarning.value.ToString(), null),
 
             (Keys.RenderAxis, instance.RenderAxis.value.ToString(), null),
             (Keys.RenderMeshes, instance.RenderMeshes.value.ToString(), null),
@@ -489,6 +492,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.ClockFormat:
                             ClockFormat.value = ReadBool(value);
+                            break;
+                        case Keys.DisableFileCloseWarning:
+                            DisableFileCloseWarning.value = ReadBool(value);
                             break;
                         case Keys.RecentFiles:
                             JsonSettings.RecentFiles.AddRange(value.Split('|', StringSplitOptions.RemoveEmptyEntries));

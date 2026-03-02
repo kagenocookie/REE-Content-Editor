@@ -237,6 +237,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ShowFolderSetting(config.BookmarksFilepath, "Bookmarks file path", "The folder in which user created bookmarks should be stored. Must not be empty.");
         ShowSlider(config.UnpackMaxThreads, "Max unpack threads", 1, 64, "The maximum number of threads to be used when unpacking.\nThe actual thread count is determined automatically by the .NET runtime.");
 
+        ShowSetting(config.DisableFileCloseWarning, "Disable Open File Warning When Closing Editor Windows", "Whether to disable the warning notifiation when a window is closed that references an open file.");
         var navchanged = ShowSetting(config.EnableKeyboardNavigation, "Enable keyboard navigation", "Whether to enable navigating between fields using arrow keys.");
         if (navchanged) {
             if (config.EnableKeyboardNavigation) {

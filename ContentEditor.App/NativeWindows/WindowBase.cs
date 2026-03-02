@@ -271,9 +271,24 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
             removeSubwindows.Add(data);
         }
     }
-    public void CloseSubwindow(WindowData subwindow)
+
+    public void CloseSubwindow(WindowData subwindow, bool showCloseFileWarning = false)
     {
         removeSubwindows.Add(subwindow);
+        if (showCloseFileWarning && !AppConfig.Instance.DisableFileCloseWarning) {
+            EditorWindow.CurrentWindow?.Overlays.ShowToast(20f, """
+                Window has been closed but the file is still kept open in case it's needed.
+                If you want to re-open it or fully close it down, you can do that from the File > Open files menu.
+                Attempting to re-open a file from the same path will not reload the file unless it's closed down first.
+                """,
+                ("Disable This Warning", static () => {
+                    AppConfig.Instance.DisableFileCloseWarning.Set(true);
+                    EditorWindow.CurrentWindow?.Overlays.ShowToast(2f, """
+                        Warning can be re-enabled from settings.
+                        """);
+                }
+            ));
+        }
     }
     public void CloseAllSubwindows()
     {
@@ -334,7 +349,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         }
         if (FocusedWindow != null && cfg.Key_Close.Get().IsPressed()) {
             var window = FocusedWindow;
-            InvokeFromUIThread(() => CloseSubwindow(window));
+            InvokeFromUIThread(() => CloseSubwindow(window, window.Handler is FileEditor or TextureViewer));
         }
     }
 

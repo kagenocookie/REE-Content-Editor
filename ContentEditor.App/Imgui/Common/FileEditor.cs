@@ -83,7 +83,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         var icon = AppIcons.GetIcon(this);
         var name = icon == '\0' ? $"{HandlerName}: {Handle.Filename}##{data.ID}" : $"{icon} {Handle.Filename}##{data.ID}";
         if (!ImguiHelpers.BeginWindow(data, name, windowFlags)) {
-            EditorWindow.CurrentWindow?.CloseSubwindow(data);
+            EditorWindow.CurrentWindow?.CloseSubwindow(data, true);
             return;
         }
         Size = data.Size;

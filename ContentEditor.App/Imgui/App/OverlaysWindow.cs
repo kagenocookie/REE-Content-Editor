@@ -14,6 +14,7 @@ public class OverlaysWindow : IWindowHandler
 
     private WindowData data = null!;
     protected UIContext context = null!;
+    private List<ToastData> Toasts { get; } = new();
 
     public WindowData Window => data;
 
@@ -32,10 +33,28 @@ public class OverlaysWindow : IWindowHandler
         tooltipTime = duration;
     }
 
+    public void ShowToast(float duration, string message, (string label, Action) actionButton = default)
+    {
+        Toasts.Add(new ToastData(NextToastMsgId++) {
+            message = message,
+            disappearAt = DateTime.Now.AddSeconds(duration),
+            buttonAction = actionButton.Item2,
+            buttonText = actionButton.label,
+        });
+    }
+
     public void OnWindow() => this.ShowDefaultWindow(context);
     public void OnIMGUI()
     {
         var size = ImGui.GetWindowViewport().Size - ImGui.GetStyle().WindowPadding;
+        ShowHelpText(size);
+        ShowTimedTooltip();
+        ShowBackgroundTasks(size);
+        ShowToasts(size);
+    }
+
+    private void ShowHelpText(Vector2 size)
+    {
         string? helptext = null;
         if (!AppConfig.Instance.HasAnyGameConfigured) {
             helptext = "Go into the Tools > Settings menu and configure the game(s) you wish to edit";
@@ -50,7 +69,7 @@ public class OverlaysWindow : IWindowHandler
             var wndSize = new Vector2(Math.Min(600, size.X), Math.Min(20 + linecount * 20, size.Y)) * UI.UIScale;
             ImGui.SetNextWindowPos(new Vector2((size.X - wndSize.X) / 2, (size.Y - wndSize.Y) / 2));
             ImGui.SetNextWindowSize(wndSize);
-            ImGui.Begin("Guide", ImGuiWindowFlags.NoTitleBar|ImGuiWindowFlags.NoResize|ImGuiWindowFlags.NoMove|ImGuiWindowFlags.NoScrollbar|ImGuiWindowFlags.NoCollapse|ImGuiWindowFlags.NoFocusOnAppearing|ImGuiWindowFlags.NoBringToFrontOnFocus);
+            ImGui.Begin("Guide", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoBringToFrontOnFocus);
             ImguiHelpers.TextCentered(helptext);
             if (editorWindow != null && ImGui.IsItemClicked()) {
                 PlatformUtils.ShowFileDialog((files) => {
@@ -60,7 +79,10 @@ public class OverlaysWindow : IWindowHandler
             }
             ImGui.End();
         }
+    }
 
+    private void ShowTimedTooltip()
+    {
         if (tooltipTime > 0) {
             ImGui.BeginTooltip();
             ImGui.Text(tooltipMsg);
@@ -70,7 +92,10 @@ public class OverlaysWindow : IWindowHandler
                 tooltipMsg = null;
             }
         }
+    }
 
+    private static void ShowBackgroundTasks(Vector2 size)
+    {
         var bg = MainLoop.Instance.BackgroundTasks;
         var runningTasks = bg.PendingTasks;
         if (runningTasks > 0) {
@@ -78,7 +103,7 @@ public class OverlaysWindow : IWindowHandler
             ImGui.SetNextWindowPos(size - taskWindowSize - ImGui.GetStyle().WindowPadding, ImGuiCond.Appearing);
             ImGui.SetNextWindowSize(taskWindowSize, ImGuiCond.Appearing);
             ImGui.SetNextWindowCollapsed(false, ImGuiCond.Appearing);
-            if (ImGui.Begin("BackgroundTasks")) {
+            if (ImGui.Begin("BackgroundTasks", ImGuiWindowFlags.NoSavedSettings)) {
                 ImGui.Text("Pending background tasks: " + runningTasks);
 
                 var jobSize = new Vector2(ImGui.GetWindowWidth() - ImGui.GetStyle().WindowPadding.X * 2, 30);
@@ -90,6 +115,62 @@ public class OverlaysWindow : IWindowHandler
             }
             ImGui.End();
         }
+    }
+
+    private void ShowToasts(Vector2 size)
+    {
+        var toastOffsetY = 0f;
+        var toastBottom = size.Y - ImGui.GetStyle().WindowPadding.Y;
+        for (int i = Toasts.Count - 1; i >= 0; i--) {
+            var toast = Toasts[i];
+            if (toast.disappearAt <= DateTime.Now) {
+                Toasts.RemoveAt(i);
+                continue;
+            }
+
+            var textSize = ImGui.CalcTextSize(toast.message);
+            var windowPadding = ImGui.GetStyle().WindowPadding;
+
+            var height = textSize.Y + windowPadding.Y * 2;
+            if (!string.IsNullOrEmpty(toast.buttonText)) height += ImGui.GetFrameHeightWithSpacing() + 4;
+
+            var toastWidth = textSize.X + windowPadding.X * 2 + ImGui.GetFrameHeight();
+            var toastLeft = size.X - toastWidth - windowPadding.X * 2;
+
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 3f);
+            var pos = new Vector2(toastLeft, toastBottom - height - toastOffsetY);
+            ImGui.SetNextWindowPos(pos, ImGuiCond.Always);
+            ImGui.SetNextWindowSize(new Vector2(toastWidth, height), ImGuiCond.Always);
+            ImGui.SetNextWindowCollapsed(false, ImGuiCond.Always);
+            var closePos = new Vector2(toastLeft + toastWidth - ImGui.GetFrameHeight(), pos.Y + windowPadding.Y);
+            if (ImGui.Begin($"###Toast{toast.ID}", ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoNavInputs | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoNavFocus | ImGuiWindowFlags.NoMove)) {
+                ImGui.Text(toast.message);
+                if (toast.buttonAction != null) {
+                    ImGui.Separator();
+                    if (ImGui.Button(string.IsNullOrEmpty(toast.buttonText) ? "Confirm" : toast.buttonText)) {
+                        toast.buttonAction.Invoke();
+                    }
+                }
+            }
+            if (ImGuiP.CloseButton(ImGui.GetID("CloseButton"), closePos)) {
+                Toasts.RemoveAt(i);
+            }
+            ImGui.End();
+            ImGui.PopStyleVar();
+            toastOffsetY += height + ImGui.GetStyle().ItemSpacing.Y * 2;
+        }
+    }
+
+    private static int NextToastMsgId = 1;
+
+    private sealed class ToastData(int id)
+    {
+        public string message = "";
+        public DateTime disappearAt;
+        public string? buttonText;
+        public Action? buttonAction;
+
+        public int ID { get; } = id;
     }
 
     public bool RequestClose()
