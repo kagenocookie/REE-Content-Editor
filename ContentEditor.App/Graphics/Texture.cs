@@ -304,7 +304,7 @@ public class Texture : IDisposable
         dds.Header.depth = 1;
         dds.Header.mipMapCount = maxMipLevel - minMipLevel;
         dds.Header.width = (uint)Math.Max(1, Width >> minMipLevel);
-        dds.Header.height = (uint)Math.Max(1, Width >> minMipLevel);
+        dds.Header.height = (uint)Math.Max(1, Height >> minMipLevel);
         dds.Header.IsHasDX10 = true;
         dds.Header.DX10 = new() {
             Format = DxgiFormat.R8G8B8A8_UNORM,
