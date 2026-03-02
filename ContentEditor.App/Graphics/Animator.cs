@@ -25,7 +25,7 @@ public class Animator(ContentWorkspace Workspace)
 
     public FbxSkelFile? skeleton;
     public Animator? owner;
-    private Animator? ActiveOwner => (owner == this ? null : owner);
+    public Animator? ActiveOwner => (owner == this ? null : owner);
     public FbxSkelFile? ActiveSkeleton => skeleton ?? ActiveOwner?.ActiveSkeleton;
 
     /// <summary>

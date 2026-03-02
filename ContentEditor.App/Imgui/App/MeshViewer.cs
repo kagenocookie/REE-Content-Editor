@@ -347,13 +347,14 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     private void ShowMeshCollections()
     {
         int groupId = 0;
+        EnsureAnimationsInit();
         foreach (var ctxGroup in meshContexts.GroupBy(c => c.Animator?.owner)) {
             if (groupId == 1) {
                 ImGui.Separator();
             }
             foreach (var ctx in ctxGroup) {
-                if (ImGui.BeginMenu(ctx.Animator != null && ctx.Animator?.owner == ctx.Animator ? $"{ctx.ShortName} *###{ctx.ShortName}" : $"{ctx.ShortName}###{ctx.ShortName}")) {
-                    if (ctx != meshContexts[0] && ImGui.Selectable($"{AppIcons.SI_GenericDelete} Remove")) {
+                if (ImGui.BeginMenu(ctx.Animator != null && ctx.Animator?.ActiveOwner == null ? $"{ctx.ShortName} *###{ctx.ShortName}" : $"{ctx.ShortName}###{ctx.ShortName}")) {
+                    if (ctx != meshContexts[0] && ImGui.Selectable($"{AppIcons.SI_GenericDelete} Remove", ImGuiSelectableFlags.NoAutoClosePopups)) {
                         RemoveSubmesh(ctx);
                         ImGui.EndMenu();
                         break;
@@ -394,7 +395,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             addCollectionCtx = context.AddChild<MeshViewer, string>(
                 "Source File",
                 this,
-                new ResourcePathPicker(Workspace, FileFilters.MeshFile, KnownFileFormats.Mesh) { UseNativesPath = true, IsPathForIngame = false, DisableWarnings = true },
+                new ResourcePathPicker(Workspace, FileFilters.MeshFile, KnownFileFormats.Mesh) { UseNativesPath = true, IsPathForIngame = false, DisableWarnings = true, DisableUpdateConfirmation = true },
                 (v) => v!.addCollectionPath,
                 (v, p) => v.addCollectionPath = p ?? "");
         }

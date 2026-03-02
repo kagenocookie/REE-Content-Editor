@@ -64,7 +64,8 @@ public class HomeWindow : IWindowHandler
         "To configure game(s), go to Edit > Settings > Games.",
         "Switch to Grid View in the PAK File Browser to quickly preview textures and models.",
         "You can modify or create new custom themes through Edit > Theme Editor.",
-        "You can change the 3D scene background color at any time in Edit > Settings > Display > Theme."
+        "You can change the 3D scene background color at any time in Edit > Settings > Display > Theme.",
+        "You can open multiple mesh parts in the Mesh Viewer using the Mesh Collection toolbar menu"
     };
 
     public void Init(UIContext context)

@@ -19,6 +19,7 @@ public class ResourcePathPicker : IObjectUIHandler
     public bool UseNativesPath { get; init; }
     public bool IsPathForIngame { get; init; } = true;
     public bool DisableWarnings { get; init; }
+    public bool DisableUpdateConfirmation { get; init; }
 
     private ContentWorkspace? workspace;
 
@@ -135,12 +136,16 @@ public class ResourcePathPicker : IObjectUIHandler
         }
 
         if (newPath != currentPath && (!string.IsNullOrEmpty(newPath) || !string.IsNullOrEmpty(currentPath))) {
-            if (ImGui.Button("Update path")) {
+            if (DisableUpdateConfirmation) {
                 ApplyPathChange(context, newPath);
-            }
-            if (ImguiHelpers.SameLine() && ImGui.Button("Cancel change")) {
-                context.Changed = false;
-                context.Filter = currentPath ?? "";
+            } else {
+                if (ImGui.Button("Update path")) {
+                    ApplyPathChange(context, newPath);
+                }
+                if (ImguiHelpers.SameLine() && ImGui.Button("Cancel change")) {
+                    context.Changed = false;
+                    context.Filter = currentPath ?? "";
+                }
             }
         }
 
