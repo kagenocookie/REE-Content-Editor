@@ -1,0 +1,42 @@
+# natives/stm/appsystem/event/timelineevent/actorplayerweapondisplayuserdata.user.3
+
+entities:
+  costumes.costume_catalog_unit:
+    custom_id_range: [100000, 999999]
+    to_string: "Costume [{data[0]?._CostumeId}]"
+    fields:
+      data:
+        type: objectArray
+        label: Data
+        required: true
+        param:
+          classname: app.TimelineEventCostumeCatalog.Unit
+  # costumes.montage_preset:
+  #   custom_id_range: [100000, 999999]
+  #   to_string: "Montage Preset [{data._Preset._ModelID} / {data._Preset._ID}]"
+  #   fields:
+  #     data:
+  #       type: objectArray
+  #       label: Data
+  #       required: true
+  #       param:
+  #         classname: app.CharacterMontagePresetCatalogUserData.Entry
+
+classes:
+  app.TimelineEventCostumeCatalog.Unit:
+    id: [_CostumeId]
+    subId: [_CostumeVariationId]
+    to_string: "Costume {_CostumeId} (Variation: {_CostumeVariationId})"
+    patcher:
+      type: array-file
+      file: natives/stm/event/resource/costumecatalog/ch0200.user.3
+      # file: natives/stm/event/resource/costumecatalog/ch1300.user.3
+  app.CharacterMontagePresetCatalogUserData.Entry:
+    # TODO nested IDs not supported yet
+    # id: [_Preset._ModelID]
+    # subId: [_Preset._ID]
+    to_string: "Montage Preset Entry [{_Preset._ModelID} / {_Preset._ID}]"
+    # patcher:
+    #   type: array-file
+    #   file: natives/stm/appsystem/event/timelineevent/catalog/timelineevent_charactermontagepresetcataloguserdata.user.3
+    #   file: natives/stm/appsystem/event/timelineevent/catalog/timelineevent_charactermontagepresetcataloguserdata_1stchunk.user.3
