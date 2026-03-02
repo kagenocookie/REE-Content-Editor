@@ -396,7 +396,6 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         var conv1 = ImGui.Button($"{AppIcons.SI_GenericConvert} Convert");
         if (fileHandle.Loader is TextureLoader) {
             ImGui.SameLine();
-            var isStoredTex = fileHandle.HandleType is FileHandleType.Bundle or FileHandleType.Disk && File.Exists(filepath);
             if (ImGui.Button($"{AppIcons.SI_UpdateTexture} Update")) {
                 var defaultFilename = GetTexFilenameSuggestion();
                 var tex = fileHandle.GetFile<TexFile>();
@@ -409,27 +408,25 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
                 });
             }
 
-            if (isStoredTex) {
-                ImGui.SameLine();
-                if (ImGui.Button($"{AppIcons.SI_GenericImport} Import From File")) {
-                    var window = EditorWindow.CurrentWindow!;
-                    PlatformUtils.ShowFileDialog((files) => {
-                        window.InvokeFromUIThread(() => {
-                            lastImportSourcePath = files[0];
-                            DDSFile dds;
-                            if (Path.GetExtension(lastImportSourcePath) == ".dds") {
-                                dds = new DDSFile(new FileHandler(lastImportSourcePath));
-                                dds.Read();
-                            } else {
-                                var tempTex = new Texture().LoadFromFile(lastImportSourcePath);
-                                dds = tempTex.GetAsDDS(generateMissingMipMaps: this.mipMapOption == MipGenOptions.Generate);
-                            }
-                            fileHandle.GetFile<TexFile>().LoadDataFromDDS(dds);
-                            texture.LoadFromDDS(dds);
-                            fileHandle.Modified = true;
-                        });
-                    }, lastImportSourcePath, fileExtension: FileFilters.TextureFilesAll);
-                }
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.SI_GenericImport} Import From File")) {
+                var window = EditorWindow.CurrentWindow!;
+                PlatformUtils.ShowFileDialog((files) => {
+                    window.InvokeFromUIThread(() => {
+                        lastImportSourcePath = files[0];
+                        DDSFile dds;
+                        if (Path.GetExtension(lastImportSourcePath) == ".dds") {
+                            dds = new DDSFile(new FileHandler(lastImportSourcePath));
+                            dds.Read();
+                        } else {
+                            var tempTex = new Texture().LoadFromFile(lastImportSourcePath);
+                            dds = tempTex.GetAsDDS(generateMissingMipMaps: this.mipMapOption == MipGenOptions.Generate);
+                        }
+                        fileHandle.GetFile<TexFile>().LoadDataFromDDS(dds);
+                        texture.LoadFromDDS(dds);
+                        fileHandle.Modified = true;
+                    });
+                }, lastImportSourcePath, fileExtension: FileFilters.TextureFilesAll);
             }
         }
 
