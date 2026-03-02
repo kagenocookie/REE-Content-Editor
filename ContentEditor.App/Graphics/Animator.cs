@@ -34,7 +34,7 @@ public class Animator(ContentWorkspace Workspace)
     public bool IsActive { get; private set; }
     public bool IsPlaying { get; private set; }
 
-    public bool IgnoreRootMotion { get; set; } = true;
+    public bool IgnoreRootMotion { get; set; } = AppConfig.Settings.MeshViewer.DisableRootMotion;
 
     public int AnimationCount => motions.Count;
     public IEnumerable<string> AnimationNames => motions.Select(m => m.Name);

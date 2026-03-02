@@ -805,6 +805,7 @@ public record MeshViewerSettings
 {
     public CameraProjection DefaultProjection { get; set; } = CameraProjection.Orthographic;
     public float MoveSpeed { get; set; } = 5f;
+    public bool DisableRootMotion { get; set; } = true;
 }
 
 public class BundleDefaults

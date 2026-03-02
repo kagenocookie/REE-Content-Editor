@@ -352,7 +352,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 ImGui.Separator();
             }
             foreach (var ctx in ctxGroup) {
-                if (ImGui.BeginMenu(ctx.Animator != null && ctx.Animator?.owner == ctx.Animator ? $"{ctx.ShortName} *###{ctx.ShortName}" : $"###{ctx.ShortName}")) {
+                if (ImGui.BeginMenu(ctx.Animator != null && ctx.Animator?.owner == ctx.Animator ? $"{ctx.ShortName} *###{ctx.ShortName}" : $"{ctx.ShortName}###{ctx.ShortName}")) {
                     if (ctx != meshContexts[0] && ImGui.Selectable($"{AppIcons.SI_GenericDelete} Remove")) {
                         RemoveSubmesh(ctx);
                         ImGui.EndMenu();
@@ -1433,7 +1433,10 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             }
             ImguiHelpers.Tooltip("Open current motlist in Motlist Editor");
             ImGui.SameLine();
-            ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_IgnoreRootMotion, ref ignoreRoot, new[] { Colors.IconTertiary, Colors.IconPrimary, Colors.IconPrimary }, Colors.IconActive);
+            if (ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_IgnoreRootMotion, ref ignoreRoot, new[] { Colors.IconTertiary, Colors.IconPrimary, Colors.IconPrimary }, Colors.IconActive)) {
+                AppConfig.Settings.MeshViewer.DisableRootMotion = ignoreRoot;
+                AppConfig.Settings.Save();
+            }
             ImguiHelpers.Tooltip("Ignore Root Motion");
             foreach (var c in meshContexts) c.Animator?.IgnoreRootMotion = ignoreRoot;
 
