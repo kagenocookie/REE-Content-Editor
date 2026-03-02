@@ -404,14 +404,25 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (AppImguiHelpers.ShowRecentFiles(AppConfig.Settings.RecentMeshes, Workspace.Game, ref addCollectionPath)) {
             addCollectionCtx.ResetState();
         }
-        if (!string.IsNullOrEmpty(addCollectionPath) &&
-            Workspace.ResourceManager.TryResolveGameFile(addCollectionPath, out var resolvedFile) &&
-            resolvedFile.Format.format == KnownFileFormats.Mesh &&
-            !meshContexts.Any(c => c.Handle == resolvedFile)
-        ) {
-            if (ImGui.Selectable($"{AppIcons.SI_GenericAdd} Add", ImGuiSelectableFlags.NoAutoClosePopups)) {
-                AppConfig.Settings.RecentMeshes.AddRecent(Workspace.Game, addCollectionPath);
-                CreateAdditionalMesh(resolvedFile).ChangeMesh(true);
+        if (!string.IsNullOrEmpty(addCollectionPath)) {
+            if (Workspace.ResourceManager.TryResolveGameFile(addCollectionPath, out var resolvedFile) && resolvedFile.Format.format == KnownFileFormats.Mesh) {
+                if (!meshContexts.Any(c => c.Handle == resolvedFile) && ImGui.Button($"{AppIcons.SI_GenericAdd} Add")) {
+                    AppConfig.Settings.RecentMeshes.AddRecent(Workspace.Game, addCollectionPath);
+                    CreateAdditionalMesh(resolvedFile).ChangeMesh(true);
+                }
+            } else {
+                if (Path.IsPathFullyQualified(addCollectionPath)) {
+                    ImGui.TextColored(Colors.Warning, """
+                        Can't resolve .mesh file from the given path.
+                        Re-check if you have the right file path and if the mesh is actually valid.
+                        If it's a mesh with a streaming file, ensure both are extracted to a matching file path.
+                        """u8);
+                } else {
+                    ImGui.TextColored(Colors.Warning, """
+                        Can't resolve .mesh file from the given path.
+                        Re-check if you have the right file path and if the mesh is actually valid.
+                        """u8);
+                }
             }
         }
 
