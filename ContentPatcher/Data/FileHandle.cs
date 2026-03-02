@@ -144,6 +144,7 @@ public interface IFileHandleReferenceHolder
 {
     bool CanClose { get; }
     IRectWindow? Parent { get; }
+    FileHandle? Handle { get; }
 
     void Close();
 }

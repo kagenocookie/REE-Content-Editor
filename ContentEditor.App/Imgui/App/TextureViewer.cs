@@ -24,6 +24,8 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
 
     IRectWindow? IFileHandleReferenceHolder.Parent => data.ParentWindow;
 
+    FileHandle? IFileHandleReferenceHolder.Handle => fileHandle;
+
     private Texture? texture;
     private string? texturePath;
     private FileHandle? fileHandle;
@@ -137,7 +139,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
             ImGui.SetNextWindowSize(new Vector2(texture.Width, texture.Height + ImGui.GetFrameHeight()));
         }
         if (!ImguiHelpers.BeginWindow(data, null, ImGuiWindowFlags.MenuBar)) {
-            EditorWindow.CurrentWindow?.CloseSubwindow(data, true);
+            EditorWindow.CurrentWindow?.CloseSubwindow(data);
             return;
         }
         ShowMenu();
@@ -601,5 +603,15 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         fileHandle?.References.Remove(this);
         texture?.Dispose();
         texture = null;
+    }
+
+    void IFocusableFileHandleReferenceHolder.Focus()
+    {
+        throw new NotImplementedException();
+    }
+
+    void IFileHandleReferenceHolder.Close()
+    {
+        throw new NotImplementedException();
     }
 }

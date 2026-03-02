@@ -50,6 +50,7 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
 
     bool IFileHandleReferenceHolder.CanClose => true;
     IRectWindow? IFileHandleReferenceHolder.Parent => null;
+    FileHandle? IFileHandleReferenceHolder.Handle => null;
 
     public Color ClearColor { get; internal set; }
 

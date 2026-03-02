@@ -6,6 +6,7 @@ namespace ContentEditor.App;
 public abstract class FileToolWindow : SimpleWindow, IFileHandleReferenceHolder
 {
     public FileHandle File { get; }
+    FileHandle? IFileHandleReferenceHolder.Handle => null;
 
     public virtual bool CanClose => true;
 

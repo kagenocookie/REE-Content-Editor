@@ -33,13 +33,12 @@ public class OverlaysWindow : IWindowHandler
         tooltipTime = duration;
     }
 
-    public void ShowToast(float duration, string message, (string label, Action) actionButton = default)
+    public void ShowToast(float duration, string message, params (string? label, Action action)[] buttons)
     {
         Toasts.Add(new ToastData(NextToastMsgId++) {
             message = message,
             disappearAt = DateTime.Now.AddSeconds(duration),
-            buttonAction = actionButton.Item2,
-            buttonText = actionButton.label,
+            Buttons = buttons ?? [],
         });
     }
 
@@ -132,7 +131,7 @@ public class OverlaysWindow : IWindowHandler
             var windowPadding = ImGui.GetStyle().WindowPadding;
 
             var height = textSize.Y + windowPadding.Y * 2;
-            if (!string.IsNullOrEmpty(toast.buttonText)) height += ImGui.GetFrameHeightWithSpacing() + 4;
+            if (toast.Buttons.Length > 0) height += ImGui.GetFrameHeightWithSpacing() + 4;
 
             var toastWidth = textSize.X + windowPadding.X * 2 + ImGui.GetFrameHeight();
             var toastLeft = size.X - toastWidth - windowPadding.X * 2;
@@ -143,16 +142,23 @@ public class OverlaysWindow : IWindowHandler
             ImGui.SetNextWindowSize(new Vector2(toastWidth, height), ImGuiCond.Always);
             ImGui.SetNextWindowCollapsed(false, ImGuiCond.Always);
             var closePos = new Vector2(toastLeft + toastWidth - ImGui.GetFrameHeight(), pos.Y + windowPadding.Y);
+            var close = false;
             if (ImGui.Begin($"###Toast{toast.ID}", ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoNavInputs | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoNavFocus | ImGuiWindowFlags.NoMove)) {
                 ImGui.Text(toast.message);
-                if (toast.buttonAction != null) {
+                if (toast.Buttons.Length > 0) {
                     ImGui.Separator();
-                    if (ImGui.Button(string.IsNullOrEmpty(toast.buttonText) ? "Confirm" : toast.buttonText)) {
-                        toast.buttonAction.Invoke();
+                    int c = 0;
+                    foreach (var (label, act) in toast.Buttons) {
+                        if (c++ > 0) ImGui.SameLine();
+                        if (ImGui.Button(string.IsNullOrEmpty(label) ? "Confirm" : label)) {
+                            act.Invoke();
+                            close = true;
+                        }
                     }
                 }
             }
-            if (ImGuiP.CloseButton(ImGui.GetID("CloseButton"), closePos)) {
+            close |= ImGuiP.CloseButton(ImGui.GetID("CloseButton"), closePos);
+            if (close) {
                 Toasts.RemoveAt(i);
             }
             ImGui.End();
@@ -167,8 +173,7 @@ public class OverlaysWindow : IWindowHandler
     {
         public string message = "";
         public DateTime disappearAt;
-        public string? buttonText;
-        public Action? buttonAction;
+        public (string? label, Action action)[] Buttons = [];
 
         public int ID { get; } = id;
     }
