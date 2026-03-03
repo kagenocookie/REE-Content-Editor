@@ -767,6 +767,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             if (ImGui.Button($"{AppIcons.SI_Update}") && animator.File != null) {
                 Workspace.ResourceManager.CloseFile(animator.File);
                 foreach (var c in meshContexts) c.Animator?.Unload();
+                SetAnimation(ctx.animationSourceFile);
             }
             ImguiHelpers.Tooltip("Force reload");
         }
