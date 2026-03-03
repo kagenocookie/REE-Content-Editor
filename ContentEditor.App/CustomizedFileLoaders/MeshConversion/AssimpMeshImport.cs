@@ -461,7 +461,7 @@ public partial class CommonMeshResource : IResourceFile
             mot.Header.version = motver;
             mot.Bones.AddRange(motBones);
             mot.RootBones.AddRange(rootBones);
-            if (mot.Name.Contains("_loop")) {
+            if (mot.Name.Contains("_loop", StringComparison.OrdinalIgnoreCase)) {
                 mot.Header.blending = 0;
             }
 
