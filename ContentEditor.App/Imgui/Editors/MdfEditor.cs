@@ -145,6 +145,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
     private bool isNewMaterialMenu = false;
     private string materialSearch = string.Empty;
     public bool isShowOnlyBookmarkedParams = false;
+    private MaterialData? draggedMat;
 
     private Dictionary<string, HashSet<string>>? _exportTextures;
     private string? _exportSelectedMat;
@@ -165,7 +166,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
         ImGui.EndChild();
     }
 
-    private void ShowMaterialList(UIContext context, MdfFile file)
+    private unsafe void ShowMaterialList(UIContext context, MdfFile file)
     {
         var list = file.Materials;
 
@@ -259,6 +260,24 @@ public class MdfFileImguiHandler : IObjectUIHandler
                 context.children.Clear();
             }
             ImGui.PopStyleColor();
+            if (ImGui.BeginDragDropSource()) {
+                draggedMat = mat;
+                ImGui.SetDragDropPayload("MDF_MATERIAL", null, 0);
+                ImGui.Text(mat.Header.matName);
+                ImGui.EndDragDropSource();
+            }
+            if (ImGui.BeginDragDropTarget()) {
+                var payload = ImGui.GetDragDropPayload();
+                if (payload.Handle != null && payload.IsDataType("MDF_MATERIAL")) {
+                    if (draggedMat != null && mat != draggedMat && ImGui.AcceptDragDropPayload("MDF_MATERIAL").Handle != null) {
+                        if (selectedIDX == list.IndexOf(draggedMat)) {
+                            selectedIDX = i;
+                        }
+                        UndoRedo.RecordListMove(context, context, list, draggedMat, list, mat);
+                    }
+                }
+                ImGui.EndDragDropTarget();
+            }
 
             if (ImGui.BeginPopupContextItem($"##MaterialID{i}")) {
                 ShowMaterialContextMenu(context,file.Materials, mat, newIndex => { selectedIDX = newIndex;  context.children.Clear(); });
