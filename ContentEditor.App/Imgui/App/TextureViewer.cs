@@ -13,14 +13,13 @@ using static ContentEditor.App.Graphics.Texture;
 
 namespace ContentEditor.App;
 
-public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleReferenceHolder
+public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHolder
 {
     public bool HasUnsavedChanges => fileHandle?.Modified == true;
 
     public string HandlerName => $"Texture Viewer";
 
     public bool CanClose => true;
-    public bool CanFocus => true;
 
     IRectWindow? IFileHandleReferenceHolder.Parent => data.ParentWindow;
 
@@ -605,13 +604,8 @@ public class TextureViewer : IWindowHandler, IDisposable, IFocusableFileHandleRe
         texture = null;
     }
 
-    void IFocusableFileHandleReferenceHolder.Focus()
-    {
-        throw new NotImplementedException();
-    }
-
     void IFileHandleReferenceHolder.Close()
     {
-        throw new NotImplementedException();
+        Dispose();
     }
 }

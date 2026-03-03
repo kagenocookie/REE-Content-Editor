@@ -140,8 +140,13 @@ public class Patcher : IDisposable
         } else {
             outputDirMain = OutputFilepath ?? config.GamePath;
             outfile = outputDirMain;
-            outputDirSub = Path.Combine(outputDirMain, "sub");
+            outputDirSub = Path.Combine(outputDirMain, ".content-patcher-staging/sub");
+            if (Directory.Exists(outputDirSub)) {
+                Directory.Delete(outputDirSub, true);
+            }
         }
+
+        // prepare all modified files
         var needsSubPak = Env.RequiresSubPaksForTextures;
         var hasTextures = false;
         foreach (var file in workspace!.ResourceManager.GetModifiedResourceFiles()) {
@@ -161,6 +166,8 @@ public class Patcher : IDisposable
                 SourceFilepath = file.Filepath,
             };
         }
+
+        // full pak handling
         if (isPak) {
             if (!Directory.Exists(outputDirMain) && !Directory.Exists(outputDirSub))
             {
@@ -170,6 +177,7 @@ public class Patcher : IDisposable
 
             var writer = new PakWriter();
             writer.AddFilesFromDirectory(outputDirMain, true);
+            writer.AddFilesFromDirectory(outputDirSub, true);
             if (IsPublishingMod && workspace.BundleManager.ActiveBundles.LastOrDefault() != null) {
                 var bundle = workspace.BundleManager.ActiveBundles.Last();
                 var modConfigPath = Path.Combine(workspace.BundleManager.GetBundleFolder(bundle), "modinfo.ini");
@@ -184,6 +192,8 @@ public class Patcher : IDisposable
             Logger.Info("Patch saved to PAK file: " + outfile);
             patch.PakSize = new FileInfo(outfile).Length;
         }
+
+        // handle enums
         foreach (var bundle in workspace.BundleManager.ActiveBundles) {
             if (!(bundle.Enums?.Count > 0)) continue;
 
@@ -207,18 +217,25 @@ public class Patcher : IDisposable
             };
         }
 
-        if (needsSubPak && hasTextures) {
-            string subOutFile = PakUtils.GetNextSubPakFilepath(Path.HasExtension(outfile) ? Path.GetDirectoryName(outfile)! : outfile);
-            var writerSub = new PakWriter();
-            writerSub.AddFilesFromDirectory(outputDirSub, true);
-            writerSub.SaveTo(subOutFile);
-            Logger.Info("Sub pak saved to file: " + outfile);
-            patch.SubPakSize = new FileInfo(subOutFile).Length;
+        // loose files additional sub pak for textures
+        if (!isPak && needsSubPak && hasTextures) {
+            string texPakFile = PakUtils.GetNextSubPakFilepath(Path.HasExtension(outfile) ? Path.GetDirectoryName(outfile)! : outfile);
+            try {
+                var writerSub = new PakWriter();
+                writerSub.AddFilesFromDirectory(outputDirSub, true);
+                writerSub.SaveTo(texPakFile);
+                Logger.Info("Texture pak saved to file: " + outfile);
+                patch.SubPakSize = new FileInfo(texPakFile).Length;
+            } catch (Exception e) {
+                Logger.Error($"Failed to update texture sub pak: {e.Message} (file {texPakFile})");
+                // keep going with the patch - if the game is running, it might be prevented from writing
+                // but the loose files should still be possible to reload so it might still be desired
+            }
 
-            // store the sub pak as a separate file so it gets cleaned up on revert
-            patch.Resources[subOutFile] = new PatchedResourceMetadata() {
-                TargetFilepath = subOutFile,
-                SourceFilepath = subOutFile,
+            // store the sub pak as a separate file so it can get cleaned up on revert
+            patch.Resources[texPakFile] = new PatchedResourceMetadata() {
+                TargetFilepath = texPakFile,
+                SourceFilepath = texPakFile,
             };
         }
 
@@ -263,13 +280,27 @@ public class Patcher : IDisposable
     public string? FindActivePatchPak()
     {
         var previousPatchMeta = Directory.EnumerateFiles(env.Config.GamePath, "*.pak.patch_metadata.json").FirstOrDefault();
-        if (previousPatchMeta != null) {
+        // attempt to find a currently active patch pak based on a patch_metadata.json
+        // if the file size doesn't match the last patch metadata info, something's wrong
+        // either the patch PAK got renamed/reordered or straight deleted, in either case we can treat it as missing
+        // may be more reliably implemented by adding a marker file inside the PAK at some point
+
+        if (previousPatchMeta == null) {
+            // try handle sub pak when used together with loose files
+            var loosePatchMetaFile = workspace!.BundleManager.ResourcePatchLogPath;
+            if (File.Exists(loosePatchMetaFile) && TryDeserialize<PatchInfo>(loosePatchMetaFile, out var meta) && meta.SubPakSize != 0) {
+                var pakPath = meta.Resources.FirstOrDefault(r => r.Key.EndsWith(".pak")).Key;
+                if (File.Exists(pakPath) && meta.SubPakSize != 0 && meta.SubPakSize == new FileInfo(pakPath).Length) {
+                    return pakPath;
+                }
+            }
+        } else if (previousPatchMeta != null) {
             var pakPath = previousPatchMeta.Replace(".patch_metadata.json", "");
             if (File.Exists(pakPath) && TryDeserialize<PatchInfo>(previousPatchMeta, out var meta)) {
-                // if the file size does not match the last patch metadata info, something's wrong
-                // either the patch PAK got renamed/reordered or straight deleted, in either case we can treat it as missing
-                // may be more reliably implemented by adding a marker file inside the PAK at some point
                 if (meta.PakSize != 0 && meta.PakSize == new FileInfo(pakPath).Length) {
+                    return pakPath;
+                }
+                if (meta.SubPakSize != 0 && meta.SubPakSize == new FileInfo(pakPath).Length) {
                     return pakPath;
                 }
             }

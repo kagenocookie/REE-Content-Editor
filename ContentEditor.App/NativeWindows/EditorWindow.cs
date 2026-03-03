@@ -796,7 +796,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             var patcher = new Patcher(patchWorkspace);
             if (outputPath == "pak") {
                 patcher.OutputFilepath = patcher.FindActivePatchPak()
-                    ?? PakUtils.GetNextPakFilepath(Workspace.Env.Config.GamePath);
+                    ?? (Workspace.Env.RequiresSubPaksForTextures ? PakUtils.GetNextSubPakFilepath(Workspace.Env.Config.GamePath) : PakUtils.GetNextPakFilepath(Workspace.Env.Config.GamePath));
             } else {
                 patcher.OutputFilepath = outputPath;
             }
