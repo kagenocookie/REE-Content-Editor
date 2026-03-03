@@ -522,6 +522,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
         { "ATOC", "ATOC - AlphaTranslucentOcclusionCavity" },
         { "ATOD", "ATOD - AlphaTranslucentOcclusionDirtmask" },
         { "ATOS", "ATOS - AlphaTranslucentOcclusionSubsurfaceScattering" },
+        { "ACOT", "ACOT - AlphaCavityOcclusionTranslucent" },
         { "COLE", "COLE - ColorLayerEdge" },
         { "COLR", "COLR - ColorLayerReflection" },
         { "NRMR", "NRMR - NormalRoughness" },
@@ -532,6 +533,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
         { "NRRT", "NRRT - NormalRoughnessTranslucent" },
         { "OCSD", "OCSD - OcclusionCavitySubsurfaceScatteringDetail" },
         { "OCTD", "OCTD - OcclusionCavityTranslucentDetail" },
+        { "SCOT", "SCOT - SubsurfaceScatteringCavityOcclusionTranslucent" },
     };
     private static bool ShowTextureTypeUI(string path, bool previewOnly = false)
     {
@@ -542,6 +544,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
             "atoc" => (TextureTypeNames["ATOC"], new[] { "Alpha", "Translucency", "Ambient Occlusion", "Cavity" }),
             "atod" => (TextureTypeNames["ATOD"], new[] { "Alpha", "Translucency", "Ambient Occlusion", "Dirt Mask" }),
             "atos" => (TextureTypeNames["ATOS"], new[] { "Alpha", "Translucency", "Ambient Occlusion", "Subsurface Scattering" }),
+            "acot" => (TextureTypeNames["ACOT"], new[] { "Alpha", "Cavity", "Ambient Occlusion", "Translucency" }),
             "cole" => (TextureTypeNames["COLE"], new[] { "Primary Color", "Secondary Color", "Edge Mask", "N/A" }),
             "colr" => (TextureTypeNames["COLR"], new[] { "Primary Color", "Secondary Color", "Reflection", "N/A" }),
             "nrmr" => (TextureTypeNames["NRMR"], new[] { "Normal X", "Normal Y", "N/A", "Roughness" }),
@@ -552,6 +555,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
             "nrrt" => (TextureTypeNames["NRRT"], new[] { "Roughness", "Normal Y", "Translucency", "Normal X" }),
             "ocsd" => (TextureTypeNames["OCSD"], new[] { "Ambient Occlusion", "Cavity", "Subsurface Scattering", "Detail Mask" }),
             "octd" => (TextureTypeNames["OCTD"], new[] { "Ambient Occlusion", "Cavity", "Translucency", "Detail Mask" }),
+            "scot" => (TextureTypeNames["SCOT"], new[] { "SubsurfaceScattering", "Cavity", "Ambient Occlusion", "Translucency" }),
             _ => (null, null)
         };
 
