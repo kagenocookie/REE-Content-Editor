@@ -345,6 +345,9 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             config.BackgroundColor.Set(newColor);
             foreach (var wnd in MainLoop.Instance.Windows) {
                 wnd.ClearColor = newColor;
+                foreach (var scn in (wnd as EditorWindow)?.SceneManager.RootScenes ?? []) {
+                    scn.OwnRenderContext.ClearColor = newColor;
+                }
             }
         }
         if (isAlpha && _wasOriginallyAlphaBg == false) {
