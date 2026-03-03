@@ -52,15 +52,15 @@ Some files may not fully work for other RE ENGINE games.
 | .mdf2     | ☑️ read/write
 | .efx      | ☑️ read/write
 | .tex, .dds  | ☑️ view, convert  | Convert between TGA/PNG/DDS/TEX<br>Format conversion across games
-| .mesh     | ☑️ 3D & data display | FBX & GLTF export/import<br>Format conversion across games
-| .motlist  | ☑️ read/write | Animation preview<br>GLTF import/export<br>Mot copy/paste/retargeting ([info](https://github.com/kagenocookie/REE-Content-Editor/wiki/Animation-tools))
-| .rcol     | ☑️ read/write | 3D shape preview and editing ([info](https://github.com/kagenocookie/REE-Content-Editor/wiki/RCOL-Request-set-colliders))
+| .mesh     | ☑️ 3D & data display | FBX & GLTF export/import<br>Format conversion across games ([wiki](https://github.com/kagenocookie/REE-Content-Editor/wiki/Mesh-editing))
+| .motlist  | ☑️ read/write | Animation preview<br>GLTF import/export<br>Mot copy/paste/retargeting ([wiki](https://github.com/kagenocookie/REE-Content-Editor/wiki/Animation-tools))
+| .rcol     | ☑️ read/write | 3D shape preview and editing ([wiki](https://github.com/kagenocookie/REE-Content-Editor/wiki/RCOL-Request-set-colliders))
 | .motbank  | read/write
 | .motfsm2, .fsmv2, .bhvt, .tmlfsm2  | read/write
 | .mcol     | ☑️ read/write | .glb import/export for collision mesh
 | .tml, .clip | read/write
 | .gui      | read/write
-| .aimap, .ainvm, .aiwayp | read/write | 3D preview<br>Navmesh generation ([guide](https://github.com/kagenocookie/REE-Content-Editor/wiki/AI-Navigation))
+| .aimap, .ainvm, .aiwayp | read/write | 3D preview<br>Navmesh generation ([wiki](https://github.com/kagenocookie/REE-Content-Editor/wiki/AI-Navigation))
 | .cdef, .def | ☑️ read/write
 | common image formats | view only
 | common mesh formats | ☑️ 3D display | Convert to RE mesh
