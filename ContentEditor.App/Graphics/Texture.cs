@@ -326,7 +326,7 @@ public class Texture : IDisposable
         var data = ArrayPool<byte>.Shared.Rent((int)dds.Header.pitchOrLinearSize);
         for (int mip = minMipLevel; mip < maxMipLevel; ++mip) {
             var w = (int)Math.Max(1, dds.Header.width >> mip);
-            var h = (int)Math.Max(1, dds.Header.width >> mip);
+            var h = (int)Math.Max(1, dds.Header.height >> mip);
 
             var size = h * w * sizeof(int);
 

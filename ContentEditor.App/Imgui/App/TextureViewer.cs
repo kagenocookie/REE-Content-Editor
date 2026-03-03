@@ -420,11 +420,13 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
                             dds = new DDSFile(new FileHandler(lastImportSourcePath));
                             dds.Read();
                         } else {
-                            var tempTex = new Texture().LoadFromFile(lastImportSourcePath);
+                            using var tempTex = new Texture().LoadFromFile(lastImportSourcePath);
                             dds = tempTex.GetAsDDS(generateMissingMipMaps: this.mipMapOption == MipGenOptions.Generate);
                         }
-                        fileHandle.GetFile<TexFile>().LoadDataFromDDS(dds);
-                        texture.LoadFromDDS(dds);
+                        var tex = fileHandle.GetFile<TexFile>();
+                        tex.LoadDataFromDDS(dds);
+                        texture.Dispose();
+                        texture = new Texture().LoadFromTex(tex);
                         fileHandle.Modified = true;
                     });
                 }, lastImportSourcePath, fileExtension: FileFilters.TextureFilesAll);
