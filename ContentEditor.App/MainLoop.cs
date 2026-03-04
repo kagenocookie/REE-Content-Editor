@@ -3,6 +3,7 @@ using System.Diagnostics;
 using ContentEditor.App.Windowing;
 using ContentEditor.BackgroundTasks;
 using ContentEditor.Reversing;
+using ReeLib;
 
 namespace ContentEditor.App;
 
@@ -38,6 +39,73 @@ internal sealed partial class MainLoop : IDisposable
     }
 
     private CancellationTokenSource _tokenSource = new CancellationTokenSource();
+    private static string? GuessGameFromFilepath(string filepath)
+    {
+        var format = PathUtils.ParseFileFormat(filepath);
+        var ext = PathUtils.GetFilenameExtensionWithoutSuffixes(filepath);
+        foreach (var game in AppConfig.Instance.ConfiguredGames) {
+            var checkedName = game;
+            if (game.StartsWith("re") && game.EndsWith("rt")) {
+                checkedName = checkedName.Substring(0, 3);
+            }
+            if (filepath.Contains(checkedName, StringComparison.OrdinalIgnoreCase)) {
+                // ResourceRepository.RemoteInfo
+                if (checkedName == "re2" || checkedName == "re3" || checkedName == "re7") {
+                    // disambiguate rt / non-rt
+                    var env = WorkspaceManager.Instance.GetWorkspace(game);
+                    env.TryGetFileExtensionVersion(ext.ToString(), out var expectedVersion);
+                    WorkspaceManager.Instance.Release(env);
+                    if (expectedVersion == format.version) {
+                        return game;
+                    }
+                } else {
+                    return game;
+                }
+            }
+        }
+        return null;
+    }
+
+    private void OpenCommandLineFile(EditorWindow window, string[] filepaths)
+    {
+        bool needsGame = false;
+        string? game = null;
+        foreach (var filepath in filepaths) {
+            var fmt = PathUtils.ParseFileFormat(filepath).format;
+            var isRsz = (fmt is KnownFileFormats.Scene or KnownFileFormats.Prefab or KnownFileFormats.UserData or KnownFileFormats.RequestSetCollider or KnownFileFormats.MotionFsm2 or KnownFileFormats.BehaviorTree);
+            if (isRsz) {
+                needsGame = true;
+                // if it's an RSZ based file, it can't open unless we know which game it is, try and figure that out
+                game = GuessGameFromFilepath(filepath);
+                break;
+            }
+        }
+
+        // always delay the file open in case there's files that need GPU (mesh/tex)
+        const int openDelayMs = 500;
+        if (needsGame) {
+            if (game != null) {
+                window.SetWorkspace(game, null);
+            }
+            Task.Delay(openDelayMs).ContinueWith(_ => {
+                window.InvokeFromUIThread(() => {
+                    if (game == null) {
+                        window.Overlays.ShowToast(15f, """
+                            Files might not have opened correctly because we could not automatically determine which game they belong to.
+                            Please manually configure and select the game, then re-open your files after doing so.
+                            """);
+                    }
+                    (windows.First() as EditorWindow)?.OpenFiles(filepaths);
+                });
+            });
+        } else {
+            Task.Delay(openDelayMs).ContinueWith(_ => {
+                window.InvokeFromUIThread(() => {
+                    (windows.First() as EditorWindow)?.OpenFiles(filepaths);
+                });
+            });
+        }
+    }
 
     public void RunEventLoop()
     {
@@ -49,6 +117,11 @@ internal sealed partial class MainLoop : IDisposable
         windows.First().InitGraphics();
         ExecDebugTests();
         windows.First().AddUniqueSubwindow(new HomeWindow());
+
+        var pathArgs = Environment.GetCommandLineArgs().Skip(1).Where(p => File.Exists(p)).ToArray();
+        if (pathArgs.Length > 0) {
+            OpenCommandLineFile((EditorWindow)windows.First(), pathArgs);
+        }
 
         var fpsLimit = new FpsLimiter();
         while (windows.FirstOrDefault()?.IsClosing == false) {
