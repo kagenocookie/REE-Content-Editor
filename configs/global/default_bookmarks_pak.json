@@ -65,27 +65,6 @@
   ],
   "re4": [
     {
-      "Path": "natives/stm/_chainsaw/character/wp",
-      "Tags": [
-        "Weapon"
-      ],
-      "Comment": "Weapons"
-    },
-    {
-      "Path": "natives/stm/_chainsaw/character/ac/ac00",
-      "Tags": [
-        "Misc"
-      ],
-      "Comment": "Accessories"
-    },
-    {
-      "Path": "natives/stm/_chainsaw/character/ch",
-      "Tags": [
-        "Character"
-      ],
-      "Comment": "Characters"
-    },
-    {
       "Path": "natives/stm/_chainsaw/authoring/campaign1001",
       "Tags": [
         "Stage"
@@ -98,6 +77,572 @@
         "Stage"
       ],
       "Comment": "Optimized static stage scenes"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha0",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Leon S. Kennedy"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha0/cha000",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Leon Shirt"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha0/cha001",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Leon Bulletproof Vest"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha0/cha002",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Leon Jacket"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha0/cha003",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Leon Pinstripe"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha0/cha004",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Leon Casual"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha0/cha005",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Leon Romantic"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha0/cha006",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Leon Villain"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha0/cha007",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Leon Hero"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha0/cha008",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Leon RPD"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha1",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Ashley Graham"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha1/cha100",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Ashley Jacket"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha1/cha101",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Ashley Jacketless"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha1/cha102",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Ashley Casual"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha1/cha103",
+      "Tags": [
+        "Character",
+        "DLC"
+      ],
+      "Comment": "Ashley Romantic"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha1/cha104",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Ashley Knight"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha2",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Ada Wong (Main Story)"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha3",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Luis Serra (Main Story)"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha3/cha300",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Luis Default"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha3/cha301",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Luis Bag Full"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha3/cha302",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Luis Bag Bottom"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha3/cha303",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Luis Bag Top"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha3/cha304",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Luis Bag Threads"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha3/cha308",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Luis Bag Open"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha3/cha309",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Luis Jacket Ripped"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha3/cha310",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Luis Bag Ground"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha6",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Albert Wesker (Main Story)"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/cha7",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Merchant"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chb0",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Young Cop"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chb0/chb000",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Young Cop Default"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chb0/chb001",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Young Cop Burnt"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chb1",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Old Cop (Mario)"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chb1/chb100",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Old Cop Default"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chb1/chb101",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Old Cop Dead"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chb1/chb102",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Old Cop Beheaded"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chb2",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Ingrid Hunnigan"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chb3",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Verdugo (Black Robe)"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chb4",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Verdugo (Red Robe)"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chb5",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Bitorez Mendez"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chb6",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Ram\u00F3n Salazar"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chb7",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Jack Krauser (Main Story)"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chb8",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Osmund Saddler"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chb9",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Helicopter Pilot (Green)"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chba",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Helicopter Pilot (Blue)"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chbb",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Sacrifice Lady 1"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chbc",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Sacrifice Lady 2"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chbd",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Zealot Corpse"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chc0",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Ganado"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chc9",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Ganado LODs"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chd0",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Garrador"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chd2",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Wolf"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chd3",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Novistador"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chd4",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Regenerador"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chd5",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Iron Maden"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chd6",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Armadura"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/che0",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Plaga Spider"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/che2",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Plaga Head Blade"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/che3",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Plaga Head Mouth"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/che4",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Plaga Claw"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chf0",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "El Gigante"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chf1",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Del Lago"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chf2",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Verdugo"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chf4",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Bitorez Mendez (Mutated)"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chf5",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Bitorez Mendez (Mutated Ripped)"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chf6",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Ramon Salazar (Mutated)"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chf7",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Jack Krauser (Mutated)"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chf8",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Osmund Saddler (Mutated)"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chfc",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Osmund Saddler (Boss)"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chfd",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Osmund Saddler (Claw)"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chg0",
+      "Tags": [
+        "Misc"
+      ],
+      "Comment": "Friendly Dog"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chg1",
+      "Tags": [
+        "Misc"
+      ],
+      "Comment": "Crow"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chg2",
+      "Tags": [
+        "Misc"
+      ],
+      "Comment": "Snake"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chg3",
+      "Tags": [
+        "Misc"
+      ],
+      "Comment": "Cow"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chg4",
+      "Tags": [
+        "Misc"
+      ],
+      "Comment": "Bass"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chg5",
+      "Tags": [
+        "Misc"
+      ],
+      "Comment": "Chicken"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chg6",
+      "Tags": [
+        "Misc"
+      ],
+      "Comment": "Bat"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chg9",
+      "Tags": [
+        "Misc"
+      ],
+      "Comment": "Rat"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chga",
+      "Tags": [
+        "Misc"
+      ],
+      "Comment": "Pig"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ch/chgb",
+      "Tags": [
+        "Misc"
+      ],
+      "Comment": "Roach"
+    },
+    {
+      "Path": "natives/stm/_chainsaw/character/ac/ac00",
+      "Tags": [
+        "Misc"
+      ],
+      "Comment": "Accessories"
     }
   ],
   "re2": [
@@ -816,6 +1361,449 @@
         "Weapon"
       ],
       "Comment": "Tactical Knife (Chris)"
+    }
+  ],
+  "re9": [
+    {
+      "Path": "natives/stm/character/ch/ch01",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Leon S. Kennedy"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/0100",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Leon (Jacket \u0026 Harness)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/0150",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Leon (Film Noir)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/0151",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Leon (Apocalypse)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/0152",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Leon (RE4)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/0153",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Leon (RPD)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch02",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Grace Ashcroft"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch02/0200",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Grace (Jacket \u0026 T-shirt)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch02/0250",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Grace (FBI)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch02/0251",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Grace (Film Noir)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch02/0252",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Grace (Apocalypse)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch02/0253",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Grace (Dimitrescu)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch03",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Emily"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch06",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Sherry Birkin"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch09",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "The Commander"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch12",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "The Girl"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch13",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Emily (Mutated)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch15",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Nathan Dempsy"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch18",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Alyssa Ashcroft"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch20",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Norman Cole"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch31",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Plant 43 (Seedling)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch32",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Plant 43 (Boss)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch40",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Male Enemies"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch41",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Female Enemies"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch42",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Fat Enemies"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch43",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Zombie Chef"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch44",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Chunk"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch45",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Blister Head"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch47",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Other Male Enemies"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch48",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Other Female Enemies"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch49",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Other Fat Enemies"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch51",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Victor Gideon"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch52",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Raccoon City Zombies"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch56",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "ARK Zombie"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch76",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Baby Spider"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch77",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Titan Spinner"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch78",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Garmr"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch80",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Zeno"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch86",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Tyrant T-501"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch88",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Licker"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch98",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Animals"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0100",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Matilda IMP"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0102",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Requiem"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0103",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "S\u0026S M232"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0106",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Silencer 9"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0108",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Redemption"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0109",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Ghost Grudge"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0110",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "B932"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0111",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Alligator Snapper"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0117",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Requiem (Film Noir)"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0118",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Requiem (Apocalypse)"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0119",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "S\u0026S 232 (Film Noir)"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0120",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "S\u0026S 232 (Apocalypse)"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp02/0200",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Gal"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp02/0201",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "STIRI REVO3 A1"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp02/0202",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Freya\u0027s Needle"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp03/0300",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "MSBG 500"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp03/0303",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "W870 Police"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp03/0304",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "990-TAC"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp05/0500",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Classic 70"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp05/0501",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Marksman 1A"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp07",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "RPG-7"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp08",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Gas Canister"
     }
   ],
   "pragmata": [
