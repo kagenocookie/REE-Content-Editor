@@ -675,26 +675,27 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (mesh.NativeMesh.OccluderMesh?.MeshGroups.Count > 0) ImGui.Checkbox("Include Occlusion Mesh", ref exportOcclusion);
         if (showImportSettings) {
             ImGui.SeparatorText("Import Settings");
-            var scale = AppConfig.Settings.Import.Scale * 100;
-            if (ImGui.InputFloat("Import Scale", ref scale, "%.00f%%")) {
-                AppConfig.Settings.Import.Scale = Math.Clamp(scale / 100, 0.001f, 100);
+            var scale = AppConfig.Settings.Import.Scale;
+            if (ImGui.InputFloat("Import Scale", ref scale, "%.2f")) {
+                AppConfig.Settings.Import.Scale = Math.Clamp(scale, 0.001f, 100);
                 AppConfig.Settings.Save();
             }
+
             var rootId = AppConfig.Settings.Import.ForceRootIdentity;
-            if (ImGui.Checkbox("Force Default Root Orientation", ref rootId)) {
+            if (ImGui.Checkbox("Force Default Root Orientation"u8, ref rootId)) {
                 AppConfig.Settings.Import.ForceRootIdentity = rootId;
                 AppConfig.Settings.Save();
             }
-            ImguiHelpers.Tooltip("Forces the root bone into the default (Identity) orientation on import.\nUse if you find that your imported mesh skeletons are fully rotated along an axis");
+            ImguiHelpers.Tooltip("Forces the root bone into the default (Identity) orientation on import.\nUse if you find that your imported mesh skeletons are fully rotated along an axis"u8);
             var convertYUp = AppConfig.Settings.Import.ConvertZToYUpRootRotation;
             if (ImGui.Checkbox("Transform Z-Up -> Y-Up root axis for animations", ref convertYUp)) {
                 AppConfig.Settings.Import.ConvertZToYUpRootRotation = convertYUp;
                 AppConfig.Settings.Save();
             }
-            ImguiHelpers.Tooltip("For modelling apps that don't know how to export with Y axis as up, this might fix the rotations of imported meshes.");
-            ImGui.SeparatorText("Export Settings");
+            ImguiHelpers.Tooltip("For modelling apps that don't know how to export with Y axis as up, this might fix the rotations of imported meshes."u8);
+            ImGui.SeparatorText("Export Settings"u8);
             scale = AppConfig.Settings.Import.ExportScale;
-            if (ImGui.InputFloat("Export Scale", ref scale, "%.2f x")) {
+            if (ImGui.InputFloat("Export Scale"u8, ref scale, "%.2f")) {
                 AppConfig.Settings.Import.ExportScale = Math.Clamp(scale, 0.001f, 100);
                 AppConfig.Settings.Save();
             }
