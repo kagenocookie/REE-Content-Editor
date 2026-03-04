@@ -50,7 +50,7 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
                 if (matchingParam == null) {
                     material.Parameters.Remove(existingParam);
                 } else if (matchingParam.Components != existingParam.componentCount) {
-                    existingParam.componentCount = matchingParam.Components;
+                    existingParam.componentCount = (short)matchingParam.Components;
                 }
             }
 
@@ -58,7 +58,7 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
                 if (hasPreviousData && material.Parameters.Any(pp => pp.paramName == param.Name)) continue;
                 material.Parameters.Add(new ParamHeader() {
                     paramName = param.Name,
-                    componentCount = param.Components
+                    componentCount = (short)param.Components
                 });
             }
 
