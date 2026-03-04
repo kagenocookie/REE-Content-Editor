@@ -77,6 +77,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     private bool? _hasTooManyWeightsForRender;
 
     private List<MeshViewerContext> meshContexts = new();
+    private MeshViewerContext? _animationListContext;
 
     protected override void Reset()
     {
@@ -213,7 +214,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             ImGui.BeginChild("OverlayControls", new Vector2(480, AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().Y - 80 : 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders);
 
             ImGui.SameLine();
-            ShowAnimationMenu(mainCtx);
+            ShowRootAnimationList();
 
             ImGui.PopStyleColor(2);
             ImGui.EndChild();
@@ -334,6 +335,9 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         context.RemoveChild(ctx.UI);
         (scene?.RootFolder as INodeObject<GameObject>)?.RemoveChild(ctx.GameObject);
         ctx.GameObject.Dispose();
+        if (_animationListContext == ctx) {
+            _animationListContext = meshContexts.FirstOrDefault();
+        }
     }
 
     private void EnsureAnimationsInit()
@@ -370,7 +374,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                     }
                     if (ctx.IsAnimatable && ImGui.BeginMenu($"{AppIcons.SI_Animation} Animation")) {
                         EnsureAnimationsInit();
-                        ctx.ShowAnimSettings(meshContexts);
+                        ctx.ShowAnimSettings(meshContexts, ctx != meshContexts[0]);
                         ImGui.EndMenu();
                     }
                     if (ImGui.BeginMenu($"{AppIcons.SI_MeshViewerMeshGroup} Mesh Groups")) {
@@ -766,6 +770,20 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         return true;
     }
 
+    private void ShowRootAnimationList()
+    {
+        _animationListContext ??= meshContexts.FirstOrDefault();
+        if (_animationListContext == null) return;
+
+        var animControllers = meshContexts.Where(mc => mc.Animator?.ActiveOwner == null).ToArray();
+        if (animControllers.Skip(1).Any()) {
+            var names = animControllers.Select(c => c.ShortName).ToArray();
+            ImguiHelpers.ValueCombo("Controller", names, animControllers, ref _animationListContext);
+            ImGui.Separator();
+        }
+
+        ShowAnimationMenu(_animationListContext);
+    }
     private void ShowAnimationMenu(MeshViewerContext ctx)
     {
         ImGui.SeparatorText("Animations");
@@ -788,7 +806,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
         ImGui.SameLine();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Source File").X - ImGui.GetStyle().FramePadding.X);
-        ctx.ShowAnimSettings(meshContexts);
+        ctx.ShowAnimSettings(meshContexts, false);
     }
 
     private void RenderSkeleton(MeshViewerContext ctx)
@@ -1386,11 +1404,11 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             }
         }
     }
-    public void ShowAnimSettings(List<MeshViewerContext> meshContexts)
+    public void ShowAnimSettings(List<MeshViewerContext> meshContexts, bool showControllerSelection)
     {
         if (Animator == null) return;
 
-        if (meshContexts[0] != this) {
+        if (showControllerSelection) {
             string parentLabel = "Animation Controller";
             if (Animator.owner != Animator) {
                 parentLabel = "Parent: " + FindOwner(meshContexts)?.ShortName;
