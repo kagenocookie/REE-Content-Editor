@@ -288,7 +288,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
                 var tex = new Texture(GL);
                 if (texData.HasCompressedData) {
                     var stream = new MemoryStream(texData.CompressedData);
-                    tex.LoadFromStream(stream);
+                    tex.LoadFromStream(stream, texture.FilePath);
                 } else {
                     var bytes = Unsafe.As<byte[]>(texData.NonCompressedData);
                     tex.LoadFromRawData(bytes, (uint)texData.Width, (uint)texData.Height);

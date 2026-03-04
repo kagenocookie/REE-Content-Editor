@@ -26,6 +26,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
     FileHandle? IFileHandleReferenceHolder.Handle => fileHandle;
 
     private Texture? texture;
+    private bool showColorSpaceHint;
     private string? texturePath;
     private FileHandle? fileHandle;
     private TextureChannel currentChannel = TextureChannel.RGBA;
@@ -104,6 +105,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
         texture?.Dispose();
         texturePath = file.Filepath;
         texture = new Texture().LoadFromFile(file);
+        showColorSpaceHint = !Path.GetExtension(file.Filename).Equals(".dds", StringComparison.OrdinalIgnoreCase) && file.Format.format != KnownFileFormats.Texture;
         file.References.Add(this);
         if (string.IsNullOrEmpty(exportTemplate)) {
             if (file.Format.format == KnownFileFormats.Texture) {
@@ -123,6 +125,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
         texture?.Dispose();
         texturePath = filepath;
         texture = new Texture().LoadFromFile(filepath);
+        showColorSpaceHint = !Path.GetExtension(filepath).Equals(".dds") && PathUtils.ParseFileFormat(filepath).format != KnownFileFormats.Texture;
     }
 
     public void Init(UIContext context)
@@ -217,6 +220,22 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
             ImguiHelpers.VerticalSeparator();
             ImGui.SameLine();
             ImGui.Text($"Format: {texture.Format}");
+
+            if (texture.Format is DxgiFormat.R8G8B8A8_UNORM or DxgiFormat.R8G8B8A8_UNORM_SRGB &&
+                (fileHandle?.Format.format != KnownFileFormats.Texture) &&
+                !Path.GetExtension((texturePath ?? fileHandle?.Filepath ?? texture.Path ?? "").AsSpan()).Equals(".dds", StringComparison.OrdinalIgnoreCase)
+            ) {
+                ImGui.SameLine();
+                if (ImGui.Button($"{AppIcons.SI_UpdateTexture}")) {
+                    texture.Format = texture.Format == DxgiFormat.R8G8B8A8_UNORM ? DxgiFormat.R8G8B8A8_UNORM_SRGB : DxgiFormat.R8G8B8A8_UNORM;
+                    showColorSpaceHint = false;
+                }
+                ImguiHelpers.Tooltip("Swap color space\nThis is used to determine whether your source image should be treated as a color or a non-color texture for most conversion operations.\nGenerally albedo and UI textures should be sRGB while everything else should NOT be sRGB.");
+                if (showColorSpaceHint) {
+                    ImGui.SameLine();
+                    ImGui.TextColored(Colors.Info, "Color space was automatically guessed based on the file name."u8);
+                }
+            }
             ImGui.Text("Channels:");
             ImGui.SameLine();
             if (ImGui.RadioButton("RGBA", currentChannel == TextureChannel.RGBA)) {

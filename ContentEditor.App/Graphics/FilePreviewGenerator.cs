@@ -110,7 +110,7 @@ public sealed class FilePreviewGenerator : IDisposable
         var path = GetThumbnailPath(file);
         using var fs = File.OpenRead(path);
         texture = new Texture(_mainGl);
-        texture.LoadFromStream(fs);
+        texture.LoadFromStream(fs, path);
         _loadedPreviews[file] = texture;
         _statuses[file] = PreviewImageStatus.Ready;
         return true;

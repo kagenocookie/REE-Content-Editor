@@ -96,23 +96,31 @@ public class Texture : IDisposable
             return LoadFromTex(stream, filepath);
         }
 
-        return LoadFromStream(stream);
+        return LoadFromStream(stream, filepath);
     }
 
     /// <summary>
     /// Load a standard image file format from a stream. This method does not support .dds or .tex files.
     /// </summary>
-    public Texture LoadFromStream(Stream stream)
+    public Texture LoadFromStream(Stream stream, string? filepath = null)
+    {
+        return LoadFromStream(stream, GuessIsSrgbFromFilename(filepath));
+    }
+
+    /// <summary>
+    /// Load a standard image file format from a stream. This method does not support .dds or .tex files.
+    /// </summary>
+    public Texture LoadFromStream(Stream stream, bool isSrgb = true)
     {
         using var img = Image.Load<Rgba32>(stream);
-        LoadFromImage(img);
+        LoadFromImage(img, isSrgb);
         return this;
     }
 
     /// <summary>
     /// Load a standard image file.
     /// </summary>
-    public unsafe Texture LoadFromImage(Image<Rgba32> img)
+    public unsafe Texture LoadFromImage(Image<Rgba32> img, bool isSrgb)
     {
         _gl.TexImage2D(TextureTarget.Texture2D, 0, InternalFormat.Rgba8, (uint)img.Width, (uint)img.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, null);
 
@@ -125,9 +133,33 @@ public class Texture : IDisposable
         });
         Width = img.Width;
         Height = img.Height;
+        Format = isSrgb ? DxgiFormat.R8G8B8A8_UNORM_SRGB : DxgiFormat.R8G8B8A8_UNORM;
 
         SetNonTextureParameters();
         return this;
+    }
+
+    public static bool GuessIsSrgbFromFilename(string? path)
+    {
+        if (string.IsNullOrEmpty(path)) return true;
+
+        var name = PathUtils.GetFilenameWithoutExtensionOrVersion(path);
+
+        if (name.Contains("_ALB", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("_COL", StringComparison.OrdinalIgnoreCase)) {
+            return true;
+        }
+
+        if (name.Contains("_NRM", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("_NRR", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("_NRO", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("norm", StringComparison.OrdinalIgnoreCase) ||
+            name.EndsWith("_n", StringComparison.OrdinalIgnoreCase)
+        ) {
+            return false;
+        }
+
+        return true;
     }
 
     public Texture LoadFromDDS(Stream stream)
@@ -307,7 +339,7 @@ public class Texture : IDisposable
         dds.Header.height = (uint)Math.Max(1, Height >> minMipLevel);
         dds.Header.IsHasDX10 = true;
         dds.Header.DX10 = new() {
-            Format = DxgiFormat.R8G8B8A8_UNORM,
+            Format = Format.ToString().Contains("SRGB") ? DxgiFormat.R8G8B8A8_UNORM_SRGB : DxgiFormat.R8G8B8A8_UNORM,
             ArraySize = 1,
             ResourceDimension = ResourceDimension.TEXTURE2D,
         };

@@ -360,7 +360,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
         if (outImageData != null) {
             outputTexture?.Dispose();
             outputTexture = new Texture();
-            outputTexture.LoadFromImage(outImageData);
+            outputTexture.LoadFromImage(outImageData, firstTex.Format.ToString().Contains("SRGB"));
             outputTexture.SetChannel(outputDisplayChannel);
             outImageData.Dispose();
 
@@ -494,7 +494,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
             foreach (var mem in img.GetPixelMemoryGroup()) {
                 mem.Span.Fill(fillColor);
             }
-            slot.texture.LoadFromImage(img);
+            slot.texture.LoadFromImage(img, slot.inputSwizzle.ToString().Contains("RGB"));
             img.Dispose();
             isDirty = true;
         } catch (Exception e) {
