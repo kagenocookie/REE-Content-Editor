@@ -535,6 +535,13 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         var mesh = meshContexts.First().MeshFile;
         if (mesh == null || !(mesh.NativeMesh.BoneData?.DeformBones.Count > 0) || !Animators.Any()) return null;
 
+        var deformBoneLimit = mesh.NativeMesh.CurrentVersionConfig == null ? 0 : MeshFile.GetDeformBoneLimit(mesh.NativeMesh.CurrentVersionConfig);
+        if (deformBoneLimit > 0 && mesh.NativeMesh.BoneData.DeformBones.Count > deformBoneLimit) {
+            return $"""
+                Mesh has too many deform bones, it will not work correctly ingame.
+                At most {deformBoneLimit} are supported by the {mesh.NativeMesh.CurrentVersionConfig} format.
+                """;
+        }
         if (mesh.NativeMesh.BoneData.DeformBones.Count > 255) {
             return """
                 Some animations might not be fully accurate in the preview.

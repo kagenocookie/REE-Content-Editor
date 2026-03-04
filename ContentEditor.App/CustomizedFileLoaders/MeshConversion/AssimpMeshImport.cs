@@ -68,9 +68,9 @@ public partial class CommonMeshResource : IResourceFile
             mainBuffer.AdditionalBuffers.Add(occBuffer);
         }
 
-        var maxWeights = MeshFile.GetWeightLimit(versionConfig);
-        var isSixWeight = maxWeights % 6 == 0;
-        bool allowExtraWeights = maxWeights > 8;
+        var maxWeightsPerVert = MeshFile.GetWeightLimit(versionConfig);
+        bool allowExtraWeights = maxWeightsPerVert > 8;
+        var maxWeighedBones = MeshFile.GetDeformBoneLimit(versionConfig);
 
         var orderedMeshes = srcMeshes.OrderBy(m => (MeshLoader.GetMeshIndexFromName(m.Name), MeshLoader.GetMeshGroupFromName(m.Name), MeshLoader.GetSubMeshIndexFromName(m.Name)));
 
@@ -312,7 +312,7 @@ public partial class CommonMeshResource : IResourceFile
                                 fail = (weightIndex == -1 || weightIndex >= outWeight.boneIndices.Length);
                             }
                             if (fail) {
-                                if (warnedBones.Add(aiBone.Name)) Log.Warn($"Too many weights (> {maxWeights}) for {(isShapeKey ? "SHAPEKEY" : "")} bone {aiBone.Name}. Ignoring.");
+                                if (warnedBones.Add(aiBone.Name)) Log.Warn($"Too many weights (> {maxWeightsPerVert}) for {(isShapeKey ? "SHAPEKEY" : "")} bone {aiBone.Name}. Ignoring.");
                                 continue;
                             }
                         }
@@ -344,6 +344,9 @@ public partial class CommonMeshResource : IResourceFile
             foreach (var (remap, bone) in deformBones) {
                 bone.remapIndex = remapIndex++;
                 mesh.BoneData!.DeformBones.Add(bone);
+            }
+            if (deformBones.Count > maxWeighedBones) {
+                Logger.Error($"Imported mesh contains {deformBones.Count} deform bones (bones that have weights assigned). Only up to {maxWeighedBones} are supported for mesh format {versionConfig}");
             }
 
             RemapDeformBones(mainBuffer.Weights, deformBones);
