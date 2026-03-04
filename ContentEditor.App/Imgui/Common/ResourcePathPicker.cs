@@ -267,6 +267,9 @@ public class ResourcePathPicker : IObjectUIHandler
             }
 
             workspace.BundleManager.SaveBundle(bundle);
+            if (file.HandleType is FileHandleType.Memory or FileHandleType.LooseFile) {
+                workspace.ResourceManager.CloseFile(file);
+            }
         }, suggestedSavePath);
     }
 }

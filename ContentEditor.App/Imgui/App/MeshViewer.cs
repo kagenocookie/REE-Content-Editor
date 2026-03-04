@@ -779,7 +779,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (animControllers.Skip(1).Any()) {
             var names = animControllers.Select(c => c.ShortName).ToArray();
             ImguiHelpers.ValueCombo("Controller", names, animControllers, ref _animationListContext);
-            ImGui.Separator();
         }
 
         ShowAnimationMenu(_animationListContext);
