@@ -12,6 +12,20 @@ namespace ContentEditor.App.FileLoaders;
 
 public partial class CommonMeshResource : IResourceFile
 {
+    private static float GetExportScale(string format) {
+        if (format != "fbx") return 1;
+
+        var scale = AppConfig.Settings.Import.ExportScale;
+        if (scale <= 0) scale = 1;
+        return scale;
+    }
+
+    private static Matrix4x4 GetScaledMatrix(Matrix4x4 mat, float scale)
+    {
+        Matrix4x4.Decompose(mat, out var s, out var r, out var t);
+        return Transform.GetMatrixFromTransforms(t * scale, r, s);
+    }
+
     private static IEnumerable<Node> FlatNodes(Node node)
     {
         yield return node;
@@ -31,12 +45,15 @@ public partial class CommonMeshResource : IResourceFile
 
     private static void AddMotToScene(Assimp.Scene scene, MotFile mot, string exportFormat)
     {
+        var isFbx = exportFormat == "fbx";
+        var scale = GetExportScale(exportFormat);
+
         var anim = new Assimp.Animation();
         anim.Name = mot.Name;
         anim.TicksPerSecond = mot.Header.FrameRate;
         anim.DurationInTicks = mot.Header.endFrame;
         // fbx is stupid and we need to do this for the keyframes to read correctly
-        var timescale = exportFormat == "fbx" ? mot.Header.FrameRate / 24f : 1;
+        var timescale = isFbx ? mot.Header.FrameRate / 24f : 1;
 
         var nodeDict = new Dictionary<uint, Node>();
         foreach (var node in FlatNodes(scene.RootNode)) {
@@ -82,10 +99,10 @@ public partial class CommonMeshResource : IResourceFile
 
                 Logger.Warn($"Animation {mot.Name} contains an unnamed bone {header.boneHash} that the mesh or the motlist file does not specify. It will get exported as placeholder 'hash{header.boneHash}' and may not be fully correct.");
                 rootNode.Children.Add(new Node(channel.NodeName, rootNode) {
-                    Transform = Matrix4x4.Transpose(Transform.GetMatrixFromTransforms(
-                        motBone?.translation ?? Vector3.Zero,
+                    Transform = Matrix4x4.Transpose(GetScaledMatrix(Transform.GetMatrixFromTransforms(
+                        (motBone?.translation ?? Vector3.Zero),
                         motBone?.quaternion ?? Quaternion.Identity,
-                        Vector3.One))
+                        Vector3.One), scale))
                 });
                 foreach (var mesh in scene.Meshes) {
                     if (mesh.Bones.Count == 0) continue;
@@ -96,16 +113,16 @@ public partial class CommonMeshResource : IResourceFile
             }
             if (clip.HasTranslation) {
                 if (clip.Translation!.frameIndexes == null) {
-                    if (clip.Translation.translations?.Length > 0) channel.PositionKeys.Add(new VectorKey(0, clip.Translation.translations[0]));
+                    if (clip.Translation.translations?.Length > 0) channel.PositionKeys.Add(new VectorKey(0, clip.Translation.translations[0] * scale));
                 } else {
                     for (int i = 0; i < clip.Translation!.frameIndexes.Length; ++i) {
-                        channel.PositionKeys.Add(new VectorKey(clip.Translation!.frameIndexes[i] * timescale, clip.Translation!.translations![i]));
+                        channel.PositionKeys.Add(new VectorKey(clip.Translation!.frameIndexes[i] * timescale, clip.Translation!.translations![i] * scale));
                     }
                 }
             } else {
                 // some blender fbx importer versions don't work unless we also add at least one position key to everything
                 // unsure if the assimp exporter does something weird or blender's importer being bad
-                var rest = mot.GetBoneByHash(header.boneHash)?.translation ?? new Vector3(boneNode.Transform.M14, boneNode.Transform.M24, boneNode.Transform.M34);
+                var rest = ((mot.GetBoneByHash(header.boneHash)?.translation * scale) ?? new Vector3(boneNode.Transform.M14, boneNode.Transform.M24, boneNode.Transform.M34));
                 channel.PositionKeys.Add(new VectorKey(0, rest));
             }
             if (clip.HasRotation) {
@@ -143,6 +160,8 @@ public partial class CommonMeshResource : IResourceFile
         // NOTE3: weights > 4 will get get lost for gltf because we can't tell it to write more weights (AI_CONFIG_EXPORT_GLTF_UNLIMITED_SKINNING_BONES_PER_VERTEX)
         // we'd either need access to assimp's Exporter class directly, or have the ExportFile method modified on the assimp side
 
+        var scale = GetExportScale(isGltf ? "glb": "fbx");
+
         scene.RootNode ??= new Node(rootName);
         var matIndexOffset = scene.Materials.Count;
         foreach (var name in file.MaterialNames) {
@@ -179,7 +198,7 @@ public partial class CommonMeshResource : IResourceFile
 
                     boneNode = new Node(srcBone.name, boneRoot);
                     boneDict[srcBone.index] = boneNode;
-                    boneNode.Transform = Matrix4x4.Transpose(srcBone.localTransform.ToSystem());
+                    boneNode.Transform = Matrix4x4.Transpose(GetScaledMatrix(srcBone.localTransform.ToSystem(), scale));
                     boneRoot.Children.Add(boneNode);
                     if (srcBone.useSecondaryWeight) {
                         boneNode.Children.Add(new Node(SecondaryWeightDummyBonePrefix + srcBone.name, boneNode));
@@ -203,7 +222,7 @@ public partial class CommonMeshResource : IResourceFile
 
                 boneNode = new Node(srcBone.name, parentBone);
                 boneDict[srcBone.index] = boneNode;
-                boneNode.Transform = Matrix4x4.Transpose(srcBone.localTransform.ToSystem());
+                boneNode.Transform = Matrix4x4.Transpose(GetScaledMatrix(srcBone.localTransform.ToSystem(), scale));
                 if (srcBone.useSecondaryWeight) {
                     boneNode.Children.Add(new Node(SecondaryWeightDummyBonePrefix + srcBone.name, boneNode));
                 }
@@ -228,7 +247,7 @@ public partial class CommonMeshResource : IResourceFile
                         extraBones.Add(exportBone);
                     }
 
-                    exportBone.Transform = Matrix4x4.Transpose(Matrix4x4.CreateScale(refBone.scale) * Matrix4x4.CreateFromQuaternion(refBone.rotation) * Matrix4x4.CreateTranslation(refBone.position));
+                    exportBone.Transform = Matrix4x4.Transpose(GetScaledMatrix(Transform.GetMatrixFromTransforms(refBone.position, refBone.rotation, refBone.scale), scale));
                 }
             }
 
@@ -288,6 +307,9 @@ public partial class CommonMeshResource : IResourceFile
 
     private static void ExportLod(MeshFile file, bool isGltf, Assimp.Scene scene, List<MeshBone>? bones, bool includeShapeKeys, MeshLOD lod, string namePrefix, List<Node> extraBones, int matIndexOffset)
     {
+        var scale = GetExportScale(isGltf ? "glb": "fbx");
+        var identity = GetScaledMatrix(Matrix4x4.Identity, scale);
+
         var bounds = file.MeshData?.boundingBox ?? new AABB();
         foreach (var mesh in lod.MeshGroups) {
             int subId = 0;
@@ -297,6 +319,9 @@ public partial class CommonMeshResource : IResourceFile
 
 
                 aiMesh.Vertices.AddRange(sub.Positions);
+                if (scale != 1) {
+                    for (int i = 0; i < aiMesh.Vertices.Count; ++i) aiMesh.Vertices[i] *= scale;
+                }
                 aiMesh.BoundingBox = new BoundingBox(bounds.minpos, bounds.maxpos);
                 if (sub.Buffer.UV0.Length > 0) {
                     var uvOut = aiMesh.TextureCoordinateChannels[0];
@@ -328,12 +353,12 @@ public partial class CommonMeshResource : IResourceFile
                     foreach (var srcBone in bones) {
                         var bone = new Bone();
                         bone.Name = srcBone.name;
-                        bone.OffsetMatrix = Matrix4x4.Transpose(srcBone.inverseGlobalTransform.ToSystem());
+                        bone.OffsetMatrix = Matrix4x4.Transpose(GetScaledMatrix(srcBone.inverseGlobalTransform.ToSystem(), scale));
                         aiMesh.Bones.Add(bone);
                     }
                     foreach (var srcBone in bones) {
                         if (srcBone.useSecondaryWeight) {
-                            aiMesh.Bones.Add(new Bone() { Name = SecondaryWeightDummyBonePrefix + srcBone.name, OffsetMatrix = Matrix4x4.Identity });
+                            aiMesh.Bones.Add(new Bone() { Name = SecondaryWeightDummyBonePrefix + srcBone.name, OffsetMatrix = identity });
                         }
                     }
 
@@ -358,13 +383,13 @@ public partial class CommonMeshResource : IResourceFile
                         var parentTx = Matrix4x4.Identity;
                         var parent = extraBone.Parent;
                         while (parent != null) {
-                            parentTx = parentTx * Matrix4x4.Transpose(parent.Transform);
+                            parentTx = parentTx * Matrix4x4.Transpose(GetScaledMatrix(parent.Transform, 1 / scale));
                             parent = parent.Parent;
                         }
 
                         Matrix4x4.Invert(parentTx, out parentTx);
                         var newBone = new Bone() { Name = extraBone.Name };
-                        newBone.OffsetMatrix = Matrix4x4.Transpose(parentTx);
+                        newBone.OffsetMatrix = Matrix4x4.Transpose(GetScaledMatrix(parentTx, scale));
                         aiMesh.Bones.Add(newBone);
                     }
 

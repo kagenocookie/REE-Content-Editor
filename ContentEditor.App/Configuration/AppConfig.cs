@@ -805,6 +805,8 @@ public record ImportSettings
     public float Scale { get; set; } = 1f;
     public bool ForceRootIdentity { get; set; } = true;
     public bool ConvertZToYUpRootRotation { get; set; } = false;
+
+    public float ExportScale { get; set; } = 1f;
 }
 
 public record MeshViewerSettings

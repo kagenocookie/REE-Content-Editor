@@ -16,6 +16,13 @@ public partial class CommonMeshResource : IResourceFile
     private const string ShapekeyPrefix = "SHAPEKEY_";
     private const string SecondaryWeightDummyBonePrefix = "WEIGHT2_DUMMY_";
 
+    private static float GetImportScale()
+    {
+        var scale = AppConfig.Settings.Import.Scale;
+        if (scale <= 0) scale = 1;
+        return scale;
+    }
+
     private static readonly Quaternion ZUpToYUpRotation = new Quaternion(-0.70710677f, 0, 0, 0.70710677f);
 
     private static MeshFile ImportMeshFromAssimp(Assimp.Scene scene, string versionConfig)
@@ -23,8 +30,7 @@ public partial class CommonMeshResource : IResourceFile
         var serializerVersion = MeshFile.GetSerializerVersion(versionConfig);
         var mesh = new MeshFile(new FileHandler());
         var srcMeshes = scene.Meshes;
-        var scale = AppConfig.Settings.Import.Scale;
-        if (scale <= 0) scale = 1;
+        var scale = GetImportScale();
 
         mesh.Header.BufferCount = 1;
 
@@ -417,7 +423,7 @@ public partial class CommonMeshResource : IResourceFile
         var motver = motlist.Header.version.GetMotVersion();
         var meta = scene.Metadata;
 
-        float scale = AppConfig.Settings.Import.Scale;
+        float scale = GetImportScale();
 
         // setup mot bone hierarchy
         var boneNames = scene.Animations

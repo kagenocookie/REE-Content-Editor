@@ -685,6 +685,13 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 AppConfig.Settings.Save();
             }
             ImguiHelpers.Tooltip("For modelling apps that don't know how to export with Y axis as up, this might fix the rotations of imported meshes.");
+            ImGui.SeparatorText("Export Settings");
+            scale = AppConfig.Settings.Import.ExportScale;
+            if (ImGui.InputFloat("Export Scale", ref scale, "%.2f x")) {
+                AppConfig.Settings.Import.ExportScale = Math.Clamp(scale, 0.001f, 100);
+                AppConfig.Settings.Save();
+            }
+            ImguiHelpers.Tooltip("Scale up all vertices and animation positions for exported meshes.\nOnly used for FBX because GLB/GLTF already has functional units"u8);
             ImGui.Spacing();
             ImGui.Spacing();
         }
