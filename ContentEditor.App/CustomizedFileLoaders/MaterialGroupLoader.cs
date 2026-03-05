@@ -20,7 +20,7 @@ public class MaterialGroupLoader : IFileLoader,
 
     public static readonly HashSet<string> AlbedoTextureNames = ["BaseDielectricMap", "ALBD", "ALBDmap", "BackMap", "BaseMetalMap", "BaseDielectricMapBase", "BaseAlphaMap"];
     public static readonly HashSet<string> NormalTextureNames = ["NormalRoughnessMap", "NormalRoughnessCavityMap"];
-    public static readonly HashSet<string> ATXXTextureNames = ["AlphaTranslucentOcclusionCavityMap", "AlphaTranslucentOcclusionSSSMap"];
+    public static readonly HashSet<string> ATXXTextureNames = ["AlphaTranslucentOcclusionCavityMap", "AlphaTranslucentOcclusionSSSMap", "AlphaCavityOcclusionTranslucentMap"];
 
     public IResourceFile? Load(ContentWorkspace workspace, FileHandle handle)
     {
@@ -62,10 +62,10 @@ public class MaterialGroupLoader : IFileLoader,
         return res.File.WriteTo(outputPath);
     }
 
-    public static void ExportTextures(ContentWorkspace env, MdfFile mdf2, string outputFolder, bool useTga, Func<string, TexHeader, bool>? exportCondition = null)
+    public static void ExportTextures(ContentWorkspace env, MdfFile mdf2, string outputFolder, string format, Func<string, TexHeader, bool>? exportCondition = null)
     {
         Texture? tempTexture = null;
-        if (useTga) {
+        if (format != "dds") {
             tempTexture = new Texture();
         }
         exportCondition ??= (mat, param) => AlbedoTextureNames.Contains(param.texType) || NormalTextureNames.Contains(param.texType) || ATXXTextureNames.Contains(param.texType);
@@ -82,14 +82,14 @@ public class MaterialGroupLoader : IFileLoader,
                 var tex = file.GetFile<TexFile>();
 
                 var texOutPath = Path.Combine(matPath, PathUtils.GetFilenameWithoutExtensionOrVersion(param.texPath).ToString());
-                if (useTga) {
-                    texOutPath += ".tga";
-                    tempTexture!.LoadFromTex(tex);
-                    tempTexture.SaveAs(texOutPath);
-                } else {
+                if (format == "dds") {
                     texOutPath += ".dds";
                     var dds = tex.ConvertToDDS();
                     dds.FileHandler.SaveAs(texOutPath);
+                } else {
+                    texOutPath += "." + format;
+                    tempTexture!.LoadFromTex(tex);
+                    tempTexture.SaveAs(texOutPath);
                 }
             }
         }

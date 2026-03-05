@@ -5,6 +5,7 @@ using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.ImguiHandling.Mesh;
+using ContentEditor.App.Widgets;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Editor;
@@ -590,6 +591,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         Handle.Modified = true;
     }
 
+    private MdfBatchExporter? mdfExporter;
     private void ShowImportExportMenu()
     {
         var mesh = meshContexts.First().MeshFile;
@@ -600,6 +602,94 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
 
         using var _ = ImguiHelpers.Disabled(exportInProgress);
+        // note: this UI is getting crowded, rework into tabs?
+        ShowImportExportControls(mesh);
+        ShowTexControls();
+        ShowMeshConvertControls(mesh);
+        ShowConvertSkeletonControls(mesh);
+    }
+
+    private void ShowConvertSkeletonControls(CommonMeshResource mesh)
+    {
+        if (!(mesh.NativeMesh.BoneData?.Bones.Count > 0)) return;
+
+        ImGui.SeparatorText("Convert Skeleton");
+        if (ImGui.Button($"{AppIcons.SI_GenericConvert} Save Skeleton")) {
+            var hasVersion = Workspace.Env.TryGetFileExtensionVersion("fbxskel", out var version)
+                || Workspace.Env.TryGetFileExtensionVersion("skeleton", out version)
+                || Workspace.Env.TryGetFileExtensionVersion("refskel", out version);
+            if (!hasVersion) {
+                Logger.Warn("Could not determine correct skeleton format version. You might need to manually specify the correct version.");
+                version = 8;
+            }
+
+            var skeleton = new FbxSkelFile(new FileHandler());
+            foreach (var bone in mesh.NativeMesh.BoneData.Bones.OrderBy(b => b.index)) {
+                Matrix4x4.Decompose(bone.localTransform.ToSystem(), out var scale, out var rot, out var pos);
+                skeleton.Bones.Add(new ReeLib.FbxSkel.RefBone() {
+                    name = bone.name,
+                    position = pos,
+                    rotation = rot,
+                    scale = scale,
+                    symmetryIndex = (short)(bone.Symmetry?.index ?? bone.index),
+                    parentIndex = (short)(bone.Parent?.index ?? -1),
+                });
+            }
+            PlatformUtils.ShowSaveFileDialog((file) => {
+                skeleton.WriteTo(file);
+            }, null, new FileFilter("Skeleton File", $"skeleton.{version}", $"fbxskel.{version}", $"refskel.{version}"));
+        }
+    }
+
+    private void ShowMeshConvertControls(CommonMeshResource mesh)
+    {
+        ImGui.SeparatorText("Convert Mesh");
+        var conv1 = ImGui.Button($"{AppIcons.SI_GenericConvert}");
+        ImguiHelpers.Tooltip("Convert");
+        ImGui.SameLine();
+        ImguiHelpers.ValueCombo("Mesh Version", MeshFile.AllVersionConfigsWithExtension, MeshFile.AllVersionConfigs, ref exportTemplate);
+        var bundleConvert = Workspace.CurrentBundle != null && ImguiHelpers.SameLine() && ImGui.Button("Convert to bundle ...");
+        if (conv1 || bundleConvert) {
+            var ver = MeshFile.GetFilePathVersion(exportTemplate);
+            var ext = $".mesh.{ver}";
+            var defaultFilename = PathUtils.GetFilenameWithoutExtensionOrVersion(Handle.Filepath).ToString() + ext;
+            if (mesh.NativeMesh.Header.version == 0) {
+                mesh.NativeMesh.ChangeVersion(exportTemplate);
+            }
+            var exportMesh = mesh.NativeMesh.RewriteClone(Workspace);
+            exportMesh.ChangeVersion(exportTemplate);
+            if (bundleConvert) {
+                var tempres = new CommonMeshResource(defaultFilename, Workspace.Env) { NativeMesh = exportMesh };
+                ResourcePathPicker.ShowSaveToBundle(Handle.Loader, tempres, Workspace, defaultFilename, Handle.NativePath);
+            } else {
+                PlatformUtils.ShowSaveFileDialog((path) => exportMesh.SaveAs(path), defaultFilename);
+            }
+        }
+    }
+
+    private void ShowTexControls()
+    {
+        if (meshContexts.Any(mc => mc.HasValidLoadedMdf2)) {
+            ImGui.SeparatorText("Texture Export");
+            if (ImGui.Button($"{AppIcons.SI_FileType_TEX} Batch export textures")) {
+                mdfExporter = new MdfBatchExporter();
+                ImGui.OpenPopup("Batch MDF exporter");
+            }
+        }
+
+        if (mdfExporter != null) {
+            if (ImGui.BeginPopupModal("Batch MDF exporter")) {
+                if (mdfExporter.Show(meshContexts.Select(mc => mc.MaterialFile!).Where(x => x != null))) {
+                    ImGui.CloseCurrentPopup();
+                    mdfExporter = null;
+                }
+                ImGui.EndPopup();
+            }
+        }
+    }
+
+    private void ShowImportExportControls(CommonMeshResource mesh)
+    {
         if (ImGui.Button($"{AppIcons.SI_GenericExport} Export Mesh")) {
             // potential export enhancement: include (embed?) textures
             if (Handle.Resource is CommonMeshResource assmesh) {
@@ -706,58 +796,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             ImguiHelpers.Tooltip("Scale up all vertices and animation positions for exported meshes.\nOnly used for FBX because GLB/GLTF already has functional units"u8);
             ImGui.Spacing();
             ImGui.Spacing();
-        }
-
-        ImGui.SeparatorText("Convert Mesh");
-        var conv1 = ImGui.Button($"{AppIcons.SI_GenericConvert}");
-        ImguiHelpers.Tooltip("Convert");
-        ImGui.SameLine();
-        ImguiHelpers.ValueCombo("Mesh Version", MeshFile.AllVersionConfigsWithExtension, MeshFile.AllVersionConfigs, ref exportTemplate);
-        var bundleConvert = Workspace.CurrentBundle != null && ImguiHelpers.SameLine() && ImGui.Button("Convert to bundle ...");
-        if (conv1 || bundleConvert) {
-            var ver = MeshFile.GetFilePathVersion(exportTemplate);
-            var ext = $".mesh.{ver}";
-            var defaultFilename = PathUtils.GetFilenameWithoutExtensionOrVersion(Handle.Filepath).ToString() + ext;
-            if (mesh.NativeMesh.Header.version == 0) {
-                mesh.NativeMesh.ChangeVersion(exportTemplate);
-            }
-            var exportMesh = mesh.NativeMesh.RewriteClone(Workspace);
-            exportMesh.ChangeVersion(exportTemplate);
-            if (bundleConvert) {
-                var tempres = new CommonMeshResource(defaultFilename, Workspace.Env) { NativeMesh = exportMesh };
-                ResourcePathPicker.ShowSaveToBundle(Handle.Loader, tempres, Workspace, defaultFilename, Handle.NativePath);
-            } else {
-                PlatformUtils.ShowSaveFileDialog((path) => exportMesh.SaveAs(path), defaultFilename);
-            }
-        }
-        if (mesh.NativeMesh.BoneData?.Bones.Count > 0) {
-            ImGui.SeparatorText("Convert Skeleton");
-            if (ImGui.Button($"{AppIcons.SI_GenericConvert} Save Skeleton")) {
-                var hasVersion = Workspace.Env.TryGetFileExtensionVersion("fbxskel", out var version)
-                    || Workspace.Env.TryGetFileExtensionVersion("skeleton", out version)
-                    || Workspace.Env.TryGetFileExtensionVersion("refskel", out version);
-                if (!hasVersion) {
-                    Logger.Warn("Could not determine correct skeleton format version. You might need to manually specify the correct version.");
-                    version = 8;
-                }
-
-                var skeleton = new FbxSkelFile(new FileHandler());
-                foreach (var bone in mesh.NativeMesh.BoneData.Bones.OrderBy(b => b.index)) {
-                    Matrix4x4.Decompose(bone.localTransform.ToSystem(), out var scale, out var rot, out var pos);
-                    skeleton.Bones.Add(new ReeLib.FbxSkel.RefBone() {
-                        name = bone.name,
-                        position = pos,
-                        rotation = rot,
-                        scale = scale,
-                        symmetryIndex = (short)(bone.Symmetry?.index ?? bone.index),
-                        parentIndex = (short)(bone.Parent?.index ?? -1),
-                    });
-                }
-                PlatformUtils.ShowSaveFileDialog((file) => {
-                    skeleton.WriteTo(file);
-                }, null, new FileFilter("Skeleton File", $"skeleton.{version}", $"fbxskel.{version}", $"refskel.{version}"));
-            }
-            ImGui.SameLine();
         }
     }
 
@@ -1121,6 +1159,9 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
     private string skeletonPath = "";
     private UIContext? mdfPickerContext;
     private bool useHighResTextures = true;
+
+    public bool HasValidLoadedMdf2 => !string.IsNullOrEmpty(loadedMdf);
+    public MdfFile? MaterialFile => string.IsNullOrEmpty(loadedMdf) ? null : viewer.Workspace.ResourceManager.GetFileHandle(loadedMdf)?.GetFile<MdfFile>();
 
     public UIContext UI { get; } = ui;
     public FileHandle Handle { get; set; } = file;

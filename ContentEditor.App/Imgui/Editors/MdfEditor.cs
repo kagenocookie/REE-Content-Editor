@@ -1,4 +1,5 @@
 using ContentEditor.App.FileLoaders;
+using ContentEditor.App.Widgets;
 using ContentEditor.App.Windowing;
 using ContentEditor.BackgroundTasks;
 using ContentEditor.Core;
@@ -287,95 +288,15 @@ public class MdfFileImguiHandler : IObjectUIHandler
         ImGui.Separator();
 
         if (ImGui.BeginPopupModal("MdfTexExport")) {
-            ShowTexExportWindow(file);
+            texExporter ??= new();
+            if (texExporter.Show([file])) {
+                ImGui.CloseCurrentPopup();
+            }
             ImGui.EndPopup();
         }
     }
 
-    private void ShowTexExportWindow(MdfFile file)
-    {
-        if (_exportTextures == null) {
-            _exportTextures = new();
-            foreach (var mat in file.Materials) {
-                var data = _exportTextures[mat.Header.matName] = new ();
-                foreach (var tex in mat.Textures) {
-                    if (string.IsNullOrEmpty(tex.texPath)) continue;
-                    if (MaterialGroupLoader.AlbedoTextureNames.Contains(tex.texType)
-                        || MaterialGroupLoader.NormalTextureNames.Contains(tex.texType)
-                        || MaterialGroupLoader.ATXXTextureNames.Contains(tex.texType)) {
-                        data.Add(tex.texPath);
-                    }
-                }
-            }
-        }
-        ImGui.SeparatorText("Material texture export");
-        var mats = file.Materials.Select(m => m.Header.matName).ToArray();
-        ImGui.Checkbox("Export as TGA", ref _exportTga);
-        ImguiHelpers.Tooltip("If unchecked, files will be exported as raw DDS");
-        if (ImguiHelpers.SameLine() && ImGui.Button("Select All")) {
-            foreach (var mat in file.Materials) {
-                var data = _exportTextures[mat.Header.matName] = new ();
-                foreach (var tex in mat.Textures) {
-                    if (string.IsNullOrEmpty(tex.texPath)) continue;
-                    data.Add(tex.texPath);
-                }
-            }
-        }
-        if (ImguiHelpers.SameLine() && ImGui.Button("Clear Selection")) {
-            _exportTextures.Clear();
-        }
-        if (ImguiHelpers.SameLine() && ImGui.Button("Reset Selection")) {
-            _exportTextures = null;
-        }
-        ImguiHelpers.ValueCombo("Material", mats, mats, ref _exportSelectedMat);
-        if (!string.IsNullOrEmpty(_exportSelectedMat)) {
-            ImGui.Separator();
-            var mat = file.Materials.FirstOrDefault(mm => mm.Header.matName == _exportSelectedMat);
-            if (mat != null) {
-                var area = ImGui.GetContentRegionAvail() - new Vector2(0, 32 * UI.UIScale + ImGui.GetStyle().FramePadding.Y);
-                var data = _exportTextures?.GetValueOrDefault(_exportSelectedMat) ?? new();
-                ImGui.BeginChild("TexList", area);
-                foreach (var tex in mat.Textures) {
-                    var selected = data.Contains(tex.texPath ?? "");
-                    if (ImGui.Checkbox("##" + tex.texType, ref selected)) {
-                        if (selected) {
-                            data.Add(tex.texPath!);
-                        } else {
-                            data.Remove(tex.texPath!);
-                        }
-                        (_exportTextures ??= new())[_exportSelectedMat] = data;
-                    }
-                    ImGui.SameLine();
-                    ImGui.Text($"{tex.texType} | {tex.texPath}");
-                }
-                ImGui.EndChild();
-            }
-        } else {
-            ImGui.Dummy(new Vector2(200, 100));
-        }
-        ImGui.Separator();
-        if (ImGui.Button("Cancel")) {
-            _exportTextures = null;
-            ImGui.CloseCurrentPopup();
-        }
-        ImGui.SameLine();
-        if (ImGui.Button("Export")) {
-            var wnd = EditorWindow.CurrentWindow;
-            PlatformUtils.ShowFolderDialog((target) => {
-                wnd!.InvokeFromUIThread(() => {
-                    if (_exportTextures == null) return;
-
-                    MaterialGroupLoader.ExportTextures(wnd.Workspace, file, target, _exportTga, (mat, param) => {
-                        return param.texPath != null && _exportTextures.GetValueOrDefault(mat)?.Contains(param.texPath) == true;
-                    });
-                    FileSystemUtils.ShowFileInExplorer(target);
-
-                    _exportTextures = null;
-                });
-            });
-            ImGui.CloseCurrentPopup();
-        }
-    }
+    private MdfBatchExporter? texExporter;
 
     private void ShowSelectedMaterialData(UIContext context, MdfFile file)
     {

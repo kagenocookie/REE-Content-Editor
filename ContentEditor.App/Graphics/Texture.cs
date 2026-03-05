@@ -390,7 +390,7 @@ public class Texture : IDisposable
         } else if (ext == ".png") {
             image.Save(filepath, new SixLabors.ImageSharp.Formats.Png.PngEncoder {
                 ColorType = SixLabors.ImageSharp.Formats.Png.PngColorType.RgbWithAlpha,
-                CompressionLevel = SixLabors.ImageSharp.Formats.Png.PngCompressionLevel.BestCompression,
+                CompressionLevel = SixLabors.ImageSharp.Formats.Png.PngCompressionLevel.DefaultCompression,
             });
             Logger.Info($"Texture saved as PNG to: {filepath}");
         } else if (ext == ".dds") {
