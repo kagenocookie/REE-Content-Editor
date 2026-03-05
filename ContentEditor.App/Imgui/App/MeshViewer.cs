@@ -765,7 +765,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     {
         EnsureAnimationsInit();
         foreach (var c in meshContexts) {
-            if (!UpdateAnimatorMesh(c.Component)) return false;
+            UpdateAnimatorMesh(c.Component, false);
         }
         return true;
     }
@@ -786,9 +786,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     private void ShowAnimationMenu(MeshViewerContext ctx)
     {
         ImGui.SeparatorText("Animations");
-        if (!UpdateAnimData()) {
-            return;
-        }
+        UpdateAnimData();
 
         var animator = PrimaryAnimator;
         if (animator == null) return;
@@ -859,7 +857,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             .Add(new GizmoRenderBatchItem(gizmoMeshHandle.GetMaterial(0), gizmoMeshHandle.GetMesh(0), Matrix4x4.Identity, gizmoMeshHandle.GetMaterial(0)));
     }
 
-    private bool UpdateAnimatorMesh(MeshComponent meshComponent)
+    private bool UpdateAnimatorMesh(MeshComponent meshComponent, bool showErrorIfInvalid)
     {
         var mesh = meshComponent.MeshHandle;
         var motion = meshComponent.GameObject.GetComponent<Motion>();
@@ -867,9 +865,11 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         // note: this should probably be handled directly within Motion component?
         if (animator != null && animator.Mesh != mesh) {
             if (mesh is not AnimatedMeshHandle anim) {
-                ImGui.BeginChild("PlaybackError", new Vector2(300, 42), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
-                ImGui.TextColored(Colors.Error, "Mesh is not animatable");
-                ImGui.EndChild();
+                if (showErrorIfInvalid) {
+                    ImGui.BeginChild("PlaybackError", new Vector2(300, 42), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
+                    ImGui.TextColored(Colors.Error, "Mesh is not animatable");
+                    ImGui.EndChild();
+                }
                 return false;
             }
 
@@ -882,7 +882,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     {
         var animator = PrimaryAnimator;
         if (animator?.ActiveMotion == null) return;
-        if (!UpdateAnimatorMesh(meshComponent)) return;
+        if (!UpdateAnimatorMesh(meshComponent, true)) return;
 
         var windowSize = ImGui.GetWindowSize();
         var timestamp = $"{animator.CurrentTime:0.00} / {animator.TotalTime:0.00} ({animator.CurrentFrame:000} / {animator.TotalFrames:000})";
