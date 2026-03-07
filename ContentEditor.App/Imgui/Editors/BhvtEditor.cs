@@ -322,19 +322,24 @@ public class NodeChildrenListHandler : ListHandlerTyped<NChild>
                 return true;
             }
             newNode = newNode.Clone();
+            var addedNodes = new List<BHVTNode>() { newNode };
             if (file != null) {
-                newNode.MakeUnique(file);
+                addedNodes.AddRange(newNode.MakeUnique(file, parent));
             }
-            var newchild = new NChild();
-            newchild.ChildNode = newNode;
-            newNode.ParentID = parent.ID;
-            var children = newNode.AllChildNodes.ToList();
+            var addedChildren = new List<NChild>();
+            foreach (var otherNode in addedNodes) {
+                var newchild = new NChild();
+                newchild.ChildNode = otherNode;
+                otherNode.ParentID = parent.ID;
+                addedChildren.Add(newchild);
+            }
+            var allNodes = addedNodes.Concat(addedNodes.SelectMany(n => n.AllChildNodes)).ToList();
             UndoRedo.RecordCallback(context, () => {
-                nodelist.Add(newchild);
-                file?.Nodes.AddRange(children);
+                foreach (var r in addedChildren) if (!nodelist.Contains(r)) nodelist.Add(r);
+                file?.Nodes.AddRange(allNodes);
             }, () => {
-                nodelist.Remove(newchild);
-                foreach (var ch in children) file?.Nodes.Remove(ch);
+                foreach (var r in addedChildren) nodelist.Remove(r);
+                foreach (var ch in allNodes) file?.Nodes.Remove(ch);
             });
 
             context.ClearChildren();
