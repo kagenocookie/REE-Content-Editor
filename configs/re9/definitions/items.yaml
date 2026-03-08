@@ -84,6 +84,14 @@ classes:
     patcher:
       type: array-file
       file: natives/stm/leveldesign/item/userdata/craftrecipecataloguserdata.user.3
+  app.CraftRecipe.MaterialItemData_Basic:
+    to_string: "Crafting Material: {_Stock}x {_ItemID} ({_ItemID:translate_fmt(Item_Name_$0)})"
+  app.CraftRecipe.MaterialItemData_Contained:
+    to_string: "Crafting Material: {_Stock}x {_ItemID} ({_ItemID:translate_fmt(Item_Name_$0)}) [discounts]"
+  app.CraftRecipe.ProductItemData_Basic:
+    to_string: "Crafting Product: {_Stock}x {_ItemID} ({_ItemID:translate_fmt(Item_Name_$0)})"
+  app.CraftRecipe.OptionalData:
+    to_string: "Discount {_EffectiveItemID}: {_Value}"
 
   app.ItemCarryOverSettingUserData.CarryOverItemSetting:
     to_string: "Item Carry Over Settings {_ItemID}"

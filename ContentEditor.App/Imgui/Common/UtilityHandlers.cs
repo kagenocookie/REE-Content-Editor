@@ -1,5 +1,6 @@
 using System.Numerics;
 using ContentEditor.Core;
+using ReeLib;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -110,7 +111,14 @@ public class NestedRszUIHandlerStringSuffixed(IObjectUIHandler nested) : IObject
 {
     public void OnIMGUI(UIContext context)
     {
-        var show = ImguiHelpers.TreeNodeSuffix(context.label, context.GetRaw()?.ToString() ?? string.Empty);
+        var instance = context.GetRaw();
+        string str;
+        if (instance is RszInstance rsz) {
+            str = WindowHandlerFactory.GetStringFormatter(rsz)?.GetString(rsz) ?? rsz.ToString();
+        } else {
+            str = instance?.ToString() ?? "";
+        }
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, str);
         RszInstanceHandler.ShowDefaultContextMenu(context);
         if (show) {
             nested.OnIMGUI(context);
