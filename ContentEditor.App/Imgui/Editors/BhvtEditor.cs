@@ -324,8 +324,16 @@ public class NodeChildrenListHandler : ListHandlerTyped<NChild>
             newNode = newNode.Clone();
             var addedNodes = new List<BHVTNode>() { newNode };
             if (file != null) {
-                addedNodes.AddRange(newNode.MakeUnique(file, parent));
+                var nodes = newNode.MakeUnique(file, parent);
+                if (nodes != null) {
+                    addedNodes.AddRange(nodes);
+                } else {
+                    Logger.Warn("Could not safely resolve all referenced nodes. Copying only the base node and removing all its states.");
+                    newNode.States.States.Clear();
+                    newNode.AllStates.AllStates.Clear();
+                }
             }
+
             var addedChildren = new List<NChild>();
             foreach (var otherNode in addedNodes) {
                 var newchild = new NChild();
@@ -334,6 +342,9 @@ public class NodeChildrenListHandler : ListHandlerTyped<NChild>
                 addedChildren.Add(newchild);
             }
             var allNodes = addedNodes.Concat(addedNodes.SelectMany(n => n.AllChildNodes)).ToList();
+            if (addedChildren.Count > 1) {
+                Logger.Info($"Pasted {addedChildren.Count - 1} additional referenced nodes");
+            }
             UndoRedo.RecordCallback(context, () => {
                 foreach (var r in addedChildren) if (!nodelist.Contains(r)) nodelist.Add(r);
                 file?.Nodes.AddRange(allNodes);
