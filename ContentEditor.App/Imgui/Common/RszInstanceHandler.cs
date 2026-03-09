@@ -977,12 +977,12 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                         if (rsz == null || !rsz.InstanceList.Any(ii => ii.RSZUserData?.InstanceId == info.InstanceId && ii != instance)) {
                             // we can do a full replace here - eithe rif we can't find the rsz container, or if there's no other references to this same userdata intance
                             info.Path = newPath;
-                            info.typeId = file.RSZ.ObjectList[0].RszClass.typeId;
+                            info.typeId = file.Instance!.RszClass.typeId;
                         } else {
                             // create a new userdata info
-                            ctx.parent!.Set(instance = new RszInstance(file.RSZ.ObjectList[0].RszClass, new RSZUserDataInfo() {
+                            ctx.parent!.Set(instance = new RszInstance(file.Instance!.RszClass, new RSZUserDataInfo() {
                                 Path = newPath,
-                                typeId = file.RSZ.ObjectList[0].RszClass.typeId,
+                                typeId = file.Instance!.RszClass.typeId,
                                 instanceId = instance.Index,
                             }));
 

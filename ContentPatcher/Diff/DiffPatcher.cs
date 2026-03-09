@@ -79,6 +79,7 @@ public class DiffPatcher
                     user.ClassName = udCls.ToString();
                     user.Path = udPath.ToString();
                     newInstance ??= new RszInstance(env.RszParser.GetRSZClass(user.ClassName)!, user);
+                    user.typeId = newInstance.RszClass.typeId;
                     instance.Values[fieldIndex] = newInstance;
                 } else {
                     // does this happen? maybe?

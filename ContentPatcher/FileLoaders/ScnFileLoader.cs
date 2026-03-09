@@ -139,7 +139,7 @@ public sealed class ScenePatcher : RszFilePatcherBase, IDisposable
             if (counter != targetCounter) continue;
             if (slash == -1) return ch;
 
-            return FindGameObjectByPath(ch, path);
+            return FindGameObjectByPath(ch, path, false);
         }
         return null;
     }

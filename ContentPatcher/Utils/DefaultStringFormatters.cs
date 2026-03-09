@@ -43,7 +43,7 @@ public static class FormatterSettings
     private static SmartFormatter ApplyDefaultFormatters(SmartFormatter formatter)
     {
         formatter.AddExtensions(new RszFieldArrayStringFormatterSource());
-        formatter.AddExtensions(new DefaultFormatter(), new NullFormatter(), LowerCaseFormatter.Instance, UpperCaseFormatter.Instance);
+        formatter.AddExtensions(new DefaultFormatter(), new NullFormatter(), LowerCaseFormatter.Instance, UpperCaseFormatter.Instance, new PathFormatter());
         // @: used for RszFieldStringFormatterSource classname filtering
         formatter.Settings.Parser.AddCustomSelectorChars(['@']);
         return formatter;
@@ -171,6 +171,29 @@ public class EntityStringFormatterSource(EntityConfig config) : ISource
     }
 }
 
+public class PathFormatter : IFormatter
+{
+    public string Name { get; set; } = "path";
+    public bool CanAutoDetect { get; set; } = false;
+
+    public bool TryEvaluateFormat(IFormattingInfo formattingInfo)
+    {
+        if (formattingInfo.CurrentValue == null) {
+            return true;
+        }
+
+        if (formattingInfo.CurrentValue is RszInstance instance) {
+            var field = formattingInfo.FormatterOptions;
+            if (!string.IsNullOrEmpty(field)) {
+                formattingInfo.Write((instance.GetFieldValue(field) as RszInstance)?.RSZUserData?.Path ?? "");
+            } else {
+                formattingInfo.Write(instance.RSZUserData?.Path ?? "");
+            }
+            return true;
+        }
+        return false;
+    }
+}
 public class TranslateGuidFormatter(MessageManager msg) : IFormatter
 {
     public string Name { get; set; } = "translate";

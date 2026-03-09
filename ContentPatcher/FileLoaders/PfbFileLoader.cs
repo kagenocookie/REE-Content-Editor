@@ -59,7 +59,7 @@ public sealed class PrefabPatcher : RszFilePatcherBase, IDisposable
         // instead, every path is considered a unique object, therefore rename == delete + create
         // not necessarily perfect, but realistically, there's no reason to rename game objects for modding purposes
         foreach (var (go, path) in IterateGameObjects(newfile.GameObjects[0])) {
-            var targetGo = FindGameObjectByPath<PfbGameObject>(file.GameObjects[0], path);
+            var targetGo = FindGameObjectByPath<PfbGameObject>(file.GameObjects[0], path, true);
             var godiff = GetGameObjectDiff(targetGo, go);
             if (godiff != null) {
                 diff[path] = godiff;
@@ -67,7 +67,7 @@ public sealed class PrefabPatcher : RszFilePatcherBase, IDisposable
         }
 
         foreach (var (go, path) in IterateGameObjects(file.GameObjects[0])) {
-            var newGo = FindGameObjectByPath<PfbGameObject>(newfile.GameObjects[0], path);
+            var newGo = FindGameObjectByPath<PfbGameObject>(newfile.GameObjects[0], path, true);
             if (newGo == null) {
                 // mark deleted - it's gone from the new file
                 diff[path] = null;
@@ -90,22 +90,26 @@ public sealed class PrefabPatcher : RszFilePatcherBase, IDisposable
         if (diff is not JsonObject obj) return;
         var file = targetFile.GetFile<PfbFile>();
 
-        var unapplied = obj.Where(kv => kv.Value is JsonObject && kv.Key != "__embeds").Select(kv => kv.Key).ToHashSet();
+        var unapplied = obj.Where(kv => kv.Value == null || kv.Value is JsonObject && kv.Key != "__embeds").Select(kv => kv.Key).ToHashSet();
         var maxAttempts = unapplied.Count;
         // repeat the loop to ensure path order doesn't matter for newly added objects
         // e.g. if there's root/new/new_2/new_3 path, we always add them in the right parent order
         while (unapplied.Count > 0 && maxAttempts-- >= 0) {
             foreach (var path in unapplied) {
-                var target = FindGameObjectByPath(file.GameObjects[0], path);
+                var target = FindGameObjectByPath(file.GameObjects[0], path, true);
                 if (target != null) {
                     unapplied.Remove(path);
-                    ApplyGameObjectDiff(target, (JsonObject)diff[path]!);
+                    if (diff[path] == null) {
+                        target.Parent?.Children.Remove(target);
+                    } else {
+                        ApplyGameObjectDiff(target, (JsonObject)diff[path]!);
+                    }
                     break;
                 } else {
                     var lastSlash = path.LastIndexOf('/');
                     if (lastSlash == -1) continue;
                     var parentPath = path.AsSpan().Slice(0, lastSlash);
-                    var targetParent = FindGameObjectByPath(file.GameObjects[0], parentPath);
+                    var targetParent = FindGameObjectByPath(file.GameObjects[0], parentPath, true);
                     if (targetParent != null) {
                         unapplied.Remove(path);
                         var newChild = JsonSerializer.Deserialize<PfbGameObject>((JsonObject)diff[path]!, workspace.Env.JsonOptions);

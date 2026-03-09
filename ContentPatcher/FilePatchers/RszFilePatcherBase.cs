@@ -110,19 +110,20 @@ public abstract class RszFilePatcherBase : IResourceFilePatcher
         return (sep, slash, counter);
     }
 
-    protected static TGO? FindGameObjectByPath<TGO>(TGO root, ReadOnlySpan<char> path, IEnumerable<TGO>? rootChildren = null) where TGO : class, IGameObject
+    protected static TGO? FindGameObjectByPath<TGO>(TGO root, ReadOnlySpan<char> path, bool ignoreRootName, IEnumerable<TGO>? rootChildren = null) where TGO : class, IGameObject
     {
         var (sep, slash, counter) = GetNextPathSegment(path);
 
         if (sep == -1) {
-            if (path.Length == 0 || path.SequenceEqual(root.Name)) return root;
+            if (path.Length == 0 || ignoreRootName || path.SequenceEqual(root.Name)) return root;
             return null;
         }
 
         var name = path.Slice(0, sep);
         // every diff path must include the root objects's name
         // we can't handle counters here because we don't know which number we're on, we can only assume the caller handled that
-        if (!name.SequenceEqual(root.Name)) return null;
+        // in the case of PFB paths, we can safely ignore the name in case they were renamed/swapped around
+        if (!ignoreRootName && !name.SequenceEqual(root.Name)) return null;
 
         var next = root;
         path = path.Slice(slash + 1);
@@ -158,7 +159,10 @@ public abstract class RszFilePatcherBase : IResourceFilePatcher
     protected void ApplyGameObjectDiff<TGO>(TGO target, JsonObject diff) where TGO : class, IGameObject
     {
         foreach (var (key, prop) in diff) {
-            if (prop == null) continue;
+            if (prop == null) {
+                // delete?
+                continue;
+            }
 
             if (key == "_guid" && target is ScnGameObject scn) {
                 if (Guid.TryParse(prop.GetValue<string>(), out var guid)) {
@@ -172,6 +176,7 @@ public abstract class RszFilePatcherBase : IResourceFilePatcher
             } else {
                 var comp = target.Components.FirstOrDefault(comp => comp.RszClass.name == key);
                 if (comp == null) {
+                    prop["$type"] = key;
                     target.Components.Add(JsonSerializer.Deserialize<RszInstance>(prop, workspace.Env.JsonOptions) ?? throw new Exception("Invalid component " + key));
                 } else {
                     ApplyObjectDiff(comp, prop);
