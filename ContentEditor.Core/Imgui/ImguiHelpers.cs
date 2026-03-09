@@ -227,8 +227,9 @@ public static class ImguiHelpers
     {
         ImGui.BeginGroup();
     }
-    public static void EndRect(int additionalSize = 0)
+    public static void EndRect(float additionalSize = -1)
     {
+        if (additionalSize == -1) additionalSize = ImGui.GetStyle().FrameRounding;
         ImGui.EndGroup();
         var min = ImGui.GetItemRectMin() - new Vector2(additionalSize);
         var max = ImGui.GetItemRectMax() + new Vector2(additionalSize);

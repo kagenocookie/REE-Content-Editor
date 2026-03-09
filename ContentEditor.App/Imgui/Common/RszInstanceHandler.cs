@@ -710,7 +710,7 @@ public class FlagsEnumFieldHandler : IObjectUIHandler
             }
         }
         ImGui.PopID();
-        ImguiHelpers.EndRect(2);
+        ImguiHelpers.EndRect();
         AppImguiHelpers.ShowJsonCopyPopup(value, value.GetType(), context);
     }
 }
@@ -903,7 +903,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                                 }
                             }
                         }
-                        ImguiHelpers.EndRect(4);
+                        ImguiHelpers.EndRect();
                         ImGui.PopID();
                     }
                     return;
@@ -912,7 +912,35 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                 ImGui.Text(context.label + ": NULL (unable to create new instance)");
                 return;
             }
-            ImGui.TextColored(Colors.Warning, "Invalid UserData instance");
+            if (ws?.Env.IsEmbeddedUserdataAny == false) {
+                ImguiHelpers.BeginRect();
+                ImGui.Text(context.label + ": NULL");
+                if (context.children.Count == 0) {
+                    context.AddChild("User Data File Path", instance, new ResourcePathPicker(ws, KnownFileFormats.UserData), _ => "", (inst, newPath) => {
+                        if (newPath == null || !ws.ResourceManager.TryResolveGameFile(newPath, out var file)) {
+                            Logger.Error("Could not resolve user file " + newPath);
+                            return;
+                        }
+
+                        var target = file.GetFile<UserFile>().Instance;
+                        if (target == null) {
+                            Logger.Error("Could not resolve user file " + newPath);
+                            return;
+                        }
+
+                        inst.RSZUserData = new RSZUserDataInfo() {
+                            Path = newPath,
+                            typeId = target.RszClass.typeId,
+                            instanceId = inst.Index,
+                        };
+                        context.ClearChildren();
+                    });
+                }
+                context.ShowChildrenUI();
+                ImguiHelpers.EndRect();
+            } else {
+                ImGui.TextColored(Colors.Warning, "Invalid UserData instance");
+            }
             return;
         }
 
@@ -942,7 +970,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
             HandleLinkedUserdata(context, instance, ws);
             ImGui.TreePop();
         }
-        ImguiHelpers.EndRect(4);
+        ImguiHelpers.EndRect();
         ImGui.Spacing();
     }
 
@@ -953,7 +981,6 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
             context.CachedString = "";
 
             if (instance.RSZUserData is RSZUserDataInfo info) {
-                // var pathCtx = context.AddChild<RSZUserDataInfo, string>(
                 var pathCtx = context.AddChild(
                     "Userdata file path",
                     info,
