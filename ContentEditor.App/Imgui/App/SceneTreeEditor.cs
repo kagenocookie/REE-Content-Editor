@@ -169,6 +169,14 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                     GetRootInspector(context)?.SetPrimaryInspector(newFolder);
                 }
 
+                if (VirtualClipboard.TryGetFromClipboard<GameObject>(out var clipboardObject) && ImGui.Selectable($"{AppIcons.SI_Paste} Paste GameObject")) {
+                    var clone = clipboardObject.Clone();
+                    UndoRedo.RecordAddChild<GameObject>(context, clone, folder);
+                    clone.MakeNameUnique();
+                    clone.Transform.ResetLocalTransform();
+                    context.ClearChildren();
+                }
+
                 if (folder.Parent != null) {
                     // TODO need proper icon
                     if (ImGui.Selectable($"{AppIcons.SI_FileExtractTo} Duplicate")) {
