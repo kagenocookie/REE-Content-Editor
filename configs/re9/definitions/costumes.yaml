@@ -31,12 +31,18 @@ classes:
       type: array-file
       file: natives/stm/event/resource/costumecatalog/ch0200.user.3
       # file: natives/stm/event/resource/costumecatalog/ch1300.user.3
+  app.MontageData.MontageParts:
+    to_string: "{_PartsName}: {_PrefabResource?.Path}"
+  app.BounsMontageData:
+    to_string: "Bonus Montage {_BonusID} - Model {_ModelId} / Preset {_DefaultPresetID}"
   app.CharacterMontagePresetCatalogUserData.Entry:
     # TODO nested IDs not supported yet
     # id: [_Preset._ModelID]
     # subId: [_Preset._ID]
-    to_string: "Montage Preset Entry [{_Preset._ModelID} / {_Preset._ID}]"
+    to_string: "Montage Preset Entry [{_Preset._ModelID} / {_Preset._ID}] {:path(_Preset)}"
     # patcher:
     #   type: array-file
+    #   file: natives/stm/gameassets/character/characterprefab/cp_e9/cp_e900/montage/cp_e900charactermontagepresetcataloguserdata.user.3
+    #   file: natives/stm/gameassets/character/characterprefab/cp_a1/cp_a100/userdata/cp_a100montagepresetdata.user.3
     #   file: natives/stm/appsystem/event/timelineevent/catalog/timelineevent_charactermontagepresetcataloguserdata.user.3
     #   file: natives/stm/appsystem/event/timelineevent/catalog/timelineevent_charactermontagepresetcataloguserdata_1stchunk.user.3

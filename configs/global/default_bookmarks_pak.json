@@ -1365,6 +1365,13 @@
   ],
   "re9": [
     {
+      "Path": "natives/stm/gameassets/content/maingame/maingame.scn.21",
+      "Tags": [
+        "Scene"
+      ],
+      "Comment": "Main game scene"
+    },
+    {
       "Path": "natives/stm/character/ch/ch01",
       "Tags": [
         "Character"
