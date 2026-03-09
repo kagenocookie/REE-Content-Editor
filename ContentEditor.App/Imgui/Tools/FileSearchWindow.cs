@@ -743,7 +743,12 @@ public class FileSearchWindow : IWindowHandler
 
                 foreach (var inRsz in rszList) {
                     foreach (var inst in inRsz.InstanceList) {
-                        if (inst.RSZUserData != null) continue;
+                        if (inst.RSZUserData != null) {
+                            if (queryValue is string && equalityComparer(inst.RSZUserData.Path, queryValue)) {
+                                AddMatch(context, $"{FindPathToRszObject(inRsz, inst, file)} UserData = {inst.RSZUserData.Path}", path);
+                            }
+                            continue;
+                        }
                         foreach (var field in inst.Fields) {
                             if (!fieldTypes.Contains(field.type)) continue;
 
