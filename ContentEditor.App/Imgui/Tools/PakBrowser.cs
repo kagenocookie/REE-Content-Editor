@@ -742,7 +742,8 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
             return false;
         }
 
-        if (IsFileOrFolderInBundle(file)) {
+        var bypassBundleFile = ImGui.IsKeyDown(ImGuiKey.ModAlt);
+        if (IsFileOrFolderInBundle(file) && !bypassBundleFile) {
             if (contentWorkspace.ResourceManager.TryResolveGameFile(file, out var targetFile)) {
                 EditorWindow.CurrentWindow?.AddFileEditor(targetFile);
                 return true;
@@ -772,7 +773,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string? pakFi
                 if (stream == null) {
                     EditorWindow.CurrentWindow?.AddSubwindow(new ErrorModal("File not found", "File could not be found in the PAK file(s)."));
                 } else {
-                    EditorWindow.CurrentWindow?.OpenFile(stream, file, PakFilePath + "://");
+                    EditorWindow.CurrentWindow?.OpenFile(stream, file, (PakFilePath ?? Workspace.Config.GamePath) + "://");
                 }
             }
         } catch (Exception e) {
