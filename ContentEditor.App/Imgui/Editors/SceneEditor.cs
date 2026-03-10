@@ -87,7 +87,10 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
         context.ClearChildren();
         var window = context.GetNativeWindow();
         scene = Handle.InternalPath == null ? null : window?.SceneManager.FindLoadedScene(Handle.InternalPath);
-        if (scene != null) return scene;
+        if (scene != null) {
+            SourceScene.SetSharedInstance(scene.RootFolder);
+            return scene;
+        }
 
         var root = SourceScene.GetSharedInstance(Workspace.Env);
         if (Logger.ErrorIf(root == null, "Failed to instantiate scene")) return null;

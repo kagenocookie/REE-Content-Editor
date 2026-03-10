@@ -234,6 +234,7 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
         var scn = new ScnFolderData() {
             Instance = Instance,
         };
+        Instance.ObjectTableIndex = -1;
         if (!string.IsNullOrEmpty(ScenePath)) {
             return scn;
         }

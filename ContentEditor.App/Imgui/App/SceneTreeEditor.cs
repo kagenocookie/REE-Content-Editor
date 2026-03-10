@@ -1,5 +1,7 @@
 using System.Numerics;
+using ContentEditor.App.FileLoaders;
 using ContentEditor.Core;
+using ReeLib;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -11,6 +13,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
     private static IInspectorController? GetRootInspector(UIContext context) => GetRootSceneEditor(context) ?? context.FindHandlerInParents<IInspectorController>();
 
     private IVisibilityTarget? dragSource;
+    private BookmarkHolder? _bookmarks;
 
     protected override IEnumerable<IVisibilityTarget> GetChildren(IVisibilityTarget? node, bool expandContents = false)
     {
@@ -113,8 +116,8 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
         if (ImGui.BeginPopupContextItem(label)) {
             if (scene?.IsActive == true) {
                 if (ImGui.Selectable($"{AppIcons.Search} Focus in 3D view")) {
-                    if (node is Folder f) scene?.ActiveCamera.LookAt(f, false);
-                    else if (node is GameObject go) scene?.ActiveCamera.LookAt(go, false);
+                    if (node is Folder f) scene.ActiveCamera.LookAt(f, false);
+                    else if (node is GameObject go) scene.ActiveCamera.LookAt(go, false);
                 }
 
                 if (ImGui.MenuItem($"{AppIcons.Eye} Toggle children Visibility")) {
@@ -125,12 +128,45 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                 ShowVisibilityBisect(node, context);
             }
 
-            if ((node is GameObject || node is Folder && string.IsNullOrEmpty(((Folder)node).ScenePath)) && ImGui.Selectable($"{AppIcons.SI_SceneGameObject} New GameObject")) {
-                var ws = context.GetWorkspace();
-                var newgo = new GameObject("New_GameObject", ws!.Env, folder ?? (node as GameObject)?.Folder, scene);
-                UndoRedo.RecordAddChild(context, newgo, (INodeObject<GameObject>)node);
-                newgo.MakeNameUnique();
-                rootEditor?.SetPrimaryInspector(newgo);
+            if ((node is GameObject || node is Folder && string.IsNullOrEmpty(((Folder)node).ScenePath))) {
+                if (ImGui.Selectable($"{AppIcons.SI_SceneGameObject} New GameObject")) {
+                    var ws = context.GetWorkspace();
+                    var newgo = new GameObject("New_GameObject", ws!.Env, folder ?? (node as GameObject)?.Folder, scene);
+                    UndoRedo.RecordAddChild(context, newgo, (INodeObject<GameObject>)node);
+                    newgo.MakeNameUnique();
+                    rootEditor?.SetPrimaryInspector(newgo);
+                }
+
+                if (ImGui.BeginMenu($"{AppIcons.Prefab} Instantiate Prefab")) {
+                    var ws = context.GetWorkspace()!;
+                    _bookmarks ??= new BookmarkHolder(ws);
+                    var items = _bookmarks.GetByTag("Prefab");
+                    if (!items.Any()) {
+                        ImGui.TextColored(Colors.Note, "No prefab bookmarks found!");
+                    } else {
+                        ImGui.InputTextWithHint("Filter", $"{AppIcons.Search}", ref context.Filter, 50);
+                        var filter = context.Filter;
+                        foreach (var item in items) {
+                            if (!string.IsNullOrEmpty(filter) && !item.Comment.Contains(filter, StringComparison.OrdinalIgnoreCase) && !item.Path.Contains(filter, StringComparison.OrdinalIgnoreCase)) {
+                                continue;
+                            }
+
+                            if (ImGui.Selectable((!string.IsNullOrEmpty(item.Comment) ? item.Comment : item.Path) + "##" + item.GetHashCode())) {
+                                if (ws.ResourceManager.TryResolveGameFile(item.Path, out var file) && file.GetCustomContent<Prefab>() is Prefab prefab) {
+                                    var instance = prefab.Instantiate();
+                                    instance.PrefabPath = PathUtils.GetInternalFromNativePath(item.Path);
+                                    instance.RandomizeGuids();
+                                    UndoRedo.RecordAddChild(context, instance, (INodeObject<GameObject>)node);
+                                    instance.MakeNameUnique();
+                                    var pos = (scene?.ActiveCamera.Transform.Position + scene?.ActiveCamera.Transform.Forward * 3) ?? Vector3.Zero;
+                                    instance.Transform.SetGlobalTransform(pos, Quaternion.Identity, Vector3.One);
+                                    rootEditor?.SetPrimaryInspector(instance);
+                                }
+                            }
+                        }
+                    }
+                    ImGui.EndMenu();
+                }
             }
 
             if (node is GameObject gameObject) {

@@ -37,6 +37,12 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
     public string? PrefabPath;
     public readonly List<Component> Components = new();
 
+    public void RandomizeGuids()
+    {
+        guid = Guid.NewGuid();
+        foreach (var child in Children) child.RandomizeGuids();
+    }
+
     public Transform Transform { get; }
 
     public Folder? Folder { get; internal set; }
@@ -296,6 +302,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         var obj = new PfbGameObject() {
             Instance = instance,
         };
+        instance.ObjectTableIndex = -1;
         foreach (var comp in Components) {
             obj.Components.Add(comp.Data);
         }
@@ -316,6 +323,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         var obj = new ScnGameObject() {
             Instance = instance,
         };
+        instance.ObjectTableIndex = -1;
         obj.Info ??= new();
         obj.Info.guid = this.guid;
         if (prefabInfos != null && !string.IsNullOrEmpty(PrefabPath)) {

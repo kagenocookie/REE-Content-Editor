@@ -65,6 +65,11 @@ public class RawScene(FileHandle handle, ScnFile file) : IResourceFile
         return _rootInstance ??= Instantiate(env);
     }
 
+    public void SetSharedInstance(Folder folder)
+    {
+        _rootInstance = folder;
+    }
+
     public Folder Instantiate(Workspace env, Scene scene)
     {
         return Instantiate(env, scene.RootFolder);
