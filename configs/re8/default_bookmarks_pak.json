@@ -1,0 +1,19 @@
+{
+  "re8": [
+    {
+      "Path": "natives/stm/character/ch",
+      "Tags": ["Character"],
+      "Comment": "Base game characters"
+    },
+    {
+      "Path": "natives/stm/_ge/character/ch",
+      "Tags": ["Character"],
+      "Comment": "Gold Edition' characters"
+    },
+    {
+      "Path": "natives/stm/character/it",
+      "Tags": ["Weapon", "Item"],
+      "Comment": "Base game weapons and items"
+    }
+  ]
+}

@@ -3,10 +3,12 @@ namespace ContentEditor.App.Windowing;
 using System;
 using System.Diagnostics;
 using System.Numerics;
+using System.Text.Json;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Github;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.Core;
+using ContentEditor.Reversing;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Data;
@@ -661,6 +663,15 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                             });
                         } catch (Exception e) {
                             Logger.Error(e.Message);
+                        }
+                    }
+                    AddUniqueSubwindow(new FileTesterWindow());
+                }
+                if (ImGui.MenuItem("Generate bookmarks from entities")) {
+                    if (workspace != null) {
+                        var list = PrefabLister.GenerateFileSets(workspace);
+                        if (list != null) {
+                            Logger.Info(JsonSerializer.Serialize(list, JsonConfig.configJsonOptions));
                         }
                     }
                     AddUniqueSubwindow(new FileTesterWindow());

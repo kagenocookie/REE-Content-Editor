@@ -48,5 +48,11 @@ public static partial class RszFieldCache
                 public static readonly RszFieldAccessorName<RszInstance> _PrefabResource = Name<RszInstance>();
             }
         }
+
+        [RszAccessor("app.ItemCatalogUserData.ItemData", nameof(GameIdentifier.re9))]
+        public static class ItemData
+        {
+            public static readonly RszFieldAccessorName<RszInstance> _LayouterPrefab = Name<RszInstance>();
+        }
     }
 }

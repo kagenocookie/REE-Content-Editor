@@ -1,0 +1,19 @@
+{
+  "re3": [
+    {
+      "Path": "natives/stm/escape/character",
+      "Tags": [
+        "Character",
+        "Weapon"
+      ],
+      "Comment": "Character and weapon meshes"
+    },
+    {
+      "Path": "natives/stm/escape/scene/location",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Main locations"
+    }
+  ]
+}

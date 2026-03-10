@@ -1,0 +1,26 @@
+{
+  "re2": [
+    {
+      "Path": "natives/x64/sectionroot/character",
+      "Tags": [
+        "Character",
+        "Weapon"
+      ],
+      "Comment": "Character and weapon meshes"
+    },
+    {
+      "Path": "natives/x64/objectroot/scene/location",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Location scenes"
+    },
+    {
+      "Path": "natives/x64/objectroot/prefab/character/survivor/parts",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Player costume prefabs"
+    }
+  ]
+}

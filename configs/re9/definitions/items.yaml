@@ -3,6 +3,7 @@ entities:
     custom_id_range: [100000, 999999]
     to_string: "Item [{data._ItemIDStr}]: {name}"
     fields:
+      # TODO: add an easy UI link to the prefab of ItemData
       data:
         type: object
         label: Data

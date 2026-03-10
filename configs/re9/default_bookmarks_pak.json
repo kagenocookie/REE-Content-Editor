@@ -1,0 +1,2052 @@
+{
+  "re9": [
+    {
+      "Path": "natives/stm/gameassets/content/maingame/maingame.scn.21",
+      "Tags": [
+        "Scene"
+      ],
+      "Comment": "Main game scene"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Leon S. Kennedy"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/0100",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Leon (Jacket \u0026 Harness)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/0150",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Leon (Film Noir)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/0151",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Leon (Apocalypse)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/0152",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Leon (RE4)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/0153",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Leon (RPD)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch02",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Grace Ashcroft"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch02/0200",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Grace (Jacket \u0026 T-shirt)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch02/0250",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Grace (FBI)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch02/0251",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Grace (Film Noir)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch02/0252",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Grace (Apocalypse)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch02/0253",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Grace (Dimitrescu)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch03",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Emily"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch06",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Sherry Birkin"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch09",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "The Commander"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch12",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "The Girl"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch13",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Emily (Mutated)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch15",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Nathan Dempsy"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch18",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Alyssa Ashcroft"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch20",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Norman Cole"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch31",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Plant 43 (Seedling)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch32",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Plant 43 (Boss)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch40",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Male Enemies"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch41",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Female Enemies"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch42",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Fat Enemies"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch43",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Zombie Chef"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch44",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Chunk"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch45",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Blister Head"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch47",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Other Male Enemies"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch48",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Other Female Enemies"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch49",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Other Fat Enemies"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch51",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Victor Gideon"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch52",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Raccoon City Zombies"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch56",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "ARK Zombie"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch76",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Baby Spider"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch77",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Titan Spinner"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch78",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Garmr"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch80",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Zeno"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch86",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Tyrant T-501"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch88",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Licker"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch98",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Animals"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0100",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Matilda IMP"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0102",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Requiem"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0103",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "S\u0026S M232"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0106",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Silencer 9"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0108",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Redemption"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0109",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Ghost Grudge"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0110",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "B932"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0111",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Alligator Snapper"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0117",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Requiem (Film Noir)"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0118",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Requiem (Apocalypse)"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0119",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "S\u0026S 232 (Film Noir)"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp01/0120",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "S\u0026S 232 (Apocalypse)"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp02/0200",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Gal"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp02/0201",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "STIRI REVO3 A1"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp02/0202",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Freya\u0027s Needle"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp03/0300",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "MSBG 500"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp03/0303",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "W870 Police"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp03/0304",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "990-TAC"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp05/0500",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Classic 70"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp05/0501",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Marksman 1A"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp07",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "RPG-7"
+    },
+    {
+      "Path": "natives/stm/character/wp/wp08",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Gas Canister"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it00_00_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Green Herb"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it00_00_100.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Mixed Herb (G+G)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it00_00_200.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Mixed Herb (G+G+G)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it00_01_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Med Injector"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_00_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Matilda IMP"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_00_001.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "S&S M232"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_00_002.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Silencer 9"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_00_003.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "B934"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_00_004.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Redemption"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_00_005.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Ghost Grudge"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_00_006.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Alligator Snapper"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_01_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "MSBG 500"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_01_002.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "W870 Police"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_01_003.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "990-TAC"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_02_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Requiem"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_03_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Gal"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_03_001.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Stiri REVO3 A1"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_03_003.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Freya's Needle"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_04_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "RPG-7"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_05_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Classic 70"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_05_001.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Marksman 1A"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_05_002.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Clatter Carbine"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_10_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Chainsaw"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_10_001.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Fire Poker"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_10_002.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Disposal Tank"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_20_001.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Hatchet"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_20_003.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Makeshift Knife"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_20_005.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Hunting Knife"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_20_006.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Mortal Edge"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_20_007.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "R.I.P. Knife"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_20_008.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Kotetsu"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_30_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Body Armor Lv.I"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_30_001.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Body Armor Lv.II"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it10_30_002.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Body Armor Lv.III"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it20_00_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Hand Grenade"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it20_00_002.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Molotov Cocktail"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it20_00_003.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Empty Bottle"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it20_00_004.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Stacked Hand Grenade"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it20_00_005.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Bottle of Acid"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_100.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "High-Capacity Mag."
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_101.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Silver Tube Extension"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_102.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "High-Capacity Mag."
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_103.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "High-Capacity Mag."
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_104.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Carbon Tube Extension"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_105.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "High-Capacity Mag."
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_106.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "High-Capacity Mag."
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_107.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Titanium Magazine Catch"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_108.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "High-Capacity Mag."
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_109.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Slick Magazine Catch"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_200.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Burst Stock"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_201.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Chrome Stock"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_202.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Premier Stock"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_203.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Folding Stock"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_204.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Stock"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_205.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Weighted Grip"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_300.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Hair Trigger"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_301.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Aluminum Trigger"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_302.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Duralumin Bolt"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_303.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Duralumin Action Bar"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_304.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Duckbill Choke"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_305.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Reinforced Bolt"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_306.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Titanium Bolt"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_307.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Barrel Jacket"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_308.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Fortified Blade"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_309.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Improved Grip"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_310.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Balanced Spring"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_311.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Enhanced Leaf Spring"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_400.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Standard Scope"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_401.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Silver Finish Scope"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_402.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Dot Sight"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_403.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Dot Sight"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_404.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Dot Sight"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_405.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Semi-auto Scope"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_406.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Dot Sight"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_407.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Dot Sight"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_500.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Long Compensator"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_501.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Chrome Barrel"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_502.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "PVD Barrel"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_503.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Long Flash Guard"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_504.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Add-on Suppressor"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_505.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Ceramic Coated Barrel"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_506.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Ported Barrel"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_507.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Compensator"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_701.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Trusted Companion Charm"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_702.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Connoisseur Charm"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_703.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Cute Bear Charm"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_704.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "BSAA Emblem Charm"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_705.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "S.T.A.R.S. Emblem Charm"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it30_00_706.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Power Shades Charm"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it40_00_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Handgun Ammo"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it40_01_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Shotgun Shells"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it40_02_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "12.7x55mm Ammo"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it40_03_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Machine Gun Ammo"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it40_05_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Rifle Ammo"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it40_20_001.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Melee Weapon Durability"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it50_00_001.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Gunpowder (Small)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it50_00_002.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Scrap"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it50_00_006.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Rare Metal"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it50_00_012.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Ink Ribbon Tin"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it50_00_014.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Gunpowder (Large)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it50_00_017.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Empty Ink Ribbon"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it50_00_018.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Empty Injector"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_002.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Bolt Cutters"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_004.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Pencil"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_013.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Cherub Key"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_038.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Joint Plug"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_039.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Screwdriver"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_040.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Fuse"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_041.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Square Socket Wrench"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_042.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Forklift Key"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_045.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "West Wing Keycard"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_046.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "East Wing Keycard"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_047.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Red Jewel"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_048.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Sun Quartz"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_049.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Moon Quartz"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_050.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Star Quartz"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_051.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Artificial Heart"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_053.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Artificial Lungs"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_055.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "ID Wristband (Level 1)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_063.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Corrosive"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_064.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Blood Specimen (Denatured)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_065.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Blood Specimen (Converged)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_067.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Blood Specimen (Reversible)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_068.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "ID Wristband (Level 2)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_069.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Pantry Key"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_073.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Organ Transport Box"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_074.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Wrench"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_075.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "ID Wristband (Level 3)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_076.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Wire Cutters"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_077.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Unicorn Trinket Box"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_080.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Emergency Exit Key"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_081.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Helicopter Key"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_082.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Investigation Report"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_083.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Photo of Grace"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_084.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Severed Hand"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_085.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Hourglass"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_086.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Double Helix Model"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_087.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Hatch Key"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_088.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Fire Poker"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_089.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Old Key"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_090.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Mechanic Jack"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_091.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "BSAA Container Key"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_092.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Battery"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_093.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Gas Can"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_094.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Cedarbrook Apartments Key"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_095.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Gas Can with Fuel"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_096.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Signal Receiver"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_097.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Distributor"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_098.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Relay"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_103.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Rusty Crank"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_104.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Valve Handwheel"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_105.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Animus Orb"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_107.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Noblesse Orb"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_108.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Broken Signal Receiver"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_109.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Repair Kit"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_110.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Locker Key"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_111.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Crank Lever"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_112.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Magnetic Key"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_113.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Override Key (Dump Control Room)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_114.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Override Key (Bioweapon Repository 11)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_115.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Distributor & Broken Signal Receiver"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_116.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Damaged Detonator"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_117.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Distributor & Signal Receiver"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_118.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Distributor & Relay"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_119.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Detonator"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_120.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Blood Specimen (Polymerized)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_121.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Marie's Doll"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it60_00_122.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Leatherbound Notebook"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it70_01_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Infected Blood"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it70_03_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Body Armor Repair"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_00_001.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "West Wing Map (Admin Offices)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_00_002.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "East Wing Map (Hospital Wards)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_00_004.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "The Wrenwood Hotel Floor Plan"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_00_006.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Care Center Basement Floor Plan"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_00_007.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Raccoon Roundup Map (Wrenwood)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_00_008.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Raccoon Roundup Map (Rhodes Hill)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_00_009.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Raccoon Roundup Map (Raccoon City)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_00_010.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Raccoon Roundup Map (ARK)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_01_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Hip Pouch"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_01_001.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Case Upgrade (8x13)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_02_002.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Steroids"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_02_004.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Stabilizer"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_05_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Lighter"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_05_001.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Flashlight"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_06_000.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Blood Collector"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_06_003.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Blood Collector"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_06_004.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Transfusion Bag"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_06_010.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Blood Collector"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_07_001.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Stakeout Takeout Charm"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_07_002.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Rugged Rookie Charm"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_07_003.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Eye Spy Charm"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_50_001.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Hemolytic Injector"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_50_003.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Ink Ribbon"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_50_005.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Antique Coin"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_50_006.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Lockpick"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_50_007.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Tactical Tracker"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_50_008.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Tracking Module (Common)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_50_009.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Tactical Tracker (Modded)"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_50_010.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Infinite Ribbon"
+    },
+    {
+      "Path": "natives/stm/GameAssets/Item/Prefab/Layouter/it99_50_011.pfb.18",
+      "Tags": [
+        "Item",
+        "Prefab"
+      ],
+      "Comment": "Override Manual"
+    }
+  ]
+}

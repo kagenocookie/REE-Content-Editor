@@ -35,10 +35,7 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     internal MmtrTemplateDB? MaterialTemplateDB => mmtrTemplateDB;
     private bool _requestedMmtrDb;
     private BookmarkManager _mdfBookmarkManagerDefaults = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, "global/default_bookmarks_mdf.json")); // TODO SILVER: Add more mat param descriptions
-    private BookmarkManager _mdfBookmarkManager = new BookmarkManager(
-        Path.Combine(AppConfig.Instance.BookmarksFilepath.Get()!, "bookmarks_mdf.json"),
-        Path.Combine(AppConfig.Instance.ConfigBasePath, "user/bookmarks_mdf.json")
-    );
+    private BookmarkManager _mdfBookmarkManager = new BookmarkManager(Path.Combine(AppConfig.Instance.BookmarksFilepath.Get()!, "bookmarks_mdf.json"));
     public BookmarkManager MDFDefaultBookmarks => _mdfBookmarkManagerDefaults;
     public BookmarkManager MDFBookmarks => _mdfBookmarkManager;
 

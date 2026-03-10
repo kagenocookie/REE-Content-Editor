@@ -38,6 +38,11 @@ public class ResourceEntity : Entity
         return FieldValues.GetValueOrDefault(name);
     }
 
+    public T? Get<T>(string name) where T : class, IContentResource
+    {
+        return FieldValues.GetValueOrDefault(name) as T;
+    }
+
     public Dictionary<string, JsonNode?>? CalculateDiff(ContentWorkspace workspace)
     {
         var differ = new DiffMaker();

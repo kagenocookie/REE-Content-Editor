@@ -17,7 +17,6 @@ namespace ContentEditor.App
             }
         }
         private readonly string _jsonFilePath;
-        private readonly string? _legacyFilePath;
         private Dictionary<string, List<BookmarkEntry>> _bookmarks = new();
         public bool IsHideBookmarks { get; set; } = false;
         public struct TagInfo
@@ -45,10 +44,9 @@ namespace ContentEditor.App
             ["Weapon"] = new TagInfo($"{AppIcons.SI_TagWeapon}", () => new[] { Colors.TagWeapon, Colors.TagWeaponHovered, Colors.TagWeaponSelected }),
         };
 
-        public BookmarkManager(string jsonFilePath, string? legacyFilePath = null)
+        public BookmarkManager(string jsonFilePath)
         {
             _jsonFilePath = jsonFilePath;
-            _legacyFilePath = legacyFilePath;
             LoadBookmarks();
         }
         public IList<BookmarkEntry> GetBookmarks(string game)
@@ -102,14 +100,6 @@ namespace ContentEditor.App
             string? path = null;
             if (File.Exists(_jsonFilePath)) {
                 path = _jsonFilePath;
-            } else if (_legacyFilePath != null && File.Exists(_legacyFilePath)) {
-                try {
-                    Directory.CreateDirectory(Path.GetDirectoryName(_jsonFilePath)!);
-                    File.Copy(_legacyFilePath, _jsonFilePath);
-                    path = _jsonFilePath;
-                } catch (Exception e) {
-                    Logger.Error("Failed to migrate bookmarks: " + e.Message);
-                }
             }
             if (!File.Exists(path)) return;
             _bookmarks = JsonSerializer.Deserialize<Dictionary<string, List<BookmarkEntry>>>(File.ReadAllText(path)) ?? new Dictionary<string, List<BookmarkEntry>>();
