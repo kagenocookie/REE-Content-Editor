@@ -217,7 +217,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                 Logger.Error("File not found: " + fullLocalFilepath);
                 return false;
             }
-            var tempFile = FileHandle.FromDiskFilePath(fullLocalFilepath, file.Loader);
+            var tempFile = FileHandle.FromDiskFilePath(fullLocalFilepath, file.Loader, true);
             if (tempFile == null) return false;
             var resource = file.Loader.Load(workspace, tempFile);
             if (resource == null) {

@@ -122,9 +122,12 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
         (Resource as IDisposable)?.Dispose();
     }
 
-    internal static FileHandle FromDiskFilePath(string filepath, IFileLoader loader)
+    internal static FileHandle FromDiskFilePath(string filepath, IFileLoader loader, bool loadIntoMemory)
     {
-        var stream = File.OpenRead(filepath);
+        Stream stream = File.OpenRead(filepath);
+        if (loadIntoMemory) {
+            stream = stream.ToMemoryStream();
+        }
         return new FileHandle(filepath, stream, FileHandleType.Disk, loader);
     }
 
