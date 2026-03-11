@@ -296,7 +296,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 var animWarns = GetAnimErrors();
                 if (animWarns != null) {
                     using var _ = ImguiHelpers.OverrideStyleCol(ImGuiCol.Text, Colors.Warning);
-                    ImGui.MenuItem($"{AppIcons.SI_GenericWarning}##mesh");
+                    ImGui.MenuItem($"{AppIcons.SI_GenericWarning}##anim");
                     ImguiHelpers.Tooltip(animWarns);
                 }
                 ImguiHelpers.VerticalSeparator();

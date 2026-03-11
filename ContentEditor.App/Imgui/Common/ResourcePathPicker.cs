@@ -106,7 +106,11 @@ public class ResourcePathPicker : IObjectUIHandler
     public static bool Show(string label, ref string currentPath, ref string pendingPath, ContentWorkspace workspace, KnownFileFormats[] formats, FileFilter[] fileFilters, PathPickerFlags flags, Action<string>? delayedSaveCallback = null)
     {
         ImGui.PushID(label);
-        pendingPath ??= currentPath;
+        if (flags.HasFlag(PathPickerFlags.NoConfirmation)) {
+            pendingPath = currentPath;
+        } else {
+            pendingPath ??= currentPath;
+        }
         var changed = false;
         if (AppImguiHelpers.InputFilepath(label, ref pendingPath, fileFilters)) {
             if (flags.HasFlag(PathPickerFlags.NoConfirmation)) {
