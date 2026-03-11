@@ -632,5 +632,6 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
     void IFileHandleReferenceHolder.Close()
     {
         Dispose();
+        EditorWindow.CurrentWindow?.CloseSubwindow(data);
     }
 }

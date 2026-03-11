@@ -1120,7 +1120,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         if (!openFiles.Remove(file.Filepath.ToLowerInvariant(), out _) && file.NativePath != null) {
             openFiles.Remove(file.NativePath, out _);
         }
-        foreach (var rf in file.References) {
+        foreach (var rf in file.References.ToList()) {
             rf.Close();
         }
         file.Dispose();
