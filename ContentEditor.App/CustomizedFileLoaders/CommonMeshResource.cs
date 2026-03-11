@@ -5,7 +5,7 @@ using ReeLib;
 
 namespace ContentEditor.App.FileLoaders;
 
-public partial class CommonMeshResource(string Name, Workspace workspace) : IResourceFile
+public partial class CommonMeshResource(string name, Workspace workspace) : IResourceFile
 {
     private Assimp.Scene? _scene;
     private MeshFile? _mesh;
@@ -15,6 +15,8 @@ public partial class CommonMeshResource(string Name, Workspace workspace) : IRes
     public List<Graphics.Mesh>? OcclusionMeshes { get; set; }
 
     public GameName GameVersion = GameName.dd2;
+
+    public string Name => name;
 
     public Assimp.Scene Scene
     {

@@ -72,7 +72,7 @@ public partial class CommonMeshResource : IResourceFile
         bool allowExtraWeights = maxWeightsPerVert > 8;
         var maxWeighedBones = MeshFile.GetDeformBoneLimit(versionConfig);
 
-        var orderedMeshes = srcMeshes.OrderBy(m => (MeshLoader.GetMeshIndexFromName(m.Name), MeshLoader.GetMeshGroupFromName(m.Name), MeshLoader.GetSubMeshIndexFromName(m.Name)));
+        var orderedMeshes = srcMeshes.OrderBy(m => (MeshLoader.GetMeshGroupFromName(m.Name), MeshLoader.GetSubMeshIndexFromName(m.Name)));
 
         foreach (var mat in scene.Materials) {
             if (string.IsNullOrEmpty(mat.Name)) continue;
@@ -165,8 +165,6 @@ public partial class CommonMeshResource : IResourceFile
 
         foreach (var aiMesh in sortedMeshes) {
             var groupIdx = MeshLoader.GetMeshGroupFromName(aiMesh.Name);
-            var meshIdx = MeshLoader.GetMeshIndexFromName(aiMesh.Name);
-            var subIdx = MeshLoader.GetSubMeshIndexFromName(aiMesh.Name);
 
             var buffer = mainBuffer;
 
@@ -222,7 +220,6 @@ public partial class CommonMeshResource : IResourceFile
             var indicesCount = faceCount * 3;
 
             // note: vert limit check shouldn't be needed here, we're letting assimp handling splitting automatically
-            if (meshIdx > 0) throw new NotImplementedException($"Only one mesh per file is currently supported.");
 
             var group = meshLod.MeshGroups.FirstOrDefault(grp => grp.groupId == groupIdx);
             if (group == null) {

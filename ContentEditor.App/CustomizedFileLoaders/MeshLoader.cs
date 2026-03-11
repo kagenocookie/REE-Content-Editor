@@ -119,24 +119,12 @@ public partial class MeshLoader : IFileLoader,
     [GeneratedRegex("Group_([\\d]+)")]
     private static partial Regex MeshGroupRegex();
 
-    [GeneratedRegex("mesh([\\d]+)")]
-    private static partial Regex MeshIndexRegex();
-
     [GeneratedRegex("sub([\\d]+)")]
     private static partial Regex SubmeshIndexRegex();
 
     public static int GetMeshGroupFromName(string meshName)
     {
         var match = MeshGroupRegex().Match(meshName);
-        if (match.Success) {
-            return int.Parse(match.Groups[1].ValueSpan, CultureInfo.InvariantCulture);
-        }
-        return 0;
-    }
-
-    public static int GetMeshIndexFromName(string meshName)
-    {
-        var match = MeshIndexRegex().Match(meshName);
         if (match.Success) {
             return int.Parse(match.Groups[1].ValueSpan, CultureInfo.InvariantCulture);
         }

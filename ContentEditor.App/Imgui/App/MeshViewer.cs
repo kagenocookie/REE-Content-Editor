@@ -698,7 +698,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     {
         if (ImGui.Button($"{AppIcons.SI_GenericExport} Export Mesh")) {
             // potential export enhancement: include (embed?) textures
-            if (Handle.Resource is CommonMeshResource assmesh) {
+            if (meshContexts.FirstOrDefault()?.MeshFile is CommonMeshResource assmesh) {
                 PlatformUtils.ShowSaveFileDialog((exportPath) => {
                     exportInProgress = true;
                     try {

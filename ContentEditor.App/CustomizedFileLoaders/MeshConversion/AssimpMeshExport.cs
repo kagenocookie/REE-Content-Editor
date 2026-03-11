@@ -282,24 +282,24 @@ public partial class CommonMeshResource : IResourceFile
             for (int i = 0; i < file.MeshData.LODs.Count; i++) {
                 var lod = file.MeshData.LODs[i];
                 if (i == 0) {
-                    ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, includeAllLods ? "lod0_" : "", extraBones, matIndexOffset);
+                    ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, includeAllLods ? $"{rootName}_lod0_" : $"{rootName}_", extraBones, matIndexOffset);
                     if (!includeAllLods) break;
                 } else {
-                    ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, $"lod{i}_", extraBones, matIndexOffset);
+                    ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, $"{rootName}_lod{i}_", extraBones, matIndexOffset);
                 }
             }
         }
         if (includeShadows && file.ShadowMesh != null) {
             for (int i = 0; i < file.ShadowMesh.LODs.Count; i++) {
                 var lod = file.ShadowMesh.LODs[i];
-                ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, $"shadow_lod{i}_", extraBones, matIndexOffset);
+                ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, $"{rootName}_shadow_lod{i}_", extraBones, matIndexOffset);
             }
         }
         if (includeOcclusion && file.OccluderMesh != null) {
             if (scene.MaterialCount == 0) {
                 scene.Materials.Add(new Material() { Name = "default" });
             }
-            ExportLod(file, isGltf, scene, bones, includeShapeKeys, file.OccluderMesh, $"occ_", extraBones, matIndexOffset);
+            ExportLod(file, isGltf, scene, bones, includeShapeKeys, file.OccluderMesh, $"{rootName}_occ_", extraBones, matIndexOffset);
         }
 
         return scene;
