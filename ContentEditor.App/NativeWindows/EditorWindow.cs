@@ -163,10 +163,15 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             return;
         }
 
+        var paks = filenames.Where(f => f.EndsWith(".pak"));
+        if (paks.Any()) {
+            var orderedPaks = paks.Order().ToArray();
+            foreach (var pak in orderedPaks) AppConfig.Settings.RecentFiles.AddRecent(Workspace.Game, pak);
+            AddSubwindow(new PakBrowser(workspace, orderedPaks));
+        }
+
         foreach (var filename in filenames) {
             if (filename.EndsWith(".pak")) {
-                AppConfig.Settings.RecentFiles.AddRecent(Workspace.Game, filename);
-                AddSubwindow(new PakBrowser(workspace, filename));
                 continue;
             }
 
