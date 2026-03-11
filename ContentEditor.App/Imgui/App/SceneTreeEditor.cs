@@ -1,6 +1,7 @@
 using System.Numerics;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.Core;
+using ContentPatcher;
 using ReeLib;
 
 namespace ContentEditor.App.ImguiHandling;
@@ -14,6 +15,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
 
     private IVisibilityTarget? dragSource;
     private BookmarkHolder? _bookmarks;
+    private string prefabFilepath = "";
 
     protected override IEnumerable<IVisibilityTarget> GetChildren(IVisibilityTarget? node, bool expandContents = false)
     {
@@ -137,13 +139,22 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                     rootEditor?.SetPrimaryInspector(newgo);
                 }
 
-                if (ImGui.BeginMenu($"{AppIcons.Prefab} Instantiate Prefab")) {
+                if (ImGui.BeginMenu($"{AppIcons.SI_FileType_PFB} Instantiate Prefab")) {
                     var ws = context.GetWorkspace()!;
                     _bookmarks ??= new BookmarkHolder(ws);
                     var items = _bookmarks.GetByTag("Prefab");
                     if (!items.Any()) {
                         ImGui.TextColored(Colors.Note, "No prefab bookmarks found!");
                     } else {
+                        ResourcePathPicker.Show("Specific prefab", ref prefabFilepath, ref prefabFilepath, ws, [KnownFileFormats.Prefab], FileFilters.PfbFile, ResourcePathPicker.PathPickerFlags.NoConfirmation|ResourcePathPicker.PathPickerFlags.UseNativesPath);
+                        FileHandle? file = null;
+                        if (!string.IsNullOrEmpty(prefabFilepath)) {
+                            ws.ResourceManager.TryResolveGameFile(prefabFilepath, out file);
+                            if (file != null && !ImGui.Button("Instantiate")) {
+                                file = null;
+                            }
+                        }
+                        ImGui.Separator();
                         ImGui.InputTextWithHint("Filter", $"{AppIcons.Search}", ref context.Filter, 50);
                         var filter = context.Filter;
                         foreach (var item in items) {
@@ -152,17 +163,18 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                             }
 
                             if (ImGui.Selectable((!string.IsNullOrEmpty(item.Comment) ? item.Comment : item.Path) + "##" + item.GetHashCode())) {
-                                if (ws.ResourceManager.TryResolveGameFile(item.Path, out var file) && file.GetCustomContent<Prefab>() is Prefab prefab) {
-                                    var instance = prefab.Instantiate();
-                                    instance.PrefabPath = PathUtils.GetInternalFromNativePath(item.Path);
-                                    instance.RandomizeGuids();
-                                    UndoRedo.RecordAddChild(context, instance, (INodeObject<GameObject>)node);
-                                    instance.MakeNameUnique();
-                                    var pos = (scene?.ActiveCamera.Transform.Position + scene?.ActiveCamera.Transform.Forward * 3) ?? Vector3.Zero;
-                                    instance.Transform.SetGlobalTransform(pos, Quaternion.Identity, Vector3.One);
-                                    rootEditor?.SetPrimaryInspector(instance);
-                                }
+                                ws.ResourceManager.TryResolveGameFile(item.Path, out file);
                             }
+                        }
+                        if (file != null && file.GetCustomContent<Prefab>() is Prefab prefab) {
+                            var instance = prefab.Instantiate();
+                            instance.PrefabPath = file.InternalPath ?? (file.NativePath != null ? PathUtils.GetInternalFromNativePath(file.NativePath) : "");
+                            instance.RandomizeGuids();
+                            UndoRedo.RecordAddChild(context, instance, (INodeObject<GameObject>)node);
+                            instance.MakeNameUnique();
+                            var pos = (scene?.ActiveCamera.Transform.Position + scene?.ActiveCamera.Transform.Forward * 3) ?? Vector3.Zero;
+                            instance.Transform.SetGlobalTransform(pos, Quaternion.Identity, Vector3.One);
+                            rootEditor?.SetPrimaryInspector(instance);
                         }
                     }
                     ImGui.EndMenu();

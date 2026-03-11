@@ -400,7 +400,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             addCollectionCtx = context.AddChild<MeshViewer, string>(
                 "Source File",
                 this,
-                new ResourcePathPicker(Workspace, FileFilters.MeshFile, KnownFileFormats.Mesh) { UseNativesPath = true, IsPathForIngame = false, DisableWarnings = true, DisableUpdateConfirmation = true },
+                new ResourcePathPicker(Workspace, FileFilters.MeshFile, KnownFileFormats.Mesh) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly },
                 (v) => v!.addCollectionPath,
                 (v, p) => v.addCollectionPath = p ?? "");
         }
@@ -1259,7 +1259,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             mdfPickerContext = UI.AddChild<MeshViewerContext, string>(
                 "MDF2 Material",
                 this,
-                new ResourcePathPicker(viewer.Workspace, KnownFileFormats.MeshMaterial) { UseNativesPath = true, IsPathForIngame = false },
+                new ResourcePathPicker(viewer.Workspace, KnownFileFormats.MeshMaterial) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly },
                 (v) => v!.mdfSource,
                 (v, p) => v.mdfSource = p ?? "");
         }
@@ -1376,7 +1376,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
         var animator = Animator;
         if (animator == null) return;
         var ctx = UI.GetChild("Skeleton") ?? UI.AddChild("Skeleton", this,
-            new ResourcePathPicker(viewer.Workspace, KnownFileFormats.Skeleton, KnownFileFormats.FbxSkeleton, KnownFileFormats.RefSkeleton) { DisableWarnings = true, IsPathForIngame = false, UseNativesPath = true },
+            new ResourcePathPicker(viewer.Workspace, KnownFileFormats.Skeleton, KnownFileFormats.FbxSkeleton, KnownFileFormats.RefSkeleton) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly },
             (v) => v!.skeletonPath,
             (v, p) => v.skeletonPath = p ?? ""
         );
@@ -1473,7 +1473,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
         animationPickerContext ??= UI.AddChild<MeshViewerContext, string>(
             "Animation File",
             this,
-            new ResourcePathPicker(Workspace, FileFilters.MeshFilesAll, KnownFileFormats.MotionList, KnownFileFormats.Motion) { UseNativesPath = true, IsPathForIngame = false, DisableWarnings = true },
+            new ResourcePathPicker(Workspace, FileFilters.MeshFilesAll, KnownFileFormats.MotionList, KnownFileFormats.Motion) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly },
             (v) => v!.animationSourceFile,
             (v, p) => v.animationSourceFile = p ?? "");
 

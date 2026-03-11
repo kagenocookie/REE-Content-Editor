@@ -49,19 +49,19 @@ public class RetargetDesigner : BaseWindowHandler
             context.AddChild<RetargetDesigner, string>(
                 "Source Mesh",
                 this,
-                new ResourcePathPicker(workspace, KnownFileFormats.Mesh) { UseNativesPath = true, IsPathForIngame = false },
+                new ResourcePathPicker(workspace, KnownFileFormats.Mesh) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnlyConfirmed },
                 (v) => v!.mesh1,
                 (v, p) => v.mesh1 = p ?? "");
             context.AddChild<RetargetDesigner, string>(
                 "Target Mesh",
                 this,
-                new ResourcePathPicker(workspace, KnownFileFormats.Mesh) { UseNativesPath = true, IsPathForIngame = false },
+                new ResourcePathPicker(workspace, KnownFileFormats.Mesh) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnlyConfirmed },
                 (v) => v!.mesh2,
                 (v, p) => v.mesh2 = p ?? "");
             context.AddChild<RetargetDesigner, string>(
                 "Reference motlist",
                 this,
-                new ResourcePathPicker(workspace, workspace.Env.TypeCache.GetResourceSubtypes(KnownFileFormats.MotionBase)) { UseNativesPath = true, IsPathForIngame = false },
+                new ResourcePathPicker(workspace, workspace.Env.TypeCache.GetResourceSubtypes(KnownFileFormats.MotionBase)) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnlyConfirmed },
                 (v) => v!.sampleMotlist,
                 (v, p) => {
                     v.sampleMotlist = p ?? "";

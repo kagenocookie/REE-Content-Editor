@@ -18,6 +18,8 @@ public static class FileFilters
 {
     public static readonly FileFilter[] AllFiles = [new FileFilter("All files", "*")];
 
+    public static readonly FileFilter[] PfbFile = [new FileFilter("PFB", "pfb.*")];
+
     public static readonly FileFilter[] PakFile = [new FileFilter("PAK File", "pak")];
     public static readonly FileFilter[] JsonFile = [new FileFilter("JSON", "json")];
     public static readonly FileFilter[] CollectionJsonFile = [new FileFilter("Mesh Collection JSON", "collection.json")];

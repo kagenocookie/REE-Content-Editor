@@ -453,7 +453,7 @@ public class MatHeaderImguiHandler : IObjectUIHandler
             context.AddChildContextSetter<MaterialHeader, string>(
                 "MMTR path",
                 tex,
-                new ResourcePathPicker(ws, KnownFileFormats.MasterMaterial),
+                new ResourcePathPicker(ws, KnownFileFormats.MasterMaterial) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefaultNoConfirm },
                 (p) => p!.mmtrPath,
                 (c, p, v) => {
                     p.mmtrPath = v;
@@ -485,7 +485,7 @@ public class TexHeaderImguiHandler : IObjectUIHandler
         ImGui.SameLine();
         var end = ImGui.GetCursorPos() + new Vector2(ImGui.CalcItemWidth(), 0);
         if (context.children.Count == 0) {
-            context.AddChild<TexHeader, string>(tex.texType, tex, new ResourcePathPicker(), (p) => p!.texPath, (p, v) => p.texPath = v);
+            context.AddChild<TexHeader, string>(tex.texType, tex, new ResourcePathPicker(workspace, KnownFileFormats.Texture) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefaultNoConfirm }, (p) => p!.texPath, (p, v) => p.texPath = v);
         }
         context.children[0].ShowUI();
 
@@ -515,7 +515,7 @@ public class MeshGpbfImguiHandler : IObjectUIHandler
         if (context.children.Count == 0) {
             var tex = context.Get<GpuBufferEntry>();
             context.AddChild<GpuBufferEntry, string>("Name", tex, new StringFieldHandler(), (p) => p!.name, (p, v) => p.name = v ?? string.Empty);
-            context.AddChild<GpuBufferEntry, string>("Path", tex, new ResourcePathPicker(context.GetWorkspace(), KnownFileFormats.ByteBuffer), (p) => p!.path, (p, v) => p.path = v ?? string.Empty);
+            context.AddChild<GpuBufferEntry, string>("Path", tex, new ResourcePathPicker(context.GetWorkspace(), KnownFileFormats.ByteBuffer) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefaultNoConfirm }, (p) => p!.path, (p, v) => p.path = v ?? string.Empty);
         }
 
         var w = ImGui.CalcItemWidth();

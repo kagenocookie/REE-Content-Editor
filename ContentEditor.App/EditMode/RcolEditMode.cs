@@ -56,7 +56,7 @@ public class RcolEditMode : EditModeHandler
             filePicker = context.AddChild<RcolEditMode, string>(
                 "Edited RCOL File",
                 this,
-                new ResourcePathPicker(Scene.Workspace, KnownFileFormats.RequestSetCollider) { UseNativesPath = true, IsPathForIngame = false },
+                new ResourcePathPicker(Scene.Workspace, KnownFileFormats.RequestSetCollider) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly },
                 (v) => v!.rcolPath,
                 (v, p) => v.rcolPath = p ?? "");
         }

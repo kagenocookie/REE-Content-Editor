@@ -52,7 +52,7 @@ public class NavmeshEditor : EditModeHandler
             filePicker = context.AddChild<NavmeshEditor, string>(
                 "File",
                 this,
-                new ResourcePathPicker(Scene.Workspace, KnownFileFormats.AIMap) { UseNativesPath = true, IsPathForIngame = false },
+                new ResourcePathPicker(Scene.Workspace, KnownFileFormats.AIMap) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly },
                 (v) => v!.filepath,
                 (v, p) => v.filepath = p ?? "");
             context.AddChild<NavmeshEditor, NavmeshContentType>(

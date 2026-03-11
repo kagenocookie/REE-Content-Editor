@@ -12,16 +12,37 @@ public class ResourcePathPicker : IObjectUIHandler
     public FileFilter[]? FileExtensionFilter { get; } = FileFilters.AllFiles;
     public KnownFileFormats[] FileFormats { get; }
 
-    /// <summary>
-    /// When true, path is expected to be an internal path (appsystem/stm/texture.tex).
-    /// When false, path is expected to be a natives path (natives/stm/appsystem/stm/texture.tex.71567213).
-    /// </summary>
-    public bool UseNativesPath { get; init; }
-    public bool IsPathForIngame { get; init; } = true;
-    public bool DisableWarnings { get; init; }
-    public bool DisableUpdateConfirmation { get; init; }
+    public PathPickerFlags Flags { get; init; } = PathPickerFlags.IngameDefault;
 
     private ContentWorkspace? workspace;
+
+    [Flags]
+    public enum PathPickerFlags
+    {
+        None = 0,
+        /// <summary>
+        /// Skips the confirmation buttons when updating the file path, immediately updating the value when a change is made.
+        /// </summary>
+        NoConfirmation = 1,
+        /// <summary>
+        /// If set, will show additional warnings in case of potential issues with ingame behavior.
+        /// </summary>
+        IsPathForIngame = 2,
+        /// <summary>
+        /// When set, path is expected to be a natives path (natives/stm/appsystem/stm/texture.tex.71567213).
+        /// Otherwise, path is expected to be an internal path (appsystem/stm/texture.tex).
+        /// </summary>
+        UseNativesPath = 4,
+        /// <summary>
+        /// Disable warnings for potentially invalid file formats.
+        /// </summary>
+        DisableFormatWarning = 8,
+
+        IngameDefault = IsPathForIngame,
+        IngameDefaultNoConfirm = IsPathForIngame|PathPickerFlags.NoConfirmation,
+        EditorOnly = UseNativesPath|NoConfirmation|DisableFormatWarning,
+        EditorOnlyConfirmed = UseNativesPath|DisableFormatWarning,
+    }
 
     public ResourcePathPicker()
     {
@@ -64,54 +85,72 @@ public class ResourcePathPicker : IObjectUIHandler
 
     public void OnIMGUI(UIContext context)
     {
-        ImGui.PushID(context.label);
         var currentPath = context.Get<string>();
         var newPath = context.InitFilterDefault(currentPath);
-        if (AppImguiHelpers.InputFilepath(context.label, ref newPath, FileExtensionFilter)) {
-            context.Changed = true;
+        var ws = workspace ??= context.GetWorkspace();
+        var wnd = context.GetNativeWindow();
+        var changed = Show(context.label, ref currentPath, ref newPath, ws!, FileFormats, FileExtensionFilter ?? [], Flags, (nativePath) => {
+            wnd?.InvokeFromUIThread(() => {
+                ApplyPathChange(context, nativePath, wnd);
+            });
+        });
+        if (changed) {
+            context.Changed = false;
+            context.Filter = currentPath ?? "";
+            ApplyPathChange(context, currentPath ?? "");
+        } else {
             context.Filter = newPath;
+        }
+    }
+
+    public static bool Show(string label, ref string currentPath, ref string pendingPath, ContentWorkspace workspace, KnownFileFormats[] formats, FileFilter[] fileFilters, PathPickerFlags flags, Action<string>? delayedSaveCallback = null)
+    {
+        ImGui.PushID(label);
+        pendingPath ??= currentPath;
+        var changed = false;
+        if (AppImguiHelpers.InputFilepath(label, ref pendingPath, fileFilters)) {
+            if (flags.HasFlag(PathPickerFlags.NoConfirmation)) {
+                changed = true;
+                currentPath = pendingPath;
+            }
         }
 
         if (ImGui.BeginPopupContextItem()) {
-            var ws = workspace ??= context.GetWorkspace();
-            if (!string.IsNullOrWhiteSpace(newPath) && ImGui.Button("Open file")) {
+            if (!string.IsNullOrWhiteSpace(pendingPath) && ImGui.Button("Open file")) {
                 ImGui.CloseCurrentPopup();
-                if (ws != null) {
-                    if (ws.ResourceManager.TryGetOrLoadFile(currentPath, out var newFileHandle)) {
-                        EditorWindow.CurrentWindow?.AddFileEditor(newFileHandle);
-                    } else {
-                        Logger.Error("Failed to load file: " + currentPath);
-                    }
+                if (workspace.ResourceManager.TryGetOrLoadFile(currentPath, out var newFileHandle)) {
+                    EditorWindow.CurrentWindow?.AddFileEditor(newFileHandle);
+                } else {
+                    Logger.Error("Failed to load file: " + currentPath);
                 }
             }
-            if (!string.IsNullOrWhiteSpace(newPath) && ImGui.Button("Extract file ...")) {
+            if (!string.IsNullOrWhiteSpace(pendingPath) && ImGui.Button("Extract file ...")) {
                 ImGui.CloseCurrentPopup();
-                if (ws != null) {
-                    var resolvedPath = ws.Env.ResolveFilepath(currentPath);
-                    if (resolvedPath == null) {
-                        Logger.Error("File not found: " + currentPath);
-                    } else {
-                        PlatformUtils.ShowSaveFileDialog(
-                            initialFile: Path.GetFileName(resolvedPath),
-                            filter: [new FileFilter(PathUtils.ParseFileFormat(currentPath).format, currentPath)],
-                            callback: (outpath) => {
-                                using var file = ws.Env.FindSingleFile(resolvedPath);
-                                using var outfs = File.Create(outpath);
-                                file?.CopyTo(outfs);
-                            });
-                    }
+                var resolvedPath = workspace.Env.ResolveFilepath(currentPath);
+                if (resolvedPath == null) {
+                    Logger.Error("File not found: " + currentPath);
+                } else {
+                    PlatformUtils.ShowSaveFileDialog(
+                        initialFile: Path.GetFileName(resolvedPath),
+                        filter: [new FileFilter(PathUtils.ParseFileFormat(currentPath).format, currentPath)],
+                        callback: (outpath) => {
+                            using var file = workspace.Env.FindSingleFile(resolvedPath);
+                            using var outfs = File.Create(outpath);
+                            file?.CopyTo(outfs);
+                        });
                 }
             }
-            if (ws?.CurrentBundle != null && ImGui.Button("Save to bundle ...")) {
-                if (ws.ResourceManager.TryResolveGameFile(currentPath, out var file)) {
+            if (workspace.CurrentBundle != null && ImGui.Button("Save to bundle ...")) {
+                if (workspace.ResourceManager.TryResolveGameFile(currentPath, out var file)) {
                     var wnd = EditorWindow.CurrentWindow!;
-                    SaveFileToBundle(ws, file, (savePath, localPath, nativePath) => {
-                        if (!file.Save(ws, savePath)) return false;
+                    SaveFileToBundle(workspace, file, (savePath, localPath, nativePath) => {
+                        if (!file.Save(workspace, savePath)) return false;
 
                         Logger.Info("File saved to " + savePath);
-                        wnd.InvokeFromUIThread(() => {
-                            ApplyPathChange(context, nativePath, wnd);
-                        });
+                        if (delayedSaveCallback != null) {
+
+                        }
+                        delayedSaveCallback?.Invoke(nativePath);
                         return true;
                     });
                 } else {
@@ -120,69 +159,69 @@ public class ResourcePathPicker : IObjectUIHandler
                 ImGui.CloseCurrentPopup();
             }
             if (ImGui.Button("Find files ...")) {
-                var exts = FileExtensionFilter ?? [];
+                var exts = fileFilters ?? [];
                 var extRegex = string.Join("|", exts.SelectMany(e => e.extensions)).Replace(".*", "");
                 if (exts.Length == 0) {
-                    EditorWindow.CurrentWindow!.AddSubwindow(new PakBrowser(ws!, null));
+                    EditorWindow.CurrentWindow!.AddSubwindow(new PakBrowser(workspace, null));
                 } else {
                     if (exts.Length > 1) {
                         extRegex = "(?:" + extRegex + ")";
                     }
-                    var pattern = ws!.Env.BasePath + "**\\." + extRegex + "\\.**";
-                    EditorWindow.CurrentWindow!.AddSubwindow(new PakBrowser(ws, null) { CurrentDir = pattern });
+                    var pattern = workspace.Env.BasePath + "**\\." + extRegex + "\\.**";
+                    EditorWindow.CurrentWindow!.AddSubwindow(new PakBrowser(workspace, null) { CurrentDir = pattern });
                 }
             }
             ImGui.EndPopup();
         }
 
-        if (newPath != currentPath && (!string.IsNullOrEmpty(newPath) || !string.IsNullOrEmpty(currentPath))) {
-            if (DisableUpdateConfirmation) {
-                ApplyPathChange(context, newPath);
-            } else {
-                if (ImGui.Button("Update path")) {
-                    ApplyPathChange(context, newPath);
-                }
-                if (ImguiHelpers.SameLine() && ImGui.Button("Cancel change")) {
-                    context.Changed = false;
-                    context.Filter = currentPath ?? "";
-                }
+        if (!flags.HasFlag(PathPickerFlags.NoConfirmation) && pendingPath != currentPath && (!string.IsNullOrEmpty(pendingPath) || !string.IsNullOrEmpty(currentPath))) {
+            if (ImGui.Button("Update path")) {
+                currentPath = pendingPath;
+                changed = true;
+            }
+            if (ImguiHelpers.SameLine() && ImGui.Button("Cancel change")) {
+                pendingPath = currentPath ?? "";
+                changed = true;
             }
         }
 
         // validate the filepath
-        if (IsPathForIngame && UseNativesPath) {
-            // native path
-            if ((Path.IsPathFullyQualified(context.Filter) || !context.Filter.StartsWith("natives/") || PathUtils.ParseFileFormat(context.Filter).version == -1)) {
-                ImGui.TextColored(Colors.Warning, "The given file path may not resolve properly ingame.\nEnsure it's a native path (including the natives/stm/ part and with file extension version)");
-            }
-        } else if (IsPathForIngame) {
-            // internal path
-            if ((Path.IsPathFullyQualified(context.Filter) || PathUtils.ParseFileFormat(context.Filter).version != -1 || context.Filter.Contains("natives/"))) {
-                ImGui.TextColored(Colors.Warning, "The given file path may not resolve properly ingame.\nEnsure it's an internal path (without the natives/stm/ part and no file extension version)");
+        if (flags.HasFlag(PathPickerFlags.IsPathForIngame)) {
+            if (flags.HasFlag(PathPickerFlags.UseNativesPath)) {
+                // native path
+                if ((Path.IsPathFullyQualified(pendingPath) || !pendingPath.StartsWith("natives/") || PathUtils.ParseFileFormat(pendingPath).version == -1)) {
+                    ImGui.TextColored(Colors.Warning, "The given file path may not resolve properly ingame.\nEnsure it's a native path (including the natives/stm/ part and with file extension version)");
+                }
+            } else {
+                // internal path
+                if ((Path.IsPathFullyQualified(pendingPath) || PathUtils.ParseFileFormat(pendingPath).version != -1 || pendingPath.Contains("natives/"))) {
+                    ImGui.TextColored(Colors.Warning, "The given file path may not resolve properly ingame.\nEnsure it's an internal path (without the natives/stm/ part and no file extension version)");
+                }
             }
         }
 
-        if (!DisableWarnings && FileFormats.Length != 0 && !string.IsNullOrEmpty(context.Filter) && FileExtensionFilter?.Length > 0) {
-            var parsed = PathUtils.ParseFileFormat(context.Filter);
-            if (!FileFormats.Contains(parsed.format)) {
-                ImGui.TextColored(Colors.Warning, "The file may be an incorrect type. Expected file types: " + string.Join(", ", FileExtensionFilter.SelectMany(x => x.extensions)).Replace(".*", ""));
+        if (!flags.HasFlag(PathPickerFlags.DisableFormatWarning) && formats.Length > 0 && fileFilters?.Length > 0 && !string.IsNullOrEmpty(currentPath)) {
+            var parsed = PathUtils.ParseFileFormat(pendingPath);
+            if (!formats.Contains(parsed.format)) {
+                ImGui.TextColored(Colors.Warning, "The file may be an incorrect type. Expected file types: " + string.Join(", ", fileFilters.SelectMany(x => x.extensions)).Replace(".*", ""));
             }
         }
 
         // TODO expandable resource preview
         ImGui.PopID();
+        return changed;
     }
 
     private void ApplyPathChange(UIContext context, string newPath, WindowBase? window = null)
     {
-        if (!IsPathForIngame) {
+        if (!Flags.HasFlag(PathPickerFlags.IsPathForIngame)) {
             UndoRedo.RecordSet(context, newPath, window);
             context.Filter = newPath;
             return;
         }
 
         newPath = PathUtils.GetNativeFromFullFilepath(newPath) ?? newPath;
-        if (UseNativesPath) {
+        if (Flags.HasFlag(PathPickerFlags.UseNativesPath)) {
             newPath = PathUtils.GetInternalFromNativePath(newPath);
         } else {
             newPath = PathUtils.RemoveNativesFolder(newPath);
