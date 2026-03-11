@@ -4,7 +4,7 @@ namespace ContentPatcher;
 
 public class McolFileLoader : IFileLoader, IFileHandleContentProvider<McolFile>
 {
-    public bool CanHandleFile(string filepath, REFileFormat format) => format.format == KnownFileFormats.CollisionMesh;
+    public bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file) => format.format == KnownFileFormats.CollisionMesh;
 
     public McolFile GetFile(FileHandle handle) => handle.GetFile<McolFile>();
 

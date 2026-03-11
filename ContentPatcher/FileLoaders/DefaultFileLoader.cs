@@ -68,7 +68,7 @@ public class DefaultFileLoader<TFileType> : IFileLoader, IFileHandleContentProvi
         return new BaseFileResource<TFileType>(file);
     }
 
-    public bool CanHandleFile(string filepath, REFileFormat format) => format.format == supportedFormat;
+    public bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file) => format.format == supportedFormat;
 
     public TFileType GetFile(FileHandle handle) => ((BaseFileResource<TFileType>)handle.Resource).File;
 
@@ -109,5 +109,5 @@ public class DefaultFileMultiLoader<TFileType> : DefaultFileLoader<TFileType>, I
         Formats = formats;
     }
 
-    bool IFileLoader.CanHandleFile(string filepath, REFileFormat format) => Formats.Contains(format.format);
+    bool IFileLoader.CanHandleFile(string filepath, REFileFormat format, FileHandle? file) => Formats.Contains(format.format);
 }

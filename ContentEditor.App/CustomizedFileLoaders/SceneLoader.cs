@@ -13,7 +13,7 @@ public class SceneLoader : IFileLoader,
 {
     int IFileLoader.Priority => 30;
 
-    public bool CanHandleFile(string filepath, REFileFormat format) => format.format == KnownFileFormats.Scene;
+    public bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file) => format.format == KnownFileFormats.Scene;
 
     public IResourceFilePatcher? CreateDiffHandler() => new ScenePatcher();
 

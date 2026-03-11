@@ -11,7 +11,7 @@ public interface IFileLoader
     /// <summary>
     /// Check whether this loader can load the given file.
     /// </summary>
-    bool CanHandleFile(string filepath, REFileFormat format);
+    bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file);
     /// <summary>
     /// Load a file. The file handle can already contain a previously loaded resource.
     /// </summary>

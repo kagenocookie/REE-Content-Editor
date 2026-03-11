@@ -65,6 +65,20 @@ public static class Extensions
         }
     }
 
+    public static bool TryDeserializeJson<T>(this Stream stream, [MaybeNullWhen(false)] out T result, out string? error, JsonSerializerOptions? options = null)
+    {
+        try {
+            var obj = JsonSerializer.Deserialize<T>(stream, options);
+            result = obj;
+            error = null;
+            return obj != null;
+        } catch (Exception e) {
+            result = default;
+            error = e.Message;
+            return false;
+        }
+    }
+
     public static ReadOnlySpan<char> GetStringAfterDelimiter(this string str, char delimiter)
     {
         var pos = str.IndexOf(delimiter);

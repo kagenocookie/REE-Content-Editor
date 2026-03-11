@@ -23,7 +23,7 @@ public class GtlFileLoader : IFileLoader, IFileHandleContentProvider<Mesh>
 {
     public GtlFileLoader() { }
 
-    public bool CanHandleFile(string filepath, REFileFormat format) => format.format == KnownFileFormats.GroundTextureList;
+    public bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file) => format.format == KnownFileFormats.GroundTextureList;
     public IResourceFilePatcher? CreateDiffHandler() => null;
 
     public IResourceFile? Load(ContentWorkspace workspace, FileHandle handle)

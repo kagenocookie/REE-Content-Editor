@@ -906,10 +906,10 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         return GetLoaderForFile(filepath, PathUtils.ParseFileFormat(filepath)) != null;
     }
 
-    private IFileLoader? GetLoaderForFile(string filepath, REFileFormat format)
+    private IFileLoader? GetLoaderForFile(string filepath, REFileFormat format, FileHandle? file = null)
     {
         foreach (var candidate in FileLoaders) {
-            if (candidate.CanHandleFile(filepath, format)) {
+            if (candidate.CanHandleFile(filepath, format, file)) {
                 return candidate;
             }
         }
@@ -952,7 +952,6 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     private FileHandle? CreateFileHandleInternal(string filepath, string? nativePath, Stream stream, bool allowDisposeStream = true)
     {
         var format = PathUtils.ParseFileFormat(filepath);
-        IFileLoader? loader = GetLoaderForFile(filepath, format);
 
         if (format.version != -1) {
             var ext = PathUtils.GetFilenameExtensionWithoutSuffixes(filepath);
@@ -961,6 +960,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             }
         }
         var handle = CreateRawStreamFileHandle(filepath, nativePath, stream, allowDisposeStream);
+        IFileLoader? loader = GetLoaderForFile(filepath, format, handle);
         handle.Loader = loader ?? UnknownStreamFileLoader.Instance;
 
         try {

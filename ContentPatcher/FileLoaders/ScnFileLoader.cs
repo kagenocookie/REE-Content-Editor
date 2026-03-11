@@ -8,7 +8,7 @@ namespace ContentPatcher;
 
 public class ScnFileLoader : IFileLoader, IFileHandleContentProvider<ScnFile>
 {
-    public bool CanHandleFile(string filepath, REFileFormat format) => format.format == KnownFileFormats.Scene;
+    public bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file) => format.format == KnownFileFormats.Scene;
 
     public ScnFile GetFile(FileHandle handle) => handle.GetFile<ScnFile>();
 

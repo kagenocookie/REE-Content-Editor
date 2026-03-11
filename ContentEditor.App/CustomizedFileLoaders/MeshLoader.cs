@@ -15,7 +15,7 @@ public partial class MeshLoader : IFileLoader,
 {
     int IFileLoader.Priority => 30;
 
-    public bool CanHandleFile(string filepath, REFileFormat format)
+    public bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file)
     {
         return format.format == KnownFileFormats.Mesh || MeshViewer.IsSupportedFileExtension(filepath);
     }

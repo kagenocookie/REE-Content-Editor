@@ -4,7 +4,7 @@ namespace ContentPatcher;
 
 public class EfxFileLoader : IFileLoader, IFileHandleContentProvider<EfxFile>
 {
-    public bool CanHandleFile(string filepath, REFileFormat format) => format.format == KnownFileFormats.Effect;
+    public bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file) => format.format == KnownFileFormats.Effect;
 
     public EfxFile GetFile(FileHandle handle) => handle.GetFile<EfxFile>();
 

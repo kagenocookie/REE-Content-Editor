@@ -7,7 +7,7 @@ public class TextureLoader : IFileLoader
 {
     int IFileLoader.Priority => 30;
 
-    public bool CanHandleFile(string filepath, REFileFormat format) => format.format == KnownFileFormats.Texture;
+    public bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file) => format.format == KnownFileFormats.Texture;
     public IResourceFilePatcher? CreateDiffHandler() => null;
 
     public unsafe IResourceFile? Load(ContentWorkspace workspace, FileHandle handle)

@@ -7,7 +7,7 @@ public class UserFileLoader : IFileLoader, IFileHandleContentProvider<UserFile>
 {
     public static readonly UserFileLoader Instance = new();
 
-    public bool CanHandleFile(string filepath, REFileFormat format) => format.format == KnownFileFormats.UserData;
+    public bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file) => format.format == KnownFileFormats.UserData;
 
     public UserFile GetFile(FileHandle handle) => handle.GetFile<UserFile>();
 

@@ -4,7 +4,7 @@ namespace ContentPatcher;
 
 public class UvsFileLoader : IFileLoader, IFileHandleContentProvider<UvsFile>
 {
-    public bool CanHandleFile(string filepath, REFileFormat format) => format.format == KnownFileFormats.UVSequence;
+    public bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file) => format.format == KnownFileFormats.UVSequence;
 
     public UvsFile GetFile(FileHandle handle) => handle.GetFile<UvsFile>();
 

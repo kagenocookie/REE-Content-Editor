@@ -4,7 +4,7 @@ namespace ContentPatcher;
 
 public class GuiFileLoader : IFileLoader, IFileHandleContentProvider<GuiFile>
 {
-    public bool CanHandleFile(string filepath, REFileFormat format) => format.format == KnownFileFormats.GUI;
+    public bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file) => format.format == KnownFileFormats.GUI;
 
     public GuiFile GetFile(FileHandle handle) => handle.GetFile<GuiFile>();
 

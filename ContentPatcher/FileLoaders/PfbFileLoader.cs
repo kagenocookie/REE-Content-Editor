@@ -7,7 +7,7 @@ namespace ContentPatcher;
 
 public class PfbFileLoader : IFileLoader, IFileHandleContentProvider<PfbFile>
 {
-    public bool CanHandleFile(string filepath, REFileFormat format) => format.format == KnownFileFormats.Prefab;
+    public bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file) => format.format == KnownFileFormats.Prefab;
 
     public PfbFile GetFile(FileHandle handle) => handle.GetFile<PfbFile>();
 

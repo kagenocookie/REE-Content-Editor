@@ -15,7 +15,7 @@ public class PrefabLoader : IFileLoader,
     IFileHandleContentProvider<Scene>
 {
     int IFileLoader.Priority => 30;
-    public bool CanHandleFile(string filepath, REFileFormat format) => format.format == KnownFileFormats.Prefab;
+    public bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file) => format.format == KnownFileFormats.Prefab;
 
     public IResourceFilePatcher? CreateDiffHandler() => new PrefabPatcher();
 

@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using System.Numerics;
 using System.Reflection;
-using System.Text.RegularExpressions;
+using ContentEditor.App.FileLoaders;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.ImguiHandling.Mdf2;
 using ContentEditor.Editor;
@@ -277,6 +277,13 @@ public static class WindowHandlerFactory
             case KnownFileFormats.Terrain:
                 return new TerrainEditor(env, file);
             case KnownFileFormats.Mesh:
+                if (file.Resource is MeshCollection meshcol) {
+                    if (!env.ResourceManager.TryResolveGameFile(meshcol.Items[0].Mesh ?? "", out var mesh)) {
+                        return null;
+                    }
+                    var viewer = new MeshViewer(env, mesh, meshcol);
+                    return viewer;
+                }
                 return new MeshViewer(env, file);
             case KnownFileFormats.Ground:
                 return new GroundEditor(file);

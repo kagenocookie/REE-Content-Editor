@@ -4,7 +4,7 @@ namespace ContentPatcher;
 
 public class TerrFileLoader : IFileLoader, IFileHandleContentProvider<TerrFile>
 {
-    public bool CanHandleFile(string filepath, REFileFormat format) => format.format == KnownFileFormats.Terrain;
+    public bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file) => format.format == KnownFileFormats.Terrain;
 
     public TerrFile GetFile(FileHandle handle) => handle.GetFile<TerrFile>();
 

@@ -7,7 +7,7 @@ public class UnknownStreamFileLoader : IFileLoader
     private UnknownStreamFileLoader() { }
 
     public static readonly UnknownStreamFileLoader Instance = new();
-    public bool CanHandleFile(string filepath, REFileFormat format)
+    public bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file)
     {
         return true;
     }

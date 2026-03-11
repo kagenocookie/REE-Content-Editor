@@ -19,7 +19,7 @@ public class GmlFileLoader : IFileLoader, IFileHandleContentProvider<CommonMeshR
 {
     public GmlFileLoader() { }
 
-    public bool CanHandleFile(string filepath, REFileFormat format) => format.format == KnownFileFormats.GroundMaterialList;
+    public bool CanHandleFile(string filepath, REFileFormat format, FileHandle? file) => format.format == KnownFileFormats.GroundMaterialList;
     public IResourceFilePatcher? CreateDiffHandler() => null;
 
     public IResourceFile? Load(ContentWorkspace workspace, FileHandle handle)

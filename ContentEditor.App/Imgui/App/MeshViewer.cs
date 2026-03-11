@@ -49,6 +49,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     private string exportTemplate;
 
+    private readonly MeshCollection? collection;
     public CommonMeshResource? Mesh => meshContexts.FirstOrDefault()?.MeshFile;
 
     private WindowData data = null!;
@@ -86,11 +87,12 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         ChangeMainMesh();
     }
 
-    public MeshViewer(ContentWorkspace workspace, FileHandle file) : base(file)
+    public MeshViewer(ContentWorkspace workspace, FileHandle file, MeshCollection? collection = null) : base(file)
     {
         windowFlags = ImGuiWindowFlags.MenuBar;
         Workspace = workspace;
-        exportTemplate = file.GetResource<CommonMeshResource>()?.NativeMesh.CurrentVersionConfig ?? MeshFile.AllVersionConfigs.Last();
+        this.collection = collection;
+        exportTemplate = (file.Resource as CommonMeshResource)?.NativeMesh.CurrentVersionConfig ?? MeshFile.GetGameVersionConfigs(workspace.Game).First();
     }
 
     public void ChangeMainMesh(string newMesh)
@@ -159,6 +161,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             mainCtx = meshContexts.First();
             scene.ActiveCamera.ProjectionMode = AppConfig.Settings.MeshViewer.DefaultProjection;
             CenterCameraToSceneObject();
+            if (collection != null) LoadCollection(collection);
         }
 
         var meshComponent = mainCtx.Component;
@@ -439,44 +442,20 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
         ImGui.SeparatorText("Manage Collection");
         if (ImGui.Selectable($"{AppIcons.SI_Save} Save collection")) {
-            var arr = new JsonArray();
+            var arr = new List<MeshCollectionItem>();
             foreach (var c in meshContexts) arr.Add(c.ToJson(meshContexts));
-            var jsonStr = arr.ToJsonString();
             var collectionsDir = Path.Combine(AppConfig.Instance.GetGameUserPath(Workspace.Game), "mesh_collections");
             Directory.CreateDirectory(collectionsDir);
             PlatformUtils.ShowSaveFileDialog((path) => {
                 using var fs = File.Create(path);
-                JsonSerializer.Serialize(fs, arr, JsonConfig.configJsonOptions);
+                JsonSerializer.Serialize(fs, new MeshCollection(arr), JsonConfig.configJsonOptions);
             }, Path.Combine(collectionsDir, Handle.Filename.ToString() + ".collection.json"), FileFilters.CollectionJsonFile);
         }
         if (ImGui.Selectable($"{AppIcons.SI_GenericImport} Load collection")) {
             var collectionsDir = Path.Combine(AppConfig.Instance.GetGameUserPath(Workspace.Game), "mesh_collections/");
             PlatformUtils.ShowFileDialog((files) => {
                 MainLoop.Instance.InvokeFromUIThread(() => {
-                    try {
-                        using var fs = File.OpenRead(files[0]);
-                        var arr = JsonSerializer.Deserialize<JsonArray>(fs);
-                        if (arr == null || arr.Count == 0) return;
-                        while (meshContexts.Count > 1) {
-                            RemoveSubmesh(meshContexts.Last());
-                        }
-                        meshContexts[0].LoadFromJson((JsonObject)arr[0]!);
-                        for (int i = 1; i < arr.Count; i++) {
-                            CreateAdditionalMesh(Handle).LoadFromJson((JsonObject)arr[i]!);
-                        }
-                        for (int i = 0; i < arr.Count; i++) {
-                            var ownerName = ((JsonObject)arr[i]!)["owner"]?.GetValue<string>();
-                            if (!string.IsNullOrEmpty(ownerName)) {
-                                EnsureAnimationsInit();
-                                var anim = meshContexts[i].Animator!;
-                                anim.owner = meshContexts.FirstOrDefault(c => c.ShortName == ownerName)?.Animator ?? meshContexts[0].Animator;
-                            }
-
-                            meshContexts[i].Animator?.owner ??= meshContexts[0].Animator;
-                        }
-                    } catch (Exception e) {
-                        Logger.Error("Failed to load mesh collection: " + e.Message);
-                    }
+                    LoadCollection(files[0]);
                 });
             }, collectionsDir, FileFilters.CollectionJsonFile);
         }
@@ -484,6 +463,47 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             while (meshContexts.Count > 1) {
                 RemoveSubmesh(meshContexts.Last());
             }
+        }
+    }
+
+    public void LoadCollection(string file)
+    {
+        try {
+            using var fs = File.OpenRead(file);
+            var coll =  Workspace.ResourceManager.CreateFileHandle(file, null, fs, true, true).Resource as MeshCollection;
+            if (coll == null || coll.Items.Count == 0) return;
+            LoadCollection(coll);
+        } catch (Exception e) {
+            Logger.Error("Failed to load mesh collection: " + e.Message);
+        }
+    }
+
+    public void LoadCollection(MeshCollection collection)
+    {
+        try {
+            if (collection.Items.Count == 0) return;
+            while (meshContexts.Count > 1) {
+                RemoveSubmesh(meshContexts.Last());
+            }
+            if (meshContexts.Count == 0) {
+                CreateAdditionalMesh(Handle);
+            }
+            meshContexts[0].LoadFromJson(collection.Items[0]);
+            for (int i = 1; i < collection.Items.Count; i++) {
+                CreateAdditionalMesh(Handle).LoadFromJson(collection.Items[i]!);
+            }
+            for (int i = 0; i < collection.Items.Count; i++) {
+                var ownerName = (collection.Items[i]!).Owner;
+                if (!string.IsNullOrEmpty(ownerName)) {
+                    EnsureAnimationsInit();
+                    var anim = meshContexts[i].Animator!;
+                    anim.owner = meshContexts.FirstOrDefault(c => c.ShortName == ownerName)?.Animator ?? meshContexts[0].Animator;
+                }
+
+                meshContexts[i].Animator?.owner ??= meshContexts[0].Animator;
+            }
+        } catch (Exception e) {
+            Logger.Error("Failed to load mesh collection: " + e.Message);
         }
     }
 
@@ -1414,30 +1434,27 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
         }
     }
 
-    public JsonObject ToJson(IEnumerable<MeshViewerContext> meshContexts)
+    public MeshCollectionItem ToJson(IEnumerable<MeshViewerContext> meshContexts)
     {
-        return new JsonObject([
-            new("mesh", JsonValue.Create(Handle.Filepath)),
-            new("skeleton", JsonValue.Create(skeletonPath)),
-            new("material", JsonValue.Create(loadedMdf)),
-            new("owner", JsonValue.Create(FindOwner(meshContexts)?.ShortName ?? null))
-        ]);
+        return new MeshCollectionItem() {
+            Mesh = Handle.Filepath,
+            Skeleton = skeletonPath,
+            Material = loadedMdf,
+            Owner = FindOwner(meshContexts)?.ShortName ?? null,
+        };
     }
 
-    public void LoadFromJson(JsonObject obj)
+    public void LoadFromJson(MeshCollectionItem item)
     {
-        var mesh = obj["mesh"]?.GetValue<string>();
-        var skeleton = obj["skeleton"]?.GetValue<string>();
-        var material = obj["material"]?.GetValue<string>();
-        if (!string.IsNullOrEmpty(mesh) && Workspace.ResourceManager.TryResolveGameFile(mesh, out var meshFile) && meshFile != Handle) {
+        if (!string.IsNullOrEmpty(item.Mesh) && Workspace.ResourceManager.TryResolveGameFile(item.Mesh, out var meshFile) && meshFile != Handle) {
             Handle = meshFile;
         }
-        if (!string.IsNullOrEmpty(material) && material != loadedMdf) {
-            mdfSource = material;
+        if (!string.IsNullOrEmpty(item.Material) && item.Material != loadedMdf) {
+            mdfSource = item.Material;
         }
-        if (!string.IsNullOrEmpty(skeleton) && skeleton != skeletonPath) {
+        if (!string.IsNullOrEmpty(item.Skeleton) && item.Skeleton != skeletonPath) {
             var anim = Animator ?? SetupAnimator();
-            skeletonPath = skeleton;
+            skeletonPath = item.Skeleton;
             if (Workspace.ResourceManager.TryResolveGameFile(skeletonPath, out var skel)) {
                 anim.skeleton = skel.GetFile<FbxSkelFile>();
             }
