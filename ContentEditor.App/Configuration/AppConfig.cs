@@ -50,6 +50,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string ThumbnailCacheFilepath = "thumbnail_cache_path";
         public const string CacheFilepath = "cache_path";
         public const string BookmarksFilepath = "bookmarks_path";
+        public const string ResourcesFilepath = "resources_path";
         public const string WindowRect = "window_rect";
         public const string PauseAnimPlayerOnSeek = "pause_anim_player_on_seek";
         public const string UseFullscreenAnimPlayback = "use_fullscreen_anim_playback";
@@ -171,6 +172,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly ClassSettingWrapper<string> CacheFilepath = new ClassSettingWrapper<string>(Keys.CacheFilepath, _lock, () => Path.Combine(AppDataPath, "cache"));
     public readonly ClassSettingWrapper<string> ThumbnailCacheFilepath = new ClassSettingWrapper<string>(Keys.ThumbnailCacheFilepath, _lock, () => Path.Combine(AppDataPath, "thumbs"));
     public readonly ClassSettingWrapper<string> BookmarksFilepath = new ClassSettingWrapper<string>(Keys.BookmarksFilepath, _lock, () => Path.Combine(AppDataPath, "user"));
+    public readonly ClassSettingWrapper<string> ResourcesFilepath = new ClassSettingWrapper<string>(Keys.ResourcesFilepath, _lock, () => ResourceRepository.LocalResourceRepositoryFolder);
     public readonly ClassSettingWrapper<string> Theme = new ClassSettingWrapper<string>(Keys.Theme, _lock, () => "default");
     public readonly SettingWrapper<int> UnpackMaxThreads = new SettingWrapper<int>(Keys.UnpackMaxThreads, _lock, 4);
     public readonly SettingWrapper<ReeLib.via.Color> BackgroundColor = new SettingWrapper<ReeLib.via.Color>(Keys.BackgroundColor, _lock, new ReeLib.via.Color(115, 140, 153, 255));
@@ -326,6 +328,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.CacheFilepath, instance.CacheFilepath.value?.ToString() ?? "", null),
             (Keys.ThumbnailCacheFilepath, instance.ThumbnailCacheFilepath.value?.ToString() ?? "", null),
             (Keys.BookmarksFilepath, instance.BookmarksFilepath.value?.ToString() ?? "", null),
+            (Keys.ResourcesFilepath, instance.ResourcesFilepath.value?.ToString() ?? "", null),
             (Keys.Theme, instance.Theme.value?.ToString() ?? "", null),
             (Keys.BackgroundColor, instance.BackgroundColor.value.ToString(), null),
             (Keys.LogLevel, instance.LogLevel.value.ToString(), null),
@@ -453,6 +456,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.BookmarksFilepath:
                             BookmarksFilepath.value = ReadString(value);
+                            break;
+                        case Keys.ResourcesFilepath:
+                            ResourcesFilepath.value = ReadString(value);
                             break;
                         case Keys.Theme:
                             Theme.value = string.IsNullOrEmpty(value) ? "default" : value;

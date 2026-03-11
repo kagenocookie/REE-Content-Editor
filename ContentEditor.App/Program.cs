@@ -66,6 +66,14 @@ sealed class Program
         WindowManager.Instance.CloseCallback = (data) => EditorWindow.CurrentWindow!.CloseSubwindow(data);
         WindowManager.Instance.ErrorCallback = (msg, parent) => EditorWindow.CurrentWindow!.AddSubwindow(new ErrorModal("Error", msg, parent?.Handler as IRectWindow));
 
+        var resourcePath = AppConfig.Instance.ResourcesFilepath.Get();
+        if (!string.IsNullOrEmpty(resourcePath) && Path.IsPathFullyQualified(resourcePath)) {
+            if (!Directory.Exists(resourcePath)) {
+                Directory.CreateDirectory(resourcePath);
+            }
+            ResourceRepository.LocalResourceRepositoryFolder = resourcePath;
+        }
+
         var evtLogger = new EventLogger();
         Logger.CurrentLogger = AppConfig.Instance.LogToFile.Get()
             ? new MultiLogger(Logger.CurrentLogger, evtLogger, new FileLogger())

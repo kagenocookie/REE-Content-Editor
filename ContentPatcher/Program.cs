@@ -123,7 +123,7 @@ void ExecutePatcher()
     var cacheOverride = cliSettings.GetValueOrDefault("resourcecache")
         ?? baseSettings.GetValueOrDefault("resourcecache");
     if (cacheOverride != null) {
-        ResourceRepository.LocalResourceRepositoryFilepath = cacheOverride;
+        ResourceRepository.LocalResourceRepositoryFolder = cacheOverride;
     }
 
     var sw = Stopwatch.StartNew();

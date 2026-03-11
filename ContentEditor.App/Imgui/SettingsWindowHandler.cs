@@ -232,6 +232,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImguiHelpers.Tooltip("The folder path that contains the game specific entity configurations. Will use relative path config/ by default if unspecified.");
         ShowSetting(config.RemoteDataSource, "Resource data source", "The source from which to check for updates and download game-specific resource cache files.\nWill use the default GitHub repository if unspecified.");
 
+        ShowFolderSetting(config.ResourcesFilepath, "Resource data storage path", "The folder to use for storing the auto-downloaded game specific resource files.");
         ShowFolderSetting(config.CacheFilepath, "Cache file path", "The folder to use for general file caching. Must not be empty.");
         ShowFolderSetting(config.ThumbnailCacheFilepath, "Thumbnail cache file path", "The folder that cached thumbnails should be stored in. Must not be empty.");
         ShowFolderSetting(config.BookmarksFilepath, "Bookmarks file path", "The folder in which user created bookmarks should be stored. Must not be empty.");
