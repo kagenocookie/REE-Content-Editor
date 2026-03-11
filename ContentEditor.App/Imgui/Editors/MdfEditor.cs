@@ -252,7 +252,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
 
             bool selected = i == selectedIDX;
             ImGui.PushStyleColor(ImGuiCol.Text, selected ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text));
-            if (ImGui.Selectable(mat.Header.matName, selected)) {
+            if (ImGui.Selectable(string.IsNullOrEmpty(mat.Header.matName) ? "<missingName>##"+i : mat.Header.matName, selected)) {
                 selectedIDX = i;
                 activeTabIDX = 0;
                 context.children.Clear();
