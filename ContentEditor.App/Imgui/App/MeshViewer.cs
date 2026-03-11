@@ -269,6 +269,12 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
             if (!isSynced && mainCtx.GameObject != null) {
                 if (ImGui.MenuItem($"{AppIcons.SI_GenericInfo} Mesh Info")) ImGui.OpenPopup("MeshInfo");
+                var meshWarn = mainCtx.GetMeshWarnings();
+                if (meshWarn != null) {
+                    using var _ = ImguiHelpers.OverrideStyleCol(ImGuiCol.Text, Colors.Warning);
+                    ImGui.MenuItem($"{AppIcons.SI_GenericWarning}##mesh");
+                    ImguiHelpers.Tooltip(meshWarn);
+                }
                 ImguiHelpers.VerticalSeparator();
                 if (ImGui.MenuItem($"{AppIcons.SI_SceneGameObject4} Mesh Collection")) ImGui.OpenPopup("MeshList");
                 if (ImGui.MenuItem($"{AppIcons.SI_MeshViewerMeshGroup} Mesh Groups")) ImGui.OpenPopup("MeshGroups");
@@ -1305,6 +1311,15 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
                 UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, ApplyMeshChanges);
             }
         }
+    }
+
+    public string? GetMeshWarnings()
+    {
+        var hasUnknownBuffer = MeshFile.NativeMesh.MeshBuffer?.Headers.BufferHeaders.Any(h => h.type == ReeLib.Mesh.VertexBufferType.UnknownData);
+        if (hasUnknownBuffer == true) {
+            return "Mesh contains an unknown data buffer.\nThis will get lost if you re-import a custom mesh over it, which might affect the ingame appearance.";
+        }
+        return null;
     }
 
     public string? GetMdfErrors()
