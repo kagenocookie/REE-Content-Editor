@@ -26,6 +26,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
     FileHandle? IFileHandleReferenceHolder.Handle => fileHandle;
 
     private Texture? texture;
+    private bool colorSpaceIsKnown;
     private bool showColorSpaceHint;
     private string? texturePath;
     private FileHandle? fileHandle;
@@ -66,7 +67,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
 
     private static readonly FormatPreset[] Presets = [
         new FormatPreset("Color Texture | BC7_UNORM_SRGB", DxgiFormat.BC7_UNORM_SRGB, MipGenOptions.Generate),
-        new FormatPreset("Normal Texture | BC7_UNORM", DxgiFormat.BC7_UNORM, MipGenOptions.Generate),
+        new FormatPreset("Normal / Non-Color Texture | BC7_UNORM", DxgiFormat.BC7_UNORM, MipGenOptions.Generate),
         new FormatPreset("UI (compressed) | BC7_UNORM_SRGB", DxgiFormat.BC7_UNORM_SRGB, MipGenOptions.Remove),
         new FormatPreset("Uncompressed (Color) | R8G8B8A8_UNORM_SRGB", DxgiFormat.R8G8B8A8_UNORM_SRGB, MipGenOptions.Unchanged),
         new FormatPreset("Uncompressed (Non-Color) | R8G8B8A8_UNORM", DxgiFormat.R8G8B8A8_UNORM, MipGenOptions.Unchanged),
@@ -105,16 +106,32 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
         texture?.Dispose();
         texturePath = file.Filepath;
         texture = new Texture().LoadFromFile(file);
-        showColorSpaceHint = !Path.GetExtension(file.Filename).Equals(".dds", StringComparison.OrdinalIgnoreCase) && file.Format.format != KnownFileFormats.Texture;
+        colorSpaceIsKnown = Path.GetExtension(file.Filename).Equals(".dds", StringComparison.OrdinalIgnoreCase) || file.Format.format == KnownFileFormats.Texture;
+        showColorSpaceHint = !colorSpaceIsKnown;
         file.References.Add(this);
         if (string.IsNullOrEmpty(exportTemplate)) {
+            bool hasMips = false;
             if (file.Format.format == KnownFileFormats.Texture) {
-                exportTemplate = file.GetFile<TexFile>().CurrentVersionConfig!;
+                var tex = file.GetFile<TexFile>();
+                exportTemplate = tex.CurrentVersionConfig!;
+                hasMips = tex.Header.mipCount > 1;
+            } else if (Path.GetExtension(file.Filename).Equals(".dds", StringComparison.OrdinalIgnoreCase)) {
+                hasMips = file.GetFile<DDSFile>().Header.mipMapCount > 1;
             }
 
             if (string.IsNullOrEmpty(exportTemplate)) {
                 exportTemplate = TexFile.GetGameVersionConfigs(workspace.Env.Config.Game).FirstOrDefault() ?? TexFile.AllVersionConfigs.Last();
             }
+
+            if (!showColorSpaceHint) {
+                selectedFormatPreset = Presets.FirstOrDefault(p => p.format.ToString().Contains("SRGB") == texture.Format.ToString().Contains("SRGB") && (p.mips == MipGenOptions.Generate) == hasMips);
+                if (selectedFormatPreset.name == null)
+                    selectedFormatPreset = Presets.First(p => p.format.ToString().Contains("SRGB") == texture.Format.ToString().Contains("SRGB"));
+            } else {
+                selectedFormatPreset = Presets.First(p => p.format.ToString().Contains("SRGB") == texture.Format.ToString().Contains("SRGB"));
+            }
+
+            SetFormatPreset(selectedFormatPreset);
         }
     }
 
@@ -221,13 +238,11 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
             ImGui.SameLine();
             ImGui.Text($"Format: {texture.Format}");
 
-            if (texture.Format is DxgiFormat.R8G8B8A8_UNORM or DxgiFormat.R8G8B8A8_UNORM_SRGB &&
-                (fileHandle?.Format.format != KnownFileFormats.Texture) &&
-                !Path.GetExtension((texturePath ?? fileHandle?.Filepath ?? texture.Path ?? "").AsSpan()).Equals(".dds", StringComparison.OrdinalIgnoreCase)
-            ) {
+            if (!colorSpaceIsKnown) {
                 ImGui.SameLine();
                 if (ImGui.Button($"{AppIcons.SI_UpdateTexture}")) {
                     texture.Format = texture.Format == DxgiFormat.R8G8B8A8_UNORM ? DxgiFormat.R8G8B8A8_UNORM_SRGB : DxgiFormat.R8G8B8A8_UNORM;
+                    SetFormatPreset(Presets.First(p => p.format.ToString().Contains("SRGB") == (texture.Format == DxgiFormat.R8G8B8A8_UNORM_SRGB)));
                     showColorSpaceHint = false;
                 }
                 ImguiHelpers.Tooltip("Swap color space\nThis is used to determine whether your source image should be treated as a color or a non-color texture for most conversion operations.\nGenerally albedo and UI textures should be sRGB while everything else should NOT be sRGB.");
@@ -380,6 +395,13 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
         return true;
     }
 
+    private void SetFormatPreset(FormatPreset preset)
+    {
+        selectedFormatPreset = preset;
+        exportFormat = preset.format;
+        mipMapOption = preset.mips;
+    }
+
     private void ShowExportMenu()
     {
         if (texture == null || fileHandle == null || workspace == null) return;
@@ -393,8 +415,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
 
         ImGui.Spacing();
         if (ImguiHelpers.ValueCombo("Preset", PresetNames, Presets, ref selectedFormatPreset)) {
-            exportFormat = selectedFormatPreset.format;
-            mipMapOption = selectedFormatPreset.mips;
+            SetFormatPreset(selectedFormatPreset);
         }
         ImGui.Spacing();
 
