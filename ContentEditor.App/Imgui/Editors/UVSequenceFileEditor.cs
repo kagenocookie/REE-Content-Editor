@@ -400,8 +400,8 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         if (workspace == null) {
             return referencedTextures[path] = null;
         }
-        if (workspace.ResourceManager.TryResolveGameFile(path, out var resolvedFile)) {
-            var texture = new Texture().LoadFromFile(resolvedFile);
+        if (workspace.ResourceManager.TryResolveGameFile(path, out var resolvedFile) && resolvedFile.Format.format == KnownFileFormats.Texture) {
+            var texture = new Texture().LoadFromTex(resolvedFile.GetFile<TexFile>());
             referencedTextures[path] = texture;
             return texture;
         }

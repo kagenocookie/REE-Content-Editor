@@ -99,24 +99,21 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
         EditorWindow.CurrentWindow?.CloseSubwindow(data);
     }
 
-    public void SetImageSource(FileHandle file)
+    public void SetImageSource(FileHandle file, bool? isSrgb = null)
     {
         fileHandle?.References.Remove(this);
         fileHandle = file;
         texture?.Dispose();
         texturePath = file.Filepath;
-        texture = new Texture().LoadFromFile(file);
-        colorSpaceIsKnown = Path.GetExtension(file.Filename).Equals(".dds", StringComparison.OrdinalIgnoreCase) || file.Format.format == KnownFileFormats.Texture;
+        file.Stream.Seek(0, SeekOrigin.Begin);
+        texture = isSrgb == null ? new Texture().LoadFromFile(file) : new Texture().LoadFromFile(file, isSrgb.Value);
+        colorSpaceIsKnown = IsDDSLike(file.Filename);
         showColorSpaceHint = !colorSpaceIsKnown;
         file.References.Add(this);
         if (string.IsNullOrEmpty(exportTemplate)) {
-            bool hasMips = false;
             if (file.Format.format == KnownFileFormats.Texture) {
                 var tex = file.GetFile<TexFile>();
                 exportTemplate = tex.CurrentVersionConfig!;
-                hasMips = tex.Header.mipCount > 1;
-            } else if (Path.GetExtension(file.Filename).Equals(".dds", StringComparison.OrdinalIgnoreCase)) {
-                hasMips = file.GetFile<DDSFile>().Header.mipMapCount > 1;
             }
 
             if (string.IsNullOrEmpty(exportTemplate)) {
@@ -124,25 +121,26 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
             }
 
             if (!showColorSpaceHint) {
-                selectedFormatPreset = Presets.FirstOrDefault(p => p.format.ToString().Contains("SRGB") == texture.Format.ToString().Contains("SRGB") && (p.mips == MipGenOptions.Generate) == hasMips);
+                bool hasMips = texture.FetchMipCount() > 1;
+                selectedFormatPreset = Presets.FirstOrDefault(p => p.format.IsSRGB() == texture.Format.IsSRGB() && (p.mips == MipGenOptions.Generate) == hasMips);
                 if (selectedFormatPreset.name == null)
-                    selectedFormatPreset = Presets.First(p => p.format.ToString().Contains("SRGB") == texture.Format.ToString().Contains("SRGB"));
+                    selectedFormatPreset = Presets.First(p => p.format.IsSRGB() == texture.Format.IsSRGB());
             } else {
-                selectedFormatPreset = Presets.First(p => p.format.ToString().Contains("SRGB") == texture.Format.ToString().Contains("SRGB"));
+                selectedFormatPreset = Presets.First(p => p.format.IsSRGB() == texture.Format.IsSRGB());
             }
 
             SetFormatPreset(selectedFormatPreset);
         }
     }
 
-    public void SetImageSource(string filepath)
+    public void SetImageSource(string filepath, bool? isSrgb = null)
     {
         fileHandle?.References.Remove(this);
         fileHandle = null;
         texture?.Dispose();
         texturePath = filepath;
-        texture = new Texture().LoadFromFile(filepath);
-        showColorSpaceHint = !Path.GetExtension(filepath).Equals(".dds") && PathUtils.ParseFileFormat(filepath).format != KnownFileFormats.Texture;
+        texture = new Texture().LoadFromFile(filepath, isSrgb);
+        showColorSpaceHint = !IsDDSLike(filepath);
     }
 
     public void Init(UIContext context)
@@ -241,8 +239,13 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
             if (!colorSpaceIsKnown) {
                 ImGui.SameLine();
                 if (ImGui.Button($"{AppIcons.SI_UpdateTexture}")) {
-                    texture.Format = texture.Format == DxgiFormat.R8G8B8A8_UNORM ? DxgiFormat.R8G8B8A8_UNORM_SRGB : DxgiFormat.R8G8B8A8_UNORM;
-                    SetFormatPreset(Presets.First(p => p.format.ToString().Contains("SRGB") == (texture.Format == DxgiFormat.R8G8B8A8_UNORM_SRGB)));
+                    var isSrgb = texture.Format.IsSRGB();
+                    if (fileHandle != null) {
+                        SetImageSource(fileHandle, !isSrgb);
+                    } else {
+                        SetImageSource(texture.Path!, !isSrgb);
+                    }
+                    SetFormatPreset(Presets.First(p => p.format.IsSRGB() == texture.Format.IsSRGB()));
                     showColorSpaceHint = false;
                 }
                 ImguiHelpers.Tooltip("Swap color space\nThis is used to determine whether your source image should be treated as a color or a non-color texture for most conversion operations.\nGenerally albedo and UI textures should be sRGB while everything else should NOT be sRGB.");
@@ -460,7 +463,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
                             dds = new DDSFile(new FileHandler(lastImportSourcePath));
                             dds.Read();
                         } else {
-                            using var tempTex = new Texture().LoadFromFile(lastImportSourcePath);
+                            using var tempTex = new Texture().LoadFromFile(lastImportSourcePath, texture.Format.IsSRGB());
                             dds = tempTex.GetAsDDS(generateMissingMipMaps: this.mipMapOption == MipGenOptions.Generate);
                         }
                         var tex = fileHandle.GetFile<TexFile>();
@@ -637,6 +640,8 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
 
         return StandardImageFileExtensions.Contains(Path.GetExtension(filepathOrExtension));
     }
+
+    private static bool IsDDSLike(ReadOnlySpan<char> filepath) => Path.GetExtension(filepath).Equals(".dds", StringComparison.OrdinalIgnoreCase) || PathUtils.ParseFileFormat(filepath).format == KnownFileFormats.Texture;
 
     public bool RequestClose()
     {

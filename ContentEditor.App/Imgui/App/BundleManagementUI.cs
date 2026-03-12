@@ -264,7 +264,7 @@ public class BundleManagementUI : IWindowHandler
         if (File.Exists(resolvedBundleFilepath)) {
             if (loadedThumbnail == null) {
                 loadedThumbnail = new Texture();
-                loadedThumbnail.LoadFromFile(resolvedBundleFilepath);
+                loadedThumbnail.LoadFromFile(resolvedBundleFilepath, true);
             }
         }
 

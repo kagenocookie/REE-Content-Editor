@@ -6,6 +6,8 @@ using ReeLib;
 using ReeLib.DDS;
 using Silk.NET.OpenGL;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.ColorSpaces;
+using SixLabors.ImageSharp.ColorSpaces.Conversion;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace ContentEditor.App.Graphics;
@@ -75,19 +77,42 @@ public class Texture : IDisposable
 
     public unsafe Texture LoadFromFile(FileHandle file)
     {
-        return LoadFromFile(file.Stream, file.Filepath);
+        if (file.Format.format == KnownFileFormats.Texture) {
+            return LoadFromTex(file.GetFile<TexFile>());
+        }
+
+        Path = file.Filepath;
+        if (Path.EndsWith(".dds", StringComparison.OrdinalIgnoreCase)) {
+            return LoadFromDDS(file.Stream);
+        }
+
+        return LoadFromStream(file.Stream, GuessIsSrgbFromFilename(file.Filepath));
     }
 
-    public unsafe Texture LoadFromFile(string filepath)
+    public unsafe Texture LoadFromFile(FileHandle file, bool isSrgb)
+    {
+        if (file.Format.format == KnownFileFormats.Texture) {
+            return LoadFromTex(file.GetFile<TexFile>());
+        }
+
+        Path = file.Filepath;
+        if (Path.EndsWith(".dds", StringComparison.OrdinalIgnoreCase)) {
+            return LoadFromDDS(file.Stream);
+        }
+
+        return LoadFromStream(file.Stream, isSrgb);
+    }
+
+    public unsafe Texture LoadFromFile(string filepath, bool? isSrgb = null)
     {
         using var stream = System.IO.File.OpenRead(filepath);
-        return LoadFromFile(stream, filepath);
+        return LoadFromFile(stream, filepath, isSrgb);
     }
 
-    private unsafe Texture LoadFromFile(Stream stream, string filepath)
+    private unsafe Texture LoadFromFile(Stream stream, string filepath, bool? isSrgb = null)
     {
         Path = filepath;
-        if (filepath.EndsWith(".dds")) {
+        if (filepath.EndsWith(".dds", StringComparison.OrdinalIgnoreCase)) {
             return LoadFromDDS(stream);
         }
 
@@ -96,7 +121,7 @@ public class Texture : IDisposable
             return LoadFromTex(stream, filepath);
         }
 
-        return LoadFromStream(stream, filepath);
+        return LoadFromStream(stream, isSrgb ?? GuessIsSrgbFromFilename(filepath));
     }
 
     /// <summary>
@@ -122,7 +147,7 @@ public class Texture : IDisposable
     /// </summary>
     public unsafe Texture LoadFromImage(Image<Rgba32> img, bool isSrgb)
     {
-        _gl.TexImage2D(TextureTarget.Texture2D, 0, InternalFormat.Rgba8, (uint)img.Width, (uint)img.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, null);
+        _gl.TexImage2D(TextureTarget.Texture2D, 0, isSrgb ? InternalFormat.Srgb8Alpha8 : InternalFormat.Rgba8, (uint)img.Width, (uint)img.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, null);
 
         img.ProcessPixelRows(accessor => {
             for (int y = 0; y < accessor.Height; y++) {
@@ -154,6 +179,8 @@ public class Texture : IDisposable
             name.Contains("_NRR", StringComparison.OrdinalIgnoreCase) ||
             name.Contains("_NRO", StringComparison.OrdinalIgnoreCase) ||
             name.Contains("norm", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("_aco", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("_ato", StringComparison.OrdinalIgnoreCase) ||
             name.EndsWith("_n", StringComparison.OrdinalIgnoreCase)
         ) {
             return false;
@@ -308,17 +335,22 @@ public class Texture : IDisposable
         return image;
     }
 
-    public unsafe DDSFile GetAsDDS(int minMipLevel = 0, int maxMipLevel = int.MaxValue, bool generateMissingMipMaps = false)
+    public int FetchMipCount(int maxMipLevel = int.MaxValue)
     {
-        Bind();
-
-        var maxPossibleMip = DDSFileExtensions.CalculateMipCount(Height, Width);
-
         var actualMaxMip = 0;
         do {
             var w = _gl.GetTexLevelParameter(TextureTarget.Texture2D, actualMaxMip, GetTextureParameter.TextureWidth);
             if (w == 0) break;
         } while (++actualMaxMip < maxMipLevel);
+        return actualMaxMip;
+    }
+
+    public unsafe DDSFile GetAsDDS(int minMipLevel = 0, int maxMipLevel = int.MaxValue, bool generateMissingMipMaps = false)
+    {
+        Bind();
+
+        var maxPossibleMip = DDSFileExtensions.CalculateMipCount(Height, Width);
+        var actualMaxMip = FetchMipCount(maxMipLevel);
 
         if (generateMissingMipMaps && actualMaxMip < maxPossibleMip)
         {
@@ -339,7 +371,7 @@ public class Texture : IDisposable
         dds.Header.height = (uint)Math.Max(1, Height >> minMipLevel);
         dds.Header.IsHasDX10 = true;
         dds.Header.DX10 = new() {
-            Format = Format.ToString().Contains("SRGB") ? DxgiFormat.R8G8B8A8_UNORM_SRGB : DxgiFormat.R8G8B8A8_UNORM,
+            Format = Format.IsSRGB() ? DxgiFormat.R8G8B8A8_UNORM_SRGB : DxgiFormat.R8G8B8A8_UNORM,
             ArraySize = 1,
             ResourceDimension = ResourceDimension.TEXTURE2D,
         };
@@ -481,6 +513,50 @@ public class Texture : IDisposable
         if (_handle == uint.MaxValue) return;
         _gl.DeleteTexture(_handle);
         _handle = uint.MaxValue;
+    }
+
+    public static void ConvertSrgbToLinear(Image<Rgba32> img)
+    {
+        img.ProcessPixelRows(accessor => {
+            for (int y = 0; y < accessor.Height; y++) {
+                var row = accessor.GetRowSpan(y);
+
+                for (int x = 0; x < row.Length; x++) {
+                    Rgba32 pixel = row[x];
+                    var lrgb = new Rgb(pixel.R / 255f, pixel.G / 255f, pixel.B / 255f);
+
+                    var srgb = ColorSpaceConverter.ToLinearRgb(lrgb);
+
+                    row[x] = new Rgba32(
+                        (byte)Math.Round(srgb.R * 255),
+                        (byte)Math.Round(srgb.G * 255),
+                        (byte)Math.Round(srgb.B * 255),
+                        pixel.A);
+                }
+            }
+        });
+    }
+
+    public static void ConvertLinearToSrgb(Image<Rgba32> img)
+    {
+        img.ProcessPixelRows(accessor => {
+            for (int y = 0; y < accessor.Height; y++) {
+                var row = accessor.GetRowSpan(y);
+
+                for (int x = 0; x < row.Length; x++) {
+                    Rgba32 pixel = row[x];
+                    var lrgb = new LinearRgb(pixel.R / 255f, pixel.G / 255f, pixel.B / 255f);
+
+                    var srgb = ColorSpaceConverter.ToRgb(lrgb);
+
+                    row[x] = new Rgba32(
+                        (byte)Math.Round(srgb.R * 255),
+                        (byte)Math.Round(srgb.G * 255),
+                        (byte)Math.Round(srgb.B * 255),
+                        pixel.A);
+                }
+            }
+        });
     }
 
     public override string ToString() => Path ?? _handle.ToString();

@@ -37,7 +37,7 @@ public class TextureConversionTask : IBackgroundTask
         var meta = new Hexa.NET.DirectXTex.TexMetadata();
         try {
             fixed (byte* bufPtr = buffer) {
-                DirectXTex.LoadFromDDSMemory(bufPtr, (nuint)memstream.Length, Hexa.NET.DirectXTex.DDSFlags.ForceDx10Ext| Hexa.NET.DirectXTex.DDSFlags.AllowLargeFiles, ref meta, ref image).ThrowIf();
+                DirectXTex.LoadFromDDSMemory(bufPtr, (nuint)memstream.Length, Hexa.NET.DirectXTex.DDSFlags.ForceDx10Ext | Hexa.NET.DirectXTex.DDSFlags.AllowLargeFiles, ref meta, ref image).ThrowIf();
             }
 
             var sourceFormat = meta.Format;

@@ -10,6 +10,8 @@ using ReeLib.DDS;
 using ReeLib.via;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
+using SixLabors.ImageSharp.ColorSpaces;
+using SixLabors.ImageSharp.ColorSpaces.Conversion;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
@@ -313,6 +315,11 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
             if (slot.texture != null) {
                 using var srcImg = slot.texture.GetAsImage();
                 var img = srcImg.Clone();
+                if (slot.texture.Format.IsSRGB()) {
+                    // ensure we operate on linear space RGBs
+                    Texture.ConvertSrgbToLinear(img);
+                }
+
                 if (img.Width != res.x || img.Height != res.y) {
                     img.Mutate(o => o.Resize(res.x, res.y, KnownResamplers.Bicubic));
                 }
@@ -370,7 +377,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
         if (outImageData != null) {
             outputTexture?.Dispose();
             outputTexture = new Texture();
-            outputTexture.LoadFromImage(outImageData, firstTex.Format.ToString().Contains("SRGB"));
+            outputTexture.LoadFromImage(outImageData, false);
             outputTexture.SetChannel(outputDisplayChannel);
             outImageData.Dispose();
 
@@ -481,10 +488,11 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
     private void ReplaceSlotTexture(TextureSlot slot, string? texPath)
     {
         try {
+            var curIsSrgb = slot.texture?.Format.IsSRGB();
             slot.texture?.Dispose();
             if (texPath != null) {
                 slot.texture = new Texture();
-                slot.texture.LoadFromFile(texPath);
+                slot.texture.LoadFromFile(texPath, curIsSrgb ?? slot.inputSwizzle == TextureSourceSwizzle.RGB);
                 slot.UpdateSwizzle();
             } else {
                 slot.texture = null;
@@ -504,7 +512,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
             foreach (var mem in img.GetPixelMemoryGroup()) {
                 mem.Span.Fill(fillColor);
             }
-            slot.texture.LoadFromImage(img, slot.inputSwizzle.ToString().Contains("RGB"));
+            slot.texture.LoadFromImage(img, false);
             img.Dispose();
             isDirty = true;
         } catch (Exception e) {
