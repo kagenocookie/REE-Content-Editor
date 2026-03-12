@@ -13,6 +13,11 @@ public static class PlatformUtils
     {
 #if WINDOWS
         var thread = new Thread(() => {
+#else
+        if (!MainLoop.IsMainThread) {
+            MainLoop.Instance.InvokeFromUIThread(() => ShowFileDialog(callback, initialFile, fileExtension, allowMultiple));
+            return;
+        }
 #endif
             using var selectFileDialog = new NativeFileDialog()
                 .SelectFile();
@@ -41,6 +46,11 @@ public static class PlatformUtils
     {
 #if WINDOWS
         var thread = new Thread(() => {
+#else
+        if (!MainLoop.IsMainThread) {
+            MainLoop.Instance.InvokeFromUIThread(() => ShowFolderDialog(callback, initialFolder));
+            return;
+        }
 #endif
             using var selectFolderDialog = new NativeFileDialog()
                 .SelectFolder();
@@ -64,6 +74,11 @@ public static class PlatformUtils
     {
 #if WINDOWS
         var thread = new Thread(() => {
+#else
+        if (!MainLoop.IsMainThread) {
+            MainLoop.Instance.InvokeFromUIThread(() => ShowSaveFileDialog(callback, initialFile));
+            return;
+        }
 #endif
             using var selectFileDialog = new NativeFileDialog()
                 .SaveFile();
