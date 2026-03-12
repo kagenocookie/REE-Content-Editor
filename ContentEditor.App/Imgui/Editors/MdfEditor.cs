@@ -41,7 +41,7 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 
     public MaterialData ReplaceMaterialParams(string mmtr, MaterialData material)
     {
-        if (mmtrTemplateDB?.Templates.TryGetValue(mmtr, out var template) == true) {
+        if (mmtrTemplateDB?.Templates.TryGetValue(mmtr.ToLowerInvariant(), out var template) == true) {
             var hasPreviousData = material.Parameters.Count > 0 || material.Textures.Count > 0;
             foreach (var existingParam in material.Parameters.ToList()) {
                 var matchingParam = template.Parameters.FirstOrDefault(pp => pp.Name == existingParam.paramName);
@@ -111,6 +111,13 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 
                 if (mmtrTemplateDB == null) {
                     MainLoop.Instance.BackgroundTasks.Queue(new MaterialParamCacheTask(Workspace.Env));
+                } else {
+                    // have the paths in lowercase to ensure we can match them up case insensitively
+                    foreach (var key in mmtrTemplateDB.Templates.Keys.ToArray()) {
+                        if (mmtrTemplateDB.Templates.Remove(key, out var data)) {
+                            mmtrTemplateDB.Templates[key.ToLowerInvariant()] = data;
+                        }
+                    }
                 }
             } else {
                 if (!MainLoop.Instance.BackgroundTasks.HasPendingTask<MaterialParamCacheTask>() &&
@@ -297,6 +304,11 @@ public class MdfFileImguiHandler : IObjectUIHandler
 
     private void ShowSelectedMaterialData(UIContext context, MdfFile file)
     {
+        if (selectedIDX < 0 || selectedIDX >= file.Materials.Count) {
+            ImGui.TextColored(Colors.Note, "No material selected");
+            return;
+        }
+
         var mat = file.Materials[selectedIDX];
 
         if (ImGui.BeginTabBar("##MaterialDataTabs")) {
@@ -352,7 +364,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
         if (ImGui.MenuItem("Delete")) {
             int index = list.IndexOf(mat);
             UndoRedo.RecordListRemove(context, list, mat);
-            int newIndex = Math.Clamp(index - 1, 0, list.Count - 1);
+            int newIndex = list.Count == 0 ? -1 : Math.Clamp(index - 1, 0, list.Count - 1);
             onSelectIndexChanged?.Invoke(newIndex);
         }
     }
@@ -492,7 +504,7 @@ public class TexHeaderImguiHandler : IObjectUIHandler
         var editor = context.FindHandlerInParents<MdfEditor>();
         var mdf = context.FindHandlerInParents<MdfFileImguiHandler>();
         var mat = mdf == null ? null : editor?.File.Materials.ElementAtOrDefault(mdf.selectedIDX);
-        if (mat != null && editor!.MaterialTemplateDB?.Templates.TryGetValue(mat.Header.mmtrPath!, out var db) == true) {
+        if (mat != null && editor!.MaterialTemplateDB?.Templates.TryGetValue(mat.Header.mmtrPath!.ToLowerInvariant(), out var db) == true) {
             if (db.TextureDefaults.TryGetValue(tex.texType, out var defaultPath) && tex.texPath?.Equals(defaultPath) != true) {
                 var pos = ImGui.GetCursorPos();
                 ImGui.SetCursorPos(end + new Vector2(ImGui.CalcTextSize(tex.texType).X + ImGui.GetStyle().ItemSpacing.X, 0));

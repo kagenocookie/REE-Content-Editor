@@ -163,6 +163,10 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         if (reader == null) {
             if (PakFilePaths == null) {
                 // all files - use default pak reader data, but make a clone just so we don't mess with the original stuff
+                if (Workspace.PakReader.PakFilePriority.Count == 0) {
+                    ImGui.TextColored(Colors.Warning, $"No PAK files found for game {Workspace.Config.Game}");
+                    return;
+                }
                 Workspace.PakReader.IncludeUnknownFilePaths = true;
                 Workspace.PakReader.AddFiles(activeListFile.Files);
                 Workspace.PakReader.CacheEntries(true);
