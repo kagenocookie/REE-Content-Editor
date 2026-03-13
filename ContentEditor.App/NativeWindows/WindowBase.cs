@@ -277,19 +277,24 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         removeSubwindows.Add(subwindow);
         var file = (subwindow.Handler as IFileHandleReferenceHolder)?.Handle;
         if (file != null && !AppConfig.Instance.DisableFileCloseWarning) {
-            EditorWindow.CurrentWindow?.Overlays.ShowToast(5, """
+            var wnd = EditorWindow.CurrentWindow;
+            if (wnd == null) return;
+            if (!wnd.Workspace.ResourceManager.IsFileOpen(file)) {
+                return;
+            }
+            wnd.Overlays.ShowToast(5, """
                 Window has been closed but the file is still kept open in case it's needed.
                 If you want to re-open it or fully close it down, you can do that from the File > Open files menu.
                 Attempting to re-open a file from the same path will not reload the file unless it's closed down first.
                 """,
-                ("Disable This Warning", static () => {
+                ("Disable This Warning", () => {
                     AppConfig.Instance.DisableFileCloseWarning.Set(true);
-                    EditorWindow.CurrentWindow?.Overlays.ShowToast(2f, """
+                    wnd.Overlays.ShowToast(2f, """
                         Warning can be re-enabled from settings.
                         """);
                 }),
                 ("Close File", () => {
-                    EditorWindow.CurrentWindow?.Workspace.ResourceManager.CloseFile(file);
+                    wnd.Workspace.ResourceManager.CloseFile(file);
                 })
             );
         }

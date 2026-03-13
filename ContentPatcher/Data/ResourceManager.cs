@@ -1140,6 +1140,11 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     {
         CloseAllFiles();
     }
+
+    public bool IsFileOpen(FileHandle file)
+    {
+        return openFiles.ContainsKey(file.Filepath.ToLowerInvariant()) || file.NativePath != null && openFiles.ContainsKey(file.NativePath);
+    }
 }
 
 public enum ResourceState
