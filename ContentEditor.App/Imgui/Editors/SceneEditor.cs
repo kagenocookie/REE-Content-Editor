@@ -65,6 +65,7 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
 
     protected override void OnFileChanged()
     {
+        var depth = Tree?.InheritedDepth ?? 0;
         base.OnFileChanged();
         if (scene != null) {
             var window = context.GetNativeWindow()!;
@@ -73,11 +74,15 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
                     window.SceneManager.UnloadScene(scene);
                     Reset();
                     scene = LoadScene();
+                    EnsureUIInit();
+                    Tree?.InheritedDepth = depth;
                 });
             } else {
                 window.SceneManager.UnloadScene(scene);
                 Reset();
                 scene = LoadScene();
+                EnsureUIInit();
+                Tree?.InheritedDepth = depth;
             }
         }
     }

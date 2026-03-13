@@ -119,6 +119,16 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         return null;
     }
 
+    internal void RemoveScene(Scene scene)
+    {
+        childScenes.Remove(scene);
+        foreach (var folder in AllFolders) {
+            if (folder.ChildScene == scene) {
+                folder.ChildScene = null;
+            }
+        }
+    }
+
     public void RequestLoadChildScene(Folder childFolder, LoadType subfolderLoadType = LoadType.Default)
     {
         if (childFolder.Scene != this || string.IsNullOrEmpty(childFolder.ScenePath)) return;

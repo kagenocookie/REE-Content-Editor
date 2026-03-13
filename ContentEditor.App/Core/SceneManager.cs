@@ -36,6 +36,14 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
         if (parentScene == null) {
             rootScenes.Add(scene);
             scene.OwnRenderContext.AddDefaultSceneGizmos();
+        } else {
+            foreach (var scn in parentScene.AllFolders) {
+                if (scn.ScenePath?.Equals(internalPath, StringComparison.OrdinalIgnoreCase) == true) {
+                    scn.ChildScene = scene;
+                    // surely nobody would reference the same scene twice from one scene?
+                    break;
+                }
+            }
         }
         return scene;
     }
@@ -45,6 +53,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
         scenes.Remove(scene);
         rootScenes.Remove(scene);
         foreach (var sub in scene.ChildScenes) RemoveScene(sub);
+        scene.ParentScene?.RemoveScene(scene);
     }
 
     public void UnloadScene(Scene scene)
