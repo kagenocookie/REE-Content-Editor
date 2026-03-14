@@ -255,7 +255,11 @@ public sealed class ContentWorkspace : IDisposable
 
     public void CreateBundleFromPAK(string bundleName, string pakFilepath)
     {
-        var bundlePath = BundleManager.GetBundleFolder(bundleName);
+        if (BundleManager.GetBundle(bundleName, null) != null) {
+            Logger.Error($"Bundle {bundleName} already exists!");
+            return;
+        }
+        var bundlePath = BundleManager.ConstructBundleFolder(bundleName);
 
         var pak = new PakReader();
         if (!pak.TryReadManifestFileList(pakFilepath)) {
@@ -267,7 +271,13 @@ public sealed class ContentWorkspace : IDisposable
 
     public void InitializeUnlabelledBundle(string bundlePath, string? sourcePath = null, string? name = null)
     {
-        if (!Path.IsPathFullyQualified(bundlePath)) bundlePath = BundleManager.GetBundleFolder(bundlePath);
+        var bundleName = name ?? Path.GetFileName(bundlePath);
+
+        if (!Path.IsPathFullyQualified(bundlePath)) bundlePath = BundleManager.ConstructBundleFolder(bundlePath);
+        if (BundleManager.GetBundle(bundleName, null) != null) {
+            Logger.Error($"Bundle {bundleName} already exists!");
+            return;
+        }
         if (sourcePath != null && sourcePath.NormalizeFilepath() != bundlePath.NormalizeFilepath()) {
             // copy all files from source to the bundle path
             foreach (var srcfile in Directory.EnumerateFiles(sourcePath, "*.*", SearchOption.AllDirectories)) {
@@ -281,7 +291,6 @@ public sealed class ContentWorkspace : IDisposable
             SetBundle(null);
         }
         var bundleJsonPath = Path.Combine(bundlePath, "bundle.json");
-        var bundleName = name ?? new DirectoryInfo(bundlePath).Name;
         var bundle = BundleManager.GetBundle(bundleName, null) ?? new Bundle();
         bundle.Name = bundleName;
         var modIni = Path.Combine(bundlePath, "modinfo.ini");

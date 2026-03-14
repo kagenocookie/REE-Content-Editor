@@ -1,4 +1,4 @@
-namespace ContentEditor.Core;
+﻿namespace ContentEditor.Core;
 
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -60,7 +60,7 @@ public class Bundle
     public Dictionary<string, long>? InitialInsertIds { get; set; }
 
     [JsonIgnore]
-    public string? SaveFilepath { get; set; }
+    public string? StorageFolder { get; set; }
 
     public override string ToString() => Name;
 

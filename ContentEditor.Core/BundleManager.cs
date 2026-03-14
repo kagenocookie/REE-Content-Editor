@@ -90,10 +90,20 @@ public class BundleManager
                 Logger.Error("Found invalid, unnamed bundle " + bundleJsonFile);
                 continue;
             }
-            bundle.SaveFilepath = Path.GetFileNameWithoutExtension(entry);
+            bundle.StorageFolder = entry;
 
             var idx = settings.BundleOrder.IndexOf(bundle.Name);
             if (idx != -1) {
+                if (orderedBundles.ContainsKey(idx)) {
+                    var renames = 1;
+                    var orgname = bundle.Name;
+                    Logger.Error("Found duplicate bundle name, renaming automatically ...");
+                    do {
+                        bundle.Name = orgname + "_" + renames++;
+                        idx = settings.BundleOrder.IndexOf(bundle.Name);
+                    } while (orderedBundles.ContainsKey(idx));
+                    Logger.Error($"Renamed repeated bundle name {orgname} to {bundle.Name}");
+                }
                 orderedBundles.Add(idx, bundle);
             } else {
                 unorderedBundles.Add(bundle);
@@ -110,7 +120,7 @@ public class BundleManager
                 Logger.Error("Found invalid, unnamed bundle " + entry);
                 continue;
             }
-            bundle.SaveFilepath = Path.GetFileNameWithoutExtension(entry);
+            bundle.StorageFolder = Path.GetFileNameWithoutExtension(entry);
 
             // TODO figure out app/runtime bundle link
             if (orderedBundles.Any(bb => bb.Value.Name == bundle.Name) || unorderedBundles.Any(bb => bb.Name == bundle.Name)) continue;
@@ -185,14 +195,14 @@ public class BundleManager
 
     public string GetBundleFolder(Bundle bundle)
     {
-        var path = GetBundleFolder(bundle.Name);
+        var path = bundle.StorageFolder ??= ConstructBundleFolder(bundle.Name);
         if (!Directory.Exists(path)) {
             Directory.CreateDirectory(path);
         }
         return path;
     }
 
-    public string GetBundleFolder(string name)
+    public string ConstructBundleFolder(string name)
     {
         return Path.Combine(AppBundlePath, name).Replace('\\', '/');
     }
@@ -306,8 +316,8 @@ public class BundleManager
     public void SaveBundle(Bundle bundle)
     {
         bundle.Touch();
-        bundle.SaveFilepath ??= bundle.Name;
-        var outfilepath = Path.Combine(AppBundlePath, bundle.SaveFilepath, "bundle.json");
+        bundle.StorageFolder ??= ConstructBundleFolder(bundle.Name);
+        var outfilepath = Path.Combine(bundle.StorageFolder, "bundle.json");
         Directory.CreateDirectory(Path.GetDirectoryName(outfilepath)!);
         using var fs = File.Create(outfilepath);
         JsonSerializer.Serialize(fs, bundle, JsonConfig.luaJsonOptions);

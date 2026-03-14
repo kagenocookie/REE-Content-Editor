@@ -285,7 +285,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
 
         if (workspace != null) {
-            if (ImGui.BeginMenu($"Bundle: {workspace.Data.Name ?? "--"}")) {
+            if (ImGui.BeginMenu($"Bundle: {workspace.CurrentBundle?.Name ?? "--"}")) {
                 if (!workspace.BundleManager.IsLoaded) workspace.BundleManager.LoadDataBundles();
                 if (ImGui.BeginMenu($"Active Bundle: {workspace.Data.ContentBundle}")) {
                     if (ImGui.MenuItem("New Bundle")) {

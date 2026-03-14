@@ -232,8 +232,8 @@ public class BundleManagementUI : IWindowHandler
         if (AppImguiHelpers.InputFilepath("Image", ref str, FileFilters.ImageFiles)) {
             if (File.Exists(str)) {
                 var localImageFilepath = str;
-                if (!string.IsNullOrEmpty(bundle.SaveFilepath)) {
-                    if (!str.StartsWith(bundle.SaveFilepath)) {
+                if (!string.IsNullOrEmpty(bundle.StorageFolder)) {
+                    if (!str.StartsWith(bundle.StorageFolder)) {
                         var srcPath = str;
                         str = Path.Combine(bundleFolder, Path.GetFileName(str));
                         try {
