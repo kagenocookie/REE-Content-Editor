@@ -310,7 +310,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
 
         Int2 res = new Int2(firstTex.Width, firstTex.Height);
         SixLabors.ImageSharp.Image<Rgba32>? outImageData = new Image<Rgba32>(res.x, res.y);
-        foreach (var grp in outImageData.GetPixelMemoryGroup()) grp.Span.Fill(new Rgba32(0x00000000));
+        foreach (var grp in outImageData.GetPixelMemoryGroup()) grp.Span.Fill(new Rgba32(0xFFFFFFFF));
         foreach (var slot in slots) {
             if (slot.texture != null) {
                 using var srcImg = slot.texture.GetAsImage();

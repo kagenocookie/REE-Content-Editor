@@ -480,7 +480,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 }
                 if (!hasUnsavedFiles && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.SetItemTooltip("No files have been modified yet.");
                 ImGui.EndDisabled();
-                if (ImGui.BeginMenu("Open files")) {
+                if (ImGui.BeginMenu("Opened files")) {
                     var files = workspace.ResourceManager.GetOpenFiles();
                     if (!files.Any()) {
                         ImGui.MenuItem("No files open", false);
