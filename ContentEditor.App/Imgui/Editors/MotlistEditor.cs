@@ -574,7 +574,10 @@ public class BoneMotionClipHandler : IObjectUIHandler
             context.AddChild<BoneMotionClip, Track>(nameof(BoneMotionClip.Scale), instance, TrackHandler.Instance, m => m!.Scale, (m, v) => m.Scale = v);
         }
 
-        if (AppImguiHelpers.CopyableTreeNode<BoneMotionClip>(context)) {
+        if (AppImguiHelpers.CopyableTreeNode<BoneMotionClip>(context, out var didPaste)) {
+            if (didPaste) {
+                instance.ChangeVersion(context.FindValueInParentValues<MotFile>()?.Header.version ?? instance.ClipHeader.MotVersion);
+            }
             context.ShowChildrenUI();
             ImGui.TreePop();
         }
