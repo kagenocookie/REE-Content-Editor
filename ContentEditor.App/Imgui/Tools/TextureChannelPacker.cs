@@ -426,11 +426,14 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
                 if (ImGui.Selectable("Clear")) {
                     ReplaceSlotTexture(slot, null);
                 }
-                if (ImGui.Selectable("Make Black")) {
-                    ReplaceSlotTexture(slot, new SixLabors.ImageSharp.Color(new Rgba32(0xff000000)));
-                }
                 if (ImGui.Selectable("Make White")) {
                     ReplaceSlotTexture(slot, new SixLabors.ImageSharp.Color(new Rgba32(0xffffffff)));
+                }
+                if (ImGui.Selectable("Make Gray")) {
+                    ReplaceSlotTexture(slot, new SixLabors.ImageSharp.Color(new Rgba32(0xff7F7F7F)));
+                }
+                if (ImGui.Selectable("Make Black")) {
+                    ReplaceSlotTexture(slot, new SixLabors.ImageSharp.Color(new Rgba32(0xff000000)));
                 }
                 ImGui.EndPopup();
             }
@@ -438,11 +441,14 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
             click = ImGui.Button(slot.input.Name, size);
             ImguiHelpers.Tooltip("Click to browse for a texture or drag & drop it into the box. Right click for more options.");
             if (ImGui.BeginPopupContextItem()) {
-                if (ImGui.Selectable("Make Black")) {
-                    ReplaceSlotTexture(slot, new SixLabors.ImageSharp.Color(new Rgba32(0xff000000)));
-                }
                 if (ImGui.Selectable("Make White")) {
                     ReplaceSlotTexture(slot, new SixLabors.ImageSharp.Color(new Rgba32(0xffffffff)));
+                }
+                if (ImGui.Selectable("Make Gray")) {
+                    ReplaceSlotTexture(slot, new SixLabors.ImageSharp.Color(new Rgba32(0xff7F7F7F)));
+                }
+                if (ImGui.Selectable("Make Black")) {
+                    ReplaceSlotTexture(slot, new SixLabors.ImageSharp.Color(new Rgba32(0xff000000)));
                 }
                 ImGui.EndPopup();
             }
