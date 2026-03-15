@@ -149,7 +149,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         var list = workspace.Env.ListFile;
         if (list == null || workspace.CurrentBundle?.ResourceListing == null) return list;
 
-        return new ListFileWrapper(list.Files.Concat(workspace.CurrentBundle.ResourceListing.Values.Select(v => v.Target)));
+        return new ListFileWrapper(list.Files.Concat(workspace.CurrentBundle.ResourceListing.Values.Select(v => v.Target)), true);
     }
     public void OnIMGUI()
     {
