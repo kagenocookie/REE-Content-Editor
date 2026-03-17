@@ -155,7 +155,8 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
         if (texture != null) {
             ImGui.SetNextWindowSize(new Vector2(texture.Width, texture.Height + ImGui.GetFrameHeight()));
         }
-        if (!ImguiHelpers.BeginWindow(data, null, ImGuiWindowFlags.MenuBar)) {
+        var filename = fileHandle != null ? PathUtils.GetFilepathWithNormalExtensionOnly(fileHandle.Filename) : Path.GetFileName(texturePath.AsSpan());
+        if (!ImguiHelpers.BeginWindow(data, $"Tex: {filename}###Tex_{data.ID}", ImGuiWindowFlags.MenuBar)) {
             EditorWindow.CurrentWindow?.CloseSubwindow(data);
             return;
         }
