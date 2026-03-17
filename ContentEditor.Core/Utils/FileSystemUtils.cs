@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace ContentEditor;
@@ -52,5 +53,15 @@ public static class FileSystemUtils
     public static void OpenURL(string url)
     {
         Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+    }
+
+    public static bool EnsureDirectoryExists([NotNullWhen(true)] string directory)
+    {
+        try {
+            Directory.CreateDirectory(directory);
+            return true;
+        } catch (Exception) {
+            return false;
+        }
     }
 }

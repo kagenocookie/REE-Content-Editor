@@ -68,8 +68,10 @@ sealed class Program
 
         var resourcePath = AppConfig.Instance.ResourcesFilepath.Get();
         if (!string.IsNullOrEmpty(resourcePath) && Path.IsPathFullyQualified(resourcePath)) {
-            if (!Directory.Exists(resourcePath)) {
-                Directory.CreateDirectory(resourcePath);
+            if (!FileSystemUtils.EnsureDirectoryExists(resourcePath)) {
+                Logger.Error("Failed to create resource folder, resetting setting to default...");
+                AppConfig.Instance.ResourcesFilepath.Reset();
+                resourcePath = AppConfig.Instance.ResourcesFilepath.Get()!;
             }
             ResourceRepository.LocalResourceRepositoryFolder = resourcePath;
         }
