@@ -358,7 +358,7 @@ public class SwappableRszInstanceHandler(string? baseClass = null, bool referenc
             } else {
                 otherInstanceOptions = rsz.InstanceList.Take(500).ToArray();
             }
-            var labels = otherInstanceOptions.Select(inst => inst.GetString()).ToArray();
+            var labels = otherInstanceOptions.Select((inst, i) => $"{i+1}. {inst.GetString()}").ToArray();
 
             var newInstance = instance;
             if (ImguiHelpers.FilterableCombo(instanceLabel, labels, otherInstanceOptions, ref newInstance, ref context.Filter)) {
