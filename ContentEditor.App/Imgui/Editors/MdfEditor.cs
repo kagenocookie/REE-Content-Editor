@@ -505,11 +505,11 @@ public class TexHeaderImguiHandler : IObjectUIHandler
         var mdf = context.FindHandlerInParents<MdfFileImguiHandler>();
         var mat = mdf == null ? null : editor?.File.Materials.ElementAtOrDefault(mdf.selectedIDX);
         if (mat != null && editor!.MaterialTemplateDB?.Templates.TryGetValue(mat.Header.mmtrPath!.ToLowerInvariant(), out var db) == true) {
-            if (db.TextureDefaults.TryGetValue(tex.texType, out var defaultPath) && tex.texPath?.Equals(defaultPath) != true) {
+            if (!db.TextureDefaults.TryGetValue(tex.texType, out var defaultPath) || tex.texPath?.Equals(defaultPath) != true) {
                 var pos = ImGui.GetCursorPos();
                 ImGui.SetCursorPos(end + new Vector2(ImGui.CalcTextSize(tex.texType).X + ImGui.GetStyle().ItemSpacing.X, 0));
                 if (ImGui.Button($"{AppIcons.SI_Reset}") && tex.texPath != null) {
-                    UndoRedo.RecordSet(context.GetChild(0)!, defaultPath);
+                    UndoRedo.RecordSet(context.GetChild(0)!, defaultPath ?? "systems/rendering/NullWhite.tex");
                     UndoRedo.AttachClearState(context.GetChild(0)!);
                 }
                 ImguiHelpers.Tooltip("Set to null texture");
