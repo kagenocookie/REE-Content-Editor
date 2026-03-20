@@ -811,6 +811,7 @@ public record ImportSettings
     public float Scale { get; set; } = 1f;
     public bool ForceRootIdentity { get; set; } = true;
     public bool ConvertZToYUpRootRotation { get; set; } = false;
+    public bool ImportMaterialsFromMeshName { get; set; }
 
     public float ExportScale { get; set; } = 1f;
 }

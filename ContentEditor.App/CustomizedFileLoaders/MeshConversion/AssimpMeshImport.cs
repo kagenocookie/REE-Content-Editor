@@ -74,9 +74,21 @@ public partial class CommonMeshResource : IResourceFile
 
         var orderedMeshes = srcMeshes.OrderBy(m => (MeshLoader.GetMeshGroupFromName(m.Name), MeshLoader.GetSubMeshIndexFromName(m.Name)));
 
-        foreach (var mat in scene.Materials) {
-            if (string.IsNullOrEmpty(mat.Name)) continue;
-            mesh.MaterialNames.Add(mat.Name);
+        var nodes = FlatNodes(scene.RootNode).ToArray();
+
+        var materialNames = scene.Materials.Select(m => m.Name).ToArray();
+        var useNameMaterials = AppConfig.Settings.Import.ImportMaterialsFromMeshName;
+        if (useNameMaterials) {
+            materialNames = scene.Meshes.Select((m, meshIndex) => {
+                var node = nodes.FirstOrDefault(n => n.MeshIndices.Contains(meshIndex));
+                var name = node != null ? node.Name : m.Name;
+                if (name.StartsWith("occ_")) return "";
+                return MeshLoader.GetMeshMaterialFromName(name);
+            }).Distinct().ToArray();
+        }
+        foreach (var matName in materialNames) {
+            if (string.IsNullOrEmpty(matName)) continue;
+            mesh.MaterialNames.Add(matName);
         }
         if (occMeshes.Count > 0 && shadowMeshes.Count == 0 && mainMeshes.Count == 0) {
             mesh.MaterialNames.Clear();
@@ -234,7 +246,10 @@ public partial class CommonMeshResource : IResourceFile
             newSub.vertsIndexOffset = vertOffset;
             newSub.vertCount = aiMesh.VertexCount;
             newSub.indicesCount = indicesCount;
-            newSub.materialIndex = (ushort)aiMesh.MaterialIndex;
+            newSub.materialIndex = (ushort)(useNameMaterials ? materialNames.IndexOf(MeshLoader.GetMeshMaterialFromName(aiMesh.Name)) : aiMesh.MaterialIndex);
+            if (newSub.materialIndex < 0 || newSub.materialIndex >= materialNames.Length) {
+                newSub.materialIndex = 0;
+            }
 
             group.submeshCount++;
             group.Submeshes.Add(newSub);

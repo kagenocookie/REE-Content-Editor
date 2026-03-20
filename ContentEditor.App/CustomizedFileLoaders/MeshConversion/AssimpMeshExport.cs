@@ -34,6 +34,14 @@ public partial class CommonMeshResource : IResourceFile
         }
     }
 
+    private static Dictionary<string, Node> FlatNodesDict(Node node)
+    {
+        var existingNodes = FlatNodes(node);
+        var nodeDict = new Dictionary<string, Node>();
+        foreach (var ext in existingNodes) nodeDict.TryAdd(ext.Name, ext);
+        return nodeDict;
+    }
+
     private static void AddMotlistToScene(Assimp.Scene scene, MotlistFile motlist, string exportFormat)
     {
         foreach (var file in motlist.MotFiles) {
@@ -315,8 +323,13 @@ public partial class CommonMeshResource : IResourceFile
             int subId = 0;
             foreach (var sub in mesh.Submeshes) {
                 var aiMesh = new Mesh(PrimitiveType.Triangle);
-                aiMesh.MaterialIndex = sub.materialIndex + matIndexOffset;
-
+                var matName = file.MaterialNames[sub.materialIndex];
+                var matIndex = scene.Materials.FindIndex(mat => mat.Name == matName);
+                if (matIndex == -1) {
+                    matIndex = scene.Materials.Count;
+                    scene.Materials.Add(new Material() { Name = matName });
+                }
+                aiMesh.MaterialIndex = matIndex;
 
                 aiMesh.Vertices.AddRange(sub.Positions);
                 if (scale != 1) {
@@ -459,7 +472,7 @@ public partial class CommonMeshResource : IResourceFile
                 }
 
                 // each submesh needs to have a unique node so they don't get merged together
-                var meshNode = new Node($"{namePrefix}Group_{mesh.groupId.ToString(CultureInfo.InvariantCulture)}_sub{subId++}", scene.RootNode);
+                var meshNode = new Node($"{namePrefix}Group_{mesh.groupId.ToString(CultureInfo.InvariantCulture)}_sub{subId++}__{matName}", scene.RootNode);
                 scene.RootNode.Children.Add(meshNode);
                 aiMesh.Name = meshNode.Name;
                 meshNode.MeshIndices.Add(scene.Meshes.Count);

@@ -131,6 +131,16 @@ public partial class MeshLoader : IFileLoader,
         return 0;
     }
 
+    public static string GetMeshMaterialFromName(string name)
+    {
+        var dsub = name.IndexOf("__");
+        if (dsub == -1) {
+            return "NO_MATERIAL";
+        }
+
+        return name.Substring(dsub + 2);
+    }
+
     public static int GetSubMeshIndexFromName(string meshName)
     {
         var match = SubmeshIndexRegex().Match(meshName);
