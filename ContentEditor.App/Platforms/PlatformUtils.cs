@@ -88,10 +88,13 @@ public static class PlatformUtils
                 }
             }
 
-            var result = selectFileDialog.Open(
-                out string? output,
-                !string.IsNullOrEmpty(initialFile) ? Path.GetDirectoryName(initialFile) : Environment.CurrentDirectory,
-                Path.GetFileName(initialFile));
+            var dir = !string.IsNullOrEmpty(initialFile) ? Path.GetDirectoryName(initialFile) : Environment.CurrentDirectory;
+
+            if (!string.IsNullOrEmpty(initialFile) && !Path.IsPathFullyQualified(initialFile)) {
+                initialFile = Path.GetFileName(initialFile);
+            }
+
+            var result = selectFileDialog.Open(out string? output, dir, initialFile);
 
             if (result == DialogResult.Okay && !string.IsNullOrEmpty(output)) {
                 callback.Invoke(output);
