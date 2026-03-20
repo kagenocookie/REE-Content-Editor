@@ -71,7 +71,7 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 
                 material.Textures.Add(new TexHeader() {
                     texType = param,
-                    texPath = template.TextureDefaults.GetValueOrDefault(param)
+                    texPath = template.TextureDefaults.GetValueOrDefault(param) ?? "systems/rendering/NullWhite.tex"
                 });
             }
 
