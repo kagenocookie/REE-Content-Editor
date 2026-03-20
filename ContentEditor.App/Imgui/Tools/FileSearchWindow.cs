@@ -667,7 +667,9 @@ public class FileSearchWindow : IWindowHandler
                         if (inst.RSZUserData != null) continue;
                         if (inst.RszClass == cls) {
                             if (value == null) {
-                                AddMatch(context, FindPathToRszObject(inRsz, inst, file), path);
+                                if (searchClassOnly) {
+                                    AddMatch(context, FindPathToRszObject(inRsz, inst, file), path);
+                                }
                                 break;
                             }
 
@@ -684,7 +686,7 @@ public class FileSearchWindow : IWindowHandler
                                     AddMatch(context, FindPathToRszObject(inRsz, inst, file), path);
                                 }
                             }
-                        } else if (value is not string) {
+                        } else if (value is not string && searchClassOnly) {
                             foreach (var field in inst.Fields) {
                                 if (field.original_type == cls.name) {
                                     AddMatch(context, FindPathToRszObject(inRsz, inst, file) + "." + field.name, path);
