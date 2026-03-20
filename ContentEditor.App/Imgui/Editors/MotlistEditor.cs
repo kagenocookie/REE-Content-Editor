@@ -680,11 +680,30 @@ public class MotBoneHandler : IObjectUIHandler
         if (ImGui.BeginPopupContextItem("Bone")) {
             var boneCtx = context.FindParentContextByValue<MotBone>();
             if (boneCtx != null && ImGui.Selectable("Copy")) {
-                VirtualClipboard.CopyToClipboard(boneCtx);
+                VirtualClipboard.CopyToClipboard(boneCtx.Get<MotBone>());
             }
-            if (boneCtx != null && VirtualClipboard.TryGetFromClipboard<MotBone>(out var newClip) && ImGui.Selectable("Paste (replace)")) {
-                UndoRedo.RecordSet(boneCtx, newClip.DeepCloneGeneric<MotBone>());
-                context.ClearChildren();
+            if (boneCtx != null && VirtualClipboard.TryGetFromClipboard<MotBone>(out var newClip)) {
+                if (ImGui.Selectable("Paste (replace values)")) {
+                    var org = instance.Clone();
+                    var clone = newClip.Clone();
+                    UndoRedo.RecordCallback(boneCtx, () => {
+                        instance.quaternion = clone.quaternion;
+                        instance.translation = clone.translation;
+                        instance.attributes1 = clone.attributes1;
+                        instance.attributes2 = clone.attributes2;
+                    }, () => {
+                        instance.quaternion = org.quaternion;
+                        instance.translation = org.translation;
+                        instance.attributes1 = org.attributes1;
+                        instance.attributes2 = org.attributes2;
+                    });
+                }
+                if (ImGui.Selectable("Paste (replace hierarchy)")) {
+                    var clone = newClip.Clone();
+                    clone.Parent = instance.Parent;
+                    UndoRedo.RecordSet(boneCtx, clone);
+                    UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, boneCtx);
+                }
             }
             ImGui.EndPopup();
         }
@@ -696,7 +715,7 @@ public class MotBoneHandler : IObjectUIHandler
         } else {
             ImGui.SameLine();
         }
-        context.children[^1].ShowUI();
+        if (context.children.Count > 0) context.children[^1].ShowUI();
     }
 }
 
