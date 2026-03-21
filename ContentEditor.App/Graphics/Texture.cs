@@ -407,19 +407,22 @@ public class Texture : IDisposable
 
     public void SaveAs(string filepath)
     {
-        using var image = GetAsImage();
-        if (image == null) return;
-
         string ext = System.IO.Path.GetExtension(filepath).ToLowerInvariant();
         Directory.CreateDirectory(System.IO.Path.GetDirectoryName(filepath)!);
 
         if (ext == ".tga") {
+            using var image = GetAsImage();
+            if (image == null) return;
+
             image.Save(filepath, new SixLabors.ImageSharp.Formats.Tga.TgaEncoder {
                 BitsPerPixel = SixLabors.ImageSharp.Formats.Tga.TgaBitsPerPixel.Pixel32,
                 Compression = SixLabors.ImageSharp.Formats.Tga.TgaCompression.None
             });
             Logger.Info($"Texture saved as TGA to: {filepath}");
         } else if (ext == ".png") {
+            using var image = GetAsImage();
+            if (image == null) return;
+
             image.Save(filepath, new SixLabors.ImageSharp.Formats.Png.PngEncoder {
                 ColorType = SixLabors.ImageSharp.Formats.Png.PngColorType.RgbWithAlpha,
                 CompressionLevel = SixLabors.ImageSharp.Formats.Png.PngCompressionLevel.DefaultCompression,
@@ -428,6 +431,7 @@ public class Texture : IDisposable
         } else if (ext == ".dds") {
             var dds = GetAsDDS();
             using var fs = File.Create(filepath);
+            dds.FileHandler.Seek(0);
             dds.FileHandler.Stream.CopyTo(fs);
             dds.Dispose();
         } else {

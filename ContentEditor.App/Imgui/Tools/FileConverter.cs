@@ -2,15 +2,19 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Text.Json;
 using ContentEditor.App.FileLoaders;
+using ContentEditor.App.Graphics;
+using ContentEditor.App.Windowing;
+using ContentEditor.BackgroundTasks;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.DDS;
 
 namespace ContentEditor.App;
 
-public class FileUpgrader : BaseWindowHandler
+public class FileConverter : BaseWindowHandler
 {
-    public override string HandlerName => "File Upgrader";
+    public override string HandlerName => "File Conversion";
 
     private string sourceFolder = "";
     private string destinationFolder = "";
@@ -21,15 +25,26 @@ public class FileUpgrader : BaseWindowHandler
     private List<string> upgradeableFileList = new();
     private List<string> notUpgradeableFileList = new();
 
-    private Dictionary<REFileFormat, FileConverter?> sourceFormats = new();
+    private enum ConversionMode
+    {
+        Select,
+        Conversion,
+        Upgrade,
+    }
 
-    private static Type[] AvailableConverters = typeof(FileUpgrader).GetNestedTypes(System.Reflection.BindingFlags.NonPublic).Where(t => t.IsAssignableTo(typeof(FileConverter)) && !t.IsAbstract).ToArray();
-    private static FileConverter[] StaticConverters = AvailableConverters.Select(c => (FileConverter)Activator.CreateInstance(c)!).ToArray();
-    private readonly List<FileConverter> Converters = new();
+    private ConversionMode mode = ConversionMode.Select;
 
+    private Dictionary<REFileFormatFull, FileConversionHandler?> sourceFormats = new();
+
+    private static Type[] AvailableConverters = typeof(FileConverter).GetNestedTypes(System.Reflection.BindingFlags.NonPublic).Where(t => t.IsAssignableTo(typeof(FileConversionHandler)) && !t.IsAbstract).ToArray();
+    private static FileConversionHandler[] StaticConverters = AvailableConverters.Select(c => (FileConversionHandler)Activator.CreateInstance(c)!).ToArray();
+    private readonly List<FileConversionHandler> Converters = new();
+
+    private bool allConverterSettingsReady = false;
+    private bool sourceChanged = true;
     public override void OnIMGUI()
     {
-        var sourceChanged = AppImguiHelpers.InputFolder("Source Folder", ref sourceFolder);
+        sourceChanged |= AppImguiHelpers.InputFolder("Source Folder", ref sourceFolder);
         ImguiHelpers.Tooltip("The folder containing the files you wish to upgrade.");
 
         AppImguiHelpers.InputFolder("Destination Folder", ref destinationFolder);
@@ -41,9 +56,21 @@ public class FileUpgrader : BaseWindowHandler
             return;
         }
 
+        if (ImguiHelpers.CSharpEnumCombo("Conversion mode", ref mode)) {
+            sourceChanged = true;
+        }
+
         if (sourceFolder == destinationFolder) {
-            ImGui.TextColored(Colors.Warning, "The source and target folders should not be the same.");
+            ImGui.TextColored(Colors.Warning, "The source and target folders should not be the same."u8);
             return;
+        }
+
+        if (mode == ConversionMode.Select) return;
+        if (mode == ConversionMode.Upgrade) {
+            ImGui.TextColored(Colors.Note, "Upgrade mode is intended for upgrading files from one version of a game to another (e.g. updating from a previous patch)."u8);
+        }
+        if (mode == ConversionMode.Conversion) {
+            ImGui.TextColored(Colors.Note, "Conversion mode is used to batch convert several files to a different file format."u8);
         }
 
         if (sourcePaks.Count == 0) {
@@ -66,23 +93,25 @@ public class FileUpgrader : BaseWindowHandler
             foreach (var filepath in Directory.EnumerateFiles(sourceFolder, "*.*", SearchOption.AllDirectories)) {
                 var file = Path.GetFileName(filepath.AsSpan());
                 var relativePath = Path.GetRelativePath(sourceFolder, filepath);
-                var format = PathUtils.ParseFileFormat(file);
+                var format = PathUtils.ParseFileFormatFull(file);
 
-                var converter = Converters.FirstOrDefault(c => c.CanUpgrade(filepath, format));
+                var converter = Converters.FirstOrDefault(c => mode == ConversionMode.Conversion ? c.CanConvert(filepath, format) : c.CanUpgrade(filepath, format));
                 if (converter == null) {
-                    converter = StaticConverters.FirstOrDefault(c => c.CanUpgrade(filepath, format));
+                    converter = StaticConverters.FirstOrDefault(c => mode == ConversionMode.Conversion ? c.CanConvert(filepath, format) : c.CanUpgrade(filepath, format));
                     if (converter != null) {
-                        Converters.Add(converter = (FileConverter)Activator.CreateInstance(converter.GetType())!);
+                        Converters.Add(converter = (FileConversionHandler)Activator.CreateInstance(converter.GetType())!);
                         converter.Init(workspace);
                     }
                 }
-                if (format.format != KnownFileFormats.Unknown) sourceFormats.TryAdd(format, converter);
+                sourceFormats.TryAdd(format, converter);
                 if (converter == null) {
                     notUpgradeableFileList.Add(relativePath);
                 } else {
                     upgradeableFileList.Add(relativePath);
+                    converter.AddFormat(format);
                 }
             }
+            sourceChanged = false;
         }
 
         var avail = ImGui.GetContentRegionAvail() - new Vector2(0, 32 * UI.UIScale + ImGui.GetStyle().FramePadding.Y);
@@ -92,7 +121,60 @@ public class FileUpgrader : BaseWindowHandler
         }
 
         if (ImGui.BeginTabBar("UpgradeTabs"u8)) {
-            if (ImGui.BeginTabItem("PAK List"u8)) {
+            var unconvertable = new List<REFileFormatFull>();
+            if (ImGui.BeginTabItem("File Formats"u8)) {
+                var allReady = true;
+                var atLeastOneReady = false;
+                var shownConverters = new HashSet<FileConversionHandler>();
+                foreach (var (format, converter) in sourceFormats.OrderBy(f => f.Key.format)) {
+                    if (converter == null) {
+                        unconvertable.Add(format);
+                        continue;
+                    }
+                    if (!shownConverters.Add(converter)) continue;
+                    ImGui.PushID(format.GetHashCode());
+
+                    var firstFmt = converter.SourceFormats.FirstOrDefault();
+                    var label = string.IsNullOrEmpty(converter.Label) ? $"{firstFmt}" : converter.Label;
+                    ImGui.Checkbox(label, ref converter.enabled);
+                    if (converter.SourceFormats.Count >= 2 && ImGui.BeginItemTooltip()) {
+                        ImGui.SeparatorText("Format List"u8);
+                        foreach (var fmt in converter.SourceFormats) {
+                            ImGui.BulletText(fmt.ToString());
+                        }
+                        ImGui.EndTooltip();
+                    }
+                    if (converter.enabled) {
+                        var isReady = converter.ShowSettings(mode);
+                        if (!isReady) {
+                            allReady = false;
+                        } else {
+                            atLeastOneReady = true;
+                        }
+                        ImGui.Spacing();
+                    }
+
+                    ImGui.PopID();
+                }
+
+                allConverterSettingsReady = allReady && atLeastOneReady;
+
+                if (unconvertable.Count > 0 && ImGui.TreeNode("Not convertable file formats")) {
+                    foreach (var format in unconvertable) {
+                        ImGui.Text(format.ToString());
+                        if (ImGui.IsItemClicked(ImGuiMouseButton.Left)) {
+                            EditorWindow.CurrentWindow?.CopyToClipboard(format.ToString());
+                        }
+                    }
+                    ImGui.TreePop();
+                }
+                ImGui.EndTabItem();
+            }
+            if (mode == ConversionMode.Upgrade && ImGui.BeginTabItem("PAK List"u8)) {
+                ImGui.TextColored(Colors.Note, """
+                    The PAK file list is used to compare the files with their original counterparts and only apply the minimal necessary changes to make the file equivalent.
+                    This may or may not work correctly for all files depending on what kind of changes have been made both on the mod side and on the original file side.
+                    """u8);
                 foreach (var pak in workspace.Env.PakReader.PakFilePriority) {
                     ImGui.PushID(pak);
                     var source = sourcePaks.Contains(pak);
@@ -116,39 +198,23 @@ public class FileUpgrader : BaseWindowHandler
                 }
                 ImGui.EndTabItem();
             }
-            if (ImGui.BeginTabItem("File Formats"u8)) {
-                foreach (var (format, converter) in sourceFormats.OrderBy(f => f.Key.format)) {
-                    if (converter == null) {
-                        ImGui.TextColored(Colors.Warning, $"{format.format}.{format.version} is not convertable");
-                        continue;
-                    }
-                    ImGui.PushID((int)format.format);
-
-                    ImGui.Checkbox(converter.Label ?? $"{format.format}.{format.version}", ref converter.enabled);
-                    if (converter.enabled) {
-                        var isReady = converter.ShowSettings();
-                        ImGui.Spacing();
-                    }
-
-                    ImGui.PopID();
-                }
-                ImGui.EndTabItem();
-            }
             if (ImGui.BeginTabItem("File List"u8)) {
                 ImGui.SetNextItemOpen(true, ImGuiCond.Appearing);
-                if (ImGui.TreeNode($"Upgradeable Files ({upgradeableFileList.Count})")) {
+                if (ImGui.TreeNode($"Convertable Files ({upgradeableFileList.Count})")) {
                     foreach (var file in upgradeableFileList) {
                         ImGui.Text(file);
-                        if (!file.StartsWith("natives")) {
+                        if (mode == ConversionMode.Upgrade && !file.StartsWith("natives")) {
                             ImGui.SameLine();
+                            ImGui.PushID(file);
                             ImGui.Button($"{AppIcons.SI_GenericWarning}");
                             ImguiHelpers.TooltipColored("The file path is not contained in the natives/ path, the upgrader is unable to compare with original game files.\nRSZ data upgrade will be attempted but might not work as expected.", Colors.Warning);
+                            ImGui.PopID();
                         }
                     }
                     ImGui.TreePop();
                 }
 
-                if (notUpgradeableFileList.Count > 0 && ImGui.TreeNode($"NOT Upgradeable Files ({notUpgradeableFileList.Count})")) {
+                if (notUpgradeableFileList.Count > 0 && ImGui.TreeNode($"NOT Convertable Files ({notUpgradeableFileList.Count})")) {
                     foreach (var file in notUpgradeableFileList) {
                         ImGui.Text(file);
                     }
@@ -177,12 +243,15 @@ public class FileUpgrader : BaseWindowHandler
             return;
         }
 
-        if (ImGui.Button("Upgrade"u8)) {
+        using var _ = ImguiHelpers.Disabled(!allConverterSettingsReady);
+        if (ImGui.Button("Start conversion"u8)) {
             AttemptUpgrade();
         }
-        ImGui.SameLine();
-        if (ImGui.Button("Find Vanilla Changes"u8)) {
-            CompareChangedFiles();
+        if (mode == ConversionMode.Upgrade) {
+            ImGui.SameLine();
+            if (ImGui.Button("Find Vanilla Changes"u8)) {
+                CompareChangedFiles();
+            }
         }
     }
 
@@ -241,7 +310,7 @@ public class FileUpgrader : BaseWindowHandler
 
         foreach (var relativePath in upgradeableFileList) {
             try {
-                var fmt = PathUtils.ParseFileFormat(relativePath);
+                var fmt = PathUtils.ParseFileFormatFull(relativePath);
                 if (!sourceFormats.TryGetValue(fmt, out var converter) || converter?.enabled != true) {
                     continue;
                 }
@@ -295,18 +364,20 @@ public class FileUpgrader : BaseWindowHandler
         originalWs.ResourceManager.SetupFileLoaders(typeof(MeshLoader).Assembly);
         updatedWs.ResourceManager.SetupFileLoaders(typeof(MeshLoader).Assembly);
 
-        return new UpgradeContext(originalWs, updatedWs);
+        return new UpgradeContext(originalWs, updatedWs, mode);
     }
 
     private class UpgradeContext : IDisposable
     {
         public ContentWorkspace sourceEnv;
         public ContentWorkspace updatedEnv;
+        public ConversionMode mode;
 
-        public UpgradeContext(ContentWorkspace sourceEnv, ContentWorkspace targetEnv)
+        public UpgradeContext(ContentWorkspace sourceEnv, ContentWorkspace targetEnv, ConversionMode mode)
         {
             this.sourceEnv = sourceEnv;
             this.updatedEnv = targetEnv;
+            this.mode = mode;
         }
 
         public void Dispose()
@@ -317,43 +388,143 @@ public class FileUpgrader : BaseWindowHandler
     }
 
 
-    private class TexConverter : FileConverter
+    private class TexConverter : FileConversionHandler
     {
         private string? exportFormat;
+        private bool compressTextures = true;
+        private bool generateMips = true;
 
-        public override bool CanUpgrade(string sourceFile, REFileFormat format) => format.format == KnownFileFormats.Texture;
+        private static readonly string[] ImageExtensions = { ".PNG", ".TGA", ".DDS" };
+        private static readonly string[] ImageExtensions2 = { "png", "tga" };
 
-        public override bool ShowSettings()
+        public override bool CanConvert(string sourceFile, REFileFormatFull format) => format.format == KnownFileFormats.Texture || ImageExtensions.Contains(Path.GetExtension(sourceFile).ToUpperInvariant());
+
+        private static string[] AllVersionsInclExportsExt { get => field ??= ImageExtensions.Concat(TexFile.AllVersionConfigsWithExtension).ToArray(); }
+        private static string[] AllVersionsInclExports { get => field ??= new string[] { "png", "tga", "dds" }.Concat(TexFile.AllVersionConfigs).ToArray(); }
+
+        public override bool ShowSettings(ConversionMode mode)
         {
             ImGui.SameLine();
-            ImguiHelpers.ValueCombo("Export format", TexFile.AllVersionConfigsWithExtension, TexFile.AllVersionConfigs, ref exportFormat);
+            var allext = mode == ConversionMode.Conversion ? AllVersionsInclExportsExt : TexFile.AllVersionConfigsWithExtension;
+            var all = mode == ConversionMode.Conversion ? AllVersionsInclExports : TexFile.AllVersionConfigs;
+            ImGui.SetNextItemWidth(ImGui.CalcItemWidth() / 2);
+            ImguiHelpers.ValueCombo("Target format", allext, all, ref exportFormat);
+            if (mode == ConversionMode.Conversion && SourceFormats.Any(f => f.extension.Equals("png", StringComparison.OrdinalIgnoreCase) || f.extension.Equals("tga", StringComparison.OrdinalIgnoreCase))) {
+                ImGui.SameLine();
+                ImGui.Checkbox("Compress (BC7)", ref compressTextures);
+                ImguiHelpers.Tooltip("Only used for PNG/TGA source files");
+                ImGui.SameLine();
+                ImGui.Checkbox("Generate MipMaps", ref generateMips);
+                ImguiHelpers.Tooltip("Only used for PNG/TGA source files");
+            }
             return !string.IsNullOrEmpty(exportFormat);
         }
 
         public override bool Upgrade(FileHandle file, string destinationPath, UpgradeContext context)
         {
-            var tex = file.GetFile<TexFile>();
-            if (!string.IsNullOrEmpty(exportFormat)) {
-                var pathVersion = TexFile.GetFileExtension(exportFormat);
-                if (pathVersion != 0) {
-                    destinationPath = PathUtils.ChangeFileVersion(destinationPath, (int)pathVersion);
-                    tex.ChangeVersion(exportFormat);
+            if (exportFormat == null) return false;
+
+            if (file.Format.format == KnownFileFormats.Texture) {
+                var tex = file.GetFile<TexFile>();
+                if (string.IsNullOrEmpty(exportFormat)) {
+                    file.Save(context.updatedEnv, destinationPath);
+                    Logger.Info($"Saved file {file.Filepath} to {destinationPath}");
+                    return true;
+                }
+
+                if (exportFormat == "png" || exportFormat == "tga" || exportFormat == "dds") {
+                    var dd = PathUtils.GetFilepathWithoutExtensionOrVersion(destinationPath);
+                    // var updatedDest = Path.ChangeExtension(destinationPath, $".{exportFormat}");
+                    destinationPath = dd.ToString() + "." + exportFormat;
+                    var texture = new Texture().LoadFromTex(tex);
+                    texture.SaveAs(destinationPath);
+                    Logger.Info($"Saved file {file.Filepath} as {destinationPath}");
+                } else {
+                    var pathVersion = TexFile.GetFileExtension(exportFormat);
+                    if (pathVersion != 0) {
+                        destinationPath = PathUtils.ChangeFileVersion(destinationPath, (int)pathVersion);
+                        tex.ChangeVersion(exportFormat);
+                    }
+
+                    file.Save(context.updatedEnv, destinationPath);
+                    Logger.Info($"Saved file {file.Filepath} to {destinationPath}");
+                }
+            } else {
+
+                if (exportFormat == "png" || exportFormat == "tga") {
+                    using var texture = new Texture().LoadFromFile(file);
+                    destinationPath = Path.ChangeExtension(destinationPath, $".{exportFormat}");
+                    texture.SaveAs(destinationPath);
+                    Logger.Info($"Saved file {file.Filepath} as {destinationPath}");
+                } else {
+                    if (exportFormat == "dds") {
+                        destinationPath = Path.ChangeExtension(destinationPath, $".{exportFormat}");
+                    } else {
+                        var pathVersion = TexFile.GetFileExtension(exportFormat);
+                        if (pathVersion == 0 || pathVersion == -1) {
+                            context.updatedEnv.Env.TryGetFileExtensionVersion("tex", out pathVersion);
+                        }
+
+                        destinationPath = Path.ChangeExtension(destinationPath, ".tex");
+                        destinationPath = PathUtils.ChangeFileVersion(destinationPath, (int)pathVersion);
+                    }
+
+                    void SaveDDS(DDSFile newDds)
+                    {
+                        if (exportFormat == "dds") {
+                            newDds.SaveAs(destinationPath);
+                        } else {
+                            var tex = new TexFile(new FileHandler());
+                            tex.ChangeVersion(exportFormat);
+                            tex.LoadDataFromDDS(newDds);
+                            TextureLoader.SaveTo(tex, destinationPath);
+                            tex.Dispose();
+                        }
+                        newDds.Dispose();
+                        Logger.Info($"Saved file {file.Filepath} to {destinationPath}");
+                    }
+
+                    if (Path.GetExtension(file.Filepath) == ".dds") {
+                        // no extra conversion needed
+                        var ddsF = new DDSFile(new FileHandler(file.Stream));
+                        ddsF.Read();
+                        SaveDDS(ddsF);
+                        return true;
+                    }
+
+                    using var texture = new Texture().LoadFromFile(file);
+                    var ops = new List<TextureConversionTask.TextureOperation>();
+                    if (compressTextures) {
+                        var fmt = texture.Format.IsSRGB() ? DxgiFormat.BC7_UNORM_SRGB : DxgiFormat.BC7_UNORM;
+                        ops.Add(new TextureConversionTask.ChangeFormat(fmt));
+                    }
+                    if (generateMips) {
+                        ops.Add(new TextureConversionTask.GenerateMipMaps());
+                    }
+
+                    var dds = texture.GetAsDDS(maxMipLevel: 1);
+
+                    if (ops.Count == 0) {
+                        // save directly
+                        SaveDDS(dds);
+                    } else {
+                        // do async conversion
+                        MainLoop.Instance.BackgroundTasks.Queue(new TextureConversionTask(dds, SaveDDS, ops.ToArray()));
+                    }
                 }
             }
 
-            file.Save(context.updatedEnv, destinationPath);
-            Logger.Info($"Saved file {file.Filepath} to {destinationPath}");
             return true;
         }
     }
 
-    private class MeshConverter : FileConverter
+    private class MeshConverter : FileConversionHandler
     {
         private string? exportFormat;
 
-        public override bool CanUpgrade(string sourceFile, REFileFormat format) => format.format == KnownFileFormats.Mesh;
+        public override bool CanConvert(string sourceFile, REFileFormatFull format) => format.format == KnownFileFormats.Mesh;
 
-        public override bool ShowSettings()
+        public override bool ShowSettings(ConversionMode mode)
         {
             ImGui.SameLine();
             ImguiHelpers.ValueCombo("Export format", MeshFile.AllVersionConfigsWithExtension, MeshFile.AllVersionConfigs, ref exportFormat);
@@ -377,14 +548,16 @@ public class FileUpgrader : BaseWindowHandler
         }
     }
 
-    private class MsgConverter : FileConverter
+    private class MsgConverter : FileConversionHandler
     {
-        public override bool CanUpgrade(string sourceFile, REFileFormat format) => format.format is KnownFileFormats.Message;
+        public override bool CanUpgrade(string sourceFile, REFileFormatFull format) => format.format is KnownFileFormats.Message;
+        public override bool CanConvert(string sourceFile, REFileFormatFull format) => format.format is KnownFileFormats.Message;
+
         private int updateVersion;
 
-        public override bool ShowSettings()
+        public override bool ShowSettings(ConversionMode mode)
         {
-            ImGui.InputInt("Changed file version", ref updateVersion);
+            ImGui.InputInt("New file version", ref updateVersion);
             ImGui.TextColored(Colors.Note, "Leave the value at 0 to keep the current version");
             return true;
         }
@@ -406,21 +579,21 @@ public class FileUpgrader : BaseWindowHandler
         }
     }
 
-    private class RSZConverter : FileConverter
+    private class RSZConverter : FileConversionHandler
     {
         public override string? Label => "RSZ Files";
 
         public string sourceRszJsonPath = "";
         public string targetRszJsonPath = "";
 
-        public override bool CanUpgrade(string sourceFile, REFileFormat format) => format.format is KnownFileFormats.UserData or KnownFileFormats.Prefab or KnownFileFormats.Scene;
+        public override bool CanUpgrade(string sourceFile, REFileFormatFull format) => format.format is KnownFileFormats.UserData or KnownFileFormats.Prefab or KnownFileFormats.Scene;
 
         public override void Init(ContentWorkspace workspace)
         {
             sourceRszJsonPath = targetRszJsonPath = AppConfig.Instance.GetGameRszJsonPath(workspace.Game) ?? "";
         }
 
-        public override bool ShowSettings()
+        public override bool ShowSettings(ConversionMode mode)
         {
             AppImguiHelpers.InputFilepath("Source Version RSZ JSON", ref sourceRszJsonPath, FileFilters.JsonFile);
             ImguiHelpers.Tooltip("The RSZ JSON of the source file game version.");
@@ -442,25 +615,36 @@ public class FileUpgrader : BaseWindowHandler
         }
     }
 
-    private abstract class FileConverter
+    private abstract class FileConversionHandler
     {
         public bool enabled = true;
 
         public virtual string? Label => null;
-        public abstract bool CanUpgrade(string sourceFile, REFileFormat format);
+
+        public readonly List<REFileFormatFull> SourceFormats = new();
+
+        public virtual bool CanUpgrade(string sourceFile, REFileFormatFull format) => false;
+        public virtual bool CanConvert(string sourceFile, REFileFormatFull format) => false;
         public virtual void Init(ContentWorkspace workspace) {}
-        public abstract bool ShowSettings();
+        public abstract bool ShowSettings(ConversionMode mode);
         public abstract bool Upgrade(FileHandle file, string destinationPath, UpgradeContext context);
 
         // NOTE: would it make sense to implement this as part of the file loader directly?
         protected virtual bool ChangeVersion(FileHandle file, int version, UpgradeContext context) => false;
 
-        protected bool TryChangeFormatVersionIfNeeded(FileHandle file, REFileFormat destinationFormat, UpgradeContext context)
+        public void AddFormat(REFileFormatFull format)
+        {
+            if (!SourceFormats.Contains(format)) {
+                SourceFormats.Add(format);
+            }
+        }
+
+        protected bool TryChangeFormatVersionIfNeeded(FileHandle file, REFileFormatFull destinationFormat, UpgradeContext context)
         {
             if (destinationFormat.version == file.Format.version) return true;
 
             if (ChangeVersion(file, destinationFormat.version, context)) {
-                Logger.Info($"Changed file version: {file.Filepath} -> {destinationFormat.version} (native: {file.NativePath ?? "unknown"})");
+                Logger.Info($"Changed file version: {file.Filepath} -> {destinationFormat} (native: {file.NativePath ?? "unknown"})");
                 return true;
             }
 
@@ -472,7 +656,7 @@ public class FileUpgrader : BaseWindowHandler
             var sourcePath = sourceFile.Filepath;
             var nativePath = sourceFile.NativePath;
 
-            var destinationFormat = PathUtils.ParseFileFormat(destinationPath);
+            var destinationFormat = PathUtils.ParseFileFormatFull(destinationPath);
 
             if (sourceFile.DiffHandler == null) {
                 if (destinationFormat.version != sourceFile.Format.version && TryChangeFormatVersionIfNeeded(sourceFile, destinationFormat, context)) {
