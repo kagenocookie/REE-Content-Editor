@@ -27,12 +27,13 @@ public class FileConverter : BaseWindowHandler
 
     private enum ConversionMode
     {
-        Select,
         Conversion,
         Upgrade,
     }
 
-    private ConversionMode mode = ConversionMode.Select;
+    private static int[] ConversionInts = [(int)ConversionMode.Conversion, (int)ConversionMode.Upgrade];
+
+    private ConversionMode mode = ConversionMode.Conversion;
 
     private Dictionary<REFileFormatFull, FileConversionHandler?> sourceFormats = new();
 
@@ -56,20 +57,22 @@ public class FileConverter : BaseWindowHandler
             return;
         }
 
-        if (ImguiHelpers.CSharpEnumCombo("Conversion mode", ref mode)) {
+        var mode_n = (int)mode;
+        if (ImguiHelpers.InlineRadioGroup(Enum.GetNames<ConversionMode>(), ConversionInts, ref mode_n)) {
             sourceChanged = true;
         }
-
+        mode = (ConversionMode)mode_n;
         if (sourceFolder == destinationFolder) {
             ImGui.TextColored(Colors.Warning, "The source and target folders should not be the same."u8);
             return;
         }
 
-        if (mode == ConversionMode.Select) return;
         if (mode == ConversionMode.Upgrade) {
+            ImGui.SameLine();
             ImGui.TextColored(Colors.Note, "Upgrade mode is intended for upgrading files from one version of a game to another (e.g. updating from a previous patch)."u8);
         }
         if (mode == ConversionMode.Conversion) {
+            ImGui.SameLine();
             ImGui.TextColored(Colors.Note, "Conversion mode is used to batch convert several files to a different file format."u8);
         }
 
@@ -114,7 +117,22 @@ public class FileConverter : BaseWindowHandler
             sourceChanged = false;
         }
 
-        var avail = ImGui.GetContentRegionAvail() - new Vector2(0, 32 * UI.UIScale + ImGui.GetStyle().FramePadding.Y);
+        using (var _ = ImguiHelpers.Disabled(!allConverterSettingsReady)) {
+            if (ImGui.Button(mode == ConversionMode.Conversion ? "Start conversion"u8 : "Start upgrade"u8)) {
+                AttemptConvert();
+            }
+            if (mode == ConversionMode.Upgrade) {
+                ImGui.SameLine();
+                if (ImGui.Button("Find Vanilla Changes"u8)) {
+                    CompareChangedFiles();
+                }
+            }
+            if (!allConverterSettingsReady) {
+                ImGui.SameLine();
+                ImGui.TextColored(Colors.Faded, "Ensure all the file format conversion settings are either fully configured or disabled");
+            }
+        }
+        var avail = ImGui.GetContentRegionAvail();
         if (!ImGui.BeginChild("FileList", avail)) {
             ImGui.EndChild();
             return;
@@ -243,17 +261,6 @@ public class FileConverter : BaseWindowHandler
             }
             return;
         }
-
-        using var _ = ImguiHelpers.Disabled(!allConverterSettingsReady);
-        if (ImGui.Button("Start conversion"u8)) {
-            AttemptUpgrade();
-        }
-        if (mode == ConversionMode.Upgrade) {
-            ImGui.SameLine();
-            if (ImGui.Button("Find Vanilla Changes"u8)) {
-                CompareChangedFiles();
-            }
-        }
     }
 
     private void CompareChangedFiles()
@@ -305,7 +312,7 @@ public class FileConverter : BaseWindowHandler
         }
     }
 
-    private void AttemptUpgrade()
+    private void AttemptConvert()
     {
         using var context = PrepareWorkspace();
 
@@ -568,9 +575,11 @@ public class FileConverter : BaseWindowHandler
                 }
             }
 
-            file.Save(context.updatedEnv, destinationPath);
-            Logger.Info($"Saved file {file.Filepath} to {destinationPath}");
-            return true;
+            if (file.Save(context.updatedEnv, destinationPath)) {
+                Logger.Info($"Saved file {file.Filepath} to {destinationPath}");
+                return true;
+            }
+            return false;
         }
     }
 
