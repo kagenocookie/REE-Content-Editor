@@ -108,7 +108,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
             var ext = ".mot." + (int)((mot as MotFile)?.Header.version ?? 0);
             PlatformUtils.ShowSaveFileDialog((path) => {
                 mot.WriteTo(path);
-            }, filter: new FileFilter("MOT file", ext));
+            }, filters: new FileFilter("MOT file", ext));
         }
 
         return false;

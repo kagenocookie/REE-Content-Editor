@@ -136,7 +136,7 @@ public class ResourcePathPicker : IObjectUIHandler
                 } else {
                     PlatformUtils.ShowSaveFileDialog(
                         initialFile: Path.GetFileName(resolvedPath),
-                        filter: [new FileFilter(PathUtils.ParseFileFormat(currentPath).format, currentPath)],
+                        filters: [new FileFilter(PathUtils.ParseFileFormat(currentPath).format, currentPath)],
                         callback: (outpath) => {
                             using var file = workspace.Env.FindSingleFile(resolvedPath);
                             using var outfs = File.Create(outpath);

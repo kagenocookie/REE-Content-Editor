@@ -70,37 +70,47 @@ public static class PlatformUtils
     /// <summary>
     /// Show a native file save dialog. The callback will be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
     /// </summary>
-    public static void ShowSaveFileDialog(Action<string> callback, string? initialFile = null, params FileFilter[] filter)
+    public static void ShowSaveFileDialog(Action<string> callback, string? initialFile = null, params FileFilter[] filters)
     {
+        var dir = !string.IsNullOrEmpty(initialFile) ? Path.GetDirectoryName(initialFile) : Environment.CurrentDirectory;
+        initialFile = Path.GetFileName(initialFile);
+
 #if WINDOWS
         var thread = new Thread(() => {
+            string? filterString = null;
+            if (filters.Length > 0) {
+                foreach (var filter in filters) {
+                    foreach (var ext in filter.extensions) {
+                        if (filterString != null) {
+                            filterString += "|";
+                        }
+                        filterString += $"{filter.name} (*.{ext})|*.{ext}";
+                    }
+                }
+            }
+            ContentEditor.App.Windows.PlatformUtils.ShowSaveFileDialog(callback, dir, initialFile, filterString);
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
 #else
         if (!MainLoop.IsMainThread) {
             MainLoop.Instance.InvokeFromUIThread(() => ShowSaveFileDialog(callback, initialFile));
             return;
         }
-#endif
-            using var selectFileDialog = new NativeFileDialog()
-                .SaveFile();
-            foreach (var (name, exts) in filter) {
-                foreach (var ext in exts) {
-                    selectFileDialog.AddFilter(name, ext);
-                }
+
+        using var selectFileDialog = new NativeFileDialog()
+            .SaveFile();
+        foreach (var (name, exts) in filters) {
+            foreach (var ext in exts) {
+                selectFileDialog.AddFilter(name, ext);
             }
+        }
 
-            var dir = !string.IsNullOrEmpty(initialFile) ? Path.GetDirectoryName(initialFile) : Environment.CurrentDirectory;
+        var result = selectFileDialog.Open(out string? output, dir, initialFile);
 
-            initialFile = Path.GetFileName(initialFile);
-
-            var result = selectFileDialog.Open(out string? output, dir, initialFile);
-
-            if (result == DialogResult.Okay && !string.IsNullOrEmpty(output)) {
-                callback.Invoke(output);
-            }
-#if WINDOWS
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
+        if (result == DialogResult.Okay && !string.IsNullOrEmpty(output)) {
+            callback.Invoke(output);
+        }
 #endif
     }
 

@@ -59,7 +59,7 @@ public class ThemeEditor : IWindowHandler
             Directory.CreateDirectory(themePath);
             PlatformUtils.ShowSaveFileDialog((path) => {
                 File.WriteAllText(path, themeData);
-            }, initialFile: Path.GetFullPath(Path.Combine(themePath, "custom_theme.theme.txt")), filter: FileFilters.ThemeFile);
+            }, initialFile: Path.GetFullPath(Path.Combine(themePath, "custom_theme.theme.txt")), filters: FileFilters.ThemeFile);
         }
         ImguiHelpers.Tooltip("Save");
         ImGui.SameLine();

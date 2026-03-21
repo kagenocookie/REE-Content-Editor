@@ -258,7 +258,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
                     } else {
                         outputTexture?.SaveAs(outpath);
                     }
-                }), filter: FileFilters.TextureFile);
+                }), filters: FileFilters.TextureFile);
             }
             ImGui.SameLine();
             var save2 = ImGui.Button("Convert ...");

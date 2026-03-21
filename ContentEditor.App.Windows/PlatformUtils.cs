@@ -66,6 +66,23 @@ public class PlatformUtils
 
     private static bool oleInitialized;
 
+    /// <summary>
+    /// Show a native file save dialog. The callback will be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
+    /// </summary>
+    public static void ShowSaveFileDialog(Action<string> callback, string? initialDir = null, string? initialFilename = null, string? extensionsFilter = null)
+    {
+        using var dialog = new SaveFileDialog() {
+            InitialDirectory = initialDir,
+            FileName = initialFilename,
+            Filter = extensionsFilter
+        };
+        var result = dialog.ShowDialog();
+
+        if (result == DialogResult.OK && !string.IsNullOrEmpty(dialog.FileName)) {
+            callback.Invoke(dialog.FileName);
+        }
+    }
+
     public static void InitDragDrop(IDragDropTarget target, IntPtr windowHandle)
     {
         // Note  If you use CoInitialize or CoInitializeEx instead of OleInitialize to initialize COM, RegisterDragDrop will always return an E_OUTOFMEMORY error.

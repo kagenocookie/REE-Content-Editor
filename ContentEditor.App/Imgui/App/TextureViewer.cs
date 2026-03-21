@@ -201,7 +201,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
 
                 PlatformUtils.ShowSaveFileDialog((file) => {
                     MainLoop.Instance.InvokeFromUIThread(() => SaveTextureToFile(file));
-                }, baseName.ToString(), filter: fileFilter);
+                }, baseName.ToString(), filters: fileFilter);
             }
             ImguiHelpers.Tooltip("Save As...");
 
