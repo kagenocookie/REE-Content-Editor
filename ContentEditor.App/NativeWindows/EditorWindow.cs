@@ -345,6 +345,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     if (ImGui.MenuItem("Open current Bundle folder")) {
                         FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
                     }
+                    if (ImGui.MenuItem("Recan Bundle Files")) {
+                        workspace.RescanFilesInBundle(workspace.CurrentBundle);
+                    }
                     if (ImGui.MenuItem("Publish Mod")) {
                         AddUniqueSubwindow(new ModPublisherWindow(workspace));
                     }
@@ -400,7 +403,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         AddSubwindow(new NameInputDialog("Bundle Creation", "Select name for the bundle to be created from the PAK file:\n" + pakPath,
             initialName, FilenameRegex(), this, name => Workspace.CreateBundleFromPAK(name, pakPath)));
     }
-
 
     protected virtual void OnFileOpen(Stream stream, string filename)
     {

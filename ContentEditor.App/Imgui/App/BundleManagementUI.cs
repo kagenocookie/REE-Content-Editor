@@ -200,7 +200,7 @@ public class BundleManagementUI : IWindowHandler
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, new[] { Colors.IconSecondary, Colors.IconPrimary })) {
             FileSystemUtils.ShowFileInExplorer(bundleManager.ResolveBundleLocalPath(bundle, ""));
         }
-        ImguiHelpers.Tooltip("Open current Bundle folder in File Explorer");
+        ImguiHelpers.Tooltip("Open Current Bundle folder in File Explorer");
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);

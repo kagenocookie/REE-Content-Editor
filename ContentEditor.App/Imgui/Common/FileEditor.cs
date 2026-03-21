@@ -173,7 +173,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                             }
                             workspace.BundleManager.SaveBundle(workspace.CurrentBundle);
                         }
-                        ImguiHelpers.Tooltip("Store in bundle\nFile is located in the bundle folder but is not marked as part of the bundle. This will store it into the bundle json.");
+                        ImguiHelpers.Tooltip("Store in bundle\nFile is located in the bundle folder but is not marked as part of the bundle. This will store the path into the bundle json.");
                     }
                 } else if (Handle.DiffHandler != null) {
                     ImGui.SameLine();

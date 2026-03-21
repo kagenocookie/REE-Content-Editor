@@ -393,6 +393,44 @@ public sealed class ContentWorkspace : IDisposable
         SetBundle(originalBundle?.Name);
     }
 
+    public void RescanFilesInBundle(Bundle bundle)
+    {
+        var folder = BundleManager.GetBundleFolder(bundle);
+        var filesAdded = false;
+        foreach (var file in Directory.EnumerateFiles(folder, "*.*", SearchOption.AllDirectories)) {
+            var localPath = Path.GetRelativePath(folder, file).Replace('\\', '/');
+            if (!bundle.TryFindResourceByLocalPath(localPath, out var item)) {
+                var format = PathUtils.ParseFileFormat(localPath);
+                if (format.format != KnownFileFormats.Unknown) {
+                    Logger.Info($"Found new file in active bundle {localPath}, adding to bundle");
+                    if (ResourceManager.TryForceLoadFile(file, out var handle)) {
+                        handle.Dispose();
+                        bundle.AddResource(localPath, PathUtils.GetNativeFromFullFilepath(localPath) ?? Env.PrependBasePath(localPath), true);
+                        filesAdded = true;
+                    } else {
+                        Logger.Warn($"Unable to open new bundle file {localPath}, ignoring");
+                    }
+                }
+            }
+        }
+
+        var filesMissing = false;
+        foreach (var entry in bundle.ResourceListing ?? []) {
+            var fullPath = Path.Combine(folder, entry.Key);
+            if (!File.Exists(fullPath)) {
+                Logger.Warn($"File {entry.Key} is missing from the bundle folder and may have been deleted or moved manually. If this was intended, you can delete it properly from the bundle manager.");
+                filesMissing = true;
+            }
+        }
+
+        if (filesAdded) {
+            BundleManager.SaveBundle(bundle);
+        }
+        if (!filesAdded && !filesMissing) {
+            Logger.Info("No files seem to have been added to or removed from the bundle folder.");
+        }
+    }
+
     public override string ToString() => Data.Name ?? "New Workspace";
 
     public void Dispose()
