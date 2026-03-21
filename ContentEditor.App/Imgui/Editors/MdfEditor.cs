@@ -465,7 +465,7 @@ public class MatHeaderImguiHandler : IObjectUIHandler
             context.AddChildContextSetter<MaterialHeader, string>(
                 "MMTR path",
                 tex,
-                new ResourcePathPicker(ws, KnownFileFormats.MasterMaterial) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefaultNoConfirm },
+                new ResourcePathPicker(ws, KnownFileFormats.MasterMaterial) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefault },
                 (p) => p!.mmtrPath,
                 (c, p, v) => {
                     p.mmtrPath = v;
