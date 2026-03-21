@@ -323,7 +323,7 @@ public partial class CommonMeshResource : IResourceFile
             int subId = 0;
             foreach (var sub in mesh.Submeshes) {
                 var aiMesh = new Mesh(PrimitiveType.Triangle);
-                var matName = file.MaterialNames[sub.materialIndex];
+                var matName = file.MaterialNames.ElementAtOrDefault(sub.materialIndex) ?? "NO_MATERIAL";
                 var matIndex = scene.Materials.FindIndex(mat => mat.Name == matName);
                 if (matIndex == -1) {
                     matIndex = scene.Materials.Count;
