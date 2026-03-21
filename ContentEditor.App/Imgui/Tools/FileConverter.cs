@@ -151,6 +151,7 @@ public class FileConverter : BaseWindowHandler
                         } else {
                             atLeastOneReady = true;
                         }
+                        ImGui.Separator();
                         ImGui.Spacing();
                     }
 
@@ -391,8 +392,14 @@ public class FileConverter : BaseWindowHandler
     private class TexConverter : FileConversionHandler
     {
         private string? exportFormat;
-        private bool compressTextures = true;
+        private DxgiFormat dxgiFormat = DxgiFormat.BC7_UNORM;
         private bool generateMips = true;
+        private bool autoSrgb = true;
+        private string dxgiFilter = "";
+
+        public override string? Label => "Textures";
+        private static DxgiFormat[] PrioritizedFormatList = Enum.GetValues<DxgiFormat>().OrderBy(d => (uint)TextureViewer.DxgiFormats.IndexOf(d)).ToArray();
+        private static string[] PrioritizedFormatStrings = PrioritizedFormatList.Select(s => s.ToString()).ToArray();
 
         private static readonly string[] ImageExtensions = { ".PNG", ".TGA", ".DDS" };
         private static readonly string[] ImageExtensions2 = { "png", "tga" };
@@ -407,16 +414,24 @@ public class FileConverter : BaseWindowHandler
             ImGui.SameLine();
             var allext = mode == ConversionMode.Conversion ? AllVersionsInclExportsExt : TexFile.AllVersionConfigsWithExtension;
             var all = mode == ConversionMode.Conversion ? AllVersionsInclExports : TexFile.AllVersionConfigs;
-            ImGui.SetNextItemWidth(ImGui.CalcItemWidth() / 2);
+            ImGui.SetNextItemWidth(Math.Max(ImGui.CalcItemWidth() / 2, ImGui.CalcTextSize("RE9/Pragmata (.tex.2508131343) ____"u8).X));
             ImguiHelpers.ValueCombo("Target format", allext, all, ref exportFormat);
-            if (mode == ConversionMode.Conversion && SourceFormats.Any(f => f.extension.Equals("png", StringComparison.OrdinalIgnoreCase) || f.extension.Equals("tga", StringComparison.OrdinalIgnoreCase))) {
-                ImGui.SameLine();
-                ImGui.Checkbox("Compress (BC7)", ref compressTextures);
-                ImguiHelpers.Tooltip("Only used for PNG/TGA source files");
-                ImGui.SameLine();
+            if (mode == ConversionMode.Conversion && SourceFormats.Any(f => f.extension.Equals("png", StringComparison.OrdinalIgnoreCase) || f.extension.Equals("tga", StringComparison.OrdinalIgnoreCase)) && exportFormat != "png" && exportFormat != "tga") {
+                ImGui.Indent(8);
                 ImGui.Checkbox("Generate MipMaps", ref generateMips);
                 ImguiHelpers.Tooltip("Only used for PNG/TGA source files");
+
+                ImGui.SameLine();
+                ImGui.Checkbox("Automatically determine sRGB mode", ref autoSrgb);
+                ImguiHelpers.Tooltip("sRGB or non-sRGB will be guessed and swapped automatically per file based on the file name.\nOnly used for PNG/TGA source files.");
+
+                ImGui.SameLine();
+                ImGui.SetNextItemWidth(Math.Max(ImGui.CalcItemWidth() / 2, ImGui.CalcTextSize("BC7_UNORM_SRGB"u8).X));
+                ImguiHelpers.FilterableCombo("DXGI format", PrioritizedFormatStrings, PrioritizedFormatList, ref dxgiFormat, ref dxgiFilter);
+                ImguiHelpers.Tooltip("Only used for PNG/TGA source files");
+                ImGui.Unindent(8);
             }
+
             return !string.IsNullOrEmpty(exportFormat);
         }
 
@@ -472,7 +487,9 @@ public class FileConverter : BaseWindowHandler
                     void SaveDDS(DDSFile newDds)
                     {
                         if (exportFormat == "dds") {
-                            newDds.SaveAs(destinationPath);
+                            using var fs = File.Create(destinationPath);
+                            newDds.FileHandler.Seek(0);
+                            newDds.FileHandler.Stream.CopyTo(fs);
                         } else {
                             var tex = new TexFile(new FileHandler());
                             tex.ChangeVersion(exportFormat);
@@ -492,11 +509,20 @@ public class FileConverter : BaseWindowHandler
                         return true;
                     }
 
-                    using var texture = new Texture().LoadFromFile(file);
+                    var isSrgb = autoSrgb ? Texture.GuessIsSrgbFromFilename(file.Filepath) : dxgiFormat.IsSRGB();
+                    using var texture = new Texture().LoadFromFile(file, isSrgb);
                     var ops = new List<TextureConversionTask.TextureOperation>();
-                    if (compressTextures) {
-                        var fmt = texture.Format.IsSRGB() ? DxgiFormat.BC7_UNORM_SRGB : DxgiFormat.BC7_UNORM;
-                        ops.Add(new TextureConversionTask.ChangeFormat(fmt));
+                    if (dxgiFormat is not DxgiFormat.R8G8B8A8_UNORM and not DxgiFormat.R8G8B8A8_UNORM_SRGB) {
+                        var targetFormat = dxgiFormat;
+                        if (autoSrgb && isSrgb != dxgiFormat.IsSRGB()) {
+                            var correctedSrgbFormat = isSrgb ? targetFormat.ToString() + "_SRGB" : targetFormat.ToString().Replace("_SRGB", "");
+                            if (!Enum.TryParse<DxgiFormat>(correctedSrgbFormat, out targetFormat)) {
+                                targetFormat = dxgiFormat; // fall back to the current value on failure
+                            }
+                        }
+                        if (targetFormat != texture.Format) {
+                            ops.Add(new TextureConversionTask.ChangeFormat(targetFormat));
+                        }
                     }
                     if (generateMips) {
                         ops.Add(new TextureConversionTask.GenerateMipMaps());
