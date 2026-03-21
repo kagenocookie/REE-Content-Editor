@@ -219,7 +219,7 @@ public class BundleManager
 
     public string ResolveBundleLocalPath(Bundle bundle, string localPath)
     {
-        return Path.Combine(AppBundlePath, bundle.Name, localPath);
+        return Path.Combine(AppBundlePath, bundle.Name, localPath).Replace('\\', '/');
     }
 
     public bool IsBundleActive(Bundle bundle)

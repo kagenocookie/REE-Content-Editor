@@ -797,7 +797,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         filepath = filepath.NormalizeFilepath();
         filepath = workspace.Env.PrependBasePath(filepath);
         if (activeBundle?.ResourceListing != null && Path.IsPathFullyQualified(filepath) && filepath.StartsWith(workspace.BundleManager.GetBundleFolder(activeBundle), StringComparison.InvariantCultureIgnoreCase)) {
-            var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(activeBundle), filepath);
+            var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(activeBundle), filepath).Replace('\\', '/');
             if (activeBundle.ResourceListing.TryGetValue(localPath, out var resourceList)) {
                 return resourceList.Target;
             }
