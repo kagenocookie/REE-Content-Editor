@@ -92,7 +92,7 @@ At the moment, you'd have to build it yourself. Follow the development setup ins
 <a id="entities"></a>
 ## Custom entity support
 
-Accessible under the Windows > Entities menu option for supported games, these are streamlined editors for game-specific data. They can be used to more easily modify or add custom items and other game content related objects. YAML configuration file example [hese](https://github.com/kagenocookie/REE-Content-Editor/blob/master/configs/dd2/definitions/items.yaml).
+Accessible under the Windows > Entities menu option for supported games, these are streamlined editors for game-specific data. They can be used to more easily modify or add custom items and other game content related objects. YAML configuration file example [here](https://github.com/kagenocookie/REE-Content-Editor/blob/master/configs/dd2/definitions/items.yaml).
 
 ## Game-specific additional support
 
