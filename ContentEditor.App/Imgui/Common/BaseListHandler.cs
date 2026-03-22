@@ -33,7 +33,7 @@ public class BaseListHandler : IObjectUIHandler
         return false;
     }
 
-    public void OnIMGUI(UIContext context)
+    public virtual void OnIMGUI(UIContext context)
     {
         var list = context.Get<IList>();
         if (list == null) {

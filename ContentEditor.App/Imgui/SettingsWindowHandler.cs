@@ -235,7 +235,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ShowFolderSetting(config.ResourcesFilepath, "Resource data storage path", "The folder to use for storing the auto-downloaded game specific resource files.");
         ShowFolderSetting(config.CacheFilepath, "Cache file path", "The folder to use for general file caching. Must not be empty.");
         ShowFolderSetting(config.ThumbnailCacheFilepath, "Thumbnail cache file path", "The folder that cached thumbnails should be stored in. Must not be empty.");
-        ShowFolderSetting(config.BookmarksFilepath, "Bookmarks file path", "The folder in which user created bookmarks should be stored. Must not be empty.");
+        ShowFolderSetting(config.BookmarksFilepath, "User data file path", "The folder in which user created bookmarks and other data should be stored. Must not be empty.");
         ShowSlider(config.UnpackMaxThreads, "Max unpack threads", 1, 64, "The maximum number of threads to be used when unpacking.\nThe actual thread count is determined automatically by the .NET runtime.");
 
         ShowSetting(config.DisableFileCloseWarning, "Disable Open File Warning When Closing Editor Windows", "Whether to disable the warning notifiation when a window is closed that references an open file.");

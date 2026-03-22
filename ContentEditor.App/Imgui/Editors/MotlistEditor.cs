@@ -796,6 +796,35 @@ public class MotFileListHandler : ListHandler
         Filterable = true;
     }
 
+    private MotBatchTransfer? batchTransfer;
+
+    protected override bool ShowContextMenuItems(UIContext context)
+    {
+        if (base.ShowContextMenuItems(context)) {
+            return true;
+        }
+
+        static MotlistFileBase? FindMotlist(UIContext ctx) => ctx.FindHandlerInParents<MotlistEditor>()?.File as MotlistFileBase ?? ctx.FindHandlerInParents<MotionCamListEditor>()?.File;
+
+        if (ImGui.Selectable("Batch copy")) {
+            var listRef = FindMotlist(context);
+            if (listRef == null) throw new NullReferenceException("Missing motlist file parent");
+            VirtualClipboard.CopyToClipboard(listRef);
+        }
+
+        if (VirtualClipboard.TryGetFromClipboard<MotlistFileBase>(out var list) && ImGui.Selectable("Batch paste")) {
+            batchTransfer = new MotBatchTransfer(context.GetWorkspace()!, list, FindMotlist(context) ?? throw new NullReferenceException("Missing motlist file parent"), context.GetEditor()!.Handle);
+        }
+
+        return false;
+    }
+
+    public override void OnIMGUI(UIContext context)
+    {
+        base.OnIMGUI(context);
+        batchTransfer?.ShowPopup(ref batchTransfer);
+    }
+
     static MotFileListHandler()
     {
         WindowHandlerFactory.DefineInstantiator<MotFile>((context) => {

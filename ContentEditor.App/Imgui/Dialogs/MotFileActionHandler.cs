@@ -150,7 +150,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
             if (!hasShown) {
                 hasShown = true;
                 LoadConfigs();
-                ImGui.OpenPopup(MotlistRetargetWindow.WindowName);
+                ImGui.OpenPopup(WindowName);
             }
 
             var keepShowing = true;
@@ -318,7 +318,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
         }
     }
 
-    private static void ConfirmPaste(MotlistFile motlist, MotFileBase prevMot, MotFileBase newMot, MotlistEditor? editor, bool replaceBoneList, bool maintainExistingChannelsOnly)
+    internal static void ConfirmPaste(MotlistFile motlist, MotFileBase prevMot, MotFileBase newMot, MotlistEditor? editor, bool replaceBoneList, bool maintainExistingChannelsOnly)
     {
         if (prevMot.GetType() != newMot.GetType()) {
             // fully replace instance
@@ -346,7 +346,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                 editor.RefreshUI();
             }
         } else {
-            Logger.Error("Unsupported mot type");
+            Logger.Error($"Mot types {prevMot.GetType().Name} and {newMot.GetType().Name} unsupported for paste");
         }
     }
 }

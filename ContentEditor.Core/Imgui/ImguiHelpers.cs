@@ -247,7 +247,7 @@ public static class ImguiHelpers
         var open = true;
         ImGui.Begin(name ?? data.Name ?? $"{data.Handler}##{data.ID}", ref open, flags);
         if (data.Context != null) {
-            data.Context.StateBool = ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows);
+            data.Context.StateBool = ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows|ImGuiFocusedFlags.NoPopupHierarchy);
         }
         data.Size = ImGui.GetWindowSize();
         data.Position = ImGui.GetWindowPos();

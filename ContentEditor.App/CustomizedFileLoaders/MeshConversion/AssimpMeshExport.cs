@@ -161,7 +161,7 @@ public partial class CommonMeshResource : IResourceFile
         scene.Animations.Add(anim);
     }
 
-    private static Assimp.Scene AddMeshToScene(Assimp.Scene scene, MeshFile file, string rootName, bool isGltf, bool includeAllLods, bool includeShadows, bool includeOcclusion, FbxSkelFile? skeleton)
+    internal static Assimp.Scene AddMeshToScene(Assimp.Scene scene, MeshFile file, string rootName, bool isGltf, bool includeAllLods, bool includeShadows, bool includeOcclusion, FbxSkelFile? skeleton, Matrix4x4 transform = default)
     {
         // NOTE: every matrix needs to be transposed, assimp expects them transposed compared to default System.Numeric.Matrix4x4 for some shit ass reason
         // NOTE2: assimp currently forces vert deduplication for gltf export so we may lose some vertices (https://github.com/assimp/assimp/issues/6349)
@@ -169,6 +169,7 @@ public partial class CommonMeshResource : IResourceFile
         // we'd either need access to assimp's Exporter class directly, or have the ExportFile method modified on the assimp side
 
         var scale = GetExportScale(isGltf ? "glb": "fbx");
+        if (transform == default) transform = Matrix4x4.Identity;
 
         scene.RootNode ??= new Node(rootName);
         var matIndexOffset = scene.Materials.Count;
@@ -290,30 +291,39 @@ public partial class CommonMeshResource : IResourceFile
             for (int i = 0; i < file.MeshData.LODs.Count; i++) {
                 var lod = file.MeshData.LODs[i];
                 if (i == 0) {
-                    ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, includeAllLods ? $"{rootName}_lod0_" : $"{rootName}_", extraBones, matIndexOffset);
+                    ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, includeAllLods ? $"{rootName}_lod0_" : $"{rootName}_", extraBones, matIndexOffset, transform);
                     if (!includeAllLods) break;
                 } else {
-                    ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, $"{rootName}_lod{i}_", extraBones, matIndexOffset);
+                    ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, $"{rootName}_lod{i}_", extraBones, matIndexOffset, transform);
                 }
             }
         }
         if (includeShadows && file.ShadowMesh != null) {
             for (int i = 0; i < file.ShadowMesh.LODs.Count; i++) {
                 var lod = file.ShadowMesh.LODs[i];
-                ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, $"{rootName}_shadow_lod{i}_", extraBones, matIndexOffset);
+                ExportLod(file, isGltf, scene, bones, includeShapeKeys, lod, $"{rootName}_shadow_lod{i}_", extraBones, matIndexOffset, transform);
             }
         }
         if (includeOcclusion && file.OccluderMesh != null) {
             if (scene.MaterialCount == 0) {
                 scene.Materials.Add(new Material() { Name = "default" });
             }
-            ExportLod(file, isGltf, scene, bones, includeShapeKeys, file.OccluderMesh, $"{rootName}_occ_", extraBones, matIndexOffset);
+            ExportLod(file, isGltf, scene, bones, includeShapeKeys, file.OccluderMesh, $"{rootName}_occ_", extraBones, matIndexOffset, transform);
         }
 
         return scene;
     }
 
-    private static void ExportLod(MeshFile file, bool isGltf, Assimp.Scene scene, List<MeshBone>? bones, bool includeShapeKeys, MeshLOD lod, string namePrefix, List<Node> extraBones, int matIndexOffset)
+    private static void ExportLod(MeshFile file,
+        bool isGltf,
+        Assimp.Scene scene,
+        List<MeshBone>? bones,
+        bool includeShapeKeys,
+        MeshLOD lod,
+        string namePrefix,
+        List<Node> extraBones,
+        int matIndexOffset,
+        Matrix4x4 transform)
     {
         var scale = GetExportScale(isGltf ? "glb": "fbx");
         var identity = GetScaledMatrix(Matrix4x4.Identity, scale);
@@ -473,6 +483,7 @@ public partial class CommonMeshResource : IResourceFile
 
                 // each submesh needs to have a unique node so they don't get merged together
                 var meshNode = new Node($"{namePrefix}Group_{mesh.groupId.ToString(CultureInfo.InvariantCulture)}_sub{subId++}__{matName}", scene.RootNode);
+                meshNode.Transform = transform;
                 scene.RootNode.Children.Add(meshNode);
                 aiMesh.Name = meshNode.Name;
                 meshNode.MeshIndices.Add(scene.Meshes.Count);

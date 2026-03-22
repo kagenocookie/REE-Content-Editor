@@ -16,6 +16,13 @@ public static class UIContextExtensions
         return context.root.Cast<IWorkspaceContainer>()?.Workspace ?? context.root.Cast<ContentWorkspace>();
     }
 
+    public static FileEditor? GetEditor(this UIContext context) => GetEditor<FileEditor>(context);
+
+    public static FileEditor? GetEditor<T>(this UIContext context) where T : FileEditor
+    {
+        return context.FindHandlerInParents<T>();
+    }
+
     public static IRectWindow? GetWindow(this UIContext context)
     {
         return context.Cast<IRectWindow>() ?? context.parent?.GetWindow() ?? EditorWindow.CurrentWindow;
