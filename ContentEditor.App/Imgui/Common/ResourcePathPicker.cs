@@ -253,7 +253,7 @@ public class ResourcePathPicker : IObjectUIHandler
         });
     }
 
-    public static void SaveFileToBundle(ContentWorkspace workspace, FileHandle file, BundleSaveFileCallback saveCallback)
+    public static void SaveFileToBundle(ContentWorkspace workspace, FileHandle file, BundleSaveFileCallback saveCallback, bool closeFile = true)
     {
         var bundle = workspace.CurrentBundle;
         if (bundle == null) {
@@ -310,7 +310,7 @@ public class ResourcePathPicker : IObjectUIHandler
             }
 
             workspace.BundleManager.SaveBundle(bundle);
-            if (file.HandleType is FileHandleType.Memory or FileHandleType.LooseFile) {
+            if (closeFile && file.References.Count == 0) {
                 workspace.ResourceManager.CloseFile(file);
             }
         }, suggestedSavePath);

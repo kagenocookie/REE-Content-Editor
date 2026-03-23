@@ -151,7 +151,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                     if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveTo, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
                         ResourcePathPicker.SaveFileToBundle(workspace, Handle, (savePath, localPath, nativePath) => {
                             return SaveTo(savePath, true, nativePath: nativePath);
-                        });
+                        }, closeFile: false);
                     }
                     ImguiHelpers.Tooltip("Save to Bundle");
                 } else if (workspace.CurrentBundle.ResourceListing == null || !workspace.CurrentBundle.TryFindResourceListing(Handle.NativePath ?? "", out var resourceListing)) {
