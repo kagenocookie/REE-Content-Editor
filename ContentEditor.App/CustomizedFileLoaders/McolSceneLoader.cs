@@ -18,9 +18,8 @@ public class McolSceneLoader : McolFileLoader,
     {
         var mcol = handle.GetFile<McolFile>();
         var scene = McolEditor.GetMeshScene(mcol.bvh);
-        if (scene == null) {
-            scene = new Assimp.Scene();
-        }
+        scene ??= new Assimp.Scene();
+        scene.RootNode ??= new Assimp.Node(handle.Filename.ToString());
         return new CommonMeshResource(PathUtils.GetFilepathWithoutExtensionOrVersion(handle.Filename).ToString(), null!) { Scene = scene };
     }
 }
