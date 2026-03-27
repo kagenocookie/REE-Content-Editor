@@ -103,6 +103,9 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
         if (scene == null) {
             scene = window?.SceneManager.CreateScene(Handle, ParentEditor?.scene?.IsActive ?? false, ParentEditor?.scene, root);
             if (Logger.ErrorIf(scene == null, "Failed to create new scene")) return null;
+            if (window?.SceneManager.HasActiveMasterScene == false) {
+                window.SceneManager.ChangeMasterScene(scene);
+            }
         }
         return scene;
     }

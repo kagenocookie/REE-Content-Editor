@@ -18,6 +18,8 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
     public Scene? ActiveMasterScene => RootMasterScenes.FirstOrDefault(sc => sc.IsActive);
     public IEnumerable<Scene> RootScenes => rootScenes;
 
+    public event Action<Scene?>? MasterSceneChanged;
+
     public Scene CreateScene(FileHandle sourceFile, bool render, Scene? parentScene = null, Folder? rootFolder = null)
     {
         return CreateScene(sourceFile.Filepath, sourceFile.InternalPath ?? sourceFile.Filepath, render, parentScene, rootFolder);
@@ -119,6 +121,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
         }
 
         scene?.SetActive(true);
+        MasterSceneChanged?.Invoke(scene);
     }
 
     private void ClearScenes()

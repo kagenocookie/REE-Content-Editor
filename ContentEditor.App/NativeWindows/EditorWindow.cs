@@ -65,6 +65,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         this.workspace = workspace;
         env = workspace?.Env;
         SceneManager = new(this);
+        SceneManager.MasterSceneChanged += SetupSceneRender;
     }
 
     public void SetWorkspace(GameIdentifier game, string? bundle) => SetWorkspace(game, bundle, false);
@@ -740,7 +741,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     var scene = SceneManager.CreateScene(file, true, null, root);
                     EditorWindow.CurrentWindow?.AddFileEditor(file);
                     SceneManager.ChangeMasterScene(scene);
-                    SetupSceneRender(scene);
                 }
             }
             if (SceneManager.RootMasterScenes.Any()) ImGui.Separator();
@@ -755,7 +755,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 } else {
                     if (ImGui.MenuItem(scene.Name)) {
                         SceneManager.ChangeMasterScene(scene);
-                        SetupSceneRender(scene);
                     }
                 }
             }
@@ -774,8 +773,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         ImGui.EndMainMenuBar();
     }
 
-    private void SetupSceneRender(Scene scene)
+    private void SetupSceneRender(Scene? scene)
     {
+        if (scene == null) {
+            return;
+        }
+
         scene.Controller.Keyboard = _inputContext.Keyboards[0];
         scene.Controller.MoveSpeed = AppConfig.Settings.SceneView.MoveSpeed;
         scene.AddWidget<SceneVisibilitySettings>();

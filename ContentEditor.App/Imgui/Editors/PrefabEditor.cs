@@ -102,6 +102,9 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
             scene = window?.SceneManager.CreateScene(Handle, false, ((ISceneEditor)this).GetRootScene(context));
             if (Logger.ErrorIf(scene == null, "Failed to create new scene")) return null;
             scene.Add(root);
+            if (window?.SceneManager.HasActiveMasterScene == false) {
+                window.SceneManager.ChangeMasterScene(scene);
+            }
         }
         return scene;
     }
