@@ -37,6 +37,13 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
     protected UIContext context = null!;
 
     private ContentWorkspace workspace = null!;
+    private float zoom = 1.0f;
+    private Vector2 pan = Vector2.Zero;
+    private bool isDragging = false;
+    private const float minZoom = 0.1f;
+    private const float maxZoom = 20.0f;
+    private bool isFitToWindow = true;
+
     private FormatPreset selectedFormatPreset;
 
     private string? lastImportSourcePath;
@@ -156,7 +163,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
             ImGui.SetNextWindowSize(new Vector2(texture.Width, texture.Height + ImGui.GetFrameHeight()));
         }
         var filename = fileHandle != null ? PathUtils.GetFilepathWithNormalExtensionOnly(fileHandle.Filename) : Path.GetFileName(texturePath.AsSpan());
-        if (!ImguiHelpers.BeginWindow(data, $"Tex: {filename}###Tex_{data.ID}", ImGuiWindowFlags.MenuBar)) {
+        if (!ImguiHelpers.BeginWindow(data, $"Tex: {filename}###Tex_{data.ID}", ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)) {
             EditorWindow.CurrentWindow?.CloseSubwindow(data);
             return;
         }
@@ -177,174 +184,10 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
             this.SetImageSource(texturePath);
         }
 
-        if (texture != null) {
-            using (var _ = ImguiHelpers.Disabled(fileHandle?.Modified != true || !File.Exists(texturePath))) {
-                if (ImGui.Button($"{AppIcons.SI_Save}")) {
-                    if (fileHandle!.Loader is TextureLoader) {
-                        fileHandle.Save(workspace);
-                    } else {
-                        texture.SaveAs(texturePath!);
-                    }
-                    fileHandle.Modified = false;
-                }
-                ImguiHelpers.Tooltip("Save");
-            }
-            ImGui.SameLine();
-
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_SaveAs, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary })) {
-                var baseName = PathUtils.GetFilepathWithoutExtensionOrVersion(texturePath ?? texture.Path);
-                var fileFilter = FileFilters.TextureFile;
-                var currentTexExt = fileHandle?.Loader is TextureLoader ? PathUtils.GetFilenameExtensionWithSuffixes(texture.Path).ToString() : null;
-                if (!string.IsNullOrEmpty(currentTexExt)) {
-                    fileFilter = fileFilter.Append(new FileFilter("TEX", $"{currentTexExt}")).ToArray();
-                }
-
-                PlatformUtils.ShowSaveFileDialog((file) => {
-                    MainLoop.Instance.InvokeFromUIThread(() => SaveTextureToFile(file));
-                }, baseName.ToString(), filters: fileFilter);
-            }
-            ImguiHelpers.Tooltip("Save As...");
-
-            ImGui.SameLine();
-            using (var _ = ImguiHelpers.Disabled(fileHandle?.Modified != true || !File.Exists(texturePath))) {
-                if (ImGui.Button($"{AppIcons.SI_Reset}")) {
-                    fileHandle!.Stream.Dispose();
-                    fileHandle.Stream = File.OpenRead(texturePath!).ToMemoryStream();
-                    if (fileHandle.Loader is TextureLoader) {
-                        fileHandle.GetFile<TexFile>().FileHandler = new FileHandler(fileHandle.Stream, fileHandle.Filepath);
-                    } else if (fileHandle.Resource is BaseFileResource<DDSFile> dds) {
-                        dds.File.FileHandler = new FileHandler(fileHandle.Stream, fileHandle.Filepath);
-                    }
-                    fileHandle.Revert(workspace);
-                    SetImageSource(fileHandle);
-                }
-                ImguiHelpers.Tooltip("Revert");
-            }
-
-            ImGui.SameLine();
-            ImguiHelpers.VerticalSeparator();
-            ImGui.SameLine();
-            if (ImGui.Button($"{AppIcons.SI_FileSource}") && texture.Path != null) {
-                EditorWindow.CurrentWindow?.CopyToClipboard(texture.Path);
-            }
-            ImguiHelpers.Tooltip($"{texture.Path}");
-            ImGui.SameLine();
-            ImguiHelpers.VerticalSeparator();
-            ImGui.SameLine();
-            ImGui.Text($"Size: {texture.Width} x {texture.Height}");
-            ImGui.SameLine();
-            ImguiHelpers.VerticalSeparator();
-            ImGui.SameLine();
-            ImGui.Text($"Format: {texture.Format}");
-
-            if (!colorSpaceIsKnown) {
-                ImGui.SameLine();
-                if (ImGui.Button($"{AppIcons.SI_UpdateTexture}")) {
-                    var isSrgb = texture.Format.IsSRGB();
-                    if (fileHandle != null) {
-                        SetImageSource(fileHandle, !isSrgb);
-                    } else {
-                        SetImageSource(texture.Path!, !isSrgb);
-                    }
-                    SetFormatPreset(Presets.First(p => p.format.IsSRGB() == texture.Format.IsSRGB()));
-                    showColorSpaceHint = false;
-                }
-                ImguiHelpers.Tooltip("Swap color space\nThis is used to determine whether your source image should be treated as a color or a non-color texture for most conversion operations.\nGenerally albedo and UI textures should be sRGB while everything else should NOT be sRGB.");
-                if (showColorSpaceHint) {
-                    ImGui.SameLine();
-                    ImGui.TextColored(Colors.Info, "Color space was automatically guessed based on the file name."u8);
-                }
-            }
-            ImGui.Text("Channels:");
-            ImGui.SameLine();
-            if (ImGui.RadioButton("RGBA", currentChannel == TextureChannel.RGBA)) {
-                currentChannel = TextureChannel.RGBA;
-                texture.SetChannel(currentChannel);
-            }
-            ImGui.SameLine();
-
-            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0.3f, 0.3f, 0.3f, 1f));
-            ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, new Vector4(0.5f, 0.5f, 0.5f, 1f));
-            ImGui.PushStyleColor(ImGuiCol.CheckMark, new Vector4(1f, 1f, 1f, 1f));
-            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.8f, 0.8f, 0.8f, 1f));
-            if (ImGui.RadioButton("RGB", currentChannel == TextureChannel.RGB)) {
-                currentChannel = TextureChannel.RGB;
-                texture.SetChannel(currentChannel);
-            }
-            ImGui.PopStyleColor(4);
-            ImGui.SameLine();
-
-            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0.3f, 0f, 0f, 1f));
-            ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, new Vector4(0.6f, 0f, 0f, 1f));
-            ImGui.PushStyleColor(ImGuiCol.CheckMark, new Vector4(1f, 0f, 0f, 1f));
-            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1f, 0f, 0f, 1f));
-            if (ImGui.RadioButton("R", currentChannel == TextureChannel.Red)) {
-                currentChannel = TextureChannel.Red;
-                texture.SetChannel(currentChannel);
-            }
-            ImGui.PopStyleColor(4);
-            ImGui.SameLine();
-
-            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0f, 0.3f, 0f, 1f));
-            ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, new Vector4(0f, 0.6f, 0f, 1f));
-            ImGui.PushStyleColor(ImGuiCol.CheckMark, new Vector4(0f, 1f, 0f, 1f));
-            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0f, 1f, 0f, 1f));
-            if (ImGui.RadioButton("G", currentChannel == TextureChannel.Green)) {
-                currentChannel = TextureChannel.Green;
-                texture.SetChannel(currentChannel);
-            }
-            ImGui.PopStyleColor(4);
-            ImGui.SameLine();
-
-            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0f, 0f, 0.4f, 1f));
-            ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, new Vector4(0f, 0f, 0.6f, 1f));
-            ImGui.PushStyleColor(ImGuiCol.CheckMark, new Vector4(0f, 0.5f, 1f, 1f));
-            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0f, 0.5f, 1f, 1f));
-            if (ImGui.RadioButton("B", currentChannel == TextureChannel.Blue)) {
-                currentChannel = TextureChannel.Blue;
-                texture.SetChannel(currentChannel);
-            }
-            ImGui.PopStyleColor(4);
-            ImGui.SameLine();
-
-            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0.2f, 0.2f, 0.3f, 1f));
-            ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, new Vector4(0.4f, 0.4f, 0.6f, 1f));
-            ImGui.PushStyleColor(ImGuiCol.CheckMark, new Vector4(0.8f, 0.8f, 0.9f, 1f));
-            if (ImGui.RadioButton("A", currentChannel == TextureChannel.Alpha)) {
-                currentChannel = TextureChannel.Alpha;
-                texture.SetChannel(currentChannel);
-            }
-            ImGui.PopStyleColor(3);
-            ImGui.SameLine();
-            if (texture.Path != null) {
-                string suffix = GetTextureTypeSuffix(texture.Path);
-                bool isKnownTextureType = ShowTextureTypeUI(suffix, previewOnly: true);
-                using (var _ = ImguiHelpers.Disabled(!isKnownTextureType)) {
-                    if (ImGui.Button("Channel Breakdown")) {
-                        ImGui.OpenPopup("ChannelBreakdownPopup");
-                    }
-                }
-                if (isKnownTextureType && ImGui.BeginPopup("ChannelBreakdownPopup")) {
-                    ShowTextureTypeUI(suffix, previewOnly: false);
-                    ImGui.EndPopup();
-                }
-            }
-            ImGui.Separator();
-            ImGui.Spacing();
-
-            Vector2 tabPadding = new Vector2(10, 10);
-            Vector2 tabSize = ImGui.GetContentRegionAvail() - tabPadding * 2;
-            Vector2 size;
-            float tabSpace = tabSize.X / tabSize.Y;
-            float texSize = (float)texture.Width / texture.Height;
-
-            if (texSize > tabSpace) {
-                size = new Vector2(tabSize.X, tabSize.X / texSize);
-            } else {
-                size = new Vector2(tabSize.Y * texSize, tabSize.Y);
-            }
-            ImGui.Image(texture.AsTextureRef(), size);
-        }
+        ShowToolbar();
+        ImGui.Separator();
+        ImGui.Spacing();
+        ShowTexture();
     }
 
     private void ShowMenu()
@@ -561,6 +404,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
         path = path.Substring(lastUnderscoreIDX + 1, firstDotIDX - lastUnderscoreIDX - 1);
         return path;
     }
+
     public static Dictionary<string, string> TextureTypeNames = new Dictionary<string, string>() {
         { "ALBD", "ALBD - AlbedoDielectric" },
         { "ALBM", "ALBM - AlbedoMetallic" },
@@ -643,6 +487,218 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
     }
 
     private static bool IsDDSLike(ReadOnlySpan<char> filepath) => Path.GetExtension(filepath).Equals(".dds", StringComparison.OrdinalIgnoreCase) || PathUtils.ParseFileFormat(filepath).format == KnownFileFormats.Texture;
+
+    private void ShowToolbar()
+    {
+        if (texture != null) {
+            using (var _ = ImguiHelpers.Disabled(fileHandle?.Modified != true || !File.Exists(texturePath))) {
+                if (ImGui.Button($"{AppIcons.SI_Save}")) {
+                    if (fileHandle!.Loader is TextureLoader) {
+                        fileHandle.Save(workspace);
+                    } else {
+                        texture.SaveAs(texturePath!);
+                    }
+                    fileHandle.Modified = false;
+                }
+                ImguiHelpers.Tooltip("Save");
+            }
+            ImGui.SameLine();
+
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_SaveAs, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary })) {
+                var baseName = PathUtils.GetFilepathWithoutExtensionOrVersion(texturePath ?? texture.Path);
+                var fileFilter = FileFilters.TextureFile;
+                var currentTexExt = fileHandle?.Loader is TextureLoader ? PathUtils.GetFilenameExtensionWithSuffixes(texture.Path).ToString() : null;
+                if (!string.IsNullOrEmpty(currentTexExt)) {
+                    fileFilter = fileFilter.Append(new FileFilter("TEX", $"{currentTexExt}")).ToArray();
+                }
+
+                PlatformUtils.ShowSaveFileDialog((file) => {
+                    MainLoop.Instance.InvokeFromUIThread(() => SaveTextureToFile(file));
+                }, baseName.ToString(), filters: fileFilter);
+            }
+            ImguiHelpers.Tooltip("Save As...");
+
+            ImGui.SameLine();
+            using (var _ = ImguiHelpers.Disabled(fileHandle?.Modified != true || !File.Exists(texturePath))) {
+                if (ImGui.Button($"{AppIcons.SI_Reset}##0")) {
+                    fileHandle!.Stream.Dispose();
+                    fileHandle.Stream = File.OpenRead(texturePath!).ToMemoryStream();
+                    if (fileHandle.Loader is TextureLoader) {
+                        fileHandle.GetFile<TexFile>().FileHandler = new FileHandler(fileHandle.Stream, fileHandle.Filepath);
+                    } else if (fileHandle.Resource is BaseFileResource<DDSFile> dds) {
+                        dds.File.FileHandler = new FileHandler(fileHandle.Stream, fileHandle.Filepath);
+                    }
+                    fileHandle.Revert(workspace);
+                    SetImageSource(fileHandle);
+                }
+                ImguiHelpers.Tooltip("Revert");
+            }
+
+            ImGui.SameLine();
+            ImguiHelpers.VerticalSeparator();
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.SI_FileSource}") && texture.Path != null) {
+                EditorWindow.CurrentWindow?.CopyToClipboard(texture.Path);
+            }
+            ImguiHelpers.Tooltip($"{texture.Path}");
+            ImGui.SameLine();
+            ImguiHelpers.VerticalSeparator();
+            ImGui.SameLine();
+            ImGui.Text($"Size: {texture.Width} x {texture.Height}");
+            ImGui.SameLine();
+            ImguiHelpers.VerticalSeparator();
+            ImGui.SameLine();
+            ImGui.Text($"Format: {texture.Format}");
+
+            if (!colorSpaceIsKnown) {
+                ImGui.SameLine();
+                if (ImGui.Button($"{AppIcons.SI_UpdateTexture}")) {
+                    var isSrgb = texture.Format.IsSRGB();
+                    if (fileHandle != null) {
+                        SetImageSource(fileHandle, !isSrgb);
+                    } else {
+                        SetImageSource(texture.Path!, !isSrgb);
+                    }
+                    SetFormatPreset(Presets.First(p => p.format.IsSRGB() == texture.Format.IsSRGB()));
+                    showColorSpaceHint = false;
+                }
+                ImguiHelpers.Tooltip("Swap color space\nThis is used to determine whether your source image should be treated as a color or a non-color texture for most conversion operations.\nGenerally albedo and UI textures should be sRGB while everything else should NOT be sRGB.");
+                if (showColorSpaceHint) {
+                    ImGui.SameLine();
+                    ImGui.TextColored(Colors.Info, "Color space was automatically guessed based on the file name."u8);
+                }
+            }
+            ImGui.Text("Channels:");
+            ImGui.SameLine();
+            if (ImGui.RadioButton("RGBA", currentChannel == TextureChannel.RGBA)) {
+                currentChannel = TextureChannel.RGBA;
+                texture.SetChannel(currentChannel);
+            }
+            ImGui.SameLine();
+
+            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0.3f, 0.3f, 0.3f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, new Vector4(0.5f, 0.5f, 0.5f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.CheckMark, new Vector4(1f, 1f, 1f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.8f, 0.8f, 0.8f, 1f));
+            if (ImGui.RadioButton("RGB", currentChannel == TextureChannel.RGB)) {
+                currentChannel = TextureChannel.RGB;
+                texture.SetChannel(currentChannel);
+            }
+            ImGui.PopStyleColor(4);
+            ImGui.SameLine();
+
+            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0.3f, 0f, 0f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, new Vector4(0.6f, 0f, 0f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.CheckMark, new Vector4(1f, 0f, 0f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1f, 0f, 0f, 1f));
+            if (ImGui.RadioButton("R", currentChannel == TextureChannel.Red)) {
+                currentChannel = TextureChannel.Red;
+                texture.SetChannel(currentChannel);
+            }
+            ImGui.PopStyleColor(4);
+            ImGui.SameLine();
+
+            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0f, 0.3f, 0f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, new Vector4(0f, 0.6f, 0f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.CheckMark, new Vector4(0f, 1f, 0f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0f, 1f, 0f, 1f));
+            if (ImGui.RadioButton("G", currentChannel == TextureChannel.Green)) {
+                currentChannel = TextureChannel.Green;
+                texture.SetChannel(currentChannel);
+            }
+            ImGui.PopStyleColor(4);
+            ImGui.SameLine();
+
+            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0f, 0f, 0.4f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, new Vector4(0f, 0f, 0.6f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.CheckMark, new Vector4(0f, 0.5f, 1f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0f, 0.5f, 1f, 1f));
+            if (ImGui.RadioButton("B", currentChannel == TextureChannel.Blue)) {
+                currentChannel = TextureChannel.Blue;
+                texture.SetChannel(currentChannel);
+            }
+            ImGui.PopStyleColor(4);
+            ImGui.SameLine();
+
+            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0.2f, 0.2f, 0.3f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.FrameBgHovered, new Vector4(0.4f, 0.4f, 0.6f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.CheckMark, new Vector4(0.8f, 0.8f, 0.9f, 1f));
+            if (ImGui.RadioButton("A", currentChannel == TextureChannel.Alpha)) {
+                currentChannel = TextureChannel.Alpha;
+                texture.SetChannel(currentChannel);
+            }
+            ImGui.PopStyleColor(3);
+            ImGui.SameLine();
+            if (texture.Path != null) {
+                string suffix = GetTextureTypeSuffix(texture.Path);
+                bool isKnownTextureType = ShowTextureTypeUI(suffix, previewOnly: true);
+                using (var _ = ImguiHelpers.Disabled(!isKnownTextureType)) {
+                    if (ImGui.Button("Channel Breakdown")) {
+                        ImGui.OpenPopup("ChannelBreakdownPopup");
+                    }
+                }
+                if (isKnownTextureType && ImGui.BeginPopup("ChannelBreakdownPopup")) {
+                    ShowTextureTypeUI(suffix, previewOnly: false);
+                    ImGui.EndPopup();
+                }
+            }
+        }
+    }
+
+    private void ShowTexture()
+    {
+        if (texture != null) {
+            int displayWidth = (int)(texture.Width * zoom);
+            int displayHeight = (int)(texture.Height * zoom);
+
+            ImGui.Text($"View Size: {displayWidth} x {displayHeight}");
+            ImGui.SameLine();
+            ImguiHelpers.VerticalSeparator();
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.SI_Reset}##1")) {
+                isFitToWindow = true;
+            }
+            ImguiHelpers.Tooltip("Reset View"u8);
+            ImGui.SameLine();
+            if (ImGui.Button("1:1")) {
+                zoom = 1.0f;
+                pan = Vector2.Zero;
+            }
+            ImguiHelpers.Tooltip("Show at original resolution"u8);
+
+            ImGui.Spacing();
+
+            Vector2 canvasSize = ImGui.GetContentRegionAvail();
+            Vector2 canvasPos = ImGui.GetCursorScreenPos();
+            if (isFitToWindow) {
+                zoom = Math.Min(canvasSize.X / texture.Width, canvasSize.Y / texture.Height);
+                pan = Vector2.Zero;
+                isFitToWindow = false;
+            }
+            ImGui.BeginChild("TextureCanvas", canvasSize, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+            ImGui.InvisibleButton("Canvas", canvasSize, ImGuiButtonFlags.MouseButtonLeft);
+            bool isHovered = ImGui.IsItemHovered();
+            bool isActive = ImGui.IsItemActive();
+            var io = ImGui.GetIO();
+
+            if (isHovered && io.MouseWheel != 0) {
+                float prevZoom = zoom;
+                zoom = Math.Clamp(zoom * MathF.Pow(1.05f, io.MouseWheel), minZoom, maxZoom);
+                Vector2 relPos = (io.MousePos - canvasPos - pan) / prevZoom;
+                pan -= relPos * (zoom - prevZoom);
+            }
+
+            if (isActive && ImGui.IsMouseDragging(ImGuiMouseButton.Left)) {
+                pan += io.MouseDelta;
+            }
+
+            Vector2 imageSize = new Vector2(texture.Width, texture.Height) * zoom;
+            Vector2 imagePos = canvasPos + pan;
+            ImGui.GetWindowDrawList().AddImage(texture.AsTextureRef(), imagePos, imagePos + imageSize);
+
+            ImGui.EndChild();
+        }
+    }
 
     public bool RequestClose()
     {
