@@ -87,6 +87,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         var patchConfig = workspace?.Config ?? new PatchDataContainer(Path.GetFullPath(configPath));
 
         workspace = new ContentWorkspace(env, patchConfig, workspace?.BundleManager);
+        workspace.UI = new AppUIService(this, workspace);
         workspace.ResourceManager.SetupFileLoaders(typeof(PrefabLoader).Assembly);
         SetupTypes(workspace);
         workspace.SetBundle(bundle);

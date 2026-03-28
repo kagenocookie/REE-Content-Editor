@@ -5,7 +5,7 @@ using ReeLib;
 
 namespace ContentPatcher;
 
-public sealed class FileHandle(string path, Stream stream, FileHandleType handleType, IFileLoader loader) : IDisposable, IEquatable<FileHandle>
+public sealed class FileHandle(string path, Stream stream, FileHandleType handleType, IFileLoader loader) : FileHandleBase, IDisposable, IEquatable<FileHandle>
 {
     public string Filepath { get; private set; } = path;
     public string? NativePath { get; init; }
@@ -73,10 +73,23 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
                 Logger.Warn(@$"""
                     The original file seems to have been deleted: {Filepath}.\nRecheck if this was intentional. Saving anyway...");
             } else {
-                Logger.Warn(@$"""
-                    Unable to save file because it doesn't have a disk file path associated to it: {Filepath}
-                    Open its editor and manually save it somewhere (e.g. save as, save to bundle, ...).
-                    You can re-open the file through the ""Open files"" menu");
+                (string? label, Action action)[] buttons;
+                if (workspace.CurrentBundle != null && HandleType != FileHandleType.Bundle) {
+                    buttons = [("Save As", () => workspace.UI.SaveAs(this)), ("Save To Bundle", () => workspace.UI.SaveToBundle(this))];
+                } else {
+                    buttons = [("Save As", () => workspace.UI.SaveAs(this))];
+                }
+                workspace.UI.ShowMessage($"""
+                    Unable to save file because it doesn't have a disk file path associated to it:
+                    {Filepath}
+                    You need to manually save it somewhere (e.g. save as, save to bundle).
+                    You can re-open the file through the "Opened files" menu
+                    """,
+                    LogSeverity.Warning,
+                    null,
+                    buttons
+                );
+
                 return false;
             }
         }

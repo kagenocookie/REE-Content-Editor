@@ -12,6 +12,24 @@ public interface ILogger
     void Error(object msg) => Info($"ERROR: {msg}");
     void Error(Exception exception, params object[] msg) => Error($"{string.Join(" ", msg)} (Error: {exception.Message})\nStack:\n{exception.StackTrace ?? "N/A"}");
     void Error(params object[] msg) => Error(string.Join(" ", msg));
+
+    void Log(LogSeverity level, object msg)
+    {
+        switch (level) {
+            case LogSeverity.Debug:
+                Debug(msg);
+                break;
+            case LogSeverity.Info:
+                Info(msg);
+                break;
+            case LogSeverity.Warning:
+                Warn(msg);
+                break;
+            case LogSeverity.Error:
+                Error(msg);
+                break;
+        }
+    }
 }
 
 public enum LogSeverity : int

@@ -25,6 +25,8 @@ public static class Logger
         }
         return false;
     }
+
+    public static void Log<T>(LogSeverity level, T msg) => CurrentLogger.Log(level, msg!);
 }
 
 

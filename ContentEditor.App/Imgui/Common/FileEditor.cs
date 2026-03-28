@@ -131,7 +131,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             ImguiHelpers.Tooltip("Save As...");
             ImGui.SameLine();
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_SaveCopy, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary })) {
-                PlatformUtils.ShowSaveFileDialog((path) => SaveTo(path, false), Handle.Filepath);
+                SaveAs();
             }
             ImguiHelpers.Tooltip("Save Copy to...");
             if (Handle.DiffHandler != null && ImguiHelpers.SameLine() && Handle.HandleType is not FileHandleType.Memory) {
@@ -149,9 +149,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                 if (!Handle.IsInBundle(workspace, workspace.CurrentBundle)) {
                     ImGui.SameLine();
                     if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveTo, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
-                        ResourcePathPicker.SaveFileToBundle(workspace, Handle, (savePath, localPath, nativePath) => {
-                            return SaveTo(savePath, true, nativePath: nativePath);
-                        }, closeFile: false);
+                        SaveToBundle(workspace);
                     }
                     ImguiHelpers.Tooltip("Save to Bundle");
                 } else if (workspace.CurrentBundle.ResourceListing == null || !workspace.CurrentBundle.TryFindResourceListing(Handle.NativePath ?? "", out var resourceListing)) {
@@ -200,6 +198,18 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             }
             ImguiHelpers.Tooltip("Revert");
         }
+    }
+
+    public void SaveAs()
+    {
+        PlatformUtils.ShowSaveFileDialog((path) => SaveTo(path, false), Handle.Filepath);
+    }
+
+    public void SaveToBundle(ContentWorkspace workspace)
+    {
+        ResourcePathPicker.SaveFileToBundle(workspace, Handle, (savePath, localPath, nativePath) => {
+            return SaveTo(savePath, true, nativePath: nativePath);
+        }, closeFile: false);
     }
 
     protected void ShowFileJsonCopyPasteButtons<T>(JsonSerializerOptions? jsonOptions) where T : BaseFile

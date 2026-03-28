@@ -20,6 +20,7 @@ public sealed class ContentWorkspace : IDisposable
     public DiffHandler Diff { get; }
     public MessageManager Messages { get; }
     public GameIdentifier Game => Env.Config.Game;
+    public UIService UI { get; set; } = new UIServiceStub();
     public string VersionHash { get; private set; }
 
     public ContentWorkspace(Workspace env, PatchDataContainer patchConfig, BundleManager? rootBundleManager = null)
