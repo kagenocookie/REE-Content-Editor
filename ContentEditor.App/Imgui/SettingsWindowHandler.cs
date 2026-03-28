@@ -33,6 +33,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         Hotkeys_Global,
         Hotkeys_PakBrowser,
         Hotkeys_MeshViewer,
+        Hotkeys_TextureViewer,
         Games_ResidentEvil,
         Games_MonsterHunter,
         Games_Other,
@@ -66,8 +67,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                 new SettingSubGroup { Name = "Global", ID = SubGroupID.Hotkeys_Global},
                 new SettingSubGroup { Name = "Pak Browser", ID = SubGroupID.Hotkeys_PakBrowser},
                 new SettingSubGroup { Name = "Mesh Viewer", ID = SubGroupID.Hotkeys_MeshViewer},
-                // TODO SILVER: There should be contextual hotkeys for the editors
-                //new SettingSubGroup { Name = "Texture Viewer"},
+                new SettingSubGroup { Name = "Texture Viewer", ID = SubGroupID.Hotkeys_TextureViewer},
             }
         },
         new SettingGroup { Name = "Games", SubGroups = {
@@ -186,6 +186,9 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                             break;
                         case SubGroupID.Hotkeys_MeshViewer:
                             ShowHotkeysMeshViewerTab();
+                            break;
+                        case SubGroupID.Hotkeys_TextureViewer:
+                            ShowHotkeysTextureViewerTab();
                             break;
                         case SubGroupID.Games_ResidentEvil:
                             ShowGamesResidentEvilTab();
@@ -386,6 +389,13 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImguiKeybinding("Previous Frame", config.Key_MeshViewer_PrevAnimFrame);
         ImguiKeybinding("Increase Playback Speed", config.Key_MeshViewer_IncreaseAnimSpeed);
         ImguiKeybinding("Decrease Playback Speed", config.Key_MeshViewer_DecreaseAnimSpeed);
+    }
+    private void ShowHotkeysTextureViewerTab()
+    {
+        ImGui.Spacing();
+        ImguiKeybinding("Reset View", config.Key_TextureViewer_ResetView);
+        ImguiKeybinding("Zoom In", config.Key_TextureViewer_ZoomIn);
+        ImguiKeybinding("Zoom Out", config.Key_TextureViewer_ZoomOut);
     }
     private static void ShowGamesResidentEvilTab()
     {

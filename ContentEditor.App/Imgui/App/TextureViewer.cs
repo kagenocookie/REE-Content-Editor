@@ -655,7 +655,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
             ImGui.SameLine();
             ImguiHelpers.VerticalSeparator();
             ImGui.SameLine();
-            if (ImGui.Button($"{AppIcons.SI_Reset}##1")) {
+            if (ImGui.Button($"{AppIcons.SI_Reset}##1") || (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_TextureViewer_ResetView.Get().IsPressed())) {
                 isFitToWindow = true;
             }
             ImguiHelpers.Tooltip("Reset View"u8);
@@ -686,6 +686,22 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
                 zoom = Math.Clamp(zoom * MathF.Pow(1.05f, io.MouseWheel), minZoom, maxZoom);
                 Vector2 relPos = (io.MousePos - canvasPos - pan) / prevZoom;
                 pan -= relPos * (zoom - prevZoom);
+            }
+
+            if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)) {
+                float zoomDelta = 0f;
+                if (AppConfig.Instance.Key_TextureViewer_ZoomIn.Get().IsPressed()) zoomDelta += 1f;
+                if (AppConfig.Instance.Key_TextureViewer_ZoomOut.Get().IsPressed()) zoomDelta -= 1f;
+
+                if (zoomDelta != 0f) {
+                    float prevZoom = zoom;
+                    zoom = Math.Clamp(zoom * MathF.Pow(1.1f, zoomDelta), minZoom, maxZoom);
+
+                    if (isHovered) {
+                        Vector2 relPos = (io.MousePos - canvasPos - pan) / prevZoom;
+                        pan -= relPos * (zoom - prevZoom);
+                    }
+                }
             }
 
             if (isActive && ImGui.IsMouseDragging(ImGuiMouseButton.Left)) {
