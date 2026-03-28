@@ -215,7 +215,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             ImGui.PushStyleColor(ImGuiCol.ChildBg, 0);
             ImGui.BeginChild("OverlayControlsContainer", new Vector2(500, ImGui.GetContentRegionAvail().Y - ImGui.GetStyle().WindowPadding.Y), ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AlwaysAutoResize, ImGuiWindowFlags.NoMove);
             ImGui.PushStyleColor(ImGuiCol.ChildBg, ImguiHelpers.GetColor(ImGuiCol.WindowBg) with { W = 0.5f });
-            ImGui.BeginChild("OverlayControls", new Vector2(480, AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().Y - 80 : 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders);
+            ImGui.BeginChild("OverlayControls", new Vector2(500, AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().Y - 80 : 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders);
 
             ImGui.SameLine();
             ShowRootAnimationList();
@@ -873,7 +873,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             ImguiHelpers.Tooltip("Force reload");
         }
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Source File").X - ImGui.GetStyle().FramePadding.X);
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Animation File").X);
         ctx.ShowAnimSettings(meshContexts, false);
     }
 
