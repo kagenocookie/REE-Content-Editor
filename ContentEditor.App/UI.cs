@@ -420,6 +420,9 @@ public static class AppIcons
     public static readonly char SI_Github = '\uee22';
     public static readonly char SI_Discord = '\uee23';
     public static readonly char SI_GenericHeart = '\uee24';
+    public static readonly char SI_FileType_CLSP = '\uee25';
+    public static readonly char SI_FileType_RBS = '\uee26';
+    public static readonly char SI_FolderBrowse = '\uee27';
 
     public static string PrependIcon(this string text, object target)
     {
@@ -517,6 +520,8 @@ public static class AppIcons
         KnownFileFormats.ShaderTimer => (SI_FileType_STS, Colors.FileTypeSTS),
         KnownFileFormats.NetworkConfig => (SI_FileType_NCF, Colors.FileTypeNCF),
         KnownFileFormats.VfxShader => (SI_FileType_VSDF, Colors.FileTypeVSDF),
+        KnownFileFormats.CollisionShapePreset => (SI_FileType_CLSP, Colors.FileTypeCLSP),
+        KnownFileFormats.RigidBodySet => (SI_FileType_RBS, Colors.FileTypeRBS),
         _ => ('\0', Vector4.One),
     };
 }
