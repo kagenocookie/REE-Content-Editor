@@ -38,10 +38,10 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
 
     private ContentWorkspace workspace = null!;
     private float zoom = 1.0f;
-    private Vector2 pan = Vector2.Zero;
-    private bool isDragging = false;
     private const float minZoom = 0.1f;
     private const float maxZoom = 20.0f;
+    private Vector2 pan = Vector2.Zero;
+    private bool isDragging = false;
     private bool isFitToWindow = true;
 
     private FormatPreset selectedFormatPreset;
@@ -520,7 +520,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
 
             ImGui.SameLine();
             using (var _ = ImguiHelpers.Disabled(fileHandle?.Modified != true || !File.Exists(texturePath))) {
-                if (ImGui.Button($"{AppIcons.SI_Reset}##0")) {
+                if (ImGui.Button($"{AppIcons.SI_Reset}")) {
                     fileHandle!.Stream.Dispose();
                     fileHandle.Stream = File.OpenRead(texturePath!).ToMemoryStream();
                     if (fileHandle.Loader is TextureLoader) {
@@ -568,6 +568,20 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
                     ImGui.TextColored(Colors.Info, "Color space was automatically guessed based on the file name."u8);
                 }
             }
+
+            if (ImGui.Button($"{AppIcons.SI_ResetCamera}") || (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_TextureViewer_ResetView.Get().IsPressed())) {
+                isFitToWindow = true;
+            }
+            ImguiHelpers.Tooltip("Reset View"u8);
+            ImGui.SameLine();
+            if (ImGui.Button("1:1")) {
+                zoom = 1.0f;
+                pan = Vector2.Zero;
+            }
+            ImguiHelpers.Tooltip("Show at original resolution"u8);
+            ImGui.SameLine();
+            ImguiHelpers.VerticalSeparator();
+            ImGui.SameLine();
             ImGui.Text("Channels:");
             ImGui.SameLine();
             if (ImGui.RadioButton("RGBA", currentChannel == TextureChannel.RGBA)) {
@@ -648,26 +662,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
     private void ShowTexture()
     {
         if (texture != null) {
-            int displayWidth = (int)(texture.Width * zoom);
-            int displayHeight = (int)(texture.Height * zoom);
-
-            ImGui.Text($"View Size: {displayWidth} x {displayHeight}");
-            ImGui.SameLine();
-            ImguiHelpers.VerticalSeparator();
-            ImGui.SameLine();
-            if (ImGui.Button($"{AppIcons.SI_Reset}##1") || (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_TextureViewer_ResetView.Get().IsPressed())) {
-                isFitToWindow = true;
-            }
-            ImguiHelpers.Tooltip("Reset View"u8);
-            ImGui.SameLine();
-            if (ImGui.Button("1:1")) {
-                zoom = 1.0f;
-                pan = Vector2.Zero;
-            }
-            ImguiHelpers.Tooltip("Show at original resolution"u8);
-
             ImGui.Spacing();
-
             Vector2 canvasSize = ImGui.GetContentRegionAvail();
             Vector2 canvasPos = ImGui.GetCursorScreenPos();
             if (isFitToWindow) {
@@ -710,7 +705,14 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
 
             Vector2 imageSize = new Vector2(texture.Width, texture.Height) * zoom;
             Vector2 imagePos = canvasPos + pan;
-            ImGui.GetWindowDrawList().AddImage(texture.AsTextureRef(), imagePos, imagePos + imageSize);
+            var drawList = ImGui.GetWindowDrawList();
+            drawList.AddImage(texture.AsTextureRef(), imagePos, imagePos + imageSize);
+
+            int displayWidth = (int)(texture.Width * zoom);
+            int displayHeight = (int)(texture.Height * zoom);
+            string displaySize = $"{displayWidth} x {displayHeight}";
+            drawList.AddRectFilled(canvasPos, canvasPos + ImGui.CalcTextSize(displaySize) + new Vector2(12.5f, 10), ImGui.GetColorU32(ImGuiCol.Button, 0.8f));
+            drawList.AddText(canvasPos + new Vector2(5,5), ImGui.GetColorU32(ImGuiCol.Text), displaySize);
 
             ImGui.EndChild();
         }
