@@ -87,6 +87,10 @@ public static class Colors
     public static Vector4 FileTypeNCF => Current.FileTypeNCF;
     public static Vector4 FileTypeCLSP => Current.FileTypeCLSP;
     public static Vector4 FileTypeRBS => Current.FileTypeRBS;
+    public static Vector4 FileTypeSKELETON => Current.FileTypeSKELETON;
+    public static Vector4 FileTypeFBXSKEL => Current.FileTypeFBXSKEL;
+    public static Vector4 FileTypeREFSKEL => Current.FileTypeREFSKEL;
+    public static Vector4 FileTypeSSS => Current.FileTypeSSS;
 
     /// <summary>
     /// Main color for icons, it should be the same as the text color of the current theme
@@ -190,6 +194,7 @@ public sealed class AppColors
     public Vector4 FileTypeMDF = new Vector4(0.93f, 0.55f, 0.07f, 1);
     public Vector4 FileTypeMMTR = new Vector4(0.93f, 0.55f, 0.07f, 1);
     public Vector4 FileTypeRTMR = new Vector4(0.93f, 0.55f, 0.07f, 1);
+    public Vector4 FileTypeSSS = new Vector4(0.93f, 0.55f, 0.07f, 1);
     public Vector4 FileTypeGPUMOTLIST = new Vector4(0.46f, 0.73f, 0, 1);
     public Vector4 FileTypeGPBF = new Vector4(0.46f, 0.73f, 0, 1);
     public Vector4 FileTypeGPUC = new Vector4(0.46f, 0.73f, 0, 1);
@@ -247,6 +252,9 @@ public sealed class AppColors
     public Vector4 FileTypeMOV = new Vector4(0.77f, 0.77f, 0.77f, 1);
     public Vector4 FileTypeVSDF = new Vector4(0.21f, 0.88f, 0, 1);
     public Vector4 FileTypeNCF = new Vector4(0.25f, 0.8f, 1, 1);
+    public Vector4 FileTypeSKELETON = new Vector4(0.77f, 0.77f, 0.77f, 1);
+    public Vector4 FileTypeFBXSKEL = new Vector4(0.216f, 0.627f, 0.776f, 1);
+    public Vector4 FileTypeREFSKEL = new Vector4(0.776f, 0.525f, 0.322f, 1);
 
     public Vector4 IconPrimary = new Vector4(1, 1, 1, 1);
     public Vector4 IconSecondary = new Vector4(0.114f, 0.6f, 0.93f, 1);
