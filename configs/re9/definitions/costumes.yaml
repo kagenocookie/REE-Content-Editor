@@ -34,7 +34,13 @@ classes:
   app.MontageData.MontageParts:
     to_string: "{_PartsName}: {_PrefabResource?.Path}"
   app.BounsMontageData:
-    to_string: "Bonus Montage {_BonusID} - Model {_ModelId} / Preset {_DefaultPresetID}"
+    to_string: "Bonus Montage {_BonusID} - Model {_ModelID} / Preset {_DefaultPresetID}"
+  app.BounsMontageData.ScenarioData:
+    to_string: "ScenarioData {_Type} _PresetID={_PresetID}"
+  app.NameHash:
+    to_string: "NameHash: {_Hash}"
+  app.FigureItemCatalog.Data:
+    to_string: "FigureItemCatalogData {_BonusID} Category={_ItemCategoryID}"
   app.CharacterMontagePresetCatalogUserData.Entry:
     # TODO nested IDs not supported yet
     # id: [_Preset._ModelID]
