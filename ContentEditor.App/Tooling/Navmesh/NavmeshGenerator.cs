@@ -1,8 +1,6 @@
 using System.Diagnostics;
 using System.Numerics;
 using ContentEditor.App.Graphics;
-using ContentEditor.App.ImguiHandling;
-using ContentEditor.Core;
 using DotRecast.Core;
 using DotRecast.Detour;
 using DotRecast.Recast;
@@ -188,6 +186,8 @@ public static class NavmeshGenerator
 
         var triContent = targetFile.mainContent!;
         var polyContent = targetFile.secondaryContent!;
+        var mainVertBackup = targetFile.mainContent!.Vertices;
+        var secVertBackup = targetFile.secondaryContent!.Vertices;
         var triGroup = triContent.InitGroup<ContentGroupTriangle>(detailMesh.nverts, true);
         var polyGroup = polyContent.InitGroup<ContentGroupPolygon>(polyMesh.nverts, true);
 
@@ -212,7 +212,7 @@ public static class NavmeshGenerator
         for (int i = 0; i < detailMesh.nverts; ++i) {
             var vert = triGroup.Vertices![i] = new Vector3(
                 detailMesh.verts[i * 3 + 0],
-                detailMesh.verts[i * 3 + 1],
+                detailMesh.verts[i * 3 + 1] - polyMesh.ch,
                 detailMesh.verts[i * 3 + 2]);
             triContent.Vertices[i] = new PaddedVec3(vert);
         }
@@ -444,20 +444,113 @@ public static class NavmeshGenerator
             return (-1, 0);
         }
 
-        PostProcessAdditionalNodes(targetFile);
+        PostProcessAdditionalNodes(targetFile, mainVertBackup, secVertBackup);
         targetFile.PackData();
     }
 
-    private static void PostProcessAdditionalNodes(AimpFile targetFile)
+    private static void PostProcessAdditionalNodes(AimpFile targetFile, PaddedVec3[] mainVerts, PaddedVec3[] secondaryVerts)
     {
-        // TODO properly re-generate Boundary/AABB/Wall nodes and their links
-        // just deleting them for now
-        while (targetFile.mainContent!.contents.Length > 1) {
-            targetFile.mainContent.RemoveGroup(targetFile.mainContent.contents[1]);
-        }
-        while (targetFile.secondaryContent!.contents.Length > 1) {
-            targetFile.secondaryContent.RemoveGroup(targetFile.secondaryContent.contents[1]);
+        var triGroup = (ContentGroupTriangle)targetFile.mainContent!.contents.First();
+        var polyGroup = (ContentGroupPolygon)targetFile.secondaryContent!.contents.First();
+        var manualLinksMain = new List<LinkInfo>();
+        var manualLinksSecondary = new List<LinkInfo>();
+        var nodesBackupMain = new Dictionary<int, NodeInfo>();
+        var nodesBackupSecondary = new Dictionary<int, NodeInfo>();
+
+        // offset all other content group node indices accordingly
+        // assume no explicit index gaps in the extra groups
+        ShiftExtraContentGroups(targetFile.mainContent, manualLinksMain, nodesBackupMain);
+        ShiftExtraContentGroups(targetFile.secondaryContent, manualLinksSecondary, nodesBackupSecondary);
+
+        // regenerate all mesh related links based on AABBs
+        var boundary = targetFile.mainContent.contents.OfType<ContentGroupMapBoundary>().FirstOrDefault();
+        var walls = targetFile.mainContent.contents.OfType<ContentGroupWall>().FirstOrDefault();
+        var secAabbs = targetFile.secondaryContent.contents.OfType<ContentGroupMapAABB>().FirstOrDefault();
+        if (boundary != null) {
+            foreach (var info in boundary.NodeInfos) {
+                var node = boundary.Nodes[info.localIndex];
+                var triangleNodes = triGroup.GetOverlappingNodes(targetFile.mainContent, new AABB(node.min, node.max));
+                foreach (var tri in triangleNodes) {
+                    info.Links.Add(new LinkInfo() {
+                        edgeIndex = 0x3000000, // vanilla re9 files have these at 0x2000000 / 0x3000000, not sure if it matters or not
+                        SourceNode = info,
+                        TargetNode = tri,
+                        ukn = 1,
+                    });
+                    tri.Links.Add(new LinkInfo() {
+                        edgeIndex = 0x2000000,
+                        SourceNode = tri,
+                        TargetNode = info,
+                        ukn = 1,
+                    });
+                }
+            }
         }
 
+        if (walls != null) {
+            targetFile.PackData(); // need to ensure correct vert indices
+            foreach (var info in walls.NodeInfos) {
+                var node = walls.Nodes[info.localIndex];
+                Vector3 min = new Vector3(float.MaxValue);
+                Vector3 max = new Vector3(float.MinValue);
+                for (int i = 0; i < 8; i++) {
+                    min = Vector3.Min(targetFile.mainContent.Vertices[node.indices[i]].Vector3, min);
+                    max = Vector3.Max(targetFile.mainContent.Vertices[node.indices[i]].Vector3, max);
+                }
+
+                // use AABBs as a rough approximation until I feel like making it more accurate
+                var triangleNodes = triGroup.GetOverlappingNodes(targetFile.mainContent, new AABB(min, max));
+                foreach (var tri in triangleNodes) {
+                    info.Links.Add(new LinkInfo() {
+                        edgeIndex = 0,
+                        SourceNode = info,
+                        TargetNode = tri,
+                        ukn = 1,
+                    });
+                    tri.Links.Add(new LinkInfo() {
+                        edgeIndex = 0,
+                        SourceNode = tri,
+                        TargetNode = info,
+                        ukn = 1,
+                    });
+                }
+            }
+        }
+
+        //note: secondary AABB groups don't contain any links, therefore we can skip handling those
+
+        // restore manual links
+        foreach (var link in manualLinksMain) {
+            // we don't need to update the source/target index, it'll get automated during Aimp writer data pack
+            link.SourceNode!.Links.Add(link);
+        }
+        foreach (var link in manualLinksSecondary) {
+            link.SourceNode!.Links.Add(link);
+        }
+
+        static void ShiftExtraContentGroups(ContentGroupContainer? container, List<LinkInfo> manualLinks, Dictionary<int, NodeInfo> nodesLookup)
+        {
+            if (container == null) return;
+
+            var nodeIndex = container.contents.FirstOrDefault()?.NodeCount ?? 0;
+            var contentIndex = 1;
+            while (contentIndex < container.contents.Length) {
+                var content = container.contents[contentIndex++];
+                foreach (var node in content.NodeInfos) {
+                    nodesLookup[node.index] = node;
+                }
+
+                foreach (var node in content.NodeInfos) {
+                    node.index = nodeIndex++;
+                    foreach (var link in node.Links) {
+                        if (nodesLookup.ContainsKey(link.sourceNodeIndex) && nodesLookup.ContainsKey(link.targetNodeIndex)) {
+                            manualLinks.Add(link);
+                        }
+                    }
+                    node.Links.Clear();
+                }
+                container.NodeInfo.maxIndex += content.NodeInfos.Count;
+            }
+        }
     }
 }
