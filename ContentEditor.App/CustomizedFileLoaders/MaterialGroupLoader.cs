@@ -81,6 +81,11 @@ public class MaterialGroupLoader : IFileLoader,
                 }
                 var tex = file.GetFile<TexFile>();
 
+                var streamingPath = "streaming/" + param.texPath;
+                if (tex.Header.flags.HasFlag(ReeLib.Tex.TexFlags.IsStreaming) && env.ResourceManager.TryResolveGameFile(streamingPath, out var streamingFile)) {
+                    tex = streamingFile.GetFile<TexFile>();
+                }
+
                 var texOutPath = Path.Combine(matPath, PathUtils.GetFilenameWithoutExtensionOrVersion(param.texPath).ToString());
                 if (format == "dds") {
                     texOutPath += ".dds";

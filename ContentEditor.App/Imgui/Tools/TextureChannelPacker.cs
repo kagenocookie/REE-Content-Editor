@@ -40,6 +40,9 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
 
     private TextureConversionTask? activeTask;
 
+    private Int2[] InputSizes = [];
+    private Int2 targetSize;
+
     public enum TextureSourceSwizzle
     {
         Red = 1,
@@ -236,7 +239,13 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
             if (ImguiHelpers.CSharpEnumCombo("Display", ref outputDisplayChannel, 800)) {
                 outputTexture.SetChannel(outputDisplayChannel);
             }
-            ImGui.Text("Size: " + outputTexture.Width + " x " + outputTexture.Height + " (Based on first texture slot)");
+            if (InputSizes.Length <= 1) {
+                ImGui.Text("Size: " + outputTexture.Width + " x " + outputTexture.Height + " (Based on input texture size)");
+            } else {
+                if (ImguiHelpers.ValueCombo("Output Size", InputSizes.Select(sz => $"{sz.x} x {sz.y}").ToArray(), InputSizes, ref targetSize, -1)) {
+                    isDirty = true;
+                }
+            }
             ImGui.Spacing();
 
             var outputSize = ImGui.GetWindowSize() - new Vector2(outputPos.X, outputPos.Y) - ImGui.GetStyle().WindowPadding * 2 - outputBottomMargin - new Vector2(64, 0);
@@ -301,14 +310,9 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
 
     private void StartProcessImage()
     {
-        if (slots.Count == 0) return;
+        if (slots.Count == 0 || targetSize.x == 0) return;
 
-        var firstTex = slots.FirstOrDefault(s => s.texture != null)?.texture;
-        if (firstTex == null) {
-            return;
-        }
-
-        Int2 res = new Int2(firstTex.Width, firstTex.Height);
+        Int2 res = new Int2(targetSize.x, targetSize.y);
         SixLabors.ImageSharp.Image<Rgba32>? outImageData = new Image<Rgba32>(res.x, res.y);
         foreach (var grp in outImageData.GetPixelMemoryGroup()) grp.Span.Fill(new Rgba32(0xFFFFFFFF));
         foreach (var slot in slots) {
@@ -525,6 +529,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
             } else {
                 slot.texture = null;
             }
+            UpdateInputSizes();
             isDirty = true;
         } catch (Exception e) {
             Logger.Error("Failed to replace texture slot: " + e.Message);
@@ -542,9 +547,24 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
             }
             slot.texture.LoadFromImage(img, false);
             img.Dispose();
+            UpdateInputSizes();
             isDirty = true;
         } catch (Exception e) {
             Logger.Error("Failed to replace texture slot: " + e.Message);
+        }
+    }
+
+    private void UpdateInputSizes()
+    {
+        InputSizes = slots
+            .Where(slot => slot.texture != null)
+            .Select(slot => new Int2(slot.texture!.Width, slot.texture.Height))
+            .Distinct()
+            .OrderBy(a => (a.x, a.y))
+            .ToArray();
+
+        if (targetSize.x == 0 || targetSize.y == 0 || !InputSizes.Contains(targetSize)) {
+            targetSize = InputSizes.LastOrDefault();
         }
     }
 
