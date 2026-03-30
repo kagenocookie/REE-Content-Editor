@@ -1,5 +1,4 @@
 using System.Numerics;
-using ContentPatcher;
 using ReeLib;
 
 namespace ContentPatcher;

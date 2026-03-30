@@ -7,9 +7,6 @@ using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher.StringFormatting;
 using ReeLib;
-using ReeLib.Il2cpp;
-using SmartFormat;
-using SmartFormat.Extensions;
 using VYaml.Annotations;
 using VYaml.Serialization;
 

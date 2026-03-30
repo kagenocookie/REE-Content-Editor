@@ -2,7 +2,6 @@ using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Windowing;
 using ContentPatcher;
 using ReeLib;
-using ReeLib.Pfb;
 
 namespace ContentEditor.App.ImguiHandling;
 

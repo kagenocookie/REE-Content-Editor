@@ -1,13 +1,6 @@
-
-using System.Collections;
 using System.Numerics;
-using System.Reflection;
-using ContentEditor.App.Windowing;
-using ContentEditor.Core;
 using ContentPatcher;
-using ReeLib;
 using ReeLib.Efx;
-using ReeLib.Il2cpp;
 using ReeLib.via;
 
 namespace ContentEditor.App.ImguiHandling;

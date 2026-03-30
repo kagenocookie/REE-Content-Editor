@@ -1,5 +1,4 @@
 using System.Reflection;
-using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.McamBank;

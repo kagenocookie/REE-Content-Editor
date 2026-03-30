@@ -3,9 +3,6 @@ using System.Text.RegularExpressions;
 using ContentEditor.Editor;
 using ContentPatcher.StringFormatting;
 using ReeLib;
-using ReeLib.Common;
-using SmartFormat;
-using SmartFormat.Extensions;
 
 namespace ContentPatcher;
 

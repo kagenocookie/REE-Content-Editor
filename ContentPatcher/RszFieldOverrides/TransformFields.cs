@@ -1,7 +1,5 @@
 using System.Numerics;
-using ContentPatcher;
 using ReeLib;
-using ReeLib.via;
 
 namespace ContentPatcher;
 

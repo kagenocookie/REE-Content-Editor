@@ -4,7 +4,6 @@ using ReeLib;
 using ReeLib.Aimp;
 using ReeLib.Mesh;
 using ReeLib.via;
-using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
 namespace ContentEditor.App.Graphics;
@@ -264,7 +263,7 @@ public class TriangleMesh : Mesh
                     // normalize weights - if the mesh has more than 4 weights per bone, ignore any extra bones
                     // this simplifies the shader code and is usually visually neglible
                     // for fully accurate animations, blender or ingame exists
-                    ref var weights = ref MemoryMarshal.Cast<float, Vector4D<float>>(VertexData.AsSpan(vertOffset + boneWeightsOffset, 4))[0];
+                    ref var weights = ref MemoryMarshal.Cast<float, Vector4>(VertexData.AsSpan(vertOffset + boneWeightsOffset, 4))[0];
                     weights /= (weights.X + weights.Y + weights.Z + weights.W);
                 }
             }

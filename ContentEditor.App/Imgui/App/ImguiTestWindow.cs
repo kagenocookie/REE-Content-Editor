@@ -1,7 +1,4 @@
-using System.Numerics;
-using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
-using ContentEditor.Core;
 
 namespace ContentEditor.App;
 

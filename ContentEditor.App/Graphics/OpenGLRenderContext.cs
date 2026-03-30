@@ -7,7 +7,6 @@ using ContentPatcher;
 using ReeLib;
 using ReeLib.Mesh;
 using ReeLib.via;
-using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
 namespace ContentEditor.App.Graphics;

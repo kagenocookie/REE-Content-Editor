@@ -1,5 +1,4 @@
 using System.Numerics;
-using ContentEditor.App.Windowing;
 using Silk.NET.Input;
 
 namespace ContentEditor.App;

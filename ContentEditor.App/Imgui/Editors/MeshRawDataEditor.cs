@@ -1,12 +1,7 @@
 using System.Numerics;
-using System.Reflection;
-using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
-using ReeLib.Common;
-using ReeLib.Mdf;
 using ReeLib.Mesh;
-using ReeLib.via;
 
 namespace ContentEditor.App.ImguiHandling.Mesh;
 

@@ -2,10 +2,8 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using Assimp;
 using Assimp.Configs;
-using ContentEditor.App.Graphics;
 using ContentPatcher;
 using ReeLib;
-using ReeLib.Common;
 
 namespace ContentEditor.App.FileLoaders;
 

@@ -1,11 +1,6 @@
-using System.Numerics;
-using ContentEditor.App.Graphics;
 using ContentEditor.App.ImguiHandling;
 using ContentPatcher;
-using ContentPatcher.DD2;
 using ReeLib;
-using ReeLib.Il2cpp;
-using ZstdSharp.Unsafe;
 
 namespace ContentEditor.App.DD2;
 

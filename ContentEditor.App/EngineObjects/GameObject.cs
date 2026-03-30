@@ -5,7 +5,6 @@ using ReeLib;
 using ReeLib.Pfb;
 using ReeLib.Scn;
 using ReeLib.via;
-using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 

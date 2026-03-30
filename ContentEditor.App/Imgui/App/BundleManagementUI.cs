@@ -1,11 +1,6 @@
 using ContentEditor.App.Graphics;
-using ContentEditor.App.Widgets;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
-using ContentPatcher;
-using ReeLib;
-using ReeLib.Aimp;
-using System;
 using System.Globalization;
 using System.Numerics;
 using System.Runtime.InteropServices;

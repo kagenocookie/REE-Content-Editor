@@ -1,6 +1,5 @@
 using System.Numerics;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.ImguiHandling;

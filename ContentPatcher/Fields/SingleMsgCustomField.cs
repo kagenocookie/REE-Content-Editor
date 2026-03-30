@@ -2,8 +2,6 @@ using System.Text.Json.Nodes;
 using ContentEditor.Editor;
 using ContentPatcher.StringFormatting;
 using ReeLib.Common;
-using SmartFormat;
-using SmartFormat.Extensions;
 
 namespace ContentPatcher;
 

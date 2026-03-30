@@ -1,6 +1,5 @@
 using System.Reflection;
 using ContentEditor.App.Windowing;
-using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.UVar;

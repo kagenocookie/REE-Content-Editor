@@ -1,5 +1,4 @@
 using System.Numerics;
-using Silk.NET.Maths;
 
 namespace ContentEditor.App.Graphics;
 

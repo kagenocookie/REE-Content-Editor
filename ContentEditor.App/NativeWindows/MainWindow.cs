@@ -1,10 +1,5 @@
 namespace ContentEditor.App.Windowing;
 
-using System;
-using System.Diagnostics;
-using System.Numerics;
-using ContentEditor.Core;
-using ContentPatcher;
 using ReeLib;
 using Silk.NET.Windowing;
 

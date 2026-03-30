@@ -1,12 +1,8 @@
 using System.Numerics;
-using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using Hexa.NET.ImNodes;
 using ReeLib;
-using ReeLib.Bhvt;
-using ReeLib.Motfsm2;
-using ReeLib.Tmlfsm2;
 using ReeLib.UVar;
 using ReeLib.via;
 

@@ -1,10 +1,6 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using ContentEditor.App;
 using ContentEditor.App.ImguiHandling;
 using ContentPatcher;
 using ReeLib;
-using ReeLib.Scn;
 
 namespace ContentEditor.App.FileLoaders;
 
