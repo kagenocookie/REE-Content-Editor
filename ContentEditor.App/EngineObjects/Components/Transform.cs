@@ -47,10 +47,18 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
 
     public Vector3 Position {
         get => WorldTransform.Translation;
+        set {
+            Matrix4x4.Decompose(WorldTransform, out var scale, out var rot, out _);
+            SetGlobalTransform(value, rot, Scale);
+        }
     }
 
     public Quaternion Rotation {
         get => Matrix4x4.Decompose(WorldTransform, out _, out var rot, out _) ? rot : Quaternion.Identity;
+        set {
+            Matrix4x4.Decompose(WorldTransform, out var scale, out var rot, out var pos);
+            SetGlobalTransform(pos, value, Scale);
+        }
     }
 
     public Vector3 Scale {

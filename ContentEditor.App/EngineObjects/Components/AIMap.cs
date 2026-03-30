@@ -258,14 +258,14 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
         if (!navMeshes.TryGetValue(NavmeshContentType.AABBs, out var mesh)) {
             var isMain = container == overrideFile!.mainContent;
             var builder = new ShapeBuilder(isMain ? ShapeBuilder.GeometryType.Line : ShapeBuilder.GeometryType.Filled, MeshLayout.PositionOnly);
-            var nodes = container.NodeInfo.Nodes;
-            var polygons = content.Nodes;
+            var infos = container.NodeInfo.Nodes;
+            var nodes = content.Nodes;
             var verts = container.Vertices;
             for (int i = 0; i < content.NodeCount; ++i) {
-                var node = nodes[nodeOffset + i];
-                var poly = polygons[i];
-                var min = verts[poly.indices[0]].Vector3;
-                var max = verts[poly.indices[1]].Vector3;
+                var info = infos[nodeOffset + i];
+                var node = nodes[i];
+                var min = verts[node.indices[0]].Vector3;
+                var max = verts[node.indices[1]].Vector3;
                 builder.Add(new AABB(min, max));
             }
             var tri = new ShapeMesh(builder);
