@@ -444,11 +444,11 @@ public static class NavmeshGenerator
             return (-1, 0);
         }
 
-        PostProcessAdditionalNodes(targetFile, mainVertBackup, secVertBackup);
+        PostProcessAdditionalNodes(targetFile);
         targetFile.PackData();
     }
 
-    private static void PostProcessAdditionalNodes(AimpFile targetFile, PaddedVec3[] mainVerts, PaddedVec3[] secondaryVerts)
+    public static void PostProcessAdditionalNodes(AimpFile targetFile)
     {
         var triGroup = (ContentGroupTriangle)targetFile.mainContent!.contents.First();
         var polyGroup = (ContentGroupPolygon)targetFile.secondaryContent!.contents.First();
@@ -484,6 +484,17 @@ public static class NavmeshGenerator
                         ukn = 1,
                     });
                 }
+
+                foreach (var pair in info.PairNodes) {
+                    if (pair == null) continue;
+
+                    var aabbNode = secAabbs!.Nodes[pair.localIndex];
+                    if (aabbNode == null) continue;
+
+                    // most aimap files use 1 AABB duplicated twice
+                    // exception is in aivspc files that have the second pair different (grounded?) but we aren't there yet anyway
+                    aabbNode.bounds = aabbNode.secondaryBounds = new AABB(node.min, node.max);
+                }
             }
         }
 
@@ -513,6 +524,15 @@ public static class NavmeshGenerator
                         TargetNode = info,
                         ukn = 1,
                     });
+                }
+
+                // TODO these generally have 4 AABBs, need to spread them around correctly
+                foreach (var pair in info.PairNodes) {
+                    if (pair == null) continue;
+
+                    var aabbNode = secAabbs!.Nodes[pair.localIndex];
+                    if (aabbNode == null) continue;
+
                 }
             }
         }

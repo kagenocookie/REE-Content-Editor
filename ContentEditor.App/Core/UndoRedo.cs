@@ -177,12 +177,22 @@ public class UndoRedo
 
     public static void RecordSet<TValue>(UIContext context, TValue value, WindowBase? window = null, UndoRedoMergeMode mergeMode = UndoRedoMergeMode.MergeIdentical, string? undoId = null)
     {
-        GetState(window).Push(new ContextSetUndoRedo<TValue>(context, value, null, undoId ?? $"{context.GetHashCode()}"), mergeMode);
+        var act = new ContextSetUndoRedo<TValue>(context, value, null, undoId ?? $"{context.GetHashCode()}");
+        if (context.DisableUndo) {
+            act.Do();
+            return;
+        }
+        GetState(window).Push(act, mergeMode);
     }
 
     public static void RecordSet<TValue>(UIContext context, TValue value, Action<UIContext> postChangeAction, WindowBase? window = null, UndoRedoMergeMode mergeMode = UndoRedoMergeMode.MergeIdentical)
     {
-        GetState(window).Push(new ContextSetUndoRedo<TValue>(context, value, postChangeAction, $"{context.GetHashCode()}"), mergeMode);
+        var act = new ContextSetUndoRedo<TValue>(context, value, postChangeAction, $"{context.GetHashCode()}");
+        if (context.DisableUndo) {
+            act.Do();
+            return;
+        }
+        GetState(window).Push(act, mergeMode);
     }
 
     public static void RecordListAdd<T>(UIContext context, IList list, T item, WindowBase? window = null) => RecordListInsert(context, list, item, -1, window);
