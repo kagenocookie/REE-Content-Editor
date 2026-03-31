@@ -1,13 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
-using ContentEditor.App.Graphics;
-using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
-using ContentEditor.Editor;
 using ContentPatcher;
-using ReeLib;
 
 namespace ContentEditor.App;
 

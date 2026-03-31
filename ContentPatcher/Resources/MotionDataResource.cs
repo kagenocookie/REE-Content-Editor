@@ -6,7 +6,6 @@ using ContentEditor;
 using ContentEditor.Core;
 using ReeLib;
 using ReeLib.Mot;
-using ReeLib.Msg;
 
 namespace ContentPatcher;
 

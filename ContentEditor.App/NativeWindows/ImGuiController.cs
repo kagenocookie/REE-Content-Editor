@@ -1,19 +1,10 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System;
-using System.Buffers;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using Hexa.NET.ImGui;
 using Silk.NET.Input;
 using Silk.NET.Maths;
-using Silk.NET.OpenGL;
-using Silk.NET.OpenGL.Extensions.Hexa.ImGui;
-using Silk.NET.Vulkan;
 using Silk.NET.Windowing;
 
 namespace Silk.NET.OpenGL.Extensions.Hexa.ImGui;

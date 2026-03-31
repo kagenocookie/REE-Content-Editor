@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
 using System.Text.Json;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Graphics;

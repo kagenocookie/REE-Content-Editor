@@ -2,7 +2,6 @@ using System.Numerics;
 using ContentEditor.Core;
 using ReeLib;
 using ReeLib.via;
-using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 

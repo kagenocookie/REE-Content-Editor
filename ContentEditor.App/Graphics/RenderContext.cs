@@ -4,7 +4,6 @@ using ContentEditor.Editor;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.via;
-using Silk.NET.Maths;
 
 namespace ContentEditor.App.Graphics;
 

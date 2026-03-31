@@ -1,9 +1,7 @@
-using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Themes;
 using Hexa.NET.ImNodes;
-using System.Globalization;
 using System.Numerics;
 using System.Reflection;
 

@@ -1,6 +1,3 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using ContentEditor.App;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Scn;

@@ -1,4 +1,3 @@
-using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Widgets;
 using ContentEditor.App.Windowing;
 using ContentEditor.BackgroundTasks;

@@ -1,6 +1,5 @@
 using System.Numerics;
 using ReeLib.via;
-using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
 namespace ContentEditor.App.Graphics;
@@ -36,7 +35,7 @@ public class AxisGizmo : Gizmo
     public override void Render(OpenGLRenderContext context)
     {
         for (int i = 0; i < 3; i++) {
-            context.Batch.Gizmo.Add(new GizmoRenderBatchItem(Meshes[0].GetMaterial(i), Meshes[0].GetMesh(i), Matrix4X4<float>.Identity, Meshes[0].GetMaterial(i + 3)));
+            context.Batch.Gizmo.Add(new GizmoRenderBatchItem(Meshes[0].GetMaterial(i), Meshes[0].GetMesh(i), Matrix4x4.Identity, Meshes[0].GetMaterial(i + 3)));
         }
     }
 }

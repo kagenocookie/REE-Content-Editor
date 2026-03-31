@@ -1,7 +1,6 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using ContentEditor;
-using ContentPatcher;
 using ReeLib;
 
 namespace ContentPatcher;

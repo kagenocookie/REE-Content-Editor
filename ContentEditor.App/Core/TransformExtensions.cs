@@ -1,6 +1,5 @@
 using System.Numerics;
 using ReeLib.via;
-using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 
@@ -8,19 +7,6 @@ public static class TransformExtensions
 {
     public const float Rad2Deg = 180f / MathF.PI;
     public const float Deg2Rad = MathF.PI / 180f;
-
-    public static Quaternion<float> ToSilkNet(this Quaternion quat) => new Quaternion<float>(quat.X, quat.Y, quat.Z, quat.W);
-    public static Vector3D<float> ToSilkNet(this Vector3 vec) => new Vector3D<float>(vec.X, vec.Y, vec.Z);
-
-    public static Matrix4X4<float> ToGeneric(this mat4 mat) => new Matrix4X4<float>(
-        mat.m00, mat.m01, mat.m02, mat.m03,
-        mat.m10, mat.m11, mat.m12, mat.m13,
-        mat.m20, mat.m21, mat.m22, mat.m23,
-        mat.m30, mat.m31, mat.m32, mat.m33
-    );
-
-    public static Quaternion<float> ToSilkNetQuaternion(this Vector4 vec) => new Quaternion<float>(vec.X, vec.Y, vec.Z, vec.W);
-    public static Vector3D<float> ToSilkNetVec3(this Vector4 vec) => new Vector3D<float>(vec.X, vec.Y, vec.Z);
 
     public static AABB ToWorldBounds(this AABB local, Matrix4x4 world)
     {
@@ -36,8 +22,6 @@ public static class TransformExtensions
 
         return aabb;
     }
-
-    public static AABB ToWorldBounds(this AABB local, Matrix4X4<float> world) => ToWorldBounds(local, world.ToSystem());
 
     public static Matrix4x4 ToMatrix(this in ReeLib.via.Transform xform)
     {
@@ -73,16 +57,16 @@ public static class TransformExtensions
         return Quaternion.CreateFromRotationMatrix(lookAt);
     }
 
-    public static Quaternion<float> CreateFromToQuaternion(this Vector3 from, Vector3 to)
+    public static Quaternion CreateFromToQuaternion(this Vector3 from, Vector3 to)
     {
         var vector = Vector3.Cross(from, to);
         var dot = Vector3.Dot(from, to);
         if (dot < -0.99999f) {
-            return new Quaternion<float>(0, 1, 0, 0);
+            return new Quaternion(0, 1, 0, 0);
         } else {
             var num2 = MathF.Sqrt((1f + dot) * 2f);
             var num3 = 1f / num2;
-            return new Quaternion<float>(vector.X * num3, vector.Y * num3, vector.Z * num3, num2 * 0.5f);
+            return new Quaternion(vector.X * num3, vector.Y * num3, vector.Z * num3, num2 * 0.5f);
         }
     }
 

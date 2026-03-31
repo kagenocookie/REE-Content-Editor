@@ -1,10 +1,6 @@
-using System.Buffers;
 using System.Diagnostics;
 using ContentEditor.App.Graphics;
-using ContentPatcher;
 using ReeLib;
-using ReeLib.via;
-using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 

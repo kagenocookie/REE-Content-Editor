@@ -1,13 +1,9 @@
-using System.Diagnostics;
 using System.Numerics;
 using ContentEditor.App.Graphics;
-using ContentEditor.App.ImguiHandling.Rcol;
-using ContentEditor.App.Windowing;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Rcol;
 using ReeLib.via;
-using Silk.NET.Maths;
 
 namespace ContentEditor.App;
 

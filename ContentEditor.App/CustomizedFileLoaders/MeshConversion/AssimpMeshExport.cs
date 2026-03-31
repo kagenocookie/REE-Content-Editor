@@ -6,7 +6,6 @@ using ReeLib;
 using ReeLib.Common;
 using ReeLib.Mesh;
 using ReeLib.via;
-using Silk.NET.Maths;
 
 namespace ContentEditor.App.FileLoaders;
 

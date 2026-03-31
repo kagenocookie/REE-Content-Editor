@@ -1,6 +1,5 @@
 using System.Numerics;
 using System.Text.Json;
-using System.Threading;
 
 namespace ContentEditor.App
 {

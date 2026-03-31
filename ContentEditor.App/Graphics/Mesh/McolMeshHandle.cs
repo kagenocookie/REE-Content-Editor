@@ -1,5 +1,4 @@
 using ReeLib;
-using ReeLib.via;
 using Silk.NET.OpenGL;
 
 namespace ContentEditor.App.Graphics;

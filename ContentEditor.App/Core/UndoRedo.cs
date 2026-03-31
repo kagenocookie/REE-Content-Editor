@@ -1,10 +1,8 @@
 using System.Collections;
 using System.Numerics;
 using System.Text.Json;
-using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
-using ReeLib.via;
 
 namespace ContentEditor.App;
 

@@ -1,14 +1,10 @@
 using System.Drawing;
 using System.Numerics;
-using System.Reflection;
-using System.Reflection.Metadata;
 using Assimp;
 using ContentEditor.App.Windowing;
-using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Bvh;
-using ReeLib.UVar;
 
 namespace ContentEditor.App.ImguiHandling;
 

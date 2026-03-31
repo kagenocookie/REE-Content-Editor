@@ -1,11 +1,8 @@
 using System.Numerics;
-using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Common;
-using ReeLib.Mesh;
 using ReeLib.Mot;
-using Silk.NET.Maths;
 
 namespace ContentEditor.App.Graphics;
 

@@ -1,10 +1,7 @@
-using System.Numerics;
-using ContentEditor.App.Graphics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
-using ContentPatcher.DD2;
 using ReeLib;
 
 namespace ContentEditor.App.EntityResources;

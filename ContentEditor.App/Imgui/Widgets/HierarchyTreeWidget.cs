@@ -1,9 +1,6 @@
 using ContentEditor.Core;
 using ReeLib;
-using System;
-using System.Collections.Generic;
 using System.Numerics;
-using System.Text;
 
 namespace ContentEditor.App;
 public class HierarchyTreeWidget

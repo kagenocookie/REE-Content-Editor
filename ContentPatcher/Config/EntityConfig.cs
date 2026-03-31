@@ -2,8 +2,6 @@ using System.Numerics;
 using System.Text.RegularExpressions;
 using ContentEditor.Editor;
 using ContentPatcher.StringFormatting;
-using SmartFormat;
-using SmartFormat.Extensions;
 using VYaml.Annotations;
 
 namespace ContentPatcher;

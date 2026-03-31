@@ -1,11 +1,6 @@
-using System.Numerics;
-using Assimp;
-using ContentEditor.App.Windowing;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Aimp;
-using ReeLib.Bvh;
-using ReeLib.Terr;
 
 namespace ContentEditor.App.ImguiHandling;
 

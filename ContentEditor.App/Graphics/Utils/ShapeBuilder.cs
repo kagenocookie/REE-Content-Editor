@@ -1,7 +1,5 @@
 using System.Numerics;
-using ReeLib.MplyMesh;
 using ReeLib.via;
-using Silk.NET.Maths;
 
 namespace ContentEditor.App.Graphics;
 
@@ -207,7 +205,7 @@ public class ShapeBuilder
     }
     private void StoreFilledCircle(ref int index, float radius, int segments, Vector3 center, Vector3 up)
     {
-        var rot = TransformExtensions.CreateFromToQuaternion(Vector3.UnitY, up).ToSystem();
+        var rot = TransformExtensions.CreateFromToQuaternion(Vector3.UnitY, up);
         var segMult = 1f / segments * MathF.PI;
         for (int i = 0; i < segments; ++i) {
             var angle1 = i * segMult;
@@ -399,7 +397,7 @@ public class ShapeBuilder
                     builder.InsertLine(ref index, -alignedUp - side2, alignedUp - side2);
                 }
 
-                var rotation = Quaternion<float>.Normalize(TransformExtensions.CreateFromToQuaternion(Vector3.Normalize(alignedUp), Vector3.Normalize(up))).ToSystem();
+                var rotation = Quaternion.Normalize(TransformExtensions.CreateFromToQuaternion(Vector3.Normalize(alignedUp), Vector3.Normalize(up)));
                 builder.TransformVertices(startIndex, index, rotation, center);
             }
         }
@@ -468,7 +466,7 @@ public class ShapeBuilder
                     builder.InsertLine(ref index, -alignedUp - side2, alignedUp - side2);
                 }
 
-                var rotation = Quaternion<float>.Normalize(TransformExtensions.CreateFromToQuaternion(Vector3.Normalize(alignedUp), Vector3.Normalize(up))).ToSystem();
+                var rotation = Quaternion.Normalize(TransformExtensions.CreateFromToQuaternion(Vector3.Normalize(alignedUp), Vector3.Normalize(up)));
                 builder.TransformVertices(startIndex, index, rotation, center);
             }
         }
@@ -526,7 +524,7 @@ public class ShapeBuilder
                     throw new NotImplementedException();
                 }
 
-                var rotation = Quaternion<float>.Normalize(TransformExtensions.CreateFromToQuaternion(Vector3.Normalize(alignedUp), Vector3.Normalize(up))).ToSystem();
+                var rotation = Quaternion.Normalize(TransformExtensions.CreateFromToQuaternion(Vector3.Normalize(alignedUp), Vector3.Normalize(up)));
                 builder.TransformVertices(startIndex, index, rotation, center);
             }
         }
@@ -565,7 +563,7 @@ public class ShapeBuilder
                     throw new NotImplementedException();
                 }
 
-                var rotation = Quaternion<float>.Normalize(TransformExtensions.CreateFromToQuaternion(Vector3.UnitY, Vector3.Normalize(dir))).ToSystem();
+                var rotation = Quaternion.Normalize(TransformExtensions.CreateFromToQuaternion(Vector3.UnitY, Vector3.Normalize(dir)));
                 builder.TransformVertices(startIndex, index, rotation, pos);
             }
         }
