@@ -108,6 +108,8 @@ public class UIContext
         set { if (value) SetChangedInParents(); else SetUnchanged(); }
     }
 
+    public bool DisableUndo { get; set; }
+
     public UIContext(string label, object? target, UIContext root, Func<UIContext, object?> getter, Action<UIContext, object?> setter, UIOptions options)
     {
         this.target = target;

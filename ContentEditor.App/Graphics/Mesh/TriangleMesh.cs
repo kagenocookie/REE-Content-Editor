@@ -97,11 +97,11 @@ public class TriangleMesh : Mesh
         }
     }
 
-    public TriangleMesh(AimpFile file, ContentGroupContainer container, ContentGroupWall data, int nodeOffset)
+    public TriangleMesh(AimpFile file, ContentGroupContainer container, ContentGroupWall data)
     {
         layout = MeshLayout.ColoredPositions;
         var polygons = data.Nodes;
-        var nodes = container.NodeInfo.Nodes;
+        var nodes = data.NodeInfos;
         var verts = container.Vertices;
         BoundingBox = container.bounds;
 
@@ -112,9 +112,9 @@ public class TriangleMesh : Mesh
 
         var index = 0;
         Span<Vector3> pts = stackalloc Vector3[8];
-        for (int i = 0; i < data.NodeCount; ++i) {
-            var node = nodes[nodeOffset + i];
-            var poly = polygons[i];
+        foreach (var info in data.NodeInfos) {
+            var node = nodes[info.localIndex];
+            var poly = polygons[info.localIndex];
             var color = BitConverter.Int32BitsToSingle((int)node.GetColor(file).rgba);
             for (int k = 0; k < 8; ++k) pts[k] = verts[poly.indices[k]].Vector3;
 

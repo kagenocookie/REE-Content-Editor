@@ -1,4 +1,6 @@
+using System.Numerics;
 using ContentEditor.App.Graphics;
+using ContentEditor.App.Tooling.Navmesh;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Aimp;
@@ -39,6 +41,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
     public AimpFile? DisplayedFile => overrideFile;
 
     public NavmeshContentType visibleContentTypes;
+    private bool isStale;
 
     protected readonly Dictionary<NavmeshContentType, MeshHandle> navMeshes = new();
     protected Material? waypMaterial;
@@ -108,6 +111,10 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
     public GizmoContainer? Update(GizmoContainer? gizmo)
     {
         if (visibleContentTypes == 0 || overrideFile == null) return null;
+        if (isStale) {
+            UnloadMeshes();
+            isStale = false;
+        }
 
         if (overrideFile.mainContent != null) UpdateContainer(ref gizmo, overrideFile.mainContent);
         if (overrideFile.secondaryContent != null) UpdateContainer(ref gizmo, overrideFile.secondaryContent);
@@ -118,7 +125,6 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
     private void UpdateContainer(ref GizmoContainer? gizmo, ContentGroupContainer container)
     {
         UpdateLinks(ref gizmo, container, container == overrideFile!.mainContent ? NavmeshContentType.MainLinks : NavmeshContentType.SecondaryLinks);
-        int offset = 0;
         foreach (var content in container.contents) {
             NavmeshContentType contentType = content switch {
                 ContentGroupMapPoint => NavmeshContentType.Points,
@@ -147,16 +153,15 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
                     UpdatePolygons(gizmo, container, (ContentGroupPolygon)content);
                     break;
                 case NavmeshContentType.Boundaries:
-                    UpdateBoundaries(gizmo, container, (ContentGroupMapBoundary)content, offset);
+                    UpdateBoundaries(gizmo, container, (ContentGroupMapBoundary)content);
                     break;
                 case NavmeshContentType.AABBs:
-                    UpdateAABBs(gizmo, container, (ContentGroupMapAABB)content, offset);
+                    UpdateAABBs(gizmo, container, (ContentGroupMapAABB)content);
                     break;
                 case NavmeshContentType.Walls:
-                    UpdateWalls(gizmo, container, (ContentGroupWall)content, offset);
+                    UpdateWalls(gizmo, container, (ContentGroupWall)content);
                     break;
             }
-            offset += content.NodeCount;
         }
     }
 
@@ -241,10 +246,10 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
         gizmo.Mesh(mesh.Meshes.Skip(1).First(), Transform.WorldTransform, triangleMaterial, triangleMaterialObscure);
     }
 
-    private void UpdateBoundaries(GizmoContainer gizmo, ContentGroupContainer container, ContentGroupMapBoundary content, int offset)
+    private void UpdateBoundaries(GizmoContainer gizmo, ContentGroupContainer container, ContentGroupMapBoundary content)
     {
         if (!navMeshes.TryGetValue(NavmeshContentType.Boundaries, out var mesh)) {
-            navMeshes[NavmeshContentType.Boundaries] = mesh = new MeshHandle(new MeshResourceHandle(new LineMesh(overrideFile!, container, content, offset)));
+            navMeshes[NavmeshContentType.Boundaries] = mesh = new MeshHandle(new MeshResourceHandle(new LineMesh(overrideFile!, container, content)));
 
             Scene!.RenderContext.StoreMesh(mesh.Handle);
         }
@@ -252,21 +257,37 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
         boundsMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "bounds")
             .Color("_MainColor", new Color(0xff, 0x66, 0xbb, 0xff));
         gizmo.Mesh(mesh.Meshes.First(), Transform.WorldTransform, boundsMaterial);
+
+        gizmo.BeginControl();
+        foreach (var info in content.NodeInfos) {
+            var node = content.Nodes[info.localIndex];
+            var aabb = new AABB(node.min, node.max);
+            if (gizmo.Cur.EditableAABB(Matrix4x4.Identity, ref aabb, out int _)) {
+                UndoRedo.RecordCallbackSetter(null, node, new AABB(node.min, node.max), aabb, (nn, val) => {
+                    nn.min = val.minpos;
+                    nn.max = val.maxpos;
+
+                    NavmeshGenerator.PostProcessAdditionalNodes(overrideFile!);
+                    overrideFile!.PackData();
+                    isStale = true;
+                    // TODO mark file handle as modified (we don't have the file handle here...)
+                    // Scene.Workspace.ResourceManager.TryResolveGameFile(overrideFiley)
+                }, $"{info}");
+            }
+        }
     }
-    private void UpdateAABBs(GizmoContainer gizmo, ContentGroupContainer container, ContentGroupMapAABB content, int nodeOffset)
+
+    private void UpdateAABBs(GizmoContainer gizmo, ContentGroupContainer container, ContentGroupMapAABB content)
     {
+        var infos = container.NodeInfo.Nodes;
+        var nodes = content.Nodes;
         if (!navMeshes.TryGetValue(NavmeshContentType.AABBs, out var mesh)) {
             var isMain = container == overrideFile!.mainContent;
             var builder = new ShapeBuilder(isMain ? ShapeBuilder.GeometryType.Line : ShapeBuilder.GeometryType.Filled, MeshLayout.PositionOnly);
-            var infos = container.NodeInfo.Nodes;
-            var nodes = content.Nodes;
             var verts = container.Vertices;
-            for (int i = 0; i < content.NodeCount; ++i) {
-                var info = infos[nodeOffset + i];
-                var node = nodes[i];
-                var min = verts[node.indices[0]].Vector3;
-                var max = verts[node.indices[1]].Vector3;
-                builder.Add(new AABB(min, max));
+            foreach (var info in content.NodeInfos) {
+                var node = content.Nodes[info.localIndex];
+                builder.Add(node.bounds);
             }
             var tri = new ShapeMesh(builder);
             navMeshes[NavmeshContentType.AABBs] = mesh = new MeshHandle(new MeshResourceHandle(tri));
@@ -278,10 +299,10 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
         gizmo.Mesh(mesh.Meshes.First(), Transform.WorldTransform, aabbsMaterial);
     }
 
-    private void UpdateWalls(GizmoContainer gizmo, ContentGroupContainer container, ContentGroupWall content, int nodeOffset)
+    private void UpdateWalls(GizmoContainer gizmo, ContentGroupContainer container, ContentGroupWall content)
     {
         if (!navMeshes.TryGetValue(NavmeshContentType.Walls, out var mesh)) {
-            navMeshes[NavmeshContentType.Walls] = mesh = new MeshHandle(new MeshResourceHandle(new TriangleMesh(overrideFile!, container, content, nodeOffset)));
+            navMeshes[NavmeshContentType.Walls] = mesh = new MeshHandle(new MeshResourceHandle(new TriangleMesh(overrideFile!, container, content)));
             mesh.Handle.Meshes.Add(new LineMesh(mesh.Meshes.First()));
             Scene!.RenderContext.StoreMesh(mesh.Handle);
         }

@@ -30,7 +30,7 @@ public class NavmeshEditor : EditModeHandler
     private UIContext? filePicker;
     private string filepath = "";
     protected UIContext? context;
-    public NavmeshContentType displayedContentTypes = NavmeshContentType.Points|NavmeshContentType.Triangles|NavmeshContentType.AABBs|NavmeshContentType.Walls|NavmeshContentType.MainLinks|NavmeshContentType.SecondaryLinks;
+    public NavmeshContentType displayedContentTypes = NavmeshContentType.Points|NavmeshContentType.Triangles|NavmeshContentType.Boundaries|NavmeshContentType.Walls|NavmeshContentType.AABBs|NavmeshContentType.MainLinks|NavmeshContentType.SecondaryLinks;
 
     private string? loadedFilepath;
     private FileHandle? loadedFile;
@@ -61,7 +61,7 @@ public class NavmeshEditor : EditModeHandler
                 new CsharpFlagsEnumFieldHandler<NavmeshContentType, int>() { HideNumberInput = true },
                 getter: o => o!.displayedContentTypes,
                 setter: (o, v) => o.displayedContentTypes = v
-            );
+            ).DisableUndo = true;
         }
 
         context.children[0].ShowUI();

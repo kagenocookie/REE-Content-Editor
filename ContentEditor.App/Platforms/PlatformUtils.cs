@@ -1,3 +1,6 @@
+#if WINDOWS
+using System.Runtime.InteropServices;
+#endif
 using NativeFileDialogNET;
 using Silk.NET.Windowing;
 
