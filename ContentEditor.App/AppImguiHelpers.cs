@@ -33,11 +33,12 @@ public static class AppImguiHelpers
     {
         var id = ImGui.GetID(label);
         var w = ImGui.CalcItemWidth();
-        var buttonWidth = ImGui.CalcTextSize("Browse...").X + ImGui.GetStyle().FramePadding.X * 4;
+        var buttonWidth = ImGui.CalcTextSize($"{AppIcons.SI_FolderBrowse}").X + ImGui.GetStyle().FramePadding.X * 4;
         ImGui.PushID(label);
-        if (ImGui.Button("Browse...")) {
+        if (ImGui.Button($"{AppIcons.SI_FolderBrowse}")) {
             PlatformUtils.ShowFileDialog((list) => fileBrowseResults[id] = list[0], path, extensions, false);
         }
+        ImguiHelpers.Tooltip("Browse..."u8);
         ImGui.SameLine();
         path ??= "";
         ImGui.SetNextItemWidth(w - buttonWidth);
@@ -83,11 +84,12 @@ public static class AppImguiHelpers
     {
         var id = ImGui.GetID(label);
         var x = ImGui.GetCursorPosX();
-        var textWidth = ImGui.CalcItemWidth() - ImGui.CalcTextSize("Browse...").X - ImGui.GetStyle().FramePadding.X * 2 - x;
+        var textWidth = ImGui.CalcItemWidth() - ImGui.CalcTextSize($"{AppIcons.SI_FolderBrowse}").X - ImGui.GetStyle().FramePadding.X * 2 - x;
         ImGui.PushID(label);
-        if (ImGui.Button("Browse...")) {
+        if (ImGui.Button($"{AppIcons.SI_FolderBrowse}")) {
             PlatformUtils.ShowFolderDialog((list) => fileBrowseResults[id] = list, path);
         }
+        ImguiHelpers.Tooltip("Browse..."u8);
         ImGui.SameLine();
         path ??= "";
         ImGui.SetNextItemWidth(textWidth);

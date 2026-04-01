@@ -492,29 +492,25 @@ public class TexHeaderImguiHandler : IObjectUIHandler
                 EditorWindow.CurrentWindow?.AddSubwindow( new TextureViewer(workspace, texHandle));
             }
         }
-        ImguiHelpers.Tooltip("Open Texture");
+        ImguiHelpers.Tooltip("Open Texture"u8);
         ImGui.SameLine();
-        var end = ImGui.GetCursorPos() + new Vector2(ImGui.CalcItemWidth(), 0);
-        if (context.children.Count == 0) {
-            context.AddChild<TexHeader, string>(tex.texType, tex, new ResourcePathPicker(workspace, KnownFileFormats.Texture) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefaultNoConfirm }, (p) => p!.texPath, (p, v) => p.texPath = v);
-        }
-        context.children[0].ShowUI();
-
         var editor = context.FindHandlerInParents<MdfEditor>();
         var mdf = context.FindHandlerInParents<MdfFileImguiHandler>();
         var mat = mdf == null ? null : editor?.File.Materials.ElementAtOrDefault(mdf.selectedIDX);
         if (mat != null && editor!.MaterialTemplateDB?.Templates.TryGetValue(mat.Header.mmtrPath!.ToLowerInvariant(), out var db) == true) {
-            if (!db.TextureDefaults.TryGetValue(tex.texType, out var defaultPath) || tex.texPath?.Equals(defaultPath) != true) {
-                var pos = ImGui.GetCursorPos();
-                ImGui.SetCursorPos(end + new Vector2(ImGui.CalcTextSize(tex.texType).X + ImGui.GetStyle().ItemSpacing.X, 0));
-                if (ImGui.Button($"{AppIcons.SI_Reset}") && tex.texPath != null) {
+            using (var _ = ImguiHelpers.Disabled(!(!db.TextureDefaults.TryGetValue(tex.texType, out var defaultPath) || tex.texPath?.Equals(defaultPath) != true))) {
+                if (ImGui.Button($"{AppIcons.SI_Null}") && tex.texPath != null) {
                     UndoRedo.RecordSet(context.GetChild(0)!, defaultPath ?? "systems/rendering/NullWhite.tex");
                     UndoRedo.AttachClearState(context.GetChild(0)!);
                 }
-                ImguiHelpers.Tooltip("Set to null texture");
-                ImGui.SetCursorPos(pos);
+                ImguiHelpers.Tooltip("Set to null texture"u8);
             }
         }
+        ImGui.SameLine();
+        if (context.children.Count == 0) {
+            context.AddChild<TexHeader, string>(tex.texType, tex, new ResourcePathPicker(workspace, KnownFileFormats.Texture) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefaultNoConfirm }, (p) => p!.texPath, (p, v) => p.texPath = v);
+        }
+        context.children[0].ShowUI();
     }
 }
 
