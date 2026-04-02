@@ -24,6 +24,8 @@ public class Patcher : IDisposable
     public string? OutputFilepath { get; set; }
     public bool IsPublishingMod { get; set; }
 
+    private string? LoosePublishMetdataFilepath => Directory.Exists(OutputFilepath) ? Path.Combine(OutputFilepath, "_patch_metadata.json") : null;
+
     public Patcher(GameConfig config)
     {
         env = new Workspace(config);
@@ -245,9 +247,14 @@ public class Patcher : IDisposable
     public void RevertPreviousPatch()
     {
         // note: if we implement patch-to-PAK, this won't be always needed, then we just find our PAK file
-        var loosePatchMetaFile = workspace!.BundleManager.ResourcePatchLogPath;
-        if (File.Exists(loosePatchMetaFile)) {
-            DeletePatchInfoResources(loosePatchMetaFile);
+        var activeLoosePatchMetaFile = workspace!.BundleManager.ResourcePatchLogPath;
+        if (File.Exists(activeLoosePatchMetaFile)) {
+            DeletePatchInfoResources(activeLoosePatchMetaFile);
+        }
+
+        var publishLooseMeta = LoosePublishMetdataFilepath;
+        if (File.Exists(publishLooseMeta)) {
+            DeletePatchInfoResources(publishLooseMeta);
         }
 
         var pak = FindActivePatchPak();
@@ -314,7 +321,7 @@ public class Patcher : IDisposable
         if (Path.GetExtension(OutputFilepath) == ".pak" && Path.Exists(OutputFilepath)) {
             metaPath = OutputFilepath + ".patch_metadata.json";
         } else {
-            metaPath = OutputFilepath != null ? Path.Combine(OutputFilepath, "_patch_metadata.json") : workspace!.BundleManager.ResourcePatchLogPath;
+            metaPath = LoosePublishMetdataFilepath ?? workspace!.BundleManager.ResourcePatchLogPath;
         }
         using var fs = File.Create(metaPath);
         JsonSerializer.Serialize(fs, patch, JsonConfig.jsonOptions);
