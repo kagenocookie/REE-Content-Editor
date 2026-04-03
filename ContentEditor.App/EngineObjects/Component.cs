@@ -16,6 +16,14 @@ public interface IConstructorComponent
     void ComponentInit();
 }
 
+public interface IScenePickableComponent
+{
+    /// <summary>
+    /// Populate list of pickable 3D objects.
+    /// </summary>
+    void CollectPickables(PickableData data);
+}
+
 /// <summary>
 /// A component that supports some sort of edit mode.
 /// </summary>

@@ -322,4 +322,42 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
     INodeObject<GameObject>? INodeObject<GameObject>.GetParent() => null;
 
     IEnumerable<GameObject> INodeObject<GameObject>.GetAllChildren() => GameObjects.SelectMany(go => go.GetAllChildren()).Concat(GetAllChildren().SelectMany(f => f.GameObjects));
+
+    internal void CollectPickables(PickableData pickData)
+    {
+        // quit early, this also quickly excludes all children
+        if (!pickData.IsPlausiblePick(GetWorldSpaceBounds())) {
+            return;
+        }
+
+        if (ChildScene != null) {
+            ChildScene.RootFolder.CollectPickables(pickData);
+            return;
+        }
+
+        foreach (var obj in GameObjects) {
+            if (!obj.ShouldDraw) continue;
+
+            CollectPickables(obj, pickData);
+        }
+
+        foreach (var folder in Children) {
+            if (!folder.ShouldDraw) continue;
+
+            folder.CollectPickables(pickData);
+        }
+    }
+
+    private static void CollectPickables(GameObject obj, PickableData data)
+    {
+        foreach (var c in obj.Components.OfType<IScenePickableComponent>()) {
+            c.CollectPickables(data);
+        }
+
+        foreach (var child in obj.Children) {
+            if (!child.ShouldDraw) continue;
+
+            CollectPickables(child, data);
+        }
+    }
 }

@@ -4,7 +4,7 @@ using ReeLib.via;
 
 namespace ContentEditor.App;
 
-public abstract class BaseMultiMeshComponent(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data)
+public abstract class BaseMultiMeshComponent(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data), IScenePickableComponent
 {
     protected readonly List<MeshHandle> meshes = new();
     protected readonly List<MaterialGroup> materials = new();
@@ -76,6 +76,15 @@ public abstract class BaseMultiMeshComponent(GameObject gameObject, RszInstance 
             foreach (var mesh in meshes) {
                 context.RenderSimple(mesh, transform);
             }
+        }
+    }
+
+    public void CollectPickables(PickableData data)
+    {
+        if (!AppConfig.Instance.RenderMeshes.Get()) return;
+
+        foreach (var mesh in meshes) {
+            data.TryAdd(this, 0, mesh, Transform.WorldTransform, WorldSpaceBounds);
         }
     }
 }

@@ -7,6 +7,7 @@ using ContentEditor.App.Windowing;
 using ContentEditor.Editor;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.via;
 using Silk.NET.OpenGL;
 
 namespace ContentEditor.App;
@@ -30,6 +31,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     public Scene? ParentScene { get; private set; }
     public Scene RootScene => Root.Scene;
 
+    private readonly PickableData pickData = new();
     private readonly List<Scene> childScenes = new();
     internal ReadOnlyCollection<Scene> ChildScenes => childScenes.AsReadOnly();
     public IEnumerable<Scene> NestedScenes {
@@ -95,6 +97,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
             Root = new SceneRoot(this);
             Type = SceneType.Main;
             renderContext.ClearColor = AppConfig.Instance.BackgroundColor.Get();
+            Mouse.Clicked += OnSceneMouseClick;
         } else {
             Root = parentScene.Root;
             Type = SceneType.Sub;
@@ -224,6 +227,56 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         if (ParentScene == null) {
             Root.Update(deltaTime);
         }
+    }
+
+    private void OnSceneMouseClick(ImGuiMouseButton button, Vector2 viewportPos)
+    {
+        if (button != ImGuiMouseButton.Left) return;
+
+        if (Root.GizmoManager?.ActiveContainer != null) {
+            return;
+        }
+
+        // try click
+        var ray = ActiveCamera.ViewportToRay(viewportPos);
+        pickData.Clear();
+        pickData.SetRay(ray);
+
+        RootFolder.CollectPickables(pickData);
+        var window = SceneManager.Window as EditorWindow;
+        if (window == null) return;
+        var editorWnd = window.ActiveImguiWindows.FirstOrDefault(wnd => (wnd.Handler as ISceneEditor)?.GetScene() == this);
+        if (editorWnd == null) {
+            // TODO verify
+            window.OpenSceneFileEditor(this);
+            editorWnd = window.ActiveImguiWindows.FirstOrDefault(wnd => (wnd.Handler as ISceneEditor)?.GetScene() == this);
+        }
+        if (editorWnd == null) {
+            return;
+        }
+
+        PickableData.PickItem bestCandidate = default;
+        var closestDistance = float.MaxValue;
+        var originPos = ActiveCamera.Transform.Position;
+        foreach (var candidate in pickData.Candidates) {
+            // verify if it's an actual match, since raw Candidates only pass a broad AABB check
+            var intersection = candidate.mesh.Handle.GetIntersection(ray, candidate.matrix);
+            if (intersection.X == float.MinValue) continue;
+
+            // see if it's closer than our closest match so far
+            var distance = (intersection - originPos).LengthSquared();
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                bestCandidate = candidate;
+            }
+        }
+        if (bestCandidate.mesh == null) {
+            // deselect maybe?
+            return;
+        }
+
+        var target = bestCandidate.context.GameObject;
+        window.InvokeFromUIThread(() => (editorWnd.Handler as IInspectorController)?.SetPrimaryInspector(target));
     }
 
     internal void Render(float deltaTime)

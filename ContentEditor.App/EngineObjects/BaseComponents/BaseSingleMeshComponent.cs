@@ -4,7 +4,7 @@ using ReeLib.via;
 
 namespace ContentEditor.App;
 
-public abstract class BaseSingleMeshComponent(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data)
+public abstract class BaseSingleMeshComponent(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data), IScenePickableComponent
 {
     protected MeshHandle? mesh;
     protected MaterialGroup? material;
@@ -74,5 +74,12 @@ public abstract class BaseSingleMeshComponent(GameObject gameObject, RszInstance
             ref readonly var transform = ref GameObject.Transform.WorldTransform;
             context.RenderSimple(mesh, transform);
         }
+    }
+
+    public void CollectPickables(PickableData data)
+    {
+        if (mesh == null || !AppConfig.Instance.RenderMeshes.Get()) return;
+
+        data.TryAdd(this, 0, mesh, Transform.WorldTransform, WorldSpaceBounds);
     }
 }
