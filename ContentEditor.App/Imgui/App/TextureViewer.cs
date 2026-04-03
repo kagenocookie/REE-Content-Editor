@@ -41,6 +41,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
     private const float minZoom = 0.1f;
     private const float maxZoom = 20.0f;
     private Vector2 pan = Vector2.Zero;
+    private Vector2 lastCanvasSize = Vector2.Zero;
     private bool isDragging = false;
     private bool isFitToWindow = true;
 
@@ -665,11 +666,17 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
             ImGui.Spacing();
             Vector2 canvasSize = ImGui.GetContentRegionAvail();
             Vector2 canvasPos = ImGui.GetCursorScreenPos();
-            if (isFitToWindow) {
+            const float resizeThreshold = 1.0f;
+            bool wasCanvasResized = Math.Abs(canvasSize.X - lastCanvasSize.X) > resizeThreshold || Math.Abs(canvasSize.Y - lastCanvasSize.Y) > resizeThreshold;
+
+            if (isFitToWindow || wasCanvasResized) {
                 zoom = Math.Min(canvasSize.X / texture.Width, canvasSize.Y / texture.Height);
                 pan = Vector2.Zero;
                 isFitToWindow = false;
             }
+            lastCanvasSize = canvasSize;
+
+            if (canvasSize.X <= 0 || canvasSize.Y <= 0) return;
             ImGui.BeginChild("TextureCanvas", canvasSize, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
             ImGui.InvisibleButton("Canvas", canvasSize, ImGuiButtonFlags.MouseButtonLeft);
             bool isHovered = ImGui.IsItemHovered();
