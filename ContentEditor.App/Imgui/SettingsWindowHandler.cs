@@ -191,6 +191,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                             break;
                         case SubGroupID.Hotkeys_TextureViewer:
                             ShowHotkeysTextureViewerTab();
+                            break;
                         case SubGroupID.Hotkeys_Scene:
                             ShowHotkeysSceneTab();
                             break;
