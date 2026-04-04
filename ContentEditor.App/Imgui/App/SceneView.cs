@@ -1,4 +1,5 @@
 using System.Numerics;
+using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -117,7 +118,55 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
         if (isDragging || hoveredMesh || Scene.Mouse.IsViewportHovered && !hoveredMesh) {
             AppImguiHelpers.RedirectMouseInputToScene(Scene, hoveredMesh);
         }
+
+        if (data.IsFocused) {
+            if (AppConfig.Instance.Key_Scene_Hide.Get().IsPressed()) {
+                var editors = EditorWindow.CurrentWindow!.GetSceneEditorWindows(Scene).ToList();
+                foreach (var ed in editors) {
+                    if (ed.Handler is not IInspectorController inspectorRoot) continue;
+
+                    foreach (var obj in inspectorRoot.Inspector.Inspectors) {
+                        if (obj.Target is IVisibilityTarget vis) {
+                            vis.ShouldDrawSelf = false;
+                        }
+                    }
+                    inspectorRoot.Inspector.Reset();
+                }
+            }
+            if (AppConfig.Instance.Key_Scene_Focus3D.Get().IsPressed()) {
+                var editors = EditorWindow.CurrentWindow!.GetSceneEditorWindows(Scene).ToList();
+                foreach (var ed in editors) {
+                    if (ed.Handler is not IInspectorController inspector || inspector.Inspector.PrimaryTarget is not IVisibilityTarget vis) continue;
+
+                    if (vis is Folder f) vis.Scene?.ActiveCamera.LookAt(f, false);
+                    else if (vis is GameObject go) vis.Scene?.ActiveCamera.LookAt(go, false);
+                }
+            }
+            if (AppConfig.Instance.Key_Scene_FocusUI.Get().IsPressed()) {
+                var editors = EditorWindow.CurrentWindow!.GetSceneEditorWindows(Scene).ToList();
+                foreach (var ed in editors) {
+                    if (ed.Handler is not ISceneEditor sceneEditor) continue;
+
+                    var treeEditor = (sceneEditor as SceneEditor)?.Tree ?? (sceneEditor as PrefabEditor)?.Tree;
+                    if (treeEditor == null) continue;
+
+                    var primary = (ed.Handler as IInspectorController)?.Inspector.PrimaryTarget;
+                    if (primary is not IVisibilityTarget vis) continue;
+
+                    treeEditor.ScrollTo(vis);
+                }
+            }
+            if (AppConfig.Instance.Key_Scene_UnhideAll.Get().IsPressed()) {
+                foreach (var obj in Scene.RootFolder.GetAllFolders(true)) {
+                    obj.ShouldDrawSelf = true;
+                }
+                foreach (var obj in Scene.RootFolder.GetAllGameObjects(true)) {
+                    obj.ShouldDrawSelf = true;
+                }
+            }
+        }
     }
+
     private bool isDragging;
 
     private void ShowMenu()

@@ -23,7 +23,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
 {
     public readonly Folder RootFolder;
     public IEnumerable<Folder> Folders => RootFolder.Children;
-    public IEnumerable<Folder> AllFolders => RootFolder.GetAllChildren();
+    public IEnumerable<Folder> AllFolders => RootFolder.GetAllFolders();
     public IEnumerable<GameObject> GameObjects => RootFolder.GameObjects;
 
     public SceneType Type { get; set; }
@@ -97,7 +97,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
             Root = new SceneRoot(this);
             Type = SceneType.Main;
             renderContext.ClearColor = AppConfig.Instance.BackgroundColor.Get();
-            Mouse.Clicked += OnSceneMouseClick;
+            Root.MouseHandler.Clicked += OnSceneMouseClick;
         } else {
             Root = parentScene.Root;
             Type = SceneType.Sub;
@@ -117,6 +117,15 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
                 child.RootFolder.Name.Equals(nameOrPath, StringComparison.InvariantCultureIgnoreCase)) {
                 return child;
             }
+        }
+
+        return null;
+    }
+
+    public Folder? GetChildSceneFolder(Scene childScene)
+    {
+        foreach (var folder in AllFolders) {
+            if (folder.ChildScene == childScene) return folder;
         }
 
         return null;
@@ -245,12 +254,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         RootFolder.CollectPickables(pickData);
         var window = SceneManager.Window as EditorWindow;
         if (window == null) return;
-        var editorWnd = window.ActiveImguiWindows.FirstOrDefault(wnd => (wnd.Handler as ISceneEditor)?.GetScene() == this);
-        if (editorWnd == null) {
-            // TODO verify
-            window.OpenSceneFileEditor(this);
-            editorWnd = window.ActiveImguiWindows.FirstOrDefault(wnd => (wnd.Handler as ISceneEditor)?.GetScene() == this);
-        }
+        var editorWnd = window.GetSceneEditorWindows(this).FirstOrDefault();
         if (editorWnd == null) {
             return;
         }
@@ -276,7 +280,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         }
 
         var target = bestCandidate.context.GameObject;
-        window.InvokeFromUIThread(() => (editorWnd.Handler as IInspectorController)?.SetPrimaryInspector(target));
+        window.InvokeFromUIThread(() => (editorWnd.Handler as IInspectorController)?.Inspector.PrimaryTarget = target);
     }
 
     internal void Render(float deltaTime)

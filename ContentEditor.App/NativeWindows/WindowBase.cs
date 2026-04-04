@@ -34,15 +34,6 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     protected readonly List<WindowData> subwindows = new();
     private readonly List<WindowData> removeSubwindows = new();
     public IReadOnlyList<WindowData> ActiveImguiWindows => subwindows.AsReadOnly();
-    public bool HasOpenInspectorForTarget(object target)
-    {
-        foreach (var sub in subwindows) {
-            if (sub.Handler is ObjectInspector inspector && inspector.Target == target) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     private readonly ManualResetEventSlim isClosing = new(false);
     public bool IsClosing => isClosing.IsSet;
@@ -101,6 +92,25 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     internal WindowBase(int id)
     {
         ID = id;
+    }
+
+    public bool HasOpenInspectorForTarget(object target)
+    {
+        foreach (var sub in subwindows) {
+            if (sub.Handler is ObjectInspector inspector && inspector.Target == target) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public IEnumerable<WindowData> GetSceneEditorWindows(Scene scene)
+    {
+        foreach (var sub in subwindows) {
+            if (sub.Handler is ISceneEditor sce && sce.GetScene() == scene) {
+                yield return sub;
+            }
+        }
     }
 
     internal virtual void InitializeWindow()

@@ -15,19 +15,16 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
 
     public ContentWorkspace Workspace { get; }
     public SceneEditor? ParentEditor { get; }
+    public InspectorContainer Inspector { get; private set; } = null!;
+
     public SceneTreeEditor? Tree => context.GetChildHandler<SceneTreeEditor>();
 
-    private ObjectInspector? primaryInspector;
     private Scene? scene;
     protected override bool IsRevertable => context.Changed;
-
-    public object? PrimaryTarget => primaryInspector?.Target;
 
     private readonly RszSearchHelper searcher = new();
     bool IFilterRoot.HasFilterActive => searcher.HasFilterActive;
     public object? MatchedObject { get => searcher.MatchedObject; set => searcher.MatchedObject = value; }
-
-    private readonly List<ObjectInspector> inspectors = new();
 
     public SceneEditor RootSceneEditor => ParentEditor?.RootSceneEditor ?? this;
 
@@ -35,11 +32,12 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
     {
         Workspace = env;
         ParentEditor = parent;
-        primaryInspector = parent?.primaryInspector;
-        if (primaryInspector != null) {
-            var inspector = primaryInspector;
-            primaryInspector.Closed += () => OnInspectorClosed(inspector);
-        }
+    }
+
+    public override void Init(UIContext context)
+    {
+        base.Init(context);
+        Inspector = new InspectorContainer(this, context);
     }
 
     public RSZFile GetRSZFile() => File.RSZ;
@@ -47,20 +45,11 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
 
     protected override void Reset()
     {
-        primaryInspector = null;
-        CloseInspectors();
+        Inspector.CloseAll();
         context.ClearChildren();
         base.Reset();
         scene?.Dispose();
         scene = null;
-    }
-
-    private void CloseInspectors()
-    {
-        for (int i = inspectors.Count - 1; i >= 0; i--) {
-            var inspector = inspectors[i];
-            EditorWindow.CurrentWindow?.CloseSubwindow(inspector);
-        }
     }
 
     protected override void OnFileChanged()
@@ -119,7 +108,7 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
         if (context.children.Count == 0) {
             var root = scene.RootFolder;
             // context.AddChild<ScnFile, List<ResourceInfo>>("Resources", File, getter: static (c) => c!.ResourceInfoList, handler: new TooltipUIHandler(new ListHandler(typeof(ResourceInfo)), "List of resources that will be preloaded together with the file ingame.\nShould be updated automatically on save."));
-            context.AddChild(root.Name, root, new SceneTreeEditor());
+            context.AddChild(root.Name, root, new SceneTreeEditor(ParentEditor?.Tree));
         }
     }
 
@@ -131,6 +120,9 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
         searcher.ShowFileEditorInline((Tree?.InheritedDepth ?? 0) * 20);
         ImGui.Spacing();
         context.ShowChildrenUI();
+        if (WindowData.IsFocused && Inspector.PrimaryTarget is IVisibilityTarget vis && AppConfig.Instance.Key_Scene_FocusUI.Get().IsPressed()) {
+            Tree?.ScrollTo(vis);
+        }
         ImGui.PopID();
     }
 
@@ -141,40 +133,7 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
 
     void IWindowHandler.OnClosed()
     {
-        CloseInspectors();
-    }
-
-    public void SetPrimaryInspector(object? target)
-    {
-        if (primaryInspector == null) {
-            primaryInspector = AddInspector(target);
-        } else {
-            primaryInspector.Target = target;
-        }
-    }
-
-    public ObjectInspector AddInspector(object? target)
-    {
-        var inspector = new ObjectInspector(this);
-        var window = EditorWindow.CurrentWindow!.AddSubwindow(inspector);
-        var child = context.AddChild("Inspector", window, NullUIHandler.Instance);
-        inspectors.Add(inspector);
-        inspector.Target = target;
-        inspector.Closed += () => OnInspectorClosed(inspector);
-        return inspector;
-    }
-
-    private void OnInspectorClosed(ObjectInspector inspector)
-    {
-        inspectors.Remove(inspector);
-        if (primaryInspector == inspector) {
-            primaryInspector = null;
-        }
-    }
-
-    void IInspectorController.EmitSave()
-    {
-        foreach (var inspector in inspectors) inspector.Context.Save();
+        Inspector.CloseAll();
     }
 
     bool IFilterRoot.IsMatch(object? obj) => searcher.IsMatch(obj);

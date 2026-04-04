@@ -104,7 +104,7 @@ public class RcolEditMode : EditModeHandler
             comp.SetOverrideFile(null);
         }
 
-        var editedTarget = PrimaryEditor?.PrimaryTarget;
+        var editedTarget = PrimaryEditor?.Inspector.PrimaryTarget;
         if (editedTarget == null) {
             comp.activeGroup = null;
             return;

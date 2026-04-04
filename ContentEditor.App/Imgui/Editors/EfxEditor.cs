@@ -20,12 +20,9 @@ public class EfxEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIns
 
     public ContentWorkspace Workspace { get; }
     public EfxEditor RootEditor => context.FindHandlerInParents<EfxEditor>(true) ?? this;
+    public InspectorContainer Inspector { get; private set; } = null!;
 
     protected override bool IsRevertable => context.Changed;
-
-    private readonly List<ObjectInspector> inspectors = new();
-    private ObjectInspector? primaryInspector;
-    public object? PrimaryTarget => primaryInspector?.Target;
 
     public EfxEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
@@ -35,7 +32,13 @@ public class EfxEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIns
     protected override void Reset()
     {
         base.Reset();
-        if (primaryInspector != null) primaryInspector.Target = null!;
+        Inspector.Reset();
+    }
+
+    public override void Init(UIContext context)
+    {
+        base.Init(context);
+        Inspector = new InspectorContainer(this, context) { IsEmbedded = true };
     }
 
     protected override void DrawFileControls(WindowData data)
@@ -55,59 +58,26 @@ public class EfxEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIns
         ImGui.BeginChild("Tree", new System.Numerics.Vector2(400, s.Y - p.Y - ImGui.GetStyle().WindowPadding.Y), ImGuiChildFlags.ResizeX);
         context.children[0].ShowUI();
         ImGui.EndChild();
-        if (context.children.Count == 1 && primaryInspector != null) {
-            context.children.Add(primaryInspector.Context);
+        var inspector = Inspector.PrimaryInspector;
+        if (context.children.Count == 1 && inspector != null) {
+            context.children.Add(inspector.Context);
         }
-        if (context.children.Count > 1 && primaryInspector != null) {
+        if (context.children.Count > 1 && inspector != null) {
             ImGui.SameLine();
             ImGui.BeginChild("Inspector");
-            primaryInspector!.OnIMGUI();
+            Inspector.Inspectors.First().OnIMGUI();
             ImGui.EndChild();
         }
     }
 
-    public void SetPrimaryInspector(object? target)
-    {
-        if (primaryInspector == null) {
-            primaryInspector = AddEmbeddedInspector(target);
-        } else {
-            primaryInspector.Target = target;
-        }
-    }
-
-    public ObjectInspector AddInspector(object target)
-    {
-        var inspector = new ObjectInspector(this);
-        var window = EditorWindow.CurrentWindow!.AddSubwindow(inspector);
-        var child = context.AddChild("Inspector", window, NullUIHandler.Instance);
-        inspectors.Add(inspector);
-        inspector.Target = target;
-        inspector.Closed += () => OnInspectorClosed(inspector);
-        return inspector;
-    }
-
-    private ObjectInspector AddEmbeddedInspector(object? target)
-    {
-        var inspector = new ObjectInspector(this);
-        var window = WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, inspector, "Inspector");
-        inspectors.Add(inspector);
-        inspector.Target = target;
-        inspector.Closed += () => OnInspectorClosed(inspector);
-        return inspector;
-    }
-
-    private void OnInspectorClosed(ObjectInspector inspector)
-    {
-        inspectors.Remove(inspector);
-        if (primaryInspector == inspector) {
-            primaryInspector = null;
-        }
-    }
-
-    void IInspectorController.EmitSave()
-    {
-        foreach (var inspector in inspectors) inspector.Context.Save();
-    }
+    // internal ObjectInspector SetInspector(object? target)
+    // {
+    //     var inspector = new ObjectInspector(this);
+    //     var window = WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, inspector, "Inspector");
+    //     Inspector.Add(inspector);
+    //     inspector.Target = target;
+    //     return inspector;
+    // }
 
     void IObjectUIHandler.OnIMGUI(UIContext container)
     {
@@ -264,7 +234,7 @@ public class EfxEntriesListEditorBase<TType> : DictionaryListImguiHandler<string
                         clone.name = item.name;
                         UndoRedo.RecordSet(itemContext, clone);
                         itemContext.ClearChildren();
-                        itemContext.parent.FindHandlerInParents<EfxEditor>()?.SetPrimaryInspector(clone);
+                        itemContext.parent.FindHandlerInParents<EfxEditor>()?.Inspector.SetPrimaryInspector(clone);
                         ImGui.CloseCurrentPopup();
                     }
                     if (ImGui.Selectable("Paste (new)")) {
@@ -272,7 +242,7 @@ public class EfxEntriesListEditorBase<TType> : DictionaryListImguiHandler<string
                         clone.name = (clone.name ?? "New_entry").GetUniqueName((x) => list.Any(e => e.name == x), "copy");
                         UndoRedo.RecordListInsert(itemContext.parent, list, clone, list.IndexOf(item) + 1);
                         itemContext.parent.ClearChildren();
-                        itemContext.parent.FindHandlerInParents<EfxEditor>()?.SetPrimaryInspector(clone);
+                        itemContext.parent.FindHandlerInParents<EfxEditor>()?.Inspector.SetPrimaryInspector(clone);
                         ImGui.CloseCurrentPopup();
                     }
                 }
@@ -281,7 +251,7 @@ public class EfxEntriesListEditorBase<TType> : DictionaryListImguiHandler<string
                 var clone = item.Clone();
                 clone.name = (clone.name ?? "New_entry").GetUniqueName((x) => list.Any(e => e.name == x), "copy");
                 UndoRedo.RecordListInsert(itemContext.parent, list, clone, list.IndexOf(item) + 1);
-                itemContext.parent.FindHandlerInParents<EfxEditor>()?.SetPrimaryInspector(clone);
+                itemContext.parent.FindHandlerInParents<EfxEditor>()?.Inspector.SetPrimaryInspector(clone);
                 ImGui.CloseCurrentPopup();
             }
             if (ImGui.Selectable("Delete")) {
@@ -299,7 +269,7 @@ public class EfxEntriesListEditorBase<TType> : DictionaryListImguiHandler<string
             var node = context.Get<EFXEntryBase>();
             ImGui.BeginGroup();
             var inspector = context.FindHandlerInParents<IInspectorController>();
-            if (ImGui.Selectable(context.label, node == inspector?.PrimaryTarget)) {
+            if (ImGui.Selectable(context.label, node == inspector?.Inspector.PrimaryTarget)) {
                 OnSelect(context, node);
             }
             var typeAttr = node.TypeAttribute;
@@ -318,7 +288,7 @@ public class EfxEntriesListEditorBase<TType> : DictionaryListImguiHandler<string
                 return;
             }
 
-            efx.SetPrimaryInspector(entry);
+            efx.Inspector.SetPrimaryInspector(entry);
         }
     }
 }

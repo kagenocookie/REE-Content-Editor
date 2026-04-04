@@ -12,9 +12,11 @@ public class SelectionBoundsGizmo : Gizmo
     private MeshHandle mesh = null!;
 
     private bool shouldRenderNext;
+    private readonly RenderContext renderContext;
 
-    public SelectionBoundsGizmo(GL gl) : base(gl)
+    public SelectionBoundsGizmo(GL gl, RenderContext renderContext) : base(gl)
     {
+        this.renderContext = renderContext;
     }
 
     public override void Init(OpenGLRenderContext context)
@@ -49,9 +51,9 @@ public class SelectionBoundsGizmo : Gizmo
         foreach (var ww in wnd.ActiveImguiWindows) {
             if (ww.Handler is ObjectInspector insp && insp.ParentWindow is ISceneEditor editor) {
                 var scene = editor.GetScene();
-                if (scene == null) continue;
+                if (scene?.RenderContext != renderContext) continue;
 
-                var primaryTarget = (editor as SceneEditor)?.PrimaryTarget ?? (editor as PrefabEditor)?.PrimaryTarget;
+                var primaryTarget = (editor as IInspectorController)?.Inspector.PrimaryTarget;
 
                 if (primaryTarget != insp.Target) continue;
 

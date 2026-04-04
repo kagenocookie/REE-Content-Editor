@@ -33,6 +33,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         Hotkeys_Global,
         Hotkeys_PakBrowser,
         Hotkeys_MeshViewer,
+        Hotkeys_Scene,
         Games_ResidentEvil,
         Games_MonsterHunter,
         Games_Other,
@@ -65,6 +66,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         new SettingGroup { Name = "Hotkeys", SubGroups = {
                 new SettingSubGroup { Name = "Global", ID = SubGroupID.Hotkeys_Global},
                 new SettingSubGroup { Name = "Pak Browser", ID = SubGroupID.Hotkeys_PakBrowser},
+                new SettingSubGroup { Name = "Scene", ID = SubGroupID.Hotkeys_Scene},
                 new SettingSubGroup { Name = "Mesh Viewer", ID = SubGroupID.Hotkeys_MeshViewer},
                 // TODO SILVER: There should be contextual hotkeys for the editors
                 //new SettingSubGroup { Name = "Texture Viewer"},
@@ -186,6 +188,9 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                             break;
                         case SubGroupID.Hotkeys_MeshViewer:
                             ShowHotkeysMeshViewerTab();
+                            break;
+                        case SubGroupID.Hotkeys_Scene:
+                            ShowHotkeysSceneTab();
                             break;
                         case SubGroupID.Games_ResidentEvil:
                             ShowGamesResidentEvilTab();
@@ -387,6 +392,15 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImguiKeybinding("Increase Playback Speed", config.Key_MeshViewer_IncreaseAnimSpeed);
         ImguiKeybinding("Decrease Playback Speed", config.Key_MeshViewer_DecreaseAnimSpeed);
     }
+    private void ShowHotkeysSceneTab()
+    {
+        ImGui.Spacing();
+        ImguiKeybinding("Focus Selected", config.Key_Scene_Focus3D);
+        ImguiKeybinding("Show Selected in UI", config.Key_Scene_FocusUI);
+        ImguiKeybinding("Hide Selected", config.Key_Scene_Hide);
+        ImguiKeybinding("Unhide All", config.Key_Scene_UnhideAll);
+    }
+
     private static void ShowGamesResidentEvilTab()
     {
         ImGui.Spacing();
@@ -541,6 +555,14 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImGui.PopItemWidth();
         ImGui.SetNextItemWidth(ImGui.CalcItemWidth() - 150);
         changed = ImguiHelpers.FilterableCSharpEnumCombo<ImGuiKey>(label, ref key.Key, ref filter) || changed;
+        if (!setting.IsInitial) {
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.SI_Reset}")) {
+                setting.Reset();
+                key = setting.Get();
+                changed = true;
+            }
+        }
         ImGui.PopID();
         keyfilters[setting] = filter;
         if (changed) {

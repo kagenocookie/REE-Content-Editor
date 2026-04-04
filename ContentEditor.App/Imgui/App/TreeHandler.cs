@@ -10,6 +10,31 @@ public abstract class TreeHandler<TBaseNode> : IObjectUIHandler where TBaseNode 
     private readonly Stack<(UIContext ctx, int depth)> _stack = new();
     private readonly List<TBaseNode> _roots = new();
     private readonly List<TBaseNode> _selectedHierarchy = new();
+    public readonly TreeHandler<TBaseNode>? parent;
+
+    public TreeHandler()
+    {
+        sharedContext = new();
+    }
+    public TreeHandler(TreeHandler<TBaseNode>? parentTree)
+    {
+        parent = parentTree;
+        sharedContext = parent?.sharedContext ?? new();
+    }
+
+    private TBaseNode? scrollToTarget;
+
+    protected int CurrentIndent { get; private set; }
+    protected float prefixColWidth;
+    protected float TreeLineHeight { get; private set; }
+
+    protected SharedTreeContext sharedContext;
+
+    protected class SharedTreeContext
+    {
+        public int focusHierarchyIndex = -1;
+        public readonly List<TBaseNode> focusHierarchy = new();
+    }
 
     protected abstract IEnumerable<TBaseNode> GetRootChildren(UIContext context);
     /// <summary>
@@ -22,9 +47,14 @@ public abstract class TreeHandler<TBaseNode> : IObjectUIHandler where TBaseNode 
     protected virtual bool IsExpandable(TBaseNode node) => GetChildren(node).Any();
 
     /// <summary>
-    /// Get a list of nodes in the tree hierarchy for the selected node ordered from leaf to root.
+    /// Get a list of nodes in the tree hierarchy for the currently selected node ordered from leaf to root.
     /// </summary>
     protected virtual IEnumerable<TBaseNode> GetSelectedItemHierarchy(UIContext context) => [];
+
+    /// <summary>
+    /// Get a list of nodes in the tree hierarchy for the given node ordered from leaf to root.
+    /// </summary>
+    protected virtual IEnumerable<TBaseNode> GetNodeParentHierarchy(TBaseNode context) => [];
 
     protected abstract void ShowPrefixColumn(TBaseNode node, UIContext context);
 
@@ -47,9 +77,11 @@ public abstract class TreeHandler<TBaseNode> : IObjectUIHandler where TBaseNode 
             context.ShowUI();
         }
     }
-    protected int CurrentIndent { get; private set; }
-    protected float prefixColWidth;
-    protected float TreeLineHeight { get; private set; }
+
+    public void ScrollTo(TBaseNode target)
+    {
+        scrollToTarget = target;
+    }
 
     public void OnIMGUI(UIContext context)
     {
@@ -57,6 +89,12 @@ public abstract class TreeHandler<TBaseNode> : IObjectUIHandler where TBaseNode 
         _roots.AddRange(GetRootChildren(context));
         _selectedHierarchy.Clear();
         _selectedHierarchy.AddRange(GetSelectedItemHierarchy(context));
+        if (scrollToTarget != null) {
+            sharedContext.focusHierarchy.Clear();
+            sharedContext.focusHierarchyIndex = _selectedHierarchy.Count - 1;
+            sharedContext.focusHierarchy.AddRange(_selectedHierarchy);
+            scrollToTarget = null;
+        }
         _stack.Clear();
         int i = 0;
         foreach (var item in _roots) {
@@ -143,6 +181,10 @@ public abstract class TreeHandler<TBaseNode> : IObjectUIHandler where TBaseNode 
                 if (ImGui.ArrowButton($"arrow", showChildren ? ImGuiDir.Down : ImGuiDir.Right)) {
                     showChildren = ctx.StateBool = !showChildren;
                 }
+                if (sharedContext.focusHierarchyIndex != -1 && sharedContext.focusHierarchy[sharedContext.focusHierarchyIndex] == node) {
+                    ctx.StateBool = showChildren = true;
+                    sharedContext.focusHierarchyIndex--;
+                }
                 ImGui.SameLine();
             } else {
                 showChildren = false;
@@ -152,6 +194,12 @@ public abstract class TreeHandler<TBaseNode> : IObjectUIHandler where TBaseNode 
                     // the assumption is that if there's any prefix UI, it's got at least a button, or is otherwise consistently sized
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + itemSpacing.Y);
                 }
+            }
+
+            if (sharedContext.focusHierarchyIndex == 0 && sharedContext.focusHierarchy[0] == node) {
+                ImGui.SetScrollHereY();
+                sharedContext.focusHierarchyIndex = -1;
+                sharedContext.focusHierarchy.Clear();
             }
 
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 1); // don't ask why, it just works
