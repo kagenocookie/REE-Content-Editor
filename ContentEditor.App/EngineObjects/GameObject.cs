@@ -59,7 +59,14 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         set => SceneFlags = (value ? SceneFlags|SceneFlags.Draw : SceneFlags&~SceneFlags.Draw);
     }
 
-    public bool IsInTree => Scene?.GameObjects.Contains(this) == true || Parent?.IsInTree == true || Folder?.IsInTree == true;
+    public bool IsInTree {
+        get {
+            if (Scene?.GameObjects.Contains(this) == true) return true;
+            if (Parent != null) return Parent.IsInTree;
+            if (Folder != null) return Folder.IsInTree && Folder.GameObjects.Contains(this);
+            return false;
+        }
+    }
 
     protected override string GetPath()
     {
