@@ -18,16 +18,14 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
 
     public ContentWorkspace Workspace { get; }
 
+    public InspectorContainer Inspector { get; private set; } = null!;
+
     public RcolEditor RootEditor => context.FindHandlerInParents<RcolEditor>(true) ?? this;
 
     private RequestSetColliderComponent? _component;
     public RequestSetColliderComponent? Component => _component;
 
     protected override bool IsRevertable => context.Changed;
-
-    private readonly List<ObjectInspector> inspectors = new();
-    private ObjectInspector? primaryInspector;
-    public object? PrimaryTarget => primaryInspector?.Target;
 
     private static MemberInfo[] BasicFields = [
         typeof(RcolFile).GetProperty(nameof(RcolFile.IgnoreTags))!,
@@ -49,10 +47,16 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
 
     public RSZFile GetRSZFile() => File.RSZ;
 
+    public override void Init(UIContext context)
+    {
+        base.Init(context);
+        Inspector = new InspectorContainer(this, context) { IsEmbedded = true };
+    }
+
     protected override void Reset()
     {
         base.Reset();
-        if (primaryInspector != null) primaryInspector.Target = null!;
+        Inspector.Reset();
     }
 
     protected override void DrawFileContents()
@@ -67,23 +71,14 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
         ImGui.BeginChild("Tree", new System.Numerics.Vector2(400, s.Y - p.Y - ImGui.GetStyle().WindowPadding.Y), ImGuiChildFlags.ResizeX);
         context.children[0].ShowUI();
         ImGui.EndChild();
-        if (context.children.Count == 1 && primaryInspector != null) {
-            context.children.Add(primaryInspector.Context);
+        if (context.children.Count == 1 && Inspector.PrimaryInspector != null) {
+            context.children.Add(Inspector.PrimaryInspector.Context);
         }
-        if (context.children.Count > 1 && primaryInspector != null) {
+        if (context.children.Count > 1 && Inspector.PrimaryInspector != null) {
             ImGui.SameLine();
             ImGui.BeginChild("Inspector");
-            primaryInspector!.OnIMGUI();
+            Inspector.PrimaryInspector!.OnIMGUI();
             ImGui.EndChild();
-        }
-    }
-
-    public void SetPrimaryInspector(object? target)
-    {
-        if (primaryInspector == null) {
-            primaryInspector = AddEmbeddedInspector(target);
-        } else {
-            primaryInspector.Target = target;
         }
     }
 
@@ -92,9 +87,8 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
         var inspector = new ObjectInspector(this);
         var window = EditorWindow.CurrentWindow!.AddSubwindow(inspector);
         var child = context.AddChild("Inspector", window, NullUIHandler.Instance);
-        inspectors.Add(inspector);
+        Inspector.Add(inspector);
         inspector.Target = target;
-        inspector.Closed += () => OnInspectorClosed(inspector);
         return inspector;
     }
 
@@ -102,23 +96,9 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
     {
         var inspector = new ObjectInspector(this);
         var window = WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, inspector, "Inspector");
-        inspectors.Add(inspector);
+        Inspector.Add(inspector);
         inspector.Target = target;
-        inspector.Closed += () => OnInspectorClosed(inspector);
         return inspector;
-    }
-
-    private void OnInspectorClosed(ObjectInspector inspector)
-    {
-        inspectors.Remove(inspector);
-        if (primaryInspector == inspector) {
-            primaryInspector = null;
-        }
-    }
-
-    void IInspectorController.EmitSave()
-    {
-        foreach (var inspector in inspectors) inspector.Context.Save();
     }
 
     void IObjectUIHandler.OnIMGUI(UIContext container)
@@ -159,19 +139,19 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
             var item = context.Get<RequestSet>();
             var show = ImguiHelpers.TreeNodeSuffix(context.label, context.GetRaw()?.ToString() ?? string.Empty);
             if (ImGui.IsItemClicked()) {
-                context.FindHandlerInParents<IInspectorController>()?.SetPrimaryInspector(item!);
+                context.FindHandlerInParents<IInspectorController>()?.Inspector.SetPrimaryInspector(item!);
             }
             HandleContextMenu(context);
             if (show) {
                 var inspector = context.FindHandlerInParents<IInspectorController>();
-                if (ImGui.Selectable("Info", inspector?.PrimaryTarget == item)) {
-                    inspector?.SetPrimaryInspector(item!);
+                if (ImGui.Selectable("Info", inspector?.Inspector.PrimaryTarget == item)) {
+                    inspector?.Inspector.SetPrimaryInspector(item!);
                 }
-                if (ImguiHelpers.SelectableSuffix($"UserData", item.Instance?.ToString(), inspector?.PrimaryTarget == item.Instance)) {
-                    inspector?.SetPrimaryInspector(item.Instance!);
+                if (ImguiHelpers.SelectableSuffix($"UserData", item.Instance?.ToString(), inspector?.Inspector.PrimaryTarget == item.Instance)) {
+                    inspector?.Inspector.SetPrimaryInspector(item.Instance!);
                 }
-                if (ImguiHelpers.SelectableSuffix($"Group", item.Group?.Info.Name, inspector?.PrimaryTarget == item.Group)) {
-                    inspector?.SetPrimaryInspector(item.Group!);
+                if (ImguiHelpers.SelectableSuffix($"Group", item.Group?.Info.Name, inspector?.Inspector.PrimaryTarget == item.Group)) {
+                    inspector?.Inspector.SetPrimaryInspector(item.Group!);
                 }
                 ImGui.TreePop();
             }
@@ -208,14 +188,14 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
                         UndoRedo.RecordSet(context, clone);
                         UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
                         UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Do, () => {
-                            if (editor?.PrimaryTarget == item) {
-                                editor.SetPrimaryInspector(clone);
+                            if (editor?.Inspector.PrimaryTarget == item) {
+                                editor.Inspector.SetPrimaryInspector(clone);
                             }
                             rcol?.InsertNewRequestSet(clone);
                         });
                         UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Undo, () => {
-                            if (editor?.PrimaryTarget == clone) {
-                                editor.SetPrimaryInspector(item);
+                            if (editor?.Inspector.PrimaryTarget == clone) {
+                                editor.Inspector.SetPrimaryInspector(item);
                             }
                         });
                     }
@@ -228,7 +208,7 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
                         if (!groupExists) rcol?.Groups.Add(clone.Group!);
                         UndoRedo.RecordListInsert(context.parent, list, clone, list.IndexOf(item) + 1);
                         UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context.parent);
-                        editor?.SetPrimaryInspector(clone);
+                        editor?.Inspector.SetPrimaryInspector(clone);
                         UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Do, () => rcol?.InsertNewRequestSet(clone));
                     }
                 }

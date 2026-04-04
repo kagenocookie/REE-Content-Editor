@@ -81,6 +81,11 @@ public class AppConfig : Singleton<AppConfig>
         public const string Key_TextureViewer_ResetView = "key_textureviewer_resetview";
         public const string Key_TextureViewer_ZoomIn = "key_textureviewer_zoomin";
         public const string Key_TextureViewer_ZoomOut = "key_textureviewer_zoomout";
+        public const string Key_Scene_Hide = "key_hide";
+        public const string Key_Scene_UnhideAll = "key_unhide_all";
+        public const string Key_Scene_Focus3D = "key_focus";
+        public const string Key_Scene_FocusUI = "key_focus_ui";
+        public const string Key_Scene_Delete = "key_delete";
 
         public const string Gamepath = "game_path";
         public const string GameExtractPath = "game_extract_path";
@@ -232,6 +237,11 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<KeyBinding> Key_TextureViewer_ResetView = new SettingWrapper<KeyBinding>(Keys.Key_TextureViewer_ResetView, _lock, new KeyBinding(ImGuiKey.Keypad0, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_TextureViewer_ZoomIn = new SettingWrapper<KeyBinding>(Keys.Key_TextureViewer_ZoomIn, _lock, new KeyBinding(ImGuiKey.Equal, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_TextureViewer_ZoomOut = new SettingWrapper<KeyBinding>(Keys.Key_TextureViewer_ZoomOut, _lock, new KeyBinding(ImGuiKey.Minus, ctrl: true));
+    public readonly SettingWrapper<KeyBinding> Key_Scene_Hide = new SettingWrapper<KeyBinding>(Keys.Key_Scene_Hide, _lock, new KeyBinding(ImGuiKey.H));
+    public readonly SettingWrapper<KeyBinding> Key_Scene_UnhideAll = new SettingWrapper<KeyBinding>(Keys.Key_Scene_UnhideAll, _lock, new KeyBinding(ImGuiKey.H, alt: true));
+    public readonly SettingWrapper<KeyBinding> Key_Scene_Focus3D = new SettingWrapper<KeyBinding>(Keys.Key_Scene_Focus3D, _lock, new KeyBinding(ImGuiKey.F));
+    public readonly SettingWrapper<KeyBinding> Key_Scene_FocusUI = new SettingWrapper<KeyBinding>(Keys.Key_Scene_FocusUI, _lock, new KeyBinding(ImGuiKey.F, shift: true));
+    public readonly SettingWrapper<KeyBinding> Key_Scene_Delete = new SettingWrapper<KeyBinding>(Keys.Key_Scene_Delete, _lock, new KeyBinding(ImGuiKey.Delete));
 
     public string ConfigBasePath => GameConfigBaseFilepath.Get() ?? "configs";
 
@@ -382,6 +392,11 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.Key_TextureViewer_ResetView, instance.Key_TextureViewer_ResetView.value.ToString(), "Keys"),
             (Keys.Key_TextureViewer_ZoomIn, instance.Key_TextureViewer_ZoomIn.value.ToString(), "Keys"),
             (Keys.Key_TextureViewer_ZoomOut, instance.Key_TextureViewer_ZoomOut.value.ToString(), "Keys"),
+            (Keys.Key_Scene_Hide, instance.Key_Scene_Hide.value.ToString(), "Keys"),
+            (Keys.Key_Scene_UnhideAll, instance.Key_Scene_UnhideAll.value.ToString(), "Keys"),
+            (Keys.Key_Scene_Focus3D, instance.Key_Scene_Focus3D.value.ToString(), "Keys"),
+            (Keys.Key_Scene_FocusUI, instance.Key_Scene_FocusUI.value.ToString(), "Keys"),
+            (Keys.Key_Scene_Delete, instance.Key_Scene_Delete.value.ToString(), "Keys"),
         };
         foreach (var (game, data) in instance.gameConfigs) {
             if (!string.IsNullOrEmpty(data.gamepath)) {
@@ -587,6 +602,11 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.Key_TextureViewer_ResetView: if (KeyBinding.TryParse(value, out _key)) Key_TextureViewer_ResetView.value = _key; break;
                         case Keys.Key_TextureViewer_ZoomIn: if (KeyBinding.TryParse(value, out _key)) Key_TextureViewer_ZoomIn.value = _key; break;
                         case Keys.Key_TextureViewer_ZoomOut: if (KeyBinding.TryParse(value, out _key)) Key_TextureViewer_ZoomOut.value = _key; break;
+                        case Keys.Key_Scene_Hide: if (KeyBinding.TryParse(value, out _key)) Key_Scene_Hide.value = _key; break;
+                        case Keys.Key_Scene_UnhideAll: if (KeyBinding.TryParse(value, out _key)) Key_Scene_UnhideAll.value = _key; break;
+                        case Keys.Key_Scene_Focus3D: if (KeyBinding.TryParse(value, out _key)) Key_Scene_Focus3D.value = _key; break;
+                        case Keys.Key_Scene_FocusUI: if (KeyBinding.TryParse(value, out _key)) Key_Scene_FocusUI.value = _key; break;
+                        case Keys.Key_Scene_Delete: if (KeyBinding.TryParse(value, out _key)) Key_Scene_Delete.value = _key; break;
                     }
                 } else {
                     var config = gameConfigs.GetValueOrDefault(group);

@@ -9,7 +9,10 @@ using ReeLib.via;
 namespace ContentEditor.App;
 
 [RszComponentClass("via.landscape.Foliage")]
-public class Foliage(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data), IFixedClassnameComponent, IGizmoComponent
+public class Foliage(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data),
+    IFixedClassnameComponent,
+    IGizmoComponent,
+    IScenePickableComponent
 {
     static string IFixedClassnameComponent.Classname => "via.landscape.Foliage";
 
@@ -180,5 +183,24 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
         }
 
         return gizmo;
+    }
+
+    public void CollectPickables(PickableData data)
+    {
+        if (!AppConfig.Instance.RenderMeshes.Get()) return;
+
+        for (int i = 0; i < meshes.Count && i < _transformsCache.Count; i++) {
+            var cache = _transformsCache[i];
+            var mesh = meshes[i];
+            if (cache.Count == 0 || mesh.IsEmpty) continue;
+
+            for (int k = 0; k < cache.Count; ++k) {
+                var matrix = cache[k];
+                var bounds = AABB.MaxMin
+                    .Extend(Vector3.Transform(mesh.BoundingBox.minpos, matrix))
+                    .Extend(Vector3.Transform(mesh.BoundingBox.maxpos, matrix));
+                data.TryAdd(this, i * 10000 | k, mesh, matrix, bounds);
+            }
+        }
     }
 }

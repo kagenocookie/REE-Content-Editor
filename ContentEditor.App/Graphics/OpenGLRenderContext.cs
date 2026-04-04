@@ -466,7 +466,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     {
         Gizmos.Add(new GridGizmo(GL));
         Gizmos.Add(new AxisGizmo(GL));
-        Gizmos.Add(new SelectionBoundsGizmo(GL));
+        Gizmos.Add(new SelectionBoundsGizmo(GL, this));
     }
 
     private void RenderGizmos()

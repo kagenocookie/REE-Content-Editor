@@ -263,7 +263,7 @@ public class UndoRedo
             UndoRedoMergeMode.NeverMerge);
     }
 
-    public static void RecordRemoveChild<TNode>(UIContext context, TNode node, WindowBase? window = null)
+    public static void RecordRemoveChild<TNode>(UIContext? context, TNode node, WindowBase? window = null)
         where TNode : INodeObject<TNode>, IDisposable
     {
         var prevParent = node.GetParent();

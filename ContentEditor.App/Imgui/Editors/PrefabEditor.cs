@@ -25,17 +25,16 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
 
     public ContentWorkspace Workspace { get; }
 
-    private ObjectInspector? primaryInspector;
+    public InspectorContainer Inspector { get; private set; } = null!;
+
+    public SceneTreeEditor? Tree => context.GetChildHandler<SceneTreeEditor>();
+
     private Scene? scene;
     protected override bool IsRevertable => context.Changed;
-
-    public object? PrimaryTarget => primaryInspector?.Target;
 
     private readonly RszSearchHelper searcher = new();
     bool IFilterRoot.HasFilterActive => searcher.HasFilterActive;
     public object? MatchedObject { get => searcher.MatchedObject; set => searcher.MatchedObject = value; }
-
-    private readonly List<ObjectInspector> inspectors = new();
 
     public PrefabEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
@@ -44,6 +43,12 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
 
     public RSZFile GetRSZFile() => File.RSZ;
     public Scene? GetScene() => scene;
+
+    public override void Init(UIContext context)
+    {
+        base.Init(context);
+        Inspector = new InspectorContainer(this, context);
+    }
 
     protected override void OnFileReverted()
     {
@@ -71,20 +76,11 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
 
     protected override void Reset()
     {
-        primaryInspector = null;
-        CloseInspectors();
+        Inspector.CloseAll();
         context.ClearChildren();
         base.Reset();
         scene?.Dispose();
         scene = null;
-    }
-
-    private void CloseInspectors()
-    {
-        for (int i = inspectors.Count - 1; i >= 0; i--) {
-            var inspector = inspectors[i];
-            EditorWindow.CurrentWindow?.CloseSubwindow(inspector);
-        }
     }
 
     private Scene? LoadScene()
@@ -125,6 +121,9 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
         ImGui.Spacing();
         ImGui.Separator();
         context.ShowChildrenUI();
+        if (WindowData.IsFocused && Inspector.PrimaryTarget is IVisibilityTarget vis && AppConfig.Instance.Key_Scene_FocusUI.Get().IsPressed()) {
+            Tree?.ScrollTo(vis);
+        }
         ImGui.PopID();
     }
 
@@ -135,40 +134,7 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
 
     void IWindowHandler.OnClosed()
     {
-        CloseInspectors();
-    }
-
-    public void SetPrimaryInspector(object? target)
-    {
-        if (primaryInspector == null) {
-            primaryInspector = AddInspector(target);
-        } else {
-            primaryInspector.Target = target;
-        }
-    }
-
-    public ObjectInspector AddInspector(object? target)
-    {
-        var inspector = new ObjectInspector(this);
-        var window = EditorWindow.CurrentWindow!.AddSubwindow(inspector);
-        var child = context.AddChild("Inspector", window, NullUIHandler.Instance);
-        inspectors.Add(inspector);
-        inspector.Target = target;
-        inspector.Closed += () => OnInspectorClosed(inspector);
-        return inspector;
-    }
-
-    private void OnInspectorClosed(ObjectInspector inspector)
-    {
-        inspectors.Remove(inspector);
-        if (primaryInspector == inspector) {
-            primaryInspector = null;
-        }
-    }
-
-    void IInspectorController.EmitSave()
-    {
-        foreach (var inspector in inspectors) inspector.Context.Save();
+        Inspector.CloseAll();
     }
 
     bool IFilterRoot.IsMatch(object? obj) => searcher.IsMatch(obj);

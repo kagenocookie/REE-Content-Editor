@@ -108,11 +108,32 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
         }
     }
 
-    public IEnumerable<GameObject> GetAllGameObjects()
+    public IEnumerable<Folder> GetAllFolders(bool includeChildScenes = false)
+    {
+        foreach (var child in Children) {
+            yield return child;
+            foreach (var sub in child.GetAllFolders()) {
+                yield return sub;
+            }
+            if (includeChildScenes && child.ChildScene != null) {
+                foreach (var cs in child.ChildScene.RootFolder.GetAllFolders(includeChildScenes)) {
+                    yield return cs;
+                }
+            }
+        }
+    }
+
+    public IEnumerable<GameObject> GetAllGameObjects(bool includeChildScenes = false)
     {
         foreach (var folder in Children) {
-            foreach (var sub in folder.GetAllGameObjects()) {
+            foreach (var sub in folder.GetAllGameObjects(includeChildScenes)) {
                 yield return sub;
+            }
+
+            if (includeChildScenes && folder.ChildScene != null) {
+                foreach (var cs in folder.ChildScene.RootFolder.GetAllGameObjects(includeChildScenes)) {
+                    yield return cs;
+                }
             }
         }
         foreach (var child in GameObjects) {
@@ -321,5 +342,43 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
     int INodeObject<GameObject>.GetChildIndex(GameObject child) => GameObjects.IndexOf(child);
     INodeObject<GameObject>? INodeObject<GameObject>.GetParent() => null;
 
-    IEnumerable<GameObject> INodeObject<GameObject>.GetAllChildren() => GameObjects.SelectMany(go => go.GetAllChildren()).Concat(GetAllChildren().SelectMany(f => f.GameObjects));
+    IEnumerable<GameObject> INodeObject<GameObject>.GetAllChildren() => GameObjects.SelectMany(go => go.GetAllChildren()).Concat(GetAllFolders().SelectMany(f => f.GameObjects));
+
+    internal void CollectPickables(PickableData pickData)
+    {
+        // quit early, this also quickly excludes all children
+        if (!pickData.IsPlausiblePick(GetWorldSpaceBounds())) {
+            return;
+        }
+
+        if (ChildScene != null) {
+            ChildScene.RootFolder.CollectPickables(pickData);
+            return;
+        }
+
+        foreach (var obj in GameObjects) {
+            if (!obj.ShouldDraw) continue;
+
+            CollectPickables(obj, pickData);
+        }
+
+        foreach (var folder in Children) {
+            if (!folder.ShouldDraw) continue;
+
+            folder.CollectPickables(pickData);
+        }
+    }
+
+    private static void CollectPickables(GameObject obj, PickableData data)
+    {
+        foreach (var c in obj.Components.OfType<IScenePickableComponent>()) {
+            c.CollectPickables(data);
+        }
+
+        foreach (var child in obj.Children) {
+            if (!child.ShouldDraw) continue;
+
+            CollectPickables(child, data);
+        }
+    }
 }

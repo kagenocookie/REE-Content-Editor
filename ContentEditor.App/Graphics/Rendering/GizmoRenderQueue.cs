@@ -32,15 +32,31 @@ public class GizmoRenderQueue(GL gl) : RenderQueue<GizmoRenderBatchItem>
             item.material.BindModel(item.matrix);
 
             gl.DrawArrays(item.mesh.MeshType, 0, (uint)item.mesh.Indices.Length);
-            if (item.obscuredMaterial != null) {
-                // re-draw with flipped depth func to provide darker "obscured" display
+        }
+
+        gl.DepthFunc(DepthFunction.Greater);
+        foreach (ref readonly var item in itemspan) {
+            if (item.obscuredMaterial == null) continue;
+            if (lastShaderId != item.obscuredMaterial.Shader.ID) {
+                item.obscuredMaterial.Shader.Use();
+                item.obscuredMaterial.Bind();
+                lastShaderId = item.obscuredMaterial.Shader.ID;
+                lastMaterialHash = item.obscuredMaterial.Hash;
+            } else if (lastMaterialHash != item.obscuredMaterial.Hash) {
                 item.obscuredMaterial.Bind();
                 lastMaterialHash = item.obscuredMaterial.Hash;
-                gl.DepthFunc(DepthFunction.Greater);
-                gl.DrawArrays(item.mesh.MeshType, 0, (uint)item.mesh.Indices.Length);
-                gl.DepthFunc(DepthFunction.Less);
             }
+            if (lastMeshId != item.mesh.ID) {
+                item.mesh.Bind();
+                lastMeshId = item.mesh.ID;
+            }
+
+            item.obscuredMaterial.BindModel(item.matrix);
+
+            gl.DrawArrays(item.mesh.MeshType, 0, (uint)item.mesh.Indices.Length);
         }
+        gl.DepthFunc(DepthFunction.Less);
+
         Items.Clear();
     }
 }

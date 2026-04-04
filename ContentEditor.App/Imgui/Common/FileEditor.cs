@@ -43,7 +43,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         ConnectFile();
     }
 
-    public void Init(UIContext context)
+    public virtual void Init(UIContext context)
     {
         this.context = context;
         context.SetChangedNoPropagate(Handle.Modified);
@@ -298,7 +298,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     {
         context.Save();
         if (this is IInspectorController inspector) {
-            inspector.EmitSave();
+            inspector.Inspector.EmitSave();
         }
     }
 

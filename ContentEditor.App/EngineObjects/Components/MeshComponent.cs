@@ -6,7 +6,10 @@ using ReeLib.via;
 namespace ContentEditor.App;
 
 [RszComponentClass("via.render.Mesh")]
-public class MeshComponent(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data), IFixedClassnameComponent, IConstructorComponent
+public class MeshComponent(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data),
+    IFixedClassnameComponent,
+    IConstructorComponent,
+    IScenePickableComponent
 {
     public static new string Classname => "via.render.Mesh";
 
@@ -147,5 +150,12 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
             ref readonly var transform = ref GameObject.Transform.WorldTransform;
             context.RenderSimple(mesh, transform);
         }
+    }
+
+    public void CollectPickables(PickableData data)
+    {
+        if (mesh == null || !AppConfig.Instance.RenderMeshes.Get()) return;
+
+        data.TryAdd(this, 0, mesh, Transform.WorldTransform, WorldSpaceBounds);
     }
 }

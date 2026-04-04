@@ -211,6 +211,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     protected virtual void OnMouseDown(IMouse mouse, Silk.NET.Input.MouseButton button, Vector2 position)
     {
         if (button > MouseButton.Middle || button < MouseButton.Left) return;
+        if (!ImGui.GetIO().WantCaptureMouse) return;
 
         foreach (var scene in SceneManager.RootMasterScenes) {
             scene.Mouse.HandleMouseDown((ImGuiMouseButton)button, position);
@@ -220,11 +221,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     protected virtual void OnMouseUp(IMouse mouse, Silk.NET.Input.MouseButton button, Vector2 position)
     {
         if (button > MouseButton.Middle || button < MouseButton.Left) return;
+        if (!ImGui.GetIO().WantCaptureMouse) return;
         foreach (var scene in SceneManager.RootScenes) {
             if (!scene.IsActive) continue;
-
-            var allowHandle = ImGui.GetIO().WantCaptureMouse == (scene.OwnRenderContext.RenderTargetTextureHandle != 0);
-            if (!allowHandle) continue;
 
             scene.Mouse.HandleMouseUp(LastMouse, (ImGuiMouseButton)button, position);
         }

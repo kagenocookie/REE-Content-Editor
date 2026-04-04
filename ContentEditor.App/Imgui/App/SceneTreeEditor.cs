@@ -11,7 +11,8 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
     private Dictionary<Scene, SceneEditor> _nestedScenes = new();
 
     private static SceneEditor? GetRootSceneEditor(UIContext context) => context.FindHandlerInParents<SceneEditor>()?.RootSceneEditor;
-    private static IInspectorController? GetRootInspector(UIContext context) => GetRootSceneEditor(context) ?? context.FindHandlerInParents<IInspectorController>();
+    private static InspectorContainer? GetRootInspector(UIContext context)
+        => (GetRootSceneEditor(context) ?? context.FindHandlerInParents<IInspectorController>())?.Inspector;
 
     private IVisibilityTarget? dragSource;
     private BookmarkHolder? _bookmarks;
@@ -65,8 +66,12 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
     protected override IEnumerable<IVisibilityTarget> GetSelectedItemHierarchy(UIContext context)
     {
         var target = GetRootInspector(context)?.PrimaryTarget;
-        if (target == null) yield break;
+        if (target == null) return Array.Empty<IVisibilityTarget>();
+        return GetNodeParentHierarchy(target as IVisibilityTarget);
+    }
 
+    protected override IEnumerable<IVisibilityTarget> GetNodeParentHierarchy(IVisibilityTarget? target)
+    {
         if (target is GameObject go) {
             yield return go;
 
@@ -79,12 +84,18 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
         }
 
         if (target is Folder folder) {
-            yield return folder;
+            // note: we're not returning scene root folders directly because they aren't real
 
-            folder = folder.Parent!;
-            while (folder != null) {
+            while (folder.Parent != null) {
                 yield return folder;
-                folder = folder.Parent!;
+                folder = folder.Parent;
+            }
+
+            var parentSceneFolder = folder.Scene?.ParentScene?.GetChildSceneFolder(folder.Scene);
+            if (parentSceneFolder != null) {
+                foreach (var p in GetNodeParentHierarchy(parentSceneFolder)) {
+                    yield return p;
+                }
             }
         }
     }
@@ -443,6 +454,9 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
     }
 
     private static Dictionary<IVisibilityTarget, (List<IVisibilityTarget> rejects, List<IVisibilityTarget> pending)> bisectTemp = new();
+
+    public SceneTreeEditor() {}
+    public SceneTreeEditor(SceneTreeEditor? parentEditor) : base(parentEditor) { }
 
     private void ShowVisibilityBisect(IVisibilityTarget node, UIContext context)
     {

@@ -153,21 +153,26 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
     {
         if (Scene == null) return new();
 
+        return ViewportToRay(screenPos - Scene.RenderContext.ViewportOffset);
+    }
+
+    public Ray ViewportToRay(Vector2 viewportPos)
+    {
+        if (Scene == null) return new();
+
         if (ProjectionMode == CameraProjection.Orthographic) {
             return new Ray() { from = Transform.Position, dir = Transform.Forward };
         }
 
-        var viewportPos = screenPos - Scene.RenderContext.ViewportOffset;
-        var size = Scene.RenderContext.ViewportSize;
-        var relative = viewportPos / size - new Vector2(0.5f);
+        var relative = viewportPos / Scene.RenderContext.ViewportSize - new Vector2(0.5f);
 
         var verticalAngle = 0.5f * FieldOfView;
         var worldHeight = 2f * MathF.Tan(verticalAngle);
 
-        var worldUnits = new Vector3(relative * worldHeight, 1);
+        var worldUnits = new Vector3(-relative * worldHeight, -1);
         worldUnits.X *= -AspectRatio;
         var dir = Vector3.Transform(worldUnits, Transform.Rotation);
-        return new Ray() { from = Transform.Position, dir = dir };
+        return new Ray() { from = Transform.Position, dir = Vector3.Normalize(dir) };
     }
 
     private static Vector4 Project(in Matrix4x4 viewProjection, Vector2 viewportSize, Vector3 position)

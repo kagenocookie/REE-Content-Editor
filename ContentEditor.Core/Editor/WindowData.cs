@@ -22,6 +22,8 @@ public class WindowData
     public Dictionary<string, JsonElement>? PersistentData { get; set; }
     public Dictionary<string, WindowData>? Subwindows { get; set; }
 
+    public bool IsFocused => Context.StateBool;
+
     [JsonIgnore]
     public UIContext Context { get; set; } = null!;
     [JsonIgnore]

@@ -54,7 +54,7 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
         }
         if (ImGui.Button("Duplicate window")) {
             if (parentWindow is IInspectorController inspectorController) {
-                var newInspector = inspectorController.AddInspector(_target);
+                var newInspector = inspectorController.Inspector.AddInspector(_target);
             } else {
                 EditorWindow.CurrentWindow?.AddSubwindow(new ObjectInspector(parentWindow) { _target = _target });
             }
