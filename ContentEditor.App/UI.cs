@@ -443,7 +443,7 @@ public static class AppIcons
     }
 
     public static char GetIcon(object target) => target switch {
-        GameObject go => string.IsNullOrEmpty(go.PrefabPath) ? SI_SceneGameObject2 : SI_FileType_PFB,
+        GameObject go => GetGameObjectMainIcon(go),
         Folder scn => string.IsNullOrEmpty(scn.ScenePath) ? SI_Folder : SI_FolderLink,
         PrefabEditor => SI_FileType_PFB,
         SceneEditor => SI_FileType_SCN,
@@ -452,6 +452,27 @@ public static class AppIcons
         EFXEntry => EfxEntry,
         _ => '\0',
     };
+
+    public static char GetGameObjectMainIcon(GameObject obj)
+    {
+        foreach (var comp in obj.Components) {
+            var icon = GetComponentIcon(comp);
+            if (icon != '\0') return icon;
+        }
+
+        return string.IsNullOrEmpty(obj.PrefabPath) ? SI_SceneGameObject2 : SI_FileType_PFB;
+    }
+
+    public static char GetComponentIcon(Component component) => component switch {
+        EnemyContextController => SI_TagCharacter,
+        RE9CharacterSpawnParam => SI_TagCharacter,
+        ItemPositions => SI_TagItem,
+        _ => component.Data.RszClass.name switch {
+            "chainsaw.Item" => SI_TagItem,
+            _ => '\0',
+        },
+    };
+
     public static (char icon, Vector4 color) GetIcon(KnownFileFormats format) => format switch {
         KnownFileFormats.Prefab => (SI_FileType_PFB, Colors.FileTypePFB),
         KnownFileFormats.Scene => (SI_FileType_SCN, Colors.FileTypeSCN),
