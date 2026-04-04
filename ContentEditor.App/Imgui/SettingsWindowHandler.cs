@@ -399,6 +399,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImguiKeybinding("Show Selected in UI", config.Key_Scene_FocusUI);
         ImguiKeybinding("Hide Selected", config.Key_Scene_Hide);
         ImguiKeybinding("Unhide All", config.Key_Scene_UnhideAll);
+        ImguiKeybinding("Delete Selected", config.Key_Scene_Delete);
     }
 
     private static void ShowGamesResidentEvilTab()

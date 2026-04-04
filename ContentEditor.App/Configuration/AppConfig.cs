@@ -82,6 +82,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string Key_Scene_UnhideAll = "key_unhide_all";
         public const string Key_Scene_Focus3D = "key_focus";
         public const string Key_Scene_FocusUI = "key_focus_ui";
+        public const string Key_Scene_Delete = "key_delete";
 
         public const string Gamepath = "game_path";
         public const string GameExtractPath = "game_extract_path";
@@ -234,6 +235,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<KeyBinding> Key_Scene_UnhideAll = new SettingWrapper<KeyBinding>(Keys.Key_Scene_UnhideAll, _lock, new KeyBinding(ImGuiKey.H, alt: true));
     public readonly SettingWrapper<KeyBinding> Key_Scene_Focus3D = new SettingWrapper<KeyBinding>(Keys.Key_Scene_Focus3D, _lock, new KeyBinding(ImGuiKey.F));
     public readonly SettingWrapper<KeyBinding> Key_Scene_FocusUI = new SettingWrapper<KeyBinding>(Keys.Key_Scene_FocusUI, _lock, new KeyBinding(ImGuiKey.F, shift: true));
+    public readonly SettingWrapper<KeyBinding> Key_Scene_Delete = new SettingWrapper<KeyBinding>(Keys.Key_Scene_Delete, _lock, new KeyBinding(ImGuiKey.Delete));
 
     public string ConfigBasePath => GameConfigBaseFilepath.Get() ?? "configs";
 
@@ -385,6 +387,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.Key_Scene_UnhideAll, instance.Key_Scene_UnhideAll.value.ToString(), "Keys"),
             (Keys.Key_Scene_Focus3D, instance.Key_Scene_Focus3D.value.ToString(), "Keys"),
             (Keys.Key_Scene_FocusUI, instance.Key_Scene_FocusUI.value.ToString(), "Keys"),
+            (Keys.Key_Scene_Delete, instance.Key_Scene_Delete.value.ToString(), "Keys"),
         };
         foreach (var (game, data) in instance.gameConfigs) {
             if (!string.IsNullOrEmpty(data.gamepath)) {
@@ -591,6 +594,7 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.Key_Scene_UnhideAll: if (KeyBinding.TryParse(value, out _key)) Key_Scene_UnhideAll.value = _key; break;
                         case Keys.Key_Scene_Focus3D: if (KeyBinding.TryParse(value, out _key)) Key_Scene_Focus3D.value = _key; break;
                         case Keys.Key_Scene_FocusUI: if (KeyBinding.TryParse(value, out _key)) Key_Scene_FocusUI.value = _key; break;
+                        case Keys.Key_Scene_Delete: if (KeyBinding.TryParse(value, out _key)) Key_Scene_Delete.value = _key; break;
                     }
                 } else {
                     var config = gameConfigs.GetValueOrDefault(group);

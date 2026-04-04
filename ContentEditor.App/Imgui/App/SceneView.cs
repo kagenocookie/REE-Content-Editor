@@ -156,6 +156,21 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
                     treeEditor.ScrollTo(vis);
                 }
             }
+            if (AppConfig.Instance.Key_Scene_Delete.Get().IsPressed()) {
+                var editors = EditorWindow.CurrentWindow!.GetSceneEditorWindows(Scene).ToList();
+                foreach (var ed in editors) {
+                    if (ed.Handler is not IInspectorController inspectorRoot) continue;
+
+                    foreach (var obj in inspectorRoot.Inspector.Inspectors) {
+                        if (obj.Target is GameObject go) {
+                            UndoRedo.RecordRemoveChild(null, go);
+                        } else if (obj.Target is Folder ff) {
+                            UndoRedo.RecordRemoveChild(null, ff);
+                        }
+                    }
+                    inspectorRoot.Inspector.Reset();
+                }
+            }
             if (AppConfig.Instance.Key_Scene_UnhideAll.Get().IsPressed()) {
                 foreach (var obj in Scene.RootFolder.GetAllFolders(true)) {
                     obj.ShouldDrawSelf = true;
