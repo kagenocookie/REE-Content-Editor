@@ -472,10 +472,12 @@ public static class AppIcons
 
     public static char GetComponentIcon(Component component) => component switch {
         EnemyContextController => SI_TagCharacter,
-        RE9CharacterSpawnParam => SI_TagCharacter,
         ItemPositions => SI_TagItem,
+        RE9CharacterSpawnParam => SI_TagCharacter,
+        RE4CharacterSpawnParam => SI_TagCharacter,
         _ => component.Data.RszClass.name switch {
-            "chainsaw.Item" => SI_TagItem,
+            "chainsaw.DropItem" => SI_TagItem,
+            "app.Monster" => SI_TagCharacter,
             _ => '\0',
         },
     };
