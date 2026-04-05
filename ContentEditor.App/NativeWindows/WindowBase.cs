@@ -345,7 +345,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         }
     }
 
-    private void HandleGlobalHotkeys()
+    protected virtual void HandleGlobalHotkeys()
     {
         var cfg = AppConfig.Instance;
         if (UndoRedo.CanUndo(this) && cfg.Key_Undo.Get().IsPressed()) {

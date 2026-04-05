@@ -374,6 +374,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         if (config.Key_Redo.Get().Key != ImGuiKey.Y) ImGui.TextColored(Colors.Warning, "While focused, text inputs will not correctly take this setting into account and still use the default layout keys for undo/redo");
 
         ImguiKeybinding("Save Open Files", config.Key_Save);
+        ImguiKeybinding("Open File", config.Key_Open);
         ImguiKeybinding("Back", config.Key_Back);
         ImguiKeybinding("Close Current Window", config.Key_Close);
         ImguiKeybinding("Toggle Home Page", config.Key_HomePage);

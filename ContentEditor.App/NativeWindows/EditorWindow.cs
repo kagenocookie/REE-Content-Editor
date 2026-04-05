@@ -186,6 +186,17 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
     }
 
+    protected override void HandleGlobalHotkeys()
+    {
+        base.HandleGlobalHotkeys();
+
+        var cfg = AppConfig.Instance;
+        if (cfg.Key_Open.Get().IsPressed()) {
+            // showing it immediately here makes it show up twice for some reason, defer to next frame
+            MainLoop.Instance.MainWindow.InvokeFromUIThread(ShowFileOpenDialog);
+        }
+    }
+
     protected override void SetupMouse(IMouse mouse)
     {
         mouse.DoubleClickTime = 400;
@@ -463,12 +474,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
         if (ImGui.BeginMenu("File")) {
             if (ImGui.MenuItem("Open ...")) {
-                PlatformUtils.ShowFileDialog((files) => {
-                    MainLoop.Instance.MainWindow.InvokeFromUIThread(() => {
-                        Logger.Info(string.Join("\n", files));
-                        OpenFiles(files);
-                    });
-                });
+                ShowFileOpenDialog();
             }
             if (workspace != null) {
                 ImGui.BeginDisabled(!hasUnsavedFiles);
@@ -483,6 +489,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 }
                 if (!hasUnsavedFiles && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.SetItemTooltip("No files have been modified yet.");
                 ImGui.EndDisabled();
+                var menuRight = ImGui.GetWindowPos().X + ImGui.GetWindowSize().X;
+                var maxWidth = menuRight + 600 >= Size.X ? Size.X - 48 * UI.UIScale : Size.X - menuRight - ImGui.GetStyle().WindowPadding.X * 3 - 80 * UI.UIScale;
                 if (ImGui.BeginMenu("Opened files")) {
                     var files = workspace.ResourceManager.GetOpenFiles();
                     if (!files.Any()) {
@@ -536,7 +544,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                                 }
                                 ImGui.SameLine();
                             }
-                            if (ImGui.MenuItem($"{file.Filepath} ({file.References.Count})")) {
+                            var itemstr = file.Filepath;
+                            var textsize = ImGui.CalcTextSize(itemstr).X;
+                            if (textsize > maxWidth - 60 * UI.UIScale) {
+                                itemstr = ImguiHelpers.ElideFilepathString(itemstr, maxWidth - 60 * UI.UIScale);
+                            }
+                            if (ImGui.MenuItem($"{itemstr} ({file.References.Count})")) {
                                 var editor = file.References.OfType<IFocusableFileHandleReferenceHolder>().FirstOrDefault();
                                 if (editor?.CanFocus == true) {
                                     editor.Focus();
@@ -559,17 +572,27 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                         if (ImGui.Button("Clear recent files")) {
                             recents.Clear();
                         }
+                        int i = 0;
                         foreach (var file in recents) {
                             if (!string.IsNullOrEmpty(recentFileFilter) && !file.Contains(recentFileFilter, StringComparison.InvariantCultureIgnoreCase)) {
                                 continue;
                             }
+                            ImGui.PushID(i++);
 
-                            if (ImGui.MenuItem(file)) {
+                            var textsize = ImGui.CalcTextSize(file).X;
+                            var itemstr = file;
+                            if (textsize > maxWidth) {
+                                itemstr = ImguiHelpers.ElideFilepathString(file, maxWidth);
+                            }
+                            if (ImGui.MenuItem(itemstr)) {
+                                ImGui.PopID();
                                 var sep = file.IndexOf('|');
                                 var fileToOpen = sep == -1 ? file : file.Substring(sep + 1);
-                                this.OnFileDrop([fileToOpen], new Vector2D<int>());
+                                this.OnFileDrop([fileToOpen], default);
                                 break;
                             }
+                            if (textsize > maxWidth) ImguiHelpers.Tooltip(file);
+                            ImGui.PopID();
                         }
                     }
                     ImGui.EndMenu();
@@ -771,6 +794,16 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
 
         ImGui.EndMainMenuBar();
+    }
+
+    private void ShowFileOpenDialog()
+    {
+        PlatformUtils.ShowFileDialog((files) => {
+            MainLoop.Instance.MainWindow.InvokeFromUIThread(() => {
+                Logger.Info(string.Join("\n", files));
+                OpenFiles(files);
+            });
+        });
     }
 
     private void SetupSceneRender(Scene? scene)

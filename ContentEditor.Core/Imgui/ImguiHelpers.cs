@@ -416,6 +416,35 @@ public static class ImguiHelpers
         return true;
     }
 
+    public static string ElideFilepathString(string str, float maxWidth)
+    {
+        var size = ImGui.CalcTextSize(str).X;
+        if (size < maxWidth) return str;
+
+        string extension;
+        var lastslash = str.LastIndexOf('/') + 1;
+        var firstdot = str.IndexOf('.', lastslash);
+        if (firstdot == -1) {
+            extension = "";
+        } else {
+            var seconddot = str.IndexOf('.', firstdot + 1);
+            if (seconddot == -1) {
+                extension = string.Concat("..", str.AsSpan(firstdot));
+            } else {
+                extension = string.Concat("..", str.AsSpan()[firstdot..seconddot]);
+            }
+        }
+
+        var extlen = ImGui.CalcTextSize(extension).X;
+
+        var newstr = str;
+        // approximate but good enough
+        var shortenLen = (int)((maxWidth - extlen) / size * str.Length);
+        if (shortenLen < 5) shortenLen = 5;
+        var shortened = str.Substring(0, shortenLen);
+        return shortened + extension;
+    }
+
     public static bool SelectableSuffix(string text, string? suffix, bool selected)
     {
         if (suffix == null) return ImGui.Selectable(text, selected);
