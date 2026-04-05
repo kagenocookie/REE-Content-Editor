@@ -78,6 +78,9 @@ public class AppConfig : Singleton<AppConfig>
         public const string Key_MeshViewer_PrevAnimFrame = "key_meshviewer_prevanimframe";
         public const string Key_MeshViewer_IncreaseAnimSpeed = "key_meshviewer_increaseanimspeed";
         public const string Key_MeshViewer_DecreaseAnimSpeed = "key_meshviewer_decreaseanimspeed";
+        public const string Key_TextureViewer_ResetView = "key_textureviewer_resetview";
+        public const string Key_TextureViewer_ZoomIn = "key_textureviewer_zoomin";
+        public const string Key_TextureViewer_ZoomOut = "key_textureviewer_zoomout";
         public const string Key_Scene_Hide = "key_hide";
         public const string Key_Scene_UnhideAll = "key_unhide_all";
         public const string Key_Scene_Focus3D = "key_focus";
@@ -231,6 +234,9 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<KeyBinding> Key_MeshViewer_PrevAnimFrame = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_PrevAnimFrame, _lock, new KeyBinding(ImGuiKey.LeftArrow));
     public readonly SettingWrapper<KeyBinding> Key_MeshViewer_IncreaseAnimSpeed = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_IncreaseAnimSpeed, _lock, new KeyBinding(ImGuiKey.UpArrow));
     public readonly SettingWrapper<KeyBinding> Key_MeshViewer_DecreaseAnimSpeed = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_DecreaseAnimSpeed, _lock, new KeyBinding(ImGuiKey.DownArrow));
+    public readonly SettingWrapper<KeyBinding> Key_TextureViewer_ResetView = new SettingWrapper<KeyBinding>(Keys.Key_TextureViewer_ResetView, _lock, new KeyBinding(ImGuiKey.Keypad0, ctrl: true));
+    public readonly SettingWrapper<KeyBinding> Key_TextureViewer_ZoomIn = new SettingWrapper<KeyBinding>(Keys.Key_TextureViewer_ZoomIn, _lock, new KeyBinding(ImGuiKey.Equal, ctrl: true));
+    public readonly SettingWrapper<KeyBinding> Key_TextureViewer_ZoomOut = new SettingWrapper<KeyBinding>(Keys.Key_TextureViewer_ZoomOut, _lock, new KeyBinding(ImGuiKey.Minus, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_Scene_Hide = new SettingWrapper<KeyBinding>(Keys.Key_Scene_Hide, _lock, new KeyBinding(ImGuiKey.H));
     public readonly SettingWrapper<KeyBinding> Key_Scene_UnhideAll = new SettingWrapper<KeyBinding>(Keys.Key_Scene_UnhideAll, _lock, new KeyBinding(ImGuiKey.H, alt: true));
     public readonly SettingWrapper<KeyBinding> Key_Scene_Focus3D = new SettingWrapper<KeyBinding>(Keys.Key_Scene_Focus3D, _lock, new KeyBinding(ImGuiKey.F));
@@ -383,6 +389,9 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.Key_MeshViewer_PrevAnimFrame, instance.Key_MeshViewer_PrevAnimFrame.value.ToString(), "Keys"),
             (Keys.Key_MeshViewer_IncreaseAnimSpeed, instance.Key_MeshViewer_IncreaseAnimSpeed.value.ToString(), "Keys"),
             (Keys.Key_MeshViewer_DecreaseAnimSpeed, instance.Key_MeshViewer_DecreaseAnimSpeed.value.ToString(), "Keys"),
+            (Keys.Key_TextureViewer_ResetView, instance.Key_TextureViewer_ResetView.value.ToString(), "Keys"),
+            (Keys.Key_TextureViewer_ZoomIn, instance.Key_TextureViewer_ZoomIn.value.ToString(), "Keys"),
+            (Keys.Key_TextureViewer_ZoomOut, instance.Key_TextureViewer_ZoomOut.value.ToString(), "Keys"),
             (Keys.Key_Scene_Hide, instance.Key_Scene_Hide.value.ToString(), "Keys"),
             (Keys.Key_Scene_UnhideAll, instance.Key_Scene_UnhideAll.value.ToString(), "Keys"),
             (Keys.Key_Scene_Focus3D, instance.Key_Scene_Focus3D.value.ToString(), "Keys"),
@@ -590,6 +599,9 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.Key_MeshViewer_PrevAnimFrame: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_PrevAnimFrame.value = _key; break;
                         case Keys.Key_MeshViewer_IncreaseAnimSpeed: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_IncreaseAnimSpeed.value = _key; break;
                         case Keys.Key_MeshViewer_DecreaseAnimSpeed: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_DecreaseAnimSpeed.value = _key; break;
+                        case Keys.Key_TextureViewer_ResetView: if (KeyBinding.TryParse(value, out _key)) Key_TextureViewer_ResetView.value = _key; break;
+                        case Keys.Key_TextureViewer_ZoomIn: if (KeyBinding.TryParse(value, out _key)) Key_TextureViewer_ZoomIn.value = _key; break;
+                        case Keys.Key_TextureViewer_ZoomOut: if (KeyBinding.TryParse(value, out _key)) Key_TextureViewer_ZoomOut.value = _key; break;
                         case Keys.Key_Scene_Hide: if (KeyBinding.TryParse(value, out _key)) Key_Scene_Hide.value = _key; break;
                         case Keys.Key_Scene_UnhideAll: if (KeyBinding.TryParse(value, out _key)) Key_Scene_UnhideAll.value = _key; break;
                         case Keys.Key_Scene_Focus3D: if (KeyBinding.TryParse(value, out _key)) Key_Scene_Focus3D.value = _key; break;

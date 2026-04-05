@@ -214,7 +214,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             ImGui.PushStyleColor(ImGuiCol.ChildBg, 0);
             ImGui.BeginChild("OverlayControlsContainer", new Vector2(500, ImGui.GetContentRegionAvail().Y - ImGui.GetStyle().WindowPadding.Y), ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AlwaysAutoResize, ImGuiWindowFlags.NoMove);
             ImGui.PushStyleColor(ImGuiCol.ChildBg, ImguiHelpers.GetColor(ImGuiCol.WindowBg) with { W = 0.5f });
-            ImGui.BeginChild("OverlayControls", new Vector2(480, AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().Y - 80 : 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders);
+            ImGui.BeginChild("OverlayControls", new Vector2(500, AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().Y - 80 : 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders);
 
             ImGui.SameLine();
             ShowRootAnimationList();
@@ -376,7 +376,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                         ShowMeshInfo(ctx, false);
                         ImGui.EndMenu();
                     }
-                    if (ctx.IsAnimatable && ImGui.BeginMenu($"{AppIcons.SI_TagCharacter} Skeleton")) {
+                    if (ctx.IsAnimatable && ImGui.BeginMenu($"{AppIcons.SI_FileType_FBXSKEL} Skeleton")) {
                         EnsureAnimationsInit();
                         ctx.ShowSkeletonPicker();
                         ImGui.EndMenu();
@@ -860,9 +860,9 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
         var animator = PrimaryAnimator;
         if (animator == null) return;
-
-        ImGui.Checkbox("Show Skeleton", ref showSkeleton);
-        ImGui.Spacing();
+        ImguiHelpers.ToggleButton($"{AppIcons.SI_FileType_FBXSKEL}", ref showSkeleton, Colors.IconActive);
+        ImguiHelpers.Tooltip("Show Skeleton"u8);
+        ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(ctx.animationSourceFile))) {
             if (ImGui.Button($"{AppIcons.SI_Update}") && animator.File != null) {
                 Workspace.ResourceManager.CloseFile(animator.File);
@@ -871,8 +871,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             }
             ImguiHelpers.Tooltip("Force reload");
         }
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Source File").X - ImGui.GetStyle().FramePadding.X);
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Animation File").X);
         ctx.ShowAnimSettings(meshContexts, false);
     }
 
