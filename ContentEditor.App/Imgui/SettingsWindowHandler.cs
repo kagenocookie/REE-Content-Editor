@@ -378,6 +378,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImguiKeybinding("Back", config.Key_Back);
         ImguiKeybinding("Close Current Window", config.Key_Close);
         ImguiKeybinding("Toggle Home Page", config.Key_HomePage);
+        ImguiKeybinding("Open PAK File Browser", config.Key_OpenPakBrowser);
     }
     private void ShowHotkeysPakBrowserTab()
     {

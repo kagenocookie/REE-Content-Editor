@@ -195,6 +195,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             // showing it immediately here makes it show up twice for some reason, defer to next frame
             MainLoop.Instance.MainWindow.InvokeFromUIThread(ShowFileOpenDialog);
         }
+        if (workspace != null && cfg.Key_OpenPakBrowser.Get().IsPressed()) {
+            AddSubwindow(new PakBrowser(workspace, null));
+        }
     }
 
     protected override void SetupMouse(IMouse mouse)
