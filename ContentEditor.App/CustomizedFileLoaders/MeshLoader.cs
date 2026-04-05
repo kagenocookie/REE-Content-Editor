@@ -79,15 +79,17 @@ public partial class MeshLoader : IFileLoader,
             importer.SetConfig(new MeshVertexLimitConfig(ushort.MaxValue));
             importer.SetConfig(new VertexBoneWeightLimitConfig(16));
             importer.SetConfig(new BooleanPropertyConfig("USE_UNLIMITED_BONES_PER VERTEX", true));
-            importedScene = importer.ImportFileFromStream(
-                handle.Stream,
-                PostProcessSteps.Triangulate |
+            var importFlags = PostProcessSteps.Triangulate |
                 PostProcessSteps.GenerateBoundingBoxes |
                 PostProcessSteps.GenerateNormals |
                 PostProcessSteps.GenerateUVCoords |
                 PostProcessSteps.CalculateTangentSpace |
-                PostProcessSteps.SplitLargeMeshes,
-                Path.GetExtension(handle.Filepath));
+                PostProcessSteps.SplitLargeMeshes;
+            if (Path.GetExtension(handle.Filepath) == ".gltf" && File.Exists(Path.ChangeExtension(handle.Filepath, ".bin"))) {
+                importedScene = importer.ImportFile(handle.Filepath, importFlags);
+            } else {
+                importedScene = importer.ImportFileFromStream(handle.Stream, importFlags, Path.GetExtension(handle.Filepath));
+            }
 
             if (!importedScene.HasMeshes && !importedScene.HasAnimations) {
                 Logger.Error("No meshes or animations found in file " + handle.Filepath);
