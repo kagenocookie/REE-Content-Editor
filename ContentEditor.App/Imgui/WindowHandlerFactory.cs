@@ -502,7 +502,11 @@ public static class WindowHandlerFactory
         }
 
         if (elementType.IsEnum) {
-            context.uiHandler = new CsharpEnumHandler(elementType);
+            if (elementType.GetCustomAttribute<FlagsAttribute>() != null) {
+                context.uiHandler = (IObjectUIHandler)Activator.CreateInstance(typeof(CsharpFlagsEnumFieldHandler<,>).MakeGenericType(elementType, elementType.GetEnumUnderlyingType()))!;
+            } else {
+                context.uiHandler = new CsharpEnumHandler(elementType);
+            }
             return;
         }
 
