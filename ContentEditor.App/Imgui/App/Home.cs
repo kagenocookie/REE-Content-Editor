@@ -106,7 +106,7 @@ public class HomeWindow : IWindowHandler
         ImGui.SameLine();
         float minTabsWidth = 500f * UI.UIScale;
         float tabsFooterHeight = ImGui.GetFrameHeight() + ImGui.GetTextLineHeightWithSpacing() - ImGui.GetStyle().ItemSpacing.Y * 2;
-        ImGui.SetNextWindowSizeConstraints(new Vector2(minTabsWidth, 0), new Vector2(float.MaxValue, float.MaxValue));
+        ImGui.SetNextWindowSizeConstraints(new Vector2(minTabsWidth, 0), new Vector2(minTabsWidth * 3, float.MaxValue));
         ImGui.BeginChild("Tabs", new Vector2((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X) / 3 * 2, ImGui.GetContentRegionAvail().Y - tabsFooterHeight - ImGui.GetStyle().ItemSpacing.Y * 2), ImGuiChildFlags.Borders | ImGuiChildFlags.ResizeX);
         float currentTabsWidth = ImGui.GetWindowWidth();
         ShowTabs(this.context);

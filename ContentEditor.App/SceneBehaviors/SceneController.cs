@@ -23,51 +23,6 @@ public class SceneController(Scene scene)
 
     public void ShowCameraControls()
     {
-        var pos = Scene.ActiveCamera.Transform.Position;
-        if (ImGui.DragFloat3("Pos", ref pos, 0.01f)) {
-            Scene.ActiveCamera.Transform.Position = pos;
-        }
-        if (ImGui.BeginPopupContextItem("Pos")) {
-            if (ImGui.Selectable("Copy value")) {
-                EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(pos, JsonConfig.jsonOptionsIncludeFields), $"Copied position!");
-                ImGui.CloseCurrentPopup();
-            }
-            if (ImGui.Selectable("Paste value")) {
-                if (EditorWindow.CurrentWindow?.GetClipboard()?.TryDeserializeJson<Vector3>(out pos, out var err, JsonConfig.jsonOptionsIncludeFields) == true) {
-                    Scene.ActiveCamera.Transform.Position = pos;
-                }
-                ImGui.CloseCurrentPopup();
-            }
-            ImGui.EndPopup();
-        }
-        if (AppConfig.Instance.ShowQuaternionsAsEuler) {
-            var euler = Scene.ActiveCamera.Transform.Rotation.ToEuler();
-            if (ImGui.DragFloat3("Rot", ref euler, 0.01f)) {
-                euler *= TransformExtensions.Deg2Rad;
-                Scene.ActiveCamera.Transform.Rotation = Quaternion.CreateFromYawPitchRoll(euler.Y, euler.X, euler.Z);
-            }
-        } else {
-            var rot = Scene.ActiveCamera.Transform.Rotation.ToVector4();
-            if (ImGui.DragFloat4("Rot", ref rot, 0.01f)) {
-                Scene.ActiveCamera.Transform.Rotation = rot.ToQuaternion();
-            }
-        }
-
-        if (ImGui.BeginPopupContextItem("Rot")) {
-            var rot = Scene.ActiveCamera.Transform.Rotation;
-            if (ImGui.Selectable("Copy value")) {
-                EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(rot, JsonConfig.jsonOptionsIncludeFields), $"Copied position!");
-                ImGui.CloseCurrentPopup();
-            }
-            if (ImGui.Selectable("Paste value")) {
-                if (EditorWindow.CurrentWindow?.GetClipboard()?.TryDeserializeJson<Quaternion>(out rot, out var err, JsonConfig.jsonOptionsIncludeFields) == true) {
-                    Scene.ActiveCamera.Transform.Rotation = rot;
-                }
-                ImGui.CloseCurrentPopup();
-            }
-            ImGui.EndPopup();
-        }
-
         if (ImGui.RadioButton("Orthographic", Scene.ActiveCamera.ProjectionMode == CameraProjection.Orthographic)) {
             Scene.ActiveCamera.ProjectionMode = CameraProjection.Orthographic;
             Scene.ActiveCamera.LookAt(Scene.RootFolder, true);
@@ -106,6 +61,51 @@ public class SceneController(Scene scene)
         }
         if (ImGui.SliderFloat("Zoom Speed", ref zoomSpeed, 0.01f, 1.0f)) {
             ZoomSpeed = zoomSpeed;
+        }
+        ImGui.Spacing();
+        var pos = Scene.ActiveCamera.Transform.Position;
+        if (ImGui.DragFloat3("Position", ref pos, 0.01f)) {
+            Scene.ActiveCamera.Transform.Position = pos;
+        }
+        if (ImGui.BeginPopupContextItem("Pos")) {
+            if (ImGui.Selectable("Copy value")) {
+                EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(pos, JsonConfig.jsonOptionsIncludeFields), $"Copied position!");
+                ImGui.CloseCurrentPopup();
+            }
+            if (ImGui.Selectable("Paste value")) {
+                if (EditorWindow.CurrentWindow?.GetClipboard()?.TryDeserializeJson<Vector3>(out pos, out var err, JsonConfig.jsonOptionsIncludeFields) == true) {
+                    Scene.ActiveCamera.Transform.Position = pos;
+                }
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
+        if (AppConfig.Instance.ShowQuaternionsAsEuler) {
+            var euler = Scene.ActiveCamera.Transform.Rotation.ToEuler();
+            if (ImGui.DragFloat3("Rotation", ref euler, 0.01f)) {
+                euler *= TransformExtensions.Deg2Rad;
+                Scene.ActiveCamera.Transform.Rotation = Quaternion.CreateFromYawPitchRoll(euler.Y, euler.X, euler.Z);
+            }
+        } else {
+            var rot = Scene.ActiveCamera.Transform.Rotation.ToVector4();
+            if (ImGui.DragFloat4("Rot", ref rot, 0.01f)) {
+                Scene.ActiveCamera.Transform.Rotation = rot.ToQuaternion();
+            }
+        }
+
+        if (ImGui.BeginPopupContextItem("Rot")) {
+            var rot = Scene.ActiveCamera.Transform.Rotation;
+            if (ImGui.Selectable("Copy value")) {
+                EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(rot, JsonConfig.jsonOptionsIncludeFields), $"Copied position!");
+                ImGui.CloseCurrentPopup();
+            }
+            if (ImGui.Selectable("Paste value")) {
+                if (EditorWindow.CurrentWindow?.GetClipboard()?.TryDeserializeJson<Quaternion>(out rot, out var err, JsonConfig.jsonOptionsIncludeFields) == true) {
+                    Scene.ActiveCamera.Transform.Rotation = rot;
+                }
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
         }
     }
 
