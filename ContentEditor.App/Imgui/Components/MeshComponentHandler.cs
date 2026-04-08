@@ -25,7 +25,7 @@ public class CompositeMeshComponentHandler : BaseComponentEditor, IUIContextEven
     public bool HandleEvent(UIContext context, EditorUIEvent eventData)
     {
         if (eventData.type is UIContextEvent.Changed or UIContextEvent.Reverted or UIContextEvent.Updated) {
-            context.Get<CompositeMesh>().UpdateInstanceTransforms();
+            context.Get<CompositeMesh>().ReloadMeshes();
         }
         return true;
     }
