@@ -64,6 +64,8 @@ public abstract class Mesh : IDisposable
                 VAO.VertexAttributePointerInt(va.Index, va.Size, VertexAttribIType.Int, va.Offset);
             } else if (va.Index == MeshLayout.Index_Color) {
                 VAO.VertexAttributePointerFloat(va.Index, 4, VertexAttribType.UnsignedByte, va.Offset, true);
+            } else if (va.Index == MeshLayout.Index_BoneWeight) {
+                VAO.VertexAttributePointerFloat(va.Index, 4, VertexAttribType.UnsignedByte, va.Offset, true);
             } else {
                 VAO.VertexAttributePointerFloat(va.Index, va.Size, VertexAttribType.Float, va.Offset);
             }

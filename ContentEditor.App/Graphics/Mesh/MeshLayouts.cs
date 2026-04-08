@@ -46,7 +46,7 @@ public readonly struct MeshLayout(params VertexAttribute[] attributes)
     public static readonly MeshLayout SkinnedTriangleMesh = new MeshLayout([
         .. DefaultAttributes,
         new VertexAttribute(9, 4, Index_BoneIndex),
-        new VertexAttribute(13, 4, Index_BoneWeight)
+        new VertexAttribute(13, 1, Index_BoneWeight)
     ]);
 
     public static readonly MeshLayout PositionOnly = new MeshLayout(Attr_Position);

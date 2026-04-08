@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using ReeLib;
 using ReeLib.Aimp;
 using ReeLib.Mesh;
+using ReeLib.MplyMesh;
 using ReeLib.via;
 using Silk.NET.OpenGL;
 
@@ -210,16 +211,14 @@ public class TriangleMesh : Mesh
         }
 
         var integerIndices = sourceMesh.MeshData?.integerFaces ?? false;
-        var hasTan = buffer.Tangents.Length != 0;
         var hasWeights = sourceMesh.BoneData?.DeformBones.Count > 0;
         var hasUV = buffer.UV0.Length > 0;
-        var hasNormals = buffer.Normals.Length > 0;
+        var hasNormals = buffer.NormalsTangents.Length > 0;
         layout = MeshLayout.Get(MeshAttributeFlag.Triangles | (hasWeights ? MeshAttributeFlag.Weight : 0));
 
         var meshVerts = submesh.Positions;
         var meshUV = hasUV ? submesh.UV0 : default;
-        var meshNormals = hasNormals ? submesh.Normals : default;
-        var meshTangents = hasTan ? submesh.Tangents : default;
+        var meshNormals = hasNormals ? submesh.NormalsTangents : default;
         var meshWeights = hasWeights ? submesh.Weights : default;
 
         var indicesShort = !integerIndices ? submesh.Indices : default;
@@ -235,8 +234,8 @@ public class TriangleMesh : Mesh
             var vert = integerIndices ? indicesInt[index] : indicesShort[index];
             Indices[index] = vert;
             var pos = meshVerts[vert];
-            var uv = hasUV ? meshUV[vert] : new Vector2();
-            var norm = hasNormals ? meshNormals[vert] : Vector3.UnitX;
+            var uv = hasUV ? meshUV[vert].AsVector2 : new Vector2();
+            var norm = hasNormals ? meshNormals[vert].Normal : Vector3.UnitX;
             var vertOffset = index * attrs;
             VertexData[vertOffset + 0] = pos.X;
             VertexData[vertOffset + 1] = pos.Y;
@@ -255,16 +254,21 @@ public class TriangleMesh : Mesh
                 VertexData[vertOffset + boneIndsOffset + 2] = BitConverter.Int32BitsToSingle(vertWeight.boneIndices[2]);
                 VertexData[vertOffset + boneIndsOffset + 3] = BitConverter.Int32BitsToSingle(vertWeight.boneIndices[3]);
 
-                VertexData[vertOffset + boneWeightsOffset + 0] = vertWeight.boneWeights[0];
-                VertexData[vertOffset + boneWeightsOffset + 1] = vertWeight.boneWeights[1];
-                VertexData[vertOffset + boneWeightsOffset + 2] = vertWeight.boneWeights[2];
-                VertexData[vertOffset + boneWeightsOffset + 3] = vertWeight.boneWeights[3];
                 if (vertWeight.boneWeights[4] > 0) {
                     // normalize weights - if the mesh has more than 4 weights per bone, ignore any extra bones
                     // this simplifies the shader code and is usually visually neglible
                     // for fully accurate animations, blender or ingame exists
-                    ref var weights = ref MemoryMarshal.Cast<float, Vector4>(VertexData.AsSpan(vertOffset + boneWeightsOffset, 4))[0];
+                    var weights = new Vector4(vertWeight.GetWeight(0), vertWeight.GetWeight(1), vertWeight.GetWeight(2), vertWeight.GetWeight(3));
                     weights /= (weights.X + weights.Y + weights.Z + weights.W);
+                    VertexData[vertOffset + boneWeightsOffset] =
+                        BitConverter.UInt32BitsToSingle(
+                        ((uint)MathF.Round(weights.X * 255) << 0) |
+                        ((uint)MathF.Round(weights.Y * 255) << 8) |
+                        ((uint)MathF.Round(weights.Z * 255) << 16) |
+                        ((uint)MathF.Round(weights.W * 255) << 24)
+                    );
+                } else {
+                    VertexData[vertOffset + boneWeightsOffset] = MemoryMarshal.Cast<byte, float>(vertWeight.boneWeights)[0];
                 }
             }
         }
