@@ -255,7 +255,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
             File.Read();
         }
         ImGui.Separator();
-        ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);
+        ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconSecondary);
         if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
             var entry = File.AddNewEntry();
             UndoRedo.RecordCallback(

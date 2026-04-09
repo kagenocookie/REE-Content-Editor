@@ -374,7 +374,7 @@ public class DefaultThemes
         style.ChildBorderSize = 1.0f;
         style.PopupRounding = 4.0f;
         style.PopupBorderSize = 1.0f;
-        style.FramePadding = new Vector2(4.0f, 3.0f);
+        style.FramePadding = new Vector2(5.0f, 3.0f);
         style.FrameRounding = 2.5f;
         style.FrameBorderSize = 0.0f;
         style.ItemSpacing = new Vector2(8.0f, 4.0f);
