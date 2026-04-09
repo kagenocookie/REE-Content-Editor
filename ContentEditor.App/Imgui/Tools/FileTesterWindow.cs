@@ -637,7 +637,7 @@ public partial class FileTesterWindow : IWindowHandler
         ]);
         AddCompareMapper<MeshBone>((m) => [m.boundingBox, m.index, m.childIndex, m.nextSibling, m.symmetryIndex, m.remapIndex]);
         AddCompareMapper<MeshBuffer>((m) => [
-            m.Positions.Length, m.Normals.Length, m.Tangents.Length, m.UV0.Length, m.UV1.Length, m.Weights.Length, m.Colors.Length, m.Faces?.Length, m.IntegerFaces?.Length,
+            m.Positions.Length, m.NormalsTangents.Length, m.UV0.Length, m.UV1.Length, m.Weights.Length, m.Colors.Length, m.Faces?.Length, m.IntegerFaces?.Length,
             m.elementCount, m.totalElementCount, m.Headers, m.shadowFaceBufferOffset, m.occFaceBufferOffset]);
         AddCompareMapper<MeshData>((m) => [m.skinWeightCount, m.totalMeshCount, m.lodCount, m.materialCount, m.boundingBox, m.boundingSphere, m.LODs]);
         AddCompareMapper<ShadowMesh>((m) => [m.skinWeightCount, m.totalMeshCount, m.lodCount, m.materialCount, m.LODs]);

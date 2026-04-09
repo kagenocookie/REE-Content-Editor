@@ -41,8 +41,7 @@ public class MeshBufferHandler : IObjectUIHandler
             var ws = context.GetWorkspace();
             context.AddChild<MeshBuffer, int>("Vertices", instance, ReadOnlyWrapperHandler.Integer, getter: v => v!.Positions.Length);
             context.AddChild<MeshBuffer, int>("Indices", instance, ReadOnlyWrapperHandler.Integer, getter: v => v!.Faces?.Length ?? v.IntegerFaces?.Length ?? 0);
-            context.AddChild<MeshBuffer, bool>("Normals", instance, ReadOnlyWrapperHandler.Bool, getter: v => v!.Normals.Length > 0);
-            context.AddChild<MeshBuffer, bool>("Tangents", instance, ReadOnlyWrapperHandler.Bool, getter: v => v!.Tangents.Length > 0);
+            context.AddChild<MeshBuffer, bool>("Normals & Tangents", instance, ReadOnlyWrapperHandler.Bool, getter: v => v!.NormalsTangents.Length > 0);
             context.AddChild<MeshBuffer, bool>("UV0", instance, ReadOnlyWrapperHandler.Bool, getter: v => v!.UV0.Length > 0);
             context.AddChild<MeshBuffer, bool>("UV1", instance, ReadOnlyWrapperHandler.Bool, getter: v => v!.UV1.Length > 0);
             context.AddChild<MeshBuffer, bool>("Colors", instance, ReadOnlyWrapperHandler.Bool, getter: v => v!.Colors.Length > 0);

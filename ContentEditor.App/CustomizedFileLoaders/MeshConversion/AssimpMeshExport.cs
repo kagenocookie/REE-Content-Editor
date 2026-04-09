@@ -348,22 +348,20 @@ public partial class CommonMeshResource : IResourceFile
                 if (sub.Buffer.UV0.Length > 0) {
                     var uvOut = aiMesh.TextureCoordinateChannels[0];
                     uvOut.EnsureCapacity(sub.UV0.Length);
-                    foreach (var uv in sub.UV0) uvOut.Add(new System.Numerics.Vector3(uv.X, 1 - uv.Y, 0));
+                    foreach (var uv in sub.UV0) uvOut.Add(new Vector3((float)uv.x, 1 - (float)uv.y, 0));
                     aiMesh.UVComponentCount[0] = 2;
                 }
                 if (sub.Buffer.UV1.Length > 0) {
                     var uvOut = aiMesh.TextureCoordinateChannels[1];
                     uvOut.EnsureCapacity(sub.UV1.Length);
-                    foreach (var uv in sub.UV1) uvOut.Add(new System.Numerics.Vector3(uv.X, 1 - uv.Y, 0));
+                    foreach (var uv in sub.UV1) uvOut.Add(new Vector3((float)uv.x, 1 - (float)uv.y, 0));
                     aiMesh.UVComponentCount[1] = 2;
                 }
-                if (sub.Buffer.Normals.Length > 0) {
-                    aiMesh.Normals.AddRange(sub.Normals);
-                }
-                if (sub.Buffer.Tangents.Length > 0) {
-                    aiMesh.Tangents.AddRange(sub.Tangents);
-                    for (int i = 0; i < sub.BiTangents.Length; ++i) {
-                        aiMesh.BiTangents.Add(sub.GetBiTangent(i));
+                if (sub.Buffer.NormalsTangents.Length > 0) {
+                    foreach (var nortan in sub.Buffer.NormalsTangents) {
+                        aiMesh.Normals.Add(nortan.Normal);
+                        aiMesh.Tangents.Add(nortan.Tangent);
+                        aiMesh.BiTangents.Add(nortan.BiTangent);
                     }
                 }
                 if (sub.Buffer.Colors.Length > 0) {

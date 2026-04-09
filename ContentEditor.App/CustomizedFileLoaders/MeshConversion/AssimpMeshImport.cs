@@ -7,6 +7,7 @@ using ReeLib.Common;
 using ReeLib.Mesh;
 using ReeLib.Mot;
 using ReeLib.Motlist;
+using ReeLib.MplyMesh;
 using ReeLib.via;
 
 namespace ContentEditor.App.FileLoaders;
@@ -94,8 +95,8 @@ public partial class CommonMeshResource : IResourceFile
             mesh.MaterialNames.Clear();
         }
 
-        var boneIndexMap = new Dictionary<string, int>();
-        var deformBones = new SortedList<int, MeshBone>();
+        var boneIndexMap = new Dictionary<string, short>();
+        var deformBones = new SortedList<short, MeshBone>();
         if (mainBuffer.Weights.Length > 0) {
             var boneNames = srcMeshes.SelectMany(m => m.Bones.Select(b => b.Name)).ToHashSet();
             static void AddRecursiveBones(MeshFile file, NodeCollection children, HashSet<string> boneNames, MeshBone? parentBone, ImportSettings settings)
@@ -161,7 +162,7 @@ public partial class CommonMeshResource : IResourceFile
                     }
                 }
             }
-            boneIndexMap = mesh.BoneData!.Bones.ToDictionary(b => b.name, b => b.index);
+            boneIndexMap = mesh.BoneData!.Bones.ToDictionary(b => b.name, b => (short)b.index);
         }
 
         int vertOffset = 0;
@@ -260,22 +261,20 @@ public partial class CommonMeshResource : IResourceFile
 
             CollectionsMarshal.AsSpan(aiMesh.Vertices).CopyTo(buffer.Positions.AsSpan(vertOffset));
 
-            if (buffer.Normals.Length > 0) {
+            if (buffer.NormalsTangents.Length > 0) {
                 for (int i = 0; i < vertCount; ++i) {
-                    buffer.Normals[vertOffset + i] = aiMesh.Normals[i];
-                    buffer.Tangents[vertOffset + i] = aiMesh.Tangents[i];
-                    buffer.BiTangentSigns[i] = Vector3.Dot(aiMesh.BiTangents[i], Vector3.Cross(aiMesh.Normals[i], aiMesh.Tangents[i])) > 0 ? sbyte.MaxValue : sbyte.MinValue;
+                    buffer.NormalsTangents[vertOffset + i] = new QuantizedNorTan(aiMesh.Normals[i], aiMesh.Tangents[i], aiMesh.BiTangents[i]);
                 }
             }
 
             if (buffer.UV0.Length > 0) {
                 var uv = aiMesh.TextureCoordinateChannels[0];
-                for (int i = 0; i < vertCount; ++i) buffer.UV0[vertOffset + i] = new Vector2(uv[i].X, 1 - uv[i].Y);
+                for (int i = 0; i < vertCount; ++i) buffer.UV0[vertOffset + i] = new HFloat2(uv[i].X, 1 - uv[i].Y);
             }
 
             if (buffer.UV1.Length > 0) {
                 var uv = aiMesh.TextureCoordinateChannels[1];
-                for (int i = 0; i < vertCount; ++i) buffer.UV1[vertOffset + i] = new Vector2(uv[i].X, 1 - uv[i].Y);
+                for (int i = 0; i < vertCount; ++i) buffer.UV1[vertOffset + i] = new HFloat2(uv[i].X, 1 - uv[i].Y);
             }
 
             if (buffer.Colors.Length > 0) {
@@ -298,7 +297,7 @@ public partial class CommonMeshResource : IResourceFile
                     if (aiBone.Name.StartsWith(SecondaryWeightDummyBonePrefix)) continue;
 
                     var isShapeKey = aiBone.Name.StartsWith(ShapekeyPrefix);
-                    int boneIndex;
+                    short boneIndex;
                     if (isShapeKey) {
                         boneIndex = boneIndexMap[aiBone.Name.Replace(ShapekeyPrefix, "")];
                     } else {
@@ -329,7 +328,7 @@ public partial class CommonMeshResource : IResourceFile
                             }
                         }
                         outWeight.boneIndices[weightIndex] = boneIndex;
-                        outWeight.boneWeights[weightIndex] = entry.Weight;
+                        outWeight.boneWeights[weightIndex] = (byte)MathF.Round(entry.Weight * 255f);
                         if (targetBone.boundingBox.IsEmpty) targetBone.boundingBox = AABB.MaxMin;
                         targetBone.boundingBox = targetBone.boundingBox.AsAABB.Extend(Vector3.Transform(buffer.Positions[vertOffset + entry.VertexID], targetBone.inverseGlobalTransform.ToSystem()));
                         hasWeight = true;
@@ -386,12 +385,10 @@ public partial class CommonMeshResource : IResourceFile
         mainBuffer.Positions = new Vector3[totalVertCount];
         mesh.Header.flags |= ContentFlags.EnableRebraiding2;
         if (srcMeshes.All(m => m.HasNormals && m.HasTangentBasis)) {
-            mainBuffer.Normals = new Vector3[totalVertCount];
-            mainBuffer.Tangents = new Vector3[totalVertCount];
-            mainBuffer.BiTangentSigns = new sbyte[totalVertCount];
+            mainBuffer.NormalsTangents = new QuantizedNorTan[totalVertCount];
         }
-        if (srcMeshes.All(m => m.HasTextureCoords(0))) mainBuffer.UV0 = new Vector2[totalVertCount];
-        if (srcMeshes.All(m => m.HasTextureCoords(1))) mainBuffer.UV1 = new Vector2[totalVertCount];
+        if (srcMeshes.All(m => m.HasTextureCoords(0))) mainBuffer.UV0 = new HFloat2[totalVertCount];
+        if (srcMeshes.All(m => m.HasTextureCoords(1))) mainBuffer.UV1 = new HFloat2[totalVertCount];
         if (srcMeshes.All(m => m.Bones.Count > 0 && m.Bones.Any(b => b.HasVertexWeights))) {
             mainBuffer.Weights = new VertexBoneWeights[totalVertCount];
             mesh.Header.flags |= ContentFlags.IsSkinning | ContentFlags.HasJoint;
@@ -407,7 +404,7 @@ public partial class CommonMeshResource : IResourceFile
         mainBuffer.Faces = new ushort[paddedTriCount];
     }
 
-    private static void RemapDeformBones(VertexBoneWeights[] weights, SortedList<int, MeshBone> deformBones)
+    private static void RemapDeformBones(VertexBoneWeights[] weights, SortedList<short, MeshBone> deformBones)
     {
         foreach (var weight in weights) {
             for (int i = 0; i < weight.boneIndices.Length; ++i) {
@@ -417,7 +414,7 @@ public partial class CommonMeshResource : IResourceFile
                         weight.boneIndices[i] = weight.boneIndices[i - 1];
                     }
                 } else if (deformBones.TryGetValue(index, out var remap)) {
-                    weight.boneIndices[i] = remap.remapIndex;
+                    weight.boneIndices[i] = (short)remap.remapIndex;
                 }
             }
         }

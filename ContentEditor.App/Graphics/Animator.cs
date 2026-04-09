@@ -228,24 +228,24 @@ public class Animator(ContentWorkspace Workspace)
                     }
                 }
 
-                if (clip?.HasTranslation == true && clip.Translation!.frameIndexes != null) {
-                    var (t1, t2, interp) = FindFrames(clip.Translation, frame);
+                if (clip?.HasTranslation == true) {
+                    var (t1, t2, interp) = FindFrames(clip.Translation!, frame);
                     if (t1 >= 0) {
-                        localPos = Vector3.Lerp(clip.Translation.translations![t1], clip.Translation.translations![t2], interp);
+                        localPos = Vector3.Lerp(clip.Translation!.translations![t1], clip.Translation.translations[t2], interp);
                     }
                 }
 
-                if (clip?.HasRotation == true && clip.Rotation!.frameIndexes != null) {
-                    var (t1, t2, interp) = FindFrames(clip.Rotation, frame);
+                if (clip?.HasRotation == true) {
+                    var (t1, t2, interp) = FindFrames(clip.Rotation!, frame);
                     if (t1 >= 0) {
-                        localRot = Quaternion.Lerp(clip.Rotation.rotations![t1], clip.Rotation.rotations![t2], interp);
+                        localRot = Quaternion.Lerp(clip.Rotation!.rotations![t1], clip.Rotation.rotations[t2], interp);
                     }
                 }
 
-                if (clip?.HasScale == true && clip.Scale!.frameIndexes != null) {
-                    var (t1, t2, interp) = FindFrames(clip.Scale, frame);
+                if (clip?.HasScale == true) {
+                    var (t1, t2, interp) = FindFrames(clip.Scale!, frame);
                     if (t1 >= 0) {
-                        localScale = Vector3.Lerp(clip.Scale.translations![t1], clip.Scale.translations![t2], interp);
+                        localScale = Vector3.Lerp(clip.Scale!.translations![t1], clip.Scale.translations[t2], interp);
                     }
                 }
 
@@ -293,7 +293,9 @@ public class Animator(ContentWorkspace Workspace)
 
     public static (int first, int second, float interpolation) FindFrames(Track track, float frame)
     {
-        var keyframes = track.frameIndexes!;
+        var keyframes = track.frameIndexes;
+        if (keyframes == null) return track.translations?.Length > 0 || track.rotations?.Length > 0 ? (0, 0, 0) : (-1, -1, 0);
+
         var len = keyframes.Length;
         if (len == 0) return (-1, -1, 0);
 
