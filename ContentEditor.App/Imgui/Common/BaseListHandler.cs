@@ -82,7 +82,10 @@ public class BaseListHandler : IObjectUIHandler
                 var child = context.children[i];
                 var remove = false;
                 if (CanCreateRemoveElements) {
+                    ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
                     remove = ImGui.Button($"{AppIcons.SI_GenericClose}");
+                    ImGui.PopStyleColor();
+                    ImguiHelpers.Tooltip("Remove"u8);
                     ImGui.SameLine();
                 }
                 child.ShowUI();
@@ -95,7 +98,7 @@ public class BaseListHandler : IObjectUIHandler
                 }
                 ImGui.PopID();
             }
-            if (CanCreateRemoveElements && ImGui.Button("Add")) {
+            if (CanCreateRemoveElements && ImGui.Button($"{AppIcons.SI_GenericAdd} Add")) {
                 try {
                     var newInstance = CreateNewElement(context);
                     if (newInstance != null) {

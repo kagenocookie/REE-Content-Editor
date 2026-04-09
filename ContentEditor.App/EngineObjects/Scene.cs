@@ -289,7 +289,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         //    Logger.Debug($"{marker} [{i}] {go?.Name} | dist: {distance}");
         //}
 
-        // SILVER: check if this is a repeated click
+        // SILVER: check if this is a repeated click. Should we consider screen res for the threshold?
         bool isSameSpot = Vector2.Distance(viewportPos, lastClickPos) < clickPosThreshold;
         if (isSameSpot && lastPickResults.Count == hits.Count) {
             pickCycleIDX = (pickCycleIDX + 1) % hits.Count;

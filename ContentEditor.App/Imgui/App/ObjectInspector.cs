@@ -46,19 +46,23 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
             ImGui.TextColored(Colors.Faded, "No object selected");
             return;
         }
-
-        if (Target is IPathedObject pathed) {
-            ImGui.TextColored(Colors.Faded, $"Target: [{Target?.GetType().Name}] {Target}: {pathed.Path}");
-        } else {
-            ImGui.TextColored(Colors.Faded, $"Target: [{Target?.GetType().Name}] {Target}");
-        }
-        if (ImGui.Button("Duplicate window")) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FileDuplicate, new[] { Colors.IconSecondary, ImguiHelpers.GetColor(ImGuiCol.Text), ImguiHelpers.GetColor(ImGuiCol.Text) })) {
             if (parentWindow is IInspectorController inspectorController) {
                 var newInspector = inspectorController.Inspector.AddInspector(_target);
             } else {
                 EditorWindow.CurrentWindow?.AddSubwindow(new ObjectInspector(parentWindow) { _target = _target });
             }
         }
+        ImguiHelpers.Tooltip("Duplicate Window"u8);
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator();
+        ImGui.SameLine();
+        if (Target is IPathedObject pathed) {
+            ImGui.TextColored(Colors.Faded, $"Target: [{Target?.GetType().Name}] {Target}: {pathed.Path}");
+        } else {
+            ImGui.TextColored(Colors.Faded, $"Target: [{Target?.GetType().Name}] {Target}");
+        }
+        ImGui.Spacing();
         context.ShowChildrenUI();
     }
 
@@ -80,7 +84,6 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
             WindowManager.Instance.CloseWindow(data);
             return;
         }
-
         OnIMGUI();
         ImGui.End();
     }

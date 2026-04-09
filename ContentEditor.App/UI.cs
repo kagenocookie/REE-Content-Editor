@@ -427,6 +427,8 @@ public static class AppIcons
     public static readonly char SI_FileType_REFSKEL = '\uee29';
     public static readonly char SI_FileType_SSS = '\uee2a';
     public static readonly char SI_Null= '\uee2b';
+    public static readonly char SI_InspectorEnum = '\uee2c';
+    public static readonly char SI_InspectorCustomValue = '\uee2d';
 
     public static string PrependIcon(this string text, object target)
     {

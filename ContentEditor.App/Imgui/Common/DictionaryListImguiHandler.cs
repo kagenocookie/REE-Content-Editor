@@ -1,4 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
+using ContentEditor.Core;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -40,9 +42,16 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
             if (!ImGui.TreeNode(context.label)) return;
         }
         if (Filterable) {
-            ImGui.Indent(4);
-            ImGui.InputTextWithHint("Filter", $"{AppIcons.Search}", ref context.Filter, 120);
-            ImGui.Unindent(4);
+            ImGui.SetNextItemAllowOverlap();
+            ImGui.InputTextWithHint("Filter"u8, $"{AppIcons.SI_GenericMagnifyingGlass}", ref context.Filter, 120);
+            if (!string.IsNullOrEmpty(context.Filter)) {
+                ImGui.SameLine();
+                ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X - ImGui.GetStyle().ItemInnerSpacing.X - ImGui.CalcTextSize("Filter").X, ImGui.GetItemRectMin().Y));
+                ImGui.SetNextItemAllowOverlap();
+                if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
+                    context.Filter = string.Empty;
+                }
+            }
             ImGui.Spacing();
         }
 
@@ -55,15 +64,21 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
             }
 
             var newCtx = context.children[0];
-            if (ImGui.Button("Add")) {
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconSecondary);
+            if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
                 var item = CreateItem(context, newCtx.Get<TKey>());
                 if (item != null) list.Add(item);
                 if (context.children.Count == 0) {
                     context.children.Add(newCtx);
                 }
             }
+            ImGui.PopStyleColor();
+            ImguiHelpers.Tooltip("Add"u8);
             ImGui.SameLine();
             newCtx.ShowUI();
+            ImGui.Spacing();
+            ImGui.Separator();
+            ImGui.Spacing();
         }
 
         var indexOffset = AllowAdditions ? 1 : 0;
