@@ -104,7 +104,7 @@ public class UvarVariableImguiHandler : IObjectUIHandler
         var prev = (Variable.UvarFlags)before;
         var next = (Variable.UvarFlags)after;
 
-        if ((prev & Variable.UvarFlags.IsVec3) != (next & Variable.UvarFlags.IsVec3)) {
+        if ((prev & Variable.UvarFlags.HasRange) != (next & Variable.UvarFlags.HasRange)) {
             try {
                 context.parent!.Get<Variable>().ResetValue();
                 context.StateBool = true;
