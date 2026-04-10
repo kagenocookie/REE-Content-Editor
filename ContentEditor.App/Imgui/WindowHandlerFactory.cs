@@ -4,6 +4,7 @@ using System.Numerics;
 using System.Reflection;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.ImguiHandling;
+using ContentEditor.App.ImguiHandling.Chain;
 using ContentEditor.App.ImguiHandling.Mdf2;
 using ContentEditor.Editor;
 using ContentPatcher;
@@ -310,6 +311,10 @@ public static class WindowHandlerFactory
                 return new WelEditor(env, file);
             case KnownFileFormats.MotionPack:
                 return new MotpackEditor(env, file);
+            case KnownFileFormats.Chain:
+                return new ChainEditor(env, file);
+            case KnownFileFormats.Chain2:
+                return new Chain2Editor(env, file);
         }
 
         if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {
@@ -359,21 +364,25 @@ public static class WindowHandlerFactory
             return false;
         }
 
-        var reflectionOptions = BindingFlags.Instance | BindingFlags.Public;
+        var reflectionOptions = BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly;
         if (includePrivate) reflectionOptions |= BindingFlags.NonPublic;
         var isValueType = targetType.IsValueType;
 
         if (members == null && !typeMembers.TryGetValue(targetType, out members)) {
             var list = new List<MemberInfo>();
-
-            foreach (var field in targetType.GetFields(reflectionOptions)) {
+            // manually build up the class hierarchy so we can enforce correct inherited field ordering (base class fields first)
+            var typelist = new List<Type>() { targetType };
+            while (typelist[0].BaseType != null) {
+                typelist.Insert(0, typelist[0].BaseType!);
+            }
+            foreach (var field in typelist.SelectMany(t => t.GetFields(reflectionOptions))) {
                 if (reflectionIgnoredTypes.Contains(field.FieldType) || ignoredFields.Contains((field.DeclaringType ?? targetType, field.Name))) continue;
                 if (field.Name.EndsWith(">k__BackingField")) continue;
 
                 list.Add(field);
             }
 
-            foreach (var prop in targetType.GetProperties(reflectionOptions)) {
+            foreach (var prop in typelist.SelectMany(t => t.GetProperties(reflectionOptions))) {
                 if (prop.IsSpecialName ||
                     prop.GetMethod == null ||
                     reflectionIgnoredTypes.Contains(prop.PropertyType) ||

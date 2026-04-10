@@ -527,6 +527,7 @@ public partial class FileTesterWindow : IWindowHandler
             case KnownFileFormats.MotionCamera: return VerifyRewriteEquality<MotcamFile>(source.GetFile<MotcamFile>(), env);
             case KnownFileFormats.JointMap: return VerifyRewriteEquality<JmapFile>(source.GetFile<JmapFile>(), env);
             case KnownFileFormats.Chain: return VerifyRewriteEquality<ChainFile>(source.GetFile<ChainFile>(), env);
+            case KnownFileFormats.Chain2: return VerifyRewriteEquality<Chain2File>(source.GetFile<Chain2File>(), env);
             default: return null;
         }
     }
