@@ -95,7 +95,7 @@ public class ResourcePathPicker : IObjectUIHandler
     }
 
     public ResourcePathPicker(ContentWorkspace? ws, RszField field)
-        : this(ws, [TypeCache.GetResourceFormat(field.original_type)])
+        : this(ws, Workspace.GetFormatIncludingSubtypes(TypeCache.GetResourceFormat(field.original_type)))
     {
     }
 
