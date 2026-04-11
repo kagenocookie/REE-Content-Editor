@@ -118,7 +118,7 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
                             parentMesh.TryGetBoneTransform(shape.Info.primaryJointNameStr, out shapeMatrix);
                             shapeMatrix = shapeMatrix * transform;
                         }
-                        if (group == activeGroup) {
+                        if (group.Info.guid == activeGroup?.Info.guid) {
                             gizmo.PushMaterial(activeMaterial, obscuredMaterial, priority: 1);
                             gizmo.BeginControl();
                             if (gizmo.Cur.EditableBoxed(in shapeMatrix, shape.shape, out var newShape, out int handleId)) {
