@@ -40,9 +40,11 @@ public class TransformComponentHandler : IObjectUIHandler, IUIContextEventHandle
                 AppImguiHelpers.ShowJsonCopyManualSet<Vector3>(localpos, context, (c, v) => c.Get<Transform>().LocalPosition = v, $"{instance.GetHashCode()}_t");
                 ImGui.EndPopup();
             }
-            ImGui.SameLine();
-            if (vec3Width < 1) ImGui.SetNextItemWidth(w * 0.25f - ImGui.GetStyle().FramePadding.X * 2);
-            ImGui.LabelText("Local Position"u8, "##labelP"u8);
+            if (!useEuler) {
+                ImGui.SameLine();
+                if (vec3Width < 1) ImGui.SetNextItemWidth(w * 0.25f - ImGui.GetStyle().FramePadding.X * 2);
+                ImGui.LabelText("Local Position"u8, "##labelP"u8);
+            }
 
             if (QuaternionFieldHandler.HandleQuaternion("Local Rotation", ref localrot, useEuler)) {
                 UndoRedo.RecordCallbackSetter(context, instance, (Quaternion)data.Values[1], localrot, static (inst, value) => inst.LocalRotation = value, $"{instance.GetHashCode()} LocalRot");
@@ -62,9 +64,11 @@ public class TransformComponentHandler : IObjectUIHandler, IUIContextEventHandle
                 AppImguiHelpers.ShowJsonCopyManualSet<Vector3>(localscale, context, (c, v) => c.Get<Transform>().LocalScale = v, $"{instance.GetHashCode()}_s");
                 ImGui.EndPopup();
             }
-            ImGui.SameLine();
-            if (vec3Width < 1) ImGui.SetNextItemWidth(w * 0.25f - ImGui.GetStyle().FramePadding.X * 2);
-            ImGui.LabelText("Local Scale"u8, "##labelS"u8);
+            if (!useEuler) {
+                ImGui.SameLine();
+                if (vec3Width < 1) ImGui.SetNextItemWidth(w * 0.25f - ImGui.GetStyle().FramePadding.X * 2);
+                ImGui.LabelText("Local Scale"u8, "##labelS"u8);
+            }
 
             if (context.children.Count == 0) {
                 context.AddChild(context.label, context.Get<Component>().Data, ChildrenOnlyHandler.Instance);

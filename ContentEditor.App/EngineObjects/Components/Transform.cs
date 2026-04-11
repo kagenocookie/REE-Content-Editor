@@ -1,4 +1,5 @@
 using System.Numerics;
+using ContentEditor.App.Graphics;
 using ContentPatcher;
 using ReeLib;
 
@@ -43,6 +44,14 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
         }
     }
 
+    public string? ParentJoint {
+        get => Data.Values[3] as string;
+        set {
+            Data.Values[3] = value ?? "";
+            InvalidateTransform();
+        }
+    }
+
     public Vector3 LocalForward => Vector3.Transform(-Vector3.UnitZ, LocalRotation);
 
     public Vector3 Position {
@@ -79,13 +88,26 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
 
             if (GameObject.Parent != null) {
                 var absoluteScale = RszFieldCache.Transform.AbsoluteScaling.Get(Data);
+                var parentTrans = GameObject.Parent.WorldTransform;
+                var parentJoint = ParentJoint;
+                if (!string.IsNullOrEmpty(parentJoint)) {
+                    var parentAnimator = GameObject.Parent.GetComponent<Motion>()?.Animator;
+                    if (parentAnimator != null) {
+                        var parentMesh = GameObject.Parent.GetComponent<MeshComponent>()?.MeshHandle as AnimatedMeshHandle;
+                        var parentBone = parentMesh?.Bones?.GetByName(parentJoint);
+                        if (parentMesh != null && parentBone != null) {
+                            var mat = parentMesh.BoneMatrices[parentBone.index];
+                            parentTrans = mat * parentTrans;
+                        }
+                    }
+                }
                 if (absoluteScale) {
                     // if true, parent scale does not affect self scale (position/rotation still affected) (see DD2 Env_1557 ladder)
-                    _cachedWorldTransform = ComputeLocalTransformMatrix() * GameObject.Parent.WorldTransform;
+                    _cachedWorldTransform = ComputeLocalTransformMatrix() * parentTrans;
                     Matrix4x4.Decompose(_cachedWorldTransform, out _, out var rot, out var pos);
                     _cachedWorldTransform = Matrix4x4.CreateScale(LocalScale) * Matrix4x4.CreateFromQuaternion(rot) * Matrix4x4.CreateTranslation(pos);
                 } else {
-                    _cachedWorldTransform = ComputeLocalTransformMatrix() * GameObject.Parent.WorldTransform;
+                    _cachedWorldTransform = ComputeLocalTransformMatrix() * parentTrans;
                 }
             } else if (GameObject.Folder != null) {
                 _cachedWorldTransform = ComputeLocalTransformMatrix() * Matrix4x4.CreateTranslation(GameObject.Folder.Offset.AsVector3);
