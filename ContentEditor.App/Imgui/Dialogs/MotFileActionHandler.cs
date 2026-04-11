@@ -104,7 +104,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
 
         if (ImGui.Selectable("Save as single mot ...")) {
             var mot = context.Get<MotFileBase>();
-            var ext = ".mot." + (int)((mot as MotFile)?.Header.version ?? 0);
+            var ext = "mot." + (int)((mot as MotFile)?.Header.version ?? 0);
             PlatformUtils.ShowSaveFileDialog((path) => {
                 mot.WriteTo(path);
             }, filters: new FileFilter("MOT file", ext));
