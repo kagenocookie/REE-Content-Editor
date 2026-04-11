@@ -96,7 +96,7 @@ public static class PlatformUtils
     /// </summary>
     public static void ShowSaveFileDialog(Action<string> callback, string? initialFile = null, params FileFilter[] filters)
     {
-        var dir = !string.IsNullOrEmpty(initialFile) ? Path.GetDirectoryName(initialFile) : Environment.CurrentDirectory;
+        var dir = !string.IsNullOrEmpty(initialFile) ? Path.GetDirectoryName(initialFile) : null;
         initialFile = Path.GetFileName(initialFile);
 
 #if WINDOWS
