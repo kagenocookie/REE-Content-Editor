@@ -78,6 +78,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     private bool? _hasTooManyWeightsForRender;
 
     private List<MeshViewerContext> meshContexts = new();
+    internal IReadOnlyList<MeshViewerContext> MeshContexts => meshContexts.AsReadOnly();
     private MeshViewerContext? _animationListContext;
 
     protected override void Reset()
@@ -1477,7 +1478,8 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
     private string? loadedAnimationSource;
     private string motFilter = "";
     private bool isMotFilterMatchCase = false;
-    private void ChangeAnim(List<MeshViewerContext> meshContexts, MotFileBase activeAnim)
+
+    private void ChangeAnim(IEnumerable<MeshViewerContext> meshContexts, MotFileBase activeAnim)
     {
         foreach (var mc in meshContexts) {
             if (mc.Animator?.owner == Animator) {
@@ -1485,6 +1487,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             }
         }
     }
+
     public void ShowAnimSettings(List<MeshViewerContext> meshContexts, bool showControllerSelection)
     {
         if (Animator == null) return;
@@ -1592,6 +1595,14 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
                 ImGui.PushID(mot.GetHashCode());
                 if (ImGui.RadioButton(name, animator.ActiveMotion == mot)) {
                     ChangeAnim(meshContexts, (MotFile)mot);
+                    if (animator == viewer.Animators.FirstOrDefault()) {
+                        foreach (var other in viewer.MeshContexts) {
+                            var motId = Animator.GetMotionId(mot.Name);
+                            if (other.Animator != animator && other.Animator?.Animations.FirstOrDefault(anim => Animator.GetMotionId(anim.Name) == motId) is MotFileBase sameIdMot) {
+                                other.ChangeAnim(viewer.MeshContexts, sameIdMot);
+                            }
+                        }
+                    }
                 }
                 if (ImGui.BeginPopupContextItem(name)) {
                     if (ImGui.Selectable("Copy name")) {

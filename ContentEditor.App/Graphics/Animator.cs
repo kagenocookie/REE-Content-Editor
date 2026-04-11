@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Text.RegularExpressions;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Common;
@@ -6,7 +7,7 @@ using ReeLib.Mot;
 
 namespace ContentEditor.App.Graphics;
 
-public class Animator(ContentWorkspace Workspace)
+public partial class Animator(ContentWorkspace Workspace)
 {
     private FileHandle? animationFile;
     private readonly List<MotFileBase> motions = new();
@@ -43,6 +44,19 @@ public class Animator(ContentWorkspace Workspace)
     public int CurrentFrame => (int)Math.Round(currentTime * clipFramerate);
     public float FrameRate => clipFramerate;
     public float FrameDuration => 1 / clipFramerate;
+
+    [GeneratedRegex("(?:^|_)(\\d{4})(?:$|_)")]
+    private static partial Regex MotIdRegex();
+
+    public static string? GetMotionId(string name)
+    {
+        var match = Animator.MotIdRegex().Match(name);
+        if (match.Success) {
+            return match.Groups[1].Value;
+        }
+
+        return null;
+    }
 
     public void Play()
     {

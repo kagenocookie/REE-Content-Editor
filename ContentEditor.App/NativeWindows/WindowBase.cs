@@ -300,7 +300,8 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
                 ("Disable This Warning", () => {
                     AppConfig.Instance.DisableFileCloseWarning.Set(true);
                     wnd.Overlays.ShowToast(2f, """
-                        Warning can be re-enabled from settings.
+                        Warning can be re-enabled from settings anytime.
+                        You can still manually force close files from the menu.
                         """);
                 }),
                 ("Close File", () => {
