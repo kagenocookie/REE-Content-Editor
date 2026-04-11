@@ -317,7 +317,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
                         texture = new Texture().LoadFromTex(tex);
                         fileHandle.Modified = true;
                     });
-                }, lastImportSourcePath, fileExtension: FileFilters.TextureFilesAll);
+                }, lastImportSourcePath, filters: FileFilters.TextureFilesAll);
             }
         }
 

@@ -79,7 +79,7 @@ public class BundleManagementUI : IWindowHandler
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleFromPakFile, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary }) && createFromPak != null) {
             PlatformUtils.ShowFileDialog(pak =>
                 createFromPak(pak[0]),
-                fileExtension: FileFilters.PakFile,
+                filters: FileFilters.PakFile,
                 allowMultiple: false
             );
         }

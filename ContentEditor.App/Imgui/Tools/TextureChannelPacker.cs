@@ -500,7 +500,7 @@ public class TextureChannelPacker : IWindowHandler, IDisposable
                     ReplaceSlotTexture(slot, files[0]);
                     isDirty = true;
                 });
-            }, slot.texture?.Path, fileExtension: FileFilters.TextureFilesAll);
+            }, slot.texture?.Path, filters: FileFilters.TextureFilesAll);
         }
 
         var channelCount = BitOperations.PopCount((uint)slot.outputSwizzle);

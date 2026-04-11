@@ -68,11 +68,27 @@ public class ResourcePathPicker : IObjectUIHandler
         var isKnownFormats = (allowedFormats.Length > 1 || allowedFormats.Length == 1 && allowedFormats[0] != KnownFileFormats.Unknown);
         FileFormats = isKnownFormats ? allowedFormats : [];
         if (ws != null && isKnownFormats) {
-            FileExtensionFilter = allowedFormats.SelectMany(format => ws.Env
+            var reFormats = allowedFormats.SelectMany(format => ws.Env
                 .GetFileExtensionsForFormat(format)
                 .Select(ext => new FileFilter(format.ToString(), [$"{ext}.*"])))
-                .Concat(additionalFilters)
                 .ToArray();
+
+            var combinedFilter = reFormats.SelectMany(x => x.extensions)
+                .Concat(additionalFilters.SelectMany(x => x.extensions))
+                .Distinct()
+                .ToArray();
+
+            if (combinedFilter.Length > 1 && !additionalFilters.Any(f => f.extensions.Order().SequenceEqual(combinedFilter.Order()))) {
+                FileExtensionFilter = reFormats
+                    .Prepend(new FileFilter("Any supported file", combinedFilter))
+                    .Concat(additionalFilters)
+                    .ToArray();
+            } else {
+                FileExtensionFilter = reFormats
+                    .Concat(additionalFilters)
+                    .ToArray();
+            }
+
         } else {
             FileExtensionFilter = additionalFilters;
         }

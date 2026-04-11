@@ -69,6 +69,39 @@ public class PlatformUtils
     /// <summary>
     /// Show a native file save dialog. The callback will be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
     /// </summary>
+    public static void ShowFileDialog(Action<string[]> callback, bool allowMultiple = false, string? initialDir = null, string? initialFilename = null, string? extensionsFilter = null)
+    {
+        using var dialog = new OpenFileDialog() {
+            InitialDirectory = initialDir,
+            FileName = initialFilename,
+            Filter = extensionsFilter,
+            Multiselect = allowMultiple
+        };
+        var result = dialog.ShowDialog();
+
+        if (result == DialogResult.OK && dialog.FileNames.Length > 0) {
+            callback.Invoke(dialog.FileNames);
+        }
+    }
+
+    /// <summary>
+    /// Show a native file save dialog. The callback will be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
+    /// </summary>
+    public static void ShowFolderDialog(Action<string> callback, string? initialDir)
+    {
+        using var dialog = new FolderBrowserDialog() {
+            InitialDirectory = initialDir ?? "",
+        };
+        var result = dialog.ShowDialog();
+
+        if (result == DialogResult.OK && !string.IsNullOrEmpty(dialog.SelectedPath)) {
+            callback.Invoke(dialog.SelectedPath);
+        }
+    }
+
+    /// <summary>
+    /// Show a native file save dialog. The callback will be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
+    /// </summary>
     public static void ShowSaveFileDialog(Action<string> callback, string? initialDir = null, string? initialFilename = null, string? extensionsFilter = null)
     {
         using var dialog = new SaveFileDialog() {
