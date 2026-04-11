@@ -258,12 +258,12 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
         if (ImGui.MenuItem($"{AppIcons.SI_GenericCamera} Controls")) ImGui.OpenPopup("CameraSettings");
         if (Scene != null && ImGui.BeginPopup("CameraSettings")) {
             Scene.Controller.ShowCameraControls();
-            if (Scene.ActiveCamera.ProjectionMode != AppConfig.Settings.MeshViewer.DefaultProjection) {
-                AppConfig.Settings.MeshViewer.DefaultProjection = Scene.ActiveCamera.ProjectionMode;
+            if (Scene.ActiveCamera.ProjectionMode != AppConfig.Settings.SceneView.DefaultProjection) {
+                AppConfig.Settings.SceneView.DefaultProjection = Scene.ActiveCamera.ProjectionMode;
                 AppConfig.Settings.Save();
             }
-            if (Math.Abs(Scene.Controller.MoveSpeed - AppConfig.Settings.MeshViewer.MoveSpeed) > 0.001f) {
-                AppConfig.Settings.MeshViewer.MoveSpeed = Scene.Controller.MoveSpeed;
+            if (Math.Abs(Scene.Controller.MoveSpeed - AppConfig.Settings.SceneView.MoveSpeed) > 0.001f) {
+                AppConfig.Settings.SceneView.MoveSpeed = Scene.Controller.MoveSpeed;
                 AppConfig.Settings.Save();
             }
             ImGui.EndPopup();
