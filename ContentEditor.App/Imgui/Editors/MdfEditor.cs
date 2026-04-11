@@ -201,7 +201,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
         if (ImGui.Button($"{AppIcons.SI_GenericImport}")) {
             PlatformUtils.ShowFileDialog(paths => { var path = paths[0];
                 ImportMatParamsFromEMVJson(path, file, context);
-            }, fileExtension: [new FileFilter("JSON", ["json"])]);
+            }, filters: [new FileFilter("JSON", ["json"])]);
         }
         if (ImGui.IsItemHovered() && ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && ImGui.IsMouseClicked(ImGuiMouseButton.Right)) {
             FileSystemUtils.OpenURL("https://github.com/SilverEzredes/EMV-Engine-SILVER");

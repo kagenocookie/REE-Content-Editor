@@ -8,69 +8,91 @@ namespace ContentEditor.App;
 
 public static class PlatformUtils
 {
-    /// <summary>
-    /// Show a native file picker dialog. The callback will be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
-    /// </summary>
-    public static void ShowFileDialog(Action<string[]> callback, string? initialFile = null, FileFilter[]? fileExtension = null, bool allowMultiple = false)
+    private static string? GetWindowsFilterString(FileFilter[]? filters, bool forSave)
     {
-#if WINDOWS
-        var thread = new Thread(() => {
-#else
-        if (!MainLoop.IsMainThread) {
-            MainLoop.Instance.InvokeFromUIThread(() => ShowFileDialog(callback, initialFile, fileExtension, allowMultiple));
-            return;
-        }
-#endif
-            using var selectFileDialog = new NativeFileDialog()
-                .SelectFile();
-            if (fileExtension != null) {
-                foreach (var (name, exts) in fileExtension) {
-                    selectFileDialog.AddFilter(name, string.Join(",", exts));
+        string? filterString = null;
+        if (filters?.Length > 0) {
+            foreach (var filter in filters) {
+                if (forSave) {
+                    foreach (var ext in filter.extensions) {
+                        if (filterString != null) {
+                            filterString += "|";
+                        }
+                        filterString += $"{filter.name} (*.{ext})|*.{ext}";
+                    }
+                } else {
+                    var substr = string.Join(", ", filter.extensions.Select(ext => $"*.{ext}"));
+                    var substr2 = string.Join(";", filter.extensions.Select(ext => $"*.{ext}"));
+                    if (filterString != null) {
+                        filterString += "|";
+                    }
+                    filterString += $"{filter.name} ({substr})|{substr2}";
                 }
             }
-            if (allowMultiple) selectFileDialog.AllowMultiple();
+        }
+        return filterString;
+    }
 
-            var result = selectFileDialog.Open(out string[]? output, !string.IsNullOrEmpty(initialFile) ? Path.GetDirectoryName(initialFile) : Environment.CurrentDirectory);
-            if (result == DialogResult.Okay && output?.Length > 0) {
-                callback.Invoke(output);
-            }
+    /// <summary>
+    /// Show a native file picker dialog. The callback can be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
+    /// </summary>
+    public static void ShowFileDialog(Action<string[]> callback, string? initialFile = null, FileFilter[]? filters = null, bool allowMultiple = false)
+    {
+        var dir = !string.IsNullOrEmpty(initialFile) ? Path.GetDirectoryName(initialFile) : null;
+
 #if WINDOWS
+        var thread = new Thread(() => {
+            var filterString = GetWindowsFilterString(filters, false);
+            ContentEditor.App.Windows.PlatformUtils.ShowFileDialog(callback, allowMultiple, dir, initialFile, filterString);
         });
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
+#else
+        using var selectFileDialog = new NativeFileDialog()
+            .SelectFile();
+        if (filters != null) {
+            foreach (var (name, exts) in filters) {
+                selectFileDialog.AddFilter(name, string.Join(",", exts));
+            }
+        }
+        if (allowMultiple) selectFileDialog.AllowMultiple();
+
+        var result = selectFileDialog.Open(out string[]? output, dir);
+        if (result == DialogResult.Okay && output?.Length > 0) {
+            callback.Invoke(output);
+        }
 #endif
     }
 
     /// <summary>
-    /// Show a native folder picker dialog. The callback will be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
+    /// Show a native folder picker dialog. The callback can be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
     /// </summary>
     public static void ShowFolderDialog(Action<string> callback, string? initialFolder = null)
     {
 #if WINDOWS
         var thread = new Thread(() => {
+            ContentEditor.App.Windows.PlatformUtils.ShowFolderDialog(callback, initialFolder);
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
 #else
         if (!MainLoop.IsMainThread) {
             MainLoop.Instance.InvokeFromUIThread(() => ShowFolderDialog(callback, initialFolder));
             return;
         }
-#endif
-            using var selectFolderDialog = new NativeFileDialog()
-                .SelectFolder();
+        using var selectFolderDialog = new NativeFileDialog()
+            .SelectFolder();
 
-            var result = selectFolderDialog.Open(out string? output, initialFolder);
-            if (result == DialogResult.Okay && output?.Length > 0)
-            {
-                callback.Invoke(output);
-            }
-#if WINDOWS
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
+        var result = selectFolderDialog.Open(out string? output, initialFolder);
+        if (result == DialogResult.Okay && output?.Length > 0)
+        {
+            callback.Invoke(output);
+        }
 #endif
     }
 
     /// <summary>
-    /// Show a native file save dialog. The callback will be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
+    /// Show a native file save dialog. The callback can be executed from a separate thread - make sure to invoke anything that requires the main thread, on the main thread.
     /// </summary>
     public static void ShowSaveFileDialog(Action<string> callback, string? initialFile = null, params FileFilter[] filters)
     {
@@ -79,17 +101,7 @@ public static class PlatformUtils
 
 #if WINDOWS
         var thread = new Thread(() => {
-            string? filterString = null;
-            if (filters.Length > 0) {
-                foreach (var filter in filters) {
-                    foreach (var ext in filter.extensions) {
-                        if (filterString != null) {
-                            filterString += "|";
-                        }
-                        filterString += $"{filter.name} (*.{ext})|*.{ext}";
-                    }
-                }
-            }
+            var filterString = GetWindowsFilterString(filters, true);
             ContentEditor.App.Windows.PlatformUtils.ShowSaveFileDialog(callback, dir, initialFile, filterString);
         });
         thread.SetApartmentState(ApartmentState.STA);

@@ -309,7 +309,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     if (ImGui.MenuItem("Create from PAK file")) {
                         PlatformUtils.ShowFileDialog(pak =>
                             CreateBundleFromPakFile(pak[0]),
-                            fileExtension: FileFilters.PakFile,
+                            filters: FileFilters.PakFile,
                             allowMultiple: false
                         );
                     }

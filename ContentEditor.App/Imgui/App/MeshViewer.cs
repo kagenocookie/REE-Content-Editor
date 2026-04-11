@@ -766,7 +766,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                             lodData.Apply(ctx.MeshFile.NativeMesh);
                         }
                     });
-                }, lastImportSourcePath, fileExtension: FileFilters.MeshFilesAll);
+                }, lastImportSourcePath, filters: FileFilters.MeshFilesAll);
             }
         }
         ImGui.SameLine();
@@ -1514,7 +1514,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
         animationPickerContext ??= UI.AddChild<MeshViewerContext, string>(
             "Animation File",
             this,
-            new ResourcePathPicker(Workspace, FileFilters.MeshFilesAll, KnownFileFormats.MotionList, KnownFileFormats.Motion) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly },
+            new ResourcePathPicker(Workspace, FileFilters.MeshFile, KnownFileFormats.MotionList, KnownFileFormats.Motion) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly },
             (v) => v!.animationSourceFile,
             (v, p) => v.animationSourceFile = p ?? "");
 
