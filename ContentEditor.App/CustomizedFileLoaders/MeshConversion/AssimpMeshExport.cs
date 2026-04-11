@@ -358,7 +358,7 @@ public partial class CommonMeshResource : IResourceFile
                     aiMesh.UVComponentCount[1] = 2;
                 }
                 if (sub.Buffer.NormalsTangents.Length > 0) {
-                    foreach (var nortan in sub.Buffer.NormalsTangents) {
+                    foreach (var nortan in sub.NormalsTangents) {
                         aiMesh.Normals.Add(nortan.Normal);
                         aiMesh.Tangents.Add(nortan.Tangent);
                         aiMesh.BiTangents.Add(nortan.BiTangent);

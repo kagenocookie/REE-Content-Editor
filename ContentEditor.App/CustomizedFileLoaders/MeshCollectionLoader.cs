@@ -91,4 +91,7 @@ public class MeshCollectionItem
 
     [JsonPropertyName("owner")]
     public string? Owner { get; set; } = "";
+
+    [JsonPropertyName("parentJoint")]
+    public string? ParentJoint { get; set; } = "";
 }

@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
+using ContentEditor.App.Graphics;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
@@ -80,16 +80,9 @@ internal partial class MotBatchTransfer(ContentWorkspace workspace, MotlistFileB
             }
         }
 
-        var match = MotIdRegex().Match(name);
-        if (match.Success) {
-            return match.Groups[1].Value;
-        }
-
-        return null;
+        return Animator.GetMotionId(name);
     }
 
-    [GeneratedRegex("(?:^|_)(\\d{4})(?:$|_)")]
-    private static partial Regex MotIdRegex();
     private Dictionary<MotFileBase, string?> filters = new();
 
     private void Transfer()

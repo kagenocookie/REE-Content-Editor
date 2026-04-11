@@ -22,6 +22,9 @@ public class Motion(GameObject gameObject, RszInstance data) : UpdateComponent(g
     public override void Update(float deltaTime)
     {
         UpdateAnimation(deltaTime);
+        if (!string.IsNullOrEmpty(Transform.ParentJoint)) {
+            Transform.InvalidateTransform();
+        }
     }
 
     public void InitAnimation()

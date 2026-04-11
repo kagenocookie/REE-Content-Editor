@@ -78,6 +78,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     private bool? _hasTooManyWeightsForRender;
 
     private List<MeshViewerContext> meshContexts = new();
+    internal IReadOnlyList<MeshViewerContext> MeshContexts => meshContexts.AsReadOnly();
     private MeshViewerContext? _animationListContext;
 
     protected override void Reset()
@@ -376,6 +377,10 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                         ShowMeshInfo(ctx, false);
                         ImGui.EndMenu();
                     }
+                    if (ImGui.BeginMenu($"{AppIcons.SI_Generic3Axis} Transform")) {
+                        ctx.ShowTransformUI(meshContexts);
+                        ImGui.EndMenu();
+                    }
                     if (ctx.IsAnimatable && ImGui.BeginMenu($"{AppIcons.SI_FileType_FBXSKEL} Skeleton")) {
                         EnsureAnimationsInit();
                         ctx.ShowSkeletonPicker();
@@ -492,14 +497,27 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 CreateAdditionalMesh(Handle).LoadFromJson(collection.Items[i]!);
             }
             for (int i = 0; i < collection.Items.Count; i++) {
+                var ctx = meshContexts[i];
                 var ownerName = (collection.Items[i]!).Owner;
                 if (!string.IsNullOrEmpty(ownerName)) {
                     EnsureAnimationsInit();
-                    var anim = meshContexts[i].Animator!;
+                    var anim = ctx.Animator!;
                     anim.owner = meshContexts.FirstOrDefault(c => c.ShortName == ownerName)?.Animator ?? meshContexts[0].Animator;
                 }
 
-                meshContexts[i].Animator?.owner ??= meshContexts[0].Animator;
+                ctx.Animator?.owner ??= meshContexts[0].Animator;
+                if (i != 0) {
+                    if (ctx.Animator?.owner != null) {
+                        var ownerGo = meshContexts.First(mc => mc.Animator == ctx.Animator!.owner).GameObject;
+                        if (ownerGo != ctx.GameObject) {
+                            ownerGo.AddChild(ctx.GameObject);
+                        } else {
+                            meshContexts[0].GameObject.AddChild(ctx.GameObject);
+                        }
+                    } else {
+                        meshContexts[0].GameObject.AddChild(ctx.GameObject);
+                    }
+                }
             }
         } catch (Exception e) {
             Logger.Error("Failed to load mesh collection: " + e.Message);
@@ -1450,6 +1468,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             Skeleton = skeletonPath,
             Material = loadedMdf,
             Owner = FindOwner(meshContexts)?.ShortName ?? null,
+            ParentJoint = GameObject.Transform.ParentJoint,
         };
     }
 
@@ -1470,6 +1489,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
         }
 
         ChangeMesh(false);
+        GameObject.Transform.ParentJoint = item.ParentJoint ?? "";
     }
 
     private UIContext? animationPickerContext;
@@ -1477,7 +1497,8 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
     private string? loadedAnimationSource;
     private string motFilter = "";
     private bool isMotFilterMatchCase = false;
-    private void ChangeAnim(List<MeshViewerContext> meshContexts, MotFileBase activeAnim)
+
+    private void ChangeAnim(IEnumerable<MeshViewerContext> meshContexts, MotFileBase activeAnim)
     {
         foreach (var mc in meshContexts) {
             if (mc.Animator?.owner == Animator) {
@@ -1485,6 +1506,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             }
         }
     }
+
     public void ShowAnimSettings(List<MeshViewerContext> meshContexts, bool showControllerSelection)
     {
         if (Animator == null) return;
@@ -1499,10 +1521,13 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
                     if (other == this || other.Animator?.owner != other.Animator) continue;
                     if (ImGui.Selectable(other.ShortName, other.Animator == Animator, ImGuiSelectableFlags.NoAutoClosePopups)) {
                         Animator.owner = other.Animator;
+                        other.GameObject.AddChild(GameObject);
                     }
                 }
                 if (Animator.owner != Animator && ImGui.Selectable("[Make controller]", ImGuiSelectableFlags.NoAutoClosePopups)) {
                     Animator.owner = Animator;
+                    GameObject.Parent?.RemoveChild(GameObject);
+                    GameObject.Folder?.AddGameObject(GameObject);
                 }
                 ImGui.EndMenu();
             }
@@ -1592,6 +1617,14 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
                 ImGui.PushID(mot.GetHashCode());
                 if (ImGui.RadioButton(name, animator.ActiveMotion == mot)) {
                     ChangeAnim(meshContexts, (MotFile)mot);
+                    if (animator == viewer.Animators.FirstOrDefault()) {
+                        foreach (var other in viewer.MeshContexts) {
+                            var motId = Animator.GetMotionId(mot.Name);
+                            if (other.Animator != animator && other.Animator?.Animations.FirstOrDefault(anim => Animator.GetMotionId(anim.Name) == motId) is MotFileBase sameIdMot) {
+                                other.ChangeAnim(viewer.MeshContexts, sameIdMot);
+                            }
+                        }
+                    }
                 }
                 if (ImGui.BeginPopupContextItem(name)) {
                     if (ImGui.Selectable("Copy name")) {
@@ -1604,6 +1637,26 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             }
         } else if (animator?.File != null) {
             ImGui.TextColored(Colors.Note, "Selected file contains no playable animations");
+        }
+    }
+
+    public void ShowTransformUI(List<MeshViewerContext> meshContexts)
+    {
+        var owner = FindOwner(meshContexts);
+
+        var childCtx = meshContexts.Where(mc => mc.FindOwner(meshContexts) == this);
+        if (owner == this || owner == null) {
+            var tr = ui.GetChild("Transform") ?? ui.AddChild("Transform", GameObject.Transform);
+            if (tr.uiHandler == null) {
+                WindowHandlerFactory.AddDefaultHandler<Transform>(tr);
+            }
+
+            ImGui.SetNextItemOpen(true, ImGuiCond.Always);
+            tr.ShowUI();
+        } else {
+            var tr = owner.UI.GetChild("Transform") ?? owner.UI.AddChild("Transform", GameObject.Transform);
+            ImGui.SetNextItemOpen(true, ImGuiCond.Always);
+            tr.ShowUI();
         }
     }
 }
