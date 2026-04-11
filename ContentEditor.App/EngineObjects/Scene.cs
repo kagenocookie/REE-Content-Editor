@@ -75,6 +75,11 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     Vector2 IRectWindow.Size => renderContext.ViewportSize;
     Vector2 IRectWindow.Position => renderContext.ViewportOffset + renderContext.UIOffset;
 
+    private List<PickableData.PickItem> lastPickResults = new();
+    private Vector2 lastClickPos = Vector2.Zero;
+    private int pickCycleIDX = 0;
+    private float clickPosThreshold = 8f;
+
     [Flags]
     public enum LoadType
     {
@@ -259,8 +264,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
             return;
         }
 
-        PickableData.PickItem bestCandidate = default;
-        var closestDistance = float.MaxValue;
+        var hits = new List<(PickableData.PickItem item, float distance)>();
         var originPos = ActiveCamera.Transform.Position;
         foreach (var candidate in pickData.Candidates) {
             // verify if it's an actual match, since raw Candidates only pass a broad AABB check
@@ -269,17 +273,34 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
 
             // see if it's closer than our closest match so far
             var distance = (intersection - originPos).LengthSquared();
-            if (distance < closestDistance) {
-                closestDistance = distance;
-                bestCandidate = candidate;
-            }
+            hits.Add((candidate, distance));
         }
-        if (bestCandidate.mesh == null) {
-            // deselect maybe?
+
+        if (hits.Count == 0) {
+            window.InvokeFromUIThread(() => (editorWnd.Handler as IInspectorController)?.Inspector.PrimaryTarget = null);
             return;
         }
 
-        var target = bestCandidate.context.GameObject;
+        hits.Sort((a, b) => a.distance.CompareTo(b.distance));
+        //for (int i = 0; i < hits.Count; i++) {
+        //    var (item, distance) = hits[i];
+        //    var go = item.context.GameObject;
+        //    string marker = (i == pickCycleIDX) ? ">>" : "  ";
+        //    Logger.Debug($"{marker} [{i}] {go?.Name} | dist: {distance}");
+        //}
+
+        // SILVER: check if this is a repeated click. Should we consider screen res for the threshold?
+        bool isSameSpot = Vector2.Distance(viewportPos, lastClickPos) < clickPosThreshold;
+        if (isSameSpot && lastPickResults.Count == hits.Count) {
+            pickCycleIDX = (pickCycleIDX + 1) % hits.Count;
+        } else {
+            pickCycleIDX = 0;
+            lastPickResults.Clear();
+            lastPickResults.AddRange(hits.Select(h => h.item));
+        }
+        lastClickPos = viewportPos;
+
+        var target = hits[pickCycleIDX].item.context.GameObject;
         window.InvokeFromUIThread(() => (editorWnd.Handler as IInspectorController)?.Inspector.PrimaryTarget = target);
     }
 

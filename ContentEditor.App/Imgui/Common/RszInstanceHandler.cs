@@ -26,10 +26,18 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
         if (showLabel) ImguiHelpers.TextSuffix(context.label, context.stringFormatter?.GetString(instance) ?? instance.RszClass.name);
 
         if (context.children.Count >= 10) {
-            ImGui.Indent(8);
+            ImGui.Spacing();
             ImGui.SetNextItemWidth(Math.Min(200, ImGui.CalcItemWidth() - 16));
-            ImGui.InputText("Filter fields", ref context.Filter, 48);
-            ImGui.Unindent(8);
+            ImGui.SetNextItemAllowOverlap();
+            ImGui.InputTextWithHint("Filter fields"u8, $"{AppIcons.SI_GenericMagnifyingGlass}", ref context.Filter, 48);
+            if (!string.IsNullOrEmpty(context.Filter)) {
+                ImGui.SameLine();
+                ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X - ImGui.GetStyle().ItemInnerSpacing.X - ImGui.CalcTextSize("Filter fields").X, ImGui.GetItemRectMin().Y));
+                ImGui.SetNextItemAllowOverlap();
+                if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
+                    context.Filter = string.Empty;
+                }
+            }
             ImGui.Spacing();
         }
         if (string.IsNullOrEmpty(context.Filter)) {
@@ -403,11 +411,12 @@ public class InstancePickerHandler<T>(bool allowNull, Func<UIContext, bool, IEnu
             restW -= ImGui.CalcTextSize("Remove").X + ImGui.GetStyle().FramePadding.X * 2;
         }
         if (!DisableRefresh) {
-            if (ImGui.Button("Refresh list")) {
+            if (ImGui.Button($"{AppIcons.SI_Update}")) {
                 availableInstances = instanceProvider.Invoke(context, true).ToArray();
                 context.SetStateArray<T>(availableInstances);
             }
-            restW -= ImGui.CalcTextSize("Refresh list").X + ImGui.GetStyle().FramePadding.X * 2;
+            ImguiHelpers.Tooltip("Refresh list"u8);
+            restW -= ImGui.CalcTextSize($"{AppIcons.SI_Update}").X + ImGui.GetStyle().FramePadding.X * 2;
             ImGui.SameLine();
         }
 
@@ -624,13 +633,13 @@ public class RszEnumFieldHandler : IObjectUIHandler
         ImGui.PushID(context.label);
         var w = ImGui.CalcItemWidth();
         ImGui.SetNextItemWidth(UI.FontSize);
-        if (ImguiHelpers.ToggleButton(useCustomValueInput ? "#" : "a", ref useCustomValueInput, useCustomValueInput ? Colors.IconActive : null)) {
+        if (ImguiHelpers.ToggleButton(useCustomValueInput ? $"{AppIcons.SI_InspectorCustomValue}" : $"{AppIcons.SI_InspectorEnum}", ref useCustomValueInput, useCustomValueInput ? Colors.IconActive : null)) {
             context.StateBool = useCustomValueInput;
             // adding an undo entry for this isn't very meaningful by itself, but it kinda needs to be there
             // the enum-style and value-style handlers use different undo record types (boxed vs direct type) and can't allow merging
             UndoRedo.RecordCallback(null, () => context.StateBool = useCustomValueInput, () => context.StateBool = !useCustomValueInput);
         }
-        ImguiHelpers.Tooltip("Use Custom Value Input");
+        ImguiHelpers.Tooltip("Use Custom Value Input"u8);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(w - UI.FontSize);
         var valueType = selected!.GetType();
@@ -965,7 +974,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                     EditorWindow.CurrentWindow!.AddFileEditor(editor.Handle);
                 }
             }
-            ImguiHelpers.Tooltip("Open in New Window");
+            ImguiHelpers.Tooltip("Open in New Window"u8);
             ImGui.SameLine();
             HandleLinkedUserdata(context, instance, ws);
             ImGui.TreePop();
@@ -1198,7 +1207,7 @@ public class PrefabRefHandler : IObjectUIHandler
                 UndoRedo.RecordCallbackSetter(context, instance, (byte)0, (byte)1, (i, v) => i.Values[0] = v, $"{instance.GetHashCode()} Preload");
             }
         }
-        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("If true, the prefab will get loaded immediately with the scene and included in the resources list.\nYou rarely want to change this for existing files.");
+        ImguiHelpers.Tooltip("If true, the prefab will get loaded immediately with the scene and included in the resources list.\nYou rarely want to change this for existing files."u8);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(nextW);
         context.ShowChildrenUI();
@@ -1447,6 +1456,6 @@ public class UndeterminedFieldTypeHandler : IObjectUIHandler
         ImGui.DragInt(context.label + " (value type unknown)", ref value.value);
         ImGui.EndDisabled();
 #endif
-        ImguiHelpers.Tooltip("The value type of this field is unknown. It's most likely always 0 in all known shipped files.");
+        ImguiHelpers.Tooltip("The value type of this field is unknown. It's most likely always 0 in all known shipped files."u8);
     }
 }

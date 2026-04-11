@@ -1,6 +1,7 @@
 using ContentEditor.Core;
 using ReeLib;
 using ReeLib.via;
+using System.Numerics;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -278,7 +279,8 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
     public void ShowFilterInput()
     {
         var filter = Query ?? "";
-        if (ImGui.InputTextWithHint("##Filter"u8, $"{AppIcons.Search}", ref filter, 200)) {
+        ImGui.SetNextItemAllowOverlap();
+        if (ImGui.InputTextWithHint("##Filter"u8, $"{AppIcons.SI_GenericMagnifyingGlass}", ref filter, 200)) {
             SetQuery(filter);
         }
         if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("""
@@ -287,6 +289,14 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
             Can use "v:" prefix to search by a field value, e.g. "v:sm34.mesh"
             Can use "f:" prefix to filter values by field name, e.g. "f:itemID"
             """u8);
+        if (!string.IsNullOrEmpty(Query)) {
+            ImGui.SameLine();
+            ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
+            ImGui.SetNextItemAllowOverlap();
+            if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
+                Query = string.Empty;
+            }
+        }
 
         shouldDeleteSearch = MatchedObject != null;
     }

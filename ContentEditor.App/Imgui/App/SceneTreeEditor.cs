@@ -111,16 +111,21 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
         var itemSpacing = ImGui.GetStyle().ItemSpacing;
         string label = GetNodeText(node);
 
+        bool isActive = GetSelectedItemHierarchy(context)?.Contains(node) == true;
         bool click, middleClick;
         if (!string.IsNullOrEmpty(folder?.ScenePath)) {
             ImGui.BeginGroup();
+            ImGui.PushStyleColor(ImGuiCol.Text, isActive ? Colors.IconActive : ImguiHelpers.GetColor(ImGuiCol.Text));
             click = ImGui.Selectable(label, new Vector2(0, TreeLineHeight));
+            ImGui.PopStyleColor();
             HandleDragDrop(node, context, startScreenPos);
             ImGui.SameLine();
             ImGui.TextColored(Colors.Faded, folder.ScenePath);
             ImGui.EndGroup();
         } else {
+            ImGui.PushStyleColor(ImGuiCol.Text, isActive ? Colors.IconActive : ImguiHelpers.GetColor(ImGuiCol.Text));
             click = ImGui.Selectable(label, new Vector2(0, TreeLineHeight));
+            ImGui.PopStyleColor();
             HandleDragDrop(node, context, startScreenPos);
         }
 

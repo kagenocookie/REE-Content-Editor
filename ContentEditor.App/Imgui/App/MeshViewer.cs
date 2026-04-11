@@ -246,7 +246,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     private void ShowEmbeddedMenu(MeshComponent meshComponent)
     {
         ImGui.SetCursorPos(ImGui.GetCursorPos() + new Vector2(6, 6));
-        if (ImGui.Button($"{AppIcons.GameObject}")) ImGui.OpenPopup("CameraSettings");
+        if (ImGui.Button($"{AppIcons.SI_GenericCamera}")) ImGui.OpenPopup("CameraSettings");
         if (ImGui.BeginPopup("CameraSettings")) {
             scene!.Controller.ShowCameraControls();
             ImGui.EndPopup();

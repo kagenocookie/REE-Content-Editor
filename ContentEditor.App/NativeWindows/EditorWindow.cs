@@ -818,7 +818,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         scene.Controller.Keyboard = _inputContext.Keyboards[0];
         scene.Controller.MoveSpeed = AppConfig.Settings.SceneView.MoveSpeed;
         scene.AddWidget<SceneVisibilitySettings>();
-        scene.AddWidget<SceneCameraControls>();
         var data = AddUniqueSubwindow(new SceneView(Workspace, scene));
         data.Position = new Vector2(0, viewportOffset.Y);
         data.Size = new Vector2(Size.X, Size.Y - viewportOffset.Y);
