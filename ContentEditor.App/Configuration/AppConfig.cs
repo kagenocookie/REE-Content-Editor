@@ -772,6 +772,7 @@ public class RecentFileList : List<string>
 
 public record SceneViewSettings
 {
+    public CameraProjection DefaultProjection { get; set; } = CameraProjection.Perspective;
     public float MoveSpeed { get; set; } = 8f;
 }
 public record DevSettings
