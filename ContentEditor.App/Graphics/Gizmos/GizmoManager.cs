@@ -148,12 +148,12 @@ public sealed class GizmoManager(Scene scene) : IDisposable
             GizmoMaterialPreset.AxisX => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_x").Color("_MainColor", new Color(0xff, 0, 0, 0xff)),
             GizmoMaterialPreset.AxisY => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_y").Color("_MainColor", new Color(0, 0xff, 0, 0xff)),
             GizmoMaterialPreset.AxisZ => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_z").Color("_MainColor", new Color(0, 0, 0xff, 0xff)),
-            GizmoMaterialPreset.AxisX_Highlight => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_x").Color("_MainColor", new Color(0xff, 0xaa, 0xaa, 0xff)),
-            GizmoMaterialPreset.AxisY_Highlight => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_y").Color("_MainColor", new Color(0xaa, 0xff, 0xaa, 0xff)),
-            GizmoMaterialPreset.AxisZ_Highlight => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_z").Color("_MainColor", new Color(0xaa, 0xaa, 0xff, 0xff)),
-            GizmoMaterialPreset.AxisX_Active => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_x").Color("_MainColor", new Color(0xff, 0xcc, 0xcc, 0xff)),
-            GizmoMaterialPreset.AxisY_Active => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_y").Color("_MainColor", new Color(0xcc, 0xff, 0xcc, 0xff)),
-            GizmoMaterialPreset.AxisZ_Active => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_z").Color("_MainColor", new Color(0xcc, 0xcc, 0xff, 0xff)),
+            GizmoMaterialPreset.AxisX_Highlight => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_x").Color("_MainColor", new Color(0xff, 0xff, 0xaa, 0xff)),
+            GizmoMaterialPreset.AxisY_Highlight => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_y").Color("_MainColor", new Color(0xff, 0xff, 0xaa, 0xff)),
+            GizmoMaterialPreset.AxisZ_Highlight => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_z").Color("_MainColor", new Color(0xff, 0xff, 0xaa, 0xff)),
+            GizmoMaterialPreset.AxisX_Active => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_x").Color("_MainColor", new Color(0xff, 0xff, 0, 0xff)),
+            GizmoMaterialPreset.AxisY_Active => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_y").Color("_MainColor", new Color(0xff, 0xff, 0, 0xff)),
+            GizmoMaterialPreset.AxisZ_Active => scene.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "axis_z").Color("_MainColor", new Color(0xff, 0xff, 0, 0xff)),
             _ => throw new NotImplementedException($"Unsupported gizmo material preset {preset}"),
         };
         presetMaterials.Add((preset, material));

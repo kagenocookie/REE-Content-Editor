@@ -295,7 +295,8 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
             pickCycleIDX = (pickCycleIDX + 1) % hits.Count;
         } else {
             pickCycleIDX = 0;
-            lastPickResults = hits.Select(h => h.item).ToList();
+            lastPickResults.Clear();
+            lastPickResults.AddRange(hits.Select(h => h.item));
         }
         lastClickPos = viewportPos;
 

@@ -17,7 +17,6 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
     private IVisibilityTarget? dragSource;
     private BookmarkHolder? _bookmarks;
     private string prefabFilepath = "";
-    private HashSet<IVisibilityTarget>? _activePath;
 
     protected override IEnumerable<IVisibilityTarget> GetChildren(IVisibilityTarget? node, bool expandContents = false)
     {
@@ -112,8 +111,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
         var itemSpacing = ImGui.GetStyle().ItemSpacing;
         string label = GetNodeText(node);
 
-        _activePath = new HashSet<IVisibilityTarget>(GetSelectedItemHierarchy(context));
-        bool isActive = _activePath?.Contains(node) == true;
+        bool isActive = GetSelectedItemHierarchy(context)?.Contains(node) == true;
         bool click, middleClick;
         if (!string.IsNullOrEmpty(folder?.ScenePath)) {
             ImGui.BeginGroup();
