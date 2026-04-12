@@ -169,7 +169,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                                 workspace.ResourceManager.CloseFile(Handle);
                                 context.GetNativeWindow()?.OpenFiles([Handle.Filepath]);
                             }
-                            workspace.BundleManager.SaveBundle(workspace.CurrentBundle);
+                            workspace.CurrentBundle.Save();
                         }
                         ImguiHelpers.Tooltip("Store in bundle\nFile is located in the bundle folder but is not marked as part of the bundle. This will store the path into the bundle json.");
                     }

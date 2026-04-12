@@ -325,7 +325,7 @@ public class ResourcePathPicker : IObjectUIHandler
                 bundle.AddResource(localFilepath, nativeFilepath, file.Format.format.IsDefaultReplacedBundleResource());
             }
 
-            workspace.BundleManager.SaveBundle(bundle);
+            bundle.Save();
             if (closeFile && file.References.Count == 0) {
                 workspace.ResourceManager.CloseFile(file);
             }

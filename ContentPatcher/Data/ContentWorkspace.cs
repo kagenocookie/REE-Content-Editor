@@ -224,7 +224,7 @@ public sealed class ContentWorkspace : IDisposable
             bundle.Enums = null;
         }
 
-        (EditedBundleManager ?? BundleManager).SaveBundle(bundle);
+        bundle.Save();
     }
 
     public void SaveBundleFileDiff(FileHandle file)
@@ -235,7 +235,7 @@ public sealed class ContentWorkspace : IDisposable
         }
 
         TryExecuteDiff(CurrentBundle, file);
-        (EditedBundleManager ?? BundleManager).SaveBundle(CurrentBundle);
+        CurrentBundle.Save();
     }
 
     private static void TryExecuteDiff(Bundle bundle, FileHandle file)
@@ -292,7 +292,7 @@ public sealed class ContentWorkspace : IDisposable
             SetBundle(null);
         }
         var bundleJsonPath = Path.Combine(bundlePath, "bundle.json");
-        var bundle = BundleManager.GetBundle(bundleName, null) ?? new Bundle();
+        var bundle = BundleManager.GetBundle(bundleName, null) ?? new Bundle() { StorageFolder = bundlePath };
         bundle.Name = bundleName;
         var modIni = Path.Combine(bundlePath, "modinfo.ini");
         if (File.Exists(modIni)) {
@@ -425,7 +425,7 @@ public sealed class ContentWorkspace : IDisposable
         }
 
         if (filesAdded) {
-            BundleManager.SaveBundle(bundle);
+            bundle.Save();
         }
         if (!filesAdded && !filesMissing) {
             Logger.Info("No files seem to have been added to or removed from the bundle folder.");

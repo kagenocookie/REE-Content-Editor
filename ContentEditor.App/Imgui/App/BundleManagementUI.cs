@@ -132,7 +132,7 @@ public class BundleManagementUI : IWindowHandler
                         newBundle.Author = AppConfig.Settings.BundleDefaults.Author ?? "";
                         newBundle.Description = AppConfig.Settings.BundleDefaults.Description ?? "";
                         newBundle.Homepage = AppConfig.Settings.BundleDefaults.Homepage ?? "";
-                        bundleManager.SaveBundle(newBundle);
+                        newBundle.Save();
                         newBundleName = "";
                     } else {
                         WindowManager.Instance.ShowError("Bundle already exists!", data);
@@ -187,7 +187,7 @@ public class BundleManagementUI : IWindowHandler
 
         ImGui.SameLine();
         if (ImGui.Button($"{AppIcons.SI_Save}")) {
-            bundleManager.SaveBundle(bundle);
+            bundle.Save();
             EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Saved!", 1f);
         }
         ImguiHelpers.Tooltip("Save bundle metadata");
@@ -398,7 +398,7 @@ public class BundleManagementUI : IWindowHandler
                     }
 
                     Logger.Info($"Deleted {entryKey} from {bundle.Name}.");
-                    bundleManager.SaveBundle(bundle);
+                    bundle.Save();
 
                     ImGui.CloseCurrentPopup();
                 }
@@ -457,7 +457,7 @@ public class BundleManagementUI : IWindowHandler
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_Save}")) {
                 entry.Target = target;
-                bundleManager.SaveBundle(bundle);
+                bundle.Save();
                 ImGui.CloseCurrentPopup();
             }
             ImguiHelpers.Tooltip("Save");

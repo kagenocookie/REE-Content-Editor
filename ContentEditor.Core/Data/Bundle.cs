@@ -60,7 +60,7 @@ public class Bundle
     public Dictionary<string, long>? InitialInsertIds { get; set; }
 
     [JsonIgnore]
-    public string? StorageFolder { get; set; }
+    public string StorageFolder { get; set; } = "";
 
     public override string ToString() => Name;
 
@@ -175,6 +175,15 @@ public class Bundle
             author={Author}
             {(string.IsNullOrEmpty(ImagePath) ? "" : $"screenshot={ImagePath}")}
             """;
+    }
+
+    public void Save()
+    {
+        Touch();
+        var outfilepath = Path.Combine(StorageFolder, "bundle.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(outfilepath)!);
+        using var fs = File.Create(outfilepath);
+        JsonSerializer.Serialize(fs, this, JsonConfig.luaJsonOptions);
     }
 
     public enum EntityRecordUpdateType

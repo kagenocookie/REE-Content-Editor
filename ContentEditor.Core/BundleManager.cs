@@ -219,7 +219,10 @@ public class BundleManager
 
     public string ResolveBundleLocalPath(Bundle bundle, string localPath)
     {
-        return Path.Combine(AppBundlePath, bundle.Name, localPath).Replace('\\', '/');
+        var expectedPath = (string.IsNullOrEmpty(bundle.StorageFolder)
+            ? Path.Combine(AppBundlePath, bundle.Name, localPath)
+            : Path.Combine(bundle.StorageFolder, localPath));
+        return expectedPath.Replace('\\', '/');
     }
 
     public bool IsBundleActive(Bundle bundle)
@@ -307,20 +310,11 @@ public class BundleManager
             GameVersion = VersionHash,
             Version = "v1.0.0"
         };
+        bundle.StorageFolder ??= ConstructBundleFolder(newBundleName);
         bundle.Touch();
         AllBundles.Add(bundle);
         ActiveBundles.Add(bundle);
         return bundle;
-    }
-
-    public void SaveBundle(Bundle bundle)
-    {
-        bundle.Touch();
-        bundle.StorageFolder ??= ConstructBundleFolder(bundle.Name);
-        var outfilepath = Path.Combine(bundle.StorageFolder, "bundle.json");
-        Directory.CreateDirectory(Path.GetDirectoryName(outfilepath)!);
-        using var fs = File.Create(outfilepath);
-        JsonSerializer.Serialize(fs, bundle, JsonConfig.luaJsonOptions);
     }
 
     public BundleManager CreateBundleSpecificManager(string? bundleName)
