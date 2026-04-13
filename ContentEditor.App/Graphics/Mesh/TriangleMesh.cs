@@ -249,10 +249,12 @@ public class TriangleMesh : Mesh
             if (HasBones) {
                 var vertWeight = meshWeights[vert];
 
-                VertexData[vertOffset + boneIndsOffset + 0] = BitConverter.Int32BitsToSingle(vertWeight.boneIndices[0]);
-                VertexData[vertOffset + boneIndsOffset + 1] = BitConverter.Int32BitsToSingle(vertWeight.boneIndices[1]);
-                VertexData[vertOffset + boneIndsOffset + 2] = BitConverter.Int32BitsToSingle(vertWeight.boneIndices[2]);
-                VertexData[vertOffset + boneIndsOffset + 3] = BitConverter.Int32BitsToSingle(vertWeight.boneIndices[3]);
+                // note: the & 0xffff _needs_ to be there because on release build, it ends up also copying the next int16 index as well into the int32
+                // which turns the number absolutely massive and broken
+                VertexData[vertOffset + boneIndsOffset + 1] = BitConverter.Int32BitsToSingle((int)vertWeight.boneIndices[0] & 0xffff);
+                VertexData[vertOffset + boneIndsOffset + 1] = BitConverter.Int32BitsToSingle((int)vertWeight.boneIndices[1] & 0xffff);
+                VertexData[vertOffset + boneIndsOffset + 2] = BitConverter.Int32BitsToSingle((int)vertWeight.boneIndices[2] & 0xffff);
+                VertexData[vertOffset + boneIndsOffset + 3] = BitConverter.Int32BitsToSingle((int)vertWeight.boneIndices[3] & 0xffff);
 
                 if (vertWeight.boneWeights[4] > 0) {
                     // normalize weights - if the mesh has more than 4 weights per bone, ignore any extra bones

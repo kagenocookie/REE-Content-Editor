@@ -236,7 +236,7 @@ public class ImGuiController : IDisposable
         io.KeyShift = _keyboard.IsKeyPressed(Key.ShiftLeft) || _keyboard.IsKeyPressed(Key.ShiftRight);
         io.KeySuper = _keyboard.IsKeyPressed(Key.SuperLeft) || _keyboard.IsKeyPressed(Key.SuperRight);
 
-#if !WINDOWS && DEBUG
+#if !WINDOWS
         // in certain setups, the clipboard does not sync properly between imgui and the desktop system, hack it in manually
         byte* clipBytesImgui = global::Hexa.NET.ImGui.ImGui.GetClipboardText();
         string? clipboardImgui = clipBytesImgui == null ? null : global::Hexa.NET.ImGui.ImGui.GetClipboardTextS();
@@ -261,7 +261,7 @@ public class ImGuiController : IDisposable
 #endif
     }
 
-#if !WINDOWS && DEBUG
+#if !WINDOWS
     private string? _lastClipboardImgui;
     private string? _lastClipboardNative;
 #endif
