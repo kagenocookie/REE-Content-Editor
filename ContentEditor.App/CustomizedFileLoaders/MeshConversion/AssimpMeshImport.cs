@@ -328,7 +328,7 @@ public partial class CommonMeshResource : IResourceFile
                             }
                         }
                         outWeight.boneIndices[weightIndex] = boneIndex;
-                        outWeight.boneWeights[weightIndex] = (byte)MathF.Round(entry.Weight * 255f);
+                        outWeight.SetWeight(weightIndex, entry.Weight);
                         if (targetBone.boundingBox.IsEmpty) targetBone.boundingBox = AABB.MaxMin;
                         targetBone.boundingBox = targetBone.boundingBox.AsAABB.Extend(Vector3.Transform(buffer.Positions[vertOffset + entry.VertexID], targetBone.inverseGlobalTransform.ToSystem()));
                         hasWeight = true;
