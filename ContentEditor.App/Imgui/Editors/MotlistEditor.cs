@@ -1165,7 +1165,7 @@ public class PropertyHandler : IObjectUIHandler
             context.AddChild<Property, List<KeyBase>>("Keys", instance, new ConditionalUIHandler(KeyListHandler.Instance, static c => !((Property)c.target!).IsPropertyContainer), getter: p => p!.Keys);
             context.AddChild<Property, List<KeyBase>>(
                 "Extra Keys", instance,
-                new ConditionalUIHandler(KeyListHandler.Instance, static c => !((Property)c.target!).IsPropertyContainer && c.FindHandlerInParents<TmlFsm2FileEditor>() != null),
+                new ConditionalUIHandler(KeyListHandler.Instance, static c => !((Property)c.target!).IsPropertyContainer && c.FindHandlerInParents<FileEditor>() is TmlFsm2FileEditor or ClipFileEditor),
                 getter: p => p!.ExtraKeys, setter: (p, v) => p.ExtraKeys = v);
         }
 

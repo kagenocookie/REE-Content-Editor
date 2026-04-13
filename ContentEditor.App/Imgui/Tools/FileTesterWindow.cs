@@ -670,10 +670,10 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<ReeLib.UVar.Variable>((m) => [m.guid, m.Value, m.Expression, m.flags, m.Name, m.nameHash]);
 
         AddCompareMapper<ReeLib.Rcol.Header>((m) => [m.numGroups, m.numIgnoreTags, m.numRequestSets, m.numShapes, m.numUserData, m.maxRequestSetId, m.status, m.uknRe3_A, m.uknRe3_B, m.ukn1, m.ukn2, m.uknRe3]);
-        AddCompareMapper<ClipFile>((m) => [m.Header, m.TrackGroups, m.RootTracks, m.Sections, m.Clip]);
+        AddCompareMapper<ClipFile>((m) => [m.Header, m.TrackGroups, m.RootTracks, m.Clip]);
         AddCompareMapper<ReeLib.Tml.ClipHeader>((m) => [
             m.version, m.magic, m.numFrames, m.guid,
-            m.rootTrackCount, m.trackCount, m.sectionCount, m.nodeReorderCount, m.trackCount, m.propertyCount, m.keysCount]);
+            m.rootTrackCount, m.trackCount, m.clipGroupCount, m.nodeReorderCount, m.trackCount, m.propertyCount, m.keysCount]);
         AddCompareMapper<ReeLib.Clip.PropertyInfo>((m) => [m.arrayIndex, m.ChildMembershipCount, m.ChildStartIndex, m.DataType, m.endFrame, m.startFrame, m.FunctionName, m.nameAsciiHash, m.nameUtf16Hash]);
         AddCompareMapper<TimelineTrack>((m) => [m.Name, m.pragmataHash, m.nameHash1, m.nameUtf16Hash, m.startFrame, m.endFrame, m.guid1, m.guid2, m.Tag, m.nodeType, m.uknByte, m.uknByte2, m.TimelineChildTracks]);
 

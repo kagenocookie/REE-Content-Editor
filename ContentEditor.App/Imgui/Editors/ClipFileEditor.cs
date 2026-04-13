@@ -1,4 +1,6 @@
+using System.Numerics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Clip;
@@ -23,7 +25,7 @@ public class ClipFileEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(MotlistEditor).TypeHandle);
         WindowHandlerFactory.DefineInstantiator<TimelineTrackGroup>((ctx) => new TimelineTrackGroup(ctx.FindValueInParentValues<ClipFileEditor>()?.File.Header.version ?? ClipVersion.MHWilds));
         WindowHandlerFactory.DefineInstantiator<TimelineTrack>((ctx) => new TimelineTrack(ctx.FindValueInParentValues<ClipFileEditor>()?.File.Header.version ?? ClipVersion.MHWilds));
-        WindowHandlerFactory.DefineInstantiator<TimelineSectionTag>((ctx) => new TimelineSectionTag(ctx.FindValueInParentValues<ClipFileEditor>()?.File.Header.version ?? ClipVersion.MHWilds));
+        WindowHandlerFactory.DefineInstantiator<TimelineClipGroup>((ctx) => new TimelineClipGroup(ctx.FindValueInParentValues<ClipFileEditor>()?.File.Header.version ?? ClipVersion.MHWilds));
     }
 
     public ClipFileEditor(ContentWorkspace env, FileHandle file) : base(file)
@@ -63,7 +65,6 @@ public class TmlFileObjectHandler : IObjectUIHandler
             var file = context.Get<ClipFile>();
             context.AddChild<ClipFile, Guid>("GUID", file, getter: (m) => m!.Header.guid, setter: (m, n) => m.Header.guid = n).AddDefaultHandler();
             context.AddChild<ClipFile, List<TimelineTrackGroup>>("Track Groups", file, new ListHandler(typeof(TimelineTrackGroup), typeof(List<TimelineTrackGroup>)), (m) => m!.TrackGroups);
-            context.AddChild<ClipFile, List<TimelineSectionTag>>("Sections", file, new ListHandler(typeof(TimelineSectionTag), typeof(List<TimelineSectionTag>)), (m) => m!.Sections);
 
             context.AddChild<ClipFile, List<SpeedPointData>>("Speed Point Data", file, new ListHandler(typeof(SpeedPointData), typeof(List<SpeedPointData>)), (m) => m!.Clip.SpeedPointData);
             context.AddChild<ClipFile, List<Bezier3DKeys>>("Bezier3D Interpolation Data", file, new ListHandler(typeof(Bezier3DKeys), typeof(List<Bezier3DKeys>)), (m) => m!.Clip.Bezier3DData);
@@ -76,25 +77,48 @@ public class TmlFileObjectHandler : IObjectUIHandler
 }
 
 
-[ObjectImguiHandler(typeof(TimelineSectionTag))]
+[ObjectImguiHandler(typeof(TimelineClipGroup))]
 public class TmlNodeGroupHandler : IObjectUIHandler
 {
     private static MemberInfo[] DisplayedFields = [
-        typeof(TimelineSectionTag).GetField(nameof(TimelineSectionTag.Name))!,
-        typeof(TimelineSectionTag).GetField(nameof(TimelineSectionTag.startFrame))!,
-        typeof(TimelineSectionTag).GetField(nameof(TimelineSectionTag.endFrame))!,
-        typeof(TimelineSectionTag).GetField(nameof(TimelineSectionTag.uknIndex))!,
-        typeof(TimelineSectionTag).GetField(nameof(TimelineSectionTag.frameCount))!,
+        typeof(TimelineClipGroup).GetField(nameof(TimelineClipGroup.Name))!,
+        typeof(TimelineClipGroup).GetProperty(nameof(TimelineClipGroup.Tracks))!,
+    ];
+
+    private static MemberInfo[] DisplayedFieldsTrackOnly = [
+        typeof(TimelineClipGroup).GetProperty(nameof(TimelineClipGroup.Tracks))!,
     ];
 
     public void OnIMGUI(UIContext context)
     {
         if (context.children.Count == 0) {
             var ws = context.GetWorkspace();
-            WindowHandlerFactory.SetupObjectUIContext(context, typeof(TimelineSectionTag), false, DisplayedFields);
+            var version = context.FindHandlerInParents<ClipFileEditor>()?.File.Header.version;
+            if (version < ClipVersion.RE8) {
+                WindowHandlerFactory.SetupObjectUIContext(context, typeof(TimelineClipGroup), false, DisplayedFieldsTrackOnly);
+            } else {
+                WindowHandlerFactory.SetupObjectUIContext(context, typeof(TimelineClipGroup), false, DisplayedFields);
+            }
         }
 
-        context.ShowChildrenNestedUI();
+        if (context.children.Count == 1) {
+            context.ShowChildrenUI();
+        } else {
+            context.children[0].ShowUI(); // name
+            var group = context.Get<TimelineClipGroup>();
+            var vec = new Vector3(group.startFrame, group.endFrame, group.frameCount);
+            if (ImGui.DragFloat3("Frame Range"u8, ref Unsafe.As<Vector3, float>(ref vec))) {
+                if (vec.Z == group.frameCount) {
+                    vec.Z = group.endFrame - group.startFrame;
+                }
+                UndoRedo.RecordCallbackSetter(context, group, new Vector3(group.startFrame, group.endFrame, group.frameCount), vec, (o, v) => {
+                    o.startFrame = v.X;
+                    o.endFrame = v.Y;
+                    o.frameCount = v.Z;
+                }, $"{group.GetHashCode()}_frameRange");
+            }
+            context.children[1].ShowUI(); // tracks
+        }
     }
 }
 
@@ -105,7 +129,7 @@ public class TimelineTrackHandler : IObjectUIHandler
         typeof(TimelineTrackGroup).GetField(nameof(TimelineTrackGroup.name))!,
         typeof(TimelineTrackGroup).GetField(nameof(TimelineTrackGroup.type))!,
         typeof(TimelineTrackGroup).GetField(nameof(TimelineTrackGroup.ukn))!,
-        typeof(TimelineTrackGroup).GetProperty(nameof(TimelineTrackGroup.Tracks))!,
+        typeof(TimelineTrackGroup).GetProperty(nameof(TimelineTrackGroup.ClipGroups))!,
     ];
 
     public void OnIMGUI(UIContext context)
