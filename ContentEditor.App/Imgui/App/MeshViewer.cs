@@ -1091,7 +1091,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             foreach (var c in meshContexts) {
                 c.Animator?.Update(Time.Delta * playbackSpeed);
             }
-        } else {
+        } else if (animator.IsActive) {
             foreach (var c in meshContexts) {
                 c.Animator?.Update(0);
             }
