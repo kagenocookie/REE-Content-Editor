@@ -22,6 +22,7 @@ public sealed class Shader : IDisposable
         { ShaderFlags.EnableSkinning, ["ENABLE_SKINNING"] },
         { ShaderFlags.EnableStreamingTex, ["ENABLE_STREAMING_TEX"] },
         { ShaderFlags.EnableInstancing, ["ENABLE_INSTANCING"] },
+        { ShaderFlags.Use6Weights, ["USE_6_WEIGHTS"] },
     };
 
     static Shader()

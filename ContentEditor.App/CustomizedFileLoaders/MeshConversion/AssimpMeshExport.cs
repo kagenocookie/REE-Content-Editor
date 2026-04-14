@@ -382,14 +382,15 @@ public partial class CommonMeshResource : IResourceFile
                         }
                     }
 
+                    var indexCount = sub.Weights[0].IndexCount;
                     for (int vertId = 0; vertId < sub.Weights.Length; ++vertId) {
                         var vd = sub.Weights[vertId];
-                        for (int i = 0; i < vd.boneIndices.Length; ++i) {
+                        for (int i = 0; i < indexCount; ++i) {
                             var weight = vd.GetWeight(i);
                             if (weight > 0) {
                                 var srcBone = file.BoneData!.DeformBones.Count == 0
                                     ? file.BoneData.RootBones[0]
-                                    : file.BoneData.DeformBones[vd.boneIndices[i]];
+                                    : file.BoneData.DeformBones[vd.GetIndex(i)];
                                 var bone = aiMesh.Bones[srcBone.index];
                                 bone.VertexWeights.Add(new VertexWeight(vertId, weight));
                                 if (isGltf && i > 4) {
@@ -416,10 +417,10 @@ public partial class CommonMeshResource : IResourceFile
                     if (sub.Buffer.ExtraWeights != null) {
                         for (int vertId = 0; vertId < sub.ExtraWeights.Length; ++vertId) {
                             var vd = sub.ExtraWeights[vertId];
-                            for (int i = 0; i < vd.boneIndices.Length; ++i) {
+                            for (int i = 0; i < indexCount; ++i) {
                                 var weight = vd.GetWeight(i);
                                 if (weight > 0) {
-                                    var srcBone = file.BoneData!.DeformBones[vd.boneIndices[i]];
+                                    var srcBone = file.BoneData!.DeformBones[vd.GetIndex(i)];
                                     var bone = aiMesh.Bones[srcBone.index];
                                     bone.VertexWeights.Add(new VertexWeight(vertId, weight));
                                 }
@@ -435,10 +436,10 @@ public partial class CommonMeshResource : IResourceFile
                         }
                         for (int vertId = 0; vertId < sub.ShapeKeyWeights.Length; ++vertId) {
                             var vd = sub.ShapeKeyWeights[vertId];
-                            for (int i = 0; i < vd.boneIndices.Length; ++i) {
+                            for (int i = 0; i < indexCount; ++i) {
                                 var weight = vd.GetWeight(i);
                                 if (weight > 0) {
-                                    var bone = dict[vd.boneIndices[i]];
+                                    var bone = dict[vd.GetIndex(i)];
                                     bone.VertexWeights.Add(new VertexWeight(vertId, weight));
                                 }
                             }

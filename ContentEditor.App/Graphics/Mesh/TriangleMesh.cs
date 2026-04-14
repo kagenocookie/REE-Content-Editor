@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using ReeLib;
 using ReeLib.Aimp;
@@ -11,7 +12,7 @@ namespace ContentEditor.App.Graphics;
 
 public class TriangleMesh : Mesh
 {
-    private TriangleMesh() {}
+    private TriangleMesh() { }
 
     public TriangleMesh(GL gl, float[] vertexData, int[] indices) : base(gl)
     {
@@ -205,8 +206,7 @@ public class TriangleMesh : Mesh
     private void PrepareMeshVertexBufferData(MeshFile sourceMesh, ReeLib.Mesh.Submesh submesh, MeshBuffer? buffer = null)
     {
         buffer ??= sourceMesh.MeshBuffer;
-        if (buffer == null)
-        {
+        if (buffer == null) {
             return;
         }
 
@@ -214,11 +214,15 @@ public class TriangleMesh : Mesh
         var hasWeights = sourceMesh.BoneData?.DeformBones.Count > 0;
         var hasUV = buffer.UV0.Length > 0;
         var hasNormals = buffer.NormalsTangents.Length > 0;
-        layout = MeshLayout.Get(MeshAttributeFlag.Triangles | (hasWeights ? MeshAttributeFlag.Weight : 0));
+        layout = MeshLayout.Get(MeshAttributeFlag.Triangles
+            | (hasWeights ? MeshAttributeFlag.Weight : 0)
+            | (hasWeights && submesh.Weights[0].IndexCount == 6 ? MeshAttributeFlag.Use6Weight : 0));
+
+        var weightIndexCount = layout.Is6Weight ? 6 : 8;
 
         var meshVerts = submesh.Positions;
-        var meshUV = hasUV ? submesh.UV0 : default;
-        var meshNormals = hasNormals ? submesh.NormalsTangents : default;
+        var meshUV = hasUV ? MemoryMarshal.Cast<HFloat2, float>(submesh.UV0) : default;
+        var meshNormals = hasNormals ? MemoryMarshal.Cast<QuantizedNorTan, Vector2>(submesh.NormalsTangents) : default;
         var meshWeights = hasWeights ? submesh.Weights : default;
 
         var indicesShort = !integerIndices ? submesh.Indices : default;
@@ -228,50 +232,22 @@ public class TriangleMesh : Mesh
         Indices = new int[submesh.indicesCount];
         VertexData = new float[submesh.indicesCount * attrs];
         var boneIndsOffset = layout.AttributeIndexOffsets[MeshLayout.Index_BoneIndex];
-        var boneWeightsOffset = layout.AttributeIndexOffsets[MeshLayout.Index_BoneWeight];
 
         for (int index = 0; index < Indices.Length; index++) {
             var vert = integerIndices ? indicesInt[index] : indicesShort[index];
             Indices[index] = vert;
             var pos = meshVerts[vert];
-            var uv = hasUV ? meshUV[vert].AsVector2 : new Vector2();
-            var norm = hasNormals ? meshNormals[vert].Normal : Vector3.UnitX;
+            var uv = hasUV ? meshUV[vert] : 0;
+            var norm = hasNormals ? meshNormals[vert] : default;
             var vertOffset = index * attrs;
             VertexData[vertOffset + 0] = pos.X;
             VertexData[vertOffset + 1] = pos.Y;
             VertexData[vertOffset + 2] = pos.Z;
-            VertexData[vertOffset + 3] = uv.X;
-            VertexData[vertOffset + 4] = uv.Y;
-            VertexData[vertOffset + 5] = norm.X;
-            VertexData[vertOffset + 6] = norm.Y;
-            VertexData[vertOffset + 7] = norm.Z;
-            VertexData[vertOffset + 8] = BitConverter.Int32BitsToSingle(index);
+            VertexData[vertOffset + 3] = uv;
+            VertexData[vertOffset + 4] = norm.X;
+            VertexData[vertOffset + 5] = BitConverter.Int32BitsToSingle(index);
             if (HasBones) {
-                var vertWeight = meshWeights[vert];
-
-                // note: the & 0xffff _needs_ to be there because on release build, it ends up also copying the next int16 index as well into the int32
-                // which turns the number absolutely massive and broken
-                VertexData[vertOffset + boneIndsOffset + 0] = BitConverter.Int32BitsToSingle((int)vertWeight.boneIndices[0] & 0xffff);
-                VertexData[vertOffset + boneIndsOffset + 1] = BitConverter.Int32BitsToSingle((int)vertWeight.boneIndices[1] & 0xffff);
-                VertexData[vertOffset + boneIndsOffset + 2] = BitConverter.Int32BitsToSingle((int)vertWeight.boneIndices[2] & 0xffff);
-                VertexData[vertOffset + boneIndsOffset + 3] = BitConverter.Int32BitsToSingle((int)vertWeight.boneIndices[3] & 0xffff);
-
-                if (vertWeight.boneWeights[4] > 0) {
-                    // normalize weights - if the mesh has more than 4 weights per bone, ignore any extra bones
-                    // this simplifies the shader code and is usually visually neglible
-                    // for fully accurate animations, blender or ingame exists
-                    var weights = new Vector4(vertWeight.GetWeight(0), vertWeight.GetWeight(1), vertWeight.GetWeight(2), vertWeight.GetWeight(3));
-                    weights /= (weights.X + weights.Y + weights.Z + weights.W);
-                    VertexData[vertOffset + boneWeightsOffset] =
-                        BitConverter.UInt32BitsToSingle(
-                        ((uint)MathF.Round(weights.X * 255) << 0) |
-                        ((uint)MathF.Round(weights.Y * 255) << 8) |
-                        ((uint)MathF.Round(weights.Z * 255) << 16) |
-                        ((uint)MathF.Round(weights.W * 255) << 24)
-                    );
-                } else {
-                    VertexData[vertOffset + boneWeightsOffset] = MemoryMarshal.Cast<byte, float>(vertWeight.boneWeights)[0];
-                }
+                meshWeights[vert].CopyTo(MemoryMarshal.Cast<float, byte>(VertexData.AsSpan(vertOffset + boneIndsOffset)));
             }
         }
 

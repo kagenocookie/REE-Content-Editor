@@ -1,4 +1,7 @@
 using System.Numerics;
+using System.Runtime.CompilerServices;
+using ReeLib.Mesh;
+using ReeLib.MplyMesh;
 
 namespace ContentEditor.App.Graphics;
 
@@ -50,7 +53,7 @@ public class HeightmapMesh : Mesh
                 var norTR = SmoothNormal(hTL, heights[z1][x1], heights[T][x],   heights[z1][R], heights[z][x],  stepX, stepZ, rangeY);
                 var norBR = SmoothNormal(hTL, heights[z][x1],  heights[z1][x],  heights[z][R],  heights[B][x],  stepX, stepZ, rangeY);
 
-                InsertQuad(ref ind, ptTL, ptTR, ptBR, ptBL, new Vector2(uvX1, uvY1), new Vector2(uvX2, uvY2), norTL, norTR, norBR, norBL);
+                InsertQuad(ref ind, ptTL, ptTR, ptBR, ptBL, new HFloat2(uvX1, uvY1), new HFloat2(uvX2, uvY2), norTL, norTR, norBR, norBL);
             }
         }
 
@@ -74,26 +77,23 @@ public class HeightmapMesh : Mesh
         return Vector3.Normalize((nor1 + nor2 + nor3 + nor4) / 4);
     }
 
-    private void InsertQuad(ref int index, Vector3 vec1, Vector3 vec2, Vector3 vec3, Vector3 vec4, Vector2 uvMin, Vector2 uvMax, Vector3 nor1, Vector3 nor2, Vector3 nor3, Vector3 nor4)
+    private void InsertQuad(ref int index, Vector3 vec1, Vector3 vec2, Vector3 vec3, Vector3 vec4, HFloat2 uvMin, HFloat2 uvMax, Vector3 nor1, Vector3 nor2, Vector3 nor3, Vector3 nor4)
     {
-        InsertVertex(ref index, vec1, nor1, new Vector2(uvMin.X, uvMin.Y));
-        InsertVertex(ref index, vec2, nor2, new Vector2(uvMax.X, uvMin.Y));
-        InsertVertex(ref index, vec3, nor3, new Vector2(uvMin.X, uvMax.Y));
-        InsertVertex(ref index, vec1, nor1, new Vector2(uvMin.X, uvMin.Y));
-        InsertVertex(ref index, vec3, nor3, new Vector2(uvMin.X, uvMax.Y));
-        InsertVertex(ref index, vec4, nor4, new Vector2(uvMax.X, uvMax.Y));
+        InsertVertex(ref index, vec1, SByte4.QuantizeNormal(nor1), new HFloat2(uvMin.x, uvMin.y));
+        InsertVertex(ref index, vec2, SByte4.QuantizeNormal(nor2), new HFloat2(uvMax.x, uvMin.y));
+        InsertVertex(ref index, vec3, SByte4.QuantizeNormal(nor3), new HFloat2(uvMin.x, uvMax.y));
+        InsertVertex(ref index, vec1, SByte4.QuantizeNormal(nor1), new HFloat2(uvMin.x, uvMin.y));
+        InsertVertex(ref index, vec3, SByte4.QuantizeNormal(nor3), new HFloat2(uvMin.x, uvMax.y));
+        InsertVertex(ref index, vec4, SByte4.QuantizeNormal(nor4), new HFloat2(uvMax.x, uvMax.y));
     }
 
-    private void InsertVertex(ref int index, Vector3 vec, Vector3 norm, Vector2 uv)
+    private void InsertVertex(ref int index, Vector3 vec, SByte4 norm, HFloat2 uv)
     {
         VertexData![index * layout.VertexSize + 0] = vec.X;
         VertexData[index * layout.VertexSize + 1] = vec.Y;
         VertexData[index * layout.VertexSize + 2] = vec.Z;
-        VertexData[index * layout.VertexSize + 3] = uv.X;
-        VertexData[index * layout.VertexSize + 4] = uv.Y;
-        VertexData[index * layout.VertexSize + 5] = norm.X;
-        VertexData[index * layout.VertexSize + 6] = norm.Y;
-        VertexData[index * layout.VertexSize + 7] = norm.Z;
+        VertexData[index * layout.VertexSize + 3] = Unsafe.As<HFloat2, float>(ref uv);
+        VertexData[index * layout.VertexSize + 4] = Unsafe.As<SByte4, float>(ref norm);
         Indices![index] = index;
         index++;
     }

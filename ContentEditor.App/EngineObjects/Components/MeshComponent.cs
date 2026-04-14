@@ -69,6 +69,9 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         }
         if (mesh?.HasArmature == true) {
             shaderFlags |= ShaderFlags.EnableSkinning;
+            if (mesh?.Meshes.FirstOrDefault()?.layout.Is6Weight == true) {
+                shaderFlags |= ShaderFlags.Use6Weights;
+            }
         }
         material = string.IsNullOrEmpty(materialFilepath)
             ? Scene.RenderContext.LoadMaterialGroup(meshFilepath, shaderFlags)
@@ -104,6 +107,9 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         }
         if (mesh?.HasArmature == true) {
             shaderFlags |= ShaderFlags.EnableSkinning;
+            if (mesh?.Meshes.FirstOrDefault()?.layout.Is6Weight == true) {
+                shaderFlags |= ShaderFlags.Use6Weights;
+            }
         }
         material = Scene.RenderContext.LoadMaterialGroup(materialFile ?? meshFile, shaderFlags);
 

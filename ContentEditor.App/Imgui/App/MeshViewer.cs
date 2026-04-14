@@ -75,8 +75,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     private bool showImportSettings;
 
-    private bool? _hasTooManyWeightsForRender;
-
     private List<MeshViewerContext> meshContexts = new();
     internal IReadOnlyList<MeshViewerContext> MeshContexts => meshContexts.AsReadOnly();
     private MeshViewerContext? _animationListContext;
@@ -120,7 +118,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     private void ChangeMainMesh(bool resetMdf = true)
     {
-        _hasTooManyWeightsForRender = null;
         var ctx = meshContexts.FirstOrDefault() ?? CreateAdditionalMesh(Handle);
         if (!Handle.References.Contains(this)) Handle.References.Add(this);
         ctx.ChangeMesh(resetMdf);
@@ -596,20 +593,17 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 Mesh has more than 255 deform bones, the rest will not animate in the preview.
                 To view full animations, export them to an external mesh editor.
 
-                This is NOT an issue ingame, with the mesh itself, or the animation, but a REE Content Editor rendering limitation.
+                This is NOT an issue ingame, with the mesh itself, or the animation, but a Content Editor rendering limitation.
                 """;
         }
 
-        if (_hasTooManyWeightsForRender == null) {
-            _hasTooManyWeightsForRender = mesh.NativeMesh.MeshBuffer != null && mesh.NativeMesh.MeshBuffer.Weights.Any(w => w.boneWeights.Count(w => w > 0) > 4);
-        }
-        if (_hasTooManyWeightsForRender ?? false) {
+        if (mesh.NativeMesh.MeshBuffer?.ExtraWeights?.Length > 0) {
             return """
                 Some animations might not be fully accurate in the preview.
-                Some vertices have more than 4 bone weights, only the first 4 are currently supported for preview.
+                The mesh contains an extra weight buffer, only the main one (6 or 8 weights depending on game) is currently supported for preview.
                 To view full animations, export them to an external mesh editor.
 
-                This is NOT an issue ingame, with the mesh itself, or the animation, but a REE Content Editor rendering limitation.
+                This is NOT an issue ingame, with the mesh itself, or the animation, but a Content Editor rendering limitation.
                 """;
         }
 

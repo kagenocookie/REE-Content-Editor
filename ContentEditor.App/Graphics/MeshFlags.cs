@@ -6,4 +6,5 @@ public enum MeshFlags
     None = 0,
     HasTangents = 1,
     HasBones = 2,
+    Use6Weights = 4,
 }

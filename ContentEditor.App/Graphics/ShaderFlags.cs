@@ -10,4 +10,5 @@ public enum ShaderFlags
     EnableSkinning = 1,
     EnableStreamingTex = 2,
     EnableInstancing = 4,
+    Use6Weights = 8,
 }
