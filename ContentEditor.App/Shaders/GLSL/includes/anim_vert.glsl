@@ -11,8 +11,8 @@ int boneIDs[6] = int[6](
 // note: in some files, weights 7/8 > 0, force normalize the values with this
 float wScale = 1 + vWeights2.z + vWeights2.w;
 float weights[6] = float[6](
-    vWeights1.x * wScale, vWeights1.y * wScale, vWeights1.z * wScale, vWeights1.w * wScale,
-    vWeights2.x * wScale, vWeights2.y * wScale
+    vWeights1.x * wScale, vWeights1.y * wScale, vWeights1.z * wScale,
+    vWeights1.w * wScale, vWeights2.x * wScale, vWeights2.y * wScale
 );
 
 #else
@@ -31,7 +31,7 @@ for (int i = 0; i < MAX_BONE_PER_VERTEX; i++)
     int id = boneIDs[i];
     float w = weights[i];
 
-    if (id < 0 || id >= MAX_BONES || w == 0.0) continue;
+    if (w == 0.0 || id >= MAX_BONES) continue;
 
     mat4 boneMat = boneMatrices[id];
     vec4 localPosition = boneMat * vec4(vPos, 1.0f);
