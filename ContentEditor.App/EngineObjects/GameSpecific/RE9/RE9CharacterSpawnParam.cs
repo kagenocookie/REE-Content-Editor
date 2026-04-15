@@ -1,7 +1,7 @@
 using ContentPatcher;
 using ReeLib;
 
-namespace ContentEditor.App;
+namespace ContentEditor.App.RE9;
 
 [RszComponentClass("app.Cp_B000SpawnParam", nameof(GameIdentifier.re9))]
 [RszComponentClass("app.Cp_B001SpawnParam", nameof(GameIdentifier.re9))]

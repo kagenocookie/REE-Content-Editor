@@ -2,7 +2,7 @@ using ContentPatcher;
 using ReeLib;
 using ReeLib.Il2cpp;
 
-namespace ContentEditor.App;
+namespace ContentEditor.App.RE4;
 
 [RszComponentClass("chainsaw.Ch1b5z1SpawnParam", nameof(GameIdentifier.re4))]
 [RszComponentClass("chainsaw.Ch1b7z0SpawnParam", nameof(GameIdentifier.re4))]

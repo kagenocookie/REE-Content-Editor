@@ -1,7 +1,7 @@
 using ContentPatcher;
 using ReeLib;
 
-namespace ContentEditor.App;
+namespace ContentEditor.App.RE2;
 
 [RszComponentClass("app.ropeway.EnemyContextController", nameof(GameIdentifier.re2), nameof(GameIdentifier.re2rt))]
 [RszComponentClass("offline.EnemyContextController", nameof(GameIdentifier.re3), nameof(GameIdentifier.re3rt))]

@@ -473,13 +473,16 @@ public static class AppIcons
     }
 
     public static char GetComponentIcon(Component component) => component switch {
-        EnemyContextController => SI_TagCharacter,
-        ItemPositions => SI_TagItem,
-        RE9CharacterSpawnParam => SI_TagCharacter,
-        RE4CharacterSpawnParam => SI_TagCharacter,
+        RE2.EnemyContextController => SI_TagCharacter,
+        RE2.ItemPositions => SI_TagItem,
+        RE4.RE4CharacterSpawnParam => SI_TagCharacter,
+        RE9.RE9CharacterSpawnParam => SI_TagCharacter,
+        Pragmata.CharacterSpawnParam => SI_TagCharacter,
+        Pragmata.PropSpawnParam => SI_TagMisc,
         _ => component.Data.RszClass.name switch {
             "chainsaw.DropItem" => SI_TagItem,
             "app.Monster" => SI_TagCharacter,
+            "app.CharacterSpawnController" => SI_TagCharacter,
             _ => '\0',
         },
     };
