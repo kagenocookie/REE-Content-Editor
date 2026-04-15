@@ -95,8 +95,8 @@ public partial class CommonMeshResource : IResourceFile
             mesh.MaterialNames.Clear();
         }
 
-        var boneIndexMap = new Dictionary<string, short>();
-        var deformBones = new SortedList<short, MeshBone>();
+        var boneIndexMap = new Dictionary<string, int>();
+        var deformBones = new SortedList<int, MeshBone>();
         if (mainBuffer.Weights.Length > 0) {
             var boneNames = srcMeshes.SelectMany(m => m.Bones.Select(b => b.Name)).ToHashSet();
             static void AddRecursiveBones(MeshFile file, NodeCollection children, HashSet<string> boneNames, MeshBone? parentBone, ImportSettings settings)
@@ -162,7 +162,7 @@ public partial class CommonMeshResource : IResourceFile
                     }
                 }
             }
-            boneIndexMap = mesh.BoneData!.Bones.ToDictionary(b => b.name, b => (short)b.index);
+            boneIndexMap = mesh.BoneData!.Bones.ToDictionary(b => b.name, b => b.index);
         }
 
         int vertOffset = 0;
@@ -297,7 +297,7 @@ public partial class CommonMeshResource : IResourceFile
                     if (aiBone.Name.StartsWith(SecondaryWeightDummyBonePrefix)) continue;
 
                     var isShapeKey = aiBone.Name.StartsWith(ShapekeyPrefix);
-                    short boneIndex;
+                    int boneIndex;
                     if (isShapeKey) {
                         boneIndex = boneIndexMap[aiBone.Name.Replace(ShapekeyPrefix, "")];
                     } else {
@@ -311,7 +311,7 @@ public partial class CommonMeshResource : IResourceFile
 
                         var outWeight = (weightBuffer[vertOffset + entry.VertexID] ??= new(serializerVersion));
                         var weightIndex = Array.FindIndex(outWeight.boneWeights, bb => bb == 0);
-                        if (weightIndex == -1 || weightIndex >= outWeight.boneIndices.Length) {
+                        if (weightIndex == -1 || weightIndex >= outWeight.IndexCount) {
                             var fail = true;
                             if (allowExtraWeights && !isShapeKey) {
                                 if (buffer.ExtraWeights == null) {
@@ -320,14 +320,14 @@ public partial class CommonMeshResource : IResourceFile
                                 }
                                 outWeight = buffer.ExtraWeights[vertOffset + entry.VertexID];
                                 weightIndex = Array.FindIndex(outWeight.boneWeights, bb => bb == 0);
-                                fail = (weightIndex == -1 || weightIndex >= outWeight.boneIndices.Length);
+                                fail = (weightIndex == -1 || weightIndex >= outWeight.IndexCount);
                             }
                             if (fail) {
                                 if (warnedBones.Add(aiBone.Name)) Log.Warn($"Too many weights (> {maxWeightsPerVert}) for {(isShapeKey ? "SHAPEKEY" : "")} bone {aiBone.Name}. Ignoring.");
                                 continue;
                             }
                         }
-                        outWeight.boneIndices[weightIndex] = boneIndex;
+                        outWeight.SetIndex(weightIndex, boneIndex);
                         outWeight.SetWeight(weightIndex, entry.Weight);
                         if (targetBone.boundingBox.IsEmpty) targetBone.boundingBox = AABB.MaxMin;
                         targetBone.boundingBox = targetBone.boundingBox.AsAABB.Extend(Vector3.Transform(buffer.Positions[vertOffset + entry.VertexID], targetBone.inverseGlobalTransform.ToSystem()));
@@ -404,17 +404,18 @@ public partial class CommonMeshResource : IResourceFile
         mainBuffer.Faces = new ushort[paddedTriCount];
     }
 
-    private static void RemapDeformBones(VertexBoneWeights[] weights, SortedList<short, MeshBone> deformBones)
+    private static void RemapDeformBones(VertexBoneWeights[] weights, SortedList<int, MeshBone> deformBones)
     {
+        var indexCount = weights.FirstOrDefault()?.IndexCount ?? 0;
         foreach (var weight in weights) {
-            for (int i = 0; i < weight.boneIndices.Length; ++i) {
-                var index = weight.boneIndices[i];
+            for (int i = 0; i < indexCount; ++i) {
+                var index = weight.GetIndex(i);
                 if (index == 0) {
                     if (i > 0 && weight.boneWeights[i] == 0) {
-                        weight.boneIndices[i] = weight.boneIndices[i - 1];
+                        weight.SetIndex(i, weight.GetIndex(i - 1));
                     }
                 } else if (deformBones.TryGetValue(index, out var remap)) {
-                    weight.boneIndices[i] = (short)remap.remapIndex;
+                    weight.SetIndex(i, remap.remapIndex);
                 }
             }
         }

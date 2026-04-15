@@ -1,4 +1,7 @@
 using System.Numerics;
+using System.Runtime.CompilerServices;
+using ReeLib.Mesh;
+using ReeLib.MplyMesh;
 using ReeLib.via;
 
 namespace ContentEditor.App.Graphics;
@@ -159,12 +162,12 @@ public class ShapeBuilder
         var seq = vertex % 6;
 
         // uv
-        VertexData![index * layout.VertexSize + 3] = seq is 1 or 2 or 4 ? 1 : 0;
-        VertexData[index * layout.VertexSize + 4] = seq is 0 or 1 or 3 ? 1 : 0;
+        var uv = new HFloat2(seq is 1 or 2 or 4 ? 1 : 0, seq is 0 or 1 or 3 ? 1 : 0);
+        VertexData![index * layout.VertexSize + 3] = Unsafe.As<HFloat2, float>(ref uv);
+
         // normals - note: correctness untested
-        VertexData[index * layout.VertexSize + 5] = side is 0 or 1 ? 1 : 0;
-        VertexData[index * layout.VertexSize + 6] = side is 2 or 3 ? 1 : 0;
-        VertexData[index * layout.VertexSize + 7] = side is 4 or 5 ? 1 : 0;
+        var norm = new SByte4((sbyte)(side is 0 or 1 ? 127 : 0), (sbyte)(side is 2 or 3 ? 127 : 0), (sbyte)(side is 4 or 5 ? 127 : 0), 0);
+        VertexData![index * layout.VertexSize + 4] = Unsafe.As<SByte4, float>(ref norm);
     }
 
     private void StoreLineSemiCircle(ref int index, float radius, Vector3 center, Vector3 rotEuler)
@@ -258,7 +261,7 @@ public class ShapeBuilder
         VertexData[index * layout.VertexSize + 2] = vec.Z;
         if (layout.HasAttributes(MeshAttributeFlag.Normal)) {
             // default normal = (0, 1, 0)
-            VertexData[index * layout.VertexSize + layout.AttributeIndexOffsets[MeshLayout.Index_Normal] + 1] = 1;
+            VertexData[index * layout.VertexSize + layout.AttributeIndexOffsets[MeshLayout.Index_Normal] + 1] = BitConverter.Int32BitsToSingle(0x0000ff00);
         }
         if (layout.HasAttributes(MeshAttributeFlag.Index)) {
             VertexData[index * layout.VertexSize + layout.AttributeIndexOffsets[MeshLayout.Index_Index]] = BitConverter.Int32BitsToSingle(index);

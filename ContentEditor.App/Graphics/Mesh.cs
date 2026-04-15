@@ -60,14 +60,10 @@ public abstract class Mesh : IDisposable
         var size = 0;
         foreach (var va in layout.Attributes) {
             size += va.Size;
-            if (va.Index == MeshLayout.Index_BoneIndex || va.Index == MeshLayout.Index_Index) {
-                VAO.VertexAttributePointerInt(va.Index, va.Size, VertexAttribIType.Int, va.Offset);
-            } else if (va.Index == MeshLayout.Index_Color) {
-                VAO.VertexAttributePointerFloat(va.Index, 4, VertexAttribType.UnsignedByte, va.Offset, true);
-            } else if (va.Index == MeshLayout.Index_BoneWeight) {
-                VAO.VertexAttributePointerFloat(va.Index, 4, VertexAttribType.UnsignedByte, va.Offset, true);
+            if (va.Index == MeshLayout.Index_BoneIndex || va.Index == MeshLayout.Index_BoneIndex2 || va.Index == MeshLayout.Index_Index) {
+                VAO.VertexAttributePointerInt(va.Index, va.Count, (VertexAttribIType)va.AttribType, va.Offset);
             } else {
-                VAO.VertexAttributePointerFloat(va.Index, va.Size, VertexAttribType.Float, va.Offset);
+                VAO.VertexAttributePointerFloat(va.Index, va.Count, va.AttribType, va.Offset, va.Normalize);
             }
         }
         VAO.BindVertexBuffer(VBO.Handle, (uint)size);
