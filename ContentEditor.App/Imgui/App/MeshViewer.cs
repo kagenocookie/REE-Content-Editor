@@ -291,6 +291,12 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                     rcolEdit?.DrawMainUI();
                     ImGui.EndMenu();
                 }
+                if (ImGui.BeginMenu($"{AppIcons.SI_FileType_CHAIN} Chain")) {
+                    mainCtx.GameObject.GetOrAddComponent<Chain>();
+                    var rcolEdit = Scene!.Root.SetEditMode(mainCtx.GameObject.GetOrAddComponent<Chain>());
+                    rcolEdit?.DrawMainUI();
+                    ImGui.EndMenu();
+                }
                 if (ImGui.MenuItem($"{AppIcons.SI_Animation} Animations")) showAnimationsMenu = !showAnimationsMenu;
                 if (showAnimationsMenu) ImguiHelpers.HighlightMenuItem($"{AppIcons.SI_Animation} Animations");
                 var animWarns = GetAnimErrors();
@@ -474,6 +480,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             var coll =  Workspace.ResourceManager.CreateFileHandle(file, null, fs, true, true).Resource as MeshCollection;
             if (coll == null || coll.Items.Count == 0) return;
             LoadCollection(coll);
+            AppConfig.Settings.RecentFiles.AddRecent(Workspace.Game, file);
         } catch (Exception e) {
             Logger.Error("Failed to load mesh collection: " + e.Message);
         }
