@@ -67,6 +67,7 @@ public class CharacterSpawnParam(GameObject gameObject, RszInstance data) : Base
     private void SetEnemyID(uint hash)
     {
         lastObjectId = hash;
+        if (hash == 0) return;
 
         foreach (var catalogPath in CatalogPaths) {
             if (Scene!.Workspace.ResourceManager.TryResolveGameFile(catalogPath, out var user)) {

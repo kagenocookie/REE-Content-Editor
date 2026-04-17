@@ -12,13 +12,12 @@ public static partial class RszFieldCache
             public static readonly RszFieldAccessorName<uint> Hash = Name<uint>().Type(RszFieldType.U32);
         }
 
-        // [RszAccessor("app.Cp_B000SpawnParam", nameof(GameIdentifier.pragmata))]
         public static class EnemySpawnParam
         {
             /// <summary>
             /// app.ObjectDefine
             /// </summary>
-            public static readonly RszFieldAccessorName<RszInstance> ObjectID = Name<RszInstance>();
+            public static readonly RszFieldAccessorFixedIndex<RszInstance> ObjectID = Index<RszInstance>(2);
         }
 
         public static class PropSpawnParam

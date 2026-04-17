@@ -9,10 +9,14 @@ public class PropSpawnParam(GameObject gameObject, RszInstance data) : BaseSingl
     private uint lastObjectId;
     private uint CurrentObjectID => Data.Get(RszFieldCache.Pragmata.PropSpawnParam._KindHash);
 
+    private bool _meshNotFound = false;
+
     protected override bool IsMeshUpToDate() => lastObjectId == CurrentObjectID;
 
     protected override void RefreshMesh()
     {
+        if (_meshNotFound && mesh == null) return;
+
         UnloadMesh();
         SetObjectID(CurrentObjectID);
     }
@@ -27,6 +31,8 @@ public class PropSpawnParam(GameObject gameObject, RszInstance data) : BaseSingl
     private void SetObjectID(uint hash)
     {
         lastObjectId = hash;
+        _meshNotFound = true;
+        if (hash == 0) return;
 
         foreach (var catalogPath in CatalogPaths) {
             if (Scene!.Workspace.ResourceManager.TryResolveGameFile(catalogPath, out var user)) {
@@ -40,7 +46,7 @@ public class PropSpawnParam(GameObject gameObject, RszInstance data) : BaseSingl
                     var pfbPath = target
                         .Get(RszFieldCache.Pragmata.PropCatalogUserData.PropPrefabData._Prefab)
                         .Get(RszFieldCache.Prefab.Path);
-                    LoadMeshFromPrefab(pfbPath);
+                    _meshNotFound = !LoadMeshFromPrefab(pfbPath);
                     return;
                 }
             }
