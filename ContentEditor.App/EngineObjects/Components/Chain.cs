@@ -81,8 +81,8 @@ public class Chain(GameObject gameObject, RszInstance data) : Component(gameObje
             inactiveMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.FileTypeCHAIN) with { A = 45 });
 
             (inactiveCollisionMaterial, obscuredCollisionMaterial) = mat.Blend().Create2("chain_coll", "chain_coll_obscured");
-            inactiveCollisionMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.Default) with { A = 95 });
-            obscuredCollisionMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.Default) with { A = 45 });
+            inactiveCollisionMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.Default) with { A = 200 });
+            obscuredCollisionMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.Default) with { A = 100 });
         }
 
         var parentMesh = GameObject.GetComponent<MeshComponent>()?.MeshHandle as AnimatedMeshHandle;
@@ -137,7 +137,7 @@ public class Chain(GameObject gameObject, RszInstance data) : Component(gameObje
         if (collisions != null) {
             Matrix4x4 joint1;
             Matrix4x4 joint2;
-            gizmo.PushMaterial(inactiveCollisionMaterial);
+            gizmo.PushMaterial(inactiveCollisionMaterial, obscuredCollisionMaterial);
             foreach (var coll in collisions) {
                 //
                 switch (coll.shape) {
