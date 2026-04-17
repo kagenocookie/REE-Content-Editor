@@ -14,14 +14,14 @@ public class PropSpawnParam(GameObject gameObject, RszInstance data) : BaseSingl
     protected override void RefreshMesh()
     {
         UnloadMesh();
-        if (lastObjectId != CurrentObjectID) {
-            SetObjectID(CurrentObjectID);
-        }
+        SetObjectID(CurrentObjectID);
     }
 
     private static readonly string[] CatalogPaths = [
-        "natives/stm/singletonuserdata/catalog/trial/propcatalog_trial_maincontents.user.3",
-        "natives/stm/singletonuserdata/catalog/trial/propcatalog_manual_trial_maincontents.user.3"
+        "natives/stm/singletonuserdata/catalog/propcatalog_1st_maincontents.user.3",
+        "natives/stm/singletonuserdata/catalog/propcatalog_2nd_maincontents.user.3",
+        "natives/stm/singletonuserdata/catalog/propcatalog_manual_1st_maincontents.user.3",
+        "natives/stm/singletonuserdata/catalog/propcatalog_manual_2nd_maincontents.user.3"
     ];
 
     private void SetObjectID(uint hash)
@@ -46,7 +46,7 @@ public class PropSpawnParam(GameObject gameObject, RszInstance data) : BaseSingl
             }
         }
 
-        // Logger.Debug("Could not find prop ID", hash);
+        Logger.Debug("Could not find prop ID", hash);
     }
 }
 
