@@ -135,6 +135,11 @@ public class NodeObject<TNode> : NodeObject, INodeObject<TNode>, IPathedObject
         ParentChanged?.Invoke(Unsafe.As<TNode>(this), parent);
     }
 
+    protected virtual void DetachFromParent()
+    {
+        SetParent(null, false);
+    }
+
     protected void SetParentDeferred(TNode? parent, bool alreadyAddedToChildren)
     {
         if (parent != _parent) {
@@ -174,7 +179,7 @@ public class NodeObject<TNode> : NodeObject, INodeObject<TNode>, IPathedObject
     public void RemoveChild(TNode child)
     {
         if (Children.Remove(child)) {
-            child.SetParent(null, false);
+            child.DetachFromParent();
         } else {
             Logger.Error($"Node {child} is not a child of {this}");
         }

@@ -63,7 +63,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         get {
             if (Scene?.GameObjects.Contains(this) == true) return true;
             if (Parent != null) return Parent.IsInTree;
-            if (Folder != null) return Folder.IsInTree && Folder.GameObjects.Contains(this);
+            if (Folder != null) return Folder.IsInTree;
             return false;
         }
     }
@@ -495,6 +495,12 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         foreach (var child in Children) {
             child.SetActive(active);
         }
+    }
+
+    protected override void DetachFromParent()
+    {
+        Folder = null;
+        base.DetachFromParent();
     }
 
     private void ActivateComponents()
