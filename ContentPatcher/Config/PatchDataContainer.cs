@@ -113,12 +113,12 @@ public class PatchDataContainer(string filepath)
 
     public void LoadPatchConfigs(ContentWorkspace workspace)
     {
-        LoadConfigsFromDir(workspace, DefinitionFilepath);
+        LoadConfigsFromDir(workspace, DefinitionFilepath, false);
         var globalPath = Path.Combine(Path.GetDirectoryName(filepath)!, "global/definitions");
-        LoadConfigsFromDir(workspace, globalPath);
+        LoadConfigsFromDir(workspace, globalPath, true);
     }
 
-    private void LoadConfigsFromDir(ContentWorkspace workspace, string directory)
+    private void LoadConfigsFromDir(ContentWorkspace workspace, string directory, bool noWarnings)
     {
         if (!Directory.Exists(directory)) return;
         foreach (var file in Directory.EnumerateFiles(directory, "*.yaml")) {
@@ -149,7 +149,9 @@ public class PatchDataContainer(string filepath)
             if (newDict.Classes != null) foreach (var (cls, config) in newDict.Classes) {
                 var rszClass = workspace.Env.RszParser.GetRSZClass(cls);
                 if (rszClass == null) {
-                    Logger.Debug($"Unknown RSZ class {cls} for game {workspace.Env.Config.Game}");
+                    if (!noWarnings) {
+                        Logger.Debug($"Unknown RSZ class {cls} for game {workspace.Env.Config.Game}");
+                    }
                     continue;
                 }
 
