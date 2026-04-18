@@ -1,7 +1,7 @@
 using ContentPatcher;
 using ReeLib;
 
-namespace ContentEditor.App;
+namespace ContentEditor.App.RE2;
 
 [RszComponentClass("app.ropeway.item.ItemPositions", nameof(GameIdentifier.re2), nameof(GameIdentifier.re2rt))]
 [RszComponentClass("offline.item.ItemPositions", nameof(GameIdentifier.re3), nameof(GameIdentifier.re3rt))]
@@ -60,22 +60,5 @@ public class ItemPositions(GameObject gameObject, RszInstance data) : BaseSingle
     protected override bool IsMeshUpToDate()
     {
         return lastItemId == CurrentItemID && lastWeaponId == CurrentWeaponID;
-    }
-
-    private void LoadMeshFromPrefab(string prefab)
-    {
-        if (Scene!.Workspace.ResourceManager.TryResolveGameFile(prefab, out var handle)) {
-            var pfb = handle.GetFile<PfbFile>();
-            var meshComp = pfb.IterAllGameObjects(true)
-                .SelectMany(go => go.Components.Where(comp => comp.RszClass.name == MeshComponent.Classname))
-                .FirstOrDefault();
-            if (meshComp == null) return;
-
-            var mesh = RszFieldCache.Mesh.Resource.Get(meshComp);
-            if (string.IsNullOrEmpty(mesh)) return;
-
-            var mat = RszFieldCache.Mesh.Material.Get(meshComp);
-            SetMesh(mesh, mat);
-        }
     }
 }

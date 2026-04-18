@@ -1,4 +1,5 @@
 using ContentEditor.App.Graphics;
+using ContentPatcher;
 using ReeLib;
 using ReeLib.via;
 
@@ -81,5 +82,27 @@ public abstract class BaseSingleMeshComponent(GameObject gameObject, RszInstance
         if (mesh == null || !AppConfig.Instance.RenderMeshes.Get()) return;
 
         data.TryAdd(this, 0, mesh, Transform.WorldTransform, WorldSpaceBounds);
+    }
+
+    protected bool LoadMeshFromPrefab(string prefab)
+    {
+        if (string.IsNullOrEmpty(prefab)) return false;
+
+        if (Scene!.Workspace.ResourceManager.TryResolveGameFile(prefab, out var handle)) {
+            var pfb = handle.GetFile<PfbFile>();
+            var meshComp = pfb.IterAllGameObjects(true)
+                .SelectMany(go => go.Components.Where(comp => comp.RszClass.name == MeshComponent.Classname))
+                .FirstOrDefault();
+            if (meshComp == null) return false;
+
+            var mesh = RszFieldCache.Mesh.Resource.Get(meshComp);
+            if (string.IsNullOrEmpty(mesh)) return false;
+
+            var mat = RszFieldCache.Mesh.Material.Get(meshComp);
+            SetMesh(mesh, mat);
+            return true;
+        }
+
+        return false;
     }
 }

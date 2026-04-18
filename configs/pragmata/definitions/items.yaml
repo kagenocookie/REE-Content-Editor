@@ -1,0 +1,10 @@
+
+classes:
+  app.ObjectDefine:
+    to_string: "ObjectDefine {Hash} ({Hash:enum(ce.ObjectDefine)})"
+  app.ChapterIDSelector:
+    to_string: "Chapter ID Selector {_TypeSelectHash}"
+  app.ItemCatalogUserData.Data:
+    to_string: "Item Catalog Data {_ID.Hash} ({_ID.Hash:enum(ce.ItemDefine)}) | {_Prefab.Path}"
+  app.PropCatalogUserData.PropPrefabData:
+    to_string: "Prop Prefab: {_PropIDHash} | {_Prefab.Path}"

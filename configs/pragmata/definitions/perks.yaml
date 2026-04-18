@@ -1,0 +1,5 @@
+classes:
+  app.PerkData:
+    to_string: "Perk Data {_PerkSelector._ID}"
+  app.PerkSelector:
+    to_string: "PerkSelector {_ID}"

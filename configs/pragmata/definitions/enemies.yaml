@@ -1,0 +1,3 @@
+classes:
+  app.CharacterBodyCatalogUserData.Data:
+    to_string: "Character Body: {_CharacterKind.Hash:enum(ce.CharacterDefine)} | {_BodyPrefab.Path}"

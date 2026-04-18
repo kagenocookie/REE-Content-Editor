@@ -77,6 +77,7 @@ At the moment, you'd have to build it yourself. Follow the development setup ins
 | .motbank  | read/write
 | .motfsm2, .fsmv2, .bhvt, .tmlfsm2  | read/write
 | .mcol     | ☑️ read/write | .glb/.fbx import/export for collision mesh
+| .chain, .chain2 | read/write | Basic shape preview
 | .tml, .clip | read/write
 | .gui      | read/write
 | .aimap, .ainvm, .aiwayp | read/write | 3D preview<br>Navmesh generation ([wiki](https://github.com/kagenocookie/REE-Content-Editor/wiki/AI-Navigation))

@@ -16,14 +16,16 @@ public static partial class RszFieldCache
         /// </summary>
         public static readonly RszFieldAccessorFirst<string> Resource =
             First<string>(f => f.type is RszFieldType.String or RszFieldType.Resource, "Mesh")
-            .Resource("via.render.MeshResourceHolder");
+            .Resource("via.render.MeshResourceHolder")
+            .Rename();
 
         /// <summary>
         /// Material resource path
         /// </summary>
         public static readonly RszFieldAccessorFieldList<string> Material =
             FromList<string>(list => list.Where(fi => fi.field.type is RszFieldType.String or RszFieldType.Resource).Skip(1).First().index)
-            .Resource("via.render.MeshMaterialResourceHolder");
+            .Resource("via.render.MeshMaterialResourceHolder")
+            .Rename();
 
         public static readonly RszFieldAccessorFirst<List<object>> PartsEnable =
             First<List<object>>(fi => fi.array && fi.size == 1)
@@ -44,7 +46,9 @@ public static partial class RszFieldCache
             First<List<object>>([
                 f => f.array && f.type is RszFieldType.Object,
                 f => f.array
-            ]).Object("via.render.CompositeMeshInstanceGroup");
+            ])
+            .Object("via.render.CompositeMeshInstanceGroup")
+            .Rename();
 
         [RszAccessor("via.render.CompositeMeshInstanceGroup")]
         public static class InstanceGroup
@@ -54,24 +58,28 @@ public static partial class RszFieldCache
             /// </summary>
             public static readonly RszFieldAccessorFirst<string> Mesh =
                 First<string>(f => f.type is RszFieldType.String or RszFieldType.Resource)
-                .Resource("via.render.MeshResourceHolder");
+                .Resource("via.render.MeshResourceHolder")
+                .Rename();
 
             /// <summary>
             /// Material resource path
             /// </summary>
             public static readonly RszFieldAccessorFieldList<string> Material =
                 FromList<string>(list => list.Where(fi => fi.field.type is RszFieldType.String or RszFieldType.Resource).Skip(1).First().index)
-                .Resource("via.render.MeshMaterialResourceHolder");
+                .Resource("via.render.MeshMaterialResourceHolder")
+                .Rename();
 
             /// <summary>
             /// Instance transforms
             /// </summary>
             public static readonly RszFieldAccessorLastFallbacks<List<object>> Transforms =
                 Last<List<object>>([
+                    fi => fi.name == "Transform",
                     fi => fi.array && fi.type == RszFieldType.Object,
                     fi => fi.array && fi.size == 4
                 ])
-                .Object("via.render.CompositeMeshTransformController");
+                .Object("via.render.CompositeMeshTransformController")
+                .Rename("Transform");
         }
 
         [RszAccessor("via.render.CompositeMeshTransformController")]

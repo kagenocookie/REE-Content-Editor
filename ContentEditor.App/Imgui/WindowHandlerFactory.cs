@@ -385,6 +385,7 @@ public static class WindowHandlerFactory
             foreach (var prop in typelist.SelectMany(t => t.GetProperties(reflectionOptions))) {
                 if (prop.IsSpecialName ||
                     prop.GetMethod == null ||
+                    prop.GetMethod.IsAbstract ||
                     reflectionIgnoredTypes.Contains(prop.PropertyType) ||
                     ignoredProperties.Contains(prop.GetMethod.Name) ||
                     ignoredFields.Contains((prop.DeclaringType ?? targetType, prop.Name))

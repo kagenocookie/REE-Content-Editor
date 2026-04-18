@@ -308,9 +308,9 @@ public class BundleManager
             Author = GetEditorRootSetting("author_name")?.GetString() ?? "<unknown>",
             Description = GetEditorRootSetting("author_description")?.GetString() ?? "<unknown>",
             GameVersion = VersionHash,
-            Version = "v1.0.0"
+            Version = "v1.0.0",
+            StorageFolder = ConstructBundleFolder(newBundleName),
         };
-        bundle.StorageFolder ??= ConstructBundleFolder(newBundleName);
         bundle.Touch();
         AllBundles.Add(bundle);
         ActiveBundles.Add(bundle);

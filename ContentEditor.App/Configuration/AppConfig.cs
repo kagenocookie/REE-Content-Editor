@@ -63,6 +63,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string RenderColliders = "render_colliders";
         public const string RenderRequestSetColliders = "render_rcol";
         public const string RenderLights = "render_lights";
+        public const string RenderChains = "render_chains";
 
         public const string Key_Undo = "key_undo";
         public const string Key_Redo = "key_redo";
@@ -221,6 +222,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<bool> RenderColliders = new SettingWrapper<bool>(Keys.RenderColliders, _lock, true);
     public readonly SettingWrapper<bool> RenderRequestSetColliders = new SettingWrapper<bool>(Keys.RenderRequestSetColliders, _lock, true);
     public readonly SettingWrapper<bool> RenderLights = new SettingWrapper<bool>(Keys.RenderLights, _lock, true);
+    public readonly SettingWrapper<bool> RenderChains = new SettingWrapper<bool>(Keys.RenderChains, _lock, true);
 
     public readonly SettingWrapper<KeyBinding> Key_Undo = new SettingWrapper<KeyBinding>(Keys.Key_Undo, _lock, new KeyBinding(ImGuiKey.Z, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_Redo = new SettingWrapper<KeyBinding>(Keys.Key_Redo, _lock, new KeyBinding(ImGuiKey.Y, ctrl: true));
@@ -377,6 +379,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.RenderColliders, instance.RenderColliders.value.ToString(), null),
             (Keys.RenderRequestSetColliders, instance.RenderRequestSetColliders.value.ToString(), null),
             (Keys.RenderLights, instance.RenderLights.value.ToString(), null),
+            (Keys.RenderChains, instance.RenderChains.value.ToString(), null),
 
             (Keys.Key_Undo, instance.Key_Undo.value.ToString(), "Keys"),
             (Keys.Key_Redo, instance.Key_Redo.value.ToString(), "Keys"),
@@ -588,6 +591,9 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.RenderLights:
                             RenderLights.value = ReadBool(value);
                             break;
+                        case Keys.RenderChains:
+                            RenderChains.value = ReadBool(value);
+                            break;
                     }
                 } else if (group == "Keys") {
                     switch (key) {
@@ -709,6 +715,7 @@ public class AppJsonSettings
     public RecentFileList RecentNavmeshes { get; init; } = new();
     public RecentFileList RecentMeshes { get; init; } = new();
     public RecentFileList RecentSkeletons { get; init; } = new();
+    public RecentFileList RecentChains { get; init; } = new();
 
     public ChangelogData Changelogs { get; init; } = new();
 
@@ -721,6 +728,7 @@ public class AppJsonSettings
             KnownFileFormats.MotionList => RecentMotlists,
             KnownFileFormats.Motion => RecentMotlists,
             KnownFileFormats.Skeleton => RecentSkeletons,
+            KnownFileFormats.Chain or KnownFileFormats.Chain2 => RecentChains,
             _ => null,
         };
     }
