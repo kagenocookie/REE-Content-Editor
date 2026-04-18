@@ -741,7 +741,7 @@ public class PositionFieldHandler : Singleton<PositionFieldHandler>, IObjectUIHa
     public unsafe void OnIMGUI(UIContext context)
     {
         var val = context.Get<Position>();
-        if (ImGui.DragScalarN(context.label, ImGuiDataType.Double, &val, 4, 0.01f)) {
+        if (ImGui.DragScalarN(context.label, ImGuiDataType.Double, &val, 3, 0.01f)) {
             UndoRedo.RecordSet(context, val);
         }
         AppImguiHelpers.ShowValueContextMenu(val, context);
