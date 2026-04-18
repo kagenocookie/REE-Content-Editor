@@ -248,11 +248,9 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                         UndoRedo.RecordAddChild(context, clone, folder.Parent, folder.Parent.GetChildIndex(folder) + 1);
                         clone.MakeNameUnique();
                         rootEditor?.SetPrimaryInspector(clone);
-                        ImGui.CloseCurrentPopup();
                     }
                     if (ImGui.Selectable($"{AppIcons.SI_GenericDelete} Delete")) {
                         UndoRedo.RecordRemoveChild(context, folder);
-                        ImGui.CloseCurrentPopup();
                     }
                 }
 

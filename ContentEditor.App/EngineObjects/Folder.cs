@@ -168,6 +168,8 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
         foreach (var go in GameObjects) {
             go.SetActive(active);
         }
+
+        ChildScene?.SetActive(active);
     }
 
     public void RequestLoad(Scene.LoadType loadType = Scene.LoadType.Default)
@@ -327,6 +329,21 @@ public sealed class Folder : NodeObject<Folder>, IDisposable, INodeObject<Folder
             GameObjects.Add(gameObject);
         } else {
             GameObjects.Insert(index, gameObject);
+        }
+    }
+
+    protected override void DetachFromParent()
+    {
+        if (Scene?.IsActive == true && ShouldDrawSelf) {
+            SetActive(false);
+        }
+        base.DetachFromParent();
+    }
+
+    protected override void OnParentChanged()
+    {
+        if (IsInTree) {
+            SetActive(true);
         }
     }
 

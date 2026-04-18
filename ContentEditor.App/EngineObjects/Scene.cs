@@ -393,10 +393,6 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
                 ActiveCamera.LookAt(lookTarget, true);
             }
         }
-
-        foreach (var child in childScenes) {
-            child.SetActive(active);
-        }
     }
 
     public void Dispose()
