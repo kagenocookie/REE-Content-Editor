@@ -61,6 +61,11 @@ public struct MaterialBuilder(RenderContext context)
         return (mat!.Clone(name1), mat!.Clone(name2));
     }
 
+    public (Material, Material, Material) Create3(string name1, string name2, string name3)
+    {
+        return (mat!.Clone(name1), mat!.Clone(name2), mat!.Clone(name3));
+    }
+
     public Material Get()
     {
         return mat!;
