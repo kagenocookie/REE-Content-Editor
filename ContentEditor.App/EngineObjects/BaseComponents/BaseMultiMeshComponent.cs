@@ -1,4 +1,5 @@
 using ContentEditor.App.Graphics;
+using ContentPatcher;
 using ReeLib;
 using ReeLib.via;
 
@@ -44,6 +45,28 @@ public abstract class BaseMultiMeshComponent(GameObject gameObject, RszInstance 
             Scene.RenderContext.SetMeshMaterial(mesh, material);
         }
         return mesh;
+    }
+
+    protected bool AddMeshesFromPrefab(string prefabFilepath)
+    {
+        var foundAny = false;
+        if (Scene?.Workspace.ResourceManager.TryResolveGameFile(prefabFilepath, out var pfbHandle) == true) {
+            var pfb = pfbHandle.GetFile<PfbFile>();
+            if (pfb.Root == null) return false;
+
+            foreach (var meshComp in pfb.IterAllGameObjects(true).SelectMany(c => c.Components.Where(cc => cc.RszClass.name == "via.render.Mesh"))) {
+                if (meshComp?.Get(RszFieldCache.Mesh.Resource) is string meshPath && !string.IsNullOrEmpty(meshPath)) {
+                    var enabledParts = meshComp?.Get(RszFieldCache.Mesh.PartsEnable).Cast<bool>();
+                    var mdf = meshComp?.Get(RszFieldCache.Mesh.Material);
+                    var mesh = AddMesh(meshPath, mdf);
+                    if (enabledParts != null && mesh != null) {
+                        mesh.SetPartsEnabled(enabledParts);
+                    }
+                    foundAny |= mesh != null;
+                }
+            }
+        }
+        return foundAny;
     }
 
     protected void UnloadMeshes()
