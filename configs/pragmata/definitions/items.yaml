@@ -8,3 +8,5 @@ classes:
     to_string: "Item Catalog Data {_ID.Hash} ({_ID.Hash:enum(ce.ItemDefine)}) | {_Prefab.Path}"
   app.PropCatalogUserData.PropPrefabData:
     to_string: "Prop Prefab: {_PropIDHash} | {_Prefab.Path}"
+  app.GUIWeaponCatalog.GUIWeaponCatalogData:
+    to_string: "GUIWeaponCatalogData: {_ID.Hash:enum(ce.WeaponDefine)}"
