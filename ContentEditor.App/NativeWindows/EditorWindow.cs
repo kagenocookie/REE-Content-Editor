@@ -280,13 +280,13 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             var games = AppConfig.Instance.GetGamelist();
             foreach (var (game, configured) in games) {
                 if (configured && fullSupportedGames.Contains(game)) {
-                    if (ImGui.MenuItem(game)) SetWorkspace(game, null);
+                    if (ImGui.MenuItem(Languages.TranslateGame(game))) SetWorkspace(game, null);
                 }
             }
             ImGui.Separator();
             foreach (var (game, configured) in games) {
                 if (configured && !fullSupportedGames.Contains(game)) {
-                    if (ImGui.MenuItem(game)) SetWorkspace(game, null);
+                    if (ImGui.MenuItem(Languages.TranslateGame(game))) SetWorkspace(game, null);
                 }
             }
             ImGui.Separator();
