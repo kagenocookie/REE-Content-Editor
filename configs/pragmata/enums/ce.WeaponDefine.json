@@ -18,8 +18,25 @@
         "It02600": 3320209826,
         "It02700": 1107688515,
         "It03100": 163051433,
-        "It03200": 394837988
+        "It04000": 3516715133
     },
     "displayLabels": {
+        "It01000": "It01000: Pulse Carbine",
+        "It01200": "It01200: Drone Hive",
+        "It01300": "It01300: Stasis Net",
+        "It01400": "It01400: Charge Piercer",
+        "It01500": "It01500: Grip Gun",
+        "It01600": "It01600: Jackhammer",
+        "It01700": "It01700: Photon Laser",
+        "It01800": "It01800: Riot Blaster",
+        "It01900": "It01900: Sticky Bombs",
+        "It02100": "It02100: Decoy Generator",
+        "It02200": "It02200: Code Generator",
+        "It02300": "It02300: Impact Barrier",
+        "It02500": "It02500: Hacking Mines",
+        "It02600": "It02600: Homing Missiles",
+        "It02700": "It02700: Lim Cannon",
+        "It03100": "It03100: Shockwave Gun",
+        "It04000": "It04000: (Unused)"
     }
 }

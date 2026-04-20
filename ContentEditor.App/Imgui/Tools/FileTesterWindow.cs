@@ -13,6 +13,7 @@ using ReeLib;
 using ReeLib.Aimp;
 using ReeLib.Bhvt;
 using ReeLib.Clip;
+using ReeLib.Clsm;
 using ReeLib.Common;
 using ReeLib.Efx;
 using ReeLib.Efx.Structs.Common;
@@ -528,6 +529,8 @@ public partial class FileTesterWindow : IWindowHandler
             case KnownFileFormats.JointMap: return VerifyRewriteEquality<JmapFile>(source.GetFile<JmapFile>(), env);
             case KnownFileFormats.Chain: return VerifyRewriteEquality<ChainFile>(source.GetFile<ChainFile>(), env);
             case KnownFileFormats.Chain2: return VerifyRewriteEquality<Chain2File>(source.GetFile<Chain2File>(), env);
+            case KnownFileFormats.CollisionShapePreset: return VerifyRewriteEquality<ClspFile>(source.GetFile<ClspFile>(), env);
+            case KnownFileFormats.CollisionSkinningMesh: return VerifyRewriteEquality<ClsmFile>(source.GetFile<ClsmFile>(), env);
             default: return null;
         }
     }
@@ -737,6 +740,8 @@ public partial class FileTesterWindow : IWindowHandler
 
         AddCompareMapper<NodeInfo>((m) => [m.index, m.groupIndex, m.localIndex, m.attributes, m.flags, m.Links]);
         AddCompareMapper<LinkInfo>((m) => [m.attributes, m.sourceNodeIndex, m.targetNodeIndex, m.edgeIndex, m.ukn]);
+
+        AddCompareMapper<ClsmGroup>((m) => [m.id, m.faceCount, m.vertCount, m.vertsOffset, m.facesOffset]);
     }
 
     private static Dictionary<Type, Func<object, IEnumerable<object?>>> comparedValueMappers = new();

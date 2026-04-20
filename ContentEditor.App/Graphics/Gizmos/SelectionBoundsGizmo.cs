@@ -59,9 +59,11 @@ public class SelectionBoundsGizmo : Gizmo
 
                 AABB targetBounds;
                 if (primaryTarget is GameObject go) {
+                    if (!go.IsInTree) continue;
                     targetBounds = go.GetWorldSpaceBounds();
                     showBounds = showBounds || !targetBounds.IsEmpty;
                 } else if (primaryTarget is Folder folder) {
+                    if (!folder.IsInTree) continue;
                     targetBounds = folder.GetWorldSpaceBounds();
                     showBounds = showBounds || !targetBounds.IsEmpty;
                 } else {

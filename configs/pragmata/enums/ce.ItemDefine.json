@@ -25,6 +25,7 @@
         "It00061": 3940343410,
         "It00100": 2943986455,
         "It00110": 629542793,
+
         "It01000": 1028629837,
         "It01200": 713657173,
         "It01300": 2427932221,
@@ -41,7 +42,6 @@
         "It02600": 3320209826,
         "It02700": 1107688515,
         "It03100": 163051433,
-        "It03200": 394837988,
 
         "It10010": 1449550544,
         "It10011": 2817286685,
@@ -71,11 +71,32 @@
         "It50020": 725482672
     },
     "displayLabels": {
+        "It00011": "It00011: Repair Kit",
+        "It00014": "It00014: Cartridge Container",
+
         "It00020": "It00020: Lunafilament XL",
         "It00021": "It00021: Lunafilament L",
         "It00022": "It00022: Lunafilament M",
         "It00023": "It00023: Lunafilament S (5)",
         "It00026": "It00023: Lunafilament S",
+
+        "It01000": "It01000: Grip Gun",
+        "It01200": "It01200: Drone Hive",
+        "It01300": "It01300: Stasis Net",
+        "It01400": "It01400: Charge Piercer",
+        "It01500": "It01500: Pulse Carbine",
+        "It01600": "It01600: Jackhammer",
+        "It01700": "It01700: Photon Laser",
+        "It01800": "It01800: Riot Blaster",
+        "It01900": "It01900: Sticky Bombs",
+        "It02100": "It02100: Decoy Generator",
+        "It02200": "It02200: Code Generator",
+        "It02300": "It02300: Impact Barrier",
+        "It02500": "It02500: Hacking Mines",
+        "It02600": "It02600: Homing Missiles",
+        "It02700": "It02700: Lim Cannon",
+        "It02900": "It02900: ERASER",
+        "It03100": "It03100: Shockwave Gun",
 
         "It10010": "It10010: REM",
         "It10011": "It10011: REM",

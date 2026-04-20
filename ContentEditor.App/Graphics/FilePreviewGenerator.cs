@@ -67,6 +67,7 @@ public sealed class FilePreviewGenerator : IDisposable
 
     public PreviewImageStatus FetchPreview(string file, out Texture? texture)
     {
+        file = file.Replace('\\', '/');
         texture = null;
         if (_statuses.TryGetValue(file, out var status)) {
             if (status == PreviewImageStatus.Generated) {
@@ -145,7 +146,7 @@ public sealed class FilePreviewGenerator : IDisposable
                 }
 
                 var fmt = PathUtils.ParseFileFormat(path).format;
-                var mainAssetPath = fmt == KnownFileFormats.Mesh ? path.Replace("/streaming/", "/").Replace("\\streaming\\", "\\") : path;
+                var mainAssetPath = fmt == KnownFileFormats.Mesh ? PathUtils.GetNonStreamingNativePath(path) : path;
                 FileHandle f;
                 try {
                     if (!workspace.ResourceManager.TryGetOrLoadFile(mainAssetPath, out f!)) {
@@ -218,7 +219,7 @@ public sealed class FilePreviewGenerator : IDisposable
     private void GenerateMeshThumbnail(string path)
     {
         _statuses[path] = PreviewImageStatus.Loading;
-        var mainPath = path.Replace("/streaming/", "/", StringComparison.OrdinalIgnoreCase).Replace("\\streaming\\", "\\", StringComparison.OrdinalIgnoreCase);
+        var mainPath = PathUtils.GetNonStreamingNativePath(path);
         var outPath = GetThumbnailPath(path);
 
         using var tmpScene = new Scene("_preview", "", workspace, null, null, _threadGL);

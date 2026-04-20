@@ -297,7 +297,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             }
 
             if (flags.HasFlag(ShaderFlags.EnableStreamingTex)) {
-                string streamingPath = Path.Combine("streaming/", texture.FilePath);
+                string streamingPath = PathUtils.GetStreamingInternalPath(texture.FilePath);
                 var streamingTex = LoadTextureInternal(streamingPath);
                 if (streamingTex != null) return streamingTex;
             }

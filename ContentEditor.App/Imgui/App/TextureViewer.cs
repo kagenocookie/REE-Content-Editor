@@ -42,7 +42,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
     private const float maxZoom = 20.0f;
     private Vector2 pan = Vector2.Zero;
     private Vector2 lastCanvasSize = Vector2.Zero;
-    private bool isDragging = false;
+    private bool isFirstLoad = true;
     private bool isFitToWindow = true;
 
     private FormatPreset selectedFormatPreset;
@@ -580,6 +580,31 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
                 pan = Vector2.Zero;
             }
             ImguiHelpers.Tooltip("Show at original resolution"u8);
+            if (fileHandle?.Format.format == KnownFileFormats.Texture && !string.IsNullOrEmpty(fileHandle.NativePath) && isFirstLoad) {
+                var tex = fileHandle.GetFile<TexFile>();
+                if (texturePath?.Contains("/streaming/", StringComparison.OrdinalIgnoreCase) == true) {
+                    ImGui.SameLine();
+                    if (ImGui.Button($"{AppIcons.SI_UpdateTexture}")) {
+                        if (workspace.ResourceManager.TryResolveGameFile(PathUtils.GetNonStreamingNativePath(fileHandle.NativePath), out var noStrmTex)) {
+                            SetImageSource(noStrmTex);
+                        } else {
+                            Logger.Error($"Could not find non-streaming version of texture {fileHandle.NativePath}");
+                        }
+                    }
+                    ImguiHelpers.Tooltip("Switch to lower quality non-streaming texture");
+                } else if (tex.Header.flags.HasFlag(ReeLib.Tex.TexFlags.IsStreaming)) {
+                    ImGui.SameLine();
+                    if (ImGui.Button($"{AppIcons.SI_UpdateTexture}") || isFirstLoad) {
+                        if (workspace.ResourceManager.TryResolveGameFile(PathUtils.GetStreamingNativePath(fileHandle.NativePath), out var strmTex)) {
+                            SetImageSource(strmTex);
+                        } else {
+                            Logger.Error($"Could not find full quality streaming version of texture {fileHandle.NativePath}");
+                        }
+                    }
+                    ImguiHelpers.Tooltip("Switch to full quality streaming texture");
+                }
+                isFirstLoad = false;
+            }
             ImGui.SameLine();
             ImguiHelpers.VerticalSeparator();
             ImGui.SameLine();

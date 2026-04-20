@@ -172,7 +172,7 @@ public class SceneController(Scene scene)
     public void UpdateGizmo(EditorWindow window, GizmoManager manager)
     {
         foreach (var ui in window.ActiveImguiWindows) {
-            if (ui.Handler is ObjectInspector inspector && inspector.Target is GameObject go && go.Scene?.RootScene == Scene) {
+            if (ui.Handler is ObjectInspector inspector && inspector.Target is GameObject go && go.Scene?.RootScene == Scene && go.IsInTree) {
                 var gizmo = manager.GetOrAddStandaloneGizmo(go.Transform);
                 gizmo.Cur.Push().TransformHandle(go.Transform);
             }

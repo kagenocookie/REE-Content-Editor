@@ -136,20 +136,7 @@ public class RE9CharacterSpawnParam(GameObject gameObject, RszInstance data) : B
         foreach (var part in parts) {
             var pfbPath = part.Get(RszFieldCache.RE9.MontageData.Parts._PrefabResource)?.Get(RszFieldCache.Prefab.Path);
             if (string.IsNullOrEmpty(pfbPath)) continue;
-
-            if (Scene.Workspace.ResourceManager.TryResolveGameFile(pfbPath, out var pfbHandle)) {
-                var pfb = pfbHandle.GetFile<PfbFile>();
-                var meshComp = pfb.Root?.Components.FirstOrDefault(c => c.RszClass.name == "via.render.Mesh");
-                var enabledParts = meshComp?.Get(RszFieldCache.Mesh.PartsEnable).Cast<bool>();
-                if (meshComp?.Get(RszFieldCache.Mesh.Resource) is string meshPath && !string.IsNullOrEmpty(meshPath)) {
-                    var mdf = meshComp?.Get(RszFieldCache.Mesh.Material);
-                    var mesh = AddMesh(meshPath, mdf);
-                    if (enabledParts != null && mesh != null) {
-                        mesh.SetPartsEnabled(enabledParts);
-                    }
-                    anyLoaded |= mesh != null;
-                }
-            }
+            anyLoaded |= AddMeshesFromPrefab(pfbPath);
         }
 
         return anyLoaded;

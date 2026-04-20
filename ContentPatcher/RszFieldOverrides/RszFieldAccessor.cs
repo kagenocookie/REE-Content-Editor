@@ -277,9 +277,12 @@ public static partial class RszFieldCache
     private static void InitializeFieldOverrides(string gameName, RszParser parser, Type type)
     {
         var fields = type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-        var classAttr = type.GetCustomAttributes<RszAccessorAttribute>().FirstOrDefault();
-        if (classAttr != null) {
+        var classAttrs = type.GetCustomAttributes<RszAccessorAttribute>();
+        var foundValidClasses = false;
+        var anyFilteredClassAttrs = false;
+        foreach (var classAttr in classAttrs) {
             if (classAttr.Games.Length != 0) {
+                anyFilteredClassAttrs = true;
                 var found = false;
                 foreach (var game in classAttr.Games) {
                     if (CompositeNames.TryGetValue(game, out var realList)) {
@@ -294,59 +297,62 @@ public static partial class RszFieldCache
                         }
                     }
                 }
-                if (found == classAttr.GamesExclude) return;
+                if (found == classAttr.GamesExclude) continue;
+                foundValidClasses = true;
             }
-        }
 
-        foreach (var field in fields) {
-            if (!field.FieldType.IsAssignableTo(typeof(RszFieldAccessorBase))) continue;
+            foreach (var field in fields) {
+                if (!field.FieldType.IsAssignableTo(typeof(RszFieldAccessorBase))) continue;
 
-            var targets = field.GetCustomAttributes<RszAccessorAttribute>().Append(classAttr);
-            if (!targets.Any()) continue;
+                var targets = field.GetCustomAttributes<RszAccessorAttribute>().Append(classAttr);
+                if (!targets.Any()) continue;
 
-            var accessor = (RszFieldAccessorBase)field.GetValue(null)!;
-            if (accessor.Override == null) continue;
+                var accessor = (RszFieldAccessorBase)field.GetValue(null)!;
+                if (accessor.Override == null) continue;
 
-            foreach (var attr in targets) {
-                if (attr == null) continue;
+                foreach (var attr in targets) {
+                    if (attr == null) continue;
 
-                if (attr.Games.Length != 0) {
-                    var found = false;
-                    foreach (var game in attr.Games) {
-                        if (CompositeNames.TryGetValue(game, out var realList)) {
-                            if (realList.Contains(gameName)) {
-                                found = true;
-                                break;
-                            }
-                        } else {
-                            if (game == gameName) {
-                                found = true;
-                                break;
+                    if (attr.Games.Length != 0) {
+                        var found = false;
+                        foreach (var game in attr.Games) {
+                            if (CompositeNames.TryGetValue(game, out var realList)) {
+                                if (realList.Contains(gameName)) {
+                                    found = true;
+                                    break;
+                                }
+                            } else {
+                                if (game == gameName) {
+                                    found = true;
+                                    break;
+                                }
                             }
                         }
+                        if (found == attr.GamesExclude) continue;
                     }
-                    if (found == attr.GamesExclude) continue;
-                }
 
-                var cls = parser.GetRSZClass(attr.Classname);
-                if (cls == null) continue;
+                    var cls = parser.GetRSZClass(attr.Classname);
+                    if (cls == null) continue;
 
-                var index = accessor.GetIndex(cls);
-                if (index == -1) continue;
+                    var index = accessor.GetIndex(cls);
+                    if (index == -1) continue;
 
-                var rszField = cls.fields[index];
-                if (accessor.Override.fieldType != null) {
-                    rszField.type = accessor.Override.fieldType.Value;
-                }
+                    var rszField = cls.fields[index];
+                    if (accessor.Override.fieldType != null) {
+                        rszField.type = accessor.Override.fieldType.Value;
+                    }
 
-                if (accessor.Override.originalType != null) {
-                    rszField.original_type = accessor.Override.originalType;
-                }
-                if (accessor.Override.name != null) {
-                    rszField.name = accessor.Override.name;
+                    if (accessor.Override.originalType != null) {
+                        rszField.original_type = accessor.Override.originalType;
+                    }
+                    if (accessor.Override.name != null) {
+                        rszField.name = accessor.Override.name;
+                    }
                 }
             }
         }
+
+        if (anyFilteredClassAttrs && !foundValidClasses) return;
 
         var nested = type.GetNestedTypes(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
         foreach (var sub in nested) {

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace ContentEditor.App;
@@ -113,51 +114,38 @@ public class NodeObject<TNode> : NodeObject, INodeObject<TNode>, IPathedObject
     /// Updates the parent immediately. Not safe to use during updates.
     /// </summary>
     /// <param name="parent"></param>
-    protected void SetParent(TNode? parent, bool alreadyAddedToChildren)
+    protected void SetParent(TNode parent)
     {
+        Debug.Assert(_parent == null);
+        Debug.Assert(parent.Children.Contains(this));
+
         if (parent == _parent) return;
-        if (_parent != null) {
-            _parent.Children.Remove(Unsafe.As<TNode>(this));
-            _parent.ChildRemoved?.Invoke(_parent, Unsafe.As<TNode>(this));
-        }
+
         _parent = parent;
-        if (parent != null) {
-            if (Scene != parent.Scene) {
-                ChangeScene(parent.Scene);
-            }
-            if (!alreadyAddedToChildren) {
-                parent.Children.Add(Unsafe.As<TNode>(this));
-            }
-            parent.ChildAdded?.Invoke(parent, Unsafe.As<TNode>(this));
+        if (Scene != parent.Scene) {
+            ChangeScene(parent.Scene);
         }
+        parent.ChildAdded?.Invoke(parent, Unsafe.As<TNode>(this));
         _cachedPath = null;
         OnParentChanged();
         ParentChanged?.Invoke(Unsafe.As<TNode>(this), parent);
     }
 
-    protected void SetParentDeferred(TNode? parent, bool alreadyAddedToChildren)
+    protected virtual void DetachFromParent()
     {
-        if (parent != _parent) {
-            if (Scene == null) {
-                SetParent(parent, alreadyAddedToChildren);
-            } else {
-                Scene.DeferAction(() => SetParent(parent, alreadyAddedToChildren));
-            }
-        }
+        Debug.Assert(_parent != null);
+        Debug.Assert(!_parent.Children.Contains(this));
+
+        _parent = null;
+        _cachedPath = null;
+        OnParentChanged();
+        ParentChanged?.Invoke(Unsafe.As<TNode>(this), null);
     }
 
     public void AddChild(TNode node)
     {
-        node.SetParent(Unsafe.As<TNode>(this), false);
-    }
-
-    public void AddChildDeferred(TNode node)
-    {
-        if (Scene == null) {
-            node.SetParent(Unsafe.As<TNode>(this), false);
-        } else {
-            Scene.DeferAction(() => node.SetParent(Unsafe.As<TNode>(this), false));
-        }
+        Children.Add(node);
+        node.SetParent(Unsafe.As<TNode>(this));
     }
 
     public void AddChild(TNode node, int index)
@@ -168,43 +156,16 @@ public class NodeObject<TNode> : NodeObject, INodeObject<TNode>, IPathedObject
         }
 
         Children.Insert(index, node);
-        node.SetParent(Unsafe.As<TNode>(this), true);
+        node.SetParent(Unsafe.As<TNode>(this));
     }
 
     public void RemoveChild(TNode child)
     {
         if (Children.Remove(child)) {
-            child.SetParent(null, false);
+            ChildRemoved?.Invoke(Unsafe.As<TNode>(this), child);
+            child.DetachFromParent();
         } else {
             Logger.Error($"Node {child} is not a child of {this}");
-        }
-    }
-
-    public void RemoveChildDefer(TNode child)
-    {
-        DeferAction(() => RemoveChild(child));
-    }
-
-    public void AddChildDeferred(TNode node, int index)
-    {
-        if (index == -1) {
-            AddChildDeferred(node);
-            return;
-        }
-
-        if (index < 0 || index >= Children.Count) {
-            Logger.Error($"Node.AddChild: Index {index} out of range");
-            return;
-        }
-
-        if (Scene == null) {
-            Children.Insert(index, node);
-            node.SetParent(Unsafe.As<TNode>(this), true);
-        } else {
-            Scene.DeferAction(() => {
-                Children.Insert(index, node);
-                node.SetParent(Unsafe.As<TNode>(this), true);
-            });
         }
     }
 

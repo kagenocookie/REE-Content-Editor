@@ -81,7 +81,7 @@ public class MaterialGroupLoader : IFileLoader,
                 }
                 var tex = file.GetFile<TexFile>();
 
-                var streamingPath = "streaming/" + param.texPath;
+                var streamingPath = PathUtils.GetStreamingInternalPath(param.texPath);
                 if (tex.Header.flags.HasFlag(ReeLib.Tex.TexFlags.IsStreaming) && env.ResourceManager.TryResolveGameFile(streamingPath, out var streamingFile)) {
                     tex = streamingFile.GetFile<TexFile>();
                 }

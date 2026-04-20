@@ -339,12 +339,12 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
         }
         ImguiHelpers.Tooltip("Filter by Name, Message content or GUID"u8);
 
-        var size = ImGui.GetWindowSize() - ImGui.GetCursorPos();
-        var w = size.X;
+        var size = ImGui.GetContentRegionAvail();
         var msgListHovered = false;
         float minW = 400f * UI.UIScale;
         ImGui.SetNextWindowSizeConstraints(new Vector2(minW, 0), new Vector2(minW * 3, float.MaxValue));
         ImGui.BeginChild("msg_list", new System.Numerics.Vector2(w, size.Y), ImGuiChildFlags.ResizeX);
+        ImGui.BeginChild("msg_list", size, ImGuiChildFlags.ResizeX);
         var langIndex = (int)selectedLanguage;
         if (ImGui.BeginTable("Messages", 3, ImGuiTableFlags.Sortable | ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.RowBg)) {
             ImGui.TableSetupColumn(" Index", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize, 60 * UI.UIScale);

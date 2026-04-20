@@ -62,9 +62,22 @@
     "displayLabels": {
         "Ch01000": "Ch01000: Hugh",
         "Ch05000": "Ch05000: Diana",
+        "Ch06000": "Ch06000: Cabin",
+        "Ch06001": "Ch06001: Cabin (Without Screen)",
+        "Ch06002": "Ch06002: Cabin (Screen only)",
+        "Ch07000": "Ch07000: Crewmate 1",
+        "Ch07100": "Ch07100: Crewmate 2",
+        "Ch07200": "Ch07200: Crewmate 3",
+
+        "Ch14100": "Ch14100: Creator",
+        "Ch14101": "Ch14101: Creator MK-II",
 
         "Ch16000": "Ch16000: Walker",
-        "Ch16003": "Ch16003: Walker",
-        "Ch17000": "Ch17000: Drone"
+        "Ch16003": "Ch16003: Walker Variant",
+        "Ch16010": "Ch16010: Sector Guard",
+        "Ch16021": "Ch16021: Spider",
+        "Ch16030": "Ch16030: Crusher",
+        "Ch17000": "Ch17000: Watcher",
+        "Ch17001": "Ch17001: Missile Watcher"
     }
 }

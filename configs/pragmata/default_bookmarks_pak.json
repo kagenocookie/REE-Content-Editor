@@ -1,6 +1,13 @@
 {
   "pragmata": [
     {
+      "Path": "natives/stm/leveldesign/scene/maincontents/maincontents.scn.21",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Main scene file"
+    },
+    {
       "Path": "natives/stm/character/ch/ch00/ch0000",
       "Tags": [
         "Character"
@@ -8,18 +15,186 @@
       "Comment": "Hugh Williams (Delphi)"
     },
     {
-      "Path": "natives/stm/character/ch/ch00/ch0012/00",
-      "Tags": [
-        "Character"
-      ],
-      "Comment": "Hugh Williams (Scribble)"
-    },
-    {
       "Path": "natives/stm/character/ch/ch01/ch0100",
       "Tags": [
         "Character"
       ],
       "Comment": "Diana"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch05/ch0540",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Technicians (Male)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch05/ch0545",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Technicians (Female)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch05/ch0550",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Crewmate 1"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch05/ch0560",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Crewmate 2"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch05/ch0570",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Crewmate 3"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch05/ch0580",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Delphi Scientist"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch08/ch0800",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Cabin"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch09",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Eight"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch20/ch2000/00",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Cat"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch21/ch2100/00",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Robot Bird"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch22/ch2200/00",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Elk"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch22/ch2210/00",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Deer"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch23/ch2300/00",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Bird (Flying)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch23/ch2310/00",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Bird (Grounded)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch24/ch2400/00",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Crab"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch25/ch2500/00",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Butterfly"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch40/ch4000/00",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Space Shuttle"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch40/ch4010/00",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Space Shuttle (Damaged)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch51/ch5100",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Walker"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch56/ch5600",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Watcher"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch57/ch5700",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Sector Guard"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch58/ch5800",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Crusher"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch59/ch5900/00",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Spider"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch62/ch6200",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Executor"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch63/ch6300/00",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Stalker"
     },
     {
       "Path": "natives/stm/item/model/it00010/wp7100",
@@ -36,6 +211,13 @@
       "Comment": "Grip Gun"
     },
     {
+      "Path": "natives/stm/item/model/it01200/wp1100",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Drone Hive"
+    },
+    {
       "Path": "natives/stm/item/model/it01300/wp1510",
       "Tags": [
         "Weapon"
@@ -50,11 +232,95 @@
       "Comment": "Charge Piercer"
     },
     {
+      "Path": "natives/stm/item/model/it01500/wp1200/00",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Pulse Carbine"
+    },
+    {
+      "Path": "natives/stm/item/model/it01600/wp1600/00",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Jackhammer"
+    },
+    {
+      "Path": "natives/stm/item/model/it01700/wp1700/00",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Photon Laser"
+    },
+    {
+      "Path": "natives/stm/item/model/it01800/wp1800",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Riot Blaster"
+    },
+    {
+      "Path": "natives/stm/item/model/it01900/wp1900",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Sticky Bombs"
+    },
+    {
+      "Path": "natives/stm/item/model/it02100/wp2100",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Decoy Generator"
+    },
+    {
+      "Path": "natives/stm/item/model/it02200/wp2200/00",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Code Generator"
+    },
+    {
+      "Path": "natives/stm/item/model/it02300/wp2300",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Impact Barrier"
+    },
+    {
+      "Path": "natives/stm/item/model/it02500/wp2700/00",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Hacking Mines"
+    },
+    {
+      "Path": "natives/stm/item/model/it02600/wp2600",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Homing Missiles"
+    },
+    {
+      "Path": "natives/stm/item/model/it02800/wp3100/00",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Railgun"
+    },
+    {
       "Path": "natives/stm/item/model/it03100/wp1300/00",
       "Tags": [
         "Weapon"
       ],
       "Comment": "Shockwave Gun"
+    },
+    {
+      "Path": "natives/stm/item/model/it03200/wp7200/00",
+      "Tags": [
+        "Weapon"
+      ],
+      "Comment": "Handgun"
     }
   ]
 }

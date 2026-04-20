@@ -54,6 +54,45 @@ public static partial class RszFieldCache
             public static readonly RszFieldAccessorName<uint> _Ch1c0z2MontageID = Name<uint>();
         }
 
+        [RszAccessor("chainsaw.DropItem", nameof(GameIdentifier.re4))]
+        public static class DropItem
+        {
+            public static readonly RszFieldAccessorName<uint> ID = Name<uint>();
+
+            /// <summary>
+            /// chainsaw.DropItemContext.SaveData
+            /// </summary>
+            public static readonly RszFieldAccessorName<RszInstance> _ItemData = Name<RszInstance>();
+        }
+
+
+        [RszAccessor("chainsaw.DropItemContext.SaveData", nameof(GameIdentifier.re4))]
+        public static class DropItemContext_SaveData
+        {
+            public static readonly RszFieldAccessorName<int> ItemID = Name<int>();
+        }
+
+
+        [RszAccessor("chainsaw.DropItemCatalogUserData", nameof(GameIdentifier.re4))]
+        public static class DropItemCatalogUserData
+        {
+            /// <summary>
+            /// chainsaw.DropItemCatalogUserData.CatalogItem[]
+            /// </summary>
+            public static readonly RszFieldAccessorName<List<object>> Items = Name<List<object>>();
+
+            [RszAccessor("chainsaw.DropItemCatalogUserData.CatalogItem", nameof(GameIdentifier.re4))]
+            public static class CatalogItem
+            {
+                public static readonly RszFieldAccessorName<int> ID = Name<int>();
+
+                /// <summary>
+                /// via.Prefab
+                /// </summary>
+                public static readonly RszFieldAccessorName<RszInstance> DropItemPrefab = Name<RszInstance>();
+            }
+        }
+
         [RszAccessor("chainsaw.CostumePresetCatalogUserData", nameof(GameIdentifier.re4))]
         public static class CostumePresetCatalogUserData
         {
