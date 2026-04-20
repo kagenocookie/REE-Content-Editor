@@ -343,7 +343,6 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
         var msgListHovered = false;
         float minW = 400f * UI.UIScale;
         ImGui.SetNextWindowSizeConstraints(new Vector2(minW, 0), new Vector2(minW * 3, float.MaxValue));
-        ImGui.BeginChild("msg_list", new System.Numerics.Vector2(w, size.Y), ImGuiChildFlags.ResizeX);
         ImGui.BeginChild("msg_list", size, ImGuiChildFlags.ResizeX);
         var langIndex = (int)selectedLanguage;
         if (ImGui.BeginTable("Messages", 3, ImGuiTableFlags.Sortable | ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.RowBg)) {
