@@ -11,6 +11,7 @@ namespace ContentEditor.App.ImguiHandling;
 public class NumericFieldHandler<T>(ImGuiDataType type) : IObjectUIHandler where T : unmanaged
 {
     public static readonly NumericFieldHandler<T> FloatInstance = new NumericFieldHandler<T>(ImGuiDataType.Float);
+    public static readonly NumericFieldHandler<T> UIntInstance = new NumericFieldHandler<T>(ImGuiDataType.U32);
 
     private static readonly Dictionary<Type, IObjectUIHandler> handlerTypes = new() {
         { typeof(int), new NumericFieldHandler<int>(ImGuiDataType.S32) },

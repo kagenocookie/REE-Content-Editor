@@ -293,8 +293,11 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 }
                 if (ImGui.BeginMenu($"{AppIcons.SI_FileType_CHAIN} Chain")) {
                     mainCtx.GameObject.GetOrAddComponent<Chain>();
-                    var rcolEdit = Scene!.Root.SetEditMode(mainCtx.GameObject.GetOrAddComponent<Chain>());
-                    rcolEdit?.DrawMainUI();
+                    if (Workspace.Env.ComponentAvailable<CollisionShapePreset>()) {
+                        mainCtx.GameObject.GetOrAddComponent<CollisionShapePreset>();
+                    }
+                    var edit = Scene!.Root.SetEditMode(mainCtx.GameObject.GetOrAddComponent<Chain>());
+                    edit?.DrawMainUI();
                     ImGui.EndMenu();
                 }
                 if (ImGui.MenuItem($"{AppIcons.SI_Animation} Animations")) showAnimationsMenu = !showAnimationsMenu;

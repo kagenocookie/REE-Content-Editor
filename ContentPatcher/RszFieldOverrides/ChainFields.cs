@@ -21,11 +21,10 @@ public static partial class RszFieldCache
     /// <summary>
     /// via.character.CollisionShapePreset
     /// </summary>
-    /// note: >= re9, pragmata, wilds, dd2
     [RszAccessor("via.character.CollisionShapePreset", [nameof(PreDD2)], GamesExclude = true)]
     public static class CollisionShapePreset
     {
-        public static readonly RszFieldAccessorFirstFallbacks<List<object>> ShapeResetInfos =
+        public static readonly RszFieldAccessorFirstFallbacks<List<object>> ShapePresetInfos =
             First<List<object>>([
                 f => f.name == "CollisionShapePresetInfos",
                 f => f.array
@@ -40,8 +39,8 @@ public static partial class RszFieldCache
     [RszAccessor("via.character.CollisionShapePresetInfo", [nameof(PreDD2)], GamesExclude = true)]
     public static class CollisionShapePresetInfo
     {
-        public static readonly RszFieldAccessorFirst<string> Enabled =
-            First<string>(f => f.type is RszFieldType.Bool or RszFieldType.U8 or RszFieldType.S8)
+        public static readonly RszFieldAccessorFirst<bool> Enabled =
+            First<bool>(f => f.type is RszFieldType.Bool or RszFieldType.U8 or RszFieldType.S8)
             .Type(RszFieldType.Bool)
             .Rename();
 
