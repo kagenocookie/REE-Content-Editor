@@ -1620,9 +1620,13 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
                     ChangeAnim(meshContexts, (MotFile)mot);
                     if (animator == viewer.Animators.FirstOrDefault()) {
                         foreach (var other in viewer.MeshContexts) {
+                            if (other.Animator == animator) continue;
+
                             var motId = Animator.GetMotionId(mot.Name);
-                            if (other.Animator != animator && other.Animator?.Animations.FirstOrDefault(anim => Animator.GetMotionId(anim.Name) == motId) is MotFileBase sameIdMot) {
-                                other.ChangeAnim(viewer.MeshContexts, sameIdMot);
+                            var sameMot = (other.Animator?.Animations.FirstOrDefault(anim => anim.Name == mot.Name)
+                                ?? other.Animator?.Animations.FirstOrDefault(anim => Animator.GetMotionId(anim.Name) == motId));
+                            if (sameMot != null) {
+                                other.ChangeAnim(viewer.MeshContexts, sameMot);
                             }
                         }
                     }
@@ -1655,7 +1659,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             ImGui.SetNextItemOpen(true, ImGuiCond.Always);
             tr.ShowUI();
         } else {
-            var tr = owner.UI.GetChild("Transform") ?? owner.UI.AddChild("Transform", GameObject.Transform);
+            var tr = owner.UI.GetChild("Transform") ?? owner.UI.AddChild("Transform", owner.GameObject.Transform);
             ImGui.SetNextItemOpen(true, ImGuiCond.Always);
             tr.ShowUI();
         }
