@@ -291,10 +291,10 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                     rcolEdit?.DrawMainUI();
                     ImGui.EndMenu();
                 }
-                if (ImGui.BeginMenu($"{AppIcons.SI_FileType_CHAIN} Chain")) {
+                if (ImGui.BeginMenu($"{AppIcons.SI_MeshViewerChain} Chain")) {
                     mainCtx.GameObject.GetOrAddComponent<Chain>();
-                    var rcolEdit = Scene!.Root.SetEditMode(mainCtx.GameObject.GetOrAddComponent<Chain>());
-                    rcolEdit?.DrawMainUI();
+                    var chainEdit = Scene!.Root.SetEditMode(mainCtx.GameObject.GetOrAddComponent<Chain>());
+                    chainEdit?.DrawMainUI();
                     ImGui.EndMenu();
                 }
                 if (ImGui.MenuItem($"{AppIcons.SI_Animation} Animations")) showAnimationsMenu = !showAnimationsMenu;
@@ -1299,7 +1299,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
     public void ShowMaterialSettings()
     {
         var meshComponent = Component;
-        if (ImGui.Checkbox("Textures: " + (useHighResTextures ? "Hi-Res" : "Low-Res"), ref useHighResTextures)) {
+        if (ImguiHelpers.ToggleButton("Textures: " + (useHighResTextures ? "Hi-Res" : "Low-Res"), ref useHighResTextures, Colors.IconActive)) {
             meshComponent.UseStreamingTex = useHighResTextures;
             UpdateMaterial(true);
         }
@@ -1308,7 +1308,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             mdfSource = originalMDF;
             UpdateMaterial();
         }
-        ImguiHelpers.Tooltip("Reset MDF");
+        ImguiHelpers.Tooltip("Reset MDF"u8);
         if (mdfPickerContext == null) {
             mdfPickerContext = UI.AddChild<MeshViewerContext, string>(
                 "MDF2 Material",
@@ -1337,12 +1337,14 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             ImGui.SeparatorText("Material mapping");
             for (int i = 0; i < mesh.NativeMesh.MaterialNames.Count; i++) {
                 var matName = mesh.NativeMesh.MaterialNames[i];
-                if (ImGui.Button($"{AppIcons.SI_GenericDelete}##{i}")) {
+                ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
+                if (ImGui.Button($"{AppIcons.SI_GenericDelete2}##{i}")) {
                     var i_backup = i--;
                     UndoRedo.RecordCallback(null, () => matNames.RemoveAt(i_backup), () => matNames.Insert(i_backup, matName));
                     UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, ApplyMeshChanges);
                     continue;
                 }
+                ImGui.PopStyleColor();
                 ImGui.SameLine();
                 ImGui.Text(i.ToString());
                 ImGui.SameLine();
@@ -1353,7 +1355,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
                     UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, ApplyMeshChanges);
                 }
             }
-            if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
+            if (ImGui.Button($"{AppIcons.SI_GenericAdd} Add")) {
                 var newName = "NewMaterial".GetUniqueName(s => matNames.Contains(s));
                 UndoRedo.RecordCallback(null, () => matNames.Add(newName), () => matNames.Remove(newName));
                 UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, ApplyMeshChanges);

@@ -429,6 +429,7 @@ public static class AppIcons
     public static readonly char SI_Null= '\uee2b';
     public static readonly char SI_InspectorEnum = '\uee2c';
     public static readonly char SI_InspectorCustomValue = '\uee2d';
+    public static readonly char SI_MeshViewerChain = '\uee2e';
 
     public static string PrependIcon(this string text, object target)
     {

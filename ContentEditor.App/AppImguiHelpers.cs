@@ -332,7 +332,7 @@ public static class AppImguiHelpers
         ImGui.SameLine();
         ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMin().X + w - (ImGui.GetFrameHeight() * 2 + ImGui.GetStyle().FramePadding.X), ImGui.GetItemRectMin().Y));
         ImGui.SetNextItemAllowOverlap();
-        if (ImGui.Button($"{AppIcons.SI_BookmarkClear}")) {
+        if (ImGui.Button($"{AppIcons.SI_GenericClear}")) {
             files.Clear();
             if (!string.IsNullOrEmpty(selectedPath)) {
                 files.AddRecent(game, selectedPath);
