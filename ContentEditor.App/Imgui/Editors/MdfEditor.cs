@@ -406,7 +406,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
-        if (ImguiHelpers.ToggleButton("A>Z", ref isAlphabetSortParams, Colors.IconActive)) {
+        if (ImguiHelpers.ToggleButton($"{AppIcons.SI_SortAZ}", ref isAlphabetSortParams, Colors.IconActive)) {
             context.children.Clear();
         }
     }

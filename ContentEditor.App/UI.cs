@@ -434,6 +434,8 @@ public static class AppIcons
     public static readonly char[] SIC_GizmoScale = { '\uee34', '\uee35', '\uee36', '\uee37' };
     public static readonly char[] SIC_GizmoRotate = { '\uee38', '\uee39', '\uee3a', '\uee3b' };
     public static readonly char SI_GizmoFreeform = '\uee3c';
+    public static readonly char SI_SortAZ = '\uee3d';
+    public static readonly char SI_SortZA = '\uee3d';
 
     public static string PrependIcon(this string text, object target)
     {
