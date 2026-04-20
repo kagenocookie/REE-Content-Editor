@@ -82,8 +82,8 @@ public class ChainEditMode : EditModeHandler
         }
 
         if (Scene.Workspace.Env.ComponentAvailable<CollisionShapePreset>()) {
-            var clspPicker = context.GetChild("ClspPicker") ?? context.AddChild(
-                "ClspPicker",
+            var clspPicker = context.GetChild("Clsp File") ?? context.AddChild(
+                "Clsp File",
                 this,
                 new ResourcePathPicker(Scene.Workspace, KnownFileFormats.CollisionShapePreset) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly },
                 (v) => v!.clspPath,
