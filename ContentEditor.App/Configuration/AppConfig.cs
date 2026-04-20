@@ -716,6 +716,7 @@ public class AppJsonSettings
     public RecentFileList RecentMeshes { get; init; } = new();
     public RecentFileList RecentSkeletons { get; init; } = new();
     public RecentFileList RecentChains { get; init; } = new();
+    public RecentFileList RecentClsp { get; init; } = new();
 
     public ChangelogData Changelogs { get; init; } = new();
 
@@ -729,6 +730,7 @@ public class AppJsonSettings
             KnownFileFormats.Motion => RecentMotlists,
             KnownFileFormats.Skeleton => RecentSkeletons,
             KnownFileFormats.Chain or KnownFileFormats.Chain2 => RecentChains,
+            KnownFileFormats.CollisionShapePreset => RecentClsp,
             _ => null,
         };
     }

@@ -282,6 +282,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImGui.Spacing();
         ShowSetting(config.BundleDefaultSaveFullPath, "Save bundle files with full path", "When checked, will always default to saving with the full relative path instead of the root bundle folder when adding new files to the active bundle.");
 
+        ImGui.SeparatorText("Default Bundle Settings");
         var defaults = config.JsonSettings.BundleDefaults;
 
         var str = defaults.Author ?? "";

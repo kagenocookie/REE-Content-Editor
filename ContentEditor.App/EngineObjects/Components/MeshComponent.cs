@@ -1,6 +1,9 @@
+using System.Numerics;
 using ContentEditor.App.Graphics;
+using ContentEditor.App.ImguiHandling;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Mesh;
 using ReeLib.via;
 
 namespace ContentEditor.App;
@@ -9,7 +12,8 @@ namespace ContentEditor.App;
 public class MeshComponent(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data),
     IFixedClassnameComponent,
     IConstructorComponent,
-    IScenePickableComponent
+    IScenePickableComponent,
+    IBoneReferenceHolder
 {
     public static new string Classname => "via.render.Mesh";
 
@@ -27,6 +31,26 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
     public void ComponentInit()
     {
         RszFieldCache.Mesh.PartsEnable.Set(Data, Enumerable.Range(0, 256).Select(_ => (object)true).ToList());
+    }
+
+    public IEnumerable<MeshBone> GetBones() => (MeshHandle as AnimatedMeshHandle)?.Bones?.Bones ?? [];
+
+    public MeshBone? FindBoneByHash(uint hash)
+    {
+        if (MeshHandle is not AnimatedMeshHandle mesh) return null;
+        var bone = mesh.Bones?.GetByHash(hash);
+
+        return bone;
+    }
+
+    public bool TryGetBoneTransform(uint hash, out Matrix4x4 matrix)
+    {
+        if (MeshHandle is not AnimatedMeshHandle mesh)  {
+            matrix = Matrix4x4.Identity;
+            return false;
+        }
+
+        return mesh.TryGetBoneTransform(hash, out matrix);
     }
 
     internal override void OnActivate()

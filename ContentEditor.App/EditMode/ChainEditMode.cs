@@ -14,6 +14,7 @@ public class ChainEditMode : EditModeHandler
 
     private UIContext? filePicker;
     private string filePath = "";
+    private string clspPath = "";
     protected UIContext? context;
 
     protected override void OnTargetChanged(Component? previous)
@@ -40,9 +41,11 @@ public class ChainEditMode : EditModeHandler
             return;
         }
         if (file.Format.format == KnownFileFormats.Chain) {
-            EditorWindow.CurrentWindow!.AddSubwindow(PrimaryEditor = new ChainEditor(Scene.Workspace, file));
+            EditorWindow.CurrentWindow!.AddSubwindow(PrimaryEditor = new ChainEditor(Scene.Workspace, file, component));
         } else if (file.Format.format == KnownFileFormats.Chain2) {
-            EditorWindow.CurrentWindow!.AddSubwindow(PrimaryEditor = new Chain2Editor(Scene.Workspace, file));
+            EditorWindow.CurrentWindow!.AddSubwindow(PrimaryEditor = new Chain2Editor(Scene.Workspace, file, component));
+        } else if (file.Format.format == KnownFileFormats.CollisionShapePreset) {
+            EditorWindow.CurrentWindow!.AddSubwindow(new RawDataEditor(Scene.Workspace, file));
         } else {
             return;
         }
@@ -78,12 +81,37 @@ public class ChainEditMode : EditModeHandler
             }
         }
 
+        if (Scene.Workspace.Env.ComponentAvailable<CollisionShapePreset>()) {
+            var clspPicker = context.GetChild("Clsp File") ?? context.AddChild(
+                "Clsp File",
+                this,
+                new ResourcePathPicker(Scene.Workspace, KnownFileFormats.CollisionShapePreset) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly },
+                (v) => v!.clspPath,
+                (v, p) => v.clspPath = p ?? "");
+            clspPicker.ShowUI();
+            if (settings.RecentClsp.Count > 0) {
+                var options = settings.RecentClsp.ToArray();
+                if (AppImguiHelpers.ShowRecentFiles(settings.RecentClsp, Scene.Workspace.Game, ref clspPath, "Recent CLSP")) {
+                    clspPicker?.ResetState();
+                }
+            }
+        }
+
         if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(filePath, out var file)) {
-            if (ImGui.Button("Open Editor")) {
+            if (ImGui.Button("Open Chain")) {
                 OpenEditor(file);
             }
         } else if (!string.IsNullOrEmpty(filePath)) {
-            ImGui.TextColored(Colors.Warning, "File not found");
+            ImGui.TextColored(Colors.Warning, "Chain file not found");
+        }
+
+        if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(clspPath, out var file2)) {
+            if (file != null) ImGui.SameLine();
+            if (ImGui.Button("Open CLSP")) {
+                OpenEditor(file2);
+            }
+        } else if (!string.IsNullOrEmpty(clspPath)) {
+            ImGui.TextColored(Colors.Warning, "Chain file not found");
         }
     }
 
@@ -105,6 +133,26 @@ public class ChainEditMode : EditModeHandler
             }
         } else {
             comp.ClearOverrideFile();
+        }
+
+        if (Scene.Workspace.Env.ComponentAvailable<CollisionShapePreset>()) {
+            if (!string.IsNullOrEmpty(clspPath)) {
+                Target.GameObject.GetOrAddComponent<CollisionShapePreset>();
+            }
+            var clspComp = Target.GameObject.GetComponent<CollisionShapePreset>();
+
+            if (!string.IsNullOrEmpty(clspPath)) {
+                if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(clspPath, out file)) {
+                    if (clspComp?.CurrentOverrideFile != file.GetFile<ClspFile>()) {
+                        AppConfig.Settings.RecentClsp.AddRecent(Scene.Workspace.Game, clspPath);
+                    }
+                    clspComp?.SetOverrideFile(file.GetFile<ClspFile>());
+                } else {
+                    ImGui.TextColored(Colors.Warning, "CLSP file not found");
+                }
+            } else {
+                clspComp?.ClearOverrideFile();
+            }
         }
     }
 }

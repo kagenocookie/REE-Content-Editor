@@ -411,11 +411,13 @@ public class InstancePickerHandler<T>(bool allowNull, Func<UIContext, bool, IEnu
             restW -= ImGui.CalcTextSize("Remove").X + ImGui.GetStyle().FramePadding.X * 2;
         }
         if (!DisableRefresh) {
+            ImGui.PushID(context.label);
             if (ImGui.Button($"{AppIcons.SI_Update}")) {
                 availableInstances = instanceProvider.Invoke(context, true).ToArray();
                 context.SetStateArray<T>(availableInstances);
             }
             ImguiHelpers.Tooltip("Refresh list"u8);
+            ImGui.PopID();
             restW -= ImGui.CalcTextSize($"{AppIcons.SI_Update}").X + ImGui.GetStyle().FramePadding.X * 2;
             ImGui.SameLine();
         }

@@ -229,7 +229,7 @@ public static class AppImguiHelpers
         }
         if (VirtualClipboard.TryGetFromClipboard<T>(out var newClip) && ImGui.Selectable("Paste (replace)")) {
             UndoRedo.RecordSet(context, newClip.DeepCloneGeneric<T>());
-            context.ClearChildren();
+            UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
             return true;
         }
         return false;
@@ -312,7 +312,7 @@ public static class AppImguiHelpers
         return didDrop;
     }
 
-    public static bool ShowRecentFiles(RecentFileList files, GameIdentifier game, ref string selectedPath)
+    public static bool ShowRecentFiles(RecentFileList files, GameIdentifier game, ref string selectedPath, string label = "Recent Files")
     {
         if (files.Count == 0) {
             return false;
@@ -323,7 +323,7 @@ public static class AppImguiHelpers
         ImGui.SetNextItemAllowOverlap();
         var w = ImGui.CalcItemWidth();
 
-        if (ImguiHelpers.ValueCombo("Recent files", options, options, ref selectedPath)) {
+        if (ImguiHelpers.ValueCombo(label, options, options, ref selectedPath)) {
             selectedPath = selectedPath.GetStringAfterDelimiter('|').ToString();
             files.AddRecent(game, selectedPath);
             return true;
@@ -332,7 +332,7 @@ public static class AppImguiHelpers
         ImGui.SameLine();
         ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMin().X + w - (ImGui.GetFrameHeight() * 2 + ImGui.GetStyle().FramePadding.X), ImGui.GetItemRectMin().Y));
         ImGui.SetNextItemAllowOverlap();
-        if (ImGui.Button($"{AppIcons.SI_GenericClear}")) {
+        if (ImGui.Button($"{AppIcons.SI_BookmarkClear}##{label}")) {
             files.Clear();
             if (!string.IsNullOrEmpty(selectedPath)) {
                 files.AddRecent(game, selectedPath);

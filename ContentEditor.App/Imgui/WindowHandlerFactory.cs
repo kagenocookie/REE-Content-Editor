@@ -354,7 +354,7 @@ public static class WindowHandlerFactory
     }
 
     #region Reflection-based handlers
-    public static bool SetupObjectUIContext(UIContext context, Type? type, bool includePrivate = false, MemberInfo[]? members = null)
+    public static bool SetupObjectUIContext(UIContext context, Type? type, bool includePrivate = false, MemberInfo[]? members = null, Func<MemberInfo, int>? orderFunc = null)
     {
         var instance = context.GetRaw();
         var ws = context.GetWorkspace();
@@ -395,6 +395,13 @@ public static class WindowHandlerFactory
 
                 list.Add(prop);
             }
+
+            if (orderFunc != null) {
+                var remove = list.Where(item => orderFunc.Invoke(item) == -1).ToList();
+                foreach (var rem in remove) list.Remove(rem);
+                list.Sort((a, b) => orderFunc.Invoke(a).CompareTo(orderFunc.Invoke(b)));
+            }
+
             typeMembers[targetType] = members = list.ToArray();
         }
 

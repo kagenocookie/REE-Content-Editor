@@ -347,6 +347,16 @@ public class UIContext
         }
     }
 
+    public void RemoveChild(string name)
+    {
+        foreach (var child in children) {
+            if (child.label == name) {
+                RemoveChild(child);
+                return;
+            }
+        }
+    }
+
     public void RemoveChild(UIContext context)
     {
         children.Remove(context);
