@@ -149,6 +149,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
     private bool isNewMaterialMenu = false;
     private string materialSearch = string.Empty;
     public bool isShowOnlyBookmarkedParams = false;
+    public bool isAlphabetSortParams = false;
     private MaterialData? draggedMat;
 
     private Dictionary<string, HashSet<string>>? _exportTextures;
@@ -327,7 +328,11 @@ public class MdfFileImguiHandler : IObjectUIHandler
                 context.children.Clear();
             }
             if (context.children.Count == 0 || context.children[0].label != label) {
-                context.AddChild(label, mat, getter: (c) => (object)getter(c)!).AddDefaultHandler<T>();
+                if (label == "Parameters") {
+                    context.AddChild(label, mat, getter: c => isAlphabetSortParams ? mat.Parameters.OrderBy(p => p.paramName, StringComparer.OrdinalIgnoreCase).ToList() : mat.Parameters).AddDefaultHandler<T>();
+                } else {
+                    context.AddChild(label, mat, getter: (c) => (object)getter(c)!).AddDefaultHandler<T>();
+                }
             }
             if (label == "Parameters") {
                 ShowMaterialParameterToolbar(context);
@@ -397,6 +402,12 @@ public class MdfFileImguiHandler : IObjectUIHandler
                 }
                 ImGui.EndPopup();
             }
+        }
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator();
+        ImGui.SameLine();
+        if (ImguiHelpers.ToggleButton("A>Z", ref isAlphabetSortParams, Colors.IconActive)) {
+            context.children.Clear();
         }
     }
     private class EMVMaterialJson
