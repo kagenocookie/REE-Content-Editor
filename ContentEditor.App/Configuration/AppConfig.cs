@@ -249,7 +249,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<KeyBinding> Key_Scene_FocusUI = new SettingWrapper<KeyBinding>(Keys.Key_Scene_FocusUI, _lock, new KeyBinding(ImGuiKey.F, shift: true));
     public readonly SettingWrapper<KeyBinding> Key_Scene_Delete = new SettingWrapper<KeyBinding>(Keys.Key_Scene_Delete, _lock, new KeyBinding(ImGuiKey.Delete));
 
-    public string ConfigBasePath => GameConfigBaseFilepath.Get() ?? "configs";
+    public string ConfigBasePath => GameConfigBaseFilepath.Get() ?? Path.Combine(AppContext.BaseDirectory, "configs");
 
     public AppJsonSettings JsonSettings { get; private set; } = new();
 
