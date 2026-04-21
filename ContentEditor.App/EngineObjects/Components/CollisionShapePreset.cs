@@ -104,7 +104,7 @@ public class CollisionShapePreset(GameObject gameObject, RszInstance data) : Com
         gizmo.PushMaterial(activeMaterial, obscuredMaterial);
         foreach (var clsp in displayFiles) {
             foreach (var preset in clsp.Presets) {
-                switch (preset.shapeType) {
+                switch (preset.ShapeType) {
                     case ReeLib.Clsp.CollisionShapeType.Capsule: {
                             if (preset.hash1 == 0 || preset.hash2 == 0) {
                                 break;

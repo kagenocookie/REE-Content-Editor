@@ -47,7 +47,7 @@ public static class UIContextExtensions
 
     public static IWindowHandler? GetWindowHandler(this UIContext context)
     {
-        return context.Cast<IWindowHandler>() ?? context.parent?.GetWindowHandler();
+        return context.FindValueInParentValues<WindowData>()?.Handler as IWindowHandler;
     }
 
     public static T? FindValueInParentValues<T>(this UIContext context) where T : class

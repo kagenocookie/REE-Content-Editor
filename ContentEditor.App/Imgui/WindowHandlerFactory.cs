@@ -315,6 +315,8 @@ public static class WindowHandlerFactory
                 return new ChainEditor(env, file);
             case KnownFileFormats.Chain2:
                 return new Chain2Editor(env, file);
+            case KnownFileFormats.CollisionShapePreset:
+                return new ClspEditor(env, file);
         }
 
         if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {
@@ -354,6 +356,11 @@ public static class WindowHandlerFactory
     }
 
     #region Reflection-based handlers
+
+    /// <summary>
+    /// Setup the UI context children for all fields in the given type based on C# type reflection.
+    /// This method will never attempt to use any predefined handlers for the direct given type, always uses reflection to get the base field set unless specified by caller.
+    /// </summary>
     public static bool SetupObjectUIContext(UIContext context, Type? type, bool includePrivate = false, MemberInfo[]? members = null, Func<MemberInfo, int>? orderFunc = null)
     {
         var instance = context.GetRaw();
