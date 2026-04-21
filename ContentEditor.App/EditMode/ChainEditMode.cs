@@ -45,7 +45,7 @@ public class ChainEditMode : EditModeHandler
         } else if (file.Format.format == KnownFileFormats.Chain2) {
             EditorWindow.CurrentWindow!.AddSubwindow(PrimaryEditor = new Chain2Editor(Scene.Workspace, file, component));
         } else if (file.Format.format == KnownFileFormats.CollisionShapePreset) {
-            EditorWindow.CurrentWindow!.AddSubwindow(new RawDataEditor(Scene.Workspace, file));
+            EditorWindow.CurrentWindow!.AddSubwindow(new ClspEditor(Scene.Workspace, file, component));
         } else {
             return;
         }

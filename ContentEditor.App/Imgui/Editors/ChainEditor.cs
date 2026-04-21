@@ -208,7 +208,7 @@ public class ChainGroupHandler : IObjectUIHandler
         if (context.children.Count == 0) {
 
             var boneHandler1 = new BoneNameHandler(c => c.parent!.Get<ChainGroupBase>().terminalNameHash, (c, v) => c.parent!.Get<ChainGroupBase>().terminalNameHash = v);
-            context.AddChild("Node 1", group, boneHandler1, c => c!.name, (c, v) => c.name = v ?? "");
+            context.AddChild("Terminal Node", group, boneHandler1, c => c!.name, (c, v) => c.name = v ?? "");
 
             var settingList = new InstancePickerHandler<ChainSettingBase>(false, (c, force) => {
                 var editor = c.FindHandlerInParents<ChainEditorBase>();
@@ -230,15 +230,16 @@ public class ChainGroupHandler : IObjectUIHandler
             }
 
             WindowHandlerFactory.SetupObjectUIContext(context, group.GetType(), false, orderFunc: (member) => {
-                if (member.Name == nameof(ChainGroup.name)) return -1;
+                // kinda hacky but still more convenient than manually whitelisting all 30 fields
                 var fieldType = (member as FieldInfo)?.FieldType ?? (member as PropertyInfo)?.PropertyType;
                 if (fieldType == null) return 99;
                 if (fieldType.IsAssignableTo(typeof(ChainSettingBase))) return -1;
                 if (fieldType == typeof(WindSetting)) return -1;
                 if (fieldType.IsAssignableTo(typeof(IEnumerable<ChainNodeBase>))) return -1;
                 switch (member.Name) {
+                    case nameof(ChainGroup.name):
+                    case nameof(ChainGroup.terminalNameHash): return -1;
                     case nameof(Chain2Group.ChainSubGroups): return 3;
-                    case nameof(ChainGroup.terminalNameHash): return 4;
                     case nameof(ChainGroup.clspFlags1): return 5;
                     case nameof(ChainGroup.clspFlags2): return 6;
                     default: return 99;
@@ -522,13 +523,12 @@ public class BoneHashHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
-        var bones = context.FindHandlerInParents<IBoneReferenceHolder>();
+        ImGui.PushID(context.label);
+        var bones = context.GetWindowHandler() as IBoneReferenceHolder;
         if (bones != null && bones.GetBones().Any()) {
             var width = ImGui.CalcItemWidth();
-            ImGui.PushID(context.label);
             var forceRefreshList = ImGui.Button($"{AppIcons.SI_Update}");
             ImguiHelpers.Tooltip("Refresh list"u8);
-            ImGui.PopID();
             width -= ImGui.CalcTextSize($"{AppIcons.SI_Update}").X + ImGui.GetStyle().FramePadding.X * 2;
 
             ImGui.SameLine();
@@ -554,5 +554,6 @@ public class BoneHashHandler : IObjectUIHandler
         }
 
         NumericFieldHandler<uint>.UIntInstance.OnIMGUI(context);
+        ImGui.PopID();
     }
 }

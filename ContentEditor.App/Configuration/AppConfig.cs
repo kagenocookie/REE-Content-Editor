@@ -259,7 +259,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<KeyBinding> Key_UVS_IncreaseSpeed = new SettingWrapper<KeyBinding>(Keys.Key_UVS_IncreaseSpeed, _lock, new KeyBinding(ImGuiKey.UpArrow));
     public readonly SettingWrapper<KeyBinding> Key_UVS_DecreaseSpeed = new SettingWrapper<KeyBinding>(Keys.Key_UVS_DecreaseSpeed, _lock, new KeyBinding(ImGuiKey.DownArrow));
 
-    public string ConfigBasePath => GameConfigBaseFilepath.Get() ?? "configs";
+    public string ConfigBasePath => GameConfigBaseFilepath.Get() ?? Path.Combine(AppContext.BaseDirectory, "configs");
 
     public AppJsonSettings JsonSettings { get; private set; } = new();
 

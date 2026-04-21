@@ -145,6 +145,7 @@ public class UIContext
     }
     public UIContext? GetChild<T>() where T : IObjectUIHandler => children.FirstOrDefault(ch => ch.uiHandler is T);
     public UIContext? GetChildByValue<T>() => children.FirstOrDefault(ch => ch.GetRaw() is T);
+    public UIContext? GetChildByValue(object? value) => children.FirstOrDefault(ch => ch.GetRaw()?.Equals(value) == true);
     public T? GetChildValue<T>() => (T?)children.FirstOrDefault(ch => ch.target is T)?.target;
     public T? GetChildHandler<T>() => (T?)children.FirstOrDefault(ch => ch.uiHandler is T)?.uiHandler;
     public UIContext? FindNestedChildByHandler<T>() where T : class, IObjectUIHandler => children.Select(ch => (ch.uiHandler is T ? ch : ch.FindNestedChildByHandler<T>())).FirstOrDefault(cc => cc != null);
