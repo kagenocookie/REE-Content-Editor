@@ -38,7 +38,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
     private readonly int[] fpsOptions = new[] { 60, 30, 15, 5, 1 };
     private int selectedFpsIDX = 0;
     private float playbackFps => fpsOptions[selectedFpsIDX];
-    private int? draggedPatternIDX;
+    private int? dragPatternIDX;
     private int? dragTargetIDX;
     private bool isDraggingPattern;
     protected override void OnFileSaved()
@@ -158,7 +158,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         var workspace = context.GetWorkspace();
         var sequence = selectedSequenceIndex >= 0 && selectedSequenceIndex < File.Sequences.Count ? File.Sequences[selectedSequenceIndex] : null;
         this.selectedSequence = sequence;
-        float minW = 450f * UI.UIScale;
+        float minW = 300f * UI.UIScale;
 
         ImGui.Separator();
         ImGui.Spacing();
@@ -280,6 +280,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         var seqlist = Enumerable.Range(0, File.Sequences.Count).Select(n => $"  {n}  ").ToArray();
         if (ImguiHelpers.Tabs(seqlist, ref selectedSequenceIndex, true, "Sequences:")) {
             selectedPattern = null;
+            shouldAnimate = false;
         }
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
@@ -328,12 +329,19 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
     private unsafe void ShowTimeline(SequenceBlock sequence)
     {
         ImGui.SeparatorText("Timeline");
-        ImguiHelpers.ToggleButton($"{AppIcons.Play}", ref shouldAnimate, Colors.IconActive);
-        ImguiHelpers.Tooltip("Animate"u8);
-        ImGui.SameLine();
         int frameCount = sequence.patternCount;
         if (frameCount > 0) {
             animationFrame = Math.Clamp(animationFrame, 0, frameCount - 1);
+        } else {
+            animationFrame = 0;
+        }
+        using (var _ = ImguiHelpers.Disabled(frameCount == 0)) {
+            ImguiHelpers.ToggleButton($"{AppIcons.Play}", ref shouldAnimate, Colors.IconActive);
+            if (shouldAnimate && selectedPattern == null) {
+                selectedPattern = sequence.patterns[0];
+            }
+            ImguiHelpers.Tooltip("Animate"u8);
+            ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.Previous}")) {
                 animationFrame = (animationFrame - 1 + frameCount) % frameCount;
                 shouldAnimate = false;
@@ -368,13 +376,18 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         ImGui.Spacing();
         for (int i = 0; i < sequence.patterns.Count; i++) {
             var pattern = sequence.patterns[i];
+            float patternW = 30;
             var texPath = File.Textures[sequence.patterns[0].textureIndex].path;
             var tex = GetOrLoadTexture(texPath);
-
+            
             ImGui.PushID(i);
-            if (i > 0) ImGui.SameLine(); // TODO SILVER: Proper wrapping
+            if (i > 0) {
+                if (ImGui.GetItemRectMax().X + ImGui.GetStyle().ItemSpacing.X + patternW < ImGui.GetWindowPos().X + ImGui.GetContentRegionAvail().X) {
+                    ImGui.SameLine();
+                }
+            }
 
-            var size = new Vector2(30, 30);
+            var size = new Vector2(patternW, patternW);
             var cursor = ImGui.GetCursorScreenPos();
             var drawList = ImGui.GetWindowDrawList();
 
@@ -393,19 +406,25 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             }
             if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.PayloadNoCrossContext | ImGuiDragDropFlags.PayloadNoCrossProcess | ImGuiDragDropFlags.SourceNoPreviewTooltip)) {
                 if (!isDraggingPattern) {
-                    draggedPatternIDX = i;
+                    dragPatternIDX = i;
                     dragTargetIDX = i;
                     isDraggingPattern = true;
                 }
                 ImGui.SetDragDropPayload("PATTERN"u8, null, 0);
                 ImGui.BeginTooltip();
-                ImGui.Text($"Pattern {draggedPatternIDX}");
+                ImGui.Text($"Pattern {dragPatternIDX}");
                 ImGui.EndTooltip();
                 ImGui.EndDragDropSource();
             }
 
-            if (isDraggingPattern && draggedPatternIDX.HasValue && ImGui.BeginDragDropTarget()) {
-                dragTargetIDX = i;
+            if (isDraggingPattern && dragPatternIDX.HasValue && ImGui.BeginDragDropTarget()) {
+                bool isLast = i == sequence.patterns.Count - 1;
+                if (isLast && ImGui.IsMouseHoveringRect(cursor, cursor + size)) { // SILVER: To avoid drawing a dummy rect at the end we can just do this instead
+                    dragTargetIDX = sequence.patterns.Count;
+                } else {
+                    dragTargetIDX = i;
+                }
+
                 ImGui.EndDragDropTarget();
             }
 
@@ -419,11 +438,11 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         }
 
         if (isDraggingPattern && !ImGui.IsMouseDown(ImGuiMouseButton.Left)) {
-            if (draggedPatternIDX.HasValue && dragTargetIDX.HasValue) {
-                ReorderTimelinePattern(sequence, draggedPatternIDX.Value, dragTargetIDX.Value);
+            if (dragPatternIDX.HasValue && dragTargetIDX.HasValue) {
+                ReorderTimelinePattern(sequence, dragPatternIDX.Value, dragTargetIDX.Value);
             }
 
-            draggedPatternIDX = null;
+            dragPatternIDX = null;
             dragTargetIDX = null;
             isDraggingPattern = false;
         }
