@@ -35,8 +35,8 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
     private int animationFrame;
     private float animationTime;
     private Vector4 animationColor = new Vector4(1, 1, 1, 1);
-    private readonly int[] fpsOptions = new[] { 60, 30, 15, 5, 1 };
-    private int selectedFpsIDX = 0;
+    private readonly int[] fpsOptions = new[] { 1, 12, 24, 30, 60 };
+    private int selectedFpsIDX = 4;
     private float playbackFps => fpsOptions[selectedFpsIDX];
     private int? dragPatternIDX;
     private int? dragTargetIDX;
@@ -158,7 +158,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         var workspace = context.GetWorkspace();
         var sequence = selectedSequenceIndex >= 0 && selectedSequenceIndex < File.Sequences.Count ? File.Sequences[selectedSequenceIndex] : null;
         this.selectedSequence = sequence;
-        float minW = 300f * UI.UIScale;
+        float minW = 350 * UI.UIScale;
 
         ImGui.Separator();
         ImGui.Spacing();
@@ -198,6 +198,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconSecondary);
             if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
                 UndoRedo.RecordListAdd(context, sequence.patterns, new UvsPattern());
+                sequence.patternCount = sequence.patterns.Count;
             }
             ImGui.PopStyleColor();
             ImguiHelpers.Tooltip("Add pattern");
@@ -337,26 +338,37 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         }
         using (var _ = ImguiHelpers.Disabled(frameCount == 0)) {
             ImguiHelpers.ToggleButton($"{AppIcons.Play}", ref shouldAnimate, Colors.IconActive);
+            if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_UVS_Pause.Get().IsPressed()) {
+                shouldAnimate = !shouldAnimate;
+            }
             if (shouldAnimate && selectedPattern == null) {
                 selectedPattern = sequence.patterns[0];
             }
             ImguiHelpers.Tooltip("Animate"u8);
             ImGui.SameLine();
-            if (ImGui.Button($"{AppIcons.Previous}")) {
+            if (ImGui.Button($"{AppIcons.Previous}") || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_UVS_PrevPattern.Get().IsPressed()) {
                 animationFrame = (animationFrame - 1 + frameCount) % frameCount;
                 shouldAnimate = false;
             }
-            ImguiHelpers.Tooltip("Previous frame"u8);
+            ImguiHelpers.Tooltip("Previous pattern"u8);
             ImGui.SameLine();
-            if (ImGui.Button($"{AppIcons.Next}")) {
+            if (ImGui.Button($"{AppIcons.Next}") || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_UVS_NextPattern.Get().IsPressed()) {
                 animationFrame = (animationFrame + 1) % frameCount;
                 shouldAnimate = false;
             }
-            ImguiHelpers.Tooltip("Next frame"u8);
+            ImguiHelpers.Tooltip("Next pattern"u8);
             ImGui.SameLine();
             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 75 - ImGui.CalcTextSize("FPS").X - ImGui.GetStyle().FramePadding.X * 3);
             if (ImGui.SliderInt("##Frame", ref animationFrame, 0, frameCount - 1)) {
                 shouldAnimate = false;
+            }
+            if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)) {
+                if (AppConfig.Instance.Key_UVS_IncreaseSpeed.Get().IsPressed() && selectedFpsIDX < fpsOptions.Length - 1) {
+                    selectedFpsIDX++;
+                }
+                if (AppConfig.Instance.Key_UVS_DecreaseSpeed.Get().IsPressed() && selectedFpsIDX > 0) {
+                    selectedFpsIDX--;
+                }
             }
             ImGui.SameLine();
             ImGui.SetNextItemWidth(75f);

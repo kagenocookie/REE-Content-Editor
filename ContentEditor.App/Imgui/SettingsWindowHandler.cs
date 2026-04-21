@@ -35,6 +35,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         Hotkeys_MeshViewer,
         Hotkeys_TextureViewer,
         Hotkeys_Scene,
+        Hotkeys_UVSEditor,
         Games_ResidentEvil,
         Games_MonsterHunter,
         Games_Other,
@@ -70,6 +71,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                 new SettingSubGroup { Name = "Scene", ID = SubGroupID.Hotkeys_Scene},
                 new SettingSubGroup { Name = "Mesh Viewer", ID = SubGroupID.Hotkeys_MeshViewer},
                 new SettingSubGroup { Name = "Texture Viewer", ID = SubGroupID.Hotkeys_TextureViewer},
+                new SettingSubGroup { Name = "UVS Editor", ID = SubGroupID.Hotkeys_UVSEditor},
             }
         },
         new SettingGroup { Name = "Games", SubGroups = {
@@ -194,6 +196,9 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                             break;
                         case SubGroupID.Hotkeys_Scene:
                             ShowHotkeysSceneTab();
+                            break;
+                        case SubGroupID.Hotkeys_UVSEditor:
+                            ShowHotkeysUVSEditorTab();
                             break;
                         case SubGroupID.Games_ResidentEvil:
                             ShowGamesResidentEvilTab();
@@ -413,6 +418,15 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImguiKeybinding("Hide Selected", config.Key_Scene_Hide);
         ImguiKeybinding("Unhide All", config.Key_Scene_UnhideAll);
         ImguiKeybinding("Delete Selected", config.Key_Scene_Delete);
+    }
+    private void ShowHotkeysUVSEditorTab()
+    {
+        ImGui.Spacing();
+        ImguiKeybinding("Pause/Play", config.Key_UVS_Pause);
+        ImguiKeybinding("Next Pattern", config.Key_UVS_NextPattern);
+        ImguiKeybinding("Previous Pattern", config.Key_UVS_PrevPattern);
+        ImguiKeybinding("Increase Playback Speed", config.Key_UVS_IncreaseSpeed);
+        ImguiKeybinding("Decrease Playback Speed", config.Key_UVS_DecreaseSpeed);
     }
 
     private static void ShowGamesResidentEvilTab()
