@@ -28,19 +28,6 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         windowFlags = ImGuiWindowFlags.HorizontalScrollbar;
     }
 
-    private bool shouldAnimate;
-    private UvsPattern? selectedPattern;
-    private SequenceBlock? selectedSequence;
-    private int selectedSequenceIndex = 0;
-    private int animationFrame;
-    private float animationTime;
-    private Vector4 animationColor = new Vector4(1, 1, 1, 1);
-    private readonly int[] fpsOptions = new[] { 1, 12, 24, 30, 60 };
-    private int selectedFpsIDX = 4;
-    private float playbackFps => fpsOptions[selectedFpsIDX];
-    private int? dragPatternIDX;
-    private int? dragTargetIDX;
-    private bool isDraggingPattern;
     protected override void OnFileSaved()
     {
         base.OnFileSaved();
@@ -64,6 +51,19 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
     }
 
     private record struct IndexedItem(MessageEntry entry, int index);
+    private bool shouldAnimate;
+    private UvsPattern? selectedPattern;
+    private SequenceBlock? selectedSequence;
+    private int selectedSequenceIndex = 0;
+    private int animationFrame;
+    private float animationTime;
+    private Vector4 animationColor = new Vector4(1, 1, 1, 1);
+    private readonly int[] fpsOptions = new[] { 1, 12, 24, 30, 60 };
+    private int selectedFpsIDX = 4;
+    private float playbackFps => fpsOptions[selectedFpsIDX];
+    private int? dragPatternIDX;
+    private int? dragTargetIDX;
+    private bool isDraggingPattern;
 
     [StructLayout(LayoutKind.Sequential)]
     private class SequencePatternArrangementHelper()
@@ -322,9 +322,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
                 EditorWindow.CurrentWindow?.AddSubwindow(new TextureViewer(workspace, texHandle));
             }
         }
-        ImguiHelpers.Tooltip("Open Texture"u8);
-        ImGui.SameLine();
-        ImGui.Text(texPath);
+        ImguiHelpers.Tooltip($"Open Texture - {texPath}");
     }
 
     private unsafe void ShowTimeline(SequenceBlock sequence)
