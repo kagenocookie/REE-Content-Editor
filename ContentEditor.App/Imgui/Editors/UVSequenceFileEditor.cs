@@ -427,9 +427,9 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
                 ImGui.EndDragDropSource();
             }
 
+            bool isLast = i == sequence.patterns.Count - 1;
             if (isDraggingPattern && dragPatternIDX.HasValue && ImGui.BeginDragDropTarget()) {
-                bool isLast = i == sequence.patterns.Count - 1;
-                if (isLast && ImGui.IsMouseHoveringRect(cursor, cursor + size)) { // SILVER: To avoid drawing a dummy rect at the end we can just do this instead
+                if (isLast && ImGui.IsMouseHoveringRect(cursor, cursor + size)) {
                     dragTargetIDX = sequence.patterns.Count;
                 } else {
                     dragTargetIDX = i;
@@ -441,8 +441,9 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             bool isActive = i == animationFrame;
             var borderColor = isActive ? Colors.IconActive : ImguiHelpers.GetColor(ImGuiCol.Border);
             drawList.AddRect(cursor, cursor + size, borderColor.ToArgb(), 0f, 0, isActive ? 2f : 1f);
-            if (isDraggingPattern && dragTargetIDX == i) {
-                drawList.AddLine(new Vector2(cursor.X - 2, cursor.Y), new Vector2(cursor.X - 2, cursor.Y + size.Y), Colors.IconActive.ToArgb(), 2f);
+            if (isDraggingPattern && (dragTargetIDX == i || (isLast && dragTargetIDX == sequence.patterns.Count))) {
+                float lineX = (dragTargetIDX == sequence.patterns.Count) ? cursor.X + size.X + 2 : cursor.X - 2;
+                drawList.AddLine(new Vector2(lineX, cursor.Y), new Vector2(lineX, cursor.Y + size.Y), Colors.IconActive.ToArgb(), 2f);
             }
             ImGui.PopID();
         }
