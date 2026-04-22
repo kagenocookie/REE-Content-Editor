@@ -215,9 +215,6 @@ public class InstanceTypePickerHandler<T>(Type?[] classOptions, Func<UIContext, 
                     newInstance = factory.Invoke(context, chosenType);
                 }
                 UndoRedo.RecordSet(context, newInstance, mergeMode: UndoRedoMergeMode.NeverMerge);
-                if (innerHandler != null) {
-                    UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
-                }
             }
 
             ImGui.SameLine();

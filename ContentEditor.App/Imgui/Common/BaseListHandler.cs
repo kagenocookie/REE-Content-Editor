@@ -39,7 +39,7 @@ public class BaseListHandler : IObjectUIHandler
         if (list == null) {
             ImGui.Text(context.label + ": NULL");
             if (containerType != null && ImguiHelpers.SameLine() && ImGui.Button("Create")) {
-                context.Set(CreateNewListInstance());
+                UndoRedo.RecordSet(context, CreateNewListInstance());
             }
             return;
         }
@@ -243,7 +243,6 @@ public class ResizableArrayHandler : BaseListHandler
         list.CopyTo(newArray, 0);
         newArray.SetValue(newInstance, list.Count);
         UndoRedo.RecordSet(context, newArray, mergeMode: UndoRedoMergeMode.NeverMerge);
-        context.ClearChildren();
     }
 
     protected override void RemoveFromList(UIContext context, IList list, int i)
@@ -258,6 +257,5 @@ public class ResizableArrayHandler : BaseListHandler
         }
 
         UndoRedo.RecordSet(context, newArray, mergeMode: UndoRedoMergeMode.NeverMerge);
-        context.ClearChildren();
     }
 }

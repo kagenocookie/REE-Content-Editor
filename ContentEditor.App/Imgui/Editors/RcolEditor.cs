@@ -186,7 +186,6 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
                         var clone = newSet.Clone(!groupExists);
                         if (!groupExists) rcol?.Groups.Add(clone.Group!);
                         UndoRedo.RecordSet(context, clone);
-                        UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
                         UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Do, () => {
                             if (editor?.Inspector.PrimaryTarget == item) {
                                 editor.Inspector.SetPrimaryInspector(clone);

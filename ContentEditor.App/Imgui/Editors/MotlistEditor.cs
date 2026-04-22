@@ -702,7 +702,6 @@ public class MotBoneHandler : IObjectUIHandler
                     var clone = newClip.Clone();
                     clone.Parent = instance.Parent;
                     UndoRedo.RecordSet(boneCtx, clone);
-                    UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, boneCtx);
                 }
             }
             ImGui.EndPopup();

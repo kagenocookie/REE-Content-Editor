@@ -22,6 +22,7 @@ public class Chain(GameObject gameObject, RszInstance data) : Component(gameObje
     private Material obscuredMaterial = null!;
     private Material inactiveCollisionMaterial = null!;
     private Material obscuredCollisionMaterial = null!;
+    private Material limitsMaterial = null!;
 
     private BaseFile? overrideFile;
     public BaseFile? CurrentFile => overrideFile;
@@ -76,12 +77,14 @@ public class Chain(GameObject gameObject, RszInstance data) : Component(gameObje
             activeMaterial = mat.Blend().Create("chain_active");
 
             (inactiveMaterial, obscuredMaterial) = mat.Blend().Create2("chain", "chain_obscured");
-            obscuredMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.FileTypeCHAIN) with { A = 95 });
-            inactiveMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.FileTypeCHAIN) with { A = 45 });
+            obscuredMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.Gizmo_Chain_Node) with { A = 95 });
+            inactiveMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.Gizmo_Chain_Node) with { A = 45 });
 
             (inactiveCollisionMaterial, obscuredCollisionMaterial) = mat.Blend().Create2("chain_coll", "chain_coll_obscured");
-            inactiveCollisionMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.Default) with { A = 200 });
-            obscuredCollisionMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.Default) with { A = 100 });
+            inactiveCollisionMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.Gizmo_Chain_Collision) with { A = 200 });
+            obscuredCollisionMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.Gizmo_Chain_Collision) with { A = 100 });
+
+            limitsMaterial = mat.Blend().Color("_MainColor", Color.FromVector4(Colors.Gizmo_Chain_Limits)).Create("chain_limits");
         }
 
         var parentMesh = GameObject.GetComponent<MeshComponent>()?.MeshHandle as AnimatedMeshHandle;
@@ -104,6 +107,8 @@ public class Chain(GameObject gameObject, RszInstance data) : Component(gameObje
         List<MeshBone> jointChain = new();
         foreach (var group in groups) {
             // var settings = (group as ChainGroup)?.Settings as ChainSettingBase ?? (group as Chain2Group)?.Settings;
+            if (activeGroup != null && activeGroup != group) continue;
+
             var endJoint = parentMesh.Bones.GetByHash(group.terminalNameHash);
             if (endJoint == null) continue;
             var nodeCount = group.ChainNodes.Count();
@@ -130,13 +135,34 @@ public class Chain(GameObject gameObject, RszInstance data) : Component(gameObje
                 }
                 parentMesh.TryGetBoneTransform(bone.Parent?.name ?? "------", out var parentBoneTransform);
 
+                var parentOrigin = (parentBoneTransform * transform).Translation;
+                var origin = (boneTransform * transform).Translation;
                 switch (node.collisionShape) {
                     case ChainNodeCollisionShape.Capsule:
                     case ChainNodeCollisionShape.StretchCapsule:
-                        gizmo.Cur.Add(new Capsule((boneTransform * transform).Translation, (parentBoneTransform * transform).Translation, node.collisionRadius));
+                        gizmo.Cur.Add(new Capsule(origin, (parentBoneTransform * transform).Translation, node.collisionRadius));
                         break;
                     case ChainNodeCollisionShape.Sphere:
-                        gizmo.Cur.Add(new Sphere((boneTransform * transform).Translation, node.collisionRadius));
+                        gizmo.Cur.Add(new Sphere(origin, node.collisionRadius));
+                        break;
+                }
+
+                switch (node.angleMode) {
+                    case AngleMode.LimitCone:
+                        if (node.angleLimitRadius > 0 && node.angleLimitRadius < 1.45f) {
+                            if (!parentMesh.TryGetBoneTransform(bone.Children.FirstOrDefault()?.name ?? "------", out var childTransform)) {
+                                childTransform = Matrix4x4.CreateTranslation(origin + (origin - parentOrigin));
+                            }
+                            var childOrigin = childTransform.Translation;
+                            gizmo.PushMaterial(limitsMaterial);
+                            var dir = (childOrigin - origin);
+                            var limitDir = Vector3.Normalize(Vector3.Transform(Vector3.UnitX, node.angleLimitDirection));
+                            // var limitDir = Vector3.Normalize(Vector3.Transform(dir, node.angleLimitDirection));
+                            var dist = dir.Length();
+                            var endConeRadius = MathF.Tan(node.angleLimitRadius) * dist;
+                            gizmo.Cur.Add(new Cone(origin, 0.0001f, origin + limitDir * dist, endConeRadius));
+                            gizmo.PopMaterial();
+                        }
                         break;
                 }
             }
@@ -162,7 +188,7 @@ public class Chain(GameObject gameObject, RszInstance data) : Component(gameObje
                         gizmo.Cur.Add(new Capsule(p1, p2, coll.radius));
                     }
                     break;
-                case ChainCollisionShape.Sphere:{
+                case ChainCollisionShape.Sphere: {
                         if (coll.jointNameHash == 0) {
                             break;
                         }

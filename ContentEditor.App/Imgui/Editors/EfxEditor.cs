@@ -233,7 +233,6 @@ public class EfxEntriesListEditorBase<TType> : DictionaryListImguiHandler<string
                         var clone = pasteSource.DeepCloneGeneric<TType>();
                         clone.name = item.name;
                         UndoRedo.RecordSet(itemContext, clone);
-                        itemContext.ClearChildren();
                         itemContext.parent.FindHandlerInParents<EfxEditor>()?.Inspector.SetPrimaryInspector(clone);
                         ImGui.CloseCurrentPopup();
                     }

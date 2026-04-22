@@ -374,10 +374,12 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             }
             foreach (var ctx in ctxGroup) {
                 if (ImGui.BeginMenu(ctx.Animator != null && ctx.Animator?.ActiveOwner == null ? $"{ctx.ShortName} *###{ctx.ShortName}" : $"{ctx.ShortName}###{ctx.ShortName}")) {
-                    if (ctx != meshContexts[0] && ImGui.Selectable($"{AppIcons.SI_GenericDelete} Remove", ImGuiSelectableFlags.NoAutoClosePopups)) {
-                        RemoveSubmesh(ctx);
-                        ImGui.EndMenu();
-                        break;
+                    if (ctx != meshContexts[0]) {
+                        if (ImGui.Selectable($"{AppIcons.SI_GenericDelete} Remove", ImGuiSelectableFlags.NoAutoClosePopups)) {
+                            RemoveSubmesh(ctx);
+                            ImGui.EndMenu();
+                            break;
+                        }
                     }
                     if (ImGui.BeginMenu($"{AppIcons.SI_GenericInfo} Info")) {
                         ShowMeshInfo(ctx, false);
@@ -452,13 +454,12 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
         ImGui.SeparatorText("Manage Collection");
         if (ImGui.Selectable($"{AppIcons.SI_Save} Save collection")) {
-            var arr = new List<MeshCollectionItem>();
-            foreach (var c in meshContexts) arr.Add(c.ToJson(meshContexts));
+            var collection = GetSerializedCollection();
             var collectionsDir = Path.Combine(AppConfig.Instance.GetGameUserPath(Workspace.Game), "mesh_collections");
             Directory.CreateDirectory(collectionsDir);
             PlatformUtils.ShowSaveFileDialog((path) => {
                 using var fs = File.Create(path);
-                JsonSerializer.Serialize(fs, new MeshCollection(arr), JsonConfig.configJsonOptions);
+                JsonSerializer.Serialize(fs, collection, JsonConfig.configJsonOptions);
             }, Path.Combine(collectionsDir, Handle.Filename.ToString() + ".collection.json"), FileFilters.CollectionJsonFile);
         }
         if (ImGui.Selectable($"{AppIcons.SI_GenericImport} Load collection")) {
@@ -474,6 +475,13 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 RemoveSubmesh(meshContexts.Last());
             }
         }
+    }
+
+    private MeshCollection GetSerializedCollection()
+    {
+        var arr = new List<MeshCollectionItem>();
+        foreach (var c in meshContexts) arr.Add(c.ToJson(meshContexts));
+        return new MeshCollection(arr);
     }
 
     public void LoadCollection(string file)
@@ -1663,6 +1671,9 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             tr.ShowUI();
         } else {
             var tr = owner.UI.GetChild("Transform") ?? owner.UI.AddChild("Transform", owner.GameObject.Transform);
+            if (tr.uiHandler == null) {
+                WindowHandlerFactory.AddDefaultHandler<Transform>(tr);
+            }
             ImGui.SetNextItemOpen(true, ImGuiCond.Always);
             tr.ShowUI();
         }
