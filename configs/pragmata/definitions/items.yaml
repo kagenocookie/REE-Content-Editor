@@ -9,4 +9,8 @@ classes:
   app.PropCatalogUserData.PropPrefabData:
     to_string: "Prop Prefab: {_PropIDHash} | {_Prefab.Path}"
   app.GUIWeaponCatalog.GUIWeaponCatalogData:
-    to_string: "GUIWeaponCatalogData: {_ID.Hash:enum(ce.WeaponDefine)}"
+    to_string: "GUIWeaponCatalogData {_ID.Hash:enum(ce.WeaponDefine)}"
+  app.WeaponCatalogUserData.WeaponPrefabData:
+    to_string: "Weapon Prefab {_WeaponID.Hash:enum(ce.WeaponDefine)}"
+  app.DisplayedItemCatalog.DisplayedItemData:
+    to_string: "Displayed Item {_ItemID.Hash:enum(ce.ItemDefine)} | {_Prefab.Path}"

@@ -1,0 +1,13 @@
+classes:
+  app.FigureDescriptionUserData.FigureDescriptionUnit:
+    to_string: "Figure Description {_FigureNameText._MessageId:translate()} [{_ID._TypeSelectHash}]"
+  app.FigureIDSelector:
+    to_string: "Figure ID Selector [{_TypeSelectHash}]"
+  app.CostumeUserdata.Unit:
+    to_string: "Costume Data {NameText._MessageId:translate()} [{ID.Hash}]"
+  app.TextMessageData:
+    to_string: "Text Message: {_MessageId:translate()}"
+  app.ShellCatalogUserData.Data:
+    to_string: "Shell Data [{_ShellID.Hash}]"
+  app.FirstGetInfoCatalogUserData.Data:
+    to_string: "First Get Info {_ID.Hash:enum(ce.ObjectDefine)} | {_Info._Data?[0]?._Header?._MessageId:translate()}"

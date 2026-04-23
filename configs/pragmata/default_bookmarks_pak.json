@@ -61,7 +61,7 @@
       "Tags": [
         "Character"
       ],
-      "Comment": "Delphi Scientist"
+      "Comment": "Dr. Higgins"
     },
     {
       "Path": "natives/stm/character/ch/ch08/ch0800",
@@ -148,11 +148,32 @@
       "Comment": "Space Shuttle (Damaged)"
     },
     {
-      "Path": "natives/stm/character/ch/ch51/ch5100",
+      "Path": "natives/stm/character/ch/ch51/ch5100/00",
       "Tags": [
         "Enemy"
       ],
       "Comment": "Walker"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch51/ch5100/50",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Walker MK-II"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch51/ch5100/60",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Walker (Corrupted)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch51/ch5150/00",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Lancer"
     },
     {
       "Path": "natives/stm/character/ch/ch56/ch5600",
@@ -166,14 +187,28 @@
       "Tags": [
         "Enemy"
       ],
-      "Comment": "Sector Guard"
+      "Comment": "SectorGuard"
     },
     {
-      "Path": "natives/stm/character/ch/ch58/ch5800",
+      "Path": "natives/stm/character/ch/ch57/ch5750",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "SectorGuard MK-II"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch58/ch5800/00",
       "Tags": [
         "Enemy"
       ],
       "Comment": "Crusher"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch58/ch5800/00",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Crusher MK-II"
     },
     {
       "Path": "natives/stm/character/ch/ch59/ch5900/00",
@@ -183,11 +218,25 @@
       "Comment": "Spider"
     },
     {
-      "Path": "natives/stm/character/ch/ch62/ch6200",
+      "Path": "natives/stm/character/ch/ch59/ch5900/50",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Spider MK-II"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch62/ch6200/00",
       "Tags": [
         "Enemy"
       ],
       "Comment": "Executor"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch62/ch6200/60",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Executor (Corrupted)"
     },
     {
       "Path": "natives/stm/character/ch/ch63/ch6300/00",
@@ -195,6 +244,62 @@
         "Enemy"
       ],
       "Comment": "Stalker"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch64/ch6400/00",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Impeder"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch65/ch6500/00",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Sentinel"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch65/ch6550/00",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Sentinel MK-II"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch66/ch6600/00",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Air Raider"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch67/ch6700/00",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Defender"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch68/ch6800/00",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Gunner"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch76/ch7600",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "LunaDigger"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch76/ch7650",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "LunaDigger MK-II"
     },
     {
       "Path": "natives/stm/item/model/it00010/wp7100",
