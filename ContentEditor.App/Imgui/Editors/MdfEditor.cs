@@ -160,7 +160,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
     {
         var file = context.Get<MdfFile>();
 
-        ImGui.BeginChild("##MaterialList", new Vector2(300f, ImGui.GetContentRegionAvail().Y));
+        ImGui.BeginChild("##MaterialList", new Vector2(250f, ImGui.GetContentRegionAvail().Y));
         ShowMaterialList(context, file);
         ImGui.EndChild();
 
@@ -310,14 +310,29 @@ public class MdfFileImguiHandler : IObjectUIHandler
         }
 
         var mat = file.Materials[selectedIDX];
-
-        if (ImGui.BeginTabBar("##MaterialDataTabs")) {
+        ImGui.SetNextWindowSizeConstraints(new Vector2(ImGui.GetContentRegionAvail().X / 2, 0), new Vector2(ImGui.GetContentRegionAvail().X / 2, float.MaxValue));
+        ImGui.BeginChild("MaterialData");
+        if (ImGui.BeginTabBar("##MaterialDataTab0")) {
             ShowMaterialDataTab(context, mat, "General", 0, (c) => mat.Header);
+            ImGui.EndTabBar();
+        }
+        ImGui.Spacing();
+        if (ImGui.BeginTabBar("##MaterialDataTab1")) {
+            ImGui.PushItemWidth(450f);
             ShowMaterialDataTab(context, mat, "Textures", 1, (c) => mat.Textures);
-            ShowMaterialDataTab(context, mat, "Parameters", 2, (c) => mat.Parameters);
+            ImGui.PopItemWidth();
             ShowMaterialDataTab(context, mat, "GPU Buffers", 3, (c) => mat.GpuBuffers);
             ImGui.EndTabBar();
         }
+        ImGui.EndChild();
+        ImGui.SameLine();
+        ImGui.SetNextWindowSizeConstraints(new Vector2(ImGui.GetContentRegionAvail().X, 0), new Vector2(ImGui.GetContentRegionAvail().X, float.MaxValue));
+        ImGui.BeginChild("MaterialParams");
+        if (ImGui.BeginTabBar("##MaterialDataTab2")) {
+            ShowMaterialDataTab(context, mat, "Parameters", 2, (c) => mat.Parameters);
+            ImGui.EndTabBar();
+        }
+        ImGui.EndChild();
     }
     private void ShowMaterialDataTab<T>(UIContext context, MaterialData mat, string label, int index, Func<UIContext, T> getter)
     {
@@ -336,9 +351,17 @@ public class MdfFileImguiHandler : IObjectUIHandler
             }
             if (label == "Parameters") {
                 ShowMaterialParameterToolbar(context);
+                ImGui.Spacing();
+                ImGui.Separator();
+                ImGui.BeginChild(label);
+                ImGui.PushItemWidth(325);
             }
             ImGui.SetNextItemOpen(true, ImGuiCond.Always);
             context.ShowChildrenUI();
+            if (label == "Parameters") {
+                ImGui.PopItemWidth();
+                ImGui.EndChild();
+            }
             ImGui.EndTabItem();
         }
     }

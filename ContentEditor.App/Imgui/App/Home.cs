@@ -742,7 +742,6 @@ public class HomeWindow : IWindowHandler
             foundMatchingFile = true;
             if (ImGui.Selectable(file)) {
                 EditorWindow.CurrentWindow?.OpenFiles(new[] { fileToOpen });
-                EditorWindow.CurrentWindow?.CloseSubwindow(this.context.Get<WindowData>());
                 break;
             }
         }
