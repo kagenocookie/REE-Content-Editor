@@ -133,10 +133,7 @@ public class CollisionShapePreset(GameObject gameObject, RszInstance data) : Com
                         }
                         break;
                     case ReeLib.Clsp.CollisionShapeType.Sphere: {
-                            if (preset.hash1 == 0) {
-                                break;
-                            }
-                            if (!parentMesh.TryGetBoneTransform(preset.hash1, out joint1)) {
+                            if (preset.hash1 == 0 || !parentMesh.TryGetBoneTransform(preset.hash1, out joint1)) {
                                 break;
                             }
                             var shape = (Sphere)preset.shape!;
@@ -144,6 +141,13 @@ public class CollisionShapePreset(GameObject gameObject, RszInstance data) : Com
                             gizmo.Cur.Add(new Sphere(p1, shape.r));
                         }
                         break;
+                    case ReeLib.Clsp.CollisionShapeType.Box: {
+                            if (preset.hash1 == 0 || !parentMesh.TryGetBoneTransform(preset.hash1, out joint1)) {
+                                break;
+                            }
+                            var shape = (OBB)preset.shape!;
+                            gizmo.Cur.Add(new OBB(shape.Coord.ToSystem() * joint1, shape.Extent));
+                        } break;
                     default:
                         Logger.Debug("Unhandled clsp shape type " + preset.shape);
                         break;

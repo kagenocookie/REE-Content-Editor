@@ -47,7 +47,6 @@ internal class ClspCollisionPresetHandler : IObjectUIHandler
         var instance = context.Get<CollisionPreset>();
         if (AppImguiHelpers.CopyableTreeNode<CollisionPreset>(context)) {
             if (context.children.Count == 0) {
-                Logger.Debug("a");
                 context.AddChild("Bone 1", instance, new BoneHashHandler(), c => c!.hash1, (c, v) => c.hash1 = v);
                 context.AddChild("Bone 2", instance, new BoneHashHandler(), c => c!.hash2, (c, v) => c.hash2 = v);
                 context.AddChild("Shape", instance, getter: c => c!.shape, setter: (c, v) => c.shape = v).AddDefaultHandler();
