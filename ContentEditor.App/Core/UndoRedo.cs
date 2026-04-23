@@ -180,9 +180,11 @@ public class UndoRedo
         var act = new ContextSetUndoRedo<TValue>(context, value, null, undoId ?? $"{context.GetHashCode()}");
         if (context.DisableUndo) {
             act.Do();
+            if (typeof(TValue).IsClass) context.ClearChildren();
             return;
         }
         GetState(window).Push(act, mergeMode);
+        if (typeof(TValue).IsClass) UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
     }
 
     public static void RecordSet<TValue>(UIContext context, TValue value, Action<UIContext> postChangeAction, WindowBase? window = null, UndoRedoMergeMode mergeMode = UndoRedoMergeMode.MergeIdentical)
@@ -335,7 +337,11 @@ public class UndoRedo
 
         public override bool Merge(UndoRedoCommand previousValue)
         {
-            originalValue = ((ContextSetUndoRedo<T>)previousValue).originalValue;
+            if (previousValue is ContextSetUndoRedo<T> p) {
+                originalValue = p.originalValue;
+            } else if (previousValue is ContextSetUndoRedo<object> pp && pp.GetType() == typeof(T)) {
+                originalValue = (T)pp.originalValue;
+            }
             return true;
         }
     }

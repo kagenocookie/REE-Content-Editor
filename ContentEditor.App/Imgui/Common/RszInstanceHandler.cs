@@ -402,13 +402,14 @@ public class InstancePickerHandler<T>(bool allowNull, Func<UIContext, bool, IEnu
         }
         var labels = availableInstances.Select(inst => inst?.ToString() ?? "<NULL>").ToArray();
 
+        var spacing = ImGui.GetStyle().ItemSpacing.X;
         var restW = ImGui.CalcItemWidth();
         if (allowNull && instance != null) {
             if (ImGui.Button("Remove")) {
                 UndoRedo.RecordSet(context, default(T), mergeMode: UndoRedoMergeMode.NeverMerge);
             }
             ImGui.SameLine();
-            restW -= ImGui.CalcTextSize("Remove").X + ImGui.GetStyle().FramePadding.X * 2;
+            restW -= ImGui.CalcTextSize("Remove").X + ImGui.GetStyle().FramePadding.X * 2 + spacing;
         }
         if (!DisableRefresh) {
             ImGui.PushID(context.label);
@@ -418,7 +419,7 @@ public class InstancePickerHandler<T>(bool allowNull, Func<UIContext, bool, IEnu
             }
             ImguiHelpers.Tooltip("Refresh list"u8);
             ImGui.PopID();
-            restW -= ImGui.CalcTextSize($"{AppIcons.SI_Update}").X + ImGui.GetStyle().FramePadding.X * 2;
+            restW -= ImGui.CalcTextSize($"{AppIcons.SI_Update}").X + ImGui.GetStyle().FramePadding.X * 2 + spacing;
             ImGui.SameLine();
         }
 

@@ -113,6 +113,18 @@ public class IntRangeFieldHandler : Singleton<IntRangeFieldHandler>, IObjectUIHa
     }
 }
 
+public class FloatSliderHandler(float min, float max) : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var val = context.Get<float>();
+        if (ImGui.SliderFloat(context.label, ref val, min, max)) {
+            UndoRedo.RecordSet(context, val);
+        }
+        AppImguiHelpers.ShowValueContextMenu(in val, context);
+    }
+}
+
 public class QuaternionFieldHandler : Singleton<QuaternionFieldHandler>, IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)

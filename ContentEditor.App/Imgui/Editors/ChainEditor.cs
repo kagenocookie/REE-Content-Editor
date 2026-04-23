@@ -121,6 +121,23 @@ public abstract class ChainEditorBase(ContentWorkspace env, FileHandle file, Con
         return comp.TryGetBoneTransform(hash, out matrix);
     }
 
+    public MeshBone? GetChainNodeBone(ChainGroupBase group, int nodeIndex)
+    {
+        return GetChainNodeBone(group.terminalNameHash, group.ChainNodes.Count() - nodeIndex - 1);
+    }
+
+    public MeshBone? GetChainNodeBone(uint terminalHash, int chainParentOffset)
+    {
+        var bone = FindBoneByHash(terminalHash);
+        if (bone == null) return null;
+        for (int i = 0; i < chainParentOffset; i++) {
+            if (bone.Parent == null) return null;
+
+            bone = bone.Parent;
+        }
+        return bone;
+    }
+
     protected bool HandleCache()
     {
         if (_hashes == null) {
@@ -206,7 +223,6 @@ public class ChainGroupHandler : IObjectUIHandler
     {
         var group = context.Get<ChainGroupBase>();
         if (context.children.Count == 0) {
-
             var boneHandler1 = new BoneNameHandler(c => c.parent!.Get<ChainGroupBase>().terminalNameHash, (c, v) => c.parent!.Get<ChainGroupBase>().terminalNameHash = v);
             context.AddChild("Terminal Node", group, boneHandler1, c => c!.name, (c, v) => c.name = v ?? "");
 
@@ -223,7 +239,7 @@ public class ChainGroupHandler : IObjectUIHandler
                 context.AddChild("Settings", group, settingList, c => group1.Settings, (c, v) => group1.Settings = v);
                 context.AddChild("Wind Settings", group, windList, c => group.WindSettings, (c, v) => group.WindSettings = v);
                 context.AddChild("Nodes", group, getter: c => group1.ChainNodes).AddDefaultHandler();
-            } else if (group is ChainGroup group2) {
+            } else if (group is Chain2Group group2) {
                 context.AddChild("Settings", group, settingList, c => group2.Settings, (c, v) => group2.Settings = v);
                 context.AddChild("Wind Settings", group, windList, c => group.WindSettings, (c, v) => group.WindSettings = v);
                 context.AddChild("Nodes", group, getter: c => group2.ChainNodes).AddDefaultHandler();
@@ -247,6 +263,15 @@ public class ChainGroupHandler : IObjectUIHandler
             });
         }
 
+        var editor = context.FindHandlerInParents<ChainEditorBase>();
+        if (editor?.ChainTarget != null) {
+            var isActive = editor.ChainTarget.activeGroup == group;
+            if (ImguiHelpers.ToggleButton(isActive ? $"{AppIcons.Star}" : $"{AppIcons.StarEmpty}", ref isActive, Colors.IconActive)) {
+                editor.ChainTarget.activeGroup = isActive ? group : null;
+            }
+            ImGui.SameLine();
+        }
+
         var show = ImguiHelpers.TreeNodeSuffix(context.label, group.ToString());
         if (ImGui.BeginPopupContextItem(context.label)) {
             if (ImGui.Selectable("Copy")) {
@@ -263,38 +288,47 @@ public class ChainGroupHandler : IObjectUIHandler
                 }
             }
             if (newGroup != null && ImGui.Selectable("Paste (replace)")) {
-                var clone = (ChainGroupBase)newGroup.Clone();
-                if (clone is ChainGroup group1) {
+                var clone = (ChainGroupBase)newGroup.DeepClone();
+                if (newGroup is ChainGroup group1) {
                     var file = context.FindHandlerInParents<ChainEditor>()?.File;
                     if (file != null) {
+                        var cc = (ChainGroup)clone;
                         if (group1.Settings != null && !file.Settings.Contains(group1.Settings)) {
-                            group1.Settings = group1.Settings.DeepCloneGeneric();
-                            file.Settings.Add(group1.Settings);
-                            group1.Settings.EnsureUniqueId(file.Settings);
+                            cc.Settings = cc.Settings!.DeepCloneGeneric();
+                            file.Settings.Add(cc.Settings);
+                            cc.Settings.EnsureUniqueId(file.Settings);
+                        } else {
+                            cc.Settings = group1.Settings;
                         }
                         if (group1.WindSettings != null && !file.WindSettings.Contains(group1.WindSettings)) {
-                            group1.WindSettings = group1.WindSettings.DeepCloneGeneric();
-                            file.WindSettings.Add(group1.WindSettings);
-                            group1.WindSettings.EnsureUniqueId(file.WindSettings);
+                            cc.WindSettings = cc.WindSettings!.DeepCloneGeneric();
+                            file.WindSettings.Add(cc.WindSettings);
+                            cc.WindSettings.EnsureUniqueId(file.WindSettings);
+                        } else {
+                            cc.WindSettings = group1.WindSettings;
                         }
                     }
-                } else if (clone is Chain2Group group2) {
+                } else if (newGroup is Chain2Group group2) {
                     var file = context.FindHandlerInParents<Chain2Editor>()?.File;
                     if (file != null) {
+                        var cc = (Chain2Group)clone;
                         if (group2.Settings != null && !file.Settings.Contains(group2.Settings)) {
-                            group2.Settings = group2.Settings.DeepCloneGeneric();
-                            file.Settings.Add(group2.Settings);
-                            group2.Settings.EnsureUniqueId(file.Settings);
+                            cc.Settings = cc.Settings!.DeepCloneGeneric();
+                            file.Settings.Add(cc.Settings);
+                            cc.Settings.EnsureUniqueId(file.Settings);
+                        } else {
+                            cc.Settings = group2.Settings;
                         }
                         if (group2.WindSettings != null && !file.WindSettings.Contains(group2.WindSettings)) {
-                            group2.WindSettings = group2.WindSettings.DeepCloneGeneric();
-                            file.WindSettings.Add(group2.WindSettings);
-                            group2.WindSettings.EnsureUniqueId(file.WindSettings);
+                            cc.WindSettings = cc.WindSettings!.DeepCloneGeneric();
+                            file.WindSettings.Add(cc.WindSettings);
+                            cc.WindSettings.EnsureUniqueId(file.WindSettings);
+                        } else {
+                            cc.WindSettings = group2.WindSettings;
                         }
                     }
                 }
                 UndoRedo.RecordSet(context, clone);
-                context.ClearChildren();
             }
             ImGui.EndPopup();
         }
@@ -326,7 +360,6 @@ internal class ChainSettingHandler : LazyPlainObjectHandler<ChainSetting>
                 }
                 clone.EnsureUniqueId(file?.Settings ?? []);
                 UndoRedo.RecordSet(context, clone);
-                UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
             }
             ImGui.EndPopup();
         }
@@ -359,7 +392,6 @@ internal class Chain2SettingHandler : LazyPlainObjectHandler<Chain2Setting>
                 }
                 clone.EnsureUniqueId(file?.Settings ?? []);
                 UndoRedo.RecordSet(context, clone);
-                UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
             }
             ImGui.EndPopup();
         }
@@ -387,7 +419,6 @@ internal class WindSettingHandler : LazyPlainObjectHandler<WindSetting>
                 }
 
                 UndoRedo.RecordSet(context, clone);
-                UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
             }
             ImGui.EndPopup();
         }
@@ -395,19 +426,20 @@ internal class WindSettingHandler : LazyPlainObjectHandler<WindSetting>
     }
 }
 
+[ObjectImguiHandler(typeof(Chain2Link))]
 [ObjectImguiHandler(typeof(ChainLink))]
 internal class ChainLinkHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
-        var instance = context.Get<ChainLink>();
         if (AppImguiHelpers.CopyableTreeNode<ChainLink>(context)) {
+            var instance = context.Get<ChainLink>();
             if (context.children.Count == 0) {
                 var boneHandler1 = new BoneNameHandler(c => c.parent!.Get<ChainLink>().terminalNodeNameHashA, (c, v) => c.parent!.Get<ChainLink>().terminalNodeNameHashA = v);
                 var boneHandler2 = new BoneNameHandler(c => c.parent!.Get<ChainLink>().terminalNodeNameHashB, (c, v) => c.parent!.Get<ChainLink>().terminalNodeNameHashB = v);
                 context.AddChild("Node 1", instance, boneHandler1, c => c!.nodeName1, (c, v) => c.nodeName1 = v);
                 context.AddChild("Node 2", instance, boneHandler2, c => c!.nodeName2, (c, v) => c.nodeName2 = v);
-                WindowHandlerFactory.SetupObjectUIContext(context, typeof(ChainLink), orderFunc: (f) => {
+                WindowHandlerFactory.SetupObjectUIContext(context, instance.GetType(), orderFunc: (f) => {
                     if (f.Name == nameof(ChainLink.terminalNodeNameHashA) ||
                         f.Name == nameof(ChainLink.terminalNodeNameHashB) ||
                         f.Name == nameof(ChainLink.nodeName1) ||
@@ -459,6 +491,97 @@ internal class CollisionDataHandler : IObjectUIHandler
     }
 }
 
+[ObjectImguiHandler(typeof(ChainNode))]
+[ObjectImguiHandler(typeof(Chain2Node))]
+internal class ChainNodeHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<ChainNodeBase>();
+        var show = false;
+        if (instance is ReeLib.Chain.ChainNode) {
+            show = AppImguiHelpers.CopyableTreeNode<ChainNode>(context);
+        } else {
+            show = AppImguiHelpers.CopyableTreeNode<Chain2Node>(context);
+        }
+        if (show) {
+            if (context.children.Count == 0) {
+                context.AddChild("Angle Limit Direction", instance, QuaternionFieldHandler.Instance, (c) => c!.angleLimitDirection, (c, v) => c.angleLimitDirection = v);
+                context.AddChild("Angle Limit Radius", instance, new FloatSliderHandler(0, MathF.PI / 2), (c) => c!.angleLimitRadius, (c, v) => c.angleLimitRadius = v);
+                if (instance is Chain2Node c2) {
+                    context.AddChild("Joint Hash", c2, new BoneHashHandler(), c => c!.jointHash, (c, v) => c.jointHash = v);
+                }
+                WindowHandlerFactory.SetupObjectUIContext(context, instance.GetType(), orderFunc: (f) => {
+                    if (f.Name == nameof(ChainNodeBase.angleLimitDirection) || f.Name == nameof(ChainNodeBase.angleLimitRadius)) return -1;
+                    if (f.Name == nameof(Chain2Node.jointHash)) return -1;
+                    return 0;
+                });
+            }
+
+            if (ImGui.Button("Align Limit Direction To Bone")) {
+                var editor = context.FindHandlerInParents<ChainEditorBase>();
+                var group = context.FindValueInParentValues<ChainGroupBase>();
+                var selfIndex = group?.ChainNodes.ToList().IndexOf(instance) ?? -1;
+                if (editor?.ChainTarget == null || selfIndex == -1 || group == null) {
+                    Logger.Error("Failed to match node up with chain group");
+                } else {
+                    var terminalBone = editor.FindBoneByHash(group.terminalNameHash);
+                    var bone = editor.GetChainNodeBone(group, selfIndex);
+                    var nextBone = bone?.Children.FirstOrDefault();
+                    if (bone != null && nextBone != null) {
+                        var offsetVec = nextBone.globalTransform.ToSystem().Translation - bone.globalTransform.ToSystem().Translation;
+                        var dir = Vector3.Normalize(offsetVec);
+                        var quat = TransformExtensions.CreateFromToQuaternion(Vector3.UnitX, dir);
+                        UndoRedo.RecordSet(context.GetChildByValue<Quaternion>()!, quat);
+                    }
+                }
+            }
+            context.ShowChildrenUI();
+            ImGui.TreePop();
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(ChainJiggleData))]
+[ObjectImguiHandler(typeof(Chain2JiggleData))]
+internal class Chain2JiggleDataHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<ChainJiggleData>()!;
+        var isChain2 = instance is Chain2JiggleData || context.parent?.Get<ChainNodeBase>() is Chain2Node;
+        if (instance == null) {
+            ImGui.Text(context.label + ": NULL");
+            if (ImguiHelpers.SameLine() && ImGui.Button("Create")) {
+                UndoRedo.RecordSet(context, isChain2 ? new Chain2JiggleData() : new ChainJiggleData(), mergeMode: UndoRedoMergeMode.NeverMerge);
+            } else {
+                return;
+            }
+        }
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, instance?.ToString() ?? "NULL");
+        if (instance != null && ImGui.BeginPopupContextItem(context.label)) {
+            if (isChain2) {
+                AppImguiHelpers.ShowVirtualCopyPopupButtons<Chain2JiggleData>((Chain2JiggleData)instance, context);
+            } else {
+                AppImguiHelpers.ShowVirtualCopyPopupButtons<ChainJiggleData>(instance, context);
+            }
+            if (ImGui.Selectable("Remove")) {
+                UndoRedo.RecordSet<ChainJiggleData>(context, null!, mergeMode: UndoRedoMergeMode.NeverMerge);
+                instance = null;
+            }
+            ImGui.EndPopup();
+        }
+        if (show) {
+            if (instance != null) {
+                if (context.children.Count == 0) {
+                    WindowHandlerFactory.SetupObjectUIContext(context, instance.GetType());
+                }
+                context.ShowChildrenUI();
+            }
+            ImGui.TreePop();
+        }
+    }
+}
 
 public class BoneNameHandler(Func<UIContext, uint>? hashGetter = null, Action<UIContext, uint>? hashSetter = null) : IObjectUIHandler
 {
@@ -470,7 +593,8 @@ public class BoneNameHandler(Func<UIContext, uint>? hashGetter = null, Action<UI
             var width = ImGui.CalcItemWidth();
             var forceRefreshList = ImGui.Button($"{AppIcons.SI_Update}");
             ImguiHelpers.Tooltip("Refresh list"u8);
-            width -= ImGui.CalcTextSize($"{AppIcons.SI_Update}").X + ImGui.GetStyle().FramePadding.X * 2;
+            var spacing = ImGui.GetStyle().ItemSpacing.X;
+            width -= ImGui.CalcTextSize($"{AppIcons.SI_Update}").X + ImGui.GetStyle().FramePadding.X * 2 + spacing;
 
             ImGui.SameLine();
             var names = context.GetStateArray<string>();
@@ -480,9 +604,9 @@ public class BoneNameHandler(Func<UIContext, uint>? hashGetter = null, Action<UI
             }
 
             if (names.Length == 0) {
-                ImGui.SetNextItemWidth(width - ImGui.GetStyle().ItemSpacing.X);
+                ImGui.SetNextItemWidth(width - spacing);
             } else {
-                ImGui.SetNextItemWidth(width / 2 - ImGui.GetStyle().ItemSpacing.X);
+                ImGui.SetNextItemWidth(width / 2 - spacing);
                 var name = context.Get<string>();
                 if (ImguiHelpers.FilterableCombo("##combo", names, names, ref name, ref context.Filter)) {
                     UndoRedo.RecordSet(context, name, mergeMode: UndoRedoMergeMode.NeverMerge);
@@ -494,7 +618,7 @@ public class BoneNameHandler(Func<UIContext, uint>? hashGetter = null, Action<UI
                 }
 
                 ImGui.SameLine();
-                ImGui.SetNextItemWidth(width / 2 - ImGui.GetStyle().ItemSpacing.X);
+                ImGui.SetNextItemWidth(width / 2);
             }
         }
 
@@ -529,7 +653,8 @@ public class BoneHashHandler : IObjectUIHandler
             var width = ImGui.CalcItemWidth();
             var forceRefreshList = ImGui.Button($"{AppIcons.SI_Update}");
             ImguiHelpers.Tooltip("Refresh list"u8);
-            width -= ImGui.CalcTextSize($"{AppIcons.SI_Update}").X + ImGui.GetStyle().FramePadding.X * 2;
+            var spacing = ImGui.GetStyle().ItemSpacing.X;
+            width -= ImGui.CalcTextSize($"{AppIcons.SI_Update}").X + ImGui.GetStyle().FramePadding.X * 2 + spacing;
 
             ImGui.SameLine();
             var names = context.GetStateArray<string>();
@@ -539,9 +664,9 @@ public class BoneHashHandler : IObjectUIHandler
             }
 
             if (names.Length == 0) {
-                ImGui.SetNextItemWidth(width - ImGui.GetStyle().ItemSpacing.X);
+                ImGui.SetNextItemWidth(width - spacing);
             } else {
-                ImGui.SetNextItemWidth(width / 2 - ImGui.GetStyle().ItemSpacing.X);
+                ImGui.SetNextItemWidth(width / 2 - spacing);
                 var hash = context.Get<uint>();
                 var name = names.FirstOrDefault(n => MurMur3HashUtils.GetHash(n) == hash);
                 if (ImguiHelpers.FilterableCombo("##combo", names, names, ref name, ref context.Filter)) {

@@ -74,10 +74,10 @@ At the moment, you'd have to build it yourself. Follow the development setup ins
 | .mesh     | ☑️ 3D & data display | FBX & GLTF export/import<br>Format conversion across games ([wiki](https://github.com/kagenocookie/REE-Content-Editor/wiki/Mesh-editing))
 | .motlist  | ☑️ read/write | Animation preview<br>GLTF import/export<br>Mot copy/paste/retargeting ([wiki](https://github.com/kagenocookie/REE-Content-Editor/wiki/Animation-tools))
 | .rcol     | ☑️ read/write | 3D shape preview and editing ([wiki](https://github.com/kagenocookie/REE-Content-Editor/wiki/RCOL-Request-set-colliders))
+| .chain, .chain2 | ☑️ read/write | Basic shape preview
 | .motbank  | read/write
 | .motfsm2, .fsmv2, .bhvt, .tmlfsm2  | read/write
 | .mcol     | ☑️ read/write | .glb/.fbx import/export for collision mesh
-| .chain, .chain2 | read/write | Basic shape preview
 | .tml, .clip | read/write
 | .gui      | read/write
 | .aimap, .ainvm, .aiwayp | read/write | 3D preview<br>Navmesh generation ([wiki](https://github.com/kagenocookie/REE-Content-Editor/wiki/AI-Navigation))

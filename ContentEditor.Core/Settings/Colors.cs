@@ -22,6 +22,7 @@ public static class Colors
     public static Vector4 RequestSetColliders => new Vector4(1, 0.4f, 0.1f, 0.8f);
     public static Vector4 Lights => new Vector4(1, 1, 0, 0.8f);
     public static Vector4 TextActive => Current.TextActive;
+
     public static Vector4 FileTypePFB => Current.FileTypePFB;
     public static Vector4 FileTypeSCN => Current.FileTypeSCN;
     public static Vector4 FileTypeMESH => Current.FileTypeMESH;
@@ -110,6 +111,7 @@ public static class Colors
     public static Vector4 IconActive => Current.IconActive;
     public static Vector4 IconOverlay => Current.IconOverlay;
     public static Vector4 IconOverlayBackground => Current.IconOverlayBackground;
+
     public static Vector4 TagAnimation => Current.TagAnimation;
     public static Vector4 TagAnimationHovered => Current.TagAnimationHovered;
     public static Vector4 TagAnimationSelected => Current.TagAnimationSelected;
@@ -143,6 +145,7 @@ public static class Colors
     public static Vector4 TagWeapon => Current.TagWeapon;
     public static Vector4 TagWeaponHovered => Current.TagWeaponHovered;
     public static Vector4 TagWeaponSelected => Current.TagWeaponSelected;
+
     public static Vector4 Game_RE2Primary => Current.Game_RE2Primary;
     public static Vector4 Game_RE2Secondary => Current.Game_RE2Secondary;
     public static Vector4 Game_RE2RTPrimary => Current.Game_RE2RTPrimary;
@@ -167,6 +170,12 @@ public static class Colors
     public static Vector4 Game_MHRISESecondary => Current.Game_MHRISESecondary;
     public static Vector4 Game_MHWILDSPrimary => Current.Game_MHWILDSPrimary;
     public static Vector4 Game_MHWILDSSecondary => Current.Game_MHWILDSSecondary;
+
+    public static Vector4 Gizmo_Chain_Node => Current.Gizmo_Chain_Node;
+    public static Vector4 Gizmo_Chain_Collision => Current.Gizmo_Chain_Collisions;
+    public static Vector4 Gizmo_Chain_Limits => Current.Gizmo_Chain_Limits;
+
+    public static Vector4 Gizmo_CollisionShapePreset => Current.Gizmo_CollisionShapePreset;
 }
 
 public sealed class AppColors
@@ -321,6 +330,13 @@ public sealed class AppColors
     public Vector4 Game_MHRISESecondary = new Vector4(0.8f, 0.2f, 0.2f, 1);
     public Vector4 Game_MHWILDSPrimary = new Vector4(0.93f, 0.73f, 0.2f, 1);
     public Vector4 Game_MHWILDSSecondary = new Vector4(0, 0.77f, 0.47f, 1);
+
+    public Vector4 Gizmo_Chain_Node = new Vector4(0.16f, 1, 0.76f, 1);
+    public Vector4 Gizmo_Chain_Collisions = new Vector4(1, 1, 1, 1);
+    public Vector4 Gizmo_Chain_Limits = new Vector4(0.94f, 0.43f, 0.11f, 1);
+
+    public Vector4 Gizmo_CollisionShapePreset = new Vector4(1, 0.70f, 0.16f, 1);
+
     public static AppColors GetDarkThemeColors() => new AppColors();
 
     public static AppColors GetLightThemeColors() => new AppColors() {

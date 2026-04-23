@@ -27,6 +27,7 @@ public class ThemeEditor : IWindowHandler
         Icons_Bundle,
         Icons_FileType,
         Tags,
+        Gizmo,
     }
     private StyleGroupID selectedTabIDX = StyleGroupID.General;
     private List<(string Name, StyleGroupID ID, List<FieldInfo> Fields)> tabs = new()
@@ -36,6 +37,7 @@ public class ThemeEditor : IWindowHandler
         ("Bundle Icons", StyleGroupID.Icons_Bundle, new()),
         ("File Type Icons", StyleGroupID.Icons_FileType, new()),
         ("Tags", StyleGroupID.Tags, new()),
+        ("Gizmo", StyleGroupID.Gizmo, new()),
     };
     private ImNodesContextPtr? nodeCtx;
     public void Init(UIContext context)
@@ -201,18 +203,11 @@ public class ThemeEditor : IWindowHandler
                 if (ImGui.BeginTabItem(tab.Name, flags)) {
                     switch (tab.ID) {
                         case StyleGroupID.General:
-                            ShowColorFields(tab.Fields);
-                            break;
                         case StyleGroupID.Icons_App:
-                            ShowColorFields(tab.Fields);
-                            break;
                         case StyleGroupID.Icons_Bundle:
-                            ShowColorFields(tab.Fields);
-                            break;
                         case StyleGroupID.Icons_FileType:
-                            ShowColorFields(tab.Fields);
-                            break;
                         case StyleGroupID.Tags:
+                        case StyleGroupID.Gizmo:
                             ShowColorFields(tab.Fields);
                             break;
                         default:
@@ -238,6 +233,7 @@ public class ThemeEditor : IWindowHandler
                 var name when name.StartsWith("FileType", StringComparison.OrdinalIgnoreCase) => StyleGroupID.Icons_FileType,
                 var name when name.StartsWith("Tag", StringComparison.OrdinalIgnoreCase) => StyleGroupID.Tags,
                 var name when name.StartsWith("Game_", StringComparison.OrdinalIgnoreCase) => StyleGroupID.Icons_Bundle,
+                var name when name.StartsWith("Gizmo_", StringComparison.OrdinalIgnoreCase) => StyleGroupID.Gizmo,
                 _ => StyleGroupID.General
             };
             tabs.Find(x => x.ID == tabId).Fields.Add(field);

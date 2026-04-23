@@ -62,7 +62,7 @@ public static class TransformExtensions
         var vector = Vector3.Cross(from, to);
         var dot = Vector3.Dot(from, to);
         if (dot < -0.99999f) {
-            return new Quaternion(0, 1, 0, 0);
+            return new Quaternion(1, 0, 0, 0);
         } else {
             var num2 = MathF.Sqrt((1f + dot) * 2f);
             var num3 = 1f / num2;

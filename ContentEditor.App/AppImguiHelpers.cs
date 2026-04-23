@@ -229,7 +229,6 @@ public static class AppImguiHelpers
         }
         if (VirtualClipboard.TryGetFromClipboard<T>(out var newClip) && ImGui.Selectable("Paste (replace)")) {
             UndoRedo.RecordSet(context, newClip.DeepCloneGeneric<T>());
-            UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
             return true;
         }
         return false;

@@ -85,11 +85,11 @@ public class CollisionShapePreset(GameObject gameObject, RszInstance data) : Com
         if (inactiveMaterial == null) {
             var mat = Scene.RenderContext
                 .GetMaterialBuilder(BuiltInMaterials.MonoColor)
-                .Color("_MainColor", Color.FromVector4(Colors.FileTypeCLSP));
+                .Color("_MainColor", Color.FromVector4(Colors.Gizmo_CollisionShapePreset));
 
             (activeMaterial, inactiveMaterial, obscuredMaterial) = mat.Blend().Create3("clsp_active", "clsp", "clsp_obscured");
-            obscuredMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.FileTypeCLSP) with { A = 95 });
-            inactiveMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.FileTypeCLSP) with { A = 45 });
+            obscuredMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.Gizmo_CollisionShapePreset) with { A = 95 });
+            inactiveMaterial.SetParameter("_MainColor", Color.FromVector4(Colors.Gizmo_CollisionShapePreset) with { A = 45 });
         }
 
         var parentMesh = GameObject.GetComponent<MeshComponent>()?.MeshHandle as AnimatedMeshHandle;
