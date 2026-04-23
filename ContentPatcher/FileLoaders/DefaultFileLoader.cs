@@ -61,7 +61,7 @@ public class DefaultFileLoader<TFileType> : IFileLoader, IFileHandleContentProvi
         return new BaseFileResource<TFileType>(file);
     }
 
-    public IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle)
+    public virtual IResourceFile? CreateNewFile(ContentWorkspace workspace, FileHandle handle)
     {
         var file = GetFileConstructor().Invoke(workspace, new FileHandler(handle.Stream, handle.Filepath));
         file.Write();

@@ -787,7 +787,8 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     {
         filepath = filepath.NormalizeFilepath();
         nativePath ??= PreprocessNativeFilepath(filepath);
-        if (openFiles.TryGetValue(nativePath ?? filepath.ToLowerInvariant(), out var handle)) {
+        if (!string.IsNullOrEmpty(nativePath) && openFiles.TryGetValue(nativePath, out var handle) ||
+            openFiles.TryGetValue(filepath.ToLowerInvariant(), out handle)) {
             return handle;
         }
 

@@ -97,6 +97,18 @@ public class ChainEditMode : EditModeHandler
             }
         }
 
+        if (ImGui.Button($"{AppIcons.SI_FileNew} New chain")) {
+            filePath = Scene.Workspace.ResourceManager.CreateNewFile(KnownFileFormats.Chain)!.Filepath;
+        }
+        ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_FileNew} New chain2")) {
+            filePath = Scene.Workspace.ResourceManager.CreateNewFile(KnownFileFormats.Chain2)!.Filepath;
+        }
+        ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_FileNew} New clsp")) {
+            filePath = Scene.Workspace.ResourceManager.CreateNewFile(KnownFileFormats.CollisionShapePreset)!.Filepath;
+        }
+
         if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(filePath, out var file)) {
             if (ImGui.Button("Open Chain")) {
                 OpenEditor(file);

@@ -157,7 +157,6 @@ public class Chain(GameObject gameObject, RszInstance data) : Component(gameObje
                             gizmo.PushMaterial(limitsMaterial);
                             var dir = (childOrigin - origin);
                             var limitDir = Vector3.Normalize(Vector3.Transform(Vector3.UnitX, node.angleLimitDirection));
-                            // var limitDir = Vector3.Normalize(Vector3.Transform(dir, node.angleLimitDirection));
                             var dist = dir.Length();
                             var endConeRadius = MathF.Tan(node.angleLimitRadius) * dist;
                             gizmo.Cur.Add(new Cone(origin, 0.0001f, origin + limitDir * dist, endConeRadius));
