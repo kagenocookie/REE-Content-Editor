@@ -358,9 +358,9 @@ public class UIContext
         }
     }
 
-    public void RemoveChild(UIContext context)
+    public void RemoveChild(UIContext? context)
     {
-        children.Remove(context);
+        children.Remove(context!);
     }
 
     public override string ToString() => $"{label} ({target})";

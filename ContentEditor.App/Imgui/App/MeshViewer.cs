@@ -121,6 +121,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         var ctx = meshContexts.FirstOrDefault() ?? CreateAdditionalMesh(Handle);
         if (!Handle.References.Contains(this)) Handle.References.Add(this);
         ctx.ChangeMesh(resetMdf);
+        ctx.UI.RemoveChild(ctx.UI.GetChild<MeshFileHandler>());
 
         var mesh = ctx.MeshFile;
 
