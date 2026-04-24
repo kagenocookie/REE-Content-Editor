@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Assimp;
@@ -38,8 +39,30 @@ public partial class CommonMeshResource : IResourceFile
         var mainBuffer = new MeshBuffer();
         mesh.MeshBuffer = mainBuffer;
 
-        var occMeshes = srcMeshes.Where(m => m.Name.StartsWith("occ_")).ToList();
-        var shadowMeshes = srcMeshes.Where(m => m.Name.StartsWith("shadow_lod")).ToList();
+        var nodes = FlatNodes(scene.RootNode).ToArray();
+        var meshNodes = nodes.Where(n => n.HasMeshes).ToArray();
+        var meshNodeDict = new Dictionary<Mesh, List<string>>();
+        foreach (var meshNode in nodes.Where(n => n.HasMeshes)) {
+            foreach (var meshIndex in meshNode.MeshIndices) {
+                var mm = scene.Meshes[meshIndex];
+                if (!meshNodeDict.TryGetValue(mm, out var list)) {
+                    meshNodeDict[mm] = list = new List<string>();
+                }
+                list.Add(meshNode.Name);
+            }
+        }
+        Debug.Assert(meshNodeDict.All(kv => kv.Value.Count <= 1));
+        string GetMeshRealName(Mesh mesh)
+        {
+            if (mesh.Name == "Mesh" || mesh.Name.StartsWith("Mesh.")) {
+                return meshNodeDict.GetValueOrDefault(mesh)?.FirstOrDefault() ?? mesh.Name;
+            }
+
+            return mesh.Name;
+        }
+
+        var occMeshes = srcMeshes.Where(m => GetMeshRealName(m).StartsWith("occ_")).ToList();
+        var shadowMeshes = srcMeshes.Where(m => GetMeshRealName(m).StartsWith("shadow_lod")).ToList();
         var mainMeshes = srcMeshes.Where(m => !occMeshes.Contains(m) && !shadowMeshes.Contains(m)).ToList();
         if (shadowMeshes.Count > 0 || mainMeshes.Count > 0) {
             mesh.MeshData = new MeshData(mainBuffer);
@@ -73,9 +96,8 @@ public partial class CommonMeshResource : IResourceFile
         bool allowExtraWeights = maxWeightsPerVert > 8;
         var maxWeighedBones = MeshFile.GetDeformBoneLimit(versionConfig);
 
-        var orderedMeshes = srcMeshes.OrderBy(m => (MeshLoader.GetMeshGroupFromName(m.Name), MeshLoader.GetSubMeshIndexFromName(m.Name)));
+        var orderedMeshes = srcMeshes.OrderBy(m => (MeshLoader.GetMeshGroupFromName(GetMeshRealName(m)), MeshLoader.GetSubMeshIndexFromName(GetMeshRealName(m))));
 
-        var nodes = FlatNodes(scene.RootNode).ToArray();
         var secNodes = nodes.Where(n => n.Name.StartsWith(SecondaryWeightDummyBonePrefix) && n.Name != SecondaryWeightDummyBonePrefix).Select(n => n.Name.Replace(SecondaryWeightDummyBonePrefix, "")).ToHashSet();
 
         var materialNames = scene.Materials.Select(m => m.Name).ToArray();
@@ -174,11 +196,12 @@ public partial class CommonMeshResource : IResourceFile
             var type1 = occMeshes.Contains(a) ? 2 : shadowMeshes.Contains(a) ? 1 : 0;
             var type2 = occMeshes.Contains(b) ? 2 : shadowMeshes.Contains(b) ? 1 : 0;
 
-            return type1.CompareTo(type2) * 10000 + a.Name.CompareTo(b.Name);
+            return type1.CompareTo(type2) * 10000 + GetMeshRealName(a).CompareTo(GetMeshRealName(b));
         })).ToList();
 
         foreach (var aiMesh in sortedMeshes) {
-            var groupIdx = MeshLoader.GetMeshGroupFromName(aiMesh.Name);
+            var nodeName = GetMeshRealName(aiMesh);
+            var groupIdx = MeshLoader.GetMeshGroupFromName(nodeName);
 
             var buffer = mainBuffer;
 
@@ -275,7 +298,11 @@ public partial class CommonMeshResource : IResourceFile
 
             if (buffer.UV1.Length > 0) {
                 var uv = aiMesh.TextureCoordinateChannels[1];
-                for (int i = 0; i < vertCount; ++i) buffer.UV1[vertOffset + i] = new HFloat2(uv[i].X, 1 - uv[i].Y);
+                if (uv.Count == 0) {
+                    for (int i = 0; i < vertCount; ++i) buffer.UV1[vertOffset + i] = new HFloat2();
+                } else {
+                    for (int i = 0; i < vertCount; ++i) buffer.UV1[vertOffset + i] = new HFloat2(uv[i].X, 1 - uv[i].Y);
+                }
             }
 
             if (buffer.Colors.Length > 0) {
@@ -361,9 +388,32 @@ public partial class CommonMeshResource : IResourceFile
                 Logger.Error($"Imported mesh contains {deformBones.Count} deform bones (bones that have weights assigned). Only up to {maxWeighedBones} are supported for mesh format {versionConfig}");
             }
 
-            RemapDeformBones(mainBuffer.Weights, deformBones);
+            RemapDeformBones(mainBuffer.Weights, deformBones, null);
 
-            if (mainBuffer.ExtraWeights != null) RemapDeformBones(mainBuffer.ExtraWeights, deformBones);
+            if (mainBuffer.ExtraWeights == null && MeshFile.RequireNullWeights(versionConfig)) {
+                // if you're wondering why this exists, I'm not quite sure either
+                // since Pragmata Demo, the weights don't weight correctly unless the bone indies with weight = 0 are filled with the least-weighted index
+                // for meshes that only have at most the whole 6/8 weights weighted, this means an additional weight buffer also (sometimes) needs to exist, even though it's all 0 there
+                // there exist meshes that have full 6 weights but no extra weight buffer and I'm not sure why either, so clearly this check here isn't fully correct either
+                // do some meshes with only 5 weighted bones need the extra empty weight buffer too? is there some other magical reason for needing this?
+                // for now this will do until proven otherwise
+                var needExtraBuffer = false;
+                var lastIndex = maxWeightsPerVert / 2 - 1;
+                foreach (var w in mainBuffer.Weights) {
+                    if (w.GetWeight(lastIndex) > 0) {
+                        needExtraBuffer = true;
+                        break;
+                    }
+                }
+                if (needExtraBuffer) {
+                    var totalVertCount = mainBuffer.Weights.Length;
+
+                    mainBuffer.ExtraWeights = new VertexBoneWeights[totalVertCount];
+                    for (int i = 0; i < totalVertCount; i++) mainBuffer.ExtraWeights[i] ??= new VertexBoneWeights(serializerVersion);
+                }
+            }
+
+            if (mainBuffer.ExtraWeights != null) RemapDeformBones(mainBuffer.ExtraWeights, deformBones, mainBuffer.Weights);
         }
 
         if (reuseBufferForShadows && mesh.ShadowMesh != null) {
@@ -388,8 +438,8 @@ public partial class CommonMeshResource : IResourceFile
         if (srcMeshes.All(m => m.HasNormals && m.HasTangentBasis)) {
             mainBuffer.NormalsTangents = new QuantizedNorTan[totalVertCount];
         }
-        if (srcMeshes.All(m => m.HasTextureCoords(0))) mainBuffer.UV0 = new HFloat2[totalVertCount];
-        if (srcMeshes.All(m => m.HasTextureCoords(1))) mainBuffer.UV1 = new HFloat2[totalVertCount];
+        if (srcMeshes.Any(m => m.HasTextureCoords(0))) mainBuffer.UV0 = new HFloat2[totalVertCount];
+        if (srcMeshes.Any(m => m.HasTextureCoords(1))) mainBuffer.UV1 = new HFloat2[totalVertCount];
         if (srcMeshes.All(m => m.Bones.Count > 0 && m.Bones.Any(b => b.HasVertexWeights))) {
             mainBuffer.Weights = new VertexBoneWeights[totalVertCount];
             mesh.Header.flags |= ContentFlags.IsSkinning | ContentFlags.HasJoint;
@@ -405,15 +455,17 @@ public partial class CommonMeshResource : IResourceFile
         mainBuffer.Faces = new ushort[paddedTriCount];
     }
 
-    private static void RemapDeformBones(VertexBoneWeights[] weights, SortedList<int, MeshBone> deformBones)
+    private static void RemapDeformBones(VertexBoneWeights[] weights, SortedList<int, MeshBone> deformBones, VertexBoneWeights[]? fallbackWeights)
     {
         var indexCount = weights.FirstOrDefault()?.IndexCount ?? 0;
-        foreach (var weight in weights) {
+        for (int vert = 0; vert < weights.Length; vert++) {
+            var weight = weights[vert];
             for (int i = 0; i < indexCount; ++i) {
                 var index = weight.GetIndex(i);
                 if (index == 0) {
-                    if (i > 0 && weight.boneWeights[i] == 0) {
-                        weight.SetIndex(i, weight.GetIndex(i - 1));
+                    if ((i > 0 || fallbackWeights != null) && weight.boneWeights[i] == 0) {
+                        // newer games require the unweighted indices to still contain the last weighted index for whatever reason
+                        weight.SetIndex(i, fallbackWeights?[vert].GetIndex(indexCount - 5) ?? weight.GetIndex(i - 1));
                     }
                 } else if (deformBones.TryGetValue(index, out var remap)) {
                     weight.SetIndex(i, remap.remapIndex);
