@@ -823,6 +823,10 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
         if (mesh.NativeMesh.MeshData?.LODs.Count > 1 || mesh.NativeMesh.ShadowMesh?.LODs.Count > 0) ImGui.Checkbox("Include LODs and Shadow Mesh", ref exportLods);
         if (mesh.NativeMesh.OccluderMesh?.MeshGroups.Count > 0) ImGui.Checkbox("Include Occlusion Mesh", ref exportOcclusion);
+        if (ImGui.Button("Open Wiki for More Details")) {
+            FileSystemUtils.OpenURL("https://github.com/kagenocookie/REE-Content-Editor/wiki/Mesh-editing");
+        }
+
         if (showImportSettings) {
             ImGui.SeparatorText("Import Settings");
             var scale = AppConfig.Settings.Import.Scale;
@@ -857,6 +861,14 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 AppConfig.Settings.Save();
             }
             ImguiHelpers.Tooltip("Scale up all vertices and animation positions for exported meshes.\nOnly used for FBX because GLB/GLTF already has functional units"u8);
+
+            var bonesForW2 = AppConfig.Settings.Import.ExportSecondaryWeightAsBones;
+            if (ImGui.Checkbox("Export secondary weight marker as bones"u8, ref bonesForW2)) {
+                AppConfig.Settings.Import.ExportSecondaryWeightAsBones = bonesForW2;
+                AppConfig.Settings.Save();
+            }
+            ImguiHelpers.Tooltip("Whether to export the bone secondary weight flag indicators as child bones.\nIf unchecked, additional empty nodes will instead be placed at the scene root.\nSee wiki for more details."u8);
+
             ImGui.Spacing();
             ImGui.Spacing();
         }

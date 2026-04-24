@@ -865,6 +865,7 @@ public record ImportSettings
     public bool ImportMaterialsFromMeshName { get; set; }
 
     public float ExportScale { get; set; } = 1f;
+    public bool ExportSecondaryWeightAsBones { get; set; } = false;
 }
 
 public record MeshViewerSettings
