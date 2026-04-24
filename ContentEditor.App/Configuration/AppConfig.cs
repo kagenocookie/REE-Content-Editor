@@ -57,6 +57,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string DateFormat = "date_format";
         public const string ClockFormat = "clock_format";
         public const string DisableFileCloseWarning = "disable_close_warning";
+        public const string UseMDFGroupedParams = "use_mdf_grouped_params";
 
         public const string RenderAxis = "render_axis";
         public const string RenderMeshes = "render_meshes";
@@ -215,6 +216,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<int> DateFormat = new SettingWrapper<int>(Keys.DateFormat, _lock, 0);
     public readonly SettingWrapper<bool> ClockFormat = new SettingWrapper<bool>(Keys.ClockFormat, _lock, false);
     public readonly SettingWrapper<bool> DisableFileCloseWarning = new SettingWrapper<bool>(Keys.DisableFileCloseWarning, _lock, false);
+    public readonly SettingWrapper<bool> UseMDFGroupedParams = new SettingWrapper<bool>(Keys.UseMDFGroupedParams, _lock, false);
 
     public readonly SettingWrapper<int> PakDisplayModeValue = new SettingWrapper<int>(Keys.LogToFile, _lock, (int)FileDisplayMode.List);
     public FileDisplayMode PakDisplayMode { get => (FileDisplayMode)PakDisplayModeValue.Get(); set => PakDisplayModeValue.Set((int)value); }
@@ -383,6 +385,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.DateFormat, instance.DateFormat.value.ToString(), null),
             (Keys.ClockFormat, instance.ClockFormat.value.ToString(), null),
             (Keys.DisableFileCloseWarning, instance.DisableFileCloseWarning.value.ToString(), null),
+            (Keys.UseMDFGroupedParams, instance.UseMDFGroupedParams.value.ToString(), null),
 
             (Keys.RenderAxis, instance.RenderAxis.value.ToString(), null),
             (Keys.RenderMeshes, instance.RenderMeshes.value.ToString(), null),
@@ -573,6 +576,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.UsePakCompactFilePaths:
                             UsePakCompactFilePaths.value = ReadBool(value);
+                            break;
+                        case Keys.UseMDFGroupedParams:
+                            UseMDFGroupedParams.value = ReadBool(value);
                             break;
                         case Keys.LastUpdateCheck:
                             if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var _updateCheck)) LastUpdateCheck.value = _updateCheck;

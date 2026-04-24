@@ -150,6 +150,9 @@ public class MdfFileImguiHandler : IObjectUIHandler
     private string materialSearch = string.Empty;
     public bool isShowOnlyBookmarkedParams = false;
     public bool isAlphabetSortParams = false;
+    private bool isGroupedParams = AppConfig.Instance.UseMDFGroupedParams.Get();
+    private string matParamSearchQuery = string.Empty;
+    private bool isMatParamMatchCase = false;
     private MaterialData? draggedMat;
 
     private Dictionary<string, HashSet<string>>? _exportTextures;
@@ -344,28 +347,26 @@ public class MdfFileImguiHandler : IObjectUIHandler
             }
             if (context.children.Count == 0 || context.children[0].label != label) {
                 if (label == "Parameters") {
-                    context.AddChild(label, mat, getter: c => isAlphabetSortParams ? mat.Parameters.OrderBy(p => p.paramName, StringComparer.OrdinalIgnoreCase).ToList() : mat.Parameters).AddDefaultHandler<T>();
+                    ShowMaterialParameterToolbar(context);
+                    ImGui.Spacing();
+                    ImGui.Separator();
+                    ImGui.Spacing();
+                    ImGui.BeginChild(label);
+                    ImGui.PushItemWidth(350);
+                    ShowMaterialParameters(context, mat);
+                    ImGui.PopItemWidth();
+                    ImGui.EndChild();
                 } else {
                     context.AddChild(label, mat, getter: (c) => (object)getter(c)!).AddDefaultHandler<T>();
                 }
             }
-            if (label == "Parameters") {
-                ShowMaterialParameterToolbar(context);
-                ImGui.Spacing();
-                ImGui.Separator();
-                ImGui.BeginChild(label);
-                ImGui.PushItemWidth(325);
-            }
             ImGui.SetNextItemOpen(true, ImGuiCond.Always);
-            context.ShowChildrenUI();
-            if (label == "Parameters") {
-                ImGui.PopItemWidth();
-                ImGui.EndChild();
+            if (label != "Parameters") {
+                context.ShowChildrenUI();
             }
             ImGui.EndTabItem();
         }
     }
-
     private static void ShowMaterialContextMenu(UIContext context, List<MaterialData> list, MaterialData mat, Action<int>? onSelectIndexChanged = null)
     {
         if (ImGui.MenuItem("Duplicate")) {
@@ -432,6 +433,110 @@ public class MdfFileImguiHandler : IObjectUIHandler
         if (ImguiHelpers.ToggleButton($"{AppIcons.SI_SortAZ}", ref isAlphabetSortParams, Colors.IconActive)) {
             context.children.Clear();
         }
+        ImguiHelpers.Tooltip("Sort parameters alphabetical"u8);
+        ImGui.SameLine();
+        if (ImguiHelpers.ToggleButton($"{AppIcons.SI_MDFGroupParams}", ref isGroupedParams, Colors.IconActive)) {
+            context.children.Clear();
+        }
+        ImguiHelpers.Tooltip("Toggle grouped parameter view"u8);
+        if (isGroupedParams != AppConfig.Instance.UseMDFGroupedParams.Get()) {
+            AppConfig.Instance.UseMDFGroupedParams.Set(isGroupedParams);
+        }
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator();
+        ImGui.SameLine();
+        ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isMatParamMatchCase, Colors.IconActive);
+        ImguiHelpers.Tooltip("Match Case");
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().FramePadding.X);
+        ImGui.SetNextItemAllowOverlap();
+        ImGui.InputTextWithHint("##MatParamSearch"u8, $"{AppIcons.SI_GenericMagnifyingGlass} Filter parameters", ref matParamSearchQuery, 64);
+        if (!string.IsNullOrEmpty(matParamSearchQuery)) {
+            ImGui.SameLine();
+            ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
+            ImGui.SetNextItemAllowOverlap();
+            if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
+                matParamSearchQuery = string.Empty;
+            }
+        }
+    }
+
+    private void ShowMaterialParameters(UIContext context, MaterialData mat)
+    {
+        var workspace = context.GetWorkspace()!;
+        var bookmarks = context.FindHandlerInParents<MdfEditor>()?.MDFBookmarks;
+        var showOnlyBookmarked = context.FindHandlerInParents<MdfFileImguiHandler>()?.isShowOnlyBookmarkedParams ?? false;
+        IEnumerable<ParamHeader> filteredParams = mat.Parameters;
+        bool isAutoExpand = !string.IsNullOrEmpty(matParamSearchQuery) || isShowOnlyBookmarkedParams;
+
+        if (!string.IsNullOrEmpty(matParamSearchQuery)) {
+            filteredParams = filteredParams.Where(p => isMatParamMatchCase ? p.paramName.Contains(matParamSearchQuery) : p.paramName.Contains(matParamSearchQuery, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var (singles, groups) = GroupAndSortMaterialParams(filteredParams.ToList(), isAlphabetSortParams, isGroupedParams);
+        foreach (var param in singles) {
+            if (showOnlyBookmarked && !bookmarks!.IsBookmarked(workspace.Game.name, param.paramName)) {
+                continue;
+            }
+            DrawMaterialParam(context, param, param.paramName);
+        }
+
+        if (isGroupedParams && singles.Count > 0 && groups.Count > 0) {
+            ImGui.Separator();
+        }
+
+        foreach (var (groupName, paramsList) in groups) {
+            var filtered = showOnlyBookmarked ? paramsList.Where(p => bookmarks!.IsBookmarked(workspace.Game.name, p.paramName)).ToList() : paramsList;
+            if (filtered.Count == 0) continue;
+
+            if (ImGui.TreeNodeEx(groupName, isAutoExpand ? ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.Framed : ImGuiTreeNodeFlags.Framed)) {
+                foreach (var param in filtered) {
+                    string shortName = param.paramName;
+                    int idx = shortName.IndexOf('_');
+
+                    if (idx >= 0 && idx < shortName.Length) {
+                        shortName = shortName.Substring(idx + 1);
+                    }
+                    DrawMaterialParam(context, param, shortName);
+                }
+                ImGui.TreePop();
+            }
+        }
+    }
+
+    private static (List<ParamHeader> singles, Dictionary<string, List<ParamHeader>> groups) GroupAndSortMaterialParams(List<ParamHeader> parameters, bool isSortAZ, bool isGrouped)
+    {
+        var list = isSortAZ ? parameters.OrderBy(p => p.paramName, StringComparer.OrdinalIgnoreCase).ToList() : parameters;
+        if (!isGrouped) {
+            return (list, new Dictionary<string, List<ParamHeader>>());
+        }
+
+        var groupedDict = list.GroupBy(p => {
+            var name = p.paramName;
+            int idx = name.IndexOf('_');
+            return idx > 0 ? name.Substring(0, idx) : name;
+        }).ToDictionary(g => g.Key, g => g.ToList());
+
+        var singles = new List<ParamHeader>();
+        var groups = new Dictionary<string, List<ParamHeader>>();
+
+        foreach (var (key, value) in groupedDict) {
+            if (value.Count == 1) {
+                singles.Add(value[0]);
+            } else {
+                groups[key] = value;
+            }
+        }
+        return (singles, groups);
+    }
+
+    private void DrawMaterialParam(UIContext parent, ParamHeader param, string label)
+    {
+        ImGui.PushID(param.paramName);
+        var ctx = parent.AddChild(label, param);
+        ctx.uiHandler ??= new ParamHeaderImguiHandler();
+        ctx.uiHandler.OnIMGUI(ctx);
+        ImGui.PopID();
     }
     private class EMVMaterialJson
     {
@@ -673,17 +778,10 @@ public class ParamHeaderImguiHandler : IObjectUIHandler
         var mdfDefaultBookmarks = context.FindHandlerInParents<MdfEditor>()?.MDFDefaultBookmarks!;
         bool isBookmarked = mdfBookmarks.IsBookmarked(workspace.Game.name, param.paramName);
         bool showOnlyBookmarked = context.FindHandlerInParents<MdfFileImguiHandler>()?.isShowOnlyBookmarkedParams ?? false;
+        string label = context.label;
 
-        BookmarkManager.BookmarkEntry? paramEntry = null;
-        foreach (var b in mdfDefaultBookmarks.GetBookmarks(workspace.Game.name)) {
-            if (b.Path == param.paramName) {
-                paramEntry = b;
-                break;
-            }
-        }
-        bool hasDefaultComment = paramEntry != null && !string.IsNullOrWhiteSpace(paramEntry.Comment);
-
-        if (showOnlyBookmarked && !isBookmarked) return;
+        var paramEntry = mdfDefaultBookmarks.GetBookmarks(workspace.Game.name).FirstOrDefault(b => b.Path == param.paramName);
+        bool hasDefaultComment = !string.IsNullOrWhiteSpace(paramEntry?.Comment);
 
         if (mdfBookmarks != null) {
             ImGui.PushStyleColor(ImGuiCol.Text, isBookmarked ? Colors.IconActive : ImguiHelpers.GetColor(ImGuiCol.Text));
@@ -712,20 +810,20 @@ public class ParamHeaderImguiHandler : IObjectUIHandler
         if (context.children.Count == 0) {
             switch (param.componentCount) {
                 case 1:
-                    context.AddChild<ParamHeader, float>(param.paramName, param, new NumericFieldHandler<float>(ImGuiDataType.Float), (p) => p!.parameter.X, (p, v) => p.parameter = new Vector4(v, 0, 0, 0));
+                    context.AddChild<ParamHeader, float>(label, param, new NumericFieldHandler<float>(ImGuiDataType.Float), (p) => p!.parameter.X, (p, v) => p.parameter = new Vector4(v, 0, 0, 0));
                     break;
                 case 2:
-                    context.AddChild<ParamHeader, Vector2>(param.paramName, param, new Vector2FieldHandler(), (p) => p!.parameter.ToVec2(), (p, v) => p.parameter = v.ToVec4());
+                    context.AddChild<ParamHeader, Vector2>(label, param, new Vector2FieldHandler(), (p) => p!.parameter.ToVec2(), (p, v) => p.parameter = v.ToVec4());
                     break;
                 case 3:
-                    context.AddChild<ParamHeader, Vector3>(param.paramName, param, new Vector3FieldHandler(), (p) => p!.parameter.ToVec3(), (p, v) => p.parameter = v.ToVec4());
+                    context.AddChild<ParamHeader, Vector3>(label, param, new Vector3FieldHandler(), (p) => p!.parameter.ToVec3(), (p, v) => p.parameter = v.ToVec4());
                     break;
                 default:
                 case 4:
                     if (param.paramName.Contains("color", StringComparison.OrdinalIgnoreCase)) {
-                        context.AddChild<ParamHeader, Color>(param.paramName, param, new ColorFieldHandler(), (p) => Color.FromVector4(p!.parameter), (p, v) => p.parameter = v.ToVector4());
+                        context.AddChild<ParamHeader, Color>(label, param, new ColorFieldHandler(), (p) => Color.FromVector4(p!.parameter), (p, v) => p.parameter = v.ToVector4());
                     } else {
-                        context.AddChild<ParamHeader, Vector4>(param.paramName, param, new Vector4FieldHandler(), (p) => p!.parameter, (p, v) => p.parameter = v);
+                        context.AddChild<ParamHeader, Vector4>(label, param, new Vector4FieldHandler(), (p) => p!.parameter, (p, v) => p.parameter = v);
                     }
                     break;
             }
