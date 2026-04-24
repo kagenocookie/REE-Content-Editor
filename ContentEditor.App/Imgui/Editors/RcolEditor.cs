@@ -8,7 +8,7 @@ using ReeLib.Rcol;
 
 namespace ContentEditor.App.ImguiHandling.Rcol;
 
-public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IInspectorController, IRSZFileEditor
+public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IInspectorController, IRSZFileEditor, IBoneReferenceHolderComponent
 {
     public override string HandlerName => "RequestSetCollider";
 
@@ -26,6 +26,8 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
     public RequestSetColliderComponent? Component => _component;
 
     protected override bool IsRevertable => context.Changed;
+
+    public MeshComponent? MeshComponent => _component?.GameObject.GetComponent<MeshComponent>();
 
     private static MemberInfo[] BasicFields = [
         typeof(RcolFile).GetProperty(nameof(RcolFile.IgnoreTags))!,
@@ -317,8 +319,10 @@ public class RcolShapeEditor : IObjectUIHandler
             context.AddChild<RcolShape, int>("Attribute", group, getter: (i) => i!.Info.Attribute, setter: (i, v) => i.Info.Attribute = v).AddDefaultHandler<int>();
             context.AddChild<RcolShape, uint>("Skip ID Bits", group, getter: (i) => i!.Info.SkipIdBits, setter: (i, v) => i.Info.SkipIdBits = v).AddDefaultHandler<uint>();
             context.AddChild<RcolShape, uint>("IgnoreTag Bits", group, getter: (i) => i!.Info.IgnoreTagBits, setter: (i, v) => i.Info.IgnoreTagBits = v).AddDefaultHandler<uint>();
-            context.AddChild<RcolShape, string>("Primary Joint", group, getter: (i) => i!.Info.primaryJointNameStr, setter: (i, v) => i.Info.primaryJointNameStr = v ?? string.Empty).AddDefaultHandler<string>();
-            context.AddChild<RcolShape, string>("Secondary Joint", group, getter: (i) => i!.Info.secondaryJointNameStr, setter: (i, v) => i.Info.secondaryJointNameStr = v ?? string.Empty).AddDefaultHandler<string>();
+            var boneHandler1 = new BoneNameHandler(c => c.parent!.Get<RcolShape>().Info.PrimaryJointNameHash, (c, v) => c.parent!.Get<RcolShape>().Info.PrimaryJointNameHash = v);
+            context.AddChild("Primary Joint", group, boneHandler1, c => c!.Info.primaryJointNameStr, (c, v) => c.Info.primaryJointNameStr = v ?? string.Empty);
+            var boneHandler2 = new BoneNameHandler(c => c.parent!.Get<RcolShape>().Info.SecondaryJointNameHash, (c, v) => c.parent!.Get<RcolShape>().Info.SecondaryJointNameHash = v);
+            context.AddChild("Secondary Joint", group, boneHandler2, c => c!.Info.secondaryJointNameStr, (c, v) => c.Info.secondaryJointNameStr = v ?? string.Empty);
             context.AddChild<RcolShape, string>("Collision Material", group, new ResourcePathPicker(context.GetWorkspace(), KnownFileFormats.CollisionMaterial), (i) => i!.Info.cmatPath, (i, v) => i.Info.cmatPath = v ?? string.Empty);
             context.AddChild("Shape", group, getter: (i) => ((RcolShape)i.target!).shape, setter: (i, s) => ((RcolShape)i.target!).shape = s).AddDefaultHandler();
             context.AddChild<RcolShape, RszInstance>(

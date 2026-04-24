@@ -7,27 +7,11 @@ using ReeLib.Mesh;
 namespace ContentEditor.App.ImguiHandling.Chain;
 
 public class ClspEditor(ContentWorkspace env, FileHandle file, Component? component = null)
-    : FileEditor(file), IBoneReferenceHolder
+    : FileEditor(file), IBoneReferenceHolderComponent
 {
     public ContentWorkspace Workspace { get; } = env;
 
-    public IEnumerable<MeshBone> GetBones() => component?.GameObject.GetComponent<MeshComponent>()?.GetBones() ?? [];
-
-    public MeshBone? FindBoneByHash(uint hash)
-    {
-        return component?.GameObject.GetComponent<MeshComponent>()?.FindBoneByHash(hash);
-    }
-
-    public bool TryGetBoneTransform(uint hash, out Matrix4x4 matrix)
-    {
-        var comp = component?.GameObject.GetComponent<MeshComponent>();
-        if (comp == null) {
-            matrix = Matrix4x4.Identity;
-            return false;
-        }
-
-        return comp.TryGetBoneTransform(hash, out matrix);
-    }
+    public MeshComponent? MeshComponent => component?.GameObject.GetComponent<MeshComponent>();
 
     protected override void DrawFileContents()
     {

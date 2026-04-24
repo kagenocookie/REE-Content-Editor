@@ -106,27 +106,32 @@ public class RequestSetColliderComponent(GameObject gameObject, RszInstance data
         ref readonly var transform = ref GameObject.Transform.WorldTransform;
 
         Matrix4x4 shapeMatrix = Matrix4x4.Identity;
+        Matrix4x4 point2Matrix = Matrix4x4.Identity;
         foreach (var rcol in rcols) {
             if (rcol == null) continue;
 
             foreach (var group in rcol.Groups) {
                 foreach (var shape in group.Shapes.Concat(group.ExtraShapes)) {
                     if (shape.shape != null) {
-                        if (string.IsNullOrEmpty(shape.Info.primaryJointNameStr) || parentMesh == null) {
-                            shapeMatrix = transform;
-                        } else {
-                            parentMesh.TryGetBoneTransform(shape.Info.primaryJointNameStr, out shapeMatrix);
+                        if (parentMesh != null && parentMesh.TryGetBoneTransform(shape.Info.PrimaryJointNameHash, out shapeMatrix)) {
                             shapeMatrix = shapeMatrix * transform;
+                        } else {
+                            shapeMatrix = transform;
+                        }
+                        if (parentMesh != null && parentMesh.TryGetBoneTransform(shape.Info.SecondaryJointNameHash, out point2Matrix)) {
+                            point2Matrix = point2Matrix * transform;
+                        } else {
+                            point2Matrix = transform;
                         }
                         if (group.Info.guid == activeGroup?.Info.guid) {
                             gizmo.PushMaterial(activeMaterial, obscuredMaterial, priority: 1);
                             gizmo.BeginControl();
-                            if (gizmo.Cur.EditableBoxed(in shapeMatrix, shape.shape, out var newShape, out int handleId)) {
+                            if (gizmo.Cur.EditableBoxed(in shapeMatrix, in point2Matrix, shape.shape, out var newShape, out int handleId)) {
                                 UndoRedo.RecordCallbackSetter(null, shape, shape.shape, newShape, static (ss, vv) => ss.shape = vv, $"{shape.GetHashCode()}{handleId}");
                             }
                         } else {
                             gizmo.PushMaterial(inactiveMaterial);
-                            gizmo.Cur.AddBoxed(in shapeMatrix, shape.shape);
+                            gizmo.Cur.AddBoxed(in shapeMatrix, in point2Matrix, shape.shape);
                         }
                         gizmo.PopMaterial();
                     }

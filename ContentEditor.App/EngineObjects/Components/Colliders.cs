@@ -103,7 +103,7 @@ public class Colliders(GameObject gameObject, RszInstance data) : Component(game
                 case "via.physics.ContinuousCapsuleShape":
                     if (isActive) {
                         var cap = RszFieldCache.CapsuleShape.Capsule.Get(shape);
-                        if (gizmo.Cur.EditableCapsule(transform, ref cap, out var hid)) {
+                        if (gizmo.Cur.EditableCapsule(transform, transform, ref cap, out var hid)) {
                             UndoRedo.RecordCallbackSetter(null, shape, RszFieldCache.CapsuleShape.Capsule.Get(shape), cap, static (ss, vv) => RszFieldCache.CapsuleShape.Capsule.Set(ss, vv), $"{shape.GetHashCode()}{hid}");
                         }
                     } else {
@@ -113,7 +113,7 @@ public class Colliders(GameObject gameObject, RszInstance data) : Component(game
                 case "via.physics.CylinderShape":
                     if (isActive) {
                         var cap = RszFieldCache.CylinderShape.Cylinder.Get(shape);
-                        if (gizmo.Cur.EditableCylinder(transform, ref cap, out var hid)) {
+                        if (gizmo.Cur.EditableCylinder(transform, transform, ref cap, out var hid)) {
                             UndoRedo.RecordCallbackSetter(null, shape, RszFieldCache.CylinderShape.Cylinder.Get(shape), cap, static (ss, vv) => RszFieldCache.CylinderShape.Cylinder.Set(ss, vv), $"{shape.GetHashCode()}{hid}");
                         }
                     } else {
