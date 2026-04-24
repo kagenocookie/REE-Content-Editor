@@ -59,6 +59,11 @@
         "Ch18000": 3193582133,
         "Ch21000": 2183828763,
 
+        "Ch30000": 3406497186,
+        "Ch31001": 2443507163,
+        "Ch31002": 257332434,
+        "Ch31003": 1469014850,
+
         "It00010": 2870192522,
         "It00011": 1305591762,
         "It00014": 644722379,
@@ -80,6 +85,7 @@
         "It00044": 3018310814,
         "It00051": 2429803748,
         "It00061": 3940343410,
+        "It00062": 1931569026,
         "It00100": 2943986455,
         "It00110": 629542793,
         "It01000": 1028629837,
@@ -123,6 +129,7 @@
         "It30003": 3036423139,
         "It30004": 1887847758,
         "It30005": 3746788365,
+        "It30006": 1669182627,
 
         "It50000": 594303752,
         "It50020": 725482672
@@ -135,11 +142,50 @@
         "Ch16003": "Ch16003: Walker",
         "Ch17000": "Ch17000: Drone",
 
+        "Ch30000": "Ch30000: Hugh (event)",
+        "Ch31001": "Ch31001: Diana (event)",
+        "Ch31002": "Ch31002: Diana (event)",
+        "Ch31003": "Ch31003: Diana (event)",
+
+        "It00011": "It00011: Repair Kit",
+        "It00014": "It00014: Data Shard",
         "It00020": "It00020: Lunafilament XL",
         "It00021": "It00021: Lunafilament L",
         "It00022": "It00022: Lunafilament M",
         "It00023": "It00023: Lunafilament S (5)",
-        "It00026": "It00023: Lunafilament S",
+        "It00025": "It00025: Lunafilament",
+        "It00026": "It00026: Lunafilament S",
+        "It00034": "It00034: Upgrade Components",
+        "It00035": "It00035: Cabin Coin",
+        "It00036": "It00036: Pure Lunum",
+        "It00039": "It00039: Shelter License Key",
+        "It00041": "It00041: Shelter License Key",
+        "It00042": "It00042: Shelter License Key",
+        "It00043": "It00043: Shelter License Key",
+        "It00044": "It00044: Shelter License Key",
+        "It00051": "It00051: Red Gate Key",
+        "It00061": "It00061: Cartridge Holder",
+        "It00062": "It00062: Storage Epander",
+        "It00100": "It00100: Hack",
+        "It00110": "It00110: Mod",
+
+        "It01000": "It01000: Grip Gun",
+        "It01200": "It01200: Drone Hive",
+        "It01300": "It01300: Stasis Net",
+        "It01400": "It01400: Charge Piercer",
+        "It01500": "It01500: Pulse Carbine",
+        "It01600": "It01600: Jackhammer",
+        "It01700": "It01700: Photon Laser",
+        "It01800": "It01800: Riot Blaster",
+        "It01900": "It01900: Sticky Bombs",
+        "It02100": "It02100: Decoy Generator",
+        "It02200": "It02200: Code Generator",
+        "It02300": "It02300: Impact Barrier",
+        "It02500": "It02500: Hacking Mines",
+        "It02600": "It02600: Homing Missiles",
+        "It02700": "It02700: Lim Cannon",
+        "It02900": "It02900: ERASER",
+        "It03100": "It03100: Shockwave Gun",
 
         "It10010": "It10010: REM",
         "It10011": "It10011: REM",
@@ -156,6 +202,17 @@
         "It10022": "It10022: REM",
         "It10023": "It10023: REM",
         "It10024": "It10024: REM",
-        "It10025": "It10025: REM"
+        "It10025": "It10025: REM",
+
+        "It30000": "It30000: Training Data",
+        "It30001": "It30001: Training Data",
+        "It30002": "It30002: Training Data",
+        "It30003": "It30003: Training Data",
+        "It30004": "It30004: Training Data",
+        "It30005": "It30005: Training Data",
+        "It30006": "It30006: Training Data",
+
+        "It50000": "It50000: Gen Chip",
+        "It50020": "It50020: Reactor"
     }
 }

@@ -7,27 +7,11 @@ using ReeLib.Mesh;
 namespace ContentEditor.App.ImguiHandling.Chain;
 
 public class ClspEditor(ContentWorkspace env, FileHandle file, Component? component = null)
-    : FileEditor(file), IBoneReferenceHolder
+    : FileEditor(file), IBoneReferenceHolderComponent
 {
     public ContentWorkspace Workspace { get; } = env;
 
-    public IEnumerable<MeshBone> GetBones() => component?.GameObject.GetComponent<MeshComponent>()?.GetBones() ?? [];
-
-    public MeshBone? FindBoneByHash(uint hash)
-    {
-        return component?.GameObject.GetComponent<MeshComponent>()?.FindBoneByHash(hash);
-    }
-
-    public bool TryGetBoneTransform(uint hash, out Matrix4x4 matrix)
-    {
-        var comp = component?.GameObject.GetComponent<MeshComponent>();
-        if (comp == null) {
-            matrix = Matrix4x4.Identity;
-            return false;
-        }
-
-        return comp.TryGetBoneTransform(hash, out matrix);
-    }
+    public MeshComponent? MeshComponent => component?.GameObject.GetComponent<MeshComponent>();
 
     protected override void DrawFileContents()
     {
@@ -47,7 +31,6 @@ internal class ClspCollisionPresetHandler : IObjectUIHandler
         var instance = context.Get<CollisionPreset>();
         if (AppImguiHelpers.CopyableTreeNode<CollisionPreset>(context)) {
             if (context.children.Count == 0) {
-                Logger.Debug("a");
                 context.AddChild("Bone 1", instance, new BoneHashHandler(), c => c!.hash1, (c, v) => c.hash1 = v);
                 context.AddChild("Bone 2", instance, new BoneHashHandler(), c => c!.hash2, (c, v) => c.hash2 = v);
                 context.AddChild("Shape", instance, getter: c => c!.shape, setter: (c, v) => c.shape = v).AddDefaultHandler();

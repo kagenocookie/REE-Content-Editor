@@ -373,8 +373,8 @@ public class ShapeBuilder
                     builder.StoreWireSemiCircle(ref index, shape.R, -alignedUp, new Vector3(0, 1, 0), new Vector3(0.5f, 0.5f, 0));
                     builder.StoreWireSemiCircle(ref index, shape.R, -alignedUp, new Vector3(0, 1, 0), new Vector3(0.5f, -0.5f, 0));
 
-                    var side1 = shape.R * Vector3.Cross(Vector3.UnitY, Vector3.UnitX);
-                    var side2 = shape.R * Vector3.Cross(Vector3.UnitY, Vector3.UnitZ);
+                    var side1 = shape.R * -Vector3.UnitZ;
+                    var side2 = shape.R * Vector3.UnitX;
                     var sideOff1 = Vector3.Normalize(Vector3.Cross(side1, Vector3.UnitY)) * 0.01f;
                     var sideOff2 = Vector3.Normalize(Vector3.Cross(side2, Vector3.UnitY)) * 0.01f;
                     builder.InsertQuad(ref index, -alignedUp + side1 + sideOff1, -alignedUp + side1 - sideOff1, alignedUp + side1 - sideOff1, alignedUp + side1 + sideOff1);
@@ -392,8 +392,8 @@ public class ShapeBuilder
                     builder.StoreLineSemiCircle(ref index, shape.R, -alignedUp, new Vector3(0.5f, 0.5f, 0));
                     builder.StoreLineSemiCircle(ref index, shape.R, -alignedUp, new Vector3(0.5f, -0.5f, 0));
 
-                    var side1 = shape.R * Vector3.Cross(Vector3.UnitY, Vector3.UnitX);
-                    var side2 = shape.R * Vector3.Cross(Vector3.UnitY, Vector3.UnitZ);
+                    var side1 = shape.R * -Vector3.UnitZ;
+                    var side2 = shape.R * Vector3.UnitX;
                     builder.InsertLine(ref index, -alignedUp + side1, alignedUp + side1);
                     builder.InsertLine(ref index, -alignedUp - side1, alignedUp - side1);
                     builder.InsertLine(ref index, -alignedUp + side2, alignedUp + side2);
@@ -441,8 +441,8 @@ public class ShapeBuilder
                     builder.StoreWireSemiCircle(ref index, shape.r, -alignedUp, new Vector3(0, 1, 0), new Vector3(0.5f, 0.5f, 0));
                     builder.StoreWireSemiCircle(ref index, shape.r, -alignedUp, new Vector3(0, 1, 0), new Vector3(0.5f, -0.5f, 0));
 
-                    var side1 = shape.r * Vector3.Cross(Vector3.UnitY, Vector3.UnitX);
-                    var side2 = shape.r * Vector3.Cross(Vector3.UnitY, Vector3.UnitZ);
+                    var side1 = shape.r * -Vector3.UnitZ;
+                    var side2 = shape.r * Vector3.UnitX;
                     var sideOff1 = Vector3.Normalize(Vector3.Cross(side1, Vector3.UnitY)) * 0.01f;
                     var sideOff2 = Vector3.Normalize(Vector3.Cross(side2, Vector3.UnitY)) * 0.01f;
                     builder.InsertQuad(ref index, -alignedUp + side1 + sideOff1, -alignedUp + side1 - sideOff1, alignedUp + side1 - sideOff1, alignedUp + side1 + sideOff1);
@@ -461,8 +461,8 @@ public class ShapeBuilder
                     builder.StoreLineSemiCircle(ref index, shape.r, -alignedUp, new Vector3(0.5f, 0.5f, 0));
                     builder.StoreLineSemiCircle(ref index, shape.r, -alignedUp, new Vector3(0.5f, -0.5f, 0));
 
-                    var side1 = shape.r * Vector3.Cross(Vector3.UnitY, Vector3.UnitX);
-                    var side2 = shape.r * Vector3.Cross(Vector3.UnitY, Vector3.UnitZ);
+                    var side1 = shape.r * -Vector3.UnitZ;
+                    var side2 = shape.r * Vector3.UnitX;
                     builder.InsertLine(ref index, -alignedUp + side1, alignedUp + side1);
                     builder.InsertLine(ref index, -alignedUp - side1, alignedUp - side1);
                     builder.InsertLine(ref index, -alignedUp + side2, alignedUp + side2);
@@ -512,8 +512,8 @@ public class ShapeBuilder
                     builder.StoreLineSemiCircle(ref index, shape.r1, alignedUp, new Vector3(0.5f, 0.5f, 0));
                     builder.StoreLineSemiCircle(ref index, shape.r1, alignedUp, new Vector3(0.5f, -0.5f, 0));
 
-                    var side1 = Vector3.Cross(Vector3.UnitY, Vector3.UnitX);
-                    var side2 = Vector3.Cross(Vector3.UnitY, Vector3.UnitZ);
+                    var side1 = -Vector3.UnitZ;
+                    var side2 = Vector3.UnitX;
                     builder.InsertLine(ref index, -alignedUp + side1 * shape.r0, alignedUp + side1 * shape.r1);
                     builder.InsertLine(ref index, -alignedUp - side1 * shape.r0, alignedUp - side1 * shape.r1);
                     builder.InsertLine(ref index, -alignedUp + side2 * shape.r0, alignedUp + side2 * shape.r1);

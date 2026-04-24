@@ -76,6 +76,7 @@ public partial class CommonMeshResource : IResourceFile
         var orderedMeshes = srcMeshes.OrderBy(m => (MeshLoader.GetMeshGroupFromName(m.Name), MeshLoader.GetSubMeshIndexFromName(m.Name)));
 
         var nodes = FlatNodes(scene.RootNode).ToArray();
+        var secNodes = nodes.Where(n => n.Name.StartsWith(SecondaryWeightDummyBonePrefix) && n.Name != SecondaryWeightDummyBonePrefix).Select(n => n.Name.Replace(SecondaryWeightDummyBonePrefix, "")).ToHashSet();
 
         var materialNames = scene.Materials.Select(m => m.Name).ToArray();
         var useNameMaterials = AppConfig.Settings.Import.ImportMaterialsFromMeshName;
@@ -99,7 +100,7 @@ public partial class CommonMeshResource : IResourceFile
         var deformBones = new SortedList<int, MeshBone>();
         if (mainBuffer.Weights.Length > 0) {
             var boneNames = srcMeshes.SelectMany(m => m.Bones.Select(b => b.Name)).ToHashSet();
-            static void AddRecursiveBones(MeshFile file, NodeCollection children, HashSet<string> boneNames, MeshBone? parentBone, ImportSettings settings)
+            static void AddRecursiveBones(MeshFile file, NodeCollection children, HashSet<string> boneNames, MeshBone? parentBone, ImportSettings settings, HashSet<string> secNodes)
             {
                 foreach (var node in children) {
                     if (node.Name.StartsWith(ShapekeyPrefix) || node.Name.StartsWith(SecondaryWeightDummyBonePrefix)) continue;
@@ -119,7 +120,7 @@ public partial class CommonMeshResource : IResourceFile
                             symmetryIndex = file.BoneData.Bones.Count,
                         };
                         file.BoneData.Bones.Add(bone);
-                        bone.useSecondaryWeight = node.Children.Any(ch => ch.Name.StartsWith(SecondaryWeightDummyBonePrefix));
+                        bone.useSecondaryWeight = secNodes.Contains(node.Name);
                         if (parentBone == null) {
                             if (settings.ForceRootIdentity) {
                                 bone.localTransform = Matrix4x4.Identity;
@@ -139,14 +140,14 @@ public partial class CommonMeshResource : IResourceFile
                             parentBone.Children.Add(bone);
                         }
                         bone.inverseGlobalTransform = Matrix4x4.Invert(bone.globalTransform.ToSystem(), out var inverse) ? inverse : throw new Exception("Failed to calculate inverse bone matrix " + bone.name);
-                        AddRecursiveBones(file, node.Children, boneNames, bone, settings);
+                        AddRecursiveBones(file, node.Children, boneNames, bone, settings, secNodes);
                     } else if (node.Children.Count > 0) {
                         // just in case there's some weird hierarchy shenanigans going on?
-                        AddRecursiveBones(file, node.Children, boneNames, parentBone, settings);
+                        AddRecursiveBones(file, node.Children, boneNames, parentBone, settings, secNodes);
                     }
                 }
             }
-            AddRecursiveBones(mesh, scene.RootNode.Children, boneNames, null, AppConfig.Settings.Import);
+            AddRecursiveBones(mesh, scene.RootNode.Children, boneNames, null, AppConfig.Settings.Import, secNodes);
             // handle symmetry bones
             foreach (var bone in mesh.BoneData!.Bones) {
                 if (bone.name.StartsWith("l_", StringComparison.InvariantCultureIgnoreCase)) {

@@ -57,7 +57,12 @@
         "Ch17200": 3736983778,
         "Ch17400": 1068007606,
         "Ch18000": 3193582133,
-        "Ch21000": 2183828763
+        "Ch21000": 2183828763,
+
+        "Ch30000": 3406497186,
+        "Ch31001": 2443507163,
+        "Ch31002": 257332434,
+        "Ch31003": 1469014850
     },
     "displayLabels": {
         "Ch01000": "Ch01000: Hugh",
@@ -68,16 +73,30 @@
         "Ch07000": "Ch07000: Crewmate 1",
         "Ch07100": "Ch07100: Crewmate 2",
         "Ch07200": "Ch07200: Crewmate 3",
+        "Ch09000": "Ch09000: Eight",
+        "Ch09001": "Ch09001: Eight (Corrupted)",
 
         "Ch14100": "Ch14100: Creator",
         "Ch14101": "Ch14101: Creator MK-II",
+        "Ch14200": "Ch14200: Garden Keeper",
+        "Ch14201": "Ch14201: Garden Keeper MK-II",
+        "Ch14300": "Ch14300: LunaDigger",
+        "Ch14301": "Ch14301: LunaDigger",
+        "Ch14302": "Ch14302: LunaDigger MK-II",
 
         "Ch16000": "Ch16000: Walker",
         "Ch16003": "Ch16003: Walker Variant",
-        "Ch16010": "Ch16010: Sector Guard",
+        "Ch16005": "Ch16005: Walker (Corrupted)",
+        "Ch16010": "Ch16010: SectorGuard",
+        "Ch16011": "Ch16011: SectorGuard MK-II",
         "Ch16021": "Ch16021: Spider",
         "Ch16030": "Ch16030: Crusher",
         "Ch17000": "Ch17000: Watcher",
-        "Ch17001": "Ch17001: Missile Watcher"
+        "Ch17001": "Ch17001: Missile Watcher",
+
+        "Ch30000": "Ch30000: Hugh (event)",
+        "Ch31001": "Ch31001: Diana (event)",
+        "Ch31002": "Ch31002: Diana (event)",
+        "Ch31003": "Ch31003: Diana (event)"
     }
 }

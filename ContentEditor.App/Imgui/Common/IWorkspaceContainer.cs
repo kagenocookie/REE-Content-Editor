@@ -1,24 +1,12 @@
-using System.Numerics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Editor;
 using ContentPatcher;
-using ReeLib.Common;
-using ReeLib.Mesh;
 
 namespace ContentEditor.App.ImguiHandling;
 
 public interface IWorkspaceContainer
 {
     ContentWorkspace Workspace { get; }
-}
-
-public interface IBoneReferenceHolder
-{
-    IEnumerable<MeshBone> GetBones();
-    MeshBone? FindBoneByHash(uint hash);
-    MeshBone? FindBoneByName(string name) => FindBoneByHash(MurMur3HashUtils.GetHash(name));
-    bool TryGetBoneTransform(uint hash, out Matrix4x4 matrix);
-    bool TryGetBoneTransform(string name, out Matrix4x4 matrix) => TryGetBoneTransform(MurMur3HashUtils.GetHash(name), out matrix);
 }
 
 public static class UIContextExtensions

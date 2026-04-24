@@ -1,11 +1,15 @@
+# entities:
+#   costumes.costume:
+
+
 classes:
   app.Costume.Closet:
     # id: [_CharacterID.Hash]
     to_string: "Closet {_CharacterID.Hash:enum(ce.CharacterDefine)} (#{_CharacterID.Hash})"
   app.Costume.Outfit:
     id: [_CostumeIDHash._TypeSelectHash]
-    to_string: "Outfit Hash {_CostumeIDHash._TypeSelectHash}"
+    to_string: "Outfit {_CostumeIDHash._TypeSelectHash:enum(ce.CostumeID)} [{_CostumeIDHash._TypeSelectHash}]"
   app.Costume.Part:
     to_string: "{_Name} | Path={_Prefab.Path}"
   app.CostumeIDSelector:
-    to_string: "Costume Hash {_TypeSelectHash}"
+    to_string: "Costume ID {_TypeSelectHash:enum(ce.CostumeID)} [{_TypeSelectHash}]"
