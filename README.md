@@ -9,7 +9,7 @@ Besides basic file editing, the tool is able to merge multiple changes to the sa
 - All mainline Resident Evil games
 - Dragon's Dogma 2
 - Devil May Cry 5
-- Pragmata Demo
+- Pragmata
 
 Some files may not fully work for other RE ENGINE games.
 
