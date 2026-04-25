@@ -371,21 +371,16 @@ public class HomeWindow : IWindowHandler
         if (ImGui.Button($"{AppIcons.SI_Bundle} Bundle Manager")) {
             EditorWindow.CurrentWindow?.ShowBundleManagement();
         }
-        ImGui.SameLine();
-        if (ImGui.Button($"{AppIcons.SI_BundleLoadOrder} Load Order") && EditorWindow.CurrentWindow?.Workspace != null) {
-            EditorWindow.CurrentWindow?.AddUniqueSubwindow(new LoadOrderUI(EditorWindow.CurrentWindow.Workspace.BundleManager));
-        }
-        ImGui.SameLine();
-        ImguiHelpers.VerticalSeparator();
-        ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
-            if (ImGui.Button($"{AppIcons.SI_Reset}")) {
+            if (ImGui.Button($"{AppIcons.SI_BundleLoadOrder}")) {
                 EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, null);
             }
             ImGui.PopStyleColor();
             ImguiHelpers.Tooltip("Unload current Bundle"u8);
         }
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderContain, new[] { Colors.IconPrimary, Colors.IconSecondary })) {
             FileSystemUtils.ShowFileInExplorer(EditorWindow.CurrentWindow?.Workspace.BundleManager.AppBundlePath);

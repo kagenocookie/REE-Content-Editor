@@ -36,6 +36,7 @@ public class BundleManagementUI : IWindowHandler
     public bool HasUnsavedChanges => false;
     private string newBundleName = string.Empty;
     private bool isNewBundleMenu = false;
+    private Bundle? draggedBundle;
 
     private int selectedLegacyEntityType = 0;
     private int selectedEntityType = 0;
@@ -61,11 +62,15 @@ public class BundleManagementUI : IWindowHandler
             bundleManager.LoadDataBundles();
         }
         ShowBundleToolbar();
-        ImGui.SeparatorText("Bundles");
         ShowBundlesMenu();
     }
     private void ShowBundleToolbar()
     {
+        ImguiHelpers.ButtonMultiColor(AppIcons.SIC_InfoBundle, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.Info });
+        ImguiHelpers.Tooltip($"Total Bundles: {bundleManager.AllBundles.Count} | Active Bundles: {bundleManager.ActiveBundles.Count}");
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator();
+        ImGui.SameLine();
         ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_BundleAdd, ref isNewBundleMenu, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary }, Colors.IconActive);
         ImguiHelpers.Tooltip("New Bundle");
         ImGui.SameLine();
@@ -85,10 +90,29 @@ public class BundleManagementUI : IWindowHandler
         }
         ImguiHelpers.Tooltip("Create Bundle from PAK File");
         ImGui.SameLine();
-        if (ImGui.Button($"{AppIcons.SI_BundleLoadOrder}")) {
-            EditorWindow.CurrentWindow?.AddUniqueSubwindow(new LoadOrderUI(bundleManager));
+        ImguiHelpers.VerticalSeparator();
+        ImGui.SameLine();
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PatchLooseFiles, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, })) {
+            EditorWindow.CurrentWindow?.ApplyContentPatches(null);
         }
-        ImguiHelpers.Tooltip("Load Order");
+        ImguiHelpers.Tooltip("Apply patches (Loose file)");
+        ImGui.SameLine();
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PatchPakFile, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, })) {
+            EditorWindow.CurrentWindow?.ApplyContentPatches("pak");
+        }
+        ImguiHelpers.Tooltip("Apply patches (PAK file)");
+        ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_PatchTo}")) {
+            PlatformUtils.ShowFolderDialog((path) => EditorWindow.CurrentWindow?.ApplyContentPatches(path), EditorWindow.CurrentWindow?.Workspace.Env.Config.GamePath);
+        }
+        ImguiHelpers.Tooltip("Patch to...");
+        ImGui.SameLine();
+        ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
+        if (ImGui.Button($"{AppIcons.SI_Reset}")) {
+            EditorWindow.CurrentWindow?.RevertContentPatches();
+        }
+        ImGui.PopStyleColor();
+        ImguiHelpers.Tooltip("Revert patches");
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
@@ -142,11 +166,12 @@ public class BundleManagementUI : IWindowHandler
                 ImguiHelpers.Tooltip("Create");
             }
             ImGui.SameLine();
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
             ImGui.SetNextItemAllowOverlap();
             ImGui.InputTextWithHint("##BundleName", "Enter Bundle name here...", ref newBundleName, 100);
             if (!string.IsNullOrEmpty(newBundleName)) {
                 ImGui.SameLine();
-                ImGui.SetCursorPosX(ImGui.GetCursorPosX() - (ImGui.CalcTextSize($"{AppIcons.SI_GenericError}").X * 2));
+                ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
                 ImGui.SetNextItemAllowOverlap();
                 if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
                     newBundleName = string.Empty;
@@ -156,12 +181,41 @@ public class BundleManagementUI : IWindowHandler
     }
     private void ShowBundlesMenu()
     {
+        var filter = data.GetPersistentData<string>("bundleFilter") ?? "";
         var selectedName = data.GetPersistentData<string>("selectedBundle");
+        var selectedBundle = bundleManager.GetBundle(selectedName, null);
+        var bundlesY = ImGui.GetFrameHeightWithSpacing() * 9 + ImGui.GetStyle().FramePadding.X + 120;
+
+        ImGui.BeginChild("##Bundles", new Vector2(ImGui.GetContentRegionAvail().X / 1.8f, bundlesY));
+        ImGui.PushItemWidth(350);
+        ImGui.SeparatorText("Bundles");
         if (bundleManager.AllBundles.Count == 0) {
             ImGui.TextColored(Colors.Info, "No Bundles found!");
         } else {
-            var filter = data.GetPersistentData<string>("bundleFilter") ?? "";
-            var selectedBundle = bundleManager.GetBundle(selectedName, null);
+            using (var _ = ImguiHelpers.Disabled(selectedBundle == null)) {
+                if (ImGui.Button($"{AppIcons.SI_Save}")) {
+                    selectedBundle!.Save();
+                    EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Saved!", 1f);
+                }
+                ImguiHelpers.Tooltip("Save bundle metadata");
+
+                ImGui.SameLine();
+                if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, new[] { Colors.IconSecondary, Colors.IconPrimary })) {
+                    FileSystemUtils.ShowFileInExplorer(bundleManager.ResolveBundleLocalPath(selectedBundle!, ""));
+                }
+                ImguiHelpers.Tooltip("Open Current Bundle folder in File Explorer");
+
+                ImGui.SameLine();
+                using (var __ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
+                    ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
+                    if (ImGui.Button($"{AppIcons.SI_BundleLoadOrder}")) {
+                        EditorWindow.CurrentWindow?.SetWorkspace(
+                            EditorWindow.CurrentWindow.Workspace.Env.Config.Game, null);
+                    }
+                    ImGui.PopStyleColor();
+                    ImguiHelpers.Tooltip("Unload current Bundle");
+                }
+            }
             var names = bundleManager.AllBundles.Select(b => b.Name).ToArray();
             var bundlespan = CollectionsMarshal.AsSpan(bundleManager.AllBundles);
             if (ImguiHelpers.FilterableCombo("Bundle", names, bundlespan, ref selectedBundle, ref filter)) {
@@ -171,187 +225,221 @@ public class BundleManagementUI : IWindowHandler
             data.SetPersistentData("bundleFilter", filter);
         }
 
-        if (selectedName == null) return;
-
-        var bundle = bundleManager.GetBundle(selectedName, null);
-        if (bundle == null) {
-            return;
-        }
-        var previousSelectedName = data.GetPersistentData<string>("activeBundleObserved");
-        if (selectedName != previousSelectedName) {
-            data.SetPersistentData("activeBundleObserved", selectedName);
-            if (EditorWindow.CurrentWindow?.Workspace.CurrentBundle?.Name != bundle.Name) {
-                EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, bundle.Name);
+        var bundle = selectedName != null ? bundleManager.GetBundle(selectedName, null) : null;
+        if (bundle != null) {
+            var previousSelectedName = data.GetPersistentData<string>("activeBundleObserved");
+            if (selectedName != previousSelectedName) {
+                data.SetPersistentData("activeBundleObserved", selectedName);
+                if (EditorWindow.CurrentWindow?.Workspace.CurrentBundle?.Name != bundle.Name) {
+                    EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, bundle.Name);
+                }
             }
-        }
-
-        ImGui.SameLine();
-        if (ImGui.Button($"{AppIcons.SI_Save}")) {
-            bundle.Save();
-            EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Saved!", 1f);
-        }
-        ImguiHelpers.Tooltip("Save bundle metadata");
-        ImGui.SameLine();
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, new[] { Colors.IconSecondary, Colors.IconPrimary })) {
-            FileSystemUtils.ShowFileInExplorer(bundleManager.ResolveBundleLocalPath(bundle, ""));
-        }
-        ImguiHelpers.Tooltip("Open Current Bundle folder in File Explorer");
-        ImGui.SameLine();
-        using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
-            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
-            if (ImGui.Button($"{AppIcons.SI_Reset}")) {
-                EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, null);
+            var str = bundle.Author ?? "";
+            if (ImGui.InputText("Author", ref str, 100)) {
+                bundle.Author = str;
             }
-            ImGui.PopStyleColor();
-            ImguiHelpers.Tooltip("Unload current Bundle");
-        }
-        var str = bundle.Author ?? "";
-        if (ImGui.InputText("Author", ref str, 100)) {
-            bundle.Author = str;
-        }
-        str = bundle.Homepage ?? "";
-        if (ImGui.InputText("Homepage", ref str, 100)) {
-            bundle.Homepage = str;
-        }
-        str = bundle.Version ?? "";
-        if (ImGui.InputText("Version", ref str, 100)) {
-            bundle.Version = str;
-        }
-        str = bundle.Description ?? "";
-        var w = ImGui.CalcItemWidth();
-        if (ImGui.InputTextMultiline("Description", ref str, 1024, new Vector2(w, 120))) {
-            bundle.Description = str;
-        }
-        str = bundle.ImagePath ?? "";
-        var bundleFolder = bundleManager.GetBundleFolder(bundle);
-        if (AppImguiHelpers.InputFilepath("Image", ref str, FileFilters.ImageFiles)) {
-            if (File.Exists(str)) {
-                var localImageFilepath = str;
-                if (!string.IsNullOrEmpty(bundle.StorageFolder)) {
-                    if (!str.StartsWith(bundle.StorageFolder)) {
-                        var srcPath = str;
-                        str = Path.Combine(bundleFolder, Path.GetFileName(str));
-                        try {
-                            File.Copy(srcPath, str, true);
-                            EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Image copied to bundle folder", 4);
-                        } catch(Exception e) {
-                            Logger.Error("Unable to copy file into bundle: " + e.Message);
+            str = bundle.Homepage ?? "";
+            if (ImGui.InputText("Homepage", ref str, 100)) {
+                bundle.Homepage = str;
+            }
+            str = bundle.Version ?? "";
+            if (ImGui.InputText("Version", ref str, 100)) {
+                bundle.Version = str;
+            }
+            str = bundle.Description ?? "";
+            var w = ImGui.CalcItemWidth();
+            if (ImGui.InputTextMultiline("Description", ref str, 1024, new Vector2(w, 120))) {
+                bundle.Description = str;
+            }
+            str = bundle.ImagePath ?? "";
+            var bundleFolder = bundleManager.GetBundleFolder(bundle);
+            if (AppImguiHelpers.InputFilepath("Image", ref str, FileFilters.ImageFiles)) {
+                if (File.Exists(str)) {
+                    var localImageFilepath = str;
+                    if (!string.IsNullOrEmpty(bundle.StorageFolder)) {
+                        if (!str.StartsWith(bundle.StorageFolder)) {
+                            var srcPath = str;
+                            str = Path.Combine(bundleFolder, Path.GetFileName(str));
+                            try {
+                                File.Copy(srcPath, str, true);
+                                EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Image copied to bundle folder", 4);
+                            } catch (Exception e) {
+                                Logger.Error("Unable to copy file into bundle: " + e.Message);
+                            }
                         }
+                        localImageFilepath = Path.GetRelativePath(bundleFolder, str);
                     }
-                    localImageFilepath = Path.GetRelativePath(bundleFolder, str);
+                    bundle.ImagePath = localImageFilepath;
+                } else {
+                    bundle.ImagePath = str;
                 }
-                bundle.ImagePath = localImageFilepath;
-            } else {
-                bundle.ImagePath = str;
             }
-        }
-        var resolvedBundleFilepath = "";
-        if (!string.IsNullOrEmpty(bundle.ImagePath) && !Path.IsPathFullyQualified(bundle.ImagePath)) {
-            var p = Path.Combine(bundleFolder, bundle.ImagePath);
-            if (File.Exists(p)) resolvedBundleFilepath = p;
-        }
-
-        if (loadedThumbnail?.Path != resolvedBundleFilepath || !File.Exists(resolvedBundleFilepath)) {
-            loadedThumbnail?.Dispose();
-            loadedThumbnail = null;
-        }
-
-        if (File.Exists(resolvedBundleFilepath)) {
-            if (loadedThumbnail == null) {
-                loadedThumbnail = new Texture();
-                loadedThumbnail.LoadFromFile(resolvedBundleFilepath, true);
+            var resolvedBundleFilepath = "";
+            if (!string.IsNullOrEmpty(bundle.ImagePath) && !Path.IsPathFullyQualified(bundle.ImagePath)) {
+                var p = Path.Combine(bundleFolder, bundle.ImagePath);
+                if (File.Exists(p)) resolvedBundleFilepath = p;
             }
-        }
 
-        if (loadedThumbnail != null) {
-            ImGui.SetNextItemOpen(true, ImGuiCond.Appearing);
-            if (ImGui.TreeNode("Preview")) {
-                var h = w * (loadedThumbnail.Height / (float)loadedThumbnail.Width);
-                ImGui.Image(loadedThumbnail.AsTextureRef(), new Vector2(w, h));
-                if (ImGui.Button("Reload")) {
-                    // wait until next frame before unloading so it doesn't glitch out
-                    MainLoop.Instance.InvokeFromUIThread(() => {
-                        loadedThumbnail?.Dispose();
-                        loadedThumbnail = null;
-                    });
+            if (loadedThumbnail?.Path != resolvedBundleFilepath || !File.Exists(resolvedBundleFilepath)) {
+                loadedThumbnail?.Dispose();
+                loadedThumbnail = null;
+            }
+
+            if (File.Exists(resolvedBundleFilepath)) {
+                if (loadedThumbnail == null) {
+                    loadedThumbnail = new Texture();
+                    loadedThumbnail.LoadFromFile(resolvedBundleFilepath, true);
                 }
-                ImGui.TreePop();
             }
-        }
 
-        ImGui.BeginDisabled();
-        string createDate = "Created at: " + FormatUTCString(bundle.CreatedAt);
-        string updateDate = "Updated at: " + FormatUTCString(bundle.UpdatedAt);
-        ImGui.InputText("##CreationDate", ref createDate, 100);
-        ImGui.InputText("##UpdateDate", ref updateDate, 100);
-        ImGui.EndDisabled();
+            if (loadedThumbnail != null) {
+                ImGui.SetNextItemOpen(true, ImGuiCond.Appearing);
+                if (ImGui.TreeNode("Preview")) {
+                    var h = w * (loadedThumbnail.Height / (float)loadedThumbnail.Width);
+                    ImGui.Image(loadedThumbnail.AsTextureRef(), new Vector2(w, h));
+                    if (ImGui.Button("Reload")) {
+                        // wait until next frame before unloading so it doesn't glitch out
+                        MainLoop.Instance.InvokeFromUIThread(() => {
+                            loadedThumbnail?.Dispose();
+                            loadedThumbnail = null;
+                        });
+                    }
+                    ImGui.TreePop();
+                }
+            }
+
+            ImGui.BeginDisabled();
+            string createDate = "Created at: " + FormatUTCString(bundle.CreatedAt!);
+            string updateDate = "Updated at: " + FormatUTCString(bundle.UpdatedAt!);
+            ImGui.InputText("##CreationDate", ref createDate, 100);
+            ImGui.InputText("##UpdateDate", ref updateDate, 100);
+            ImGui.EndDisabled();
+            ImGui.PopItemWidth();
+        }
+        ImGui.EndChild();
+
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator(ImguiHelpers.GetColor(ImGuiCol.Separator), 2, 4, bundlesY);
+        ImGui.SameLine();
+
+        ImGui.BeginChild("##LoadOrder", new Vector2(ImGui.GetContentRegionAvail().X, bundlesY));
+        ImGui.SeparatorText("Load Order");
+        ShowBundleLoadOrderList();
+        ImGui.EndChild();
 
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.Spacing();
+        if (bundle != null) {
+            var legacyEntityTypes = bundle.LegacyData?.Where(ld => ld.TryGetPropertyValue("type", out _)).Select(ld => ld["type"]!.GetValue<string>()).Distinct();
+            if (legacyEntityTypes?.Any() == true) {
+                if (ImGui.TreeNode("Legacy entities")) {
+                    var types = allOption.Concat(legacyEntityTypes).ToArray();
+                    if (ImGui.Combo("Type", ref selectedLegacyEntityType, types, types.Length)) {
 
-        var legacyEntityTypes = bundle.LegacyData?
-            .Where(ld => ld.TryGetPropertyValue("type", out _))
-            .Select(ld => ld["type"]!.GetValue<string>())
-            .Distinct();
+                    }
+                    var entityFilter = selectedLegacyEntityType > 0 && selectedLegacyEntityType < types.Length ? types[selectedLegacyEntityType] : null;
+                    foreach (var e in bundle.LegacyData!) {
+                        if (!e.TryGetPropertyValue("type", out var type)) {
+                            continue;
+                        }
+                        var typeStr = type!.GetValue<string>();
+                        if (entityFilter != null && typeStr != entityFilter) {
+                            continue;
+                        }
 
-        if (legacyEntityTypes?.Any() == true) {
-            if (ImGui.TreeNode("Legacy entities")) {
-                var types = allOption.Concat(legacyEntityTypes).ToArray();
-                if (ImGui.Combo("Type", ref selectedLegacyEntityType, types, types.Length)) {
-
+                        ImGui.Text(typeStr);
+                        ImGui.SameLine();
+                        var label = e.TryGetPropertyValue("label", out var labelNode) ? labelNode!.GetValue<string>() : null;
+                        if (label == null) {
+                            label = e.TryGetPropertyValue("id", out var idNode) ? idNode!.GetValue<string>() : null;
+                        }
+                        if (label == null) {
+                            ImGui.Text("Unknown legacy entity type");
+                        } else {
+                            ImGui.Text(label);
+                        }
+                    }
+                    ImGui.TreePop();
                 }
-                var filter = selectedLegacyEntityType > 0 && selectedLegacyEntityType < types.Length ? types[selectedLegacyEntityType] : null;
-                foreach (var e in bundle.LegacyData!) {
-                    if (!e.TryGetPropertyValue("type", out var type)) {
-                        continue;
-                    }
-                    var typeStr = type!.GetValue<string>();
-                    if (filter != null && typeStr != filter) {
-                        continue;
-                    }
+            }
 
-                    ImGui.Text(typeStr);
-                    ImGui.SameLine();
-                    var label = e.TryGetPropertyValue("label", out var labelNode) ? labelNode!.GetValue<string>() : null;
-                    if (label == null) {
-                        label = e.TryGetPropertyValue("id", out var idNode) ? idNode!.GetValue<string>() : null;
-                    }
-                    if (label == null) {
-                        ImGui.Text("Unknown legacy entity type");
-                    } else {
-                        ImGui.Text(label);
-                    }
+            if (ImGui.TreeNodeEx("Entities", ImGuiTreeNodeFlags.Framed)) {
+                var types = allOption.Concat(bundle.Entities.Select(e => e.Type).Distinct()).ToArray();
+                ImGui.Combo("Type", ref selectedEntityType, types, types.Length);
+                var entityFilter = selectedEntityType > 0 && selectedEntityType < types.Length ? types[selectedEntityType] : null;
+                foreach (var e in bundle.Entities) {
+                    if (entityFilter != null && e.Type != entityFilter) continue;
+                    ImGui.Text($"{e.Type} {e.Id} : {e.Label}");
                 }
+
+                ImGui.TreePop();
+            }
+
+            if (bundle.ResourceListing != null && ImGui.TreeNodeEx("Files", ImGuiTreeNodeFlags.Framed)) {
+                ImGui.Indent(-ImGui.GetStyle().IndentSpacing);
+                ImGui.Spacing();
+                ImGui.PushStyleVar(ImGuiStyleVar.TreeLinesSize, 1.5f);
+                if (ImGui.TreeNodeEx($"{AppIcons.SI_Bundle} " + bundle.Name, ImGuiTreeNodeFlags.DrawLinesFull | ImGuiTreeNodeFlags.DefaultOpen)) {
+                    var tree = HierarchyTreeWidget.Build(bundle.ResourceListing.Select(e => e.Key));
+                    HierarchyTreeWidget.Draw(tree, node => ShowHierarchyFileTreeActionButtons(node, bundle), node => OpenFileFromNode(node, bundle));
+                    ImGui.TreePop();
+                }
+                ImGui.PopStyleVar();
+                ImGui.Unindent();
                 ImGui.TreePop();
             }
         }
-
-        if (ImGui.TreeNodeEx("Entities", ImGuiTreeNodeFlags.Framed)) {
-            var types = allOption.Concat(bundle.Entities.Select(e => e.Type).Distinct()).ToArray();
-            ImGui.Combo("Type", ref selectedEntityType, types, types.Length);
-            var filter = selectedEntityType > 0 && selectedEntityType < types.Length ? types[selectedEntityType] : null;
-            foreach (var e in bundle.Entities) {
-                if (filter != null && e.Type != filter) continue;
-                ImGui.Text($"{e.Type} {e.Id} : {e.Label}");
-            }
-
-            ImGui.TreePop();
+    }
+    private unsafe void ShowBundleLoadOrderList()
+    {
+        var bundles = draggedBundle == null ? bundleManager.AllBundles : bundleManager.AllBundles.ToList();
+        if (bundles.Count == 0) {
+            ImGui.TextColored(Colors.Info, "No Bundles detected!");
         }
+        bool dragActiveThisFrame = false;
+        foreach (var bundle in bundles) {
+            ImGui.PushID(bundle.Name);
+            var active = bundleManager.IsBundleActive(bundle);
+            bool isDraggedRow = draggedBundle == bundle;
+            var dragHandleColor = isDraggedRow ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text);
+            float borderSize = isDraggedRow ? 2f : 0f;
 
-        if (bundle.ResourceListing != null && ImGui.TreeNodeEx("Files", ImGuiTreeNodeFlags.Framed)) {
-            ImGui.Indent(-ImGui.GetStyle().IndentSpacing);
-            ImGui.Spacing();
-            ImGui.PushStyleVar(ImGuiStyleVar.TreeLinesSize, 1.5f);
-            if (ImGui.TreeNodeEx($"{AppIcons.SI_Bundle} " + bundle.Name, ImGuiTreeNodeFlags.DrawLinesFull | ImGuiTreeNodeFlags.DefaultOpen)) {
-                var tree = HierarchyTreeWidget.Build(bundle.ResourceListing.Select(e => e.Key));
-                HierarchyTreeWidget.Draw(tree, node => ShowHierarchyFileTreeActionButtons(node, bundle), node => OpenFileFromNode(node, bundle));
-                ImGui.TreePop();
-            }
+            ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, borderSize);
+            ImGui.PushStyleColor(ImGuiCol.Text, dragHandleColor);
+            ImGui.PushStyleColor(ImGuiCol.Border, dragHandleColor);
+            ImGui.Button($"{AppIcons.SI_GenericReorder}");
             ImGui.PopStyleVar();
-            ImGui.Unindent();
-            ImGui.TreePop();
+            ImGui.PopStyleColor(2);
+
+            if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.PayloadNoCrossContext | ImGuiDragDropFlags.PayloadNoCrossProcess | ImGuiDragDropFlags.SourceNoPreviewTooltip)) {
+                ImGui.SetDragDropPayload("BUNDLE"u8, null, 0);
+                dragActiveThisFrame = true;
+                draggedBundle = bundle;
+                ImGui.EndDragDropSource();
+            }
+
+            if (draggedBundle != null && draggedBundle != bundle && ImGui.BeginDragDropTarget()) {
+                bundleManager.SwapBundleOrders(draggedBundle, bundle);
+                bundleManager.SaveSettings();
+                ImGui.EndDragDropTarget();
+            }
+            ImGui.SameLine();
+            if (ImGui.Checkbox($"##{bundle.Name}", ref active)) {
+                bundleManager.SetBundleActive(bundle, active);
+                bundleManager.SaveSettings();
+            }
+            ImGui.SameLine();
+            ImguiHelpers.VerticalSeparator();
+            ImGui.SameLine();
+            using (var _ = ImguiHelpers.Disabled(!active)) {
+                ImGui.TextColored(draggedBundle == bundle ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text), bundle.Name);
+            }
+            ImGui.Separator();
+            ImGui.PopID();
         }
+
+        if (!dragActiveThisFrame) draggedBundle = null;
     }
     private void ShowHierarchyFileTreeActionButtons(HierarchyTreeWidget node, Bundle bundle)
     {
