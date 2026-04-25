@@ -144,7 +144,6 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 public class MdfFileImguiHandler : IObjectUIHandler
 {
     internal int selectedIDX = 0;
-    private int activeTabIDX = 0;
     private string newMaterialName = string.Empty;
     private bool isNewMaterialMenu = false;
     private string materialSearch = string.Empty;
@@ -190,7 +189,6 @@ public class MdfFileImguiHandler : IObjectUIHandler
                     clone.Header.matName = clone.Header.matName.GetUniqueName(str => list.Any(l => l.Header.matName == str));
                     UndoRedo.RecordListAdd(context, list, clone);
                     selectedIDX = list.Count - 1;
-                    activeTabIDX = 0;
                     context.children.Clear();
                 }
             }
@@ -264,7 +262,6 @@ public class MdfFileImguiHandler : IObjectUIHandler
             ImGui.PushStyleColor(ImGuiCol.Text, selected ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text));
             if (ImGui.Selectable(string.IsNullOrEmpty(mat.Header.matName) ? "<missingName>##"+i : mat.Header.matName, selected)) {
                 selectedIDX = i;
-                activeTabIDX = 0;
                 context.children.Clear();
             }
             ImGui.PopStyleColor();
@@ -316,15 +313,15 @@ public class MdfFileImguiHandler : IObjectUIHandler
         ImGui.SetNextWindowSizeConstraints(new Vector2(ImGui.GetContentRegionAvail().X / 2, 0), new Vector2(ImGui.GetContentRegionAvail().X / 2, float.MaxValue));
         ImGui.BeginChild("MaterialData");
         if (ImGui.BeginTabBar("##MaterialDataTab0")) {
-            ShowMaterialDataTab(context, mat, "General", 0, (c) => mat.Header);
+            ShowMaterialDataTab(context, mat, "General", (c) => mat.Header);
             ImGui.EndTabBar();
         }
         ImGui.Spacing();
         if (ImGui.BeginTabBar("##MaterialDataTab1")) {
             ImGui.PushItemWidth(450f);
-            ShowMaterialDataTab(context, mat, "Textures", 1, (c) => mat.Textures);
+            ShowMaterialDataTab(context, mat, "Textures", (c) => mat.Textures);
             ImGui.PopItemWidth();
-            ShowMaterialDataTab(context, mat, "GPU Buffers", 3, (c) => mat.GpuBuffers);
+            ShowMaterialDataTab(context, mat, "GPU Buffers", (c) => mat.GpuBuffers);
             ImGui.EndTabBar();
         }
         ImGui.EndChild();
@@ -332,37 +329,32 @@ public class MdfFileImguiHandler : IObjectUIHandler
         ImGui.SetNextWindowSizeConstraints(new Vector2(ImGui.GetContentRegionAvail().X, 0), new Vector2(ImGui.GetContentRegionAvail().X, float.MaxValue));
         ImGui.BeginChild("MaterialParams");
         if (ImGui.BeginTabBar("##MaterialDataTab2")) {
-            ShowMaterialDataTab(context, mat, "Parameters", 2, (c) => mat.Parameters);
+            ShowMaterialDataTab(context, mat, "Parameters", (c) => mat.Parameters);
             ImGui.EndTabBar();
         }
         ImGui.EndChild();
     }
-    private void ShowMaterialDataTab<T>(UIContext context, MaterialData mat, string label, int index, Func<UIContext, T> getter)
+    private void ShowMaterialDataTab<T>(UIContext context, MaterialData mat, string label, Func<UIContext, T> getter)
     {
-        bool tabLabel = ImGui.BeginTabItem(label);
-        if (tabLabel) {
-            if (activeTabIDX != index) {
-                activeTabIDX = index;
-                context.children.Clear();
-            }
-            if (context.children.Count == 0 || context.children[0].label != label) {
-                if (label == "Parameters") {
-                    ShowMaterialParameterToolbar(context);
-                    ImGui.Spacing();
-                    ImGui.Separator();
-                    ImGui.Spacing();
-                    ImGui.BeginChild(label);
-                    ImGui.PushItemWidth(350);
-                    ShowMaterialParameters(context, mat);
-                    ImGui.PopItemWidth();
-                    ImGui.EndChild();
-                } else {
-                    context.AddChild(label, mat, getter: (c) => (object)getter(c)!).AddDefaultHandler<T>();
+        if (ImGui.BeginTabItem(label)) {
+            if (label == "Parameters") {
+                ShowMaterialParameterToolbar(context);
+                ImGui.Spacing();
+                ImGui.Separator();
+                ImGui.Spacing();
+                ImGui.BeginChild(label);
+                ImGui.PushItemWidth(350);
+                ShowMaterialParameters(context, mat);
+                ImGui.PopItemWidth();
+                ImGui.EndChild();
+            } else {
+                var child = context.GetChild(label);
+                if (child == null) {
+                    child = context.AddChild(label, mat, getter: c => (object)getter(c)!);
+                    child.AddDefaultHandler<T>();
                 }
-            }
-            ImGui.SetNextItemOpen(true, ImGuiCond.Always);
-            if (label != "Parameters") {
-                context.ShowChildrenUI();
+                ImGui.SetNextItemOpen(true, ImGuiCond.Always);
+                child.ShowUI();
             }
             ImGui.EndTabItem();
         }
