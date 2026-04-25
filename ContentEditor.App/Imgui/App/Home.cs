@@ -372,6 +372,7 @@ public class HomeWindow : IWindowHandler
         if (ImGui.Button($"{AppIcons.SI_Bundle} Bundle Manager")) {
             EditorWindow.CurrentWindow?.ShowBundleManagement();
         }
+        ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
             if (ImGui.Button($"{AppIcons.SI_BundleLoadOrder}")) {
