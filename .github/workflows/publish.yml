@@ -8,60 +8,72 @@ jobs:
     permissions:
       contents: write
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: recursive
         fetch-depth: 0
         persist-credentials: false
         lfs: true
 
-    - name: Restore dependencies
+    - name: Restore dependencies (Windows)
       run: dotnet restore -r win-x64
 
     - name: Set outputs
       id: vars
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $env:GITHUB_OUTPUT
 
-    - name: Publish debug build
+    - name: Publish debug build (Windows)
       if: ${{ !startsWith(github.ref, 'refs/tags/') }}
       run: |
-        dotnet publish -c Debug --no-restore -f net10.0-windows /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:VersionSuffix=r${{ steps.vars.outputs.sha_short }} -o build ContentEditor.App/ContentEditor.App.csproj
-        cp -Force -R configs build/
+        dotnet publish -c Debug --no-restore -f net10.0-windows /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:VersionSuffix=r${{ steps.vars.outputs.sha_short }} -o build/win64 ContentEditor.App/ContentEditor.App.csproj
 
-    - name: Publish release app
+    - name: Publish release app (Windows)
       if: startsWith(github.ref, 'refs/tags/')
       run: |
         $TAG="${{ github.ref_name }}".Replace("v","")
-        dotnet publish -c Release --no-restore -f net10.0-windows /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:DebugType=none /p:DebugSymbols=false /p:VersionPrefix=$TAG -o build ContentEditor.App/ContentEditor.App.csproj
-        cp -Force -R configs build/
+        dotnet publish -c Release --no-restore -f net10.0-windows /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:DebugType=none /p:DebugSymbols=false /p:VersionPrefix=$TAG -o build/win64 ContentEditor.App/ContentEditor.App.csproj
 
-    - name: Publish release patcher
+    - name: Restore dependencies (Linux)
+      run: dotnet restore -r linux-x64
+
+    - name: Publish debug build (Linux)
+      if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+      run: |
+        dotnet publish -c Debug --no-restore -f net10.0 /p:Platform=x64 /p:RuntimeIdentifier=linux-x64 /p:VersionSuffix=r${{ steps.vars.outputs.sha_short }} -o build/linux ContentEditor.App/ContentEditor.App.csproj
+
+    - name: Publish release app (Linux)
       if: startsWith(github.ref, 'refs/tags/')
       run: |
         $TAG="${{ github.ref_name }}".Replace("v","")
-        dotnet publish -c Release --no-restore /p:DebugType=none /p:DebugSymbols=false /p:VersionPrefix=$TAG -o build_patcher ContentPatcher/ContentPatcher.csproj
-        rm -Recurse build_patcher/Hexa.NET.ImGui.dll
-        rm -Recurse build_patcher/runtimes/*
-        cp -R configs build_patcher/
+        dotnet publish -c Release --no-restore -f net10.0 /p:Platform=x64 /p:RuntimeIdentifier=linux-x64 /p:DebugType=none /p:DebugSymbols=false /p:VersionPrefix=$TAG -o build/linux ContentEditor.App/ContentEditor.App.csproj
+
+    - name: Copy configs
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        cp -Force -R configs build/win64/
+        cp -Force -R configs build/linux/
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4.4.3
+      uses: actions/upload-artifact@v7
       with:
-        name: ContentEditor
-        path: "build/"
+        name: ContentEditor-win64
+        path: |
+          build/win64/
+          build/linux/
         include-hidden-files: true
 
     - name: ZIP files for release
       if: startsWith(github.ref, 'refs/tags/')
       run: |
-        cd build/
-        7z a ContentEditor.zip *
-        cd ../build_patcher/
-        7z a ContentPatcher.zip *
-        mv ContentPatcher.zip ../build/
+        cd build/win64/
+        7z a ContentEditor-win64.zip *
+        cd ../linux/
+        7z a ContentEditor-linux64.zip *
 
     - name: Upload files to release
       uses: softprops/action-gh-release@v2.2.2
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: "build/*.zip"
+        files: |
+          build/win64/*.zip
+          build/linux/*.zip
