@@ -47,28 +47,29 @@ jobs:
         $TAG="${{ github.ref_name }}".Replace("v","")
         dotnet publish -c Release --no-restore -f net10.0 /p:Platform=x64 /p:RuntimeIdentifier=linux-x64 /p:DebugType=none /p:DebugSymbols=false /p:VersionPrefix=$TAG -o build/linux ContentEditor.App/ContentEditor.App.csproj
 
-    - name: Copy configs
-      if: startsWith(github.ref, 'refs/tags/')
-      run: |
-        cp -Force -R configs build/win64/
-        cp -Force -R configs build/linux/
-
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v7
-      with:
-        name: ContentEditor-win64
-        path: |
-          build/win64/
-          build/linux/
-        include-hidden-files: true
-
     - name: ZIP files for release
       if: startsWith(github.ref, 'refs/tags/')
       run: |
         cd build/win64/
         7z a ContentEditor-win64.zip *
         cd ../linux/
-        7z a ContentEditor-linux64.zip *
+        7z a ContentEditor-linux.zip *
+
+    - name: Upload artifacts (Windows)
+      uses: actions/upload-artifact@v7
+      with:
+        name: ContentEditor-win64
+        path: build/win64/ContentEditor-win64.zip
+        include-hidden-files: true
+        archive: false
+
+    - name: Upload artifacts (Linux)
+      uses: actions/upload-artifact@v7
+      with:
+        name: ContentEditor-linux
+        path: build/linux/ContentEditor-linux.zip
+        include-hidden-files: true
+        archive: false
 
     - name: Upload files to release
       uses: softprops/action-gh-release@v2.2.2

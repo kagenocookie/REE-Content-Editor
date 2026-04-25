@@ -5,6 +5,7 @@ using ContentEditor.Core;
 using ContentEditor.Themes;
 using ReeLib;
 using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace ContentEditor.App;
 
@@ -593,7 +594,8 @@ public class HomeWindow : IWindowHandler
                 } else {
                     ImGui.SameLine();
                     if (ImGui.Button($"{AppIcons.Download}")) {
-                        var downloadLink = release.Assets.FirstOrDefault(asset => asset.Name == "ContentEditor.zip")?.BrowserDownloadUrl;
+                        var releaseZipName = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "ContentEditor-win64.zip" : "ContentEditor-linux.zip";
+                        var downloadLink = release.Assets.FirstOrDefault(asset => asset.Name == releaseZipName)?.BrowserDownloadUrl;
                         if (string.IsNullOrEmpty(downloadLink)) downloadLink = GithubApi.LatestReleaseUrl;
                         FileSystemUtils.OpenURL(downloadLink);
                     }
