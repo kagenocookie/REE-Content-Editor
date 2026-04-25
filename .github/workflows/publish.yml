@@ -48,7 +48,6 @@ jobs:
         dotnet publish -c Release --no-restore -f net10.0 /p:Platform=x64 /p:RuntimeIdentifier=linux-x64 /p:DebugType=none /p:DebugSymbols=false /p:VersionPrefix=$TAG -o build/linux ContentEditor.App/ContentEditor.App.csproj
 
     - name: ZIP files for release
-      if: startsWith(github.ref, 'refs/tags/')
       run: |
         cd build/win64/
         7z a ContentEditor-win64.zip *
