@@ -167,6 +167,8 @@ public class MdfFileImguiHandler : IObjectUIHandler
         ImGui.EndChild();
 
         ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator(ImguiHelpers.GetColor(ImGuiCol.Separator), 2,4, ImGui.GetContentRegionAvail().Y);
+        ImGui.SameLine();
 
         ImGui.BeginChild("##MaterialData");
         ShowSelectedMaterialData(context, file);
@@ -325,6 +327,8 @@ public class MdfFileImguiHandler : IObjectUIHandler
             ImGui.EndTabBar();
         }
         ImGui.EndChild();
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator(ImguiHelpers.GetColor(ImGuiCol.Separator), 2,4, ImGui.GetContentRegionAvail().Y);
         ImGui.SameLine();
         ImGui.SetNextWindowSizeConstraints(new Vector2(ImGui.GetContentRegionAvail().X, 0), new Vector2(ImGui.GetContentRegionAvail().X, float.MaxValue));
         ImGui.BeginChild("MaterialParams");
