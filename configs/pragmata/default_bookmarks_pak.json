@@ -19,7 +19,252 @@
       "Tags": [
         "Character"
       ],
-      "Comment": "Diana"
+      "Comment": "Diana (Cradle Jacket)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0101",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Lunar Aqua)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0102",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Fluffy)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0103",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Heartbeat)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0104",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Lunar White)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0105",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Shadow Executor)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0106",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Star Lily)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0107",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Black Neon)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0108",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Pink Pop)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0109",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Black Neon?)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0110",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Mecha Builder)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0111",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Neo Kunoichi)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0148",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Neo Kunoichi / Corrupted)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0149",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Neo Kunoichi / Corrupted 2)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0150",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Shadow Executor / Corrupted)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0151",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Shadow Executor / Corrupted 2)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0152",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Lunar Aqua / Corrupted)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0153",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Lunar Aqua / Corrupted 2)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0154",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Fluffy / Corrupted)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0155",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Fluffy / Corrupted 2)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0156",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Mecha Builder / Corrupted)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0157",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Mecha Builder / Corrupted 2)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0158",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Pink Pop / Corrupted)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0159",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Pink Pop / Corrupted 2)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0160",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Lunar Black / Corrupted)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0161",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Lunar Black / Corrupted 2)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0162",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Heartbeat / Corrupted)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0163",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Heartbeat / Corrupted 2)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0164",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Black Neon / Corrupted)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0165",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Black Neon / Corrupted 2)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0166",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (?? / Corrupted)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0167",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (?? / Corrupted 2)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0168",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Star Lily / Corrupted)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0169",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Star Lily / Corrupted 2)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0170",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Cradle Jacket / Corrupted)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch01/ch0171",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Diana (Cradle Jacket / Corrupted 2)"
     },
     {
       "Path": "natives/stm/character/ch/ch05/ch0540",
@@ -166,7 +411,7 @@
       "Tags": [
         "Enemy"
       ],
-      "Comment": "Walker (Corrupted)"
+      "Comment": "Anomalous Walker"
     },
     {
       "Path": "natives/stm/character/ch/ch51/ch5150/00",
@@ -176,11 +421,39 @@
       "Comment": "Lancer"
     },
     {
-      "Path": "natives/stm/character/ch/ch56/ch5600",
+      "Path": "natives/stm/character/ch/ch56/ch5600/00",
       "Tags": [
         "Enemy"
       ],
       "Comment": "Watcher"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch56/ch5600/50",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Watcher MK-II"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch56/ch5620/00",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Missile Platform ???"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch56/ch5630",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Missile Watcher"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch56/ch5640/00",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Reassembler"
     },
     {
       "Path": "natives/stm/character/ch/ch57/ch5700",
@@ -194,7 +467,7 @@
       "Tags": [
         "Enemy"
       ],
-      "Comment": "SectorGuard MK-II"
+      "Comment": "SectorGuard (Enhanced)"
     },
     {
       "Path": "natives/stm/character/ch/ch58/ch5800/00",
@@ -209,6 +482,13 @@
         "Enemy"
       ],
       "Comment": "Crusher MK-II"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch58/ch5810",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Bomber"
     },
     {
       "Path": "natives/stm/character/ch/ch59/ch5900/00",
@@ -236,7 +516,7 @@
       "Tags": [
         "Enemy"
       ],
-      "Comment": "Executor (Corrupted)"
+      "Comment": "Anomalous Executor"
     },
     {
       "Path": "natives/stm/character/ch/ch63/ch6300/00",
@@ -288,6 +568,20 @@
       "Comment": "Gunner"
     },
     {
+      "Path": "natives/stm/character/ch/ch75/ch7500",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Creator"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch75/ch7550",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Creator MK-II"
+    },
+    {
       "Path": "natives/stm/character/ch/ch76/ch7600",
       "Tags": [
         "Enemy"
@@ -300,6 +594,41 @@
         "Enemy"
       ],
       "Comment": "LunaDigger MK-II"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch77/ch7700",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Garden Keeper"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch77/ch7750",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Garden Keeper MK-II"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch78/ch7800",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Anomaly"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch79/ch7900",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Idea"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch81/ch8100",
+      "Tags": [
+        "Enemy"
+      ],
+      "Comment": "Abiosis"
     },
     {
       "Path": "natives/stm/item/model/it00010/wp7100",
