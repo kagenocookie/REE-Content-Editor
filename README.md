@@ -15,7 +15,7 @@ Some files may not fully work for other RE ENGINE games.
 
 ## Setup - Windows
 - Install the .NET Desktop Runtime 10 or newer (https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
-- Download the latest [release](https://github.com/kagenocookie/REE-Content-Editor/releases) or [debug](https://github.com/kagenocookie/REE-Content-Editor/actions) build `ContentEditor.zip`
+- Download the latest [release](https://github.com/kagenocookie/REE-Content-Editor/releases) or [debug](https://github.com/kagenocookie/REE-Content-Editor/actions) build `ContentEditor.zip` (a GitHub account is required to download the debug builds)
 - Launch `ContentEditor.App.exe`
 - Usage guides are available on [the wiki](https://github.com/kagenocookie/REE-Content-Editor/wiki), these will be updated as new features are added and improved
 
@@ -74,7 +74,7 @@ At the moment, you'd have to build it yourself. Follow the development setup ins
 | .mesh     | ☑️ 3D & data display | FBX & GLTF export/import<br>Format conversion across games ([wiki](https://github.com/kagenocookie/REE-Content-Editor/wiki/Mesh-editing))
 | .motlist  | ☑️ read/write | Animation preview<br>GLTF import/export<br>Mot copy/paste/retargeting ([wiki](https://github.com/kagenocookie/REE-Content-Editor/wiki/Animation-tools))
 | .rcol     | ☑️ read/write | 3D shape preview and editing ([wiki](https://github.com/kagenocookie/REE-Content-Editor/wiki/RCOL-Request-set-colliders))
-| .chain, .chain2 | ☑️ read/write | Basic shape preview
+| .chain, .chain2 | ☑️ read/write | Collision shape and limit 3D display
 | .motbank  | read/write
 | .motfsm2, .fsmv2, .bhvt, .tmlfsm2  | read/write
 | .mcol     | ☑️ read/write | .glb/.fbx import/export for collision mesh
