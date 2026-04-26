@@ -13,6 +13,7 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
     private static string[] tabs = [$"{AppIcons.SI_Log}", $"{AppIcons.SI_LogDebug} Debug", $"{AppIcons.SI_GenericInfo} Info", $"{AppIcons.SI_GenericWarning} Warning", $"{AppIcons.SI_GenericError} Error"];
     private int currentTab;
     private bool compactMultiline;
+    private string filter = "";
 
     internal static EventLogger? EventLogger { get; set; }
     private bool isOpen = false;
@@ -95,12 +96,22 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
                 Clear();
             }
             ImguiHelpers.Tooltip("Clear");
+            ImGui.SameLine();
+            ImguiHelpers.VerticalSeparator();
+            ImGui.SameLine();
+            var avail = ImGui.GetContentRegionAvail();
+            ImGui.SetNextItemWidth(avail.X - ImGui.CalcTextSize("Filter").X);
+            ImGui.InputText("Filter", ref filter, 128);
             ImGui.Spacing();
             ImGui.Separator();
             ImGui.BeginChild("Content");
             var isMaxScrolled = ImGui.GetScrollY() >= ImGui.GetScrollMaxY();
             for (int i = 0; i < list.Count; i++) {
                 var item = list[i];
+                if (filter.Length > 0 && !item.message.Contains(filter)) {
+                    continue;
+                }
+
                 var col = GetColor(item.level);
                 if (compactMultiline) {
                     var br = item.message.IndexOf('\n');
