@@ -280,13 +280,13 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             var games = AppConfig.Instance.GetGamelist();
             foreach (var (game, configured) in games) {
                 if (configured && fullSupportedGames.Contains(game)) {
-                    if (ImGui.MenuItem(game)) SetWorkspace(game, null);
+                    if (ImGui.MenuItem(Languages.TranslateGame(game))) SetWorkspace(game, null);
                 }
             }
             ImGui.Separator();
             foreach (var (game, configured) in games) {
                 if (configured && !fullSupportedGames.Contains(game)) {
-                    if (ImGui.MenuItem(game)) SetWorkspace(game, null);
+                    if (ImGui.MenuItem(Languages.TranslateGame(game))) SetWorkspace(game, null);
                 }
             }
             ImGui.Separator();
@@ -336,9 +336,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 }
                 if (ImGui.MenuItem("Bundle Manager")) {
                     ShowBundleManagement();
-                }
-                if (ImGui.MenuItem("Load Order")) {
-                    AddUniqueSubwindow(new LoadOrderUI(workspace.BundleManager));
                 }
                 if (workspace.BundleManager.UninitializedBundleFolders.Count > 0) {
                     if (ImGui.BeginMenu("* Uninitialized bundle folders")) {

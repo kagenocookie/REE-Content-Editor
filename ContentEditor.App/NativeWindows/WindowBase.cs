@@ -193,6 +193,9 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         var pos = new Vector2(Size.X / 5 + Random.Shared.NextSingle() * 80, Size.Y / 5 + Random.Shared.NextSingle() * 80);
         var window = new WindowData() { Handler = subwindow, Position = pos, ParentWindow = this };
         AddSubwindow(window);
+        if (subwindow is not HomeWindow) {
+            CloseHomeIfOpen();
+        }
         return window;
     }
 
@@ -308,6 +311,13 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
                     wnd.Workspace.ResourceManager.CloseFile(file);
                 })
             );
+        }
+    }
+    private void CloseHomeIfOpen()
+    {
+        var home = subwindows.FirstOrDefault(w => w.Handler is HomeWindow);
+        if (home != null) {
+            CloseSubwindow(home);
         }
     }
 

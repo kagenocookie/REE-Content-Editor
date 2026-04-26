@@ -1,5 +1,3 @@
-using System.Numerics;
-using System.Runtime.InteropServices;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
@@ -7,6 +5,8 @@ using ContentPatcher;
 using ReeLib;
 using ReeLib.Msg;
 using ReeLib.Uvs;
+using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -51,7 +51,19 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
     }
 
     private record struct IndexedItem(MessageEntry entry, int index);
-    private float imageScale = 1f;
+    private bool shouldAnimate;
+    private UvsPattern? selectedPattern;
+    private SequenceBlock? selectedSequence;
+    private int selectedSequenceIndex = 0;
+    private int animationFrame;
+    private float animationTime;
+    private Vector4 animationColor = new Vector4(1, 1, 1, 1);
+    private readonly int[] fpsOptions = new[] { 1, 12, 24, 30, 60 };
+    private int selectedFpsIDX = 4;
+    private float playbackFps => fpsOptions[selectedFpsIDX];
+    private int? dragPatternIDX;
+    private int? dragTargetIDX;
+    private bool isDraggingPattern;
 
     [StructLayout(LayoutKind.Sequential)]
     private class SequencePatternArrangementHelper()
@@ -144,114 +156,75 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         }
 
         var workspace = context.GetWorkspace();
-
-        ImGui.SliderFloat("Image scale", ref imageScale, 0.05f, 5f);
-
-        var seqlist = Enumerable.Range(0, File.Sequences.Count).Select(n => $"  {n}  ").ToArray();
-        if (ImguiHelpers.Tabs(seqlist, ref selectedSequenceIndex, false, "Sequences")) {
-            selectedPattern = null;
-        }
-        ImGui.SameLine();
-        if (ImGui.Button("New sequence")) {
-            selectedSequenceIndex =  File.Sequences.Count;
-            UndoRedo.RecordListAdd(context, File.Sequences, new SequenceBlock() { patterns = new List<UvsPattern>() { new UvsPattern() { bottom = 1, right = 1 } }});
-            selectedPattern = null;
-            Handle.Modified = true;
-        }
-        if (selectedSequence != null && ImguiHelpers.SameLine() && ImGui.Button("Delete sequence")) {
-            EditorWindow.CurrentWindow!.AddSubwindow(new ConfirmationDialog(
-                "Deleting sequence",
-                "Are you sure you wish to delete the sequence " + selectedSequenceIndex + "?",
-                context.GetWindow() ?? throw new Exception("Missing parent window"),
-                () => {
-                    UndoRedo.RecordListRemove(context, File.Sequences, selectedSequence);
-                    context.ClearChildren();
-                }
-            ));
-        }
-
         var sequence = selectedSequenceIndex >= 0 && selectedSequenceIndex < File.Sequences.Count ? File.Sequences[selectedSequenceIndex] : null;
         this.selectedSequence = sequence;
+        float minW = 350 * UI.UIScale;
 
-        ImGui.BeginChild("Sequence data", new System.Numerics.Vector2(), ImGuiChildFlags.ResizeX|ImGuiChildFlags.Borders);
+        ImGui.Separator();
+        ImGui.Spacing();
+        ImGui.SetNextWindowSizeConstraints(new Vector2(minW, 0), new Vector2(minW * 3, float.MaxValue));
+        ImGui.BeginChild("Sequence Tabs", new System.Numerics.Vector2(), ImGuiChildFlags.ResizeX | ImGuiChildFlags.Borders);
         if (sequence != null) {
-            var seqCtx = context.GetChild(sequence) ?? context.AddChild($"Sequence {selectedSequenceIndex}", sequence);
-            ImGui.Text(seqCtx.label);
-            if (ImguiHelpers.SameLine() && ImGui.Button("Add pattern")) {
-                UndoRedo.RecordListAdd(context, sequence.patterns, new UvsPattern());
-            }
-
-            ImGui.SetNextItemOpen(true, ImGuiCond.Appearing);
-            if (ImGui.TreeNode("Overview")) {
-                ShowOverview(sequence);
-                ImGui.TreePop();
-            }
-
-            if (ImGui.TreeNode("Grid Arrangement")) {
-                ShowArrangement(sequence, seqCtx);
-                ImGui.TreePop();
-            }
-
-            if (ImGui.TreeNode("Individual Patterns")) {
-                int patId = 0;
-                foreach (var pattern in sequence.patterns) {
-                    if (ImguiHelpers.TreeNodeSuffix($"Pattern {patId++}", $"[{pattern}]")) {
-                        ShowPatternEdit(pattern);
-                        ImGui.TreePop();
-                    }
-                }
-                ImGui.TreePop();
-            }
+            ShowTabs(sequence);
         }
-
         ImGui.EndChild();
-        if (sequence != null) {
-            ImGui.SameLine();
-            ImGui.BeginChild("Edit", new System.Numerics.Vector2(), ImGuiChildFlags.AutoResizeX|ImGuiChildFlags.Borders);
-            ImGui.Text("Sequence " + File.Sequences.IndexOf(sequence));
-            ImGui.Checkbox("Animate", ref shouldAnimate);
-            if (shouldAnimate && sequence.patterns.Count > 0) {
-                var pat = sequence.patterns[0];
-                var texPath = File.Textures[pat.textureIndex].path;
-                var tex = GetOrLoadTexture(texPath);
-                if (tex != null) {
-                    var (uv0, uv1) = pat.GetBoundingPoints();
-                    var size = new Vector2(tex.Width, tex.Height) * (uv1 - uv0);
-                    AnimationSequence(sequence, size, ref animationFrame, ref animationTime, ref animationColor);
-                }
-            }
 
+        if (sequence != null && workspace != null) {
+            ShowToolbar(sequence, workspace);
+            ImGui.Spacing();
+            ShowTimeline(sequence);
             if (selectedPattern != null) {
-                ImGui.SeparatorText("Selected pattern");
-                ImGui.Text(selectedPattern.ToString());
-                ShowPatternEdit(selectedPattern);
+                ShowPreview(sequence);
+                ImGui.SameLine();
+                ShowSelectedPattern();
             }
             ImGui.EndChild();
         }
         ImGui.PopID();
     }
-
-    private static void ShowArrangement(SequenceBlock sequence, UIContext seqCtx)
+    private void ShowTabs(SequenceBlock sequence)
     {
-        var arrange = seqCtx.GetChildValue<SequencePatternArrangementHelper>();
-        if (arrange == null) {
-            arrange = new SequencePatternArrangementHelper();
-            seqCtx.AddChild("Arrangement", arrange);
-            arrange.Infer(sequence);
+        var seqCtx = context.GetChild(sequence) ?? context.AddChild($"Sequence {selectedSequenceIndex}", sequence);
+
+        ImGui.BeginTabBar($"Sequence##{selectedSequenceIndex}");
+        if (ImGui.BeginTabItem("Overview")) {
+            ShowOverview(sequence);
+            ImGui.SeparatorText("Grid Arrangement");
+            ShowArrangement(sequence, seqCtx);
+            ImGui.EndTabItem();
         }
 
-        arrange.OnIMGUI(sequence);
+        if (ImGui.BeginTabItem("Individual Patterns")) {
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconSecondary);
+            if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
+                UndoRedo.RecordListAdd(context, sequence.patterns, new UvsPattern());
+                sequence.patternCount = sequence.patterns.Count;
+            }
+            ImGui.PopStyleColor();
+            ImguiHelpers.Tooltip("Add pattern");
+            ImGui.Separator();
+
+            int patId = 0;
+            foreach (var pattern in sequence.patterns) {
+                if (ImguiHelpers.TreeNodeSuffix($"Pattern {patId++}", $"[{pattern}]")) {
+                    ShowPatternEdit(pattern);
+                    ImGui.TreePop();
+                }
+            }
+            ImGui.EndTabItem();
+        }
+        ImGui.EndTabBar();
     }
 
     private void ShowOverview(SequenceBlock sequence)
     {
+        ImGui.Spacing();
         foreach (var texId in sequence.patterns.Select(p => p.textureIndex).Distinct()) {
             var texPath = File.Textures[texId].path;
             var tex = GetOrLoadTexture(texPath);
             if (tex == null) {
                 ImGui.TextColored(Colors.Warning, "Could not find texture " + texPath);
             } else {
-                ImGui.Text(texPath);
                 var maxwidth = ImGui.GetWindowSize().X - ImGui.GetCursorPosX() - 40;
                 var scale = (maxwidth / tex.Width);
                 var size = new System.Numerics.Vector2(maxwidth, scale * tex.Height);
@@ -267,7 +240,9 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
                     if (pattern.textureIndex != texId) continue;
 
                     var (uv0, uv1) = pattern.GetBoundingPoints();
-                    drawlist.AddRect(imageStart + size * uv0, imageStart + size * uv1, (ImguiHelpers.GetColor(ImGuiCol.Border) with { W = 0.3f }).ToArgb());
+                    var isActiveFrame = pi == animationFrame;
+                    var color = isActiveFrame ? Colors.IconActive : (ImguiHelpers.GetColor(ImGuiCol.Border) with { W = 0.3f });
+                    drawlist.AddRect(imageStart + size * uv0, imageStart + size * uv1, color.ToArgb());
                     ImGui.SetCursorScreenPos(imageStart + size * uv0);
 
                     ImGui.BeginGroup();
@@ -281,29 +256,249 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
                 }
 
                 ImGui.SetCursorPos(afterImagePos);
+                ImGui.Dummy(Vector2.Zero);
             }
         }
     }
 
-    private bool shouldAnimate;
-    private UvsPattern? selectedPattern;
-    private SequenceBlock? selectedSequence;
-    private int selectedSequenceIndex = 0;
-    private int animationFrame;
-    private float animationTime;
-    private Vector4 animationColor = new Vector4(1, 1, 1, 1);
-
-    private void AnimationSequence(SequenceBlock sequence, Vector2 size, ref int frame, ref float time, ref Vector4 color, float fps = 60)
+    private static void ShowArrangement(SequenceBlock sequence, UIContext seqCtx)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(fps, 1);
-        time += Time.Delta;
-        if (time > 1 / fps) {
-            time -= 1 / fps;
-            frame++;
+        var arrange = seqCtx.GetChildValue<SequencePatternArrangementHelper>();
+        if (arrange == null) {
+            arrange = new SequencePatternArrangementHelper();
+            seqCtx.AddChild("Arrangement", arrange);
+            arrange.Infer(sequence);
         }
 
-        if (frame >= sequence.patternCount) {
-            frame = 0;
+        arrange.OnIMGUI(sequence);
+    }
+
+    private void ShowToolbar(SequenceBlock sequence, ContentWorkspace workspace)
+    {
+        var texPath = File.Textures[sequence.patterns[0].textureIndex].path;
+        ImGui.SameLine();
+        ImGui.BeginChild("Sequence Editor", new Vector2(ImGui.GetContentRegionAvail().X, 0), ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.Borders);
+        var seqlist = Enumerable.Range(0, File.Sequences.Count).Select(n => $"  {n}  ").ToArray();
+        if (ImguiHelpers.Tabs(seqlist, ref selectedSequenceIndex, true, "Sequences:")) {
+            selectedPattern = null;
+            shouldAnimate = false;
+        }
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator();
+        ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
+            selectedSequenceIndex = File.Sequences.Count;
+            UndoRedo.RecordListAdd(context, File.Sequences, new SequenceBlock() { patterns = new List<UvsPattern>() { new UvsPattern() { bottom = 1, right = 1 } } });
+            selectedPattern = null;
+            Handle.Modified = true;
+        }
+        ImguiHelpers.Tooltip("New Sequence"u8);
+        ImguiHelpers.SameLine();
+        ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
+        if (selectedSequence != null) {
+            if (ImGui.Button($"{AppIcons.SI_GenericDelete2}")) {
+                EditorWindow.CurrentWindow!.AddSubwindow(new ConfirmationDialog(
+                    "Deleting sequence",
+                    "Are you sure you wish to delete the sequence " + selectedSequenceIndex + "?",
+                    context.GetWindow() ?? throw new Exception("Missing parent window"),
+                    () => {
+                        UndoRedo.RecordListRemove(context, File.Sequences, selectedSequence);
+                        if (selectedSequenceIndex >= File.Sequences.Count) {
+                            selectedSequenceIndex = 0;
+                        }
+                        selectedPattern = null;
+                        context.ClearChildren();
+                    }
+                ));
+            }
+        }
+        ImGui.PopStyleColor();
+        ImguiHelpers.Tooltip("Delete Sequence"u8);
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator();
+        ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}") && texPath != null) {
+            if (workspace.ResourceManager.TryResolveGameFile(texPath, out var texHandle)) {
+                EditorWindow.CurrentWindow?.AddSubwindow(new TextureViewer(workspace, texHandle));
+            }
+        }
+        ImguiHelpers.Tooltip($"Open Texture - {texPath}");
+    }
+
+    private unsafe void ShowTimeline(SequenceBlock sequence)
+    {
+        ImGui.SeparatorText("Timeline");
+        int frameCount = sequence.patternCount;
+        if (frameCount > 0) {
+            animationFrame = Math.Clamp(animationFrame, 0, frameCount - 1);
+        } else {
+            animationFrame = 0;
+        }
+        using (var _ = ImguiHelpers.Disabled(frameCount == 0)) {
+            ImguiHelpers.ToggleButton($"{AppIcons.Play}", ref shouldAnimate, Colors.IconActive);
+            if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_UVS_Pause.Get().IsPressed()) {
+                shouldAnimate = !shouldAnimate;
+            }
+            if (shouldAnimate && selectedPattern == null) {
+                selectedPattern = sequence.patterns[0];
+            }
+            ImguiHelpers.Tooltip("Animate"u8);
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.Previous}") || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_UVS_PrevPattern.Get().IsPressed()) {
+                animationFrame = (animationFrame - 1 + frameCount) % frameCount;
+                shouldAnimate = false;
+            }
+            ImguiHelpers.Tooltip("Previous pattern"u8);
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.Next}") || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_UVS_NextPattern.Get().IsPressed()) {
+                animationFrame = (animationFrame + 1) % frameCount;
+                shouldAnimate = false;
+            }
+            ImguiHelpers.Tooltip("Next pattern"u8);
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - 75 - ImGui.CalcTextSize("FPS").X - ImGui.GetStyle().FramePadding.X * 3);
+            if (ImGui.SliderInt("##Frame", ref animationFrame, 0, frameCount - 1)) {
+                shouldAnimate = false;
+            }
+            if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)) {
+                if (AppConfig.Instance.Key_UVS_IncreaseSpeed.Get().IsPressed() && selectedFpsIDX < fpsOptions.Length - 1) {
+                    selectedFpsIDX++;
+                }
+                if (AppConfig.Instance.Key_UVS_DecreaseSpeed.Get().IsPressed() && selectedFpsIDX > 0) {
+                    selectedFpsIDX--;
+                }
+            }
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(75f);
+            if (ImGui.BeginCombo("FPS", fpsOptions[selectedFpsIDX].ToString())) {
+                for (int i = 0; i < fpsOptions.Length; i++) {
+                    bool isSelected = i == selectedFpsIDX;
+                    if (ImGui.Selectable(fpsOptions[i].ToString(), isSelected)) {
+                        selectedFpsIDX = i;
+                        animationFrame = 0;
+                    }
+                }
+                ImGui.EndCombo();
+            }
+        }
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+        for (int i = 0; i < sequence.patterns.Count; i++) {
+            var pattern = sequence.patterns[i];
+            float patternW = 30;
+            var texPath = File.Textures[sequence.patterns[0].textureIndex].path;
+            var tex = GetOrLoadTexture(texPath);
+            
+            ImGui.PushID(i);
+            if (i > 0) {
+                if (ImGui.GetItemRectMax().X + ImGui.GetStyle().ItemSpacing.X + patternW < ImGui.GetWindowPos().X + ImGui.GetContentRegionAvail().X) {
+                    ImGui.SameLine();
+                }
+            }
+
+            var size = new Vector2(patternW, patternW);
+            var cursor = ImGui.GetCursorScreenPos();
+            var drawList = ImGui.GetWindowDrawList();
+
+            if (tex != null) {
+                var (uv0, uv1) = pattern.GetBoundingPoints();
+                ImGui.Image(tex.AsTextureRef(), size, uv0, uv1);
+            }
+
+            ImGui.SetCursorScreenPos(cursor);
+            ImGui.InvisibleButton("##timelinePattern", size);
+
+            if (ImGui.IsItemClicked() && !ImGui.IsMouseDragging(ImGuiMouseButton.Left)) {
+                animationFrame = i;
+                selectedPattern = pattern;
+                shouldAnimate = false;
+            }
+            if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.PayloadNoCrossContext | ImGuiDragDropFlags.PayloadNoCrossProcess | ImGuiDragDropFlags.SourceNoPreviewTooltip)) {
+                if (!isDraggingPattern) {
+                    dragPatternIDX = i;
+                    dragTargetIDX = i;
+                    isDraggingPattern = true;
+                }
+                ImGui.SetDragDropPayload("PATTERN"u8, null, 0);
+                ImGui.BeginTooltip();
+                ImGui.Text($"Pattern {dragPatternIDX}");
+                ImGui.EndTooltip();
+                ImGui.EndDragDropSource();
+            }
+
+            bool isLast = i == sequence.patterns.Count - 1;
+            if (isDraggingPattern && dragPatternIDX.HasValue && ImGui.BeginDragDropTarget()) {
+                if (isLast && ImGui.IsMouseHoveringRect(cursor, cursor + size)) {
+                    dragTargetIDX = sequence.patterns.Count;
+                } else {
+                    dragTargetIDX = i;
+                }
+
+                ImGui.EndDragDropTarget();
+            }
+
+            bool isActive = i == animationFrame;
+            var borderColor = isActive ? Colors.IconActive : ImguiHelpers.GetColor(ImGuiCol.Border);
+            drawList.AddRect(cursor, cursor + size, borderColor.ToArgb(), 0f, 0, isActive ? 2f : 1f);
+            if (isDraggingPattern && (dragTargetIDX == i || (isLast && dragTargetIDX == sequence.patterns.Count))) {
+                float lineX = (dragTargetIDX == sequence.patterns.Count) ? cursor.X + size.X + 2 : cursor.X - 2;
+                drawList.AddLine(new Vector2(lineX, cursor.Y), new Vector2(lineX, cursor.Y + size.Y), Colors.IconActive.ToArgb(), 2f);
+            }
+            ImGui.PopID();
+        }
+
+        if (isDraggingPattern && !ImGui.IsMouseDown(ImGuiMouseButton.Left)) {
+            if (dragPatternIDX.HasValue && dragTargetIDX.HasValue) {
+                ReorderTimelinePattern(sequence, dragPatternIDX.Value, dragTargetIDX.Value);
+            }
+
+            dragPatternIDX = null;
+            dragTargetIDX = null;
+            isDraggingPattern = false;
+        }
+    }
+
+    private void ShowPreview(SequenceBlock sequence)
+    {
+        ImGui.Spacing();
+        ImGui.SetNextWindowSizeConstraints(new Vector2(ImGui.GetContentRegionAvail().X / 2, ImGui.GetContentRegionAvail().Y), new Vector2(ImGui.GetContentRegionAvail().X / 2, ImGui.GetContentRegionAvail().Y));
+        ImGui.BeginChild("PatternPreview");
+        ImGui.SeparatorText("Preview");
+        if (sequence.patterns.Count > 0) {
+            var texPath = File.Textures[sequence.patterns[0].textureIndex].path;
+            var tex = GetOrLoadTexture(texPath);
+            if (tex != null) {
+                var (uv0, uv1) = sequence.patterns[animationFrame].GetBoundingPoints();
+                var size = new Vector2(tex.Width, tex.Height) * (uv1 - uv0);
+                AnimationSequence(sequence, size, ref animationFrame, ref animationTime, ref animationColor, shouldAnimate, playbackFps);
+            }
+        }
+        ImGui.EndChild();
+    }
+
+    private void ShowSelectedPattern()
+    {
+        ImGui.BeginChild("PatternSelect");
+        ImGui.SeparatorText("Selected Pattern");
+        ImGui.Text(selectedPattern?.ToString());
+        ShowPatternEdit(selectedPattern!);
+        ImGui.EndChild();
+    }
+
+    private void AnimationSequence(SequenceBlock sequence, Vector2 size, ref int frame, ref float time, ref Vector4 color, bool animate, float fps)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(fps, 1);
+        if (animate) {
+            time += Time.Delta;
+            if (time > 1 / fps) {
+                time -= 1 / fps;
+                frame++;
+            }
+
+            if (frame >= sequence.patternCount) {
+                frame = 0;
+            }
         }
 
         var pattern = sequence.patterns[frame];
@@ -409,6 +604,17 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         return referencedTextures[path] = null;
     }
 
+    private void ReorderTimelinePattern(SequenceBlock sequence, int from, int to)
+    {
+        var item = sequence.patterns[from];
+        sequence.patterns.RemoveAt(from);
+
+        if (to > from) to--;
+
+        sequence.patterns.Insert(to, item);
+        sequence.patternCount = sequence.patterns.Count;
+        Handle.Modified = true;
+    }
     protected override void Dispose(bool disposing)
     {
         foreach (var tex in referencedTextures.Values) {

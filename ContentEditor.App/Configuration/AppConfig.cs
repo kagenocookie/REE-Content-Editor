@@ -57,6 +57,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string DateFormat = "date_format";
         public const string ClockFormat = "clock_format";
         public const string DisableFileCloseWarning = "disable_close_warning";
+        public const string UseMDFGroupedParams = "use_mdf_grouped_params";
 
         public const string RenderAxis = "render_axis";
         public const string RenderMeshes = "render_meshes";
@@ -89,6 +90,11 @@ public class AppConfig : Singleton<AppConfig>
         public const string Key_Scene_Focus3D = "key_focus";
         public const string Key_Scene_FocusUI = "key_focus_ui";
         public const string Key_Scene_Delete = "key_delete";
+        public const string Key_UVS_Pause = "key_uvs_pause";
+        public const string Key_UVS_NextPattern = "key_uvs_nextpattern";
+        public const string Key_UVS_PrevPattern = "key_uvs_prevpattern";
+        public const string Key_UVS_IncreaseSpeed = "key_uvs_increasespeed";
+        public const string Key_UVS_DecreaseSpeed = "key_uvs_decreasespeed";
 
         public const string Gamepath = "game_path";
         public const string GameExtractPath = "game_extract_path";
@@ -210,6 +216,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<int> DateFormat = new SettingWrapper<int>(Keys.DateFormat, _lock, 0);
     public readonly SettingWrapper<bool> ClockFormat = new SettingWrapper<bool>(Keys.ClockFormat, _lock, false);
     public readonly SettingWrapper<bool> DisableFileCloseWarning = new SettingWrapper<bool>(Keys.DisableFileCloseWarning, _lock, false);
+    public readonly SettingWrapper<bool> UseMDFGroupedParams = new SettingWrapper<bool>(Keys.UseMDFGroupedParams, _lock, false);
 
     public readonly SettingWrapper<int> PakDisplayModeValue = new SettingWrapper<int>(Keys.LogToFile, _lock, (int)FileDisplayMode.List);
     public FileDisplayMode PakDisplayMode { get => (FileDisplayMode)PakDisplayModeValue.Get(); set => PakDisplayModeValue.Set((int)value); }
@@ -248,6 +255,11 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<KeyBinding> Key_Scene_Focus3D = new SettingWrapper<KeyBinding>(Keys.Key_Scene_Focus3D, _lock, new KeyBinding(ImGuiKey.F));
     public readonly SettingWrapper<KeyBinding> Key_Scene_FocusUI = new SettingWrapper<KeyBinding>(Keys.Key_Scene_FocusUI, _lock, new KeyBinding(ImGuiKey.F, shift: true));
     public readonly SettingWrapper<KeyBinding> Key_Scene_Delete = new SettingWrapper<KeyBinding>(Keys.Key_Scene_Delete, _lock, new KeyBinding(ImGuiKey.Delete));
+    public readonly SettingWrapper<KeyBinding> Key_UVS_Pause = new SettingWrapper<KeyBinding>(Keys.Key_UVS_Pause, _lock, new KeyBinding(ImGuiKey.Space));
+    public readonly SettingWrapper<KeyBinding> Key_UVS_NextPattern = new SettingWrapper<KeyBinding>(Keys.Key_UVS_NextPattern, _lock, new KeyBinding(ImGuiKey.RightArrow));
+    public readonly SettingWrapper<KeyBinding> Key_UVS_PrevPattern = new SettingWrapper<KeyBinding>(Keys.Key_UVS_PrevPattern, _lock, new KeyBinding(ImGuiKey.LeftArrow));
+    public readonly SettingWrapper<KeyBinding> Key_UVS_IncreaseSpeed = new SettingWrapper<KeyBinding>(Keys.Key_UVS_IncreaseSpeed, _lock, new KeyBinding(ImGuiKey.UpArrow));
+    public readonly SettingWrapper<KeyBinding> Key_UVS_DecreaseSpeed = new SettingWrapper<KeyBinding>(Keys.Key_UVS_DecreaseSpeed, _lock, new KeyBinding(ImGuiKey.DownArrow));
 
     public string ConfigBasePath => GameConfigBaseFilepath.Get() ?? Path.Combine(AppContext.BaseDirectory, "configs");
 
@@ -373,6 +385,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.DateFormat, instance.DateFormat.value.ToString(), null),
             (Keys.ClockFormat, instance.ClockFormat.value.ToString(), null),
             (Keys.DisableFileCloseWarning, instance.DisableFileCloseWarning.value.ToString(), null),
+            (Keys.UseMDFGroupedParams, instance.UseMDFGroupedParams.value.ToString(), null),
 
             (Keys.RenderAxis, instance.RenderAxis.value.ToString(), null),
             (Keys.RenderMeshes, instance.RenderMeshes.value.ToString(), null),
@@ -406,6 +419,11 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.Key_Scene_Focus3D, instance.Key_Scene_Focus3D.value.ToString(), "Keys"),
             (Keys.Key_Scene_FocusUI, instance.Key_Scene_FocusUI.value.ToString(), "Keys"),
             (Keys.Key_Scene_Delete, instance.Key_Scene_Delete.value.ToString(), "Keys"),
+            (Keys.Key_UVS_Pause, instance.Key_UVS_Pause.value.ToString(), "Keys"),
+            (Keys.Key_UVS_NextPattern, instance.Key_UVS_NextPattern.value.ToString(), "Keys"),
+            (Keys.Key_UVS_PrevPattern, instance.Key_UVS_PrevPattern.value.ToString(), "Keys"),
+            (Keys.Key_UVS_IncreaseSpeed, instance.Key_UVS_IncreaseSpeed.value.ToString(), "Keys"),
+            (Keys.Key_UVS_DecreaseSpeed, instance.Key_UVS_DecreaseSpeed.value.ToString(), "Keys"),
         };
         foreach (var (game, data) in instance.gameConfigs) {
             if (!string.IsNullOrEmpty(data.gamepath)) {
@@ -559,6 +577,9 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.UsePakCompactFilePaths:
                             UsePakCompactFilePaths.value = ReadBool(value);
                             break;
+                        case Keys.UseMDFGroupedParams:
+                            UseMDFGroupedParams.value = ReadBool(value);
+                            break;
                         case Keys.LastUpdateCheck:
                             if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var _updateCheck)) LastUpdateCheck.value = _updateCheck;
                             break;
@@ -621,6 +642,11 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.Key_Scene_Focus3D: if (KeyBinding.TryParse(value, out _key)) Key_Scene_Focus3D.value = _key; break;
                         case Keys.Key_Scene_FocusUI: if (KeyBinding.TryParse(value, out _key)) Key_Scene_FocusUI.value = _key; break;
                         case Keys.Key_Scene_Delete: if (KeyBinding.TryParse(value, out _key)) Key_Scene_Delete.value = _key; break;
+                        case Keys.Key_UVS_Pause: if (KeyBinding.TryParse(value, out _key)) Key_UVS_Pause.value = _key; break;
+                        case Keys.Key_UVS_NextPattern: if (KeyBinding.TryParse(value, out _key)) Key_UVS_NextPattern.value = _key; break;
+                        case Keys.Key_UVS_PrevPattern: if (KeyBinding.TryParse(value, out _key)) Key_UVS_PrevPattern.value = _key; break;
+                        case Keys.Key_UVS_IncreaseSpeed: if (KeyBinding.TryParse(value, out _key)) Key_UVS_IncreaseSpeed.value = _key; break;
+                        case Keys.Key_UVS_DecreaseSpeed: if (KeyBinding.TryParse(value, out _key)) Key_UVS_DecreaseSpeed.value = _key; break;
                     }
                 } else {
                     var config = gameConfigs.GetValueOrDefault(group);

@@ -240,9 +240,9 @@ public static class AppIcons
     public static readonly char SI_Reset = '\ued0f';
     public static readonly char SI_ResetCamera = '\ued10';
     public static readonly char SI_ResetMaterial = '\ued11';
-    public static readonly char SI_ObjectMove = '\ued12';
-    public static readonly char SI_ObjectScale = '\ued13';
-    public static readonly char SI_ObjectRotate = '\ued14';
+    public static readonly char SI_GizmoMove = '\ued12';
+    public static readonly char SI_GizmoScale = '\ued13';
+    public static readonly char SI_GizmoRotate = '\ued14';
     public static readonly char SI_FileJumpTo = '\ued15';
     public static readonly char SI_WindowOpenNew = '\ued16';
     public static readonly char SI_FileCopyPath = '\ued17';
@@ -429,6 +429,14 @@ public static class AppIcons
     public static readonly char SI_Null= '\uee2b';
     public static readonly char SI_InspectorEnum = '\uee2c';
     public static readonly char SI_InspectorCustomValue = '\uee2d';
+    public static readonly char SI_MeshViewerChain = '\uee2e';
+    public static readonly char[] SIC_GizmoMove = { '\uee2f', '\uee30', '\uee31', '\uee32', '\uee33' };
+    public static readonly char[] SIC_GizmoScale = { '\uee34', '\uee35', '\uee36', '\uee37' };
+    public static readonly char[] SIC_GizmoRotate = { '\uee38', '\uee39', '\uee3a', '\uee3b' };
+    public static readonly char SI_GizmoFreeform = '\uee3c';
+    public static readonly char SI_SortAZ = '\uee3d';
+    public static readonly char SI_SortZA = '\uee3e';
+    public static readonly char SI_MDFGroupParams = '\uee3f';
 
     public static string PrependIcon(this string text, object target)
     {

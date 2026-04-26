@@ -156,7 +156,6 @@ public class HomeWindow : IWindowHandler
         using (var _ = ImguiHelpers.Disabled(AppConfig.Instance.IsFirstTime)) {
             if (ImGui.Button($"{AppIcons.SI_FileType_PAK}") && EditorWindow.CurrentWindow?.Workspace != null) {
                 EditorWindow.CurrentWindow?.AddSubwindow(new PakBrowser(EditorWindow.CurrentWindow.Workspace, null));
-                EditorWindow.CurrentWindow?.CloseSubwindow(data);
             }
             ImguiHelpers.Tooltip("Browse Game Files"u8);
             ImGui.SameLine();
@@ -165,7 +164,6 @@ public class HomeWindow : IWindowHandler
                     MainLoop.Instance.MainWindow.InvokeFromUIThread(() => {
                         Logger.Info(string.Join("\n", files));
                         EditorWindow.CurrentWindow?.OpenFiles(files);
-                        EditorWindow.CurrentWindow?.CloseSubwindow(data);
                     });
                 });
             }
@@ -173,13 +171,11 @@ public class HomeWindow : IWindowHandler
             ImguiHelpers.AlignElementRight((ImGui.CalcTextSize($"{AppIcons.SI_Settings}").X + ImGui.GetStyle().FramePadding.X * 2) * 2 + ImGui.GetStyle().ItemSpacing.X);
             if (ImGui.Button($"{AppIcons.Pencil}")) {
                 EditorWindow.CurrentWindow?.AddUniqueSubwindow(new ThemeEditor());
-                EditorWindow.CurrentWindow?.CloseSubwindow(data);
             }
             ImguiHelpers.Tooltip("Theme Editor"u8);
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_Settings}")) {
                 EditorWindow.CurrentWindow?.AddUniqueSubwindow(new SettingsWindowHandler());
-                EditorWindow.CurrentWindow?.CloseSubwindow(data);
             }
             ImguiHelpers.Tooltip("Settings"u8);
 
@@ -375,12 +371,15 @@ public class HomeWindow : IWindowHandler
         ImGui.Spacing();
         if (ImGui.Button($"{AppIcons.SI_Bundle} Bundle Manager")) {
             EditorWindow.CurrentWindow?.ShowBundleManagement();
-            EditorWindow.CurrentWindow?.CloseSubwindow(data);
         }
         ImGui.SameLine();
-        if (ImGui.Button($"{AppIcons.SI_BundleLoadOrder} Load Order") && EditorWindow.CurrentWindow?.Workspace != null) {
-            EditorWindow.CurrentWindow?.AddUniqueSubwindow(new LoadOrderUI(EditorWindow.CurrentWindow.Workspace.BundleManager));
-            EditorWindow.CurrentWindow?.CloseSubwindow(data);
+        using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
+            if (ImGui.Button($"{AppIcons.SI_BundleLoadOrder}")) {
+                EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, null);
+            }
+            ImGui.PopStyleColor();
+            ImguiHelpers.Tooltip("Unload current Bundle"u8);
         }
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
@@ -741,7 +740,6 @@ public class HomeWindow : IWindowHandler
             foundMatchingFile = true;
             if (ImGui.Selectable(file)) {
                 EditorWindow.CurrentWindow?.OpenFiles(new[] { fileToOpen });
-                EditorWindow.CurrentWindow?.CloseSubwindow(this.context.Get<WindowData>());
                 break;
             }
         }

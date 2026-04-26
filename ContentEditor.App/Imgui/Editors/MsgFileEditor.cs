@@ -82,7 +82,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
                 }
             }, Handle.Filename.ToString() + ".csv", FileFilters.CsvJsonFile);
         }
-        ImguiHelpers.Tooltip("Export to file");
+        ImguiHelpers.Tooltip("Export to file"u8);
         ImGui.SameLine();
         if (ImGui.Button($"{AppIcons.SI_GenericImport}")) {
             PlatformUtils.ShowFileDialog((files) => {
@@ -99,7 +99,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
                 }
             }, null, FileFilters.CsvJsonFileAll);
         }
-        ImguiHelpers.Tooltip("Import from file");
+        ImguiHelpers.Tooltip("Import from file"u8);
     }
 
     private void ExportToJson(string path)
@@ -255,6 +255,11 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
             File.Read();
         }
         ImGui.Separator();
+        ImGui.SetNextItemWidth(Math.Min(300, ImGui.CalcItemWidth()));
+        ImguiHelpers.ValueCombo("Language", LangOptions, LangValues, ref selectedLanguage);
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator();
+        ImGui.SameLine();
         ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconSecondary);
         if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
             var entry = File.AddNewEntry();
@@ -268,9 +273,17 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
             filter = string.Empty;
         }
         ImGui.PopStyleColor();
-        ImguiHelpers.Tooltip("Create new entry");
+        ImguiHelpers.Tooltip("Create new entry"u8);
+        using (var _ = ImguiHelpers.Disabled(!(selectedRow >= 0 && selectedRow < File.Entries.Count))) {
+            ImGui.SameLine();
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_Copy, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
+                var data = new MessageData(File.Entries[selectedRow], Filename, "");
+                EditorWindow.CurrentWindow?.CopyToClipboard(data.ToJson().ToJsonString(), "Entry copied!");
+            }
+            ImguiHelpers.Tooltip("Copy entry"u8);
+        }
         ImGui.SameLine();
-        if (ImGui.Button($"{AppIcons.SI_Paste}")) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_Paste, new[] {Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary})) {
             var clipboard = EditorWindow.CurrentWindow?.GetClipboard();
             if (clipboard != null) {
                 try {
@@ -296,16 +309,25 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
                 }
             }
         }
-        ImguiHelpers.Tooltip("Paste as new entry");
+        ImguiHelpers.Tooltip("Paste as new entry"u8);
+        using (var _ = ImguiHelpers.Disabled(!(selectedRow >= 0 && selectedRow < File.Entries.Count))) {
+
+            ImGui.SameLine();
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
+            if (ImGui.Button($"{AppIcons.SI_GenericDelete2}")) {
+                ShowDeleteConfirm(selectedRow);
+            }
+            ImGui.PopStyleColor();
+            ImguiHelpers.Tooltip("Delete entry"u8);
+        }
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(Math.Min(300, ImGui.CalcItemWidth()));
-        ImguiHelpers.ValueCombo("Language", LangOptions, LangValues, ref selectedLanguage);
+        ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isMessageSearchMatchCase, Colors.IconActive);
-        ImguiHelpers.Tooltip("Match Case");
+        ImguiHelpers.Tooltip("Match Case"u8);
         ImGui.SameLine();
         ImGui.SetNextItemAllowOverlap();
-        ImGui.SetNextItemWidth(Math.Min(400, ImGui.CalcItemWidth() - ImGui.GetCursorPosX()));
+        ImGui.SetNextItemWidth(Math.Min(400, ImGui.GetContentRegionAvail().X));
         ImGui.InputTextWithHint("##MessageFilter", $"{AppIcons.SI_GenericMagnifyingGlass} Filter", ref filter, 64);
         if (!string.IsNullOrEmpty(filter)) {
             ImGui.SameLine();
@@ -315,10 +337,12 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
                 filter = string.Empty;
             }
         }
-        ImguiHelpers.Tooltip("Filter by Name, Message content or GUID");
+        ImguiHelpers.Tooltip("Filter by Name, Message content or GUID"u8);
 
         var size = ImGui.GetContentRegionAvail();
         var msgListHovered = false;
+        float minW = 400f * UI.UIScale;
+        ImGui.SetNextWindowSizeConstraints(new Vector2(minW, 0), new Vector2(minW * 3, float.MaxValue));
         ImGui.BeginChild("msg_list", size, ImGuiChildFlags.ResizeX);
         var langIndex = (int)selectedLanguage;
         if (ImGui.BeginTable("Messages", 3, ImGuiTableFlags.Sortable | ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.RowBg)) {
@@ -373,22 +397,8 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
             var selected = File.Entries[selectedRow];
             ImGui.SameLine();
             ImGui.BeginChild("Message " + selected.Header.entryName);
-            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
-            if (ImGui.Button($"{AppIcons.SI_GenericDelete2}")) {
-                ShowDeleteConfirm(selectedRow);
-            }
-            ImGui.PopStyleColor();
-            ImguiHelpers.Tooltip("Delete entry");
-            ImGui.SameLine();
-            if (ImGui.Button($"{AppIcons.SI_Copy}")) {
-                var data = new MessageData(selected, Filename, "");
-                EditorWindow.CurrentWindow?.CopyToClipboard(data.ToJson().ToJsonString(), "Entry copied!");
-            }
-            ImguiHelpers.Tooltip("Copy entry");
-
-            ImGui.Separator();
             ImGui.Spacing();
-
+            ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Message").X - ImGui.GetStyle().FramePadding.X);
             ImGui.BeginDisabled();
             string entryGUID = selected.Header.guid.ToString();
             ImGui.InputText("##GUID", ref entryGUID, 128);
@@ -397,7 +407,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
             if (ImGui.Button($"{AppIcons.SI_Copy}##0")) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(selected.Header.guid.ToString(), "GUID copied!");
             }
-            ImguiHelpers.Tooltip("Copy GUID");
+            ImguiHelpers.Tooltip("Copy GUID"u8);
 
             var prevname = selected.Header.entryName;
             if (ImGui.InputText("Name", ref selected.Header.entryName, 128)) {
@@ -421,6 +431,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
                 );
                 Handle.Modified = true;
             }
+            ImGui.PopItemWidth();
             ImGui.SeparatorText("Attributes");
             ImGui.BeginChild("Attributes");
             for (int i = 0; i < File.AttributeItems.Count; i++) {
