@@ -118,6 +118,9 @@ For any spawn related data editing, my [anatomically accurate map](https://kagen
 ### Resident Evil 2 (RT), 3 (RT), 4, 8
 - Basic weapon data entities
 
+### Pragmata
+- Costume prefab catalog entities
+
 ## Structure
 The project consists of several individual modules.
 
