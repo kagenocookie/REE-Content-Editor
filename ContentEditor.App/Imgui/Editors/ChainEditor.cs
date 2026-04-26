@@ -482,7 +482,10 @@ internal class CollisionDataHandler : IObjectUIHandler
                         f.Name == nameof(CollisionDataBase.pairJointName)) {
                         return -1;
                     }
-                    return 0;
+                    if (f.Name == nameof(CollisionDataBase.shape)) return 1;
+                    if (f.Name == nameof(CollisionDataBase.radius)) return 2;
+                    if (f.Name == nameof(CollisionDataBase.endRadius)) return 3;
+                    return 10;
                 });
             }
             context.ShowChildrenUI();
@@ -514,7 +517,10 @@ internal class ChainNodeHandler : IObjectUIHandler
                 WindowHandlerFactory.SetupObjectUIContext(context, instance.GetType(), orderFunc: (f) => {
                     if (f.Name == nameof(ChainNodeBase.angleLimitDirection) || f.Name == nameof(ChainNodeBase.angleLimitRadius)) return -1;
                     if (f.Name == nameof(Chain2Node.jointHash)) return -1;
-                    return 0;
+                    if (f.Name == nameof(ChainNodeBase.collisionShape)) return 1;
+                    if (f.Name == nameof(ChainNodeBase.angleMode)) return 2;
+                    if (f.Name == nameof(ChainNodeBase.collisionRadius)) return 3;
+                    return 10;
                 });
             }
 

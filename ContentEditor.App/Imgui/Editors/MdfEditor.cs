@@ -154,10 +154,6 @@ public class MdfFileImguiHandler : IObjectUIHandler
     private bool isMatParamMatchCase = false;
     private MaterialData? draggedMat;
 
-    private Dictionary<string, HashSet<string>>? _exportTextures;
-    private string? _exportSelectedMat;
-    private bool _exportTga;
-
     public void OnIMGUI(UIContext context)
     {
         var file = context.Get<MdfFile>();

@@ -22,7 +22,6 @@ public class HomeWindow : IWindowHandler
     public int FixedID => -123164;
     protected UIContext context = null!;
 
-    private static HashSet<string>? fullSupportedGames;
     private string recentFileFilter = string.Empty;
     private bool isRecentFileFilterMatchCase = false;
     private readonly HashSet<string> _activeRecentFileGameFilters = new();
@@ -646,6 +645,7 @@ public class HomeWindow : IWindowHandler
         var commits = AppConfig.Settings.Changelogs.FindCurrentAndNewCommits();
         ImGui.BeginChild("CommitLog");
         foreach (var commit in commits) {
+            if (commit.Commit.Message?.StartsWith("Merge branch") == true) continue;
             ImGui.TextColored(Colors.Faded, commit.Commit.Author?.Date.ToLocalTime().ToString(Time.dateFormat + timeFormat) ?? "[unknown time]");
             ImGui.SameLine();
             ImGui.Text(commit.Commit.Message ?? "<no message>");

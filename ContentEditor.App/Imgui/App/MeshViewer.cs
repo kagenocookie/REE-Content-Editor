@@ -1668,7 +1668,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
 
         var childCtx = meshContexts.Where(mc => mc.FindOwner(meshContexts) == this);
         if (owner == this || owner == null) {
-            var tr = ui.GetChild("Transform") ?? ui.AddChild("Transform", GameObject.Transform);
+            var tr = UI.GetChild("Transform") ?? UI.AddChild("Transform", GameObject.Transform);
             if (tr.uiHandler == null) {
                 WindowHandlerFactory.AddDefaultHandler<Transform>(tr);
             }
