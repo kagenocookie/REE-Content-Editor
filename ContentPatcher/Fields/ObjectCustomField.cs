@@ -8,6 +8,7 @@ public class ObjectCustomField : CustomField, IMainField, IDiffableField
     public string classname = null!;
     public override string ResourceIdentifier => classname;
     public bool? forceNested;
+    bool IDiffableField.EnableDiff => true;
 
     public override void LoadParams(string fieldName, Dictionary<string, object>? param)
     {

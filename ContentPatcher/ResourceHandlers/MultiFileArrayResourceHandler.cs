@@ -60,7 +60,7 @@ public class MultiFileArrayResourceHandler : ResourceHandler
             var file = item.file;
             foreach (var elem in item.list.OfType<RszInstance>()) {
                 var id = idGenerator.GetID(elem, config.IDFields!);
-                var hashedId = (uint)HashCode.Combine(id, MurMur3HashUtils.GetHash(file));
+                var hashedId = AppUtils.StableHashCombine((uint)id, MurMur3HashUtils.GetHash(file));
                 dict[hashedId] = new RSZObjectResource(elem, file);
             }
         }

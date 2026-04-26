@@ -7,6 +7,7 @@ public class RszArrayCustomField : CustomField, IMainField, IDiffableField
 {
     public string classname = null!;
     public override string ResourceIdentifier => classname;
+    bool IDiffableField.EnableDiff => true;
 
     public override void LoadParams(string fieldName, Dictionary<string, object>? param)
     {

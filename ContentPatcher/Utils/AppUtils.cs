@@ -39,6 +39,14 @@ public static partial class AppUtils
         return hash;
     }
 
+    public static uint StableHashCombine(uint hash1, uint hash2)
+    {
+        uint hash = 17;
+        hash = unchecked(hash * 31 + hash1);
+        hash = unchecked(hash * 31 + hash2);
+        return hash;
+    }
+
     public static string? FindGameExecutable(string gamePath, string mostLikelyExeName)
     {
         if (!Directory.Exists(gamePath)) {
