@@ -149,6 +149,11 @@ public class Chain(GameObject gameObject, RszInstance data) : Component(gameObje
 
                 switch (node.angleMode) {
                     case AngleMode.LimitCone:
+                    case AngleMode.LimitConeBox:
+                    case AngleMode.LimitHinge:
+                    case AngleMode.LimitOval:
+                    case AngleMode.LimitElliptic:
+                        // show cone for all angle modes for now so there's at least some visualization even if only semi accurate
                         if (node.angleLimitRadius > 0 && node.angleLimitRadius < 1.45f) {
                             if (!parentMesh.TryGetBoneTransform(bone.Children.FirstOrDefault()?.name ?? "------", out var childTransform)) {
                                 childTransform = Matrix4x4.CreateTranslation(origin + (origin - parentOrigin));
