@@ -4,10 +4,57 @@ using ContentEditor.Editor;
 using ReeLib;
 using VYaml.Annotations;
 
+public abstract class NestableFieldAccessor
+{
+    public abstract RszField Field { get; }
+    public abstract object? Get(object instance);
+    public abstract void Set(object instance, object value);
+
+    public class PlainReturn : NestableFieldAccessor
+    {
+        public static readonly PlainReturn Instance = new();
+        public override RszField Field => _FakeField;
+        private static readonly RszField _FakeField = new RszField() { name = "Placeholder", type = RszFieldType.S32 };
+
+        public override object? Get(object instance) => instance;
+
+        public override void Set(object instance, object value) { }
+    }
+
+    public class SimpleField(RszClass ownerClass, string fieldName) : NestableFieldAccessor
+    {
+        public int Index { get; } = ownerClass.IndexOfField(fieldName);
+
+        public override RszField Field => ownerClass.fields[Index];
+
+        public override object? Get(object instance) => ((RszInstance)instance).Values[Index];
+        public override void Set(object instance, object? value) => ((RszInstance)instance).Values[Index] = value!;
+    }
+
+    public class NestedField(RszClass idOwnerClass, string path) : NestableFieldAccessor
+    {
+        public RszField LastPathField { get; } = FindLastPathField(idOwnerClass, path);
+
+        public override RszField Field => LastPathField;
+
+        public override object? Get(object instance) => ((RszInstance)instance).GetNestedFieldValue(path);
+
+        public override void Set(object instance, object value) => ((RszInstance)instance).SetNestedFieldValue(path, value);
+
+        private static RszField FindLastPathField(RszClass cls, string path)
+        {
+            var i = path.LastIndexOf('.');
+            if (i == -1) return cls.GetField(path)!;
+
+            return cls.GetField(path.Substring(i + 1))!;
+        }
+    }
+}
+
 public class ClassConfig
 {
-    public int[]? IDFields { get; set; }
-    public int[]? SubIDFields { get; set; }
+    public NestableFieldAccessor[]? IDFields { get; set; }
+    public NestableFieldAccessor[]? SubIDFields { get; set; }
     public string? Group { get; set; }
     public string? Type { get; set; }
     public Dictionary<string, FieldConfig>? Fields { get; set; }
@@ -45,9 +92,11 @@ public partial class SerializedPatchConfigRoot
 public partial class ClassConfigSerialized
 {
     [YamlMember("id")]
-    public string[]? ID { get; set; }
+    public object[]? ID { get; set; }
+
     [YamlMember("subId")]
     public string[]? SubID { get; set; }
+
     public string? Group { get; set; }
     public string? Type { get; set; }
     public Dictionary<string, FieldConfig>? Fields { get; set; }
@@ -56,7 +105,7 @@ public partial class ClassConfigSerialized
     [YamlMember("to_string")]
     public string? To_String { get; set; }
 
-    public void MergeIntoRuntimeConfig(RszClass? cls, ClassConfig target)
+    public void MergeIntoRuntimeConfig(Workspace env, RszClass? cls, ClassConfig target)
     {
         if (cls == null && (ID?.Length > 0 || SubID?.Length > 0)) {
             throw new ArgumentNullException(nameof(cls), "RSZ class is required when ID or SubID are present");
@@ -64,8 +113,8 @@ public partial class ClassConfigSerialized
         target.Type = Type ?? target.Type;
         target.Group = Group ?? target.Group;
         target.Patcher = ResourceHandler.CreateInstance(cls!.name, Patcher) ?? target.Patcher;
-        target.IDFields = ID?.Select(fieldname => cls.IndexOfField(fieldname)).ToArray() ?? target.IDFields;
-        target.SubIDFields = SubID?.Select(fieldname => cls.IndexOfField(fieldname)).ToArray() ?? target.SubIDFields;
+        target.IDFields = ID?.Select(ff => CreateFieldGetter(env.RszParser, cls, ff)).ToArray() ?? target.IDFields;
+        target.SubIDFields = SubID?.Select(ff => CreateFieldGetter(env.RszParser, cls, ff)).ToArray() ?? target.SubIDFields;
 
         if (Fields != null) {
             target.Fields ??= new();
@@ -84,6 +133,23 @@ public partial class ClassConfigSerialized
                 target.Subclasses.Add(subclass, subdata.ToRuntimeConfig(subclass));
             }
         }
+    }
+
+    private static NestableFieldAccessor CreateFieldGetter(RszParser parser, RszClass cls, object obj)
+    {
+        if (obj is string str) {
+            return new NestableFieldAccessor.SimpleField(cls, str);
+        }
+
+        if (obj is Dictionary<object, object> dict) {
+            var path = (string)dict["path"];
+            var innerClass = (string)dict["class"];
+            var innerCls = parser.GetRSZClass(innerClass)
+                ?? throw new Exception("Unknown field inner class " + innerClass);
+            return new NestableFieldAccessor.NestedField(innerCls, path);
+        }
+
+        throw new NotSupportedException("Unsupported field ID type " + obj.GetType().FullName + ": " + obj);
     }
 }
 

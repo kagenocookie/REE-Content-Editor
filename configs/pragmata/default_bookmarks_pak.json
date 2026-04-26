@@ -15,6 +15,83 @@
       "Comment": "Hugh Williams (Delphi)"
     },
     {
+      "Path": "natives/stm/character/ch/ch00/ch0001",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Hugh Williams (Lunar Cat)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch00/ch0002",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Hugh Williams (Astro Classic)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch00/ch0003",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Hugh Williams (Exolayer Type-B)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch00/ch0004",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Hugh Williams (Shadow Walker)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch00/ch0005",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Hugh Williams (Legion Zero Type-B)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch00/ch0006",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Hugh Williams (Heavy Lifter)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch00/ch0007",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Hugh Williams (Obsidia)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch00/ch0008",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Hugh Williams (Exolayer)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch00/ch0009",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Hugh Williams (Astro Classic Type-B)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch00/ch0010",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Hugh Williams (Legion Zero)"
+    },
+    {
+      "Path": "natives/stm/character/ch/ch00/ch0011",
+      "Tags": [
+        "Character"
+      ],
+      "Comment": "Hugh Williams (Neo Bushido)"
+    },
+    {
       "Path": "natives/stm/character/ch/ch01/ch0100",
       "Tags": [
         "Character"

@@ -159,7 +159,7 @@ public class PatchDataContainer(string filepath)
                     configs[cls] = runtimeConfig = new();
                 }
 
-                config.MergeIntoRuntimeConfig(rszClass, runtimeConfig);
+                config.MergeIntoRuntimeConfig(workspace.Env, rszClass, runtimeConfig);
 
                 if (config.To_String != null) {
                     var fmt = FormatterSettings.CreateWorkspaceFormatter(workspace);

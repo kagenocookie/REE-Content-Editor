@@ -19,9 +19,9 @@ public abstract class IDGenerator
         [(uint)RszFieldType.String] = new StringHashGenerator(),
     };
 
-    public long GetID(RszInstance instance, int[] fieldIndices) => GetID(instance.Values, fieldIndices);
-    public abstract long GetID(object[] values, int[] fieldIndices);
-    public long GetID<T>(T value) => GetID([value!], [0]);
+    public abstract long GetID(object value, NestableFieldAccessor[] fields);
+    public long GetID<T>(T value) => GetID((object)value!, PlainReturnAccessorArray);
+    private static readonly NestableFieldAccessor[] PlainReturnAccessorArray = [NestableFieldAccessor.PlainReturn.Instance];
 
     public static IDGenerator GetGenerator(uint generatorTypeHash)
     {
@@ -51,6 +51,26 @@ public abstract class IDGenerator
         throw new NotImplementedException("Unsupported ID field combination");
     }
 
+    public static IDGenerator GetGenerator(object instance, NestableFieldAccessor[] fields)
+    {
+        if (fields.Length == 1 && generators.TryGetValue((uint)fields[0].Field.type, out var result)) {
+            return result;
+        }
+        if (fields.Length == 2) {
+            uint t1 = (uint)fields[0].Field.type;
+            uint t2 = (uint)fields[1].Field.type;
+            uint typehash = (uint)HashCode.Combine(t1, t2);
+            if (generators.TryGetValue(typehash, out result)) {
+                return result;
+            }
+            var gen1 = generators[t1];
+            var gen2 = generators[t2];
+            return generators[typehash] = new DoubleIDGenerator(gen1, gen2);
+        }
+
+        throw new NotImplementedException("Unsupported ID field combination");
+    }
+
     public static long GenerateID<T>(uint generatorTypeHash, T value)
     {
         if (generators.TryGetValue(generatorTypeHash, out var Generator)) {
@@ -60,45 +80,36 @@ public abstract class IDGenerator
         throw new NotImplementedException();
     }
 
-    public static long GenerateID(uint typeHash, object[] values, int[] fieldIndices)
-    {
-        if (generators.TryGetValue(typeHash, out var Generator)) {
-            return Generator.GetID(values, fieldIndices);
-        }
-
-        throw new NotImplementedException();
-    }
-
-    public static long GenerateID(RszInstance instance, int[] fieldIndices)
+    public static long GenerateID(RszInstance instance, NestableFieldAccessor[] fields)
     {
         if (generators.TryGetValue(instance.RszClass.crc, out var Generator)) {
-            return Generator.GetID(instance, fieldIndices);
+            return Generator.GetID(instance, fields);
         }
 
-        generators[instance.RszClass.crc] = Generator = GetGenerator(instance, fieldIndices);
-        return Generator.GetID(instance, fieldIndices);
+        generators[instance.RszClass.crc] = Generator = GetGenerator(instance, fields);
+        return Generator.GetID(instance, fields);
     }
 
     private sealed class IntegerIDGenerator : IDGenerator
     {
-        public override long GetID(object[] values, int[] fieldIndices) => Convert.ToInt64(values[fieldIndices[0]]);
+        public override long GetID(object value, NestableFieldAccessor[] fields) => Convert.ToInt64(fields[0].Get(value));
     }
 
     private sealed class UlongIDGenerator : IDGenerator
     {
-        public override long GetID(object[] values, int[] fieldIndices) => (long)(ulong)values[fieldIndices[0]];
+        public override long GetID(object value, NestableFieldAccessor[] fields) => (long)(ulong)fields[0].Get(value)!;
     }
 
     private sealed class DoubleIDGenerator(IDGenerator id1, IDGenerator id2) : IDGenerator
     {
-        public override long GetID(object[] values, int[] fieldIndices) => id1.GetID(values[fieldIndices[0]]) | (id2.GetID(values[fieldIndices[1]]) << 32);
+        public override long GetID(object value, NestableFieldAccessor[] fields) => id1.GetID(fields[0].Get(value)) | (id2.GetID(fields[1].Get(value)) << 32);
     }
 
     private sealed class GuidIDGenerator : IDGenerator
     {
-        public override long GetID(object[] values, int[] fieldIndices)
+        public override long GetID(object value, NestableFieldAccessor[] fields)
         {
-            var guid = (Guid)values[fieldIndices[0]];
+            var guid = (Guid)fields[0].Get(value)!;
             var span = MemoryUtils.StructureAsBytes(ref guid);
             return MurMur3HashUtils.MurMur3Hash(span);
         }
@@ -106,15 +117,10 @@ public abstract class IDGenerator
 
     private sealed class StringHashGenerator : IDGenerator
     {
-        public override long GetID(object[] values, int[] fieldIndices)
+        public override long GetID(object value, NestableFieldAccessor[] fields)
         {
-            var str = (string)values[fieldIndices[0]];
+            var str = (string)fields[0].Get(value)!;
             return MurMur3HashUtils.GetHash(str);
         }
-    }
-
-    private sealed class FixedFuncGenerator(Func<object[], int[], long> func) : IDGenerator
-    {
-        public override long GetID(object[] values, int[] fieldIndices) => func.Invoke(values, fieldIndices);
     }
 }

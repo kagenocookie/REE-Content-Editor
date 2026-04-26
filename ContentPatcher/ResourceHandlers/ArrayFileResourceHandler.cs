@@ -24,9 +24,13 @@ public class ArrayFileResourceHandler : ResourceHandler
             workspace.Diff.ApplyDiff(list.Instances, initialData, ResourceKey);
             foreach (var inst in list.Instances) {
                 if (config.IDFields?.Length == 1) {
-                    var idField = inst.RszClass.fields[config.IDFields[0]];
-                    var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
-                    inst.SetFieldValue(config.IDFields[0], Convert.ChangeType(entity.Id, fieldType));
+                    var idField = config.IDFields[0].Field;
+                    if (idField.type is RszFieldType.String or RszFieldType.Resource) {
+                        throw new NotImplementedException("String IDs not yet supported");
+                    } else {
+                        var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
+                        config.IDFields[0].Set(inst, Convert.ChangeType(entity.Id, fieldType));
+                    }
                 } else {
                     throw new NotImplementedException("Unsupported rsz object id combination");
                 }
@@ -36,9 +40,9 @@ public class ArrayFileResourceHandler : ResourceHandler
             var inst = RszInstance.CreateInstance(workspace.Env.RszParser, workspace.Env.RszParser.GetRSZClass(ResourceKey)!);
             workspace.Diff.ApplyDiff(inst, initialData);
             if (config.IDFields?.Length == 1) {
-                var idField = inst.RszClass.fields[config.IDFields[0]];
+                var idField = config.IDFields[0].Field;
                 var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
-                inst.SetFieldValue(config.IDFields[0], Convert.ChangeType(entity.Id, fieldType));
+                config.IDFields[0].Set(inst, Convert.ChangeType(entity.Id, fieldType));
             } else {
                 throw new NotImplementedException("Unsupported rsz object id combination");
             }
@@ -51,8 +55,8 @@ public class ArrayFileResourceHandler : ResourceHandler
         var items = GetObjectList(workspace, false);
         if (items.Count == 0) return;
 
-        var idGenerator = IDGenerator.GetGenerator((RszInstance)items[0], config.IDFields!);
-        var subIdGenerator = config.SubIDFields?.Length > 0 ? IDGenerator.GetGenerator((RszInstance)items[0], config.SubIDFields) : null;
+        var idGenerator = IDGenerator.GetGenerator(items[0], config.IDFields!);
+        var subIdGenerator = config.SubIDFields?.Length > 0 ? IDGenerator.GetGenerator(items[0], config.SubIDFields) : null;
         foreach (var item in items.OfType<RszInstance>()) {
             var id = idGenerator.GetID(item, config.IDFields!);
             if (subIdGenerator != null) {
@@ -95,13 +99,16 @@ public class ArrayFileResourceHandler : ResourceHandler
     {
         UserFile userfile = workspace.ResourceManager.ReadFileResource<UserFile>(file!, modify);
 
-        var instance = userfile.RSZ.ObjectList[0];
-        var arrayField = string.IsNullOrEmpty(targetArrayField)
-            ? instance.RszClass.fields.FirstOrDefault(f => f.array)
-            : instance.RszClass.fields.FirstOrDefault(f => f.name == targetArrayField);
-        if (arrayField == null) throw new Exception(targetArrayField == null ? $"Invalid array-field patcher - root instance {instance} has no array fields"
-            : $"Invalid array-field patcher - root instance {instance} does not have field{targetArrayField}");
+        var instance = userfile.Instance!;
+        if (string.IsNullOrEmpty(targetArrayField)) {
+            var arrayField = instance.RszClass.fields.FirstOrDefault(f => f.array);
+            if (arrayField == null) throw new Exception($"Invalid array-field patcher - root instance {instance} has no array fields");
+            return (IList<object>)instance.GetFieldValue(arrayField!)!;
+        } else {
+            var arrayField = instance.RszClass.IndexOfField(targetArrayField);
+            if (arrayField == -1) throw new Exception($"Invalid array-field patcher - root instance {instance} does not have field{targetArrayField}");
 
-        return (IList<object>)instance.GetFieldValue(arrayField.name)!;
+            return (IList<object>)instance.Values[arrayField];
+        }
     }
 }

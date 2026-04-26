@@ -98,7 +98,7 @@ public class MdfBatchExporter
                     foreach (var file in files) {
                         var fmt = _exportFormat switch {
                             ExportFormats.PNG => "png",
-                            ExportFormats.TGA => "tag",
+                            ExportFormats.TGA => "tga",
                             ExportFormats.DDS => "dds",
                             _ => "dds",
                         };

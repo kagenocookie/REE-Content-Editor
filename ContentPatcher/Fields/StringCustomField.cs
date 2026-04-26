@@ -51,7 +51,7 @@ public class StringCustomField : CustomField<StringResource>, ICustomResourceFie
     public ClassConfig CreateConfig()
     {
         var cfg = new ClassConfig();
-        cfg.IDFields = [0];
+        cfg.IDFields = [NestableFieldAccessor.PlainReturn.Instance];
         return cfg;
     }
 

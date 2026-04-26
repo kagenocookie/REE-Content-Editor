@@ -34,7 +34,7 @@ public class SingleMsgCustomField : CustomField<MessageData>, ICustomResourceFie
     {
         var cfg = new ClassConfig();
         cfg.Patcher = new SingleMsgHandler() { file = file, ResourceKey = file };
-        cfg.IDFields = [0];
+        cfg.IDFields = [NestableFieldAccessor.PlainReturn.Instance];
         // cfg.To_String = // msg key + msg value["en"]
         return cfg;
     }

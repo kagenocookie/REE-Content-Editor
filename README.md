@@ -15,12 +15,18 @@ Some files may not fully work for other RE ENGINE games.
 
 ## Setup - Windows
 - Install the .NET Desktop Runtime 10 or newer (https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
-- Download the latest [release](https://github.com/kagenocookie/REE-Content-Editor/releases) or [debug](https://github.com/kagenocookie/REE-Content-Editor/actions) build `ContentEditor.zip` (a GitHub account is required to download the debug builds)
+- Download the latest [release](https://github.com/kagenocookie/REE-Content-Editor/releases) or [debug](https://github.com/kagenocookie/REE-Content-Editor/actions) build `ContentEditor-win64.zip` (a GitHub account is required to download the debug builds)
 - Launch `ContentEditor.App.exe`
 - Usage guides are available on [the wiki](https://github.com/kagenocookie/REE-Content-Editor/wiki), these will be updated as new features are added and improved
 
 ## Setup - Linux
 There's 2 ways of running Content Editor from linux, either through wine or as a native app. The native app has the drawback of not supporting GPU accelerated tex compression for BC7 due to lack of directX (and the CPU compression takes literally forever), but should otherwise work fine. On the other hand, the wine version has the drawback of a terrible file picker, so choose your poison.
+
+### Linux - Native
+- Install the .NET Runtime 10 or newer (https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
+- Download the latest [release](https://github.com/kagenocookie/REE-Content-Editor/releases) or [debug](https://github.com/kagenocookie/REE-Content-Editor/actions) build `ContentEditor-linux.zip` (a GitHub account is required to download the debug builds)
+- Launch `ContentEditor.App`
+- Usage guides are available on [the wiki](https://github.com/kagenocookie/REE-Content-Editor/wiki), these will be updated as new features are added and improved
 
 ### Linux - Wine
 You can't launch the windows exe directly even with wine due to the .NET dependency, so we need to install that first
@@ -33,9 +39,6 @@ You can't launch the windows exe directly even with wine due to the .NET depende
 - After that you should be able to launch it normally and it should open
 - Note that all disk file path settings need to be `Z:/var/path/...` and not the normal linux root equivalent
 - You can make the app shortcut prettier inside Lutris by pointing it to the app logo .png from [here](https://github.com/kagenocookie/REE-Content-Editor/blob/master/docs/REECE_Logo_Raster_Light.png)
-
-### Linux - Native
-At the moment, you'd have to build it yourself. Follow the development setup instructions, then use `dotnet publish -c Release -f net10.0 /p:Platform=x64 /p:RuntimeIdentifier=linux-x64 -o build ContentEditor.App/ContentEditor.App.csproj`. The built app should now be inside the `build` folder.
 
 ## Development setup
 - Requirements: .NET 10.0 SDK, git
