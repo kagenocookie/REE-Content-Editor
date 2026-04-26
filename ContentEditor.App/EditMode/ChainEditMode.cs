@@ -12,6 +12,8 @@ public class ChainEditMode : EditModeHandler
 
     public ChainEditorBase? PrimaryEditor { get; private set; }
 
+    private bool Chain2Available => Scene.Workspace.Env.GetFileExtensionsForFormat(KnownFileFormats.Chain2).Any();
+
     private UIContext? filePicker;
     private string filePath = "";
     private string clspPath = "";
@@ -100,9 +102,11 @@ public class ChainEditMode : EditModeHandler
         if (ImGui.Button($"{AppIcons.SI_FileNew} New chain")) {
             filePath = Scene.Workspace.ResourceManager.CreateNewFile(KnownFileFormats.Chain)!.Filepath;
         }
-        ImGui.SameLine();
-        if (ImGui.Button($"{AppIcons.SI_FileNew} New chain2")) {
-            filePath = Scene.Workspace.ResourceManager.CreateNewFile(KnownFileFormats.Chain2)!.Filepath;
+        if (Chain2Available) {
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.SI_FileNew} New chain2")) {
+                filePath = Scene.Workspace.ResourceManager.CreateNewFile(KnownFileFormats.Chain2)!.Filepath;
+            }
         }
         ImGui.SameLine();
         if (ImGui.Button($"{AppIcons.SI_FileNew} New clsp")) {
