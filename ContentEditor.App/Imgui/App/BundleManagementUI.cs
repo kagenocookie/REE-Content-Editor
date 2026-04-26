@@ -92,6 +92,30 @@ public class BundleManagementUI : IWindowHandler
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
+        using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(bundleManager.GamePath))) {
+            if (ImGui.Button($"{AppIcons.SI_FolderOpen}")) {
+                FileSystemUtils.ShowFileInExplorer(bundleManager.GamePath);
+            }
+            ImguiHelpers.Tooltip("Open game folder in File Explorer");
+            ImGui.SameLine();
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderContain, new[] {Colors.IconPrimary, Colors.IconSecondary})) {
+                FileSystemUtils.ShowFileInExplorer(bundleManager.AppBundlePath);
+            }
+            ImguiHelpers.Tooltip("Open Bundles folder in File Explorer");
+        }
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator();
+        ImGui.SameLine();
+        using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);
+            if (ImGui.Button($"{AppIcons.SI_GenericExport}")) {
+                EditorWindow.CurrentWindow?.AddUniqueSubwindow(new ModPublisherWindow(EditorWindow.CurrentWindow.Workspace));
+            }
+            ImGui.PopStyleColor();
+            ImguiHelpers.Tooltip("Publish Mod");
+        }
+        ImGui.SameLine();
+        ImguiHelpers.AlignElementRight(ImGui.CalcTextSize($"{AppIcons.SI_GenericClose}").X * 4 + ImGui.GetStyle().ItemSpacing.X * 9);
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PatchLooseFiles, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, })) {
             EditorWindow.CurrentWindow?.ApplyContentPatches(null);
         }
@@ -113,32 +137,6 @@ public class BundleManagementUI : IWindowHandler
         }
         ImGui.PopStyleColor();
         ImguiHelpers.Tooltip("Revert patches");
-        ImGui.SameLine();
-        ImguiHelpers.VerticalSeparator();
-        ImGui.SameLine();
-        using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(bundleManager.GamePath))) {
-            if (ImGui.Button($"{AppIcons.SI_FolderOpen}")) {
-                FileSystemUtils.ShowFileInExplorer(bundleManager.GamePath);
-            }
-            ImguiHelpers.Tooltip("Open game folder in File Explorer");
-            ImGui.SameLine();
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderContain, new[] {Colors.IconPrimary, Colors.IconSecondary})) {
-                FileSystemUtils.ShowFileInExplorer(bundleManager.AppBundlePath);
-            }
-            ImguiHelpers.Tooltip("Open Bundles folder in File Explorer");
-        }
-
-        ImGui.SameLine();
-        ImguiHelpers.VerticalSeparator();
-        ImGui.SameLine();
-        using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
-            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);
-            if (ImGui.Button($"{AppIcons.SI_GenericExport}")) {
-                EditorWindow.CurrentWindow?.AddUniqueSubwindow(new ModPublisherWindow(EditorWindow.CurrentWindow.Workspace));
-            }
-            ImGui.PopStyleColor();
-            ImguiHelpers.Tooltip("Publish Mod");
-        }
         ShowNewBundleMenu();
     }
     private void ShowNewBundleMenu()
