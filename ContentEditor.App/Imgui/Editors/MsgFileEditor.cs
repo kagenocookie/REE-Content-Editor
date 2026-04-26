@@ -326,17 +326,8 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
         ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isMessageSearchMatchCase, Colors.IconActive);
         ImguiHelpers.Tooltip("Match Case"u8);
         ImGui.SameLine();
-        ImGui.SetNextItemAllowOverlap();
         ImGui.SetNextItemWidth(Math.Min(400, ImGui.GetContentRegionAvail().X));
-        ImGui.InputTextWithHint("##MessageFilter", $"{AppIcons.SI_GenericMagnifyingGlass} Filter", ref filter, 64);
-        if (!string.IsNullOrEmpty(filter)) {
-            ImGui.SameLine();
-            ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
-            ImGui.SetNextItemAllowOverlap();
-            if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
-                filter = string.Empty;
-            }
-        }
+        AppImguiHelpers.ClearableInputText("##MessageFilter"u8, $"{AppIcons.SI_GenericMagnifyingGlass} Filter", ref filter, 64);
         ImguiHelpers.Tooltip("Filter by Name, Message content or GUID"u8);
 
         var size = ImGui.GetContentRegionAvail();

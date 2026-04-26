@@ -350,4 +350,18 @@ public static class AppImguiHelpers
 
         scene.Root.MouseHandler.UpdateMouseState(EditorWindow.CurrentWindow!.LastMouse, leftDown, rightDown, middleDown, isHovered, absPos);
     }
+
+    public static void ClearableInputText(ReadOnlySpan<byte> id, string placeholder, ref string filter, uint maxlen = 128)
+    {
+        ImGui.SetNextItemAllowOverlap();
+        ImGui.InputTextWithHint(id, placeholder, ref filter, maxlen);
+        if (!string.IsNullOrEmpty(filter)) {
+            ImGui.SameLine();
+            ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
+            ImGui.SetNextItemAllowOverlap();
+            if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
+                filter = string.Empty;
+            }
+        }
+    }
 }

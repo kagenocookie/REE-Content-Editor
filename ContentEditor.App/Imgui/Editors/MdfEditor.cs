@@ -216,17 +216,8 @@ public class MdfFileImguiHandler : IObjectUIHandler
             ImGui.EndTooltip();
         }
         ImGui.SameLine();
-        ImGui.SetNextItemAllowOverlap();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-        ImGui.InputTextWithHint("##MaterialSearch", $"{AppIcons.SI_GenericMagnifyingGlass} Search", ref materialSearch, 64);
-        if (!string.IsNullOrEmpty(materialSearch)) {
-            ImGui.SameLine();
-            ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
-            ImGui.SetNextItemAllowOverlap();
-            if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
-                materialSearch = string.Empty;
-            }
-        }
+        AppImguiHelpers.ClearableInputText("##MaterialSearch"u8, $"{AppIcons.SI_GenericMagnifyingGlass} Search", ref materialSearch, 64);
         if (isNewMaterialMenu) {
             ImGui.Separator();
             using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(newMaterialName))) {
@@ -445,16 +436,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
         ImguiHelpers.Tooltip("Match Case");
         ImGui.SameLine();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().FramePadding.X);
-        ImGui.SetNextItemAllowOverlap();
-        ImGui.InputTextWithHint("##MatParamSearch"u8, $"{AppIcons.SI_GenericMagnifyingGlass} Filter parameters", ref matParamSearchQuery, 64);
-        if (!string.IsNullOrEmpty(matParamSearchQuery)) {
-            ImGui.SameLine();
-            ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
-            ImGui.SetNextItemAllowOverlap();
-            if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
-                matParamSearchQuery = string.Empty;
-            }
-        }
+        AppImguiHelpers.ClearableInputText("##MatParamSearch"u8, $"{AppIcons.SI_GenericMagnifyingGlass} Filter parameters", ref matParamSearchQuery, 64);
     }
 
     private void ShowMaterialParameters(UIContext context, MaterialData mat)

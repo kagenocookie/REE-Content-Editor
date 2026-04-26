@@ -28,16 +28,7 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
         if (context.children.Count >= 10) {
             ImGui.Spacing();
             ImGui.SetNextItemWidth(Math.Min(200, ImGui.CalcItemWidth() - 16));
-            ImGui.SetNextItemAllowOverlap();
-            ImGui.InputTextWithHint("Filter fields"u8, $"{AppIcons.SI_GenericMagnifyingGlass}", ref context.Filter, 48);
-            if (!string.IsNullOrEmpty(context.Filter)) {
-                ImGui.SameLine();
-                ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X - ImGui.GetStyle().ItemInnerSpacing.X - ImGui.CalcTextSize("Filter fields").X, ImGui.GetItemRectMin().Y));
-                ImGui.SetNextItemAllowOverlap();
-                if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
-                    context.Filter = string.Empty;
-                }
-            }
+            AppImguiHelpers.ClearableInputText("Filter fields"u8, $"{AppIcons.SI_GenericMagnifyingGlass}", ref context.Filter, 48);
             ImGui.Spacing();
         }
         if (string.IsNullOrEmpty(context.Filter)) {

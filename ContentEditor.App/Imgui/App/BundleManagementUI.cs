@@ -165,16 +165,7 @@ public class BundleManagementUI : IWindowHandler
             }
             ImGui.SameLine();
             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-            ImGui.SetNextItemAllowOverlap();
-            ImGui.InputTextWithHint("##BundleName", "Enter Bundle name here...", ref newBundleName, 100);
-            if (!string.IsNullOrEmpty(newBundleName)) {
-                ImGui.SameLine();
-                ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
-                ImGui.SetNextItemAllowOverlap();
-                if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
-                    newBundleName = string.Empty;
-                }
-            }
+            AppImguiHelpers.ClearableInputText("##BundleName"u8, "Enter Bundle name here...", ref newBundleName, 100);
         }
     }
     private void ShowBundlesMenu()

@@ -403,16 +403,7 @@ public class HomeWindow : IWindowHandler
         string filterLabelDisplayText = _activeBundleGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} " + "All Games" : $"{AppIcons.SI_Filter} " + $"{_activeBundleGameFilters.Count} Selected";
         float filterComboWidth = ImGui.CalcTextSize(filterLabelDisplayText).X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - (((filterComboWidth + ImGui.GetStyle().ItemSpacing.X) + (ImGui.GetStyle().FramePadding.X + ImGui.GetStyle().ItemSpacing.X) * 3) + (ImGui.GetStyle().ItemSpacing.X) * 6));
-        ImGui.SetNextItemAllowOverlap();
-        ImGui.InputTextWithHint("##BundleFilter", $"{AppIcons.SI_GenericMagnifyingGlass} Search Bundles", ref bundleFilter, 128);
-        if (!string.IsNullOrEmpty(bundleFilter)) {
-            ImGui.SameLine();
-            ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
-            ImGui.SetNextItemAllowOverlap();
-            if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
-                bundleFilter = string.Empty;
-            }
-        }
+        AppImguiHelpers.ClearableInputText("##BundleFilter"u8, $"{AppIcons.SI_GenericMagnifyingGlass} Search Bundles", ref bundleFilter, 128);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(filterComboWidth);
         if (ImGui.BeginCombo("##BundleGameFilterCombo", filterLabelDisplayText, ImGuiComboFlags.HeightLargest)) {
@@ -684,16 +675,7 @@ public class HomeWindow : IWindowHandler
         string filterLabelDisplayText = _activeRecentFileGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} " + "All Games" : $"{AppIcons.SI_Filter} " + $"{_activeRecentFileGameFilters.Count} Selected";
         float filterComboWidth = ImGui.CalcTextSize(filterLabelDisplayText).X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - (((filterComboWidth + ImGui.GetStyle().ItemSpacing.X) + (ImGui.GetStyle().FramePadding.X + ImGui.GetStyle().ItemSpacing.X) * 3)));
-        ImGui.SetNextItemAllowOverlap();
-        ImGui.InputTextWithHint("##RecentFileFilter", $"{AppIcons.SI_GenericMagnifyingGlass} Search Recent Files", ref recentFileFilter, 128);
-        if (!string.IsNullOrEmpty(recentFileFilter)) {
-            ImGui.SameLine();
-            ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
-            ImGui.SetNextItemAllowOverlap();
-            if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
-                recentFileFilter = string.Empty;
-            }
-        }
+        AppImguiHelpers.ClearableInputText("##RecentFileFilter"u8, $"{AppIcons.SI_GenericMagnifyingGlass} Search Recent Files", ref recentFileFilter, 128);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(filterComboWidth);
         if (ImGui.BeginCombo("##RecentGameFilterCombo", filterLabelDisplayText, ImGuiComboFlags.HeightLargest)) {

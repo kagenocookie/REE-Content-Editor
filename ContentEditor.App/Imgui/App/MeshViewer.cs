@@ -1624,17 +1624,8 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             ImguiHelpers.Tooltip("Match Case");
 
             ImGui.SameLine();
-            ImGui.SetNextItemAllowOverlap();
             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-            ImGui.InputTextWithHint("##MotFilter", $"{AppIcons.SI_GenericMagnifyingGlass} Filter Animations", ref motFilter, 200);
-            if (!string.IsNullOrEmpty(motFilter)) {
-                ImGui.SameLine();
-                ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
-                ImGui.SetNextItemAllowOverlap();
-                if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
-                    motFilter = string.Empty;
-                }
-            }
+            AppImguiHelpers.ClearableInputText("##MotFilter"u8, $"{AppIcons.SI_GenericMagnifyingGlass} Filter Animations", ref motFilter, 200);
 
             ImGui.Spacing();
             foreach (var mot in animator.Animations) {

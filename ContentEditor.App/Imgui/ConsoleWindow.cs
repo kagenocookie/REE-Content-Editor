@@ -99,16 +99,15 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
             ImGui.SameLine();
             ImguiHelpers.VerticalSeparator();
             ImGui.SameLine();
-            var avail = ImGui.GetContentRegionAvail();
-            ImGui.SetNextItemWidth(avail.X - ImGui.CalcTextSize("Filter").X);
-            ImGui.InputText("Filter", ref filter, 128);
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+            AppImguiHelpers.ClearableInputText("##Filter"u8, "Filter log entries", ref filter);
             ImGui.Spacing();
             ImGui.Separator();
             ImGui.BeginChild("Content");
             var isMaxScrolled = ImGui.GetScrollY() >= ImGui.GetScrollMaxY();
             for (int i = 0; i < list.Count; i++) {
                 var item = list[i];
-                if (filter.Length > 0 && !item.message.Contains(filter)) {
+                if (filter.Length > 0 && !item.message.Contains(filter, StringComparison.InvariantCultureIgnoreCase)) {
                     continue;
                 }
 

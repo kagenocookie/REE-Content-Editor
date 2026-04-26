@@ -313,17 +313,8 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
             ImguiHelpers.Tooltip("Match Case");
             ImGui.SameLine();
             ImGui.SetNextItemWidth(searchBarWidth);
-            ImGui.SetNextItemAllowOverlap();
-            ImGui.InputTextWithHint("##BookmarkSearch"u8, $"{AppIcons.SI_GenericMagnifyingGlass} Search Comments", ref bookmarkSearch, 64);
+            AppImguiHelpers.ClearableInputText("##BookmarkSearch"u8, $"{AppIcons.SI_GenericMagnifyingGlass} Search Comments", ref bookmarkSearch, 64);
             var bookmarkSearchQuery = isBookmarkSearchMatchCase ? bookmarkSearch.Trim() : bookmarkSearch.Trim().ToLowerInvariant();
-            if (!string.IsNullOrEmpty(bookmarkSearch)) {
-                ImGui.SameLine();
-                ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
-                ImGui.SetNextItemAllowOverlap();
-                if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
-                    bookmarkSearch = string.Empty;
-                }
-            }
             ImGui.SameLine();
             ImGui.SetNextItemWidth(filterComboWidth);
             if (ImGui.BeginCombo("##TagFilterCombo"u8, filterLabelDisplayText, ImGuiComboFlags.HeightLargest)) {

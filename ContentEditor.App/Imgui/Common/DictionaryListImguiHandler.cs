@@ -42,16 +42,7 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
             if (!ImGui.TreeNode(context.label)) return;
         }
         if (Filterable) {
-            ImGui.SetNextItemAllowOverlap();
-            ImGui.InputTextWithHint("Filter"u8, $"{AppIcons.SI_GenericMagnifyingGlass}", ref context.Filter, 120);
-            if (!string.IsNullOrEmpty(context.Filter)) {
-                ImGui.SameLine();
-                ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X - ImGui.GetStyle().ItemInnerSpacing.X - ImGui.CalcTextSize("Filter").X, ImGui.GetItemRectMin().Y));
-                ImGui.SetNextItemAllowOverlap();
-                if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
-                    context.Filter = string.Empty;
-                }
-            }
+            AppImguiHelpers.ClearableInputText("Filter"u8, $"{AppIcons.SI_GenericMagnifyingGlass}", ref context.Filter, 120);
             ImGui.Spacing();
         }
 
