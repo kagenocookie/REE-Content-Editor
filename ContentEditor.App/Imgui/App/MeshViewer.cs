@@ -823,9 +823,8 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
         if (mesh.NativeMesh.MeshData?.LODs.Count > 1 || mesh.NativeMesh.ShadowMesh?.LODs.Count > 0) ImGui.Checkbox("Include LODs and Shadow Mesh", ref exportLods);
         if (mesh.NativeMesh.OccluderMesh?.MeshGroups.Count > 0) ImGui.Checkbox("Include Occlusion Mesh", ref exportOcclusion);
-        if (ImGui.Button("Open Wiki for More Details")) {
-            FileSystemUtils.OpenURL("https://github.com/kagenocookie/REE-Content-Editor/wiki/Mesh-editing");
-        }
+        ImGui.SameLine();
+        AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/Mesh-editing", true);
 
         if (showImportSettings) {
             ImGui.SeparatorText("Import Settings");
@@ -914,6 +913,9 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             }
             ImguiHelpers.Tooltip("Force reload");
         }
+        ImGui.SameLine();
+        AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/Animation-tools", true);
+
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Animation File").X);
         ctx.ShowAnimSettings(meshContexts, false);
     }

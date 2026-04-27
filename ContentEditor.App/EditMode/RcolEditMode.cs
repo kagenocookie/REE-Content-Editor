@@ -52,6 +52,7 @@ public class RcolEditMode : EditModeHandler
         if (context == null) {
             context = UIContext.CreateRootContext("RcolEdit", this);
         }
+        AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/RCOL-Request-set-colliders");
         if (filePicker == null) {
             filePicker = context.AddChild<RcolEditMode, string>(
                 "Edited RCOL File",

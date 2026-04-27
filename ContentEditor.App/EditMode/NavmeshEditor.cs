@@ -64,6 +64,7 @@ public class NavmeshEditor : EditModeHandler
             ).DisableUndo = true;
         }
 
+        AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/AI-Navigation");
         context.children[0].ShowUI();
 
         if (Target is AIMapComponentBase map) {

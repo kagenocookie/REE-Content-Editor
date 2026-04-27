@@ -58,6 +58,7 @@ public class ChainEditMode : EditModeHandler
         if (context == null) {
             context = UIContext.CreateRootContext("ChainEdit", this);
         }
+        AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/Chains");
         if (filePicker == null) {
             filePicker = context.AddChild<ChainEditMode, string>(
                 "Edited Chain File",

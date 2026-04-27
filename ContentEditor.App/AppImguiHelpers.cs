@@ -364,4 +364,14 @@ public static class AppImguiHelpers
             }
         }
     }
+
+    public static void WikiLinkButton(string link, bool iconOnly = false)
+    {
+        if (ImGui.Button(iconOnly ? $"{AppIcons.SI_GenericWiki}" : $"{AppIcons.SI_GenericWiki} Documentation Wiki")) {
+            FileSystemUtils.OpenURL(link);
+        }
+        if (iconOnly) {
+            ImguiHelpers.Tooltip("Open wiki for usage documentation");
+        }
+    }
 }
