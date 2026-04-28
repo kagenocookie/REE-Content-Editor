@@ -55,10 +55,22 @@ public class ResourcePathPicker : IObjectUIHandler
         var isKnownFormats = (allowedFormats.Length > 1 || allowedFormats.Length == 1 && allowedFormats[0] != KnownFileFormats.Unknown);
         FileFormats = isKnownFormats ? allowedFormats : [];
         if (ws != null && isKnownFormats) {
-            FileExtensionFilter = allowedFormats.SelectMany(format => ws.Env
+            var reFormats = allowedFormats.SelectMany(format => ws.Env
                 .GetFileExtensionsForFormat(format)
                 .Select(ext => new FileFilter(format.ToString(), [$"{ext}.*"])))
                 .ToArray();
+
+            var combinedFilter = reFormats.SelectMany(x => x.extensions)
+                .Distinct()
+                .ToArray();
+
+            if (combinedFilter.Length > 1) {
+                FileExtensionFilter = reFormats
+                    .Prepend(new FileFilter("Any supported file", combinedFilter))
+                    .ToArray();
+            } else {
+                FileExtensionFilter = reFormats;
+            }
         }
     }
 
@@ -180,7 +192,7 @@ public class ResourcePathPicker : IObjectUIHandler
             }
             if (ImGui.Button("Find files ...")) {
                 var exts = fileFilters ?? [];
-                var extRegex = string.Join("|", exts.SelectMany(e => e.extensions)).Replace(".*", "");
+                var extRegex = string.Join("|", exts.SelectMany(e => e.extensions).Distinct()).Replace(".*", "");
                 if (exts.Length == 0) {
                     EditorWindow.CurrentWindow!.AddSubwindow(new PakBrowser(workspace, null));
                 } else {
