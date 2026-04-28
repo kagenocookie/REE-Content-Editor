@@ -1561,7 +1561,6 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
 
         var settings = AppConfig.Settings;
         if (settings.RecentMotlists.Count > 0) {
-            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Recent files").X - ImGui.GetStyle().FramePadding.X);
             if (AppImguiHelpers.ShowRecentFiles(settings.RecentMotlists, Workspace.Game, ref animationSourceFile)) {
                 animationPickerContext.ResetState();
             }
