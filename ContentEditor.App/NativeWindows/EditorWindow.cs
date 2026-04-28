@@ -357,7 +357,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     if (ImGui.MenuItem("Open current Bundle folder")) {
                         FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
                     }
-                    if (ImGui.MenuItem("Recan Bundle Files")) {
+                    if (ImGui.MenuItem("Rescan Bundle Files")) {
                         workspace.RescanFilesInBundle(workspace.CurrentBundle);
                     }
                     if (ImGui.MenuItem("Publish Mod")) {

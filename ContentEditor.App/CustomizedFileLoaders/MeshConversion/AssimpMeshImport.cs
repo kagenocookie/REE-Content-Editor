@@ -305,6 +305,15 @@ public partial class CommonMeshResource : IResourceFile
                 }
             }
 
+            if (buffer.UV2.Length > 0) {
+                var uv = aiMesh.TextureCoordinateChannels[2];
+                if (uv.Count == 0) {
+                    for (int i = 0; i < vertCount; ++i) buffer.UV2[vertOffset + i] = new HFloat2();
+                } else {
+                    for (int i = 0; i < vertCount; ++i) buffer.UV2[vertOffset + i] = new HFloat2(uv[i].X, 1 - uv[i].Y);
+                }
+            }
+
             if (buffer.Colors.Length > 0) {
                 var colors = aiMesh.VertexColorChannels[0];
                 for (int i = 0; i < vertCount; ++i) buffer.Colors[vertOffset + i] = Color.FromVector4(colors[i]);
@@ -440,6 +449,7 @@ public partial class CommonMeshResource : IResourceFile
         }
         if (srcMeshes.Any(m => m.HasTextureCoords(0))) mainBuffer.UV0 = new HFloat2[totalVertCount];
         if (srcMeshes.Any(m => m.HasTextureCoords(1))) mainBuffer.UV1 = new HFloat2[totalVertCount];
+        if (srcMeshes.Any(m => m.HasTextureCoords(2))) mainBuffer.UV2 = new HFloat2[totalVertCount];
         if (srcMeshes.All(m => m.Bones.Count > 0 && m.Bones.Any(b => b.HasVertexWeights))) {
             mainBuffer.Weights = new VertexBoneWeights[totalVertCount];
             mesh.Header.flags |= ContentFlags.IsSkinning | ContentFlags.HasJoint;

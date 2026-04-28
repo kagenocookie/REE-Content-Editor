@@ -373,6 +373,12 @@ public partial class CommonMeshResource : IResourceFile
                     foreach (var uv in sub.UV1) uvOut.Add(new Vector3((float)uv.x, 1 - (float)uv.y, 0));
                     aiMesh.UVComponentCount[1] = 2;
                 }
+                if (sub.Buffer.UV2.Length > 0) {
+                    var uvOut = aiMesh.TextureCoordinateChannels[2];
+                    uvOut.EnsureCapacity(sub.UV2.Length);
+                    foreach (var uv in sub.UV2) uvOut.Add(new Vector3((float)uv.x, 1 - (float)uv.y, 0));
+                    aiMesh.UVComponentCount[2] = 2;
+                }
                 if (sub.Buffer.NormalsTangents.Length > 0) {
                     foreach (var nortan in sub.NormalsTangents) {
                         aiMesh.Normals.Add(nortan.Normal);
