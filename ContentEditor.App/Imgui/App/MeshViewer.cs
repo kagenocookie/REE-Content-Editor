@@ -798,6 +798,9 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         ImguiHelpers.ToggleButton($"{AppIcons.SI_Settings}", ref showImportSettings, Colors.IconActive);
         ImguiHelpers.Tooltip("Show Settings");
 
+        ImGui.SameLine();
+        AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/Mesh-editing", true);
+
         if (exportInProgress) {
             ImGui.SameLine();
             // we have no way of showing any progress from assimp's side (which is 99% of the export duration) so this is the best we can do
@@ -817,8 +820,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
         if (mesh.NativeMesh.MeshData?.LODs.Count > 1 || mesh.NativeMesh.ShadowMesh?.LODs.Count > 0) ImGui.Checkbox("Include LODs and Shadow Mesh", ref exportLods);
         if (mesh.NativeMesh.OccluderMesh?.MeshGroups.Count > 0) ImGui.Checkbox("Include Occlusion Mesh", ref exportOcclusion);
-        ImGui.SameLine();
-        AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/Mesh-editing", true);
 
         if (showImportSettings) {
             ImGui.SeparatorText("Import Settings");
