@@ -296,25 +296,28 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
                 return tex;
             }
 
-            if (flags.HasFlag(ShaderFlags.EnableStreamingTex)) {
-                string streamingPath = PathUtils.GetStreamingInternalPath(texture.FilePath);
-                var streamingTex = LoadTextureInternal(streamingPath);
-                if (streamingTex != null) return streamingTex;
-            }
-
-            return LoadTextureInternal(texture.FilePath) ?? GetMissingTexture();
+            return LoadTextureInternal(texture.FilePath, flags.HasFlag(ShaderFlags.EnableStreamingTex)) ?? GetMissingTexture();
         } catch (Exception e) {
             Logger.Error("Failed to load texture " + texture.FilePath + ": " + e.Message);
             return GetMissingTexture();
         }
     }
 
-    private Texture? LoadTextureInternal(string filepath)
+    private Texture? LoadTextureInternal(string filepath, bool resolveStreaming)
     {
         var filehash = PakUtils.GetFilepathHash(filepath);
         if (TextureRefs.TryAddReference(filehash, out var handle)) {
             return handle.Resource;
         } else if (ResourceManager.TryResolveGameFile(filepath, out var texHandle)) {
+            if (resolveStreaming) {
+                var texFile = texHandle.GetFile<TexFile>();
+                if (texFile.Header.flags.HasFlag(ReeLib.Tex.TexFlags.IsStreaming)) {
+                    string streamingPath = PathUtils.GetStreamingInternalPath(filepath);
+                    if (ResourceManager.TryResolveGameFile(streamingPath, out var streamingTex)) {
+                        texHandle = streamingTex;
+                    }
+                }
+            }
             var tex = new Texture(GL).LoadFromFile(texHandle);
             if (texHandle.Filepath != filepath) {
                 var srcHash = filehash;
