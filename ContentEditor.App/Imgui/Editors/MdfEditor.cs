@@ -534,7 +534,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
     private void DrawMaterialParam(UIContext parent, ParamHeader param, string label)
     {
         ImGui.PushID(param.paramName);
-        var ctx = parent.AddChild(label, param);
+        var ctx = parent.GetChild(label) ?? parent.AddChild(label, param);
         ctx.uiHandler ??= new ParamHeaderImguiHandler();
         ctx.uiHandler.OnIMGUI(ctx);
         ImGui.PopID();
