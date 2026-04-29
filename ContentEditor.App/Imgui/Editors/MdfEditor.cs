@@ -371,13 +371,13 @@ public class MdfFileImguiHandler : IObjectUIHandler
             ImGui.SetNextWindowSizeConstraints(new Vector2(ImGui.GetContentRegionAvail().X, 0), new Vector2(ImGui.GetContentRegionAvail().X, float.MaxValue));
             ImGui.BeginChild("MaterialParams");
             if (ImGui.BeginTabBar("##MaterialDataTab2")) {
-                ShowMaterialDataTab(context, mat, "Parameters", (c) => mat.Parameters);
+                ShowMaterialDataTab(context, mat, "Parameters", (c) => mat.Parameters, true);
                 ImGui.EndTabBar();
             }
             ImGui.EndChild();
         }
     }
-    private void ShowMaterialDataTab<T>(UIContext context, MaterialData mat, string label, Func<UIContext, T> getter)
+    private void ShowMaterialDataTab<T>(UIContext context, MaterialData mat, string label, Func<UIContext, T> getter, bool fixedWidth = false)
     {
         if (ImGui.BeginTabItem(label)) {
             if (typeof(T) == typeof(List<ParamHeader>)) {
@@ -386,7 +386,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
                 ImGui.Separator();
                 ImGui.Spacing();
                 ImGui.BeginChild(label);
-                ImGui.PushItemWidth(350);
+                ImGui.PushItemWidth(fixedWidth ? 350 * UI.UIScale : MathF.Max(300 * UI.UIScale, ImGui.GetContentRegionAvail().X * 0.6f));
                 ShowMaterialParameters(context, mat);
                 ImGui.PopItemWidth();
                 ImGui.EndChild();
@@ -632,7 +632,7 @@ public class MatHeaderImguiHandler : IObjectUIHandler
                 new ResourcePathPicker(ws, KnownFileFormats.MasterMaterial) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefault },
                 (p) => p!.mmtrPath,
                 (c, p, v) => {
-                    p.mmtrPath = v;
+                    p.mmtrPath = v ?? "";
                     var mat = c.FindParentContextByValue<MaterialHeader>()?.target as MaterialData;
                     var root = c.FindHandlerInParents<MdfEditor>();
                     if (mat != null && root != null && !string.IsNullOrEmpty(v)) {
