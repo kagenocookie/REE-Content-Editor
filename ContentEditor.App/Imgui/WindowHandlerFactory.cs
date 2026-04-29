@@ -385,6 +385,7 @@ public static class WindowHandlerFactory
             foreach (var field in typelist.SelectMany(t => t.GetFields(reflectionOptions))) {
                 if (reflectionIgnoredTypes.Contains(field.FieldType) || ignoredFields.Contains((field.DeclaringType ?? targetType, field.Name))) continue;
                 if (field.Name.EndsWith(">k__BackingField")) continue;
+                if (field.FieldType.IsGenericType && field.FieldType.GetGenericTypeDefinition() == typeof(Span<>)) continue;
 
                 list.Add(field);
             }
@@ -393,6 +394,7 @@ public static class WindowHandlerFactory
                 if (prop.IsSpecialName ||
                     prop.GetMethod == null ||
                     prop.GetMethod.IsAbstract ||
+                    prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(Span<>) ||
                     reflectionIgnoredTypes.Contains(prop.PropertyType) ||
                     ignoredProperties.Contains(prop.GetMethod.Name) ||
                     ignoredFields.Contains((prop.DeclaringType ?? targetType, prop.Name))
