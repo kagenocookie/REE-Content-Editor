@@ -100,6 +100,12 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
+        DrawFileSourceIcon();
+        DrawFileContents();
+    }
+
+    protected void DrawFileSourceIcon()
+    {
         ImGui.Button($"{AppIcons.SI_FileSource}");
         if (Handle.FileSource != null) {
             ImguiHelpers.TooltipColored($"File source: {Handle.HandleType} - {Handle.FileSource} ({Handle.NativePath})", Colors.Faded);
@@ -111,7 +117,6 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         if (ImGui.IsItemClicked()) {
             EditorWindow.CurrentWindow?.CopyToClipboard(Handle.NativePath ?? Handle.Filepath, "Path copied!");
         }
-        DrawFileContents();
     }
 
     protected virtual void DrawFileControls(WindowData data)

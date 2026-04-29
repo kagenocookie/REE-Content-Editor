@@ -94,6 +94,25 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         return mat;
     }
 
+    public override void OnIMGUI()
+    {
+        DrawFileControls(context.Get<WindowData>());
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator();
+        ImGui.SameLine();
+        DrawFileSourceIcon();
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator();
+        ImGui.SameLine();
+        var compactMode = AppConfig.Instance.UseMDFCompactView.Get();
+        if (ImguiHelpers.ToggleButton($"{AppIcons.SI_LogCompact}", ref compactMode, Colors.TextActive)) {
+            AppConfig.Instance.UseMDFCompactView.Set(compactMode);
+            context.children.Clear();
+        }
+        ImguiHelpers.Tooltip("Toggle compact view"u8);
+        DrawFileContents();
+    }
+
     protected override void DrawFileContents()
     {
         if (mmtrTemplateDB == null) {
@@ -299,36 +318,44 @@ public class MdfFileImguiHandler : IObjectUIHandler
         }
 
         var mat = file.Materials[selectedIDX];
-        ImGui.SetNextWindowSizeConstraints(new Vector2(ImGui.GetContentRegionAvail().X / 2, 0), new Vector2(ImGui.GetContentRegionAvail().X / 2, float.MaxValue));
-        ImGui.BeginChild("MaterialData");
-        if (ImGui.BeginTabBar("##MaterialDataTab0")) {
-            ShowMaterialDataTab(context, mat, "General", (c) => mat.Header);
-            ImGui.EndTabBar();
+        var responsiveWidth = UI.UIScale * 800;
+        var avail = ImGui.GetContentRegionAvail();
+        if (avail.X < responsiveWidth || AppConfig.Instance.UseMDFCompactView) {
+            if (ImGui.BeginTabBar("##MaterialData")) {
+                ShowMaterialDataTab(context, mat, "General", (c) => mat.Header);
+                ShowMaterialDataTab(context, mat, "Textures", (c) => mat.Textures);
+                ShowMaterialDataTab(context, mat, "Parameters", (c) => mat.Parameters);
+                ImGui.EndTabBar();
+            }
+        } else {
+            ImGui.SetNextWindowSizeConstraints(new Vector2(avail.X / 2, 0), new Vector2(avail.X / 2, float.MaxValue));
+            ImGui.BeginChild("MaterialData");
+            if (ImGui.BeginTabBar("##MaterialDataTab0")) {
+                ShowMaterialDataTab(context, mat, "General", (c) => mat.Header);
+                ImGui.EndTabBar();
+            }
+            ImGui.Spacing();
+            if (ImGui.BeginTabBar("##MaterialDataTab1")) {
+                ShowMaterialDataTab(context, mat, "Textures", (c) => mat.Textures);
+                ImGui.EndTabBar();
+            }
+            ImGui.EndChild();
+            ImGui.SameLine();
+            ImguiHelpers.VerticalSeparator(ImguiHelpers.GetColor(ImGuiCol.Separator), 2,4, ImGui.GetContentRegionAvail().Y);
+            ImGui.SameLine();
+            ImGui.SetNextWindowSizeConstraints(new Vector2(ImGui.GetContentRegionAvail().X, 0), new Vector2(ImGui.GetContentRegionAvail().X, float.MaxValue));
+            ImGui.BeginChild("MaterialParams");
+            if (ImGui.BeginTabBar("##MaterialDataTab2")) {
+                ShowMaterialDataTab(context, mat, "Parameters", (c) => mat.Parameters);
+                ImGui.EndTabBar();
+            }
+            ImGui.EndChild();
         }
-        ImGui.Spacing();
-        if (ImGui.BeginTabBar("##MaterialDataTab1")) {
-            ImGui.PushItemWidth(450f);
-            ShowMaterialDataTab(context, mat, "Textures", (c) => mat.Textures);
-            ImGui.PopItemWidth();
-            ShowMaterialDataTab(context, mat, "GPU Buffers", (c) => mat.GpuBuffers);
-            ImGui.EndTabBar();
-        }
-        ImGui.EndChild();
-        ImGui.SameLine();
-        ImguiHelpers.VerticalSeparator(ImguiHelpers.GetColor(ImGuiCol.Separator), 2,4, ImGui.GetContentRegionAvail().Y);
-        ImGui.SameLine();
-        ImGui.SetNextWindowSizeConstraints(new Vector2(ImGui.GetContentRegionAvail().X, 0), new Vector2(ImGui.GetContentRegionAvail().X, float.MaxValue));
-        ImGui.BeginChild("MaterialParams");
-        if (ImGui.BeginTabBar("##MaterialDataTab2")) {
-            ShowMaterialDataTab(context, mat, "Parameters", (c) => mat.Parameters);
-            ImGui.EndTabBar();
-        }
-        ImGui.EndChild();
     }
     private void ShowMaterialDataTab<T>(UIContext context, MaterialData mat, string label, Func<UIContext, T> getter)
     {
         if (ImGui.BeginTabItem(label)) {
-            if (label == "Parameters") {
+            if (typeof(T) == typeof(List<ParamHeader>)) {
                 ShowMaterialParameterToolbar(context);
                 ImGui.Spacing();
                 ImGui.Separator();
@@ -587,6 +614,8 @@ public class MatHeaderImguiHandler : IObjectUIHandler
                         root.ReplaceMaterialParams(v, mat);
                     }
                 });
+            var matData = context.target as MaterialData;
+            context.AddChild("GPU Buffers", matData, getter: m => m!.GpuBuffers).AddDefaultHandler();
         }
         ImGui.SetNextItemOpen(true, ImGuiCond.Always);
         context.ShowChildrenUI();
