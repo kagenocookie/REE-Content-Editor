@@ -650,7 +650,7 @@ public class TexHeaderImguiHandler : IObjectUIHandler
         }
         ImGui.SameLine();
         if (context.children.Count == 0) {
-            context.AddChild<TexHeader, string>(tex.texType, tex, new ResourcePathPicker(workspace, KnownFileFormats.Texture) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefaultNoConfirm }, (p) => p!.texPath, (p, v) => p.texPath = v);
+            context.AddChild<TexHeader, string>(tex.texType, tex, new ResourcePathPicker(workspace, KnownFileFormats.Texture) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefaultNoConfirm }, (p) => p!.texPath, (p, v) => p.texPath = v ?? "");
         }
         context.children[0].ShowUI();
     }

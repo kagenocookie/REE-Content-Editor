@@ -19,11 +19,11 @@ public class NormalRenderQueue(GL gl) : RenderQueue<NormalRenderBatchItem>
             ref readonly var item = ref itemspan[sortedIndices![i]];
             if (lastShaderId != item.material.Shader.ID) {
                 item.material.Shader.Use();
-                item.material.Bind();
+                context.BindMaterial(item.material);
                 lastShaderId = item.material.Shader.ID;
                 lastMaterialHash = item.material.Hash;
             } else if (lastMaterialHash != item.material.Hash) {
-                item.material.Bind();
+                context.BindMaterial(item.material);
                 lastMaterialHash = item.material.Hash;
             }
 

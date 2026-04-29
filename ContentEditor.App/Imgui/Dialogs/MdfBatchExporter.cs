@@ -27,9 +27,9 @@ public class MdfBatchExporter
                 var data = _exportTextures[mat.Key] = new ();
                 foreach (var tex in mat.First().Textures) {
                     if (string.IsNullOrEmpty(tex.texPath)) continue;
-                    if (MaterialGroupLoader.AlbedoTextureNames.Contains(tex.texType)
-                        || MaterialGroupLoader.NormalTextureNames.Contains(tex.texType)
-                        || MaterialGroupLoader.ATXXTextureNames.Contains(tex.texType)) {
+                    if (MaterialGroupWrapper.AlbedoTextureNames.Contains(tex.texType)
+                        || MaterialGroupWrapper.NormalTextureNames.Contains(tex.texType)
+                        || MaterialGroupWrapper.ATXXTextureNames.Contains(tex.texType)) {
                         data.Add(tex.texPath);
                     }
                 }
@@ -103,7 +103,7 @@ public class MdfBatchExporter
                             _ => "dds",
                         };
                         MaterialGroupLoader.ExportTextures(wnd.Workspace, file, target, fmt, (mat, param) => {
-                            return param.texPath != null && _exportTextures.GetValueOrDefault(mat)?.Contains(param.texPath) == true;
+                            return param.texPath != null && _exportTextures.GetValueOrDefault(mat.Name)?.Contains(param.texPath) == true;
                         });
                     }
                     FileSystemUtils.ShowFileInExplorer(target);

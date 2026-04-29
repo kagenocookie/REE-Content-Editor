@@ -100,6 +100,7 @@ public partial class MeshLoader : IFileLoader,
                 Scene = importedScene,
                 GameVersion = workspace.Env.Config.Game.GameEnum,
             };
+            resource.ImportMaterials(importedScene);
 
             var mesh = resource.NativeMesh;
             resource.PreloadMeshBuffers();

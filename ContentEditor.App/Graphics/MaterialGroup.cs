@@ -1,18 +1,30 @@
+using ContentEditor.App.FileLoaders;
+using ReeLib;
+
 namespace ContentEditor.App.Graphics;
 
 public sealed class MaterialGroup
 {
     public List<Material> Materials { get; } = new();
 
+    public MaterialGroupWrapper SourceMaterial { get; }
+
     public ShaderFlags Flags { get; init; }
 
     public MaterialGroup()
     {
+        // TODO initialize data somehow?
+        SourceMaterial = new MaterialGroupWrapper(new MdfFile(new FileHandler()));
     }
 
-    public MaterialGroup(params Material[] materials)
+    public MaterialGroup(params Material[] materials) : this()
     {
         Materials.AddRange(materials);
+    }
+
+    public MaterialGroup(MaterialGroupWrapper sourceMaterial)
+    {
+        SourceMaterial = sourceMaterial;
     }
 
     public void Add(Material material)

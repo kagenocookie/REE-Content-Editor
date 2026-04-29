@@ -73,12 +73,12 @@ public sealed class InstancedRenderQueue(GL gl) : RenderQueue<InstancedRenderBat
             if (lastShaderId != item.material.Shader.ID) {
                 RenderBatch(ref bufferIndexOffset);
                 item.material.Shader.Use();
-                item.material.Bind();
+                context.BindMaterial(item.material);
                 lastShaderId = item.material.Shader.ID;
                 lastMaterialHash = item.material.Hash;
             } else if (lastMaterialHash != item.material.Hash) {
                 RenderBatch(ref bufferIndexOffset);
-                item.material.Bind();
+                context.BindMaterial(item.material);
                 lastMaterialHash = item.material.Hash;
             }
 

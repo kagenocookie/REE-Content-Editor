@@ -114,7 +114,7 @@ public class Material
         RecomputeHash();
     }
 
-    public void Bind()
+    public void BindParameters(GL _gl)
     {
         foreach (var param in vec4Parameters) {
             _gl.Uniform4(param._location, param.Value);
@@ -126,12 +126,6 @@ public class Material
             if (tex == null) continue;
 
             tex.Bind(slot);
-        }
-        if (BlendMode.Blend) {
-            _gl.Enable(EnableCap.Blend);
-            _gl.BlendFunc(BlendMode.BlendModeSrc, BlendMode.BlendModeDest);
-        } else {
-            _gl.Disable(EnableCap.Blend);
         }
     }
 

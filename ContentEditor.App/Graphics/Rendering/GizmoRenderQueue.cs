@@ -17,11 +17,11 @@ public class GizmoRenderQueue(GL gl) : RenderQueue<GizmoRenderBatchItem>
         foreach (ref readonly var item in itemspan) {
             if (lastShaderId != item.material.Shader.ID) {
                 item.material.Shader.Use();
-                item.material.Bind();
+                context.BindMaterial(item.material);
                 lastShaderId = item.material.Shader.ID;
                 lastMaterialHash = item.material.Hash;
             } else if (lastMaterialHash != item.material.Hash) {
-                item.material.Bind();
+                context.BindMaterial(item.material);
                 lastMaterialHash = item.material.Hash;
             }
             if (lastMeshId != item.mesh.ID) {
@@ -39,11 +39,11 @@ public class GizmoRenderQueue(GL gl) : RenderQueue<GizmoRenderBatchItem>
             if (item.obscuredMaterial == null) continue;
             if (lastShaderId != item.obscuredMaterial.Shader.ID) {
                 item.obscuredMaterial.Shader.Use();
-                item.obscuredMaterial.Bind();
+                context.BindMaterial(item.obscuredMaterial);
                 lastShaderId = item.obscuredMaterial.Shader.ID;
                 lastMaterialHash = item.obscuredMaterial.Hash;
             } else if (lastMaterialHash != item.obscuredMaterial.Hash) {
-                item.obscuredMaterial.Bind();
+                context.BindMaterial(item.obscuredMaterial);
                 lastMaterialHash = item.obscuredMaterial.Hash;
             }
             if (lastMeshId != item.mesh.ID) {

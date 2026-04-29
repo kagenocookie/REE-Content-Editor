@@ -292,5 +292,6 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
 
     void IFileHandleReferenceHolder.Close() { }
 
+    public abstract void BindMaterial(Material material);
     public abstract void ExecuteRender();
 }

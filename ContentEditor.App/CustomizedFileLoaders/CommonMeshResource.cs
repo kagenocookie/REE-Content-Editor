@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Assimp;
 using ContentEditor.App.Graphics;
 using ContentPatcher;
@@ -13,6 +15,8 @@ public partial class CommonMeshResource(string name, Workspace workspace) : IRes
 
     public List<Graphics.Mesh>? PreloadedMeshes { get; set; }
     public List<Graphics.Mesh>? OcclusionMeshes { get; set; }
+
+    public MaterialGroupWrapper? ImportedMaterials { get; private set; }
 
     public GameName GameVersion = GameName.dd2;
 
@@ -36,49 +40,84 @@ public partial class CommonMeshResource(string name, Workspace workspace) : IRes
         set => _motlist = value;
     }
 
-    public List<Assimp.Material>? MaterialList
-    {
-        get {
-            if (_scene != null) return _scene.Materials;
-            if (_mesh != null) {
-                return _mesh.MaterialNames.Select(name => new Assimp.Material() { Name = name }).ToList();
-            }
-            return null;
-        }
-    }
+    public IReadOnlyList<string> MaterialNames => NativeMesh.MaterialNames;
 
-    public bool HasNativeMesh => _mesh != null;
-    public bool HasAssimpScene => _scene != null;
     public bool HasAnimations => _scene?.HasAnimations == true;
 
     public IEnumerable<int> GroupIDs =>
-        _mesh?.MeshData?.LODs[0].MeshGroups.Select(g => (int)g.groupId).Distinct()
-        ?? _scene?.Meshes.Select(m => string.IsNullOrEmpty(m.Name) ? 0 : MeshLoader.GetMeshGroupFromName(m.Name)).Distinct()
+        NativeMesh.MeshData?.LODs[0].MeshGroups.Select(g => (int)g.groupId).Distinct()
         ?? [];
 
-    public int VertexCount => _mesh?.MeshBuffer?.Positions.Length
-        ?? _scene?.Meshes.Sum(m => m.VertexCount)
+    public int VertexCount => NativeMesh.MeshBuffer?.Positions.Length
         ?? -1;
 
-    public int PolyCount => _mesh?.TotalTriangleCount
-        ?? _scene?.Meshes.Sum(m => m.FaceCount)
+    public int PolyCount => NativeMesh.TotalTriangleCount;
+
+    public int MaterialCount => NativeMesh.MaterialNames.Count;
+
+    public int BoneCount => NativeMesh.BoneData?.Bones.Count
         ?? -1;
 
-    public int MaterialCount => _mesh?.MaterialNames.Count
-        ?? _scene?.MaterialCount
-        ?? -1;
-
-    public int BoneCount => _mesh?.BoneData?.Bones.Count
-        ?? _scene?.Meshes.FirstOrDefault()?.BoneCount
-        ?? -1;
-
-    public int MeshCount => _mesh?.MeshData?.totalMeshCount
-        ?? _scene?.MeshCount
+    public int MeshCount => NativeMesh.MeshData?.totalMeshCount
         ?? -1;
 
     public void WriteTo(string filepath)
     {
         NativeMesh.WriteTo(filepath);
+    }
+
+    public void ImportMaterials(Assimp.Scene scene)
+    {
+        if (!workspace.TryGetFileExtensionVersion("mdf2", out int version)) {
+            version = 51;
+        }
+        var mdf = new MdfFile(new FileHandler(new MemoryStream(), $"{name}.mdf2.{version}"));
+        foreach (var mat in scene.Materials) {
+            if (!mat.HasName) {
+                continue;
+            }
+
+            var matData = new ReeLib.Mdf.MaterialData(new ReeLib.Mdf.MaterialHeader() {
+                matName = mat.Name,
+                mmtrPath = "__imported.mmtr",
+            });
+            if (mat.HasTextureDiffuse) {
+                var texPath = LoadAssimpTexture(scene, mat.TextureDiffuse);
+                if (!string.IsNullOrEmpty(texPath)) {
+                    matData.Textures.Add(new ReeLib.Mdf.TexHeader(MaterialGroupWrapper.AlbedoTextureNames.First(), texPath));
+                }
+            }
+            mdf.Materials.Add(matData);
+        }
+
+        ImportedMaterials = new MaterialGroupWrapper(mdf);
+        ImportedMaterials.UpdateMaterialLookups();
+    }
+
+    private string? LoadAssimpTexture(Assimp.Scene scene, TextureSlot texture)
+    {
+        Debug.Assert(MainLoop.IsMainThread);
+
+        if (!texture.FilePath.StartsWith('*')) {
+            return texture.FilePath;
+        }
+
+        var texData = scene.GetEmbeddedTexture(texture.FilePath);
+        if (texData == null) return null;
+
+        var tex = new Texture();
+        if (texData.HasCompressedData) {
+            var stream = new MemoryStream(texData.CompressedData);
+            tex.LoadFromStream(stream, false);
+        } else {
+            var bytes = Unsafe.As<byte[]>(texData.NonCompressedData);
+            tex.LoadFromRawData(bytes, (uint)texData.Width, (uint)texData.Height);
+        }
+
+        var tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".dds");
+        tex.SaveAs(tempPath);
+        Logger.Info($"Saved embedded texture {texture.FilePath} to {tempPath}");
+        return tempPath;
     }
 
     public void ExportToFile(

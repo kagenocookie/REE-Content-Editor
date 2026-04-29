@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -277,28 +276,12 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         }
     }
 
-    private Texture LoadTexture(Assimp.Scene? scene, Assimp.TextureSlot texture, ShaderFlags flags)
+    private Texture LoadTexture(string filepath, ShaderFlags flags)
     {
         try {
-            if (texture.FilePath.StartsWith('*')) {
-                var texData = scene?.GetEmbeddedTexture(texture.FilePath);
-                if (texData == null) return GetDefaultTexture();
-
-                var tex = new Texture(GL);
-                if (texData.HasCompressedData) {
-                    var stream = new MemoryStream(texData.CompressedData);
-                    tex.LoadFromStream(stream, texture.FilePath);
-                } else {
-                    var bytes = Unsafe.As<byte[]>(texData.NonCompressedData);
-                    tex.LoadFromRawData(bytes, (uint)texData.Width, (uint)texData.Height);
-                }
-                TextureRefs.AddUnnamed(tex);
-                return tex;
-            }
-
-            return LoadTextureInternal(texture.FilePath, flags.HasFlag(ShaderFlags.EnableStreamingTex)) ?? GetMissingTexture();
+            return LoadTextureInternal(filepath, flags.HasFlag(ShaderFlags.EnableStreamingTex)) ?? GetMissingTexture();
         } catch (Exception e) {
-            Logger.Error("Failed to load texture " + texture.FilePath + ": " + e.Message);
+            Logger.Error("Failed to load texture " + filepath + ": " + e.Message);
             return GetMissingTexture();
         }
     }
@@ -338,33 +321,32 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             return groupRef.Resource;
         }
 
-        var group = new MaterialGroup() { Flags = flags };
-        var scene = (file.Resource as AssimpMaterialResource)?.Scene;
-        var materials = scene?.Materials ?? (file.GetCustomContent<CommonMeshResource>())?.MaterialList;
-        if (materials == null) {
-            if (file.Format.format != KnownFileFormats.Mesh) {
-                Logger.Error("Failed to load material group " + file.Filepath);
+        var matData = file.Resource as MaterialGroupWrapper ?? (file.Resource as CommonMeshResource)?.ImportedMaterials;
+        if (matData == null) {
+            var matNames = (file.Resource as CommonMeshResource)?.MaterialNames;
+            MaterialGroup placeholder;
+            if (matNames == null) {
+                if (file.Format.format != KnownFileFormats.Mesh) {
+                    Logger.Error("Failed to load materials from " + file.Filepath);
+                }
+                var mat = CreateDefaultMeshMaterial(flags, "default", null);
+                placeholder = new MaterialGroup(mat);
+            } else {
+                var mats = matNames.Select(name => CreateDefaultMeshMaterial(flags, name, null)).ToArray();
+                placeholder = new MaterialGroup(mats);
             }
-            var material = CreateViewShadedMaterial(flags);
-            group.Add(material);
-            material.SetParameter(TextureUnit.Texture0, GetDefaultTexture());
-            MaterialRefs.Add((file, flags), group);
-            AddMaterialTextureReferences(material);
-            return group;
+            AddMaterialTextureReferences(placeholder);
+            MaterialRefs.Add((file, flags), placeholder);
+            return placeholder;
         }
+        var group = new MaterialGroup(matData) { Flags = flags };
 
-        foreach (var mat in materials) {
-            if (!mat.HasName) {
-                Logger.Debug("Material " + materials.IndexOf(mat) + " has no name");
-                continue;
-            }
-
+        foreach (var mat in matData.Materials) {
             var material = CreateViewShadedMaterial(flags);
-            //var material = CreateWireMaterial(flags);
             material.name = mat.Name;
             if (material.HasTextureParameter(TextureUnit.Texture0)) {
-                if (mat.HasTextureDiffuse) {
-                    var tex = LoadTexture(scene, mat.TextureDiffuse, flags);
+                if (mat.AlbedoTexture != null) {
+                    var tex = LoadTexture(mat.AlbedoTexture.texPath, flags);
                     material.SetParameter(TextureUnit.Texture0, tex);
                 } else {
                     material.SetParameter(TextureUnit.Texture0, GetDefaultTexture());
@@ -375,6 +357,14 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
         MaterialRefs.Add((file, flags), group);
         return group;
+    }
+
+    private Material CreateDefaultMeshMaterial(ShaderFlags flags, string name, Texture? texture)
+    {
+        var material = CreateViewShadedMaterial(flags);
+        material.SetParameter(TextureUnit.Texture0, texture ?? GetDefaultTexture());
+        material.name = name;
+        return material;
     }
 
     public override unsafe void RenderSimple(MeshHandle handle, in Matrix4x4 transform)
@@ -407,9 +397,9 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     }
 
 
-    private void BindMaterial(Material material)
+    public override void BindMaterial(Material material)
     {
-        material.Bind();
+        material.BindParameters(GL);
         BindMaterialFlags(material);
     }
 
