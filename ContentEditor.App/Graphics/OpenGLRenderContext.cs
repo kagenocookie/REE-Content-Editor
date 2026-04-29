@@ -49,6 +49,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     {
         if (!builtInMaterials.TryGetValue((BuiltInMaterials.Standard, flags), out var material)) {
             material = new(GL, GetShader("Shaders/GLSL/viewShaded.glsl", flags));
+            material.SetParameter("_MainColor", new Color(255, 255, 255, 255));
             material.AddTextureParameter("_MainTexture", TextureUnit.Texture0);
             material.name = "default";
         }
@@ -59,6 +60,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     {
         if (!builtInMaterials.TryGetValue((BuiltInMaterials.ViewShaded, flags), out var material)) {
             material = new(GL, GetShader("Shaders/GLSL/viewShaded.glsl", flags));
+            material.SetParameter("_MainColor", new Color(255, 255, 255, 255));
             material.AddTextureParameter("_MainTexture", TextureUnit.Texture0);
             material.name = "default";
         }
@@ -276,7 +278,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         }
     }
 
-    private Texture LoadTexture(string filepath, ShaderFlags flags)
+    protected override Texture LoadTexture(string filepath, ShaderFlags flags)
     {
         try {
             return LoadTextureInternal(filepath, flags.HasFlag(ShaderFlags.EnableStreamingTex)) ?? GetMissingTexture();

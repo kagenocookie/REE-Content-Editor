@@ -31,6 +31,7 @@ public class MaterialGroupLoader : IFileLoader
                 workspace.ResourceManager.TryResolveGameFile(mat.AlbedoTexture.texPath, out _);
             }
         }
+        handle.Reverted += wrapper.UpdateMaterialLookups;
 
         return wrapper;
     }

@@ -71,9 +71,44 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
     public abstract Material GetBuiltInMaterial(BuiltInMaterials material, ShaderFlags flags = ShaderFlags.None);
     public abstract IEnumerable<Material> GetPresetMaterials(EditorPresetMaterials preset);
 
+    protected abstract Texture LoadTexture(string filepath, ShaderFlags flags);
+
     public abstract MeshHandle CreateBlankMesh();
     public abstract (MeshHandle, ShapeMesh) CreateShapeMesh();
     protected abstract MeshResourceHandle? LoadMeshResource(FileHandle fileHandle);
+
+    private static readonly ShaderFlags[] ShaderFlagCombinations = BuildShaderFlagCombinations();
+    private static ShaderFlags[] BuildShaderFlagCombinations()
+    {
+        var flags = Enum.GetValues<ShaderFlags>();
+        var distinct = new HashSet<ShaderFlags>();
+        distinct.Add(0);
+        foreach (var a in flags) {
+            for (int i = 0; i < flags.Length; i++) {
+                var combined = a;
+                for (int k = i; k < flags.Length; k++) {
+                    var b = flags[k];
+                    combined |= b;
+                    distinct.Add(combined);
+                }
+            }
+        }
+
+        return distinct.ToArray();
+    }
+
+    public void UpdateResource(FileHandle file)
+    {
+        switch (file.Format.format) {
+            case KnownFileFormats.MeshMaterial:
+                foreach (var flag in ShaderFlagCombinations) {
+                    if (MaterialRefs.TryGetByResourceKeyNoReferenceIncrement((file, flag), out var material)) {
+                        material.RefreshParameters(this, file);
+                    }
+                }
+                break;
+        }
+    }
 
     public void AddSceneGizmo(Gizmo gizmo) => Gizmos.Add(gizmo);
     public virtual void AddDefaultSceneGizmos() { }
@@ -216,6 +251,20 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
         foreach (var mat in matGroup.Materials) {
             AddMaterialTextureReferences(mat);
         }
+    }
+
+    public bool UpdateTextureReference([NotNull] ref Texture? sourceTexture, string texturePath, ShaderFlags flags)
+    {
+        if (sourceTexture != null) {
+            if (TextureRefs.TryGetByResourceKeyNoReferenceIncrement(PakUtils.GetFilepathHash(texturePath), out var existing) && existing == sourceTexture) {
+                return false;
+            }
+
+            TextureRefs.Dereference(sourceTexture);
+        }
+
+        sourceTexture = LoadTexture(texturePath, flags);
+        return true;
     }
 
     protected void AddMaterialTextureReferences(Material mat)

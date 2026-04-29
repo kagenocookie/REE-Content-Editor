@@ -87,6 +87,9 @@ public class Material
         textureParameters.Add((name, slot, null));
     }
     public bool HasTextureParameter(TextureUnit slot) => textureParameters.FindIndex(a => a.slot == slot) != -1;
+    public bool HasColorParameter(string name) => vec4Parameters.Any(a => a.name == name);
+    public bool HasFloatParameter(string name) => floatParameters.Any(a => a.name == name);
+    public Texture? GetTexture(TextureUnit slot) => textureParameters.FirstOrDefault(a => a.slot == slot).tex;
 
     public Color GetColor(string name) => Color.FromVector4(GetParameter<Vector4>(vec4Parameters, name));
     public void SetParameter(string name, Vector4 vec) => SetParameter(vec4Parameters, name, vec);

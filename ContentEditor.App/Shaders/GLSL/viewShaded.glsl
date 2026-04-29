@@ -42,7 +42,7 @@ void main()
     vec4 fwd = vec4(0.0, 0.0, 1.0, 0.0) * uView;
     vec3 normal = normalize(fNorm);
 
-    FragColor = texture(_MainTexture, fUv) * clamp(dot(fwd.xyz, normal), 0.25, 1.0);
+    FragColor = texture(_MainTexture, fUv) * clamp(dot(fwd.xyz, normal), 0.25, 1.0) * _MainColor;
 }
 
 #endif

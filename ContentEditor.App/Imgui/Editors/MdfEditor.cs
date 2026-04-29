@@ -157,6 +157,31 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     {
         this.OnIMGUI();
     }
+
+    protected override void Reset()
+    {
+        base.Reset();
+        UpdateResources();
+    }
+
+    public override bool HandleEvent(UIContext context, EditorUIEvent eventData)
+    {
+        var ret = base.HandleEvent(context, eventData);
+        if (eventData.type is UIContextEvent.Changed or UIContextEvent.Reverted or UIContextEvent.Updated) {
+            UpdateResources();
+        }
+        return ret;
+    }
+
+    private void UpdateResources()
+    {
+        var nativeWindow = context.GetNativeWindow();
+        if (nativeWindow != null) {
+            foreach (var scene in nativeWindow.SceneManager.RootScenes) {
+                scene.RenderContext.UpdateResource(Handle);
+            }
+        }
+    }
 }
 
 [ObjectImguiHandler(typeof(MdfFile), Stateless = false)]

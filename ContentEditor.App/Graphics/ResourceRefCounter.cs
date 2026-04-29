@@ -72,6 +72,18 @@ public sealed class ResourceRefCounter<TKey, TResource> : IDisposable
         }
     }
 
+    internal bool TryGetByResourceKeyNoReferenceIncrement(TKey resourceKey, [MaybeNullWhen(false)] out TResource resource)
+    {
+        if (resourceRemaps.TryGetValue(resourceKey, out var remappedKey)) resourceKey = remappedKey;
+        if (keyedResources.TryGetValue(resourceKey, out var refResource)) {
+            resource = refResource.Resource;
+            return true;
+        }
+
+        resource = default;
+        return false;
+    }
+
     public void Dispose()
     {
         foreach (var handle in instances.Values) {
