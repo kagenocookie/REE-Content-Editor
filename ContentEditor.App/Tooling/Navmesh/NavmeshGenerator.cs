@@ -484,17 +484,6 @@ public static class NavmeshGenerator
                         ukn = 1,
                     });
                 }
-
-                foreach (var pair in info.PairNodes) {
-                    if (pair == null) continue;
-
-                    var aabbNode = secAabbs!.Nodes[pair.localIndex];
-                    if (aabbNode == null) continue;
-
-                    // most aimap files use 1 AABB duplicated twice
-                    // exception is in aivspc files that have the second pair different (grounded?) but we aren't there yet anyway
-                    aabbNode.bounds = aabbNode.secondaryBounds = new AABB(node.min, node.max);
-                }
             }
         }
 
@@ -525,19 +514,33 @@ public static class NavmeshGenerator
                         ukn = 1,
                     });
                 }
-
-                // TODO these generally have 4 AABBs, need to spread them around correctly
-                foreach (var pair in info.PairNodes) {
-                    if (pair == null) continue;
-
-                    var aabbNode = secAabbs!.Nodes[pair.localIndex];
-                    if (aabbNode == null) continue;
-
-                }
             }
         }
 
-        //note: secondary AABB groups don't contain any links, therefore we can skip handling those
+        if (secAabbs != null) {
+            // pre-RE9 navmeshes only have AABB->boundary links but not boundary->AABB,
+            // therefore we propagate changes from the AABB side so have a unified path
+            foreach (var info in secAabbs.NodeInfos) {
+                var aabbNode = secAabbs.Nodes[info.localIndex];
+
+                foreach (var pair in info.PairNodes) {
+                    if (pair == null) continue;
+
+                    var pairGroup = targetFile.mainContent.contents[pair.groupIndex];
+
+                    if (pairGroup == boundary) {
+                        var node = boundary.Nodes[pair.localIndex];
+
+                        // most aimap files use 1 AABB duplicated twice
+                        // exception is in aivspc files that have the second pair different (grounded?) but we aren't there yet anyway
+                        aabbNode.bounds = aabbNode.secondaryBounds = new AABB(node.min, node.max);
+                    } else if (pairGroup == walls) {
+                        var node = walls.Nodes[pair.localIndex];
+                        // TODO handle navmeh walls position propagation
+                    }
+                }
+            }
+        }
 
         // restore manual links
         foreach (var link in manualLinksMain) {
