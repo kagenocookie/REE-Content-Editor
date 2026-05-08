@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Text.Json;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Github;
+using ContentEditor.App.Imgui.App;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.Core;
 using ContentEditor.Reversing;
@@ -816,6 +817,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     if (ImGui.MenuItem("Entities")) {
                         AddSubwindow(new AppContentEditorWindow(workspace));
                     }
+                }
+                if (ImGui.MenuItem("Macro Shelf")) {
+                    AddSubwindow(new LuaMacroShelf());
                 }
             }
             ImGui.EndMenu();

@@ -299,17 +299,20 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                 UI.FontSizeLarge = UI.FontSize * UI.FontSizeLargeMultiplier;
             }
         }
+        ShowSetting(config.UseFullscreenAnimPlayback, "Fullscreen Animation Playback Overlay", "Whether to keep the animation playback overlay in the top-right corner of the Mesh Viewer or make it fullscreen.");
+
+        ImGui.SeparatorText("Fields");
         ShowSetting(config.PrettyFieldLabels, "Simplify field labels", "Whether to simplify field labels instead of showing the raw field names (e.g. \"Target Object\" instead of \"_TargetObject\").");
         ShowSlider(config.AutoExpandFieldsCount, "Auto-expand field count", 0, 16, "RSZ object fields with less than the defined number of fields will initially auto expand.");
 
+        ImGui.SeparatorText("FPS");
         var showFps = config.ShowFps.Get();
         if (ImGui.Checkbox("Show FPS", ref showFps)) {
             config.ShowFps.Set(showFps);
         }
-
         ShowSlider(config.MaxFps, "Max FPS", 10, 240, "The maximum FPS for rendering.");
         ShowSlider(config.BackgroundMaxFps, "Max FPS in background", 5, config.MaxFps.Get(), "The maximum FPS when the editor window is not focused.");
-        ShowSetting(config.UseFullscreenAnimPlayback, "Fullscreen Animation Playback Overlay", "Whether to keep the animation playback overlay in the top-right corner of the Mesh Viewer or make it fullscreen.");
+
         ImGui.SeparatorText("Date & Time");
         var dateFormat = config.DateFormat.Get();
         if (ImGui.Combo("Date Format", ref dateFormat, DateFormats, DateFormats.Length)) {
