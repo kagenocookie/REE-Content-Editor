@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Text;
+using ReeLib.Common;
 
 namespace ContentEditor.App;
 
@@ -478,13 +479,18 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         if (!cachedResults.TryGetValue(cacheKey, out sortedEntries)) {
             string[] files;
             if (CurrentDir.StartsWith(PakReader.UnknownFilePathPrefix)) {
-                files = ListFileWrapper.FilterFiles(reader?.UnknownFilePaths ?? [], CurrentDir);
+                files = ListFileWrapper.FilterFiles(reader!.UnknownFilePaths, CurrentDir);
             } else {
                 files = baseList.GetFiles(CurrentDir);
             }
             if (string.IsNullOrEmpty(CurrentDir) && reader!.ContainsUnknownFiles) {
                 Array.Resize(ref files, files.Length + 1);
                 files[^1] = PakReader.UnknownFilePathPrefix;
+            } else if (files.Length == 0) {
+                if (reader!.FileExists(PakUtils.GetFilepathHash(CurrentDir))) {
+                    files = [CurrentDir];
+                    Log.Info($"Congratulations! You have found a new file path at {CurrentDir}!");
+                }
             }
             var sorted = cacheKey.ColumnIndex switch {
                 0 => cacheKey.SortDirection == ImGuiSortDirection.Ascending ? files : files.Reverse(),

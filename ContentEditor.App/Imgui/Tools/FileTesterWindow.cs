@@ -531,6 +531,7 @@ public partial class FileTesterWindow : IWindowHandler
             case KnownFileFormats.Chain2: return VerifyRewriteEquality<Chain2File>(source.GetFile<Chain2File>(), env);
             case KnownFileFormats.CollisionShapePreset: return VerifyRewriteEquality<ClspFile>(source.GetFile<ClspFile>(), env);
             case KnownFileFormats.CollisionSkinningMesh: return VerifyRewriteEquality<ClsmFile>(source.GetFile<ClsmFile>(), env);
+            case KnownFileFormats.GpuCloth: return VerifyRewriteEquality<GpucFile>(source.GetFile<GpucFile>(), env);
             default: return null;
         }
     }
@@ -591,7 +592,12 @@ public partial class FileTesterWindow : IWindowHandler
                 mapperNameLookups[type] = index => index.ToString();
             } else {
                 var fields = type.GetFields(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance);
-                var props = type.GetProperties(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance).Where(p => p.CanRead && p.GetMethod!.GetParameters().Length == 0 && p.GetMethod.GetBaseDefinition().DeclaringType != typeof(BaseModel) && p.GetMethod.GetBaseDefinition().DeclaringType != typeof(BaseFile));
+                var props = type.GetProperties(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance)
+                    .Where(p => p.CanRead &&
+                        p.GetMethod!.GetParameters().Length == 0 &&
+                        p.GetMethod.GetBaseDefinition().DeclaringType != typeof(BaseModel) &&
+                        p.GetMethod.GetBaseDefinition().DeclaringType != typeof(BaseFile) &&
+                        (!p.PropertyType.IsGenericType || p.PropertyType.GetGenericTypeDefinition() != typeof(Span<>)));
                 comparedValueMappers[type] = mapper = (obj) => fields.Select(f => f.GetValue(obj)).Concat(props.Select(p => p.GetValue(obj)));
                 var names = fields.Select(f => f.Name).Concat(props.Select(p => p.Name)).ToArray();
                 mapperNameLookups[type] = (index) => names[index];
