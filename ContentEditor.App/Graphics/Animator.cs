@@ -172,7 +172,7 @@ public partial class Animator(ContentWorkspace Workspace)
                 motions.Add(mot.File);
             } else if (file.Resource is BaseFileResource<MotpackFile> motpack) {
                 foreach (var submot in motpack.File.Motions) {
-                    if (submot.motion is MotFile mmo) {
+                    if (submot is MotFile mmo) {
                         motions.Add(mmo);
                     }
                 }
