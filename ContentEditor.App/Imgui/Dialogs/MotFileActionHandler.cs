@@ -65,9 +65,9 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
             if (paste) {
                 if (MotionDataResource.TryDeserialize(clipData, out var motData, out var error)) {
                     // TODO motpack support
-                    var editor = context.FindHandlerInParents<MotlistEditor>();
-                    var motlist = editor?.File;
-                    if (Logger.ErrorIf(motlist == null, "Could not find parent motlist")) return true;
+                    var editor = context.GetEditor<MotlistEditor>() ?? context.GetEditor<MotFileEditor>() ?? context.GetEditor<MotpackEditor>();
+                    var file = editor?.Handle;
+                    if (Logger.ErrorIf(file == null, "Could not find parent motion file")) return true;
 
                     var prevMot = context.Get<MotFileBase>();
                     MotFileBase newMot;
@@ -83,9 +83,9 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                     if (newMot == null) return true;
 
                     if (pasteRetarget) {
-                        retargetWindow = new MotlistRetargetWindow(motlist, prevMot, newMot, editor);
+                        retargetWindow = new MotlistRetargetWindow(file, prevMot, newMot, editor);
                     } else {
-                        ConfirmPaste(motlist, prevMot, newMot, editor, false, false);
+                        ConfirmPaste(file, prevMot, newMot, editor, false, false);
                     }
                 } else {
                     Logger.Error("Failed to deserialize motion data: " + error);
@@ -95,11 +95,11 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
         }
 
         if (ImGui.Selectable("Retargeting ...")) {
-            var editor = context.FindHandlerInParents<MotlistEditor>();
-            var motlist = editor?.File;
-            if (Logger.ErrorIf(motlist == null, "Could not find parent motlist")) return true;
+            var editor = context.GetEditor<MotlistEditor>() ?? context.GetEditor<MotFileEditor>() ?? context.GetEditor<MotpackEditor>();
+            var file = editor?.Handle;
+            if (Logger.ErrorIf(file == null, "Could not find parent motion file")) return true;
             var mot = context.Get<MotFileBase>();
-            retargetWindow = new MotlistRetargetWindow(motlist, mot, mot, editor);
+            retargetWindow = new MotlistRetargetWindow(file, mot, mot, editor);
         }
 
         if (ImGui.Selectable("Save as single mot ...")) {
@@ -113,7 +113,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
         return false;
     }
 
-    private class MotlistRetargetWindow(MotlistFile motlist, MotFileBase replacedFile, MotFileBase newFile, MotlistEditor? editor)
+    private class MotlistRetargetWindow(FileHandle file, MotFileBase replacedFile, MotFileBase newFile, FileEditor? editor)
     {
         public static readonly string WindowName = "Motion Paste Settings";
         private bool hasShown;
@@ -255,7 +255,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                     ImGui.Spacing();
                     if (ImGui.Button("Confirm Replace", new Vector2(170, 0))) {
                         if (replacedFile != newFile) {
-                            ConfirmPaste(motlist, replacedFile, newFile, editor, overwriteBoneList, maintainExistingChannelsOnly);
+                            ConfirmPaste(file, replacedFile, newFile, editor, overwriteBoneList, maintainExistingChannelsOnly);
                         }
                         keepShowing = false;
                     }
@@ -317,16 +317,9 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
         }
     }
 
-    internal static void ConfirmPaste(MotlistFile motlist, MotFileBase prevMot, MotFileBase newMot, MotlistEditor? editor, bool replaceBoneList, bool maintainExistingChannelsOnly)
+    internal static void ConfirmPaste(FileHandle targetFile, MotFileBase prevMot, MotFileBase newMot, FileEditor? editor, bool replaceBoneList, bool maintainExistingChannelsOnly)
     {
-        if (prevMot.GetType() != newMot.GetType()) {
-            // fully replace instance
-            motlist.ReplaceMotFile(prevMot, newMot);
-            if (editor != null) {
-                editor.Handle.Modified = true;
-                editor.RefreshUI();
-            }
-        } else if (newMot is MotFile motSrc && prevMot is MotFile motTarget) {
+        if (newMot is MotFile motSrc && prevMot is MotFile motTarget) {
             // replace values, keep instance
             foreach (var clip in motTarget.BoneClips) {
                 // ensure that for any names that were manually modified, the hashes also update to match
@@ -335,15 +328,33 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                 }
             }
             motTarget.CopyValuesFrom(motSrc, false, replaceBoneList, maintainExistingChannelsOnly);
+            var motlist = targetFile.Format.format == KnownFileFormats.MotionList ? targetFile.GetFile<MotlistFile>() : null;
             if (motlist != null) {
                 // ensure unique name
                 motTarget.Header.motName = motTarget.Header.motName
                     .GetUniqueName((newName) => motlist.MotFiles.Any(m => m != motTarget && m is MotFile mm && mm.Header.motName == newName));
             }
-            if (editor != null) {
-                editor.Handle.Modified = true;
-                editor.RefreshUI();
+            targetFile.Modified = true;
+            if (editor is MotlistEditor me) {
+                me.RefreshUI();
+            } else {
+                editor?.Context.ResetState();
             }
+        } else
+        if (prevMot.GetType() != newMot.GetType()) {
+            var motlist = targetFile.Format.format == KnownFileFormats.MotionList ? targetFile.GetFile<MotlistFile>() : null;
+            if (motlist == null) {
+                Logger.Error("Can't change individual motion file types outside of motlist");
+                return;
+            }
+            motlist.ReplaceMotFile(prevMot, newMot);
+            targetFile.Modified = true;
+            if (editor is MotlistEditor me) {
+                me.RefreshUI();
+            } else {
+                editor?.Context.ResetState();
+            }
+            return;
         } else {
             Logger.Error($"Mot types {prevMot.GetType().Name} and {newMot.GetType().Name} unsupported for paste");
         }

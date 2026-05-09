@@ -25,6 +25,8 @@ public class InspectorContainer(IWindowHandler windowHandler, UIContext uiContex
     public void SetPrimaryInspector(object? target)
     {
         if (primaryInspector == null) {
+            if (target == null) return;
+
             primaryInspector = AddInspector(target);
         } else {
             primaryInspector.Target = target;

@@ -103,7 +103,7 @@ internal partial class MotBatchTransfer(ContentWorkspace workspace, MotlistFileB
                     continue;
                 }
 
-                MotFileActionHandler.ConfirmPaste(motlist, target, clone, null, replaceBoneList, maintainExistingChannelsOnly);
+                MotFileActionHandler.ConfirmPaste(targetFileHandle, target, clone, null, replaceBoneList, maintainExistingChannelsOnly);
             }
         }
         targetFileHandle.Modified = true;

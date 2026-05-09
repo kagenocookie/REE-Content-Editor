@@ -8,6 +8,7 @@ using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Github;
 using ContentEditor.App.Imgui.App;
 using ContentEditor.App.ImguiHandling;
+using ContentEditor.BackgroundTasks;
 using ContentEditor.Core;
 using ContentEditor.Reversing;
 using ContentPatcher;
@@ -716,9 +717,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     SetWorkspace(workspace.Game, workspace.CurrentBundle?.Name, true);
                 }
             }
-            if (ImGui.BeginMenu("Data Generation")) {
+            if (workspace != null && ImGui.BeginMenu("Data Generation")) {
                 if (ImGui.MenuItem("Rebuild RSZ patch data")) {
-                    if (workspace != null && !runningRszInference) {
+                    if (!runningRszInference) {
                         runningRszInference = true;
                         Logger.Info("Starting RSZ data scan...");
                         Task.Run(() => {
@@ -735,12 +736,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                             }
                         });
                     } else {
-                        Logger.Info("Scan already in progress or workspace missing");
+                        Logger.Info("Scan already in progress or workspace unset");
                     }
                 }
 
                 if (ImGui.MenuItem("Rebuild EFX data")) {
-                    if (workspace != null && !runningRszInference) {
+                    if (!runningRszInference) {
                         runningRszInference = true;
                         var outDir = Path.Combine(Directory.GetCurrentDirectory(), "efx_structs");
                         foreach (var game in AppConfig.Instance.ConfiguredGames) {
@@ -749,33 +750,41 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                             EfxTools.GenerateEFXStructsJson(gameId.ToEfxVersion(), efxOutput);
                         }
                     } else {
-                        Logger.Info("Scan already in progress or workspace missing");
+                        Logger.Info("Scan already in progress or workspace unset");
                     }
                 }
+
                 if (ImGui.MenuItem("Generate file extension cache")) {
-                    if (workspace != null) {
-                        try {
-                            var games = AppConfig.Instance.ConfiguredGames.Select(c => new GameIdentifier(c))
-                                .Concat(Enum.GetValues<GameName>().Select(n => new GameIdentifier(n.ToString())))
-                                .Distinct()
-                                .OrderBy(s => s.name).ToList();
-                            FileExtensionTools.ExtractAllFileExtensionCacheData(games, game => {
-                                return AppConfig.Instance.GetGameFilelist(game);
-                            });
-                        } catch (Exception e) {
-                            Logger.Error(e.Message);
-                        }
+                    try {
+                        var games = AppConfig.Instance.ConfiguredGames.Select(c => new GameIdentifier(c))
+                            .Concat(Enum.GetValues<GameName>().Select(n => new GameIdentifier(n.ToString())))
+                            .Distinct()
+                            .OrderBy(s => s.name).ToList();
+                        FileExtensionTools.ExtractAllFileExtensionCacheData(games, game => {
+                            return AppConfig.Instance.GetGameFilelist(game);
+                        });
+                    } catch (Exception e) {
+                        Logger.Error(e.Message);
                     }
-                    AddUniqueSubwindow(new FileTesterWindow());
                 }
-                if (ImGui.MenuItem("Generate bookmarks from entities")) {
-                    if (workspace != null) {
-                        var list = PrefabLister.GenerateFileSets(workspace);
-                        if (list != null) {
-                            Logger.Info(JsonSerializer.Serialize(list, JsonConfig.configJsonOptions));
-                        }
+
+                if (ImGui.MenuItem("Generate list file (all files)")) {
+                    if (!MainLoop.Instance.BackgroundTasks.HasPendingTask<ListFileGeneratorTask>()) {
+                        MainLoop.Instance.BackgroundTasks.Queue(new ListFileGeneratorTask(workspace) { LatestPAKsOnly = false });
                     }
-                    AddUniqueSubwindow(new FileTesterWindow());
+                }
+
+                if (ImGui.MenuItem("Generate list file (latest PAKs only)")) {
+                    if (!MainLoop.Instance.BackgroundTasks.HasPendingTask<ListFileGeneratorTask>()) {
+                        MainLoop.Instance.BackgroundTasks.Queue(new ListFileGeneratorTask(workspace) { LatestPAKsOnly = true });
+                    }
+                }
+
+                if (ImGui.MenuItem("Generate bookmarks from entities")) {
+                    var list = PrefabLister.GenerateFileSets(workspace);
+                    if (list != null) {
+                        Logger.Info(JsonSerializer.Serialize(list, JsonConfig.configJsonOptions));
+                    }
                 }
                 ImGui.EndMenu();
             }
