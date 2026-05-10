@@ -415,7 +415,6 @@ public class MotFileBaseHandler : IObjectUIHandler
 }
 
 [ObjectImguiHandler(typeof(MotFile))]
-// [ObjectImguiHandler(typeof(MotpackMotFile))]
 public class MotFileHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
@@ -434,7 +433,7 @@ public class MotFileHandler : IObjectUIHandler
             context.AddChild<MotFile, bool>("Looping", instance, BoolFieldHandler.Instance, getter: (m) => m!.Header.blending == 0, setter: (m, v) => m!.Header.blending = v ? 0 : -1);
             context.AddChild<MotFile, float>("Start Frame", instance, getter: (m) => m!.Header.startFrame, setter: (m, v) => m!.Header.startFrame = v).AddDefaultHandler<float>();
             context.AddChild<MotFile, float>("End Frame", instance, getter: (m) => m!.Header.endFrame, setter: (m, v) => m!.Header.endFrame = v).AddDefaultHandler<float>();
-            context.AddChild<MotFile, ushort>("Attributes", instance, getter: (m) => m!.Header.uknAttributes, setter: (m, v) => m!.Header.uknAttributes = v).AddDefaultHandler<ushort>();
+            context.AddChild<MotFile, MotFlags>("Attributes", instance, getter: (m) => m!.Header.attributes, setter: (m, v) => m!.Header.attributes = v).AddDefaultHandler<MotFlags>();
             context.AddChild<MotFile, ushort>("Attributes 2", instance, getter: (m) => m!.Header.uknAttributes2, setter: (m, v) => m!.Header.uknAttributes2 = v).AddDefaultHandler<ushort>();
 
             context.AddChild<MotFile, List<MotBone>>("Bones", instance, getter: (m) => m!.RootBones).AddDefaultHandler();
@@ -443,6 +442,7 @@ public class MotFileHandler : IObjectUIHandler
             context.AddChild<MotFile, List<MotPropertyTrack>>("Animated Properties", instance, getter: (m) => m!.MotPropertyTracks).AddDefaultHandler();
             context.AddChild<MotFile, MotPropertyList>("Property List", instance, new CopyableTreeUIHandler<MotPropertyList>(), (m) => m!.PropertyList, (m, v) => m.PropertyList = v);
             context.AddChild<MotFile, List<MotEndClip>>("End Clips", instance, getter: (m) => m!.EndClips).AddDefaultHandler();
+            context.AddChild<MotFile, VertexAnimationContainer>("Vertex Animation Data", instance, getter: (m) => m!.VertexAnimation, setter: (m, v) => m!.VertexAnimation = v).AddDefaultHandler<VertexAnimationContainer>();
         }
 
         context.ShowChildrenUI();
