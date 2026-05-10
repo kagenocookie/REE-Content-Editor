@@ -232,7 +232,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         }
         ImGui.SameLine();
         var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
-        if (ImguiHelpers.ToggleButton($"{AppIcons.SI_PathShort}", ref useCompactFilePaths, Colors.IconActive)) {
+        if (ImguiHelpers.ToggleButton($"{AppIcons.SI_LogCompact}", ref useCompactFilePaths, Colors.IconActive)) {
             AppConfig.Instance.UsePakCompactFilePaths.Set(useCompactFilePaths);
         }
         ImguiHelpers.Tooltip("Toggle Compact File Paths"u8);
@@ -415,10 +415,10 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         ImGui.PopStyleColor();
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(unpackedFiles != null)) {
-            if (ImGui.Button($"{AppIcons.SI_ArchiveExtractTo}")) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PakExtractTo, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary})) {
                 PlatformUtils.ShowFolderDialog(ExtractCurrentList, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
             }
-            ImguiHelpers.Tooltip("Extract To...");
+            ImguiHelpers.Tooltip("Extract to...");
         }
         DrawContents();
     }

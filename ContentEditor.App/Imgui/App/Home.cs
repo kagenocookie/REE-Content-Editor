@@ -3,6 +3,7 @@ using ContentEditor.App.Internal;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Themes;
+using ContentPatcher;
 using ReeLib;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -324,6 +325,7 @@ public class HomeWindow : IWindowHandler
         }
         if (!string.IsNullOrEmpty(chosenGame)) {
             var gamepath = AppConfig.Instance.GetGamePath(chosenGame);
+            var gameExe = AppConfig.Instance.GetGameExecutablePath(chosenGame);
             var rszPath = AppConfig.Instance.GetGameRszJsonPath(chosenGame);
             var filelist = AppConfig.Instance.GetGameFilelist(chosenGame);
             var extractPath = AppConfig.Instance.GetGameExtractPath(chosenGame);
@@ -332,7 +334,20 @@ public class HomeWindow : IWindowHandler
             if (AppImguiHelpers.InputFolder("Game Path", ref gamepath) && Directory.Exists(gamepath)) {
                 AppConfig.Instance.SetGamePath(chosenGame, gamepath);
             }
+            if (!ImGui.IsItemActive() && string.IsNullOrEmpty(gamepath) && !string.IsNullOrEmpty(gameExe)) {
+                AppConfig.Instance.SetGamePath(chosenGame, Path.GetDirectoryName(gameExe)!);
+            }
             ImguiHelpers.Tooltip("This is the path to the game (where the .exe file is located)."u8);
+            ImGui.SameLine();
+            ImGui.TextColored(Colors.TextActive, "*");
+
+            if (AppImguiHelpers.InputFilepath("Game Executable", ref gameExe, FileFilters.Executable)) {
+                AppConfig.Instance.SetGameExecutablePath(chosenGame, gameExe);
+            }
+            if (!ImGui.IsItemActive() && !string.IsNullOrEmpty(gamepath) && string.IsNullOrEmpty(gameExe)) {
+                AppConfig.Instance.SetGameExecutablePath(chosenGame, AppUtils.FindGameExecutable(gamepath, chosenGame)!);
+            }
+            ImguiHelpers.Tooltip("This is the exact path to the game's executable."u8);
             ImGui.SameLine();
             ImGui.TextColored(Colors.TextActive, "*");
 
@@ -356,7 +371,7 @@ public class HomeWindow : IWindowHandler
         ImGui.SameLine();
         string finishText = "Finish Setup";
         ImguiHelpers.AlignElementRight(ImGui.CalcTextSize(finishText).X + ImGui.GetStyle().ItemSpacing.X + ImGui.GetStyle().FramePadding.X);
-        using (var _ = ImguiHelpers.Disabled((string.IsNullOrEmpty(chosenGame) || string.IsNullOrEmpty(AppConfig.Instance.GetGamePath(chosenGame))))) {
+        using (var _ = ImguiHelpers.Disabled((string.IsNullOrEmpty(chosenGame) || string.IsNullOrEmpty(AppConfig.Instance.GetGamePath(chosenGame)) || string.IsNullOrEmpty(AppConfig.Instance.GetGameExecutablePath(chosenGame))))) {
             if (ImGui.Button(finishText)) {
                 AppConfig.Instance.IsFirstTime.Set(false);
                 EditorWindow.CurrentWindow?.SetWorkspace(chosenGame, null);
@@ -367,9 +382,13 @@ public class HomeWindow : IWindowHandler
     private void ShowBundlesTab(UIContext context)
     {
         var data = context.Get<WindowData>();
+        bool isCompactView = ImGui.GetWindowWidth() <= 550 * UI.UIScale;
         ImGui.Spacing();
-        if (ImGui.Button($"{AppIcons.SI_Bundle} Bundle Manager")) {
+        if (ImGui.Button(isCompactView ? $"{AppIcons.SI_Bundle}" : $"{AppIcons.SI_Bundle} Bundle Manager")) {
             EditorWindow.CurrentWindow?.ShowBundleManagement();
+        }
+        if (isCompactView) {
+            ImguiHelpers.Tooltip("Bundle Manager"u8);
         }
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
@@ -397,10 +416,15 @@ public class HomeWindow : IWindowHandler
         ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isBundleFilterMatchCase, Colors.IconActive);
         ImguiHelpers.Tooltip("Match Case"u8);
         ImGui.SameLine();
-        string filterLabelDisplayText = _activeBundleGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} " + "All Games" : $"{AppIcons.SI_Filter} " + $"{_activeBundleGameFilters.Count} Selected";
+        string filterLabelDisplayText;
+        if (isCompactView) {
+            filterLabelDisplayText = _activeBundleGameFilters.Count == 0 ? $"{AppIcons.SI_Filter}" : $"{AppIcons.SI_Filter} {_activeBundleGameFilters.Count}";
+        } else {
+            filterLabelDisplayText = _activeBundleGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} All Games" : $"{AppIcons.SI_Filter} {_activeBundleGameFilters.Count} Selected";
+        }
         float filterComboWidth = ImGui.CalcTextSize(filterLabelDisplayText).X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - (((filterComboWidth + ImGui.GetStyle().ItemSpacing.X) + (ImGui.GetStyle().FramePadding.X + ImGui.GetStyle().ItemSpacing.X) * 3) + (ImGui.GetStyle().ItemSpacing.X) * 6));
-        AppImguiHelpers.ClearableInputText("##BundleFilter"u8, $"{AppIcons.SI_GenericMagnifyingGlass} Search Bundles", ref bundleFilter, 128);
+        AppImguiHelpers.ClearableInputText("##BundleFilter"u8, isCompactView ? $"{AppIcons.SI_GenericMagnifyingGlass} Search" : $"{AppIcons.SI_GenericMagnifyingGlass} Search Bundles", ref bundleFilter, 128);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(filterComboWidth);
         if (ImGui.BeginCombo("##BundleGameFilterCombo", filterLabelDisplayText, ImGuiComboFlags.HeightLargest)) {

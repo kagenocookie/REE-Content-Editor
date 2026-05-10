@@ -33,7 +33,7 @@ public static class AppImguiHelpers
     {
         var id = ImGui.GetID(label);
         var w = ImGui.CalcItemWidth();
-        var buttonWidth = ImGui.CalcTextSize($"{AppIcons.SI_FolderBrowse}").X + ImGui.GetStyle().FramePadding.X * 4;
+        var buttonWidth = ImGui.CalcTextSize($"{AppIcons.SI_FolderBrowse}").X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X;
         ImGui.PushID(label);
         if (ImGui.Button($"{AppIcons.SI_FolderBrowse}")) {
             PlatformUtils.ShowFileDialog((list) => fileBrowseResults[id] = list[0], path, extensions, false);

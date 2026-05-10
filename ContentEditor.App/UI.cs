@@ -443,6 +443,8 @@ public static class AppIcons
     public static readonly char[] SIC_FileType_Chain2New = { '\uee4e', '\uee4f', '\uee50' };
     public static readonly char[] SIC_FileType_CLSPNew = { '\uee51', '\uee52', '\uee53', '\uee54' };
     public static readonly char SI_LUA = '\uee55';
+    public static readonly char SI_Small_ArrowDown = '\uee56';
+    public static readonly char[] SIC_PakExtractTo = { '\uee57', '\uee58', '\uee59' };
 
     public static string PrependIcon(this string text, object target)
     {

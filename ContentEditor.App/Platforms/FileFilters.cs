@@ -36,5 +36,6 @@ public static class FileFilters
 
     public static readonly FileFilter[] ThemeFile = [new FileFilter("Theme File", "theme.txt")];
     public static readonly FileFilter[] LuaFile = [new FileFilter("Lua File", "lua")];
+    public static readonly FileFilter[] Executable = [new FileFilter("Executable", "exe")];
 }
 

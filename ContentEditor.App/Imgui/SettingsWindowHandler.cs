@@ -1,9 +1,10 @@
-using System.Numerics;
 using ContentEditor.App.Internal;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Themes;
+using ContentPatcher;
 using ReeLib;
+using System.Numerics;
 
 namespace ContentEditor.App;
 
@@ -204,7 +205,6 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     private static void ShowPreferencesGeneralTab()
     {
         ImGui.Spacing();
-
         ShowSetting(config.EnableUpdateCheck, "Automatically check for Updates", "Will occasionally check GitHub for new releases.");
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(AutoUpdater.UpdateCheckInProgress)) {
@@ -212,7 +212,19 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                 AutoUpdater.CheckForUpdateInBackground();
             }
         }
+        ShowSetting(config.DisableFileCloseWarning, "Disable Open File Warning When Closing Editor Windows", "Whether to disable the warning notifiation when a window is closed that references an open file.");
+        var navchanged = ShowSetting(config.EnableKeyboardNavigation, "Enable keyboard navigation", "Whether to enable navigating between fields using arrow keys.");
+        if (navchanged) {
+            if (config.EnableKeyboardNavigation) {
+                ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.NavEnableKeyboard;
+            } else {
+                ImGui.GetIO().ConfigFlags &= ~ImGuiConfigFlags.NavEnableKeyboard;
+            }
+        }
+        ShowSetting(config.LoadFromNatives, "Load files from natives/ folder", $"If checked, the app will prefer to load loose files from the active game's natives folder instead of packed files, similar to how the game would.");
+        ShowSetting(config.UseSubPakForLooseTextures, "Store textures into sub pak files (>= MHWilds)", "Whether to store textures in sub paks even for loose file output.\nShouldn't be needed anymore with current REFramework versions, but might be needed in case of issues with newer games");
 
+        ImGui.SeparatorText("Cache");
         var configPath = config.GameConfigBaseFilepath.Get();
         if (AppImguiHelpers.InputFolder("Game Config Base Path", ref configPath)) {
             if (configPath.EndsWith(".exe")) configPath = Path.GetDirectoryName(configPath)!;
@@ -225,21 +237,13 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ShowFolderSetting(config.CacheFilepath, "Cache file path", "The folder to use for general file caching. Must not be empty.");
         ShowFolderSetting(config.ThumbnailCacheFilepath, "Thumbnail cache file path", "The folder that cached thumbnails should be stored in. Must not be empty.");
         ShowFolderSetting(config.BookmarksFilepath, "User data file path", "The folder in which user created bookmarks and other data should be stored. Must not be empty.");
-        ShowSlider(config.UnpackMaxThreads, "Max unpack threads", 1, 64, "The maximum number of threads to be used when unpacking.\nThe actual thread count is determined automatically by the .NET runtime.");
 
-        ShowSetting(config.DisableFileCloseWarning, "Disable Open File Warning When Closing Editor Windows", "Whether to disable the warning notifiation when a window is closed that references an open file.");
-        var navchanged = ShowSetting(config.EnableKeyboardNavigation, "Enable keyboard navigation", "Whether to enable navigating between fields using arrow keys.");
-        if (navchanged) {
-            if (config.EnableKeyboardNavigation) {
-                ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.NavEnableKeyboard;
-            } else {
-                ImGui.GetIO().ConfigFlags &= ~ImGuiConfigFlags.NavEnableKeyboard;
-            }
-        }
+        ImGui.SeparatorText("Performance");
+        ShowSlider(config.UnpackMaxThreads, "Max unpack threads", 1, 64, "The maximum number of threads to be used when unpacking.\nThe actual thread count is determined automatically by the .NET runtime.");
         ShowSetting(config.EnableGpuTexCompression, "Enable GPU texture compression", "Whether to enable using the much faster GPU-based compression method.\nCurrently only available on Windows.\nCan be disabled in case of issues, so that CPU-based compression is used instead.");
-        ShowSetting(config.UseSubPakForLooseTextures, "Store textures into sub pak files (>= MHWilds)", "Whether to store textures in sub paks even for loose file output.\nShouldn't be needed anymore with current REFramework versions, but might be needed in case of issues with newer games");
+
+        ImGui.SeparatorText("Debug");
         ShowSetting(config.LogToFile, "Output logs to file", $"If checked, any logging will also be output to file {FileLogger.DefaultLogFilePath}.\nChanging this setting requires a restart of the app.");
-        ShowSetting(config.LoadFromNatives, "Load files from natives/ folder", $"If checked, the app will prefer to load loose files from the active game's natives folder instead of packed files, similar to how the game would.");
         var logLevel = config.LogLevel.Get();
         if (ImGui.Combo("Minimum logging level", ref logLevel, LogLevels, LogLevels.Length)) {
             config.LogLevel.Set(logLevel);
@@ -296,17 +300,20 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                 UI.FontSizeLarge = UI.FontSize * UI.FontSizeLargeMultiplier;
             }
         }
+        ShowSetting(config.UseFullscreenAnimPlayback, "Fullscreen Animation Playback Overlay", "Whether to keep the animation playback overlay in the top-right corner of the Mesh Viewer or make it fullscreen.");
+
+        ImGui.SeparatorText("Fields");
         ShowSetting(config.PrettyFieldLabels, "Simplify field labels", "Whether to simplify field labels instead of showing the raw field names (e.g. \"Target Object\" instead of \"_TargetObject\").");
         ShowSlider(config.AutoExpandFieldsCount, "Auto-expand field count", 0, 16, "RSZ object fields with less than the defined number of fields will initially auto expand.");
 
+        ImGui.SeparatorText("FPS");
         var showFps = config.ShowFps.Get();
         if (ImGui.Checkbox("Show FPS", ref showFps)) {
             config.ShowFps.Set(showFps);
         }
-
         ShowSlider(config.MaxFps, "Max FPS", 10, 240, "The maximum FPS for rendering.");
         ShowSlider(config.BackgroundMaxFps, "Max FPS in background", 5, config.MaxFps.Get(), "The maximum FPS when the editor window is not focused.");
-        ShowSetting(config.UseFullscreenAnimPlayback, "Fullscreen Animation Playback Overlay", "Whether to keep the animation playback overlay in the top-right corner of the Mesh Viewer or make it fullscreen.");
+
         ImGui.SeparatorText("Date & Time");
         var dateFormat = config.DateFormat.Get();
         if (ImGui.Combo("Date Format", ref dateFormat, DateFormats, DateFormats.Length)) {
@@ -458,30 +465,40 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         if (ImGui.TreeNodeEx(Languages.TranslateGame(game.name), ImGuiTreeNodeFlags.Framed)) {
             ImGui.Spacing();
             var gamepath = config.GetGamePath(game);
+            var gameExe = config.GetGameExecutablePath(game);
+            var extractPath = config.GetGameExtractPath(game);
+            var rszPath = config.GetGameRszJsonPath(game);
+            var filelist = config.GetGameFilelist(game);
+            var isFullySupported = fullSupportedGames?.Contains(game.name) == true;
+
             if (AppImguiHelpers.InputFolder("Game Path", ref gamepath)) {
                 if (gamepath.EndsWith(".exe")) gamepath = Path.GetDirectoryName(gamepath)!;
                 config.SetGamePath(game, gamepath);
             }
+            if (!ImGui.IsItemActive() && string.IsNullOrEmpty(gamepath) && !string.IsNullOrEmpty(gameExe)) {
+                config.SetGamePath(game, Path.GetDirectoryName(gameExe)!);
+            }
             ImguiHelpers.Tooltip("The full path to the game. Should point to the folder containing the .exe and .pak files");
 
-            var extractPath = config.GetGameExtractPath(game);
             if (AppImguiHelpers.InputFolder("Game Extract Path", ref extractPath)) {
                 extractPath = PathUtils.RemoveNativesFolder(extractPath);
                 config.SetGameExtractPath(game, extractPath);
             }
             ImguiHelpers.Tooltip("The default path to preselect when extracting files.");
 
-            ImGui.Spacing();
-
-            var rszPath = config.GetGameRszJsonPath(game);
-            var filelist = config.GetGameFilelist(game);
+            if (AppImguiHelpers.InputFilepath("Game Executable", ref gameExe, FileFilters.Executable)) {
+                config.SetGameExecutablePath(game, gameExe);
+            }
+            if (!ImGui.IsItemActive() && !string.IsNullOrEmpty(gamepath) && string.IsNullOrEmpty(gameExe)) {
+                config.SetGameExecutablePath(game, AppUtils.FindGameExecutable(gamepath, game.name)!);
+            }
+            ImguiHelpers.Tooltip("The full path to the game executable.");
 
             if (AppImguiHelpers.InputFilepath("File List", ref filelist, FileFilters.ListFile)) {
                 config.SetGameFilelist(game, filelist);
             }
             ImguiHelpers.Tooltip("Defining a custom path here may not be required if it's at least a partially supported game.\nCan also be used in case of issues with automatic downloads.");
 
-            var isFullySupported = fullSupportedGames?.Contains(game.name) == true;
             if (AppImguiHelpers.InputFilepath(isFullySupported ? "Custom RSZ JSON Path" : "RSZ Template JSON Path", ref rszPath, FileFilters.JsonFile)) {
                 config.SetGameRszJsonPath(game, rszPath);
                 WindowHandlerFactory.ResetGameTypes(game);

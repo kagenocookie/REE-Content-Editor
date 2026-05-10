@@ -61,6 +61,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string UseMDFCompactView = "use_mdf_compact_view";
         public const string DisableScriptSafetyWarning = "disable_script_safety_warning";
         public const string UseSubPakForLooseTextures = "use_sub_pak_for_textures";
+        public const string GameLaunchType = "game_launch_type";
 
         public const string RenderAxis = "render_axis";
         public const string RenderMeshes = "render_meshes";
@@ -100,6 +101,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string Key_UVS_DecreaseSpeed = "key_uvs_decreasespeed";
 
         public const string Gamepath = "game_path";
+        public const string GameExePath = "game_exe_path";
         public const string GameExtractPath = "game_extract_path";
         public const string RszJsonPath = "rsz_json_path";
         public const string FilelistPath = "file_list_path";
@@ -108,6 +110,7 @@ public class AppConfig : Singleton<AppConfig>
     private class AppGameConfig
     {
         public string gamepath = string.Empty;
+        public string gameExe = string.Empty;
         public string? gameExtractPath;
 
         public string? filelist;
@@ -223,6 +226,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<bool> UseMDFCompactView = new SettingWrapper<bool>(Keys.UseMDFCompactView, _lock, false);
     public readonly SettingWrapper<bool> DisableScriptSafetyWarning = new SettingWrapper<bool>(Keys.DisableScriptSafetyWarning, _lock, false);
     public readonly SettingWrapper<bool> UseSubPakForLooseTextures = new SettingWrapper<bool>(Keys.UseSubPakForLooseTextures, _lock, false);
+    public readonly SettingWrapper<int> GameLaunchType = new SettingWrapper<int>(Keys.GameLaunchType, _lock, 0);
 
     public readonly SettingWrapper<int> PakDisplayModeValue = new SettingWrapper<int>(Keys.LogToFile, _lock, (int)FileDisplayMode.List);
     public FileDisplayMode PakDisplayMode { get => (FileDisplayMode)PakDisplayModeValue.Get(); set => PakDisplayModeValue.Set((int)value); }
@@ -279,6 +283,8 @@ public class AppConfig : Singleton<AppConfig>
     public void SetGameRszJsonPath(GameIdentifier game, string path) => SetForGameAndSave(game.name, path, (cfg, val) => cfg.rszJson = val);
     public string? GetGameFilelist(GameIdentifier game) => _lock.Read(() => gameConfigs.GetValueOrDefault(game.name)?.filelist);
     public void SetGameFilelist(GameIdentifier game, string path) => SetForGameAndSave(game.name, path, (cfg, val) => cfg.filelist = val);
+    public string? GetGameExecutablePath(GameIdentifier game) => _lock.Read(() => gameConfigs.GetValueOrDefault(game.name)?.gameExe);
+    public void SetGameExecutablePath(GameIdentifier game, string path) => SetForGameAndSave(game.name, path, (cfg, val) => cfg.gameExe = val);
 
     public string GetGameUserPath(GameIdentifier game) => Path.Combine(BookmarksFilepath.Get() ?? Path.Combine(AppDataPath, "thumbs"), game.name);
     public string LuaUserPath => Path.Combine(BookmarksFilepath.Get() ?? AppDataPath, "lua");
@@ -396,6 +402,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.UseMDFCompactView, instance.UseMDFCompactView.value.ToString(), null),
             (Keys.DisableScriptSafetyWarning, instance.DisableScriptSafetyWarning.value.ToString(), null),
             (Keys.UseSubPakForLooseTextures, instance.UseSubPakForLooseTextures.value.ToString(), null),
+            (Keys.GameLaunchType, instance.GameLaunchType.value.ToString(), null),
 
             (Keys.RenderAxis, instance.RenderAxis.value.ToString(), null),
             (Keys.RenderMeshes, instance.RenderMeshes.value.ToString(), null),
@@ -438,6 +445,9 @@ public class AppConfig : Singleton<AppConfig>
         foreach (var (game, data) in instance.gameConfigs) {
             if (!string.IsNullOrEmpty(data.gamepath)) {
                 items.Add((Keys.Gamepath, data.gamepath, game));
+            }
+            if (!string.IsNullOrEmpty(data.gameExe)) {
+                items.Add((Keys.GameExePath, data.gameExe, game));
             }
             if (!string.IsNullOrEmpty(data.gameExtractPath)) {
                 items.Add((Keys.GameExtractPath, data.gameExtractPath, game));
@@ -599,6 +609,9 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.UseSubPakForLooseTextures:
                             UseSubPakForLooseTextures.value = ReadBool(value);
                             break;
+                        case Keys.GameLaunchType:
+                            if (int.TryParse(value, out _intvalue)) GameLaunchType.value = _intvalue;
+                            break;
                         case Keys.LastUpdateCheck:
                             if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var _updateCheck)) LastUpdateCheck.value = _updateCheck;
                             break;
@@ -676,6 +689,9 @@ public class AppConfig : Singleton<AppConfig>
                     switch (key) {
                         case Keys.Gamepath:
                             config.gamepath = value;
+                            break;
+                        case Keys.GameExePath:
+                            config.gameExe = value;
                             break;
                         case Keys.GameExtractPath:
                             config.gameExtractPath = value;
