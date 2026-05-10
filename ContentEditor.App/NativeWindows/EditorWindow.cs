@@ -3,7 +3,9 @@ namespace ContentEditor.App.Windowing;
 using System;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Github;
 using ContentEditor.App.Imgui.App;
@@ -458,7 +460,26 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                                     launchSuffix = " with patched pak files";
                                     break;
                             }
-                            Process.Start(activeGamePath);
+                            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                                Process.Start(activeGamePath);
+                            } else {
+                                var vdfPath = Directory.EnumerateFiles(Path.GetDirectoryName(activeGamePath)!, "*.vdf").FirstOrDefault();
+                                var found = false;
+                                if (File.Exists(vdfPath)) {
+                                    var runLine = File.ReadAllLines(vdfPath).FirstOrDefault(l => l.Contains("HasRunKey"));
+                                    var match = new Regex(@"Apps\\\\(\d+)").Match(runLine ?? "");
+                                    if (match.Success && int.TryParse(match.Groups[1].ValueSpan, out var appId)) {
+                                        found = true;
+                                        Process.Start(new ProcessStartInfo() {
+                                            FileName = $"steam://rungameid/{appId}",
+                                            UseShellExecute = true,
+                                        });
+                                    }
+                                }
+                                if (!found) {
+                                    Logger.Error("Game can't be auto-launched from the current platform");
+                                }
+                            }
                             Logger.Debug($"{Languages.TranslateGame(workspace.Game.name)} launched{launchSuffix}.");
                         } catch (Exception e) {
                             Logger.Error($"Failed to launch {Languages.TranslateGame(workspace.Game.name)}: " + e.Message);
