@@ -1,9 +1,10 @@
-using System.Numerics;
 using ContentEditor.App.Internal;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Themes;
+using ContentPatcher;
 using ReeLib;
+using System.Numerics;
 
 namespace ContentEditor.App;
 
@@ -474,6 +475,9 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                 if (gamepath.EndsWith(".exe")) gamepath = Path.GetDirectoryName(gamepath)!;
                 config.SetGamePath(game, gamepath);
             }
+            if (!ImGui.IsItemActive() && string.IsNullOrEmpty(gamepath) && !string.IsNullOrEmpty(gameExe)) {
+                config.SetGamePath(game, Path.GetDirectoryName(gameExe)!);
+            }
             ImguiHelpers.Tooltip("The full path to the game. Should point to the folder containing the .exe and .pak files");
 
             if (AppImguiHelpers.InputFolder("Game Extract Path", ref extractPath)) {
@@ -484,6 +488,9 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
 
             if (AppImguiHelpers.InputFilepath("Game Executable", ref gameExe, FileFilters.Executable)) {
                 config.SetGameExecutablePath(game, gameExe);
+            }
+            if (!ImGui.IsItemActive() && !string.IsNullOrEmpty(gamepath) && string.IsNullOrEmpty(gameExe)) {
+                config.SetGameExecutablePath(game, AppUtils.FindGameExecutable(gamepath, game.name)!);
             }
             ImguiHelpers.Tooltip("The full path to the game executable.");
 

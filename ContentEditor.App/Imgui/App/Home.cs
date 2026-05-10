@@ -3,6 +3,7 @@ using ContentEditor.App.Internal;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Themes;
+using ContentPatcher;
 using ReeLib;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -333,12 +334,18 @@ public class HomeWindow : IWindowHandler
             if (AppImguiHelpers.InputFolder("Game Path", ref gamepath) && Directory.Exists(gamepath)) {
                 AppConfig.Instance.SetGamePath(chosenGame, gamepath);
             }
+            if (!ImGui.IsItemActive() && string.IsNullOrEmpty(gamepath) && !string.IsNullOrEmpty(gameExe)) {
+                AppConfig.Instance.SetGamePath(chosenGame, Path.GetDirectoryName(gameExe)!);
+            }
             ImguiHelpers.Tooltip("This is the path to the game (where the .exe file is located)."u8);
             ImGui.SameLine();
             ImGui.TextColored(Colors.TextActive, "*");
 
             if (AppImguiHelpers.InputFilepath("Game Executable", ref gameExe, FileFilters.Executable)) {
                 AppConfig.Instance.SetGameExecutablePath(chosenGame, gameExe);
+            }
+            if (!ImGui.IsItemActive() && !string.IsNullOrEmpty(gamepath) && string.IsNullOrEmpty(gameExe)) {
+                AppConfig.Instance.SetGameExecutablePath(chosenGame, AppUtils.FindGameExecutable(gamepath, chosenGame)!);
             }
             ImguiHelpers.Tooltip("This is the exact path to the game's executable."u8);
             ImGui.SameLine();
