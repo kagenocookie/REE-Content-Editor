@@ -58,6 +58,7 @@ public class MaterialGroupLoader : IFileLoader
             tempTexture = new Texture();
         }
         var material = new MaterialGroupWrapper(mdf2);
+        material.UpdateMaterialLookups();
 
         exportCondition ??= (mat, param) => param == mat.AlbedoTexture || param == mat.NormalTexture || param == mat.ATXXTexture;
         foreach (var mat in material.Materials) {
