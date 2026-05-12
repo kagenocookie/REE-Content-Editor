@@ -369,6 +369,47 @@ public class NodeChildrenListHandler : ListHandlerTyped<NChild>
         child.ChildNode = WindowHandlerFactory.Instantiate<BHVTNode>(context);
         return child;
     }
+
+    protected override void ExpandList(UIContext context, IList list, object newInstance)
+    {
+        base.ExpandList(context, list, newInstance);
+        var node = ((NChild)newInstance).ChildNode;
+        var file = context.FindValueInParentValues<BhvtFile>();
+        if (node == null || file == null) return;
+
+        UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Do, () => {
+            file.InsertNodes([node]);
+        });
+        UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Undo, () => {
+            file.Nodes.Remove(node);
+        });
+    }
+
+    protected override void RemoveFromList(UIContext context, IList list, int i)
+    {
+        var node = (NChild)list[i]!;
+        base.RemoveFromList(context, list, i);
+        var file = context.FindValueInParentValues<BhvtFile>();
+        if (file != null && node.ChildNode != null) {
+            var allNodes = node.ChildNode.AllChildNodes
+                .Prepend(node.ChildNode)
+                .Select(c => (node: c, index: file.Nodes.IndexOf(c)))
+                .ToList();
+
+            UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Do, () => {
+                foreach (var child in allNodes) file.Nodes.Remove(child.node);
+            });
+            UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Undo, () => {
+                foreach (var child in allNodes.OrderBy(c => (uint)c.index)) {
+                    if (child.index == -1) {
+                        file.Nodes.Add(child.node);
+                    } else {
+                        file.Nodes.Insert(child.index, child.node);
+                    }
+                }
+            });
+        }
+    }
 }
 
 [ObjectImguiHandler(typeof(NAction))]
