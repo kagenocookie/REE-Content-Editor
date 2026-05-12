@@ -29,7 +29,7 @@ public static class AppImguiHelpers
 
     public unsafe static ImTextureRef AsTextureRef(this Texture texture) => new ImTextureRef(null, new ImTextureID(texture.Handle));
 
-    public static bool InputFilepath(string label, [NotNull] ref string? path, FileFilter[]? extensions = null)
+    public static bool InputFilepath(string label, [NotNull] ref string? path, FileFilter[]? extensions = null, bool allowOverlap = false)
     {
         var id = ImGui.GetID(label);
         var w = ImGui.CalcItemWidth();
@@ -42,6 +42,7 @@ public static class AppImguiHelpers
         ImGui.SameLine();
         path ??= "";
         ImGui.SetNextItemWidth(w - buttonWidth);
+        if (allowOverlap) ImGui.SetNextItemAllowOverlap();
         var changed = ImGui.InputText(label, ref path, 280, ImGuiInputTextFlags.ElideLeft);
         ImGui.PopID();
 

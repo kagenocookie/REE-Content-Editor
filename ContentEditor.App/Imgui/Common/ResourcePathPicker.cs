@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Numerics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -131,7 +132,15 @@ public class ResourcePathPicker : IObjectUIHandler
         }
     }
 
-    public static bool Show(string label, ref string currentPath, ref string pendingPath, ContentWorkspace workspace, KnownFileFormats[] formats, FileFilter[] fileFilters, PathPickerFlags flags, Action<string>? delayedSaveCallback = null)
+    public static bool Show(
+        string label,
+        ref string currentPath,
+        ref string pendingPath,
+        ContentWorkspace workspace,
+        KnownFileFormats[] formats,
+        FileFilter[] fileFilters,
+        PathPickerFlags flags,
+        Action<string>? delayedSaveCallback = null)
     {
         ImGui.PushID(label);
         if (flags.HasFlag(PathPickerFlags.NoConfirmation)) {
@@ -140,7 +149,9 @@ public class ResourcePathPicker : IObjectUIHandler
             pendingPath ??= currentPath;
         }
         var changed = false;
-        if (AppImguiHelpers.InputFilepath(label, ref pendingPath, fileFilters)) {
+        var spos = ImGui.GetCursorScreenPos();
+        var w = ImGui.CalcItemWidth();
+        if (AppImguiHelpers.InputFilepath(label, ref pendingPath, fileFilters, allowOverlap: true)) {
             if (flags.HasFlag(PathPickerFlags.NoConfirmation)) {
                 changed = true;
                 currentPath = pendingPath;
@@ -204,6 +215,34 @@ public class ResourcePathPicker : IObjectUIHandler
                 }
             }
             ImGui.EndPopup();
+        }
+
+        if ((ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenBlockedByActiveItem | ImGuiHoveredFlags.AllowWhenOverlappedByItem) || ImGui.IsPopupOpen("Suggestions"))) {
+            var bundleFiles = workspace.ResourceManager.GetBundleFilesByFormats(formats);
+            if (bundleFiles.Any()) {
+                var rect = ImGui.GetItemRectSize();
+                var buttonWidth = ImGui.CalcTextSize($"{AppIcons.SI_FolderBrowse}").X + ImGui.GetStyle().ItemSpacing.X;
+                var buttonMargin = ImGui.GetStyle().FramePadding.X * 2;
+                rect.X = w - ImGui.GetFrameHeight();
+                ImGui.SameLine();
+                ImGui.SetCursorScreenPos(spos + new Vector2(rect.X, 0));
+                if (ImGui.ArrowButton("##btnSuggest", ImGuiDir.Down)) {
+                    ImGui.OpenPopup("Suggestions");
+                }
+                ImGui.SetNextWindowPos(new Vector2(spos.X + buttonWidth + buttonMargin, spos.Y + rect.Y));
+                ImGui.SetNextWindowSizeConstraints(new Vector2(rect.X - buttonMargin, ImGui.GetTextLineHeightWithSpacing() * 5), new Vector2(float.MaxValue));
+                if (ImGui.BeginPopup("Suggestions")) {
+                    ImGui.SeparatorText("Suggestions from active bundle");
+                    foreach (var suggest in bundleFiles) {
+                        var suggestDisplay = flags.HasFlag(PathPickerFlags.UseNativesPath) ? suggest : PathUtils.GetInternalFromNativePath(suggest);
+                        if (ImGui.Selectable(suggestDisplay, suggestDisplay.Equals(currentPath, StringComparison.OrdinalIgnoreCase))) {
+                            currentPath = pendingPath = suggestDisplay;
+                            changed = true;
+                        }
+                    }
+                    ImGui.EndPopup();
+                }
+            }
         }
 
         if (!flags.HasFlag(PathPickerFlags.NoConfirmation) && pendingPath != currentPath && (!string.IsNullOrEmpty(pendingPath) || !string.IsNullOrEmpty(currentPath))) {

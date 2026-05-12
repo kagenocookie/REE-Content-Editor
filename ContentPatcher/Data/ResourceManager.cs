@@ -1117,6 +1117,30 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
     public IEnumerable<FileHandle> GetOpenFiles() => openFiles.Values;
 
+    /// <summary>
+    /// Gets all files from the active bundle's resource listing that match any of the specified file formats.
+    /// </summary>
+    public IEnumerable<string> GetBundleFilesByFormats(params KnownFileFormats[] formats)
+    {
+        if (bundles == null || activeBundle == null || activeBundle.ResourceListing == null) {
+            yield break;
+        }
+
+        if (formats.Length == 0) {
+            foreach (var entry in activeBundle.ResourceListing.Values) {
+                yield return entry.Target;
+            }
+            yield break;
+        }
+
+        foreach (var (localPath, entry) in activeBundle.ResourceListing) {
+            var fileFormat = PathUtils.ParseFileFormat(entry.Target);
+            if (formats.Contains(fileFormat.format)) {
+                yield return entry.Target;
+            }
+        }
+    }
+
     public IEnumerable<FileHandle> GetModifiedResourceFiles()
     {
         foreach (var file in openFiles) {
