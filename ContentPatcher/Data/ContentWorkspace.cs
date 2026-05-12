@@ -312,6 +312,7 @@ public sealed class ContentWorkspace : IDisposable
             using var fs = File.OpenRead(bundleJsonPath);
             var data = JsonSerializer.Deserialize<Bundle>(fs);
             if (data != null) {
+                data.StorageFolder = bundle.StorageFolder;
                 bundle = data;
                 bundle.Name = bundleName;
                 hasPreviousBundleData = true;
