@@ -17,6 +17,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
     private IVisibilityTarget? dragSource;
     private BookmarkHolder? _bookmarks;
     private string prefabFilepath = "";
+    private string prefabFilter = "";
 
     protected override IEnumerable<IVisibilityTarget> GetChildren(IVisibilityTarget? node, bool expandContents = false)
     {
@@ -162,7 +163,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                     if (!items.Any()) {
                         ImGui.TextColored(Colors.Note, "No prefab bookmarks found!");
                     } else {
-                        ResourcePathPicker.Show("Specific prefab", ref prefabFilepath, ref prefabFilepath, ws, [KnownFileFormats.Prefab], FileFilters.PfbFile, ResourcePathPicker.PathPickerFlags.NoConfirmation|ResourcePathPicker.PathPickerFlags.UseNativesPath);
+                        ResourcePathPicker.Show("Specific prefab", ref prefabFilepath, ref prefabFilepath, ref prefabFilter, ws, [KnownFileFormats.Prefab], FileFilters.PfbFile, ResourcePathPicker.PathPickerFlags.NoConfirmation|ResourcePathPicker.PathPickerFlags.UseNativesPath);
                         FileHandle? file = null;
                         if (!string.IsNullOrEmpty(prefabFilepath)) {
                             ws.ResourceManager.TryResolveGameFile(prefabFilepath, out file);

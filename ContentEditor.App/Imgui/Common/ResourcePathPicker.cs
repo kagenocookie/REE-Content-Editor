@@ -118,7 +118,7 @@ public class ResourcePathPicker : IObjectUIHandler
         var newPath = context.InitFilterDefault(currentPath);
         var ws = workspace ??= context.GetWorkspace();
         var wnd = context.GetNativeWindow();
-        var changed = Show(context.label, ref currentPath, ref newPath, ws!, FileFormats, FileExtensionFilter ?? [], Flags, (nativePath) => {
+        var changed = Show(context.label, ref currentPath, ref newPath, ref context.ClassnameFilter, ws!, FileFormats, FileExtensionFilter ?? [], Flags, (nativePath) => {
             wnd?.InvokeFromUIThread(() => {
                 ApplyPathChange(context, nativePath, wnd);
             });
@@ -136,6 +136,7 @@ public class ResourcePathPicker : IObjectUIHandler
         string label,
         ref string currentPath,
         ref string pendingPath,
+        ref string searchFilter,
         ContentWorkspace workspace,
         KnownFileFormats[] formats,
         FileFilter[] fileFilters,
@@ -226,19 +227,30 @@ public class ResourcePathPicker : IObjectUIHandler
                 rect.X = w - ImGui.GetFrameHeight();
                 ImGui.SameLine();
                 ImGui.SetCursorScreenPos(spos + new Vector2(rect.X, 0));
-                if (ImGui.ArrowButton("##btnSuggest", ImGuiDir.Down)) {
-                    ImGui.OpenPopup("Suggestions");
+                if (ImGui.ArrowButton("##btnSuggest"u8, ImGuiDir.Down)) {
+                    ImGui.OpenPopup("Suggestions"u8);
                 }
                 ImGui.SetNextWindowPos(new Vector2(spos.X + buttonWidth + buttonMargin, spos.Y + rect.Y));
                 ImGui.SetNextWindowSizeConstraints(new Vector2(rect.X - buttonMargin, ImGui.GetTextLineHeightWithSpacing() * 5), new Vector2(float.MaxValue));
-                if (ImGui.BeginPopup("Suggestions")) {
-                    ImGui.SeparatorText("Suggestions from active bundle");
+                if (ImGui.BeginPopup("Suggestions"u8)) {
+                    ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
+                    ImGui.InputTextWithHint("##Filter"u8, $"{AppIcons.Search} Filter", ref searchFilter, 100);
+
+                    ImGui.SeparatorText("Suggestions from active bundle"u8);
+                    bool matchedAny = false;
                     foreach (var suggest in bundleFiles) {
                         var suggestDisplay = flags.HasFlag(PathPickerFlags.UseNativesPath) ? suggest : PathUtils.GetInternalFromNativePath(suggest);
+                        if (!string.IsNullOrEmpty(searchFilter) && !suggestDisplay.Contains(searchFilter)) continue;
+                        if (flags.HasFlag(PathPickerFlags.IsPathForIngame) && suggestDisplay.StartsWith("streaming/", StringComparison.OrdinalIgnoreCase)) continue;
+
+                        matchedAny |= true;
                         if (ImGui.Selectable(suggestDisplay, suggestDisplay.Equals(currentPath, StringComparison.OrdinalIgnoreCase))) {
                             currentPath = pendingPath = suggestDisplay;
                             changed = true;
                         }
+                    }
+                    if (!matchedAny) {
+                        ImGui.TextColored(Colors.Faded, "No matching results"u8);
                     }
                     ImGui.EndPopup();
                 }
