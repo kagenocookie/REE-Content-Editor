@@ -192,7 +192,7 @@ public class BHVTNodeEditor : IObjectUIHandler
             }
             var parent = ctx.FindParentContextByHandler<BHVTNodeEditor>()?.Get<BHVTNode>();
             var isBhvt = rootEditor is BhvtEditor;
-            return new BHVTNode(version) { Attributes = attrs, ID = new NodeID((uint)System.Random.Shared.Next(), 0), ParentID = parent?.ID ?? default };
+            return new BHVTNode(version) { Attributes = attrs, ID = new NodeID((uint)System.Random.Shared.Next(), 0), ParentID = parent?.ID ?? default, Parent = parent };
         });
 
         WindowHandlerFactory.DefineInstantiator<NState>((ctx) => {
@@ -339,6 +339,7 @@ public class NodeChildrenListHandler : ListHandlerTyped<NChild>
                 var newchild = new NChild();
                 newchild.ChildNode = otherNode;
                 otherNode.ParentID = parent.ID;
+                otherNode.Parent = parent;
                 addedChildren.Add(newchild);
             }
             var allNodes = addedNodes.Concat(addedNodes.SelectMany(n => n.AllChildNodes)).ToList();
@@ -347,7 +348,7 @@ public class NodeChildrenListHandler : ListHandlerTyped<NChild>
             }
             UndoRedo.RecordCallback(context, () => {
                 foreach (var r in addedChildren) if (!nodelist.Contains(r)) nodelist.Add(r);
-                file?.Nodes.AddRange(allNodes);
+                file?.InsertNodes(allNodes);
             }, () => {
                 foreach (var r in addedChildren) nodelist.Remove(r);
                 foreach (var ch in allNodes) file?.Nodes.Remove(ch);

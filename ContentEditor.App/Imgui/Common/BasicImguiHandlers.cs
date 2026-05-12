@@ -202,6 +202,8 @@ public class QuaternionFieldHandler : Singleton<QuaternionFieldHandler>, IObject
 
 public class StringFieldHandler : Singleton<StringFieldHandler>, IObjectUIHandler
 {
+    public static IObjectUIHandler Disabled { get; } = new ReadOnlyWrapperHandler(StringFieldHandler.Instance);
+
     public void OnIMGUI(UIContext context)
     {
         var val = context.Get<string?>() ?? string.Empty;
