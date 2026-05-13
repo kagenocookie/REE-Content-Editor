@@ -180,7 +180,7 @@ public class BHVTNodeEditor : IObjectUIHandler
     {
         WindowHandlerFactory.DefineInstantiator<BHVTNode>((ctx) => {
             var rootEditor = ctx.FindHandlerInParents<FileEditor>();
-            GameVersion version;
+            GameName version;
             NodeAttribute attrs = 0;
             if (rootEditor is BhvtEditor bhvt) {
                 version = bhvt.File.Header.Version;
@@ -188,7 +188,7 @@ public class BHVTNodeEditor : IObjectUIHandler
                 version = mfs2.File.BhvtFile.Header.Version;
                 attrs = NodeAttribute.IsEnabled|NodeAttribute.IsRestartable|NodeAttribute.IsFSMNode;
             } else {
-                version = GameVersion.dd2;
+                version = GameName.dd2;
             }
             var parent = ctx.FindParentContextByHandler<BHVTNodeEditor>()?.Get<BHVTNode>();
             var isBhvt = rootEditor is BhvtEditor;
@@ -364,7 +364,7 @@ public class NodeChildrenListHandler : ListHandlerTyped<NChild>
 
     protected override object? CreateNewElement(UIContext context)
     {
-        var version = context.FindHandlerInParents<BHVTNode>()?.Transitions.Version ?? GameVersion.re3;
+        var version = context.FindHandlerInParents<BHVTNode>()?.Transitions.Version ?? GameName.re3;
         var child = new NChild();
         child.ChildNode = WindowHandlerFactory.Instantiate<BHVTNode>(context);
         return child;
