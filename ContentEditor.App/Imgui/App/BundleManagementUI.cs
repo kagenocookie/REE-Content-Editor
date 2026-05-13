@@ -1,6 +1,7 @@
 using ContentEditor.App.Graphics;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
+using ReeLib;
 using System.Globalization;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -527,6 +528,9 @@ public class BundleManagementUI : IWindowHandler
             ImGui.SetNextItemWidth(ImGui.CalcTextSize(target).X + 15);
             if (ImGui.InputText("##target", ref target, 512)) {
                 entry.Target = target.ToLowerInvariant();
+            }
+            if (!target.StartsWith("natives/", StringComparison.OrdinalIgnoreCase)) {
+                ImGui.TextColored(Colors.Warning, "Invalid natives path! This won't work!\nThe path needs to start with natives/x64/, natives/stm/, natives/egs/, ... depending on game and platform.");
             }
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_Save}")) {
