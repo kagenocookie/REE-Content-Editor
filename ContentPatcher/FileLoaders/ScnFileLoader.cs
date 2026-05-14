@@ -126,7 +126,7 @@ public sealed class ScenePatcher : RszFilePatcherBase, IDisposable
 
     private static ScnGameObject? FindGameObjectByPath(IEnumerable<ScnGameObject> rootChildren, ReadOnlySpan<char> path)
     {
-        while (path[0] == '/') path = path.Slice(1);
+        path = path.TrimStart('/');
         var (sep, slash, targetCounter) = GetNextPathSegment(path);
         var rootName = sep == -1 ? path : path.Slice(0, sep);
         var counter = 0;
