@@ -706,7 +706,6 @@ public partial class FileTesterWindow : IWindowHandler
 
         AddCompareMapper<Motfsm2File>((m) => [m.BhvtFile, m.TransitionDatas, m.TransitionMaps]);
         AddCompareMapper<BhvtFile>((m) => [m.Header.hash, m.RootNode, m.UserVariables, m.SubVariables, m.GameObjectReferences,
-            // 5
             m.ActionRsz.ObjectList.Count, m.StaticActionRsz.ObjectList.Count,
             m.ExpressionTreeConditionsRsz.ObjectList.Count, m.StaticExpressionTreeConditionsRsz.ObjectList.Count,
 

@@ -1,4 +1,7 @@
 using System.Text.Json;
+using ContentEditor.App;
+using ContentEditor.Core;
+using ContentPatcher;
 using ReeLib;
 using ReeLib.Common;
 using ReeLib.Mesh;
@@ -9,6 +12,38 @@ public class MeshBoneHashCacheTask(Workspace workspace) : FileCacheTaskBase(work
 {
     protected override string GetCacheFilePath(GameIdentifier game) => GetCachePath(game);
     public static string GetCachePath(GameIdentifier game) => Path.Combine(GetBaseCacheDir(game.name), "bone_hashes.json");
+
+    public static bool TryResolveCache(ContentWorkspace workspace, ref bool _requestedCache, ref Dictionary<uint, string>? _hashes)
+    {
+        var cachePath = MeshBoneHashCacheTask.GetCachePath(workspace.Game);
+        if (!_requestedCache) {
+            _requestedCache = true;
+            if (!System.IO.File.Exists(cachePath)) {
+                // OK
+            } else if (!cachePath.TryDeserializeJsonFile<Dictionary<uint, string>>(out var db, out var error)) {
+                Logger.Warn("Could not load previous mmtr parameter cache from path " + cachePath + ":\n" + error);
+            } else {
+                _hashes = db;
+            }
+
+            if (_hashes == null) {
+                MainLoop.Instance.BackgroundTasks.Queue(new MeshBoneHashCacheTask(workspace.Env));
+            }
+        } else {
+            if (!MainLoop.Instance.BackgroundTasks.HasPendingTask<MeshBoneHashCacheTask>() &&
+                System.IO.File.Exists(cachePath) &&
+                cachePath.TryDeserializeJsonFile<Dictionary<uint, string>>(out var db, out var error)) {
+                _hashes = db;
+            }
+        }
+        if (_hashes != null) {
+            foreach (var (hash, name) in _hashes) {
+                Utils.HashedBoneNames.TryAdd(hash, name);
+            }
+            return true;
+        }
+        return false;
+    }
 
     public override string ToString() => $"Caching mesh bone name hashes";
 

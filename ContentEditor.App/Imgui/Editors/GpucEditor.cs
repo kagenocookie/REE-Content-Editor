@@ -49,7 +49,7 @@ public class GpucEditor(ContentWorkspace env, FileHandle file, ContentEditor.App
 
     protected override void DrawFileContents()
     {
-        if (HandleCache()) {
+        if (_hashes == null && MeshBoneHashCacheTask.TryResolveCache(Workspace, ref _requestedCache, ref _hashes)) {
             foreach (var item in File.CollisionPlanes) item.UpdateJointNames();
             foreach (var item in File.CollisionSpheres) item.UpdateJointNames();
             foreach (var item in File.CollisionCapsules) item.UpdateJointNames();
@@ -63,41 +63,6 @@ public class GpucEditor(ContentWorkspace env, FileHandle file, ContentEditor.App
             context.AddChild("Data", File).AddDefaultHandler();
         }
         context.ShowChildrenUI();
-    }
-
-    protected bool HandleCache()
-    {
-        if (_hashes == null) {
-            var cachePath = MeshBoneHashCacheTask.GetCachePath(Workspace.Game);
-            if (!_requestedCache) {
-                _requestedCache = true;
-                if (!System.IO.File.Exists(cachePath)) {
-                    // OK
-                } else if (!cachePath.TryDeserializeJsonFile<Dictionary<uint, string>>(out var db, out var error)) {
-                    Logger.Warn("Could not load previous mmtr parameter cache from path " + cachePath + ":\n" + error);
-                } else {
-                    _hashes = db;
-                }
-
-                if (_hashes == null) {
-                    MainLoop.Instance.BackgroundTasks.Queue(new MeshBoneHashCacheTask(Workspace.Env));
-                }
-            } else {
-                if (!MainLoop.Instance.BackgroundTasks.HasPendingTask<MeshBoneHashCacheTask>() &&
-                    System.IO.File.Exists(cachePath) &&
-                    cachePath.TryDeserializeJsonFile<Dictionary<uint, string>>(out var db, out var error)) {
-                    _hashes = db;
-                }
-            }
-            if (_hashes != null) {
-                foreach (var (hash, name) in _hashes) {
-                    Utils.HashedBoneNames.TryAdd(hash, name);
-                }
-                return true;
-            }
-        }
-
-        return false;
     }
 }
 
