@@ -1,4 +1,5 @@
 using System.Collections;
+using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Jmap;
@@ -39,9 +40,9 @@ public class JmapFileEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
             context.AddChild<JmapFile, List<ExtraJointInfo>>("Extra Joints", instance, getter: v => v!.ExtraJoints.Joints).AddDefaultHandler<List<ExtraJointInfo>>();
             context.AddChild<JmapFile, List<ExtraJointGroup>>("Extra Joint Groups", instance, getter: v => v!.ExtraJointGroups.Groups).AddDefaultHandler<List<ExtraJointGroup>>();
 
-            context.AddChild<JmapFile, IkMotionData?>("IK Motion Data", instance, new ConditionalUIHandler(new LazyPlainObjectHandler<IkMotionData>(), ConditionJmapRERT), v => v!.IkMotionData);
+            context.AddChild<JmapFile, List<IkMotionData>?>("IK Motion Data", instance, new ConditionalUIHandler(new ListHandlerTyped<IkMotionData>(), ConditionJmapRERT), v => v!.IkMotionData);
             context.AddChild<JmapFile, SymmetryMirrorData?>("Symmetry Data", instance, new ConditionalUIHandler(new LazyPlainObjectHandler<SymmetryMirrorData>(), ConditionJmapRERT), v => v!.SymmetryData);
-            context.AddChild<JmapFile, ExtraHashData?>("Extra Hashes", instance, new ConditionalUIHandler(new LazyPlainObjectHandler<ExtraHashData>(), ConditionJmapRERT), v => v!.ExtraHashes);
+            context.AddChild<JmapFile, SkeletonMaskData?>("Extra Hashes", instance, new ConditionalUIHandler(new LazyPlainObjectHandler<SkeletonMaskData>(), ConditionJmapRERT), v => v!.SkeletonMaskData);
         }
 
         context.ShowChildrenUI();

@@ -52,7 +52,7 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     {
         static ClipVersion GetVersionFromContext(UIContext ctx) => ctx.FindValueInParentValues<EmbeddedClip>()?.Version ?? ctx.FindValueInParentValues<TimelineTrackGroup>()?.Version ?? ClipVersion.MHWilds;
 
-        WindowHandlerFactory.DefineInstantiator<EndClipStruct>((ctx) => new EndClipStruct() { Version = GetVersionFromContext(ctx) });
+        WindowHandlerFactory.DefineInstantiator<TracksData>((ctx) => new TracksData() { Version = GetVersionFromContext(ctx) });
         WindowHandlerFactory.DefineInstantiator<ClipTrack>((ctx) => new ClipTrack(GetVersionFromContext(ctx)));
         WindowHandlerFactory.DefineInstantiator<Property>((ctx) => new Property(GetVersionFromContext(ctx)));
         WindowHandlerFactory.DefineInstantiator<NormalKey>((ctx) => {
@@ -194,6 +194,11 @@ public class MotIndexImguiHandler : IObjectUIHandler
         typeof(MotIndex).GetField(nameof(MotIndex.motNumber))!,
         typeof(MotIndex).GetField(nameof(MotIndex.Switch))!,
         typeof(MotIndex).GetField(nameof(MotIndex.data))!,
+        typeof(MotIndex).GetField(nameof(MotIndex.jointMaskId))!,
+        typeof(MotIndex).GetField(nameof(MotIndex.tagHash))!,
+        typeof(MotIndex).GetField(nameof(MotIndex.type))!,
+        typeof(MotIndex).GetField(nameof(MotIndex.flags))!,
+        typeof(MotIndex).GetField(nameof(MotIndex.physicsFlags))!,
     ];
 
     public void OnIMGUI(UIContext context)
@@ -226,7 +231,7 @@ public class MotIndexImguiHandler : IObjectUIHandler
                 ctx.ClearChildren();
             });
 
-            WindowHandlerFactory.SetupObjectUIContext(context, typeof(MotIndex), members: [typeof(MotIndex).GetProperty(nameof(MotIndex.MotClips))!]);
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(MotIndex), members: [typeof(MotIndex).GetProperty(nameof(MotIndex.OverrideClips))!]);
         }
 
         context.ShowChildrenNestedUI();
@@ -803,11 +808,11 @@ public class MotBoneClipHeaderHandler : IObjectUIHandler
 public class MotClipHandler : IObjectUIHandler
 {
     private static MemberInfo[] DisplayedFields = [
-        typeof(MotClip).GetField(nameof(MotClip.mainTrackIndex))!,
-        typeof(MotClip).GetField(nameof(MotClip.lastTrackIndex))!,
-        typeof(MotClip).GetField(nameof(MotClip.uknBytes28))!,
+        typeof(MotClip).GetField(nameof(MotClip.useFlags))!,
+        typeof(MotClip).GetField(nameof(MotClip.category))!,
+        typeof(MotClip).GetField(nameof(MotClip.uknBytes))!,
         typeof(MotClip).GetProperty(nameof(MotClip.ClipEntry))!,
-        typeof(MotClip).GetProperty(nameof(MotClip.EndClipStructs))!,
+        typeof(MotClip).GetProperty(nameof(MotClip.TrackData))!,
     ];
 
     public void OnIMGUI(UIContext context)
