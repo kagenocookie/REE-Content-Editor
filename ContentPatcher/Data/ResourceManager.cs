@@ -241,7 +241,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             if (markModifiedOnChange) file.Modified = true;
             return true;
         } catch (Exception e) {
-            Logger.Error(e, $"Failed to apply patch for file {localFile}. This could indicate issues with the patch generation or . Attempting simple replacement...");
+            Logger.Error(e, $"Failed to apply patch for file {localFile}. This could indicate issues with the patch generation or unsupported file edits. Attempting simple replacement...");
 
             if (File.Exists(fullLocalFilepath)) {
                 var local = ReadOrGetFileResource(fullLocalFilepath, resourceEntry.Target);

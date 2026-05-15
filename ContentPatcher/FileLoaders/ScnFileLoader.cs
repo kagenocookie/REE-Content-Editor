@@ -247,6 +247,7 @@ public sealed class ScenePatcher : RszFilePatcherBase, IDisposable
                     ApplyGameObjectDiff(target, (JsonObject)obj[path]!);
                     break;
                 } else {
+                    pathSpan = pathSpan.TrimStart('/');
                     var lastSlash = pathSpan.LastIndexOf('/');
                     if (lastSlash == -1) {
                         // add to root

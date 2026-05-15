@@ -1,4 +1,5 @@
 using ContentEditor.App.Graphics;
+using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ReeLib;
@@ -201,6 +202,17 @@ public class BundleManagementUI : IWindowHandler
                         EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, null);
                     }
                     ImguiHelpers.Tooltip("Unload current Bundle");
+                }
+                ImGui.SameLine();
+                if (selectedBundle?.ResourceListing != null && ImGui.Button("Debug: Rebuild Patch Diffs")) {
+                    foreach (var r in selectedBundle.ResourceListing) {
+                        r.Value.Diff = null;
+                        r.Value.DiffTime = default;
+                    }
+                    selectedBundle.Save();
+                    if (selectedBundle == EditorWindow.CurrentWindow?.Workspace.CurrentBundle) {
+                        context.GetWorkspace()?.SaveBundle(true);
+                    }
                 }
             }
             var names = bundleManager.AllBundles.Select(b => b.Name).ToArray();

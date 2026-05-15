@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using ContentEditor;
 using ReeLib;
+using ReeLib.via;
 
 public class DiffPatcher
 {
@@ -85,6 +86,9 @@ public class DiffPatcher
                     // does this happen? maybe?
                     Logger.Warn($"Found missing data or unsupported userdata field {field.name} in {cls.name}. Ignoring.");
                 }
+            } else if (field.type is RszFieldType.GameObjectRef or RszFieldType.Uri) {
+                var guid = diffprop.Value.Deserialize<Guid>();
+                instance.Values[fieldIndex] = new GameObjectRef(guid);
             } else {
                 var csType = RszInstance.RszFieldTypeToCSharpType(field.type);
                 instance.Values[fieldIndex] = diffprop.Value.Deserialize(csType, env.JsonOptions) ?? Activator.CreateInstance(csType)!;

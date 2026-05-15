@@ -116,6 +116,9 @@ public class DiffMaker
                 var subdiff = GetMinimalDiff(targetValue, prop.Value);
                 if (subdiff != null) {
                     diff.Add(prop.Key, subdiff);
+                    if (!diff.ContainsKey("$type") && source.ContainsKey("$type")) {
+                        diff["$type"] = source["$type"]!.GetValue<string>();
+                    }
                 }
             }
         }
