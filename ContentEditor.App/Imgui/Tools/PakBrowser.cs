@@ -108,7 +108,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         }
 
         var extractList = currentList;
-        if (selectedPath.StartsWith(PakReader.UnknownFilePathPrefix)) {
+        if (selectedPath.StartsWith(PakReader.UnknownFilePathPrefix.AsSpan()[..^1])) {
             extractList = new ListFileWrapper(reader.UnknownFilePaths, contentWorkspace.Platform);
         }
 
@@ -478,7 +478,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         var cacheKey = (CurrentDir, ColumnIndex, SortDirection);
         if (!cachedResults.TryGetValue(cacheKey, out sortedEntries)) {
             string[] files;
-            if (CurrentDir.StartsWith(PakReader.UnknownFilePathPrefix)) {
+            if (CurrentDir.StartsWith(PakReader.UnknownFilePathPrefix.AsSpan()[..^1])) {
                 files = ListFileWrapper.FilterFiles(reader!.UnknownFilePaths, CurrentDir);
             } else {
                 files = baseList.GetFiles(CurrentDir);
@@ -712,40 +712,41 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
 
     private bool HandleFileClick(ListFileWrapper baseList, string file)
     {
-        if (!baseList.FileExists(file)) {
-            if (file.Equals(PakUtils.ManifestFilepath, StringComparison.InvariantCultureIgnoreCase)) {
-                var stream = reader!.GetFile(file);
-                if (stream == null) {
-                    EditorWindow.CurrentWindow?.AddSubwindow(new ErrorModal("File not found", "File could not be found in the PAK file(s)."));
-                } else {
-                    var pak = reader.GetPakFileOfEntry(PakUtils.GetFilepathHash(file));
-                    EditorWindow.CurrentWindow?.OpenFile(stream, file, pak + "://");
-                }
-                return true;
+        if (file.Equals(PakUtils.ManifestFilepath, StringComparison.InvariantCultureIgnoreCase)) {
+            var stream = reader!.GetFile(file);
+            if (stream == null) {
+                EditorWindow.CurrentWindow?.AddSubwindow(new ErrorModal("File not found", "File could not be found in the PAK file(s)."));
+            } else {
+                var pak = reader.GetPakFileOfEntry(PakUtils.GetFilepathHash(file));
+                EditorWindow.CurrentWindow?.OpenFile(stream, file, pak + "://");
             }
-
-            // if it's not a full list file match then it's a folder, navigate to it
-            CurrentDir = file;
-            pagination.page = 0;
-            return false;
+            return true;
         }
 
         var bypassBundleFile = ImGui.IsKeyDown(ImGuiKey.ModAlt);
-        if (IsFileOrFolderInBundle(file) && !bypassBundleFile) {
+        if (!bypassBundleFile && IsFileOrFolderInBundle(file)) {
             if (contentWorkspace.ResourceManager.TryResolveGameFile(file, out var targetFile)) {
                 EditorWindow.CurrentWindow?.AddFileEditor(targetFile);
                 return true;
             }
         }
 
-        if (!reader!.FileExists(file)) {
+        var fileExists = file.StartsWith(PakReader.UnknownFilePathPrefix) ? reader!.GetUnknownFile(file) != null : reader!.FileExists(file);
+        if (!fileExists) {
+            if (!baseList.FileExists(file)) {
+                CurrentDir = file;
+                pagination.page = 0;
+                return true;
+            }
+
+            // if it's not a full list file match then it's a folder, navigate to it
             var hasLooseFile = File.Exists(Path.Combine(Workspace.Config.GamePath, file));
             if (hasLooseFile) {
                 Logger.Error("File could not be found in the loaded PAK files. Matching loose file was found, the file entry may have been invalidated by Fluffy Mod Manager.");
             } else {
                 Logger.Error("File could not be found in the loaded PAK files. Possible causes: Fluffy Mod Manager archive invalidation, missing some DLC content, not having the right PAK files open, or a wrong file list.");
             }
-            return true;
+            return false;
         }
 
         try {
@@ -754,7 +755,15 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
                 file = PathUtils.GetNonStreamingPath(file).ToString();
             }
 
-            if (PakFilePaths == null) {
+            if (file.StartsWith(PakReader.UnknownFilePathPrefix)) {
+                var stream = reader!.GetUnknownFile(file);
+                if (stream == null) {
+                    Logger.Error("Failed to open unknown file " + file);
+                } else {
+                    var handle = contentWorkspace.ResourceManager.CreateFileHandle(contentWorkspace.Env.AppendFileVersion(file), null, stream!);
+                    EditorWindow.CurrentWindow?.AddFileEditor(handle);
+                }
+            } else if (PakFilePaths == null) {
                 EditorWindow.CurrentWindow?.OpenFiles([file]);
             } else {
                 var stream = reader.GetFile(file);
@@ -789,7 +798,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
                     }, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
                 } else {
                     PlatformUtils.ShowSaveFileDialog((savePath) => {
-                        var stream = file.StartsWith(PakReader.UnknownFilePathPrefix) ? reader!.GetUnknownFile(file) : reader!.GetFile(file);
+                        var stream = file.StartsWith(PakReader.UnknownFilePathPrefix.AsSpan()[..^1]) ? reader!.GetUnknownFile(file) : reader!.GetFile(file);
                         if (stream == null) {
                             Logger.Error("Could not find file " + file + " in selected PAK files");
                             return;
