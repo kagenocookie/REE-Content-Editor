@@ -140,8 +140,8 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         if (mesh != null) {
             Scene.RenderContext.SetMeshMaterial(mesh, material);
         }
-        RszFieldCache.Mesh.Resource.Set(Data, meshFile.InternalPath ?? meshFile.Filepath ?? string.Empty);
-        RszFieldCache.Mesh.Material.Set(Data, materialFile?.InternalPath ?? materialFile?.Filepath ?? string.Empty);
+        RszFieldCache.Mesh.Resource.Set(Data, meshFile.ResourcePath ?? meshFile.Filepath ?? string.Empty);
+        RszFieldCache.Mesh.Material.Set(Data, materialFile?.ResourcePath ?? materialFile?.Filepath ?? string.Empty);
         mesh?.Update();
         IsStatic = mesh == null || !mesh.HasArmature;
     }

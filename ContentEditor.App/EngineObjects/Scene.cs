@@ -44,7 +44,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     }
 
     public string Name { get; }
-    public string InternalPath { get; }
+    public string ResourcePath { get; }
     public ContentWorkspace Workspace { get; }
     public bool IsActive { get; set; }
     public SceneManager SceneManager { get; internal set; } = null!;
@@ -89,10 +89,10 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         PreloadedOnly = 4,
     }
 
-    internal Scene(string name, string internalPath, ContentWorkspace workspace, Scene? parentScene = null, Folder? rootFolder = null, GL? gl = null)
+    internal Scene(string name, string resourcePath, ContentWorkspace workspace, Scene? parentScene = null, Folder? rootFolder = null, GL? gl = null)
     {
         Name = name;
-        InternalPath = internalPath;
+        ResourcePath = resourcePath;
         Workspace = workspace;
         ParentScene = parentScene;
         _gl = gl ?? parentScene?._gl ?? EditorWindow.CurrentWindow?.GLContext ?? throw new Exception("Could not get OpenGL Context!");
@@ -118,7 +118,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     {
         foreach (var child in childScenes) {
             if (child.Name.Equals(nameOrPath, StringComparison.InvariantCultureIgnoreCase) ||
-                child.InternalPath.Equals(nameOrPath, StringComparison.InvariantCultureIgnoreCase) ||
+                child.ResourcePath.Equals(nameOrPath, StringComparison.InvariantCultureIgnoreCase) ||
                 child.RootFolder.Name.Equals(nameOrPath, StringComparison.InvariantCultureIgnoreCase)) {
                 return child;
             }

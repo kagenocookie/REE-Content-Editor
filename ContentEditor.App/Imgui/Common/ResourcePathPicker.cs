@@ -30,10 +30,10 @@ public class ResourcePathPicker : IObjectUIHandler
         /// </summary>
         IsPathForIngame = 2,
         /// <summary>
-        /// When set, path is expected to be a natives path (natives/stm/appsystem/stm/texture.tex.71567213).
-        /// Otherwise, path is expected to be an internal path (appsystem/stm/texture.tex).
+        /// When set, path is expected to be a target path (appsystem/stm/texture.tex.71567213).
+        /// Otherwise, path is expected to be a resource path (appsystem/stm/texture.tex).
         /// </summary>
-        UseNativesPath = 4,
+        UseTargetPath = 4,
         /// <summary>
         /// Disable warnings for potentially invalid file formats.
         /// </summary>
@@ -41,8 +41,8 @@ public class ResourcePathPicker : IObjectUIHandler
 
         IngameDefault = IsPathForIngame,
         IngameDefaultNoConfirm = IsPathForIngame|PathPickerFlags.NoConfirmation,
-        EditorOnly = UseNativesPath|NoConfirmation|DisableFormatWarning,
-        EditorOnlyConfirmed = UseNativesPath|DisableFormatWarning,
+        EditorOnly = UseTargetPath|NoConfirmation|DisableFormatWarning,
+        EditorOnlyConfirmed = UseTargetPath|DisableFormatWarning,
     }
 
     public ResourcePathPicker()
@@ -239,7 +239,7 @@ public class ResourcePathPicker : IObjectUIHandler
                     ImGui.SeparatorText("Suggestions from active bundle"u8);
                     bool matchedAny = false;
                     foreach (var suggest in bundleFiles) {
-                        var suggestDisplay = flags.HasFlag(PathPickerFlags.UseNativesPath) ? suggest : PathUtils.GetInternalFromNativePath(suggest);
+                        var suggestDisplay = flags.HasFlag(PathPickerFlags.UseTargetPath) ? suggest : workspace.Env.GetResourcePath(suggest).ToString();
                         if (!string.IsNullOrEmpty(searchFilter) && !suggestDisplay.Contains(searchFilter)) continue;
                         if (flags.HasFlag(PathPickerFlags.IsPathForIngame) && suggestDisplay.StartsWith("streaming/", StringComparison.OrdinalIgnoreCase)) continue;
 
@@ -268,18 +268,10 @@ public class ResourcePathPicker : IObjectUIHandler
             }
         }
 
-        // validate the filepath
-        if (flags.HasFlag(PathPickerFlags.IsPathForIngame)) {
-            if (flags.HasFlag(PathPickerFlags.UseNativesPath)) {
-                // native path
-                if ((Path.IsPathFullyQualified(pendingPath) || !pendingPath.StartsWith("natives/") || PathUtils.ParseFileFormat(pendingPath).version == -1)) {
-                    ImGui.TextColored(Colors.Warning, "The given file path may not resolve properly ingame.\nEnsure it's a native path (including the natives/stm/ part and with file extension version)");
-                }
-            } else {
-                // internal path
-                if ((Path.IsPathFullyQualified(pendingPath) || PathUtils.ParseFileFormat(pendingPath).version != -1 || pendingPath.Contains("natives/"))) {
-                    ImGui.TextColored(Colors.Warning, "The given file path may not resolve properly ingame.\nEnsure it's an internal path (without the natives/stm/ part and no file extension version)");
-                }
+        // validate resource file paths
+        if (flags.HasFlag(PathPickerFlags.IsPathForIngame) && !flags.HasFlag(PathPickerFlags.UseTargetPath)) {
+            if ((Path.IsPathFullyQualified(pendingPath) || PathUtils.ParseFileFormat(pendingPath).version != -1 || pendingPath.Contains("natives/"))) {
+                ImGui.TextColored(Colors.Warning, "The given file path may not resolve properly ingame.\nEnsure it's an internal path (without the natives/stm/ part and no file extension version)");
             }
         }
 
@@ -303,21 +295,22 @@ public class ResourcePathPicker : IObjectUIHandler
             return;
         }
 
-        newPath = PathUtils.GetNativeFromFullFilepath(newPath) ?? newPath;
-        if (Flags.HasFlag(PathPickerFlags.UseNativesPath)) {
-            newPath = PathUtils.GetInternalFromNativePath(newPath);
-        } else {
-            newPath = PathUtils.RemoveNativesFolder(newPath);
-            var format = PathUtils.ParseFileFormat(newPath);
-            if (format.version != -1) {
-                newPath = PathUtils.GetFilepathWithoutSuffixes(newPath).ToString();
-            }
+        var workspace = context.GetWorkspace()!;
+        if (Path.IsPathFullyQualified(newPath)) {
+            newPath = PathUtils.GetTargetFromFullFilepath(newPath) ?? newPath;
         }
+
+        if (Flags.HasFlag(PathPickerFlags.UseTargetPath)) {
+            newPath = workspace.Env.GetTargetPath(newPath);
+        } else {
+            newPath = workspace.Env.GetResourcePath(newPath).ToString();
+        }
+
         UndoRedo.RecordSet(context, newPath, window);
         context.Filter = newPath;
     }
 
-    public delegate bool BundleSaveFileCallback(string savePath, string localPath, string nativePath);
+    public delegate bool BundleSaveFileCallback(string savePath, string localPath, string targetPath);
 
     public static void ShowSaveToBundle(IFileLoader loader, IResourceFile resource, ContentWorkspace workspace, string initialFilename, string? nativePath = null, Action? callback = null)
     {
@@ -332,7 +325,7 @@ public class ResourcePathPicker : IObjectUIHandler
         });
     }
 
-    public static void SaveFileToBundle(ContentWorkspace workspace, FileHandle file, BundleSaveFileCallback saveCallback, bool closeFile = true, bool useNewNativePath = false)
+    public static void SaveFileToBundle(ContentWorkspace workspace, FileHandle file, BundleSaveFileCallback saveCallback, bool closeFile = true, bool useNewTargetPath = false)
     {
         var bundle = workspace.CurrentBundle;
         if (bundle == null) {
@@ -342,16 +335,16 @@ public class ResourcePathPicker : IObjectUIHandler
 
         var fn = file.Filename.ToString();
         var bundleFolder = workspace.BundleManager.GetBundleFolder(bundle);
-        var nativeFilepath = file.NativePath ?? PathUtils.GetNativeFromFullFilepath(file.Filepath) ?? fn;
+        var targetFilepath = workspace.Env.RemoveBasePath(file.TargetPath ?? PathUtils.GetTargetFromFullFilepath(file.Filepath) ?? fn).ToString();
         var localFilepath = fn;
         string suggestedSavePath;
         if (AppConfig.Instance.BundleDefaultSaveFullPath) {
-            localFilepath = PathUtils.RemoveNativesFolder(nativeFilepath);
+            localFilepath = workspace.Env.PrependBasePath(targetFilepath);
             suggestedSavePath = Path.Combine(bundleFolder, localFilepath);
         } else {
             suggestedSavePath = Path.Combine(bundleFolder, localFilepath);
             if (File.Exists(suggestedSavePath)) {
-                localFilepath = PathUtils.RemoveNativesFolder(nativeFilepath);
+                localFilepath = targetFilepath;
                 suggestedSavePath = Path.Combine(bundleFolder, localFilepath);
                 Logger.Warn($"The file {suggestedSavePath} already exists, defaulting to the full file path instead.");
             }
@@ -374,26 +367,26 @@ public class ResourcePathPicker : IObjectUIHandler
                 Logger.Info($"Target bundle file {path} already exists, replacing it.");
             }
 
-            if (useNewNativePath) {
-                nativeFilepath = workspace.Env.PrependBasePath(localFilepath);
+            if (useNewTargetPath) {
+                targetFilepath = localFilepath;
             }
 
-            if (bundle.TryFindResourceByLocalPath(localFilepath, out var previousListing) && previousListing.Target != nativeFilepath) {
-                Logger.Info($"File is already stored in the bundle.json. Re-using existing file's native filepath.");
-                nativeFilepath = previousListing.Target;
+            if (bundle.TryFindResourceByLocalPath(localFilepath, out var previousListing) && previousListing.Target != targetFilepath) {
+                Logger.Info($"File is already stored in the bundle.json. Re-using existing file's target path.");
+                targetFilepath = previousListing.Target;
             }
 
-            if (!saveCallback.Invoke(path, localFilepath, nativeFilepath)) {
+            if (!saveCallback.Invoke(path, localFilepath, targetFilepath)) {
                 Logger.Error("Failed to save file to bundle in path " + localFilepath);
                 return;
             }
 
-            if (useNewNativePath) {
-                workspace.UI.ShowMessage($"Saved as new file to bundle with native path:\n{nativeFilepath}\nPath can be modified through the Bundle Manager");
+            if (useNewTargetPath) {
+                workspace.UI.ShowMessage($"Saved as new file to bundle with target path:\n{targetFilepath}\nPath can be modified through the Bundle Manager");
             }
 
-            if (!bundle.TryFindResourceByNativePath(nativeFilepath, out _)) {
-                bundle.AddResource(localFilepath, nativeFilepath, file.Format.format.IsDefaultReplacedBundleResource());
+            if (!bundle.TryFindResourceByTargetPath(targetFilepath, out _)) {
+                bundle.AddResource(localFilepath, targetFilepath, file.Format.format.IsDefaultReplacedBundleResource());
             }
 
             bundle.Save();

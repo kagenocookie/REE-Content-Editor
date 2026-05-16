@@ -17,8 +17,8 @@ public class ScanDD2EntityData : IEntitySetup
     private static void ScanArmors(ContentWorkspace workspace)
     {
         // note: accessing the files directly because entity setup happens too early to use the ResourceManager
-        var armorFile = new UserFile(workspace.Env.RszFileOption, new FileHandler(workspace.Env.GetFile("natives/stm/appsystem/item/itemdata/itemarmordata.user.2")!));
-        var itemNames = new MsgFile(new FileHandler(workspace.Env.GetFile("natives/stm/message/ui/itemname.msg.22")!));
+        var armorFile = new UserFile(workspace.Env.RszFileOption, new FileHandler(workspace.Env.GetFile("appsystem/item/itemdata/itemarmordata.user.2")!));
+        var itemNames = new MsgFile(new FileHandler(workspace.Env.GetFile("message/ui/itemname.msg.22")!));
         armorFile.Read();
         itemNames.Read();
         var nameDict = itemNames.ToNameDictionary(ReeLib.Msg.Language.English);

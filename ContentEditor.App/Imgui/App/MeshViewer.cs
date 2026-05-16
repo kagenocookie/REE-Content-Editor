@@ -710,7 +710,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             exportMesh.ChangeVersion(exportTemplate);
             if (bundleConvert) {
                 var tempres = new CommonMeshResource(defaultFilename, Workspace.Env) { NativeMesh = exportMesh };
-                ResourcePathPicker.ShowSaveToBundle(Handle.Loader, tempres, Workspace, defaultFilename, Handle.NativePath);
+                ResourcePathPicker.ShowSaveToBundle(Handle.Loader, tempres, Workspace, defaultFilename, Handle.TargetPath);
             } else {
                 PlatformUtils.ShowSaveFileDialog((path) => exportMesh.SaveAs(path), defaultFilename);
             }
@@ -1295,8 +1295,8 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
         if (!File.Exists(mdfPath)) mdfPath = meshBasePath + "_Mat" + ext;
 
         if (!File.Exists(mdfPath)) {
-            if (Handle.NativePath != null) {
-                meshBasePath = PathUtils.GetFilepathWithoutExtensionOrVersion(Handle.NativePath).ToString();
+            if (Handle.TargetPath != null) {
+                meshBasePath = PathUtils.GetFilepathWithoutExtensionOrVersion(Handle.TargetPath).ToString();
                 if (viewer.Workspace.ResourceManager.TryResolveGameFile(meshBasePath + ext, out _)) {
                     mdfPath = meshBasePath + ext;
                 } else if (viewer.Workspace.ResourceManager.TryResolveGameFile(meshBasePath + "_Mat" + ext, out _)) {

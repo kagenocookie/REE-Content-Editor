@@ -7,9 +7,9 @@ namespace ContentPatcher;
 
 public sealed class FileHandle(string path, Stream stream, FileHandleType handleType, IFileLoader loader) : FileHandleBase, IDisposable, IEquatable<FileHandle>
 {
-    public string Filepath { get; private set; } = path;
-    public string? NativePath { get; init; }
-    public string? InternalPath => NativePath == null ? null : PathUtils.GetInternalFromNativePath(NativePath);
+    public string Filepath { get; } = path;
+    public string? TargetPath { get; init; }
+    public string? ResourcePath { get; init; }
     public FileHandleType HandleType { get; private set; } = handleType;
     public IFileLoader Loader { get; set; } = loader;
     public IResourceFilePatcher? DiffHandler { get; set; }
@@ -30,7 +30,7 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
     }
 
     public ReadOnlySpan<char> Filename => Path.GetFileName(Filepath.AsSpan());
-    public REFileFormat Format => PathUtils.ParseFileFormat(NativePath ?? Filepath);
+    public REFileFormat Format => PathUtils.ParseFileFormat(TargetPath ?? Filepath);
 
     public event Action? Saved;
     public event Action? Reverted;
@@ -43,9 +43,13 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
 
     public T? GetCustomContent<T>() where T : class => (Loader as IFileHandleContentProvider<T>)?.GetFile(this);
 
-    public static FileHandle CreateEmbedded(IFileLoader loader, IResourceFile file, string filepath = "", string? nativePath = null)
+    public static FileHandle CreateEmbedded(IFileLoader loader, IResourceFile file, string filepath = "", string? targetPath = null)
     {
-        var handle = new FileHandle(filepath, new MemoryStream(0), FileHandleType.Embedded, loader) { NativePath = nativePath };
+        targetPath = targetPath == null ? null : PathUtils.RemovePlatformPrefix(targetPath).ToString();
+        var handle = new FileHandle(filepath, new MemoryStream(0), FileHandleType.Embedded, loader) {
+            TargetPath = targetPath,
+            ResourcePath = targetPath == null ? null : PathUtils.GetFilepathWithoutSuffixes(targetPath).ToString()
+        };
         handle.Resource = file;
         return handle;
     }
@@ -141,7 +145,7 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
         if (loadIntoMemory) {
             stream = stream.ToMemoryStream();
         }
-        return new FileHandle(filepath, stream, FileHandleType.Disk, loader);
+        return new FileHandle(filepath.NormalizeFilepath(), stream, FileHandleType.Disk, loader);
     }
 
     bool IEquatable<FileHandle>.Equals(FileHandle? other) => ReferenceEquals(other, this);

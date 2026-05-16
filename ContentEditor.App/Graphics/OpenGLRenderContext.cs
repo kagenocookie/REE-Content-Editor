@@ -300,7 +300,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             if (resolveStreaming && texHandle.Format.format == KnownFileFormats.Texture) {
                 var texFile = texHandle.GetFile<TexFile>();
                 if (texFile.Header.flags.HasFlag(ReeLib.Tex.TexFlags.IsStreaming)) {
-                    string streamingPath = PathUtils.GetStreamingInternalPath(filepath);
+                    string streamingPath = PathUtils.GetStreamingPath(filepath);
                     if (ResourceManager.TryResolveGameFile(streamingPath, out var streamingTex)) {
                         texHandle = streamingTex;
                     }

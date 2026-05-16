@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Text.Json;
+using ReeLib;
 
 namespace ContentEditor.App
 {
@@ -16,8 +17,12 @@ namespace ContentEditor.App
             }
         }
         private readonly string _jsonFilePath;
+        private readonly PlatformIdentifier platform;
         private Dictionary<string, List<BookmarkEntry>> _bookmarks = new();
+
         public bool IsHideBookmarks { get; set; } = false;
+        public bool IsFilepathBookmarks => platform.id != Platform.Unknown;
+
         public struct TagInfo
         {
             public string Icon;
@@ -43,11 +48,13 @@ namespace ContentEditor.App
             ["Weapon"] = new TagInfo($"{AppIcons.SI_TagWeapon}", () => new[] { Colors.TagWeapon, Colors.TagWeaponHovered, Colors.TagWeaponSelected }),
         };
 
-        public BookmarkManager(string jsonFilePath)
+        public BookmarkManager(string jsonFilePath, PlatformIdentifier platform)
         {
             _jsonFilePath = jsonFilePath;
+            this.platform = platform;
             LoadBookmarks();
         }
+
         public IList<BookmarkEntry> GetBookmarks(string game)
         {
             if (_bookmarks.TryGetValue(game, out var list)) {
@@ -102,6 +109,14 @@ namespace ContentEditor.App
             }
             if (!File.Exists(path)) return;
             _bookmarks = JsonSerializer.Deserialize<Dictionary<string, List<BookmarkEntry>>>(File.ReadAllText(path)) ?? new Dictionary<string, List<BookmarkEntry>>();
+
+            if (IsFilepathBookmarks) {
+                foreach (var (game, list) in _bookmarks) {
+                    foreach (var entry in list) {
+                        entry.Path = PathUtils.SwapPlatformPrefix(entry.Path, platform);
+                    }
+                }
+            }
         }
 
         public void SaveBookmarks()

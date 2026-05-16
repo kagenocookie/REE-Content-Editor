@@ -44,7 +44,7 @@ public class DiffPatcher
             } else if (field.type is RszFieldType.String or RszFieldType.RuntimeType or RszFieldType.Resource) {
                 instance.Values[fieldIndex] = diffprop.Value?.GetValue<string>() ?? instance.Values[fieldIndex] ?? string.Empty;
             } else if (field.type is RszFieldType.UserData) {
-                if (env.IsEmbeddedUserdataAny) {
+                if (env.UsesEmbeddedUserdataAny) {
                     if (diffprop.Value == null) continue;
 
                     RSZFile rsz;

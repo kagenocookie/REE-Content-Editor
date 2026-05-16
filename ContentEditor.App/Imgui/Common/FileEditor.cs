@@ -106,14 +106,14 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     {
         ImGui.Button($"{AppIcons.SI_FileSource}");
         if (Handle.FileSource != null) {
-            ImguiHelpers.TooltipColored($"File source: {Handle.HandleType} - {Handle.FileSource} ({Handle.NativePath})", Colors.Faded);
-        } else if (!string.IsNullOrEmpty(Handle.NativePath)) {
-            ImguiHelpers.TooltipColored($"File source: {Handle.HandleType} ({Handle.NativePath})", Colors.Faded);
+            ImguiHelpers.TooltipColored($"File source: {Handle.HandleType} - {Handle.FileSource} ({Handle.TargetPath})", Colors.Faded);
+        } else if (!string.IsNullOrEmpty(Handle.TargetPath)) {
+            ImguiHelpers.TooltipColored($"File source: {Handle.HandleType} ({Handle.TargetPath})", Colors.Faded);
         } else {
             ImguiHelpers.TooltipColored($"File source: {Handle.HandleType}", Colors.Faded);
         }
         if (ImGui.IsItemClicked()) {
-            EditorWindow.CurrentWindow?.CopyToClipboard(Handle.NativePath ?? Handle.Filepath, "Path copied!");
+            EditorWindow.CurrentWindow?.CopyToClipboard(Handle.TargetPath ?? Handle.Filepath, "Path copied!");
         }
     }
 
@@ -163,9 +163,9 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                         SaveToBundle(workspace, true);
                     }
                     ImguiHelpers.Tooltip("Save to Bundle as New File");
-                } else if (workspace.CurrentBundle.ResourceListing == null || !workspace.CurrentBundle.TryFindResourceListing(Handle.NativePath ?? "", out var resourceListing)) {
+                } else if (workspace.CurrentBundle.ResourceListing == null || !workspace.CurrentBundle.TryFindResourceListing(Handle.TargetPath ?? "", out var resourceListing)) {
                     ImGui.SameLine();
-                    if (string.IsNullOrEmpty(Handle.NativePath) && Handle.Modified) {
+                    if (string.IsNullOrEmpty(Handle.TargetPath) && Handle.Modified) {
                         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
                             Logger.Warn("File has unsaved changes. Please save the file first before storing in bundle.");
                         }
@@ -173,9 +173,9 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
                             workspace.CurrentBundle.ResourceListing ??= new();
                             var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle), Handle.Filepath);
-                            var nativePath = !string.IsNullOrEmpty(Handle.NativePath) ? Handle.NativePath : workspace.Env.PrependBasePath(localPath);
-                            workspace.CurrentBundle.AddResource(localPath, nativePath, Handle.Format.format.IsDefaultReplacedBundleResource());
-                            if (string.IsNullOrEmpty(Handle.NativePath)) {
+                            var targetPath = !string.IsNullOrEmpty(Handle.TargetPath) ? Handle.TargetPath : workspace.Env.RemoveBasePath(localPath).ToString();
+                            workspace.CurrentBundle.AddResource(localPath, targetPath, Handle.Format.format.IsDefaultReplacedBundleResource());
+                            if (string.IsNullOrEmpty(Handle.TargetPath)) {
                                 // force reopen the file so we get the updated native path
                                 workspace.ResourceManager.CloseFile(Handle);
                                 context.GetNativeWindow()?.OpenFiles([Handle.Filepath]);
@@ -218,9 +218,9 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
 
     public void SaveToBundle(ContentWorkspace workspace, bool saveAsNewFile)
     {
-        ResourcePathPicker.SaveFileToBundle(workspace, Handle, (savePath, localPath, nativePath) => {
-            return SaveTo(savePath, true, nativePath: nativePath);
-        }, closeFile: false, useNewNativePath: saveAsNewFile);
+        ResourcePathPicker.SaveFileToBundle(workspace, Handle, (savePath, localPath, targetPath) => {
+            return SaveTo(savePath, true, targetPath: targetPath);
+        }, closeFile: false, useNewTargetPath: saveAsNewFile);
     }
 
     protected void ShowFileJsonCopyPasteButtons<T>(JsonSerializerOptions? jsonOptions) where T : BaseFile
@@ -261,7 +261,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         Handle.Save(context.GetWorkspace()!);
     }
 
-    private bool SaveTo(string savePath, bool replaceFileHandle, Action? beforeReplaceAction = null, string? nativePath = null)
+    private bool SaveTo(string savePath, bool replaceFileHandle, Action? beforeReplaceAction = null, string? targetPath = null)
     {
         var workspace = context.GetWorkspace()!;
         if (!Handle.Save(workspace, savePath)) return false;
@@ -273,7 +273,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             if (Handle.References.Count == 0) {
                 workspace.ResourceManager.CloseFile(Handle);
             }
-            var newHandle = workspace.ResourceManager.GetFileHandle(savePath, nativePath);
+            var newHandle = workspace.ResourceManager.GetFileHandle(savePath, targetPath);
             if (newHandle == null) {
                 Logger.Error("Could not re-load newly saved file from path " + savePath);
             } else {

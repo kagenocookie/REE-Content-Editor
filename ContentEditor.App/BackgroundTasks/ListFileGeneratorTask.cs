@@ -6,7 +6,7 @@ namespace ContentEditor.BackgroundTasks;
 
 public class ListFileGeneratorTask(ContentWorkspace workspace) : IBackgroundTask
 {
-    private FileListGenerator generator = new FileListGenerator(workspace.Env.Config.GamePath);
+    private FileListGenerator generator = new FileListGenerator(workspace.Env.Config.GamePath, workspace.Platform);
 
     public override string ToString() => $"Generating File List";
 

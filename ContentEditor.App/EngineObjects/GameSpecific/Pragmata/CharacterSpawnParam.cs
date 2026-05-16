@@ -60,8 +60,8 @@ public class CharacterSpawnParam(GameObject gameObject, RszInstance data) : Base
     }
 
     private static readonly string[] CatalogPaths = [
-        "natives/stm/singletonuserdata/catalog/characterbodycatalog_1st_maincontents.user.3",
-        "natives/stm/singletonuserdata/catalog/characterbodycatalog_2nd_maincontents.user.3"
+        "singletonuserdata/catalog/characterbodycatalog_1st_maincontents.user.3",
+        "singletonuserdata/catalog/characterbodycatalog_2nd_maincontents.user.3"
     ];
 
     private void SetEnemyID(uint hash)

@@ -45,11 +45,11 @@ public partial class LuaFileHandleWrapper : ILuaObjectWrapper
     [LuaMember("filepath")]
     public string Filepath => file.Filepath;
 
-    [LuaMember("native_path")]
-    public string? NativePath => file.NativePath;
+    [LuaMember("target_path")]
+    public string? TargetPath => file.TargetPath;
 
-    [LuaMember("internal_path")]
-    public string? InternalPath => file.InternalPath;
+    [LuaMember("resource_path")]
+    public string? ResourcePath => file.ResourcePath;
 
     [LuaMember("modified")]
     public bool Modified { get => file.Modified; set => file.Modified = value; }

@@ -376,7 +376,7 @@ public partial class FileTesterWindow : IWindowHandler
     {
         // streaming mesh data is pure buffers and not a proper file format, no point in checking those
         // if (filepath != "") return true;
-        return format == KnownFileFormats.Mesh && filepath.StartsWith("natives/stm/streaming");
+        return format == KnownFileFormats.Mesh && filepath.Contains("natives/stm/streaming", StringComparison.OrdinalIgnoreCase);
     }
 
     internal IEnumerable<(string path, Stream file)> GetExecutableFiles(GameIdentifier game, string extension, CancellationToken token = default)

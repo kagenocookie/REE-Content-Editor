@@ -22,16 +22,16 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
 
     public Scene CreateScene(FileHandle sourceFile, bool render, Scene? parentScene = null, Folder? rootFolder = null)
     {
-        return CreateScene(sourceFile.Filepath, sourceFile.InternalPath ?? sourceFile.Filepath, render, parentScene, rootFolder);
+        return CreateScene(sourceFile.Filepath, sourceFile.ResourcePath ?? sourceFile.Filepath, render, parentScene, rootFolder);
     }
 
-    public Scene CreateScene(string name, string internalPath, bool render, Scene? parentScene = null, Folder? rootFolder = null)
+    public Scene CreateScene(string name, string resourcePath, bool render, Scene? parentScene = null, Folder? rootFolder = null)
     {
         if (env == null) throw new Exception("Workspace unset");
 
-        // convert in case we received a native and not internal path
-        internalPath = PathUtils.GetInternalFromNativePath(internalPath);
-        var scene = new Scene(name, internalPath, env, parentScene, rootFolder) { IsActive = render, SceneManager = this };
+        // convert in case we received a native and not resource path
+        resourcePath = env.Env.GetResourcePath(resourcePath).ToString();
+        var scene = new Scene(name, resourcePath, env, parentScene, rootFolder) { IsActive = render, SceneManager = this };
         scenes.Add(scene);
         // if (render) Logger.Debug("Loading scene " + rootFolder?.Name ?? internalPath);
         rootFolder?.MoveToScene(scene);
@@ -40,7 +40,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
             scene.OwnRenderContext.AddDefaultSceneGizmos();
         } else {
             foreach (var scn in parentScene.AllFolders) {
-                if (scn.ScenePath?.Equals(internalPath, StringComparison.OrdinalIgnoreCase) == true) {
+                if (scn.ScenePath?.Equals(resourcePath, StringComparison.OrdinalIgnoreCase) == true) {
                     scn.ChildScene = scene;
                     // surely nobody would reference the same scene twice from one scene?
                     break;
@@ -67,7 +67,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
     public Scene? FindLoadedScene(string internalPath)
     {
         foreach (var scene in scenes) {
-            if (scene.InternalPath == internalPath) {
+            if (scene.ResourcePath == internalPath) {
                 return scene;
             }
         }

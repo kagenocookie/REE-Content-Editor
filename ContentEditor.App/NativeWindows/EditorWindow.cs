@@ -279,6 +279,22 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
     }
 
+    private void ChangePlatform(PlatformIdentifier platform)
+    {
+        if (workspace == null || platform == workspace.Platform) {
+            return;
+        }
+
+        workspace.Env.Config.Platform = platform;
+        // force reload/close anything that needs to know the platform
+        foreach (var wnd in subwindows) {
+            if (wnd.Handler is PakBrowser pakb) {
+                CloseSubwindow(wnd);
+            }
+        }
+        workspace.Env.ResetListFile();
+    }
+
     protected void ShowGameSelectionMenu()
     {
         fullSupportedGames ??= ResourceRepository.RemoteInfo.Resources
@@ -287,6 +303,23 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             .ToHashSet();
 
         if (ImGui.BeginMenu("Game: " + (env == null ? "<unset>" : env.Config.Game.name.ToUpper()))) {
+            if (env != null) {
+                if (ImGui.BeginMenu("Platform: " + env.Config.Platform)) {
+                    foreach (var otherPlat in PlatformIdentifier.GetAvailableDesktopPlatforms(env.Config.Game)) {
+                        if (ImGui.Selectable(otherPlat.ToString(), otherPlat == env.Config.Platform)) {
+                            ChangePlatform(otherPlat);
+                        }
+                    }
+                    ImGui.SeparatorText("Other platforms (untested)");
+                    foreach (var otherPlat in PlatformIdentifier.NonDesktop) {
+                        if (ImGui.Selectable(otherPlat.ToString(), otherPlat == env.Config.Platform)) {
+                            ChangePlatform(otherPlat);
+                        }
+                    }
+                    ImGui.EndMenu();
+                }
+                ImGui.Separator();
+            }
             var games = AppConfig.Instance.GetGamelist();
             foreach (var (game, configured) in games) {
                 if (configured && fullSupportedGames.Contains(game)) {
@@ -541,12 +574,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
         if (workspace == null) return;
 
-        if (!string.IsNullOrEmpty(scene.InternalPath)) {
-            if (workspace.ResourceManager.TryResolveGameFile(scene.InternalPath, out var file)) {
+        if (!string.IsNullOrEmpty(scene.ResourcePath)) {
+            if (workspace.ResourceManager.TryResolveGameFile(scene.ResourcePath, out var file)) {
                 file.Stream.Seek(0, SeekOrigin.Begin);
                 AddFileEditor(file);
             } else {
-                file = workspace.ResourceManager.GetOpenFiles().FirstOrDefault(ff => ff.InternalPath == scene.InternalPath);
+                file = workspace.ResourceManager.GetOpenFiles().FirstOrDefault(ff => ff.ResourcePath == scene.ResourcePath);
                 if (file != null) {
                     AddFileEditor(file);
                 }

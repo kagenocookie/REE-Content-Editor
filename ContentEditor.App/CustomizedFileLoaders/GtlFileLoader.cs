@@ -33,7 +33,7 @@ public class GtlFileLoader : IFileLoader, IFileHandleContentProvider<Mesh>
         if (!file.Read()) return null;
 
         if (workspace.Env.Config.Game == GameIdentifier.dd2) {
-            file.ReadData(workspace.ResourceManager.ReadFileResource<GrndFile>("natives/stm/editdata/ground/world00/world00.grnd.858720015"), 0, 1);
+            file.ReadData(workspace.ResourceManager.ReadFileResource<GrndFile>("editdata/ground/world00/world00.grnd.858720015"), 0, 1);
         } else {
             var grndMatch = workspace.Env.GetFilesWithExtension("grnd").FirstOrDefault();
             if (grndMatch.Item1 == null || grndMatch.Item2 == null) {

@@ -678,7 +678,7 @@ public class FileConverter : BaseWindowHandler
             if (destinationFormat.version == file.Format.version) return true;
 
             if (ChangeVersion(file, destinationFormat.version, context)) {
-                Logger.Info($"Changed file version: {file.Filepath} -> {destinationFormat} (native: {file.NativePath ?? "unknown"})");
+                Logger.Info($"Changed file version: {file.Filepath} -> {destinationFormat} (target: {file.TargetPath ?? "unknown"})");
                 return true;
             }
 
@@ -688,7 +688,7 @@ public class FileConverter : BaseWindowHandler
         protected bool DoDefaultDiffPatch(FileHandle sourceFile, string destinationPath, UpgradeContext context, [MaybeNullWhen(false)] out FileHandle updatedFile)
         {
             var sourcePath = sourceFile.Filepath;
-            var nativePath = sourceFile.NativePath;
+            var nativePath = sourceFile.TargetPath;
 
             var destinationFormat = PathUtils.ParseFileFormatFull(destinationPath);
 

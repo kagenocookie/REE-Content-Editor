@@ -163,7 +163,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                     if (!items.Any()) {
                         ImGui.TextColored(Colors.Note, "No prefab bookmarks found!");
                     } else {
-                        ResourcePathPicker.Show("Specific prefab", ref prefabFilepath, ref prefabFilepath, ref prefabFilter, ws, [KnownFileFormats.Prefab], FileFilters.PfbFile, ResourcePathPicker.PathPickerFlags.NoConfirmation|ResourcePathPicker.PathPickerFlags.UseNativesPath);
+                        ResourcePathPicker.Show("Specific prefab", ref prefabFilepath, ref prefabFilepath, ref prefabFilter, ws, [KnownFileFormats.Prefab], FileFilters.PfbFile, ResourcePathPicker.PathPickerFlags.NoConfirmation|ResourcePathPicker.PathPickerFlags.UseTargetPath);
                         FileHandle? file = null;
                         if (!string.IsNullOrEmpty(prefabFilepath)) {
                             ws.ResourceManager.TryResolveGameFile(prefabFilepath, out file);
@@ -185,7 +185,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                         }
                         if (file != null && file.GetCustomContent<Prefab>() is Prefab prefab) {
                             var instance = prefab.Instantiate();
-                            instance.PrefabPath = file.InternalPath ?? (file.NativePath != null ? PathUtils.GetInternalFromNativePath(file.NativePath) : "");
+                            instance.PrefabPath = file.ResourcePath ?? "";
                             instance.RandomizeGuids();
                             UndoRedo.RecordAddChild(context, instance, (INodeObject<GameObject>)node);
                             instance.MakeNameUnique();

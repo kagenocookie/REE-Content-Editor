@@ -869,7 +869,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                         ImGui.Text(context.label + ": NULL (unable to create new instance)");
                         return;
                     }
-                    if (ws.Env.IsEmbeddedUserdataAny) {
+                    if (ws.Env.UsesEmbeddedUserdataAny) {
                         // TODO recheck re7 userdata
                         ImGui.PushID(context.label);
                         ImguiHelpers.BeginRect();
@@ -915,7 +915,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                 ImGui.Text(context.label + ": NULL (unable to create new instance)");
                 return;
             }
-            if (ws?.Env.IsEmbeddedUserdataAny == false) {
+            if (ws?.Env.UsesEmbeddedUserdataAny == false) {
                 ImguiHelpers.BeginRect();
                 ImGui.Text(context.label + ": NULL");
                 if (context.children.Count == 0) {

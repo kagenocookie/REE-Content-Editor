@@ -101,10 +101,10 @@ public class RE4CharacterSpawnParam(GameObject gameObject, RszInstance data) : B
     }
 
     private static string[] PresetCatalogPaths = [
-        "natives/stm/_chainsaw/appsystem/catalog/character/costumepresetcatalog_1st.user.2",
-        "natives/stm/_chainsaw/appsystem/catalog/character/costumepresetcatalog_2nd.user.2",
-        "natives/stm/_anotherorder/appsystem/catalog/maincontents/costumepresetcatalog_ao.user.2",
-        "natives/stm/_mercenaries/appsystem/catalog/maincontents/costumepresetcatalog_mc_2nd.user.2",
+        "_chainsaw/appsystem/catalog/character/costumepresetcatalog_1st.user.2",
+        "_chainsaw/appsystem/catalog/character/costumepresetcatalog_2nd.user.2",
+        "_anotherorder/appsystem/catalog/maincontents/costumepresetcatalog_ao.user.2",
+        "_mercenaries/appsystem/catalog/maincontents/costumepresetcatalog_mc_2nd.user.2",
     ];
     private void SetEnemyID(int kindId, uint enemyId)
     {

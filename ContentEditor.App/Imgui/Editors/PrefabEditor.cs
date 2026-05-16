@@ -87,7 +87,7 @@ public class PrefabEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IOb
     {
         context.ClearChildren();
         var window = context.GetNativeWindow();
-        scene = Handle.InternalPath == null ? null : window?.SceneManager.FindLoadedScene(Handle.InternalPath);
+        scene = Handle.ResourcePath == null ? null : window?.SceneManager.FindLoadedScene(Handle.ResourcePath);
         if (scene != null) return scene;
 
         var root = Prefab.GetSharedInstance();

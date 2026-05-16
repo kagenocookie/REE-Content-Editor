@@ -91,6 +91,7 @@ public class BundleManager
                 continue;
             }
             bundle.StorageFolder = entry;
+            bundle.UpgradeBundleDataIfNeeded(this);
 
             var idx = settings.BundleOrder.IndexOf(bundle.Name);
             if (idx != -1) {
@@ -121,6 +122,7 @@ public class BundleManager
                 continue;
             }
             bundle.StorageFolder = Path.GetFileNameWithoutExtension(entry);
+            bundle.UpgradeBundleDataIfNeeded(this);
 
             // TODO figure out app/runtime bundle link
             if (orderedBundles.Any(bb => bb.Value.Name == bundle.Name) || unorderedBundles.Any(bb => bb.Name == bundle.Name)) continue;
@@ -207,16 +209,6 @@ public class BundleManager
         return Path.Combine(AppBundlePath, name).Replace('\\', '/');
     }
 
-    public string? GetBundleResourcePath(Bundle bundle, string filepath)
-    {
-        if (bundle.ResourceListing == null) return null;
-        if (bundle.TryFindResourceByNativePath(filepath, out var localPath)) {
-            return ResolveBundleLocalPath(bundle, localPath);
-        }
-
-        return null;
-    }
-
     public string ResolveBundleLocalPath(Bundle bundle, string localPath)
     {
         var expectedPath = (string.IsNullOrEmpty(bundle.StorageFolder)
@@ -298,7 +290,12 @@ public class BundleManager
         SaveSettings();
     }
 
-    public Bundle? CreateBundle(string newBundleName)
+    public Bundle GetOrCreateBundle(string bundleName, string? storageFolder = null)
+    {
+        return GetBundle(bundleName, null) ?? CreateBundle(bundleName, storageFolder)!;
+    }
+
+    public Bundle? CreateBundle(string newBundleName, string? storageFolder = null)
     {
         var existing = GetBundle(newBundleName, null);
         if (existing != null) return null;
@@ -309,7 +306,8 @@ public class BundleManager
             Description = GetEditorRootSetting("author_description")?.GetString() ?? "<unknown>",
             GameVersion = VersionHash,
             Version = "v1.0.0",
-            StorageFolder = ConstructBundleFolder(newBundleName),
+            StorageFolder = storageFolder ?? ConstructBundleFolder(newBundleName),
+            BundleVersion = 2,
         };
         bundle.Touch();
         AllBundles.Add(bundle);

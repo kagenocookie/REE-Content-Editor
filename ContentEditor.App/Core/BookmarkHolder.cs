@@ -2,10 +2,22 @@ using ContentPatcher;
 
 namespace ContentEditor.App;
 
-public class BookmarkHolder(ContentWorkspace workspace)
+public class BookmarkHolder(
+    ContentWorkspace workspace,
+    string defaultPath = "default_bookmarks_pak.json",
+    string userPath = "bookmarks_pak.json",
+    bool useGlobalDefaults = false,
+    bool isFilepathBookmarks = true)
 {
-    public BookmarkManager Defaults { get; } = new BookmarkManager(Path.Combine(AppConfig.Instance.ConfigBasePath, workspace.Game.name, "default_bookmarks_pak.json"));
-    public BookmarkManager User { get; } = new BookmarkManager(Path.Combine(AppConfig.Instance.BookmarksFilepath.Get()!, "bookmarks_pak.json"));
+    public BookmarkManager Defaults { get; } = new BookmarkManager(
+        Path.Combine(AppConfig.Instance.ConfigBasePath, useGlobalDefaults ? "global" : workspace.Game.name, defaultPath),
+        isFilepathBookmarks ? default : workspace.Platform
+    );
+
+    public BookmarkManager User { get; } = new BookmarkManager(
+        Path.Combine(AppConfig.Instance.BookmarksFilepath.Get()!, userPath),
+        isFilepathBookmarks ? default : workspace.Platform
+    );
 
     public bool IsEmpty => !Defaults.GetBookmarks(workspace.Game.name).Any() && !User.GetBookmarks(workspace.Game.name).Any();
 

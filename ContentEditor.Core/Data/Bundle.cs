@@ -56,6 +56,9 @@ public class Bundle
     [JsonPropertyName("game_version")]
     public string? GameVersion { get; set; }
 
+    [JsonPropertyName("bundle_version")]
+    public int BundleVersion { get; set; }
+
     [JsonPropertyName("initial_insert_ids")]
     public Dictionary<string, long>? InitialInsertIds { get; set; }
 
@@ -65,14 +68,20 @@ public class Bundle
     public override string ToString() => Name;
 
     [JsonIgnore]
-    private Dictionary<string, string>? _nativeToLocalResourcePathCache;
+    private Dictionary<string, string>? _targetToLocalPathCache;
+
+    [JsonIgnore]
+    private Dictionary<string, string> TargetToLocalPathCache =>
+        _targetToLocalPathCache ??= ResourceListing?
+            .GroupBy(k => k.Value.Target)
+            .ToDictionary(k => k.First().Value.Target, k => k.First().Key) ?? new(0);
 
     public void Touch()
     {
         UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss \\U\\T\\C");
         UpdatedAtTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         if (CreatedAt == null) CreatedAt = UpdatedAt;
-        _nativeToLocalResourcePathCache = null;
+        _targetToLocalPathCache = null;
     }
 
     public IEnumerable<Entity> GetEntities(string type)
@@ -91,7 +100,7 @@ public class Bundle
     /// <returns></returns>
     public EntityRecordUpdateType RecordEntity(Entity updated)
     {
-        _nativeToLocalResourcePathCache = null;
+        _targetToLocalPathCache = null;
         for (int i = 0; i < Entities.Count; i++) {
             var entity = Entities[i];
             if (entity.Type == updated.Type && entity.Id == updated.Id) {
@@ -117,17 +126,17 @@ public class Bundle
         return null;
     }
 
-    public void AddResource(string localFilepath, string nativeFilepath, bool replace = false)
+    public void AddResource(string localFilepath, string targetPath, bool replace = false)
     {
         ResourceListing ??= new();
-        nativeFilepath = nativeFilepath.Replace('\\', '/').ToLowerInvariant();
-        if (TryFindResourceByNativePath(nativeFilepath, out var prevLocal)) {
-            Logger.Error("Bundle already contains the file " + nativeFilepath + "\nBundle local filepath: " + prevLocal);
+        targetPath = targetPath.Replace('\\', '/').ToLowerInvariant();
+        if (TryFindResourceByTargetPath(targetPath, out var prevLocal)) {
+            Logger.Error("Bundle already contains the file " + targetPath + "\nBundle local filepath: " + prevLocal);
             return;
         }
-        ResourceListing[localFilepath] = new ResourceListItem() { Target = nativeFilepath, Replace = replace };
-        if (_nativeToLocalResourcePathCache != null) {
-            _nativeToLocalResourcePathCache[nativeFilepath] = localFilepath;
+        ResourceListing[localFilepath] = new ResourceListItem() { Target = targetPath, Replace = replace };
+        if (_targetToLocalPathCache != null) {
+            _targetToLocalPathCache[targetPath] = localFilepath;
         }
     }
 
@@ -137,26 +146,14 @@ public class Bundle
         return ResourceListing.TryGetValue(localPath, out item);
     }
 
-    public bool TryFindResourceByNativePath(string nativePath, [MaybeNullWhen(false)] out string localPath)
+    public bool TryFindResourceByTargetPath(string targetPath, [MaybeNullWhen(false)] out string localPath)
     {
-        if (_nativeToLocalResourcePathCache == null) {
-            _nativeToLocalResourcePathCache = ResourceListing?
-                .GroupBy(k => k.Value.Target)
-                .ToDictionary(k => k.First().Value.Target, k => k.First().Key) ?? new(0);
-        }
-
-        return _nativeToLocalResourcePathCache.TryGetValue(nativePath, out localPath);
+        return TargetToLocalPathCache.TryGetValue(targetPath, out localPath);
     }
 
-    public bool TryFindResourceListing(string nativePath, [MaybeNullWhen(false)] out ResourceListItem resourceListing)
+    public bool TryFindResourceListing(string targetPath, [MaybeNullWhen(false)] out ResourceListItem resourceListing)
     {
-        if (_nativeToLocalResourcePathCache == null) {
-            _nativeToLocalResourcePathCache = ResourceListing?
-                .GroupBy(k => k.Value.Target)
-                .ToDictionary(k => k.First().Value.Target, k => k.First().Key) ?? new(0);
-        }
-
-        resourceListing = _nativeToLocalResourcePathCache.TryGetValue(nativePath, out var localPath) ? ResourceListing![localPath] : null;
+        resourceListing = TargetToLocalPathCache.TryGetValue(targetPath, out var localPath) ? ResourceListing![localPath] : null;
         return resourceListing != null;
     }
 
@@ -184,6 +181,20 @@ public class Bundle
         Directory.CreateDirectory(Path.GetDirectoryName(outfilepath)!);
         using var fs = File.Create(outfilepath);
         JsonSerializer.Serialize(fs, this, JsonConfig.luaJsonOptions);
+    }
+
+    public void UpgradeBundleDataIfNeeded(BundleManager bundleManager)
+    {
+        if (BundleVersion < 2) {
+            if (ResourceListing != null) {
+                foreach (var (local, resource) in ResourceListing) {
+                    if (resource.Target.StartsWith("natives/", StringComparison.OrdinalIgnoreCase)) {
+                        resource.Target = resource.Target.Substring(resource.Target.IndexOf('/', "natives/".Length) + 1);
+                    }
+                }
+            }
+            BundleVersion = 2;
+        }
     }
 
     public enum EntityRecordUpdateType

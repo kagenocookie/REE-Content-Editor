@@ -334,7 +334,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
                     if (bundleConvert) {
                         var texLoader = fileHandle.Loader as TextureLoader ?? new TextureLoader();
                         var tempres = new BaseFileResource<TexFile>(tex);
-                        ResourcePathPicker.ShowSaveToBundle(texLoader, tempres, workspace, defaultFilename, fileHandle.NativePath, () => {
+                        ResourcePathPicker.ShowSaveToBundle(texLoader, tempres, workspace, defaultFilename, fileHandle.TargetPath, () => {
                             dds.Dispose();
                             tex.Dispose();
                         });
@@ -580,25 +580,26 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
                 pan = Vector2.Zero;
             }
             ImguiHelpers.Tooltip("Show at original resolution"u8);
-            if (fileHandle?.Format.format == KnownFileFormats.Texture && !string.IsNullOrEmpty(fileHandle.NativePath) && isFirstLoad) {
+            if (fileHandle?.Format.format == KnownFileFormats.Texture && !string.IsNullOrEmpty(fileHandle.TargetPath)) {
                 var tex = fileHandle.GetFile<TexFile>();
-                if (texturePath?.Contains("/streaming/", StringComparison.OrdinalIgnoreCase) == true) {
+                if (fileHandle.TargetPath.StartsWith("streaming/", StringComparison.OrdinalIgnoreCase) == true) {
                     ImGui.SameLine();
                     if (ImGui.Button($"{AppIcons.SI_UpdateTexture}")) {
-                        if (workspace.ResourceManager.TryResolveGameFile(PathUtils.GetNonStreamingNativePath(fileHandle.NativePath), out var noStrmTex)) {
+                        if (workspace.ResourceManager.TryResolveGameFile(PathUtils.GetNonStreamingPath(fileHandle.TargetPath).ToString(), out var noStrmTex)) {
                             SetImageSource(noStrmTex);
                         } else {
-                            Logger.Error($"Could not find non-streaming version of texture {fileHandle.NativePath}");
+                            Logger.Error($"Could not find non-streaming version of texture {fileHandle.TargetPath}");
                         }
                     }
                     ImguiHelpers.Tooltip("Switch to lower quality non-streaming texture");
                 } else if (tex.Header.flags.HasFlag(ReeLib.Tex.TexFlags.IsStreaming)) {
                     ImGui.SameLine();
                     if (ImGui.Button($"{AppIcons.SI_UpdateTexture}") || isFirstLoad) {
-                        if (workspace.ResourceManager.TryResolveGameFile(PathUtils.GetStreamingNativePath(fileHandle.NativePath), out var strmTex)) {
+
+                        if (workspace.ResourceManager.TryResolveGameFile(PathUtils.GetStreamingPath(fileHandle.TargetPath), out var strmTex)) {
                             SetImageSource(strmTex);
                         } else {
-                            Logger.Error($"Could not find full quality streaming version of texture {fileHandle.NativePath}");
+                            Logger.Error($"Could not find full quality streaming version of texture {fileHandle.TargetPath}");
                         }
                     }
                     ImguiHelpers.Tooltip("Switch to full quality streaming texture");

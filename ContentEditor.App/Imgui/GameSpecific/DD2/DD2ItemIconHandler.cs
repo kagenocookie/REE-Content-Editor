@@ -33,7 +33,7 @@ public sealed class DD2ItemIconHandler(CustomField field) : IObjectUIHandler, IO
                 return;
             }
             var texture = context.GetChildValue<Texture>();
-            var uvsFile = workspace.ResourceManager.ReadFileResource<UvsFile>("natives/stm/gui/ui01/common/item/c00/uvs_ui01c00.uvs.8");
+            var uvsFile = workspace.ResourceManager.ReadFileResource<UvsFile>("gui/ui01/common/item/c00/uvs_ui01c00.uvs.8");
             var pattern = uvsFile.Sequences[sequenceId].patterns[patternId];
             var texPath = uvsFile.Textures[pattern.textureIndex].path;
             if (texture == null || texture.Path?.Contains(texPath) != true) {

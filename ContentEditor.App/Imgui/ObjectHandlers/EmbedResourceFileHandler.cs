@@ -16,11 +16,13 @@ public class EmbeddedResourceFileHandler(ResourceCustomField field) : IObjectUIH
     public void OnIMGUI(UIContext context)
     {
         var entity = context.GetOwnerEntity();
-        if (entity == null) {
-            ImGui.TextColored(Colors.Error, context.label + ": Entity not found");
+        var workspace = context.GetWorkspace();
+        if (entity == null || workspace == null) {
+            ImGui.TextColored(Colors.Error, $"{field.label} field requires a valid item entity and workspace");
             return;
         }
-        var path = field.GetPath(entity);
+
+        var path = workspace.Env.GetResourcePath(field.GetPath(entity)).ToString();
         if (string.IsNullOrEmpty(path)) {
             ImGui.Text(context.label + ": No resource");
             if (file != null) {
@@ -30,20 +32,16 @@ public class EmbeddedResourceFileHandler(ResourceCustomField field) : IObjectUIH
             return;
         }
 
-        var workspace = context.GetWorkspace();
         if (entity == null || workspace == null) {
             ImGui.TextColored(Colors.Error, $"{field.label} field requires a valid item entity and workspace");
             return;
         }
-        if (file == null || file.NativePath == null || !PathUtils.GetInternalFromNativePath(file.NativePath).Equals(path, StringComparison.InvariantCultureIgnoreCase)) {
+        if (file == null || file.ResourcePath == null || !file.ResourcePath.Equals(path, StringComparison.InvariantCultureIgnoreCase)) {
             if (file != null) {
                 context.ClearChildren();
                 file = null;
             }
-            if (path.IsNativePath()) {
-                ImGui.TextColored(Colors.Error, "The path is specified as a native path - this is not supported!\nPath should not be prefixed with natives/ and containly only the base file extension without versions.");
-                return;
-            }
+
             if (!workspace.ResourceManager.TryResolveGameFile(path, out file)) {
                 ImGui.TextColored(Colors.Warning, "Could not resolve file " + path);
                 return;

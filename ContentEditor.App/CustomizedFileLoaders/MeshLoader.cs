@@ -40,7 +40,7 @@ public partial class MeshLoader : IFileLoader,
 
                 if (file.RequiresStreamingData) {
                     if (workspace.ResourceManager.TryResolveStreamingBufferFile(handle, out var bufferFile)) {
-                        file.LoadStreamingData(new FileHandler(bufferFile.Stream, bufferFile.NativePath));
+                        file.LoadStreamingData(new FileHandler(bufferFile.Stream, bufferFile.TargetPath));
                     } else {
                         Logger.Warn("Could not resolve streaming buffer for streaming mesh file " + handle.Filepath);
                     }

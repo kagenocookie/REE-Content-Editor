@@ -80,7 +80,7 @@ public class SceneEditor : FileEditor, IWorkspaceContainer, IRSZFileEditor, IObj
     {
         context.ClearChildren();
         var window = context.GetNativeWindow();
-        scene = Handle.InternalPath == null ? null : window?.SceneManager.FindLoadedScene(Handle.InternalPath);
+        scene = Handle.ResourcePath == null ? null : window?.SceneManager.FindLoadedScene(Handle.ResourcePath);
         if (scene != null) {
             SourceScene.SetSharedInstance(scene.RootFolder);
             return scene;

@@ -62,12 +62,12 @@ public sealed class FilePreviewGenerator : IDisposable
     private string GetThumbnailPath(string filepath)
     {
         // should we worry about file path length limits? if so, we could use hashes instead of full file paths
-        return Path.Combine(PreviewCacheFolder, PathUtils.RemoveNativesFolder(filepath) + ".jpg");
+        return Path.Combine(PreviewCacheFolder, string.Concat(PathUtils.RemoveNativesFolder(filepath, workspace.Platform), ".jpg")).NormalizeFilepath();
     }
 
     public PreviewImageStatus FetchPreview(string file, out Texture? texture)
     {
-        file = file.Replace('\\', '/');
+        file = PathUtils.GetNonStreamingPath(file.NormalizeFilepath()).ToString();
         texture = null;
         if (_statuses.TryGetValue(file, out var status)) {
             if (status == PreviewImageStatus.Generated) {
@@ -146,16 +146,15 @@ public sealed class FilePreviewGenerator : IDisposable
                 }
 
                 var fmt = PathUtils.ParseFileFormat(path).format;
-                var mainAssetPath = fmt == KnownFileFormats.Mesh ? PathUtils.GetNonStreamingNativePath(path) : path;
                 FileHandle f;
                 try {
-                    if (!workspace.ResourceManager.TryGetOrLoadFile(mainAssetPath, out f!)) {
+                    if (!workspace.ResourceManager.TryGetOrLoadFile(path, out f!)) {
                         _statuses[path] = PreviewImageStatus.Failed;
                         continue;
                     }
                 } catch (Exception e) {
                     _statuses[path] = PreviewImageStatus.Failed;
-                    Logger.Error($"Could not load file {mainAssetPath} for preview generation ({e.Message})");
+                    Logger.Error($"Could not load file {path} for preview generation ({e.Message})");
                     continue;
                 }
                 if (_stopRequested || _cancelRequested) break;
@@ -219,7 +218,6 @@ public sealed class FilePreviewGenerator : IDisposable
     private void GenerateMeshThumbnail(string path)
     {
         _statuses[path] = PreviewImageStatus.Loading;
-        var mainPath = PathUtils.GetNonStreamingNativePath(path);
         var outPath = GetThumbnailPath(path);
 
         using var tmpScene = new Scene("_preview", "", workspace, null, null, _threadGL);
@@ -228,12 +226,12 @@ public sealed class FilePreviewGenerator : IDisposable
 
         var go = new GameObject("mesh", workspace.Env, tmpScene.RootFolder, tmpScene);
         var comp = go.AddComponent<MeshComponent>();
-        var basePath = PathUtils.GetFilepathWithoutExtensionOrVersion(mainPath).ToString();
+        var basePath = PathUtils.GetFilepathWithoutExtensionOrVersion(path).ToString();
         workspace.ResourceManager.TryResolveGameFile(basePath + ".mdf2", out var mdfHandle);
         if (mdfHandle == null) workspace.ResourceManager.TryResolveGameFile(basePath + "_Mat.mdf2", out mdfHandle);
         if (mdfHandle == null) workspace.ResourceManager.TryResolveGameFile(basePath + "_00.mdf2", out mdfHandle);
 
-        comp.SetMesh(mainPath, mdfHandle?.Filepath);
+        comp.SetMesh(path, mdfHandle?.Filepath);
         if (comp.MeshHandle == null) {
             _statuses[path] = PreviewImageStatus.Failed;
             Logger.Debug($"Failed to generate thumbnail for mesh " + path);

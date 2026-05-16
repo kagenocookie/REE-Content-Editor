@@ -32,7 +32,7 @@ public class NavmeshBakerUI(Scene baseScene, FileHandle mapFileHandle, UIContext
 
     public override void OnIMGUI()
     {
-        ImGui.Text("Base scene: " + BaseScene.InternalPath);
+        ImGui.Text("Base scene: " + BaseScene.ResourcePath);
         ImGui.Text("Map file: " + File.Filepath);
         if (ImGui.Button("Open Map File")) {
             EditorWindow.CurrentWindow?.AddFileEditor(File);
@@ -58,7 +58,7 @@ public class NavmeshBakerUI(Scene baseScene, FileHandle mapFileHandle, UIContext
         }
         if (sceneList.Count == 0) {
             sceneList.AddRange(BaseScene.RootScene.NestedScenes);
-            sceneLabels = sceneList.Select(sc => sc.InternalPath).ToArray();
+            sceneLabels = sceneList.Select(sc => sc.ResourcePath).ToArray();
         }
 
         ImGui.SameLine();

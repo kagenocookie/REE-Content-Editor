@@ -78,7 +78,7 @@ public class RE9CharacterSpawnParam(GameObject gameObject, RszInstance data) : B
     {
         lastPresetId = presetId;
         var baseType = kind[0..5];
-        var catalogPath = $"natives/stm/gameassets/character/characterprefab/{baseType}/{kind}/montage/{kind}montagepresetcataloguserdata.user.3";
+        var catalogPath = $"gameassets/character/characterprefab/{baseType}/{kind}/montage/{kind}montagepresetcataloguserdata.user.3";
         if (Scene!.Workspace.ResourceManager.TryResolveGameFile(catalogPath, out var user)) {
             var list = (user.GetFile<UserFile>().Instance?
                 .Get(RszFieldCache.RE9.CharacterMontagePresetCatalogUserData._Presets))?.Cast<RszInstance>();

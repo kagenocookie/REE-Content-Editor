@@ -24,12 +24,12 @@ public class DropItem(GameObject gameObject, RszInstance data) : BaseMultiMeshCo
     }
 
     private static readonly string[] CatalogPaths = [
-        "natives/stm/_chainsaw/environment/catalog/item/dropitemcataloguserdata_main.user.2",
-        "natives/stm/_chainsaw/environment/catalog/item/dropitemcataloguserdata_1st.user.2",
-        "natives/stm/_mercenaries/environment/catalog/item/dropitemcataloguserdata_mc.user.2",
-        "natives/stm/_anotherorder/environment/catalog/item/dropitemcataloguserdata_ao.user.2",
-        "natives/stm/_anotherorder/environment/catalog/item/dropitemcataloguserdata_main_ovr.user.2",
-        "natives/stm/_anotherorder/environment/catalog/item/dropitemcataloguserdata_1st_ovr.user.2",
+        "_chainsaw/environment/catalog/item/dropitemcataloguserdata_main.user.2",
+        "_chainsaw/environment/catalog/item/dropitemcataloguserdata_1st.user.2",
+        "_mercenaries/environment/catalog/item/dropitemcataloguserdata_mc.user.2",
+        "_anotherorder/environment/catalog/item/dropitemcataloguserdata_ao.user.2",
+        "_anotherorder/environment/catalog/item/dropitemcataloguserdata_main_ovr.user.2",
+        "_anotherorder/environment/catalog/item/dropitemcataloguserdata_1st_ovr.user.2",
     ];
 
     private void SetObjectID(int hash)

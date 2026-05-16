@@ -154,18 +154,18 @@ public class Patcher : IDisposable
         var needsSubPak = StoreGDeflateTexturesAsSubPak && Env.RequiresSubPaksForTextures;
         var hasTextures = false;
         foreach (var file in workspace!.ResourceManager.GetModifiedResourceFiles()) {
-            var nativePath = file.NativePath ?? file.Filepath;
+            var targetPath = file.TargetPath ?? file.Filepath;
             string fileOutput;
             if (needsSubPak && file.Format.format == KnownFileFormats.Texture) {
                 hasTextures = true;
-                fileOutput = Path.Combine(outputDirSub, nativePath);
+                fileOutput = Path.Combine(outputDirSub, workspace.Env.PrependBasePath(targetPath));
             } else {
-                fileOutput = Path.Combine(outputDirMain, nativePath);
+                fileOutput = Path.Combine(outputDirMain, workspace.Env.PrependBasePath(targetPath));
             }
 
             Directory.CreateDirectory(Path.GetDirectoryName(fileOutput)!);
             file.Loader.Save(workspace, file, fileOutput);
-            patch.Resources[nativePath] = new PatchedResourceMetadata() {
+            patch.Resources[targetPath] = new PatchedResourceMetadata() {
                 TargetFilepath = fileOutput,
                 SourceFilepath = file.Filepath,
             };
@@ -343,7 +343,7 @@ public class Patcher : IDisposable
     private sealed class PatchedResourceMetadata
     {
         /// <summary>
-        /// The target filepath of this resource. This is the fully qualified path for the game's filesystem, e.g. "natives/stm/file.user.2".
+        /// The output filepath of this resource. This is the fully qualified absolute path, e.g. "C:/games/RE4/natives/stm/file.user.2".
         /// </summary>
         public required string TargetFilepath { get; init; }
         /// <summary>

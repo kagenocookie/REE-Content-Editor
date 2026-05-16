@@ -20,6 +20,7 @@ public sealed class ContentWorkspace : IDisposable
     public DiffHandler Diff { get; }
     public MessageManager Messages { get; }
     public GameIdentifier Game => Env.Config.Game;
+    public PlatformIdentifier Platform => Env.Config.Platform;
     public UIService UI { get; set; } = new UIServiceStub();
     public string VersionHash { get; private set; }
 
@@ -240,7 +241,7 @@ public sealed class ContentWorkspace : IDisposable
 
     private static void TryExecuteDiff(Bundle bundle, FileHandle file)
     {
-        if (file.NativePath != null && bundle.TryFindResourceByNativePath(file.NativePath, out var localPath) && file.DiffHandler != null) {
+        if (file.TargetPath != null && bundle.TryFindResourceByTargetPath(file.TargetPath, out var localPath) && file.DiffHandler != null) {
             var resourceListing = bundle.ResourceListing![localPath];
             try {
                 var newdiff = file.DiffHandler.FindDiff(file);
@@ -249,7 +250,7 @@ public sealed class ContentWorkspace : IDisposable
                 }
                 resourceListing.DiffTime = DateTime.UtcNow;
             } catch (Exception e) {
-                Logger.Error(e, $"Failed to generate file diff {file.NativePath} (bundle local path: {localPath})");
+                Logger.Error(e, $"Failed to generate file diff {file.TargetPath} (bundle local path: {localPath})");
             }
         }
     }
@@ -292,7 +293,7 @@ public sealed class ContentWorkspace : IDisposable
             SetBundle(null);
         }
         var bundleJsonPath = Path.Combine(bundlePath, "bundle.json");
-        var bundle = BundleManager.GetBundle(bundleName, null) ?? new Bundle() { StorageFolder = bundlePath };
+        var bundle = BundleManager.GetOrCreateBundle(bundleName, bundlePath);
         bundle.Name = bundleName;
         var modIni = Path.Combine(bundlePath, "modinfo.ini");
         if (File.Exists(modIni)) {
@@ -315,6 +316,7 @@ public sealed class ContentWorkspace : IDisposable
                 data.StorageFolder = bundle.StorageFolder;
                 bundle = data;
                 bundle.Name = bundleName;
+                bundle.UpgradeBundleDataIfNeeded(BundleManager);
                 hasPreviousBundleData = true;
             }
         }
@@ -353,7 +355,7 @@ public sealed class ContentWorkspace : IDisposable
             if (localFile.StartsWith("natives/")) {
                 bundle.ResourceListing ??= new();
                 bundle.ResourceListing[localFile] = new ResourceListItem() {
-                    Target = localFile.ToLowerInvariant(),
+                    Target = Env.RemoveBasePath(localFile).ToString().ToLowerInvariant(),
                 };
             } else if (localFile.StartsWith("reframework/data/usercontent/bundles/") && localFile.EndsWith(".json")) {
                 Logger.Error("Found nested bundle file, the mod was not installed correctly. Aborting.\nFile: " + file);
@@ -378,17 +380,16 @@ public sealed class ContentWorkspace : IDisposable
                 }
                 bundle.ResourceListing ??= new();
                 bundle.ResourceListing[localFile] = new ResourceListItem() {
-                    Target = nativePath.ToLowerInvariant(),
+                    Target = Env.RemoveBasePath(nativePath.NormalizeFilepath()).ToString().ToLowerInvariant(),
                 };
                 if (!isProbablyCorrect) {
-                    Logger.Warn("Resource file at the bundle root. Unable to guarantee correctly determined native path. Please recheck the generated bundle json.\nFile: " + localFile);
+                    Logger.Warn("Resource file at the bundle root. Unable to guarantee correctly determined native path. Please recheck the generated bundle file list.\nFile: " + localFile);
                 }
             }
         }
 
         bundle.Touch();
-        BundleManager.ActiveBundles.Add(bundle);
-        BundleManager.AllBundles.Add(bundle);
+        BundleManager.SetBundleActive(bundle, true);
         SetBundle(bundle.Name);
         SaveBundle(true);
         BundleManager.UninitializedBundleFolders.Remove(bundlePath);
@@ -400,14 +401,14 @@ public sealed class ContentWorkspace : IDisposable
         var folder = BundleManager.GetBundleFolder(bundle);
         var filesAdded = false;
         foreach (var file in Directory.EnumerateFiles(folder, "*.*", SearchOption.AllDirectories)) {
-            var localPath = Path.GetRelativePath(folder, file).Replace('\\', '/');
+            var localPath = Path.GetRelativePath(folder, file).NormalizeFilepath();
             if (!bundle.TryFindResourceByLocalPath(localPath, out var item)) {
                 var format = PathUtils.ParseFileFormat(localPath);
                 if (format.format != KnownFileFormats.Unknown) {
                     Logger.Info($"Found new file in active bundle {localPath}, adding to bundle");
                     if (ResourceManager.TryForceLoadFile(file, out var handle)) {
                         handle.Dispose();
-                        bundle.AddResource(localPath, PathUtils.GetNativeFromFullFilepath(localPath) ?? Env.PrependBasePath(localPath), true);
+                        bundle.AddResource(localPath, Env.RemoveBasePath(localPath).ToString(), true);
                         filesAdded = true;
                     } else {
                         Logger.Warn($"Unable to open new bundle file {localPath}, ignoring");

@@ -451,7 +451,7 @@ public class BundleManagementUI : IWindowHandler
 
             ShowOpenInEditorButton(node, bundle, entry);
             ImGui.SameLine();
-            ShowEditNativesPathButton(entry, bundle);
+            ShowEditTargetPathButton(entry, bundle);
             ImGui.SameLine();
             using (var __ = ImguiHelpers.Disabled(!(entry?.Diff != null && showDiff != null && entry.Diff is JsonObject odiff && odiff.Count > 1))) {
                 if (ImGui.Button($"{AppIcons.SI_FileChanges}")) {
@@ -518,31 +518,30 @@ public class BundleManagementUI : IWindowHandler
             ImguiHelpers.Tooltip("Open file in Editor");
         }
     }
-    private void ShowEditNativesPathButton(ResourceListItem? entry, Bundle bundle)
+    private void ShowEditTargetPathButton(ResourceListItem? entry, Bundle bundle)
     {
         string? target = entry?.Target;
         using (var _ = ImguiHelpers.Disabled(target == null)) {
             if (ImGui.Button($"{AppIcons.SI_FileSource}")) {
-                ImGui.OpenPopup("EditNativesPath");
+                ImGui.OpenPopup("EditTargetPath");
             }
             ImguiHelpers.TooltipColored(target ?? "", Colors.Faded);
         }
 
-        ShowEditNativesPathPopup(entry, bundle);
+        ShowEditTargetPathPopup(entry, bundle);
     }
-    private void ShowEditNativesPathPopup(ResourceListItem? entry, Bundle bundle)
+    private void ShowEditTargetPathPopup(ResourceListItem? entry, Bundle bundle)
     {
         if (entry == null) return;
 
         string target = entry.Target;
-        if (ImGui.BeginPopup("EditNativesPath")) {
-            ImGui.SeparatorText("Edit Natives Path");
+        if (ImGui.BeginPopup("EditTargetPath")) {
+            ImGui.SeparatorText("Edit Target Path");
             ImGui.SetNextItemWidth(ImGui.CalcTextSize(target).X + 15);
             if (ImGui.InputText("##target", ref target, 512)) {
-                entry.Target = target.ToLowerInvariant();
-            }
-            if (!target.StartsWith("natives/", StringComparison.OrdinalIgnoreCase)) {
-                ImGui.TextColored(Colors.Warning, "Invalid natives path! This won't work!\nThe path needs to start with natives/x64/, natives/stm/, natives/egs/, ... depending on game and platform.");
+                var workspace = context.GetWorkspace();
+                entry.Target = workspace?.Env.GetTargetPath(target).ToLowerInvariant()
+                    ?? PathUtils.RemovePlatformPrefix(target).ToString().ToLowerInvariant();
             }
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_Save}")) {
@@ -556,6 +555,7 @@ public class BundleManagementUI : IWindowHandler
                 ImGui.CloseCurrentPopup();
             }
             ImguiHelpers.Tooltip("Cancel");
+            ImGui.TextColored(Colors.Note, "The final target file path this file should read as.\nThe platform specific natives/stm/ prefix will be automatically added\nduring patching or publishing and does not need to be included here."u8);
             ImGui.EndPopup();
         }
     }

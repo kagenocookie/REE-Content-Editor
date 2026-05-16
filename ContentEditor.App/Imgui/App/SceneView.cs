@@ -83,10 +83,10 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
             if (Scene.HasRenderables) {
                 // the texture handle gets assigned immediately before the first render
                 // that means it won't be available until all required resources load in
-                ImGui.Text($"Loading scene {Scene.InternalPath ?? Scene.Name} ...");
+                ImGui.Text($"Loading scene {Scene.ResourcePath ?? Scene.Name} ...");
             } else {
                 using var _ = ImguiHelpers.OverrideStyleCol(ImGuiCol.Text, Colors.Warning);
-                ImguiHelpers.TextCentered($"Scene {Scene.InternalPath ?? Scene.Name} has no 3D content");
+                ImguiHelpers.TextCentered($"Scene {Scene.ResourcePath ?? Scene.Name} has no 3D content");
             }
             return;
         }
@@ -102,9 +102,9 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
         var hoveredMesh = ImGui.IsItemHovered();
 
         if (!Scene.HasRenderables) {
-            var text = $"Scene {Scene.InternalPath ?? Scene.Name} has no 3D content";
+            var text = $"Scene {Scene.ResourcePath ?? Scene.Name} has no 3D content";
             var textSize = ImGui.CalcTextSize(text);
-            ImGui.GetWindowDrawList().AddText(cc + new Vector2(expectedSize.X / 2 - textSize.X / 2, 0), ImGui.ColorConvertFloat4ToU32(Colors.Warning), $"Scene {Scene.InternalPath ?? Scene.Name} has no 3D content");
+            ImGui.GetWindowDrawList().AddText(cc + new Vector2(expectedSize.X / 2 - textSize.X / 2, 0), ImGui.ColorConvertFloat4ToU32(Colors.Warning), $"Scene {Scene.ResourcePath ?? Scene.Name} has no 3D content");
         }
 
         if (meshClick) {
@@ -194,7 +194,7 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
 
     private void ShowEditModesMenu()
     {
-        var canReopenScene = !string.IsNullOrEmpty(Scene.InternalPath) || File.Exists(Scene.Name);
+        var canReopenScene = !string.IsNullOrEmpty(Scene.ResourcePath) || File.Exists(Scene.Name);
         using (var _ = ImguiHelpers.Disabled(!canReopenScene)) {
             if (ImGui.MenuItem($"{AppIcons.SI_SceneParentGameObject}")) {
                 EditorWindow.CurrentWindow?.OpenSceneFileEditor(Scene);
@@ -237,12 +237,12 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
                                 ImGui.PushID(i++);
                                 if (mode == activeEditMode && editable == activeEditMode.Target) {
                                     ImGui.PushStyleColor(ImGuiCol.Text, Colors.TextActive);
-                                    if (ImGui.MenuItem(comp.GameObject.Path + " | " + comp.Scene?.InternalPath)) {
+                                    if (ImGui.MenuItem(comp.GameObject.Path + " | " + comp.Scene?.ResourcePath)) {
                                         Scene.Root.DisableEditMode();
                                     }
                                     ImGui.PopStyleColor();
                                 } else {
-                                    if (ImGui.MenuItem(comp.GameObject.Path + " | " + comp.Scene?.InternalPath)) {
+                                    if (ImGui.MenuItem(comp.GameObject.Path + " | " + comp.Scene?.ResourcePath)) {
                                         Scene.Root.SetEditMode(editable);
                                     }
                                 }

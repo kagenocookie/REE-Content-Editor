@@ -713,7 +713,7 @@ public class FileSearchWindow : IWindowHandler
         } else if (cls.fields[fieldIndex].type is RszFieldType.String or RszFieldType.RuntimeType or RszFieldType.Resource) {
             equalityComparer = (object? a, object? b) => (a as string)?.Equals(b as string, StringComparison.InvariantCultureIgnoreCase) == true;
         } else if (cls.fields[fieldIndex].type is RszFieldType.UserData) {
-            if (context.Env.IsEmbeddedUserdata) {
+            if (context.Env.UsesEmbeddedUserdata) {
                 var hash = MurMur3HashUtils.GetHash((string)value!);
                 equalityComparer = (object? a, object? b) => ((a as RszInstance)?.RSZUserData as RSZUserDataInfo_TDB_LE_67)?.jsonPathHash == hash;
             } else {
@@ -870,7 +870,7 @@ public class FileSearchWindow : IWindowHandler
         if (fieldTypes.Contains(RszFieldType.String)) {
             equalityComparer = (object? a, object? b) => (a as string)?.Equals(b as string, StringComparison.InvariantCultureIgnoreCase) == true;
         } else if (fieldTypes.Contains(RszFieldType.UserData)) {
-            if (context.Env.IsEmbeddedUserdata) {
+            if (context.Env.UsesEmbeddedUserdata) {
                 var hash = MurMur3HashUtils.GetHash((string)queryValue!);
                 equalityComparer = (object? a, object? b) => ((a as RszInstance)?.RSZUserData as RSZUserDataInfo_TDB_LE_67)?.jsonPathHash == hash;
             } else {

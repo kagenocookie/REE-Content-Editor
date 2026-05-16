@@ -1,3 +1,4 @@
+using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Internal;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
@@ -413,7 +414,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImguiKeybinding("Decrease Playback Speed", config.Key_UVS_DecreaseSpeed);
     }
 
-    private static void ShowGamesResidentEvilTab()
+    private void ShowGamesResidentEvilTab()
     {
         ImGui.Spacing();
         var reGames = Enum.GetValues<GameName>().Where(g => g.ToString().StartsWith("re")).ToList();
@@ -422,7 +423,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         }
         ImGui.Separator();
     }
-    private static void ShowGamesMonsterHunterTab()
+    private void ShowGamesMonsterHunterTab()
     {
         ImGui.Spacing();
         var mhGames = Enum.GetValues<GameName>().Where(g => g.ToString().StartsWith("mh")).ToList();
@@ -431,7 +432,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         }
         ImGui.Separator();
     }
-    private static void ShowGamesOtherTab()
+    private void ShowGamesOtherTab()
     {
         ImGui.Spacing();
         var otherGames = Enum.GetValues<GameName>().Where(g => g != GameName.unknown && !g.ToString().StartsWith("re") && !g.ToString().StartsWith("mh")).OrderBy(g => g.ToString());
@@ -459,7 +460,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             ShowGameSpecificMenu(game, true);
         }
     }
-    private static void ShowGameSpecificMenu(string gameShortName, bool isCustom = false)
+    private void ShowGameSpecificMenu(string gameShortName, bool isCustom = false)
     {
         GameIdentifier game = gameShortName;
         if (ImGui.TreeNodeEx(Languages.TranslateGame(game.name), ImGuiTreeNodeFlags.Framed)) {
@@ -481,7 +482,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             ImguiHelpers.Tooltip("The full path to the game. Should point to the folder containing the .exe and .pak files");
 
             if (AppImguiHelpers.InputFolder("Game Extract Path", ref extractPath)) {
-                extractPath = PathUtils.RemoveNativesFolder(extractPath);
+                extractPath = PathUtils.RemoveNativesFolder(extractPath.NormalizeFilepath(), context.GetWorkspace()?.Platform ?? PlatformIdentifier.GetDefaultIdentifier(game)).ToString();
                 config.SetGameExtractPath(game, extractPath);
             }
             ImguiHelpers.Tooltip("The default path to preselect when extracting files.");

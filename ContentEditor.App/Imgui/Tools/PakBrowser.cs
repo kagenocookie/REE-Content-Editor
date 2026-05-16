@@ -109,7 +109,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
 
         var extractList = currentList;
         if (selectedPath.StartsWith(PakReader.UnknownFilePathPrefix)) {
-            extractList = new ListFileWrapper(reader.UnknownFilePaths);
+            extractList = new ListFileWrapper(reader.UnknownFilePaths, contentWorkspace.Platform);
         }
 
         try {
@@ -150,7 +150,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         var list = workspace.Env.ListFile;
         if (list == null || workspace.CurrentBundle?.ResourceListing == null) return list;
 
-        return new ListFileWrapper(list.Files.Concat(workspace.CurrentBundle.ResourceListing.Values.Select(v => v.Target)), true);
+        return new ListFileWrapper(list.Files.Concat(workspace.CurrentBundle.ResourceListing.Values.Select(v => v.Target)), workspace.Platform, true);
     }
     public void OnIMGUI()
     {
@@ -196,7 +196,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
                 }
 
                 reader.CacheEntries(true);
-                currentList = new ListFileWrapper(reader.CachedPaths);
+                currentList = new ListFileWrapper(reader.CachedPaths, contentWorkspace.Platform);
                 hasInvalidatedPaks = reader.FileExists(0);
             }
         }
@@ -751,7 +751,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         try {
             if (PathUtils.ParseFileFormat(file).format == KnownFileFormats.Mesh && file.Contains("/streaming")) {
                 Logger.Warn("Attempted to open streaming mesh. Opening the main non-streaming mesh instead.");
-                file = PathUtils.GetNonStreamingNativePath(file);
+                file = PathUtils.GetNonStreamingPath(file).ToString();
             }
 
             if (PakFilePaths == null) {
@@ -1010,9 +1010,10 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
     private bool IsFileOrFolderInBundle(string path)
     {
         if (contentWorkspace.CurrentBundle?.ResourceListing == null) return false;
+        path = Workspace.RemoveBasePath(path).ToString();
 
         if (Path.HasExtension(path)) {
-            return contentWorkspace.CurrentBundle.TryFindResourceByNativePath(path, out _);
+            return contentWorkspace.CurrentBundle.TryFindResourceByTargetPath(path, out _);
         }
 
         foreach (var p in contentWorkspace.CurrentBundle.ResourceListing) {
