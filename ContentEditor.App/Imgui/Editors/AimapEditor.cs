@@ -61,7 +61,7 @@ public class AimpHeaderEditor : IObjectUIHandler
             context.AddChild<AimpHeader, MapType>("Map Type", rset, getter: (i) => i!.mapType, setter: (i, v) => i.mapType = v).AddDefaultHandler<MapType>();
             context.AddChild<AimpHeader, SectionType>("Section Type", rset, getter: (i) => i!.sectionType, setter: (i, v) => i.sectionType = v).AddDefaultHandler<SectionType>();
             context.AddChild<AimpHeader, float>("Agent Rad When Build", rset, getter: (i) => i!.agentRadWhenBuild, setter: (i, v) => i.agentRadWhenBuild = v).AddDefaultHandler<float>();
-            context.AddChild<AimpHeader, int>("uknId", rset, getter: (i) => i!.uknId, setter: (i, v) => i.uknId = v).AddDefaultHandler<int>();
+            context.AddChild<AimpHeader, MapStructure>("Map Structure", rset, getter: (i) => i!.mapStructure, setter: (i, v) => i.mapStructure = v).AddDefaultHandler<MapStructure>();
         }
 
         context.ShowChildrenUI();

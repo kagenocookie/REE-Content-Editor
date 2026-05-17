@@ -50,7 +50,11 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 
     static MotlistEditor()
     {
-        static ClipVersion GetVersionFromContext(UIContext ctx) => ctx.FindValueInParentValues<EmbeddedClip>()?.Version ?? ctx.FindValueInParentValues<TimelineTrackGroup>()?.Version ?? ClipVersion.MHWilds;
+        static ClipVersion GetVersionFromContext(UIContext ctx) =>
+            ctx.FindValueInParentValues<EmbeddedClip>()?.Version
+            ?? ctx.FindValueInParentValues<TimelineTrackGroup>()?.Version
+            ?? ctx.FindValueInParentValues<MotClip>()?.ClipEntry.Header.version
+            ?? ClipVersion.MHWilds;
 
         WindowHandlerFactory.DefineInstantiator<TracksData>((ctx) => new TracksData() { Version = GetVersionFromContext(ctx) });
         WindowHandlerFactory.DefineInstantiator<ClipTrack>((ctx) => new ClipTrack(GetVersionFromContext(ctx)));

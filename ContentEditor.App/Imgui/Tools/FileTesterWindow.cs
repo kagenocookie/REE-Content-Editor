@@ -532,6 +532,7 @@ public partial class FileTesterWindow : IWindowHandler
             case KnownFileFormats.CollisionShapePreset: return VerifyRewriteEquality<ClspFile>(source.GetFile<ClspFile>(), env);
             case KnownFileFormats.CollisionSkinningMesh: return VerifyRewriteEquality<ClsmFile>(source.GetFile<ClsmFile>(), env);
             case KnownFileFormats.GpuCloth: return VerifyRewriteEquality<GpucFile>(source.GetFile<GpucFile>(), env);
+            case KnownFileFormats.ShellFur: return VerifyRewriteEquality<SfurFile>(source.GetFile<SfurFile>(), env);
             default: return null;
         }
     }
@@ -702,7 +703,7 @@ public partial class FileTesterWindow : IWindowHandler
 
         AddCompareMapper<McolFile>((m) => [m.bvh]);
         AddCompareMapper<CocoFile>((m) => [m.CollisionMeshPaths, m.Trees]);
-        AddCompareMapper<ReeLib.Aimp.AimpHeader>((m) => [m.agentRadWhenBuild, m.hash, m.mapId.guid, m.mapType, m.name, m.uknId, m.sectionType]);
+        AddCompareMapper<ReeLib.Aimp.AimpHeader>((m) => [m.agentRadWhenBuild, m.hash, m.mapId.guid, m.mapType, m.name, m.mapStructure, m.sectionType]);
 
         AddCompareMapper<Motfsm2File>((m) => [m.BhvtFile, m.TransitionDatas, m.TransitionMaps]);
         AddCompareMapper<BhvtFile>((m) => [m.Header.hash, m.RootNode, m.UserVariables, m.SubVariables, m.GameObjectReferences,
