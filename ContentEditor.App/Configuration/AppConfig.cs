@@ -100,6 +100,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string Key_UVS_IncreaseSpeed = "key_uvs_increasespeed";
         public const string Key_UVS_DecreaseSpeed = "key_uvs_decreasespeed";
 
+        public const string Platform = "platform";
         public const string Gamepath = "game_path";
         public const string GameExePath = "game_exe_path";
         public const string GameExtractPath = "game_extract_path";
@@ -109,6 +110,7 @@ public class AppConfig : Singleton<AppConfig>
 
     private class AppGameConfig
     {
+        public Platform platform;
         public string gamepath = string.Empty;
         public string gameExe = string.Empty;
         public string? gameExtractPath;
@@ -285,6 +287,8 @@ public class AppConfig : Singleton<AppConfig>
     public void SetGameFilelist(GameIdentifier game, string path) => SetForGameAndSave(game.name, path, (cfg, val) => cfg.filelist = val);
     public string? GetGameExecutablePath(GameIdentifier game) => _lock.Read(() => gameConfigs.GetValueOrDefault(game.name)?.gameExe);
     public void SetGameExecutablePath(GameIdentifier game, string path) => SetForGameAndSave(game.name, path, (cfg, val) => cfg.gameExe = val);
+    public Platform GetGamePlatform(GameIdentifier game) => _lock.Read(() => gameConfigs.GetValueOrDefault(game.name)?.platform ?? Platform.Unknown);
+    public void SetGamePlatform(GameIdentifier game, Platform platformId) => SetForGameAndSave(game.name, platformId, (cfg, val) => cfg.platform = val);
 
     public string GetGameUserPath(GameIdentifier game) => Path.Combine(BookmarksFilepath.Get() ?? Path.Combine(AppDataPath, "thumbs"), game.name);
     public string LuaUserPath => Path.Combine(BookmarksFilepath.Get() ?? AppDataPath, "lua");
@@ -445,6 +449,9 @@ public class AppConfig : Singleton<AppConfig>
         foreach (var (game, data) in instance.gameConfigs) {
             if (!string.IsNullOrEmpty(data.gamepath)) {
                 items.Add((Keys.Gamepath, data.gamepath, game));
+            }
+            if (data.platform != Platform.Unknown) {
+                items.Add((Keys.Platform, data.platform.ToString(), game));
             }
             if (!string.IsNullOrEmpty(data.gameExe)) {
                 items.Add((Keys.GameExePath, data.gameExe, game));
@@ -687,6 +694,13 @@ public class AppConfig : Singleton<AppConfig>
                     }
 
                     switch (key) {
+                        case Keys.Platform:
+                            if (Enum.TryParse<Platform>(value, out var platformId)) {
+                                config.platform = (PlatformIdentifier)platformId;
+                            } else {
+                                config.platform = PlatformIdentifier.IsX64Game(((GameIdentifier)group).GameEnum) ? Platform.X64 : Platform.Steam;
+                            }
+                            break;
                         case Keys.Gamepath:
                             config.gamepath = value;
                             break;

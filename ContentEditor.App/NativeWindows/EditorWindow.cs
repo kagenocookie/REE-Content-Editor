@@ -286,6 +286,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
 
         workspace.Env.Config.Platform = platform;
+        AppConfig.Instance.SetGamePlatform(workspace.Game, platform.id);
         // force reload/close anything that needs to know the platform
         foreach (var wnd in subwindows) {
             if (wnd.Handler is PakBrowser pakb) {

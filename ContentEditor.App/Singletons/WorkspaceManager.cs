@@ -18,6 +18,10 @@ public class WorkspaceManager : Singleton<WorkspaceManager>
             var filelist = AppConfig.Instance.GetGameFilelist(game);
             if (!string.IsNullOrEmpty(rszPath)) workspace.Instance.Config.Resources.LocalPaths.RszPatchFiles = [rszPath];
             if (!string.IsNullOrEmpty(filelist)) workspace.Instance.Config.Resources.LocalPaths.FileList = filelist;
+            workspace.Instance.Config.Platform = AppConfig.Instance.GetGamePlatform(game);
+            if (workspace.Instance.Config.Platform.id == Platform.Unknown) {
+                workspace.Instance.Config.Platform = PlatformIdentifier.IsX64Game(game) ? PlatformIdentifier.X64 : PlatformIdentifier.Steam;
+            }
         }
 
         workspace.AddRef();
