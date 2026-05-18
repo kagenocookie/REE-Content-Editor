@@ -19,7 +19,6 @@ public class LuaReflectionObject(object obj) : ILuaUserData, ILuaObjectWrapper
 
     private static readonly HashSet<Type> reflectionIgnoredTypes = [typeof(FileHandler), typeof(RszFileOption), typeof(RszParser), typeof(RszClass)];
     private static readonly HashSet<(Type type, string field)> ignoredFields = [
-        (typeof(BaseModel), nameof(BaseModel.Size)),
         (typeof(BaseModel), nameof(BaseModel.Start)),
         (typeof(BaseFile), nameof(BaseFile.Size)),
         (typeof(BaseFile), nameof(BaseFile.Embedded)),

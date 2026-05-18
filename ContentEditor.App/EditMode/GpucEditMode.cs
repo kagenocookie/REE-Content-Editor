@@ -14,7 +14,6 @@ public class GpucEditMode : EditModeHandler
 
     private UIContext? filePicker;
     private string filePath = "";
-    private string clspPath = "";
     protected UIContext? context;
 
     protected override void OnTargetChanged(Component? previous)
