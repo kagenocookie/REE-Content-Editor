@@ -126,12 +126,12 @@ public sealed class ContentWorkspace : IDisposable
             WindowManager.Instance.ShowError($"Bundle '{Data.ContentBundle}' not found!");
             return;
         }
-        if (bundle.ResourceListing != null) {
+        if (bundle.HasResources) {
             // update the diffs for all open bundle resource files that are part of the bundle
             // we don't check for file.Modified because it can be marked as false but still be different from the current diff
             // e.g. if we manually replaced the file or undo'ed our changes
             if (forceDiffAllFiles) {
-                foreach (var (localPath, info) in bundle.ResourceListing) {
+                foreach (var info in bundle.Resources) {
                     FileHandle? file;
                     try {
                         file = ResourceManager.GetFileHandle(info.Target);
@@ -241,8 +241,7 @@ public sealed class ContentWorkspace : IDisposable
 
     private static void TryExecuteDiff(Bundle bundle, FileHandle file)
     {
-        if (file.TargetPath != null && bundle.TryFindResourceByTargetPath(file.TargetPath, out var localPath) && file.DiffHandler != null) {
-            var resourceListing = bundle.ResourceListing![localPath];
+        if (file.TargetPath != null && bundle.TryFindResource(file.TargetPath, out var resourceListing, out var localPath) && file.DiffHandler != null) {
             try {
                 var newdiff = file.DiffHandler.FindDiff(file);
                 if (newdiff?.ToJsonString() != resourceListing.Diff?.ToJsonString()) {
@@ -316,7 +315,7 @@ public sealed class ContentWorkspace : IDisposable
                 data.StorageFolder = bundle.StorageFolder;
                 bundle = data;
                 bundle.Name = bundleName;
-                bundle.UpgradeBundleDataIfNeeded(BundleManager);
+                bundle.Init(BundleManager);
                 hasPreviousBundleData = true;
             }
         }
@@ -324,7 +323,6 @@ public sealed class ContentWorkspace : IDisposable
         var bundlePathNorm = bundlePath.NormalizeFilepath();
         if (!hasPreviousBundleData) {
             bundle.GameVersion = VersionHash;
-            bundle.ResourceListing ??= new();
             foreach (var file in Directory.EnumerateFiles(bundlePath, "*.pak")) {
                 if (file.EndsWith(".pak")) {
                     Logger.Info("Unpacking PAK file: " + file);
@@ -353,10 +351,7 @@ public sealed class ContentWorkspace : IDisposable
             }
 
             if (localFile.StartsWith("natives/")) {
-                bundle.ResourceListing ??= new();
-                bundle.ResourceListing[localFile] = new ResourceListItem() {
-                    Target = Env.RemoveBasePath(localFile).ToString().ToLowerInvariant(),
-                };
+                bundle.AddResource(localFile, Env.RemoveBasePath(localFile).ToString(), true);
             } else if (localFile.StartsWith("reframework/data/usercontent/bundles/") && localFile.EndsWith(".json")) {
                 Logger.Error("Found nested bundle file, the mod was not installed correctly. Aborting.\nFile: " + file);
                 // we'll need a different flow for upgrading legacy DD2 bundles, as well as some sort of migration of legacy data
@@ -378,10 +373,7 @@ public sealed class ContentWorkspace : IDisposable
                     }
                     listfile.ResetResultCache();
                 }
-                bundle.ResourceListing ??= new();
-                bundle.ResourceListing[localFile] = new ResourceListItem() {
-                    Target = Env.RemoveBasePath(nativePath.NormalizeFilepath()).ToString().ToLowerInvariant(),
-                };
+                bundle.AddResource(localFile, Env.RemoveBasePath(localFile).ToString(), true);
                 if (!isProbablyCorrect) {
                     Logger.Warn("Resource file at the bundle root. Unable to guarantee correctly determined native path. Please recheck the generated bundle file list.\nFile: " + localFile);
                 }
@@ -402,13 +394,34 @@ public sealed class ContentWorkspace : IDisposable
         var filesAdded = false;
         foreach (var file in Directory.EnumerateFiles(folder, "*.*", SearchOption.AllDirectories)) {
             var localPath = Path.GetRelativePath(folder, file).NormalizeFilepath();
-            if (!bundle.TryFindResourceByLocalPath(localPath, out var item)) {
+            if (bundle.TryFindResourceByLocalPath(localPath, out var item, out var storedLocalPath)) {
+                if (storedLocalPath != localPath) {
+                    if (!OperatingSystem.IsWindows() && File.Exists(Path.Combine(folder, storedLocalPath))) {
+                        Logger.Warn($"""
+                            Found files in bundle with only difference in casing:
+                            Previous path: {storedLocalPath}
+                            New path: {localPath}
+
+                            This is not supported and only one file will be resolved.
+                            """);
+                    } else {
+                        Logger.Info($"""
+                            Updating file path casing:
+                            Previous path: {storedLocalPath}
+                            New path: {localPath}
+                            """);
+                        bundle.AddResource(localPath, item.Target, item.Replace);
+                        filesAdded = true;
+                    }
+                }
+            } else {
                 var format = PathUtils.ParseFileFormat(localPath);
                 if (format.format != KnownFileFormats.Unknown) {
                     Logger.Info($"Found new file in active bundle {localPath}, adding to bundle");
                     if (ResourceManager.TryForceLoadFile(file, out var handle)) {
                         handle.Dispose();
-                        bundle.AddResource(localPath, Env.RemoveBasePath(localPath).ToString(), true);
+                        var originalTargetPath = Env.ListFile?.GetFiles(localPath).FirstOrDefault();
+                        bundle.AddResource(localPath, Env.RemoveBasePath(originalTargetPath ?? localPath).ToString(), true);
                         filesAdded = true;
                     } else {
                         Logger.Warn($"Unable to open new bundle file {localPath}, ignoring");
@@ -418,10 +431,10 @@ public sealed class ContentWorkspace : IDisposable
         }
 
         var filesMissing = false;
-        foreach (var entry in bundle.ResourceListing ?? []) {
-            var fullPath = Path.Combine(folder, entry.Key);
+        foreach (var localPath in bundle.ResourceLocalPaths) {
+            var fullPath = Path.Combine(folder, localPath);
             if (!File.Exists(fullPath)) {
-                Logger.Warn($"File {entry.Key} is missing from the bundle folder and may have been deleted or moved manually. If this was intended, you can delete it properly from the bundle manager.");
+                Logger.Warn($"File {localPath} is missing from the bundle folder and may have been deleted or moved manually. If this was intended, you can delete it properly from the bundle manager.");
                 filesMissing = true;
             }
         }

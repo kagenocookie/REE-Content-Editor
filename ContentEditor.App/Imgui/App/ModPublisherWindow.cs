@@ -91,35 +91,35 @@ public class ModPublisherWindow : IWindowHandler
 
             ImGui.TreePop();
         }
-        if (bundle.ResourceListing?.Count > 0 && ImGui.TreeNode("Files")) {
-            foreach (var e in bundle.ResourceListing) {
-                ImGui.PushID(e.Key);
+        if (bundle.HasResources && ImGui.TreeNode("Files")) {
+            foreach (var (localPath, resource) in bundle.ResourcesEntries) {
+                ImGui.PushID(localPath);
                 if (ImGui.Button("Open")) {
-                    var path = Workspace.BundleManager.ResolveBundleLocalPath(bundle, e.Key);
-                    if (!File.Exists(path)) {
-                        window.OpenFiles([e.Value.Target]);
+                    var fullPath = Workspace.BundleManager.ResolvePathToBundleFile(bundle, localPath);
+                    if (!File.Exists(fullPath)) {
+                        window.OpenFiles([resource.Target]);
                     } else {
-                        window.OpenFiles([path]);
+                        window.OpenFiles([fullPath]);
                     }
                 }
                 ImGui.SameLine();
 
-                if (e.Value.Diff != null && (e.Value.Diff is JsonObject odiff && odiff.Count > 1)) {
+                if (resource.Diff != null && (resource.Diff is JsonObject odiff && odiff.Count > 1)) {
                     if (ImGui.Button("Show diff")) {
-                        window.AddSubwindow(new JsonViewer(e.Value.Diff, $"{e.Key} => {e.Value.Target}"));
+                        window.AddSubwindow(new JsonViewer(resource.Diff, $"{localPath} => {resource.Target}"));
                     }
-                    if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Partial patch generated at: " + e.Value.DiffTime.ToString("O"));
+                    if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Partial patch generated at: " + resource.DiffTime.ToString("O"));
                     ImGui.SameLine();
                 }
-                ImGui.Text(e.Key);
+                ImGui.Text(localPath);
                 ImGui.SameLine();
-                ImGui.TextColored(Colors.Faded, e.Value.Target);
+                ImGui.TextColored(Colors.Faded, resource.Target);
                 ImGui.PopID();
             }
 
             ImGui.TreePop();
         }
-        if (bundle.Entities.Count == 0 && !(bundle.ResourceListing?.Count > 0)) {
+        if (bundle.Entities.Count == 0 && !bundle.HasResources) {
             ImGui.TextColored(Colors.Info, "There is currently no content inside the bundle.");
         }
     }

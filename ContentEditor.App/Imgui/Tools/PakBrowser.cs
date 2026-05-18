@@ -148,9 +148,9 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
     private static ListFileWrapper? LocalizeListFile(ContentWorkspace workspace)
     {
         var list = workspace.Env.ListFile;
-        if (list == null || workspace.CurrentBundle?.ResourceListing == null) return list;
+        if (list == null || workspace.CurrentBundle?.HasResources != true) return list;
 
-        return new ListFileWrapper(list.Files.Concat(workspace.CurrentBundle.ResourceListing.Values.Select(v => v.Target)), workspace.Platform, true);
+        return new ListFileWrapper(list.Files.Concat(workspace.CurrentBundle.Resources.Select(v => v.Target)), workspace.Platform, true);
     }
     public void OnIMGUI()
     {
@@ -237,7 +237,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         }
         ImguiHelpers.Tooltip("Toggle Compact File Paths"u8);
         ImGui.SameLine();
-        if (contentWorkspace.CurrentBundle?.ResourceListing != null) {
+        if (contentWorkspace.CurrentBundle?.HasResources == true) {
             var resetCache = ImguiHelpers.ToggleButton($"{AppIcons.SI_FileType_PAK}", ref includeBasegameFiles, Colors.IconActive);
             ImguiHelpers.Tooltip("Show base game files"u8);
             ImGui.SameLine();
@@ -304,7 +304,6 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
             ImGui.SameLine();
             ImGui.SetNextItemWidth(searchBarWidth);
             AppImguiHelpers.ClearableInputText("##BookmarkSearch"u8, $"{AppIcons.SI_GenericMagnifyingGlass} Search Comments", ref bookmarkSearch, 64);
-            var bookmarkSearchQuery = isBookmarkSearchMatchCase ? bookmarkSearch.Trim() : bookmarkSearch.Trim().ToLowerInvariant();
             ImGui.SameLine();
             ImGui.SetNextItemWidth(filterComboWidth);
             if (ImGui.BeginCombo("##TagFilterCombo"u8, filterLabelDisplayText, ImGuiComboFlags.HeightLargest)) {
@@ -350,10 +349,10 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
                 ImguiHelpers.Tooltip("Clear Filters");
             }
             if (_bookmarks.Defaults.GetBookmarks(Workspace.Config.Game.name).Count > 0 && !_bookmarks.Defaults.IsHideBookmarks) {
-                ShowBookmarksTable("Default", 3, _bookmarks.Defaults, _activeTagFilter, bookmarkSearchQuery);
+                ShowBookmarksTable("Default", 3, _bookmarks.Defaults, _activeTagFilter, bookmarkSearch.Trim());
             }
             if (_bookmarks.User.GetBookmarks(Workspace.Config.Game.name).Count > 0 && !_bookmarks.User.IsHideBookmarks) {
-                ShowBookmarksTable("Custom", 4, _bookmarks.User, _activeTagFilter, bookmarkSearchQuery);
+                ShowBookmarksTable("Custom", 4, _bookmarks.User, _activeTagFilter, bookmarkSearch.Trim());
             } else {
                 if (!_bookmarks.User.IsHideBookmarks) {
                     ImGui.TextDisabled("No Custom Bookmarks yet...");
@@ -725,9 +724,11 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
 
         var bypassBundleFile = ImGui.IsKeyDown(ImGuiKey.ModAlt);
         if (!bypassBundleFile && IsFileOrFolderInBundle(file)) {
-            if (contentWorkspace.ResourceManager.TryResolveGameFile(file, out var targetFile)) {
-                EditorWindow.CurrentWindow?.AddFileEditor(targetFile);
-                return true;
+            if (contentWorkspace.CurrentBundle?.TryFindResource(file, out var listing) == true) {
+                if (contentWorkspace.ResourceManager.TryResolveGameFile(listing.Target, out var targetFile)) {
+                    EditorWindow.CurrentWindow?.AddFileEditor(targetFile);
+                    return true;
+                }
             }
         }
 
@@ -1018,15 +1019,16 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
 
     private bool IsFileOrFolderInBundle(string path)
     {
-        if (contentWorkspace.CurrentBundle?.ResourceListing == null) return false;
+        if (contentWorkspace.CurrentBundle?.HasResources != true) return false;
+
         path = Workspace.RemoveBasePath(path).ToString();
 
         if (Path.HasExtension(path)) {
-            return contentWorkspace.CurrentBundle.TryFindResourceByTargetPath(path, out _);
+            return contentWorkspace.CurrentBundle.ContainsResource(path);
         }
 
-        foreach (var p in contentWorkspace.CurrentBundle.ResourceListing) {
-            if (p.Value.Target.StartsWith(path)) return true;
+        foreach (var p in contentWorkspace.CurrentBundle.Resources) {
+            if (p.Target.StartsWith(path, StringComparison.OrdinalIgnoreCase)) return true;
         }
         return false;
     }

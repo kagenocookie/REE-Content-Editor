@@ -314,7 +314,7 @@ public class ResourcePathPicker : IObjectUIHandler
 
     public static void ShowSaveToBundle(IFileLoader loader, IResourceFile resource, ContentWorkspace workspace, string initialFilename, string? nativePath = null, Action? callback = null)
     {
-        if (!string.IsNullOrEmpty(nativePath) && !Path.IsPathFullyQualified(initialFilename) && !initialFilename.IsNativePath()) nativePath = Path.Combine(Path.GetDirectoryName(nativePath)!, initialFilename).Replace('\\', '/').ToLowerInvariant();
+        if (!string.IsNullOrEmpty(nativePath) && !Path.IsPathFullyQualified(initialFilename) && !initialFilename.IsNativePath()) nativePath = Path.Combine(Path.GetDirectoryName(nativePath)!, initialFilename).NormalizeFilepath();
 
         var tempHandle = FileHandle.CreateEmbedded(loader, resource, initialFilename, nativePath);
 
@@ -385,7 +385,7 @@ public class ResourcePathPicker : IObjectUIHandler
                 workspace.UI.ShowMessage($"Saved as new file to bundle with target path:\n{targetFilepath}\nPath can be modified through the Bundle Manager");
             }
 
-            if (!bundle.TryFindResourceByTargetPath(targetFilepath, out _)) {
+            if (!bundle.ContainsResource(targetFilepath)) {
                 bundle.AddResource(localFilepath, targetFilepath, file.Format.format.IsDefaultReplacedBundleResource());
             }
 

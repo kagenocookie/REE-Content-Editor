@@ -3,6 +3,7 @@ namespace ContentEditor.Core;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using ReeLib;
 
 public class BundleManager
 {
@@ -91,7 +92,7 @@ public class BundleManager
                 continue;
             }
             bundle.StorageFolder = entry;
-            bundle.UpgradeBundleDataIfNeeded(this);
+            bundle.Init(this);
 
             var idx = settings.BundleOrder.IndexOf(bundle.Name);
             if (idx != -1) {
@@ -122,7 +123,7 @@ public class BundleManager
                 continue;
             }
             bundle.StorageFolder = Path.GetFileNameWithoutExtension(entry);
-            bundle.UpgradeBundleDataIfNeeded(this);
+            bundle.Init(this);
 
             // TODO figure out app/runtime bundle link
             if (orderedBundles.Any(bb => bb.Value.Name == bundle.Name) || unorderedBundles.Any(bb => bb.Name == bundle.Name)) continue;
@@ -206,15 +207,15 @@ public class BundleManager
 
     public string ConstructBundleFolder(string name)
     {
-        return Path.Combine(AppBundlePath, name).Replace('\\', '/');
+        return Path.Combine(AppBundlePath, name).NormalizeFilepath();
     }
 
-    public string ResolveBundleLocalPath(Bundle bundle, string localPath)
+    public string ResolvePathToBundleFile(Bundle bundle, string localPath)
     {
         var expectedPath = (string.IsNullOrEmpty(bundle.StorageFolder)
             ? Path.Combine(AppBundlePath, bundle.Name, localPath)
             : Path.Combine(bundle.StorageFolder, localPath));
-        return expectedPath.Replace('\\', '/');
+        return expectedPath.NormalizeFilepath();
     }
 
     public bool IsBundleActive(Bundle bundle)
@@ -348,15 +349,6 @@ public class BundleManager
         manager.settings = settings;
         manager.Enums.AddRange(Enums);
         return manager;
-    }
-    public HashSet<string> GetActiveBundleFiles(string? bundleName)
-    {
-        if (string.IsNullOrEmpty(bundleName)) return new HashSet<string>();
-
-        var bundle = GetBundle(bundleName, null);
-        if (bundle?.ResourceListing == null) return new HashSet<string>();
-
-        return new HashSet<string>(bundle.ResourceListing.Values.Select(v => v.ToString()));
     }
 
     private JsonElement? GetEditorRootSetting(string propName) => settings?.IngameEditor?.RootElement.TryGetProperty(propName, out var prop) == true ? prop : null;

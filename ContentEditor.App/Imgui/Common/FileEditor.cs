@@ -163,7 +163,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                         SaveToBundle(workspace, true);
                     }
                     ImguiHelpers.Tooltip("Save to Bundle as New File");
-                } else if (workspace.CurrentBundle.ResourceListing == null || !workspace.CurrentBundle.TryFindResourceListing(Handle.TargetPath ?? "", out var resourceListing)) {
+                } else if (!workspace.CurrentBundle.TryFindResource(Handle.TargetPath ?? "", out var resourceListing)) {
                     ImGui.SameLine();
                     if (string.IsNullOrEmpty(Handle.TargetPath) && Handle.Modified) {
                         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
@@ -171,7 +171,6 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                         }
                     } else {
                         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
-                            workspace.CurrentBundle.ResourceListing ??= new();
                             var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle), Handle.Filepath);
                             var targetPath = !string.IsNullOrEmpty(Handle.TargetPath) ? Handle.TargetPath : workspace.Env.RemoveBasePath(localPath).ToString();
                             workspace.CurrentBundle.AddResource(localPath, targetPath, Handle.Format.format.IsDefaultReplacedBundleResource());

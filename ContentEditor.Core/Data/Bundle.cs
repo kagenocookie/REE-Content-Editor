@@ -5,6 +5,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using ReeLib;
+using ReeLib.Common;
 
 public class Bundle
 {
@@ -65,16 +67,39 @@ public class Bundle
     [JsonIgnore]
     public string StorageFolder { get; set; } = "";
 
-    public override string ToString() => Name;
+    public bool HasResources => ResourceListing?.Count > 0;
+
+    [JsonIgnore]
+    public IEnumerable<(string localPath, ResourceListItem resource)> ResourcesEntries => ResourceListing?.Select(kv => (kv.Key, kv.Value)) ?? [];
+
+    [JsonIgnore]
+    public IEnumerable<ResourceListItem> Resources => ResourceListing?.Values ?? Enumerable.Empty<ResourceListItem>();
+
+    [JsonIgnore]
+    public IEnumerable<string> ResourceLocalPaths => ResourceListing?.Keys ?? Enumerable.Empty<string>();
 
     [JsonIgnore]
     private Dictionary<string, string>? _targetToLocalPathCache;
 
-    [JsonIgnore]
     private Dictionary<string, string> TargetToLocalPathCache =>
         _targetToLocalPathCache ??= ResourceListing?
-            .GroupBy(k => k.Value.Target)
-            .ToDictionary(k => k.First().Value.Target, k => k.First().Key) ?? new(0);
+            .GroupBy(k => MurMur3HashUtils.GetPakFilepathHash_FastAscii(k.Value.Target))
+            .ToDictionary(grp => grp.First().Value.Target, grp => grp.First().Key, PakHashedPathComparer.Instance) ?? new(0, PakHashedPathComparer.Instance);
+
+    [JsonIgnore]
+    private Dictionary<string, string>? _localToTargetPathCache;
+
+    private Dictionary<string, string> LocalToTargetPathCache =>
+        _localToTargetPathCache ??= ResourceListing?
+            .ToDictionary(item => item.Key, item => item.Value.Target, PakHashedPathComparer.Instance) ?? new(0, PakHashedPathComparer.Instance);
+
+    private static readonly JsonSerializerOptions jsonOptions = new() {
+        WriteIndented = true,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        IgnoreReadOnlyProperties = true,
+        IgnoreReadOnlyFields = true,
+    };
 
     public void Touch()
     {
@@ -82,6 +107,7 @@ public class Bundle
         UpdatedAtTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         if (CreatedAt == null) CreatedAt = UpdatedAt;
         _targetToLocalPathCache = null;
+        _localToTargetPathCache = null;
     }
 
     public IEnumerable<Entity> GetEntities(string type)
@@ -101,6 +127,7 @@ public class Bundle
     public EntityRecordUpdateType RecordEntity(Entity updated)
     {
         _targetToLocalPathCache = null;
+        _localToTargetPathCache = null;
         for (int i = 0; i < Entities.Count; i++) {
             var entity = Entities[i];
             if (entity.Type == updated.Type && entity.Id == updated.Id) {
@@ -129,32 +156,75 @@ public class Bundle
     public void AddResource(string localFilepath, string targetPath, bool replace = false)
     {
         ResourceListing ??= new();
-        targetPath = targetPath.Replace('\\', '/').ToLowerInvariant();
-        if (TryFindResourceByTargetPath(targetPath, out var prevLocal)) {
-            Logger.Error("Bundle already contains the file " + targetPath + "\nBundle local filepath: " + prevLocal);
+        targetPath = targetPath.NormalizeFilepath();
+        if (TryFindResource(targetPath, out var prevLocal, out var prevLocalPath) && prevLocalPath == localFilepath) {
+            Logger.Error("Bundle already contains the file " + targetPath + "\nBundle local filepath: " + prevLocalPath);
             return;
         }
-        ResourceListing[localFilepath] = new ResourceListItem() { Target = targetPath, Replace = replace };
-        if (_targetToLocalPathCache != null) {
-            _targetToLocalPathCache[targetPath] = localFilepath;
+        if (TryFindResourceByLocalPath(localFilepath, out var prev, out prevLocalPath)) {
+            if (prevLocalPath == localFilepath) {
+                Logger.Error($"File {localFilepath} is already in the bundle!");
+                return;
+            }
+            // if they're not case-sensitive equal, let it re-add with the newly given path
+            ResourceListing.Remove(prevLocalPath);
         }
+        ResourceListing[localFilepath] = new ResourceListItem() { Target = targetPath, Replace = replace };
+        _targetToLocalPathCache![targetPath] = localFilepath;
+        if (_localToTargetPathCache != null) {
+            _localToTargetPathCache[localFilepath] = targetPath;
+        }
+    }
+
+    public bool ContainsResource(string targetPath)
+    {
+        return TargetToLocalPathCache.ContainsKey(targetPath);
+    }
+
+    public bool TryFindResource(string targetPath, [MaybeNullWhen(false)] out ResourceListItem resourceListing)
+    {
+        resourceListing = TargetToLocalPathCache.TryGetValue(targetPath, out var localPath) ? ResourceListing![localPath] : null;
+        return resourceListing != null;
+    }
+
+    public bool TryFindResource(string targetPath, [MaybeNullWhen(false)] out ResourceListItem resourceListing, [MaybeNullWhen(false)] out string localPath)
+    {
+        resourceListing = TargetToLocalPathCache.TryGetValue(targetPath, out localPath) ? ResourceListing![localPath] : null;
+        return resourceListing != null;
     }
 
     public bool TryFindResourceByLocalPath(string localPath, [MaybeNullWhen(false)] out ResourceListItem item)
     {
-        ResourceListing ??= new();
-        return ResourceListing.TryGetValue(localPath, out item);
+        if (LocalToTargetPathCache.TryGetValue(localPath, out var targetPath) && TargetToLocalPathCache.TryGetValue(targetPath, out var realLocalPath)) {
+            item = ResourceListing![realLocalPath];
+            return true;
+        }
+
+        item = null;
+        return false;
     }
 
-    public bool TryFindResourceByTargetPath(string targetPath, [MaybeNullWhen(false)] out string localPath)
+    public bool TryFindResourceByLocalPath(string localPath, [MaybeNullWhen(false)] out ResourceListItem item, [MaybeNullWhen(false)] out string realLocalPath)
     {
-        return TargetToLocalPathCache.TryGetValue(targetPath, out localPath);
+        if (LocalToTargetPathCache.TryGetValue(localPath, out var targetPath) && TargetToLocalPathCache.TryGetValue(targetPath, out realLocalPath)) {
+            item = ResourceListing![realLocalPath];
+            return true;
+        }
+
+        item = null;
+        realLocalPath = null;
+        return false;
     }
 
-    public bool TryFindResourceListing(string targetPath, [MaybeNullWhen(false)] out ResourceListItem resourceListing)
+    public bool RemoveResource(string localPath)
     {
-        resourceListing = TargetToLocalPathCache.TryGetValue(targetPath, out var localPath) ? ResourceListing![localPath] : null;
-        return resourceListing != null;
+        if (LocalToTargetPathCache.Remove(localPath, out var targetPath) && TargetToLocalPathCache.Remove(targetPath, out var realLocalPath)) {
+            ResourceListing?.Remove(realLocalPath);
+            return true;
+        }
+
+        Logger.Warn("Couldn't find local file to remove from bundle: " + localPath);
+        return false;
     }
 
     public string ToModConfigIni()
@@ -180,13 +250,16 @@ public class Bundle
         var outfilepath = Path.Combine(StorageFolder, "bundle.json");
         Directory.CreateDirectory(Path.GetDirectoryName(outfilepath)!);
         using var fs = File.Create(outfilepath);
-        JsonSerializer.Serialize(fs, this, JsonConfig.luaJsonOptions);
+        JsonSerializer.Serialize(fs, this, jsonOptions);
     }
 
-    public void UpgradeBundleDataIfNeeded(BundleManager bundleManager)
+    public void Init(BundleManager bundleManager)
     {
+        if (ResourceListing != null) {
+            ResourceListing = new SortedDictionary<string, ResourceListItem>(ResourceListing, PakHashedPathComparer.Instance);
+        }
         if (BundleVersion < 2) {
-            if (ResourceListing != null) {
+            if (ResourceListing?.Count > 0) {
                 foreach (var (local, resource) in ResourceListing) {
                     if (resource.Target.StartsWith("natives/", StringComparison.OrdinalIgnoreCase)) {
                         resource.Target = resource.Target.Substring(resource.Target.IndexOf('/', "natives/".Length) + 1);
@@ -196,6 +269,8 @@ public class Bundle
             BundleVersion = 2;
         }
     }
+
+    public override string ToString() => Name;
 
     public enum EntityRecordUpdateType
     {

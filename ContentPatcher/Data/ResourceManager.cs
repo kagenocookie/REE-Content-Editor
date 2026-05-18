@@ -1,11 +1,11 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.Json.Nodes;
 using ContentEditor;
 using ContentEditor.Core;
 using ReeLib;
+using ReeLib.Common;
 
 namespace ContentPatcher;
 
@@ -13,7 +13,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 {
     private readonly Dictionary<string, ResourceData> resources = new();
     private readonly Dictionary<string, EntityData> entities = new();
-    private readonly ConcurrentDictionary<string, FileHandle> openFiles = new();
+    private readonly ConcurrentDictionary<string, FileHandle> openFiles = new(HybridPakPathEqualityComparer.Instance);
     private BundleManager? bundles;
     private ContentWorkspace workspace = null!;
     private Bundle? activeBundle;
@@ -130,9 +130,9 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     private void LoadAndApplyBundle(Bundle bundle, ResourceState state)
     {
         var success = true;
-        if (bundle.ResourceListing != null) {
+        if (bundle.HasResources) {
             var bundleBasepath = workspace.BundleManager.GetBundleFolder(bundle);
-            foreach (var (localFile, resInfo) in bundle.ResourceListing) {
+            foreach (var (localFile, resInfo) in bundle.ResourcesEntries) {
                 if (localFile.EndsWith(".pak")) {
                     Logger.Error($"PAK bundles are not yet supported for the patcher! (bundle: {bundle.Name})");
                     continue;
@@ -330,7 +330,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
         if (fieldResource.FilePath == null) {
             // ignore - there's no file here
-        } else if (openFiles.TryGetValue(fieldResource.FilePath.ToLowerInvariant(), out var file)) {
+        } else if (openFiles.TryGetValue(fieldResource.FilePath, out var file)) {
             file.Modified = true;
         } else {
             throw new Exception("New resource file should've been opened, wtf?");
@@ -754,7 +754,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         streamingTargetPath = streamingTargetPath.NormalizeFilepath();
         var rawStream = workspace.Env.FindSingleFile(streamingTargetPath, out var resolvedPath);
         if (rawStream != null && resolvedPath != null) {
-            resolvedPath = workspace.Env.RemoveBasePath(resolvedPath).ToString().ToLowerInvariant();
+            resolvedPath = workspace.Env.RemoveBasePath(resolvedPath).ToString();
             if (openFiles.TryGetValue(resolvedPath, out file)) {
                 rawStream.Dispose();
                 return true;
@@ -785,7 +785,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         filepath = workspace.Env.RemoveBasePath(filepath).ToString().NormalizeFilepath();
         targetPath ??= PreprocessTargetFilepath(filepath);
         if (!string.IsNullOrEmpty(targetPath) && openFiles.TryGetValue(targetPath, out var handle) ||
-            openFiles.TryGetValue(filepath.ToLowerInvariant(), out handle)) {
+            openFiles.TryGetValue(filepath, out handle)) {
             return handle;
         }
 
@@ -795,13 +795,13 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     private string? PreprocessTargetFilepath(string filepath)
     {
         filepath = workspace.Env.RemoveBasePath(filepath).ToString().NormalizeFilepath();
-        if (activeBundle?.ResourceListing != null && Path.IsPathFullyQualified(filepath) && filepath.StartsWith(workspace.BundleManager.GetBundleFolder(activeBundle), StringComparison.InvariantCultureIgnoreCase)) {
+        if (activeBundle?.HasResources == true && Path.IsPathFullyQualified(filepath) && filepath.StartsWith(workspace.BundleManager.GetBundleFolder(activeBundle))) {
             var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(activeBundle), filepath).NormalizeFilepath();
-            if (activeBundle.ResourceListing.TryGetValue(localPath, out var resourceList)) {
+            if (activeBundle.TryFindResourceByLocalPath(localPath, out var resourceList)) {
                 return resourceList.Target;
             }
         }
-        return PathUtils.ParseFileFormat(filepath).version != -1 ? filepath.ToLowerInvariant() : null;
+        return PathUtils.ParseFileFormat(filepath).version != -1 ? filepath : null;
     }
 
     private FileHandle? ReadFileResource(string filepath, string? targetPath, bool includeActiveBundle)
@@ -814,7 +814,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             handle = CreateFileHandleInternal(filepath, targetPath, file);
             if (handle == null) return null;
 
-            openFiles.TryAdd(handle.TargetPath ?? handle.Filepath.ToLowerInvariant(), handle);
+            openFiles.TryAdd(handle.TargetPath ?? handle.Filepath, handle);
             return handle;
         }
 
@@ -848,18 +848,16 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         }
 
         if (handle == null) return null;
-        openFiles.TryAdd(handle.TargetPath ?? handle.Filepath.ToLowerInvariant(), handle);
+        openFiles.TryAdd(handle.TargetPath ?? handle.Filepath, handle);
         return handle;
     }
 
     private bool AttemptResolveBundleFile([NotNullIfNotNull(nameof(handle))] ref FileHandle? handle, string filepath, string? targetPath, string? resolvedFilename)
     {
         // TODO should include dependency bundles as well here
-        if (activeBundle?.ResourceListing != null && activeBundle.TryFindResourceByTargetPath(targetPath ?? filepath, out var bundleLocalResource)) {
-            var resourceListing = activeBundle.ResourceListing[bundleLocalResource];
+        if (activeBundle?.HasResources == true && activeBundle.TryFindResource(targetPath ?? filepath, out var resourceListing, out var localPath)) {
             // we can treat the given handle as a "temporary" file and now load the active file
-
-            var fullBundleFilePath = workspace.BundleManager.ResolveBundleLocalPath(activeBundle, bundleLocalResource);
+            var fullBundleFilePath = workspace.BundleManager.ResolvePathToBundleFile(activeBundle, localPath);
             if (File.Exists(fullBundleFilePath)) {
                 using var bundleStream = File.OpenRead(fullBundleFilePath);
                 var useRawHandler = handle?.Loader is UnknownStreamFileLoader;
@@ -949,7 +947,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             return null;
         }
 
-        openFiles[filename.ToLowerInvariant()] = handle;
+        openFiles[filename] = handle;
         handle.Resource = newFileResource;
         handle.DiffHandler = loader.CreateDiffHandler();
         return handle;
@@ -1042,7 +1040,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         if (handle == null) {
             throw new NotSupportedException();
         }
-        string filekey = handle.TargetPath ?? handle.Filepath.ToLowerInvariant();
+        string filekey = handle.TargetPath ?? handle.Filepath;
         if (keepFileReference && !openFiles.TryAdd(filekey, handle)) {
             var prev = openFiles[filekey];
             CloseFile(prev);
@@ -1080,7 +1078,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     public void MarkFileResourceModified(string filepath, bool markModified)
     {
         filepath = PreprocessTargetFilepath(filepath) ?? filepath;
-        if (openFiles.TryGetValue(filepath.ToLowerInvariant(), out var fileResource)) {
+        if (openFiles.TryGetValue(filepath, out var fileResource)) {
             fileResource.Modified = markModified;
         }
     }
@@ -1093,7 +1091,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     public TFileType? GetOpenFile<TFileType>(string filepath, bool markModified = false) where TFileType : BaseFile
     {
         filepath = PreprocessTargetFilepath(filepath) ?? filepath;
-        if (openFiles?.TryGetValue(filepath.ToLowerInvariant(), out var handle) == true) {
+        if (openFiles?.TryGetValue(filepath, out var handle) == true) {
             var file = handle.GetFile<TFileType>();
             if (markModified) {
                 handle.Modified = true;
@@ -1112,18 +1110,18 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     /// </summary>
     public IEnumerable<string> GetBundleFilesByFormats(params KnownFileFormats[] formats)
     {
-        if (bundles == null || activeBundle == null || activeBundle.ResourceListing == null) {
+        if (bundles == null || activeBundle == null || !activeBundle.HasResources) {
             yield break;
         }
 
         if (formats.Length == 0) {
-            foreach (var entry in activeBundle.ResourceListing.Values) {
+            foreach (var entry in activeBundle.Resources) {
                 yield return entry.Target;
             }
             yield break;
         }
 
-        foreach (var (localPath, entry) in activeBundle.ResourceListing) {
+        foreach (var entry in activeBundle.Resources) {
             var fileFormat = PathUtils.ParseFileFormat(entry.Target);
             if (formats.Contains(fileFormat.format)) {
                 yield return entry.Target;
@@ -1142,7 +1140,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
     public void CloseFile(FileHandle file)
     {
-        if (!openFiles.Remove(file.Filepath.ToLowerInvariant(), out _) && file.TargetPath != null) {
+        if (!openFiles.Remove(file.Filepath, out _) && file.TargetPath != null) {
             openFiles.Remove(file.TargetPath, out _);
         }
         foreach (var rf in file.References.ToList()) {
@@ -1168,7 +1166,40 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
     public bool IsFileOpen(FileHandle file)
     {
-        return openFiles.ContainsKey(file.Filepath.ToLowerInvariant()) || file.TargetPath != null && openFiles.ContainsKey(file.TargetPath);
+        return openFiles.ContainsKey(file.Filepath) || file.TargetPath != null && openFiles.ContainsKey(file.TargetPath);
+    }
+
+    /// <summary>
+    /// "Hybrid" path comparer that uses case sensitive comparison for absolute disk file paths (C:/games/...),
+    /// but case-insensitive PAK style hashed comparison for relative game paths.
+    /// </summary>
+    private sealed class HybridPakPathEqualityComparer : IEqualityComparer<string>
+    {
+        public static readonly HybridPakPathEqualityComparer Instance = new();
+
+        public bool Equals(string? x, string? y)
+        {
+            var q1 = Path.IsPathRooted(x);
+            var q2 = Path.IsPathRooted(y);
+            if (q1 != q2) {
+                return false;
+            }
+
+            if (q1 && q2) {
+                return x == y;
+            }
+
+            return x?.Equals(y, StringComparison.OrdinalIgnoreCase) == true;
+        }
+
+        public int GetHashCode([DisallowNull] string str)
+        {
+            if (Path.IsPathRooted(str)) {
+                return str.GetHashCode();
+            }
+
+            return MurMur3HashUtils.GetPakFilepathHash_FastAscii(str).GetHashCode();
+        }
     }
 }
 

@@ -192,7 +192,7 @@ public class BundleManagementUI : IWindowHandler
 
                 ImGui.SameLine();
                 if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, new[] { Colors.IconSecondary, Colors.IconPrimary })) {
-                    FileSystemUtils.ShowFileInExplorer(bundleManager.ResolveBundleLocalPath(selectedBundle!, ""));
+                    FileSystemUtils.ShowFileInExplorer(bundleManager.ResolvePathToBundleFile(selectedBundle!, ""));
                 }
                 ImguiHelpers.Tooltip("Open Current Bundle folder in File Explorer");
 
@@ -204,10 +204,10 @@ public class BundleManagementUI : IWindowHandler
                     ImguiHelpers.Tooltip("Unload current Bundle");
                 }
                 ImGui.SameLine();
-                if (selectedBundle?.ResourceListing != null && ImGui.Button("Debug: Rebuild Patch Diffs")) {
-                    foreach (var r in selectedBundle.ResourceListing) {
-                        r.Value.Diff = null;
-                        r.Value.DiffTime = default;
+                if (selectedBundle?.HasResources == true && ImGui.Button("Debug: Rebuild Patch Diffs")) {
+                    foreach (var r in selectedBundle.Resources) {
+                        r.Diff = null;
+                        r.DiffTime = default;
                     }
                     selectedBundle.Save();
                     if (selectedBundle == EditorWindow.CurrentWindow?.Workspace.CurrentBundle) {
@@ -375,12 +375,12 @@ public class BundleManagementUI : IWindowHandler
                 ImGui.TreePop();
             }
 
-            if (bundle.ResourceListing != null && ImGui.TreeNodeEx("Files", ImGuiTreeNodeFlags.Framed)) {
+            if (bundle.HasResources && ImGui.TreeNodeEx("Files", ImGuiTreeNodeFlags.Framed)) {
                 ImGui.Indent(-ImGui.GetStyle().IndentSpacing);
                 ImGui.Spacing();
                 ImGui.PushStyleVar(ImGuiStyleVar.TreeLinesSize, 1.5f);
                 if (ImGui.TreeNodeEx($"{AppIcons.SI_Bundle} " + bundle.Name, ImGuiTreeNodeFlags.DrawLinesFull | ImGuiTreeNodeFlags.DefaultOpen)) {
-                    var tree = HierarchyTreeWidget.Build(bundle.ResourceListing.Select(e => e.Key));
+                    var tree = HierarchyTreeWidget.Build(bundle.ResourceLocalPaths);
                     HierarchyTreeWidget.Draw(tree, node => ShowHierarchyFileTreeActionButtons(node, bundle), node => OpenFileFromNode(node, bundle));
                     ImGui.TreePop();
                 }
@@ -442,9 +442,8 @@ public class BundleManagementUI : IWindowHandler
     }
     private void ShowHierarchyFileTreeActionButtons(HierarchyTreeWidget node, Bundle bundle)
     {
-        bundle.ResourceListing ??= new();
         var entryKey = node.EntryKey ?? "";
-        bundle.ResourceListing.TryGetValue(entryKey, out var entry);
+        bundle.TryFindResourceByLocalPath(entryKey, out var entry);
 
         ImGui.PushID(node.EntryKey ?? node.Name);
         using (var _ = ImguiHelpers.Disabled(entry == null)) {
@@ -474,9 +473,9 @@ public class BundleManagementUI : IWindowHandler
                 ImGui.Separator();
 
                 if (ImGui.Button("Yes", new Vector2(textSize.X / 2, 0))) {
-                    var filePath = bundleManager.ResolveBundleLocalPath(bundle, entryKey);
+                    var filePath = bundleManager.ResolvePathToBundleFile(bundle, entryKey);
 
-                    bundle.ResourceListing.Remove(entryKey);
+                    bundle.RemoveResource(entryKey);
 
                     if (File.Exists(filePath)) {
                         File.Delete(filePath);
@@ -506,7 +505,7 @@ public class BundleManagementUI : IWindowHandler
 
         using (var _ = ImguiHelpers.Disabled(target == null)) {
             if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}") && openFileCallback != null) {
-                var path = bundleManager.ResolveBundleLocalPath(bundle, node.EntryKey!);
+                var path = bundleManager.ResolvePathToBundleFile(bundle, node.EntryKey!);
 
                 if (!File.Exists(path)) {
                     Logger.Warn("File not found in bundle folder, opening base file " + target);
@@ -540,8 +539,8 @@ public class BundleManagementUI : IWindowHandler
             ImGui.SetNextItemWidth(ImGui.CalcTextSize(target).X + 15);
             if (ImGui.InputText("##target", ref target, 512)) {
                 var workspace = context.GetWorkspace();
-                entry.Target = workspace?.Env.GetTargetPath(target).ToLowerInvariant()
-                    ?? PathUtils.RemovePlatformPrefix(target).ToString().ToLowerInvariant();
+                entry.Target = workspace?.Env.GetTargetPath(target)
+                    ?? PathUtils.RemovePlatformPrefix(target).ToString();
             }
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_Save}")) {
@@ -563,9 +562,8 @@ public class BundleManagementUI : IWindowHandler
     {
         if (node.EntryKey == null || openFileCallback == null) return;
 
-        var path = bundleManager.ResolveBundleLocalPath(bundle, node.EntryKey);
-        bundle.ResourceListing ??= new();
-        bundle.ResourceListing.TryGetValue(node.EntryKey, out var entry);
+        var path = bundleManager.ResolvePathToBundleFile(bundle, node.EntryKey);
+        bundle.TryFindResourceByLocalPath(node.EntryKey, out var entry);
 
         if (!File.Exists(path)) {
             if (entry != null) {

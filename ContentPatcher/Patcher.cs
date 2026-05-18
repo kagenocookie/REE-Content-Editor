@@ -102,9 +102,9 @@ public class Patcher : IDisposable
         if (workspace == null) throw new NullReferenceException("Workspace was not setup");
 
         foreach (var bundle in workspace.BundleManager.ActiveBundles) {
-            if (!(bundle.ResourceListing?.Count > 0)) continue;
+            if (!bundle.HasResources) continue;
 
-            var hasAnyUndiffedResources = bundle.ResourceListing?.Any(e => e.Value.Diff == null && e.Value.DiffTime < new DateTime(2025, 1, 1)) == true;
+            var hasAnyUndiffedResources = bundle.Resources.Any(e => e.Diff == null && e.DiffTime < new DateTime(2025, 1, 1)) == true;
             if (hasAnyUndiffedResources) {
                 // NOTE: we could skip ResourceManager.ClearInstances() if active bundle != null
                 // also, we could avoid loading _everything_ and instead only calculate diffs for anything that's missing them

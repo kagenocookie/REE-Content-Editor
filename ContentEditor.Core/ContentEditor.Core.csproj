@@ -12,4 +12,8 @@
     <PackageReference Include="SmartFormat" Version="3.6.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\RE-Engine-Lib\REE-Lib\REE-Lib.csproj" />
+  </ItemGroup>
+
 </Project>
