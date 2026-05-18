@@ -367,7 +367,7 @@ public static class WindowHandlerFactory
     /// Setup the UI context children for all fields in the given type based on C# type reflection.
     /// This method will never attempt to use any predefined handlers for the direct given type, always uses reflection to get the base field set unless specified by caller.
     /// </summary>
-    public static bool SetupObjectUIContext(UIContext context, Type? type, bool includePrivate = false, MemberInfo[]? members = null, Func<MemberInfo, int>? orderFunc = null)
+    public static bool SetupObjectUIContext(UIContext context, Type? type, bool includePrivate = false, MemberInfo[]? members = null, Func<MemberInfo, int, int>? orderFunc = null)
     {
         var instance = context.GetRaw();
         var ws = context.GetWorkspace();
@@ -412,9 +412,10 @@ public static class WindowHandlerFactory
             }
 
             if (orderFunc != null) {
-                var remove = list.Where(item => orderFunc.Invoke(item) == -1).ToList();
+                var remove = list.Where((item, i) => orderFunc.Invoke(item, i) == -1).ToList();
                 foreach (var rem in remove) list.Remove(rem);
-                list.Sort((a, b) => orderFunc.Invoke(a).CompareTo(orderFunc.Invoke(b)));
+                var indices = list.Select((a, i) => (a, i)).ToDictionary(ai => ai.a, ai => ai.i);
+                list.Sort((a, b) => orderFunc.Invoke(a, indices[a]).CompareTo(orderFunc.Invoke(b, indices[b])));
             }
 
             typeMembers[targetType] = members = list.ToArray();

@@ -81,13 +81,13 @@ public class GpucCollisionShapeHandler : IObjectUIHandler
             var boneHandler2 = new BoneNameHandler(c => c.parent!.Get<CollisionShape>().secondaryJointNameHash, (c, v) => c.parent!.Get<CollisionShape>().secondaryJointNameHash = v);
             context.AddChild("Secondary Joint", inst, boneHandler2, c => c!.secondaryJointName, (c, v) => c.secondaryJointName = v ?? "");
 
-            WindowHandlerFactory.SetupObjectUIContext(context, inst.GetType(), orderFunc: (f) => {
+            WindowHandlerFactory.SetupObjectUIContext(context, inst.GetType(), orderFunc: (f, i) => {
                 if (f.Name == nameof(CollisionShape.primaryJointName) || f.Name == nameof(CollisionShape.primaryJointNameHash) ||
                     f.Name == nameof(CollisionShape.secondaryJointName) || f.Name == nameof(CollisionShape.secondaryJointNameHash)
                 ) {
                     return -1;
                 }
-                return 1;
+                return i;
             });
         }
         context.ShowChildrenNestedUI();

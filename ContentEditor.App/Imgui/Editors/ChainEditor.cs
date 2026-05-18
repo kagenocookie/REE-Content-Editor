@@ -215,7 +215,7 @@ public class ChainGroupHandler : IObjectUIHandler
                 context.AddChild("Nodes", group, getter: c => group2.ChainNodes).AddDefaultHandler();
             }
 
-            WindowHandlerFactory.SetupObjectUIContext(context, group.GetType(), false, orderFunc: (member) => {
+            WindowHandlerFactory.SetupObjectUIContext(context, group.GetType(), false, orderFunc: (member, index) => {
                 // kinda hacky but still more convenient than manually whitelisting all 30 fields
                 var fieldType = (member as FieldInfo)?.FieldType ?? (member as PropertyInfo)?.PropertyType;
                 if (fieldType == null) return 99;
@@ -228,7 +228,7 @@ public class ChainGroupHandler : IObjectUIHandler
                     case nameof(Chain2Group.ChainSubGroups): return 3;
                     case nameof(ChainGroup.clspFlags1): return 5;
                     case nameof(ChainGroup.clspFlags2): return 6;
-                    default: return 99;
+                    default: return index + 10;
                 }
             });
         }
@@ -409,14 +409,14 @@ internal class ChainLinkHandler : IObjectUIHandler
                 var boneHandler2 = new BoneNameHandler(c => c.parent!.Get<ChainLink>().terminalNodeNameHashB, (c, v) => c.parent!.Get<ChainLink>().terminalNodeNameHashB = v);
                 context.AddChild("Node 1", instance, boneHandler1, c => c!.nodeName1, (c, v) => c.nodeName1 = v);
                 context.AddChild("Node 2", instance, boneHandler2, c => c!.nodeName2, (c, v) => c.nodeName2 = v);
-                WindowHandlerFactory.SetupObjectUIContext(context, instance.GetType(), orderFunc: (f) => {
+                WindowHandlerFactory.SetupObjectUIContext(context, instance.GetType(), orderFunc: (f, i) => {
                     if (f.Name == nameof(ChainLink.terminalNodeNameHashA) ||
                         f.Name == nameof(ChainLink.terminalNodeNameHashB) ||
                         f.Name == nameof(ChainLink.nodeName1) ||
                         f.Name == nameof(ChainLink.nodeName2)) {
                         return -1;
                     }
-                    return 0;
+                    return i;
                 });
             }
             context.ShowChildrenUI();
@@ -445,7 +445,7 @@ internal class CollisionDataHandler : IObjectUIHandler
                 var boneHandler2 = new BoneNameHandler(c => c.parent!.Get<CollisionDataBase>().pairJointNameHash, (c, v) => c.parent!.Get<CollisionDataBase>().pairJointNameHash = v);
                 context.AddChild("Node 1", instance, boneHandler1, c => c!.jointName, (c, v) => c.jointName = v);
                 context.AddChild("Node 2", instance, boneHandler2, c => c!.pairJointName, (c, v) => c.pairJointName = v);
-                WindowHandlerFactory.SetupObjectUIContext(context, instance.GetType(), orderFunc: (f) => {
+                WindowHandlerFactory.SetupObjectUIContext(context, instance.GetType(), orderFunc: (f, i) => {
                     if (f.Name == nameof(CollisionDataBase.jointNameHash) ||
                         f.Name == nameof(CollisionDataBase.pairJointNameHash) ||
                         f.Name == nameof(CollisionDataBase.jointName) ||
@@ -455,7 +455,7 @@ internal class CollisionDataHandler : IObjectUIHandler
                     if (f.Name == nameof(CollisionDataBase.shape)) return 1;
                     if (f.Name == nameof(CollisionDataBase.radius)) return 2;
                     if (f.Name == nameof(CollisionDataBase.endRadius)) return 3;
-                    return 10;
+                    return 10 + i;
                 });
             }
             context.ShowChildrenUI();
@@ -484,13 +484,13 @@ internal class ChainNodeHandler : IObjectUIHandler
                 if (instance is Chain2Node c2) {
                     context.AddChild("Joint Hash", c2, new BoneHashHandler(), c => c!.jointHash, (c, v) => c.jointHash = v);
                 }
-                WindowHandlerFactory.SetupObjectUIContext(context, instance.GetType(), orderFunc: (f) => {
+                WindowHandlerFactory.SetupObjectUIContext(context, instance.GetType(), orderFunc: (f, i) => {
                     if (f.Name == nameof(ChainNodeBase.angleLimitDirection) || f.Name == nameof(ChainNodeBase.angleLimitRadius)) return -1;
                     if (f.Name == nameof(Chain2Node.jointHash)) return -1;
                     if (f.Name == nameof(ChainNodeBase.collisionShape)) return 1;
                     if (f.Name == nameof(ChainNodeBase.angleMode)) return 2;
                     if (f.Name == nameof(ChainNodeBase.collisionRadius)) return 3;
-                    return 10;
+                    return 10 + i;
                 });
             }
 
