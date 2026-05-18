@@ -81,7 +81,7 @@ public sealed class DD2ItemIconHandler(CustomField field) : IObjectUIHandler, IO
         {
             var texPath = instance.data.IconTexture;
             var texture = context.GetChildValue<Texture>();
-            if (texture == null || texPath != null && texture.Path?.Contains(texPath) != true) {
+            if (texPath != null && (texture == null || texture.Path?.Contains(texPath) != true)) {
                 var texfile = workspace.Env.FindSingleFile(workspace.Env.AppendFileVersion(texPath));
                 if (texfile == null) {
                     ImGui.TextColored(Colors.Danger, "Texture not found");
@@ -92,7 +92,7 @@ public sealed class DD2ItemIconHandler(CustomField field) : IObjectUIHandler, IO
                 context.AddChild("texture", texture = new Texture().LoadFromTex(tex));
             }
 
-            if (string.IsNullOrEmpty(instance.data.IconTexture)) {
+            if (string.IsNullOrEmpty(instance.data.IconTexture) || texture == null) {
                 return;
             }
 
