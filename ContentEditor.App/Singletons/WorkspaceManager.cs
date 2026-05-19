@@ -14,14 +14,19 @@ public class WorkspaceManager : Singleton<WorkspaceManager>
             Workspaces[game] = workspace = new RefCounted<Workspace>(new Workspace(config) {
                 AllowUseLooseFiles = AppConfig.Instance.LoadFromNatives.Get(),
             });
-            if (!ResourceRepository.DisableOnlineUpdater) {
-                if (!MainLoop.Instance.BackgroundTasks.HasPendingTask<ReeLibResourceUpdateTask>(t => t.Workspace == workspace.Instance)) {
-                    await MainLoop.Instance.BackgroundTasks.QueueAwait(new ReeLibResourceUpdateTask(workspace.Instance));
-                } else {
-                    await MainLoop.Instance.BackgroundTasks.Await<ReeLibResourceUpdateTask>(t => t.Workspace == workspace.Instance);
+            try {
+                if (!ResourceRepository.DisableOnlineUpdater) {
+                    if (!MainLoop.Instance.BackgroundTasks.HasPendingTask<ReeLibResourceUpdateTask>(t => t.Workspace == workspace.Instance)) {
+                        await MainLoop.Instance.BackgroundTasks.QueueAwait(new ReeLibResourceUpdateTask(workspace.Instance));
+                    } else {
+                        await MainLoop.Instance.BackgroundTasks.Await<ReeLibResourceUpdateTask>(t => t.Workspace == workspace.Instance);
+                    }
                 }
+                InitWorkspaceConfig(game, workspace.Instance);
+            } catch {
+                Workspaces.Remove(game);
+                throw;
             }
-            InitWorkspaceConfig(game, workspace.Instance);
         }
 
         workspace.AddRef();

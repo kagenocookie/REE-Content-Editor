@@ -16,7 +16,7 @@ public class TextureConversionTask : IBackgroundTask
     private readonly TextureOperation[] operations;
 
     public string Status { get; private set; }
-    public bool IsCancelled { get; set; }
+    public TaskStatus TaskStatus { get; set; }
 
     public TextureConversionTask(DDSFile dds, Action<DDSFile> callback, params TextureOperation[] operations)
     {

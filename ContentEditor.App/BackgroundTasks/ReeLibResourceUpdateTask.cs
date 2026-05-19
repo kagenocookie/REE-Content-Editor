@@ -11,18 +11,22 @@ public class ReeLibResourceUpdateTask(Workspace workspace) : IBackgroundTask
 
     public float Progress { get; private set; } = -1;
 
-    public bool IsCancelled { get; set; }
+    public TaskStatus TaskStatus { get; set; }
 
     public Workspace Workspace { get; } = workspace;
 
     public void Execute(CancellationToken token = default)
     {
         ResourceRepository.UpdateAndGet(Workspace.Config.Game);
-        Status = "Fetching List File";
+        Status = "Loading List File";
         _ = Workspace.ListFile;
-        Status = "Fetching RSZ JSON";
-        _ = Workspace.RszParser;
-        Status = "Fetching Type Cache";
+        Status = "Loading RSZ JSON";
+        try {
+            _ = Workspace.RszParser;
+        } catch {
+            // ignore, likely unsupported game
+        }
+        Status = "Loading Type Cache";
         _ = Workspace.TypeCache;
     }
 }

@@ -70,10 +70,12 @@ public sealed class BackgroundTaskService : IDisposable
 
             if (worker == null) {
                 // no free workers, wait for one of the tasks to finish
+                task.TaskStatus = TaskStatus.WaitingForActivation;
                 waitingTasks.Enqueue(task);
                 return;
             }
 
+            task.TaskStatus = TaskStatus.WaitingToRun;
             worker.StartTask(task);
         }
     }
@@ -87,7 +89,7 @@ public sealed class BackgroundTaskService : IDisposable
     public void CancelTask(IBackgroundTask pendingTask)
     {
         lock (_lock) {
-            pendingTask.IsCancelled = true;
+            pendingTask.TaskStatus = TaskStatus.Canceled;
             foreach (var w in workers) {
                 if (w.CurrentTask == pendingTask) {
                     w.CancelAsync();
@@ -101,7 +103,7 @@ public sealed class BackgroundTaskService : IDisposable
     {
         lock (_lock) {
             while (waitingTasks.TryDequeue(out nextTask)) {
-                if (!nextTask.IsCancelled) {
+                if (!nextTask.IsEnded) {
                     return true;
                 }
             }
@@ -132,12 +134,15 @@ public sealed class BackgroundTaskService : IDisposable
 
         if (task == null) return;
 
-        while (!task.IsCancelled && (waitingTasks.Contains(task) || workers.Any(w => w.CurrentTask == task))) {
-            await Task.Delay(100);
+        while (!task.IsEnded) {
+            await Task.Delay(25);
         }
 
-        if (task.IsCancelled) {
+        if (task.TaskStatus == TaskStatus.Canceled) {
             throw new OperationCanceledException("Background task has been canceled");
+        }
+        if (task.TaskStatus == TaskStatus.Faulted) {
+            throw new Exception("Background task failed to execute");
         }
     }
 
@@ -161,6 +166,7 @@ public sealed class BackgroundTaskService : IDisposable
 
         public void StartTask(IBackgroundTask task)
         {
+            task.TaskStatus = TaskStatus.WaitingToRun;
             CurrentTask = task;
             if (!IsBusy) {
                 RunWorkerAsync();
@@ -186,9 +192,15 @@ public sealed class BackgroundTaskService : IDisposable
                 }
 
                 try {
-                    CurrentTask?.Execute(token);
+                    var task = CurrentTask;
+                    if (task != null) {
+                        task.TaskStatus = TaskStatus.Running;
+                        task.Execute(token);
+                        task.TaskStatus = TaskStatus.RanToCompletion;
+                    }
                 } catch (Exception e) {
                     MainLoop.Instance.InvokeFromUIThread(() => Logger.Error($"Background task {CurrentTask} failed: " + e.Message));
+                    CurrentTask.TaskStatus = TaskStatus.Faulted;
                 }
 
                 CurrentTask = null;
@@ -223,9 +235,12 @@ public sealed class BackgroundTaskService : IDisposable
 
 public interface IBackgroundTask
 {
-    bool IsCancelled { get; internal set; }
+    TaskStatus TaskStatus { get; internal set; }
     string? Status { get; }
     float Progress => -1;
+
+    bool IsCompletedSuccessfully => TaskStatus == TaskStatus.RanToCompletion;
+    bool IsEnded => TaskStatus is TaskStatus.Canceled or TaskStatus.Faulted or TaskStatus.RanToCompletion;
 
     void Execute(CancellationToken token = default);
 }

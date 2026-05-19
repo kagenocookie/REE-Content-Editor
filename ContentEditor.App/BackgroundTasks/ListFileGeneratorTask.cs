@@ -14,7 +14,7 @@ public class ListFileGeneratorTask(ContentWorkspace workspace) : IBackgroundTask
 
     public float Progress => generator.PhaseProgress;
 
-    public bool IsCancelled { get; set; }
+    public TaskStatus TaskStatus { get; set; }
     public bool LatestPAKsOnly { get; set; }
 
     public void Execute(CancellationToken token = default)

@@ -13,7 +13,7 @@ public abstract class FileCacheTaskBase : IBackgroundTask
     protected static string GetBaseCacheDir(GameIdentifier game) => Path.Combine(AppConfig.Instance.CacheFilepath.Get() ?? Path.Combine(AppConfig.AppDataPath, "cache"), game.name);
 
     public string Status { get; private set; }
-    public bool IsCancelled { get; set; }
+    public TaskStatus TaskStatus { get; set; }
     public Workspace Workspace { get; }
 
     private int filesProcessed = 0;

@@ -87,7 +87,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     }
 
     public void SetWorkspace(GameIdentifier game, string? bundle) => SetWorkspace(game, bundle, false);
-    private void SetWorkspace(GameIdentifier game, string? bundle, bool forceReloadEnv)
+    internal void SetWorkspace(GameIdentifier game, string? bundle, bool forceReloadEnv)
     {
         LastRequestedGame = game;
         // close all subwindows since they won't necessarily have the correct data anymore
@@ -101,6 +101,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
 
         _workspaceSetupInProgress = false;
+        _resourceSetupFailure = null;
         if (workspace != null) {
             ChangeWorkspace(workspace, bundle);
             return;
@@ -119,7 +120,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             if (t.IsCompletedSuccessfully) {
                 ChangeEnv(t.Result, bundle);
             } else {
-                _resourceSetupFailure = t.Exception?.Message ?? "Workspace resource setup failed.";
+                _resourceSetupFailure = t.Exception?.Message ?? "Unspecified error.";
             }
             _workspaceSetupInProgress = false;
         });

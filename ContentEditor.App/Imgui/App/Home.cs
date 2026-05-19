@@ -270,7 +270,8 @@ public class HomeWindow : IWindowHandler
                 ImGui.EndTabItem();
             }
             if (!AppConfig.Instance.IsFirstTime) {
-                var isReady = EditorWindow.CurrentWindow?.IsReady == true;
+                var window = EditorWindow.CurrentWindow;
+                var isReady = window?.IsReady == true;
                 if (!isReady && !wasPreviouslyNotSetup) {
                     notSetupTimeStart = DateTime.Now;
                 }
@@ -288,7 +289,7 @@ public class HomeWindow : IWindowHandler
                     ShowCommitLog();
                     ImGui.EndTabItem();
                 }
-                if (ImGui.BeginTabItem("Game Setup"u8, !isReady && !wasPreviouslyNotSetup && DateTime.Now - notSetupTimeStart > TimeSpan.FromSeconds(0.5f) ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None)) {
+                if (ImGui.BeginTabItem("Game Setup"u8, window?.ResourceSetupFailure != null || !isReady && !wasPreviouslyNotSetup && DateTime.Now - notSetupTimeStart > TimeSpan.FromSeconds(0.5f) ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None)) {
                     ShowGameConfigTab();
                     ImGui.EndTabItem();
                 }
@@ -412,7 +413,10 @@ public class HomeWindow : IWindowHandler
                 if (window.ResourceSetupFailure == null) {
                     ImGui.TextColored(Colors.Note, "Loading up workspace..."u8);
                 } else {
-                    ImGui.TextColored(Colors.Error, "Workspace failed to set up: " + window.ResourceSetupFailure);
+                    ImGui.TextColored(Colors.Error, "Workspace failed to set up:\n" + window.ResourceSetupFailure);
+                    if (ImGui.Button("Retry")) {
+                        window.SetWorkspace(window.LastRequestedGame, null, true);
+                    }
                 }
                 ImGui.PopFont();
             }
