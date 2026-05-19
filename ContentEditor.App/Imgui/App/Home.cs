@@ -1,12 +1,13 @@
+using System.Numerics;
+using System.Runtime.InteropServices;
 using ContentEditor.App.Github;
 using ContentEditor.App.Internal;
 using ContentEditor.App.Windowing;
+using ContentEditor.BackgroundTasks;
 using ContentEditor.Core;
 using ContentEditor.Themes;
 using ContentPatcher;
 using ReeLib;
-using System.Numerics;
-using System.Runtime.InteropServices;
 
 namespace ContentEditor.App;
 
@@ -35,6 +36,9 @@ public class HomeWindow : IWindowHandler
     private string chosenGame = "";
     private bool customGame;
     public BundleDisplayMode DisplayMode { get; set; } = AppConfig.Instance.BundleDisplayMode;
+
+    private bool wasPreviouslyNotSetup;
+    private DateTime notSetupTimeStart;
 
     private static Dictionary<string, Func<Vector4[]>> GameColors = new() // TODO SILVER: Add the rest of the games
     {
@@ -266,10 +270,16 @@ public class HomeWindow : IWindowHandler
                 ImGui.EndTabItem();
             }
             if (!AppConfig.Instance.IsFirstTime) {
-                if (ImGui.BeginTabItem("Bundles")) {
+                var isReady = EditorWindow.CurrentWindow?.IsReady == true;
+                if (!isReady && !wasPreviouslyNotSetup) {
+                    notSetupTimeStart = DateTime.Now;
+                }
+                if (!isReady) ImGui.BeginDisabled();
+                if (ImGui.BeginTabItem("Bundles", isReady && wasPreviouslyNotSetup ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None)) {
                     ShowBundlesTab(context);
                     ImGui.EndTabItem();
                 }
+                if (!isReady) ImGui.EndDisabled();
                 if (ImGui.BeginTabItem(AppConfig.IsOutdatedVersion ? "Updates *" : "Updates")) {
                     ShowUpdateLog();
                     ImGui.EndTabItem();
@@ -278,6 +288,11 @@ public class HomeWindow : IWindowHandler
                     ShowCommitLog();
                     ImGui.EndTabItem();
                 }
+                if (ImGui.BeginTabItem("Game Setup"u8, !isReady && !wasPreviouslyNotSetup && DateTime.Now - notSetupTimeStart > TimeSpan.FromSeconds(0.5f) ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None)) {
+                    ShowGameConfigTab();
+                    ImGui.EndTabItem();
+                }
+                wasPreviouslyNotSetup = !isReady;
             }
             ImGui.EndTabBar();
         }
@@ -378,21 +393,136 @@ public class HomeWindow : IWindowHandler
         }
         ImGui.SeparatorText("##LoremIpsum");
     }
+
+    private void ShowGameConfigTab()
+    {
+        var updateInProgress = MainLoop.Instance.BackgroundTasks.HasPendingTask<ReeLibResourceUpdateTask>();
+        if (updateInProgress) {
+            ImGui.PushFont(null, UI.FontSize * 2);
+            ImGui.TextColored(Colors.Info, "Resource update is currently in progress."u8);
+            ImGui.Spacing();
+            ImGui.PopFont();
+            OverlaysWindow.ShowBackgroundTaskProgress(ImGui.GetContentRegionAvail().X);
+        }
+        var window = EditorWindow.CurrentWindow;
+        if (window == null) return;
+        if (window.IsReady != true) {
+            if (!updateInProgress) {
+                ImGui.PushFont(null, UI.FontSize * 2);
+                if (window.ResourceSetupFailure == null) {
+                    ImGui.TextColored(Colors.Note, "Loading up workspace..."u8);
+                } else {
+                    ImGui.TextColored(Colors.Error, "Workspace failed to set up: " + window.ResourceSetupFailure);
+                }
+                ImGui.PopFont();
+            }
+            return;
+        }
+        var workspace = EditorWindow.CurrentWindow?.Workspace;
+        if (workspace == null || string.IsNullOrEmpty(workspace.Game.name)) {
+            ImGui.PushFont(null, UI.FontSize * 2);
+            ImGui.TextColored(Colors.Error, "Game is not selected! Select a game from the main toolbar.");
+            ImGui.PopFont();
+            return;
+        }
+        var game = workspace.Game;
+
+        var gamepath = AppConfig.Instance.GetGamePath(game);
+        var gameExe = AppConfig.Instance.GetGameExecutablePath(game);
+
+        var rszPath = AppConfig.Instance.GetGameRszJsonPath(game);
+        var filelist = AppConfig.Instance.GetGameFilelist(game);
+        var isCustomGame = game.GameEnum == GameName.unknown;
+
+        ImGui.SeparatorText("Paths");
+        if (AppImguiHelpers.InputFolder("Game Folder", ref gamepath)) {
+            AppConfig.Instance.SetGamePath(game, gamepath);
+        }
+        if (AppImguiHelpers.InputFilepath("Game Executable", ref gameExe, FileFilters.Executable)) {
+            AppConfig.Instance.SetGameExecutablePath(game, gameExe);
+        }
+        if (Directory.Exists(gamepath) && ImGui.Button("Auto-Detect Executable path")) {
+            AppConfig.Instance.SetGameExecutablePath(game, AppUtils.FindGameExecutable(gamepath, game.name) ?? gameExe);
+        }
+        ImGui.SeparatorText("Resources");
+        if (ResourceRepository.RemoteInfo.FileExtensions == null) {
+            ImGui.TextColored(Colors.Warning, "Remote resource data has not been fetched yet.");
+        } else {
+            // TODO make FileExtensionsPath accessible
+            // ImGui.TextColored(Colors.Faded, "Last file extension cache update: " + Languages.FormatDate(ResourceRepository.RemoteInfo.FileExtensions.LastUpdatedAt));
+        }
+
+        if (ImGui.Button("Open Local Resource Folder")) {
+            FileSystemUtils.ShowFileInExplorer(ResourceRepository.LocalResourceRepositoryFolder);
+        }
+
+        var remote = ResourceRepository.RemoteInfo.Resources.GetValueOrDefault(game.name);
+        if (isCustomGame) {
+            ImGui.TextColored(Colors.Info, "This is a custom game. All resource files need to be manually defined.");
+        } else if (remote == null) {
+            ImGui.TextColored(Colors.Info, "No known resource lists currently available for this game. All resource files need to be manually defined.");
+        }
+
+        ImGui.TextColored(Colors.Info, "This game's resource data was last updated at: " + Languages.FormatDate(remote?.LastUpdatedAtUtc));
+
+        var rszFullySupported = remote?.IsRSZFullySupported == true;
+
+
+        if (AppImguiHelpers.InputFilepath(rszFullySupported ? "Custom RSZ JSON Path" : "RSZ Template JSON Path", ref rszPath, FileFilters.JsonFile)) {
+            AppConfig.Instance.SetGameRszJsonPath(game, rszPath);
+            WindowHandlerFactory.ResetGameTypes(game);
+            Component.ResetGameTypes(game);
+        }
+        // TODO show actual currently used file path
+        ImguiHelpers.Tooltip(rszFullySupported
+            ? "The default RSZ json file is fetched automatically.\nChange this only if you know what you're doing - mainly for accessing files from older game versions"
+            : "For not yet fully supported games, you may need to manually provide the path to a valid RSZ JSON template before some files can be opened.");
+        if (remote?.RszPatchFiles.Length > 0) {
+            ImGui.TextColored(Colors.Info, $"Remote URL: {remote.RszPatchFiles[0]}");
+            if (ImGui.IsItemClicked()) {
+                window.CopyToClipboard(remote.RszPatchFiles[0], "URL copied!");
+            }
+            // TODO
+            // ImGui.SameLine();
+            // if (ImGui.Button("Re-Download")) {
+            //     // ResourceRepository.UpdateLocalCache
+            // }
+        }
+
+        if (AppImguiHelpers.InputFilepath("File List", ref filelist)) {
+            AppConfig.Instance.SetGameFilelist(game, filelist);
+        }
+        // TODO show actual currently used file path
+        if (!string.IsNullOrEmpty(remote?.FileList)) {
+            ImGui.TextColored(Colors.Info, $"Remote URL: {remote.FileList}");
+            if (ImGui.IsItemClicked()) {
+                window.CopyToClipboard(remote.FileList, "URL copied!");
+            }
+            // TODO
+            // ImGui.SameLine();
+            // if (ImGui.Button("Re-Download")) {
+            //     ResourceRepository.UpdateLocalCache
+            // }
+        }
+    }
+
     private void ShowBundlesTab(UIContext context)
     {
         var data = context.Get<WindowData>();
+        var window = EditorWindow.CurrentWindow;
+        var workspace = window?.Workspace;
         bool isCompactView = ImGui.GetWindowWidth() <= 550 * UI.UIScale;
         ImGui.Spacing();
         if (ImGui.Button(isCompactView ? $"{AppIcons.SI_Bundle}" : $"{AppIcons.SI_Bundle} Bundle Manager")) {
-            EditorWindow.CurrentWindow?.ShowBundleManagement();
+            window?.ShowBundleManagement();
         }
         if (isCompactView) {
             ImguiHelpers.Tooltip("Bundle Manager"u8);
         }
         ImGui.SameLine();
-        using (var _ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
+        using (var _ = ImguiHelpers.Disabled(workspace?.CurrentBundle == null)) {
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleUnload, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconTertiary, Colors.IconTertiary, Colors.IconTertiary} )) {
-                EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, null);
+                window?.SetWorkspace(workspace!.Game, null);
             }
             ImguiHelpers.Tooltip("Unload current Bundle"u8);
         }
@@ -400,7 +530,7 @@ public class HomeWindow : IWindowHandler
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderContain, new[] { Colors.IconPrimary, Colors.IconSecondary })) {
-            FileSystemUtils.ShowFileInExplorer(EditorWindow.CurrentWindow?.Workspace.BundleManager.AppBundlePath);
+            FileSystemUtils.ShowFileInExplorer(workspace?.BundleManager.AppBundlePath);
         }
         ImguiHelpers.Tooltip("Open Bundles folder in File Explorer"u8);
         ImGui.SameLine();
@@ -569,7 +699,7 @@ public class HomeWindow : IWindowHandler
             }
         }
         if (gameToSet != null && bundleToOpen != null) {
-            EditorWindow.CurrentWindow?.SetWorkspace(gameToSet, bundleToOpen);
+            window?.SetWorkspace(gameToSet, bundleToOpen);
         }
         ImGui.EndChild();
     }

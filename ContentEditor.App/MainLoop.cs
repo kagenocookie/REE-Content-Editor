@@ -39,6 +39,7 @@ internal sealed partial class MainLoop : IDisposable
     }
 
     private CancellationTokenSource _tokenSource = new CancellationTokenSource();
+
     private static string? GuessGameFromFilepath(string filepath)
     {
         var format = PathUtils.ParseFileFormat(filepath);

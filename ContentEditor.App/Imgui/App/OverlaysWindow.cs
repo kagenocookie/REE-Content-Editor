@@ -103,16 +103,23 @@ public class OverlaysWindow : IWindowHandler
             ImGui.SetNextWindowSize(taskWindowSize, ImGuiCond.Appearing);
             ImGui.SetNextWindowCollapsed(false, ImGuiCond.Appearing);
             if (ImGui.Begin("Background Tasks", ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoFocusOnAppearing)) {
-                ImGui.Text("Pending background tasks: " + runningTasks);
-
-                var jobSize = new Vector2(ImGui.GetWindowWidth() - ImGui.GetStyle().WindowPadding.X * 2, 30);
-                foreach (var (job, progress) in bg.CurrentJobs) {
-                    ImGui.Separator();
-                    ImGui.ProgressBar(progress >= 0 && progress <= 1 ? progress : -1 * (float)ImGui.GetTime(), jobSize);
-                    ImGui.TextWrapped(job);
-                }
+                ShowBackgroundTaskProgress(ImGui.GetWindowWidth());
             }
             ImGui.End();
+        }
+    }
+
+    internal static void ShowBackgroundTaskProgress(float maxWidth)
+    {
+        var bg = MainLoop.Instance.BackgroundTasks;
+        var runningTasks = bg.PendingTasks;
+        ImGui.Text("Pending background tasks: " + runningTasks);
+
+        var jobSize = new Vector2(maxWidth - ImGui.GetStyle().WindowPadding.X * 2, 30);
+        foreach (var (job, progress) in bg.CurrentJobs) {
+            ImGui.Separator();
+            ImGui.ProgressBar(progress >= 0 && progress <= 1 ? progress : -1 * (float)ImGui.GetTime(), jobSize);
+            ImGui.TextWrapped(job);
         }
     }
 

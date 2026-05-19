@@ -78,6 +78,12 @@ public sealed class BackgroundTaskService : IDisposable
         }
     }
 
+    public Task QueueAwait<T>(T task) where T : class, IBackgroundTask
+    {
+        Queue(task);
+        return Await<T>(t => t == task);
+    }
+
     public void CancelTask(IBackgroundTask pendingTask)
     {
         lock (_lock) {
@@ -118,7 +124,25 @@ public sealed class BackgroundTaskService : IDisposable
         }
     }
 
+    public Task Await<T>() where T : class, IBackgroundTask => Await<T>(f => true);
+    public async Task Await<T>(Func<T, bool> condition) where T : class, IBackgroundTask
+    {
+        var task = (T?)workers.FirstOrDefault(w => w.CurrentTask is T cc && condition(cc))?.CurrentTask
+            ?? waitingTasks.OfType<T>().FirstOrDefault(t => condition(t));
+
+        if (task == null) return;
+
+        while (!task.IsCancelled && (waitingTasks.Contains(task) || workers.Any(w => w.CurrentTask == task))) {
+            await Task.Delay(100);
+        }
+
+        if (task.IsCancelled) {
+            throw new OperationCanceledException("Background task has been canceled");
+        }
+    }
+
     public bool HasPendingTask<T>() => workers.Any(w => w.CurrentTask is T) || waitingTasks.Any(t => t is T);
+    public bool HasPendingTask<T>(Func<T, bool> condition) => workers.Any(w => w.CurrentTask is T cc && condition(cc)) || waitingTasks.Any(t => t is T cc && condition(cc));
 
     private class BackgroundTaskWorker : BackgroundWorker, IDisposable
     {

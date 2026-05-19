@@ -42,6 +42,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     protected ContentWorkspace? workspace;
     public event Action? GameChanged;
 
+    public GameIdentifier LastRequestedGame { get; private set; }
+
     public SceneManager SceneManager { get; }
 
     private static HashSet<string>? fullSupportedGames;
@@ -62,6 +64,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
     private string openFileFilter = "";
     private string recentFileFilter = "";
+
+    private bool _workspaceSetupInProgress;
+    private string? _resourceSetupFailure;
+    public bool IsReady => !_workspaceSetupInProgress && _resourceSetupFailure == null;
+    public string? ResourceSetupFailure => _resourceSetupFailure;
+
     private enum GameLaunchType
     {
         Normal = 0,
@@ -81,6 +89,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     public void SetWorkspace(GameIdentifier game, string? bundle) => SetWorkspace(game, bundle, false);
     private void SetWorkspace(GameIdentifier game, string? bundle, bool forceReloadEnv)
     {
+        LastRequestedGame = game;
         // close all subwindows since they won't necessarily have the correct data anymore
         if (env != null && (env.Config.Game != game || forceReloadEnv)) {
             if (!RequestCloseAllSubwindows(true)) return;
@@ -91,12 +100,46 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             return;
         }
 
-        env ??= WorkspaceManager.Instance.GetWorkspace(game);
+        _workspaceSetupInProgress = false;
+        if (workspace != null) {
+            ChangeWorkspace(workspace, bundle);
+            return;
+        }
 
-        var configPath = Path.Combine(AppConfig.Instance.ConfigBasePath, game.name);
+        if (env != null) {
+            ChangeEnv(env, bundle);
+            return;
+        }
+
+        _workspaceSetupInProgress = true;
+        WorkspaceManager.Instance.GetWorkspaceAsync(game).ContinueWith(t => {
+            if (game != LastRequestedGame) {
+                return;
+            }
+            if (t.IsCompletedSuccessfully) {
+                ChangeEnv(t.Result, bundle);
+            } else {
+                _resourceSetupFailure = t.Exception?.Message ?? "Workspace resource setup failed.";
+            }
+            _workspaceSetupInProgress = false;
+        });
+    }
+
+    private void ChangeEnv(Workspace env, string? bundle)
+    {
+        this.env = env;
+
+        var configPath = Path.Combine(AppConfig.Instance.ConfigBasePath, env.Config.Game.name);
         var patchConfig = workspace?.Config ?? new PatchDataContainer(Path.GetFullPath(configPath));
 
         workspace = new ContentWorkspace(env, patchConfig, workspace?.BundleManager);
+        ChangeWorkspace(workspace, bundle);
+    }
+
+    private void ChangeWorkspace(ContentWorkspace workspace, string? bundle)
+    {
+        this.workspace = workspace;
+
         workspace.UI = new AppUIService(this, workspace);
         workspace.ResourceManager.SetupFileLoaders(typeof(PrefabLoader).Assembly);
         SetupTypes(workspace);
@@ -104,7 +147,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         GameChanged?.Invoke();
         SceneManager.ChangeWorkspace(workspace);
         if (bundle != null && workspace.CurrentBundle != null) {
-            AppConfig.Settings.RecentBundles.AddRecent(game, bundle);
+            AppConfig.Settings.RecentBundles.AddRecent(workspace.Game, bundle);
         }
     }
 
@@ -171,7 +214,11 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     protected override void OnFileDrop(string[] filenames, Vector2D<int> position)
     {
         if (env == null || workspace == null) {
-            AddSubwindow(new ErrorModal("Game unset", "Select a game first"));
+            if (!IsReady) {
+                AddSubwindow(new ErrorModal("You're too fast", "Please wait for the workspace to load up before opening files."));
+            } else {
+                AddSubwindow(new ErrorModal("Game unset", "Select a game first"));
+            }
             return;
         }
 
@@ -303,7 +350,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             .Select(kv => kv.Key)
             .ToHashSet();
 
-        if (ImGui.BeginMenu("Game: " + (env == null ? "<unset>" : env.Config.Game.name.ToUpper()))) {
+        if (ImGui.BeginMenu("Game: " + (env == null && string.IsNullOrEmpty(LastRequestedGame.name) ? "<unset>" : (env?.Config.Game ?? LastRequestedGame).name.ToUpper()))) {
             if (env != null) {
                 if (ImGui.BeginMenu("Platform: " + env.Config.Platform)) {
                     foreach (var otherPlat in PlatformIdentifier.GetAvailableDesktopPlatforms(env.Config.Game)) {
@@ -343,73 +390,71 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             ImGui.EndMenu();
         }
 
-        if (workspace != null) {
-            if (ImGui.BeginMenu($"Bundle: {workspace.CurrentBundle?.Name ?? "--"}")) {
-                if (!workspace.BundleManager.IsLoaded) workspace.BundleManager.LoadDataBundles();
-                if (ImGui.BeginMenu($"Active Bundle: {workspace.Data.ContentBundle}")) {
-                    if (ImGui.MenuItem("New Bundle")) {
-                        ShowBundleManagement();
-                    }
-                    if (ImGui.MenuItem("Create from PAK file")) {
-                        PlatformUtils.ShowFileDialog(pak =>
-                            CreateBundleFromPakFile(pak[0]),
-                            filters: FileFilters.PakFile,
-                            allowMultiple: false
-                        );
-                    }
-                    if (ImGui.MenuItem("Create from loose file mod")) {
-                        PlatformUtils.ShowFolderDialog(folder => {
-                            CreateBundleFromLooseFileFolder(folder);
-                        });
-                    }
-                    ImGui.Separator();
-                    if (workspace.CurrentBundle != null && ImGui.MenuItem("Unload current bundle")) {
-                        SetWorkspace(workspace.Env.Config.Game, null);
-                    }
-                    var foundUnusedBundle = false;
-                    foreach (var b in workspace.BundleManager.AllBundles.OrderBy(bb => (uint)AppConfig.Settings.RecentBundles.FindPrefixedIndex(bb.Name))) {
-                        if (!foundUnusedBundle && AppConfig.Settings.RecentBundles.FindPrefixedIndex(b.Name) == -1) {
-                            foundUnusedBundle = true;
-                            ImGui.Separator();
-                        }
-                        if (ImGui.MenuItem(b.Name)) {
-                            SetWorkspace(workspace.Env.Config.Game, b.Name);
-                        }
-                    }
-                    ImGui.EndMenu();
-                }
-                if (ImGui.MenuItem("Bundle Manager")) {
+        if (ImGui.BeginMenu($"Bundle: {workspace?.CurrentBundle?.Name ?? "--"}", enabled: workspace != null)) {
+            if (!workspace!.BundleManager.IsLoaded) workspace.BundleManager.LoadDataBundles();
+            if (ImGui.BeginMenu($"Active Bundle: {workspace.Data.ContentBundle}")) {
+                if (ImGui.MenuItem("New Bundle")) {
                     ShowBundleManagement();
                 }
-                if (workspace.BundleManager.UninitializedBundleFolders.Count > 0) {
-                    if (ImGui.BeginMenu("* Uninitialized bundle folders")) {
-                        foreach (var item in workspace.BundleManager.UninitializedBundleFolders) {
-                            if (ImGui.MenuItem(item)) {
-                                try {
-                                    workspace.InitializeUnlabelledBundle(item);
-                                } catch (Exception ex) {
-                                    Logger.Error(ex, "Failed to set up uninitialized bundle " + item);
-                                }
-                                break;
-                            }
-                        }
-                        ImGui.EndMenu();
-                    }
+                if (ImGui.MenuItem("Create from PAK file")) {
+                    PlatformUtils.ShowFileDialog(pak =>
+                        CreateBundleFromPakFile(pak[0]),
+                        filters: FileFilters.PakFile,
+                        allowMultiple: false
+                    );
                 }
-                if (workspace.CurrentBundle != null) {
-                    ImGui.Separator();
-                    if (ImGui.MenuItem("Open current Bundle folder")) {
-                        FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
+                if (ImGui.MenuItem("Create from loose file mod")) {
+                    PlatformUtils.ShowFolderDialog(folder => {
+                        CreateBundleFromLooseFileFolder(folder);
+                    });
+                }
+                ImGui.Separator();
+                if (workspace.CurrentBundle != null && ImGui.MenuItem("Unload current bundle")) {
+                    SetWorkspace(workspace.Env.Config.Game, null);
+                }
+                var foundUnusedBundle = false;
+                foreach (var b in workspace.BundleManager.AllBundles.OrderBy(bb => (uint)AppConfig.Settings.RecentBundles.FindPrefixedIndex(bb.Name))) {
+                    if (!foundUnusedBundle && AppConfig.Settings.RecentBundles.FindPrefixedIndex(b.Name) == -1) {
+                        foundUnusedBundle = true;
+                        ImGui.Separator();
                     }
-                    if (ImGui.MenuItem("Rescan Bundle Files")) {
-                        workspace.RescanFilesInBundle(workspace.CurrentBundle);
-                    }
-                    if (ImGui.MenuItem("Publish Mod")) {
-                        AddUniqueSubwindow(new ModPublisherWindow(workspace));
+                    if (ImGui.MenuItem(b.Name)) {
+                        SetWorkspace(workspace.Env.Config.Game, b.Name);
                     }
                 }
                 ImGui.EndMenu();
             }
+            if (ImGui.MenuItem("Bundle Manager")) {
+                ShowBundleManagement();
+            }
+            if (workspace.BundleManager.UninitializedBundleFolders.Count > 0) {
+                if (ImGui.BeginMenu("* Uninitialized bundle folders")) {
+                    foreach (var item in workspace.BundleManager.UninitializedBundleFolders) {
+                        if (ImGui.MenuItem(item)) {
+                            try {
+                                workspace.InitializeUnlabelledBundle(item);
+                            } catch (Exception ex) {
+                                Logger.Error(ex, "Failed to set up uninitialized bundle " + item);
+                            }
+                            break;
+                        }
+                    }
+                    ImGui.EndMenu();
+                }
+            }
+            if (workspace.CurrentBundle != null) {
+                ImGui.Separator();
+                if (ImGui.MenuItem("Open current Bundle folder")) {
+                    FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
+                }
+                if (ImGui.MenuItem("Rescan Bundle Files")) {
+                    workspace.RescanFilesInBundle(workspace.CurrentBundle);
+                }
+                if (ImGui.MenuItem("Publish Mod")) {
+                    AddUniqueSubwindow(new ModPublisherWindow(workspace));
+                }
+            }
+            ImGui.EndMenu();
         }
     }
 
@@ -607,12 +652,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             ImGui.Bullet();
         }
         if (ImGui.BeginMenu("File")) {
-            if (ImGui.BeginMenu("Create New")) {
+            if (ImGui.BeginMenu("Create New", workspace != null)) {
                 if (ImGui.MenuItem("Lua Script")) AddFileEditor(Workspace.ResourceManager.CreateNewFile(LuaFileLoader.Instance, "Script", "lua")!);
                 ImGui.EndMenu();
             }
             ImGui.Separator();
-            if (ImGui.MenuItem("Open ...")) {
+            if (ImGui.MenuItem("Open ...", false, workspace != null)) {
                 ShowFileOpenDialog();
             }
             if (workspace != null) {
@@ -761,10 +806,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 AddUniqueSubwindow(new ThemeEditor());
             }
             ImGui.Separator();
-            if (ImGui.MenuItem("Retarget Designer")) {
-                AddUniqueSubwindow(new RetargetDesigner());
+            if (workspace != null) {
+                if (ImGui.MenuItem("Retarget Designer")) {
+                    AddUniqueSubwindow(new RetargetDesigner());
+                }
+                ImGui.Separator();
             }
-            ImGui.Separator();
             if (workspace != null && ImGui.MenuItem("Check for updated game data cache")) {
                 if (RequestCloseAllSubwindows(true)) {
                     ResourceRepository.ResetCache(workspace.Game);
@@ -892,7 +939,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
         ShowGameSelectionMenu();
 
-        if (ImGui.BeginMenu("Scenes")) {
+        if (ImGui.BeginMenu("Scenes", enabled: workspace != null)) {
             if (ImGui.Selectable($"{AppIcons.SI_GenericAdd} New scene")) {
                 var file = Workspace.ResourceManager.CreateNewFile(KnownFileFormats.Scene);
                 if (file != null) {
