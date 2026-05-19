@@ -136,20 +136,28 @@ public class AppConfig : Singleton<AppConfig>
     public static bool IsOutdatedVersion { get; internal set; }
     public static AppJsonSettings Settings => Instance.JsonSettings;
 
-    public sealed class SettingWrapper<T>(string settingKey, ReaderWriterLockSlim _lock, T initial) where T : struct, IEquatable<T>
+    public abstract class SettingWrapperBase<T>(string settingKey)
+    {
+        public string SettingKey { get; } = settingKey;
+
+        public event Action<T>? ValueChanged;
+        public abstract T Get();
+
+        protected void OnValueChanged(T value) => ValueChanged?.Invoke(value);
+    }
+
+    public sealed class SettingWrapper<T>(string settingKey, ReaderWriterLockSlim _lock, T initial)
+        : SettingWrapperBase<T>(settingKey) where T : struct, IEquatable<T>
     {
         internal T value = initial;
 
         private readonly T Initial = initial;
-        public readonly string SettingKey = settingKey;
-
-        public event Action<T>? ValueChanged;
 
         public bool IsInitial => Initial.Equals(value);
-        public T Get() => _lock.Read(() => value);
+        public override T Get() => _lock.Read(() => value);
         public void Set(T value) => SetAndSave(value, (v) => {
             this.value = value;
-            ValueChanged?.Invoke(v);
+            OnValueChanged(v);
         });
         public void Reset() => Set(Initial);
 
@@ -158,26 +166,102 @@ public class AppConfig : Singleton<AppConfig>
         public static implicit operator T(SettingWrapper<T> vv) => vv.Get();
     }
 
-    public sealed class ClassSettingWrapper<T>(string settingKey, ReaderWriterLockSlim _lock, Func<T>? initial = default) where T : class
+    public sealed class ClassSettingWrapper<T>(string settingKey, ReaderWriterLockSlim _lock, Func<T>? initial = default)
+        : SettingWrapperBase<T?>(settingKey) where T : class
     {
         internal T? value = initial?.Invoke() ?? default;
 
         private readonly T? Initial = initial?.Invoke() ?? default;
-        public readonly string SettingKey = settingKey;
-
-        public event Action<T?>? ValueChanged;
 
         public bool IsInitial => value == null ? Initial == null : value.Equals(Initial);
-        public T? Get() => _lock.Read(() => value);
+        public override T? Get() => _lock.Read(() => value);
         public void Set(T? value) => SetAndSave(value, (v) => {
             this.value = value;
-            ValueChanged?.Invoke(v);
+            OnValueChanged(v!);
         });
         public void Reset() => Set(Initial);
 
         public override string? ToString() => Get()?.ToString();
 
         public static implicit operator T?(ClassSettingWrapper<T> vv) => vv.Get();
+    }
+
+    public sealed class ComputedSetting<S1, T> : IDisposable
+    {
+        private readonly SettingWrapperBase<S1> setting;
+        private readonly Func<S1, T> func;
+        private T value = default!;
+
+        public T Value {
+            get {
+                if (!_isInitialized) {
+                    value = func.Invoke(setting.Get());
+                    _isInitialized = true;
+                }
+                return value;
+            }
+        }
+
+        private bool _isInitialized;
+
+        public ComputedSetting(SettingWrapperBase<S1> setting, Func<S1, T> func)
+        {
+            setting.ValueChanged += UpdateValue;
+            this.setting = setting;
+            this.func = func;
+        }
+
+        private void UpdateValue(S1 source) => value = func.Invoke(source);
+
+        public void Dispose()
+        {
+            setting.ValueChanged -= UpdateValue;
+        }
+
+        public static implicit operator T(ComputedSetting<S1, T> set) => set.Value;
+    }
+
+    public sealed class ComputedSetting2<S1, S2, T> : IDisposable
+    {
+        private readonly SettingWrapperBase<S1> setting1;
+        private readonly SettingWrapperBase<S2> setting2;
+        private readonly Func<S1, S2, T> func;
+        private T value = default!;
+        private S1 source1;
+        private S2 source2;
+        private bool _isInitialized;
+
+        public T Value {
+            get {
+                if (!_isInitialized) {
+                    value = func.Invoke(source1 = setting1.Get(), source2 = setting2.Get());
+                    _isInitialized = true;
+                }
+                return value;
+            }
+        }
+
+        public ComputedSetting2(SettingWrapperBase<S1> setting1, SettingWrapperBase<S2> setting2, Func<S1, S2, T> func)
+        {
+            setting1.ValueChanged += UpdateValue1;
+            setting2.ValueChanged += UpdateValue2;
+            source1 = default!;
+            source2 = default!;
+            this.setting1 = setting1;
+            this.setting2 = setting2;
+            this.func = func;
+        }
+
+        private void UpdateValue1(S1 source) => value = func.Invoke(source1 = source, source2);
+        private void UpdateValue2(S2 source) => value = func.Invoke(source1, source2 = source);
+
+        public void Dispose()
+        {
+            setting1.ValueChanged -= UpdateValue1;
+            setting2.ValueChanged -= UpdateValue2;
+        }
+
+        public static implicit operator T(ComputedSetting2<S1, S2, T> set) => set.Value;
     }
 
     private Dictionary<string, AppGameConfig> gameConfigs = new();
@@ -276,6 +360,9 @@ public class AppConfig : Singleton<AppConfig>
     public string ConfigBasePath => GameConfigBaseFilepath.Get() ?? Path.Combine(AppContext.BaseDirectory, "configs");
 
     public AppJsonSettings JsonSettings { get; private set; } = new();
+
+    public static ComputedSetting<S1, T> Computed<S1, T>(SettingWrapperBase<S1> s1, Func<S1, T> func) => new ComputedSetting<S1, T>(s1, func);
+    public static ComputedSetting2<S1, S2, T> Computed<S1, S2, T>(SettingWrapperBase<S1> s1, SettingWrapperBase<S2> s2, Func<S1, S2, T> func) => new ComputedSetting2<S1, S2, T>(s1, s2, func);
 
     public string? GetGamePath(GameIdentifier game) => _lock.Read(() => gameConfigs.GetValueOrDefault(game.name)?.gamepath);
     public void SetGamePath(GameIdentifier game, string path) => SetForGameAndSave(game.name, path, (cfg, val) => cfg.gamepath = val);

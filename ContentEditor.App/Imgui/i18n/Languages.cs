@@ -31,4 +31,14 @@ public class Languages
             _ => code,
         };
     }
+
+    public static string FormatDate(DateTime? dateTime)
+    {
+        return dateTime == null ? "[unknown date]" : FormatDate(dateTime.Value);
+    }
+
+    public static string FormatDate(DateTime dateTime)
+    {
+        return dateTime.ToLocalTime().ToString(Time.DateTimeFormat);
+    }
 }

@@ -2,7 +2,7 @@
 
 ## RE Engine File System
 
-RE Engine uses a custom archive format called **PAK** that differs from standard ZIP in a critical way. Unlike ZIP which stores file paths as strings, RE Engine PAK files store files **without filenames**, instead computing two 32-bit hashes of the lowercase and upper case paths, concatenating a platform prefix (`natives/STM/`, `natives/x64/`, `natives/EGS/`, ...), the actual path, the file format version, and optionally additional localization suffixes (`.x64.en`, ...).
+RE Engine uses a custom archive format called **PAK** that differs from standard ZIP in a critical way. Unlike ZIP which stores file paths as strings, RE Engine PAK files store files **without filenames**, instead computing two 32-bit hashes of the lowercase and upper case paths, which also makes file paths case insensitive. The hash is computed by concatenating a platform prefix (`natives/STM/`, `natives/x64/`, `natives/EGS/`, ...), the actual path, the file format version, and optionally additional localization suffixes for files that have multiple language versions (`.x64.en`, ...).
 
 All modding tools including Content Editor use a **list file** to bridge PAK hashes with file paths. A list file contains all known full pak paths used by a game. This is needed because finding the paths otherwise is a non-trivial operation that can take a while.
 
@@ -16,7 +16,6 @@ To account for this path handling, Content Editor treats paths in terms of diffe
     - This is the main path type Content Editor uses to refer to files for accessing and for output file generation
     - The platform prefix is usually meaningless for the mod developer, so removing it means less things to keep aware of
     - It also makes it easier to swap platforms without needing to modify the source project file listing
-    - These are currently forced lowercase for bundles, but this limitation will get removed in the future
 - **Resource path** (example: `Character/Ch/Ch0100/ch0100_body.tex`)
     - The normal resource file path as stored in resource files
     - No platform prefix and no file version extensions

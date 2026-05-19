@@ -22,7 +22,22 @@ public class Time
         "MM/dd/yyyy",
         "yyyy/MM/dd"
     ];
-    public static string dateFormat => DateFormats[Math.Clamp(AppConfig.Instance.DateFormat.Get(), 0, DateFormats.Length - 1)];
+
+    public static AppConfig.ComputedSetting<int, string> DateOnlyFormat { get; }
+    public static AppConfig.ComputedSetting2<int, bool, string> DateTimeFormat { get; }
+
+    static Time()
+    {
+        DateOnlyFormat = AppConfig.Computed(
+            AppConfig.Instance.DateFormat,
+            (fmt) => DateFormats[Math.Clamp(fmt, 0, DateFormats.Length - 1)]);
+
+        DateTimeFormat = AppConfig.Computed(
+            AppConfig.Instance.DateFormat,
+            AppConfig.Instance.ClockFormat,
+            (fmt, clock) => DateFormats[Math.Clamp(fmt, 0, DateFormats.Length - 1)] + (clock ? " hh:mm tt" : " HH:mm"));
+    }
+
     internal void Init()
     {
 
