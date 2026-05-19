@@ -131,14 +131,19 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         this.env = env;
 
         var configPath = Path.Combine(AppConfig.Instance.ConfigBasePath, env.Config.Game.name);
-        var patchConfig = workspace?.Config ?? new PatchDataContainer(Path.GetFullPath(configPath));
+        var patchConfig = this.workspace?.Config ?? new PatchDataContainer(Path.GetFullPath(configPath));
 
-        workspace = new ContentWorkspace(env, patchConfig, workspace?.BundleManager);
+        var workspace = new ContentWorkspace(env, patchConfig, this.workspace?.BundleManager);
         ChangeWorkspace(workspace, bundle);
     }
 
     private void ChangeWorkspace(ContentWorkspace workspace, string? bundle)
     {
+        if (!MainLoop.IsMainThread) {
+            MainLoop.Instance.InvokeFromUIThread(() => ChangeWorkspace(workspace, bundle));
+            return;
+        }
+
         this.workspace = workspace;
 
         workspace.UI = new AppUIService(this, workspace);
@@ -351,7 +356,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             .Select(kv => kv.Key)
             .ToHashSet();
 
-        if (ImGui.BeginMenu("Game: " + (env == null && string.IsNullOrEmpty(LastRequestedGame.name) ? "<unset>" : (env?.Config.Game ?? LastRequestedGame).name.ToUpper()))) {
+        var curGame = (env?.Config.Game ?? LastRequestedGame).name;
+        if (ImGui.BeginMenu("Game: " + (string.IsNullOrEmpty(curGame) ? "<unset>" : curGame.ToUpper()))) {
             if (env != null) {
                 if (ImGui.BeginMenu("Platform: " + env.Config.Platform)) {
                     foreach (var otherPlat in PlatformIdentifier.GetAvailableDesktopPlatforms(env.Config.Game)) {
