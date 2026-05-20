@@ -349,6 +349,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         foreach (var mat in matData.Materials) {
             var material = CreateViewShadedMaterial(flags);
             material.name = mat.Name;
+            material.SourceMaterial = mat;
             if (material.HasTextureParameter(TextureUnit.Texture0)) {
                 if (mat.AlbedoTexture != null) {
                     var tex = LoadTexture(mat.AlbedoTexture.texPath, flags);
@@ -422,6 +423,11 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             GL.Disable(EnableCap.DepthTest);
         } else {
             GL.Enable(EnableCap.DepthTest);
+        }
+        if (material.SourceMaterial?.IsTwoSided == false) {
+            GL.Enable(EnableCap.CullFace);
+        } else {
+            GL.Disable(EnableCap.CullFace);
         }
     }
 

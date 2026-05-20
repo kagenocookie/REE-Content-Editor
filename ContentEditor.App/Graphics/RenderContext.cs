@@ -77,7 +77,7 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
     public abstract (MeshHandle, ShapeMesh) CreateShapeMesh();
     protected abstract MeshResourceHandle? LoadMeshResource(FileHandle fileHandle);
 
-    private static readonly ShaderFlags[] ShaderFlagCombinations = BuildShaderFlagCombinations();
+    internal static readonly ShaderFlags[] ShaderFlagCombinations = BuildShaderFlagCombinations();
     private static ShaderFlags[] BuildShaderFlagCombinations()
     {
         var flags = Enum.GetValues<ShaderFlags>();

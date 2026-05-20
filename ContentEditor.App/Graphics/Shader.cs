@@ -20,7 +20,7 @@ public sealed class Shader : IDisposable
     private static readonly Dictionary<ShaderFlags, string[]> FlagDefines = new() {
         { ShaderFlags.None, [] },
         { ShaderFlags.EnableSkinning, ["ENABLE_SKINNING"] },
-        { ShaderFlags.EnableStreamingTex, ["ENABLE_STREAMING_TEX"] },
+        { ShaderFlags.EnableStreamingTex, [] }, // no flag needed, does not affect shader content
         { ShaderFlags.EnableInstancing, ["ENABLE_INSTANCING"] },
         { ShaderFlags.Use6Weights, ["USE_6_WEIGHTS"] },
     };
@@ -28,13 +28,8 @@ public sealed class Shader : IDisposable
     static Shader()
     {
         // build defines lookup tables for all flag combinations for faster runtime lookups
-        var keys = FlagDefines.Keys.Where(f => f != ShaderFlags.None).ToArray();
-        foreach (var key in keys) {
-            foreach (var key2 in keys) {
-                if (key == key2 || FlagDefines.ContainsKey(key | key2)) continue;
-
-                FlagDefines[key | key2] = FlagDefines[key].Concat(FlagDefines[key2]).ToArray();
-            }
+        foreach (var combination in RenderContext.ShaderFlagCombinations) {
+            FlagDefines[combination] = FlagDefines.SelectMany(fd => (combination & fd.Key) != 0 ? fd.Value : []).ToArray();
         }
     }
 
@@ -47,7 +42,7 @@ public sealed class Shader : IDisposable
         // using just part of the hash here: 8 bits for path hash + 8 bits for the flags
         // should be good enough since we probably won't have more than maybe 20 unique shaders
         var shaderId = MurMur3HashUtils.GetHash(shaderPath);
-        ID = (uint)(shaderId & 0x0000ff00) + (uint)flags;
+        ID = (uint)(shaderId & 0x0000ff00) + ((uint)flags & 0xff);
 
         LoadFromCombinedShaderFile(shaderPath, flags, version);
         Name = Path.GetFileNameWithoutExtension(shaderPath);

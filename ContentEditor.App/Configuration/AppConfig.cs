@@ -287,7 +287,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<ReeLib.via.Color> BackgroundColor = new SettingWrapper<ReeLib.via.Color>(Keys.BackgroundColor, _lock, new ReeLib.via.Color(115, 140, 153, 255));
     public readonly SettingWrapper<bool> PrettyFieldLabels = new SettingWrapper<bool>(Keys.PrettyLabels, _lock, true);
     public readonly SettingWrapper<bool> ShowQuaternionsAsEuler = new SettingWrapper<bool>(Keys.QuaternionsAsEuler, _lock, true);
-    public readonly SettingWrapper<int> LogLevel = new SettingWrapper<int>(Keys.LogLevel, _lock, 1);
+    public readonly SettingWrapper<int> LogLevel = new SettingWrapper<int>(Keys.LogLevel, _lock, (int)LogSeverity.Info);
     public readonly SettingWrapper<int> MaxUndoSteps = new SettingWrapper<int>(Keys.MaxUndoSteps, _lock, 250);
     public readonly SettingWrapper<int> AutoExpandFieldsCount = new SettingWrapper<int>(Keys.AutoExpandFieldsCount, _lock, 3);
     public readonly SettingWrapper<int> FontSize = new SettingWrapper<int>(Keys.FontSize, _lock, 20);

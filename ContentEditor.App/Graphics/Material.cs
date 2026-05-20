@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using ContentEditor.App.FileLoaders;
 using ReeLib.Common;
 using ReeLib.via;
 using Silk.NET.OpenGL;
@@ -18,6 +19,8 @@ public class Material
     private readonly List<(string name, TextureUnit slot, Texture? tex)> textureParameters = new();
     private MaterialParameter<Matrix4x4>? boneMatricesParameter;
     private readonly MaterialParameter<Matrix4x4> modelMatrixParam;
+
+    public MaterialGroupWrapper.MaterialLookupData? SourceMaterial { get; set; }
 
     /// <summary>
     /// 24-bit integer hash of the material parameter names and values.

@@ -33,6 +33,11 @@ public class MaterialGroupWrapper(MdfFile mdf2) : BaseFileResource<MdfFile>(mdf2
         public TexHeader? NormalTexture { get; set; }
         public TexHeader? ATXXTexture { get; set; }
 
+        // note: I'm not really sure what the differences between the TwoSide flags are
+        // based on ingame testing, TwoSideEnable doesn't matter but either of the other or both of two flags will disable backface culling
+        // could be .mmtr specific
+        public bool IsTwoSided => (material.Header.Flags1 & (MaterialFlags1.BaseTwoSideEnable|MaterialFlags1.ForcedTwoSideEnable)) != 0;
+
         public override string ToString() => $"{Name} [{AlbedoTexture?.texPath ?? "no albedo"}]";
     }
 
