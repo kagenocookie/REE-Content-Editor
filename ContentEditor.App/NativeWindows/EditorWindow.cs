@@ -243,8 +243,23 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             if (workspace.ResourceManager.TryGetOrLoadFile(filename, out var file)) {
                 file.Stream.Seek(0, SeekOrigin.Begin);
                 AddFileEditor(file);
+            } else if (Path.IsPathRooted(filename) && !File.Exists(filename)) {
+                AddSubwindow(new ErrorModal("File not found", $"File could not be found:\n{filename}"));
             } else {
-                AddSubwindow(new ErrorModal("Unsupported file", "File is not supported:\n" + filename));
+                var fmt = PathUtils.ParseFileFormat(filename).format;
+                var canLoad = workspace.ResourceManager.CanLoadFile(filename);
+                if (!canLoad) {
+                    AddSubwindow(new ErrorModal("Unsupported file", $"This file format ({fmt}) is not yet supported:\n{filename}"));
+                } else if (fmt.IsRSZBasedFormat()) {
+                    AddSubwindow(new ErrorModal("Unsupported file", $"""
+                        File could not be opened or is not supported:
+                        {filename}
+
+                        This is an RSZ-based file format, make sure you have the correct game selected.
+                        """));
+                } else {
+                    AddSubwindow(new ErrorModal("Unsupported file", $"File could not be opened or is not supported:\n{filename}"));
+                }
             }
         }
     }
