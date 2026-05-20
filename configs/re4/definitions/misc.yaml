@@ -1,0 +1,5 @@
+classes:
+  soundlib.SoundTriggerInfo:
+    to_string: "SoundTriggerInfo TriggerId={_TriggerId} EventId={_EventId}"
+  soundlib.SoundTargetOperationTrigger:
+    to_string: "SoundTargetOperationTrigger GuiTrigger={_GuiTriggerId} SoundTrigger={_SoundTriggerId}"
