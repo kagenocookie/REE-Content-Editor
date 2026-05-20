@@ -296,7 +296,7 @@ public class ResourcePathPicker : IObjectUIHandler
         }
 
         var workspace = context.GetWorkspace()!;
-        if (Path.IsPathFullyQualified(newPath)) {
+        if (Path.IsPathRooted(newPath)) {
             newPath = PathUtils.GetTargetFromFullFilepath(newPath) ?? newPath;
         }
 
