@@ -8,6 +8,7 @@ using ContentEditor;
 using ContentEditor.Core;
 using ContentPatcher.FileFormats;
 using ReeLib;
+using ReeLib.Common;
 
 public class Patcher : IDisposable
 {
@@ -337,7 +338,7 @@ public class Patcher : IDisposable
         public long PakSize { get; set; }
         public long SubPakSize { get; set; }
 
-        public Dictionary<string, PatchedResourceMetadata> Resources { get; set; } = new();
+        public Dictionary<string, PatchedResourceMetadata> Resources { get; set; } = new(PakHashedPathComparer.Instance);
     }
 
     private sealed class PatchedResourceMetadata
