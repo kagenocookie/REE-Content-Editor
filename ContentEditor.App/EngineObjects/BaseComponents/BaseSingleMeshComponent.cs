@@ -40,7 +40,7 @@ public abstract class BaseSingleMeshComponent(GameObject gameObject, RszInstance
             : Scene!.RenderContext.LoadMaterialGroup(materialFilepath);
         mesh = Scene.RenderContext.LoadMesh(meshFilepath);
         if (mesh != null && material != null) {
-            Scene.RenderContext.SetMeshMaterial(mesh, material);
+            mesh.SetMaterials(material);
         }
     }
 

@@ -24,8 +24,12 @@ public class MaterialGroupWrapper(MdfFile mdf2) : BaseFileResource<MdfFile>(mdf2
 
     public sealed class MaterialLookupData(MaterialData material)
     {
-        public string Name { get; } = material.Name;
-        public IEnumerable<TexHeader> Textures => material.Textures;
+        public MaterialData Data { get; } = material;
+
+        public string Name { get => Data.Name; set => Data.Name = value; }
+        public uint NameHash  { get => Data.Header.matNameHash; set => Data.Header.matNameHash = value; }
+
+        public IEnumerable<TexHeader> Textures => Data.Textures;
 
         public ParamHeader? BaseColor { get; set; }
 
@@ -36,7 +40,7 @@ public class MaterialGroupWrapper(MdfFile mdf2) : BaseFileResource<MdfFile>(mdf2
         // note: I'm not really sure what the differences between the TwoSide flags are
         // based on ingame testing, TwoSideEnable doesn't matter but either of the other or both of two flags will disable backface culling
         // could be .mmtr specific
-        public bool IsTwoSided => (material.Header.Flags1 & (MaterialFlags1.BaseTwoSideEnable|MaterialFlags1.ForcedTwoSideEnable)) != 0;
+        public bool IsTwoSided => (Data.Header.Flags & (MaterialFlags.BaseTwoSideEnable|MaterialFlags.ForcedTwoSideEnable)) != 0;
 
         public override string ToString() => $"{Name} [{AlbedoTexture?.texPath ?? "no albedo"}]";
     }

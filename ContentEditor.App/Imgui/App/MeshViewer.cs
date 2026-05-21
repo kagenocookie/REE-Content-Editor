@@ -632,7 +632,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         var mdfMats = mesh.Material.Materials;
         var matNames = ctx.MeshFile.NativeMesh.MaterialNames;
         if (matNames.Count < mdfMats.Count) {
-            var missingMats = mdfMats.Select(m => m.name).Where(m => !matNames.Contains(m));
+            var missingMats = mdfMats.Select(m => m.Name).Where(m => !matNames.Contains(m));
             foreach (var mat in missingMats) {
                 if (matNames.Count >= mdfMats.Count) break;
                 matNames.Add(mat);
@@ -962,8 +962,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             gizmoMeshHandle.SetMaterials(new MaterialGroup(material));
             scene.RenderContext.StoreMesh(gizmoMeshHandle.Handle);
         }
-        (scene.RenderContext as OpenGLRenderContext)?.Batch.Gizmo
-            .Add(new GizmoRenderBatchItem(gizmoMeshHandle.GetMaterial(0), gizmoMeshHandle.GetMesh(0), Matrix4x4.Identity, gizmoMeshHandle.GetMaterial(0)));
+        (scene.RenderContext as OpenGLRenderContext)?.Batch.Gizmo.Add(new GizmoRenderBatchItem(gizmoMeshHandle, 0, Matrix4x4.Identity, 0));
     }
 
     private bool UpdateAnimatorMesh(MeshComponent meshComponent, bool showErrorIfInvalid)
@@ -1347,7 +1346,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
         if (mesh != null && meshComponent.MeshHandle?.Material != null) {
             var mdfMats = meshComponent.MeshHandle.Material.Materials;
             var matNames = mesh.NativeMesh.MaterialNames;
-            var nameMismatch = matNames.Any(name => !mdfMats.Select(m => m.name).Contains(name));
+            var nameMismatch = matNames.Any(name => !mdfMats.Select(m => m.Name).Contains(name));
             var error = GetMdfErrors();
             if (error != null) {
                 ImGui.TextColored(Colors.Warning, error);
@@ -1397,12 +1396,12 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
         if (mesh != null && meshComponent.MeshHandle?.Material != null) {
             var mdfMats = meshComponent.MeshHandle.Material.Materials;
             var matNames = mesh.NativeMesh.MaterialNames;
-            var nameMismatch = matNames.Any(name => !mdfMats.Select(m => m.name).Contains(name));
+            var nameMismatch = matNames.Any(name => !mdfMats.Select(m => m.Name).Contains(name));
             if (mdfMats.Count != mesh.NativeMesh.MaterialNames.Count) {
                 return "Mesh material count does not match MDF2 material count. Textures won't display correctly ingame.\nEnsure that both counts match.";
             }
             if (nameMismatch) {
-                return "Mesh references material names that are not present in the selected MDF2.";
+                return "Mesh references material names that are not present in the selected MDF2.\nSuch submeshes will be invisible ingame.";
             }
         }
 
@@ -1418,7 +1417,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
         var mdfMats = mesh.Material.Materials;
         var matNames = MeshFile.NativeMesh.MaterialNames;
         if (matNames.Count < mdfMats.Count) {
-            var missingMats = mdfMats.Select(m => m.name).Where(m => !matNames.Contains(m));
+            var missingMats = mdfMats.Select(m => m.Name).Where(m => !matNames.Contains(m));
             foreach (var mat in missingMats) {
                 if (matNames.Count >= mdfMats.Count) break;
                 matNames.Add(mat);

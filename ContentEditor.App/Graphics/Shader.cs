@@ -28,8 +28,9 @@ public sealed class Shader : IDisposable
     static Shader()
     {
         // build defines lookup tables for all flag combinations for faster runtime lookups
+        var rawDefines = FlagDefines.ToArray();
         foreach (var combination in RenderContext.ShaderFlagCombinations) {
-            FlagDefines[combination] = FlagDefines.SelectMany(fd => (combination & fd.Key) != 0 ? fd.Value : []).ToArray();
+            FlagDefines[combination] = rawDefines.SelectMany(fd => (combination & fd.Key) != 0 ? fd.Value : []).ToArray();
         }
     }
 

@@ -145,6 +145,10 @@ public class Chain(GameObject gameObject, RszInstance data) : Component(gameObje
                     case ChainNodeCollisionShape.Sphere:
                         gizmo.Cur.Add(new Sphere(origin, node.collisionRadius));
                         break;
+                    case ChainNodeCollisionShape.None:
+                        gizmo.Cur.Add(new LineSegment(origin, (parentBoneTransform * transform).Translation));
+                        gizmo.Cur.Add(new Sphere(origin, 0.004f));
+                        break;
                 }
 
                 switch (node.angleMode) {

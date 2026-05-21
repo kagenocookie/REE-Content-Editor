@@ -88,7 +88,7 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
                 var mesh = ctx.LoadMesh(group.meshPath);
                 if (mesh != null) {
                     if (mat != null) {
-                        ctx.SetMeshMaterial(mesh, mat);
+                        mesh.SetMaterials(mat);
                     }
 
                     meshes.Add(mesh);
@@ -137,7 +137,7 @@ public class Foliage(GameObject gameObject, RszInstance data) : RenderableCompon
             }
 
             foreach (var inst in group.transforms!) {
-                var instanceMat = transform * ContentEditor.App.Transform.GetMatrixFromTransforms(inst.pos, inst.rot, inst.scale);
+                var instanceMat = ContentEditor.App.Transform.GetMatrixFromTransforms(inst.pos, inst.rot, inst.scale) * transform;
                 matrices.Add(instanceMat);
             }
         }

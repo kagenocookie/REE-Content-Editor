@@ -4,6 +4,7 @@ using Assimp;
 using ContentEditor.App.Graphics;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Common;
 
 namespace ContentEditor.App.FileLoaders;
 
@@ -89,6 +90,7 @@ public partial class CommonMeshResource(string name, Workspace workspace) : IRes
 
             var matData = new ReeLib.Mdf.MaterialData(new ReeLib.Mdf.MaterialHeader() {
                 matName = mat.Name,
+                matNameHash = MurMur3HashUtils.GetHash(mat.Name),
                 mmtrPath = "__imported.mmtr",
             });
             if (mat.HasTextureDiffuse) {
@@ -199,6 +201,7 @@ public partial class CommonMeshResource(string name, Workspace workspace) : IRes
             foreach (var group in mainLod.MeshGroups) {
                 foreach (var sub in group.Submeshes) {
                     var newMesh = new TriangleMesh(mesh, sub);
+                    newMesh.MaterialNameHash = MurMur3HashUtils.GetHash(mesh.MaterialNames[sub.materialIndex]);
                     newMesh.MeshGroup = group.groupId;
                     PreloadedMeshes.Add(newMesh);
                 }

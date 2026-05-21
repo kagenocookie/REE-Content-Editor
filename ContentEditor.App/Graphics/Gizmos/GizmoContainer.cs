@@ -140,8 +140,7 @@ public class GizmoContainer : IDisposable
             var sub = mesh.Handle.Meshes[i];
             if (!mesh.GetMeshPartEnabled(sub.MeshGroup)) continue;
 
-            var material = materialOverride ?? mesh.GetMaterial(i);
-            // TODO support material override
+            var material = materialOverride ?? mesh.GetMaterialForMesh(i) ?? mesh.GetMaterial(0);
             meshDraws.Add(new GizmoRenderBatchItem(material, sub, transform));
         }
     }

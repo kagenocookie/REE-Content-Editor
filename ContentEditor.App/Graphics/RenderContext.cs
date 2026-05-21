@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using ContentEditor.App.FileLoaders;
 using ContentEditor.Editor;
 using ContentPatcher;
 using ReeLib;
@@ -68,6 +70,7 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
     public abstract void RenderInstanced(MeshHandle handle, List<Matrix4x4> transforms);
 
     public abstract MaterialGroup LoadMaterialGroup(FileHandle file, ShaderFlags flags = ShaderFlags.None);
+    protected abstract Material LoadUpdatedMaterial(FileHandle file, MaterialGroup group, MaterialGroupWrapper.MaterialLookupData material);
     public abstract Material GetBuiltInMaterial(BuiltInMaterials material, ShaderFlags flags = ShaderFlags.None);
     public abstract IEnumerable<Material> GetPresetMaterials(EditorPresetMaterials preset);
 
@@ -132,35 +135,6 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
         TextureRefs.Dispose();
     }
 
-    private IResourceFile? LoadResource(string path)
-    {
-        if (!ResourceManager.TryResolveGameFile(path, out var fileHandle)) {
-            Logger.Error("Failed to load resource " + path);
-            return null;
-        }
-
-        var resource = fileHandle.Resource;
-        if (_loadedResources.TryGetValue(resource, out var handleRefs)) {
-            _loadedResources[resource] = (handleRefs.handle, handleRefs.refcount + 1);
-        } else {
-            _loadedResources[resource] = (fileHandle, 1);
-            fileHandle.References.Add(this);
-        }
-
-        return resource;
-    }
-
-    internal void UnloadResource(IResourceFile resource)
-    {
-        if (_loadedResources.Remove(resource, out var handleRefs)) {
-            if (handleRefs.refcount == 1) {
-                handleRefs.handle.References.Remove(this);
-            } else {
-                _loadedResources[resource] = (handleRefs.handle, handleRefs.refcount - 1);
-            }
-        }
-    }
-
     public void SetRenderToTexture(Vector2 textureSize = new())
     {
         if (textureSize == ViewportSize) return;
@@ -194,7 +168,7 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
         }
 
         var mesh = CreateMeshInstanceHandle(resource, file);
-        SetMeshMaterial(mesh, mesh.Material);
+        mesh.SetMaterials(mesh.Material);
         return mesh;
     }
 
@@ -225,30 +199,31 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
         }
     }
 
-    public void SetMeshMaterial(MeshHandle mesh, MaterialGroup material)
+    public void LoadSingleMaterial(FileHandle file, MaterialGroup group, MaterialGroupWrapper.MaterialLookupData specificMaterial)
     {
-        var handle = mesh.Handle;
-        var matIndices = new List<int>();
-        foreach (var srcMesh in handle.Meshes) {
-            var matName = handle.GetMaterialName(matIndices.Count);
-            var target = material.GetByName(matName);
-            if (target != null) {
-                matIndices.Add(material.GetMaterialIndex(target));
-            } else {
-                if (material.Materials.Count == 0) {
-                    material.Materials.Add(GetPresetMaterials(EditorPresetMaterials.Default).First());
-                    material.Materials[0].name = matName;
-                }
-                matIndices.Add(0);
-            }
+        Debug.Assert(!group.Materials.Any(m => m.SourceMaterial == specificMaterial));
+        foreach (var tex in specificMaterial.Data.Textures) {
+            LoadUpdatedMaterial(file, group, specificMaterial);
         }
+    }
 
-        mesh.SetMaterials(material, matIndices);
+    public void UnloadMaterial(Material material)
+    {
+        foreach (var tex in material.Textures) {
+            TextureRefs.Dereference(tex);
+        }
     }
 
     protected void AddMaterialTextureReferences(MaterialGroup matGroup)
     {
         foreach (var mat in matGroup.Materials) {
+            AddMaterialTextureReferences(mat);
+        }
+    }
+
+    protected void AddMaterialTextureReferences(Material mat, int count)
+    {
+        for (int i = 0 ; i < count; i++)  {
             AddMaterialTextureReferences(mat);
         }
     }

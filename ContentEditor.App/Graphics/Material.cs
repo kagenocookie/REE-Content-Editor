@@ -27,7 +27,16 @@ public class Material
     /// </summary>
     public uint Hash { get; private set; }
 
-    public string name = string.Empty;
+    public string Name {
+        get => SourceMaterial?.Name ?? field;
+        set {
+            field = value;
+            NameHash = MurMur3HashUtils.GetHash(value);
+            SourceMaterial?.Name = value;
+        }
+    } = string.Empty;
+    public uint NameHash { get => SourceMaterial?.NameHash ?? field; set { field = value; SourceMaterial?.NameHash = value; } }
+
     public MaterialBlendMode BlendMode = new();
     public bool DisableDepth;
 
@@ -37,7 +46,8 @@ public class Material
     {
         _gl = gl;
         this.shader = shader;
-        this.name = name;
+        Name = name;
+        NameHash = MurMur3HashUtils.GetHash(name);
         modelMatrixParam = new MaterialParameter<Matrix4x4>(Matrix4x4.Identity, _gl.GetUniformLocation(shader.Handle, "uModel"));
     }
 
@@ -65,7 +75,7 @@ public class Material
 
     public void RecomputeHash()
     {
-        uint hash = 17;
+        uint hash = NameHash;
         HashParameters(vec4Parameters, ref hash);
         HashParameters(floatParameters, ref hash);
         foreach (var tex in textureParameters) {
@@ -166,12 +176,13 @@ public class Material
         mat.textureParameters.AddRange(textureParameters);
         mat.BlendMode = new MaterialBlendMode(BlendMode.Blend, BlendMode.BlendModeSrc, BlendMode.BlendModeDest);
         mat.DisableDepth = DisableDepth;
-        mat.name = name ?? this.name;
+        mat.Name = name ?? this.Name;
+        mat.NameHash = MurMur3HashUtils.GetHash(mat.Name);
         mat.Hash = Hash;
         return mat;
     }
 
-    public override string ToString() => $"\"{name}\" ({shader}) [tex count: {textureParameters.Count}; first: {textureParameters.FirstOrDefault().tex}]";
+    public override string ToString() => $"\"{Name}\" ({shader}) [tex count: {textureParameters.Count}; first: {textureParameters.FirstOrDefault().tex}]";
 }
 
 public sealed class MaterialParameter<TValue>(TValue value, int location) // where TValue : unmanaged, IEquatable<TValue>

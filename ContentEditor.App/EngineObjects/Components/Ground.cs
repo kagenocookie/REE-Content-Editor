@@ -79,8 +79,6 @@ public class Ground(GameObject gameObject, RszInstance data) : RenderableCompone
         foreach (var (position, mesh) in meshes) {
             if (mesh == null) continue;
 
-            // var pos = WorldEnvironmentController.Instance.GroundFields.GetPosition(position);
-            // context.RenderSimple(mesh, Matrix4X4.CreateTranslation(pos.ToGeneric()));
             context.RenderSimple(mesh, Matrix4x4.Identity);
         }
     }
@@ -110,6 +108,9 @@ public class Ground(GameObject gameObject, RszInstance data) : RenderableCompone
                 res.Max = new System.Numerics.Vector3(pos.X + size.X, groundResource.Header.minY + groundResource.Header.height, pos.Z + size.Y);
                 tmesh = Scene.RenderContext.LoadMesh(handle);
                 var mm = Scene.RenderContext.LoadMaterialGroup(groundMaterialResource ?? handle);
+                foreach (var m in tmesh?.Handle.Meshes ?? []) {
+                    m.MaterialNameHash = mm.Materials.FirstOrDefault()?.NameHash ?? 0;
+                }
                 tmesh?.SetMaterials(mm);
                 meshes.Add(curId, tmesh);
                 materials.Add(mm);

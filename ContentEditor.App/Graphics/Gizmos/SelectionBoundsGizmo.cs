@@ -1,6 +1,7 @@
 using System.Numerics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
+using ReeLib.Common;
 using ReeLib.via;
 using Silk.NET.OpenGL;
 
@@ -30,14 +31,14 @@ public class SelectionBoundsGizmo : Gizmo
         var (mat, mat2) = context.GetMaterialBuilder(BuiltInMaterials.MonoColor).Create2("white", "back");
         mat.SetParameter("_MainColor", new Color(255, 255, 255, 255));
         mat2.SetParameter("_MainColor", new Color(136, 136, 136, 255));
-        mesh.SetMaterials(new MaterialGroup(mat, mat2), [0]);
+        mesh.SetMaterials(new MaterialGroup(mat, mat2));
     }
 
     public override void Render(OpenGLRenderContext context)
     {
         if (!shouldRenderNext) return;
 
-        context.Batch.Gizmo.Add(new GizmoRenderBatchItem(Meshes[0].GetMaterial(0), Meshes[0].GetMesh(0), Matrix4x4.Identity, Meshes[0].GetMaterial(1)));
+        context.Batch.Gizmo.Add(new GizmoRenderBatchItem(Meshes[0], 0, Matrix4x4.Identity, 1));
     }
 
     public override void Update(OpenGLRenderContext context, float deltaTime)

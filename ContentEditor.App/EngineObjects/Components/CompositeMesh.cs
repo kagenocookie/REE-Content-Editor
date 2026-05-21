@@ -96,7 +96,7 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
             var mesh = ctx.LoadMesh(meshPath);
             if (mesh != null) {
                 if (mat != null) {
-                    ctx.SetMeshMaterial(mesh, mat);
+                    mesh.SetMaterials(mat);
                 }
 
                 meshes.Add(mesh);
@@ -154,7 +154,7 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
                 var pos = RszFieldCache.CompositeMesh.TransformController.LocalPosition.Get(inst);
                 var rot = RszFieldCache.CompositeMesh.TransformController.LocalRotation.Get(inst);
                 var scl = RszFieldCache.CompositeMesh.TransformController.LocalScale.Get(inst);
-                var instanceMat = transform * ContentEditor.App.Transform.GetMatrixFromTransforms(pos, rot, scl);
+                var instanceMat = ContentEditor.App.Transform.GetMatrixFromTransforms(pos, rot, scl) * transform;
                 matrices.Add(instanceMat);
             }
         }
@@ -176,7 +176,6 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
             var mesh = meshes[i];
             if (cache.Count == 0 || mesh.IsEmpty) continue;
             context.RenderInstanced(mesh, cache);
-            // foreach (var trans in cache) context.RenderSimple(mesh, trans);
         }
     }
 

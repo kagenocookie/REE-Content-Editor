@@ -42,7 +42,7 @@ public abstract class BaseMultiMeshComponent(GameObject gameObject, RszInstance 
         if (material != null) materials.Add(material);
 
         if (mesh != null && material != null) {
-            Scene.RenderContext.SetMeshMaterial(mesh, material);
+            mesh.SetMaterials(material);
         }
         return mesh;
     }

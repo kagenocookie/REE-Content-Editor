@@ -1,12 +1,14 @@
 using ContentEditor.App.FileLoaders;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.via;
 
 namespace ContentEditor.App.Graphics;
 
 public sealed class MaterialGroup
 {
     public List<Material> Materials { get; } = new();
+    public uint ContentHash { get; private set; }
 
     public MaterialGroupWrapper SourceMaterial { get; private set; }
 
@@ -21,6 +23,7 @@ public sealed class MaterialGroup
     public MaterialGroup(params Material[] materials) : this()
     {
         Materials.AddRange(materials);
+        UpdateHash();
     }
 
     public MaterialGroup(MaterialGroupWrapper sourceMaterial)
@@ -31,10 +34,22 @@ public sealed class MaterialGroup
     public void RefreshParameters(RenderContext context, FileHandle file)
     {
         SourceMaterial = file.Resource as MaterialGroupWrapper ?? SourceMaterial;
-        foreach (var mat in Materials) {
-            var sourceMat = SourceMaterial.GetByName(mat.name);
+        var hash = 0;
+        for (int i = 0; i < SourceMaterial.Materials.Count; i++) {
+            var sm = SourceMaterial.Materials[i];
+            var index = GetMaterialIndex(sm.NameHash);
+            if (index == -1) {
+                context.LoadSingleMaterial(file, this, sm);
+            }
+        }
+        for (int i = 0; i < Materials.Count; i++) {
+            var mat = Materials[i];
+            var sourceMat = SourceMaterial.GetByName(mat.Name);
             if (sourceMat == null) {
-                // remove + unload?
+                // remove + unload resources (textures) from context
+                var rmMat = Materials[i];
+                Materials.RemoveAt(i--);
+                context.UnloadMaterial(rmMat);
                 continue;
             }
 
@@ -44,24 +59,40 @@ public sealed class MaterialGroup
                     mat.SetParameter(Silk.NET.OpenGL.TextureUnit.Texture0, tex);
                 }
             }
-            if (sourceMat.BaseColor != null && mat.HasColorParameter("_MainColor")) {
-                mat.SetParameter("_MainColor", sourceMat.BaseColor.Color);
+            if (mat.HasColorParameter("_MainColor")) {
+                if (sourceMat.BaseColor != null) {
+                    mat.SetParameter("_MainColor", sourceMat.BaseColor.Color);
+                } else {
+                    mat.SetParameter("_MainColor", new Color(uint.MaxValue));
+                }
             }
+            hash = HashCode.Combine(hash, mat.Hash);
         }
+        ContentHash = (uint)hash;
+    }
+
+    private void UpdateHash()
+    {
+        var hash = 1;
+        foreach (var mat in Materials) {
+            hash = HashCode.Combine(hash, mat.Hash);
+        }
+        ContentHash = (uint)hash;
     }
 
     public void Add(Material material)
     {
         Materials.Add(material);
+        ContentHash = (uint)HashCode.Combine((int)ContentHash, material.Hash);
     }
 
     public Material? GetByName(string name)
     {
-        return Materials.FirstOrDefault(m => m.name == name);
+        return Materials.FirstOrDefault(m => m.Name == name);
     }
-    public int GetMaterialIndex(string name)
+    public int GetMaterialIndex(uint nameHash)
     {
-        return Materials.FindIndex(m => m.name == name);
+        return Materials.FindIndex(m => (m.SourceMaterial?.NameHash ?? m.NameHash) == nameHash);
     }
     public int GetMaterialIndex(Material material)
     {

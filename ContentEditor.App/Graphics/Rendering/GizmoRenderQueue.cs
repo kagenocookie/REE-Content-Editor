@@ -77,4 +77,11 @@ public readonly struct GizmoRenderBatchItem : RenderQueueItem
         this.matrix = matrix;
         this.obscuredMaterial = obscuredMaterial;
     }
+    public GizmoRenderBatchItem(MeshHandle handle, int meshAndMatIndex, Matrix4x4 matrix, int obscuredMatIndex = -1) : this()
+    {
+        this.material = handle.Material.Materials[meshAndMatIndex];
+        this.mesh = handle.Handle.Meshes[meshAndMatIndex];
+        this.matrix = matrix;
+        this.obscuredMaterial = obscuredMatIndex == -1 ? null : handle.Material.Materials[meshAndMatIndex];
+    }
 }

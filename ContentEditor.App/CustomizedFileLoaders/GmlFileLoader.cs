@@ -41,6 +41,7 @@ public class GmlFileLoader : IFileLoader, IFileHandleContentProvider<CommonMeshR
 
         meshdata.Scene = new Assimp.Scene();
         meshdata.Scene.Materials.AddRange(mats);
+        meshdata.ImportMaterials(meshdata.Scene);
 
         return new GroundMaterialResourceFile(handle, file, meshdata);
     }

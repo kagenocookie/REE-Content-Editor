@@ -1,3 +1,4 @@
+using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Widgets;
 using ContentEditor.App.Windowing;
 using ContentEditor.BackgroundTasks;
@@ -168,6 +169,7 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     {
         var ret = base.HandleEvent(context, eventData);
         if (eventData.type is UIContextEvent.Changed or UIContextEvent.Reverted or UIContextEvent.Updated) {
+            (Handle.Resource as MaterialGroupWrapper)?.UpdateMaterialLookups();
             UpdateResources();
         }
         return ret;
@@ -406,7 +408,8 @@ public class MdfFileImguiHandler : IObjectUIHandler
     {
         if (ImGui.MenuItem("Duplicate")) {
             var clone = mat.Clone();
-            clone.Header.matName = $"{mat.Header.matName}_copy".GetUniqueName(str => list.Any(l => l.Header.matName == str));
+            clone.Name = $"{mat.Name}_copy".GetUniqueName(str => list.Any(l => l.Name == str));
+            clone.Header.matNameHash = MurMur3HashUtils.GetHash(clone.Name);
             UndoRedo.RecordListAdd(context, list, clone);
             onSelectIndexChanged?.Invoke(list.Count - 1);
         }
@@ -599,10 +602,8 @@ public class MdfFileImguiHandler : IObjectUIHandler
 public class MatHeaderImguiHandler : IObjectUIHandler
 {
     private static MemberInfo[] DisplayedFields = [
-        typeof(MaterialHeader).GetField(nameof(MaterialHeader.matName))!,
         typeof(MaterialHeader).GetField(nameof(MaterialHeader.shaderType))!,
-        typeof(MaterialHeader).GetProperty(nameof(MaterialHeader.Flags1))!,
-        typeof(MaterialHeader).GetProperty(nameof(MaterialHeader.Flags2))!,
+        typeof(MaterialHeader).GetProperty(nameof(MaterialHeader.Flags))!,
         typeof(MaterialHeader).GetProperty(nameof(MaterialHeader.Phong))!,
         typeof(MaterialHeader).GetProperty(nameof(MaterialHeader.Tesselation))!,
         typeof(MaterialHeader).GetField(nameof(MaterialHeader.ukn1))!,
@@ -611,14 +612,17 @@ public class MatHeaderImguiHandler : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         if (context.children.Count == 0) {
-            var tex = context.Get<MaterialHeader>();
+            var data = context.Get<MaterialHeader>();
             var ws = context.GetWorkspace();
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(MaterialHeader), members: DisplayedFields);
-            context.GetChildByValue<MaterialFlags1>()?.uiHandler = new CsharpFlagsEnumFieldHandler<MaterialFlags1, int>() { HideNumberInput = true };
-            context.GetChildByValue<MaterialFlags2>()?.uiHandler = new CsharpFlagsEnumFieldHandler<MaterialFlags2, int>() { HideNumberInput = true };
+            context.AddChild("Name", data, StringFieldHandler.Instance, d => d!.matName, (d, v) => {
+                d.matName = v ?? "";
+                d.matNameHash = MurMur3HashUtils.GetHash(v ?? "");
+            }).SetSiblingIndex(0);
+            context.GetChildByValue<MaterialFlags>()?.uiHandler = new CsharpFlagsEnumFieldHandler<MaterialFlags, int>() { HideNumberInput = true };
             context.AddChildContextSetter<MaterialHeader, string>(
                 "MMTR path",
-                tex,
+                data,
                 new ResourcePathPicker(ws, KnownFileFormats.MasterMaterial) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefault },
                 (p) => p!.mmtrPath,
                 (c, p, v) => {

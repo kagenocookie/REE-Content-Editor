@@ -19,6 +19,7 @@ public abstract class Mesh : IDisposable
     public BufferObject<int> EBO { get; protected set; }
     public AABB BoundingBox { get; protected set; }
     public int MeshGroup { get; set; }
+    public uint MaterialNameHash { get; set; }
 
     public uint ID => VAO.Handle;
 

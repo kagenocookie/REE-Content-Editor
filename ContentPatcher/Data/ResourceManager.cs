@@ -14,6 +14,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     private readonly Dictionary<string, ResourceData> resources = new();
     private readonly Dictionary<string, EntityData> entities = new();
     private readonly ConcurrentDictionary<string, FileHandle> openFiles = new(HybridPakPathEqualityComparer.Instance);
+    private readonly Dictionary<string, string> targetPathRemaps = new(HybridPakPathEqualityComparer.Instance);
     private BundleManager? bundles;
     private ContentWorkspace workspace = null!;
     private Bundle? activeBundle;
@@ -801,7 +802,13 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                 return resourceList.Target;
             }
         }
-        return PathUtils.ParseFileFormat(filepath).version != -1 ? filepath : null;
+        var fmt = PathUtils.ParseFileFormatFull(filepath);
+        if (fmt.version != -1) return filepath;
+        if (targetPathRemaps.TryGetValue(filepath, out var targetPath)) return targetPath;
+        if (fmt.format != KnownFileFormats.Unknown && workspace.Env.TryGetFileExtensionVersion(fmt.extension, out var expectedVersion)) {
+            return targetPathRemaps[filepath] = filepath + "." + expectedVersion;
+        }
+        return null;
     }
 
     private FileHandle? ReadFileResource(string filepath, string? targetPath, bool includeActiveBundle)

@@ -101,7 +101,8 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
             ? Scene.RenderContext.LoadMaterialGroup(meshFilepath, shaderFlags)
             : Scene.RenderContext.LoadMaterialGroup(materialFilepath, shaderFlags);
         if (mesh != null && material != null) {
-            Scene.RenderContext.SetMeshMaterial(mesh, material);
+            // TODO handle material count mismatch more accurately?
+            mesh.SetMaterials(material);
         }
         RszFieldCache.Mesh.Resource.Set(Data, meshFilepath);
         RszFieldCache.Mesh.Material.Set(Data, materialFilepath ?? string.Empty);
@@ -137,9 +138,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         }
         material = Scene.RenderContext.LoadMaterialGroup(materialFile ?? meshFile, shaderFlags);
 
-        if (mesh != null) {
-            Scene.RenderContext.SetMeshMaterial(mesh, material);
-        }
+        mesh?.SetMaterials(material);
         RszFieldCache.Mesh.Resource.Set(Data, meshFile.ResourcePath ?? meshFile.Filepath ?? string.Empty);
         RszFieldCache.Mesh.Material.Set(Data, materialFile?.ResourcePath ?? materialFile?.Filepath ?? string.Empty);
         mesh?.Update();

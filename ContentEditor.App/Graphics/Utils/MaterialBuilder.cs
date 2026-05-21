@@ -17,7 +17,7 @@ public struct MaterialBuilder(RenderContext context)
     public MaterialBuilder Builtin(BuiltInMaterials type, string name)
     {
         mat = context.GetBuiltInMaterial(type);
-        mat.name = name;
+        mat.Name = name;
         return this;
     }
 
@@ -53,7 +53,7 @@ public struct MaterialBuilder(RenderContext context)
 
     public Material Create(string? name = null)
     {
-        return mat!.Clone(name ?? mat.name);
+        return mat!.Clone(name ?? mat.Name);
     }
 
     public (Material, Material) Create2(string name1, string name2)

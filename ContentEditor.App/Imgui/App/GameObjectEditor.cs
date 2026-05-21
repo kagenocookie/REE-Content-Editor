@@ -55,10 +55,21 @@ public class BaseComponentEditor : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         if (context.children.Count == 0) {
-            var child = context.AddChild(context.label, context.Get<Component>().Data);
+            var component = context.Get<Component>();
+// #if DEBUG
+//             if (component.GetType() != typeof(Component)) {
+//                 var rawComponentChild = context.AddChild(context.label + " [DEBUG]", component);
+//                 WindowHandlerFactory.SetupObjectUIContext(rawComponentChild, component.GetType(), true, orderFunc: (f, i) => {
+//                     if (f.Name == nameof(Component.GameObject) || f.Name == nameof(Component.Data)) return -1;
+//                     return i;
+//                 });
+//                 rawComponentChild.uiHandler ??= new LazyPlainObjectHandler(component.GetType());
+//             }
+// #endif
+            var child = context.AddChild(context.label, component.Data);
             WindowHandlerFactory.SetupRSZInstanceHandler(child);
         }
-        context.children[0].ShowUI();
+        context.ShowChildrenUI();
     }
 }
 

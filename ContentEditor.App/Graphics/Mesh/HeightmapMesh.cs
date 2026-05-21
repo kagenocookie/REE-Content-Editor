@@ -80,11 +80,11 @@ public class HeightmapMesh : Mesh
     private void InsertQuad(ref int index, Vector3 vec1, Vector3 vec2, Vector3 vec3, Vector3 vec4, HFloat2 uvMin, HFloat2 uvMax, Vector3 nor1, Vector3 nor2, Vector3 nor3, Vector3 nor4)
     {
         InsertVertex(ref index, vec1, SByte4.QuantizeNormal(nor1), new HFloat2(uvMin.x, uvMin.y));
+        InsertVertex(ref index, vec3, SByte4.QuantizeNormal(nor3), new HFloat2(uvMin.x, uvMax.y));
         InsertVertex(ref index, vec2, SByte4.QuantizeNormal(nor2), new HFloat2(uvMax.x, uvMin.y));
-        InsertVertex(ref index, vec3, SByte4.QuantizeNormal(nor3), new HFloat2(uvMin.x, uvMax.y));
         InsertVertex(ref index, vec1, SByte4.QuantizeNormal(nor1), new HFloat2(uvMin.x, uvMin.y));
-        InsertVertex(ref index, vec3, SByte4.QuantizeNormal(nor3), new HFloat2(uvMin.x, uvMax.y));
         InsertVertex(ref index, vec4, SByte4.QuantizeNormal(nor4), new HFloat2(uvMax.x, uvMax.y));
+        InsertVertex(ref index, vec3, SByte4.QuantizeNormal(nor3), new HFloat2(uvMin.x, uvMax.y));
     }
 
     private void InsertVertex(ref int index, Vector3 vec, SByte4 norm, HFloat2 uv)

@@ -179,6 +179,22 @@ public class UIContext
         return AddChild(label, instance, handler, boxedGetter, boxedSetter);
     }
 
+    public void SetSiblingIndex(int index)
+    {
+        var curIndex = parent?.children.IndexOf(this);
+        if (curIndex == null || curIndex == index) return;
+        if (index >= parent!.children.Count) {
+            parent.children.RemoveAt(curIndex.Value);
+            parent.children.Add(this);
+        } else if (index > curIndex.Value) {
+            parent.children.Insert(index, this);
+            parent.children.RemoveAt(curIndex.Value);
+        } else {
+            parent.children.RemoveAt(curIndex.Value);
+            parent.children.Insert(index, this);
+        }
+    }
+
     public bool IsChildOf(UIContext context)
     {
         var parent = this.parent;

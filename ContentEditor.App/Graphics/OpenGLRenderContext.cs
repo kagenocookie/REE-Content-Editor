@@ -4,6 +4,7 @@ using ContentEditor.App.FileLoaders;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Common;
 using ReeLib.Mesh;
 using ReeLib.via;
 using Silk.NET.OpenGL;
@@ -51,7 +52,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             material = new(GL, GetShader("Shaders/GLSL/viewShaded.glsl", flags));
             material.SetParameter("_MainColor", new Color(255, 255, 255, 255));
             material.AddTextureParameter("_MainTexture", TextureUnit.Texture0);
-            material.name = "default";
+            material.Name = "default";
         }
         return material.Clone();
     }
@@ -62,7 +63,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             material = new(GL, GetShader("Shaders/GLSL/viewShaded.glsl", flags));
             material.SetParameter("_MainColor", new Color(255, 255, 255, 255));
             material.AddTextureParameter("_MainTexture", TextureUnit.Texture0);
-            material.name = "default";
+            material.Name = "default";
         }
         return material.Clone();
     }
@@ -73,7 +74,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             material = new(GL, GetShader("Shaders/GLSL/wireframe.glsl", flags));
             material.SetParameter("_OuterColor", new Color(0, 0, 0, 5));
             material.SetParameter("_InnerColor", Colors.FileTypeMCOL);
-            material.name = "wire";
+            material.Name = "wire";
         }
         return material.Clone();
     }
@@ -84,7 +85,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             material = new(GL, GetShader("Shaders/GLSL/wireframe-uv.glsl", flags));
             material.SetParameter("_OuterColor", new Color(0, 0, 0, 5));
             material.SetParameter("_InnerColor", new Color(0, 255, 0, 200));
-            material.name = "wireFilled";
+            material.Name = "wireFilled";
         }
         return material.Clone();
     }
@@ -95,7 +96,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             material = new(GL, GetShader("Shaders/GLSL/unshaded-color.glsl", flags));
             material.SetParameter("_MainColor", new Color(255, 255, 255, 255));
             material.SetParameter("_FadeMaxDistance", float.MaxValue);
-            material.name = "color";
+            material.Name = "color";
         }
         return material.Clone();
     }
@@ -106,7 +107,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             material = new(GL, GetShader("Shaders/GLSL/gizmo-vertex-color.glsl", flags));
             material.SetParameter("_MainColor", new Color(255, 255, 255, 255));
             material.SetParameter("_FadeMaxDistance", float.MaxValue);
-            material.name = "color";
+            material.Name = "color";
         }
         return material.Clone();
     }
@@ -197,7 +198,6 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
                 // currently intended mainly to save on memory for gtl files because they're huge
                 copy.ClearCPUBuffer();
                 var singleMeshHandle = new MeshResourceHandle(MeshRefs.NextInstanceID);
-                singleMeshHandle.SetMaterialName(0, "mat");
                 singleMeshHandle.Meshes.Add(copy);
                 return singleMeshHandle;
             }
@@ -228,6 +228,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             foreach (var group in mainLod.MeshGroups) {
                 foreach (var sub in group.Submeshes) {
                     var newMesh = new TriangleMesh(GL, meshFile, sub);
+                    newMesh.MaterialNameHash = MurMur3HashUtils.GetHash(meshFile.MaterialNames[sub.materialIndex]);
                     newMesh.MeshGroup = group.groupId;
                     meshlist.Add(newMesh);
                 }
@@ -242,7 +243,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             foreach (var sub in group.Submeshes) {
                 var newMesh = meshlist[meshIdx++].Clone();
                 newMesh.Initialize(GL);
-                handle.SetMaterialName(handle.Meshes.Count, sub.materialIndex >= meshFile.MaterialNames.Count ? "default" : meshFile.MaterialNames[sub.materialIndex]);
+                newMesh.MaterialNameHash = MurMur3HashUtils.GetHash(meshFile.MaterialNames[sub.materialIndex]);
                 handle.Bones = boneList;
                 handle.Meshes.Add(newMesh);
             }
@@ -319,6 +320,16 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         }
     }
 
+    protected override Material LoadUpdatedMaterial(FileHandle file, MaterialGroup group, MaterialGroupWrapper.MaterialLookupData mat)
+    {
+        var newMaterial = CreateMaterialInternal(group, mat);
+
+        if (MaterialRefs.TryGetRefByResourceKeyNoReferenceIncrement((file, group.Flags), out var res)) {
+            AddMaterialTextureReferences(newMaterial, res.References);
+        }
+        return newMaterial;
+    }
+
     public override MaterialGroup LoadMaterialGroup(FileHandle file, ShaderFlags flags = ShaderFlags.None)
     {
         if (MaterialRefs.TryAddReference((file, flags), out var groupRef)) {
@@ -326,7 +337,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             return groupRef.Resource;
         }
 
-        var matData = file.Resource as MaterialGroupWrapper ?? (file.Resource as CommonMeshResource)?.ImportedMaterials;
+        var matData = file.Resource as MaterialGroupWrapper ?? (file.Resource as CommonMeshResource ?? file.GetCustomContent<CommonMeshResource>())?.ImportedMaterials;
         if (matData == null) {
             var matNames = (file.Resource as CommonMeshResource)?.MaterialNames;
             MaterialGroup placeholder;
@@ -347,52 +358,51 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         var group = new MaterialGroup(matData) { Flags = flags };
 
         foreach (var mat in matData.Materials) {
-            var material = CreateViewShadedMaterial(flags);
-            material.name = mat.Name;
-            material.SourceMaterial = mat;
-            if (material.HasTextureParameter(TextureUnit.Texture0)) {
-                if (mat.AlbedoTexture != null) {
-                    var tex = LoadTexture(mat.AlbedoTexture.texPath, flags);
-                    material.SetParameter(TextureUnit.Texture0, tex);
-                } else {
-                    material.SetParameter(TextureUnit.Texture0, GetDefaultTexture());
-                }
-            }
-            group.Add(material);
+            CreateMaterialInternal(group, mat);
         }
 
         MaterialRefs.Add((file, flags), group);
         return group;
     }
 
+    private Material CreateMaterialInternal(MaterialGroup group, MaterialGroupWrapper.MaterialLookupData mat)
+    {
+        var newMaterial = CreateViewShadedMaterial(group.Flags);
+        newMaterial.Name = mat.Name;
+        newMaterial.SourceMaterial = mat;
+        if (newMaterial.HasTextureParameter(TextureUnit.Texture0)) {
+            if (mat.AlbedoTexture != null) {
+                var tex = LoadTexture(mat.AlbedoTexture.texPath, group.Flags);
+                newMaterial.SetParameter(TextureUnit.Texture0, tex);
+            } else {
+                newMaterial.SetParameter(TextureUnit.Texture0, GetDefaultTexture());
+            }
+        }
+        group.Add(newMaterial);
+
+        return newMaterial;
+    }
+
     private Material CreateDefaultMeshMaterial(ShaderFlags flags, string name, Texture? texture)
     {
         var material = CreateViewShadedMaterial(flags);
         material.SetParameter(TextureUnit.Texture0, texture ?? GetDefaultTexture());
-        material.name = name;
+        material.Name = name;
         return material;
     }
 
     public override unsafe void RenderSimple(MeshHandle handle, in Matrix4x4 transform)
     {
-        for (int i = 0; i < handle.Handle.Meshes.Count; i++) {
-            var mesh = handle.Handle.Meshes[i];
-            if (!handle.GetMeshPartEnabled(mesh.MeshGroup)) continue;
-
-            var material = handle.GetMaterial(i);
-
+        handle.PrepareSubmeshParts();
+        foreach (var (mesh, material) in handle.EnabledSubmeshes) {
             Batch.Simple.Add(new NormalRenderBatchItem(material, mesh, transform, handle));
         }
     }
 
     public override void RenderInstanced(MeshHandle handle, List<Matrix4x4> transforms)
     {
-        for (int i = 0; i < handle.Handle.Meshes.Count; i++) {
-            var mesh = handle.Handle.Meshes[i];
-            if (!handle.GetMeshPartEnabled(mesh.MeshGroup)) continue;
-
-            var material = handle.GetMaterial(i);
-
+        handle.PrepareSubmeshParts();
+        foreach (var (mesh, material) in handle.EnabledSubmeshes) {
             Batch.Instanced.Add(new InstancedRenderBatchItem(material, mesh, transforms));
         }
     }

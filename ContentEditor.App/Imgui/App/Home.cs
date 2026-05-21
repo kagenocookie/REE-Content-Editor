@@ -863,6 +863,8 @@ public class HomeWindow : IWindowHandler
         ImGui.Spacing();
         bool foundMatchingFile = false;
         ImGui.BeginChild("RecentFileList");
+        var isReady = EditorWindow.CurrentWindow?.IsReady == true;
+        if (!isReady) ImGui.BeginDisabled();
         foreach (var file in recents) {
             var sep = file.IndexOf('|');
             var game = sep == -1 ? null : file.Substring(0, sep);
@@ -880,6 +882,7 @@ public class HomeWindow : IWindowHandler
                 break;
             }
         }
+        if (!isReady) ImGui.EndDisabled();
         if (!foundMatchingFile) {
             ImGui.TextDisabled(!string.IsNullOrEmpty(recentFileFilter) || _activeRecentFileGameFilters.Count > 0 ? "No files match the current filters." : "There are no recent files.");
         }

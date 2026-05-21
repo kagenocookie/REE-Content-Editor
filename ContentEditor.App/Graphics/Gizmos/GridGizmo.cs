@@ -1,4 +1,5 @@
 using System.Numerics;
+using ReeLib.Common;
 using ReeLib.via;
 using Silk.NET.OpenGL;
 
@@ -37,8 +38,8 @@ public class GridGizmo : Gizmo
             lines.Add(new Vector3(-gridSpan, 0, z * GridCellSpacing));
             lines.Add(new Vector3(gridSpan, 0, z * GridCellSpacing));
         }
-        mesh.Handle.Meshes.Add(new LineMesh(GL, lines.ToArray()));
-        mesh.SetMaterials(matGroup, [0]);
+        mesh.Handle.Meshes.Add(new LineMesh(GL, lines.ToArray()) { MaterialNameHash = MurMur3HashUtils.GetHash("gray") });
+        mesh.SetMaterials(matGroup);
         Meshes.Add(mesh);
     }
 

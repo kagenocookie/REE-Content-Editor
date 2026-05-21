@@ -5,7 +5,7 @@ using ReeLib.via;
 namespace ContentEditor.App.Graphics;
 
 /// <summary>
-/// Reference to a mesh + material combination.
+/// Reference to a mesh + mdf2 combination.
 /// This is separate from the raw mesh data so we can apply different materials to the same mesh without loading the mesh geometry twice.
 /// </summary>
 public class MeshHandle
@@ -17,15 +17,20 @@ public class MeshHandle
 
     public bool HasArmature => Handle.Meshes.Any(m => m.HasBones);
 
-    /// <summary>
-    /// Remapping table for submesh index to material, so we can have material groups with different material ordering correctly apply to the same mesh resource.
-    /// </summary>
-    internal List<int> MaterialIndicesRemap { get; } = new();
+    public List<(int subMeshIndex, int matIndex)> EnabledSubmeshIndices { get; } = new();
 
     public IEnumerable<Mesh> Meshes => Handle.Meshes.AsReadOnly();
     public AABB BoundingBox => Handle.BoundingBox;
     private readonly HashSet<int> DisabledParts = new(0);
     public bool IsEmpty => Handle.Meshes.Count == 0;
+
+    public IEnumerable<(Mesh, Material)> EnabledSubmeshes {
+        get {
+            foreach (var (mi, mat) in EnabledSubmeshIndices) {
+                yield return (Handle.Meshes[mi], Material.Materials[mat]);
+            }
+        }
+    }
 
     internal MeshHandle(MeshResourceHandle mesh)
     {
@@ -33,18 +38,18 @@ public class MeshHandle
     }
 
     public Mesh GetMesh(int index) => Handle.Meshes[index];
-    public Material GetMaterial(int meshIndex)
+    public Material GetMaterial(int index) => Material.Materials[index];
+
+    public Material? GetMaterialForMesh(int meshIndex)
     {
-        var remappedIndex = meshIndex;
-        if (meshIndex >= 0 && meshIndex < MaterialIndicesRemap.Count) {
-            remappedIndex = MaterialIndicesRemap[meshIndex];
+        PrepareSubmeshParts();
+        foreach (var part in EnabledSubmeshIndices) {
+            if (part.subMeshIndex == meshIndex) {
+                return Material.Materials[part.matIndex];
+            }
         }
 
-        if (remappedIndex >= 0 && remappedIndex < Material.Materials.Count) {
-            return Material.Materials[remappedIndex];
-        }
-
-        return Material.Materials[0];
+        return null;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -77,31 +82,36 @@ public class MeshHandle
     /// </summary>
     public virtual void Update() { }
 
-    public void SetMaterial(int meshIndex, string materialName)
+    public void PrepareSubmeshParts()
     {
-        var matIndex = Material.GetMaterialIndex(materialName);
-        MaterialIndicesRemap[meshIndex] = matIndex;
+        if (Material.ContentHash != lastMaterialHash) {
+            UpdateParts();
+            lastMaterialHash = Material.ContentHash;
+        }
+    }
+
+    private uint lastMaterialHash = uint.MaxValue;
+
+    private void UpdateParts()
+    {
+        EnabledSubmeshIndices.Clear();
+        for (int i = 0; i < Handle.Meshes.Count; i++) {
+            var mesh = Handle.Meshes[i];
+            if (DisabledParts.Contains(mesh.MeshGroup)) continue;
+            var matIndex = Material.GetMaterialIndex(mesh.MaterialNameHash);
+            if (matIndex == -1) {
+                continue;
+            }
+
+            EnabledSubmeshIndices.Add((i, matIndex));
+        }
     }
 
     public override string ToString() => $"[Mesh handle {Handle}]";
 
-    internal void SetMaterials(MaterialGroup material, IEnumerable<int> meshRemapIndices)
-    {
-        Material = material;
-        UpdateMaterials(meshRemapIndices);
-    }
-
     internal void SetMaterials(MaterialGroup material)
     {
         Material = material;
-        MaterialIndicesRemap.Clear();
-        MaterialIndicesRemap.AddRange(Enumerable.Range(0, material.Materials.Count));
-    }
-
-    internal void UpdateMaterials(IEnumerable<int> meshRemapIndices)
-    {
-        MaterialIndicesRemap.Clear();
-        MaterialIndicesRemap.AddRange(meshRemapIndices);
     }
 
     public virtual void BindForRender(Material material) { }
