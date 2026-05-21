@@ -41,3 +41,19 @@ public class WelEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
         this.OnIMGUI();
     }
 }
+
+[ObjectImguiHandler(typeof(EventInfo))]
+public class WelEventInfoHandler : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        if (context.children.Count == 0) {
+            WindowHandlerFactory.SetupObjectUIContext(context, typeof(EventInfo), false);
+        }
+
+        if (AppImguiHelpers.DuplicatableTreeNode<EventInfo>(context)) {
+            context.ShowChildrenUI();
+            ImGui.TreePop();
+        }
+    }
+}

@@ -210,6 +210,28 @@ public static class AppImguiHelpers
         return CopyableTreeNode<T>(context, out _);
     }
 
+    public static bool DuplicatableTreeNode<T>(UIContext context) where T : class
+    {
+        var instance = context.Get<T>()!;
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString() ?? "NULL");
+        if (ImGui.BeginPopupContextItem(context.label)) {
+            ShowVirtualCopyPopupButtons<T>(instance, context);
+            if (ImGui.Selectable("Duplicate")) {
+                var clone = instance.DeepCloneGeneric<T>();
+                var list = context.parent?.Get<IList>();
+                Debug.Assert(list != null && context.parent != null);
+                var curIndex = list.IndexOf(instance);
+                if (curIndex == list.Count) {
+                    UndoRedo.RecordListAdd(context.parent, list, clone);
+                } else {
+                    UndoRedo.RecordListInsert(context.parent, list, clone, curIndex + 1);
+                }
+            }
+            ImGui.EndPopup();
+        }
+        return show;
+    }
+
     public static bool CopyableTreeNode<T>(UIContext context, out bool didPaste) where T : class
     {
         var instance = context.Get<T>()!;
