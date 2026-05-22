@@ -55,7 +55,14 @@ public class BaseComponentEditor : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         if (context.children.Count == 0) {
-            var component = context.Get<Component>();
+            SetupDefaultUI(context);
+        }
+        context.ShowChildrenUI();
+    }
+
+    protected static UIContext SetupDefaultUI(UIContext context)
+    {
+        var component = context.Get<Component>();
 // #if DEBUG
 //             if (component.GetType() != typeof(Component)) {
 //                 var rawComponentChild = context.AddChild(context.label + " [DEBUG]", component);
@@ -66,10 +73,9 @@ public class BaseComponentEditor : IObjectUIHandler
 //                 rawComponentChild.uiHandler ??= new LazyPlainObjectHandler(component.GetType());
 //             }
 // #endif
-            var child = context.AddChild(context.label, component.Data);
-            WindowHandlerFactory.SetupRSZInstanceHandler(child);
-        }
-        context.ShowChildrenUI();
+        var child = context.AddChild(context.label, component.Data);
+        WindowHandlerFactory.SetupRSZInstanceHandler(child);
+        return child;
     }
 }
 

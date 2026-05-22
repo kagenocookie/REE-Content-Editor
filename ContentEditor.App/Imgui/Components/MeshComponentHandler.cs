@@ -5,8 +5,40 @@ using ReeLib;
 namespace ContentEditor.App.ImguiHandling;
 
 [ObjectImguiHandler(typeof(MeshComponent), Stateless = true, Priority = 0)]
-public class MeshComponentHandler : BaseComponentEditor, IUIContextEventHandler
+public class MeshComponentHandler : BaseComponentEditor, IUIContextEventHandler, IObjectUIHandler
 {
+    void IObjectUIHandler.OnIMGUI(UIContext context)
+    {
+        if (context.children.Count == 0) {
+            var content = SetupDefaultUI(context);
+            var meshCtx = content.children.FirstOrDefault(c => c.uiHandler is ResourcePathPicker rp && rp.FileFormats.Contains(KnownFileFormats.Mesh));
+            var matCtx = content.children.FirstOrDefault(c => c.uiHandler is ResourcePathPicker rp && rp.FileFormats.Contains(KnownFileFormats.MeshMaterial));
+            if (meshCtx != null && matCtx != null) {
+                var errorNoteHandler = new DynamicLabelHandler(
+                    color: Colors.Warning,
+                    textFunc: c => {
+                        var meshPath = meshCtx.Get<string>();
+                        var matPath = matCtx.Get<string>();
+                        var ws = c.GetWorkspace();
+                        if (ws != null && !string.IsNullOrEmpty(meshPath) && !string.IsNullOrEmpty(matPath)) {
+                            if (ws.ResourceManager.TryResolveGameFile(meshPath, out var mesh) && ws.ResourceManager.TryResolveGameFile(matPath, out var mat)) {
+                                var meshMats = mesh.GetFile<MeshFile>().MaterialNames.Count;
+                                var mats = mat.GetFile<MdfFile>().Materials.Count;
+                                if (meshMats != mats) {
+                                    return $"There is a mismatch between the mesh and mdf2 material counts (mesh: {meshMats}, mdf2: {mats} materials).\nThe mesh will appear as checkerboards ingame.";
+                                }
+                            }
+                        }
+                        return null;
+                    }
+                );
+                content.AddChild("__errorNote", null, errorNoteHandler).MoveAfter(matCtx);
+            }
+        }
+
+        context.ShowChildrenUI();
+    }
+
     public bool HandleEvent(UIContext context, EditorUIEvent eventData)
     {
         if (eventData.type is UIContextEvent.Changed or UIContextEvent.Reverted or UIContextEvent.Updated) {

@@ -1,3 +1,4 @@
+using System.Numerics;
 using ContentEditor.Core;
 using ReeLib;
 
@@ -38,6 +39,33 @@ public class TextHeaderUIHandler(string text, IObjectUIHandler inner) : IObjectU
     {
         ImGui.SeparatorText(text);
         inner.OnIMGUI(context);
+    }
+}
+
+public class FixedLabelHandler(string text, Vector4 color = default) : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        if (color == Vector4.Zero) {
+            ImGui.Text(text);
+        } else {
+            ImGui.TextColored(color, text);
+        }
+    }
+}
+
+public class DynamicLabelHandler(Func<UIContext, string?> textFunc, Vector4 color = default) : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var text = textFunc.Invoke(context);
+        if (string.IsNullOrEmpty(text)) return;
+
+        if (color == Vector4.Zero) {
+            ImGui.Text(text);
+        } else {
+            ImGui.TextColored(color, text);
+        }
     }
 }
 

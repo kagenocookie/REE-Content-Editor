@@ -243,7 +243,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             foreach (var sub in group.Submeshes) {
                 var newMesh = meshlist[meshIdx++].Clone();
                 newMesh.Initialize(GL);
-                newMesh.MaterialNameHash = MurMur3HashUtils.GetHash(meshFile.MaterialNames[sub.materialIndex]);
+                newMesh.MaterialNameHash = MurMur3HashUtils.GetHash(meshFile.MaterialNames.ElementAtOrDefault(sub.materialIndex) ?? "");
                 handle.Bones = boneList;
                 handle.Meshes.Add(newMesh);
             }

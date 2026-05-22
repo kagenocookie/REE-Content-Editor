@@ -179,6 +179,14 @@ public class UIContext
         return AddChild(label, instance, handler, boxedGetter, boxedSetter);
     }
 
+    public void MoveAfter(UIContext child)
+    {
+        var curIndex = parent?.children.IndexOf(child);
+        if (curIndex == null) return;
+
+        SetSiblingIndex(curIndex == -1 ? parent!.children.Count : curIndex.Value + 1);
+    }
+
     public void SetSiblingIndex(int index)
     {
         var curIndex = parent?.children.IndexOf(this);
