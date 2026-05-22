@@ -160,7 +160,7 @@ public class ResourcePathPicker : IObjectUIHandler
         }
 
         if (ImGui.BeginPopupContextItem()) {
-            if (!string.IsNullOrWhiteSpace(pendingPath) && ImGui.Button("Open file")) {
+            if (!string.IsNullOrWhiteSpace(pendingPath) && ImGui.Selectable("Open file")) {
                 ImGui.CloseCurrentPopup();
                 if (workspace.ResourceManager.TryResolveGameFile(currentPath, out var newFileHandle)) {
                     EditorWindow.CurrentWindow?.AddFileEditor(newFileHandle);
@@ -168,7 +168,7 @@ public class ResourcePathPicker : IObjectUIHandler
                     Logger.Error("Failed to load file: " + currentPath);
                 }
             }
-            if (!string.IsNullOrWhiteSpace(pendingPath) && ImGui.Button("Extract file ...")) {
+            if (!string.IsNullOrWhiteSpace(pendingPath) && ImGui.Selectable("Extract file ...")) {
                 ImGui.CloseCurrentPopup();
                 var resolvedPath = workspace.Env.ResolveFilepath(currentPath);
                 if (resolvedPath == null) {
@@ -184,7 +184,7 @@ public class ResourcePathPicker : IObjectUIHandler
                         });
                 }
             }
-            if (workspace.CurrentBundle != null && ImGui.Button("Save to bundle ...")) {
+            if (workspace.CurrentBundle != null && ImGui.Selectable("Save to bundle ...")) {
                 if (workspace.ResourceManager.TryResolveGameFile(currentPath, out var file)) {
                     var wnd = EditorWindow.CurrentWindow!;
                     SaveFileToBundle(workspace, file, (savePath, localPath, nativePath) => {
@@ -202,7 +202,7 @@ public class ResourcePathPicker : IObjectUIHandler
                 }
                 ImGui.CloseCurrentPopup();
             }
-            if (ImGui.Button("Find files ...")) {
+            if (ImGui.Selectable("Find files ...")) {
                 var exts = fileFilters ?? [];
                 var extRegex = string.Join("|", exts.SelectMany(e => e.extensions).Distinct()).Replace(".*", "");
                 if (exts.Length == 0) {
