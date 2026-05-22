@@ -868,7 +868,7 @@ public class HomeWindow : IWindowHandler
         foreach (var file in recents) {
             var sep = file.IndexOf('|');
             var game = sep == -1 ? null : file.Substring(0, sep);
-            var fileToOpen = sep == -1 ? file : file.Substring(sep + 1);
+            var fileToOpen = sep == -1 ? file : file.AsSpan(sep + 1);
 
             if (_activeRecentFileGameFilters.Count > 0 && (game == null || !_activeRecentFileGameFilters.Contains(game))) {
                 continue;
@@ -878,8 +878,14 @@ public class HomeWindow : IWindowHandler
             }
             foundMatchingFile = true;
             if (ImGui.Selectable(file)) {
-                EditorWindow.CurrentWindow?.OpenFiles(new[] { fileToOpen });
+                EditorWindow.CurrentWindow?.OpenFiles(new[] { fileToOpen.ToString() });
                 break;
+            }
+            if (Path.IsPathRooted(fileToOpen) && ImGui.BeginPopupContextItem()) {
+                if (ImGui.Selectable("Open Containing Folder")) {
+                    FileSystemUtils.ShowFileInExplorer(Path.GetDirectoryName(fileToOpen.ToString()));
+                }
+                ImGui.EndPopup();
             }
         }
         if (!isReady) ImGui.EndDisabled();

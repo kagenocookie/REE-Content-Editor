@@ -792,10 +792,15 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                             }
                             if (ImGui.MenuItem(itemstr)) {
                                 ImGui.PopID();
-                                var sep = file.IndexOf('|');
-                                var fileToOpen = sep == -1 ? file : file.Substring(sep + 1);
+                                var fileToOpen = file.GetStringAfterDelimiter('|').ToString();
                                 this.OnFileDrop([fileToOpen], default);
                                 break;
+                            }
+                            if (Path.IsPathRooted(file.GetStringAfterDelimiter('|')) && ImGui.BeginPopupContextItem()) {
+                                if (ImGui.Selectable("Open Containing Folder")) {
+                                    FileSystemUtils.ShowFileInExplorer(Path.GetDirectoryName(file.GetStringAfterDelimiter('|').ToString()));
+                                }
+                                ImGui.EndPopup();
                             }
                             if (textsize > maxWidth) ImguiHelpers.Tooltip(file);
                             ImGui.PopID();
