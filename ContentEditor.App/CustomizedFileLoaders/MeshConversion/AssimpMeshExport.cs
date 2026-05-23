@@ -25,6 +25,7 @@ public partial class CommonMeshResource : IResourceFile
         public bool includeOcclusion;
         public bool includeShapeKeys;
         public FbxSkelFile? skeleton;
+        public string? rootBoneName;
         public Dictionary<string, (Node node, bool? deforming, Matrix4x4 inverseTransform)> bonesLookup = new();
 
         public Node? secondaryWeightNodeContainer;
@@ -192,8 +193,6 @@ public partial class CommonMeshResource : IResourceFile
 
     internal static void PrepareSkeleton(ExportContext context, MeshFile mesh)
     {
-        var scene = context.scene;
-        // var existingNodes = FlatNodes(scene.RootNode);
         var scale = GetExportScale(context.format);
 
         Node boneRoot = context.scene.RootNode;
@@ -207,41 +206,26 @@ public partial class CommonMeshResource : IResourceFile
                         throw new NotImplementedException("Unordered ref skel bones currently not supported");
                     }
                 }
+                context.rootBoneName ??= refBone.name;
                 var node = new Node(refBone.name, parent ?? boneRoot);
                 (parent ?? boneRoot).Children.Add(node);
 
-                var transform = Transform.GetMatrixFromTransforms(refBone.position, refBone.rotation, refBone.scale);
-                node.Transform = Matrix4x4.Transpose(GetScaledMatrix(transform, scale));
+                var localTransform = Transform.GetMatrixFromTransforms(refBone.position, refBone.rotation, refBone.scale);
+                node.Transform = Matrix4x4.Transpose(GetScaledMatrix(localTransform, scale));
 
-                Matrix4x4.Invert(transform, out var inverseGlobal);
-                if (parent != null) {
-                    inverseGlobal = inverseGlobal * context.bonesLookup[parent.Name].inverseTransform;
-                }
+                Matrix4x4.Invert(localTransform, out var inverseLocal);
+                var inverseGlobal = parent == null ? inverseLocal : context.bonesLookup[parent.Name].inverseTransform * inverseLocal;
                 context.bonesLookup[refBone.name] = (node, null, inverseGlobal);
             }
         }
 
         if (mesh.BoneData == null) return;
 
-        foreach (var srcBone in mesh.BoneData.Bones.Where(b => b.parentIndex == -1)) {
-            if (context.bonesLookup.TryGetValue(srcBone.name, out var boneData)) {
-                if (srcBone.IsDeformBone && boneData.deforming != true) {
-                    context.bonesLookup[srcBone.name] = (boneData.node, true, boneData.inverseTransform);
-                }
-                continue;
-            }
-
-            var boneNode = new Node(srcBone.name, boneRoot);
-            boneNode.Transform = Matrix4x4.Transpose(GetScaledMatrix(srcBone.localTransform.ToSystem(), scale));
-            boneRoot.Children.Add(boneNode);
-            context.bonesLookup[srcBone.name] = (boneNode, srcBone.IsDeformBone, srcBone.inverseGlobalTransform.ToSystem());
-            if (srcBone.useSecondaryWeight) {
-                context.AddWeight2Bone(srcBone.name);
-            }
-        }
-
         // insert bones by queue and requeue them if we don't have their parent yet
-        var pendingBones = new Queue<MeshBone>(mesh.BoneData.Bones.Where(b => b.parentIndex != -1));
+        var pendingBones = new Queue<MeshBone>(
+            mesh.BoneData.Bones.Where(b => b.parentIndex == -1)
+            .Concat(mesh.BoneData.Bones.Where(b => b.parentIndex != -1)));
+
         while (pendingBones.TryDequeue(out var srcBone)) {
             if (context.bonesLookup.TryGetValue(srcBone.name, out var boneData)) {
                 if (srcBone.IsDeformBone && boneData.deforming != true) {
@@ -250,14 +234,20 @@ public partial class CommonMeshResource : IResourceFile
                 continue;
             }
 
-            if (!context.bonesLookup.TryGetValue(srcBone.Parent!.name, out var parent)) {
-                pendingBones.Enqueue(srcBone);
-                continue;
+            var parentNode = boneRoot;
+            if (srcBone.Parent != null) {
+                if (context.bonesLookup.TryGetValue(srcBone.Parent.name, out var parent)) {
+                    parentNode = parent.node;
+                } else {
+                    pendingBones.Enqueue(srcBone);
+                    continue;
+                }
             }
+            context.rootBoneName ??= srcBone.name;
 
-            var boneNode = new Node(srcBone.name, parent.node);
+            var boneNode = new Node(srcBone.name, parentNode);
             boneNode.Transform = Matrix4x4.Transpose(GetScaledMatrix(srcBone.localTransform.ToSystem(), scale));
-            parent.node.Children.Add(boneNode);
+            parentNode.Children.Add(boneNode);
             context.bonesLookup[srcBone.name] = (boneNode, srcBone.IsDeformBone, srcBone.inverseGlobalTransform.ToSystem());
             if (srcBone.useSecondaryWeight) {
                 context.AddWeight2Bone(srcBone.name);
@@ -269,7 +259,7 @@ public partial class CommonMeshResource : IResourceFile
                 context.includeShapeKeys = false;
                 if (!context.gltfWarned) {
                     context.gltfWarned = true;
-                    Logger.Warn($"GLTF exporter does not support enough bones to include shape keys. Mesh will not behave correctly when re-imported. Consider using a different file format.");
+                    Logger.Warn($"GLTF exporter does not support enough bones to include shape keys. Mesh will not behave correctly when re-imported. Consider using FBX instead.");
                 }
             } else {
                 context.includeShapeKeys = true;
@@ -393,11 +383,13 @@ public partial class CommonMeshResource : IResourceFile
                 }
                 if (file.BoneData != null && sub.Buffer.Weights.Length > 0) {
                     foreach (var srcBone in file.BoneData.Bones.OrderBy(b => b.index)) {
-                        aiMesh.Bones.Add(new Bone(
-                            srcBone.name,
-                            Matrix4x4.Transpose(GetScaledMatrix(context.bonesLookup[srcBone.name].inverseTransform, scale)),
-                            null
-                        ));
+                        // note to self: AVOID the constructor
+                        // it accepts a Matrix3x3 instead for some godwaful reason,
+                        // and that doesn't play nice with a transposed 4x4 matrix
+                        aiMesh.Bones.Add(new Bone() {
+                            Name = srcBone.name,
+                            OffsetMatrix = Matrix4x4.Transpose(GetScaledMatrix(context.bonesLookup[srcBone.name].inverseTransform, scale))
+                        });
                     }
                     if (context.writeWeight2FlagAsBones) {
                         foreach (var srcBone in file.BoneData.Bones) {
@@ -439,10 +431,13 @@ public partial class CommonMeshResource : IResourceFile
                             }
                         }
                     }
-                    // ensure all bones exist in every mesh (otherwise some bones might not get detected as bones when importing to Blender)
+                    // ensure all bones exist in every mesh (otherwise some bones might not get detected as bones when importing to Blender, or the exporter might crash)
                     foreach (var w in context.bonesLookup) {
                         if (!aiMesh.Bones.Any(b => b.Name == w.Key)) {
-                            aiMesh.Bones.Add(new Bone(w.Key, Matrix4x4.Transpose(GetScaledMatrix(w.Value.inverseTransform, scale)), []));
+                            aiMesh.Bones.Add(new Bone() {
+                                Name = w.Key,
+                                OffsetMatrix = Matrix4x4.Transpose(GetScaledMatrix(w.Value.inverseTransform, scale))
+                            });
                         }
                     }
 

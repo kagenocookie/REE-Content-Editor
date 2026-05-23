@@ -181,12 +181,17 @@ public partial class CommonMeshResource(string name, Workspace workspace) : IRes
         }
         void PrintTree(Node node, int depth)
         {
-            Logger.Info(new string(' ', depth * 2) + node.Name);
+            Logger.Info(new string(' ', depth * 2) + node.Name + " | " + System.Numerics.Matrix4x4.Transpose(node.Transform).Translation);
             foreach (var child in node.Children) {
                 PrintTree(child, depth + 1);
             }
         }
         // PrintTree(exportCtx.scene.RootNode, 0);
+        // foreach (var bone in exportCtx.scene.Meshes[0].Bones) {
+        //     var node = exportCtx.scene.RootNode.FindNode(bone.Name);
+        //     System.Numerics.Matrix4x4.Invert(System.Numerics.Matrix4x4.Transpose(bone.OffsetMatrix), out var boneGlobal);
+        //     Logger.Info(bone.Name + " | Bone: " + boneGlobal.Translation + " | Node: " + System.Numerics.Matrix4x4.Transpose(node.Transform).Translation);
+        // }
         context.ExportFile(exportCtx.scene, filepath, exportFormat);
     }
 
