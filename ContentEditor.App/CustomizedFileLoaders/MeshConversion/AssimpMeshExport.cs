@@ -394,7 +394,10 @@ public partial class CommonMeshResource : IResourceFile
                     if (context.writeWeight2FlagAsBones) {
                         foreach (var srcBone in file.BoneData.Bones) {
                             if (context.secondaryWeightBones.ContainsKey(srcBone.name)) {
-                                aiMesh.Bones.Add(new Bone(SecondaryWeightDummyBonePrefix + srcBone.name, identity, null));
+                                aiMesh.Bones.Add(new Bone() {
+                                    Name = SecondaryWeightDummyBonePrefix + srcBone.name,
+                                    OffsetMatrix = Matrix4x4.Transpose(GetScaledMatrix(context.bonesLookup[srcBone.name].inverseTransform, scale))
+                                });
                             }
                         }
                     }
@@ -444,7 +447,10 @@ public partial class CommonMeshResource : IResourceFile
                     if (context.includeShapeKeys) {
                         var dict = new Dictionary<int, Bone>();
                         foreach (var bone in file.BoneData!.DeformBones) {
-                            var attach = dict[bone.remapIndex] = new Bone() { Name = ShapekeyPrefix + bone.name };
+                            var attach = dict[bone.remapIndex] = new Bone() {
+                                Name = ShapekeyPrefix + bone.name,
+                                OffsetMatrix = Matrix4x4.Transpose(GetScaledMatrix(context.bonesLookup[bone.name].inverseTransform, scale))
+                            };
                             aiMesh.Bones.Add(attach);
                         }
                         for (int vertId = 0; vertId < sub.ShapeKeyWeights.Length; ++vertId) {
