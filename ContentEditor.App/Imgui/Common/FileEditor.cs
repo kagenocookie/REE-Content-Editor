@@ -151,46 +151,51 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                 ImguiHelpers.Tooltip("See changes");
             }
             if (workspace.CurrentBundle != null) {
-                if (!Handle.IsInBundle(workspace, workspace.CurrentBundle)) {
+                var isInBundle = Handle.IsInBundle(workspace, workspace.CurrentBundle);
+                if (!isInBundle) {
                     ImGui.SameLine();
                     if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveTo, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
                         SaveToBundle(workspace, false);
                     }
                     ImguiHelpers.Tooltip("Save to Bundle");
+                }
 
-                    ImGui.SameLine();
-                    if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveAsNew, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
-                        SaveToBundle(workspace, true);
-                    }
-                    ImguiHelpers.Tooltip("Save to Bundle as New File");
-                } else if (!workspace.CurrentBundle.TryFindResource(Handle.TargetPath ?? "", out var resourceListing)) {
-                    ImGui.SameLine();
-                    if (string.IsNullOrEmpty(Handle.TargetPath) && Handle.Modified) {
-                        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
-                            Logger.Warn("File has unsaved changes. Please save the file first before storing in bundle.");
-                        }
-                    } else {
-                        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
-                            var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle), Handle.Filepath);
-                            var targetPath = !string.IsNullOrEmpty(Handle.TargetPath) ? Handle.TargetPath : workspace.Env.RemoveBasePath(localPath).ToString();
-                            workspace.CurrentBundle.AddResource(localPath, targetPath, Handle.Format.format.IsDefaultReplacedBundleResource());
-                            if (string.IsNullOrEmpty(Handle.TargetPath)) {
-                                // force reopen the file so we get the updated native path
-                                workspace.ResourceManager.CloseFile(Handle);
-                                context.GetNativeWindow()?.OpenFiles([Handle.Filepath]);
+                ImGui.SameLine();
+                if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveAsNew, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
+                    SaveToBundle(workspace, true);
+                }
+                ImguiHelpers.Tooltip("Save to Bundle as New File");
+
+                if (isInBundle) {
+                    if (!workspace.CurrentBundle.TryFindResource(Handle.TargetPath ?? "", out var resourceListing)) {
+                        ImGui.SameLine();
+                        if (string.IsNullOrEmpty(Handle.TargetPath) && Handle.Modified) {
+                            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
+                                Logger.Warn("File has unsaved changes. Please save the file first before storing in bundle.");
                             }
-                            workspace.CurrentBundle.Save();
+                        } else {
+                            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
+                                var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle), Handle.Filepath);
+                                var targetPath = !string.IsNullOrEmpty(Handle.TargetPath) ? Handle.TargetPath : workspace.Env.RemoveBasePath(localPath).ToString();
+                                workspace.CurrentBundle.AddResource(localPath, targetPath, Handle.Format.format.IsDefaultReplacedBundleResource());
+                                if (string.IsNullOrEmpty(Handle.TargetPath)) {
+                                    // force reopen the file so we get the updated native path
+                                    workspace.ResourceManager.CloseFile(Handle);
+                                    context.GetNativeWindow()?.OpenFiles([Handle.Filepath]);
+                                }
+                                workspace.CurrentBundle.Save();
+                            }
+                            ImguiHelpers.Tooltip("Store in bundle\nFile is located in the bundle folder but is not marked as part of the bundle. This will store the path into the bundle json.");
                         }
-                        ImguiHelpers.Tooltip("Store in bundle\nFile is located in the bundle folder but is not marked as part of the bundle. This will store the path into the bundle json.");
+                    } else if (Handle.DiffHandler != null) {
+                        ImGui.SameLine();
+                        var replace = resourceListing.Replace;
+                        if (ImGui.Checkbox("Replace File", ref replace)) {
+                            resourceListing.Replace = replace;
+                            Handle.Modified = true;
+                        }
+                        ImguiHelpers.Tooltip("When true, the file is treated as a full replacement and not partially patched.\nThis is required if you need to remove anything from the base file.\n\nWhen false, the file will be partially patched.\nThis is useful to allow multiple mods to affect a small part of a shared file, but may cause issues in specific cases like removed or reordered items.");
                     }
-                } else if (Handle.DiffHandler != null) {
-                    ImGui.SameLine();
-                    var replace = resourceListing.Replace;
-                    if (ImGui.Checkbox("Replace File", ref replace)) {
-                        resourceListing.Replace = replace;
-                        Handle.Modified = true;
-                    }
-                    ImguiHelpers.Tooltip("When true, the file is treated as a full replacement and not partially patched.\nThis is required if you need to remove anything from the base file.\n\nWhen false, the file will be partially patched.\nThis is useful to allow multiple mods to affect a small part of a shared file, but may cause issues in specific cases like removed or reordered items.");
                 }
             }
         }
