@@ -211,7 +211,7 @@ public class FileSearchWindow : IWindowHandler
         }
     }
 
-    private static readonly CsharpFlagsEnumFieldHandler<RszFileTypes, uint> flagHandler = new CsharpFlagsEnumFieldHandler<RszFileTypes, uint>();
+    private static readonly CsharpFlagsEnumFieldHandler<RszFileTypes, uint> flagHandler = new CsharpFlagsEnumFieldHandler<RszFileTypes, uint>() { HideNumberInput = true };
 
     private UIContext _flagContext = null!;
     private void ShowRszFieldSearch(Workspace env)
