@@ -796,14 +796,20 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     private string? PreprocessTargetFilepath(string filepath)
     {
         filepath = workspace.Env.RemoveBasePath(filepath).ToString().NormalizeFilepath();
-        if (activeBundle?.HasResources == true && Path.IsPathFullyQualified(filepath) && filepath.StartsWith(workspace.BundleManager.GetBundleFolder(activeBundle))) {
+        if (activeBundle?.HasResources == true && Path.IsPathRooted(filepath) && filepath.StartsWith(workspace.BundleManager.GetBundleFolder(activeBundle))) {
             var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(activeBundle), filepath).NormalizeFilepath();
             if (activeBundle.TryFindResourceByLocalPath(localPath, out var resourceList)) {
                 return resourceList.Target;
             }
         }
         var fmt = PathUtils.ParseFileFormatFull(filepath);
-        if (fmt.version != -1) return filepath;
+        if (fmt.version != -1) {
+            // try and clean base path
+            if (Path.IsPathRooted(filepath)) {
+                return PathUtils.GetTargetFromFullFilepath(filepath);
+            }
+            return filepath;
+        }
         if (targetPathRemaps.TryGetValue(filepath, out var targetPath)) return targetPath;
         if (fmt.format != KnownFileFormats.Unknown && workspace.Env.TryGetFileExtensionVersion(fmt.extension, out var expectedVersion)) {
             return targetPathRemaps[filepath] = filepath + "." + expectedVersion;

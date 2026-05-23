@@ -175,8 +175,11 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                             }
                         } else {
                             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
-                                var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle), Handle.Filepath);
+                                var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle), Handle.Filepath).NormalizeFilepath();
                                 var targetPath = !string.IsNullOrEmpty(Handle.TargetPath) ? Handle.TargetPath : workspace.Env.RemoveBasePath(localPath).ToString();
+                                if (Path.IsPathRooted(targetPath)) {
+                                    targetPath = localPath;
+                                }
                                 workspace.CurrentBundle.AddResource(localPath, targetPath, Handle.Format.format.IsDefaultReplacedBundleResource());
                                 if (string.IsNullOrEmpty(Handle.TargetPath)) {
                                     // force reopen the file so we get the updated native path
