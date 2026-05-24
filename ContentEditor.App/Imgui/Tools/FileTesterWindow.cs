@@ -1,8 +1,11 @@
+using System.Buffers;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.ImguiHandling;
@@ -91,10 +94,12 @@ public partial class FileTesterWindow : IWindowHandler
             }
 
             if (ImGui.TreeNode("Hash bruteforce")) {
-                if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Will attempt to match the given UTF16 hash with a wordlist (lowercase, uppercase, capital case variants are attempted)");
-                if (AppImguiHelpers.InputFilepath("Wordlist filepath", ref wordlistFilepath)) {
+                if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Will attempt to match the given UTF16 hash with a wordlist (lowercase, uppercase, capital case variants are attempted) or executable file");
+                wordlistFilepath ??= AppConfig.Instance.GetGameExecutablePath(context.GetWorkspace()?.Game.name ?? "") ?? "";
+                if (AppImguiHelpers.InputFilepath("Words Source", ref wordlistFilepath)) {
                     wordlistCache = null;
                 }
+                ImguiHelpers.Tooltip("The word source can be either an executable or a file list txt file");
                 if (ImguiHelpers.InlineRadioGroup(["UTF-16", "Ascii", "UTF-8"], [0, 1, 2], ref wordlistHashType)) {
                     wordlistCache = null;
                 }
@@ -104,20 +109,31 @@ public partial class FileTesterWindow : IWindowHandler
                         Logger.Info("Requested hash is an empty string's hash!");
                     } else {
                         if (wordlistCache == null) {
-                            var words = File.ReadAllLines(wordlistFilepath);
-                            wordlistCache = new(words.Length * 3);
+                            IList<string> words;
+                            if (Path.GetExtension(wordlistFilepath) == ".exe") {
+                                words = ExtractStringsFromExecutable(wordlistFilepath, wordlistHashType != 1);
+                            } else {
+                                words = File.ReadAllLines(wordlistFilepath);
+                            }
+                            wordlistCache = new(words.Count * 3);
                             Func<string, uint> hasher = wordlistHashType switch { 1 => MurMur3HashUtils.GetAsciiHash, 2 => MurMur3HashUtils.GetUTF8Hash, _ => MurMur3HashUtils.GetHash };
                             foreach (var word in words) {
                                 if (word == "") continue;
                                 var upper = word.ToUpperInvariant();
-                                var capital = char.ToUpper(word[0]) + word.Substring(1);
                                 wordlistCache[hasher(word)] = word;
                                 wordlistCache[hasher(upper)] = upper;
-                                wordlistCache[hasher(capital)] = capital;
+                                if (!char.IsUpper(word[0])) {
+                                    var capital = char.ToUpper(word[0]) + word.Substring(1);
+                                    wordlistCache[hasher(capital)] = capital;
+                                }
+                                if (!word.Any(char.IsUpper)) {
+                                    var lower = word.ToLowerInvariant();
+                                    wordlistCache[hasher(lower)] = lower;
+                                }
                             }
                         }
                         if (wordlistCache.TryGetValue(testedHash, out var match)) {
-                            Logger.Info($"Found hash match (UTF-16): {match}");
+                            Logger.Info($"Found hash match: {match}");
                         } else {
                             Logger.Info("Hash lookup finished, no matches found.");
                         }
@@ -526,6 +542,7 @@ public partial class FileTesterWindow : IWindowHandler
             case KnownFileFormats.MotionCameraBank: return VerifyRewriteEquality<McamBankFile>(source.GetFile<McamBankFile>(), env);
             case KnownFileFormats.MotionCameraList: return VerifyRewriteEquality<McamlistFile>(source.GetFile<McamlistFile>(), env);
             case KnownFileFormats.MotionCamera: return VerifyRewriteEquality<MotcamFile>(source.GetFile<MotcamFile>(), env);
+            case KnownFileFormats.MotionTree: return VerifyRewriteEquality<MotTreeFile>(source.GetFile<MotTreeFile>(), env);
             case KnownFileFormats.JointMap: return VerifyRewriteEquality<JmapFile>(source.GetFile<JmapFile>(), env);
             case KnownFileFormats.Chain: return VerifyRewriteEquality<ChainFile>(source.GetFile<ChainFile>(), env);
             case KnownFileFormats.Chain2: return VerifyRewriteEquality<Chain2File>(source.GetFile<Chain2File>(), env);
@@ -763,4 +780,34 @@ public partial class FileTesterWindow : IWindowHandler
 
     [GeneratedRegex("[\\s,.\\[][a-zA-Z]+\\.([a-zA-Z0-9_?\\.\\?]+?)(?=[, (\\]]|$)")]
     private static partial Regex NameLookupRegex();
+
+    private static readonly SearchValues<char> IdentifierChars = SearchValues.Create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.:");
+    private static List<string> ExtractStringsFromExecutable(string exePath, bool useUtf16)
+    {
+        var rawWords = HashUtils.ExtractStrings(useUtf16 ? Encoding.Unicode : Encoding.ASCII, exePath, IdentifierChars, str => true);
+        if (useUtf16) {
+            var asciiWords = HashUtils.ExtractStrings(Encoding.ASCII, exePath, IdentifierChars, str => true);
+            rawWords = rawWords.Concat(asciiWords);
+        }
+        var words = new List<string>();
+        foreach (var line in rawWords) {
+            words.Add(line);
+            if (line.StartsWith('m') && char.IsUpper(line[1])) {
+                words.Add(line.Substring(1));
+            } else if (line.StartsWith("get", StringComparison.OrdinalIgnoreCase)) {
+                words.Add(line.Substring(3));
+            } else if (line.StartsWith("get_", StringComparison.OrdinalIgnoreCase)) {
+                words.Add(line.Substring(4));
+            } else if (line.StartsWith("set", StringComparison.OrdinalIgnoreCase)) {
+                words.Add(line.Substring(3));
+            } else if (line.StartsWith("is", StringComparison.OrdinalIgnoreCase)) {
+                words.Add(line.Substring(2));
+            } else if (line.StartsWith("Use", StringComparison.OrdinalIgnoreCase)) {
+                words.Add(line.Substring(3));
+            } else if (line.StartsWith("Enable", StringComparison.OrdinalIgnoreCase)) {
+                words.Add(line.Substring(6));
+            }
+        }
+        return words;
+    }
 }

@@ -1,4 +1,6 @@
 using System.Numerics;
+using System.Text;
+using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 
 namespace ContentEditor.App.ImguiHandling;
@@ -19,8 +21,24 @@ public class ByteArrayHandler : IObjectUIHandler
         var show = true;
         if (rows > 1) {
             show = ImguiHelpers.TreeNodeSuffix(context.label, "Byte array");
+            ImGui.SameLine();
+            if (ImGui.Button("Copy as HEX")) {
+                var str = new StringBuilder(len * 3);
+                foreach (var b in data) {
+                    str.Append(b.ToString("X2")).Append(' ');
+                }
+                EditorWindow.CurrentWindow?.CopyToClipboard(str.ToString());
+            }
         } else {
             ImGui.Text(context.label);
+            ImGui.SameLine();
+            if (ImGui.Button("Copy as HEX")) {
+                var str = new StringBuilder(len * 3);
+                foreach (var b in data) {
+                    str.Append(b.ToString("X2")).Append(' ');
+                }
+                EditorWindow.CurrentWindow?.CopyToClipboard(str.ToString());
+            }
             ImGui.SameLine();
         }
 

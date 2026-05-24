@@ -15,6 +15,7 @@ using ReeLib.Motlist;
 using ReeLib.Motpack;
 using ReeLib.MotTree;
 using ReeLib.Tml;
+using static ReeLib.MotTree.MotionTreeNode;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -1274,6 +1275,97 @@ public class PropertyInfoHandler : IObjectUIHandler
 
         if (ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString()!)) {
             context.ShowChildrenUI();
+            ImGui.TreePop();
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(MotionTreeNode))]
+public class MotionTreeNodeHandler : LazyPlainObjectHandler<MotionTreeNode>
+{
+    public MotionTreeNodeHandler()
+    {
+        AllowCopyDuplicate = true;
+    }
+
+    public override void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<MotionTreeNode>();
+        if (DoTreeNode(context, instance)) {
+            if (context.children.Count == 0) {
+                var ws = context.GetWorkspace();
+                context.AddChild<MotionTreeNode, string>("Name", instance, getter: (m) => m!.name, setter: (m, v) => m!.name = v ?? string.Empty).AddDefaultHandler<string>();
+                context.AddChild<MotionTreeNode, string>("Type Name", instance, getter: (m) => m!.typeName, setter: (m, v) => m!.typeName = v ?? string.Empty).AddDefaultHandler<string>();
+                context.AddChild<MotionTreeNode, MotionTreeNodeType>("Node Type", instance, getter: (m) => m!.nodeType, setter: (m, v) => m!.nodeType = v).AddDefaultHandler();
+                context.AddChild<MotionTreeNode, uint>("Full Type Hash", instance, getter: (m) => m!.fullTypeHash, setter: (m, v) => m!.fullTypeHash = v).AddDefaultHandler();
+                context.AddChild<MotionTreeNode, uint>("Type Hash", instance, getter: (m) => m!.typeHash, setter: (m, v) => m!.typeHash = v).AddDefaultHandler();
+                context.AddChild<MotionTreeNode, NodeTypeInfo>("Type Info", instance, getter: (m) => m!.TypeInfo).AddDefaultHandler();
+                context.AddChild<MotionTreeNode, uint>("Name Hash", instance, getter: (m) => m!.nameHash, setter: (m, v) => m!.nameHash = v).AddDefaultHandler();
+                context.AddChild<MotionTreeNode, uint>("Unknown Hash", instance, getter: (m) => m!.unknownHash, setter: (m, v) => m!.unknownHash = v).AddDefaultHandler();
+                context.AddChild<MotionTreeNode, List<string>>("Tags", instance, getter: (m) => m!.Tags).AddDefaultHandler();
+                context.AddChild<MotionTreeNode, List<MotionTreeNodeParameter>>("Parameters", instance, getter: (m) => m!.Parameters).AddDefaultHandler();
+            }
+
+            ImGui.PushID(context.label);
+            foreach (var child in context.children) {
+                child.ShowUI();
+            }
+            ImGui.PopID();
+            ImGui.TreePop();
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(NodeTypeInfo))]
+public class NodeTypeInfoHandler : LazyPlainObjectHandler<NodeTypeInfo>
+{
+    public override void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<NodeTypeInfo>();
+        if (DoTreeNode(context, instance)) {
+            if (context.children.Count == 0) {
+                WindowHandlerFactory.SetupObjectUIContext(context, Type);
+            }
+            ImGui.PushID(context.label);
+            ImGui.BeginDisabled();
+            foreach (var child in context.children) {
+                child.ShowUI();
+            }
+            ImGui.EndDisabled();
+            ImGui.PopID();
+            ImGui.TreePop();
+        }
+    }
+}
+
+[ObjectImguiHandler(typeof(MotionTreeNodeParameter))]
+public class MotionTreeNodeParameterHandler : LazyPlainObjectHandler<MotionTreeNodeParameter>
+{
+    public MotionTreeNodeParameterHandler()
+    {
+        AllowCopy = true;
+    }
+
+    public override void OnIMGUI(UIContext context)
+    {
+        var instance = context.Get<MotionTreeNodeParameter>();
+        if (DoTreeNode(context, instance)) {
+            ImGui.PushID(context.label);
+            if (context.children.Count == 0) {
+                if (instance.type == MotionTreeParamType.ExtraData) {
+                    context.AddChild("Data", instance, getter: o => o!.value, setter: (o, v) => o.value = v).AddDefaultHandler();
+                } else {
+                    WindowHandlerFactory.SetupObjectUIContext(context, Type);
+                    var nameHandler = context.GetChildByValue(instance.name);
+                    nameHandler?.uiHandler = new ReadOnlyWrapperHandler(nameHandler.uiHandler!);
+                    var typeHandler = context.GetChildByValue(instance.type);
+                    typeHandler?.uiHandler = new ReadOnlyWrapperHandler(typeHandler.uiHandler!);
+                    var hashHandler = context.GetChildByValue(instance.hash);
+                    hashHandler?.uiHandler = new ReadOnlyWrapperHandler(hashHandler.uiHandler!);
+                }
+            }
+            context.ShowChildrenUI();
+            ImGui.PopID();
             ImGui.TreePop();
         }
     }

@@ -15,7 +15,7 @@ public class PlainObjectHandler : IObjectUIHandler
     }
 }
 
-public class ReflectionObjectHandler<T>(MemberInfo[] members) : IObjectUIHandler
+public class ReflectionObjectHandler<T>(MemberInfo[]? members) : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -30,10 +30,19 @@ public class ReflectionObjectHandler<T>(MemberInfo[] members) : IObjectUIHandler
 public class LazyPlainObjectHandler<T>() : LazyPlainObjectHandler(typeof(T)) where T : class
 {
     public bool AllowReorder { get; set; }
+    public bool AllowCopyDuplicate { get; set; }
+    public bool AllowCopy { get; set; }
 
     protected override bool DoTreeNode(UIContext context, object instance)
     {
-        var show = base.DoTreeNode(context, instance);
+        bool show;
+        if (AllowCopyDuplicate) {
+            show = AppImguiHelpers.DuplicatableTreeNode<T>(context);
+        } else if (AllowCopy) {
+            show = AppImguiHelpers.CopyableTreeNode<T>(context);
+        } else {
+            show = base.DoTreeNode(context, instance);
+        }
         if (AllowReorder) {
             if (AppImguiHelpers.DragDropReorder<T>(context, false, out var dropped)) {
                 context.ClearChildren();
