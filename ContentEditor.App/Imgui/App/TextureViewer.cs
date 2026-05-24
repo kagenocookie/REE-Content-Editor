@@ -519,6 +519,22 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
             }
             ImguiHelpers.Tooltip("Save As...");
 
+            if (fileHandle?.Format.format == KnownFileFormats.Texture && workspace.CurrentBundle != null) {
+                if (!fileHandle.IsInBundle(workspace, workspace.CurrentBundle)) {
+                    ImGui.SameLine();
+                    if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveTo, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
+                        SaveToBundle(workspace, false);
+                    }
+                    ImguiHelpers.Tooltip("Save to Bundle");
+                }
+
+                ImGui.SameLine();
+                if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveAsNew, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
+                    SaveToBundle(workspace, true);
+                }
+                ImguiHelpers.Tooltip("Save to Bundle as New File");
+            }
+
             ImGui.SameLine();
             using (var _ = ImguiHelpers.Disabled(fileHandle?.Modified != true || !File.Exists(texturePath))) {
                 if (ImGui.Button($"{AppIcons.SI_Reset}")) {
@@ -749,6 +765,14 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
 
             ImGui.EndChild();
         }
+    }
+
+    private void SaveToBundle(ContentWorkspace workspace, bool saveAsNewFile)
+    {
+        Debug.Assert(fileHandle != null);
+        ResourcePathPicker.SaveFileToBundle(workspace, fileHandle, (savePath, localPath, targetPath) => {
+            return fileHandle.Save(workspace, savePath);
+        }, closeFile: false, useNewTargetPath: saveAsNewFile);
     }
 
     public bool RequestClose()
