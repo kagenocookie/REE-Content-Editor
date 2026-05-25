@@ -74,6 +74,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
         public Vector2 botRightMargin;
         public Vector2 padding;
         public bool autoRearrange;
+        public bool columnMajor;
 
         public void Infer(SequenceBlock sequence)
         {
@@ -106,17 +107,30 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             var listBefore = new List<UvsPattern>(sequence.patterns);
             var texIndex = textureIndices.Count == 0 ? 0 : textureIndices[0];
             sequence.patterns.Clear();
-            var outerArea = new Vector2(topLeftMargin.X, topLeftMargin.Y);
             var itemSize = new Vector2(1f / x, 1f / y);
-            for (int i = 0; i < x; ++i) {
+            if (columnMajor) {
+                for (int i = 0; i < x; ++i) {
+                    for (int k = 0; k < y; ++k) {
+                        sequence.patterns.Add(new UvsPattern() {
+                            left = topLeftMargin.X + i * itemSize.X * (1f - botRightMargin.X - topLeftMargin.X) + padding.X * itemSize.X,
+                            top = topLeftMargin.Y + k * itemSize.Y * (1f - botRightMargin.Y - topLeftMargin.Y) + padding.Y * itemSize.Y,
+                            right = topLeftMargin.X + (i + 1) * itemSize.X * (1f - botRightMargin.X - topLeftMargin.X) - padding.X * itemSize.X,
+                            bottom = topLeftMargin.Y + (k + 1) * itemSize.Y * (1f - botRightMargin.Y - topLeftMargin.Y) - padding.Y * itemSize.Y,
+                            textureIndex = texIndex,
+                        });
+                    }
+                }
+            } else {
                 for (int k = 0; k < y; ++k) {
-                    sequence.patterns.Add(new UvsPattern() {
-                        left = topLeftMargin.X + i * itemSize.X * (1f - botRightMargin.X - topLeftMargin.X) + padding.X * itemSize.X,
-                        top = topLeftMargin.Y + k * itemSize.Y * (1f - botRightMargin.Y - topLeftMargin.Y) + padding.Y * itemSize.Y,
-                        right = topLeftMargin.X + (i + 1) * itemSize.X * (1f - botRightMargin.X - topLeftMargin.X) - padding.X * itemSize.X,
-                        bottom = topLeftMargin.Y + (k + 1) * itemSize.Y * (1f - botRightMargin.Y - topLeftMargin.Y) - padding.Y * itemSize.Y,
-                        textureIndex = texIndex,
-                    });
+                    for (int i = 0; i < x; ++i) {
+                        sequence.patterns.Add(new UvsPattern() {
+                            left = topLeftMargin.X + i * itemSize.X * (1f - botRightMargin.X - topLeftMargin.X) + padding.X * itemSize.X,
+                            top = topLeftMargin.Y + k * itemSize.Y * (1f - botRightMargin.Y - topLeftMargin.Y) + padding.Y * itemSize.Y,
+                            right = topLeftMargin.X + (i + 1) * itemSize.X * (1f - botRightMargin.X - topLeftMargin.X) - padding.X * itemSize.X,
+                            bottom = topLeftMargin.Y + (k + 1) * itemSize.Y * (1f - botRightMargin.Y - topLeftMargin.Y) - padding.Y * itemSize.Y,
+                            textureIndex = texIndex,
+                        });
+                    }
                 }
             }
             var listAfter = new List<UvsPattern>(sequence.patterns);
@@ -130,13 +144,18 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             sequence.patternCount = sequence.patterns.Count;
         }
 
+        private static string[] RowColMajor = ["Row Major", "Column Major"];
+        private static bool[] FalseTrue = [false, true];
+
         public void OnIMGUI(SequenceBlock sequence)
         {
             var changed = ImGui.DragInt2("Count X/Y", ref x, 0.025f, 1, 20);
 
-            changed = ImGui.DragFloat2("Margin Top/Left", ref topLeftMargin, 0.001f, 0, 1) || changed;
-            changed = ImGui.DragFloat2("Margin Bottom/Right", ref botRightMargin, 0.001f, 0, 1) || changed;
-            changed = ImGui.DragFloat2("Item Padding", ref padding, 0.001f, 0, 0.4999f) || changed;
+            changed |= ImGui.DragFloat2("Margin Top/Left", ref topLeftMargin, 0.001f, 0, 1);
+            changed |= ImGui.DragFloat2("Margin Bottom/Right", ref botRightMargin, 0.001f, 0, 1);
+            changed |= ImGui.DragFloat2("Item Padding", ref padding, 0.001f, 0, 0.4999f);
+            changed |= ImguiHelpers.InlineRadioGroup(RowColMajor, FalseTrue, ref columnMajor);
+            ImguiHelpers.Tooltip("Order: RowMajor fills left-to-right then top-to-bottom. ColumnMajor fills top-to-bottom then left-to-right.");
             ImGui.Checkbox("Automatically re-arrange", ref autoRearrange);
 
             if (autoRearrange ? changed : ImguiHelpers.SameLine() && ImGui.Button("Re-arrange")) {
@@ -389,7 +408,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             float patternW = 30;
             var texPath = File.Textures[sequence.patterns[0].textureIndex].path;
             var tex = GetOrLoadTexture(texPath);
-            
+
             ImGui.PushID(i);
             if (i > 0) {
                 if (ImGui.GetItemRectMax().X + ImGui.GetStyle().ItemSpacing.X + patternW < ImGui.GetWindowPos().X + ImGui.GetContentRegionAvail().X) {
