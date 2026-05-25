@@ -298,6 +298,9 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
             ResourceManager.TryResolveGameFile(filepath, out var texHandle) ||
             (Path.IsPathFullyQualified(filepath) && File.Exists(filepath) && ResourceManager.TryGetOrLoadFile(filepath, out texHandle))
         ) {
+            if (texHandle.Format.format == KnownFileFormats.RenderTexture) {
+                return GetDefaultTexture();
+            }
             if (resolveStreaming && texHandle.Format.format == KnownFileFormats.Texture) {
                 var texFile = texHandle.GetFile<TexFile>();
                 if (texFile.Header.flags.HasFlag(ReeLib.Tex.TexFlags.IsStreaming)) {
