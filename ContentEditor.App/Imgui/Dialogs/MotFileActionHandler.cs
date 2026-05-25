@@ -44,15 +44,8 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
 
             var ws = context.GetWorkspace();
             if (Logger.ErrorIf(ws == null)) return true;
-            try {
-                // try and add a failsafe in case somehow the paste later fails for reasons unknown
-                var motCopy = motData.ToMotFile();
-                if (motCopy == null) throw new NullReferenceException("File is null");
-                motData.VerificationId = VirtualClipboard.Store(motCopy);
-            } catch (Exception e) {
-                Logger.Error("Failed to copy motion data: " + e.Message);
-                return true;
-            }
+            // try and add a failsafe in case somehow the paste later fails for reasons unknown
+            motData.VerificationId = VirtualClipboard.Store(motData);
             EditorWindow.CurrentWindow?.CopyToClipboard(motData.ToJsonString(ws.Env), "Copied motion " + motData.MotName + " to clipboard (JSON)");
             return true;
         }
@@ -70,8 +63,17 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                     if (Logger.ErrorIf(file == null, "Could not find parent motion file")) return true;
 
                     var prevMot = context.Get<MotFileBase>();
-                    MotFileBase newMot;
-                    if (!VirtualClipboard.TryGetById(motData.VerificationId, out newMot!)) {
+                    MotFileBase? newMot = null;
+                    try {
+                        if (VirtualClipboard.TryGetById<MotionDataResource>(motData.VerificationId, out var originalMotData)) {
+                            newMot = originalMotData.ToMotFile();
+                        }
+                    } catch (Exception e) {
+                        // ignore, try failsafe
+                        Logger.Debug($"Virtual clipboard data is invalid ({e.Message})");
+                    }
+
+                    if (newMot == null) {
                         try {
                             newMot = motData.ToMotFile()!;
                             if (newMot == null) throw new NullReferenceException("Deserialized file is null");
@@ -80,6 +82,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                             return true;
                         }
                     }
+
                     if (newMot == null) return true;
 
                     if (pasteExtra) {
