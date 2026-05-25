@@ -24,7 +24,7 @@ To account for this path handling, Content Editor treats paths in terms of diffe
 - **Bundle local path** (example: `my_sub_folder/ch0100_body.tex.251111100`)
     - Path within bundle, relative to the bundle folder
     - Files can be moved around arbitrarily within a bundle folder, and the actual output path can be changed anytime through the Bundle Manager
-    - Because the majority of mods only ever modify a few files, letting the user have everything stored at the best folder makes files easier to work with
+    - Because the majority of mods only ever modify a few files, letting the user have everything stored at the base folder makes files easier to work with
 
 ## Content Editor File System
 
