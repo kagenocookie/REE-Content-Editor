@@ -60,8 +60,8 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
         var clipData = EditorWindow.CurrentWindow?.GetClipboard();
         if (!string.IsNullOrEmpty(clipData)) {
             var paste = ImGui.Selectable("Paste motion data");
-            var pasteRetarget = ImGui.Selectable("Paste motion data (Customize) ...");
-            paste = paste || pasteRetarget;
+            var pasteExtra = ImGui.Selectable("Paste motion data (Customize) ...");
+            paste = paste || pasteExtra;
             if (paste) {
                 if (MotionDataResource.TryDeserialize(clipData, out var motData, out var error)) {
                     // TODO motpack support
@@ -82,10 +82,10 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                     }
                     if (newMot == null) return true;
 
-                    if (pasteRetarget) {
+                    if (pasteExtra) {
                         retargetWindow = new MotlistRetargetWindow(file, prevMot, newMot, editor);
                     } else {
-                        ConfirmPaste(file, prevMot, newMot, editor, false, false);
+                        ConfirmPaste(file, prevMot, newMot, editor, false, false, false, false);
                     }
                 } else {
                     Logger.Error("Failed to deserialize motion data: " + error);
@@ -143,6 +143,8 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
 
         private bool overwriteBoneList;
         private bool maintainExistingChannelsOnly;
+        private bool copyBehaviorClips;
+        private bool removeExistingBehaviorClips;
 
         public bool Show()
         {
@@ -167,6 +169,10 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                 ImGui.SeparatorText("Additional options");
                 ImGui.Checkbox("Only paste already existing channels", ref maintainExistingChannelsOnly);
                 ImguiHelpers.Tooltip("Only channels that already exist in the target motion will be kept, while the rest are ignored.\nCan be used to make pure edits and avoid modifying bones that should not be modified by the animation.");
+                ImGui.Checkbox("Add all source mot file behavior clips", ref copyBehaviorClips);
+                if (copyBehaviorClips) {
+                    ImGui.Checkbox("Remove all behavior clips from the target mot file (fully replace with copied)", ref removeExistingBehaviorClips);
+                }
                 if (newFile != replacedFile) {
                     if (newFile is MotFile m1 && replacedFile is MotFile m2 && !m1.Bones.Select(b => b.boneHash).Order().SequenceEqual(m2.Bones.Select(x => x.boneHash).Order())) {
                         ImGui.Checkbox("Overwrite bone list", ref overwriteBoneList);
@@ -255,7 +261,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                     ImGui.Spacing();
                     if (ImGui.Button("Confirm Replace", new Vector2(170, 0))) {
                         if (replacedFile != newFile) {
-                            ConfirmPaste(file, replacedFile, newFile, editor, overwriteBoneList, maintainExistingChannelsOnly);
+                            ConfirmPaste(file, replacedFile, newFile, editor, overwriteBoneList, maintainExistingChannelsOnly, copyBehaviorClips, removeExistingBehaviorClips);
                         }
                         keepShowing = false;
                     }
@@ -317,7 +323,15 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
         }
     }
 
-    internal static void ConfirmPaste(FileHandle targetFile, MotFileBase prevMot, MotFileBase newMot, FileEditor? editor, bool replaceBoneList, bool maintainExistingChannelsOnly)
+    internal static void ConfirmPaste(
+        FileHandle targetFile,
+        MotFileBase prevMot,
+        MotFileBase newMot,
+        FileEditor? editor,
+        bool replaceBoneList,
+        bool maintainExistingChannelsOnly,
+        bool copyBehaviorClips,
+        bool removeExistingBehaviorClips)
     {
         if (newMot is MotFile motSrc && prevMot is MotFile motTarget) {
             // replace values, keep instance
@@ -327,7 +341,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                     clip.ClipHeader.boneHash = MurMur3HashUtils.GetHash(clip.ClipHeader.boneName);
                 }
             }
-            motTarget.CopyValuesFrom(motSrc, false, replaceBoneList, maintainExistingChannelsOnly);
+            motTarget.CopyValuesFrom(motSrc, copyBehaviorClips, replaceBoneList, maintainExistingChannelsOnly, replaceBehaviorClips: removeExistingBehaviorClips);
             var motlist = targetFile.Format.format == KnownFileFormats.MotionList ? targetFile.GetFile<MotlistFile>() : null;
             if (motlist != null) {
                 // ensure unique name
