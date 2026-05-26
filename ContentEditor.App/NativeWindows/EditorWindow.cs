@@ -393,13 +393,13 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             var games = AppConfig.Instance.GetGamelist();
             foreach (var (game, configured) in games) {
                 if (configured && fullSupportedGames.Contains(game)) {
-                    if (ImGui.MenuItem(Languages.TranslateGame(game))) SetWorkspace(game, null);
+                    if (ImGui.MenuItem(Lang.TranslateGame(game))) SetWorkspace(game, null);
                 }
             }
             ImGui.Separator();
             foreach (var (game, configured) in games) {
                 if (configured && !fullSupportedGames.Contains(game)) {
-                    if (ImGui.MenuItem(Languages.TranslateGame(game))) SetWorkspace(game, null);
+                    if (ImGui.MenuItem(Lang.TranslateGame(game))) SetWorkspace(game, null);
                 }
             }
             ImGui.Separator();
@@ -547,7 +547,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     }
 
                     if (isGameAlreadyRunning) {
-                        Logger.Info($"{Languages.TranslateGame(workspace.Game.name)} is already running.");
+                        Logger.Info($"{Lang.TranslateGame(workspace.Game.name)} is already running.");
                     } else {
                         try {
                             string launchSuffix = "";
@@ -581,9 +581,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                                     Logger.Error("Game can't be auto-launched from the current platform");
                                 }
                             }
-                            Logger.Debug($"{Languages.TranslateGame(workspace.Game.name)} launched{launchSuffix}.");
+                            Logger.Debug($"{Lang.TranslateGame(workspace.Game.name)} launched{launchSuffix}.");
                         } catch (Exception e) {
-                            Logger.Error($"Failed to launch {Languages.TranslateGame(workspace.Game.name)}: " + e.Message);
+                            Logger.Error($"Failed to launch {Lang.TranslateGame(workspace.Game.name)}: " + e.Message);
                         }
                     }
                 }
@@ -926,6 +926,13 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             }
             if (ImGui.MenuItem("Icon List")) {
                 AddUniqueSubwindow(new IconListWindow());
+            }
+            if (ImGui.MenuItem("Dump translations")) {
+                var json = Lang.GetTranslationsJson();
+                PlatformUtils.ShowSaveFileDialog(path => {
+                    var bytes = VYaml.Serialization.YamlSerializer.Serialize(json);
+                    File.WriteAllBytes(path, bytes.Span);
+                }, Path.Combine(AppContext.BaseDirectory, "i18n", Lang.CurrentLanguage.ToString()+".lang.yaml"), FileFilters.LangYamlFile);
             }
             ImGui.EndMenu();
         }

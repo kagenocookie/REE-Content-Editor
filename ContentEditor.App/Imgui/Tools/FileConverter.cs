@@ -44,10 +44,10 @@ public class FileConverter : BaseWindowHandler
     private bool sourceChanged = true;
     public override void OnIMGUI()
     {
-        sourceChanged |= AppImguiHelpers.InputFolder("Source Folder", ref sourceFolder);
+        sourceChanged |= AppImguiHelpers.InputFolder("Source Folder"u8, ref sourceFolder);
         ImguiHelpers.Tooltip("The folder containing the files you wish to upgrade.");
 
-        AppImguiHelpers.InputFolder("Destination Folder", ref destinationFolder);
+        AppImguiHelpers.InputFolder("Destination Folder"u8, ref destinationFolder);
         ImguiHelpers.Tooltip("The folder into which to store the upgraded files.");
 
         // TODO non-RT to RT conversion option

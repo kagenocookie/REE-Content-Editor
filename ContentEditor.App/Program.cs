@@ -65,6 +65,7 @@ sealed class Program
         AppConfig.LoadConfigs();
         WindowManager.Instance.CloseCallback = (data) => EditorWindow.CurrentWindow!.CloseSubwindow(data);
         WindowManager.Instance.ErrorCallback = (msg, parent) => EditorWindow.CurrentWindow!.AddSubwindow(new ErrorModal("Error", msg, parent?.Handler as IRectWindow));
+        Lang.ChangeLanguage(AppConfig.Instance.Language);
 
         var resourcePath = AppConfig.Instance.ResourcesFilepath.Get();
         if (!string.IsNullOrEmpty(resourcePath) && Path.IsPathFullyQualified(resourcePath)) {

@@ -275,7 +275,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 if (ImGui.MenuItem($"{AppIcons.SI_MeshViewerMeshGroup} Mesh Groups")) ImGui.OpenPopup("MeshGroups");
                 if (ImGui.MenuItem($"{AppIcons.SI_FileType_MDF} Material")) ImGui.OpenPopup("Material");
                 var mdfErrors = mainCtx.GetMdfErrors();
-                if (mdfErrors != null) {
+                if (!mdfErrors.IsEmpty) {
                     using var _ = ImguiHelpers.OverrideStyleCol(ImGuiCol.Text, Colors.Warning);
                     ImGui.MenuItem($"{AppIcons.SI_GenericWarning}##mdf");
                     ImguiHelpers.Tooltip(mdfErrors);
@@ -295,8 +295,8 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                     edit?.DrawMainUI();
                     ImGui.EndMenu();
                 }
-                if (ImGui.MenuItem($"{AppIcons.SI_Animation} Animations")) showAnimationsMenu = !showAnimationsMenu;
-                if (showAnimationsMenu) ImguiHelpers.HighlightMenuItem($"{AppIcons.SI_Animation} Animations");
+                if (ImGui.MenuItem(Lang.MeshViewer.Title_Animations)) showAnimationsMenu = !showAnimationsMenu;
+                if (showAnimationsMenu) ImguiHelpers.HighlightMenuItem(Lang.MeshViewer.Title_Animations);
                 var animWarns = GetAnimErrors();
                 if (animWarns != null) {
                     using var _ = ImguiHelpers.OverrideStyleCol(ImGuiCol.Text, Colors.Warning);
@@ -1348,7 +1348,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             var matNames = mesh.NativeMesh.MaterialNames;
             var nameMismatch = matNames.Any(name => !mdfMats.Select(m => m.Name).Contains(name));
             var error = GetMdfErrors();
-            if (error != null) {
+            if (!error.IsEmpty) {
                 ImGui.TextColored(Colors.Warning, error);
             }
 
@@ -1387,7 +1387,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
         }
     }
 
-    public string? GetMdfErrors()
+    public ReadOnlySpan<byte> GetMdfErrors()
     {
         var meshComponent = Component;
         var mesh = MeshFile;
@@ -1398,10 +1398,10 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             var matNames = mesh.NativeMesh.MaterialNames;
             var nameMismatch = matNames.Any(name => !mdfMats.Select(m => m.Name).Contains(name));
             if (mdfMats.Count != mesh.NativeMesh.MaterialNames.Count) {
-                return "Mesh material count does not match MDF2 material count. Textures won't display correctly ingame.\nEnsure that both counts match.";
+                return Lang.MeshViewer.Error_MaterialCountMismatch;
             }
             if (nameMismatch) {
-                return "Mesh references material names that are not present in the selected MDF2.\nSuch submeshes will be invisible ingame.";
+                return Lang.MeshViewer.Error_MaterialNotFound;
             }
         }
 

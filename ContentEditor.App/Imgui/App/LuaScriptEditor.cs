@@ -106,7 +106,7 @@ public class LuaScriptEditor : FileEditor
             return;
         }
 
-        var gameName = Languages.TranslateGame(Workspace.Game.name);
+        var gameName = Lang.TranslateGame(Workspace.Game.name);
         var groups = new List<string>();
         foreach (var folder in Directory.EnumerateDirectories(basePath)) {
             var relative = Path.GetRelativePath(basePath, folder).NormalizeFilepath();

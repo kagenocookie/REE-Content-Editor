@@ -21,7 +21,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
 
     public ContentWorkspace Workspace { get; }
 
-    private Language selectedLanguage = Language.English; // TODO user-defined default language
+    private Language selectedLanguage = Lang.CurrentLanguage;
     private int selectedRow = -1;
     private string filter = string.Empty;
     private bool isMessageSearchMatchCase = false;

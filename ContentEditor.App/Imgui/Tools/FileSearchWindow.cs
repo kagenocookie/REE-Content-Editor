@@ -680,6 +680,7 @@ public class FileSearchWindow : IWindowHandler
 
     private void InvokeSearchMsg(SearchContext context, string query)
     {
+        var lang = Lang.CurrentLanguage;
         foreach (var (path, stream) in context.Env.GetFilesWithExtension("msg", context.Token)) {
             try {
                 if (context.Token.IsCancellationRequested) return;
@@ -690,12 +691,12 @@ public class FileSearchWindow : IWindowHandler
                 foreach (var entry in file.Entries) {
                     if (Guid.TryParse(query, out var guid)) {
                         if (entry.Guid == guid) {
-                            var summary = entry.Name + " = " + LimitLength(entry.GetMessage(Language.English), 50);
+                            var summary = entry.Name + " = " + LimitLength(entry.GetMessage(lang), 50);
                             AddMatch(context, summary, path);
                             return;
                         }
-                    } else if (entry.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase) || entry.GetMessage(Language.English).Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
-                        var summary = entry.Name + " = " + LimitLength(entry.GetMessage(Language.English), 50);
+                    } else if (entry.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase) || entry.GetMessage(lang).Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
+                        var summary = entry.Name + " = " + LimitLength(entry.GetMessage(lang), 50);
                         AddMatch(context, summary, path);
                     }
                 }

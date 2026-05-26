@@ -1,11 +1,13 @@
+using System.Numerics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Internal;
+using ContentEditor.App.Internationalization;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Themes;
 using ContentPatcher;
 using ReeLib;
-using System.Numerics;
+using ReeLib.Msg;
 
 namespace ContentEditor.App;
 
@@ -45,42 +47,42 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     }
     private class SettingGroup
     {
-        public required string Name { get; set; }
+        public required FixedString Name { get; set; }
         public List<SettingSubGroup> SubGroups { get; set; } = new();
     }
     private class SettingSubGroup
     {
-        public required string Name { get; set; }
+        public required FixedString Name { get; set; }
         public required SubGroupID ID { get; set; }
     }
 
     private readonly List<SettingGroup> groups = new()
     {
-        new SettingGroup { Name = "Preferences", SubGroups = {
-                new SettingSubGroup { Name = "General", ID = SubGroupID.Preferences_General},
-                new SettingSubGroup { Name = "Editing", ID = SubGroupID.Preferences_Editing},
-                new SettingSubGroup { Name = "Bundles", ID = SubGroupID.Preferences_Bundles},
+        new SettingGroup { Name = Lang.Settings.Group_Preferences, SubGroups = {
+                new SettingSubGroup { Name = Lang.Settings.Group_General, ID = SubGroupID.Preferences_General},
+                new SettingSubGroup { Name = Lang.Settings.Group_Editing, ID = SubGroupID.Preferences_Editing},
+                new SettingSubGroup { Name = Lang.Settings.Group_Bundles, ID = SubGroupID.Preferences_Bundles},
             }
         },
-        new SettingGroup { Name = "Display", SubGroups = {
-                new SettingSubGroup { Name = "General", ID = SubGroupID.Display_General},
-                new SettingSubGroup { Name = "Theme", ID = SubGroupID.Display_Theme},
+        new SettingGroup { Name = Lang.Settings.Group_Display, SubGroups = {
+                new SettingSubGroup { Name = Lang.Settings.Group_General, ID = SubGroupID.Display_General},
+                new SettingSubGroup { Name = Lang.Settings.Group_Theme, ID = SubGroupID.Display_Theme},
             }
         },
-        new SettingGroup { Name = "Hotkeys", SubGroups = {
-                new SettingSubGroup { Name = "Global", ID = SubGroupID.Hotkeys_Global},
-                new SettingSubGroup { Name = "Pak Browser", ID = SubGroupID.Hotkeys_PakBrowser},
-                new SettingSubGroup { Name = "Scene", ID = SubGroupID.Hotkeys_Scene},
-                new SettingSubGroup { Name = "Mesh Viewer", ID = SubGroupID.Hotkeys_MeshViewer},
-                new SettingSubGroup { Name = "Texture Viewer", ID = SubGroupID.Hotkeys_TextureViewer},
-                new SettingSubGroup { Name = "UVS Editor", ID = SubGroupID.Hotkeys_UVSEditor},
+        new SettingGroup { Name = Lang.Settings.Group_Hotkeys, SubGroups = {
+                new SettingSubGroup { Name = Lang.Settings.Group_Global, ID = SubGroupID.Hotkeys_Global},
+                new SettingSubGroup { Name = Lang.Settings.Group_Pak, ID = SubGroupID.Hotkeys_PakBrowser},
+                new SettingSubGroup { Name = Lang.Settings.Group_Scene, ID = SubGroupID.Hotkeys_Scene},
+                new SettingSubGroup { Name = Lang.Settings.Group_Mesh, ID = SubGroupID.Hotkeys_MeshViewer},
+                new SettingSubGroup { Name = Lang.Settings.Group_Texture, ID = SubGroupID.Hotkeys_TextureViewer},
+                new SettingSubGroup { Name = Lang.Settings.Group_UVS, ID = SubGroupID.Hotkeys_UVSEditor},
             }
         },
-        new SettingGroup { Name = "Games", SubGroups = {
-                new SettingSubGroup { Name = "Resident Evil", ID = SubGroupID.Games_ResidentEvil},
-                new SettingSubGroup { Name = "Monster Hunter", ID = SubGroupID.Games_MonsterHunter},
-                new SettingSubGroup { Name = "Other", ID = SubGroupID.Games_Other},
-                new SettingSubGroup { Name = "Custom", ID = SubGroupID.Games_Custom}
+        new SettingGroup { Name = Lang.Settings.Group_Games, SubGroups = {
+                new SettingSubGroup { Name = Lang.Settings.Group_Resident, ID = SubGroupID.Games_ResidentEvil},
+                new SettingSubGroup { Name = Lang.Settings.Group_Monster, ID = SubGroupID.Games_MonsterHunter},
+                new SettingSubGroup { Name = Lang.Settings.Group_Other, ID = SubGroupID.Games_Other},
+                new SettingSubGroup { Name = Lang.Settings.Group_Custom, ID = SubGroupID.Games_Custom}
             }
         },
     };
@@ -103,12 +105,12 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
 
     private void ShowSettingsMenu(ref bool isShow)
     {
-        ImGui.BeginChild("GroupList", new Vector2(200 * UI.UIScale, 0), ImGuiChildFlags.Borders);
+        ImGui.BeginChild("GroupList"u8, new Vector2(200 * UI.UIScale, 0), ImGuiChildFlags.Borders);
         ShowGroupList();
         ImGui.EndChild();
 
         ImGui.SameLine();
-        ImGui.BeginChild("SubGroupContent", new Vector2(0, 0), ImGuiChildFlags.Borders);
+        ImGui.BeginChild("SubGroupContent"u8, new Vector2(0, 0), ImGuiChildFlags.Borders);
         if (selectedGroup >= 0) {
             ShowSubGroupContent(groups[selectedGroup]);
         }
@@ -203,18 +205,26 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             default: ImGui.Text("Lorem Ipsum"); break;
         }
     }
+
     private static void ShowPreferencesGeneralTab()
     {
         ImGui.Spacing();
-        ShowSetting(config.EnableUpdateCheck, "Automatically check for Updates", "Will occasionally check GitHub for new releases.");
+        var lang = config.PreferredLanguage.Get();
+        if (ImGui.Combo(Lang.Settings.PreferredLanguage, ref lang, Lang.SupportableLanguageNames)) {
+            var newLang = (Language)lang;
+            Lang.ChangeLanguage(newLang);
+            AppConfig.Instance.PreferredLanguage.Set(lang);
+        }
+
+        ShowSetting(config.EnableUpdateCheck, Lang.Settings.AutoUpdate);
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(AutoUpdater.UpdateCheckInProgress)) {
-            if (ImGui.Button("Check now")) {
+            if (ImGui.Button(Lang.Buttons.CheckUpdates)) {
                 AutoUpdater.CheckForUpdateInBackground();
             }
         }
-        ShowSetting(config.DisableFileCloseWarning, "Disable Open File Warning When Closing Editor Windows", "Whether to disable the warning notifiation when a window is closed that references an open file.");
-        var navchanged = ShowSetting(config.EnableKeyboardNavigation, "Enable keyboard navigation", "Whether to enable navigating between fields using arrow keys.");
+        ShowSetting(config.DisableFileCloseWarning, Lang.Settings.DisableFileCloseWarning);
+        var navchanged = ShowSetting(config.EnableKeyboardNavigation, Lang.Settings.EnableKeyboardNav);
         if (navchanged) {
             if (config.EnableKeyboardNavigation) {
                 ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.NavEnableKeyboard;
@@ -222,70 +232,71 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                 ImGui.GetIO().ConfigFlags &= ~ImGuiConfigFlags.NavEnableKeyboard;
             }
         }
-        ShowSetting(config.LoadFromNatives, "Load files from natives/ folder", $"If checked, the app will prefer to load loose files from the active game's natives folder instead of packed files, similar to how the game would.");
-        ShowSetting(config.UseSubPakForLooseTextures, "Store textures into sub pak files (>= MHWilds)", "Whether to store textures in sub paks even for loose file output.\nShouldn't be needed anymore with current REFramework versions, but might be needed in case of issues with newer games");
+        ShowSetting(config.LoadFromNatives, Lang.Settings.LoadFromNatives);
+        ShowSetting(config.UseSubPakForLooseTextures, Lang.Settings.UseSubPakForLooseTextures);
 
-        ImGui.SeparatorText("Cache");
+        ImGui.SeparatorText(Lang.Settings.Section_Cache);
         var configPath = config.GameConfigBaseFilepath.Get();
-        if (AppImguiHelpers.InputFolder("Game Config Base Path", ref configPath)) {
-            if (configPath.EndsWith(".exe")) configPath = Path.GetDirectoryName(configPath)!;
+        if (AppImguiHelpers.InputFolder(Lang.Settings.GameConfigBasePath.Text, ref configPath)) {
+            if (configPath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) configPath = Path.GetDirectoryName(configPath)!;
             config.GameConfigBaseFilepath.Set(configPath);
         }
-        ImguiHelpers.Tooltip("The folder path that contains the game specific entity configurations. Will use relative path config/ by default if unspecified.");
-        ShowSetting(config.RemoteDataSource, "Resource data source", "The source from which to check for updates and download game-specific resource cache files.\nWill use the default GitHub repository if unspecified.");
+        ImguiHelpers.Tooltip(Lang.Settings.GameConfigBasePath.Tooltip);
+        ShowSetting(config.RemoteDataSource, Lang.Settings.RemoteDataSource);
 
-        ShowFolderSetting(config.ResourcesFilepath, "Resource data storage path", "The folder to use for storing the auto-downloaded game specific resource files.");
-        ShowFolderSetting(config.CacheFilepath, "Cache file path", "The folder to use for general file caching. Must not be empty.");
-        ShowFolderSetting(config.ThumbnailCacheFilepath, "Thumbnail cache file path", "The folder that cached thumbnails should be stored in. Must not be empty.");
-        ShowFolderSetting(config.BookmarksFilepath, "User data file path", "The folder in which user created bookmarks and other data should be stored. Must not be empty.");
+        ShowFolderSetting(config.ResourcesFilepath, Lang.Settings.ResourcesFilepath);
+        ShowFolderSetting(config.CacheFilepath, Lang.Settings.CacheFilepath);
+        ShowFolderSetting(config.ThumbnailCacheFilepath, Lang.Settings.ThumbnailCacheFilepath);
+        ShowFolderSetting(config.BookmarksFilepath, Lang.Settings.BookmarksFilepath);
 
-        ImGui.SeparatorText("Performance");
-        ShowSlider(config.UnpackMaxThreads, "Max unpack threads", 1, 64, "The maximum number of threads to be used when unpacking.\nThe actual thread count is determined automatically by the .NET runtime.");
-        ShowSetting(config.EnableGpuTexCompression, "Enable GPU texture compression", "Whether to enable using the much faster GPU-based compression method.\nCurrently only available on Windows.\nCan be disabled in case of issues, so that CPU-based compression is used instead.");
+        ImGui.SeparatorText(Lang.Settings.Section_Performance);
+        ShowSlider(config.UnpackMaxThreads, Lang.Settings.MaxUnpackThreads, 1, 64);
+        ShowSetting(config.EnableGpuTexCompression, Lang.Settings.EnableGpuTexCompression);
 
-        ImGui.SeparatorText("Debug");
-        ShowSetting(config.LogToFile, "Output logs to file", $"If checked, any logging will also be output to file {FileLogger.DefaultLogFilePath}.\nChanging this setting requires a restart of the app.");
+        ImGui.SeparatorText(Lang.Settings.Section_Debug);
+        ShowSetting(config.LogToFile, Lang.Settings.LogToFile, Lang.Settings.LogToFile_Tooltip.UTF8);
         var logLevel = config.LogLevel.Get();
-        if (ImGui.Combo("Minimum logging level", ref logLevel, LogLevels, LogLevels.Length)) {
+        if (ImGui.Combo(Lang.Settings.MinLogLevel.String, ref logLevel, LogLevels, LogLevels.Length)) {
             config.LogLevel.Set(logLevel);
         }
     }
+
     private static void ShowPreferencesEditingTab()
     {
         ImGui.Spacing();
 
         var maxUndo = config.MaxUndoSteps.Get();
-        if (ImGui.DragInt("Max undo steps", ref maxUndo, 0.25f, 0)) {
+        if (ImGui.DragInt(Lang.Settings.MaxUndoSteps.Text, ref maxUndo, 0.25f, 0)) {
             config.MaxUndoSteps.Set(maxUndo);
         }
-        ImguiHelpers.Tooltip("The maximum number of steps you can undo. Higher number means a bit higher memory usage after longer sessions.");
+        ImguiHelpers.Tooltip(Lang.Settings.MaxUndoSteps.Tooltip);
 
-        ShowSetting(config.ShowQuaternionsAsEuler, "Use Euler angles for quaternions", "Whether quaternions should be displayed as euler angles.");
-        ShowSetting(config.PauseAnimPlayerOnSeek, "Pause Animation Player on seek", "Whether to pause the animation player while seeking with the slider.");
+        ShowSetting(config.ShowQuaternionsAsEuler, Lang.Settings.ShowQuaternionsAsEuler);
+        ShowSetting(config.PauseAnimPlayerOnSeek, Lang.Settings.PauseAnimPlayerOnSeek);
     }
 
     private static void ShowBundlesEditingTab()
     {
         ImGui.Spacing();
-        ShowSetting(config.BundleDefaultSaveFullPath, "Save bundle files with full path", "When checked, will always default to saving with the full relative path instead of the root bundle folder when adding new files to the active bundle.");
+        ShowSetting(config.BundleDefaultSaveFullPath, Lang.Settings.BundleDefaultSaveFullPath);
 
-        ImGui.SeparatorText("Default Bundle Settings");
+        ImGui.SeparatorText(Lang.Settings.Section_BundleDefaults);
         var defaults = config.JsonSettings.BundleDefaults;
 
         var str = defaults.Author ?? "";
-        if (ImGui.InputText("Author", ref str, 100)) {
+        if (ImGui.InputText(Lang.Settings.Author, ref str, 100)) {
             defaults.Author = str;
             config.SaveJsonConfig();
         }
 
         str = defaults.Description ?? "";
-        if (ImGui.InputText("Description", ref str, 100)) {
+        if (ImGui.InputText(Lang.Settings.Description, ref str, 100)) {
             defaults.Description = str;
             config.SaveJsonConfig();
         }
 
         str = defaults.Homepage ?? "";
-        if (ImGui.InputText("Homepage", ref str, 100)) {
+        if (ImGui.InputText(Lang.Settings.Homepage, ref str, 100)) {
             defaults.Homepage = str;
             config.SaveJsonConfig();
         }
@@ -294,45 +305,45 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     {
         ImGui.Spacing();
 
-        ShowSlider(config.FontSize, "UI Font Size", 10, 128, "The default font size for drawing text.");
+        ShowSlider(config.FontSize, Lang.Settings.FontSize, 10, 128);
         if (UI.FontSize != config.FontSize.Get()) {
-            if (ImGui.Button("Update UI")) {
+            if (ImGui.Button(Lang.Settings.Button_UpdateUI)) {
                 UI.FontSize = config.FontSize.Get();
                 UI.FontSizeLarge = UI.FontSize * UI.FontSizeLargeMultiplier;
             }
         }
-        ShowSetting(config.UseFullscreenAnimPlayback, "Fullscreen Animation Playback Overlay", "Whether to keep the animation playback overlay in the top-right corner of the Mesh Viewer or make it fullscreen.");
+        ShowSetting(config.UseFullscreenAnimPlayback, Lang.Settings.UseFullscreenAnimPlayback);
 
-        ImGui.SeparatorText("Fields");
-        ShowSetting(config.PrettyFieldLabels, "Simplify field labels", "Whether to simplify field labels instead of showing the raw field names (e.g. \"Target Object\" instead of \"_TargetObject\").");
-        ShowSlider(config.AutoExpandFieldsCount, "Auto-expand field count", 0, 16, "RSZ object fields with less than the defined number of fields will initially auto expand.");
+        ImGui.SeparatorText(Lang.Settings.Section_Fields);
+        ShowSetting(config.PrettyFieldLabels, Lang.Settings.PrettyFieldLabels);
+        ShowSlider(config.AutoExpandFieldsCount, Lang.Settings.AutoExpand, 0, 16);
 
-        ImGui.SeparatorText("FPS");
+        ImGui.SeparatorText(Lang.Settings.Section_FPS);
         var showFps = config.ShowFps.Get();
-        if (ImGui.Checkbox("Show FPS", ref showFps)) {
+        if (ImGui.Checkbox(Lang.Settings.ShowFPS, ref showFps)) {
             config.ShowFps.Set(showFps);
         }
-        ShowSlider(config.MaxFps, "Max FPS", 10, 240, "The maximum FPS for rendering.");
-        ShowSlider(config.BackgroundMaxFps, "Max FPS in background", 5, config.MaxFps.Get(), "The maximum FPS when the editor window is not focused.");
+        ShowSlider(config.MaxFps, Lang.Settings.MaxFPS, 10, 240);
+        ShowSlider(config.BackgroundMaxFps, Lang.Settings.MaxFPSBackground, 5, config.MaxFps.Get());
 
-        ImGui.SeparatorText("Date & Time");
+        ImGui.SeparatorText(Lang.Settings.Section_DateTime);
         var dateFormat = config.DateFormat.Get();
-        if (ImGui.Combo("Date Format", ref dateFormat, DateFormats, DateFormats.Length)) {
+        if (ImGui.Combo(Lang.Settings.DateFormat.String, ref dateFormat, DateFormats, DateFormats.Length)) {
             config.DateFormat.Set(dateFormat);
         }
-        ShowSetting(config.ClockFormat, "12-hour Clock", "Switch the time format from 24-hour to 12-hour clock.");
+        ShowSetting(config.ClockFormat, Lang.Settings.ClockFormat);
     }
     private static void ShowDisplayThemeTab()
     {
         ImGui.Spacing();
 
-        if (ImGui.Button("Open Theme Editor")) {
+        if (ImGui.Button(Lang.Settings.Button_OpenThemeEditor)) {
             EditorWindow.CurrentWindow?.AddUniqueSubwindow(new ThemeEditor());
         }
 
         ImGui.Spacing();
         var theme = config.Theme.Get();
-        if (ImguiHelpers.ValueCombo("Theme", DefaultThemes.AvailableThemes, DefaultThemes.AvailableThemes, ref theme)) {
+        if (ImguiHelpers.ValueCombo(Lang.Settings.Theme.String, DefaultThemes.AvailableThemes, DefaultThemes.AvailableThemes, ref theme)) {
             UI.ApplyTheme(theme!);
             config.Theme.Set(theme);
         }
@@ -340,7 +351,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         var bgColor = config.BackgroundColor.Get().ToVector4();
         var isAlpha = bgColor.W < 1;
         if (_wasOriginallyAlphaBg == null) _wasOriginallyAlphaBg = isAlpha;
-        if (ImGui.ColorEdit4("Background Color", ref bgColor)) {
+        if (ImGui.ColorEdit4(Lang.Settings.BackgroundColor.String, ref bgColor)) {
             var newColor = ReeLib.via.Color.FromVector4(bgColor);
             config.BackgroundColor.Set(newColor);
             foreach (var wnd in MainLoop.Instance.Windows) {
@@ -351,67 +362,67 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             }
         }
         if (isAlpha && _wasOriginallyAlphaBg == false) {
-            ImGui.TextColored(Colors.Warning, "Window transparency change will only be applied after restarting the app");
+            ImGui.TextColored(Colors.Warning, Lang.Settings.Warn_Transparency);
         }
     }
     private void ShowHotkeysGlobalTab()
     {
         ImGui.Spacing();
 
-        ImguiKeybinding("Undo", config.Key_Undo);
-        if (config.Key_Undo.Get().Key != ImGuiKey.Z) ImGui.TextColored(Colors.Warning, "While focused, text inputs will not correctly take this setting into account and still use the default layout keys for undo/redo");
+        ImguiKeybinding(Lang.Settings.Bind_Undo.String, config.Key_Undo);
+        if (config.Key_Undo.Get().Key != ImGuiKey.Z) ImGui.TextColored(Colors.Warning, Lang.Settings.Warn_UndoRedoBinding);
 
-        ImguiKeybinding("Redo", config.Key_Redo);
-        if (config.Key_Redo.Get().Key != ImGuiKey.Y) ImGui.TextColored(Colors.Warning, "While focused, text inputs will not correctly take this setting into account and still use the default layout keys for undo/redo");
+        ImguiKeybinding(Lang.Settings.Bind_Redo.String, config.Key_Redo);
+        if (config.Key_Redo.Get().Key != ImGuiKey.Y) ImGui.TextColored(Colors.Warning, Lang.Settings.Warn_UndoRedoBinding);
 
-        ImguiKeybinding("Save Open Files", config.Key_Save);
-        ImguiKeybinding("Open File", config.Key_Open);
-        ImguiKeybinding("Back", config.Key_Back);
-        ImguiKeybinding("Close Current Window", config.Key_Close);
-        ImguiKeybinding("Toggle Home Page", config.Key_HomePage);
-        ImguiKeybinding("Open PAK File Browser", config.Key_OpenPakBrowser);
+        ImguiKeybinding(Lang.Settings.Bind_Save.String, config.Key_Save);
+        ImguiKeybinding(Lang.Settings.Bind_Open.String, config.Key_Open);
+        ImguiKeybinding(Lang.Settings.Bind_Back.String, config.Key_Back);
+        ImguiKeybinding(Lang.Settings.Bind_Close.String, config.Key_Close);
+        ImguiKeybinding(Lang.Settings.Bind_HomePage.String, config.Key_HomePage);
+        ImguiKeybinding(Lang.Settings.Bind_OpenPakBrowser.String, config.Key_OpenPakBrowser);
     }
     private void ShowHotkeysPakBrowserTab()
     {
         ImGui.Spacing();
-        ImguiKeybinding("Open Bookmarks", config.Key_PakBrowser_OpenBookmarks);
-        ImguiKeybinding("Bookmark Current Path", config.Key_PakBrowser_Bookmark);
-        ImguiKeybinding("Jump to page Top", config.Key_PakBrowser_JumpToPageTop);
+        ImguiKeybinding(Lang.Settings.Bind_PakBrowser_OpenBookmarks.String, config.Key_PakBrowser_OpenBookmarks);
+        ImguiKeybinding(Lang.Settings.Bind_PakBrowser_Bookmark.String, config.Key_PakBrowser_Bookmark);
+        ImguiKeybinding(Lang.Settings.Bind_PakBrowser_JumpToPageTop.String, config.Key_PakBrowser_JumpToPageTop);
     }
     private void ShowHotkeysMeshViewerTab()
     {
         ImGui.Spacing();
-        ImGui.SeparatorText("Animator");
-        ImguiKeybinding("Pause/Play", config.Key_MeshViewer_PauseAnim);
-        ImguiKeybinding("Next Frame", config.Key_MeshViewer_NextAnimFrame);
-        ImguiKeybinding("Previous Frame", config.Key_MeshViewer_PrevAnimFrame);
-        ImguiKeybinding("Increase Playback Speed", config.Key_MeshViewer_IncreaseAnimSpeed);
-        ImguiKeybinding("Decrease Playback Speed", config.Key_MeshViewer_DecreaseAnimSpeed);
+        ImGui.SeparatorText(Lang.Settings.Section_Animator);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_PauseAnim.String, config.Key_MeshViewer_PauseAnim);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_NextAnimFrame.String, config.Key_MeshViewer_NextAnimFrame);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_PrevAnimFrame.String, config.Key_MeshViewer_PrevAnimFrame);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_IncreaseAnimSpeed.String, config.Key_MeshViewer_IncreaseAnimSpeed);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_DecreaseAnimSpeed.String, config.Key_MeshViewer_DecreaseAnimSpeed);
     }
     private void ShowHotkeysTextureViewerTab()
     {
         ImGui.Spacing();
-        ImguiKeybinding("Reset View", config.Key_TextureViewer_ResetView);
-        ImguiKeybinding("Zoom In", config.Key_TextureViewer_ZoomIn);
-        ImguiKeybinding("Zoom Out", config.Key_TextureViewer_ZoomOut);
+        ImguiKeybinding(Lang.Settings.Bind_TextureViewer_ResetView.String, config.Key_TextureViewer_ResetView);
+        ImguiKeybinding(Lang.Settings.Bind_TextureViewer_ZoomIn.String, config.Key_TextureViewer_ZoomIn);
+        ImguiKeybinding(Lang.Settings.Bind_TextureViewer_ZoomOut.String, config.Key_TextureViewer_ZoomOut);
     }
     private void ShowHotkeysSceneTab()
     {
         ImGui.Spacing();
-        ImguiKeybinding("Focus Selected", config.Key_Scene_Focus3D);
-        ImguiKeybinding("Show Selected in UI", config.Key_Scene_FocusUI);
-        ImguiKeybinding("Hide Selected", config.Key_Scene_Hide);
-        ImguiKeybinding("Unhide All", config.Key_Scene_UnhideAll);
-        ImguiKeybinding("Delete Selected", config.Key_Scene_Delete);
+        ImguiKeybinding(Lang.Settings.Bind_Scene_Focus3D.String, config.Key_Scene_Focus3D);
+        ImguiKeybinding(Lang.Settings.Bind_Scene_FocusUI.String, config.Key_Scene_FocusUI);
+        ImguiKeybinding(Lang.Settings.Bind_Scene_Hide.String, config.Key_Scene_Hide);
+        ImguiKeybinding(Lang.Settings.Bind_Scene_UnhideAll.String, config.Key_Scene_UnhideAll);
+        ImguiKeybinding(Lang.Settings.Bind_Scene_Delete.String, config.Key_Scene_Delete);
     }
     private void ShowHotkeysUVSEditorTab()
     {
         ImGui.Spacing();
-        ImguiKeybinding("Pause/Play", config.Key_UVS_Pause);
-        ImguiKeybinding("Next Pattern", config.Key_UVS_NextPattern);
-        ImguiKeybinding("Previous Pattern", config.Key_UVS_PrevPattern);
-        ImguiKeybinding("Increase Playback Speed", config.Key_UVS_IncreaseSpeed);
-        ImguiKeybinding("Decrease Playback Speed", config.Key_UVS_DecreaseSpeed);
+        ImguiKeybinding(Lang.Settings.Bind_UVS_Pause.String, config.Key_UVS_Pause);
+        ImguiKeybinding(Lang.Settings.Bind_UVS_NextPattern.String, config.Key_UVS_NextPattern);
+        ImguiKeybinding(Lang.Settings.Bind_UVS_PrevPattern.String, config.Key_UVS_PrevPattern);
+        ImguiKeybinding(Lang.Settings.Bind_UVS_IncreaseSpeed.String, config.Key_UVS_IncreaseSpeed);
+        ImguiKeybinding(Lang.Settings.Bind_UVS_DecreaseSpeed.String, config.Key_UVS_DecreaseSpeed);
     }
 
     private void ShowGamesResidentEvilTab()
@@ -444,16 +455,16 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     private void ShowGamesCustomTab()
     {
         ImGui.Spacing();
-        ImGui.SeparatorText("Add Custom Game");
-        ImGui.InputText("Short Name", ref customGameNameInput, 20);
-        AppImguiHelpers.InputFolder("Game Path", ref customGameFilepath);
+        ImGui.SeparatorText(Lang.Settings.Section_AddCustom);
+        ImGui.InputText(Lang.Settings.Custom_ShortName, ref customGameNameInput, 20);
+        AppImguiHelpers.InputFolder(Lang.Settings.GamePath.Text, ref customGameFilepath);
         if (!string.IsNullOrEmpty(customGameNameInput) && !string.IsNullOrEmpty(customGameFilepath) && Directory.Exists(customGameFilepath)) {
             ImGui.SameLine();
-            if (ImGui.Button("Add")) {
+            if (ImGui.Button(Lang.Buttons.Add)) {
                 config.SetGamePath(customGameNameInput, customGameFilepath);
             }
         }
-        ImGui.SeparatorText("Custom Games");
+        ImGui.SeparatorText(Lang.Settings.CustomGames);
 
         var customGames = AppConfig.Instance.GetGamelist().Where(g => !Enum.TryParse<GameName>(g.name, true, out _)).Select(g => g.name);
         foreach (var game in customGames) {
@@ -463,7 +474,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     private void ShowGameSpecificMenu(string gameShortName, bool isCustom = false)
     {
         GameIdentifier game = gameShortName;
-        if (ImGui.TreeNodeEx(Languages.TranslateGame(game.name), ImGuiTreeNodeFlags.Framed)) {
+        if (ImGui.TreeNodeEx(Lang.TranslateGame(game.name), ImGuiTreeNodeFlags.Framed)) {
             ImGui.Spacing();
             var gamepath = config.GetGamePath(game);
             var gameExe = config.GetGameExecutablePath(game);
@@ -472,68 +483,69 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             var filelist = config.GetGameFilelist(game);
             var isFullySupported = fullSupportedGames?.Contains(game.name) == true;
 
-            if (AppImguiHelpers.InputFolder("Game Path", ref gamepath)) {
-                if (gamepath.EndsWith(".exe")) gamepath = Path.GetDirectoryName(gamepath)!;
+            if (AppImguiHelpers.InputFolder(Lang.Settings.GamePath.Text, ref gamepath)) {
+                if (gamepath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) gamepath = Path.GetDirectoryName(gamepath)!;
                 config.SetGamePath(game, gamepath);
             }
             if (!ImGui.IsItemActive() && string.IsNullOrEmpty(gamepath) && !string.IsNullOrEmpty(gameExe)) {
                 config.SetGamePath(game, Path.GetDirectoryName(gameExe)!);
             }
-            ImguiHelpers.Tooltip("The full path to the game. Should point to the folder containing the .exe and .pak files");
+            ImguiHelpers.Tooltip(Lang.Settings.GamePath.Tooltip);
 
-            if (AppImguiHelpers.InputFolder("Game Extract Path", ref extractPath)) {
+            if (AppImguiHelpers.InputFolder(Lang.Settings.ExtractPath.Text, ref extractPath)) {
                 extractPath = PathUtils.RemoveNativesFolder(extractPath.NormalizeFilepath(), context.GetWorkspace()?.Platform ?? PlatformIdentifier.GetDefaultIdentifier(game)).ToString();
                 config.SetGameExtractPath(game, extractPath);
             }
-            ImguiHelpers.Tooltip("The default path to preselect when extracting files.");
+            ImguiHelpers.Tooltip(Lang.Settings.ExtractPath.Tooltip);
 
-            if (AppImguiHelpers.InputFilepath("Game Executable", ref gameExe, FileFilters.Executable)) {
+            if (AppImguiHelpers.InputFilepath(Lang.Settings.ExePath.Text.String, ref gameExe, FileFilters.Executable)) {
                 config.SetGameExecutablePath(game, gameExe);
             }
             if (!ImGui.IsItemActive() && !string.IsNullOrEmpty(gamepath) && string.IsNullOrEmpty(gameExe)) {
                 config.SetGameExecutablePath(game, AppUtils.FindGameExecutable(gamepath, game.name)!);
             }
-            ImguiHelpers.Tooltip("The full path to the game executable.");
+            ImguiHelpers.Tooltip(Lang.Settings.ExePath.Tooltip);
 
-            if (AppImguiHelpers.InputFilepath("File List", ref filelist, FileFilters.ListFile)) {
+            if (AppImguiHelpers.InputFilepath(Lang.Settings.FileList.Text.String, ref filelist, FileFilters.ListFile)) {
                 config.SetGameFilelist(game, filelist);
             }
-            ImguiHelpers.Tooltip("Defining a custom path here may not be required if it's at least a partially supported game.\nCan also be used in case of issues with automatic downloads.");
+            ImguiHelpers.Tooltip(Lang.Settings.FileList.Tooltip);
 
-            if (AppImguiHelpers.InputFilepath(isFullySupported ? "Custom RSZ JSON Path" : "RSZ Template JSON Path", ref rszPath, FileFilters.JsonFile)) {
+            var rszLabel = isFullySupported ? Lang.Settings.RszPath_Custom : Lang.Settings.RszPath;
+            if (AppImguiHelpers.InputFilepath(rszLabel.Text.String, ref rszPath, FileFilters.JsonFile)) {
                 config.SetGameRszJsonPath(game, rszPath);
                 WindowHandlerFactory.ResetGameTypes(game);
                 Component.ResetGameTypes(game);
             }
-            ImguiHelpers.Tooltip(isFullySupported
-                ? "The default RSZ json file is fetched automatically.\nChange this only if you know what you're doing - mainly for accessing files from older game versions"
-                : "For not yet fully supported games, you may need to manually provide the path to a valid RSZ JSON template before some files can be opened.");
+            ImguiHelpers.Tooltip(rszLabel.Tooltip);
             if (isCustom) {
                 ImGui.PushStyleColor(ImGuiCol.Text, Colors.Warning);
-                ImGui.TextWrapped("*This is a custom defined game. The app may need an upgrade to fully support all files, some files may not load correctly.");
+                ImGui.TextWrapped(Lang.Settings.Note_CustomGame);
                 ImGui.PopStyleColor();
             } else if (isFullySupported) {
                 ImGui.PushStyleColor(ImGuiCol.Text, Colors.Info);
-                ImGui.TextWrapped("*This is a fully supported game, game specific data can be fetched automatically.");
+                ImGui.TextWrapped(Lang.Settings.Note_FullySupported);
                 ImGui.PopStyleColor();
             }
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.Info);
-            ImGui.TextWrapped("*Changes to these settings may require a restart of the app before they get applied");
+            ImGui.TextWrapped(Lang.Settings.Note_ChangesNeedRestart);
             ImGui.PopStyleColor();
 
             ImGui.Spacing();
             ImGui.TreePop();
         }
     }
-    private static void ShowSetting(AppConfig.ClassSettingWrapper<string> setting, string label, string? tooltip)
+    private static void ShowSetting(AppConfig.ClassSettingWrapper<string> setting, TextTooltip text) => ShowSetting(setting, text.Text, text.Tooltip);
+    private static void ShowSetting(AppConfig.ClassSettingWrapper<string> setting, ReadOnlySpan<byte> label, ReadOnlySpan<byte> tooltip)
     {
         var remoteSource = setting.Get() ?? "";
         if (ImGui.InputText(label, ref remoteSource, 280)) {
             setting.Set(remoteSource);
         }
-        if (tooltip != null) { ImguiHelpers.Tooltip(tooltip); }
+        ImguiHelpers.Tooltip(tooltip);
     }
-    private static bool ShowSetting(AppConfig.SettingWrapper<bool> setting, string label, string? tooltip)
+    private static bool ShowSetting(AppConfig.SettingWrapper<bool> setting, TextTooltip text) => ShowSetting(setting, text.Text, text.Tooltip);
+    private static bool ShowSetting(AppConfig.SettingWrapper<bool> setting, ReadOnlySpan<byte> label, ReadOnlySpan<byte> tooltip)
     {
         var value = setting.Get();
         var changed = false;
@@ -541,24 +553,24 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             setting.Set(value);
             changed = true;
         }
-        if (tooltip != null) { ImguiHelpers.Tooltip(tooltip); }
+        ImguiHelpers.Tooltip(tooltip);
         return changed;
     }
-    private static void ShowSlider(AppConfig.SettingWrapper<int> setting, string label, int min, int max, string? tooltip)
+    private static void ShowSlider(AppConfig.SettingWrapper<int> setting, TextTooltip text, int min, int max)
     {
         var value = setting.Get();
-        if (ImGui.SliderInt(label, ref value, min, max)) {
+        if (ImGui.SliderInt(text.Text, ref value, min, max)) {
             setting.Set(value);
         }
-        if (tooltip != null) { ImguiHelpers.Tooltip(tooltip); }
+        ImguiHelpers.Tooltip(text.Tooltip);
     }
-    private static void ShowFolderSetting(AppConfig.ClassSettingWrapper<string> setting, string label, string? tooltip)
+    private static void ShowFolderSetting(AppConfig.ClassSettingWrapper<string> setting, TextTooltip text)
     {
         var configPath = setting.Get();
-        if (AppImguiHelpers.InputFolder(label, ref configPath)) {
+        if (AppImguiHelpers.InputFolder(text.Text, ref configPath)) {
             setting.Set(configPath);
         }
-        if (tooltip != null) { ImguiHelpers.Tooltip(tooltip); }
+        ImguiHelpers.Tooltip(text.Tooltip);
     }
     private Dictionary<AppConfig.SettingWrapper<KeyBinding>, string> keyfilters = new();
 
@@ -569,11 +581,11 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImGui.PushID(label);
         var changed = false;
         ImGui.PushItemWidth(50);
-        changed = ImGui.Checkbox("Ctrl", ref key.ctrl);
+        changed = ImGui.Checkbox(Lang.Settings.Key_Ctrl, ref key.ctrl);
         ImGui.SameLine();
-        changed = ImGui.Checkbox("Shift", ref key.shift) || changed;
+        changed = ImGui.Checkbox(Lang.Settings.Key_Shift, ref key.shift) || changed;
         ImGui.SameLine();
-        changed = ImGui.Checkbox("Alt", ref key.alt) || changed;
+        changed = ImGui.Checkbox(Lang.Settings.Key_Alt, ref key.alt) || changed;
         ImGui.SameLine();
         ImGui.PopItemWidth();
         ImGui.SetNextItemWidth(ImGui.CalcItemWidth() - 200);

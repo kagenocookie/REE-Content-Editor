@@ -75,7 +75,7 @@ public class HomeWindow : IWindowHandler
     public void Init(UIContext context)
     {
         this.context = context;
-        var games = AppConfig.Instance.GetGamelist().Select(gs => gs.name).Select(code => new { Code = code, Name = Languages.TranslateGame(code)}).OrderBy(x => x.Name).ToArray();
+        var games = AppConfig.Instance.GetGamelist().Select(gs => gs.name).Select(code => new { Code = code, Name = Lang.TranslateGame(code)}).OrderBy(x => x.Name).ToArray();
         gameNameCodes = games.Select(g => g.Code).ToArray();
         gameNames = games.Select(g => g.Name).ToArray();
         if (tips.Length > 0) currentTipsIDX = randomTipsIDX.Next(tips.Length);
@@ -205,7 +205,7 @@ public class HomeWindow : IWindowHandler
                     lastGroup = currentGroup;
 
                     ImGui.PushStyleColor(ImGuiCol.Text, color);
-                    if (ImGui.Selectable(Languages.TranslateGame(game))) {
+                    if (ImGui.Selectable(Lang.TranslateGame(game))) {
                         EditorWindow.CurrentWindow?.SetWorkspace(game, null);
                     }
                     ImGui.PopStyleColor();
@@ -346,7 +346,7 @@ public class HomeWindow : IWindowHandler
             var extractPath = AppConfig.Instance.GetGameExtractPath(chosenGame);
             var isCustomGame = !Enum.TryParse<GameName>(chosenGame, out _);
 
-            if (AppImguiHelpers.InputFolder("Game Path", ref gamepath) && Directory.Exists(gamepath)) {
+            if (AppImguiHelpers.InputFolder("Game Path"u8, ref gamepath) && Directory.Exists(gamepath)) {
                 AppConfig.Instance.SetGamePath(chosenGame, gamepath);
             }
             if (!ImGui.IsItemActive() && string.IsNullOrEmpty(gamepath) && !string.IsNullOrEmpty(gameExe)) {
@@ -439,7 +439,7 @@ public class HomeWindow : IWindowHandler
         var isCustomGame = game.GameEnum == GameName.unknown;
 
         ImGui.SeparatorText("Paths");
-        if (AppImguiHelpers.InputFolder("Game Folder", ref gamepath)) {
+        if (AppImguiHelpers.InputFolder("Game Folder"u8, ref gamepath)) {
             AppConfig.Instance.SetGamePath(game, gamepath);
         }
         if (AppImguiHelpers.InputFilepath("Game Executable", ref gameExe, FileFilters.Executable)) {
@@ -467,7 +467,7 @@ public class HomeWindow : IWindowHandler
             ImGui.TextColored(Colors.Info, "No known resource lists currently available for this game. All resource files need to be manually defined.");
         }
 
-        ImGui.TextColored(Colors.Info, "This game's resource data was last updated at: " + Languages.FormatDate(remote?.LastUpdatedAtUtc));
+        ImGui.TextColored(Colors.Info, "This game's resource data was last updated at: " + Lang.FormatDate(remote?.LastUpdatedAtUtc));
 
         var rszFullySupported = remote?.IsRSZFullySupported == true;
 
@@ -603,7 +603,7 @@ public class HomeWindow : IWindowHandler
             var sep = bundle.IndexOf('|');
             var gamePrefix = sep == -1 ? null : bundle.Substring(0, sep);
             var bundleName = sep == -1 ? bundle : bundle.Substring(sep + 1);
-            string gameDisplay = gamePrefix != null ? Languages.TranslateGame(gamePrefix) : "";
+            string gameDisplay = gamePrefix != null ? Lang.TranslateGame(gamePrefix) : "";
             if (_activeBundleGameFilters.Count > 0 && (gamePrefix == null || !_activeBundleGameFilters.Contains(gamePrefix))) {
                 continue;
             }
@@ -730,7 +730,7 @@ public class HomeWindow : IWindowHandler
                 ImGui.PushFont(null, UI.FontSize * 2);
                 ImGui.Text("Version " + release.TagName);
                 ImGui.PopFont();
-                ImGui.TextColored(Colors.Faded, $"Release date: {Languages.FormatDate(release.ReleaseDate.ToLocalTime())}");
+                ImGui.TextColored(Colors.Faded, $"Release date: {Lang.FormatDate(release.ReleaseDate.ToLocalTime())}");
 
                 if (release.TagName == AppConfig.Version) {
                     ImGui.SameLine();
@@ -801,7 +801,7 @@ public class HomeWindow : IWindowHandler
         ImGui.BeginChild("CommitLog");
         foreach (var commit in commits) {
             if (commit.Commit.Message?.StartsWith("Merge branch") == true) continue;
-            ImGui.TextColored(Colors.Faded, Languages.FormatDate(commit.Commit.Author?.Date));
+            ImGui.TextColored(Colors.Faded, Lang.FormatDate(commit.Commit.Author?.Date));
             ImGui.SameLine();
             ImGui.Text(commit.Commit.Message ?? "<no message>");
             if (AppConfig.RevisionHash != null && commit.Sha?.StartsWith(AppConfig.RevisionHash) == true) {

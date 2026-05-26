@@ -81,7 +81,7 @@ public static class AppImguiHelpers
         }
     }
 
-    public static bool InputFolder(string label, [NotNull] ref string? path)
+    public static bool InputFolder(ReadOnlySpan<byte> label, [NotNull] ref string? path)
     {
         var id = ImGui.GetID(label);
         var x = ImGui.GetCursorPosX();

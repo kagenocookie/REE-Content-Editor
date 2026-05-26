@@ -13,7 +13,7 @@ internal static class PrefabLister
                 return GenerateRE9(workspace);
             }
 
-            Logger.Warn("Bookmark generation not currently available for " + Languages.TranslateGame(workspace.Game.name));
+            Logger.Warn("Bookmark generation not currently available for " + Lang.TranslateGame(workspace.Game.name));
             return null;
         } catch (Exception e) {
             Logger.Error(e.Message);

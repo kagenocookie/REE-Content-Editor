@@ -660,7 +660,7 @@ public static class ImguiHelpers
     /// <summary>
     /// Draws a highlight over the last drawn menu bar item.
     /// </summary>
-    public static void HighlightMenuItem(string text, Vector4? color = null)
+    public static void HighlightMenuItem(ReadOnlySpan<byte> text, Vector4? color = null)
     {
         color ??= ImguiHelpers.GetColor(ImGuiCol.TabSelected) with { W = 0.25f };
         var padding = ImGui.GetStyle().FramePadding;

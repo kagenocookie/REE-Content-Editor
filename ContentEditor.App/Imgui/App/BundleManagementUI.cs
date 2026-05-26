@@ -580,7 +580,7 @@ public class BundleManagementUI : IWindowHandler
     {
         utcString = utcString.Replace("UTC", "").Trim();
         if (DateTime.TryParseExact(utcString, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var utc)) {
-            return Languages.FormatDate(utc);
+            return Lang.FormatDate(utc);
         }
         return utcString;
     }
