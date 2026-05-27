@@ -60,8 +60,9 @@ public class NavmeshEditor : EditModeHandler
                 this,
                 new CsharpFlagsEnumFieldHandler<NavmeshContentType, int>() { HideNumberInput = true },
                 getter: o => o!.displayedContentTypes,
-                setter: (o, v) => o.displayedContentTypes = v
-            ).DisableUndo = true;
+                setter: (o, v) => o.displayedContentTypes = v,
+                UIOptions.DisableUndoRedo
+            );
         }
 
         AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/AI-Navigation");

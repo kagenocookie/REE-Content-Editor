@@ -94,7 +94,7 @@ public class FileSearchWindow : IWindowHandler
     public void Init(UIContext context)
     {
         this.context = context;
-        context.DisableUndo = true;
+        context.options = UIOptions.DisableUndoRedo;
         data = context.Get<WindowData>();
     }
 
@@ -119,7 +119,7 @@ public class FileSearchWindow : IWindowHandler
             case 0:
                 ImguiHelpers.CSharpEnumCombo("Search Type", ref rszSearchType);
                 _flagContext ??= context.AddChild("File Types", this, flagHandler, (c) => c!.rszSearchFlags, (c, v) => c.rszSearchFlags = v);
-                _flagContext.DisableUndo = true;
+                _flagContext.options = UIOptions.DisableUndoRedo;
                 flagHandler.OnIMGUI(_flagContext);
                 switch (rszSearchType) {
                     case RszSearchType.ByField:

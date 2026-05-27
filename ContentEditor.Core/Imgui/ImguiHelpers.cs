@@ -40,27 +40,6 @@ public static class ImguiHelpers
         }
     }
 
-    public static void ApplyDisplaySettingsPreLabel(FieldDisplaySettings settings)
-    {
-        if (settings.marginBefore != 0) {
-            for (int i = 0; i < settings.marginBefore; ++i) ImGui.Spacing();
-        }
-    }
-
-    public static void ApplyDisplaySettingsPostLabel(FieldDisplaySettings settings)
-    {
-        if (settings.tooltip != null && ImGui.IsItemHovered()) {
-            ImGui.SetItemTooltip(settings.tooltip);
-        }
-    }
-
-    public static void ApplyDisplaySettingsPostField(FieldDisplaySettings settings)
-    {
-        if (settings.marginAfter != 0) {
-            for (int i = 0; i < settings.marginAfter; ++i) ImGui.Spacing();
-        }
-    }
-
     public static bool CSharpEnumCombo<TEnum>(string label, ref TEnum selected, int height = -1) where TEnum : struct, Enum
     {
         var values = Enum.GetValues<TEnum>();

@@ -10,17 +10,18 @@ public class UIContext
     private List<UIContextStateVariable> State { get; } = new(0);
     public UIOptions options;
     public object? target;
-    public object? owner;
     public UIContext root;
-    public FieldDisplaySettings? displaySettings;
+    public UIContext? parent;
+
     public string label;
+    public StringFormatter? stringFormatter;
+
     public object? originalValue;
     private Func<UIContext, object?> getter;
     private Action<UIContext, object?> setter;
-    public UIContext? parent;
     public IObjectUIHandler? uiHandler;
+
     public readonly List<UIContext> children = new();
-    public StringFormatter? stringFormatter;
     private bool wasChanged;
     public bool IsChanged => wasChanged;
 
@@ -35,16 +36,35 @@ public class UIContext
     public ref string ClassnameFilter => ref GetStateRef<string>(4, "");
     public ref string CachedString => ref GetStateRef<string>(5, "");
 
-    public T[]? GetStateArray<T>() => GetStateOrNull(6)?.value as T[];
-    public void SetStateArray<T>(T[] list) => GetStateRef<T[]>(6, list) = list;
+    public bool Changed
+    {
+        get => wasChanged;
+        set { if (value) SetChangedInParents(); else SetUnchanged(); }
+    }
 
-    public string InitFilterDefault(string? defaultFilter) => GetStateRef<string>(2, defaultFilter ?? "");
+    public bool DisableUndo => (options & UIOptions.DisableUndoRedo) != 0;
 
     private class UIContextStateVariable(int id, object? value)
     {
         public int id = id;
         public object? value = value;
     }
+
+    public UIContext(string label, object? target, UIContext root, Func<UIContext, object?> getter, Action<UIContext, object?> setter, UIOptions options)
+    {
+        this.target = target;
+        this.label = label;
+        this.getter = getter;
+        this.setter = setter;
+        this.options = options;
+        this.root = root;
+        originalValue = GetRaw();
+    }
+
+    public T[]? GetStateArray<T>() => GetStateOrNull(6)?.value as T[];
+    public void SetStateArray<T>(T[] list) => GetStateRef<T[]>(6, list) = list;
+
+    public string InitFilterDefault(string? defaultFilter) => GetStateRef<string>(2, defaultFilter ?? "");
 
     public void ResetState()
     {
@@ -102,25 +122,6 @@ public class UIContext
         return state;
     }
 
-    public bool Changed
-    {
-        get => wasChanged;
-        set { if (value) SetChangedInParents(); else SetUnchanged(); }
-    }
-
-    public bool DisableUndo { get; set; }
-
-    public UIContext(string label, object? target, UIContext root, Func<UIContext, object?> getter, Action<UIContext, object?> setter, UIOptions options)
-    {
-        this.target = target;
-        this.label = label;
-        this.getter = getter;
-        this.setter = setter;
-        this.options = options;
-        this.root = root;
-        originalValue = GetRaw();
-    }
-
     public static UIContext CreateRootContext(string label, object instance, UIOptions? options = null)
     {
         var root = new UIContext(label, instance, null!, (ctx) => ctx.target, (_, _) => throw new NotImplementedException(), options ?? new UIOptions());
@@ -153,16 +154,17 @@ public class UIContext
     private static object? DefaultGetter(UIContext ctx) => ctx.target;
     private static void NotImplementedSetter(UIContext ctx, object? val) => throw new NotImplementedException();
 
-    public UIContext AddChild(string label, object? instance, IObjectUIHandler? handler = null, Func<UIContext, object?>? getter = null, Action<UIContext, object?>? setter = null)
+    public UIContext AddChild(string label, object? instance, IObjectUIHandler? handler = null, Func<UIContext, object?>? getter = null, Action<UIContext, object?>? setter = null, UIOptions options = UIOptions.None)
     {
         var child = new UIContext(label, instance, root, getter ?? DefaultGetter, setter ?? NotImplementedSetter, options) {
             parent = this,
+            options = options,
         };
         child.uiHandler = handler;
         children.Add(child);
         return child;
     }
-    public UIContext AddChild<TTarget, TValue>(string label, TTarget? instance, IObjectUIHandler? handler = null, Func<TTarget?, TValue?>? getter = null, Action<TTarget, TValue?>? setter = null)
+    public UIContext AddChild<TTarget, TValue>(string label, TTarget? instance, IObjectUIHandler? handler = null, Func<TTarget?, TValue?>? getter = null, Action<TTarget, TValue?>? setter = null, UIOptions options = UIOptions.None)
     {
         Func<UIContext, object?> boxedGetter = getter == null ? DefaultGetter : (ctx) => getter((TTarget?)ctx.target);
         Action<UIContext, object?> boxedSetter = setter == null ? NotImplementedSetter :  (ctx, val) => {
@@ -390,16 +392,11 @@ public class UIContext
     public override string ToString() => $"{label} ({target})";
 }
 
-public class FieldDisplaySettings
+[Flags]
+public enum UIOptions
 {
-    public string? tooltip;
-    public int marginBefore;
-    public int marginAfter;
-}
-
-public class UIOptions
-{
-    public bool isReadonly;
+    None,
+    DisableUndoRedo = 1,
 }
 
 public interface IObjectUIHandler
