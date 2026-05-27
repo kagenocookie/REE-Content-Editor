@@ -530,7 +530,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     public void ShowLaunchGameMenu()
     {
         if (workspace == null) return;
-        string? activeGamePath = AppConfig.Instance.GetGameExecutablePath(workspace.Game.name);
+        string? activeGamePath = AppConfig.Instance.GetGameExecutablePath(workspace.Game);
         var launchType = (GameLaunchType)AppConfig.Instance.GameLaunchType.Get();
         using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(activeGamePath))) {
             if (ImGui.MenuItem($"{AppIcons.Play} Launch Game")) {

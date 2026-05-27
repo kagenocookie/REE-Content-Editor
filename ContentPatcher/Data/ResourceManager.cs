@@ -1223,7 +1223,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                 return str.GetHashCode();
             }
 
-            return MurMur3HashUtils.GetPakFilepathHash_FastAscii(str).GetHashCode();
+            return MurMur3HashUtils.GetPakFilepathHash(str).GetHashCode();
         }
     }
 }

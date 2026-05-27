@@ -83,8 +83,8 @@ public class Bundle
 
     private Dictionary<string, string> TargetToLocalPathCache =>
         _targetToLocalPathCache ??= ResourceListing?
-            .GroupBy(k => MurMur3HashUtils.GetPakFilepathHash_FastAscii(k.Value.Target))
-            .ToDictionary(grp => grp.First().Value.Target, grp => grp.First().Key, PakHashedPathComparer.Instance) ?? new(0, PakHashedPathComparer.Instance);
+            .GroupBy((Func<KeyValuePair<string, ResourceListItem>, ulong>)(k => MurMur3HashUtils.GetPakFilepathHash(k.Value.Target)))
+            .ToDictionary(grp => grp.First().Value.Target, grp => grp.First().Key, PakHashedPathComparer.Instance) ?? new(0, (IEqualityComparer<string>)PakHashedPathComparer.Instance);
 
     [JsonIgnore]
     private Dictionary<string, string>? _localToTargetPathCache;

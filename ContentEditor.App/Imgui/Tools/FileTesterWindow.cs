@@ -95,7 +95,7 @@ public partial class FileTesterWindow : IWindowHandler
 
             if (ImGui.TreeNode("Hash bruteforce")) {
                 if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Will attempt to match the given UTF16 hash with a wordlist (lowercase, uppercase, capital case variants are attempted) or executable file");
-                wordlistFilepath ??= AppConfig.Instance.GetGameExecutablePath(context.GetWorkspace()?.Game.name ?? "") ?? "";
+                wordlistFilepath ??= AppConfig.Instance.GetGameExecutablePath(context.GetWorkspace()?.Game ?? default) ?? "";
                 if (AppImguiHelpers.InputFilepath("Words Source", ref wordlistFilepath)) {
                     wordlistCache = null;
                 }
@@ -550,6 +550,7 @@ public partial class FileTesterWindow : IWindowHandler
             case KnownFileFormats.CollisionSkinningMesh: return VerifyRewriteEquality<ClsmFile>(source.GetFile<ClsmFile>(), env);
             case KnownFileFormats.GpuCloth: return VerifyRewriteEquality<GpucFile>(source.GetFile<GpucFile>(), env);
             case KnownFileFormats.ShellFur: return VerifyRewriteEquality<SfurFile>(source.GetFile<SfurFile>(), env);
+            case KnownFileFormats.EventList: return VerifyRewriteEquality<WelFile>(source.GetFile<WelFile>(), env);
             default: return null;
         }
     }
