@@ -272,6 +272,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImguiHelpers.Tooltip(Lang.Settings.MaxUndoSteps.Tooltip);
 
         ShowSetting(config.ShowQuaternionsAsEuler, Lang.Settings.ShowQuaternionsAsEuler);
+        ShowSetting(config.QuaternionsDisableAutoNormalize, Lang.Settings.QuaternionsDisableAutoNormalize);
         ShowSetting(config.PauseAnimPlayerOnSeek, Lang.Settings.PauseAnimPlayerOnSeek);
     }
 

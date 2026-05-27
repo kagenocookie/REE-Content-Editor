@@ -34,6 +34,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string MaxUndoSteps = "max_undo_steps";
         public const string PrettyLabels = "pretty_labels";
         public const string QuaternionsAsEuler = "quaternions_as_euler";
+        public const string QuaternionsDisableAutoNormalize = "quaternions_disable_auto_normalize";
         public const string RecentFiles = "recent_files";
         public const string LoadFromNatives = "load_natives";
         public const string BundleDefaultSaveFullPath = "bundle_save_full_path";
@@ -289,6 +290,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<ReeLib.via.Color> BackgroundColor = new SettingWrapper<ReeLib.via.Color>(Keys.BackgroundColor, _lock, new ReeLib.via.Color(115, 140, 153, 255));
     public readonly SettingWrapper<bool> PrettyFieldLabels = new SettingWrapper<bool>(Keys.PrettyLabels, _lock, true);
     public readonly SettingWrapper<bool> ShowQuaternionsAsEuler = new SettingWrapper<bool>(Keys.QuaternionsAsEuler, _lock, true);
+    public readonly SettingWrapper<bool> QuaternionsDisableAutoNormalize = new SettingWrapper<bool>(Keys.QuaternionsDisableAutoNormalize, _lock, false);
     public readonly SettingWrapper<int> LogLevel = new SettingWrapper<int>(Keys.LogLevel, _lock, (int)LogSeverity.Info);
     public readonly SettingWrapper<int> MaxUndoSteps = new SettingWrapper<int>(Keys.MaxUndoSteps, _lock, 250);
     public readonly SettingWrapper<int> AutoExpandFieldsCount = new SettingWrapper<int>(Keys.AutoExpandFieldsCount, _lock, 3);
@@ -488,6 +490,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.BundleDisplayMode, instance.BundleDisplayModeValue.value.ToString(), null),
             (Keys.PrettyLabels, instance.PrettyFieldLabels.value.ToString(), null),
             (Keys.QuaternionsAsEuler, instance.ShowQuaternionsAsEuler.value.ToString(), null),
+            (Keys.QuaternionsDisableAutoNormalize, instance.QuaternionsDisableAutoNormalize.value.ToString(), null),
             (Keys.PauseAnimPlayerOnSeek, instance.PauseAnimPlayerOnSeek.value.ToString(), null),
             (Keys.UseFullscreenAnimPlayback, instance.UseFullscreenAnimPlayback.value.ToString(), null),
             (Keys.DateFormat, instance.DateFormat.value.ToString(), null),
@@ -659,6 +662,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.QuaternionsAsEuler:
                             ShowQuaternionsAsEuler.value = ReadBool(value);
+                            break;
+                        case Keys.QuaternionsDisableAutoNormalize:
+                            QuaternionsDisableAutoNormalize.value = ReadBool(value);
                             break;
                         case Keys.PauseAnimPlayerOnSeek:
                             PauseAnimPlayerOnSeek.value = ReadBool(value);
