@@ -795,16 +795,8 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
     private string? PreprocessTargetFilepath(string filepath)
     {
-        filepath = workspace.Env.RemoveBasePath(filepath).ToString().NormalizeFilepath();
-        if (activeBundle?.HasResources == true && Path.IsPathRooted(filepath) && filepath.StartsWith(workspace.BundleManager.GetBundleFolder(activeBundle))) {
-            // usecase: opening a file in the active bundle
-            var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(activeBundle), filepath).NormalizeFilepath();
-            if (activeBundle.TryFindResourceByLocalPath(localPath, out var resourceList)) {
-                return resourceList.Target;
-            }
-        }
-
         if (!Path.IsPathRooted(filepath)) {
+            filepath = workspace.Env.RemoveBasePath(filepath).ToString().NormalizeFilepath();
             var fmt = PathUtils.ParseFileFormatFull(filepath);
             if (fmt.version != -1) {
                 // usecase: file taken direct from PAK file
@@ -822,10 +814,24 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             if (fmt.format != KnownFileFormats.Unknown && workspace.Env.TryGetFileExtensionVersion(fmt.extension, out var expectedVersion)) {
                 return targetPathRemaps[filepath] = filepath + "." + expectedVersion;
             }
+
+            return null;
+        }
+
+        if (activeBundle?.HasResources == true) {
+            // usecase: opening a file in the active bundle (opened as disk file)
+            filepath = workspace.Env.RemoveBasePath(filepath).ToString().NormalizeFilepath();
+            if (filepath.StartsWith(workspace.BundleManager.GetBundleFolder(activeBundle))) {
+                var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(activeBundle), filepath).NormalizeFilepath();
+                if (activeBundle.TryFindResourceByLocalPath(localPath, out var resourceList)) {
+                    return resourceList.Target;
+                }
+            }
         }
 
         // intentionally unhandled usecases:
         // - when opening a random disk file, even if it's in a natives/stm/ path, don't mark the target path
+        // - if the file is inside a non-active bundle, also don't mark the path - they mustn't replace actually active files
         return null;
     }
 
