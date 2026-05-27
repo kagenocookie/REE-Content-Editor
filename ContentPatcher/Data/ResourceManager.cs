@@ -797,23 +797,33 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     {
         filepath = workspace.Env.RemoveBasePath(filepath).ToString().NormalizeFilepath();
         if (activeBundle?.HasResources == true && Path.IsPathRooted(filepath) && filepath.StartsWith(workspace.BundleManager.GetBundleFolder(activeBundle))) {
+            // usecase: opening a file in the active bundle
             var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(activeBundle), filepath).NormalizeFilepath();
             if (activeBundle.TryFindResourceByLocalPath(localPath, out var resourceList)) {
                 return resourceList.Target;
             }
         }
+
         var fmt = PathUtils.ParseFileFormatFull(filepath);
-        if (fmt.version != -1) {
-            // try and clean base path
-            if (Path.IsPathRooted(filepath)) {
-                return PathUtils.GetTargetFromFullFilepath(filepath);
+        if (fmt.version == -1) {
+            // usecase: resource path without extension
+            // attempt to optimize and prevent searching/loading it anew on each load request
+            // lang variants (.en, .ja) might not differentiate like this, but this is a request without an explicit lang anyway so it's OK
+
+            // we've already opened this specific one before and therefore know which path it should have
+            if (targetPathRemaps.TryGetValue(filepath, out var targetPath)) return targetPath;
+
+            // not opened before but we can auto append the version that we know it should have
+            if (fmt.format != KnownFileFormats.Unknown && workspace.Env.TryGetFileExtensionVersion(fmt.extension, out var expectedVersion)) {
+                return targetPathRemaps[filepath] = filepath + "." + expectedVersion;
             }
+        } else if (!Path.IsPathRooted(filepath)) {
+            // usecase: file taken direct from PAK file
             return filepath;
         }
-        if (targetPathRemaps.TryGetValue(filepath, out var targetPath)) return targetPath;
-        if (fmt.format != KnownFileFormats.Unknown && workspace.Env.TryGetFileExtensionVersion(fmt.extension, out var expectedVersion)) {
-            return targetPathRemaps[filepath] = filepath + "." + expectedVersion;
-        }
+
+        // intentionally unhandled usecases:
+        // - when opening a random disk file, even if it's in a natives/stm/ path, don't mark the target path
         return null;
     }
 
