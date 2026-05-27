@@ -804,8 +804,13 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             }
         }
 
-        var fmt = PathUtils.ParseFileFormatFull(filepath);
-        if (fmt.version == -1) {
+        if (!Path.IsPathRooted(filepath)) {
+            var fmt = PathUtils.ParseFileFormatFull(filepath);
+            if (fmt.version != -1) {
+                // usecase: file taken direct from PAK file
+                return filepath;
+            }
+
             // usecase: resource path without extension
             // attempt to optimize and prevent searching/loading it anew on each load request
             // lang variants (.en, .ja) might not differentiate like this, but this is a request without an explicit lang anyway so it's OK
@@ -817,9 +822,6 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             if (fmt.format != KnownFileFormats.Unknown && workspace.Env.TryGetFileExtensionVersion(fmt.extension, out var expectedVersion)) {
                 return targetPathRemaps[filepath] = filepath + "." + expectedVersion;
             }
-        } else if (!Path.IsPathRooted(filepath)) {
-            // usecase: file taken direct from PAK file
-            return filepath;
         }
 
         // intentionally unhandled usecases:
