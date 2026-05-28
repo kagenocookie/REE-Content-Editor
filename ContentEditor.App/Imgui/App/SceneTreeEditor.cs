@@ -163,16 +163,16 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                     if (!items.Any()) {
                         ImGui.TextColored(Colors.Note, "No prefab bookmarks found!");
                     } else {
-                        ResourcePathPicker.Show("Specific prefab", ref prefabFilepath, ref prefabFilepath, ref prefabFilter, ws, [KnownFileFormats.Prefab], FileFilters.PfbFile, ResourcePathPicker.PathPickerFlags.NoConfirmation|ResourcePathPicker.PathPickerFlags.UseTargetPath);
+                        ResourcePathPicker.Show("Specific prefab"u8, ref prefabFilepath, ref prefabFilepath, ref prefabFilter, ws, [KnownFileFormats.Prefab], FileFilters.PfbFile, ResourcePathPicker.PathPickerFlags.NoConfirmation|ResourcePathPicker.PathPickerFlags.UseTargetPath);
                         FileHandle? file = null;
                         if (!string.IsNullOrEmpty(prefabFilepath)) {
                             ws.ResourceManager.TryResolveGameFile(prefabFilepath, out file);
-                            if (file != null && !ImGui.Button("Instantiate")) {
+                            if (file != null && !ImGui.Button("Instantiate"u8)) {
                                 file = null;
                             }
                         }
                         ImGui.Separator();
-                        ImGui.InputTextWithHint("Filter", $"{AppIcons.Search}", ref context.Filter, 50);
+                        ImGui.InputTextWithHint("Filter"u8, $"{AppIcons.Search}", ref context.Filter, 50);
                         var filter = context.Filter;
                         foreach (var item in items) {
                             if (!string.IsNullOrEmpty(filter) && !item.Comment.Contains(filter, StringComparison.OrdinalIgnoreCase) && !item.Path.Contains(filter, StringComparison.OrdinalIgnoreCase)) {

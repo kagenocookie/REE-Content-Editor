@@ -309,7 +309,7 @@ public class FileSearchWindow : IWindowHandler
             var values = enumDesc.GetValues();
             var strings = values.Select(val => $"{enumDesc.GetLabel(val)} ({val})").ToArray();
             var tmp = Activator.CreateInstance(enumDesc.BackingType);
-            if (ImguiHelpers.FilterableCombo($"Enum Values ({values.Length})", strings, strings, ref tmp, ref _enumFilter)) {
+            if (ImguiHelpers.FilterableCombo(FixedString.Cached($"Enum Values ({values.Length})"), strings, strings, ref tmp, ref _enumFilter)) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(tmp?.ToString() ?? "", $"Copied: {tmp}");
             }
         } else if (subs.Count > 1) {
@@ -555,7 +555,7 @@ public class FileSearchWindow : IWindowHandler
 
     private void ShowEfxFind(Workspace env)
     {
-        ImguiHelpers.FilterableCSharpEnumCombo("Type", ref efxAttrType, ref efxAttrFilter);
+        ImguiHelpers.FilterableCSharpEnumCombo("Type"u8, ref efxAttrType, ref efxAttrFilter);
         ImGui.InputText("Query", ref efxSearch, 100);
         ImGui.Checkbox("Match per file", ref efxFileMatchOnly);
 

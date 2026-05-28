@@ -153,7 +153,7 @@ internal partial class MotBatchTransfer(ContentWorkspace workspace, MotlistFileB
             var temptarget = target;
             var filter = filters.GetValueOrDefault(src) ?? "";
             ImGui.SetNextItemWidth(selectWidth);
-            if (ImguiHelpers.FilterableCombo("##target", TargetNames, targetFileSpan, ref temptarget, ref filter)) {
+            if (ImguiHelpers.FilterableCombo("##target"u8, TargetNames, targetFileSpan, ref temptarget, ref filter)) {
                 ChangeMapping(src, temptarget);
             }
             ImGui.SameLine();

@@ -29,7 +29,7 @@ public static class AppImguiHelpers
 
     public unsafe static ImTextureRef AsTextureRef(this Texture texture) => new ImTextureRef(null, new ImTextureID(texture.Handle));
 
-    public static bool InputFilepath(string label, [NotNull] ref string? path, FileFilter[]? extensions = null, bool allowOverlap = false)
+    public static bool InputFilepath(ReadOnlySpan<byte> label, [NotNull] ref string? path, FileFilter[]? extensions = null, bool allowOverlap = false)
     {
         var id = ImGui.GetID(label);
         var w = ImGui.CalcItemWidth();
@@ -403,7 +403,7 @@ public static class AppImguiHelpers
         Delete,
         Error
     }
-    public static void ShowActionModal(string id, string icon, Vector4 iconColor, string text, Action? onAction, ActionModalType type = ActionModalType.Delete)
+    public static void ShowActionModal(ReadOnlySpan<byte> id, string icon, Vector4 iconColor, ReadOnlySpan<byte> text, Action? onAction, ActionModalType type = ActionModalType.Delete)
     {
         var viewport = ImGui.GetMainViewport();
         Vector2 center = viewport.Pos + viewport.Size * 0.5f;

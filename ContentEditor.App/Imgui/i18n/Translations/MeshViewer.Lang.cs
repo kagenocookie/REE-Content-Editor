@@ -1,5 +1,5 @@
 using System.Text;
-using ContentEditor.App.Internationalization;
+using ContentEditor.Core;
 
 namespace ContentEditor.App;
 

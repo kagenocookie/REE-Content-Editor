@@ -63,7 +63,7 @@ public class NavmeshBakerUI(Scene baseScene, FileHandle mapFileHandle, UIContext
 
         ImGui.SameLine();
         var sceneSpan = CollectionsMarshal.AsSpan(sceneList);
-        if (ImguiHelpers.FilterableCombo("Reference Scene", sceneLabels, sceneSpan, ref referenceScene, ref sceneFilter)) {
+        if (ImguiHelpers.FilterableCombo("Reference Scene"u8, sceneLabels, sceneSpan, ref referenceScene, ref sceneFilter)) {
             sceneColliders.Clear();
         }
         ImguiHelpers.Tooltip("The root scene from which to scan for valid colliders");

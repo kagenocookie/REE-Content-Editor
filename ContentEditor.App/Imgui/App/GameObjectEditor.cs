@@ -91,8 +91,8 @@ public class ComponentDataHandler : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var instance = context.Get<RszInstance>();
-        context.stringFormatter ??= WindowHandlerFactory.GetStringFormatter(instance);
-        var show = ImguiHelpers.TreeNodeSuffix(context.label, context.stringFormatter?.GetString(instance) ?? instance.RszClass.name);
+        context.annotation ??= (TranslatableBase?)WindowHandlerFactory.GetStringFormatter(instance) ?? FixedString.Cached(instance.RszClass.name);
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, context.annotation.GetUTF8(instance));
         RszInstanceHandler.ShowDefaultContextMenu(context);
         if (show) {
             if (context.children.Count == 0) {

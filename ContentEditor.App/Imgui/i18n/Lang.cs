@@ -1,6 +1,6 @@
 using System.Reflection;
 using System.Text;
-using ContentEditor.App.Internationalization;
+using ContentEditor.Core;
 using ReeLib.Msg;
 
 namespace ContentEditor.App;
@@ -34,6 +34,7 @@ public static partial class Lang
 
     public static void ChangeLanguage(Language language)
     {
+        FixedString.SetTranslations(_plainTranslations, _contextTranslations);
         if (CurrentLanguage == language) return;
 
         if (Translatables.Count == 0) {
@@ -41,6 +42,8 @@ public static partial class Lang
         }
 
         CurrentLanguage = language;
+        _plainTranslations.Clear();
+        _contextTranslations.Clear();
         LoadTranslations(language);
     }
 
@@ -53,12 +56,22 @@ public static partial class Lang
         foreach (var (key, str) in Translatables) {
             output[key] = str.Format;
         }
+        foreach (var (key, tl) in _plainTranslations) {
+            output[key] = tl;
+        }
+        foreach (var (context, list) in _contextTranslations) {
+            foreach (var (key, tl) in _plainTranslations) {
+                output[context + "." + key] = tl;
+            }
+        }
         return output;
     }
 
     private static readonly string TranslationsBasePath = Path.Combine(AppContext.BaseDirectory, "i18n");
 
     private static string GetLangFilepath(Language lang) => Path.Combine(TranslationsBasePath, lang.ToString() + ".lang.yaml");
+    private static readonly Dictionary<string, string> _plainTranslations = new();
+    private static readonly Dictionary<string, Dictionary<string, string>> _contextTranslations = new();
 
     private static bool LoadTranslations(Language language, HashSet<string>? whitelistPaths = null)
     {
@@ -78,7 +91,18 @@ public static partial class Lang
             if (missingTranslations.Remove(key, out var translatable)) {
                 translatable.Format = fmt;
             } else {
-                Logger.Debug($"Found unknown translation key '{key}' for {language} with format '{fmt}'");
+                var dot = key.IndexOf('.');
+                if (dot == -1) {
+                    Logger.Debug($"Found unknown translation key '{key}' for {language} with format '{fmt}'");
+                    _plainTranslations[key] = fmt;
+                } else {
+                    var context = key.Substring(0, dot);
+                    var realKey = key.Substring(dot + 1);
+                    if (!_contextTranslations.TryGetValue(context, out var list)) {
+                        _contextTranslations[context] = list = new();
+                    }
+                    list[realKey] = fmt;
+                }
             }
         }
 

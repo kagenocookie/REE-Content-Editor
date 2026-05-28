@@ -2,6 +2,7 @@
 using System.Numerics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
+using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher;
 
@@ -15,8 +16,8 @@ public class SaveFileConfirmation : IWindowHandler
 
     public List<FileHandle> Files { get; }
 
-    private readonly string title;
-    private readonly string text;
+    private readonly TranslatableBase title;
+    private readonly TranslatableBase text;
     private readonly IRectWindow parent;
     public Action OnConfirmed;
     public Action? OnCancelled;
@@ -24,7 +25,7 @@ public class SaveFileConfirmation : IWindowHandler
     private WindowData data = null!;
     protected UIContext context = null!;
 
-    public SaveFileConfirmation(string title, string text, IEnumerable<FileHandle> files, IRectWindow parent, Action onConfirmed, Action? onCancelled = null)
+    public SaveFileConfirmation(TranslatableBase title, TranslatableBase text, IEnumerable<FileHandle> files, IRectWindow parent, Action onConfirmed, Action? onCancelled = null)
     {
         this.title = title;
         this.text = text;

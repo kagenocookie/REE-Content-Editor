@@ -1,7 +1,6 @@
 using System.Numerics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Internal;
-using ContentEditor.App.Internationalization;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Themes;
@@ -370,60 +369,60 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     {
         ImGui.Spacing();
 
-        ImguiKeybinding(Lang.Settings.Bind_Undo.String, config.Key_Undo);
+        ImguiKeybinding(Lang.Settings.Bind_Undo, config.Key_Undo);
         if (config.Key_Undo.Get().Key != ImGuiKey.Z) ImGui.TextColored(Colors.Warning, Lang.Settings.Warn_UndoRedoBinding);
 
-        ImguiKeybinding(Lang.Settings.Bind_Redo.String, config.Key_Redo);
+        ImguiKeybinding(Lang.Settings.Bind_Redo, config.Key_Redo);
         if (config.Key_Redo.Get().Key != ImGuiKey.Y) ImGui.TextColored(Colors.Warning, Lang.Settings.Warn_UndoRedoBinding);
 
-        ImguiKeybinding(Lang.Settings.Bind_Save.String, config.Key_Save);
-        ImguiKeybinding(Lang.Settings.Bind_Open.String, config.Key_Open);
-        ImguiKeybinding(Lang.Settings.Bind_Back.String, config.Key_Back);
-        ImguiKeybinding(Lang.Settings.Bind_Close.String, config.Key_Close);
-        ImguiKeybinding(Lang.Settings.Bind_HomePage.String, config.Key_HomePage);
-        ImguiKeybinding(Lang.Settings.Bind_OpenPakBrowser.String, config.Key_OpenPakBrowser);
+        ImguiKeybinding(Lang.Settings.Bind_Save, config.Key_Save);
+        ImguiKeybinding(Lang.Settings.Bind_Open, config.Key_Open);
+        ImguiKeybinding(Lang.Settings.Bind_Back, config.Key_Back);
+        ImguiKeybinding(Lang.Settings.Bind_Close, config.Key_Close);
+        ImguiKeybinding(Lang.Settings.Bind_HomePage, config.Key_HomePage);
+        ImguiKeybinding(Lang.Settings.Bind_OpenPakBrowser, config.Key_OpenPakBrowser);
     }
     private void ShowHotkeysPakBrowserTab()
     {
         ImGui.Spacing();
-        ImguiKeybinding(Lang.Settings.Bind_PakBrowser_OpenBookmarks.String, config.Key_PakBrowser_OpenBookmarks);
-        ImguiKeybinding(Lang.Settings.Bind_PakBrowser_Bookmark.String, config.Key_PakBrowser_Bookmark);
-        ImguiKeybinding(Lang.Settings.Bind_PakBrowser_JumpToPageTop.String, config.Key_PakBrowser_JumpToPageTop);
+        ImguiKeybinding(Lang.Settings.Bind_PakBrowser_OpenBookmarks, config.Key_PakBrowser_OpenBookmarks);
+        ImguiKeybinding(Lang.Settings.Bind_PakBrowser_Bookmark, config.Key_PakBrowser_Bookmark);
+        ImguiKeybinding(Lang.Settings.Bind_PakBrowser_JumpToPageTop, config.Key_PakBrowser_JumpToPageTop);
     }
     private void ShowHotkeysMeshViewerTab()
     {
         ImGui.Spacing();
         ImGui.SeparatorText(Lang.Settings.Section_Animator);
-        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_PauseAnim.String, config.Key_MeshViewer_PauseAnim);
-        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_NextAnimFrame.String, config.Key_MeshViewer_NextAnimFrame);
-        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_PrevAnimFrame.String, config.Key_MeshViewer_PrevAnimFrame);
-        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_IncreaseAnimSpeed.String, config.Key_MeshViewer_IncreaseAnimSpeed);
-        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_DecreaseAnimSpeed.String, config.Key_MeshViewer_DecreaseAnimSpeed);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_PauseAnim, config.Key_MeshViewer_PauseAnim);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_NextAnimFrame, config.Key_MeshViewer_NextAnimFrame);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_PrevAnimFrame, config.Key_MeshViewer_PrevAnimFrame);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_IncreaseAnimSpeed, config.Key_MeshViewer_IncreaseAnimSpeed);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_DecreaseAnimSpeed, config.Key_MeshViewer_DecreaseAnimSpeed);
     }
     private void ShowHotkeysTextureViewerTab()
     {
         ImGui.Spacing();
-        ImguiKeybinding(Lang.Settings.Bind_TextureViewer_ResetView.String, config.Key_TextureViewer_ResetView);
-        ImguiKeybinding(Lang.Settings.Bind_TextureViewer_ZoomIn.String, config.Key_TextureViewer_ZoomIn);
-        ImguiKeybinding(Lang.Settings.Bind_TextureViewer_ZoomOut.String, config.Key_TextureViewer_ZoomOut);
+        ImguiKeybinding(Lang.Settings.Bind_TextureViewer_ResetView, config.Key_TextureViewer_ResetView);
+        ImguiKeybinding(Lang.Settings.Bind_TextureViewer_ZoomIn, config.Key_TextureViewer_ZoomIn);
+        ImguiKeybinding(Lang.Settings.Bind_TextureViewer_ZoomOut, config.Key_TextureViewer_ZoomOut);
     }
     private void ShowHotkeysSceneTab()
     {
         ImGui.Spacing();
-        ImguiKeybinding(Lang.Settings.Bind_Scene_Focus3D.String, config.Key_Scene_Focus3D);
-        ImguiKeybinding(Lang.Settings.Bind_Scene_FocusUI.String, config.Key_Scene_FocusUI);
-        ImguiKeybinding(Lang.Settings.Bind_Scene_Hide.String, config.Key_Scene_Hide);
-        ImguiKeybinding(Lang.Settings.Bind_Scene_UnhideAll.String, config.Key_Scene_UnhideAll);
-        ImguiKeybinding(Lang.Settings.Bind_Scene_Delete.String, config.Key_Scene_Delete);
+        ImguiKeybinding(Lang.Settings.Bind_Scene_Focus3D, config.Key_Scene_Focus3D);
+        ImguiKeybinding(Lang.Settings.Bind_Scene_FocusUI, config.Key_Scene_FocusUI);
+        ImguiKeybinding(Lang.Settings.Bind_Scene_Hide, config.Key_Scene_Hide);
+        ImguiKeybinding(Lang.Settings.Bind_Scene_UnhideAll, config.Key_Scene_UnhideAll);
+        ImguiKeybinding(Lang.Settings.Bind_Scene_Delete, config.Key_Scene_Delete);
     }
     private void ShowHotkeysUVSEditorTab()
     {
         ImGui.Spacing();
-        ImguiKeybinding(Lang.Settings.Bind_UVS_Pause.String, config.Key_UVS_Pause);
-        ImguiKeybinding(Lang.Settings.Bind_UVS_NextPattern.String, config.Key_UVS_NextPattern);
-        ImguiKeybinding(Lang.Settings.Bind_UVS_PrevPattern.String, config.Key_UVS_PrevPattern);
-        ImguiKeybinding(Lang.Settings.Bind_UVS_IncreaseSpeed.String, config.Key_UVS_IncreaseSpeed);
-        ImguiKeybinding(Lang.Settings.Bind_UVS_DecreaseSpeed.String, config.Key_UVS_DecreaseSpeed);
+        ImguiKeybinding(Lang.Settings.Bind_UVS_Pause, config.Key_UVS_Pause);
+        ImguiKeybinding(Lang.Settings.Bind_UVS_NextPattern, config.Key_UVS_NextPattern);
+        ImguiKeybinding(Lang.Settings.Bind_UVS_PrevPattern, config.Key_UVS_PrevPattern);
+        ImguiKeybinding(Lang.Settings.Bind_UVS_IncreaseSpeed, config.Key_UVS_IncreaseSpeed);
+        ImguiKeybinding(Lang.Settings.Bind_UVS_DecreaseSpeed, config.Key_UVS_DecreaseSpeed);
     }
 
     private void ShowGamesResidentEvilTab()
@@ -499,7 +498,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             }
             ImguiHelpers.Tooltip(Lang.Settings.ExtractPath.Tooltip);
 
-            if (AppImguiHelpers.InputFilepath(Lang.Settings.ExePath.Text.String, ref gameExe, FileFilters.Executable)) {
+            if (AppImguiHelpers.InputFilepath(Lang.Settings.ExePath.Text, ref gameExe, FileFilters.Executable)) {
                 config.SetGameExecutablePath(game, gameExe);
             }
             if (!ImGui.IsItemActive() && !string.IsNullOrEmpty(gamepath) && string.IsNullOrEmpty(gameExe)) {
@@ -507,13 +506,13 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             }
             ImguiHelpers.Tooltip(Lang.Settings.ExePath.Tooltip);
 
-            if (AppImguiHelpers.InputFilepath(Lang.Settings.FileList.Text.String, ref filelist, FileFilters.ListFile)) {
+            if (AppImguiHelpers.InputFilepath(Lang.Settings.FileList.Text, ref filelist, FileFilters.ListFile)) {
                 config.SetGameFilelist(game, filelist);
             }
             ImguiHelpers.Tooltip(Lang.Settings.FileList.Tooltip);
 
             var rszLabel = isFullySupported ? Lang.Settings.RszPath_Custom : Lang.Settings.RszPath;
-            if (AppImguiHelpers.InputFilepath(rszLabel.Text.String, ref rszPath, FileFilters.JsonFile)) {
+            if (AppImguiHelpers.InputFilepath(rszLabel.Text, ref rszPath, FileFilters.JsonFile)) {
                 config.SetGameRszJsonPath(game, rszPath);
                 WindowHandlerFactory.ResetGameTypes(game);
                 Component.ResetGameTypes(game);
@@ -575,7 +574,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     }
     private Dictionary<AppConfig.SettingWrapper<KeyBinding>, string> keyfilters = new();
 
-    private bool ImguiKeybinding(string label, AppConfig.SettingWrapper<KeyBinding> setting)
+    private bool ImguiKeybinding(ReadOnlySpan<byte> label, AppConfig.SettingWrapper<KeyBinding> setting)
     {
         var key = setting.Get();
         var filter = keyfilters.GetValueOrDefault(setting) ?? "";

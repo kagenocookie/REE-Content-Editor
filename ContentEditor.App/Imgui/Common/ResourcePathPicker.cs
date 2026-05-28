@@ -133,7 +133,7 @@ public class ResourcePathPicker : IObjectUIHandler
     }
 
     public static bool Show(
-        string label,
+        ReadOnlySpan<byte> label,
         ref string currentPath,
         ref string pendingPath,
         ref string searchFilter,

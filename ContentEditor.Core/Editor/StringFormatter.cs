@@ -6,13 +6,13 @@ namespace ContentEditor.Editor;
 
 public class StringFormatter(string format, SmartFormatter formatter)
 {
-    public string GetString(object target)
+    public string GetString(object? target)
     {
         try {
             return formatter.Format(CultureInfo.InvariantCulture, format, target);
         } catch (FormattingException e) {
             Logger.Error("Failed to evaluate object string representation: " + e.Message);
-            return target.ToString() ?? target.GetType().Name;
+            return target?.ToString() ?? target?.GetType().Name ?? "NULL";
         }
     }
 

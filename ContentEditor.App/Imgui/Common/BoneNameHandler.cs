@@ -30,7 +30,7 @@ public class BoneNameHandler(Func<UIContext, uint>? hashGetter = null, Action<UI
             } else {
                 ImGui.SetNextItemWidth(width / 2 - spacing);
                 var name = context.Get<string>();
-                if (ImguiHelpers.FilterableCombo("##combo", names, names, ref name, ref context.Filter)) {
+                if (ImguiHelpers.FilterableCombo("##combo"u8, names, names, ref name, ref context.Filter)) {
                     UndoRedo.RecordSet(context, name, mergeMode: UndoRedoMergeMode.NeverMerge);
                     if (hashSetter != null) {
                         UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, () => {
@@ -90,7 +90,7 @@ public class BoneHashHandler : IObjectUIHandler
                 ImGui.SetNextItemWidth(width / 2 - spacing);
                 var hash = context.Get<uint>();
                 var name = names.FirstOrDefault(n => MurMur3HashUtils.GetHash(n) == hash);
-                if (ImguiHelpers.FilterableCombo("##combo", names, names, ref name, ref context.Filter)) {
+                if (ImguiHelpers.FilterableCombo("##combo"u8, names, names, ref name, ref context.Filter)) {
                     UndoRedo.RecordSet(context, MurMur3HashUtils.GetHash(name ?? ""), mergeMode: UndoRedoMergeMode.NeverMerge);
                 }
 

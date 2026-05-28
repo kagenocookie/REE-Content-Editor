@@ -356,31 +356,31 @@ public class HomeWindow : IWindowHandler
             ImGui.SameLine();
             ImGui.TextColored(Colors.TextActive, "*");
 
-            if (AppImguiHelpers.InputFilepath("Game Executable", ref gameExe, FileFilters.Executable)) {
+            if (AppImguiHelpers.InputFilepath(Lang.Settings.ExePath.Text, ref gameExe, FileFilters.Executable)) {
                 AppConfig.Instance.SetGameExecutablePath(chosenGame, gameExe);
             }
             if (!ImGui.IsItemActive() && !string.IsNullOrEmpty(gamepath) && string.IsNullOrEmpty(gameExe)) {
                 AppConfig.Instance.SetGameExecutablePath(chosenGame, AppUtils.FindGameExecutable(gamepath, chosenGame)!);
             }
-            ImguiHelpers.Tooltip("This is the exact path to the game's executable."u8);
+            ImguiHelpers.Tooltip(Lang.Settings.ExePath.Tooltip);
             ImGui.SameLine();
             ImGui.TextColored(Colors.TextActive, "*");
 
             if (isCustomGame) {
-                if (AppImguiHelpers.InputFilepath("RSZ JSON File Path", ref rszPath, FileFilters.JsonFile) && File.Exists(gamepath)) {
+                if (AppImguiHelpers.InputFilepath(Lang.Settings.RszPath.Text, ref rszPath, FileFilters.JsonFile) && File.Exists(gamepath)) {
                     AppConfig.Instance.SetGameRszJsonPath(chosenGame, rszPath);
                 }
-                ImguiHelpers.Tooltip("This setting should point to the correct rsz*.json for the chosen game."u8);
+                ImguiHelpers.Tooltip(Lang.Settings.RszPath.Tooltip);
 
-                if (AppImguiHelpers.InputFilepath("File List Path", ref filelist) && File.Exists(gamepath)) {
+                if (AppImguiHelpers.InputFilepath(Lang.Settings.FileList.Text, ref filelist) && File.Exists(gamepath)) {
                     AppConfig.Instance.SetGameFilelist(chosenGame, filelist);
                 }
-                ImguiHelpers.Tooltip("This setting should point to a filepath containing a list of all files used by the game."u8);
+                ImguiHelpers.Tooltip(Lang.Settings.FileList.Tooltip);
 
-                if (AppImguiHelpers.InputFilepath("File Extraction Path", ref extractPath) && File.Exists(gamepath)) {
+                if (AppImguiHelpers.InputFilepath(Lang.Settings.ExtractPath.Text, ref extractPath) && File.Exists(gamepath)) {
                     AppConfig.Instance.SetGameExtractPath(chosenGame, extractPath);
                 }
-                ImguiHelpers.Tooltip("This is the default path used when extracting files. Can be left empty."u8);
+                ImguiHelpers.Tooltip(Lang.Settings.ExtractPath.Tooltip);
             }
         }
         ImGui.SameLine();
@@ -439,10 +439,10 @@ public class HomeWindow : IWindowHandler
         var isCustomGame = game.GameEnum == GameName.unknown;
 
         ImGui.SeparatorText("Paths");
-        if (AppImguiHelpers.InputFolder("Game Folder"u8, ref gamepath)) {
+        if (AppImguiHelpers.InputFolder(Lang.Settings.GamePath.Text, ref gamepath)) {
             AppConfig.Instance.SetGamePath(game, gamepath);
         }
-        if (AppImguiHelpers.InputFilepath("Game Executable", ref gameExe, FileFilters.Executable)) {
+        if (AppImguiHelpers.InputFilepath(Lang.Settings.ExePath.Text, ref gameExe, FileFilters.Executable)) {
             AppConfig.Instance.SetGameExecutablePath(game, gameExe);
         }
         if (Directory.Exists(gamepath) && ImGui.Button("Auto-Detect Executable path")) {
@@ -471,16 +471,14 @@ public class HomeWindow : IWindowHandler
 
         var rszFullySupported = remote?.IsRSZFullySupported == true;
 
-
-        if (AppImguiHelpers.InputFilepath(rszFullySupported ? "Custom RSZ JSON Path" : "RSZ Template JSON Path", ref rszPath, FileFilters.JsonFile)) {
+        var rszLabel = rszFullySupported ? Lang.Settings.RszPath_Custom : Lang.Settings.RszPath;
+        if (AppImguiHelpers.InputFilepath(rszLabel.Text, ref rszPath, FileFilters.JsonFile)) {
             AppConfig.Instance.SetGameRszJsonPath(game, rszPath);
             WindowHandlerFactory.ResetGameTypes(game);
             Component.ResetGameTypes(game);
         }
         // TODO show actual currently used file path
-        ImguiHelpers.Tooltip(rszFullySupported
-            ? "The default RSZ json file is fetched automatically.\nChange this only if you know what you're doing - mainly for accessing files from older game versions"
-            : "For not yet fully supported games, you may need to manually provide the path to a valid RSZ JSON template before some files can be opened.");
+        ImguiHelpers.Tooltip(rszLabel.Tooltip);
         if (remote?.RszPatchFiles.Length > 0) {
             ImGui.TextColored(Colors.Info, $"Remote URL: {remote.RszPatchFiles[0]}");
             if (ImGui.IsItemClicked()) {
@@ -493,7 +491,7 @@ public class HomeWindow : IWindowHandler
             // }
         }
 
-        if (AppImguiHelpers.InputFilepath("File List", ref filelist)) {
+        if (AppImguiHelpers.InputFilepath(Lang.Settings.FileList.Text, ref filelist)) {
             AppConfig.Instance.SetGameFilelist(game, filelist);
         }
         // TODO show actual currently used file path
@@ -521,7 +519,7 @@ public class HomeWindow : IWindowHandler
             window?.ShowBundleManagement();
         }
         if (isCompactView) {
-            ImguiHelpers.Tooltip("Bundle Manager"u8);
+            ImguiHelpers.Tooltip(Lang.Windows.BundleManager);
         }
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(workspace?.CurrentBundle == null)) {

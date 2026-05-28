@@ -1,6 +1,7 @@
 
 using System.Numerics;
 using ContentEditor.App.Windowing;
+using ContentEditor.Core;
 using ContentEditor.Editor;
 
 namespace ContentEditor.App;
@@ -11,8 +12,8 @@ public class ErrorModal : IWindowHandler, IDisposable
 
     public string HandlerName => "Error";
 
-    private readonly string title;
-    private readonly string text;
+    private readonly TranslatableBase title;
+    private readonly TranslatableBase text;
     private readonly IRectWindow? parent;
     public Action? OnClosed;
     private bool isOpen = false;
@@ -20,7 +21,7 @@ public class ErrorModal : IWindowHandler, IDisposable
     private WindowData data = null!;
     protected UIContext context = null!;
 
-    public ErrorModal(string title, string text, IRectWindow? parent = null, Action? onClosed = null)
+    public ErrorModal(TranslatableBase title, TranslatableBase text, IRectWindow? parent = null, Action? onClosed = null)
     {
         this.title = title;
         this.text = text;

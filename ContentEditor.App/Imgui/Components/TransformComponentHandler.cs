@@ -46,7 +46,7 @@ public class TransformComponentHandler : IObjectUIHandler, IUIContextEventHandle
                 ImGui.LabelText("Local Position"u8, "##labelP"u8);
             }
 
-            if (QuaternionFieldHandler.HandleQuaternion("Local Rotation", ref localrot, useEuler)) {
+            if (QuaternionFieldHandler.HandleQuaternion("Local Rotation"u8, ref localrot, useEuler)) {
                 UndoRedo.RecordCallbackSetter(context, instance, (Quaternion)data.Values[1], localrot, static (inst, value) => inst.LocalRotation = value, $"{instance.GetHashCode()} LocalRot");
             }
             if (ImGui.BeginPopupContextItem("Local Rotation")) {

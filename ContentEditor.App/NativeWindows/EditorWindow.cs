@@ -221,9 +221,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     {
         if (env == null || workspace == null) {
             if (!IsReady) {
-                AddSubwindow(new ErrorModal("You're too fast", "Please wait for the workspace to load up before opening files."));
+                AddSubwindow(new ErrorModal(Lang.Errors.FileLoad_NotReady_Title, Lang.Errors.FileLoad_NotReady_Message));
             } else {
-                AddSubwindow(new ErrorModal("Game unset", "Select a game first"));
+                AddSubwindow(new ErrorModal(Lang.Errors.FileLoad_GameUnset_Title, Lang.Errors.FileLoad_GameUnset_Message));
             }
             return;
         }
@@ -244,21 +244,16 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 file.Stream.Seek(0, SeekOrigin.Begin);
                 AddFileEditor(file);
             } else if (Path.IsPathRooted(filename) && !File.Exists(filename)) {
-                AddSubwindow(new ErrorModal("File not found", $"File could not be found:\n{filename}"));
+                AddSubwindow(new ErrorModal(Lang.Errors.FileLoad_FileNotFound_Title, Lang.Errors.FileLoad_FileNotFound.FormatRef(filename)));
             } else {
                 var fmt = PathUtils.ParseFileFormat(filename).format;
                 var canLoad = workspace.ResourceManager.CanLoadFile(filename);
                 if (!canLoad) {
-                    AddSubwindow(new ErrorModal("Unsupported file", $"This file format ({fmt}) is not yet supported:\n{filename}"));
+                    AddSubwindow(new ErrorModal(Lang.Errors.FileLoad_Unsupported_Title, Lang.Errors.FileLoad_UnsupportedFormat.FormatRef((int)fmt, filename)));
                 } else if (fmt.IsRSZBasedFormat()) {
-                    AddSubwindow(new ErrorModal("Unsupported file", $"""
-                        File could not be opened or is not supported:
-                        {filename}
-
-                        This is an RSZ-based file format, make sure you have the correct game selected.
-                        """));
+                    AddSubwindow(new ErrorModal(Lang.Errors.FileLoad_Unsupported_Title, Lang.Errors.FileLoad_UnsupportedFormatRSZ.FormatRef(filename)));
                 } else {
-                    AddSubwindow(new ErrorModal("Unsupported file", $"File could not be opened or is not supported:\n{filename}"));
+                    AddSubwindow(new ErrorModal(Lang.Errors.FileLoad_Unsupported_Title, Lang.Errors.FileLoad_UnknownError.FormatRef(filename)));
                 }
             }
         }
@@ -343,7 +338,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             AddSubwindow(handler);
         } else {
             workspace.ResourceManager.CloseFile(file);
-            AddSubwindow(new ErrorModal("Unsupported file", "File is not supported for editing:\n" + file.Filepath));
+            AddSubwindow(new ErrorModal(Lang.Errors.FileLoad_Unsupported_Title, Lang.Errors.FileLoad_NotEditable.FormatRef(file.Filepath)));
         }
     }
 
@@ -372,15 +367,15 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             .ToHashSet();
 
         var curGame = (env?.Config.Game ?? LastRequestedGame).name;
-        if (ImGui.BeginMenu("Game: " + (string.IsNullOrEmpty(curGame) ? "<unset>" : curGame.ToUpper()))) {
+        if (ImGui.BeginMenu(Lang.Home.ActiveGame.Format((string.IsNullOrEmpty(curGame) ? "--" : curGame.ToUpper())))) {
             if (env != null) {
-                if (ImGui.BeginMenu("Platform: " + env.Config.Platform)) {
+                if (ImGui.BeginMenu(Lang.Home.ActivePlatform.Format(env.Config.Platform.ToString()))) {
                     foreach (var otherPlat in PlatformIdentifier.GetAvailableDesktopPlatforms(env.Config.Game)) {
                         if (ImGui.Selectable(otherPlat.ToString(), otherPlat == env.Config.Platform)) {
                             ChangePlatform(otherPlat);
                         }
                     }
-                    ImGui.SeparatorText("Other platforms (untested)");
+                    ImGui.SeparatorText(Lang.Home.OtherPlatforms);
                     foreach (var otherPlat in PlatformIdentifier.NonDesktop) {
                         if (ImGui.Selectable(otherPlat.ToString(), otherPlat == env.Config.Platform)) {
                             ChangePlatform(otherPlat);
@@ -403,35 +398,35 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 }
             }
             ImGui.Separator();
-            if (ImGui.MenuItem("Configure games...")) {
+            if (ImGui.MenuItem(Lang.Buttons.ConfigureGames)) {
                 AddUniqueSubwindow(new SettingsWindowHandler());
             }
-            if (workspace != null && !string.IsNullOrEmpty(workspace.Env.Config.GamePath) && ImGui.MenuItem("Open game folder")) {
+            if (workspace != null && !string.IsNullOrEmpty(workspace.Env.Config.GamePath) && ImGui.MenuItem(Lang.Buttons.Open_GameFolder)) {
                 FileSystemUtils.ShowFileInExplorer(workspace.Env.Config.GamePath);
             }
             ImGui.EndMenu();
         }
 
-        if (ImGui.BeginMenu($"Bundle: {workspace?.CurrentBundle?.Name ?? "--"}", enabled: workspace != null)) {
+        if (ImGui.BeginMenu(Lang.Home.NamedBundle.Format(workspace?.CurrentBundle?.Name ?? "--"), enabled: workspace != null)) {
             if (!workspace!.BundleManager.IsLoaded) workspace.BundleManager.LoadDataBundles();
-            if (ImGui.BeginMenu($"Active Bundle: {workspace.Data.ContentBundle}")) {
-                if (ImGui.MenuItem("New Bundle")) {
+            if (ImGui.BeginMenu(Lang.Home.ActiveBundle.Format(workspace.Data.ContentBundle ?? ""))) {
+                if (ImGui.MenuItem(Lang.Buttons.NewBundle)) {
                     ShowBundleManagement();
                 }
-                if (ImGui.MenuItem("Create from PAK file")) {
+                if (ImGui.MenuItem(Lang.Buttons.NewBundleFromPAK)) {
                     PlatformUtils.ShowFileDialog(pak =>
                         CreateBundleFromPakFile(pak[0]),
                         filters: FileFilters.PakFile,
                         allowMultiple: false
                     );
                 }
-                if (ImGui.MenuItem("Create from loose file mod")) {
+                if (ImGui.MenuItem(Lang.Buttons.NewBundleFromLoose)) {
                     PlatformUtils.ShowFolderDialog(folder => {
                         CreateBundleFromLooseFileFolder(folder);
                     });
                 }
                 ImGui.Separator();
-                if (workspace.CurrentBundle != null && ImGui.MenuItem("Unload current bundle")) {
+                if (workspace.CurrentBundle != null && ImGui.MenuItem(Lang.Buttons.BundleUnload)) {
                     SetWorkspace(workspace.Env.Config.Game, null);
                 }
                 var foundUnusedBundle = false;
@@ -446,11 +441,11 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 }
                 ImGui.EndMenu();
             }
-            if (ImGui.MenuItem("Bundle Manager")) {
+            if (ImGui.MenuItem(Lang.Windows.BundleManager)) {
                 ShowBundleManagement();
             }
             if (workspace.BundleManager.UninitializedBundleFolders.Count > 0) {
-                if (ImGui.BeginMenu("* Uninitialized bundle folders")) {
+                if (ImGui.BeginMenu(Lang.Home.UninitializedBundles)) {
                     foreach (var item in workspace.BundleManager.UninitializedBundleFolders) {
                         if (ImGui.MenuItem(item)) {
                             try {
@@ -466,13 +461,13 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             }
             if (workspace.CurrentBundle != null) {
                 ImGui.Separator();
-                if (ImGui.MenuItem("Open current Bundle folder")) {
+                if (ImGui.MenuItem(Lang.Buttons.Open_CurrentBundleFolder)) {
                     FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
                 }
-                if (ImGui.MenuItem("Rescan Bundle Files")) {
+                if (ImGui.MenuItem(Lang.Buttons.BundleFileRescan)) {
                     workspace.RescanFilesInBundle(workspace.CurrentBundle);
                 }
-                if (ImGui.MenuItem("Publish Mod")) {
+                if (ImGui.MenuItem(Lang.Buttons.BundlePublish)) {
                     AddUniqueSubwindow(new ModPublisherWindow(workspace));
                 }
             }
@@ -504,7 +499,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             }
         }
 
-        AddSubwindow(new NameInputDialog("Bundle Creation", "Select name for the bundle to be created from the loose mod:\n" + folder,
+        AddSubwindow(new NameInputDialog(Lang.Home.BundleDialog_Title, Lang.Home.BundleDialog_Text_Loose.FormatRef(folder),
             initialName, FilenameRegex(), this, name => Workspace.InitializeUnlabelledBundle(name, folder)));
     }
     public void CreateBundleFromPakFile(string pakPath)
@@ -523,7 +518,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             }
         }
 
-        AddSubwindow(new NameInputDialog("Bundle Creation", "Select name for the bundle to be created from the PAK file:\n" + pakPath,
+        AddSubwindow(new NameInputDialog(Lang.Home.BundleDialog_Title, Lang.Home.BundleDialog_Text_PAK.FormatRef(pakPath),
             initialName, FilenameRegex(), this, name => Workspace.CreateBundleFromPAK(name, pakPath)));
     }
 
@@ -533,9 +528,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         string? activeGamePath = AppConfig.Instance.GetGameExecutablePath(workspace.Game);
         var launchType = (GameLaunchType)AppConfig.Instance.GameLaunchType.Get();
         using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(activeGamePath))) {
-            if (ImGui.MenuItem($"{AppIcons.Play} Launch Game")) {
+            if (ImGui.MenuItem(Lang.Home.LaunchGame)) {
                 if (!File.Exists(activeGamePath)) {
-                    Logger.Error("Game executable not found at: " + activeGamePath);
+                    Logger.Error(Lang.Errors.ExeNotFound.Format(activeGamePath ?? "-"));
                 } else {
                     bool isGameAlreadyRunning = false;
 
@@ -592,23 +587,23 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, ImGui.GetStyle().FramePadding.Y));
         if (ImGui.BeginMenu($"{AppIcons.SI_Small_ArrowDown}")) {
             ImGui.PopStyleVar();
-            if (ImGui.MenuItem("Launch Game with Loose File patch", launchType == GameLaunchType.LooseFiles)) {
+            if (ImGui.MenuItem(Lang.Home.LaunchGame_LoosePatch, launchType == GameLaunchType.LooseFiles)) {
                 AppConfig.Instance.GameLaunchType.Set(launchType == GameLaunchType.LooseFiles ? (int)GameLaunchType.Normal : (int)GameLaunchType.LooseFiles);
             }
-            if (ImGui.MenuItem("Launch Game with Pak File patch", launchType == GameLaunchType.Pak)) {
+            if (ImGui.MenuItem(Lang.Home.LaunchGame_PakPatch, launchType == GameLaunchType.Pak)) {
                 AppConfig.Instance.GameLaunchType.Set(launchType == GameLaunchType.Pak ? (int)GameLaunchType.Normal : (int)GameLaunchType.Pak);
             }
             ImGui.Separator();
-            if (ImGui.MenuItem("Apply patches (Loose File)")) {
+            if (ImGui.MenuItem(Lang.Home.ApplyPatches_Loose)) {
                 ApplyContentPatches(null);
             }
-            if (ImGui.MenuItem("Apply patches (PAK)")) {
+            if (ImGui.MenuItem(Lang.Home.ApplyPatches_Pak)) {
                 ApplyContentPatches("pak");
             }
-            if (ImGui.MenuItem("Patch to...")) {
+            if (ImGui.MenuItem(Lang.Home.ApplyPatches_CustomPath)) {
                 PlatformUtils.ShowFolderDialog((path) => ApplyContentPatches(path), workspace.Env.Config.GamePath);
             }
-            if (ImGui.MenuItem("Revert patches")) {
+            if (ImGui.MenuItem(Lang.Home.ApplyPatches_Revert)) {
                 RevertContentPatches();
             }
             ImGui.EndMenu();
@@ -673,41 +668,41 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         if (hasUnsavedFiles) {
             ImGui.Bullet();
         }
-        if (ImGui.BeginMenu("File")) {
-            if (ImGui.BeginMenu("Create New", workspace != null)) {
+        if (ImGui.BeginMenu(Lang.Home.Menu_File)) {
+            if (ImGui.BeginMenu(Lang.Home.Menu_CreateNew, workspace != null)) {
                 if (ImGui.MenuItem("Lua Script")) AddFileEditor(Workspace.ResourceManager.CreateNewFile(LuaFileLoader.Instance, "Script", "lua")!);
                 ImGui.EndMenu();
             }
             ImGui.Separator();
-            if (ImGui.MenuItem("Open ...", false, workspace != null)) {
+            if (ImGui.MenuItem(Lang.Home.Menu_Open, false, workspace != null)) {
                 ShowFileOpenDialog();
             }
             if (workspace != null) {
                 ImGui.BeginDisabled(!hasUnsavedFiles);
-                if (ImGui.MenuItem("Save modified files")) {
+                if (ImGui.MenuItem(Lang.Home.Menu_SaveAll)) {
                     workspace.SaveModifiedFiles();
                 }
-                if (!hasUnsavedFiles && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.SetItemTooltip("No files have been modified yet.");
-                if (ImGui.MenuItem("Revert modified files")) {
+                if (!hasUnsavedFiles && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.SetItemTooltip(Lang.Home.Menu_TooltipNoModifiedFiles);
+                if (ImGui.MenuItem(Lang.Home.Menu_RevertAll)) {
                     foreach (var file in workspace.ResourceManager.GetModifiedResourceFiles()) {
                         file.Revert(workspace);
                     }
                 }
-                if (!hasUnsavedFiles && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.SetItemTooltip("No files have been modified yet.");
+                if (!hasUnsavedFiles && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.SetItemTooltip(Lang.Home.Menu_TooltipNoModifiedFiles);
                 ImGui.EndDisabled();
                 var menuRight = ImGui.GetWindowPos().X + ImGui.GetWindowSize().X;
                 var maxWidth = menuRight + 600 >= Size.X ? Size.X - 48 * UI.UIScale : Size.X - menuRight - ImGui.GetStyle().WindowPadding.X * 3 - 80 * UI.UIScale;
-                if (ImGui.BeginMenu("Opened files")) {
+                if (ImGui.BeginMenu(Lang.Home.Menu_OpenedFiles)) {
                     var files = workspace.ResourceManager.GetOpenFiles();
                     if (!files.Any()) {
-                        ImGui.MenuItem("No files open", false);
+                        ImGui.MenuItem(Lang.Home.Menu_NoFilesOpen, false);
                     } else {
-                        if (ImGui.Button("Close all")) {
+                        if (ImGui.Button(Lang.Home.Menu_CloseAll)) {
                             if (HasUnsavedChanges) {
                                 if (!HasSubwindow<SaveFileConfirmation>(out _)) {
                                     AddSubwindow(new SaveFileConfirmation(
-                                        "Unsaved changes",
-                                        $"Some files have unsaved changes.\nAre you sure you wish to close the window?",
+                                        Lang.General.UnsavedChanges,
+                                        Lang.General.UnsavedChangesText,
                                         workspace.ResourceManager.GetModifiedResourceFiles(),
                                         this,
                                         () => workspace.ResourceManager.CloseAllFiles()
@@ -729,15 +724,15 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                             }
                             ImGui.PushID(file.Filepath);
                             if (file.Modified) {
-                                if (ImGui.Button("Save")) file.Save(workspace);
+                                if (ImGui.Button(Lang.Buttons.Save)) file.Save(workspace);
                                 ImGui.SameLine();
                             }
                             if (!file.References.Any(r => !r.CanClose)) {
-                                if (ImGui.Button("Close")) {
+                                if (ImGui.Button(Lang.Buttons.Close)) {
                                     if (file.Modified) {
                                         AddSubwindow(new SaveFileConfirmation(
-                                            "Unsaved changes",
-                                            $"The file {file.Filepath} has unsaved changes.\nAre you sure you wish to close it?",
+                                            Lang.General.UnsavedChanges,
+                                            Lang.General.UnsavedChangesText_SingleFile.FormatRef(file.Filepath),
                                             [file],
                                             this,
                                             () => workspace.ResourceManager.CloseFile(file)
@@ -768,12 +763,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     }
                     ImGui.EndMenu();
                 }
-                if (ImGui.BeginMenu("Recent files")) {
+                if (ImGui.BeginMenu(Lang.Home.Menu_RecentFiles)) {
                     var recents = AppConfig.Settings.RecentFiles;
                     if (recents == null || recents.Count == 0) {
-                        ImGui.MenuItem("No recent files", false);
+                        ImGui.MenuItem(Lang.Home.RecentFiles_None, false);
                     } else {
-                        ImGui.InputTextWithHint("Filter", $"{AppIcons.Search}", ref recentFileFilter, 128);
+                        ImGui.InputTextWithHint(Lang.General.FilterInput, $"{AppIcons.Search}", ref recentFileFilter, 128);
                         ImGui.SameLine();
                         if (ImGui.Button("Clear recent files")) {
                             recents.Clear();
@@ -797,7 +792,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                                 break;
                             }
                             if (Path.IsPathRooted(file.GetStringAfterDelimiter('|')) && ImGui.BeginPopupContextItem()) {
-                                if (ImGui.Selectable("Open Containing Folder")) {
+                                if (ImGui.Selectable(Lang.Buttons.Open_ContainingFolder)) {
                                     FileSystemUtils.ShowFileInExplorer(Path.GetDirectoryName(file.GetStringAfterDelimiter('|').ToString()));
                                 }
                                 ImGui.EndPopup();
@@ -810,43 +805,43 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 }
             }
             ImGui.Separator();
-            if (ImGui.MenuItem("Exit")) {
+            if (ImGui.MenuItem(Lang.Buttons.Exit)) {
                 _window.Close();
             }
             ImGui.EndMenu();
         }
 
-        if (ImGui.BeginMenu("Edit")) {
+        if (ImGui.BeginMenu(Lang.Home.Menu_Edit)) {
             ImGui.BeginDisabled(!UndoRedo.CanUndo(this));
-            if (ImGui.MenuItem("Undo")) UndoRedo.Undo(this);
+            if (ImGui.MenuItem(Lang.Buttons.Undo)) UndoRedo.Undo(this);
             ImGui.EndDisabled();
 
             ImGui.BeginDisabled(!UndoRedo.CanRedo(this));
-            if (ImGui.MenuItem("Redo")) UndoRedo.Redo(this);
+            if (ImGui.MenuItem(Lang.Buttons.Redo)) UndoRedo.Redo(this);
             ImGui.EndDisabled();
 
             ImGui.Separator();
-            if (ImGui.MenuItem("Settings")) {
+            if (ImGui.MenuItem(Lang.Windows.Settings)) {
                 AddUniqueSubwindow(new SettingsWindowHandler());
             }
-            if (ImGui.MenuItem("Theme Editor")) {
+            if (ImGui.MenuItem(Lang.Windows.ThemeEditor)) {
                 AddUniqueSubwindow(new ThemeEditor());
             }
             ImGui.Separator();
             if (workspace != null) {
-                if (ImGui.MenuItem("Retarget Designer")) {
+                if (ImGui.MenuItem(Lang.Windows.RetargetDesigner)) {
                     AddUniqueSubwindow(new RetargetDesigner());
                 }
                 ImGui.Separator();
             }
-            if (workspace != null && ImGui.MenuItem("Check for updated game data cache")) {
+            if (workspace != null && ImGui.MenuItem(Lang.Buttons.CheckForDataUpdate)) {
                 if (RequestCloseAllSubwindows(true)) {
                     ResourceRepository.ResetCache(workspace.Game);
                     ResourceRepository.Initialize(true);
                     SetWorkspace(workspace.Game, workspace.CurrentBundle?.Name, true);
                 }
             }
-            if (workspace != null && ImGui.BeginMenu("Data Generation")) {
+            if (workspace != null && ImGui.BeginMenu(Lang.Home.Menu_DataGeneration)) {
                 if (ImGui.MenuItem("Rebuild RSZ patch data")) {
                     if (!runningRszInference) {
                         runningRszInference = true;
@@ -937,33 +932,33 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             ImGui.EndMenu();
         }
 
-        if (ImGui.BeginMenu("Windows")) {
-            if (ImGui.MenuItem("Open New Workspace")) {
+        if (ImGui.BeginMenu(Lang.Home.Menu_Windows)) {
+            if (ImGui.MenuItem(Lang.Buttons.NewWorkspace)) {
                 UI.OpenWindow(workspace);
             }
             ImGui.Separator();
             if (workspace != null) {
-                if (ImGui.MenuItem("PAK File Browser")) {
+                if (ImGui.MenuItem(Lang.Windows.PakBrowser)) {
                     AddSubwindow(new PakBrowser(workspace, null));
                 }
-                if (ImGui.MenuItem("Bundle Manager")) {
+                if (ImGui.MenuItem(Lang.Windows.BundleManager)) {
                     ShowBundleManagement();
                 }
-                if (ImGui.MenuItem("File Search")) {
+                if (ImGui.MenuItem(Lang.Windows.FileSearch)) {
                     AddSubwindow(new FileSearchWindow());
                 }
-                if (ImGui.MenuItem("Texture Channel Packer")) {
+                if (ImGui.MenuItem(Lang.Windows.TexturePacker)) {
                     AddSubwindow(new TextureChannelPacker()).Size = new Vector2(1280, 800);
                 }
-                if (ImGui.MenuItem("Batch File Conversion")) {
+                if (ImGui.MenuItem(Lang.Windows.BatchConvert)) {
                     AddSubwindow(new FileConverter()).Size = new Vector2(1280, 800);
                 }
                 if (workspace.Config.Entities.Any()) {
-                    if (ImGui.MenuItem("Entities")) {
+                    if (ImGui.MenuItem(Lang.Windows.Entities)) {
                         AddSubwindow(new AppContentEditorWindow(workspace));
                     }
                 }
-                if (ImGui.MenuItem("Macro Shelf")) {
+                if (ImGui.MenuItem(Lang.Windows.MacroShelf)) {
                     AddSubwindow(new LuaMacroShelf());
                 }
             }
@@ -973,7 +968,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
         ShowGameSelectionMenu();
 
-        if (ImGui.BeginMenu("Scenes", enabled: workspace != null)) {
+        if (ImGui.BeginMenu(Lang.Home.Menu_Scenes, enabled: workspace != null)) {
             if (ImGui.Selectable($"{AppIcons.SI_GenericAdd} New scene")) {
                 var file = Workspace.ResourceManager.CreateNewFile(KnownFileFormats.Scene);
                 if (file != null) {
@@ -1006,11 +1001,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
         ImguiHelpers.VerticalSeparator();
 
-        if (ImGui.MenuItem("Support development (Ko-Fi)")) {
+        if (ImGui.MenuItem(Lang.Home.SupportDevelopment)) {
             FileSystemUtils.OpenURL("https://ko-fi.com/shadowcookie");
         }
 
-        if (AppConfig.IsOutdatedVersion && AppConfig.Instance.EnableUpdateCheck && ImGui.MenuItem(AppConfig.IsDebugBuild ? "New version available!" : $"New version ({AppConfig.Settings.Changelogs.LatestReleaseVersion}) available!")) {
+        if (AppConfig.IsOutdatedVersion && AppConfig.Instance.EnableUpdateCheck &&
+            ImGui.MenuItem(AppConfig.IsDebugBuild ? Lang.Home.NewVersion_Unspecific : Lang.Home.NewVersion_Specific.Format(AppConfig.Settings.Changelogs.LatestReleaseVersion ?? ""))) {
             FileSystemUtils.OpenURL(GithubApi.MainRepositoryUrl);
         }
 
@@ -1078,7 +1074,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             patcher.StoreGDeflateTexturesAsSubPak = AppConfig.Instance.UseSubPakForLooseTextures;
             return patcher.Execute(singleBundle == null);
         } catch (Exception e) {
-            Logger.Error(e, "Failed to execute patcher");
+            Logger.Error(e, Lang.Errors.PatchFailed);
             return false;
         }
     }
@@ -1100,7 +1096,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 Logger.Info("Deleted patch PAK: " + patchPakFilepath);
             }
         } catch (Exception e) {
-            Logger.Error(e, "Failed to revert patches");
+            Logger.Error(e, Lang.Errors.PatchRevertFailed);
         }
     }
 
@@ -1109,8 +1105,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         if (HasUnsavedChanges && workspace != null) {
             if (HasSubwindow<SaveFileConfirmation>(out _)) return false;
             AddSubwindow(new SaveFileConfirmation(
-                "Unsaved changes",
-                $"Some files have unsaved changes.\nAre you sure you wish to close the window?",
+                Lang.General.UnsavedChanges,
+                Lang.General.UnsavedChangesText,
                 workspace.ResourceManager.GetModifiedResourceFiles(),
                 this,
                 () => {

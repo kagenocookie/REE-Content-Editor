@@ -71,7 +71,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         ImGui.BeginChild("NewMacro", new Vector2(450, 0));
         string newMacroPath = string.Empty;
         string newMacroName = string.Empty;
-        if (AppImguiHelpers.InputFilepath("LUA Script Path",ref newMacroPath, FileFilters.LuaFile)) {
+        if (AppImguiHelpers.InputFilepath("LUA Script Path"u8,ref newMacroPath, FileFilters.LuaFile)) {
 
         }
         ImGui.SameLine();

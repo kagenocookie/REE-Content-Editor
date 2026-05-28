@@ -379,7 +379,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
             ImGui.EndChild();
         }
     }
-    private void ShowMaterialDataTab<T>(UIContext context, MaterialData mat, string label, Func<UIContext, T> getter, bool fixedWidth = false)
+    private void ShowMaterialDataTab<T>(UIContext context, MaterialData mat, TranslatableBase label, Func<UIContext, T> getter, bool fixedWidth = false)
     {
         if (ImGui.BeginTabItem(label)) {
             if (typeof(T) == typeof(List<ParamHeader>)) {
@@ -406,18 +406,18 @@ public class MdfFileImguiHandler : IObjectUIHandler
     }
     private static void ShowMaterialContextMenu(UIContext context, List<MaterialData> list, MaterialData mat, Action<int>? onSelectIndexChanged = null)
     {
-        if (ImGui.MenuItem("Duplicate")) {
+        if (ImGui.MenuItem(Lang.Buttons.Duplicate)) {
             var clone = mat.Clone();
             clone.Name = $"{mat.Name}_copy".GetUniqueName(str => list.Any(l => l.Name == str));
             clone.Header.matNameHash = MurMur3HashUtils.GetHash(clone.Name);
             UndoRedo.RecordListAdd(context, list, clone);
             onSelectIndexChanged?.Invoke(list.Count - 1);
         }
-        if (ImGui.MenuItem("Copy")) {
+        if (ImGui.MenuItem(Lang.Buttons.Copy)) {
             VirtualClipboard.CopyToClipboard(mat.Clone());
         }
         using (var i = ImguiHelpers.Disabled(!VirtualClipboard.TryGetFromClipboard<MaterialData>(out _))) {
-            if (ImGui.MenuItem("Paste")) {
+            if (ImGui.MenuItem(Lang.Buttons.Paste)) {
                 if (VirtualClipboard.TryGetFromClipboard<MaterialData>(out var pasted)) {
                     var clone = pasted.Clone();
                     clone.Header.matName = clone.Header.matName.GetUniqueName(str => list.Any(l => l.Header.matName == str));
@@ -427,7 +427,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
             }
         }
         ImGui.Separator();
-        if (ImGui.MenuItem("Delete")) {
+        if (ImGui.MenuItem(Lang.Buttons.Delete)) {
             int index = list.IndexOf(mat);
             UndoRedo.RecordListRemove(context, list, mat);
             int newIndex = list.Count == 0 ? -1 : Math.Clamp(index - 1, 0, list.Count - 1);
@@ -446,8 +446,8 @@ public class MdfFileImguiHandler : IObjectUIHandler
                 ImGui.OpenPopup("Confirm Action"u8);
             }
             ImguiHelpers.Tooltip("Clear material parameter bookmarks");
-            AppImguiHelpers.ShowActionModal("Confirm Action", $"{AppIcons.SI_GenericDelete2}", Colors.IconTertiary,
-                $"Are you sure you want to delete all material parameter bookmarks for {Lang.TranslateGame(workspace.Game.name)}?",
+            AppImguiHelpers.ShowActionModal(Lang.General.ConfirmTitle, $"{AppIcons.SI_GenericDelete2}", Colors.IconTertiary,
+                Lang.Material.ConfirmDeleteBookmarks.FormatRef(Lang.TranslateGame(workspace.Game.name)),
                 () => {
                     mdfBookmarks?.ClearBookmarks(workspace.Game.name);
                     isShowOnlyBookmarkedParams = false;
@@ -734,14 +734,14 @@ public class MdfMaterialLazyPlainObjectHandler : LazyPlainObjectHandler
         var tree = base.DoTreeNode(context, instance);
         var mat = (MaterialData)instance;
         if (ImGui.BeginPopupContextItem(context.label)) {
-            if (ImGui.Button("Duplicate")) {
+            if (ImGui.Button(Lang.Buttons.Duplicate)) {
                 var list = context.parent!.Get<List<MaterialData>>();
                 var clone = mat.Clone();
                 clone.Header.matName = $"{mat.Header.matName}_copy".GetUniqueName(str => list.Any(l => l.Header.matName == str));
                 UndoRedo.RecordListAdd(context.parent, list, clone);
                 ImGui.CloseCurrentPopup();
             }
-            if (ImGui.Button("Delete")) {
+            if (ImGui.Button(Lang.Buttons.Delete)) {
                 var list = context.parent!.Get<List<MaterialData>>();
                 UndoRedo.RecordListRemove(context.parent, list, mat, childIndexOffset: 1);
                 ImGui.CloseCurrentPopup();
@@ -749,7 +749,7 @@ public class MdfMaterialLazyPlainObjectHandler : LazyPlainObjectHandler
             ImGui.EndPopup();
         }
         if (!tree && context.label != mat.Header.matName) {
-            context.label = mat.Header.matName;
+            context.label = FixedString.Cached(mat.Header.matName);
         }
         return tree;
     }
@@ -800,7 +800,7 @@ public class ParamHeaderImguiHandler : IObjectUIHandler
         var mdfDefaultBookmarks = context.FindHandlerInParents<MdfEditor>()?.MDFDefaultBookmarks!;
         bool isBookmarked = mdfBookmarks.IsBookmarked(workspace.Game.name, param.paramName);
         bool showOnlyBookmarked = context.FindHandlerInParents<MdfFileImguiHandler>()?.isShowOnlyBookmarkedParams ?? false;
-        string label = context.label;
+        var label = context.label;
 
         var paramEntry = mdfDefaultBookmarks.GetBookmarks(workspace.Game.name).FirstOrDefault(b => b.Path == param.paramName);
         bool hasDefaultComment = !string.IsNullOrWhiteSpace(paramEntry?.Comment);

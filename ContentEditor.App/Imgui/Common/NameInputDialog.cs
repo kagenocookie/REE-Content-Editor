@@ -2,6 +2,7 @@
 using System.Numerics;
 using System.Text.RegularExpressions;
 using ContentEditor.App.Windowing;
+using ContentEditor.Core;
 using ContentEditor.Editor;
 
 namespace ContentEditor.App;
@@ -12,8 +13,8 @@ public class NameInputDialog : IWindowHandler
 
     public string HandlerName => "Name Input";
 
-    private readonly string title;
-    private readonly string text;
+    private readonly TranslatableBase title;
+    private readonly TranslatableBase text;
     private readonly IRectWindow parent;
     public Action<string> OnConfirmed;
     public Action? OnCancelled;
@@ -24,7 +25,7 @@ public class NameInputDialog : IWindowHandler
     private WindowData data = null!;
     protected UIContext context = null!;
 
-    public NameInputDialog(string title, string text, string initialName, Regex validationRegex, IRectWindow parent, Action<string> onConfirmed, Action? onCancelled = null)
+    public NameInputDialog(TranslatableBase title, TranslatableBase text, string initialName, Regex validationRegex, IRectWindow parent, Action<string> onConfirmed, Action? onCancelled = null)
     {
         this.title = title;
         this.text = text;

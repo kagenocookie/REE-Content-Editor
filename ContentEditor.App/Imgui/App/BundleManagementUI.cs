@@ -217,7 +217,7 @@ public class BundleManagementUI : IWindowHandler
             }
             var names = bundleManager.AllBundles.Select(b => b.Name).ToArray();
             var bundlespan = CollectionsMarshal.AsSpan(bundleManager.AllBundles);
-            if (ImguiHelpers.FilterableCombo("Bundle", names, bundlespan, ref selectedBundle, ref filter)) {
+            if (ImguiHelpers.FilterableCombo("Bundle"u8, names, bundlespan, ref selectedBundle, ref filter)) {
                 selectedName = selectedBundle?.Name;
                 data.SetPersistentData("selectedBundle", selectedName);
             }
@@ -252,7 +252,7 @@ public class BundleManagementUI : IWindowHandler
             }
             str = bundle.ImagePath ?? "";
             var bundleFolder = bundleManager.GetBundleFolder(bundle);
-            if (AppImguiHelpers.InputFilepath("Image", ref str, FileFilters.ImageFiles)) {
+            if (AppImguiHelpers.InputFilepath("Image"u8, ref str, FileFilters.ImageFiles)) {
                 if (File.Exists(str)) {
                     var localImageFilepath = str;
                     if (!string.IsNullOrEmpty(bundle.StorageFolder)) {

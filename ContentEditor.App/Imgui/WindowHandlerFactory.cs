@@ -6,6 +6,7 @@ using ContentEditor.App.FileLoaders;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.ImguiHandling.Chain;
 using ContentEditor.App.ImguiHandling.Mdf2;
+using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher;
 using ReeLib;
@@ -704,7 +705,7 @@ public static class WindowHandlerFactory
         var ws = context.GetWorkspace();
         // var config = ws?.Config.Get(instance.RszClass.name);
         if (classFormatters.TryGetValue(instance.RszClass, out var fmt)) {
-            context.stringFormatter = fmt;
+            context.annotation = new FormattedObjectString(fmt, instance);
         }
         if (classHandlers.TryGetValue(instance.RszClass, out var handlerFact)) {
             context.uiHandler = handlerFact.Invoke();

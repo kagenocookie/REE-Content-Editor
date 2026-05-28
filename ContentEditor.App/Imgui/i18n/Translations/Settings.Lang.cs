@@ -1,5 +1,5 @@
 using System.Text;
-using ContentEditor.App.Internationalization;
+using ContentEditor.Core;
 
 namespace ContentEditor.App;
 
@@ -54,8 +54,9 @@ public static partial class Lang
         public static readonly TextTooltip GamePath = new ("Game Path", "The full path to the game. Should point to the folder containing the .exe and .pak files");
         public static readonly TextTooltip ExePath = new ("Game Executable", "The full path to the game executable.");
         public static readonly TextTooltip FileList = new ("File List", "Defining a custom path here may not be required if it's at least a partially supported game.\nCan also be used in case of issues with automatic downloads.");
-        public static readonly TextTooltip ExtractPath = new ("Game Extract Path", "The default path to preselect when extracting files.");
-        public static readonly TextTooltip RszPath = new ("RSZ Template JSON Path", "For not yet fully supported games, you may need to manually provide the path to a valid RSZ JSON template before some files can be opened.");
+        public static readonly TextTooltip FileList_Custom = new ("File List", "This setting should point to a filepath containing a list of all files used by the game.");
+        public static readonly TextTooltip ExtractPath = new ("Game Extract Path", "This is the default path used when extracting files. Can be left empty.");
+        public static readonly TextTooltip RszPath = new ("RSZ Template JSON Path", "This setting should point to the correct rsz*.json for the chosen game.\nFor not yet fully supported games, you may need to manually provide the path to a valid RSZ JSON template before some files can be opened.");
         public static readonly TextTooltip RszPath_Custom = new ("Custom RSZ JSON Path", "The default RSZ json file is fetched automatically.\nChange this only if you know what you're doing - mainly for accessing files from older game versions");
         public static readonly FixedString ShowFPS = "Show FPS";
         public static readonly FixedString DateFormat = "Date Format";
@@ -73,7 +74,7 @@ public static partial class Lang
         public static readonly FixedString PreferredLanguage = "Preferred Language";
         public static readonly FixedString MinLogLevel = "Minimum logging level";
         public static readonly FixedString LogToFile = "Output logs to file";
-        public static readonly FixedInterpolatedStringProvider<string> LogToFile_Tooltip = new("If checked, any logging will also be output to file {0}.\nChanging this setting requires a restart of the app.", FileLogger.DefaultLogFilePath);
+        public static readonly FixedInterpolatedString<string> LogToFile_Tooltip = new("If checked, any logging will also be output to file {0}.\nChanging this setting requires a restart of the app.", FileLogger.DefaultLogFilePath);
 
         public static readonly TextTooltip AutoUpdate = new TextTooltip("Automatically check for Updates", "Will occasionally check GitHub for new releases.");
         public static readonly TextTooltip EnableKeyboardNav = new TextTooltip("Enable keyboard navigation", "Whether to enable navigating between fields using arrow keys.");

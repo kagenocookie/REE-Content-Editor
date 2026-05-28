@@ -723,14 +723,14 @@ public class MotBoneHandler : IObjectUIHandler
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(MotBone), false, DisplayedFields);
         }
 
-        var show = ImguiHelpers.TreeNodeSuffix("Bone", instance.ToString());
+        var show = ImguiHelpers.TreeNodeSuffix("Bone"u8, instance.ToString());
         if (ImGui.BeginPopupContextItem("Bone")) {
             var boneCtx = context.FindParentContextByValue<MotBone>();
-            if (boneCtx != null && ImGui.Selectable("Copy")) {
+            if (boneCtx != null && ImGui.Selectable(Lang.Buttons.Copy)) {
                 VirtualClipboard.CopyToClipboard(boneCtx.Get<MotBone>());
             }
             if (boneCtx != null && VirtualClipboard.TryGetFromClipboard<MotBone>(out var newClip)) {
-                if (ImGui.Selectable("Paste (replace values)")) {
+                if (ImGui.Selectable(Lang.Buttons.Paste_Replace)) {
                     var org = instance.Clone();
                     var clone = newClip.Clone();
                     UndoRedo.RecordCallback(boneCtx, () => {
@@ -745,7 +745,7 @@ public class MotBoneHandler : IObjectUIHandler
                         instance.attributes2 = org.attributes2;
                     });
                 }
-                if (ImGui.Selectable("Paste (replace hierarchy)")) {
+                if (ImGui.Selectable(Lang.Buttons.Paste_Hierarchy)) {
                     var clone = newClip.Clone();
                     clone.Parent = instance.Parent;
                     UndoRedo.RecordSet(boneCtx, clone);
@@ -852,7 +852,7 @@ public class MotFileListHandler : ListHandler
 
         static MotlistFileBase? FindMotlist(UIContext ctx) => ctx.FindHandlerInParents<MotlistEditor>()?.File as MotlistFileBase ?? ctx.FindHandlerInParents<MotionCamListEditor>()?.File;
 
-        if (ImGui.Selectable("Batch copy")) {
+        if (ImGui.Selectable(Lang.Buttons.Copy_Batch)) {
             var listRef = FindMotlist(context);
             if (listRef == null) throw new NullReferenceException("Missing motlist file parent");
             VirtualClipboard.CopyToClipboard(listRef);

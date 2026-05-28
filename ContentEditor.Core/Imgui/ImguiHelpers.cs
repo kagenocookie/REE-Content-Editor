@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace ContentEditor.Core;
 
@@ -12,7 +13,16 @@ public static class ImguiHelpers
     public const string DragDrop_File = "EXT_FILE";
     public const string DragDrop_Text = "EXT_TEXT";
 
-    public static bool TreeNodeSuffix(string label, string suffix, Vector4 color = default)
+    public static bool TreeNodeSuffix(ReadOnlySpan<byte> label, string suffix, Vector4 color = default)
+    {
+        var suffixLen = Encoding.UTF8.GetByteCount(suffix) + 1;
+        Span<byte> suffixBytes = stackalloc byte[suffixLen];
+        Encoding.UTF8.GetBytes(suffix, suffixBytes);
+        suffixBytes[^1] = 0;
+        return TreeNodeSuffix(label, suffixBytes, color);
+    }
+
+    public static bool TreeNodeSuffix(ReadOnlySpan<byte> label, ReadOnlySpan<byte> suffix, Vector4 color = default)
     {
         ImGui.BeginGroup();
         var show = ImGui.TreeNode(label);
@@ -29,7 +39,7 @@ public static class ImguiHelpers
         return show;
     }
 
-    public static void TextSuffix(string label, string suffix, Vector4 color = default)
+    public static void TextSuffix(ReadOnlySpan<byte> label, ReadOnlySpan<byte> suffix, Vector4 color = default)
     {
         ImGui.Text(label);
         ImGui.SameLine();
@@ -51,7 +61,7 @@ public static class ImguiHelpers
         }
         return false;
     }
-    public static bool FilterableCSharpEnumCombo<TEnum>(string label, ref TEnum selected, ref string filter) where TEnum : struct, Enum
+    public static bool FilterableCSharpEnumCombo<TEnum>(ReadOnlySpan<byte> label, ref TEnum selected, ref string filter) where TEnum : struct, Enum
     {
         var values = Enum.GetValues<TEnum>();
         var labels = Enum.GetNames<TEnum>();
@@ -97,7 +107,7 @@ public static class ImguiHelpers
         return false;
     }
 
-    public static bool FilterableEnumCombo<TEnumSource>(string label, TEnumSource enumDescriptor, ref object? selected, ref string filter)
+    public static bool FilterableEnumCombo<TEnumSource>(ReadOnlySpan<byte> label, TEnumSource enumDescriptor, ref object? selected, ref string filter)
         where TEnumSource : IEnumDataSource
     {
         var labels = enumDescriptor.GetLabels();
@@ -105,7 +115,7 @@ public static class ImguiHelpers
         return FilterableCombo(label, labels, values, ref selected, ref filter);
     }
 
-    public static bool FilterableEntityCombo<TEntityBaseType>(string label, IEnumerable<KeyValuePair<long, TEntityBaseType>> entities, ref long selected, ref string filter)
+    public static bool FilterableEntityCombo<TEntityBaseType>(ReadOnlySpan<byte> label, IEnumerable<KeyValuePair<long, TEntityBaseType>> entities, ref long selected, ref string filter)
         where TEntityBaseType : Entity
     {
         var labels = entities.Select(kv => kv.Value.Label).ToArray();
@@ -123,7 +133,7 @@ public static class ImguiHelpers
         return -1;
     }
 
-    public static bool FilterableCombo<TValue>(string label, string[] labels, ReadOnlySpan<TValue> values, ref TValue? selected, ref string filter)
+    public static bool FilterableCombo<TValue>(ReadOnlySpan<byte> label, string[] labels, ReadOnlySpan<TValue> values, ref TValue? selected, ref string filter)
     {
         var selectedIndex = values!.BoxedIndexOf(selected);
         if (!ImGui.BeginCombo(label, selectedIndex == -1 ? selected?.ToString() ?? "" : labels[selectedIndex])) {
@@ -353,7 +363,7 @@ public static class ImguiHelpers
         return new DisposableImguiID();
     }
 
-    public static DisposableImguiID ScopedID(string id)
+    public static DisposableImguiID ScopedID(ReadOnlySpan<byte> id)
     {
         ImGui.PushID(id);
         return new DisposableImguiID();

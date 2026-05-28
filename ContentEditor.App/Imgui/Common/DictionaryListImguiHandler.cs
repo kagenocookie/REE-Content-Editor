@@ -81,7 +81,7 @@ public abstract class DictionaryListImguiHandler<TKey, TItem, TListType> : IObje
             while (ctxIndex >= context.children.Count || context.children[ctxIndex] == null) {
                 var childCtx = WindowHandlerFactory.CreateListElementContext(context, context.children.Count - indexOffset);
                 context.children.Add(childCtx);
-                childCtx.label = GetKey(list[context.children.Count - indexOffset - 1]).ToString() ?? childCtx.label;
+                childCtx.label = FixedString.CachedNullFallback(GetKey(list[context.children.Count - indexOffset - 1]).ToString(), childCtx.label);
             }
             var child = context.children[ctxIndex];
             if (item == null) {

@@ -127,18 +127,18 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             if (ImGui.Button($"{AppIcons.SI_Save}")) {
                 Save();
             }
-            ImguiHelpers.Tooltip("Save");
+            ImguiHelpers.Tooltip(Lang.Buttons.Save);
             var workspace = data.Context.GetWorkspace()!;
             ImGui.SameLine();
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_SaveAs, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary })) {
                 PlatformUtils.ShowSaveFileDialog((path) => SaveTo(path, true), GetSavePathSuggestion(Handle));
             }
-            ImguiHelpers.Tooltip("Save As...");
+            ImguiHelpers.Tooltip(Lang.Buttons.SaveAs);
             ImGui.SameLine();
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_SaveCopy, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary })) {
                 SaveAs();
             }
-            ImguiHelpers.Tooltip("Save Copy to...");
+            ImguiHelpers.Tooltip(Lang.Buttons.SaveCopy);
             if (Handle.DiffHandler != null && ImguiHelpers.SameLine() && Handle.HandleType is not FileHandleType.Memory) {
                 if (ImGui.Button($"{AppIcons.SI_FileChanges}")) {
                     var diff = Handle.DiffHandler.FindDiff(Handle);
@@ -148,7 +148,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                         EditorWindow.CurrentWindow?.AddSubwindow(new JsonViewer(diff, Handle.Filepath, Handle));
                     }
                 }
-                ImguiHelpers.Tooltip("See changes");
+                ImguiHelpers.Tooltip(Lang.Buttons.SeeChanges);
             }
             if (workspace.CurrentBundle != null) {
                 var isInBundle = Handle.IsInBundle(workspace, workspace.CurrentBundle);
@@ -157,14 +157,14 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                     if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveTo, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
                         SaveToBundle(workspace, false);
                     }
-                    ImguiHelpers.Tooltip("Save to Bundle");
+                    ImguiHelpers.Tooltip(Lang.Buttons.SaveToBundle);
                 }
 
                 ImGui.SameLine();
                 if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveAsNew, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
                     SaveToBundle(workspace, true);
                 }
-                ImguiHelpers.Tooltip("Save to Bundle as New File");
+                ImguiHelpers.Tooltip(Lang.Buttons.SaveToBundleNewFile);
 
                 if (isInBundle) {
                     if (!workspace.CurrentBundle.TryFindResource(Handle.TargetPath ?? "", out var resourceListing)) {
@@ -214,7 +214,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             if (ImGui.Button($"{AppIcons.SI_Reset}")) {
                 Handle.Revert(data.Context.GetWorkspace()!);
             }
-            ImguiHelpers.Tooltip("Revert");
+            ImguiHelpers.Tooltip(Lang.Buttons.Revert);
         }
     }
 
@@ -232,14 +232,14 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
 
     protected void ShowFileJsonCopyPasteButtons<T>(JsonSerializerOptions? jsonOptions) where T : BaseFile
     {
-        if (ImGui.Button("Copy as JSON")) {
+        if (ImGui.Button(Lang.Buttons.Copy_Json)) {
             var data = Handle.GetFile<T>();
             var json = JsonSerializer.Serialize(data, jsonOptions ?? JsonConfig.jsonOptionsIncludeFields);
             EditorWindow.CurrentWindow?.CopyToClipboard(json, $"Copied file to JSON!");
             ImGui.CloseCurrentPopup();
         }
         ImGui.SameLine();
-        if (ImGui.Button("Paste from JSON")) {
+        if (ImGui.Button(Lang.Buttons.Paste_Json)) {
             try {
                 var wnd = EditorWindow.CurrentWindow;
                 var data = wnd?.GetClipboard();
@@ -352,7 +352,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     {
         var ownerWindow = EditorWindow.CurrentWindow!;
         ownerWindow.AddSubwindow(new SaveFileConfirmation(
-            "Unsaved changes", "You have unsaved changes in this file, do you wish to save the file first?",
+            Lang.General.UnsavedChanges, Lang.General.UnsavedChangesText_ThisFile,
             [Handle],
             this,
             () => {

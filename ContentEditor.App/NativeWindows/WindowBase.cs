@@ -223,6 +223,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         data.Handler?.OnOpen();
     }
 
+    public void CopyToClipboard(TranslatableBase text, string? userNotice = "Copied!") => CopyToClipboard(text.String, userNotice);
     public void CopyToClipboard(string text, string? userNotice = "Copied!")
     {
         if (_inputContext.Keyboards.FirstOrDefault() is IKeyboard kb) {

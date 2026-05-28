@@ -53,7 +53,7 @@ public class EmbeddedResourceFileHandler(ResourceCustomField field) : IObjectUIH
             if (editor == null) {
                 context.AddChild(context.label, null, ReadOnlyLabelHandler.Instance);
             } else {
-                WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, editor, context.label);
+                WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, editor, context._label);
             }
         }
 

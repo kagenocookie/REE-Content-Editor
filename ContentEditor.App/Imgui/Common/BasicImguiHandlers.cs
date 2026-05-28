@@ -64,7 +64,7 @@ public class Vector2FieldHandler : Singleton<Vector2FieldHandler>, IObjectUIHand
     public void OnIMGUI(UIContext context)
     {
         var val = context.Get<Vector2>();
-        if (ImGui.DragFloat2(context.label, ref val, 0.01f)) UndoRedo.RecordSet(context, val);
+        if (ImGui.DragFloat2(context.label, ref val.X, 0.01f)) UndoRedo.RecordSet(context, val);
         AppImguiHelpers.ShowValueContextMenu(in val, context);
     }
 }
@@ -74,7 +74,7 @@ public class Vector3FieldHandler : Singleton<Vector3FieldHandler>, IObjectUIHand
     public void OnIMGUI(UIContext context)
     {
         var val = context.Get<Vector3>();
-        if (ImGui.DragFloat3(context.label, ref val, 0.01f)) UndoRedo.RecordSet(context, val);
+        if (ImGui.DragFloat3(context.label, ref val.X, 0.01f)) UndoRedo.RecordSet(context, val);
         AppImguiHelpers.ShowValueContextMenu(in val, context);
     }
 }
@@ -86,7 +86,7 @@ public class PaddedVec3FieldHandler : IObjectUIHandler
     {
         var val = context.Get<PaddedVec3>();
         var valVec = val.Vector3;
-        if (ImGui.DragFloat3(context.label, ref valVec, 0.01f)) UndoRedo.RecordSet(context, new PaddedVec3(valVec.X, valVec.Y, valVec.Z));
+        if (ImGui.DragFloat3(context.label, ref valVec.X, 0.01f)) UndoRedo.RecordSet(context, new PaddedVec3(valVec.X, valVec.Y, valVec.Z));
         AppImguiHelpers.ShowValueContextMenu(in val, context);
     }
 }
@@ -96,7 +96,7 @@ public class Vector4FieldHandler : Singleton<Vector4FieldHandler>, IObjectUIHand
     public void OnIMGUI(UIContext context)
     {
         var val = context.Get<Vector4>();
-        if (ImGui.DragFloat4(context.label, ref val, 0.01f)) UndoRedo.RecordSet(context, val);
+        if (ImGui.DragFloat4(context.label, ref val.X, 0.01f)) UndoRedo.RecordSet(context, val);
         AppImguiHelpers.ShowValueContextMenu(in val, context);
     }
 }
@@ -138,7 +138,7 @@ public class QuaternionFieldHandler : Singleton<QuaternionFieldHandler>, IObject
             UndoRedo.RecordSet(context, val);
         }
         if (ImGui.BeginPopupContextItem(context.label)) {
-            if (DefaultContextItems(context.label, ref val)) {
+            if (DefaultContextItems(context._label, ref val)) {
                 UndoRedo.RecordSet(context, val);
             }
             if (ImGui.Selectable("Toggle quaternion/euler display")) {
@@ -148,19 +148,19 @@ public class QuaternionFieldHandler : Singleton<QuaternionFieldHandler>, IObject
         }
     }
 
-    public static bool HandleQuaternion(string label, ref Quaternion val, bool useEuler)
+    public static bool HandleQuaternion(ReadOnlySpan<byte> label, ref Quaternion val, bool useEuler)
     {
         var changed = false;
         if (useEuler) {
             var euler = val.ToEuler();
-            if (ImGui.DragFloat3(label, ref euler, 0.25f)) {
+            if (ImGui.DragFloat3(label, ref euler.X, 0.25f)) {
                 euler *= TransformExtensions.Deg2Rad;
                 val = Quaternion.CreateFromYawPitchRoll(euler.Y, euler.X, euler.Z);
                 changed = true;
             }
         } else {
             var vec = new Vector4(val.X, val.Y, val.Z, val.W);
-            if (ImGui.DragFloat4(label, ref vec, 0.001f)) {
+            if (ImGui.DragFloat4(label, ref vec.X, 0.001f)) {
                 if (vec == Vector4.Zero) vec = new Vector4(0, 0, 0, 1);
                 val = new Quaternion(vec.X, vec.Y, vec.Z, vec.W);
                 if (!AppConfig.Instance.QuaternionsDisableAutoNormalize) {
@@ -252,7 +252,7 @@ public class ColorFieldHandler : Singleton<ColorFieldHandler>, IObjectUIHandler
     {
         var val = context.Get<Color>();
         var vec = val.ToVector4();
-        if (ImGui.ColorEdit4(context.label, ref vec, ImGuiColorEditFlags.Uint8)) {
+        if (ImGui.ColorEdit4(context.label, ref vec.X, ImGuiColorEditFlags.Uint8)) {
             UndoRedo.RecordSet(context, Color.FromVector4(vec));
         }
         AppImguiHelpers.ShowValueContextMenu(in val, context);

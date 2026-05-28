@@ -23,7 +23,7 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
             ImGui.Text(context.label + ": NULL");
             return;
         }
-        if (showLabel) ImguiHelpers.TextSuffix(context.label, context.stringFormatter?.GetString(instance) ?? instance.RszClass.name);
+        if (showLabel) ImguiHelpers.TextSuffix(context.label, context.annotation ??= instance.RszClass.name);
 
         if (context.children.Count >= 10) {
             ImGui.Spacing();
@@ -35,7 +35,7 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
             context.ShowChildrenUI();
         } else {
             foreach (var child in context.children) {
-                if (child.label.Contains(context.Filter, StringComparison.InvariantCultureIgnoreCase)) {
+                if (child._label.Contains(context.Filter, StringComparison.InvariantCultureIgnoreCase)) {
                     child.ShowUI();
                 }
             }
@@ -230,7 +230,7 @@ public class RszClassnamePickerHandler(string? baseClass = null, string label = 
             if (string.IsNullOrEmpty(context.InputClassname)) {
                 context.InputClassname = instance?.RszClass.name ?? string.Empty;
             }
-            ImguiHelpers.FilterableCombo(label, classOptions, classValues, ref context.InputClassname!, ref context.ClassnameFilter);
+            ImguiHelpers.FilterableCombo(FixedString.Cached(label), classOptions, classValues, ref context.InputClassname!, ref context.ClassnameFilter);
             var classInput = context.InputClassname;
             if (!string.IsNullOrEmpty(classInput) ? classInput != instance?.RszClass.name : allowNull && instance != null) {
                 if (ImGui.Button("Change")) {
@@ -325,7 +325,7 @@ public class SwappableRszInstanceHandler(string? baseClass = null, bool referenc
             if (string.IsNullOrEmpty(context.InputClassname)) {
                 context.InputClassname = instance?.RszClass.name ?? string.Empty;
             }
-            ImguiHelpers.FilterableCombo("Class", classOptions, classOptions, ref context.InputClassname!, ref context.ClassnameFilter);
+            ImguiHelpers.FilterableCombo("Class"u8, classOptions, classOptions, ref context.InputClassname!, ref context.ClassnameFilter);
             var classInput = context.InputClassname;
             if (!string.IsNullOrEmpty(classInput) && classInput != instance?.RszClass.name) {
                 if (ImGui.Button("Change")) {
@@ -343,7 +343,7 @@ public class SwappableRszInstanceHandler(string? baseClass = null, bool referenc
                     }
                 }
                 ImGui.SameLine();
-                if (ImGui.Button("Cancel")) {
+                if (ImGui.Button("Cancel"u8)) {
                     context.InputClassname = instance?.RszClass.name ?? "";
                 }
             }
@@ -360,7 +360,7 @@ public class SwappableRszInstanceHandler(string? baseClass = null, bool referenc
             var labels = otherInstanceOptions.Select((inst, i) => $"{i+1}. {inst.GetString()}").ToArray();
 
             var newInstance = instance;
-            if (ImguiHelpers.FilterableCombo(instanceLabel, labels, otherInstanceOptions, ref newInstance, ref context.Filter)) {
+            if (ImguiHelpers.FilterableCombo(FixedString.Cached(instanceLabel), labels, otherInstanceOptions, ref newInstance, ref context.Filter)) {
                 if (newInstance?.RszClass != instance?.RszClass) {
                     UndoRedo.RecordSet(context, newInstance, (ctx) => {
                         ctx.ClearChildren();
@@ -472,7 +472,8 @@ public class NestedRszInstanceHandler : IObjectUIHandler
         }
         if (!_wasInit) {
             _wasInit = true;
-            context.stringFormatter = WindowHandlerFactory.GetStringFormatter(instance);
+            var formatter = WindowHandlerFactory.GetStringFormatter(instance);
+            context.annotation = formatter == null ? new ObjectString(instance) : new FormattedObjectString(formatter, instance);
         }
         if (instance.Fields.Length == 0) {
             // no point in showing it in the UI - at least until we add subclass selection
@@ -500,7 +501,7 @@ public class NestedRszInstanceHandler : IObjectUIHandler
 
     protected virtual bool ShowTree(UIContext context, RszInstance instance)
     {
-        return ImguiHelpers.TreeNodeSuffix(context.label, context.stringFormatter?.GetString(instance) ?? instance.RszClass.name);
+        return ImguiHelpers.TreeNodeSuffix(context.label, context.annotation ??= instance.RszClass.name);
     }
 }
 
@@ -723,7 +724,7 @@ public class RectFieldHandler : Singleton<RectFieldHandler>, IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var vec = context.Get<Rect>().AsVector;
-        if (ImGui.DragFloat4(context.label, ref vec, 0.01f)) {
+        if (ImGui.DragFloat4(context.label, ref vec.X, 0.01f)) {
             UndoRedo.RecordSet(context, new Rect(vec.X, vec.Y, vec.Z, vec.W));
         }
         AppImguiHelpers.ShowValueContextMenu(vec, context);
@@ -878,7 +879,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                         if (string.IsNullOrEmpty(context.ClassnameFilter)) {
                             context.ClassnameFilter = subtypes[0];
                         }
-                        ImguiHelpers.ValueCombo(context.label, subtypes, subtypes, ref context.ClassnameFilter);
+                        ImguiHelpers.ValueCombo(context._label, subtypes, subtypes, ref context.ClassnameFilter);
                         if (!string.IsNullOrEmpty(context.ClassnameFilter)) {
                             ImGui.SameLine();
                             if (ImGui.Button("Create")) {
@@ -1210,7 +1211,7 @@ public class TransformStructHandler : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var data = context.Get<ReeLib.via.Transform>();
-        var show = ImguiHelpers.TreeNodeSuffix("Transform", data.ToString()!);
+        var show = ImguiHelpers.TreeNodeSuffix("Transform"u8, data.ToString()!);
         AppImguiHelpers.ShowValueContextMenu(data, context);
         if (show) {
             var pos = data.pos;
@@ -1322,7 +1323,7 @@ public class OBBStructHandler : IObjectUIHandler
                 UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} offset");
             }
             if (!context.HasBoolState) context.StateBool = AppConfig.Instance.ShowQuaternionsAsEuler.Get();
-            if (QuaternionFieldHandler.HandleQuaternion("Rotation", ref rot, context.StateBool)) {
+            if (QuaternionFieldHandler.HandleQuaternion("Rotation"u8, ref rot, context.StateBool)) {
                 box.Coord = Transform.GetMatrixFromTransforms(trans, rot, scale);
                 UndoRedo.RecordSet(context, box, undoId: $"{context.GetHashCode()} rotation");
             }

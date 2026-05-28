@@ -433,7 +433,7 @@ public class FileConverter : BaseWindowHandler
 
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(Math.Max(ImGui.CalcItemWidth() / 2, ImGui.CalcTextSize("BC7_UNORM_SRGB"u8).X));
-                ImguiHelpers.FilterableCombo("DXGI format", PrioritizedFormatStrings, PrioritizedFormatList, ref dxgiFormat, ref dxgiFilter);
+                ImguiHelpers.FilterableCombo("DXGI format"u8, PrioritizedFormatStrings, PrioritizedFormatList, ref dxgiFormat, ref dxgiFilter);
                 ImguiHelpers.Tooltip("Only used for PNG/TGA source files");
                 ImGui.Unindent(8);
             }
@@ -629,10 +629,10 @@ public class FileConverter : BaseWindowHandler
 
         public override bool ShowSettings(ConversionMode mode)
         {
-            AppImguiHelpers.InputFilepath("Source Version RSZ JSON", ref sourceRszJsonPath, FileFilters.JsonFile);
+            AppImguiHelpers.InputFilepath("Source Version RSZ JSON"u8, ref sourceRszJsonPath, FileFilters.JsonFile);
             ImguiHelpers.Tooltip("The RSZ JSON of the source file game version.");
 
-            AppImguiHelpers.InputFilepath("Target Version RSZ JSON", ref targetRszJsonPath, FileFilters.JsonFile);
+            AppImguiHelpers.InputFilepath("Target Version RSZ JSON"u8, ref targetRszJsonPath, FileFilters.JsonFile);
             ImguiHelpers.Tooltip("The RSZ JSON of the upgraded game version.");
 
             ImGui.TextColored(Colors.Note, "Both RSZ JSON paths are optional. If unspecified, the currently active one will be used.");

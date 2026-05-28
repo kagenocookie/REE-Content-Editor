@@ -213,7 +213,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
             ImGui.EndTabItem();
         }
 
-        if (ImGui.BeginTabItem("Individual Patterns")) {
+        if (ImGui.BeginTabItem("Individual Patterns"u8)) {
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconSecondary);
             if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
                 UndoRedo.RecordListAdd(context, sequence.patterns, new UvsPattern());
@@ -225,7 +225,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
 
             int patId = 0;
             foreach (var pattern in sequence.patterns) {
-                if (ImguiHelpers.TreeNodeSuffix($"Pattern {patId++}", $"[{pattern}]")) {
+                if (ImguiHelpers.TreeNodeSuffix(Lang.UVS.PatternLabel.Format(patId++), $"[{pattern}]")) {
                     ShowPatternEdit(pattern);
                     ImGui.TreePop();
                 }

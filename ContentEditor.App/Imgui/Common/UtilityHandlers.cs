@@ -230,7 +230,7 @@ public class InstanceTypePickerHandler<T>(Type?[] classOptions, Func<UIContext, 
         if (filterable) {
             ImguiHelpers.FilterableCombo(context.label, labels, classOptions!, ref chosenType, ref context.Filter);
         } else {
-            ImguiHelpers.ValueCombo(context.label, labels, classOptions!, ref chosenType);
+            ImguiHelpers.ValueCombo(context._label, labels, classOptions!, ref chosenType);
         }
         if (chosenType != curType) {
             if (ImGui.Button("Change")) {

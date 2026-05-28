@@ -209,12 +209,12 @@ public class LuaScriptEditor : FileEditor
                 ImGui.EndPopup();
             }
         }
-        if (ImguiHelpers.FilterableCombo("Script Group", Groups, Groups, ref selectedGroup, ref groupFilter)) {
+        if (ImguiHelpers.FilterableCombo("Script Group"u8, Groups, Groups, ref selectedGroup, ref groupFilter)) {
             SetScriptGroup(selectedGroup ?? "");
         }
 
         if (FilesInCurrentGroup.Length > 0) {
-            if (ImguiHelpers.FilterableCombo("Stored Script", FilesInCurrentGroup, FilesInCurrentGroup, ref currentScriptPathRelative, ref groupFilter)) {
+            if (ImguiHelpers.FilterableCombo("Stored Script"u8, FilesInCurrentGroup, FilesInCurrentGroup, ref currentScriptPathRelative, ref groupFilter)) {
                 if (!string.IsNullOrEmpty(currentScriptPathRelative)) {
                     var fullPath = Path.Combine(CurrentGroupFolder, currentScriptPathRelative);
                     if (File.Exists(fullPath)) {

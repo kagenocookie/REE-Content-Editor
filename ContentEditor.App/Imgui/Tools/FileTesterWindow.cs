@@ -96,7 +96,7 @@ public partial class FileTesterWindow : IWindowHandler
             if (ImGui.TreeNode("Hash bruteforce")) {
                 if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Will attempt to match the given UTF16 hash with a wordlist (lowercase, uppercase, capital case variants are attempted) or executable file");
                 wordlistFilepath ??= AppConfig.Instance.GetGameExecutablePath(context.GetWorkspace()?.Game ?? default) ?? "";
-                if (AppImguiHelpers.InputFilepath("Words Source", ref wordlistFilepath)) {
+                if (AppImguiHelpers.InputFilepath("Words Source"u8, ref wordlistFilepath)) {
                     wordlistCache = null;
                 }
                 ImguiHelpers.Tooltip("The word source can be either an executable or a file list txt file");
@@ -195,7 +195,7 @@ public partial class FileTesterWindow : IWindowHandler
             FormatLabels = list.Select(kv => $"{kv.Item2} ({kv.Item1})").ToArray();
         }
 
-        if (ImguiHelpers.FilterableCombo("File type", FormatLabels, Formats, ref format, ref formatFilter)) {
+        if (ImguiHelpers.FilterableCombo("File type"u8, FormatLabels, Formats, ref format, ref formatFilter)) {
             AppConfig.Settings.Dev.LastFileTestFormat = format;
             AppConfig.Settings.Save();
         }

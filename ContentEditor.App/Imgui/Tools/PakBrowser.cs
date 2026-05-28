@@ -279,8 +279,8 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
                     ImGui.OpenPopup("Confirm Action"u8);
                 }
                 ImguiHelpers.Tooltip("Clear Custom Bookmarks");
-                AppImguiHelpers.ShowActionModal("Confirm Action", $"{AppIcons.SI_GenericDelete2}", Colors.IconTertiary,
-                    $"Are you sure you want to delete all custom bookmarks for {Lang.TranslateGame(Workspace.Config.Game.name)}?",
+                AppImguiHelpers.ShowActionModal(Lang.General.ConfirmTitle, $"{AppIcons.SI_GenericDelete2}", Colors.IconTertiary,
+                    Lang.PakBrowser.ConfirmDeleteBookmarks.FormatRef(Lang.TranslateGame(Workspace.Config.Game.name)),
                     () => {
                         _bookmarks.User.ClearBookmarks(Workspace.Config.Game.name);
                         Logger.Info($"Cleared custom bookmarks for {Workspace.Config.Game.name}");
@@ -999,7 +999,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
                 }
             }
             ImGui.Separator();
-            if (ImGui.MenuItem("Clear All Tags"u8)) {
+            if (ImGui.MenuItem(Lang.Buttons.Clear_Tags)) {
                 bm.Tags.Clear();
                 manager.SaveBookmarks();
             }
@@ -1043,7 +1043,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
 
     private static string CompactFilePath(string path)
     {
-        var parts = path.Replace('\\', '/').Split('/');
+        var parts = path.NormalizeFilepath().Split('/');
         if (parts.Length <= 2) return path;
 
         return parts[^1];
@@ -1051,7 +1051,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
 
     private static string LessCompactFilePath(string path)
     {
-        var parts = path.Replace('\\', '/').Split('/');
+        var parts = path.NormalizeFilepath().Split('/');
         if (parts.Length <= 2) return path;
 
         var remainingParts = parts[2..];

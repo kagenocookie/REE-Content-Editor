@@ -13,8 +13,9 @@ public class UIContext
     public UIContext root;
     public UIContext? parent;
 
-    public string label;
-    public StringFormatter? stringFormatter;
+    public string _label => label.String;
+    public TranslatableBase label { get; set; }
+    public TranslatableBase? annotation;
 
     public object? originalValue;
     private Func<UIContext, object?> getter;
@@ -50,7 +51,7 @@ public class UIContext
         public object? value = value;
     }
 
-    public UIContext(string label, object? target, UIContext root, Func<UIContext, object?> getter, Action<UIContext, object?> setter, UIOptions options)
+    public UIContext(TranslatableBase label, object? target, UIContext root, Func<UIContext, object?> getter, Action<UIContext, object?> setter, UIOptions options)
     {
         this.target = target;
         this.label = label;
@@ -154,7 +155,7 @@ public class UIContext
     private static object? DefaultGetter(UIContext ctx) => ctx.target;
     private static void NotImplementedSetter(UIContext ctx, object? val) => throw new NotImplementedException();
 
-    public UIContext AddChild(string label, object? instance, IObjectUIHandler? handler = null, Func<UIContext, object?>? getter = null, Action<UIContext, object?>? setter = null, UIOptions options = UIOptions.None)
+    public UIContext AddChild(TranslatableBase label, object? instance, IObjectUIHandler? handler = null, Func<UIContext, object?>? getter = null, Action<UIContext, object?>? setter = null, UIOptions options = UIOptions.None)
     {
         var child = new UIContext(label, instance, root, getter ?? DefaultGetter, setter ?? NotImplementedSetter, options) {
             parent = this,
@@ -164,7 +165,7 @@ public class UIContext
         children.Add(child);
         return child;
     }
-    public UIContext AddChild<TTarget, TValue>(string label, TTarget? instance, IObjectUIHandler? handler = null, Func<TTarget?, TValue?>? getter = null, Action<TTarget, TValue?>? setter = null, UIOptions options = UIOptions.None)
+    public UIContext AddChild<TTarget, TValue>(TranslatableBase label, TTarget? instance, IObjectUIHandler? handler = null, Func<TTarget?, TValue?>? getter = null, Action<TTarget, TValue?>? setter = null, UIOptions options = UIOptions.None)
     {
         Func<UIContext, object?> boxedGetter = getter == null ? DefaultGetter : (ctx) => getter((TTarget?)ctx.target);
         Action<UIContext, object?> boxedSetter = setter == null ? NotImplementedSetter :  (ctx, val) => {
@@ -172,7 +173,7 @@ public class UIContext
         };
         return AddChild(label, instance, handler, boxedGetter, boxedSetter);
     }
-    public UIContext AddChildContextSetter<TTarget, TValue>(string label, TTarget? instance, IObjectUIHandler? handler = null, Func<TTarget?, TValue?>? getter = null, Action<UIContext, TTarget, TValue?>? setter = null)
+    public UIContext AddChildContextSetter<TTarget, TValue>(TranslatableBase label, TTarget? instance, IObjectUIHandler? handler = null, Func<TTarget?, TValue?>? getter = null, Action<UIContext, TTarget, TValue?>? setter = null)
     {
         Func<UIContext, object?> boxedGetter = getter == null ? DefaultGetter : (ctx) => getter((TTarget?)ctx.target);
         Action<UIContext, object?> boxedSetter = setter == null ? NotImplementedSetter :  (ctx, val) => {
