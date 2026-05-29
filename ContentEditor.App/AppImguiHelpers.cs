@@ -235,7 +235,7 @@ public static class AppImguiHelpers
     public static bool CopyableTreeNode<T>(UIContext context, out bool didPaste) where T : class
     {
         var instance = context.Get<T>()!;
-        var show = ImguiHelpers.TreeNodeSuffix(context.label, instance.ToString() ?? "NULL");
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, context.annotation ?? instance.ToString() ?? "NULL");
         if (ImGui.BeginPopupContextItem(context.label)) {
             didPaste = ShowVirtualCopyPopupButtons<T>(instance, context);
             ImGui.EndPopup();

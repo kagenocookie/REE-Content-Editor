@@ -148,6 +148,7 @@ public sealed class BackgroundTaskService : IDisposable
 
     public bool HasPendingTask<T>() => workers.Any(w => w.CurrentTask is T) || waitingTasks.Any(t => t is T);
     public bool HasPendingTask<T>(Func<T, bool> condition) => workers.Any(w => w.CurrentTask is T cc && condition(cc)) || waitingTasks.Any(t => t is T cc && condition(cc));
+    public T? GetPendingTask<T>() where T : class => workers.FirstOrDefault(w => w.CurrentTask is T)?.CurrentTask as T ?? waitingTasks.FirstOrDefault(t => t is T) as T;
 
     private class BackgroundTaskWorker : BackgroundWorker, IDisposable
     {
@@ -195,7 +196,7 @@ public sealed class BackgroundTaskService : IDisposable
                     var task = CurrentTask;
                     if (task != null) {
                         task.TaskStatus = TaskStatus.Running;
-                        task.Execute(token);
+                        task.Execute(token).Wait();
                         task.TaskStatus = TaskStatus.RanToCompletion;
                     }
                 } catch (Exception e) {
@@ -242,7 +243,7 @@ public interface IBackgroundTask
     bool IsCompletedSuccessfully => TaskStatus == TaskStatus.RanToCompletion;
     bool IsEnded => TaskStatus is TaskStatus.Canceled or TaskStatus.Faulted or TaskStatus.RanToCompletion;
 
-    void Execute(CancellationToken token = default);
+    Task Execute(CancellationToken token = default);
 }
 
 public static class BackgroundTaskExtensions

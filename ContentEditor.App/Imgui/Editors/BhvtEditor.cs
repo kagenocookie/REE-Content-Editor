@@ -81,6 +81,21 @@ public class MotFsm2FileEditor : FileEditor, IWorkspaceContainer, IObjectUIHandl
             context.AddChild<Motfsm2File, List<TransitionData>>("Transition Data List", File, new ListHandlerTyped<TransitionData>(), (f) => f!.TransitionDatas);
             context.AddChild<Motfsm2File, BhvtFile?>("Behavior Tree", File, new BhvtFileEditor(), (f) => f!.BhvtFile);
         }
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator();
+        ImGui.SameLine();
+        if (ImGui.Button("Translate names")) {
+            var bhvt = File.BhvtFile;
+            var lang = AppConfig.Instance.Language;
+            foreach (var node in bhvt.Nodes) {
+                TranslationService.QueueTranslation(node.Name, lang, (s, t) => {
+                    if (s && t != node.Name) {
+                        node.Name = t!;
+                        Handle.Modified = true;
+                    }
+                });
+            }
+        }
         context.ShowChildrenUI();
     }
 

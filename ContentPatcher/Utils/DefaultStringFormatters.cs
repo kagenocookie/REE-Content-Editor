@@ -16,7 +16,7 @@ public static class FormatterSettings
         StringFormatCompatibility = false,
     };
 
-    public static readonly SmartFormatter DefaultFormatter = ApplyDefaultFormatters(new SmartFormatter(FormatterSettings.DefaultSettings));
+    public static readonly SmartFormatter DefaultFormatter = ApplyDefaultFormatters(ApplyRszFieldFallback(new SmartFormatter(FormatterSettings.DefaultSettings)));
 
     public static SmartFormatter CreateFullEntityFormatter(EntityConfig config, ContentWorkspace? workspace = null)
     {
@@ -46,6 +46,12 @@ public static class FormatterSettings
         formatter.AddExtensions(new DefaultFormatter(), new NullFormatter(), LowerCaseFormatter.Instance, UpperCaseFormatter.Instance, new PathFormatter());
         // @: used for RszFieldStringFormatterSource classname filtering
         formatter.Settings.Parser.AddCustomSelectorChars(['@']);
+        return formatter;
+    }
+
+    private static SmartFormatter ApplyRszFieldFallback(SmartFormatter formatter)
+    {
+        formatter.AddExtensions(new RszFieldStringFormatterSource(null));
         return formatter;
     }
 

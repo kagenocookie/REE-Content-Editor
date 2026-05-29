@@ -58,6 +58,14 @@ public sealed class FixedString(string fmt) : TranslatableBase(fmt)
         _contextTranslations = contextSpecificTranslations;
     }
 
+    public static void OverrideTranslation(string source, string target)
+    {
+        _plainTranslations[source] = target;
+        if (_cached.TryGetValue(source, out var cached)) {
+            cached.Format = target;
+        }
+    }
+
     public static implicit operator FixedString(string str) => new (str);
     // public static implicit operator byte[](FixedString pp) => pp.bytes;
 }

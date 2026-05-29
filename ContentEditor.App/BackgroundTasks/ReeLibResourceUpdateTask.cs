@@ -15,7 +15,7 @@ public class ReeLibResourceUpdateTask(Workspace workspace) : IBackgroundTask
 
     public Workspace Workspace { get; } = workspace;
 
-    public void Execute(CancellationToken token = default)
+    public async Task Execute(CancellationToken token = default)
     {
         ResourceRepository.UpdateAndGet(Workspace.Config.Game);
         Status = "Loading List File";

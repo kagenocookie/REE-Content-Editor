@@ -28,7 +28,7 @@ public class TextureConversionTask : IBackgroundTask
 
     public override string ToString() => $"Texture Conversion: {dds.FileHandler.FilePath}";
 
-    public unsafe void Execute(CancellationToken token = default)
+    public unsafe async Task Execute(CancellationToken token = default)
     {
         var memstream = dds.FileHandler.Stream.ToMemoryStream(true, false);
         var buffer = memstream.GetBuffer();

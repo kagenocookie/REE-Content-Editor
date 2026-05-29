@@ -17,7 +17,7 @@ public class ListFileGeneratorTask(ContentWorkspace workspace) : IBackgroundTask
     public TaskStatus TaskStatus { get; set; }
     public bool LatestPAKsOnly { get; set; }
 
-    public void Execute(CancellationToken token = default)
+    public Task Execute(CancellationToken token = default)
     {
         var paks = PakUtils.ScanPakFiles(generator.GameDirectory);
         if (LatestPAKsOnly) {
@@ -42,5 +42,6 @@ public class ListFileGeneratorTask(ContentWorkspace workspace) : IBackgroundTask
         FileSystemUtils.EnsureDirectoryExists(Path.GetDirectoryName(outputPath)!);
         File.WriteAllLines(outputPath, files);
         Logger.Info($"Generated file list written to {outputPath}");
+        return Task.CompletedTask;
     }
 }

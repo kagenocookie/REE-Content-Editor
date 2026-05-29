@@ -68,6 +68,33 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
             child.uiHandler = new PlainObjectHandler();
             WindowHandlerFactory.SetupObjectUIContext(child, typeof(RcolFile), members: BasicFields);
         }
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator();
+        ImGui.SameLine();
+        if (ImGui.Button("Translate names")) {
+            var lang = AppConfig.Instance.Language;
+            foreach (var set in File.RequestSets) {
+                TranslationService.QueueTranslation(set.Info.Name, lang, (s, translated) => {
+                    if (s) {
+                        FixedString.OverrideTranslation(set.Info.Name, translated!);
+                    }
+                });
+            }
+            foreach (var group in File.Groups) {
+                TranslationService.QueueTranslation(group.Info.Name, lang, (s, translated) => {
+                    if (s) {
+                        FixedString.OverrideTranslation(group.Info.Name, translated!);
+                    }
+                });
+                foreach (var shape in group.Shapes.Concat(group.ExtraShapes)) {
+                    TranslationService.QueueTranslation(shape.Info.Name, lang, (s, translated) => {
+                        if (s) {
+                            FixedString.OverrideTranslation(shape.Info.Name, translated!);
+                        }
+                    });
+                }
+            }
+        }
         var p = ImGui.GetCursorPos();
         var s = ImGui.GetWindowSize();
         ImGui.BeginChild("Tree", new System.Numerics.Vector2(400, s.Y - p.Y - ImGui.GetStyle().WindowPadding.Y), ImGuiChildFlags.ResizeX);
@@ -221,8 +248,17 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
 
 
 [ObjectImguiHandler(typeof(RequestSet))]
-public class RequestSetEditor : IObjectUIHandler
+public class RequestSetEditor : IObjectUIHandler, IUIContextEventHandler
 {
+    public bool HandleEvent(UIContext context, EditorUIEvent eventData)
+    {
+        // check if name changed
+        if (eventData.IsChangeFromChild && eventData.origin == context.children.Skip(1).FirstOrDefault()) {
+            context.annotation = null;
+        }
+        return true;
+    }
+
     public void OnIMGUI(UIContext context)
     {
         var rset = context.Get<RequestSet>();
@@ -270,8 +306,17 @@ public class RequestSetEditor : IObjectUIHandler
 }
 
 [ObjectImguiHandler(typeof(RcolGroup))]
-public class RcolGroupEditor : IObjectUIHandler
+public class RcolGroupEditor : IObjectUIHandler, IUIContextEventHandler
 {
+    public bool HandleEvent(UIContext context, EditorUIEvent eventData)
+    {
+        // check if name changed
+        if (eventData.IsChangeFromChild && eventData.origin == context.children.FirstOrDefault()) {
+            context.annotation = null;
+        }
+        return true;
+    }
+
     public void OnIMGUI(UIContext context)
     {
         if (context.children.Count == 0) {
@@ -284,6 +329,7 @@ public class RcolGroupEditor : IObjectUIHandler
             context.AddChild<RcolGroup, List<RcolShape>>("ExtraShapes", group, new ListHandler(typeof(RcolShape)) { CanCreateRemoveElements = true }, getter: (i) => i!.ExtraShapes);
         }
 
+        context.annotation ??= context.Get<RcolGroup>().Info.Name;
         if (AppImguiHelpers.CopyableTreeNode<RcolGroup>(context, out var pasted)) {
             context.ShowChildrenUI();
             ImGui.TreePop();
@@ -300,8 +346,17 @@ public class RcolGroupEditor : IObjectUIHandler
 }
 
 [ObjectImguiHandler(typeof(RcolShape))]
-public class RcolShapeEditor : IObjectUIHandler
+public class RcolShapeEditor : IObjectUIHandler, IUIContextEventHandler
 {
+    public bool HandleEvent(UIContext context, EditorUIEvent eventData)
+    {
+        // check if name changed
+        if (eventData.IsChangeFromChild && eventData.origin == context.children.FirstOrDefault()) {
+            context.annotation = null;
+        }
+        return true;
+    }
+
     public void OnIMGUI(UIContext context)
     {
         if (context.children.Count == 0) {
@@ -333,6 +388,7 @@ public class RcolShapeEditor : IObjectUIHandler
                 setter: (i, v) => i.DefaultInstance = v);
         }
 
+        context.annotation ??= context.Get<RcolShape>().Info.Name;
         if (AppImguiHelpers.CopyableTreeNode<RcolShape>(context)) {
             context.ShowChildrenUI();
             ImGui.TreePop();

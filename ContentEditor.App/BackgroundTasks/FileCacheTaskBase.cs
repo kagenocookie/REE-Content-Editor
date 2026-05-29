@@ -34,7 +34,7 @@ public abstract class FileCacheTaskBase : IBackgroundTask
     protected abstract string FilterPattern { get; }
     protected abstract string FileExtension { get; }
 
-    public unsafe void Execute(CancellationToken token = default)
+    public Task Execute(CancellationToken token = default)
     {
         totalFiles = Workspace.ListFile?.FilterAllFiles(FilterPattern).Length ?? 1;
         filesProcessed = 0;
@@ -52,7 +52,7 @@ public abstract class FileCacheTaskBase : IBackgroundTask
         var outputDir = Path.GetDirectoryName(outputFilepath);
         if (string.IsNullOrEmpty(outputDir)) {
             Logger.Error("Failed to determine cache output path");
-            return;
+            return Task.CompletedTask;
         }
 
         try {
@@ -61,6 +61,7 @@ public abstract class FileCacheTaskBase : IBackgroundTask
         } catch (Exception e) {
             Logger.Error("Failed to save cache to path " + outputFilepath + ":\n" + e.Message);
         }
+        return Task.CompletedTask;
     }
 
     protected abstract void Serialize(string outputFilepath);
