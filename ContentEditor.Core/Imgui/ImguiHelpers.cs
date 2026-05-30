@@ -670,4 +670,12 @@ public static class ImguiHelpers
         float avail = ImGui.GetContentRegionAvail().X;
         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + avail - width);
     }
+    /// <summary>
+    /// Draws an asterisk on the same line.
+    /// </summary>
+    public static void IsRequired()
+    {
+        ImGui.SameLine();
+        ImGui.TextColored(Colors.TextActive, "*");
+    }
 }

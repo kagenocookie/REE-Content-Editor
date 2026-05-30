@@ -8,7 +8,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Github;
-using ContentEditor.App.Imgui.App;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.BackgroundTasks;
 using ContentEditor.Core;
@@ -959,7 +958,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     }
                 }
                 if (ImGui.MenuItem(Lang.Windows.MacroShelf)) {
-                    AddSubwindow(new LuaMacroShelf());
+                    AddUniqueSubwindow(new LuaMacroShelf());
                 }
             }
             ImGui.EndMenu();

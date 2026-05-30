@@ -461,40 +461,24 @@ public class BundleManagementUI : IWindowHandler
             ImGui.SameLine();
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
             if (ImGui.Button($"{AppIcons.SI_GenericDelete2}")) {
-                ImGui.OpenPopup("ConfirmDelete");
+                ImGui.OpenPopup("Confirm Action"u8);
             }
             ImGui.PopStyleColor();
-            ImguiHelpers.Tooltip("Delete file");
+            ImguiHelpers.Tooltip("Delete file"u8);
+            if (node.EntryKey != null) {
+                AppImguiHelpers.ShowActionModal(Lang.General.ConfirmTitle, $"{AppIcons.SI_GenericDelete2}", Colors.IconTertiary,
+                    Lang.Bundles.ConfirmDeleteBundleFile.FormatRef(node.EntryKey, bundle.Name),
+                    () => {
+                        var filePath = bundleManager.ResolvePathToBundleFile(bundle, entryKey);
+                        bundle.RemoveResource(entryKey);
 
-            if (ImGui.BeginPopupModal("ConfirmDelete", ImGuiWindowFlags.AlwaysAutoResize)) {
-                string confirmText = $"Are you sure you want to delete {node.EntryKey} from {bundle.Name}?";
-                var textSize = ImGui.CalcTextSize(confirmText);
-                ImGui.Text(confirmText);
-                ImGui.Separator();
-
-                if (ImGui.Button("Yes", new Vector2(textSize.X / 2, 0))) {
-                    var filePath = bundleManager.ResolvePathToBundleFile(bundle, entryKey);
-
-                    bundle.RemoveResource(entryKey);
-
-                    if (File.Exists(filePath)) {
-                        File.Delete(filePath);
-                    } else {
-                        Logger.Error($"Failed to delete file {filePath}!");
+                        if (File.Exists(filePath)) {
+                            File.Delete(filePath);
+                        } else {
+                            Logger.Error($"Failed to delete file {filePath}!");
+                        }
                     }
-
-                    Logger.Info($"Deleted {entryKey} from {bundle.Name}.");
-                    bundle.Save();
-
-                    ImGui.CloseCurrentPopup();
-                }
-
-                ImGui.SameLine();
-                if (ImGui.Button("No", new Vector2(textSize.X / 2, 0))) {
-                    ImGui.CloseCurrentPopup();
-                }
-
-                ImGui.EndPopup();
+                );
             }
         }
         ImGui.PopID();
