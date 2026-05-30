@@ -1,6 +1,5 @@
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
-using ReeLib;
 using System.Numerics;
 using System.Text.Json;
 
@@ -15,6 +14,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     private string MacroMasterListPath => Path.Combine(AppConfig.Instance.LuaUserPath, "lua_macroshelf_masterlist.json");
     private int selectedTabIDX = 0;
     private string newGroupName = string.Empty;
+    private bool isShowNewGroupMenu = false;
     private class MacroMasterList
     {
         public List<string> Groups { get; set; } = [];
@@ -124,14 +124,23 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
 
         ImGui.InputText("Macro Name", ref macroDraft.Name, 64);
         ImguiHelpers.IsRequired();
-
-        ImGui.InputTextMultiline("Description", ref macroDraft.Description, 128, new Vector2(0, ImGui.GetFrameHeight() * 2));
+        ImGui.InputText("Description", ref macroDraft.Description, 128);
 
         ShowMacroGroupsCombo("Group", ref macroDraft.Group);
 
+        Vector4 color = ImGui.ColorConvertU32ToFloat4(macroDraft.IconColor);
+        if (ImGui.ColorEdit4("##IconColor", ref color, ImGuiColorEditFlags.NoInputs)) {
+            macroDraft.IconColor = ImGui.ColorConvertFloat4ToU32(color);
+        }
+        ImguiHelpers.Tooltip("Icon Color");
+        ImGui.SameLine();
         string fakeComboText = $"{ResolveMacroIcon(macroDraft.Icon)} {macroDraft.Icon}";
+        ImGui.BeginDisabled();
         ImGui.SetNextItemAllowOverlap();
-        ImGui.InputText("##fakeComboInputBox", ref fakeComboText, 64, ImGuiInputTextFlags.ReadOnly); //SILVER: They will never know
+        var itemW = ImGui.CalcItemWidth();
+        ImGui.SetNextItemWidth(itemW - (ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.X));
+        ImGui.InputText("##fakeComboInputBox", ref fakeComboText, 64, ImGuiInputTextFlags.ReadOnly);
+        ImGui.EndDisabled();
         ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight(), ImGui.GetItemRectMin().Y));
         ImGui.SetNextItemAllowOverlap();
         if (ImGui.ArrowButton("##fakeComboDropdown", ImGuiDir.Down)) {
@@ -160,14 +169,10 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
             }
             ImGui.EndPopup();
         }
-        Vector4 color = ImGui.ColorConvertU32ToFloat4(macroDraft.IconColor);
-        if (ImGui.ColorEdit4("Icon Color", ref color)) {
-            macroDraft.IconColor = ImGui.ColorConvertFloat4ToU32(color);
-        }
         ImGui.Checkbox("Game Specific", ref macroDraft.IsGameSpecific);
         ImGui.Separator();
 
-        using (var _ = ImguiHelpers.Disabled((string.IsNullOrWhiteSpace(macroDraft.Path) || string.IsNullOrWhiteSpace(macroDraft.Name)))) {
+        using (var _ = ImguiHelpers.Disabled((string.IsNullOrWhiteSpace(macroDraft.Path) || string.IsNullOrWhiteSpace(macroDraft.Name) || isShowNewGroupMenu))) {
             if (ImGui.Button($"{AppIcons.SI_GenericAdd} Add Macro", new Vector2(-1, 0))) {
                 SaveMacro(macroDraft.ToEntry());
                 macroDraft = new();
@@ -230,8 +235,8 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
 
         foreach (var macro in filteredMacros) {
 
-            ImGui.PushID(macro.Name);
-            ImGui.BeginChild($"MacroCard_{macro.Name}", new Vector2(0, 70), ImGuiChildFlags.Borders);
+            ImGui.PushID(macro.Path);
+            ImGui.BeginChild($"MacroCard_{macro.Path}", new Vector2(0, 70), ImGuiChildFlags.Borders);
 
             ImGui.PushStyleColor(ImGuiCol.Text, ImGui.ColorConvertU32ToFloat4(macro.IconColor));
             ImGui.Text($"{ResolveMacroIcon(macro.Icon!)}");
@@ -240,7 +245,9 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
             ImGui.BeginGroup();
 
             ImGui.Text(macro.Name);
+            ImGui.SameLine();
             ImGui.TextDisabled(macro.Description);
+            ImGui.TextDisabled(macro.Path);
 
             ImGui.EndGroup();
 
@@ -258,14 +265,20 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         }
     }
 
-    private bool ShowMacroGroupsCombo(string label, ref string previewText)
+    private bool ShowMacroGroupsCombo(string label, ref string group)
     {
         bool changed = false;
-        if (ImGui.BeginCombo(label, previewText)) {
+        ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_AddGroup, ref isShowNewGroupMenu, new[] { Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary }, Colors.IconActive);
+        ImguiHelpers.Tooltip("Define a new Group");
+        ImGui.SameLine();
+        var itemW = ImGui.CalcItemWidth();
+        var comboW = ImGui.CalcTextSize($"{AppIcons.SI_GenericClose}").X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X;
+        ImGui.PushItemWidth(itemW - comboW);
+        if (ImGui.BeginCombo(label, group)) {
             foreach (var tab in tabs) {
-                bool isSelected = tab.Name == previewText;
+                bool isSelected = tab.Name == group;
                 if (ImGui.Selectable(tab.Name, isSelected)) {
-                    previewText = tab.Name;
+                    group = tab.Name;
                     changed = true;
                 }
 
@@ -275,20 +288,26 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
             }
             ImGui.EndCombo();
         }
-        // TODO SILVER
-        if (ImGui.InputTextWithHint("New Group", "Press Enter to confirm", ref newGroupName, 64, ImGuiInputTextFlags.EnterReturnsTrue)) {
-            if (!string.IsNullOrWhiteSpace(newGroupName)) {
-                string groupName = newGroupName.Trim();
-
-                if (!tabs.Any(x => x.Name.Equals( groupName, StringComparison.OrdinalIgnoreCase))) {
-                    tabs.Add(new MacroTabItem { Name = groupName });
-                    SaveMacrosMasterList();
+        if (isShowNewGroupMenu) {
+            using (var _ = ImguiHelpers.Disabled(string.IsNullOrWhiteSpace(newGroupName))) {
+                if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
+                    string groupName = newGroupName.Trim();
+                    if (!tabs.Any(x => x.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase))) {
+                        tabs.Add(new MacroTabItem { Name = groupName });
+                        SaveMacrosMasterList();
+                    }
+                    newGroupName = string.Empty;
+                    isShowNewGroupMenu = false;
+                    group = groupName;
+                    changed = true;
                 }
-                newGroupName = string.Empty;
-                changed = true;
+                ImguiHelpers.Tooltip("Add Group");
             }
+            ImGui.SameLine();
+            ImGui.InputTextWithHint("##NewGroup", "Enter new group name here...", ref newGroupName, 64);
+            ImGui.Separator();
         }
-
+        ImGui.PopItemWidth();
         return changed;
     }
     private void ScanForMacros()
