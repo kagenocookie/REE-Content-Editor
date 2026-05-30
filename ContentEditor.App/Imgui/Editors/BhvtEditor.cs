@@ -90,8 +90,7 @@ public class MotFsm2FileEditor : FileEditor, IWorkspaceContainer, IObjectUIHandl
             foreach (var node in bhvt.Nodes) {
                 TranslationService.QueueTranslation(node.Name, lang, (s, t) => {
                     if (s && t != node.Name) {
-                        node.Name = t!;
-                        Handle.Modified = true;
+                        FixedString.OverrideTranslation(node.Name, t!);
                     }
                 });
             }
@@ -267,7 +266,7 @@ public class BHVTNodeEditor : IObjectUIHandler
             context.AddChild<BHVTNode, List<NChild>>("Children", node, new NodeChildrenListHandler(), (f) => f!.Children.Children);
         }
 
-        var show = ImguiHelpers.TreeNodeSuffix(context.label, node.ToString());
+        var show = ImguiHelpers.TreeNodeSuffix(context.label, NodeString(node));
         if (ImGui.BeginPopupContextItem(context.label)) {
             if (ImGui.Selectable("Copy Node")) {
                 VirtualClipboard.CopyToClipboard(node.Clone(), "The object must be pasted over a node's Children list");
@@ -279,6 +278,7 @@ public class BHVTNodeEditor : IObjectUIHandler
             ImGui.TreePop();
         }
     }
+    private static string NodeString(BHVTNode node) => $"[{node.ID}]  {(string.IsNullOrEmpty(node.Name) ? "-" : FixedString.Cached(node.Name))}     C:{node.Children.Count} | S:{node.States.States.Count} | T:{node.Transitions.Transitions.Count}";
 }
 
 [ObjectImguiHandler(typeof(NTransition))]
