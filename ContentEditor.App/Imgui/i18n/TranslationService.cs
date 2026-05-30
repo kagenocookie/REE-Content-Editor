@@ -4,11 +4,11 @@ using ReeLib.Msg;
 
 namespace ContentEditor.App;
 
-public class TranslationService
+public static class TranslationService
 {
     public delegate void TranslationCallback(bool success, string? message);
 
-    public static void QueueTranslation(string sourceText, Language targetLanguage, TranslationCallback callback)
+    public static void QueueTranslation(string sourceText, Language targetLanguage, TranslationCallback callback, Language? sourceLanguage = null)
     {
         if (string.IsNullOrWhiteSpace(sourceText)) {
             callback(true, sourceText);
@@ -20,12 +20,17 @@ public class TranslationService
         }
 
         var task = GetTranslationTask();
-        task.Translate(sourceText, targetLanguage, callback);
+
+        if (sourceLanguage == null && targetLanguage == Language.English) {
+            // game files are generally either japanese or english, so we're very likely doing jp->en in such a case
+            sourceLanguage = Language.Japanese;
+        }
+        task.Translate(sourceText, sourceLanguage, targetLanguage, callback);
     }
 
-    public static void QueueTranslation(TranslatableBase sourceText, Language targetLanguage, TranslationCallback callback)
+    public static void QueueTranslation(TranslatableBase sourceText, Language targetLanguage, TranslationCallback callback, Language? sourceLanguage = null)
     {
-        QueueTranslation(sourceText.String, targetLanguage, callback);
+        QueueTranslation(sourceText.String, targetLanguage, callback, sourceLanguage);
     }
 
     private static AsyncTranslationTask GetTranslationTask()

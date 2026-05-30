@@ -13,13 +13,17 @@ public class AsyncTranslationTask : IBackgroundTask
     public string Status { get; private set; }
     public TaskStatus TaskStatus { get; set; }
 
-    private sealed record class PendingTranslation(string text, string? language, Language targetLanguage, TranslationService.TranslationCallback callback);
+    private sealed record class PendingTranslation(string text, Language? sourceLang, Language targetLanguage, TranslationService.TranslationCallback callback, int batchGrouping = -1)
+    {
+        public bool IsCompatibleForBatch(PendingTranslation other) => other.sourceLang == sourceLang && other.targetLanguage == targetLanguage && batchGrouping == other.batchGrouping;
+    }
 
     private static string GetTranslationCacheFilepath(Language lang) => Path.Combine(AppConfig.Instance.CacheFilepath.Get() ?? Path.Combine(AppConfig.AppDataPath, "cache"), "translations", lang.ToString() + ".json");
 
+    private static string LangToIso2Code(Language? lang) => lang == null ? "auto" : LangToIso2Code(lang.Value);
     private static string LangToIso2Code(Language lang) => lang switch {
         Language.English => "en",
-        Language.Japanese => "jp",
+        Language.Japanese => "ja",
         Language.French => "fr",
         Language.German => "de",
         Language.Bulgarian => "bg",
@@ -90,7 +94,7 @@ public class AsyncTranslationTask : IBackgroundTask
         _translationsCache.Clear();
     }
 
-    public void Translate(string text, Language targetLanguage, TranslationService.TranslationCallback callback)
+    public void Translate(string text, Language? sourceLanguage, Language targetLanguage, TranslationService.TranslationCallback callback)
     {
         if (string.IsNullOrWhiteSpace(text)) {
             callback(true, text);
@@ -102,22 +106,25 @@ public class AsyncTranslationTask : IBackgroundTask
         }
 
         requestedTranslations++;
-        requests.Add(new PendingTranslation(text, null, targetLanguage, callback));
+        requests.Add(new PendingTranslation(text, sourceLanguage, targetLanguage, callback));
     }
 
     private const int MaxBatchTextLength = 1000;
+    private const string TranslationSeparatorMarker = "\n|||\n";
 
     private static Task? _saveCacheTask;
 
     public async Task Execute(CancellationToken token = default)
     {
         // give a bit of a delay so the inital task dispatcher has time to queue any initial TL requests
-        Thread.Sleep(50);
+        await Task.Delay(50, token);
         Status = "Fetching translations";
+        int nextBatchGroupId = 0;
         List<PendingTranslation> batch = new();
         while (TaskStatus == TaskStatus.Running && !token.IsCancellationRequested && requests.TryTake(out var task)) {
             batch.Add(task);
             var batchLen = task.text.Length;
+            var sourceLang = task.sourceLang;
             var lang = task.targetLanguage;
             var texts = _translationsCache[lang];
             if (texts.TryGetValue(task.text, out var cachedResult)) {
@@ -126,24 +133,24 @@ public class AsyncTranslationTask : IBackgroundTask
             }
 
             // attempt to batch up more than one at a time
-            while (batchLen < MaxBatchTextLength && requests.TryTake(out task)) {
-                var nextLen = batchLen + task.text.Length + 5;
-                if (task.targetLanguage != lang || nextLen > MaxBatchTextLength) {
-                    requests.Add(task);
+            while (batchLen < MaxBatchTextLength && requests.TryTake(out var nextTask)) {
+                var nextLen = batchLen + nextTask.text.Length + TranslationSeparatorMarker.Length;
+                if (nextLen > MaxBatchTextLength || !nextTask.IsCompatibleForBatch(task)) {
+                    requests.Add(nextTask);
                     break;
                 }
 
-                if (texts.TryGetValue(task.text, out cachedResult)) {
-                    task.callback.Invoke(true, cachedResult);
+                if (texts.TryGetValue(nextTask.text, out cachedResult)) {
+                    nextTask.callback.Invoke(true, cachedResult);
                     continue;
                 }
 
                 batchLen = nextLen;
-                batch.Add(task);
+                batch.Add(nextTask);
             }
 
-            var combinedText = string.Join("\n|||\n", batch.Select(b => b.text));
-            var combinedTranslation = await GoogleTranslate.Translate(null, LangToIso2Code(lang), combinedText);
+            var combinedText = string.Join(TranslationSeparatorMarker, batch.Select(b => b.text));
+            var combinedTranslation = await GoogleTranslate.Translate(LangToIso2Code(sourceLang), LangToIso2Code(lang), combinedText);
             var translations = combinedTranslation.Split("|||", StringSplitOptions.RemoveEmptyEntries|StringSplitOptions.TrimEntries);
             if (translations.Length != batch.Count) {
                 // well, what now?
@@ -152,25 +159,40 @@ public class AsyncTranslationTask : IBackgroundTask
                 continue;
             }
 
+            var didAnyTranslation = false;
+            for (int i = 0; i < batch.Count; i++) {
+                if (translations[i] != batch[i].text) {
+                    didAnyTranslation = true;
+                }
+            }
+            if (!didAnyTranslation && sourceLang == null) {
+                // maybe it didn't correctly detect source language, re-queue half batches
+                for (int i = 0; i < batch.Count; i++) {
+                    if (i == batch.Count / 2) {
+                        nextBatchGroupId++;
+                    }
+                    var b = batch[i];
+                    requests.Add(new PendingTranslation(b.text, b.sourceLang, b.targetLanguage, b.callback, nextBatchGroupId));
+                }
+                nextBatchGroupId++;
+                continue;
+            }
+
             for (int i = 0; i < batch.Count; i++) {
                 var batchTask = batch[i];
                 var translated = translations[i];
+                if (translated == batchTask.text) {
+                    texts[batchTask.text] = translated;
+                }
                 texts[batchTask.text] = translated;
                 texts[translated] = translated;
                 batchTask.callback.Invoke(true, translated);
             }
             batch.Clear();
-            if (_saveCacheTask == null || _saveCacheTask.Status >= TaskStatus.RanToCompletion) {
+            if (_saveCacheTask == null || _saveCacheTask.IsCompleted) {
                 _saveCacheTask = Task.Run(() => SaveTranslationCacheDelayed(lang));
             }
             processedTranslations++;
-        }
-
-        // slightly delay it to hopefully catch any extra thread timing issues
-        Thread.Sleep(10);
-        if (TaskStatus == TaskStatus.Running && !requests.IsEmpty) {
-            Logger.Warn("We may have missed some translations???");
-            // await Execute(token);
         }
     }
 

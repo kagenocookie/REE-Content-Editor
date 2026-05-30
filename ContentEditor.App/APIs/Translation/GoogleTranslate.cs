@@ -29,6 +29,8 @@ public class GoogleTranslate
             if (item == null) continue;
             if (item.GetValueKind() == JsonValueKind.Array && item.AsArray().Count > 0 && item[0]?.GetValueKind() == JsonValueKind.String) {
                 sb.Append(item[0]!.GetValue<string>()).Append(' ');
+            } else if (item.GetValueKind() == JsonValueKind.String) {
+                sb.Append(item.GetValue<string>()).Append(' ');
             }
         }
 
