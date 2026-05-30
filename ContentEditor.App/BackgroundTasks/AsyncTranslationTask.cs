@@ -165,10 +165,10 @@ public class AsyncTranslationTask : IBackgroundTask
                     didAnyTranslation = true;
                 }
             }
-            if (!didAnyTranslation && sourceLang == null) {
+            if (!didAnyTranslation && sourceLang == null && batch.Count > 1) {
                 // maybe it didn't correctly detect source language, re-queue half batches
                 for (int i = 0; i < batch.Count; i++) {
-                    if (i == batch.Count / 2) {
+                    if (i == batch.Count / 2 + 1) {
                         nextBatchGroupId++;
                     }
                     var b = batch[i];
