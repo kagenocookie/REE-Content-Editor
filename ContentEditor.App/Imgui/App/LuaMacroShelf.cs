@@ -11,20 +11,24 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     public int FixedID => -10227;
     private WindowData data = null!;
     protected UIContext context = null!;
-    private string MacroMasterListPath => Path.Combine(AppConfig.Instance.LuaUserPath, "lua_macroshelf_masterlist.json");
+    private static string MacroMasterListPath => Path.Combine(AppConfig.Instance.LuaUserPath, "lua_macroshelf_masterlist.json");
+    private static string MacroGlobalFolderPath => Path.Combine(AppConfig.Instance.LuaUserPath, "macros", "global");
+    private static string MacroGameFolderPath => Path.Combine(AppConfig.Instance.LuaUserPath, "macros", EditorWindow.CurrentWindow!.Workspace.Game.name);
     private int selectedTabIDX = 0;
     private string newGroupName = string.Empty;
     private bool isShowNewGroupMenu = false;
+    private string[] macroIconsArray = [];
     private class MacroMasterList
     {
-        public List<string> Groups { get; set; } = [];
+        public List<string> Groups { get; set; } = [
+            "General",
+        ];
         public List<string> MacroFiles { get; set; } = [];
     }
     private class MacroTabItem
     {
         public required string Name { get; set; }
     }
-
     private readonly List<MacroTabItem> tabs = [];
     public class MacroEntry
     {
@@ -48,7 +52,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         public bool IsGameSpecific = true;
 
         public MacroEntry ToEntry() => new MacroEntry {
-            Path = Path,
+            Path = GetLuaScriptRelativePath(Path),
             Name = Name,
             Description = Description,
             Group = Group,
@@ -58,7 +62,6 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         };
     }
     private MacroDraft macroDraft = new();
-    private string[]? macroIconsArray;
     private enum SidebarMenu
     {
         None,
@@ -99,28 +102,32 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     }
     private void ShowSidebar()
     {
-        SidebarToggle($"{AppIcons.SI_GenericAdd}", SidebarMenu.NewMacro, "Create a new Macro");
+        SidebarToggle($"{AppIcons.SI_GenericAdd}", SidebarMenu.NewMacro);
+        ImguiHelpers.Tooltip("Create a new Macro"u8);
         if (ImGui.Button($"{AppIcons.SI_Update}")) {
             ScanForMacros();
         }
-        ImguiHelpers.Tooltip("Rescan macros folder"u8);
+        ImguiHelpers.Tooltip("Re-scan Macros folder"u8);
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, new[] { Colors.IconSecondary, Colors.IconPrimary })) {
             FileSystemUtils.ShowFileInExplorer(AppConfig.Instance.LuaUserPath);
         }
         ImguiHelpers.Tooltip("Open Macros folder in File Explorer"u8);
-        SidebarToggle($"{AppIcons.SI_Settings}", SidebarMenu.MacroSettings, "Macro Settings");
+        //SidebarToggle($"{AppIcons.SI_Settings}", SidebarMenu.MacroSettings, "Macro Settings");
     }
-    private void SidebarToggle(string icon, SidebarMenu activeMenu, string tooltip)
+    private void SidebarToggle(string icon, SidebarMenu activeMenu)
     {
         bool isActive = activeSidebarMenu == activeMenu;
         if (ImguiHelpers.ToggleButton($"{icon}", ref isActive, Colors.IconActive)) { activeSidebarMenu = isActive ? activeMenu : SidebarMenu.None; }
-        ImguiHelpers.Tooltip(tooltip);
     }
     private void ShowNewMacroMenu()
     {
         ImGui.BeginChild("NewMacro", new Vector2(450, 0));
-        AppImguiHelpers.InputFilepath("LUA Script Path"u8, ref macroDraft.Path, FileFilters.LuaFile);
+        AppImguiHelpers.InputFilepath("LUA Script Path"u8, ref macroDraft.Path, FileFilters.LuaFile);//TODO SILVER: This should open to the user's lua folder
         ImguiHelpers.IsRequired();
+        bool isValidLuaPath = string.IsNullOrWhiteSpace(macroDraft.Path) || IsPathInsideLuaFolder(macroDraft.Path);
+        if (!isValidLuaPath) {
+            ImGui.TextColored(Colors.IconTertiary, "Lua file must be inside the User Lua folder!");
+        }
 
         ImGui.InputText("Macro Name", ref macroDraft.Name, 64);
         ImguiHelpers.IsRequired();
@@ -171,8 +178,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         }
         ImGui.Checkbox("Game Specific", ref macroDraft.IsGameSpecific);
         ImGui.Separator();
-
-        using (var _ = ImguiHelpers.Disabled((string.IsNullOrWhiteSpace(macroDraft.Path) || string.IsNullOrWhiteSpace(macroDraft.Name) || isShowNewGroupMenu))) {
+        using (var _ = ImguiHelpers.Disabled((string.IsNullOrWhiteSpace(macroDraft.Path) || string.IsNullOrWhiteSpace(macroDraft.Name) || isShowNewGroupMenu || !isValidLuaPath))) {
             if (ImGui.Button($"{AppIcons.SI_GenericAdd} Add Macro", new Vector2(-1, 0))) {
                 SaveMacro(macroDraft.ToEntry());
                 macroDraft = new();
@@ -183,6 +189,51 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator(ImguiHelpers.GetColor(ImGuiCol.Separator), 2, 0, ImGui.GetContentRegionAvail().Y);
         ImGui.SameLine();
+    }
+    private bool ShowMacroGroupsCombo(string label, ref string group)
+    {
+        bool changed = false;
+        ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_AddGroup, ref isShowNewGroupMenu, new[] { Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary }, Colors.IconActive);
+        ImguiHelpers.Tooltip("Define a new Group");
+        ImGui.SameLine();
+        var itemW = ImGui.CalcItemWidth();
+        var comboW = ImGui.CalcTextSize($"{AppIcons.SI_GenericClose}").X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X;
+        ImGui.PushItemWidth(itemW - comboW);
+        if (ImGui.BeginCombo(label, group)) {
+            foreach (var tab in tabs) {
+                bool isSelected = tab.Name == group;
+                if (ImGui.Selectable(tab.Name, isSelected)) {
+                    group = tab.Name;
+                    changed = true;
+                }
+
+                if (isSelected) {
+                    ImGui.SetItemDefaultFocus();
+                }
+            }
+            ImGui.EndCombo();
+        }
+        if (isShowNewGroupMenu) {
+            using (var _ = ImguiHelpers.Disabled(string.IsNullOrWhiteSpace(newGroupName))) {
+                if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
+                    string groupName = newGroupName.Trim();
+                    if (!tabs.Any(x => x.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase))) {
+                        tabs.Add(new MacroTabItem { Name = groupName });
+                        SaveMacrosMasterList();
+                    }
+                    newGroupName = string.Empty;
+                    isShowNewGroupMenu = false;
+                    group = groupName;
+                    changed = true;
+                }
+                ImguiHelpers.Tooltip("Add Group");
+            }
+            ImGui.SameLine();
+            ImGui.InputTextWithHint("##NewGroup", "Enter new group name here...", ref newGroupName, 64);
+            ImGui.Separator();
+        }
+        ImGui.PopItemWidth();
+        return changed;
     }
     private void ShowMacroSettingsMenu()
     {
@@ -235,20 +286,16 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
 
         foreach (var macro in filteredMacros) {
 
-            ImGui.PushID(macro.Path);
-            ImGui.BeginChild($"MacroCard_{macro.Path}", new Vector2(0, 70), ImGuiChildFlags.Borders);
+            ImGui.PushID(macro.Name);
+            ImGui.BeginChild($"MacroCard_{macro.Name}", new Vector2(0, 70), ImGuiChildFlags.Borders);
 
             ImGui.PushStyleColor(ImGuiCol.Text, ImGui.ColorConvertU32ToFloat4(macro.IconColor));
             ImGui.Text($"{ResolveMacroIcon(macro.Icon!)}");
             ImGui.PopStyleColor();
             ImGui.SameLine();
             ImGui.BeginGroup();
-
             ImGui.Text(macro.Name);
-            ImGui.SameLine();
             ImGui.TextDisabled(macro.Description);
-            ImGui.TextDisabled(macro.Path);
-
             ImGui.EndGroup();
 
             ImGui.SameLine(ImGui.GetContentRegionAvail().X - (ImGui.CalcTextSize($"{AppIcons.SI_GenericClose}").X * 2 + ImGui.GetStyle().FramePadding.X * 3 + ImGui.GetStyle().ItemSpacing.X));
@@ -264,90 +311,19 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
             ImGui.PopID();
         }
     }
-
-    private bool ShowMacroGroupsCombo(string label, ref string group)
-    {
-        bool changed = false;
-        ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_AddGroup, ref isShowNewGroupMenu, new[] { Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary }, Colors.IconActive);
-        ImguiHelpers.Tooltip("Define a new Group");
-        ImGui.SameLine();
-        var itemW = ImGui.CalcItemWidth();
-        var comboW = ImGui.CalcTextSize($"{AppIcons.SI_GenericClose}").X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X;
-        ImGui.PushItemWidth(itemW - comboW);
-        if (ImGui.BeginCombo(label, group)) {
-            foreach (var tab in tabs) {
-                bool isSelected = tab.Name == group;
-                if (ImGui.Selectable(tab.Name, isSelected)) {
-                    group = tab.Name;
-                    changed = true;
-                }
-
-                if (isSelected) {
-                    ImGui.SetItemDefaultFocus();
-                }
-            }
-            ImGui.EndCombo();
-        }
-        if (isShowNewGroupMenu) {
-            using (var _ = ImguiHelpers.Disabled(string.IsNullOrWhiteSpace(newGroupName))) {
-                if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
-                    string groupName = newGroupName.Trim();
-                    if (!tabs.Any(x => x.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase))) {
-                        tabs.Add(new MacroTabItem { Name = groupName });
-                        SaveMacrosMasterList();
-                    }
-                    newGroupName = string.Empty;
-                    isShowNewGroupMenu = false;
-                    group = groupName;
-                    changed = true;
-                }
-                ImguiHelpers.Tooltip("Add Group");
-            }
-            ImGui.SameLine();
-            ImGui.InputTextWithHint("##NewGroup", "Enter new group name here...", ref newGroupName, 64);
-            ImGui.Separator();
-        }
-        ImGui.PopItemWidth();
-        return changed;
-    }
     private void ScanForMacros()
     {
         try {
-            macros.Clear();
             tabs.Clear();
-            MacroMasterList master;
-            string globalMacroPath = GetMacroFolderPath(false);
-            string gameMacroPath = GetMacroFolderPath(true);
-            Directory.CreateDirectory(globalMacroPath);
-            Directory.CreateDirectory(gameMacroPath);
-
-            if (File.Exists(MacroMasterListPath)) {
-                master = JsonSerializer.Deserialize<MacroMasterList>( File.ReadAllText(MacroMasterListPath) ) ?? new MacroMasterList();
-            } else {
-                master = new MacroMasterList();
+            macros.Clear();
+            var master = new MacroMasterList();
+            foreach (string folder in new[] { MacroGlobalFolderPath, MacroGameFolderPath }) {
+                Directory.CreateDirectory(folder);
+                LoadMacrosFromFolder(folder, master);
             }
-
-            LoadMacrosFromFolder(globalMacroPath, master);
-            LoadMacrosFromFolder(gameMacroPath, master);
-
-            if (master.Groups.Count == 0) {
-                master.Groups.Add("General");
+            foreach (string groupName in master.Groups.Distinct()) {
+                tabs.Add(new MacroTabItem { Name = groupName });
             }
-
-            foreach (string groupName in master.Groups) {
-                bool exists = false;
-                foreach (var tab in tabs) {
-                    if (tab.Name == groupName) {
-                        exists = true;
-                        break;
-                    }
-                }
-
-                if (!exists) {
-                    tabs.Add(new MacroTabItem { Name = groupName });
-                }
-            }
-
             SaveMacrosMasterList();
         } catch (Exception e) {
             Logger.Error($"Failed to load macros: {e}");
@@ -357,20 +333,17 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     {
         foreach (string filePath in Directory.GetFiles(folder, "*.json")) {
             try {
-                var macro = JsonSerializer.Deserialize<MacroEntry>( File.ReadAllText(filePath));
-
+                var macro = JsonSerializer.Deserialize<MacroEntry>(File.ReadAllText(filePath));
                 if (macro != null) {
                     macros.Add(macro);
-                    string relativePath = Path.GetRelativePath( AppConfig.Instance.LuaUserPath, filePath);
 
+                    string relativePath = GetLuaScriptRelativePath(filePath);
                     if (!master.MacroFiles.Contains(relativePath)) {
                         master.MacroFiles.Add(relativePath);
                     }
-
                     if (!string.IsNullOrWhiteSpace(macro.Group) && !master.Groups.Contains(macro.Group)) {
                         master.Groups.Add(macro.Group);
                     }
-
                 }
             } catch (Exception e) {
                 Logger.Error($"Failed to load macro file {filePath}: {e}");
@@ -403,7 +376,6 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         };
         File.WriteAllText(MacroMasterListPath, JsonSerializer.Serialize(master, JsonConfig.jsonOptions));
     }
-
     private static string[] BuildMacroIconsArray()
     {
         return typeof(AppIcons).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static).Where(f => f.Name.StartsWith("SI_")).Select(f => f.Name).ToArray();
@@ -413,13 +385,19 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         var field = typeof(AppIcons).GetField(iconName);
         return field?.GetValue(null)?.ToString() ?? $"{AppIcons.SI_LUA}";
     }
-    private static string GetMacroFolderPath(bool gameSpecific)
-    {
-        return gameSpecific ? Path.Combine(AppConfig.Instance.LuaUserPath, "macros", EditorWindow.CurrentWindow!.Workspace.Game.name) : Path.Combine( AppConfig.Instance.LuaUserPath, "macros", "global");
-    }
     private static string GetMacroFilePath(MacroEntry macro)
     {
-        return Path.Combine(GetMacroFolderPath(macro.IsGameSpecific), $"{macro.Name}.json");
+        return Path.Combine(macro.IsGameSpecific ? MacroGameFolderPath : MacroGlobalFolderPath, $"{macro.Name}.json");
+    }
+    private static bool IsPathInsideLuaFolder(string path)
+    {
+        string luaRoot = Path.GetFullPath(AppConfig.Instance.LuaUserPath);
+        string fullPath = Path.GetFullPath(path);
+        return fullPath.StartsWith(luaRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) || fullPath.Equals(luaRoot, StringComparison.OrdinalIgnoreCase);
+    }
+    private static string GetLuaScriptRelativePath(string path)
+    {
+        return Path.GetRelativePath(AppConfig.Instance.LuaUserPath, Path.GetFullPath(path));
     }
     public bool RequestClose()
     {
