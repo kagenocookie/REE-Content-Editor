@@ -1,5 +1,6 @@
 using System.Numerics;
 using ContentEditor.App.Graphics;
+using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Tooling.Navmesh;
 using ContentPatcher;
 using ReeLib;
@@ -27,13 +28,15 @@ public class AIMapSection(GameObject gameObject, RszInstance data) : AIMapCompon
     public override IEnumerable<string> StoredResources => Data.Get(RszFieldCache.AIMapSection.Maps).Select(x => RszFieldCache.MapHandle.Resource.Get((RszInstance)x));
 }
 
-public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data) : Component(gameObject, data),
-    IEditableComponent<NavmeshEditor>, IGizmoComponent
+public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data),
+    IEditableComponent<NavmeshEditor>, IGizmoComponent, IScenePickableComponent
 {
     public abstract IEnumerable<string> StoredResources { get; }
 
     private readonly List<AimpFile> files = new();
     public IEnumerable<AimpFile> ActiveFiles => files;
+
+    public override AABB LocalBounds => AABB.Combine(navMeshes.Select(n => n.Value.BoundingBox));
 
     public bool IsEnabled => visibleContentTypes != 0;
 
@@ -42,6 +45,8 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
 
     public NavmeshContentType visibleContentTypes;
     private bool isStale;
+
+    private readonly List<NodeInfo> selectedNodes = new();
 
     protected readonly Dictionary<NavmeshContentType, MeshHandle> navMeshes = new();
     protected Material? waypMaterial;
@@ -54,6 +59,12 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
     protected Material? boundsMaterial;
     protected Material? aabbsMaterial;
     protected Material? wallsMaterial;
+    protected Material? selectedMaterial;
+
+    internal override void Render(RenderContext context)
+    {
+        // the actual rendering is done via gizmos, we just need to be a Renderable to support click picking
+    }
 
     public void SetOverrideFile(AimpFile? file)
     {
@@ -114,12 +125,29 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
         if (isStale) {
             UnloadMeshes();
             isStale = false;
+            RecomputeWorldAABB();
         }
 
         if (overrideFile.mainContent != null) UpdateContainer(ref gizmo, overrideFile.mainContent);
         if (overrideFile.secondaryContent != null) UpdateContainer(ref gizmo, overrideFile.secondaryContent);
+        UpdateSelectedNodeDisplay(gizmo);
 
         return gizmo;
+    }
+
+    private ContentGroup? GetContentGroup(NavmeshContentType type)
+    {
+        if (overrideFile == null) return null;
+        return type switch {
+            NavmeshContentType.Triangles => overrideFile.mainContent?.contents[0] as ContentGroupTriangle,
+            NavmeshContentType.Boundaries => overrideFile.secondaryContent?.contents.OfType<ContentGroupMapBoundary>().FirstOrDefault(),
+            NavmeshContentType.Walls => overrideFile.secondaryContent?.contents.OfType<ContentGroupMapBoundary>().FirstOrDefault(),
+            NavmeshContentType.AABBs => overrideFile.secondaryContent?.contents.OfType<ContentGroupMapAABB>().FirstOrDefault()
+                ?? overrideFile.mainContent?.contents.OfType<ContentGroupMapAABB>().FirstOrDefault(),
+            NavmeshContentType.Polygons => overrideFile.secondaryContent?.contents[0] as ContentGroupPolygon,
+            NavmeshContentType.Points => overrideFile.mainContent?.contents[0] as ContentGroupMapPoint,
+            _ => null,
+        };
     }
 
     private void UpdateContainer(ref GizmoContainer? gizmo, ContentGroupContainer container)
@@ -174,6 +202,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
         if (!navMeshes.TryGetValue(group, out var mesh)) {
             navMeshes[group] = mesh = new MeshHandle(new MeshResourceHandle(new LineMesh(overrideFile!, container)));
             Scene!.RenderContext.StoreMesh(mesh.Handle);
+            RecomputeWorldAABB();
         }
 
         if (isWayp) {
@@ -197,6 +226,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
             sh.Build(builder);
             navMeshes[NavmeshContentType.Points] = mesh = new MeshHandle(new MeshResourceHandle(sh));
             Scene!.RenderContext.StoreMesh(mesh.Handle);
+            RecomputeWorldAABB();
         }
 
         pointMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "pts").Color("_MainColor", new Color(0xff, 0xff, 0xff, 0xff)).Float("_FadeMaxDistance", 250);
@@ -210,6 +240,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
             navMeshes[NavmeshContentType.Triangles] = mesh = new MeshHandle(new MeshResourceHandle(tri));
             mesh.Handle.Meshes.Add(new LineMesh(tri));
             Scene!.RenderContext.StoreMesh(mesh.Handle);
+            RecomputeWorldAABB();
         }
 
         triangleMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "tris")
@@ -232,6 +263,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
             navMeshes[NavmeshContentType.Polygons] = mesh = new MeshHandle(new MeshResourceHandle(tri));
             mesh.Handle.Meshes.Add(new LineMesh(tri));
             Scene!.RenderContext.StoreMesh(mesh.Handle);
+            RecomputeWorldAABB();
         }
 
         triangleMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "tris")
@@ -252,6 +284,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
             navMeshes[NavmeshContentType.Boundaries] = mesh = new MeshHandle(new MeshResourceHandle(new LineMesh(overrideFile!, container, content)));
 
             Scene!.RenderContext.StoreMesh(mesh.Handle);
+            RecomputeWorldAABB();
         }
 
         boundsMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "bounds")
@@ -292,6 +325,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
             var tri = new ShapeMesh(builder);
             navMeshes[NavmeshContentType.AABBs] = mesh = new MeshHandle(new MeshResourceHandle(tri));
             Scene!.RenderContext.StoreMesh(mesh.Handle);
+            RecomputeWorldAABB();
         }
 
         aabbsMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "aabb")
@@ -305,6 +339,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
             navMeshes[NavmeshContentType.Walls] = mesh = new MeshHandle(new MeshResourceHandle(new TriangleMesh(overrideFile!, container, content)));
             mesh.Handle.Meshes.Add(new LineMesh(mesh.Meshes.First()));
             Scene!.RenderContext.StoreMesh(mesh.Handle);
+            RecomputeWorldAABB();
         }
 
         wallsMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.GizmoVertexColor, "walls")
@@ -319,4 +354,97 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
         gizmo.Mesh(mesh.Meshes.Skip(1).First(), Transform.WorldTransform, triangleMaterial, triangleMaterialObscure);
     }
 
+    private void UpdateSelectedNodeDisplay(GizmoContainer? gizmo)
+    {
+        if (selectedNodes.Count == 0 || overrideFile == null) return;
+
+        selectedMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "selected")
+            .Color("_MainColor", new Color(0xff, 0xff, 0xff, 0x88)).Blend();
+
+        gizmo ??= new GizmoContainer(Scene!, this);
+        gizmo.PushMaterial(selectedMaterial, selectedMaterial, ShapeBuilder.GeometryType.Filled, 5);
+        foreach (var node in selectedNodes) {
+            var group = overrideFile.GetGroupForNode(node);
+            if (group is ContentGroupTriangle triGroup) {
+                if (!this.visibleContentTypes.HasFlag(NavmeshContentType.Triangles)) continue;
+                var triNode = triGroup.Nodes[node.localIndex];
+                var p1 = group.Vertices![triNode.index1];
+                var p2 = group.Vertices[triNode.index2];
+                var p3 = group.Vertices[triNode.index3];
+                var norm = Vector3.Normalize(Vector3.Cross(p2 - p1, p3 - p2)) * 0.01f;
+                gizmo.Cur.Add(new Triangle(p1 + norm, p2 + norm, p3 + norm));
+            } else if (group is ContentGroupPolygon polyGroup) {
+                if (!this.visibleContentTypes.HasFlag(NavmeshContentType.Polygons)) continue;
+                var polyNode = polyGroup.Nodes[node.localIndex];
+                for (int i = 2; i < polyNode.indices.Length; i++) {
+                    var p1 = group.Vertices![polyNode.indices[0]];
+                    var p2 = group.Vertices[polyNode.indices[i - 1]];
+                    var p3 = group.Vertices[polyNode.indices[i]];
+                    var norm = Vector3.Normalize(Vector3.Cross(p2 - p1, p3 - p2)) * 0.01f;
+                    gizmo.Cur.Add(new Triangle(p1 + norm, p2 + norm, p3 + norm));
+                }
+            }
+        }
+        gizmo.PopMaterial();
+    }
+
+    public void HandleSelect(IntersectionInfo info, int contextId, ISceneEditor editor)
+    {
+        selectedNodes.Clear();
+        var type = (NavmeshContentType)contextId;
+        if (!navMeshes.TryGetValue(type, out var meshHandle)) {
+            return;
+        }
+        var mesh = meshHandle.Meshes.ElementAtOrDefault(info.meshIndex);
+        var group = GetContentGroup(type);
+        if (mesh == null || group == null) {
+            return;
+        }
+
+        if (type == NavmeshContentType.Triangles) {
+            var nodeId = info.triangleIndex;
+            var nodeInfo = group.NodeInfos.ElementAtOrDefault(nodeId);
+            if (nodeInfo != null) {
+                selectedNodes.Add(nodeInfo);
+                (editor as IInspectorController)?.Inspector.PrimaryTarget = new InspectorComponentLink(this, nodeInfo);
+            } else {
+                (editor as IInspectorController)?.Inspector.PrimaryTarget = new InspectorComponentLink(this, group);
+            }
+        } else if (type == NavmeshContentType.Polygons) {
+            var polyGroup = (ContentGroupPolygon)group;
+            var nodeId = 0;
+            var curTriIndex = 0;
+            foreach (var polyNode in polyGroup.Nodes) {
+                var polyTriCount = polyNode.indices.Length - 2;
+                if (curTriIndex + polyTriCount > info.triangleIndex) {
+                    break;
+                }
+                curTriIndex += polyTriCount;
+                nodeId++;
+            }
+
+            var nodeInfo = group.NodeInfos.ElementAtOrDefault(nodeId);
+            if (nodeInfo != null) {
+                selectedNodes.Add(nodeInfo);
+                (editor as IInspectorController)?.Inspector.PrimaryTarget = new InspectorComponentLink(this, nodeInfo);
+            } else {
+                (editor as IInspectorController)?.Inspector.PrimaryTarget = new InspectorComponentLink(this, group);
+            }
+        }
+    }
+
+    public void CollectPickables(PickableData data)
+    {
+        if (overrideFile == null) return;
+
+        if (visibleContentTypes.HasFlag(NavmeshContentType.Triangles) && navMeshes.TryGetValue(NavmeshContentType.Triangles, out var mesh)) {
+            var bounds = WorldSpaceBounds;
+            data.TryAdd(this, (int)NavmeshContentType.Triangles, mesh, Transform.WorldTransform, bounds);
+        }
+
+        if (visibleContentTypes.HasFlag(NavmeshContentType.Polygons) && navMeshes.TryGetValue(NavmeshContentType.Polygons, out mesh)) {
+            var bounds = WorldSpaceBounds;
+            data.TryAdd(this, (int)NavmeshContentType.Polygons, mesh, Transform.WorldTransform, bounds);
+        }
+    }
 }

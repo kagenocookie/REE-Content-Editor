@@ -73,6 +73,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
 
     protected override IEnumerable<IVisibilityTarget> GetNodeParentHierarchy(IVisibilityTarget? target)
     {
+        if (target is InspectorComponentLink link) target = link.Component.GameObject;
         if (target is GameObject go) {
             yield return go;
 

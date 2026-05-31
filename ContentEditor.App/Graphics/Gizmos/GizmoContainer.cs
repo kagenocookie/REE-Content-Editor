@@ -178,6 +178,7 @@ public class GizmoContainer : IDisposable
     public void Add(Capsule shape) => shapeStack.Peek().Add(shape);
     public void Add(Cylinder shape) => shapeStack.Peek().Add(shape);
     public void Add(LineSegment shape) => shapeStack.Peek().Add(shape);
+    public void Add(Triangle shape) => shapeStack.Peek().Add(shape);
 
     public GizmoShapeBuilder Cur => shapeStack.Peek();
 

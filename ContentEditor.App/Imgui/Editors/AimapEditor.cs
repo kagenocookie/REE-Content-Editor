@@ -72,11 +72,59 @@ public class NodeDataEditor : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
-        var rset = context.Get<NodeData>();
         if (context.children.Count == 0) {
-            context.AddChild<NodeData, List<NodeInfo>>("Node Info", rset, getter: (i) => i!.Nodes, setter: (i, v) => i.Nodes = v!).AddDefaultHandler<List<NodeInfo>>();
+            var instance = context.Get<NodeData>();
+            context.AddChild<NodeData, List<NodeInfo>>("Node Info", instance, getter: (i) => i!.Nodes, setter: (i, v) => i.Nodes = v!).AddDefaultHandler<List<NodeInfo>>();
         }
 
         context.ShowChildrenUI();
+    }
+}
+
+[ObjectImguiHandler(typeof(NodeInfo))]
+public class NodeInfoHandler : IObjectUIHandler, IUIContextEventHandler
+{
+    public bool HandleEvent(UIContext context, EditorUIEvent eventData)
+    {
+        if (eventData.IsChangeFromChild) {
+            var parentWindow = context.FindHandlerInParents<ObjectInspector>()?.ParentWindow;
+            if (parentWindow is ISceneEditor sceneEditor && sceneEditor.GetScene()?.Root.ActiveEditMode is NavmeshEditor navmeshEditor) {
+                (navmeshEditor.Target as AIMap)?.ResetPreviewGeometry();
+            }
+        }
+        return true;
+    }
+
+    public void OnIMGUI(UIContext context)
+    {
+        if (context.children.Count == 0) {
+            var instance = context.Get<NodeInfo>();
+            context.AddChild<NodeInfo, int>("Index", instance, getter: (i) => i!.index).AddDefaultHandler();
+            context.AddChild<NodeInfo, int>("Group Index", instance, getter: (i) => i!.groupIndex).AddDefaultHandler();
+            context.AddChild<NodeInfo, int>("Local Index", instance, getter: (i) => i!.localIndex).AddDefaultHandler();
+            context.AddChild<NodeInfo, NodeInfoFlags>("Flags", instance, getter: (i) => i!.flags, setter: (i, v) => i.flags = v).AddDefaultHandler();
+            // TODO show exactly the attributes that are actually present in the file - how do we get the file :)?
+            context.AddChild<NodeInfo, GenericFlagsU64>("Attributes", instance, getter: (i) => (GenericFlagsU64)i!.attributes, setter: (i, v) => i.attributes = (ulong)v).AddDefaultHandler();
+
+            var ws = context.GetWorkspace();
+            if (ws?.Env.TypeCache.GetSubclasses("via.navigation.map.NodeUserData").Any(x => x != "via.navigation.map.NodeUserData") == true) {
+                context.AddChild<NodeInfo, RszInstance>(
+                    "User Data",
+                    instance,
+                    new NestedUIHandlerStringSuffixed(new RszClassnamePickerHandler("via.navigation.map.NodeUserData")),
+                    (i) => i!.UserData,
+                    setter: (i, v) => i.UserData = v);
+            }
+
+            context.AddChild<NodeInfo, List<LinkInfo>>("Links", instance, getter: (i) => i!.Links).AddDefaultHandler();
+            context.AddChild<NodeInfo, List<NodeInfo?>>("Pair Nodes", instance, getter: (i) => i!.PairNodes).AddDefaultHandler();
+            context.AddChild("Info", null, new FixedLabelHandler(Lang.EditMode.Navmesh_NodeEditWarning, Colors.Info));
+        }
+
+        if (context.parent?.uiHandler is InspectorComponentLinkHandler) {
+            context.ShowChildrenUI();
+        } else {
+            context.ShowChildrenNestedUI();
+        }
     }
 }

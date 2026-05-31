@@ -104,6 +104,7 @@ public class ShapeBuilder
     public void Add(TaperedCapsule shape) => GetShapeContainer<TaperedCapsule, ShapeBuilderTaperedCapsule>().shapes.Add(shape);
     public void Add(Cylinder shape) => GetShapeContainer<Cylinder, ShapeBuilderCylinder>().shapes.Add(shape);
     public void Add(Cone shape) => GetShapeContainer<Cone, ShapeBuilderCone>().shapes.Add(shape);
+    public void Add(Triangle shape) => GetShapeContainer<Triangle, ShapeBuilderTriangle>().shapes.Add(shape);
     public void AddCircle(Vector3 position, Vector3 forward, float radius)
     {
         GetShapeContainer<(Vector3 pos, Vector3 dir, float radius), ShapeBuilderCircle>().shapes.Add((position, forward, radius));
@@ -769,6 +770,40 @@ public class ShapeBuilder
         {
             int hash = 17;
             foreach (var obj in shapes) hash = (int)HashCode.Combine(hash, obj.start, obj.end);
+            return hash;
+        }
+    }
+
+    public class ShapeBuilderTriangle : ShapeBuilderShapeType<Triangle>
+    {
+        public override void Build(ref int index, ShapeBuilder builder)
+        {
+            if (builder.GeoType == ShapeBuilder.GeometryType.Line) {
+                foreach (var shape in shapes) {
+                    builder.InsertLine(ref index, shape.p0, shape.p1);
+                    builder.InsertLine(ref index, shape.p1, shape.p2);
+                    builder.InsertLine(ref index, shape.p2, shape.p0);
+                }
+            } else if (builder.GeoType == ShapeBuilder.GeometryType.Filled) {
+                foreach (var shape in shapes) {
+                    builder.InsertVertex(ref index, shape.p0);
+                    builder.InsertVertex(ref index, shape.p1);
+                    builder.InsertVertex(ref index, shape.p2);
+                }
+            } else {
+                throw new NotImplementedException();
+            }
+        }
+
+        public override int CalculateVertexCount(ShapeBuilder builder)
+        {
+            return shapes.Count * (builder.GeoType == ShapeBuilder.GeometryType.Line ? 6 : 3);
+        }
+
+        public override int CalculateShapeHash()
+        {
+            int hash = 17;
+            foreach (var obj in shapes) hash = (int)HashCode.Combine(hash, obj.p0, obj.p1, obj.p2);
             return hash;
         }
     }

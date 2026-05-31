@@ -249,7 +249,6 @@ public static class NavmeshGenerator
                 attributes = 0,
                 flags = 0,
                 groupIndex = 0,
-                userdataIndex = 0,
             };
             polyGroup.NodeInfos.Add(nodeInfo);
         }
@@ -280,7 +279,7 @@ public static class NavmeshGenerator
                 // TODO calculate the traverseCost correctly (whatever correctly means here), for now just leaving it at the default edge len value
             }
             if (nodeInfo.Links.Count >= 3) {
-                nodeInfo.flags |= 2;
+                nodeInfo.flags |= NodeInfoFlags.Bit2;
             }
         }
 
@@ -313,7 +312,6 @@ public static class NavmeshGenerator
                     attributes = 0,
                     flags = 0,
                     groupIndex = 0,
-                    userdataIndex = 0,
                 };
                 triGroup.NodeInfos.Add(nodeInfo);
 
@@ -417,7 +415,7 @@ public static class NavmeshGenerator
                     triInfo.edges.traverseCosts[2] = Vector3.DistanceSquared(p3, p1);
                 }
                 if (nodeInfo.Links.Count == 3) {
-                    nodeInfo.flags |= 2;
+                    nodeInfo.flags |= NodeInfoFlags.Bit2;
                 }
             }
         }
