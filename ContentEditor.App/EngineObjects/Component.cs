@@ -1,4 +1,6 @@
 using System.Reflection;
+using ContentEditor.App.Graphics;
+using ContentEditor.App.ImguiHandling;
 using ReeLib;
 
 namespace ContentEditor.App;
@@ -22,6 +24,11 @@ public interface IScenePickableComponent
     /// Populate list of pickable 3D objects.
     /// </summary>
     void CollectPickables(PickableData data);
+    void HandleSelect(IntersectionInfo info, int contextId, ISceneEditor editor) {
+        if (this is Component comp) {
+            (editor as IInspectorController)?.Inspector.PrimaryTarget = comp.GameObject;
+        }
+    }
 }
 
 /// <summary>

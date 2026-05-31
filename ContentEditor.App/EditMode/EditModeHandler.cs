@@ -36,4 +36,8 @@ public abstract class EditModeHandler
     public virtual void DrawMainUI()
     {
     }
+
+    public virtual void DrawToolbarUI()
+    {
+    }
 }

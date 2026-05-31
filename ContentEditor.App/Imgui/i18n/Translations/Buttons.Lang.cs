@@ -38,6 +38,7 @@ public static partial class Lang
         public static readonly FixedString Undo = "Undo";
         public static readonly FixedString Redo = "Redo";
         public static readonly FixedString NewWorkspace = "Open New Workspace";
+        public static readonly FixedString Show_GameObject = "Show GameObject";
 
         public static readonly FixedString CheckUpdates = "Check For Updates";
         public static readonly FixedString CheckForDataUpdate = "Check for updated game data cache";

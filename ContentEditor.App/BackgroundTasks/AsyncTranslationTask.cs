@@ -16,6 +16,7 @@ public class AsyncTranslationTask : IBackgroundTask
     private sealed record class PendingTranslation(string text, Language? sourceLang, Language targetLanguage, TranslationService.TranslationCallback callback, int batchGrouping = -1)
     {
         public bool IsCompatibleForBatch(PendingTranslation other) => other.sourceLang == sourceLang && other.targetLanguage == targetLanguage && batchGrouping == other.batchGrouping;
+        public override string ToString() => $"{text} [{sourceLang}=>{targetLanguage}]";
     }
 
     private static string GetTranslationCacheFilepath(Language lang) => Path.Combine(AppConfig.Instance.CacheFilepath.Get() ?? Path.Combine(AppConfig.AppDataPath, "cache"), "translations", lang.ToString() + ".json");
@@ -181,9 +182,6 @@ public class AsyncTranslationTask : IBackgroundTask
             for (int i = 0; i < batch.Count; i++) {
                 var batchTask = batch[i];
                 var translated = translations[i];
-                if (translated == batchTask.text) {
-                    texts[batchTask.text] = translated;
-                }
                 texts[batchTask.text] = translated;
                 texts[translated] = translated;
                 batchTask.callback.Invoke(true, translated);

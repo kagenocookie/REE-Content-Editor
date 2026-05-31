@@ -138,3 +138,59 @@ public class CsharpFlagsEnumFieldHandler<T, TUnderlying>() : IObjectUIHandler
         ImguiHelpers.EndRect(2);
     }
 }
+
+
+public class CsharpEnumRadioHandler : IObjectUIHandler
+{
+    private Type enumType;
+    private EnumData data;
+
+    public bool Inline { get; set; } = true;
+
+    private class EnumData
+    {
+        public required string[] Labels { get; init; }
+        public required object[] Values { get; init; }
+    }
+    private static readonly Dictionary<Type, EnumData> Datas = new();
+
+    public CsharpEnumRadioHandler(Type enumType, Dictionary<object, string>? filteredValues = null)
+    {
+        this.enumType = enumType;
+        if (filteredValues != null) {
+            data = new EnumData() {
+                Values = filteredValues.OrderBy(kv => kv.Key).Select(kv => kv.Key).ToArray(),
+                Labels = filteredValues.OrderBy(kv => kv.Key).Select(kv => kv.Value).ToArray(),
+            };
+            return;
+        }
+        if (!Datas.TryGetValue(enumType, out data!)) {
+            var labels = enumType.GetEnumNames();
+            Datas[enumType] = data = new EnumData() {
+                Labels = labels,
+                Values = new object[labels.Length]
+            };
+            var it = enumType.GetEnumValues().GetEnumerator();
+            for (int i = 0; i < labels.Length; ++i) {
+                it.MoveNext();
+                data.Values[i] = it.Current;
+            }
+        }
+    }
+
+    public void OnIMGUI(UIContext context)
+    {
+        var selected = context.GetRaw();
+        ImGui.PushID(context.label);
+        ImGui.Text(context.label);
+        for (int i = 0; i < data.Labels.Length; i++) {
+            if (Inline) ImGui.SameLine();
+            var opt = data.Values[i];
+            var label = data.Labels[i];
+            if (ImGui.RadioButton(label, opt.Equals(selected))) {
+                UndoRedo.RecordSet(context, opt);
+            }
+        }
+        ImGui.PopID();
+    }
+}

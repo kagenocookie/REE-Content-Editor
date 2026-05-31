@@ -365,6 +365,14 @@ public class UIContext
         }
     }
 
+    public void ShowChildrenUI(int startingIndex, int endIndex = int.MaxValue)
+    {
+        endIndex = Math.Min(endIndex, children.Count);
+        for (int i = startingIndex; i < endIndex; i++) {
+            children[i].ShowUI();
+        }
+    }
+
     public void ShowChildrenNestedUI()
     {
         if (ImguiHelpers.TreeNodeSuffix(label, GetRaw()?.ToString() ?? "")) {

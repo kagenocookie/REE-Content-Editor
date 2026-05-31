@@ -260,20 +260,19 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         var window = SceneManager.Window as EditorWindow;
         if (window == null) return;
         var editorWnd = window.GetSceneEditorWindows(this).FirstOrDefault();
-        if (editorWnd == null) {
+        var editor = editorWnd?.Handler as ISceneEditor;
+        if (editorWnd == null || editor == null) {
             return;
         }
 
-        var hits = new List<(PickableData.PickItem item, float distance)>();
+        var hits = new List<(PickableData.PickItem item, IntersectionInfo info)>();
         var originPos = ActiveCamera.Transform.Position;
         foreach (var candidate in pickData.Candidates) {
             // verify if it's an actual match, since raw Candidates only pass a broad AABB check
             var intersection = candidate.mesh.Handle.GetIntersection(ray, candidate.matrix);
-            if (intersection.X == float.MinValue) continue;
+            if (!intersection.IsHit) continue;
 
-            // see if it's closer than our closest match so far
-            var distance = (intersection - originPos).LengthSquared();
-            hits.Add((candidate, distance));
+            hits.Add((candidate, intersection));
         }
 
         if (hits.Count == 0) {
@@ -281,7 +280,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
             return;
         }
 
-        hits.Sort((a, b) => a.distance.CompareTo(b.distance));
+        hits.Sort((a, b) => a.info.distanceSquared.CompareTo(b.info.distanceSquared));
         //for (int i = 0; i < hits.Count; i++) {
         //    var (item, distance) = hits[i];
         //    var go = item.context.GameObject;
@@ -300,8 +299,15 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
         }
         lastClickPos = viewportPos;
 
-        var target = hits[pickCycleIDX].item.context.GameObject;
-        window.InvokeFromUIThread(() => (editorWnd.Handler as IInspectorController)?.Inspector.PrimaryTarget = target);
+        var hit = hits[pickCycleIDX];
+        if (hit.item.context is IScenePickableComponent pickable) {
+            window.InvokeFromUIThread(() => {
+                pickable.HandleSelect(hit.info, hit.item.contextId, editor);
+            });
+        } else {
+            // this probably shouldn't happen with the current implementation but just in case
+            window.InvokeFromUIThread(() => (editor as IInspectorController)?.Inspector.PrimaryTarget = hit.item.context.GameObject);
+        }
     }
 
     internal void Render(float deltaTime)

@@ -1,6 +1,13 @@
 {
   "re8": [
     {
+      "Path": "natives/stm/gameflow/master.scn.20",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Main game scene"
+    },
+    {
       "Path": "natives/stm/character/ch",
       "Tags": ["Character"],
       "Comment": "Base game characters"

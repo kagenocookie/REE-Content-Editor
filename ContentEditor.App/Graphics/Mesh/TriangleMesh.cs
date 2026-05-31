@@ -38,7 +38,7 @@ public class TriangleMesh : Mesh
         PrepareMeshVertexBufferData(sourceMesh, submesh, buffer);
     }
 
-    public TriangleMesh(AimpFile file, ContentGroupContainer container, ContentGroupTriangle data)
+    public TriangleMesh(AimpFile file, ContentGroupContainer container, ContentGroupTriangle data, ulong attributesFilter)
     {
         layout = MeshLayout.ColoredPositions;
         Indices = new int[data.NodeCount * 3];
@@ -54,7 +54,17 @@ public class TriangleMesh : Mesh
         for (int i = 0; i < data.NodeCount; ++i) {
             var node = nodes[i];
             var tri = triangles[i];
-            var color = BitConverter.Int32BitsToSingle((int)node.GetColor(file).rgba);
+            float color;
+            if (attributesFilter != 0) {
+                if ((node.attributes & attributesFilter) != 0) {
+                    var col = file.layers![BitOperations.TrailingZeroCount(node.attributes & attributesFilter)].color;
+                    color = BitConverter.UInt32BitsToSingle(col.rgba);
+                } else {
+                    color = BitConverter.UInt32BitsToSingle(0xffffffff);
+                }
+            } else {
+                color = BitConverter.Int32BitsToSingle((int)node.GetColor(file).rgba);
+            }
             var a = verts[tri.index1].Vector3;
             var b = verts[tri.index2].Vector3;
             var c = verts[tri.index3].Vector3;
@@ -65,7 +75,7 @@ public class TriangleMesh : Mesh
         }
     }
 
-    public TriangleMesh(AimpFile file, ContentGroupContainer container, ContentGroupPolygon data)
+    public TriangleMesh(AimpFile file, ContentGroupContainer container, ContentGroupPolygon data, ulong attributesFilter)
     {
         layout = MeshLayout.ColoredPositions;
         var polygons = data.Nodes;
@@ -86,7 +96,17 @@ public class TriangleMesh : Mesh
         for (int i = 0; i < data.NodeCount; ++i) {
             var node = nodes[i];
             var poly = polygons[i];
-            var color = BitConverter.Int32BitsToSingle((int)node.GetColor(file).rgba);
+            float color;
+            if (attributesFilter != 0) {
+                if ((node.attributes & attributesFilter) != 0) {
+                    var col = file.layers![BitOperations.TrailingZeroCount(node.attributes & attributesFilter)].color;
+                    color = BitConverter.UInt32BitsToSingle(col.rgba);
+                } else {
+                    color = BitConverter.UInt32BitsToSingle(0xffffffff);
+                }
+            } else {
+                color = BitConverter.Int32BitsToSingle((int)node.GetColor(file).rgba);
+            }
             for (int x = 2; x < poly.indices.Length; ++x) {
                 var a = verts[poly.indices[0]].Vector3;
                 var b = verts[poly.indices[x - 1]].Vector3;

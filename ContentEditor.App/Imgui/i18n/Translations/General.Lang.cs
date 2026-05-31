@@ -15,5 +15,9 @@ public static partial class Lang
         public static readonly InterpolatedString<string> UnsavedChangesText_SingleFile = "The file {0} has unsaved changes.\nAre you sure you wish to close it?";
 
         public static readonly FixedString FilterInput = "Filter";
+
+        public static readonly IconString WikiLink = new IconString("{0} Documentation Wiki", AppIcons.SI_GenericWiki);
+        public static readonly FixedString WikiLink_NoIcon = $"{AppIcons.SI_GenericWiki}";
+        public static readonly FixedString WikiLink_Tooltip = "Open wiki for usage documentation";
     }
 }

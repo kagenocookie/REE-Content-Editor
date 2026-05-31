@@ -391,11 +391,11 @@ public static class AppImguiHelpers
 
     public static void WikiLinkButton(string link, bool iconOnly = false)
     {
-        if (ImGui.Button(iconOnly ? $"{AppIcons.SI_GenericWiki}" : $"{AppIcons.SI_GenericWiki} Documentation Wiki")) {
+        if (ImGui.Button(iconOnly ? Lang.General.WikiLink_NoIcon : Lang.General.WikiLink)) {
             FileSystemUtils.OpenURL(link);
         }
         if (iconOnly) {
-            ImguiHelpers.Tooltip("Open wiki for usage documentation");
+            ImguiHelpers.Tooltip(Lang.General.WikiLink_Tooltip);
         }
     }
     public enum ActionModalType

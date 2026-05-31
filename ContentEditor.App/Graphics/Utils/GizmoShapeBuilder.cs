@@ -13,6 +13,9 @@ public class GizmoShapeBuilder : IDisposable
     private int lastShapeHash;
 
     public ShapeMesh? mesh;
+    /// <summary>
+    /// The rendering order of this shape within the owning gizmo. Lower priority number is rendered before higher number.
+    /// </summary>
     public int renderPriority;
 
     private static readonly Vector3[] UnitDirections = [Vector3.UnitX, -Vector3.UnitX, Vector3.UnitY, -Vector3.UnitY, Vector3.UnitZ, -Vector3.UnitZ];
@@ -367,6 +370,7 @@ public class GizmoShapeBuilder : IDisposable
     public void Add(TaperedCapsule shape) => builder.Add(shape);
     public void Add(Cylinder shape) => builder.Add(shape);
     public void Add(Cone shape) => builder.Add(shape);
+    public void Add(Triangle shape) => builder.Add(shape);
 
     public void AddCircle(Vector3 position, Vector3 forward, float handleSize) => builder.AddCircle(position, forward, handleSize);
 

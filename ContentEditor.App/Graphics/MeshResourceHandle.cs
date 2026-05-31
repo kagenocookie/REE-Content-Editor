@@ -46,37 +46,40 @@ public sealed class MeshResourceHandle : IDisposable
 
     public override string ToString() => $"[Mesh {HandleID} / {Meshes.Count} submeshes]";
 
-    public Vector3 GetIntersection(Ray ray, in Matrix4x4 worldMatrix)
+    public IntersectionInfo GetIntersection(Ray ray, in Matrix4x4 worldMatrix)
     {
-        var closestTriangleDistance = float.MaxValue;
         Matrix4x4.Invert(worldMatrix, out var invMat);
         var localRay = new Ray() {
             from = Vector3.Transform(ray.from, invMat),
             dir = Vector3.TransformNormal(ray.dir, invMat)
         };
-        var closestVec = new Vector3(float.MinValue);
-        foreach (var mesh in Meshes) {
+        var info = IntersectionInfo.Default;
+        for (int meshIndex = 0; meshIndex < Meshes.Count; meshIndex++) {
+            var mesh = Meshes[meshIndex];
             if (mesh.MeshType != Silk.NET.OpenGL.PrimitiveType.Triangles) continue;
 
             var layoutSize = mesh.layout.VertexSize;
 
-            for (int i = layoutSize * 2; i < mesh.VertexData.Length; i += layoutSize) {
-                var v1 = new Vector3(mesh.VertexData[i - layoutSize * 2 + 0], mesh.VertexData[i - layoutSize * 2 + 1], mesh.VertexData[i - layoutSize * 2 + 2]);
-                var v2 = new Vector3(mesh.VertexData[i - layoutSize * 1 + 0], mesh.VertexData[i - layoutSize * 1 + 1], mesh.VertexData[i - layoutSize * 1 + 2]);
-                var v3 = new Vector3(mesh.VertexData[i - layoutSize * 0 + 0], mesh.VertexData[i - layoutSize * 0 + 1], mesh.VertexData[i - layoutSize * 0 + 2]);
+            for (int i = 0; i < mesh.VertexData.Length; i += layoutSize * 3) {
+                // note: this works because we're never doing indexed mesh/rendering, should iterate through indices otherwise
+                var v1 = new Vector3(mesh.VertexData[i + layoutSize * 0 + 0], mesh.VertexData[i + layoutSize * 0 + 1], mesh.VertexData[i + layoutSize * 0 + 2]);
+                var v2 = new Vector3(mesh.VertexData[i + layoutSize * 1 + 0], mesh.VertexData[i + layoutSize * 1 + 1], mesh.VertexData[i + layoutSize * 1 + 2]);
+                var v3 = new Vector3(mesh.VertexData[i + layoutSize * 2 + 0], mesh.VertexData[i + layoutSize * 2 + 1], mesh.VertexData[i + layoutSize * 2 + 2]);
 
                 if (MathHelpers.IntersectsTriangle(localRay, v1, v2, v3, out var intersection)) {
                     var worldVec = Vector3.Transform(intersection, worldMatrix);
                     var dist = Vector3.DistanceSquared(worldVec, ray.from);
-                    if (dist < closestTriangleDistance) {
-                        closestVec = worldVec;
-                        closestTriangleDistance = dist;
+                    if (dist < info.distanceSquared) {
+                        info.point = worldVec;
+                        info.distanceSquared = dist;
+                        info.meshIndex = meshIndex;
+                        info.triangleIndex = i / layoutSize / 3;
                     }
                 }
             }
         }
 
-        return closestVec;
+        return info;
     }
 
     public void Dispose()
@@ -86,4 +89,18 @@ public sealed class MeshResourceHandle : IDisposable
             mesh.Dispose();
         }
     }
+}
+
+public struct IntersectionInfo
+{
+    public Vector3 point;
+    public float distanceSquared;
+    public int meshIndex;
+    public int triangleIndex;
+
+    public readonly float Distance => MathF.Sqrt(distanceSquared);
+
+    public readonly bool IsHit => point.X != float.MinValue;
+
+    public static readonly IntersectionInfo Default = new IntersectionInfo() { point = new Vector3(float.MinValue), distanceSquared = float.MaxValue };
 }

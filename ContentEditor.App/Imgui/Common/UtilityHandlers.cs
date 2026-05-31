@@ -42,7 +42,7 @@ public class TextHeaderUIHandler(string text, IObjectUIHandler inner) : IObjectU
     }
 }
 
-public class FixedLabelHandler(string text, Vector4 color = default) : IObjectUIHandler
+public class FixedLabelHandler(TranslatableBase text, Vector4 color = default) : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
