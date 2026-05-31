@@ -323,20 +323,17 @@ public class HomeWindow : IWindowHandler
         ImGui.Checkbox("Custom Game", ref customGame);
         ImguiHelpers.Tooltip("Select this if you wish to configure a game outside of the predefined list.\nCustom games may not fully work."u8);
         if (customGame) {
-
             if (!string.IsNullOrEmpty(chosenGame) && !Enum.TryParse<GameName>(chosenGame, out _)) {
                 ImGui.SameLine();
                 ImGui.Button($"{AppIcons.SI_GenericInfo}");
                 ImguiHelpers.TooltipColored("This is a custom defined game. The app may need an upgrade to fully support all files, some files may not load correctly.", Colors.Note);
             }
             ImGui.InputText("Game Short Name", ref chosenGame, 20);
-            ImGui.SameLine();
-            ImGui.TextColored(Colors.TextActive, "*");
+            ImguiHelpers.IsRequired();
             chosenGame = chosenGame.Replace(" ", "");
         } else {
             ImguiHelpers.ValueCombo("##Game", gameNames, gameNameCodes, ref chosenGame);
-            ImGui.SameLine();
-            ImGui.TextColored(Colors.TextActive, "*");
+            ImguiHelpers.IsRequired();
         }
         if (!string.IsNullOrEmpty(chosenGame)) {
             var gamepath = AppConfig.Instance.GetGamePath(chosenGame);
@@ -353,8 +350,7 @@ public class HomeWindow : IWindowHandler
                 AppConfig.Instance.SetGamePath(chosenGame, Path.GetDirectoryName(gameExe)!);
             }
             ImguiHelpers.Tooltip("This is the path to the game (where the .exe file is located)."u8);
-            ImGui.SameLine();
-            ImGui.TextColored(Colors.TextActive, "*");
+            ImguiHelpers.IsRequired();
 
             if (AppImguiHelpers.InputFilepath(Lang.Settings.ExePath.Text, ref gameExe, FileFilters.Executable)) {
                 AppConfig.Instance.SetGameExecutablePath(chosenGame, gameExe);
@@ -363,8 +359,7 @@ public class HomeWindow : IWindowHandler
                 AppConfig.Instance.SetGameExecutablePath(chosenGame, AppUtils.FindGameExecutable(gamepath, chosenGame)!);
             }
             ImguiHelpers.Tooltip(Lang.Settings.ExePath.Tooltip);
-            ImGui.SameLine();
-            ImGui.TextColored(Colors.TextActive, "*");
+            ImguiHelpers.IsRequired();
 
             if (isCustomGame) {
                 if (AppImguiHelpers.InputFilepath(Lang.Settings.RszPath.Text, ref rszPath, FileFilters.JsonFile) && File.Exists(gamepath)) {

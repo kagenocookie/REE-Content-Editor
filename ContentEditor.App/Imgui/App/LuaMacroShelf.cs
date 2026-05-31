@@ -25,6 +25,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         ];
         public List<string> MacroFiles { get; set; } = [];
     }
+    private MacroMasterList master = new();
     private class MacroTabItem
     {
         public required string Name { get; set; }
@@ -39,6 +40,8 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         public string? Icon { get; set; }
         public uint IconColor { get; set; }
         public bool IsGameSpecific { get; set; }
+        [System.Text.Json.Serialization.JsonIgnore]
+        public string? JsonFilePath { get; set; }
     }
     private readonly List<MacroEntry> macros = new();
     private class MacroDraft
@@ -50,6 +53,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         public string Icon = "SI_LUA";
         public uint IconColor = ImGui.GetColorU32(ImGuiCol.Text);
         public bool IsGameSpecific = true;
+        public string JsonFilePath = string.Empty;
 
         public MacroEntry ToEntry() => new MacroEntry {
             Path = GetLuaScriptRelativePath(Path),
@@ -58,7 +62,8 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
             Group = Group,
             Icon = Icon,
             IconColor = IconColor,
-            IsGameSpecific = IsGameSpecific
+            IsGameSpecific = IsGameSpecific,
+            JsonFilePath = JsonFilePath
         };
     }
     private MacroDraft macroDraft = new();
@@ -112,6 +117,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
             FileSystemUtils.ShowFileInExplorer(AppConfig.Instance.LuaUserPath);
         }
         ImguiHelpers.Tooltip("Open Macros folder in File Explorer"u8);
+        AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/Lua-API", true);
         //SidebarToggle($"{AppIcons.SI_Settings}", SidebarMenu.MacroSettings, "Macro Settings");
     }
     private void SidebarToggle(string icon, SidebarMenu activeMenu)
@@ -178,7 +184,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         }
         ImGui.Checkbox("Game Specific", ref macroDraft.IsGameSpecific);
         ImGui.Separator();
-        using (var _ = ImguiHelpers.Disabled((string.IsNullOrWhiteSpace(macroDraft.Path) || string.IsNullOrWhiteSpace(macroDraft.Name) || isShowNewGroupMenu || !isValidLuaPath))) {
+        using (var _ = ImguiHelpers.Disabled(string.IsNullOrWhiteSpace(macroDraft.Name) || isShowNewGroupMenu || !isValidLuaPath)) {
             if (ImGui.Button($"{AppIcons.SI_GenericAdd} Add Macro", new Vector2(-1, 0))) {
                 SaveMacro(macroDraft.ToEntry());
                 macroDraft = new();
@@ -286,8 +292,8 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
 
         foreach (var macro in filteredMacros) {
 
-            ImGui.PushID(macro.Name);
-            ImGui.BeginChild($"MacroCard_{macro.Name}", new Vector2(0, 70), ImGuiChildFlags.Borders);
+            ImGui.PushID(macro.Name + macro.JsonFilePath);
+            ImGui.BeginChild($"MacroCard_{macro.Name}_{macro.JsonFilePath}", new Vector2(0, 70), ImGuiChildFlags.Borders);
 
             ImGui.PushStyleColor(ImGuiCol.Text, ImGui.ColorConvertU32ToFloat4(macro.IconColor));
             ImGui.Text($"{ResolveMacroIcon(macro.Icon!)}");
@@ -316,13 +322,14 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         try {
             tabs.Clear();
             macros.Clear();
-            var master = new MacroMasterList();
+            master = new MacroMasterList();
             foreach (string folder in new[] { MacroGlobalFolderPath, MacroGameFolderPath }) {
                 Directory.CreateDirectory(folder);
                 LoadMacrosFromFolder(folder, master);
             }
             foreach (string groupName in master.Groups.Distinct()) {
                 tabs.Add(new MacroTabItem { Name = groupName });
+                selectedTabIDX = Math.Clamp(selectedTabIDX, 0, tabs.Count - 1);
             }
             SaveMacrosMasterList();
         } catch (Exception e) {
@@ -335,9 +342,9 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
             try {
                 var macro = JsonSerializer.Deserialize<MacroEntry>(File.ReadAllText(filePath));
                 if (macro != null) {
+                    macro.JsonFilePath = filePath;
                     macros.Add(macro);
-
-                    string relativePath = GetLuaScriptRelativePath(filePath);
+                    string relativePath = Path.GetRelativePath(AppConfig.Instance.LuaUserPath, filePath);
                     if (!master.MacroFiles.Contains(relativePath)) {
                         master.MacroFiles.Add(relativePath);
                     }
@@ -353,27 +360,23 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     private void SaveMacro(MacroEntry macro)
     {
         macros.Add(macro);
-        string filePath = GetMacroFilePath(macro);
+        string filePath = Path.Combine(macro.IsGameSpecific ? MacroGameFolderPath : MacroGlobalFolderPath, $"{macro.Name}.json");
         Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
         File.WriteAllText(filePath, JsonSerializer.Serialize(macro, JsonConfig.configJsonOptions));
-        SaveMacrosMasterList();
+        ScanForMacros();
     }
     private void DeleteMacro(MacroEntry macro)
     {
         macros.Remove(macro);
-        var filePath = GetMacroFilePath(macro);
-        if (File.Exists(filePath)) {
-            File.Delete(filePath);
+        if (File.Exists(macro.JsonFilePath)) {
+            File.Delete(macro.JsonFilePath);
+            master.MacroFiles.Remove(Path.GetRelativePath(AppConfig.Instance.LuaUserPath, macro.JsonFilePath));
         }
-        SaveMacrosMasterList();
+        ScanForMacros();
     }
     private void SaveMacrosMasterList()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(MacroMasterListPath)!);
-        var master = new MacroMasterList {
-            Groups = tabs.Select(x => x.Name).Distinct().ToList(),
-            MacroFiles = macros.Select(GetMacroFilePath).Select(p => Path.GetRelativePath(AppConfig.Instance.LuaUserPath, p)).ToList()
-        };
         File.WriteAllText(MacroMasterListPath, JsonSerializer.Serialize(master, JsonConfig.jsonOptions));
     }
     private static string[] BuildMacroIconsArray()
@@ -384,10 +387,6 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     {
         var field = typeof(AppIcons).GetField(iconName);
         return field?.GetValue(null)?.ToString() ?? $"{AppIcons.SI_LUA}";
-    }
-    private static string GetMacroFilePath(MacroEntry macro)
-    {
-        return Path.Combine(macro.IsGameSpecific ? MacroGameFolderPath : MacroGlobalFolderPath, $"{macro.Name}.json");
     }
     private static bool IsPathInsideLuaFolder(string path)
     {
