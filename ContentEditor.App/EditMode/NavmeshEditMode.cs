@@ -4,6 +4,7 @@ using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Aimp;
 
 namespace ContentEditor.App;
 
@@ -58,53 +59,10 @@ public class NavmeshEditMode : EditModeHandler
 
     public override void DrawMainUI()
     {
-        if (context == null) {
-            context = UIContext.CreateRootContext("Navmesh", this);
-            filePicker = context.AddChild<NavmeshEditMode, string>(
-                "File",
-                this,
-                new ResourcePathPicker(Scene.Workspace, KnownFileFormats.AIMap) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly },
-                (v) => v!.filepath,
-                (v, p) => v.filepath = p ?? "");
-            context.AddChild<NavmeshEditMode, NavmeshContentType>(
-                "Content Types",
-                this,
-                new CsharpFlagsEnumFieldHandler<NavmeshContentType, int>() { HideNumberInput = true },
-                getter: o => o!.displayedContentTypes,
-                setter: (o, v) => o.displayedContentTypes = v,
-                UIOptions.DisableUndoRedo
-            );
-            context.AddChild(
-                Lang.EditMode.Navmesh_SceneMode,
-                this,
-                new CsharpEnumRadioHandler(typeof(SceneMode)),
-                c => c!.Mode,
-                (c,v) => c.Mode = v,
-                UIOptions.DisableUndoRedo
-            );
-            context.AddChild(
-                Lang.EditMode.Navmesh_AttrFill,
-                this,
-                new ConditionalUIHandler(BoolFieldHandler.Instance, c => ((NavmeshEditMode)c.target!).Mode != SceneMode.Selection),
-                c => c!.AttributeFill,
-                (c,v) => c.AttributeFill = v,
-                UIOptions.DisableUndoRedo
-            );
-            context.AddChild(
-                Lang.EditMode.Navmesh_Attribute,
-                this,
-                new CsharpFlagsEnumFieldHandler<GenericFlagsU64, ulong>(),
-                c => c!.SelectedAttribute,
-                (c,v) => {
-                    c.SelectedAttribute = v;
-                    (c.Target as AIMapComponentBase)?.AttributesFilter = (ulong)v;
-                },
-                UIOptions.DisableUndoRedo
-            );
-        }
+        EnsureUIContext();
 
         AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/AI-Navigation");
-        context.children[0].ShowUI();
+        context!.children[0].ShowUI();
 
         if (Target is AIMapComponentBase map) {
             var storedSuggestions = map.StoredResources.ToArray();
@@ -129,7 +87,7 @@ public class NavmeshEditMode : EditModeHandler
                 filePicker?.ResetState();
             }
         }
-        context.ShowChildrenUI(1);
+        context!.children[1].ShowUI();
         if (loadedFilepath != filepath) {
             if (loadedFile != null) {
                 loadedFile.ModifiedChanged -= OnFileChanged;
@@ -153,6 +111,65 @@ public class NavmeshEditMode : EditModeHandler
             if (ImGui.Button(Lang.EditMode.Button_BakeNavmesh)) {
                 EditorWindow.CurrentWindow?.AddSubwindow(new NavmeshBakerUI(Scene, loadedFile, context));
             }
+        }
+    }
+
+    public override void DrawToolbarUI()
+    {
+        if (loadedFile != null && loadedFile.GetFile<AimpFile>().mainContent?.contents.FirstOrDefault() is ContentGroupTriangle) {
+            if (ImGui.BeginMenu(Lang.EditMode.Navmesh_PaintingToolbar)) {
+                EnsureUIContext();
+                context!.ShowChildrenUI(2);
+                ImGui.EndMenu();
+            }
+        }
+    }
+
+    private void EnsureUIContext()
+    {
+        if (context == null) {
+            context = UIContext.CreateRootContext("Navmesh", this);
+            filePicker = context.AddChild<NavmeshEditMode, string>(
+                "File",
+                this,
+                new ResourcePathPicker(Scene.Workspace, KnownFileFormats.AIMap) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly },
+                (v) => v!.filepath,
+                (v, p) => v.filepath = p ?? "");
+            context.AddChild<NavmeshEditMode, NavmeshContentType>(
+                "Content Types",
+                this,
+                new CsharpFlagsEnumFieldHandler<NavmeshContentType, int>() { HideNumberInput = true },
+                getter: o => o!.displayedContentTypes,
+                setter: (o, v) => o.displayedContentTypes = v,
+                UIOptions.DisableUndoRedo
+            );
+            context.AddChild(
+                Lang.EditMode.Navmesh_SceneMode,
+                this,
+                new CsharpEnumRadioHandler(typeof(SceneMode)),
+                c => c!.Mode,
+                (c, v) => c.Mode = v,
+                UIOptions.DisableUndoRedo
+            );
+            context.AddChild(
+                Lang.EditMode.Navmesh_AttrFill,
+                this,
+                new ConditionalUIHandler(BoolFieldHandler.Instance, c => ((NavmeshEditMode)c.target!).Mode != SceneMode.Selection),
+                c => c!.AttributeFill,
+                (c, v) => c.AttributeFill = v,
+                UIOptions.DisableUndoRedo
+            );
+            context.AddChild(
+                Lang.EditMode.Navmesh_Attribute,
+                this,
+                new CsharpFlagsEnumFieldHandler<GenericFlagsU64, ulong>(),
+                c => c!.SelectedAttribute,
+                (c, v) => {
+                    c.SelectedAttribute = v;
+                    (c.Target as AIMapComponentBase)?.AttributesFilter = (ulong)v;
+                },
+                UIOptions.DisableUndoRedo
+            );
         }
     }
 

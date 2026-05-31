@@ -365,9 +365,10 @@ public class UIContext
         }
     }
 
-    public void ShowChildrenUI(int startingIndex)
+    public void ShowChildrenUI(int startingIndex, int endIndex = int.MaxValue)
     {
-        for (int i = startingIndex; i < children.Count; i++) {
+        endIndex = Math.Min(endIndex, children.Count);
+        for (int i = startingIndex; i < endIndex; i++) {
             children[i].ShowUI();
         }
     }
