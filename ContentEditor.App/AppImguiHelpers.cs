@@ -403,7 +403,7 @@ public static class AppImguiHelpers
         Delete,
         Error
     }
-    public static void ShowActionModal(ReadOnlySpan<byte> id, string icon, Vector4 iconColor, ReadOnlySpan<byte> text, Action? onAction, ActionModalType type = ActionModalType.Delete)
+    public static void ShowActionModal(ReadOnlySpan<byte> id, string icon, Vector4 iconColor, ReadOnlySpan<byte> text, Action? onAction, Action? onCancel = null, ActionModalType type = ActionModalType.Delete)
     {
         var viewport = ImGui.GetMainViewport();
         Vector2 center = viewport.Pos + viewport.Size * 0.5f;
@@ -441,6 +441,7 @@ public static class AppImguiHelpers
                     }
                     ImGui.SameLine();
                     if (ImGui.Button("No"u8, new Vector2(textSize.X / 2, 0))) {
+                        onCancel?.Invoke();
                         ImGui.CloseCurrentPopup();
                     }
                     break;
@@ -453,5 +454,26 @@ public static class AppImguiHelpers
             ImGui.EndPopup();
         }
         ImGui.PopStyleVar();
+    }
+    public static string Ellipsize(string text, float maxWidth)
+    {
+        if (ImGui.CalcTextSize(text).X <= maxWidth) {
+            return text;
+        }
+        string ellipsis = "...";
+        float ellipsisWidth = ImGui.CalcTextSize(ellipsis).X;
+        if (ellipsisWidth > maxWidth) {
+            return string.Empty;
+        }
+
+        int textLen = text.Length;
+        while (textLen > 0) {
+            string candidate = text.Substring(0, textLen);
+            if (ImGui.CalcTextSize(candidate).X + ellipsisWidth <= maxWidth) {
+                return candidate + ellipsis;
+            }
+            textLen--;
+        }
+        return ellipsis;
     }
 }

@@ -461,7 +461,7 @@ public class BundleManagementUI : IWindowHandler
             ImGui.SameLine();
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
             if (ImGui.Button($"{AppIcons.SI_GenericDelete2}")) {
-                ImGui.OpenPopup("Confirm Action"u8);
+                ImGui.OpenPopup(Lang.General.ConfirmTitle);
             }
             ImGui.PopStyleColor();
             ImguiHelpers.Tooltip("Delete file"u8);

@@ -636,25 +636,7 @@ public class HomeWindow : IWindowHandler
                 var textSize = ImGui.CalcTextSize(bundleName);
                 float textOffset = iconSize.X + ImGui.GetStyle().ItemSpacing.X * 2;
                 float availableTextWidth = max.X - (min.X + textOffset) - ImGui.GetStyle().ItemSpacing.X * 2;
-                string bundleDisplayName = bundleName;
-                if (availableTextWidth <= 0) {
-                    bundleDisplayName = string.Empty;
-                } else if (ImGui.CalcTextSize(bundleDisplayName).X > availableTextWidth) {
-                    const string ellipsis = "...";
-                    float ellipsisWidth = ImGui.CalcTextSize(ellipsis).X;
-
-                    if (ellipsisWidth > availableTextWidth) {
-                        bundleDisplayName = string.Empty;
-                    } else {
-                        for (int i = bundleDisplayName.Length - 1; i >= 0; i--) {
-                            string adjusted = string.Concat(bundleDisplayName.AsSpan(0, i), ellipsis);
-                            if (ImGui.CalcTextSize(adjusted).X <= availableTextWidth) {
-                                bundleDisplayName = adjusted;
-                                break;
-                            }
-                        }
-                    }
-                }
+                string bundleDisplayName = AppImguiHelpers.Ellipsize(bundleName, availableTextWidth);
                 var textPos = new Vector2(min.X + textOffset, iconPos.Y);
                 ImGui.PushStyleColor(ImGuiCol.Text, isHovered ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text));
                 drawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), bundleDisplayName);

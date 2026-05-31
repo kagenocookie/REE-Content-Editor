@@ -1,3 +1,4 @@
+using ContentEditor.App.Lua;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using System.Numerics;
@@ -17,6 +18,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     private int selectedTabIDX = 0;
     private string newGroupName = string.Empty;
     private bool isShowNewGroupMenu = false;
+    private bool isEditMacroDataMode = false;
     private string[] macroIconsArray = [];
     private class MacroMasterList
     {
@@ -44,6 +46,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         public string? JsonFilePath { get; set; }
     }
     private readonly List<MacroEntry> macros = new();
+    private MacroEntry? pendingDeleteMacro;
     private class MacroDraft
     {
         public string Path = string.Empty;
@@ -86,6 +89,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     public void OnIMGUI()
     {
         ShowMacroShelf();
+        
     }
     private void ShowMacroShelf()
     {
@@ -104,19 +108,41 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         ImGui.BeginChild("Tabs");
         ShowTabs();
         ImGui.EndChild();
+        if (pendingDeleteMacro != null) {
+            ImGui.OpenPopup(Lang.General.ConfirmTitle);
+            AppImguiHelpers.ShowActionModal(Lang.General.ConfirmTitle, $"{AppIcons.SI_GenericDelete2}", Colors.IconTertiary,
+                Lang.MacroShelf.Confirm_DeleteMacroFile.FormatRef(pendingDeleteMacro.Name!),
+                () => {
+                    DeleteMacro(pendingDeleteMacro);
+                    pendingDeleteMacro = null;
+                },
+                () => {
+                    pendingDeleteMacro = null;
+                }
+            );
+        }
     }
     private void ShowSidebar()
     {
         SidebarToggle($"{AppIcons.SI_GenericAdd}", SidebarMenu.NewMacro);
-        ImguiHelpers.Tooltip("Create a new Macro"u8);
+        ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_CreateMacro);
+        using (var _ = ImguiHelpers.Disabled(activeSidebarMenu != SidebarMenu.NewMacro)) {
+            if (ImGui.Button($"{AppIcons.SI_GenericClear}")) {
+                macroDraft = new();
+                isEditMacroDataMode = false;
+            }
+            ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_ClearMacroData);
+        }
+        ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);
         if (ImGui.Button($"{AppIcons.SI_Update}")) {
             ScanForMacros();
         }
-        ImguiHelpers.Tooltip("Re-scan Macros folder"u8);
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, new[] { Colors.IconSecondary, Colors.IconPrimary })) {
+        ImGui.PopStyleColor();
+        ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_RescanMacros);
+        if (ImGui.Button($"{AppIcons.SI_FolderOpen}")) {
             FileSystemUtils.ShowFileInExplorer(AppConfig.Instance.LuaUserPath);
         }
-        ImguiHelpers.Tooltip("Open Macros folder in File Explorer"u8);
+        ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_OpenMacrosFolder);
         AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/Lua-API", true);
         //SidebarToggle($"{AppIcons.SI_Settings}", SidebarMenu.MacroSettings, "Macro Settings");
     }
@@ -128,24 +154,23 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     private void ShowNewMacroMenu()
     {
         ImGui.BeginChild("NewMacro", new Vector2(450, 0));
-        AppImguiHelpers.InputFilepath("LUA Script Path"u8, ref macroDraft.Path, FileFilters.LuaFile);//TODO SILVER: This should open to the user's lua folder
+        AppImguiHelpers.InputFilepath(Lang.MacroShelf.Label_MacroLuaPath, ref macroDraft.Path, FileFilters.LuaFile);//TODO SILVER: This should open to the user's lua folder
         ImguiHelpers.IsRequired();
         bool isValidLuaPath = string.IsNullOrWhiteSpace(macroDraft.Path) || IsPathInsideLuaFolder(macroDraft.Path);
         if (!isValidLuaPath) {
-            ImGui.TextColored(Colors.IconTertiary, "Lua file must be inside the User Lua folder!");
+            ImGui.TextColored(Colors.Error, Lang.MacroShelf.Error_InvalidLuaPath); // SILVER: Maybe move this some place else?
         }
-
-        ImGui.InputText("Macro Name", ref macroDraft.Name, 64);
+        ImGui.InputText(Lang.MacroShelf.Label_MacroName, ref macroDraft.Name, 64);
         ImguiHelpers.IsRequired();
-        ImGui.InputText("Description", ref macroDraft.Description, 128);
+        ImGui.InputText(Lang.MacroShelf.Label_MacroDesc, ref macroDraft.Description, 128);
 
-        ShowMacroGroupsCombo("Group", ref macroDraft.Group);
+        ShowMacroGroupsCombo(ref macroDraft.Group);
 
         Vector4 color = ImGui.ColorConvertU32ToFloat4(macroDraft.IconColor);
         if (ImGui.ColorEdit4("##IconColor", ref color, ImGuiColorEditFlags.NoInputs)) {
             macroDraft.IconColor = ImGui.ColorConvertFloat4ToU32(color);
         }
-        ImguiHelpers.Tooltip("Icon Color");
+        ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_IconColor);
         ImGui.SameLine();
         string fakeComboText = $"{ResolveMacroIcon(macroDraft.Icon)} {macroDraft.Icon}";
         ImGui.BeginDisabled();
@@ -160,7 +185,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
             ImGui.OpenPopup("IconPickerPopup");
         }
         ImGui.SameLine();
-        ImGui.Text("Icon");
+        ImGui.Text(Lang.MacroShelf.Label_MacroIcon);
 
         if (ImGui.BeginPopup("IconPickerPopup")) {
             int iconCount = 0;
@@ -182,12 +207,14 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
             }
             ImGui.EndPopup();
         }
-        ImGui.Checkbox("Game Specific", ref macroDraft.IsGameSpecific);
+        ImGui.Checkbox(Lang.MacroShelf.Label_MacroType, ref macroDraft.IsGameSpecific);
+        ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_MacroType);
         ImGui.Separator();
         using (var _ = ImguiHelpers.Disabled(string.IsNullOrWhiteSpace(macroDraft.Name) || isShowNewGroupMenu || !isValidLuaPath)) {
-            if (ImGui.Button($"{AppIcons.SI_GenericAdd} Add Macro", new Vector2(-1, 0))) {
+            if (ImGui.Button(isEditMacroDataMode ? Lang.MacroShelf.Button_SaveMacro : Lang.MacroShelf.Button_AddMacro, new Vector2(-1, 0))) {
                 SaveMacro(macroDraft.ToEntry());
                 macroDraft = new();
+                isEditMacroDataMode = false;
             }
         }
         ImGui.EndChild();
@@ -196,16 +223,16 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         ImguiHelpers.VerticalSeparator(ImguiHelpers.GetColor(ImGuiCol.Separator), 2, 0, ImGui.GetContentRegionAvail().Y);
         ImGui.SameLine();
     }
-    private bool ShowMacroGroupsCombo(string label, ref string group)
+    private bool ShowMacroGroupsCombo(ref string group)
     {
         bool changed = false;
         ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_AddGroup, ref isShowNewGroupMenu, new[] { Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary }, Colors.IconActive);
-        ImguiHelpers.Tooltip("Define a new Group");
+        ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_NewGroup);
         ImGui.SameLine();
         var itemW = ImGui.CalcItemWidth();
         var comboW = ImGui.CalcTextSize($"{AppIcons.SI_GenericClose}").X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X;
         ImGui.PushItemWidth(itemW - comboW);
-        if (ImGui.BeginCombo(label, group)) {
+        if (ImGui.BeginCombo(Lang.MacroShelf.Label_MacroGroup, group)) {
             foreach (var tab in tabs) {
                 bool isSelected = tab.Name == group;
                 if (ImGui.Selectable(tab.Name, isSelected)) {
@@ -232,10 +259,10 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
                     group = groupName;
                     changed = true;
                 }
-                ImguiHelpers.Tooltip("Add Group");
+                ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_AddGroup);
             }
             ImGui.SameLine();
-            ImGui.InputTextWithHint("##NewGroup", "Enter new group name here...", ref newGroupName, 64);
+            ImGui.InputTextWithHint("##NewGroup", Lang.MacroShelf.Hint_NewGroup, ref newGroupName, 64);
             ImGui.Separator();
         }
         ImGui.PopItemWidth();
@@ -262,7 +289,6 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
             if (ImGui.BeginTabBar($"##MacroTabs{row}", ImGuiTabBarFlags.NoCloseWithMiddleMouseButton | ImGuiTabBarFlags.DrawSelectedOverline)) {
                 ImGui.PushStyleColor(ImGuiCol.TabSelected, isOnThisRow ? ImguiHelpers.GetColor(ImGuiCol.TabSelected) : ImguiHelpers.GetColor(ImGuiCol.Tab));
                 ImGui.PushStyleColor(ImGuiCol.TabSelectedOverline, isOnThisRow ? ImguiHelpers.GetColor(ImGuiCol.TabSelectedOverline) : ImguiHelpers.GetColor(ImGuiCol.Tab));
-
                 for (int i = row; i < Math.Min(row + tabsPerRow, tabs.Count); i++) {
                     ImGui.PushID(i);
                     if (ImGui.BeginTabItem(tabs[i].Name, (selectedTabIDX == i) ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None)) {
@@ -286,35 +312,85 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     {
         var filteredMacros = macros.Where(x => x.Group == tab).OrderBy(x => x.Name).ToList();
         if (filteredMacros.Count == 0) {
-            ImGui.TextDisabled("No macros added.");
+            ImGui.TextDisabled(Lang.MacroShelf.Label_NoMacros);
             return;
         }
 
+        float macroCardW = 250f;
+        float macroCardH = 70f;
+        int rowIDX = 0;
+        int rows = Math.Max(1, (int)(ImGui.GetContentRegionAvail().X / (macroCardW + ImGui.GetStyle().ItemSpacing.X)));
+
         foreach (var macro in filteredMacros) {
-
             ImGui.PushID(macro.Name + macro.JsonFilePath);
-            ImGui.BeginChild($"MacroCard_{macro.Name}_{macro.JsonFilePath}", new Vector2(0, 70), ImGuiChildFlags.Borders);
-
-            ImGui.PushStyleColor(ImGuiCol.Text, ImGui.ColorConvertU32ToFloat4(macro.IconColor));
-            ImGui.Text($"{ResolveMacroIcon(macro.Icon!)}");
-            ImGui.PopStyleColor();
-            ImGui.SameLine();
-            ImGui.BeginGroup();
-            ImGui.Text(macro.Name);
-            ImGui.TextDisabled(macro.Description);
-            ImGui.EndGroup();
-
-            ImGui.SameLine(ImGui.GetContentRegionAvail().X - (ImGui.CalcTextSize($"{AppIcons.SI_GenericClose}").X * 2 + ImGui.GetStyle().FramePadding.X * 3 + ImGui.GetStyle().ItemSpacing.X));
-            if (ImGui.Button($"{AppIcons.Play}")) {
-                //TODO SILVER
+            if (rowIDX > 0) {
+                ImGui.SameLine();
             }
-            ImGui.SameLine();
-            if (ImGui.Button($"{AppIcons.SI_GenericDelete2}")) {
-                DeleteMacro(macro);
+            var pos = ImGui.GetCursorScreenPos();
+            ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertU32ToFloat4(macro.IconColor) * 0.25f);
+            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGui.ColorConvertU32ToFloat4(macro.IconColor) * 0.45f);
+            ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGui.ColorConvertU32ToFloat4(macro.IconColor) * 0.65f);
+            ImGui.PushStyleColor(ImGuiCol.Border, ImGui.GetColorU32(macro.IconColor));
+            ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 2f);
+            if (ImGui.Button($"##macroCard_{macro.Name}", new Vector2(macroCardW, macroCardH))){
+                RunMacro(macro);
+            }
+            ImGui.PopStyleColor(4);
+            ImGui.PopStyleVar();
+            ShowMacroCardContextMenu(macro);
+
+            if (!string.IsNullOrEmpty(macro.Description)) {
+                ImguiHelpers.Tooltip(macro.Description);
             }
 
-            ImGui.EndChild();
+            var drawList = ImGui.GetWindowDrawList();
+            float iconSize = UI.FontSize * 2;
+            float iconPadding = 10;
+            ImGui.PushFont(null, iconSize);
+            drawList.AddText(pos + new Vector2(iconPadding, (macroCardH - iconSize) * 0.5f), macro.IconColor, ResolveMacroIcon(macro.Icon!));
+            ImGui.PopFont();
+
+            float textX = pos.X + iconPadding + iconSize + 8f;
+            float textWidth = macroCardW - (iconPadding + iconSize + 15f);
+            string displayName =  AppImguiHelpers.Ellipsize(macro.Name!, textWidth);
+
+            drawList.AddText(new Vector2(textX, pos.Y + 10), ImGui.GetColorU32(ImGuiCol.Text), displayName);
+            drawList.AddText(new Vector2(textX, pos.Y + 30), ImGui.GetColorU32(ImGuiCol.TextDisabled), macro.IsGameSpecific ? Lang.MacroShelf.Label_MacroTypeA : Lang.MacroShelf.Label_MacroTypeB);
+
+            rowIDX++;
+            if (rowIDX >= rows) {
+                rowIDX = 0;
+            }
             ImGui.PopID();
+        }
+    }
+    private void ShowMacroCardContextMenu(MacroEntry macro)
+    {
+        if (ImGui.BeginPopupContextItem("macroCardPopup")) {
+            if (ImGui.MenuItem(Lang.MacroShelf.MenuItem_RunMacro)) {
+                RunMacro(macro);
+            }
+            ImGui.Spacing();
+            if (ImGui.MenuItem(Lang.MacroShelf.MenuItem_EditMacro)) {
+                activeSidebarMenu = SidebarMenu.NewMacro;
+                isEditMacroDataMode = true;
+                macroDraft.Path = Path.Combine(AppConfig.Instance.LuaUserPath, macro.Path!);
+                macroDraft.Name = macro.Name!;
+                macroDraft.Description = macro.Description!;
+                macroDraft.Group = macro.Group!;
+                macroDraft.Icon = macro.Icon!;
+                macroDraft.IconColor = macro.IconColor;
+                macroDraft.IsGameSpecific = macro.IsGameSpecific;
+            }
+            ImGui.Spacing();
+            ImGui.Separator();
+            ImGui.Spacing();
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
+            if (ImGui.MenuItem(Lang.MacroShelf.MenuItem_DeleteMacro)) {
+                pendingDeleteMacro = macro;
+            }
+            ImGui.PopStyleColor();
+            ImGui.EndPopup();
         }
     }
     private void ScanForMacros()
@@ -379,6 +455,22 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         Directory.CreateDirectory(Path.GetDirectoryName(MacroMasterListPath)!);
         File.WriteAllText(MacroMasterListPath, JsonSerializer.Serialize(master, JsonConfig.jsonOptions));
     }
+    private void RunMacro(MacroEntry macro)
+    {
+        try {
+            var fullPath = Path.Combine(AppConfig.Instance.LuaUserPath, macro.Path!);
+            if (!File.Exists(fullPath)) {
+                Logger.Error($"Macro script not found at: {fullPath}");
+                return;
+            }
+            var scriptText = File.ReadAllText(fullPath);
+            var lua = LuaWrapper.Create(EditorWindow.CurrentWindow!.Workspace, EditorWindow.CurrentWindow);
+            lua.Run(scriptText);
+        } catch (Exception e) {
+            Logger.Error($"Failed to run macro: {e}");
+        }
+    }
+
     private static string[] BuildMacroIconsArray()
     {
         return typeof(AppIcons).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static).Where(f => f.Name.StartsWith("SI_")).Select(f => f.Name).ToArray();
