@@ -1,6 +1,13 @@
 {
   "re3rt": [
     {
+      "Path": "natives/stm/escape/scene/contents/main/ropewaycontents.scn.20",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Main game scene"
+    },
+    {
       "Path": "natives/stm/escape/character",
       "Tags": [
         "Character",

@@ -1,0 +1,11 @@
+{
+  "dmc5": [
+    {
+      "Path": "natives/x64/scene/masterscene.scn.19",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Main game scene"
+    }
+  ]
+}

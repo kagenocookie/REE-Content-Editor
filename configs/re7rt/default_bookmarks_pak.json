@@ -1,6 +1,13 @@
 {
   "re7rt": [
     {
+      "Path": "natives/stm/scenes/master.scn.20",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Main game scene"
+    },
+    {
       "Path": "natives/stm/character/player/pl0000",
       "Tags": [
         "Character"

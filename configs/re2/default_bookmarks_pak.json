@@ -1,6 +1,13 @@
 {
   "re2": [
     {
+      "Path": "natives/x64/objectroot/scene/contents/main/ropewaycontents.scn.19",
+      "Tags": [
+        "Stage"
+      ],
+      "Comment": "Main game scene"
+    },
+    {
       "Path": "natives/x64/sectionroot/character",
       "Tags": [
         "Character",
