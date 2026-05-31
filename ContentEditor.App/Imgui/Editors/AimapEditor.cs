@@ -88,7 +88,7 @@ public class NodeInfoHandler : IObjectUIHandler, IUIContextEventHandler
     {
         if (eventData.IsChangeFromChild) {
             var parentWindow = context.FindHandlerInParents<ObjectInspector>()?.ParentWindow;
-            if (parentWindow is ISceneEditor sceneEditor && sceneEditor.GetScene()?.Root.ActiveEditMode is NavmeshEditor navmeshEditor) {
+            if (parentWindow is ISceneEditor sceneEditor && sceneEditor.GetScene()?.Root.ActiveEditMode is NavmeshEditMode navmeshEditor) {
                 (navmeshEditor.Target as AIMap)?.ResetPreviewGeometry();
             }
         }

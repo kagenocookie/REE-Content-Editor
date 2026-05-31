@@ -23,9 +23,16 @@ public enum NavmeshContentType : int
     All = Points|Triangles|Polygons|Boundaries|AABBs|Walls|MainLinks|SecondaryLinks,
 }
 
-public class NavmeshEditor : EditModeHandler
+public enum SceneMode
 {
-    public override string DisplayName => "Navmesh";
+    Selection,
+    SetAttribute,
+    RemoveAttribute,
+}
+
+public class NavmeshEditMode : EditModeHandler
+{
+    public override string DisplayName => "Navigation";
 
     private UIContext? filePicker;
     private string filepath = "";
@@ -34,6 +41,10 @@ public class NavmeshEditor : EditModeHandler
 
     private string? loadedFilepath;
     private FileHandle? loadedFile;
+
+    public SceneMode Mode { get; private set; }
+    public bool AttributeFill { get; private set; }
+    public GenericFlagsU64 SelectedAttribute { get; private set; }
 
     private bool firstTimeOnTarget;
 
@@ -49,18 +60,45 @@ public class NavmeshEditor : EditModeHandler
     {
         if (context == null) {
             context = UIContext.CreateRootContext("Navmesh", this);
-            filePicker = context.AddChild<NavmeshEditor, string>(
+            filePicker = context.AddChild<NavmeshEditMode, string>(
                 "File",
                 this,
                 new ResourcePathPicker(Scene.Workspace, KnownFileFormats.AIMap) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly },
                 (v) => v!.filepath,
                 (v, p) => v.filepath = p ?? "");
-            context.AddChild<NavmeshEditor, NavmeshContentType>(
+            context.AddChild<NavmeshEditMode, NavmeshContentType>(
                 "Content Types",
                 this,
                 new CsharpFlagsEnumFieldHandler<NavmeshContentType, int>() { HideNumberInput = true },
                 getter: o => o!.displayedContentTypes,
                 setter: (o, v) => o.displayedContentTypes = v,
+                UIOptions.DisableUndoRedo
+            );
+            context.AddChild(
+                Lang.EditMode.Navmesh_SceneMode,
+                this,
+                new CsharpEnumRadioHandler(typeof(SceneMode)),
+                c => c!.Mode,
+                (c,v) => c.Mode = v,
+                UIOptions.DisableUndoRedo
+            );
+            context.AddChild(
+                Lang.EditMode.Navmesh_AttrFill,
+                this,
+                new ConditionalUIHandler(BoolFieldHandler.Instance, c => ((NavmeshEditMode)c.target!).Mode != SceneMode.Selection),
+                c => c!.AttributeFill,
+                (c,v) => c.AttributeFill = v,
+                UIOptions.DisableUndoRedo
+            );
+            context.AddChild(
+                Lang.EditMode.Navmesh_Attribute,
+                this,
+                new CsharpFlagsEnumFieldHandler<GenericFlagsU64, ulong>(),
+                c => c!.SelectedAttribute,
+                (c,v) => {
+                    c.SelectedAttribute = v;
+                    (c.Target as AIMapComponentBase)?.AttributesFilter = (ulong)v;
+                },
                 UIOptions.DisableUndoRedo
             );
         }
@@ -77,7 +115,7 @@ public class NavmeshEditor : EditModeHandler
                     }
                     firstTimeOnTarget = false;
                 }
-                if (ImguiHelpers.ValueCombo("Stored Files", storedSuggestions, storedSuggestions, ref filepath)) {
+                if (ImguiHelpers.ValueCombo(Lang.EditMode.StoredFiles.String, storedSuggestions, storedSuggestions, ref filepath)) {
                     AppConfig.Settings.RecentNavmeshes.AddRecent(Scene.Workspace.Game, filepath);
                     filePicker?.ResetState();
                 }
@@ -91,7 +129,7 @@ public class NavmeshEditor : EditModeHandler
                 filePicker?.ResetState();
             }
         }
-        context.children[1].ShowUI();
+        context.ShowChildrenUI(1);
         if (loadedFilepath != filepath) {
             if (loadedFile != null) {
                 loadedFile.ModifiedChanged -= OnFileChanged;
@@ -108,11 +146,11 @@ public class NavmeshEditor : EditModeHandler
         }
 
         if (loadedFile != null) {
-            if (ImGui.Button("Reset preview geometry")) {
+            if (ImGui.Button(Lang.EditMode.Button_ResetGeometry)) {
                 (Target as AIMapComponentBase)?.ResetPreviewGeometry();
             }
             ImGui.SameLine();
-            if (ImGui.Button("Bake navmesh ...")) {
+            if (ImGui.Button(Lang.EditMode.Button_BakeNavmesh)) {
                 EditorWindow.CurrentWindow?.AddSubwindow(new NavmeshBakerUI(Scene, loadedFile, context));
             }
         }

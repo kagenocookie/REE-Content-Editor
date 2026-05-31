@@ -29,7 +29,7 @@ public class AIMapSection(GameObject gameObject, RszInstance data) : AIMapCompon
 }
 
 public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data),
-    IEditableComponent<NavmeshEditor>, IGizmoComponent, IScenePickableComponent
+    IEditableComponent<NavmeshEditMode>, IGizmoComponent, IScenePickableComponent
 {
     public abstract IEnumerable<string> StoredResources { get; }
 
@@ -60,6 +60,8 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
     protected Material? aabbsMaterial;
     protected Material? wallsMaterial;
     protected Material? selectedMaterial;
+
+    public ulong AttributesFilter { get; set { field = value; isStale = true; } }
 
     internal override void Render(RenderContext context)
     {
@@ -236,7 +238,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
     private void UpdateTriangles(GizmoContainer gizmo, ContentGroupContainer container, ContentGroupTriangle content)
     {
         if (!navMeshes.TryGetValue(NavmeshContentType.Triangles, out var mesh)) {
-            var tri = new TriangleMesh(overrideFile!, container, content);
+            var tri = new TriangleMesh(overrideFile!, container, content, AttributesFilter);
             navMeshes[NavmeshContentType.Triangles] = mesh = new MeshHandle(new MeshResourceHandle(tri));
             mesh.Handle.Meshes.Add(new LineMesh(tri));
             Scene!.RenderContext.StoreMesh(mesh.Handle);
@@ -259,7 +261,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
     private void UpdatePolygons(GizmoContainer gizmo, ContentGroupContainer container, ContentGroupPolygon content)
     {
         if (!navMeshes.TryGetValue(NavmeshContentType.Polygons, out var mesh)) {
-            var tri = new TriangleMesh(overrideFile!, container, content);
+            var tri = new TriangleMesh(overrideFile!, container, content, AttributesFilter);
             navMeshes[NavmeshContentType.Polygons] = mesh = new MeshHandle(new MeshResourceHandle(tri));
             mesh.Handle.Meshes.Add(new LineMesh(tri));
             Scene!.RenderContext.StoreMesh(mesh.Handle);
@@ -359,27 +361,28 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
         if (selectedNodes.Count == 0 || overrideFile == null) return;
 
         selectedMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "selected")
-            .Color("_MainColor", new Color(0xff, 0xff, 0xff, 0x88)).Blend();
+            .Color("_MainColor", new Color(0xff, 0xff, 0xff, 0x55)).Blend();
 
         gizmo ??= new GizmoContainer(Scene!, this);
         gizmo.PushMaterial(selectedMaterial, selectedMaterial, ShapeBuilder.GeometryType.Filled, 5);
         foreach (var node in selectedNodes) {
             var group = overrideFile.GetGroupForNode(node);
+            var container = overrideFile.mainContent!.contents.Contains(group) == true ? overrideFile.mainContent : overrideFile.secondaryContent;
             if (group is ContentGroupTriangle triGroup) {
                 if (!this.visibleContentTypes.HasFlag(NavmeshContentType.Triangles)) continue;
                 var triNode = triGroup.Nodes[node.localIndex];
-                var p1 = group.Vertices![triNode.index1];
-                var p2 = group.Vertices[triNode.index2];
-                var p3 = group.Vertices[triNode.index3];
+                var p1 = container!.Vertices![triNode.index1].Vector3;
+                var p2 = container.Vertices[triNode.index2].Vector3;
+                var p3 = container.Vertices[triNode.index3].Vector3;
                 var norm = Vector3.Normalize(Vector3.Cross(p2 - p1, p3 - p2)) * 0.01f;
                 gizmo.Cur.Add(new Triangle(p1 + norm, p2 + norm, p3 + norm));
             } else if (group is ContentGroupPolygon polyGroup) {
                 if (!this.visibleContentTypes.HasFlag(NavmeshContentType.Polygons)) continue;
                 var polyNode = polyGroup.Nodes[node.localIndex];
                 for (int i = 2; i < polyNode.indices.Length; i++) {
-                    var p1 = group.Vertices![polyNode.indices[0]];
-                    var p2 = group.Vertices[polyNode.indices[i - 1]];
-                    var p3 = group.Vertices[polyNode.indices[i]];
+                    var p1 = container!.Vertices![polyNode.indices[0]].Vector3;
+                    var p2 = container.Vertices[polyNode.indices[i - 1]].Vector3;
+                    var p3 = container.Vertices[polyNode.indices[i]].Vector3;
                     var norm = Vector3.Normalize(Vector3.Cross(p2 - p1, p3 - p2)) * 0.01f;
                     gizmo.Cur.Add(new Triangle(p1 + norm, p2 + norm, p3 + norm));
                 }
@@ -400,16 +403,15 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
         if (mesh == null || group == null) {
             return;
         }
+        var navEdit = editor.GetScene()?.Root.ActiveEditMode as NavmeshEditMode;
+        var selectMode = navEdit?.Mode ?? SceneMode.Selection;
+        var fill = navEdit?.AttributeFill ?? false;
+        var attr = navEdit?.SelectedAttribute ?? 0;
 
+        NodeInfo? nodeInfo = null;
         if (type == NavmeshContentType.Triangles) {
             var nodeId = info.triangleIndex;
-            var nodeInfo = group.NodeInfos.ElementAtOrDefault(nodeId);
-            if (nodeInfo != null) {
-                selectedNodes.Add(nodeInfo);
-                (editor as IInspectorController)?.Inspector.PrimaryTarget = new InspectorComponentLink(this, nodeInfo);
-            } else {
-                (editor as IInspectorController)?.Inspector.PrimaryTarget = new InspectorComponentLink(this, group);
-            }
+            nodeInfo = group.NodeInfos.ElementAtOrDefault(nodeId);
         } else if (type == NavmeshContentType.Polygons) {
             var polyGroup = (ContentGroupPolygon)group;
             var nodeId = 0;
@@ -423,14 +425,51 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
                 nodeId++;
             }
 
-            var nodeInfo = group.NodeInfos.ElementAtOrDefault(nodeId);
-            if (nodeInfo != null) {
-                selectedNodes.Add(nodeInfo);
-                (editor as IInspectorController)?.Inspector.PrimaryTarget = new InspectorComponentLink(this, nodeInfo);
-            } else {
-                (editor as IInspectorController)?.Inspector.PrimaryTarget = new InspectorComponentLink(this, group);
+            nodeInfo = group.NodeInfos.ElementAtOrDefault(nodeId);
+        }
+
+        if (nodeInfo != null) {
+            if (selectMode == SceneMode.SetAttribute) {
+                ModifyAttributes(nodeInfo, group, fill, (ulong)attr, false);
+            } else if (selectMode == SceneMode.RemoveAttribute) {
+                ModifyAttributes(nodeInfo, group, fill, (ulong)attr, true);
+            }
+
+            selectedNodes.Add(nodeInfo);
+            (editor as IInspectorController)?.Inspector.PrimaryTarget = new InspectorComponentLink(this, nodeInfo);
+        } else {
+            (editor as IInspectorController)?.Inspector.PrimaryTarget = new InspectorComponentLink(this, group);
+        }
+    }
+
+    private void ModifyAttributes(NodeInfo node, ContentGroup group, bool propagateNeighbors, ulong attributes, bool remove)
+    {
+        var list = new List<NodeInfo>() { node };
+        var attrsBackup = new Dictionary<NodeInfo, ulong>();
+        for (int i = 0; i < list.Count; i++) {
+            var item = list[i];
+            attrsBackup[item] = item.attributes;
+            if (!propagateNeighbors) break;
+            foreach (var nei in item.Links) {
+                if (!attrsBackup.ContainsKey(nei.TargetNode!) && nei.TargetNode!.attributes == list[0].attributes) {
+                    list.Add(nei.TargetNode);
+                }
+                if (!attrsBackup.ContainsKey(nei.SourceNode!) && nei.SourceNode!.attributes == list[0].attributes) {
+                    list.Add(nei.SourceNode);
+                }
             }
         }
+        var setAttrs = () => {
+            foreach (var item in list) item.attributes |= attributes;
+        };
+        var removeAttrs = () => {
+            foreach (var item in list) item.attributes &= ~attributes;
+        };
+        var restoreAttrs = () => {
+            foreach (var item in list) item.attributes = attrsBackup[item];
+        };
+        UndoRedo.RecordCallback(null, remove ? removeAttrs : setAttrs, restoreAttrs);
+        UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, () => isStale = true);
     }
 
     public void CollectPickables(PickableData data)
