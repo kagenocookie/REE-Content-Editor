@@ -89,7 +89,6 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     public void OnIMGUI()
     {
         ShowMacroShelf();
-        
     }
     private void ShowMacroShelf()
     {
@@ -310,9 +309,11 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     }
     private void ShowTabContent(string tab)
     {
+        ImGui.BeginChild($"##{tab}");
         var filteredMacros = macros.Where(x => x.Group == tab).OrderBy(x => x.Name).ToList();
         if (filteredMacros.Count == 0) {
             ImGui.TextDisabled(Lang.MacroShelf.Label_NoMacros);
+            ImGui.EndChild();
             return;
         }
 
@@ -363,6 +364,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
             }
             ImGui.PopID();
         }
+        ImGui.EndChild();
     }
     private void ShowMacroCardContextMenu(MacroEntry macro)
     {
