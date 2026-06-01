@@ -93,7 +93,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     private void ShowMacroShelf()
     {
         float sidebarW = ImGui.CalcTextSize($"{AppIcons.SI_GenericClose}").X + ImGui.GetStyle().FramePadding.X * 2;
-        ImGui.BeginChild("Sidebar", new Vector2(sidebarW, 0));
+        ImGui.BeginChild("Sidebar", new Vector2(sidebarW, 0), ImGuiWindowFlags.NoScrollbar);
         ShowSidebar();
         ImGui.EndChild();
         ImGui.SameLine();
