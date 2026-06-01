@@ -5,6 +5,7 @@ using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Aimp;
+using ReeLib.Il2cpp;
 
 namespace ContentEditor.App;
 
@@ -45,7 +46,7 @@ public class NavmeshEditMode : EditModeHandler
 
     public SceneMode Mode { get; private set; }
     public bool AttributeFill { get; private set; }
-    public GenericFlagsU64 SelectedAttribute { get; private set; }
+    public ulong SelectedAttribute { get; private set; }
 
     private bool firstTimeOnTarget;
 
@@ -125,6 +126,22 @@ public class NavmeshEditMode : EditModeHandler
         }
     }
 
+    public static EnumDescriptor<ulong> CreateAIMapLayerEnum(AimpFile? file)
+    {
+        var desc = new EnumDescriptor<ulong>();
+        int i = 0;
+        if (file?.layers == null) {
+            for (i = 0; i < 64; i++) {
+                desc.AddValue<ulong>(1ul << i, i.ToString());
+            }
+            return desc;
+        }
+        foreach (var layer in file.layers) {
+            desc.AddValue<ulong>(1ul << i++, layer.name ?? layer.nameHash.ToString());
+        }
+        return desc;
+    }
+
     private void EnsureUIContext()
     {
         if (context == null) {
@@ -162,7 +179,7 @@ public class NavmeshEditMode : EditModeHandler
             context.AddChild(
                 Lang.EditMode.Navmesh_Attribute,
                 this,
-                new CsharpFlagsEnumFieldHandler<GenericFlagsU64, ulong>(),
+                new FlagsEnumFieldHandler(CreateAIMapLayerEnum((Target as AIMapComponentBase)?.DisplayedFile)),
                 c => c!.SelectedAttribute,
                 (c, v) => {
                     c.SelectedAttribute = v;
@@ -173,9 +190,16 @@ public class NavmeshEditMode : EditModeHandler
         }
     }
 
+    private void RefreshEnums()
+    {
+        EnsureUIContext();
+        context!.children[^1].uiHandler = new FlagsEnumFieldHandler(CreateAIMapLayerEnum((Target as AIMapComponentBase)?.DisplayedFile));
+    }
+
     private void OnFileChanged(bool changed)
     {
         (Target as AIMapComponentBase)?.ResetPreviewGeometry();
+        RefreshEnums();
     }
 
     public override void OnIMGUI()
@@ -189,6 +213,7 @@ public class NavmeshEditMode : EditModeHandler
             if (comp.DisplayedFile != nvm) {
                 comp.SetOverrideFile(nvm);
                 AppConfig.Settings.RecentNavmeshes.AddRecent(Scene.Workspace.Game, filepath);
+                RefreshEnums();
             }
             comp.visibleContentTypes = displayedContentTypes;
         }
