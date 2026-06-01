@@ -111,6 +111,7 @@ public static partial class Lang
         public static readonly FixedString Bind_Close = "Close Current Window";
         public static readonly FixedString Bind_HomePage = "Toggle Home Page";
         public static readonly FixedString Bind_OpenPakBrowser = "Open PAK File Browser";
+        public static readonly FixedString Bind_OpenMacroShelf = "Open Macro Shelf";
         public static readonly FixedString Bind_PakBrowser_OpenBookmarks = "Open Bookmarks";
         public static readonly FixedString Bind_PakBrowser_Bookmark = "Bookmark Current Path";
         public static readonly FixedString Bind_PakBrowser_JumpToPageTop = "Jump to page Top";

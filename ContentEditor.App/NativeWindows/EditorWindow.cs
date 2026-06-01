@@ -270,6 +270,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         if (workspace != null && cfg.Key_OpenPakBrowser.Get().IsPressed()) {
             AddSubwindow(new PakBrowser(workspace, null));
         }
+        if (workspace != null && cfg.Key_OpenMacroShelf.Get().IsPressed()) {
+            AddUniqueSubwindow(new LuaMacroShelf(workspace));
+        }
     }
 
     protected override void SetupMouse(IMouse mouse)
@@ -958,7 +961,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     }
                 }
                 if (ImGui.MenuItem(Lang.Windows.MacroShelf)) {
-                    AddUniqueSubwindow(new LuaMacroShelf());
+                    AddUniqueSubwindow(new LuaMacroShelf(workspace));
                 }
             }
             ImGui.EndMenu();

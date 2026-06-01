@@ -1,6 +1,7 @@
 using ContentEditor.App.Lua;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
+using ContentPatcher;
 using System.Numerics;
 using System.Text.Json;
 
@@ -12,9 +13,15 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     public int FixedID => -10227;
     private WindowData data = null!;
     protected UIContext context = null!;
+    public LuaMacroShelf(ContentWorkspace workspace)
+    {
+        Workspace = workspace;
+    }
+    public ContentWorkspace Workspace { get; }
+    
     private static string MacroMasterListPath => Path.Combine(AppConfig.Instance.LuaUserPath, "lua_macroshelf_masterlist.json");
     private static string MacroGlobalFolderPath => Path.Combine(AppConfig.Instance.LuaUserPath, "macros", "global");
-    private static string MacroGameFolderPath => Path.Combine(AppConfig.Instance.LuaUserPath, "macros", EditorWindow.CurrentWindow!.Workspace.Game.name);
+    private string MacroGameFolderPath => Path.Combine(AppConfig.Instance.LuaUserPath, "macros", Workspace.Game.name);
     private int selectedTabIDX = 0;
     private string newGroupName = string.Empty;
     private bool isShowNewGroupMenu = false;
@@ -209,7 +216,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         ImGui.Checkbox(Lang.MacroShelf.Label_MacroType, ref macroDraft.IsGameSpecific);
         ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_MacroType);
         ImGui.Separator();
-        using (var _ = ImguiHelpers.Disabled(string.IsNullOrWhiteSpace(macroDraft.Name) || isShowNewGroupMenu || !isValidLuaPath)) {
+        using (var _ = ImguiHelpers.Disabled(string.IsNullOrWhiteSpace(macroDraft.Name) || isShowNewGroupMenu || !isValidLuaPath || !macroDraft.Path.EndsWith(".lua"))) {
             if (ImGui.Button(isEditMacroDataMode ? Lang.MacroShelf.Button_SaveMacro : Lang.MacroShelf.Button_AddMacro, new Vector2(-1, 0))) {
                 SaveMacro(macroDraft.ToEntry());
                 macroDraft = new();
@@ -466,7 +473,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
                 return;
             }
             var scriptText = File.ReadAllText(fullPath);
-            var lua = LuaWrapper.Create(EditorWindow.CurrentWindow!.Workspace, EditorWindow.CurrentWindow);
+            var lua = LuaWrapper.Create(Workspace, EditorWindow.CurrentWindow);
             lua.Run(scriptText);
         } catch (Exception e) {
             Logger.Error($"Failed to run macro: {e}");
