@@ -49,7 +49,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     private MacroEntry? pendingDeleteMacro;
     private class MacroDraft
     {
-        public string Path = string.Empty;
+        public string Path = AppConfig.Instance.LuaUserPath;
         public string Name = string.Empty;
         public string Description = string.Empty;
         public string Group = "General";
@@ -153,7 +153,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     private void ShowNewMacroMenu()
     {
         ImGui.BeginChild("NewMacro", new Vector2(450, 0));
-        AppImguiHelpers.InputFilepath(Lang.MacroShelf.Label_MacroLuaPath, ref macroDraft.Path, FileFilters.LuaFile);//TODO SILVER: This should open to the user's lua folder
+        AppImguiHelpers.InputFilepath(Lang.MacroShelf.Label_MacroLuaPath, ref macroDraft.Path, FileFilters.LuaFile);
         ImguiHelpers.IsRequired();
         bool isValidLuaPath = string.IsNullOrWhiteSpace(macroDraft.Path) || IsPathInsideLuaFolder(macroDraft.Path);
         if (!isValidLuaPath) {
