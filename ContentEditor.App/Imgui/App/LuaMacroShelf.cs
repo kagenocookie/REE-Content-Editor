@@ -352,7 +352,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
                 if (ImGui.IsItemHovered()) {
                     ImGui.BeginTooltip();
                     ImGui.SeparatorText(macro.Name);
-                    ImGui.Text(string.IsNullOrEmpty(macro.Description) ? "No description provided..." : macro.Description);
+                    ImGui.Text(string.IsNullOrEmpty(macro.Description) ? Lang.MacroShelf.Tooltip_NoDesc : macro.Description);
                     ImGui.TextColored(ImguiHelpers.GetColor(ImGuiCol.TextDisabled), (macro.IsGameSpecific ? Lang.MacroShelf.Label_MacroTypeA : Lang.MacroShelf.Label_MacroTypeB));
                     ImGui.EndTooltip();
                 }
