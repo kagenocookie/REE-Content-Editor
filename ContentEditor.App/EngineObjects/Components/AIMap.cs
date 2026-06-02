@@ -423,12 +423,6 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
                 boundaryStart = info.point;
             } else {
                 var boundaryEnd = info.point;
-                // get or add Boundary group
-                // get or add AABB group
-                // expand AABB group with two new nodes
-                // expand boundary group with pair nodes for the new AABB nodes
-                // make it undoable
-                // TODO add way to delete boundaries
 
                 var aabbGroup = overrideFile.GetOrAddGroup<ContentGroupMapAABB>();
                 var boundaryGroup = overrideFile.GetOrAddGroup<ContentGroupMapBoundary>();
@@ -450,15 +444,19 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
                 info2_aabb.PairNodes.Add(info2);
 
                 UndoRedo.RecordCallback(null, () => {
-                    if (!boundaryGroup!.Nodes.Contains(node1)) {
-                        boundaryGroup!.Nodes.Add(node1);
-                        boundaryGroup!.Nodes.Add(node2);
-                        boundaryGroup!.NodeInfos.Add(info1);
-                        boundaryGroup!.NodeInfos.Add(info2);
+                    if (!boundaryGroup.Nodes.Contains(node1)) {
+                        boundaryGroup.Nodes.Add(node1);
+                        boundaryGroup.Nodes.Add(node2);
+                        info1.localIndex = boundaryGroup.NodeInfos.Count;
+                        boundaryGroup.NodeInfos.Add(info1);
+                        info2.localIndex = boundaryGroup.NodeInfos.Count;
+                        boundaryGroup.NodeInfos.Add(info2);
                         aabbGroup!.Nodes.Add(node1_aabb);
-                        aabbGroup!.Nodes.Add(node2_aabb);
-                        aabbGroup!.NodeInfos.Add(info1_aabb);
-                        aabbGroup!.NodeInfos.Add(info2_aabb);
+                        aabbGroup.Nodes.Add(node2_aabb);
+                        info1_aabb.localIndex = aabbGroup.NodeInfos.Count;
+                        info2_aabb.localIndex = aabbGroup.NodeInfos.Count;
+                        aabbGroup.NodeInfos.Add(info1_aabb);
+                        aabbGroup.NodeInfos.Add(info2_aabb);
                         info1.Links.Clear();
                         info2.Links.Clear();
                     }
