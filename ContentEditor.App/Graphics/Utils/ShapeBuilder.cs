@@ -711,7 +711,6 @@ public class ShapeBuilder
                 foreach (var shape in shapes) {
                     var min = shape.minpos;
                     var max = shape.maxpos;
-                    // TODO verify
 
                     pts[0] = new Vector3(min.X, min.Y, min.Z);
                     pts[1] = new Vector3(min.X, min.Y, max.Z);
@@ -722,12 +721,12 @@ public class ShapeBuilder
                     pts[6] = new Vector3(max.X, max.Y, min.Z);
                     pts[7] = new Vector3(max.X, max.Y, max.Z);
 
-                    builder.InsertQuad(ref index, pts[0], pts[1], pts[3], pts[2]);
-                    builder.InsertQuad(ref index, pts[4], pts[5], pts[7], pts[6]);
-                    builder.InsertQuad(ref index, pts[0], pts[1], pts[5], pts[4]);
-                    builder.InsertQuad(ref index, pts[2], pts[3], pts[7], pts[6]);
-                    builder.InsertQuad(ref index, pts[0], pts[2], pts[6], pts[4]);
-                    builder.InsertQuad(ref index, pts[1], pts[3], pts[7], pts[5]);
+                    builder.InsertQuad(ref index, pts[0], pts[1], pts[3], pts[2]); // -X
+                    builder.InsertQuad(ref index, pts[4], pts[6], pts[7], pts[5]); // +X
+                    builder.InsertQuad(ref index, pts[0], pts[4], pts[5], pts[1]); // -Y
+                    builder.InsertQuad(ref index, pts[2], pts[3], pts[7], pts[6]); // +Y
+                    builder.InsertQuad(ref index, pts[0], pts[2], pts[6], pts[4]); // -Z
+                    builder.InsertQuad(ref index, pts[1], pts[5], pts[7], pts[3]); // +Z
                 }
             }
         }

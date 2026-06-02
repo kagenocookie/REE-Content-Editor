@@ -1,4 +1,5 @@
 using System.Numerics;
+using ReeLib.Mdf;
 using ReeLib.via;
 using Silk.NET.OpenGL;
 
@@ -42,6 +43,20 @@ public struct MaterialBuilder(RenderContext context)
     public MaterialBuilder Blend(BlendingFactor BlendModeSrc = BlendingFactor.SrcAlpha, BlendingFactor BlendModeDest = BlendingFactor.OneMinusSrcAlpha)
     {
         mat!.BlendMode = new MaterialBlendMode(true, BlendModeSrc, BlendModeDest);
+        return this;
+    }
+
+    public MaterialBuilder OneSided()
+    {
+        WithMdfParams(static m => m.Header.Flags &= ~(MaterialFlags.BaseTwoSideEnable|MaterialFlags.ForcedTwoSideEnable));
+        return this;
+    }
+
+    public MaterialBuilder WithMdfParams(Action<MaterialData>? mod = null)
+    {
+        var mdfData = mat!.SourceMaterial?.Data ?? new MaterialData();
+        mod?.Invoke(mdfData);
+        mat!.SourceMaterial = new FileLoaders.MaterialGroupWrapper.MaterialLookupData(mdfData);
         return this;
     }
 

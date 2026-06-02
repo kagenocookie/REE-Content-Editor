@@ -331,7 +331,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
         }
 
         aabbsMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "aabb")
-            .Color("_MainColor", new Color(0x99, 0x66, 0xbb, 0x66)).Blend();
+            .Color("_MainColor", new Color(0x99, 0x66, 0xbb, 0x66)).Blend().OneSided();
         gizmo.Mesh(mesh.Meshes.First(), Transform.WorldTransform, aabbsMaterial);
     }
 
@@ -361,7 +361,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
         if (overrideFile == null) return;
 
         selectedMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "selected")
-            .Color("_MainColor", new Color(0xff, 0xff, 0xff, 0x55)).Blend();
+            .Color("_MainColor", new Color(0xff, 0xff, 0xff, 0x55)).Blend().OneSided();
 
         gizmo ??= new GizmoContainer(Scene!, this);
         gizmo.PushMaterial(selectedMaterial, selectedMaterial, ShapeBuilder.GeometryType.Filled, 5);
