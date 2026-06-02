@@ -6,6 +6,11 @@ using System.Numerics;
 using System.Text.Json;
 
 namespace ContentEditor.App;
+public enum MacroDisplayMode
+{
+    Full,
+    Compact
+}
 public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
 {
     public string HandlerName => $"{AppIcons.SI_LUA} Macro Shelf";
@@ -22,8 +27,10 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     private static string MacroMasterListPath => Path.Combine(AppConfig.Instance.LuaUserPath, "lua_macroshelf_masterlist.json");
     private static string MacroGlobalFolderPath => Path.Combine(AppConfig.Instance.LuaUserPath, "macros", "global");
     private string MacroGameFolderPath => Path.Combine(AppConfig.Instance.LuaUserPath, "macros", Workspace.Game.name);
+    public MacroDisplayMode DisplayMode { get; set; } = AppConfig.Instance.MacroDisplayMode;
     private int selectedTabIDX = 0;
     private string newGroupName = string.Empty;
+    private bool isShowNewMacroMenu = false;
     private bool isShowNewGroupMenu = false;
     private bool isEditMacroDataMode = false;
     private string[] macroIconsArray = [];
@@ -77,13 +84,6 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         };
     }
     private MacroDraft macroDraft = new();
-    private enum SidebarMenu
-    {
-        None,
-        NewMacro,
-        MacroSettings
-    }
-    private SidebarMenu activeSidebarMenu = SidebarMenu.None;
     public void Init(UIContext context)
     {
         this.context = context;
@@ -106,10 +106,8 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator(ImguiHelpers.GetColor(ImGuiCol.Separator), 2, 0, ImGui.GetContentRegionAvail().Y);
         ImGui.SameLine();
-        switch (activeSidebarMenu) {
-            case SidebarMenu.NewMacro: ShowNewMacroMenu(); break;
-            case SidebarMenu.MacroSettings: ShowMacroSettingsMenu(); break;
-            case SidebarMenu.None: break;
+        if (isShowNewMacroMenu) {
+            ShowNewMacroMenu();
         }
         ImGui.BeginChild("Tabs");
         ShowTabs();
@@ -130,17 +128,21 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     }
     private void ShowSidebar()
     {
-        SidebarToggle($"{AppIcons.SI_GenericAdd}", SidebarMenu.NewMacro);
+        ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericAdd}", ref isShowNewMacroMenu, Colors.IconActive);
         ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_CreateMacro);
-        using (var _ = ImguiHelpers.Disabled(activeSidebarMenu != SidebarMenu.NewMacro)) {
+        using (var _ = ImguiHelpers.Disabled(!isShowNewMacroMenu)) {
             if (ImGui.Button($"{AppIcons.SI_GenericClear}")) {
                 macroDraft = new();
                 isEditMacroDataMode = false;
             }
             ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_ClearMacroData);
         }
+        if (ImGui.Button(DisplayMode == MacroDisplayMode.Compact ? $"{AppIcons.SI_ViewGridSmall}" : $"{AppIcons.List}")) {
+            AppConfig.Instance.MacroDisplayMode = DisplayMode = DisplayMode == MacroDisplayMode.Full ? MacroDisplayMode.Compact : MacroDisplayMode.Full;
+        }
+        ImguiHelpers.Tooltip(DisplayMode == MacroDisplayMode.Compact ? "Compact View"u8 : "Full View"u8);
         ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);
-        if (ImGui.Button($"{AppIcons.SI_Update}")) {
+        if (ImGui.Button($"{AppIcons.SI_GenericMagnifyingGlass}")) {
             ScanForMacros();
         }
         ImGui.PopStyleColor();
@@ -150,12 +152,6 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         }
         ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_OpenMacrosFolder);
         AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/Lua-API", true);
-        //SidebarToggle($"{AppIcons.SI_Settings}", SidebarMenu.MacroSettings, "Macro Settings");
-    }
-    private void SidebarToggle(string icon, SidebarMenu activeMenu)
-    {
-        bool isActive = activeSidebarMenu == activeMenu;
-        if (ImguiHelpers.ToggleButton($"{icon}", ref isActive, Colors.IconActive)) { activeSidebarMenu = isActive ? activeMenu : SidebarMenu.None; }
     }
     private void ShowNewMacroMenu()
     {
@@ -254,6 +250,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         }
         if (isShowNewGroupMenu) {
             using (var _ = ImguiHelpers.Disabled(string.IsNullOrWhiteSpace(newGroupName))) {
+                ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);
                 if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
                     string groupName = newGroupName.Trim();
                     if (!tabs.Any(x => x.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase))) {
@@ -265,6 +262,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
                     group = groupName;
                     changed = true;
                 }
+                ImGui.PopStyleColor();
                 ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_AddGroup);
             }
             ImGui.SameLine();
@@ -274,24 +272,12 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         ImGui.PopItemWidth();
         return changed;
     }
-    private void ShowMacroSettingsMenu()
-    {
-        // TODO SILVER
-        ImGui.BeginChild("MacroSettings", new Vector2(450, 0));
-        ImGui.Text("Lorem Ipsum");
-        ImGui.EndChild();
-
-        ImGui.SameLine();
-        ImguiHelpers.VerticalSeparator(ImguiHelpers.GetColor(ImGuiCol.Separator), 2, 0, ImGui.GetContentRegionAvail().Y);
-        ImGui.SameLine();
-    }
     private void ShowTabs()
     {
         float tabWidth = 80;
         int tabsPerRow = Math.Max(1, (int)(ImGui.GetContentRegionAvail().X / tabWidth));
         for (int row = 0; row < tabs.Count; row += tabsPerRow) {
             bool isOnThisRow = selectedTabIDX >= row && selectedTabIDX < row + tabsPerRow;
-
             if (ImGui.BeginTabBar($"##MacroTabs{row}", ImGuiTabBarFlags.NoCloseWithMiddleMouseButton | ImGuiTabBarFlags.DrawSelectedOverline)) {
                 ImGui.PushStyleColor(ImGuiCol.TabSelected, isOnThisRow ? ImguiHelpers.GetColor(ImGuiCol.TabSelected) : ImguiHelpers.GetColor(ImGuiCol.Tab));
                 ImGui.PushStyleColor(ImGuiCol.TabSelectedOverline, isOnThisRow ? ImguiHelpers.GetColor(ImGuiCol.TabSelectedOverline) : ImguiHelpers.GetColor(ImGuiCol.Tab));
@@ -324,7 +310,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
             return;
         }
 
-        float macroCardW = 250f;
+        float macroCardW = DisplayMode == MacroDisplayMode.Compact ? 60 : 250;
         float macroCardH = 70f;
         int rowIDX = 0;
         int rows = Math.Max(1, (int)(ImGui.GetContentRegionAvail().X / (macroCardW + ImGui.GetStyle().ItemSpacing.X)));
@@ -346,11 +332,6 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
             ImGui.PopStyleColor(4);
             ImGui.PopStyleVar();
             ShowMacroCardContextMenu(macro);
-
-            if (!string.IsNullOrEmpty(macro.Description)) {
-                ImguiHelpers.Tooltip(macro.Description);
-            }
-
             var drawList = ImGui.GetWindowDrawList();
             float iconSize = UI.FontSize * 2;
             float iconPadding = 10;
@@ -358,12 +339,24 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
             drawList.AddText(pos + new Vector2(iconPadding, (macroCardH - iconSize) * 0.5f), macro.IconColor, ResolveMacroIcon(macro.Icon!));
             ImGui.PopFont();
 
-            float textX = pos.X + iconPadding + iconSize + 8f;
-            float textWidth = macroCardW - (iconPadding + iconSize + 15f);
-            string displayName =  AppImguiHelpers.Ellipsize(macro.Name!, textWidth);
-
-            drawList.AddText(new Vector2(textX, pos.Y + 10), ImGui.GetColorU32(ImGuiCol.Text), displayName);
-            drawList.AddText(new Vector2(textX, pos.Y + 30), ImGui.GetColorU32(ImGuiCol.TextDisabled), macro.IsGameSpecific ? Lang.MacroShelf.Label_MacroTypeA : Lang.MacroShelf.Label_MacroTypeB);
+            if (DisplayMode == MacroDisplayMode.Full) {
+                if (!string.IsNullOrEmpty(macro.Description)) {
+                    ImguiHelpers.Tooltip(macro.Description);
+                }
+                float textX = pos.X + iconPadding + iconSize + 8f;
+                float textWidth = macroCardW - (iconPadding + iconSize + 15f);
+                string displayName = AppImguiHelpers.Ellipsize(macro.Name!, textWidth);
+                drawList.AddText(new Vector2(textX, pos.Y + 10), ImGui.GetColorU32(ImGuiCol.Text), displayName);
+                drawList.AddText(new Vector2(textX, pos.Y + 30), ImGui.GetColorU32(ImGuiCol.TextDisabled), macro.IsGameSpecific ? Lang.MacroShelf.Label_MacroTypeA : Lang.MacroShelf.Label_MacroTypeB);
+            } else {
+                if (ImGui.IsItemHovered()) {
+                    ImGui.BeginTooltip();
+                    ImGui.SeparatorText(macro.Name);
+                    ImGui.Text(string.IsNullOrEmpty(macro.Description) ? "No description provided..." : macro.Description);
+                    ImGui.TextColored(ImguiHelpers.GetColor(ImGuiCol.TextDisabled), (macro.IsGameSpecific ? Lang.MacroShelf.Label_MacroTypeA : Lang.MacroShelf.Label_MacroTypeB));
+                    ImGui.EndTooltip();
+                }
+            }
 
             rowIDX++;
             if (rowIDX >= rows) {
@@ -381,7 +374,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
             }
             ImGui.Spacing();
             if (ImGui.MenuItem(Lang.MacroShelf.MenuItem_EditMacro)) {
-                activeSidebarMenu = SidebarMenu.NewMacro;
+                isShowNewMacroMenu = true;
                 isEditMacroDataMode = true;
                 macroDraft.Path = Path.Combine(AppConfig.Instance.LuaUserPath, macro.Path!);
                 macroDraft.Name = macro.Name!;
