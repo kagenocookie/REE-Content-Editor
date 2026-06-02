@@ -103,8 +103,9 @@ public class NodeInfoHandler : IObjectUIHandler, IUIContextEventHandler
             context.AddChild<NodeInfo, int>("Group Index", instance, getter: (i) => i!.groupIndex).AddDefaultHandler();
             context.AddChild<NodeInfo, int>("Local Index", instance, getter: (i) => i!.localIndex).AddDefaultHandler();
             context.AddChild<NodeInfo, NodeInfoFlags>("Flags", instance, getter: (i) => i!.flags, setter: (i, v) => i.flags = v).AddDefaultHandler();
-            // TODO show exactly the attributes that are actually present in the file - how do we get the file :)?
-            context.AddChild<NodeInfo, GenericFlagsU64>("Attributes", instance, getter: (i) => (GenericFlagsU64)i!.attributes, setter: (i, v) => i.attributes = (ulong)v).AddDefaultHandler();
+            var mapFile = context.FindHandlerInParents<AimapEditor>()?.File
+                ?? (context.FindValueInParentValues<InspectorComponentLink>()?.Component as AIMapComponentBase)?.DisplayedFile;
+            context.AddChild<NodeInfo, ulong>("Attributes", instance, new FlagsEnumFieldHandler(NavmeshEditMode.CreateAIMapLayerEnum(mapFile)), (i) => i!.attributes, (i, v) => i.attributes = v);
 
             var ws = context.GetWorkspace();
             if (ws?.Env.TypeCache.GetSubclasses("via.navigation.map.NodeUserData").Any(x => x != "via.navigation.map.NodeUserData") == true) {

@@ -451,10 +451,10 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
             attrsBackup[item] = item.attributes;
             if (!propagateNeighbors) break;
             foreach (var nei in item.Links) {
-                if (!attrsBackup.ContainsKey(nei.TargetNode!) && nei.TargetNode!.attributes == list[0].attributes) {
+                if (nei.TargetNode?.attributes == node.attributes && attrsBackup.TryAdd(nei.TargetNode, node.attributes)) {
                     list.Add(nei.TargetNode);
                 }
-                if (!attrsBackup.ContainsKey(nei.SourceNode!) && nei.SourceNode!.attributes == list[0].attributes) {
+                if (nei.SourceNode?.attributes == node.attributes && attrsBackup.TryAdd(nei.SourceNode, node.attributes)) {
                     list.Add(nei.SourceNode);
                 }
             }
