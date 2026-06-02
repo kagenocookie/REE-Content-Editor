@@ -17,6 +17,8 @@ public static partial class Lang
         public static readonly FixedString Tooltip_NewGroup = "Define a new Group";
         public static readonly FixedString Tooltip_AddGroup = "Add Group";
         public static readonly FixedString Tooltip_NoDesc = "No description provided...";
+        public static readonly FixedString Tooltip_ViewTypeA = "Compact View";
+        public static readonly FixedString Tooltip_ViewTypeB = "Full View";
 
         public static readonly FixedString Label_MacroLuaPath = "LUA Script Path";
         public static readonly FixedString Label_MacroName = "Macro Name";

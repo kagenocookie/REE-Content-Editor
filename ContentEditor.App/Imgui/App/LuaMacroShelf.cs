@@ -128,7 +128,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     }
     private void ShowSidebar()
     {
-        ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericAdd}", ref isShowNewMacroMenu, Colors.IconActive);
+        ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_AddMacro, ref isShowNewMacroMenu, new[] { Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary }, Colors.IconActive);
         ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_CreateMacro);
         using (var _ = ImguiHelpers.Disabled(!isShowNewMacroMenu)) {
             if (ImGui.Button($"{AppIcons.SI_GenericClear}")) {
@@ -140,9 +140,9 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         if (ImGui.Button(DisplayMode == MacroDisplayMode.Compact ? $"{AppIcons.SI_ViewGridSmall}" : $"{AppIcons.List}")) {
             AppConfig.Instance.MacroDisplayMode = DisplayMode = DisplayMode == MacroDisplayMode.Full ? MacroDisplayMode.Compact : MacroDisplayMode.Full;
         }
-        ImguiHelpers.Tooltip(DisplayMode == MacroDisplayMode.Compact ? "Compact View"u8 : "Full View"u8);
+        ImguiHelpers.Tooltip(DisplayMode == MacroDisplayMode.Compact ? Lang.MacroShelf.Tooltip_ViewTypeA : Lang.MacroShelf.Tooltip_ViewTypeB);
         ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);
-        if (ImGui.Button($"{AppIcons.SI_GenericMagnifyingGlass}")) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderScan, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary } )) {
             ScanForMacros();
         }
         ImGui.PopStyleColor();
