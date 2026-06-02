@@ -30,6 +30,7 @@ public enum SceneMode
     Selection,
     SetAttribute,
     RemoveAttribute,
+    AddBoundary,
 }
 
 public class NavmeshEditMode : EditModeHandler

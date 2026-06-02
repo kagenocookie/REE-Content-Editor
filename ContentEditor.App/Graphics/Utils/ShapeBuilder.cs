@@ -666,7 +666,9 @@ public class ShapeBuilder
                     // an OBB is just an AABB with a transformation applied to it, we can use the same logic
                     for (int i = 0; i < BoxTrianglePoints.Length; ++i) {
                         var point = shape.Coord.Multiply(BoxTrianglePoints[i] * shape.Extent);
-                        builder.AddBoxUVAttributes(index, i);
+                        if (builder.layout.HasAttributes(MeshAttributeFlag.UV)) {
+                            builder.AddBoxUVAttributes(index, i);
+                        }
                         builder.InsertVertex(ref index, point);
                     }
                 }
