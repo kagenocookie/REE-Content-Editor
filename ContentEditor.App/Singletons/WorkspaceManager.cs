@@ -15,6 +15,7 @@ public class WorkspaceManager : Singleton<WorkspaceManager>
                 AllowUseLooseFiles = AppConfig.Instance.LoadFromNatives.Get(),
             });
             try {
+                InitWorkspaceConfig(game, workspace.Instance);
                 if (!ResourceRepository.DisableOnlineUpdater) {
                     if (!MainLoop.Instance.BackgroundTasks.HasPendingTask<ReeLibResourceUpdateTask>(t => t.Workspace == workspace.Instance)) {
                         await MainLoop.Instance.BackgroundTasks.QueueAwait(new ReeLibResourceUpdateTask(workspace.Instance));
@@ -22,7 +23,6 @@ public class WorkspaceManager : Singleton<WorkspaceManager>
                         await MainLoop.Instance.BackgroundTasks.Await<ReeLibResourceUpdateTask>(t => t.Workspace == workspace.Instance);
                     }
                 }
-                InitWorkspaceConfig(game, workspace.Instance);
             } catch {
                 Workspaces.Remove(game);
                 throw;
