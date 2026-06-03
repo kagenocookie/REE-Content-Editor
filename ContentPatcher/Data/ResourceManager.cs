@@ -1065,9 +1065,12 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         return handle;
     }
 
-    public FileHandle CreateFileHandle(string filepath, string? nativePath, Stream stream, bool allowDispose = true, bool keepFileReference = true)
+    public FileHandle CreateFileHandle(string filepath, string? nativeOrTargetPath, Stream stream, bool allowDispose = true, bool keepFileReference = true)
     {
-        var handle = this.CreateFileHandleInternal(filepath.NormalizeFilepath(), nativePath, stream, allowDispose);
+        if (nativeOrTargetPath != null && nativeOrTargetPath.StartsWith("natives/", StringComparison.OrdinalIgnoreCase)) {
+            nativeOrTargetPath = PathUtils.RemovePlatformPrefix(nativeOrTargetPath).ToString();
+        }
+        var handle = this.CreateFileHandleInternal(filepath.NormalizeFilepath(), nativeOrTargetPath, stream, allowDispose);
         if (handle == null) {
             throw new NotSupportedException();
         }
