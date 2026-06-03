@@ -414,7 +414,13 @@ public class UndoRedo
 
         public override void Undo()
         {
-            var idx = list.IndexOf(item);
+            int idx;
+            if (index < 0) {
+                idx = -index;
+                if (idx >= list.Count) idx = list.IndexOf(item);
+            } else {
+                idx = list.IndexOf(item);
+            }
             if (idx == -1) return;
 
             list.RemoveAt(idx);
