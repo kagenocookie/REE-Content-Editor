@@ -331,7 +331,7 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
         }
 
         aabbsMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "aabb")
-            .Color("_MainColor", new Color(0x99, 0x66, 0xbb, 0x66)).Blend();
+            .Color("_MainColor", new Color(0x99, 0x66, 0xbb, 0x66)).Blend().OneSided();
         gizmo.Mesh(mesh.Meshes.First(), Transform.WorldTransform, aabbsMaterial);
     }
 
@@ -358,41 +358,52 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
 
     private void UpdateSelectedNodeDisplay(GizmoContainer? gizmo)
     {
-        if (selectedNodes.Count == 0 || overrideFile == null) return;
+        if (overrideFile == null) return;
 
         selectedMaterial ??= Scene!.RenderContext.GetMaterialBuilder(BuiltInMaterials.MonoColor, "selected")
-            .Color("_MainColor", new Color(0xff, 0xff, 0xff, 0x55)).Blend();
+            .Color("_MainColor", new Color(0xff, 0xff, 0xff, 0x55)).Blend().OneSided();
 
         gizmo ??= new GizmoContainer(Scene!, this);
         gizmo.PushMaterial(selectedMaterial, selectedMaterial, ShapeBuilder.GeometryType.Filled, 5);
-        foreach (var node in selectedNodes) {
-            var group = overrideFile.GetGroupForNode(node);
-            var container = overrideFile.mainContent!.contents.Contains(group) == true ? overrideFile.mainContent : overrideFile.secondaryContent;
-            if (group is ContentGroupTriangle triGroup) {
-                if (!this.visibleContentTypes.HasFlag(NavmeshContentType.Triangles)) continue;
-                var triNode = triGroup.Nodes[node.localIndex];
-                var p1 = container!.Vertices![triNode.index1].Vector3;
-                var p2 = container.Vertices[triNode.index2].Vector3;
-                var p3 = container.Vertices[triNode.index3].Vector3;
-                var norm = Vector3.Normalize(Vector3.Cross(p2 - p1, p3 - p2)) * 0.01f;
-                gizmo.Cur.Add(new Triangle(p1 + norm, p2 + norm, p3 + norm));
-            } else if (group is ContentGroupPolygon polyGroup) {
-                if (!this.visibleContentTypes.HasFlag(NavmeshContentType.Polygons)) continue;
-                var polyNode = polyGroup.Nodes[node.localIndex];
-                for (int i = 2; i < polyNode.indices.Length; i++) {
-                    var p1 = container!.Vertices![polyNode.indices[0]].Vector3;
-                    var p2 = container.Vertices[polyNode.indices[i - 1]].Vector3;
-                    var p3 = container.Vertices[polyNode.indices[i]].Vector3;
+        if (selectedNodes.Count > 0) {
+            foreach (var node in selectedNodes) {
+                var group = overrideFile.GetGroupForNode(node);
+                var container = overrideFile.mainContent!.contents.Contains(group) == true ? overrideFile.mainContent : overrideFile.secondaryContent;
+                if (group is ContentGroupTriangle triGroup) {
+                    if (!this.visibleContentTypes.HasFlag(NavmeshContentType.Triangles)) continue;
+                    var triNode = triGroup.Nodes[node.localIndex];
+                    var p1 = container!.Vertices![triNode.index1].Vector3;
+                    var p2 = container.Vertices[triNode.index2].Vector3;
+                    var p3 = container.Vertices[triNode.index3].Vector3;
                     var norm = Vector3.Normalize(Vector3.Cross(p2 - p1, p3 - p2)) * 0.01f;
                     gizmo.Cur.Add(new Triangle(p1 + norm, p2 + norm, p3 + norm));
+                } else if (group is ContentGroupPolygon polyGroup) {
+                    if (!this.visibleContentTypes.HasFlag(NavmeshContentType.Polygons)) continue;
+                    var polyNode = polyGroup.Nodes[node.localIndex];
+                    for (int i = 2; i < polyNode.indices.Length; i++) {
+                        var p1 = container!.Vertices![polyNode.indices[0]].Vector3;
+                        var p2 = container.Vertices[polyNode.indices[i - 1]].Vector3;
+                        var p3 = container.Vertices[polyNode.indices[i]].Vector3;
+                        var norm = Vector3.Normalize(Vector3.Cross(p2 - p1, p3 - p2)) * 0.01f;
+                        gizmo.Cur.Add(new Triangle(p1 + norm, p2 + norm, p3 + norm));
+                    }
                 }
             }
+        }
+        if (boundaryStart.X != float.MaxValue) {
+            gizmo.Cur.Add(new OBB(Matrix4x4.CreateTranslation(boundaryStart), new Vector3(0.5f)));
         }
         gizmo.PopMaterial();
     }
 
+    private Vector3 boundaryStart = new Vector3(float.MaxValue);
+
     public void HandleSelect(IntersectionInfo info, int contextId, ISceneEditor editor)
     {
+        if (overrideFile?.Header.mapType != MapType.Navmesh) {
+            Logger.Warn("AIMap scene operations only supported for navmesh type maps");
+            return;
+        }
         selectedNodes.Clear();
         var type = (NavmeshContentType)contextId;
         if (!navMeshes.TryGetValue(type, out var meshHandle)) {
@@ -407,6 +418,69 @@ public abstract class AIMapComponentBase(GameObject gameObject, RszInstance data
         var selectMode = navEdit?.Mode ?? SceneMode.Selection;
         var fill = navEdit?.AttributeFill ?? false;
         var attr = navEdit?.SelectedAttribute ?? 0;
+        if (selectMode == SceneMode.AddBoundary) {
+            if (boundaryStart.X == float.MaxValue) {
+                boundaryStart = info.point;
+            } else {
+                var boundaryEnd = info.point;
+
+                var aabbGroup = overrideFile.GetOrAddGroup<ContentGroupMapAABB>();
+                var boundaryGroup = overrideFile.GetOrAddGroup<ContentGroupMapBoundary>();
+                if (aabbGroup == null || boundaryGroup == null) {
+                    Logger.Error("Could not create boundary group in map file");
+                    return;
+                }
+                var node1_aabb = new AABBNode(AABB.CreateFromOrigin(boundaryStart, new Vector3(0.5f)));
+                var node2_aabb = new AABBNode(AABB.CreateFromOrigin(boundaryEnd, new Vector3(0.5f)));
+                var info1_aabb = overrideFile.CreateNode(aabbGroup, node1_aabb);
+                var info2_aabb = overrideFile.CreateNode(aabbGroup, node2_aabb);
+                var node1 = new ContentGroupMapBoundary.MapBoundaryNode(node1_aabb.bounds);
+                var node2 = new ContentGroupMapBoundary.MapBoundaryNode(node2_aabb.bounds);
+                var info1 = overrideFile.CreateNode(boundaryGroup, node1);
+                var info2 = overrideFile.CreateNode(boundaryGroup, node2);
+                info1.PairNodes.Add(info1_aabb);
+                info2.PairNodes.Add(info2_aabb);
+                info1_aabb.PairNodes.Add(info1);
+                info2_aabb.PairNodes.Add(info2);
+
+                UndoRedo.RecordCallback(null, () => {
+                    if (!boundaryGroup.Nodes.Contains(node1)) {
+                        boundaryGroup.Nodes.Add(node1);
+                        boundaryGroup.Nodes.Add(node2);
+                        info1.localIndex = boundaryGroup.NodeInfos.Count;
+                        boundaryGroup.NodeInfos.Add(info1);
+                        info2.localIndex = boundaryGroup.NodeInfos.Count;
+                        boundaryGroup.NodeInfos.Add(info2);
+                        aabbGroup!.Nodes.Add(node1_aabb);
+                        aabbGroup.Nodes.Add(node2_aabb);
+                        info1_aabb.localIndex = aabbGroup.NodeInfos.Count;
+                        info2_aabb.localIndex = aabbGroup.NodeInfos.Count;
+                        aabbGroup.NodeInfos.Add(info1_aabb);
+                        aabbGroup.NodeInfos.Add(info2_aabb);
+                        info1.Links.Clear();
+                        info2.Links.Clear();
+                    }
+
+                    info1.Links.Add(new LinkInfo() { SourceNode = info1, TargetNode = info2, sourceNodeIndex = info1.index, targetNodeIndex = info2.index });
+                    info2.Links.Add(new LinkInfo() { SourceNode = info2, TargetNode = info1, sourceNodeIndex = info2.index, targetNodeIndex = info1.index });
+                    NavmeshGenerator.PostProcessAdditionalNodes(overrideFile);
+                    overrideFile.PackData();
+                    isStale = true;
+                }, () => {
+                    overrideFile.RemoveNode(boundaryGroup, info1);
+                    overrideFile.RemoveNode(boundaryGroup, info2);
+                    overrideFile.RemoveNode(aabbGroup, info1_aabb);
+                    overrideFile.RemoveNode(aabbGroup, info2_aabb);
+                    NavmeshGenerator.PostProcessAdditionalNodes(overrideFile);
+                    overrideFile.PackData();
+                    isStale = true;
+                });
+
+                boundaryStart = new Vector3(float.MaxValue);
+            }
+            return;
+        }
+        boundaryStart = new Vector3(float.MaxValue);
 
         NodeInfo? nodeInfo = null;
         if (type == NavmeshContentType.Triangles) {

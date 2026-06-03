@@ -4,42 +4,57 @@ using ContentEditor.Core;
 
 namespace ContentEditor.App.ImguiHandling;
 
-public class CsharpEnumHandler : IObjectUIHandler
+public class BoxedEnumData
 {
-    private Type enumType;
-    private EnumData data;
+    public required string[] Labels { get; init; }
+    public required object[] Values { get; init; }
 
-    public bool NoUndoRedo { get; set; }
+    private static readonly Dictionary<Type, BoxedEnumData> Datas = new();
 
-    private class EnumData
+    public static BoxedEnumData GetOrCreate(Type enumType, Dictionary<object, string>? filteredValues = null)
     {
-        public required string[] Labels { get; init; }
-        public required object[] Values { get; init; }
-    }
-    private static readonly Dictionary<Type, EnumData> Datas = new();
-
-    public CsharpEnumHandler(Type enumType, Dictionary<object, string>? filteredValues = null)
-    {
-        this.enumType = enumType;
         if (filteredValues != null) {
-            data = new EnumData() {
+            var data = new BoxedEnumData() {
                 Values = filteredValues.OrderBy(kv => kv.Key).Select(kv => kv.Key).ToArray(),
                 Labels = filteredValues.OrderBy(kv => kv.Key).Select(kv => kv.Value).ToArray(),
             };
-            return;
-        }
-        if (!Datas.TryGetValue(enumType, out data!)) {
-            var labels = enumType.GetEnumNames();
-            Datas[enumType] = data = new EnumData() {
-                Labels = labels,
-                Values = new object[labels.Length]
-            };
-            var it = enumType.GetEnumValues().GetEnumerator();
-            for (int i = 0; i < labels.Length; ++i) {
-                it.MoveNext();
-                data.Values[i] = it.Current;
+            if (AppConfig.Instance.PrettyFieldLabels) data.TranslateLabels();
+            return data;
+        } else {
+            if (!Datas.TryGetValue(enumType, out var data)) {
+                var labels = enumType.GetEnumNames();
+                Datas[enumType] = data = new BoxedEnumData() {
+                    Labels = labels,
+                    Values = new object[labels.Length]
+                };
+                if (AppConfig.Instance.PrettyFieldLabels) data.TranslateLabels();
+                var it = enumType.GetEnumValues().GetEnumerator();
+                for (int i = 0; i < labels.Length; ++i) {
+                    it.MoveNext();
+                    data.Values[i] = it.Current;
+                }
             }
+            return data;
         }
+    }
+
+    public void TranslateLabels()
+    {
+        for (int i = 0; i < Labels.Length; i++) {
+            Labels[i] = WindowHandlerFactory.GetFieldLabel(Labels[i]);
+        }
+    }
+}
+
+public sealed class CsharpEnumHandler : IObjectUIHandler
+{
+    private BoxedEnumData data;
+
+    public bool NoUndoRedo { get; set; }
+
+    public CsharpEnumHandler(Type enumType, Dictionary<object, string>? filteredValues = null)
+    {
+        data = BoxedEnumData.GetOrCreate(enumType, filteredValues);
     }
 
     public void OnIMGUI(UIContext context)
@@ -61,21 +76,10 @@ public class CsharpFlagsEnumFieldHandler<T, TUnderlying>() : IObjectUIHandler
     where TUnderlying : unmanaged, IBinaryInteger<TUnderlying>, IBitwiseOperators<TUnderlying, TUnderlying, TUnderlying>
 {
     private ImGuiDataType scalarType = TypeToImguiDataType(typeof(T).GetEnumUnderlyingType());
-    private string[] Names = Enum.GetNames<T>();
+    private string[] Names = AppConfig.Instance.PrettyFieldLabels ? Enum.GetNames<T>().Select(WindowHandlerFactory.GetFieldLabel).ToArray() : Enum.GetNames<T>();
     private T[] Values = Enum.GetValues<T>();
 
     public bool HideNumberInput { get; init; }
-
-    private static object[] GetBoxedValues(Type type)
-    {
-        var values = Enum.GetValues(type);
-        var outv = new object[values.Length];
-        int i = 0;
-        foreach (var v in values) {
-            outv[i++] = v;
-        }
-        return outv;
-    }
 
     private static ImGuiDataType TypeToImguiDataType(Type type)
     {
@@ -140,42 +144,15 @@ public class CsharpFlagsEnumFieldHandler<T, TUnderlying>() : IObjectUIHandler
 }
 
 
-public class CsharpEnumRadioHandler : IObjectUIHandler
+public sealed class CsharpEnumRadioHandler : IObjectUIHandler
 {
-    private Type enumType;
-    private EnumData data;
+    private BoxedEnumData data;
 
     public bool Inline { get; set; } = true;
 
-    private class EnumData
-    {
-        public required string[] Labels { get; init; }
-        public required object[] Values { get; init; }
-    }
-    private static readonly Dictionary<Type, EnumData> Datas = new();
-
     public CsharpEnumRadioHandler(Type enumType, Dictionary<object, string>? filteredValues = null)
     {
-        this.enumType = enumType;
-        if (filteredValues != null) {
-            data = new EnumData() {
-                Values = filteredValues.OrderBy(kv => kv.Key).Select(kv => kv.Key).ToArray(),
-                Labels = filteredValues.OrderBy(kv => kv.Key).Select(kv => kv.Value).ToArray(),
-            };
-            return;
-        }
-        if (!Datas.TryGetValue(enumType, out data!)) {
-            var labels = enumType.GetEnumNames();
-            Datas[enumType] = data = new EnumData() {
-                Labels = labels,
-                Values = new object[labels.Length]
-            };
-            var it = enumType.GetEnumValues().GetEnumerator();
-            for (int i = 0; i < labels.Length; ++i) {
-                it.MoveNext();
-                data.Values[i] = it.Current;
-            }
-        }
+        data = BoxedEnumData.GetOrCreate(enumType, filteredValues);
     }
 
     public void OnIMGUI(UIContext context)

@@ -99,6 +99,7 @@ public static class WindowHandlerFactory
 
     static WindowHandlerFactory()
     {
+        AppConfig.Instance.PreferredLanguage.ValueChanged += (_) => prettyLabels.Clear();
         AppConfig.Instance.PrettyFieldLabels.ValueChanged += (bool newValue) => showPrettyLabels = newValue;
         showPrettyLabels = AppConfig.Instance.PrettyFieldLabels.Get();
 
@@ -871,7 +872,7 @@ public static class WindowHandlerFactory
         };
     }
 
-    private static string GetFieldLabel(string name)
+    public static string GetFieldLabel(string name)
     {
         if (!showPrettyLabels) return name;
 
@@ -879,6 +880,6 @@ public static class WindowHandlerFactory
             return label;
         }
 
-        return prettyLabels[name] = name.PrettyPrint();
+        return prettyLabels[name] = FixedString.GetTranslation(name.PrettyPrint());
     }
 }

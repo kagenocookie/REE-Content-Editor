@@ -30,6 +30,7 @@ public enum SceneMode
     Selection,
     SetAttribute,
     RemoveAttribute,
+    AddBoundary,
 }
 
 public class NavmeshEditMode : EditModeHandler
@@ -118,7 +119,7 @@ public class NavmeshEditMode : EditModeHandler
     public override void DrawToolbarUI()
     {
         if (loadedFile != null && loadedFile.GetFile<AimpFile>().mainContent?.contents.FirstOrDefault() is ContentGroupTriangle) {
-            if (ImGui.BeginMenu(Lang.EditMode.Navmesh_PaintingToolbar)) {
+            if (ImGui.BeginMenu(Lang.EditMode.Navmesh_SceneModeToolbar)) {
                 EnsureUIContext();
                 context!.ShowChildrenUI(2);
                 ImGui.EndMenu();
@@ -171,7 +172,7 @@ public class NavmeshEditMode : EditModeHandler
             context.AddChild(
                 Lang.EditMode.Navmesh_AttrFill,
                 this,
-                new ConditionalUIHandler(BoolFieldHandler.Instance, c => ((NavmeshEditMode)c.target!).Mode != SceneMode.Selection),
+                new ConditionalUIHandler(BoolFieldHandler.Instance, c => ((NavmeshEditMode)c.target!).Mode is SceneMode.SetAttribute or SceneMode.RemoveAttribute),
                 c => c!.AttributeFill,
                 (c, v) => c.AttributeFill = v,
                 UIOptions.DisableUndoRedo
