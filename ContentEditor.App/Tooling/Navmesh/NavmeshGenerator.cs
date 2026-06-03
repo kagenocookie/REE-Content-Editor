@@ -459,12 +459,19 @@ public static class NavmeshGenerator
         // assume no explicit index gaps in the extra groups
         ShiftExtraContentGroups(targetFile.mainContent, manualLinksMain, nodesBackupMain);
         ShiftExtraContentGroups(targetFile.secondaryContent, manualLinksSecondary, nodesBackupSecondary);
+        foreach (var info in triGroup.NodeInfos) {
+            info.Links.RemoveAll(l => l.SourceNode!.groupIndex != 0 || l.TargetNode!.groupIndex != 0);
+        }
+        foreach (var info in polyGroup.NodeInfos) {
+            info.Links.RemoveAll(l => l.SourceNode!.groupIndex != 0 || l.TargetNode!.groupIndex != 0);
+        }
 
         // regenerate all mesh related links based on AABBs
         var boundary = targetFile.mainContent.contents.OfType<ContentGroupMapBoundary>().FirstOrDefault();
         var walls = targetFile.mainContent.contents.OfType<ContentGroupWall>().FirstOrDefault();
         var secAabbs = targetFile.secondaryContent.contents.OfType<ContentGroupMapAABB>().FirstOrDefault();
         if (boundary != null) {
+            foreach (var info in boundary.NodeInfos) info.Links.Clear();
             foreach (var info in boundary.NodeInfos) {
                 var node = boundary.Nodes[info.localIndex];
                 var triangleNodes = triGroup.GetOverlappingNodes(targetFile.mainContent, new AABB(node.min, node.max));
@@ -487,6 +494,7 @@ public static class NavmeshGenerator
 
         if (walls != null) {
             targetFile.PackData(); // need to ensure correct vert indices
+            foreach (var info in walls.NodeInfos) info.Links.Clear();
             foreach (var info in walls.NodeInfos) {
                 var node = walls.Nodes[info.localIndex];
                 Vector3 min = new Vector3(float.MaxValue);
