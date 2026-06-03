@@ -29,7 +29,7 @@ public partial class Lang
             nameof(GameName.gtrick) => "Ghost Trick",
             nameof(GameName.kunitsu) => "Kunitsu-Gami",
             nameof(GameName.pragmata) => "Pragmata",
-            nameof(GameName.oni) => "Onimusha: WotS",
+            nameof(GameName.oniws) => "Onimusha: WotS",
             _ => code,
         };
     }
