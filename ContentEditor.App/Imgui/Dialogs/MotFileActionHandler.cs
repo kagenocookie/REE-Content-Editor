@@ -148,6 +148,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
         private bool maintainExistingChannelsOnly;
         private bool copyBehaviorClips;
         private bool removeExistingBehaviorClips;
+        private bool copyOnlyBehaviorClips;
 
         public bool Show()
         {
@@ -175,6 +176,7 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                 ImGui.Checkbox("Add all source mot file behavior clips", ref copyBehaviorClips);
                 if (copyBehaviorClips) {
                     ImGui.Checkbox("Remove all behavior clips from the target mot file (fully replace with copied)", ref removeExistingBehaviorClips);
+                    ImGui.Checkbox("Copy only behavior clips (ignore animation)", ref copyOnlyBehaviorClips);
                 }
                 if (newFile != replacedFile) {
                     if (newFile is MotFile m1 && replacedFile is MotFile m2 && !m1.Bones.Select(b => b.boneHash).Order().SequenceEqual(m2.Bones.Select(x => x.boneHash).Order())) {
@@ -264,7 +266,16 @@ internal class MotFileActionHandler(IObjectUIHandler inner) : IObjectUIHandler
                     ImGui.Spacing();
                     if (ImGui.Button("Confirm Replace", new Vector2(170, 0))) {
                         if (replacedFile != newFile) {
-                            ConfirmPaste(file, replacedFile, newFile, editor, overwriteBoneList, maintainExistingChannelsOnly, copyBehaviorClips, removeExistingBehaviorClips);
+                            if (copyBehaviorClips && copyOnlyBehaviorClips) {
+                                if (replacedFile is MotFile mf1 && newFile is MotFile mf2) {
+                                    if (removeExistingBehaviorClips) mf1.Clips.Clear();
+                                    mf1.Clips.AddRange(mf2.Clips);
+                                } else {
+                                    Logger.Error("Clip copy not supported for the given mot file types");
+                                }
+                            } else {
+                                ConfirmPaste(file, replacedFile, newFile, editor, overwriteBoneList, maintainExistingChannelsOnly, copyBehaviorClips, removeExistingBehaviorClips);
+                            }
                         }
                         keepShowing = false;
                     }
