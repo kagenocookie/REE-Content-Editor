@@ -635,6 +635,7 @@ public class MatHeaderImguiHandler : IObjectUIHandler
                 });
             var matData = context.target as MaterialData;
             context.AddChild("GPU Buffers", matData, getter: m => m!.GpuBuffers).AddDefaultHandler();
+            context.AddChild("Material Index Lists", matData, getter: m => m!.MaterialIndexLists).AddDefaultHandler();
         }
         ImGui.SetNextItemOpen(true, ImGuiCond.Always);
         context.ShowChildrenUI();
