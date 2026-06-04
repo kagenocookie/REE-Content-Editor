@@ -357,7 +357,11 @@ public static partial class RszFieldCache
         var nested = type.GetNestedTypes(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
         foreach (var sub in nested) {
             if (sub.Name.EndsWith("<>c")) continue;
-            InitializeFieldOverrides(gameName, parser, sub);
+            try {
+                InitializeFieldOverrides(gameName, parser, sub);
+            } catch (Exception e) {
+                Logger.Error($"Failed to initialize rsz field overrides for type {sub.Name}: {e.Message}");
+            }
         }
     }
 }
