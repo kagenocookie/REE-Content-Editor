@@ -45,7 +45,7 @@ public class MotFileEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 {
     public ContentWorkspace Workspace { get; }
-    public MotlistFile File { get; private set; }
+    public MotlistFile File => Handle.GetFile<MotlistFile>();
 
     public override string HandlerName => "Motlist";
 
@@ -89,14 +89,12 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     public MotlistEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
         Workspace = env;
-        File = file.GetFile<MotlistFile>();
     }
 
     protected override void OnFileReverted()
     {
         base.OnFileReverted();
         context.ClearChildren();
-        File = Handle.GetFile<MotlistFile>();
     }
 
     protected override void DrawFileControls(WindowData data)
