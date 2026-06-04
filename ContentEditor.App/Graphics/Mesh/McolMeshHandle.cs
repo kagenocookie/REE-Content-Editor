@@ -34,7 +34,7 @@ public class McolMeshHandle : MeshHandle
         } else {
             if (first is not TriangleMesh) {
                 // TODO re-init the mesh part properly
-                Handle.Meshes.Insert(0, new TriangleMesh(GL, [], []));
+                Handle.Meshes.Insert(0, new TriangleMesh(GL, [], [], MeshLayout.PositionOnly));
             }
         }
 
