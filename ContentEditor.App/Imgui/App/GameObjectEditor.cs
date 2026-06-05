@@ -172,9 +172,12 @@ public class ComponentDataHandler : IObjectUIHandler
 
         ImGui.BeginDisabled(!context.IsChanged);
         if (ImGui.Button($"{AppIcons.SI_Reset}")) {
-            // not sure whats up with this, causes imgui pops to fail and throw an assert
-            //context.Revert();
-            //context.ResetState();
+            try {
+                context.Revert();
+                context.ResetState();
+                // some components throw this while being reverted. data seems to be fine if we catch this though
+            } catch(NotImplementedException) {
+            }
         }
         ImGui.EndDisabled();
         // end context buttons
