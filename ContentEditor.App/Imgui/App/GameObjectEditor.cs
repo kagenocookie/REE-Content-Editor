@@ -1,7 +1,8 @@
-using System.Reflection;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
+using System.Numerics;
+using System.Reflection;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -63,16 +64,16 @@ public class BaseComponentEditor : IObjectUIHandler
     protected static UIContext SetupDefaultUI(UIContext context)
     {
         var component = context.Get<Component>();
-// #if DEBUG
-//             if (component.GetType() != typeof(Component)) {
-//                 var rawComponentChild = context.AddChild(context.label + " [DEBUG]", component);
-//                 WindowHandlerFactory.SetupObjectUIContext(rawComponentChild, component.GetType(), true, orderFunc: (f, i) => {
-//                     if (f.Name == nameof(Component.GameObject) || f.Name == nameof(Component.Data)) return -1;
-//                     return i;
-//                 });
-//                 rawComponentChild.uiHandler ??= new LazyPlainObjectHandler(component.GetType());
-//             }
-// #endif
+        // #if DEBUG
+        //             if (component.GetType() != typeof(Component)) {
+        //                 var rawComponentChild = context.AddChild(context.label + " [DEBUG]", component);
+        //                 WindowHandlerFactory.SetupObjectUIContext(rawComponentChild, component.GetType(), true, orderFunc: (f, i) => {
+        //                     if (f.Name == nameof(Component.GameObject) || f.Name == nameof(Component.Data)) return -1;
+        //                     return i;
+        //                 });
+        //                 rawComponentChild.uiHandler ??= new LazyPlainObjectHandler(component.GetType());
+        //             }
+        // #endif
         var child = context.AddChild(context.label, component.Data);
         WindowHandlerFactory.SetupRSZInstanceHandler(child);
         return child;
@@ -92,7 +93,7 @@ public class ComponentDataHandler : IObjectUIHandler
     {
         var instance = context.Get<RszInstance>();
         context.annotation ??= (TranslatableBase?)WindowHandlerFactory.GetStringFormatter(instance) ?? FixedString.Cached(instance.RszClass.name);
-        var show = ImguiHelpers.TreeNodeSuffix(context.label, context.annotation.GetUTF8(instance));
+        var show = DrawComponentTreeNode(context, instance);
         RszInstanceHandler.ShowDefaultContextMenu(context);
         if (show) {
             if (context.children.Count == 0) {
@@ -107,6 +108,83 @@ public class ComponentDataHandler : IObjectUIHandler
             ImGui.PopID();
             ImGui.TreePop();
         }
+    }
+
+    private bool DrawComponentTreeNode(UIContext context, RszInstance instance)
+    {
+        ImGui.BeginGroup();
+
+        ReadOnlySpan<byte> label = context.label;
+        ReadOnlySpan<byte> suffix = context.annotation.GetUTF8(instance);
+        ImGui.PushID(label);
+
+        // begin node header
+        ImGui.PushStyleColor(ImGuiCol.Header, new Vector4(0.231f, 0.231f, 0.231f, 1.0f));
+        ImGui.PushStyleColor(ImGuiCol.HeaderHovered, new Vector4(0.35f, 0.35f, 0.35f, 1.0f));
+        ImGui.PushStyleColor(ImGuiCol.HeaderActive, new Vector4(0.3f, 0.3f, 0.3f, 1.0f));
+
+
+        var show = ImGui.TreeNodeEx("##treenode", ImGuiTreeNodeFlags.FramePadding |
+                                                  ImGuiTreeNodeFlags.Framed |
+                                                  ImGuiTreeNodeFlags.AllowOverlap);
+
+        ImGui.PopStyleColor(3);
+        // end node header
+
+        object? componentFirstField = instance.Values.Length > 0 ? instance.Values[0] : null;
+        if (componentFirstField is bool enabledBool) {
+            ImGui.SameLine();
+
+            ImGui.PushStyleColor(ImGuiCol.Border, new Vector4(0.356f, 0.356f, 0.356f, 1.0f));
+            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0.08f, 0.08f, 0.08f, 1.0f));
+            ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 2.0f);
+            // hacky way to make the checkbox a bit smaller, i guess we'd need a custom one if we wanna make it smaller without doing this
+            ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(4, 1));
+
+            if (ImGui.Checkbox("##chkbox", ref enabledBool)) {
+                UndoRedo.RecordCallbackSetter(context, instance, instance.Values[0], enabledBool, (inst, val) => inst.Values[0] = val);
+            }
+
+            ImGui.PopStyleVar(2);
+            ImGui.PopStyleColor(2);
+        }
+        ImGui.SameLine();
+
+        // begin name labels
+        // using class name here because i couldn't find an efficient way to strip the suffix from the label
+        // it's also accurate to their editor ig
+        ImGui.TextUnformatted(instance.RszClass.ShortName);
+        ImGui.SameLine();
+        ImGui.TextColored(Colors.Faded, suffix);
+        // end name labels
+
+        // begin context buttons
+        ImGui.SameLine();
+
+        float buttonWidth = ImGui.CalcTextSize($"{AppIcons.SI_Reset}").X + ImGui.GetStyle().FramePadding.X * 2;
+        float avail = ImGui.GetContentRegionAvail().X;
+
+        float rightEdge = ImGui.GetCursorScreenPos().X + avail;
+
+        float posX = rightEdge - buttonWidth;
+
+        ImGui.SetCursorScreenPos(new Vector2(posX, ImGui.GetCursorScreenPos().Y));
+
+        ImGui.BeginDisabled(!context.IsChanged);
+        if (ImGui.Button($"{AppIcons.SI_Reset}")) {
+            // not sure whats up with this, causes imgui pops to fail and throw an assert
+            //context.Revert();
+            //context.ResetState();
+        }
+        ImGui.EndDisabled();
+        // end context buttons
+
+        ImGui.PopID();
+        ImGui.EndGroup();
+        // hack: doing BeginGroup means the indent doesn't apply, but we need the group if we want to have a context menu trigger on both node and suffix
+        // doing a manual indent fixes that
+        if (show) ImGui.Indent(ImGui.GetStyle().IndentSpacing);
+        return show;
     }
 
     protected virtual void ShowContents(UIContext context)
