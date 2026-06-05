@@ -40,6 +40,7 @@ public partial class FileTesterWindow : IWindowHandler
     private bool allVersions;
     private bool testRewrite;
     private bool smokeTest;
+    private bool allFormats;
 
     private const int SmokeTestFileLimit = 25;
 
@@ -195,22 +196,45 @@ public partial class FileTesterWindow : IWindowHandler
             FormatLabels = list.Select(kv => $"{kv.Item2} ({kv.Item1})").ToArray();
         }
 
+        if (allFormats) ImGui.BeginDisabled();
         if (ImguiHelpers.FilterableCombo("File type"u8, FormatLabels, Formats, ref format, ref formatFilter)) {
             AppConfig.Settings.Dev.LastFileTestFormat = format;
             AppConfig.Settings.Save();
         }
+        if (allFormats) ImGui.EndDisabled();
+        ImGui.SameLine();
+        ImGui.Checkbox("Test all known file formats", ref allFormats);
+
         ImGui.Checkbox("Try all configured games", ref allVersions);
         ImGui.SameLine();
         ImGui.Checkbox("Execute read/write test", ref testRewrite);
         ImGui.SameLine();
         ImGui.Checkbox("Smoke test", ref smokeTest);
 
-        if (format != KnownFileFormats.Unknown) {
+        if (format != KnownFileFormats.Unknown || allFormats) {
             if (ImGui.Button("Execute")) {
-                if (testRewrite) {
-                    ExecuteWriteTest(format, allVersions);
+                KnownFileFormats[] formats = [format];
+                if (allFormats) {
+                    var exts = Enum.GetValues<KnownFileFormats>().SelectMany(Workspace!.Env.GetFileExtensionsForFormat).ToArray();
+                    formats = exts
+                        .Where(ext => Workspace.ResourceManager.CanLoadFile($".{ext}"))
+                        .Select(ext => PathUtils.ParseFileFormat(ext).format)
+                        .ToArray();
+                }
+
+                results.Clear();
+                if (formats.Length == 1) {
+                    var task = testRewrite ? ExecuteWriteTest(formats[0], allVersions) : Execute(formats[0], allVersions);
                 } else {
-                    Execute(format, allVersions);
+                    var wnd = EditorWindow.CurrentWindow!;
+                    Task.Run(() => {
+                        foreach (var fmt in formats) {
+                            if (fmt == KnownFileFormats.Effect) continue;
+                            this.format = fmt;
+                            var task = testRewrite ? ExecuteWriteTest(fmt, allVersions) : Execute(fmt, allVersions);
+                            task.Wait();
+                        }
+                    });
                 }
             }
         }
@@ -249,25 +273,25 @@ public partial class FileTesterWindow : IWindowHandler
         }
     }
 
-    internal void ExecuteWriteTest(KnownFileFormats format, bool allVersions)
+    internal Task ExecuteWriteTest(KnownFileFormats format, bool allVersions)
     {
         results.Clear();
         var workspace = (data.ParentWindow as IWorkspaceContainer)?.Workspace;
         if (workspace == null) {
             ImGui.TextColored(Colors.Error, "Workspace not configured");
-            return;
+            return Task.CompletedTask;
         }
         var isLoadable = workspace.Env.GetFileExtensionsForFormat(format).Any(ext => workspace.ResourceManager.CanLoadFile("." + ext));
         if (!isLoadable) {
             Logger.Error("File format " + format + " is not supported");
-            return;
+            return Task.CompletedTask;
         }
 
         cancellationTokenSource?.Cancel();
         cancellationTokenSource ??= new();
 
-        var wnd = EditorWindow.CurrentWindow!;
-        Task.Run(() => {
+        Action<Action> deferAction = MainLoop.IsMainThread ? EditorWindow.CurrentWindow!.InvokeFromUIThread : MainLoop.Instance.InvokeFromUIThread;
+        return Task.Run(() => {
             try {
                 var token = cancellationTokenSource.Token;
                 var timer = Stopwatch.StartNew();
@@ -305,7 +329,7 @@ public partial class FileTesterWindow : IWindowHandler
                     Logger.Info($"Finished {env.Game} {format} test: {success}/{success + fails.Count} files suceeded.");
                 }
 
-                wnd.InvokeFromUIThread(() => Logger.Info("Test finished in: " + timer.ElapsedMilliseconds + " ms"));
+                deferAction.Invoke(() => Logger.Debug("Test finished in: " + timer.ElapsedMilliseconds + " ms"));
             } catch (Exception e) {
                 Logger.Error(e, "Unexpected error during file test");
             } finally {
@@ -314,25 +338,25 @@ public partial class FileTesterWindow : IWindowHandler
             }
         });
     }
-    internal void Execute(KnownFileFormats format, bool allVersions)
+    internal Task Execute(KnownFileFormats format, bool allVersions)
     {
         results.Clear();
         var workspace = (data.ParentWindow as IWorkspaceContainer)?.Workspace;
         if (workspace == null) {
             ImGui.TextColored(Colors.Error, "Workspace not configured");
-            return;
+            return Task.CompletedTask;
         }
         var isLoadable = workspace.Env.GetFileExtensionsForFormat(format).Any(ext => workspace.ResourceManager.CanLoadFile("." + ext));
         if (!isLoadable) {
             Logger.Error("File format " + format + " is not supported");
-            return;
+            return Task.CompletedTask;
         }
 
         cancellationTokenSource?.Cancel();
         cancellationTokenSource ??= new();
         // if (!workspace.ResourceManager.CanLoadFile()) return false;
-        var wnd = EditorWindow.CurrentWindow!;
-        Task.Run(async () => {
+        Action<Action> deferAction = MainLoop.IsMainThread ? EditorWindow.CurrentWindow!.InvokeFromUIThread : MainLoop.Instance.InvokeFromUIThread;
+        return Task.Run(async () => {
             try {
                 var tasks = new List<Task>();
                 var token = cancellationTokenSource.Token;
@@ -378,7 +402,7 @@ public partial class FileTesterWindow : IWindowHandler
                 while (tasks.Any(t => !t.IsCompleted)) {
                     await Task.Delay(500);
                 }
-                wnd.InvokeFromUIThread(() => Logger.Info("Test finished in: " + timer.ElapsedMilliseconds + " ms"));
+                deferAction.Invoke(() => Logger.Info("Test finished in: " + timer.ElapsedMilliseconds + " ms"));
             } catch (Exception e) {
                 Logger.Error(e, "Unexpected error during file test");
             } finally {
@@ -709,7 +733,7 @@ public partial class FileTesterWindow : IWindowHandler
         AddCompareMapper<GuiFile>((m) => [m.Containers, m.RootViewElement, m.AttributeOverrides, m.Resources, m.LinkedGUIs, m.Parameters, m.ParameterReferences, m.ParameterOverrides]);
         AddCompareMapper<ReeLib.Gui.ContainerInfo>((m) => [m.ID, m.Name, m.ClassName]);
         AddCompareMapper<ReeLib.Gui.Element>((m) => [m.Name, m.ClassName, m.ID, m.ContainerID, m.guid3, m.Attributes, m.ExtraAttributes, m.ElementData]);
-        AddCompareMapper<ReeLib.Gui.Attribute>((m) => [m.propertyType, m.OrderIndex, m.uknInt, m.Value]);
+        AddCompareMapper<ReeLib.Gui.Attribute>((m) => [m.PropertyType, m.OrderIndex, m.uknInt, m.Value]);
         AddCompareMapper<ReeLib.Gui.GuiClip>((m) => [m.ID, m.IsDefault, m.name, m.clip]);
         AddCompareMapper<EmbeddedClip>((m) => [m.Header, m.Bezier3DData, m.ClipInfoList, m.Properties.Count, m.NormalKeys.Count, m.ExtraPropertyData, m.FrameCount, m.Guid, m.SpeedPointData, m.Tracks]);
         AddCompareMapper<Property>((m) => [
