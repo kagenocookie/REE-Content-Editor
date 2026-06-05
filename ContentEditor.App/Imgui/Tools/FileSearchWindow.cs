@@ -1138,6 +1138,9 @@ public class FileSearchWindow : IWindowHandler
     {
         // var formats = context.Env.TypeCache.GetResourceSubtypes(KnownFileFormats.Motion).Except([KnownFileFormats.MotionTree]);
         // var motExts = formats.SelectMany(fmt => context.Env.GetFileExtensionsForFormat(fmt));
+        if (string.IsNullOrEmpty(query)) {
+            return;
+        }
         foreach (var (path, stream) in context.Env.GetFilesWithExtension("motlist", context.Token)) {
             try {
                 if (context.Token.IsCancellationRequested) return;
@@ -1148,10 +1151,13 @@ public class FileSearchWindow : IWindowHandler
 
                 foreach (var motBase in file.MotFiles) {
                     if (motBase is MotFile mot) {
-                        if (!string.IsNullOrEmpty(query) && !mot.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) continue;
-
-                        var desc = $"{mot.Name}";
-                        AddMatch(context, desc, path);
+                        if (mot.Name.Contains(query, StringComparison.InvariantCultureIgnoreCase)) {
+                            var desc = $"{mot.Name}";
+                            AddMatch(context, desc, path);
+                        } else if (mot.Bones.Any(b => b.boneName.Equals(query, StringComparison.OrdinalIgnoreCase))) {
+                            var desc = $"{mot.Name} (Bone match)";
+                            AddMatch(context, desc, path);
+                        }
                     }
                 }
             } catch (NotSupportedException e) {

@@ -22,12 +22,11 @@ namespace ContentEditor.App.ImguiHandling;
 public class MotFileEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 {
     public ContentWorkspace Workspace { get; }
-    public MotFile File { get; private set; }
+    public MotFile File => Handle.GetFile<MotFile>();
 
     public MotFileEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
         Workspace = env;
-        File = file.GetFile<MotFile>();
     }
 
     protected override void DrawFileContents()
@@ -45,7 +44,7 @@ public class MotFileEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 {
     public ContentWorkspace Workspace { get; }
-    public MotlistFile File { get; private set; }
+    public MotlistFile File => Handle.GetFile<MotlistFile>();
 
     public override string HandlerName => "Motlist";
 
@@ -89,14 +88,12 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     public MotlistEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
         Workspace = env;
-        File = file.GetFile<MotlistFile>();
     }
 
     protected override void OnFileReverted()
     {
         base.OnFileReverted();
         context.ClearChildren();
-        File = Handle.GetFile<MotlistFile>();
     }
 
     protected override void DrawFileControls(WindowData data)
@@ -151,7 +148,7 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 public class MotpackEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 {
     public ContentWorkspace Workspace { get; }
-    public MotpackFile File { get; private set; }
+    public MotpackFile File => Handle.GetFile<MotpackFile>();
 
     public override string HandlerName => "MotionPack";
 
@@ -163,14 +160,12 @@ public class MotpackEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     public MotpackEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
         Workspace = env;
-        File = file.GetFile<MotpackFile>();
     }
 
     protected override void OnFileReverted()
     {
         base.OnFileReverted();
         context.ClearChildren();
-        File = Handle.GetFile<MotpackFile>();
     }
 
     protected override void DrawFileContents()
@@ -246,7 +241,7 @@ public class MotIndexImguiHandler : IObjectUIHandler
 public class MotionCamListEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 {
     public ContentWorkspace Workspace { get; }
-    public McamlistFile File { get; private set; }
+    public McamlistFile File => Handle.GetFile<McamlistFile>();
 
     public override string HandlerName => "MotionCamList";
 
@@ -277,14 +272,12 @@ public class MotionCamListEditor : FileEditor, IWorkspaceContainer, IObjectUIHan
     public MotionCamListEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
         Workspace = env;
-        File = file.GetFile<McamlistFile>();
     }
 
     protected override void OnFileReverted()
     {
         base.OnFileReverted();
         context.ClearChildren();
-        File = Handle.GetFile<McamlistFile>();
     }
 
     protected override void DrawFileControls(WindowData data)

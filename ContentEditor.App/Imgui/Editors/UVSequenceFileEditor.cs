@@ -15,7 +15,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
     public override string HandlerName => "UV Sequence Editor";
     public string Filename => Handle.Filepath;
 
-    public UvsFile File { get; }
+    public UvsFile File => Handle.GetFile<UvsFile>();
 
     public ContentWorkspace Workspace { get; }
 
@@ -24,7 +24,6 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
     public UVSequenceFileEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
         Workspace = env;
-        File = file.GetFile<UvsFile>();
         windowFlags = ImGuiWindowFlags.HorizontalScrollbar;
     }
 

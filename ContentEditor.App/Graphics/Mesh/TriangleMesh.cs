@@ -14,17 +14,17 @@ public class TriangleMesh : Mesh
 {
     private TriangleMesh() { }
 
-    public TriangleMesh(GL gl, float[] vertexData, int[] indices) : base(gl)
+    public TriangleMesh(GL gl, float[] vertexData, int[] indices, in MeshLayout layout) : base(gl)
     {
+        this.layout = layout;
         VertexData = vertexData;
         Indices = indices;
         UpdateBuffers();
     }
 
-    public TriangleMesh(GL gl, float[] vertexData, int[] indices, AABB bounds, in MeshLayout layout) : this(gl, vertexData, indices)
+    public TriangleMesh(GL gl, float[] vertexData, int[] indices, AABB bounds, in MeshLayout layout) : this(gl, vertexData, indices, layout)
     {
         BoundingBox = bounds;
-        this.layout = layout;
     }
 
     public TriangleMesh(GL gl, MeshFile sourceMesh, ReeLib.Mesh.Submesh submesh) : base(gl)

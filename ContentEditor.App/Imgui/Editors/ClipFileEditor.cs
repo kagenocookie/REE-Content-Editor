@@ -11,7 +11,7 @@ namespace ContentEditor.App.ImguiHandling;
 public class ClipFileEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 {
     public ContentWorkspace Workspace { get; }
-    public ClipFile File { get; private set; }
+    public ClipFile File => Handle.GetFile<ClipFile>();
 
     public override string HandlerName => Handle.Format.format switch {
         KnownFileFormats.Timeline => "Timeline",
@@ -31,14 +31,12 @@ public class ClipFileEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     public ClipFileEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
         Workspace = env;
-        File = file.GetFile<ClipFile>();
     }
 
     protected override void OnFileReverted()
     {
         context.ClearChildren();
         base.OnFileReverted();
-        File = Handle.GetFile<ClipFile>();
     }
 
     protected override void DrawFileContents()

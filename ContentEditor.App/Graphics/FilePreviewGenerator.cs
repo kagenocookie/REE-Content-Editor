@@ -230,6 +230,7 @@ public sealed class FilePreviewGenerator : IDisposable
         workspace.ResourceManager.TryResolveGameFile(basePath + ".mdf2", out var mdfHandle);
         if (mdfHandle == null) workspace.ResourceManager.TryResolveGameFile(basePath + "_Mat.mdf2", out mdfHandle);
         if (mdfHandle == null) workspace.ResourceManager.TryResolveGameFile(basePath + "_00.mdf2", out mdfHandle);
+        if (mdfHandle == null) workspace.ResourceManager.TryResolveGameFile(basePath + "_A.mdf2", out mdfHandle);
 
         comp.SetMesh(path, mdfHandle?.Filepath);
         if (comp.MeshHandle == null) {

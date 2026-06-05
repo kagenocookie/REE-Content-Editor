@@ -42,7 +42,7 @@ public class Patcher : IDisposable
 
     public void LoadIniConfig(string inifile)
     {
-        var data = IniFile.ReadFileIgnoreKeyCasing("content_patcher.ini").ToList();
+        var data = IniFile.ReadFileIgnoreKeyCasing(inifile).ToList();
         LoadConfig(data);
     }
 
