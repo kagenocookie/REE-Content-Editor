@@ -13,7 +13,7 @@ public static partial class Lang
         public static readonly FixedString Tooltip_RescanMacros = "Re-scan Macros folder";
         public static readonly FixedString Tooltip_OpenMacrosFolder = "Open Macros folder in File Explorer";
         public static readonly FixedString Tooltip_IconColor = "Icon Color";
-        public static readonly FixedString Tooltip_MacroType = "Whether or not this macro can be used for multiple games or only the currently selected game.";
+        public static readonly FixedString Tooltip_MacroType = "Whether or not this macro can be used for multiple games or only the currently active game.";
         public static readonly FixedString Tooltip_NewGroup = "Define a new Group";
         public static readonly FixedString Tooltip_AddGroup = "Add Group";
         public static readonly FixedString Tooltip_NoDesc = "No description provided...";
@@ -27,7 +27,7 @@ public static partial class Lang
         public static readonly FixedString Label_MacroIcon = "Icon";
         public static readonly FixedString Label_MacroType = "Game Specific";
         public static readonly FixedString Label_NoMacros = "No macros added.";
-        public static readonly FixedString Label_MacroTypeA = "Type: Current Game";
+        public static readonly FixedString Label_MacroTypeA = "Type: Game Specific";
         public static readonly FixedString Label_MacroTypeB = "Type: Global";
 
         public static readonly FixedString Hint_NewGroup = "Enter new group name here...";
