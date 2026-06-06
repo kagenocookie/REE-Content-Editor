@@ -62,8 +62,7 @@ public class NameInputDialog : IWindowHandler
 
         ImGui.Spacing();
         ImGui.Spacing();
-        if (ImGui.InputText("Name", ref input, 300, ImGuiInputTextFlags.CharsNoBlank)) {
-        }
+        ImGui.InputText("Name", ref input, 300);
         var valid = validationRegex == null || validationRegex.IsMatch(input);
         if (!valid) {
             ImGui.TextColored(Colors.Error, "Chosen name contains invalid characters");

@@ -1,5 +1,6 @@
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Clip;
 using ReeLib.Gui;
 
 namespace ContentEditor.App.ImguiHandling;
@@ -18,26 +19,15 @@ public class GuiEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 
     static GuiEditor()
     {
-        WindowHandlerFactory.DefineInstantiator<GuiContainer>(ctx => {
-            var version = ctx.FindHandlerInParents<GuiEditor>()?.File.Header.GuiVersion ?? GuiVersion.RE4;
-            var instance = new GuiContainer(version);
-            return instance;
-        });
-        WindowHandlerFactory.DefineInstantiator<GuiClip>(ctx => {
-            var version = ctx.FindHandlerInParents<GuiEditor>()?.File.Header.GuiVersion ?? GuiVersion.RE4;
-            var instance = new GuiClip(version);
-            return instance;
-        });
-        WindowHandlerFactory.DefineInstantiator<Element>(ctx => {
-            var version = ctx.FindHandlerInParents<GuiEditor>()?.File.Header.GuiVersion ?? GuiVersion.RE4;
-            var instance = new Element(version);
-            return instance;
-        });
-        WindowHandlerFactory.DefineInstantiator<AttributeOverride>(ctx => {
-            var version = ctx.FindHandlerInParents<GuiEditor>()?.File.Header.GuiVersion ?? GuiVersion.RE4;
-            var instance = new AttributeOverride(version);
-            return instance;
-        });
+        static GuiVersion GetGuiVersion(UIContext ctx) => ctx.FindHandlerInParents<GuiEditor>()?.File.Header.GuiVersion ?? GuiVersion.Pragmata;
+
+        WindowHandlerFactory.DefineInstantiator<GuiContainer>(ctx => new GuiContainer(GetGuiVersion(ctx)));
+        WindowHandlerFactory.DefineInstantiator<GuiClip>(ctx => new GuiClip(GetGuiVersion(ctx)));
+        WindowHandlerFactory.DefineInstantiator<Element>(ctx => new Element(GetGuiVersion(ctx)));
+        WindowHandlerFactory.DefineInstantiator<AttributeOverride>(ctx => new AttributeOverride(GetGuiVersion(ctx)));
+        WindowHandlerFactory.DefineInstantiator<ReeLib.Gui.Attribute>(ctx => new ReeLib.Gui.Attribute(GetGuiVersion(ctx)));
+        WindowHandlerFactory.DefineInstantiator<ContainerAttribute1>(ctx => new ContainerAttribute1(GetGuiVersion(ctx)));
+        WindowHandlerFactory.DefineInstantiator<ContainerAttribute2>(ctx => new ContainerAttribute2(GetGuiVersion(ctx)));
     }
 
     public GuiEditor(ContentWorkspace env, FileHandle file) : base (file)
@@ -64,5 +54,31 @@ public class GuiEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     void IObjectUIHandler.OnIMGUI(UIContext container)
     {
         this.OnIMGUI();
+    }
+}
+
+[ObjectImguiHandler(typeof(AttributeOverride))]
+[ObjectImguiHandler(typeof(GuiParameterOverride))]
+[ObjectImguiHandler(typeof(GuiParameterReference))]
+[ObjectImguiHandler(typeof(ReeLib.Gui.Attribute))]
+[ObjectImguiHandler(typeof(ContainerAttribute1))]
+[ObjectImguiHandler(typeof(ContainerAttribute2))]
+public class GuiAttributeHandler : IObjectUIHandler, IUIContextEventHandler
+{
+    public bool HandleEvent(UIContext context, EditorUIEvent eventData)
+    {
+        if (eventData.IsChangeFromChild && eventData.origin.GetRaw()?.GetType() == typeof(PropertyType)) {
+            context.ClearChildren();
+        }
+        return true;
+    }
+
+    public void OnIMGUI(UIContext context)
+    {
+        if (context.children.Count == 0) {
+            var instance = context.GetRaw();
+            WindowHandlerFactory.SetupObjectUIContext(context, instance?.GetType());
+        }
+        context.ShowChildrenNestedUI();
     }
 }

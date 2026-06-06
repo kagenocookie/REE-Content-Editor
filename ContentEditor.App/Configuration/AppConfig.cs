@@ -876,7 +876,7 @@ public struct KeyBinding : IEquatable<KeyBinding>
 
     public bool IsPressed()
     {
-        if (!ImGui.IsKeyPressed(Key)) return false;
+        if (Key == ImGuiKey.None || !ImGui.IsKeyPressed(Key)) return false;
         // strictly check modifiers, so ctrl+shift+s doesn't trigger a ctrl+s hotkey
         if (ctrl != ImGui.IsKeyDown(ImGuiKey.ModCtrl)) return false;
         if (shift != ImGui.IsKeyDown(ImGuiKey.ModShift)) return false;

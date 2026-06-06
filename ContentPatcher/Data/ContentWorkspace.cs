@@ -263,9 +263,11 @@ public sealed class ContentWorkspace : IDisposable
         var bundlePath = BundleManager.ConstructBundleFolder(bundleName);
 
         var pak = new PakReader();
+        pak.PakFilePriority = [pakFilepath];
         if (!pak.TryReadManifestFileList(pakFilepath)) {
             pak.AddFiles(Env.ListFile?.Files ?? []);
         }
+        Directory.CreateDirectory(bundlePath);
         pak.UnpackFilesTo(bundlePath);
         InitializeUnlabelledBundle(bundlePath, null, bundleName);
     }
