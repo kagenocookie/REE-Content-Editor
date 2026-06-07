@@ -119,24 +119,14 @@ public class ComponentDataHandler : IObjectUIHandler
         ImGui.PushID(label);
 
         // begin node header
-        ImGui.PushStyleColor(ImGuiCol.Header, new Vector4(0.231f, 0.231f, 0.231f, 1.0f));
-        ImGui.PushStyleColor(ImGuiCol.HeaderHovered, new Vector4(0.35f, 0.35f, 0.35f, 1.0f));
-        ImGui.PushStyleColor(ImGuiCol.HeaderActive, new Vector4(0.3f, 0.3f, 0.3f, 1.0f));
-
-
         var show = ImGui.TreeNodeEx("##treenode", ImGuiTreeNodeFlags.FramePadding |
                                                   ImGuiTreeNodeFlags.Framed |
                                                   ImGuiTreeNodeFlags.AllowOverlap);
-
-        ImGui.PopStyleColor(3);
         // end node header
 
         object? componentFirstField = instance.Values.Length > 0 ? instance.Values[0] : null;
         if (componentFirstField is bool enabledBool) {
             ImGui.SameLine();
-
-            ImGui.PushStyleColor(ImGuiCol.Border, new Vector4(0.356f, 0.356f, 0.356f, 1.0f));
-            ImGui.PushStyleColor(ImGuiCol.FrameBg, new Vector4(0.08f, 0.08f, 0.08f, 1.0f));
             ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 2.0f);
             // hacky way to make the checkbox a bit smaller, i guess we'd need a custom one if we wanna make it smaller without doing this
             ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(4, 1));
@@ -146,7 +136,6 @@ public class ComponentDataHandler : IObjectUIHandler
             }
 
             ImGui.PopStyleVar(2);
-            ImGui.PopStyleColor(2);
         }
         ImGui.SameLine();
 
