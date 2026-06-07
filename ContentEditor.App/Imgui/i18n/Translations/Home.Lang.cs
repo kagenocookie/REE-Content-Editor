@@ -19,6 +19,11 @@ public static partial class Lang
         public static readonly FixedString NewVersion_Unspecific = "New version available!";
         public static readonly InterpolatedString<string> NewVersion_Specific = "New version ({0}) available!";
 
+        public static readonly FixedString ShowFavoritesOnly = "Show favorite files";
+        public static readonly FixedString ShowFavoritesOnly_NoFavorites = "There are currently no files marked as favorite.\nThis can be done through the right click context menu on a recently opened file.";
+        public static readonly IconString File_MarkAsFavorite = new IconString("{0} Mark as favorite", AppIcons.StarEmpty);
+        public static readonly IconString File_RemoveFromFavorites = new IconString("{0} Remove from favorites", AppIcons.Star);
+
         public static readonly FixedString Menu_File = "File";
         public static readonly FixedString Menu_CreateNew = "Create New";
         public static readonly FixedString Menu_Open = "Open ...";

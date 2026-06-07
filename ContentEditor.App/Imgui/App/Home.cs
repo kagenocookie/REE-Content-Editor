@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 using ContentEditor.App.Github;
+using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Internal;
 using ContentEditor.App.Windowing;
 using ContentEditor.BackgroundTasks;
@@ -25,6 +26,7 @@ public class HomeWindow : IWindowHandler
     protected UIContext context = null!;
 
     private string recentFileFilter = string.Empty;
+    private bool showFavoritesOnly = false;
     private bool isRecentFileFilterMatchCase = false;
     private readonly HashSet<string> _activeRecentFileGameFilters = new();
     private string bundleFilter = string.Empty;
@@ -523,9 +525,8 @@ public class HomeWindow : IWindowHandler
             }
             ImguiHelpers.Tooltip("Unload current Bundle"u8);
         }
-        ImGui.SameLine();
-        ImguiHelpers.VerticalSeparator();
-        ImGui.SameLine();
+
+        ImguiHelpers.InlineVerticalSeparator();
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderContain, new[] { Colors.IconPrimary, Colors.IconSecondary })) {
             FileSystemUtils.ShowFileInExplorer(workspace?.BundleManager.AppBundlePath);
         }
@@ -536,9 +537,8 @@ public class HomeWindow : IWindowHandler
             AppConfig.Instance.SaveJsonConfig();
         }
         ImguiHelpers.Tooltip("Clear recent bundles list"u8);
-        ImGui.SameLine();
-        ImguiHelpers.VerticalSeparator();
-        ImGui.SameLine();
+
+        ImguiHelpers.InlineVerticalSeparator();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isBundleFilterMatchCase, Colors.IconActive);
         ImguiHelpers.Tooltip("Match Case"u8);
         ImGui.SameLine();
@@ -576,9 +576,7 @@ public class HomeWindow : IWindowHandler
             }
             ImguiHelpers.Tooltip("Clear Game Filters"u8);
         }
-        ImGui.SameLine();
-        ImguiHelpers.VerticalSeparator();
-        ImGui.SameLine();
+        ImguiHelpers.InlineVerticalSeparator();
         if (ImGui.Button(DisplayMode == BundleDisplayMode.Grid ? $"{AppIcons.SI_ViewGridSmall}" : $"{AppIcons.List}")) {
             AppConfig.Instance.BundleDisplayMode = DisplayMode = DisplayMode == BundleDisplayMode.Grid ? BundleDisplayMode.List : BundleDisplayMode.Grid;
         }
@@ -790,17 +788,28 @@ public class HomeWindow : IWindowHandler
 
     private void ShowRecentFilesList()
     {
-        var recents = AppConfig.Settings.RecentFiles;
+        var curGame = context.GetWorkspace()?.Game.name;
         if (ImGui.Button($"{AppIcons.SI_GenericClear}")) {
             AppConfig.Settings.RecentFiles.Clear();
             AppConfig.Instance.SaveJsonConfig();
         }
         ImguiHelpers.Tooltip("Clear recent files"u8);
-        ImGui.SameLine();
-        ImguiHelpers.VerticalSeparator();
-        ImGui.SameLine();
+
+        ImguiHelpers.InlineVerticalSeparator();
+        var favorites = AppConfig.Settings.GetGameSettings(curGame)?.Favorites;
+        var hasFavorites = favorites?.Count > 0;
+        if (!string.IsNullOrEmpty(curGame) && !hasFavorites) {
+            showFavoritesOnly = false;
+        }
+        ImGui.BeginDisabled(!hasFavorites);
+        ImguiHelpers.ToggleButton($"{AppIcons.Star}", ref showFavoritesOnly, Colors.IconActive);
+        ImGui.EndDisabled();
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.SetItemTooltip(hasFavorites ? Lang.Home.ShowFavoritesOnly : Lang.Home.ShowFavoritesOnly_NoFavorites);
+
+        ImguiHelpers.InlineVerticalSeparator();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isRecentFileFilterMatchCase, Colors.IconActive);
         ImguiHelpers.Tooltip("Match Case"u8);
+
         ImGui.SameLine();
         string filterLabelDisplayText = _activeRecentFileGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} " + "All Games" : $"{AppIcons.SI_Filter} " + $"{_activeRecentFileGameFilters.Count} Selected";
         float filterComboWidth = ImGui.CalcTextSize(filterLabelDisplayText).X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
@@ -840,10 +849,19 @@ public class HomeWindow : IWindowHandler
         ImGui.BeginChild("RecentFileList");
         var isReady = EditorWindow.CurrentWindow?.IsReady == true;
         if (!isReady) ImGui.BeginDisabled();
-        foreach (var file in recents) {
+
+        var files = AppConfig.Settings.RecentFiles as List<string>;
+        if (favorites != null && showFavoritesOnly) {
+            files = favorites
+                .OrderBy(f => (uint)files.FindIndex(other => other.GetStringAfterDelimiter('|').SequenceEqual(f)))
+                .ToList();
+        }
+
+        foreach (var file in files) {
             var sep = file.IndexOf('|');
             var game = sep == -1 ? null : file.Substring(0, sep);
             var fileToOpen = sep == -1 ? file : file.AsSpan(sep + 1);
+            var isFavorite = hasFavorites && AppConfig.Settings.GetGameSettings(curGame)?.Favorites.Contains(fileToOpen.ToString()) == true;
 
             if (_activeRecentFileGameFilters.Count > 0 && (game == null || !_activeRecentFileGameFilters.Contains(game))) {
                 continue;
@@ -856,9 +874,15 @@ public class HomeWindow : IWindowHandler
                 EditorWindow.CurrentWindow?.OpenFiles(new[] { fileToOpen.ToString() });
                 break;
             }
-            if (Path.IsPathRooted(fileToOpen) && ImGui.BeginPopupContextItem()) {
-                if (ImGui.Selectable("Open Containing Folder")) {
+            if (ImGui.BeginPopupContextItem()) {
+                if (Path.IsPathRooted(fileToOpen) && ImGui.Selectable("Open Containing Folder")) {
                     FileSystemUtils.ShowFileInExplorer(Path.GetDirectoryName(fileToOpen.ToString()));
+                }
+                if (!string.IsNullOrEmpty(curGame)) {
+                    if (ImGui.Selectable(isFavorite ? Lang.Home.File_RemoveFromFavorites : Lang.Home.File_MarkAsFavorite)) {
+                        isFavorite = !isFavorite;
+                        AppConfig.Settings.SetFileFavorite(curGame, fileToOpen.ToString(), isFavorite);
+                    }
                 }
                 ImGui.EndPopup();
             }

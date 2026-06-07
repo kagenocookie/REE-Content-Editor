@@ -896,6 +896,7 @@ public class AppJsonSettings
     public BundleDefaults BundleDefaults { get; init; } = new();
     public ImportSettings Import { get; init; } = new();
     public DevSettings Dev { get; init; } = new();
+
     public RecentFileList RecentBundles { get; init; } = new() { Limit = 50 };
     public RecentFileList RecentFiles { get; init; } = new() { Limit = 100 };
     public RecentFileList RecentRcols { get; init; } = new();
@@ -907,6 +908,7 @@ public class AppJsonSettings
     public RecentFileList RecentClsp { get; init; } = new();
     public RecentFileList RecentCloth { get; init; } = new();
 
+    public Dictionary<string, AppGameJsonSettings> GameSettings { get; set; } = new();
     public ChangelogData Changelogs { get; init; } = new();
 
     public RecentFileList? GetRecentForFormat(KnownFileFormats format)
@@ -925,7 +927,28 @@ public class AppJsonSettings
         };
     }
 
+    public AppGameJsonSettings? GetGameSettings(string? game)
+    {
+        return game == null ? null : GameSettings.GetValueOrDefault(game);
+    }
+
+    public void SetFileFavorite(string game, string file, bool favorite)
+    {
+        var settings = GameSettings.GetValueOrDefault(game) ?? (GameSettings[game] = new AppGameJsonSettings());
+        if (favorite) {
+            settings.Favorites.Add(file);
+        } else {
+            settings.Favorites.Remove(file);
+        }
+        Save();
+    }
+
     public void Save() => AppConfig.Instance.SaveJsonConfig();
+}
+
+public class AppGameJsonSettings
+{
+    public HashSet<string> Favorites { get; set; } = new();
 }
 
 public class RecentFileList : List<string>
