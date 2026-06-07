@@ -129,8 +129,8 @@ public class Colliders(GameObject gameObject, RszInstance data) : Component(game
                         break;
                     }
                 case "via.physics.StaticCompoundShape": {
-                        var shapelist = RszFieldCache.StaticCompoundShape.Shapes.Get(shape);
-                        // TODO
+                        var shapelist = RszFieldCache.StaticCompoundShape.Shapes.Get(shape).OfType<RszInstance>();
+                        ShowCompoundShapes(gizmo, isActive, shapelist);
                         break;
                     }
                 case "via.physics.HeightFieldShape": {
@@ -146,5 +146,80 @@ public class Colliders(GameObject gameObject, RszInstance data) : Component(game
 
         gizmo.PopMaterial();
         return gizmo;
+    }
+
+    private void ShowCompoundShapes(GizmoContainer gizmo, bool isActive, IEnumerable<RszInstance> shapelist)
+    {
+        ref readonly var transform = ref Transform.WorldTransform;
+        if (isActive) {
+            foreach (var shapeEntry in shapelist) {
+                var subshape = shapeEntry.Get(RszFieldCache.StaticCompoundShape.Instance.Shape);
+                switch (subshape.RszClass.name) {
+                    case "via.physics.BoxShape": {
+                            var box = RszFieldCache.BoxShape.Box.Get(subshape);
+                            if (gizmo.Cur.EditableOBB(transform, ref box, out var hid)) {
+                                UndoRedo.RecordCallbackSetter(null, subshape, RszFieldCache.BoxShape.Box.Get(subshape), box, static (ss, vv) => RszFieldCache.BoxShape.Box.Set(ss, vv), $"{subshape.GetHashCode()}{hid}");
+                            }
+                            break;
+                        }
+                    case "via.physics.AabbShape": {
+                            var box = RszFieldCache.AabbShape.Aabb.Get(subshape);
+                            if (gizmo.Cur.EditableAABB(transform, ref box, out var hid)) {
+                                UndoRedo.RecordCallbackSetter(null, subshape, RszFieldCache.AabbShape.Aabb.Get(subshape), box, static (ss, vv) => RszFieldCache.AabbShape.Aabb.Set(ss, vv), $"{subshape.GetHashCode()}{hid}");
+                            }
+                            break;
+                        }
+                    case "via.physics.SphereShape": {
+                            var sphere = RszFieldCache.SphereShape.Sphere.Get(subshape);
+                            if (gizmo.Cur.EditableSphere(transform, ref sphere, out var hid)) {
+                                UndoRedo.RecordCallbackSetter(null, subshape, RszFieldCache.SphereShape.Sphere.Get(subshape), sphere, static (ss, vv) => RszFieldCache.SphereShape.Sphere.Set(ss, vv), $"{subshape.GetHashCode()}{hid}");
+                            }
+                            gizmo.Cur.Add(transform, RszFieldCache.SphereShape.Sphere.Get(subshape));
+                            break;
+                        }
+                    case "via.physics.CapsuleShape": {
+                            var scap = RszFieldCache.CapsuleShape.Capsule.Get(subshape);
+                            if (gizmo.Cur.EditableCapsule(transform, transform, ref scap, out var hid)) {
+                                UndoRedo.RecordCallbackSetter(null, subshape, RszFieldCache.CapsuleShape.Capsule.Get(subshape), scap, static (ss, vv) => RszFieldCache.CapsuleShape.Capsule.Set(ss, vv), $"{subshape.GetHashCode()}{hid}");
+                            }
+                            break;
+                        }
+                    case "via.physics.CylinderShape": {
+                            var cap = RszFieldCache.CylinderShape.Cylinder.Get(subshape);
+                            if (gizmo.Cur.EditableCylinder(transform, transform, ref cap, out var hid)) {
+                                UndoRedo.RecordCallbackSetter(null, subshape, RszFieldCache.CylinderShape.Cylinder.Get(subshape), cap, static (ss, vv) => RszFieldCache.CylinderShape.Cylinder.Set(ss, vv), $"{subshape.GetHashCode()}{hid}");
+                            }
+                            break;
+                        }
+                    default:
+                        Logger.Debug($"Unsupported static compound shape type {subshape.RszClass.name}");
+                        break;
+                }
+            }
+        } else {
+            foreach (var shapeEntry in shapelist) {
+                var subshape = shapeEntry.Get(RszFieldCache.StaticCompoundShape.Instance.Shape);
+                switch (subshape.RszClass.name) {
+                    case "via.physics.BoxShape":
+                        gizmo.Cur.Add(transform, RszFieldCache.BoxShape.Box.Get(subshape));
+                        break;
+                    case "via.physics.AabbShape":
+                        gizmo.Cur.Add(transform, RszFieldCache.AabbShape.Aabb.Get(subshape));
+                        break;
+                    case "via.physics.SphereShape":
+                        gizmo.Cur.Add(transform, RszFieldCache.SphereShape.Sphere.Get(subshape));
+                        break;
+                    case "via.physics.CapsuleShape":
+                        gizmo.Cur.Add(transform, RszFieldCache.CapsuleShape.Capsule.Get(subshape));
+                        break;
+                    case "via.physics.CylinderShape":
+                        gizmo.Cur.Add(transform, RszFieldCache.CylinderShape.Cylinder.Get(subshape));
+                        break;
+                    default:
+                        Logger.Debug($"Unsupported static compound shape type {subshape.RszClass.name}");
+                        break;
+                }
+            }
+        }
     }
 }
