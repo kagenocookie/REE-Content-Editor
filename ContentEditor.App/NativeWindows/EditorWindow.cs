@@ -8,7 +8,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Github;
-using ContentEditor.App.Imgui.App;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.BackgroundTasks;
 using ContentEditor.Core;
@@ -270,6 +269,9 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
         if (workspace != null && cfg.Key_OpenPakBrowser.Get().IsPressed()) {
             AddSubwindow(new PakBrowser(workspace, null));
+        }
+        if (workspace != null && cfg.Key_OpenMacroShelf.Get().IsPressed()) {
+            AddUniqueSubwindow(new LuaMacroShelf(workspace));
         }
     }
 
@@ -959,7 +961,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     }
                 }
                 if (ImGui.MenuItem(Lang.Windows.MacroShelf)) {
-                    AddSubwindow(new LuaMacroShelf());
+                    AddUniqueSubwindow(new LuaMacroShelf(workspace));
                 }
             }
             ImGui.EndMenu();

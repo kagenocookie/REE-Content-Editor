@@ -45,7 +45,7 @@ public class ErrorModal : IWindowHandler, IDisposable
             ImGui.OpenPopup(title);
             isOpen = true;
         }
-        AppImguiHelpers.ShowActionModal(title, $"{AppIcons.SI_GenericError}", Colors.IconTertiary, text, null, AppImguiHelpers.ActionModalType.Error);
+        AppImguiHelpers.ShowActionModal(title, $"{AppIcons.SI_GenericError}", Colors.IconTertiary, text, null, null, AppImguiHelpers.ActionModalType.Error);
     }
 
     public bool RequestClose()

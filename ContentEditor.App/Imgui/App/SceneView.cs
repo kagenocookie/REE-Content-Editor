@@ -69,7 +69,7 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
     {
         if (!Scene.IsActive) {
             using var _ = ImguiHelpers.OverrideStyleCol(ImGuiCol.Text, Colors.Warning);
-            ImguiHelpers.TextCentered("No active scene. Activate one from the Scenes menu.");
+            ImguiHelpers.TextCentered(Lang.SceneView.Label_NoActiveScene.ToString());
             return;
         }
 
@@ -83,10 +83,10 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
             if (Scene.HasRenderables) {
                 // the texture handle gets assigned immediately before the first render
                 // that means it won't be available until all required resources load in
-                ImGui.Text($"Loading scene {Scene.ResourcePath ?? Scene.Name} ...");
+                ImGui.Text(Lang.SceneView.Label_LoadingScene.FormatRef(Scene.ResourcePath ?? Scene.Name));
             } else {
                 using var _ = ImguiHelpers.OverrideStyleCol(ImGuiCol.Text, Colors.Warning);
-                ImguiHelpers.TextCentered($"Scene {Scene.ResourcePath ?? Scene.Name} has no 3D content");
+                ImguiHelpers.TextCentered(Lang.SceneView.Label_SceneNo3D.FormatRef(Scene.ResourcePath ?? Scene.Name).ToString());
             }
             return;
         }
@@ -102,9 +102,9 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
         var hoveredMesh = ImGui.IsItemHovered();
 
         if (!Scene.HasRenderables) {
-            var text = $"Scene {Scene.ResourcePath ?? Scene.Name} has no 3D content";
+            var text = Lang.SceneView.Label_SceneNo3D.FormatRef(Scene.ResourcePath ?? Scene.Name);
             var textSize = ImGui.CalcTextSize(text);
-            ImGui.GetWindowDrawList().AddText(cc + new Vector2(expectedSize.X / 2 - textSize.X / 2, 0), ImGui.ColorConvertFloat4ToU32(Colors.Warning), $"Scene {Scene.ResourcePath ?? Scene.Name} has no 3D content");
+            ImGui.GetWindowDrawList().AddText(cc + new Vector2(expectedSize.X / 2 - textSize.X / 2, 0), ImGui.ColorConvertFloat4ToU32(Colors.Warning), Lang.SceneView.Label_SceneNo3D.FormatRef(Scene.ResourcePath ?? Scene.Name));
         }
 
         if (meshClick) {
@@ -199,14 +199,18 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
             if (ImGui.MenuItem($"{AppIcons.SI_SceneParentGameObject}")) {
                 EditorWindow.CurrentWindow?.OpenSceneFileEditor(Scene);
             }
-            ImguiHelpers.Tooltip("Re-Open Scene Editor"u8);
+            ImguiHelpers.Tooltip(Lang.SceneView.Tooltip_ReOpenScnEditor);
         }
+        if (ImGui.MenuItem($"{AppIcons.SI_LUA}")) {
+            EditorWindow.CurrentWindow?.AddUniqueSubwindow(new LuaMacroShelf(Workspace));
+        }
+        ImguiHelpers.Tooltip(Lang.SceneView.Tooltip_OpenMacroShelf);
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
         var activeEditMode = Scene.Root.ActiveEditMode;
         using (var _ = ImguiHelpers.Disabled(Scene.Root.GetAvailableEditModes().Any() == false)) {
-            if (ImGui.BeginMenu(activeEditMode == null ? "Editing: --" : "Editing: " + activeEditMode.DisplayName)) {
+            if (ImGui.BeginMenu(activeEditMode == null ? Lang.SceneView.Label_EditTypeA : Lang.SceneView.Label_EditTypeB + activeEditMode.DisplayName)) {
                 if (activeEditMode != null) {
                     activeEditMode.DrawMainUI();
                     if (activeEditMode.Target is Component cc) {
@@ -214,7 +218,7 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
                         if (ImGui.Button($"{AppIcons.SI_ResetCamera}")) {
                             Scene.ActiveCamera.LookAt(cc.GameObject, true);
                         }
-                        ImguiHelpers.Tooltip("Focus on target object"u8);
+                        ImguiHelpers.Tooltip(Lang.SceneView.Tooltip_FocusObj);
                         ImGui.SameLine();
                         ImGui.Text(activeEditMode.Target.ToString());
                     }
@@ -255,7 +259,7 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
                 ImGui.EndMenu();
             }
         }
-        if (ImGui.MenuItem($"{AppIcons.SI_GenericCamera} Controls")) ImGui.OpenPopup("CameraSettings");
+        if (ImGui.MenuItem(Lang.SceneView.MenuItem_CamControls)) ImGui.OpenPopup("CameraSettings");
         if (Scene != null && ImGui.BeginPopup("CameraSettings")) {
             Scene.Controller.ShowCameraControls();
             if (Scene.ActiveCamera.ProjectionMode != AppConfig.Settings.SceneView.DefaultProjection) {

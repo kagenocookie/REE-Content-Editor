@@ -49,6 +49,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string UsePakCompactFilePaths = "use_pak_compact_file_paths";
         public const string PakDisplayMode = "pak_display_mode";
         public const string BundleDisplayMode = "bundle_display_mode";
+        public const string MacroDisplayMode = "macro_display_mode";
         public const string ThumbnailCacheFilepath = "thumbnail_cache_path";
         public const string CacheFilepath = "cache_path";
         public const string BookmarksFilepath = "bookmarks_path";
@@ -78,6 +79,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string Key_Save = "key_save";
         public const string Key_Open = "key_open";
         public const string Key_OpenPakBrowser = "key_open_pak_browser";
+        public const string Key_OpenMacroShelf = "key_open_macro_shelf";
         public const string Key_Back = "key_back";
         public const string Key_Close = "key_close";
         public const string Key_HomePage = "key_homepage";
@@ -326,6 +328,9 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<int> BundleDisplayModeValue = new SettingWrapper<int>(Keys.LogToFile, _lock, (int)BundleDisplayMode.Grid);
     public BundleDisplayMode BundleDisplayMode { get => (BundleDisplayMode)BundleDisplayModeValue.Get(); set => BundleDisplayModeValue.Set((int)value); }
 
+    public readonly SettingWrapper<int> MacroDisplayModeValue = new SettingWrapper<int>(Keys.LogToFile, _lock, (int)MacroDisplayMode.Full);
+    public MacroDisplayMode MacroDisplayMode { get => (MacroDisplayMode)MacroDisplayModeValue.Get(); set => MacroDisplayModeValue.Set((int)value); }
+
     public readonly SettingWrapper<bool> RenderAxis = new SettingWrapper<bool>(Keys.RenderAxis, _lock, true);
     public readonly SettingWrapper<bool> RenderMeshes = new SettingWrapper<bool>(Keys.RenderMeshes, _lock, true);
     public readonly SettingWrapper<bool> RenderColliders = new SettingWrapper<bool>(Keys.RenderColliders, _lock, true);
@@ -338,6 +343,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<KeyBinding> Key_Save = new SettingWrapper<KeyBinding>(Keys.Key_Save, _lock, new KeyBinding(ImGuiKey.S, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_Open = new SettingWrapper<KeyBinding>(Keys.Key_Open, _lock, new KeyBinding(ImGuiKey.O, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_OpenPakBrowser = new SettingWrapper<KeyBinding>(Keys.Key_OpenPakBrowser, _lock, new KeyBinding(ImGuiKey.B, ctrl: true));
+    public readonly SettingWrapper<KeyBinding> Key_OpenMacroShelf = new SettingWrapper<KeyBinding>(Keys.Key_OpenMacroShelf, _lock, new KeyBinding(ImGuiKey.M, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_Back = new SettingWrapper<KeyBinding>(Keys.Key_Back, _lock, new KeyBinding(ImGuiKey.Backspace));
     public readonly SettingWrapper<KeyBinding> Key_Close = new SettingWrapper<KeyBinding>(Keys.Key_Close, _lock, new KeyBinding(ImGuiKey.W, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_HomePage = new SettingWrapper<KeyBinding>(Keys.Key_HomePage, _lock, new KeyBinding(ImGuiKey.H, ctrl: true, shift: true));
@@ -488,6 +494,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.UsePakCompactFilePaths, instance.UsePakCompactFilePaths.value.ToString(), null),
             (Keys.PakDisplayMode, instance.PakDisplayModeValue.value.ToString(), null),
             (Keys.BundleDisplayMode, instance.BundleDisplayModeValue.value.ToString(), null),
+            (Keys.MacroDisplayMode, instance.MacroDisplayModeValue.value.ToString(), null),
             (Keys.PrettyLabels, instance.PrettyFieldLabels.value.ToString(), null),
             (Keys.QuaternionsAsEuler, instance.ShowQuaternionsAsEuler.value.ToString(), null),
             (Keys.QuaternionsDisableAutoNormalize, instance.QuaternionsDisableAutoNormalize.value.ToString(), null),
@@ -515,6 +522,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.Key_Save, instance.Key_Save.value.ToString(), "Keys"),
             (Keys.Key_Open, instance.Key_Open.value.ToString(), "Keys"),
             (Keys.Key_OpenPakBrowser, instance.Key_OpenPakBrowser.value.ToString(), "Keys"),
+            (Keys.Key_OpenMacroShelf, instance.Key_OpenMacroShelf.value.ToString(), "Keys"),
             (Keys.Key_Back, instance.Key_Back.value.ToString(), "Keys"),
             (Keys.Key_Close, instance.Key_Close.value.ToString(), "Keys"),
             (Keys.Key_HomePage, instance.Key_HomePage.value.ToString(), "Keys"),
@@ -699,6 +707,9 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.BundleDisplayMode:
                             if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsed)) BundleDisplayModeValue.value = Math.Clamp(parsed, (int)BundleDisplayMode.Grid, (int)BundleDisplayMode.List);
                             break;
+                        case Keys.MacroDisplayMode:
+                            if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsed)) MacroDisplayModeValue.value = Math.Clamp(parsed, (int)MacroDisplayMode.Full, (int)MacroDisplayMode.Compact);
+                            break;
                         case Keys.UsePakCompactFilePaths:
                             UsePakCompactFilePaths.value = ReadBool(value);
                             break;
@@ -763,6 +774,7 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.Key_Save: if (KeyBinding.TryParse(value, out _key)) Key_Save.value = _key; break;
                         case Keys.Key_Open: if (KeyBinding.TryParse(value, out _key)) Key_Open.value = _key; break;
                         case Keys.Key_OpenPakBrowser: if (KeyBinding.TryParse(value, out _key)) Key_OpenPakBrowser.value = _key; break;
+                        case Keys.Key_OpenMacroShelf: if (KeyBinding.TryParse(value, out _key)) Key_OpenMacroShelf.value = _key; break;
                         case Keys.Key_Back: if (KeyBinding.TryParse(value, out _key)) Key_Back.value = _key; break;
                         case Keys.Key_Close: if (KeyBinding.TryParse(value, out _key)) Key_Close.value = _key; break;
                         case Keys.Key_HomePage: if (KeyBinding.TryParse(value, out _key)) Key_HomePage.value = _key; break;

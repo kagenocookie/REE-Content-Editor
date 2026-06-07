@@ -8,7 +8,7 @@ public static partial class Lang
 {
     public static class Home
     {
-        public static readonly IconString LaunchGame = new IconString("Launch game: {0}", AppIcons.Play);
+        public static readonly IconString LaunchGame = new IconString("{0} Launch Game", AppIcons.Play);
         public static readonly FixedString LaunchGame_LoosePatch = "Launch Game with Loose File patch";
         public static readonly FixedString LaunchGame_PakPatch = "Launch Game with Pak File patch";
         public static readonly FixedString ApplyPatches_Pak = "Apply patches (PAK)";

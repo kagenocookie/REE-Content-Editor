@@ -445,6 +445,9 @@ public static class AppIcons
     public static readonly char SI_LUA = '\uee55';
     public static readonly char SI_Small_ArrowDown = '\uee56';
     public static readonly char[] SIC_PakExtractTo = { '\uee57', '\uee58', '\uee59' };
+    public static readonly char[] SIC_AddGroup = { '\uee5a', '\uee5b', '\uee5c', '\uee5d' };
+    public static readonly char[] SIC_AddMacro = { '\uee5e', '\uee5f', '\uee60' };
+    public static readonly char[] SIC_FolderScan = { '\uee61', '\uee62', '\uee63', '\uee64', '\uee65' };
 
     public static string PrependIcon(this string text, object target)
     {
