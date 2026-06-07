@@ -371,6 +371,14 @@ public class ResourcePathPicker : IObjectUIHandler
                 targetFilepath = localFilepath;
             }
 
+            var customBasePath = AppConfig.Instance.BundleCustomBaseTargetPath.Get()?
+                .Replace("{AUTHOR}", bundle.Author)
+                .Replace("{BUNDLE_NAME}", bundle.Name);
+
+            if (!string.IsNullOrEmpty(customBasePath) && (useNewTargetPath || file.TargetPath == null)) {
+                targetFilepath = Path.Combine(customBasePath, localFilepath).NormalizeFilepath();
+            }
+
             if (bundle.TryFindResourceByLocalPath(localFilepath, out var previousListing) && previousListing.Target != targetFilepath) {
                 Logger.Info($"File is already stored in the bundle.json. Re-using existing file's target path.");
                 targetFilepath = previousListing.Target;

@@ -38,6 +38,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string RecentFiles = "recent_files";
         public const string LoadFromNatives = "load_natives";
         public const string BundleDefaultSaveFullPath = "bundle_save_full_path";
+        public const string BundleCustomBaseTargetPath = "bundle_custom_base_path";
         public const string Theme = "theme";
         public const string EnableUpdateCheck = "enable_update_check";
         public const string EnableKeyboardNavigation = "enable_keyboard_nav";
@@ -307,6 +308,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<bool> IsFirstTime = new SettingWrapper<bool>(Keys.IsFirstTime, _lock, true);
     public readonly SettingWrapper<bool> LoadFromNatives = new SettingWrapper<bool>(Keys.LoadFromNatives, _lock, false);
     public readonly SettingWrapper<bool> BundleDefaultSaveFullPath = new SettingWrapper<bool>(Keys.BundleDefaultSaveFullPath, _lock, false);
+    public readonly ClassSettingWrapper<string> BundleCustomBaseTargetPath = new ClassSettingWrapper<string>(Keys.BundleCustomBaseTargetPath, _lock);
     public readonly SettingWrapper<Vector4> WindowRect = new SettingWrapper<Vector4>(Keys.WindowRect, _lock, new Vector4(50, 50, 1280, 720));
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
     public readonly SettingWrapper<bool> PauseAnimPlayerOnSeek = new SettingWrapper<bool>(Keys.PauseAnimPlayerOnSeek, _lock, true);
@@ -479,6 +481,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.ThumbnailCacheFilepath, instance.ThumbnailCacheFilepath.value?.ToString() ?? "", null),
             (Keys.BookmarksFilepath, instance.BookmarksFilepath.value?.ToString() ?? "", null),
             (Keys.ResourcesFilepath, instance.ResourcesFilepath.value?.ToString() ?? "", null),
+            (Keys.BundleCustomBaseTargetPath, instance.BundleCustomBaseTargetPath.value?.ToString() ?? "", null),
             (Keys.Theme, instance.Theme.value?.ToString() ?? "", null),
             (Keys.BackgroundColor, instance.BackgroundColor.value.ToString(), null),
             (Keys.LogLevel, instance.LogLevel.value.ToString(), null),
@@ -640,6 +643,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.ResourcesFilepath:
                             ResourcesFilepath.value = ReadString(value);
+                            break;
+                        case Keys.BundleCustomBaseTargetPath:
+                            BundleCustomBaseTargetPath.value = ReadString(value);
                             break;
                         case Keys.Theme:
                             Theme.value = string.IsNullOrEmpty(value) ? "default" : value;

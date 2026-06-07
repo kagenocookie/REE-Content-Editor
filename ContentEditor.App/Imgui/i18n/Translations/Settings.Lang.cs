@@ -102,6 +102,12 @@ public static partial class Lang
         public static readonly TextTooltip PauseAnimPlayerOnSeek = new TextTooltip("Pause Animation Player on seek", "Whether to pause the animation player while seeking with the slider.");
         public static readonly TextTooltip BundleDefaultSaveFullPath = new TextTooltip("Save bundle files with full path", "When checked, will always default to saving with the full relative path instead of the root bundle folder when adding new files to the active bundle.");
         public static readonly TextTooltip MaxUndoSteps = new TextTooltip("Max undo steps", "The maximum number of steps you can undo. Higher number means a bit higher memory usage after longer sessions.");
+        public static readonly TextTooltip CustomBundleBasePath = new TextTooltip("Base Bundle File Path", """
+            The default base path added to every custom file when saving a new file to bundle.
+            Accepts replace parameters for {AUTHOR} or {BUNDLE_NAME}
+            For example, "{AUTHOR}/{BUNDLE_NAME}/" for a bundle called Johnmods with a bundle named BigMod would use "Johnmods/BigMod/" as the target path for every new file.
+            This makes it easier to set up paths so they're not just all at the root folder in the published mod.
+            """);
 
         public static readonly FixedString Bind_Undo = "Undo";
         public static readonly FixedString Bind_Redo = "Redo";

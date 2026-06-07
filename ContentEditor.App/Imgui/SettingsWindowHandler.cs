@@ -279,6 +279,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     {
         ImGui.Spacing();
         ShowSetting(config.BundleDefaultSaveFullPath, Lang.Settings.BundleDefaultSaveFullPath);
+        ShowSetting(config.BundleCustomBaseTargetPath, Lang.Settings.CustomBundleBasePath);
 
         ImGui.SeparatorText(Lang.Settings.Section_BundleDefaults);
         var defaults = config.JsonSettings.BundleDefaults;
