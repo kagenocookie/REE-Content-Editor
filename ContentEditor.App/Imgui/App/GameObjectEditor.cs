@@ -115,7 +115,7 @@ public class ComponentDataHandler : IObjectUIHandler
         ImGui.BeginGroup();
 
         ReadOnlySpan<byte> label = context.label;
-        ReadOnlySpan<byte> suffix = context.annotation.GetUTF8(instance);
+        ReadOnlySpan<byte> suffix = ReferenceEquals(context.annotation, null) ? ReadOnlySpan<byte>.Empty : context.annotation.GetUTF8(instance);
         ImGui.PushID(label);
 
         // begin node header
@@ -143,8 +143,10 @@ public class ComponentDataHandler : IObjectUIHandler
         // using class name here because i couldn't find an efficient way to strip the suffix from the label
         // it's also accurate to their editor ig
         ImGui.TextUnformatted(instance.RszClass.ShortName);
-        ImGui.SameLine();
-        ImGui.TextColored(Colors.Faded, suffix);
+        if (!suffix.IsEmpty) {
+            ImGui.SameLine();
+            ImGui.TextColored(Colors.Faded, suffix);
+        }
         // end name labels
 
         // begin context buttons
