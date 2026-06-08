@@ -393,7 +393,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
                 ImGui.PopItemWidth();
                 ImGui.EndChild();
             } else {
-                var child = context.GetChild(label);
+                var child = context.GetChildByValue(getter(context)!);
                 if (child == null) {
                     child = context.AddChild(label, mat, getter: c => (object)getter(c)!);
                     child.AddDefaultHandler<T>();

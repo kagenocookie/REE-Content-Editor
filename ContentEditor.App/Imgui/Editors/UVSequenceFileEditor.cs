@@ -202,7 +202,7 @@ public sealed class UVSequenceFileEditor : FileEditor, IWorkspaceContainer, IDis
     }
     private void ShowTabs(SequenceBlock sequence)
     {
-        var seqCtx = context.GetChild(sequence) ?? context.AddChild($"Sequence {selectedSequenceIndex}", sequence);
+        var seqCtx = context.GetChildByTarget(sequence) ?? context.AddChild($"Sequence {selectedSequenceIndex}", sequence);
 
         ImGui.BeginTabBar($"Sequence##{selectedSequenceIndex}");
         if (ImGui.BeginTabItem("Overview")) {

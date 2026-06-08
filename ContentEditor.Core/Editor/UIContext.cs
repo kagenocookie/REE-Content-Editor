@@ -131,6 +131,7 @@ public class UIContext
     }
 
     public UIContext? GetChild(int index) => index >= 0 && index < children.Count ? children[index] : null;
+    public UIContext? GetChild(TranslatableBase label) => GetChild(label.String);
     public UIContext? GetChild(string label)
     {
         foreach (var child in children) {
@@ -138,7 +139,7 @@ public class UIContext
         }
         return null;
     }
-    public UIContext? GetChild(object target)
+    public UIContext? GetChildByTarget(object target)
     {
         foreach (var child in children) {
             if (child.target == target) return child;
