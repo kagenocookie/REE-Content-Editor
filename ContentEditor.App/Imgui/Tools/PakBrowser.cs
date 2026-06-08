@@ -821,8 +821,8 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
                 }
             }
             if (Path.HasExtension(file) && contentWorkspace.CurrentBundle != null) {
-                var handle = contentWorkspace.ResourceManager.GetFileHandle(file);
                 if (ImguiHelpers.ContextMenuItem("##SaveToBundle", AppIcons.SIC_BundleSaveTo, "Save to Bundle", new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
+                    var handle = contentWorkspace.ResourceManager.GetFileHandle(file);
                     if (handle != null) {
                         ResourcePathPicker.SaveFileToBundle(contentWorkspace, handle, (savePath, localPath, nativePath) => handle.Save(contentWorkspace, savePath), closeFile: true);
                     }
