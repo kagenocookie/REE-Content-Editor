@@ -418,7 +418,7 @@ public class DefaultThemes
         style.Colors[(int)ImGuiCol.Button] = new Vector4(0.2000000029802322f, 0.2000000029802322f, 0.2156862765550613f, 1.0f);
         style.Colors[(int)ImGuiCol.ButtonHovered] = new Vector4(0.272f, 0.315f, 0.610f, 1.000f);
         style.Colors[(int)ImGuiCol.ButtonActive] = new Vector4(0.1137254908680916f, 0.5921568870544434f, 0.9254902005195618f, 1.0f);
-        style.Colors[(int)ImGuiCol.Header] = new Vector4(0.253f, 0.480f, 0.788f, 0.510f);
+        style.Colors[(int)ImGuiCol.Header] = new Vector4(0.246f, 0.290f, 0.351f, 0.561f);
         style.Colors[(int)ImGuiCol.HeaderHovered] = new Vector4(0.207f, 0.323f, 0.546f, 1.000f);
         style.Colors[(int)ImGuiCol.HeaderActive] = new Vector4(0.0f, 0.4666666686534882f, 0.7843137383460999f, 1.0f);
         style.Colors[(int)ImGuiCol.Separator] = new Vector4(0.3058823645114899f, 0.3058823645114899f, 0.3058823645114899f, 1.0f);
@@ -430,8 +430,10 @@ public class DefaultThemes
         style.Colors[(int)ImGuiCol.Tab] = new Vector4(0.1450980454683304f, 0.1450980454683304f, 0.1490196138620377f, 1.0f);
         style.Colors[(int)ImGuiCol.TabHovered] = new Vector4(0.1137254908680916f, 0.5921568870544434f, 0.9254902005195618f, 1.0f);
         style.Colors[(int)ImGuiCol.TabSelected] = new Vector4(0.145f, 0.466f, 0.685f, 1.000f);
+        style.Colors[(int)ImGuiCol.TabSelectedOverline] = new Vector4(0.260f, 0.590f, 0.980f, 1.000f);
         style.Colors[(int)ImGuiCol.TabDimmed] = new Vector4(0.1450980454683304f, 0.1450980454683304f, 0.1490196138620377f, 1.0f);
         style.Colors[(int)ImGuiCol.TabDimmedSelected] = new Vector4(0.0f, 0.4666666686534882f, 0.7843137383460999f, 1.0f);
+        style.Colors[(int)ImGuiCol.TabDimmedSelectedOverline] = new Vector4(0.500f, 0.500f, 0.500f, 0.000f);
         style.Colors[(int)ImGuiCol.PlotLines] = new Vector4(0.0f, 0.4666666686534882f, 0.7843137383460999f, 1.0f);
         style.Colors[(int)ImGuiCol.PlotLinesHovered] = new Vector4(0.1137254908680916f, 0.5921568870544434f, 0.9254902005195618f, 1.0f);
         style.Colors[(int)ImGuiCol.PlotHistogram] = new Vector4(0.0f, 0.4666666686534882f, 0.7843137383460999f, 1.0f);
@@ -442,7 +444,11 @@ public class DefaultThemes
         style.Colors[(int)ImGuiCol.TableRowBg] = new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
         style.Colors[(int)ImGuiCol.TableRowBgAlt] = new Vector4(0.526f, 0.526f, 0.526f, 0.060f);
         style.Colors[(int)ImGuiCol.TextSelectedBg] = new Vector4(0.0f, 0.4666666686534882f, 0.7843137383460999f, 1.0f);
+        style.Colors[(int)ImGuiCol.TextLink] = new Vector4(0.260f, 0.590f, 0.980f, 1.000f);
+        style.Colors[(int)ImGuiCol.TreeLines] = new Vector4(0.431f, 0.431f, 0.502f, 0.502f);
         style.Colors[(int)ImGuiCol.DragDropTarget] = new Vector4(0.865f, 0.952f, 0.076f, 1.000f);
+        style.Colors[(int)ImGuiCol.DockingPreview] = new Vector4(0.260f, 0.590f, 0.980f, 0.700f);
+        style.Colors[(int)ImGuiCol.DockingEmptyBg] = new Vector4(0.200f, 0.200f, 0.200f, 1.000f);
         style.Colors[(int)ImGuiCol.NavCursor] = new Vector4(0.1450980454683304f, 0.1450980454683304f, 0.1490196138620377f, 1.0f);
         style.Colors[(int)ImGuiCol.NavWindowingHighlight] = new Vector4(1.0f, 1.0f, 1.0f, 0.7f);
         style.Colors[(int)ImGuiCol.NavWindowingDimBg] = new Vector4(0.8f, 0.8f, 0.8f, 0.2000000029802322f);
