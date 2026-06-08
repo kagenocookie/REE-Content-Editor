@@ -475,8 +475,9 @@ public class BundleManagementUI : IWindowHandler
                         if (File.Exists(filePath)) {
                             File.Delete(filePath);
                         } else {
-                            Logger.Error($"Failed to delete file {filePath}!");
+                            Logger.Error($"File not found - could not delete file {filePath}!");
                         }
+                        bundle.Save();
                     }
                 );
             }
