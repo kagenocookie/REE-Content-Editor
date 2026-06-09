@@ -192,7 +192,7 @@ public abstract class TranslatableBase
         _format = format;
     }
 
-    protected static byte[] GetNullTerminatedUTF8(string str)
+    internal static byte[] GetNullTerminatedUTF8(string str)
     {
         int byteCount = Encoding.UTF8.GetByteCount(str);
         var bytes = new byte[byteCount + 1];
@@ -226,7 +226,7 @@ public class InterpolatedString<T>(string format) where T : IComparable<T>
     public byte[] Format(T value)
     {
         if (!Bytes.TryGetValue(value, out var bytes)) {
-            Bytes[value] = bytes = Encoding.UTF8.GetBytes(string.Format(format, Converter(value)));
+            Bytes[value] = bytes = TranslatableBase.GetNullTerminatedUTF8(string.Format(format, Converter(value)));
         }
 
         return bytes;
@@ -248,7 +248,7 @@ public class InterpolatedString<T1, T2>(string format)
     public byte[] Format(T1 value1, T2 value2)
     {
         if (!Bytes.TryGetValue((value1, value2), out var bytes)) {
-            Bytes[(value1, value2)] = bytes = Encoding.UTF8.GetBytes(string.Format(format, Converter1(value1), Converter2(value2)));
+            Bytes[(value1, value2)] = bytes = TranslatableBase.GetNullTerminatedUTF8(string.Format(format, Converter1(value1), Converter2(value2)));
         }
 
         return bytes;
