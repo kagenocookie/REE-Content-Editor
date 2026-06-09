@@ -139,6 +139,7 @@ maincol FileTypeNCF = FFFFCC40
 maincol FileTypeSKELETON = FFC4C4C4
 maincol FileTypeFBXSKEL = FFC6A037
 maincol FileTypeREFSKEL = FF5286C6
+maincol HomeButtonActive = 32B2B2B2
 maincol IconPrimary = FFF5F2EE
 maincol IconSecondary = FF0087FF
 maincol IconTertiary = FF6666FF

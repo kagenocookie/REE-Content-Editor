@@ -93,6 +93,8 @@ public static class Colors
     public static Vector4 FileTypeREFSKEL => Current.FileTypeREFSKEL;
     public static Vector4 FileTypeSSS => Current.FileTypeSSS;
 
+    public static Vector4 HomeButtonActive => Current.HomeButtonActive;
+
     /// <summary>
     /// Main color for icons, it should be the same as the text color of the current theme
     ///</summary>
@@ -264,6 +266,8 @@ public sealed class AppColors
     public Vector4 FileTypeSKELETON = new Vector4(0.77f, 0.77f, 0.77f, 1);
     public Vector4 FileTypeFBXSKEL = new Vector4(0.216f, 0.627f, 0.776f, 1);
     public Vector4 FileTypeREFSKEL = new Vector4(0.776f, 0.525f, 0.322f, 1);
+
+    public Vector4 HomeButtonActive = new Vector4(0.253f, 0.480f, 0.788f, 0.510f);
 
     public Vector4 IconPrimary = new Vector4(1, 1, 1, 1);
     public Vector4 IconSecondary = new Vector4(0.114f, 0.6f, 0.93f, 1);
