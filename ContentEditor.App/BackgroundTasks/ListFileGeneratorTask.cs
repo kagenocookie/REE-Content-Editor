@@ -1,3 +1,6 @@
+using ContentEditor.App;
+using ContentEditor.App.ImguiHandling;
+using ContentEditor.App.Windowing;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Pak;
@@ -16,6 +19,8 @@ public class ListFileGeneratorTask(ContentWorkspace workspace) : IBackgroundTask
 
     public TaskStatus TaskStatus { get; set; }
     public bool LatestPAKsOnly { get; set; }
+    public FileListGenerator.ScanFlags? Flags { get; set; }
+    public bool IncludeOtherGameLists { get; set; }
 
     public Task Execute(CancellationToken token = default)
     {
@@ -32,10 +37,16 @@ public class ListFileGeneratorTask(ContentWorkspace workspace) : IBackgroundTask
             generator.PreviousListFile = listPath;
         }
 
-        // generator.ReferenceListFiles = ResourceRepository.Initialize()?.LocalInfo
-        //     .Select(loc => loc.Value.TryGetListFilePath(out var ff) ? ff : null!)
-        //     .Where(ff => ff != null)
-        //     .ToArray() ?? [];
+        if (Flags != null) {
+            generator.Flags = Flags.Value;
+        }
+
+        if (IncludeOtherGameLists) {
+            generator.ReferenceListFiles = ResourceRepository.Initialize()?.LocalInfo
+                .Select(loc => loc.Value.TryGetListFilePath(out var ff) ? ff : null!)
+                .Where(ff => ff != null)
+                .ToArray() ?? [];
+        }
 
         var files = generator.Scan();
         var outputPath = Path.Combine(Directory.GetCurrentDirectory(), $"output/{workspace.Game.name}.list");
@@ -43,5 +54,40 @@ public class ListFileGeneratorTask(ContentWorkspace workspace) : IBackgroundTask
         File.WriteAllLines(outputPath, files);
         Logger.Info($"Generated file list written to {outputPath}");
         return Task.CompletedTask;
+    }
+}
+
+public class ListFileGeneratorTaskWindow : BaseWindowHandler
+{
+    public override string HandlerName => "List File Generator";
+
+    private FileListGenerator.ScanFlags options = FileListGenerator.ScanFlags.Executable|FileListGenerator.ScanFlags.Files|FileListGenerator.ScanFlags.MaintainPreviousList;
+    private bool includeOtherGameLists;
+    private bool latestPAKsOnly;
+
+    public override void OnIMGUI()
+    {
+        if (MainLoop.Instance.BackgroundTasks.HasPendingTask<ListFileGeneratorTask>()) {
+            ImGui.TextColored(Colors.Note, "List file generation is in progress. Please wait for it to finish or restart Content Editor to cancel it.");
+            return;
+        }
+        if (context.children.Count == 0) {
+            context.AddChild("Options", this, new CsharpFlagsEnumFieldHandler<FileListGenerator.ScanFlags, int>() { HideNumberInput = true }, x => x!.options, (x, v) => x.options = v);
+            context.AddChild("Include other game file lists", this, getter: x => x!.includeOtherGameLists, setter: (x, v) => x.includeOtherGameLists = v).AddDefaultHandler();
+            context.AddChild("Latest PAK files only (based on last 15mins file modified date)", this, getter: x => x!.latestPAKsOnly, setter: (x, v) => x.latestPAKsOnly = v).AddDefaultHandler();
+        }
+        context.ShowChildrenUI();
+        if (ImGui.Button("Generate")) {
+            MainLoop.Instance.BackgroundTasks.Queue(new ListFileGeneratorTask(workspace) {
+                Flags = options,
+                IncludeOtherGameLists = includeOtherGameLists,
+                LatestPAKsOnly = latestPAKsOnly,
+            });
+            EditorWindow.CurrentWindow?.CloseSubwindow(this);
+        }
+        ImGui.SameLine();
+        if (ImGui.Button("Cancel")) {
+            EditorWindow.CurrentWindow?.CloseSubwindow(this);
+        }
     }
 }

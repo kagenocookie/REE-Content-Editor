@@ -894,16 +894,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     }
                 }
 
-                if (ImGui.MenuItem("Generate list file (all files)")) {
-                    if (!MainLoop.Instance.BackgroundTasks.HasPendingTask<ListFileGeneratorTask>()) {
-                        MainLoop.Instance.BackgroundTasks.Queue(new ListFileGeneratorTask(workspace) { LatestPAKsOnly = false });
-                    }
-                }
-
-                if (ImGui.MenuItem("Generate list file (latest PAKs only)")) {
-                    if (!MainLoop.Instance.BackgroundTasks.HasPendingTask<ListFileGeneratorTask>()) {
-                        MainLoop.Instance.BackgroundTasks.Queue(new ListFileGeneratorTask(workspace) { LatestPAKsOnly = true });
-                    }
+                if (ImGui.MenuItem("Generate list file")) {
+                    AddSubwindow(new ListFileGeneratorTaskWindow());
                 }
 
                 if (ImGui.MenuItem("Generate bookmarks from entities")) {
