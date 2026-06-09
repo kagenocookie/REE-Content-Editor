@@ -24,6 +24,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
 
     public Workspace Workspace { get; } = contentWorkspace.Env;
     public string[]? PakFilePaths { get; } = pakFilePaths;
+    private string? thumbnailDiscriminator = pakFilePaths == null ? null : MurMur3HashUtils.GetPakFilepathHash(string.Join("", pakFilePaths)).ToString("X16");
 
     private string _currentDir = contentWorkspace.Env.BasePath[0..^1];
     public string CurrentDir {
@@ -513,7 +514,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
         GetPageFiles(baseList, (short)gridSortColumn, gridSortDir, ref sortedEntries);
         if (sortedEntries.Length == 0) return;
-        previewGenerator ??= new(contentWorkspace, EditorWindow.CurrentWindow?.GLContext!);
+        previewGenerator ??= new(contentWorkspace, EditorWindow.CurrentWindow?.GLContext!, PakFilePaths);
 
         var style = ImGui.GetStyle();
         var btnSize = new Vector2(120 * UI.UIScale, 100 * UI.UIScale);
@@ -558,7 +559,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
             ImGui.PushFont(null, UI.FontSizeLarge);
             if (Path.HasExtension(file)) {
                 if (isFilePreviewEnabled) {
-                    var previewStatus = previewGenerator.FetchPreview(file, out var previewTex);
+                    var previewStatus = previewGenerator.FetchPreview(file, out var previewTex, thumbnailDiscriminator);
                     if (previewStatus == PreviewImageStatus.Ready) {
                         var texSize = new Vector2(btnSize.X, btnSize.Y - UI.FontSize) - style.FramePadding;
                         ImGui.GetWindowDrawList().AddImage(previewTex!.AsTextureRef(), pos + style.FramePadding, pos + texSize);
@@ -606,7 +607,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         var baseList = currentList!;
         int i = 0;
         if (isFilePreviewEnabled) {
-            previewGenerator ??= new(contentWorkspace, EditorWindow.CurrentWindow?.GLContext!);
+            previewGenerator ??= new(contentWorkspace, EditorWindow.CurrentWindow?.GLContext!, PakFilePaths);
         }
 
         var useCompactFilePaths = AppConfig.Instance.UsePakCompactFilePaths.Get();
@@ -664,7 +665,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
 
                 if (isFilePreviewEnabled && ImGui.IsItemHovered()) {
                     if (Path.HasExtension(file)) {
-                        var previewStatus = previewGenerator!.FetchPreview(file, out var previewTex);
+                        var previewStatus = previewGenerator!.FetchPreview(file, out var previewTex, thumbnailDiscriminator);
                         if (previewStatus == PreviewImageStatus.Ready) {
                             ImGui.BeginTooltip();
                             ImGui.Image(previewTex!.AsTextureRef(), new Vector2(256, 256));

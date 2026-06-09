@@ -95,12 +95,12 @@ public partial class FileTesterWindow : IWindowHandler
             }
 
             if (ImGui.TreeNode("Hash bruteforce")) {
-                if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Will attempt to match the given UTF16 hash with a wordlist (lowercase, uppercase, capital case variants are attempted) or executable file");
+                if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Will attempt to match the given UTF16 hash with a word list (lowercase, uppercase, capital case variants are attempted) or executable file");
                 wordlistFilepath ??= AppConfig.Instance.GetGameExecutablePath(context.GetWorkspace()?.Game ?? default) ?? "";
                 if (AppImguiHelpers.InputFilepath("Words Source"u8, ref wordlistFilepath)) {
                     wordlistCache = null;
                 }
-                ImguiHelpers.Tooltip("The word source can be either an executable or a file list txt file");
+                ImguiHelpers.Tooltip("The word source can be either an executable or a word list text file");
                 if (ImguiHelpers.InlineRadioGroup(["UTF-16", "Ascii", "UTF-8"], [0, 1, 2], ref wordlistHashType)) {
                     wordlistCache = null;
                 }

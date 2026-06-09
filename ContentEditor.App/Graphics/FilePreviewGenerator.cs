@@ -4,6 +4,7 @@ using System.Numerics;
 using ContentEditor.App.FileLoaders;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Common;
 using ReeLib.via;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
@@ -17,13 +18,14 @@ public sealed class FilePreviewGenerator : IDisposable
 {
     public string PreviewCacheFolder { get; }
 
-    private readonly ConcurrentQueue<string> _pendingPreviews = new();
+    private readonly ConcurrentQueue<(string path, ulong hash)> _pendingPreviews = new();
     private readonly ContentWorkspace workspace;
-    private readonly ConcurrentDictionary<string, Texture> _loadedPreviews = new();
-    private readonly ConcurrentDictionary<string, PreviewImageStatus> _statuses = new();
+    private readonly ConcurrentDictionary<ulong, Texture> _loadedPreviews = new();
+    private readonly ConcurrentDictionary<ulong, PreviewImageStatus> _statuses = new();
 
     private static readonly Int2 ThumbnailSize = new Int2(256, 256);
     private readonly GL _mainGl;
+    private readonly string[]? pakFiles;
     private static WindowOptions _workerWindowOptions = WindowOptions.Default with {
         IsVisible = false,
         ShouldSwapAutomatically = false,
@@ -38,14 +40,21 @@ public sealed class FilePreviewGenerator : IDisposable
 
     private Thread? thread;
 
-    public FilePreviewGenerator(ContentWorkspace originalWorkspace, GL gl)
+    public FilePreviewGenerator(ContentWorkspace originalWorkspace, GL gl, string[]? pakFiles)
     {
         this._mainGl = gl;
+        this.pakFiles = pakFiles;
         PreviewCacheFolder = Path.Combine(AppConfig.Instance.ThumbnailCacheFilepath.Get()!, originalWorkspace.Game.name);
         workspace = originalWorkspace.CreateTempClone();
+        if (originalWorkspace.CurrentBundle != null) {
+            workspace.SetBundle(originalWorkspace.CurrentBundle.Name);
+        }
         workspace.ResourceManager.SetupFileLoaders(typeof(MeshLoader).Assembly);
         // we manually load tex files so we can skip unnecessary mipmaps
         workspace.ResourceManager.RemoveFileLoader<TexFileLoader>();
+        if (pakFiles != null) {
+            workspace.Env.PakReader.PakFilePriority = pakFiles.ToList();
+        }
     }
 
     public void CancelCurrentQueue()
@@ -59,41 +68,57 @@ public sealed class FilePreviewGenerator : IDisposable
         }
     }
 
-    private string GetThumbnailPath(string filepath)
+    private string GetThumbnailPath(ulong hash)
     {
-        // should we worry about file path length limits? if so, we could use hashes instead of full file paths
-        return Path.Combine(PreviewCacheFolder, string.Concat(PathUtils.RemoveNativesFolder(filepath, workspace.Platform), ".jpg")).NormalizeFilepath();
+        var hex = hash.ToString("X16");
+        var mainFolder = hex.Substring(0, 2);
+        var fn = hex.AsSpan(2);
+        return Path.Combine(PreviewCacheFolder, mainFolder, string.Concat(fn, ".jpg")).NormalizeFilepath();
     }
 
-    public PreviewImageStatus FetchPreview(string file, out Texture? texture)
+    private static ulong CombineHash(ulong pathHash, ulong extraHash)
+    {
+        var low = AppUtils.StableHashCombine((uint)pathHash, (uint)extraHash);
+        var high = AppUtils.StableHashCombine((uint)(pathHash >> 32), (uint)(extraHash >> 32));
+        return low | ((ulong)high << 32);
+    }
+
+    public PreviewImageStatus FetchPreview(string file, out Texture? texture, string? discriminator = null)
     {
         file = PathUtils.GetNonStreamingPath(file.NormalizeFilepath()).ToString();
+        var fileHash = MurMur3HashUtils.GetPakFilepathHash(file);
+        if (discriminator != null) {
+            fileHash = CombineHash(fileHash, MurMur3HashUtils.GetPakFilepathHash(discriminator));
+        }
+        if (workspace.CurrentBundle?.ContainsResource(file) == true) {
+            fileHash = CombineHash(fileHash, MurMur3HashUtils.GetPakFilepathHash(workspace.CurrentBundle.Name));
+        }
         texture = null;
-        if (_statuses.TryGetValue(file, out var status)) {
+        if (_statuses.TryGetValue(fileHash, out var status)) {
             if (status == PreviewImageStatus.Generated) {
-                if (LoadGeneratedThumbnail(file, out texture)) {
+                if (LoadGeneratedThumbnail(fileHash, out texture)) {
                     return PreviewImageStatus.Ready;
                 } else {
-                    _statuses[file] = PreviewImageStatus.Failed;
+                    _statuses[fileHash] = PreviewImageStatus.Failed;
                 }
             }
             if (status == PreviewImageStatus.Ready) {
-                texture = _loadedPreviews[file];
+                texture = _loadedPreviews[fileHash];
             }
             return status;
         }
 
         var fmt = PathUtils.ParseFileFormat(file);
         if (fmt.format is KnownFileFormats.Texture or KnownFileFormats.Mesh) {
-            _statuses[file] = PreviewImageStatus.Pending;
-            EnqueueFile(file);
+            _statuses[fileHash] = PreviewImageStatus.Pending;
+            EnqueueFile(file, fileHash);
             return PreviewImageStatus.Pending;
         } else {
-            return _statuses[file] = AppIcons.GetIcon(fmt.format).icon == '\0' ? PreviewImageStatus.Unsupported : PreviewImageStatus.PredefinedIcon;
+            return _statuses[fileHash] = AppIcons.GetIcon(fmt.format).icon == '\0' ? PreviewImageStatus.Unsupported : PreviewImageStatus.PredefinedIcon;
         }
     }
 
-    private void EnqueueFile(string file)
+    private void EnqueueFile(string file, ulong pathHash)
     {
         if (_pendingPreviews.IsEmpty) {
             _cancelRequested = true;
@@ -103,17 +128,17 @@ public sealed class FilePreviewGenerator : IDisposable
             thread = new Thread(RunPreviewGenerationQueue);
             thread.Start();
         }
-        _pendingPreviews.Enqueue(file);
+        _pendingPreviews.Enqueue((file, pathHash));
     }
 
-    private bool LoadGeneratedThumbnail(string file, out Texture? texture)
+    private bool LoadGeneratedThumbnail(ulong hash, out Texture? texture)
     {
-        var path = GetThumbnailPath(file);
+        var path = GetThumbnailPath(hash);
         using var fs = File.OpenRead(path);
         texture = new Texture(_mainGl);
         texture.LoadFromStream(fs, false);
-        _loadedPreviews[file] = texture;
-        _statuses[file] = PreviewImageStatus.Ready;
+        _loadedPreviews[hash] = texture;
+        _statuses[hash] = PreviewImageStatus.Ready;
         return true;
     }
 
@@ -137,11 +162,12 @@ public sealed class FilePreviewGenerator : IDisposable
         }
 
         try {
-            while (!_stopRequested && !_cancelRequested && _pendingPreviews.TryDequeue(out var path)) {
-                var thumbPath = GetThumbnailPath(path);
+            while (!_stopRequested && !_cancelRequested && _pendingPreviews.TryDequeue(out var queueItem)) {
+                var (path, hash) = queueItem;
+                var thumbPath = GetThumbnailPath(hash);
                 if (File.Exists(thumbPath)) {
-                    // TODO verify content hash for changes
-                    _statuses[path] = PreviewImageStatus.Generated;
+                    // TODO verify content hash for changes somehow?
+                    _statuses[hash] = PreviewImageStatus.Generated;
                     continue;
                 }
 
@@ -149,36 +175,36 @@ public sealed class FilePreviewGenerator : IDisposable
                 FileHandle f;
                 try {
                     if (!workspace.ResourceManager.TryGetOrLoadFile(path, out f!)) {
-                        _statuses[path] = PreviewImageStatus.Failed;
+                        _statuses[hash] = PreviewImageStatus.Failed;
                         continue;
                     }
                 } catch (Exception e) {
-                    _statuses[path] = PreviewImageStatus.Failed;
+                    _statuses[hash] = PreviewImageStatus.Failed;
                     Logger.Error($"Could not load file {path} for preview generation ({e.Message})");
                     continue;
                 }
                 if (_stopRequested || _cancelRequested) break;
                 if (f == null) {
                     Logger.Debug("Failed to resolve preview file: " + path);
-                    _statuses[path] = PreviewImageStatus.Failed;
+                    _statuses[hash] = PreviewImageStatus.Failed;
                     continue;
                 }
 
                 try {
                     switch (fmt) {
                         case KnownFileFormats.Texture:
-                            GenerateTextureThumbnail(path, f.Stream);
+                            GenerateTextureThumbnail(path, hash, f.Stream);
                             break;
                         case KnownFileFormats.Mesh:
-                            GenerateMeshThumbnail(path);
+                            GenerateMeshThumbnail(path, hash);
                             break;
                         default:
-                            _statuses[path] = PreviewImageStatus.Failed;
+                            _statuses[hash] = PreviewImageStatus.Failed;
                             break;
                     }
                 } catch (Exception e) {
                     Logger.Debug("Failed to generate file thumbnail: " + e.Message);
-                    _statuses[path] = PreviewImageStatus.Failed;
+                    _statuses[hash] = PreviewImageStatus.Failed;
                 }
                 workspace.ResourceManager.CloseAllFiles();
             }
@@ -190,14 +216,14 @@ public sealed class FilePreviewGenerator : IDisposable
         }
     }
 
-    private void GenerateTextureThumbnail(string path, Stream stream)
+    private void GenerateTextureThumbnail(string path, ulong hash, Stream stream)
     {
-        _statuses[path] = PreviewImageStatus.Loading;
+        _statuses[hash] = PreviewImageStatus.Loading;
         var texFile = new TexFile(new FileHandler(stream, path));
         texFile.Read();
         var totalMips = texFile.Header.mipCount;
         var targetMip = texFile.GetBestMipLevelForDimensions(ThumbnailSize.x, ThumbnailSize.y);
-        var outPath = GetThumbnailPath(path);
+        var outPath = GetThumbnailPath(hash);
 
         using var fullTexture = new Texture(_threadGL);
         fullTexture.LoadFromTex(texFile);
@@ -212,13 +238,13 @@ public sealed class FilePreviewGenerator : IDisposable
         img.Mutate(x => x.Resize(ThumbnailSize.x, ThumbnailSize.y));
         Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
         img.SaveAsJpeg(outPath, null);
-        _statuses[path] = PreviewImageStatus.Generated;
+        _statuses[hash] = PreviewImageStatus.Generated;
     }
 
-    private void GenerateMeshThumbnail(string path)
+    private void GenerateMeshThumbnail(string path, ulong hash)
     {
-        _statuses[path] = PreviewImageStatus.Loading;
-        var outPath = GetThumbnailPath(path);
+        _statuses[hash] = PreviewImageStatus.Loading;
+        var outPath = GetThumbnailPath(hash);
 
         using var tmpScene = new Scene("_preview", "", workspace, null, null, _threadGL);
         tmpScene.SetActive(true);
@@ -234,7 +260,7 @@ public sealed class FilePreviewGenerator : IDisposable
 
         comp.SetMesh(path, mdfHandle?.Filepath);
         if (comp.MeshHandle == null) {
-            _statuses[path] = PreviewImageStatus.Failed;
+            _statuses[hash] = PreviewImageStatus.Failed;
             Logger.Debug($"Failed to generate thumbnail for mesh " + path);
             return;
         }
@@ -252,7 +278,7 @@ public sealed class FilePreviewGenerator : IDisposable
         Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
         img.SaveAsJpeg(outPath, null);
 
-        _statuses[path] = PreviewImageStatus.Generated;
+        _statuses[hash] = PreviewImageStatus.Generated;
     }
 
     public void Dispose()
