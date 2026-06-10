@@ -264,6 +264,12 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     {
         ImGui.Spacing();
 
+        var textEditor = config.ExternalTextEditor.Get() ?? "";
+        if (AppImguiHelpers.InputFilepath(Lang.Settings.ExternalTextEditor.Text, ref textEditor, FileFilters.ExecutableTool)) {
+            config.ExternalTextEditor.Set(textEditor);
+        }
+        ImguiHelpers.Tooltip(Lang.Settings.ExternalTextEditor.Tooltip);
+
         var maxUndo = config.MaxUndoSteps.Get();
         if (ImGui.DragInt(Lang.Settings.MaxUndoSteps.Text, ref maxUndo, 0.25f, 0)) {
             config.MaxUndoSteps.Set(maxUndo);

@@ -55,6 +55,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string CacheFilepath = "cache_path";
         public const string BookmarksFilepath = "bookmarks_path";
         public const string ResourcesFilepath = "resources_path";
+        public const string ExternalTextEditor = "external_text_editor";
         public const string WindowRect = "window_rect";
         public const string PauseAnimPlayerOnSeek = "pause_anim_player_on_seek";
         public const string UseFullscreenAnimPlayback = "use_fullscreen_anim_playback";
@@ -289,6 +290,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly ClassSettingWrapper<string> BookmarksFilepath = new ClassSettingWrapper<string>(Keys.BookmarksFilepath, _lock, () => Path.Combine(AppDataPath, "user"));
     public readonly ClassSettingWrapper<string> ResourcesFilepath = new ClassSettingWrapper<string>(Keys.ResourcesFilepath, _lock, () => ResourceRepository.LocalResourceRepositoryFolder);
     public readonly ClassSettingWrapper<string> Theme = new ClassSettingWrapper<string>(Keys.Theme, _lock, () => "default");
+    public readonly ClassSettingWrapper<string> ExternalTextEditor = new ClassSettingWrapper<string>(Keys.ExternalTextEditor, _lock);
     public readonly SettingWrapper<int> UnpackMaxThreads = new SettingWrapper<int>(Keys.UnpackMaxThreads, _lock, 4);
     public readonly SettingWrapper<ReeLib.via.Color> BackgroundColor = new SettingWrapper<ReeLib.via.Color>(Keys.BackgroundColor, _lock, new ReeLib.via.Color(115, 140, 153, 255));
     public readonly SettingWrapper<bool> PrettyFieldLabels = new SettingWrapper<bool>(Keys.PrettyLabels, _lock, true);
@@ -481,6 +483,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.ThumbnailCacheFilepath, instance.ThumbnailCacheFilepath.value?.ToString() ?? "", null),
             (Keys.BookmarksFilepath, instance.BookmarksFilepath.value?.ToString() ?? "", null),
             (Keys.ResourcesFilepath, instance.ResourcesFilepath.value?.ToString() ?? "", null),
+            (Keys.ExternalTextEditor, instance.ExternalTextEditor.value?.ToString() ?? "", null),
             (Keys.BundleCustomBaseTargetPath, instance.BundleCustomBaseTargetPath.value?.ToString() ?? "", null),
             (Keys.Theme, instance.Theme.value?.ToString() ?? "", null),
             (Keys.BackgroundColor, instance.BackgroundColor.value.ToString(), null),
@@ -643,6 +646,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.ResourcesFilepath:
                             ResourcesFilepath.value = ReadString(value);
+                            break;
+                        case Keys.ExternalTextEditor:
+                            ExternalTextEditor.value = ReadString(value);
                             break;
                         case Keys.BundleCustomBaseTargetPath:
                             BundleCustomBaseTargetPath.value = ReadString(value);

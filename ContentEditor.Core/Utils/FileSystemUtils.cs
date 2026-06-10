@@ -50,6 +50,24 @@ public static class FileSystemUtils
         }
     }
 
+    public static void OpenInExternalEditor(string? fileOrFolder, string? exePath)
+    {
+        if (string.IsNullOrEmpty(exePath)) {
+            Logger.Error("External editor not configured or does not exist");
+            return;
+        }
+        if (string.IsNullOrEmpty(fileOrFolder)) {
+            Logger.Error("Invalid filepath");
+            return;
+        }
+
+        var escapedFile = $"\"{fileOrFolder}\"";
+        Process.Start(new ProcessStartInfo(exePath) {
+            UseShellExecute = false,
+            Arguments = escapedFile,
+        });
+    }
+
     public static void OpenURL(string url)
     {
         Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });

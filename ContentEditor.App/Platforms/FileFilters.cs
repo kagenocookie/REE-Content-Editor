@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using ReeLib;
 
 namespace ContentEditor.App;
@@ -38,5 +39,6 @@ public static class FileFilters
     public static readonly FileFilter[] ThemeFile = [new FileFilter("Theme File", "theme.txt")];
     public static readonly FileFilter[] LuaFile = [new FileFilter("Lua File", "lua")];
     public static readonly FileFilter[] Executable = [new FileFilter("Executable", "exe")];
+    public static readonly FileFilter[] ExecutableTool = [RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? new FileFilter("Executable", "exe") : new FileFilter("Executable file", "*")];
 }
 

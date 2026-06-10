@@ -343,6 +343,16 @@ public static class WindowHandlerFactory
             return new TextViewer(file.Stream, $"File ({file.HandleType} {file.FileSource})\n{file.Filepath}", true);
         }
 
+        if (file.Filepath.EndsWith(".cs")) {
+            var textedit = AppConfig.Instance.ExternalTextEditor.Get();
+            if (!string.IsNullOrEmpty(textedit)) {
+                FileSystemUtils.OpenInExternalEditor(file.Filepath, textedit);
+                return new ErrorModal(Lang.Errors.OpenedInExternalEditor_Title, Lang.Errors.OpenedInExternalEditor_Text);
+            } else {
+                return new TextViewer(file.Stream, $"File ({file.HandleType} {file.FileSource})\n{file.Filepath}", true);
+            }
+        }
+
         return null;
     }
 

@@ -466,6 +466,10 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem(Lang.Buttons.Open_CurrentBundleFolder)) {
                     FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
                 }
+                var textEditor = AppConfig.Instance.ExternalTextEditor.Get();
+                if (!string.IsNullOrEmpty(textEditor) && ImGui.MenuItem(Lang.Buttons.Open_CurrentBundleTextEditor)) {
+                    FileSystemUtils.OpenInExternalEditor(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle), textEditor);
+                }
                 if (ImGui.MenuItem(Lang.Buttons.BundleFileRescan)) {
                     workspace.RescanFilesInBundle(workspace.CurrentBundle);
                 }

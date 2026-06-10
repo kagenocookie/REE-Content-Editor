@@ -21,6 +21,7 @@ public static partial class Lang
         public static readonly FixedString Open_GameFolder = "Open game folder";
         public static readonly FixedString Open_BundleFolder = "Open bundle folder";
         public static readonly FixedString Open_CurrentBundleFolder = "Open current bundle folder";
+        public static readonly FixedString Open_CurrentBundleTextEditor = "Open current bundle folder in text editor";
         public static readonly FixedString Close = "Close";
         public static readonly FixedString Confirm = "Confirm";
         public static readonly FixedString Cancel = "Cancel";

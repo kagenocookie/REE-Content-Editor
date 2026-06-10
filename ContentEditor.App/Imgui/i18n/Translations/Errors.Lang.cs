@@ -22,11 +22,14 @@ public static partial class Lang
 
             This is an RSZ-based file format, make sure you have the correct game selected.
             """);
-        public static readonly InterpolatedString<string> FileLoad_NotEditable = new("File is not supported for editing:\n{0}");
-        public static readonly InterpolatedString<string> FileLoad_UnknownError = new("File could not be opened or is not supported:\n{0}");
-        public static readonly InterpolatedString<string> ExeNotFound = new("Game executable not found at: {0}");
+        public static readonly InterpolatedString<string> FileLoad_NotEditable = "File is not supported for editing:\n{0}";
+        public static readonly InterpolatedString<string> FileLoad_UnknownError = "File could not be opened or is not supported:\n{0}";
+        public static readonly InterpolatedString<string> ExeNotFound = "Game executable not found at: {0}";
 
         public static readonly FixedString PatchFailed = "Failed to execute patcher";
         public static readonly FixedString PatchRevertFailed = "Failed to revert patches";
+
+        public static readonly FixedString OpenedInExternalEditor_Title = "Opened in external editor";
+        public static readonly FixedString OpenedInExternalEditor_Text = "The file has been opened in the configured eternal editor.";
     }
 }

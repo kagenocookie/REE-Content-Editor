@@ -58,6 +58,7 @@ public static partial class Lang
         public static readonly TextTooltip ExtractPath = new ("Game Extract Path", "This is the default path used when extracting files. Can be left empty.");
         public static readonly TextTooltip RszPath = new ("RSZ Template JSON Path", "This setting should point to the correct rsz*.json for the chosen game.\nFor not yet fully supported games, you may need to manually provide the path to a valid RSZ JSON template before some files can be opened.");
         public static readonly TextTooltip RszPath_Custom = new ("Custom RSZ JSON Path", "The default RSZ json file is fetched automatically.\nChange this only if you know what you're doing - mainly for accessing files from older game versions");
+        public static readonly TextTooltip ExternalTextEditor = new ("External Text Editor", "The preferred external tool to use for editing text files");
         public static readonly FixedString ShowFPS = "Show FPS";
         public static readonly FixedString DateFormat = "Date Format";
 
