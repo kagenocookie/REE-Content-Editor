@@ -359,7 +359,7 @@ public sealed class ContentWorkspace : IDisposable
                 // we'll need a different flow for upgrading legacy DD2 bundles, as well as some sort of migration of legacy data
                 return;
             } else if (localFile.StartsWith("reframework/")) {
-                Logger.Warn("REFramework files are not currently supported for patch installation. Install this manually for now: " + localFile);
+                bundle.AddResource(localFile, localFile, true);
             } else {
                 var listfile = Env.ListFile;
                 var nativePath = localFile;
@@ -375,7 +375,8 @@ public sealed class ContentWorkspace : IDisposable
                     }
                     listfile.ResetResultCache();
                 }
-                bundle.AddResource(localFile, Env.RemoveBasePath(localFile).ToString(), true);
+                var fmt = PathUtils.ParseFileFormat(localFile).format;
+                bundle.AddResource(localFile, Env.RemoveBasePath(localFile).ToString(), fmt.IsDefaultReplacedBundleResource());
                 if (!isProbablyCorrect) {
                     Logger.Warn("Resource file at the bundle root. Unable to guarantee correctly determined native path. Please recheck the generated bundle file list.\nFile: " + localFile);
                 }
@@ -423,11 +424,14 @@ public sealed class ContentWorkspace : IDisposable
                     if (ResourceManager.TryForceLoadFile(file, out var handle)) {
                         handle.Dispose();
                         var originalTargetPath = Env.ListFile?.GetFiles(localPath).FirstOrDefault();
-                        bundle.AddResource(localPath, Env.RemoveBasePath(originalTargetPath ?? localPath).ToString(), true);
+                        bundle.AddResource(localPath, Env.RemoveBasePath(originalTargetPath ?? localPath).ToString(), format.format.IsDefaultReplacedBundleResource());
                         filesAdded = true;
                     } else {
                         Logger.Warn($"Unable to open new bundle file {localPath}, ignoring");
                     }
+                } else if (localPath.StartsWith("reframework")) {
+                    bundle.AddResource(localPath, localPath, true);
+                    filesAdded = true;
                 }
             }
         }

@@ -129,6 +129,7 @@ public class Patcher : IDisposable
         workspace!.SetBundle(null);
         workspace!.ResourceManager.ClearInstances();
         workspace!.ResourceManager.LoadBaseBundleData();
+        string outputDirLoose;
         string outputDirMain;
         string outputDirSub;
 
@@ -136,6 +137,7 @@ public class Patcher : IDisposable
         var isPak = Path.GetExtension(OutputFilepath) == ".pak";
         if (isPak) {
             var outputDir = Path.Combine(config.GamePath, ".content-patcher-staging");
+            outputDirLoose = Path.GetDirectoryName(OutputFilepath)!;
             outputDirMain = Path.Combine(outputDir, "main");
             outputDirSub = Path.Combine(outputDir, "sub");
             if (Directory.Exists(outputDir)) {
@@ -145,6 +147,7 @@ public class Patcher : IDisposable
         } else {
             outputDirMain = OutputFilepath ?? config.GamePath;
             outfile = outputDirMain;
+            outputDirLoose = outputDirMain;
             outputDirSub = Path.Combine(outputDirMain, ".content-patcher-staging/sub");
             if (Directory.Exists(outputDirSub)) {
                 Directory.Delete(outputDirSub, true);
@@ -160,6 +163,8 @@ public class Patcher : IDisposable
             if (needsSubPak && file.Format.format == KnownFileFormats.Texture) {
                 hasTextures = true;
                 fileOutput = Path.Combine(outputDirSub, workspace.Env.PrependBasePath(targetPath));
+            } else if (file.TargetPath?.StartsWith("reframework") == true) {
+                fileOutput = Path.Combine(outputDirLoose, targetPath);
             } else {
                 fileOutput = Path.Combine(outputDirMain, workspace.Env.PrependBasePath(targetPath));
             }
