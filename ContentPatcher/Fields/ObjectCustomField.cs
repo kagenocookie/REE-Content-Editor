@@ -3,10 +3,10 @@ using System.Text.Json.Nodes;
 namespace ContentPatcher;
 
 [ResourceField("object")]
-public class ObjectCustomField : CustomField, IMainField, IDiffableField
+public class ObjectCustomField : EntityField, IMainField, IDiffableField
 {
     public string classname = null!;
-    public override string ResourceIdentifier => classname;
+    public override string ResourceTypeId => classname;
     public bool? forceNested;
     bool IDiffableField.EnableDiff => true;
 

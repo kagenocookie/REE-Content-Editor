@@ -6,8 +6,8 @@ namespace ContentPatcher;
 
 public abstract class ResourceHandler
 {
-    public string ResourceKey { get; set; } = string.Empty;
-    public string? file;
+    public string ResourceTypeID { get; set; } = string.Empty;
+    public List<string> Files { get; init; } = new();
 
     private static readonly Dictionary<string, Func<string, Dictionary<string, object>, ResourceHandler>> patchers = new();
     static ResourceHandler()
@@ -22,14 +22,14 @@ public abstract class ResourceHandler
     }
 
     [return: NotNullIfNotNull(nameof(config))]
-    public static ResourceHandler? CreateInstance(string resourceKey, Dictionary<string, object>? config)
+    public static ResourceHandler? CreateInstance(string resourceTypeId, Dictionary<string, object>? config)
     {
         if (config == null) return null;
         var type = config["type"] as string;
         if (type == null) throw new ArgumentException("Patcher must have a type field", nameof(config));
 
         if (patchers.TryGetValue(type, out var func)) {
-            return func.Invoke(resourceKey, config);
+            return func.Invoke(resourceTypeId, config);
         }
 
         throw new ArgumentException($"Unknown patcher type {type}");
@@ -45,5 +45,5 @@ public abstract class ResourceHandler
     public abstract void ModifyResources(ContentWorkspace workspace, ClassConfig config, IEnumerable<KeyValuePair<long, IContentResource>> resources);
 
     public virtual (long id, IContentResource resource) CreateResource(ContentWorkspace workspace, ClassConfig config, ResourceEntity entity, JsonNode? initialData)
-        => throw new NotImplementedException($"Can't create new resources of type {ResourceKey}");
+        => throw new NotImplementedException($"Can't create new resources of type {ResourceTypeID}");
 }

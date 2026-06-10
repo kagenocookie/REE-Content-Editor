@@ -15,6 +15,7 @@ classes:
     patcher:
       type: multi-array
       path: _Closets
+      nonUniqueIds: true
       files:
       - natives/stm/singletonuserdata/catalog/costumecataloguserdata_1st_maincontents.user.3
       - natives/stm/singletonuserdata/catalog/costumecataloguserdata_2nd_maincontents.user.3

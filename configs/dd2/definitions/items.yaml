@@ -19,14 +19,14 @@ entities:
         required: true
         param:
           key: "item_name_{id}"
-          file: natives/stm/message/ui/itemname.msg.22
+          resource: item_name
       description:
         type: msg
         label: Description
         required: true
         param:
           key: "item_detail_{id}"
-          file: natives/stm/message/ui/itemdetail.msg.22
+          resource: item_detail
           multiline: true
       data:
         type: object
@@ -95,6 +95,22 @@ entities:
           type: Prefab
           path: "{data?.Prefab?.Path}"
 
+resources:
+  item_name:
+    patcher:
+      type: msg
+      key: "item_name_(\\d+)"
+      files:
+      - natives/STM/Message/UI/ItemName.msg.22
+      - natives/STM/Message/UI/ItemName_END.msg.22
+  item_detail:
+    patcher:
+      type: msg
+      key: "item_detail_(\\d+)"
+      files:
+      - natives/STM/Message/UI/ItemDetail.msg.22
+      - natives/STM/Message/UI/ItemDetail_END.msg.22
+
 classes:
   app.ItemCommonParam:
     id: [_Id]
@@ -106,17 +122,21 @@ classes:
     subclasses:
       app.ItemDataParam:
         patcher:
-          type: array-file
-          file: natives/stm/appsystem/item/itemdata/itemdata.user.2
+          type: multi-array
+          path: _Params
+          files:
+          - natives/STM/AppSystem/Item/ItemData/ItemData.user.2
+          - natives/STM/AppSystem/Item/ItemData/ExItemData.user.2
       app.ItemWeaponParam:
         patcher:
           type: array-file
-          file: natives/stm/appsystem/item/itemdata/itemweapondata.user.2
+          file: natives/STM/AppSystem/Item/ItemData/ItemWeaponData.user.2
       app.ItemArmorParam:
         patcher:
           type: array-file
-          file: natives/stm/appsystem/item/itemdata/itemarmordata.user.2
+          file: natives/STM/AppSystem/Item/ItemData/ItemArmorData.user.2
   app.ItemDataParam:
+    to_string: "Item Data {_Id}"
     fields:
       _FakeItemId: { enum: app.ItemIDEnum }
       _DecayedItemId: { enum: app.ItemIDEnum }
@@ -143,7 +163,7 @@ classes:
     subId: [_Type, _EnhanceNo]
     group: item
     type: item_enhance
-    to_string: "{_Type} {_EnhanceNo}"
+    to_string: "{_Type:enum(app.EnhanceType)} {_EnhanceNo}"
     fields:
       _Type: { enum: app.EnhanceType }
       _ItemId: { enum: app.ItemIDEnum }

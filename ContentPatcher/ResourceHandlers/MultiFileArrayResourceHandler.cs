@@ -9,7 +9,7 @@ namespace ContentPatcher;
 public class MultiFileArrayResourceHandler : ResourceHandler
 {
     private string path = "";
-    private List<string> files = new();
+    private bool nonUniqueIds = false;
 
     private class FileObjectContainer
     {
@@ -20,20 +20,21 @@ public class MultiFileArrayResourceHandler : ResourceHandler
         public override string ToString() => $"{path} [{list.Count}] ({file})";
     }
 
-    public static MultiFileArrayResourceHandler Deserialize(string resourceKey, Dictionary<string, object> data)
+    public static MultiFileArrayResourceHandler Deserialize(string resourceTypeId, Dictionary<string, object> data)
     {
         return new MultiFileArrayResourceHandler() {
-            ResourceKey = resourceKey,
+            ResourceTypeID = resourceTypeId,
             path = (string)data["path"],
-            files = ((IEnumerable<object>)data["files"]).Cast<string>().ToList(),
+            Files = ((IEnumerable<object>)data["files"]).Cast<string>().ToList(),
+            nonUniqueIds = data.GetValueOrDefault("nonUniqueIds") is bool bb ? bb : false,
         };
     }
 
     public override (long id, IContentResource resource) CreateResource(ContentWorkspace workspace, ClassConfig config, ResourceEntity entity, JsonNode? initialData)
     {
         // always store new resources on the first path, the idea is that it probably doesn't matter which because the catalogs are usually just merged for runtime anyway
-        var file = files[0];
-        var inst = RszInstance.CreateInstance(workspace.Env.RszParser, workspace.Env.RszParser.GetRSZClass(ResourceKey)!);
+        var file = Files[0];
+        var inst = RszInstance.CreateInstance(workspace.Env.RszParser, workspace.Env.RszParser.GetRSZClass(ResourceTypeID)!);
         workspace.Diff.ApplyDiff(inst, initialData);
         if (config.IDFields?.Length == 1) {
             var idField = config.IDFields[0].Field;
@@ -60,8 +61,10 @@ public class MultiFileArrayResourceHandler : ResourceHandler
             var file = item.file;
             foreach (var elem in item.list.OfType<RszInstance>()) {
                 var id = idGenerator.GetID(elem, config.IDFields!);
-                var hashedId = AppUtils.StableHashCombine((uint)id, MurMur3HashUtils.GetHash(file));
-                dict[hashedId] = new RSZObjectResource(elem, file);
+                if (nonUniqueIds) {
+                    id = AppUtils.StableHashCombine((uint)id, MurMur3HashUtils.GetHash(file));
+                }
+                dict[id] = new RSZObjectResource(elem, file);
             }
         }
     }
@@ -91,7 +94,7 @@ public class MultiFileArrayResourceHandler : ResourceHandler
     private List<FileObjectContainer> GetObjectList(ContentWorkspace workspace, bool modify)
     {
         var list = new List<FileObjectContainer>();
-        foreach (var file in files) {
+        foreach (var file in Files) {
             UserFile userfile = workspace.ResourceManager.ReadFileResource<UserFile>(file!, modify);
 
             var instance = userfile.Instance!;

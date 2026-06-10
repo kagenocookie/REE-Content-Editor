@@ -8,11 +8,22 @@ public class ArrayFileResourceHandler : ResourceHandler
 {
     private string? targetArrayField;
 
-    public static ArrayFileResourceHandler Deserialize(string resourceKey, Dictionary<string, object> data)
+    public static ArrayFileResourceHandler Deserialize(string resourceTypeId, Dictionary<string, object> data)
     {
+        var file = data.GetValueOrDefault("file");
+        var files = new List<string>();
+        if (file is string str) {
+            files.Add(str);
+        } else {
+            files.AddRange(((IEnumerable<object>)data["files"]).Cast<string>());
+        }
+
+        if (files.Count != 1) {
+            throw new InvalidDataException("array-file requires exactly one file");
+        }
         return new ArrayFileResourceHandler() {
-            file = (string)data["file"],
-            ResourceKey = resourceKey,
+            Files = files,
+            ResourceTypeID = resourceTypeId,
             targetArrayField = data.TryGetValue("field", out var ff) ? ff as string : null,
         };
     }
@@ -20,8 +31,8 @@ public class ArrayFileResourceHandler : ResourceHandler
     public override (long id, IContentResource resource) CreateResource(ContentWorkspace workspace, ClassConfig config, ResourceEntity entity, JsonNode? initialData)
     {
         if (config.SubIDFields?.Length > 0) {
-            var list = new RSZObjectListResource(ResourceKey, file!);
-            workspace.Diff.ApplyDiff(list.Instances, initialData, ResourceKey);
+            var list = new RSZObjectListResource(ResourceTypeID, Files[0]);
+            workspace.Diff.ApplyDiff(list.Instances, initialData, ResourceTypeID);
             foreach (var inst in list.Instances) {
                 if (config.IDFields?.Length == 1) {
                     var idField = config.IDFields[0].Field;
@@ -37,7 +48,7 @@ public class ArrayFileResourceHandler : ResourceHandler
             }
             return (entity.Id, list);
         } else {
-            var inst = RszInstance.CreateInstance(workspace.Env.RszParser, workspace.Env.RszParser.GetRSZClass(ResourceKey)!);
+            var inst = RszInstance.CreateInstance(workspace.Env.RszParser, workspace.Env.RszParser.GetRSZClass(ResourceTypeID)!);
             workspace.Diff.ApplyDiff(inst, initialData);
             if (config.IDFields?.Length == 1) {
                 var idField = config.IDFields[0].Field;
@@ -46,7 +57,7 @@ public class ArrayFileResourceHandler : ResourceHandler
             } else {
                 throw new NotImplementedException("Unsupported rsz object id combination");
             }
-            return (entity.Id, new RSZObjectResource(inst, file!));
+            return (entity.Id, new RSZObjectResource(inst, Files[0]));
         }
     }
 
@@ -63,10 +74,10 @@ public class ArrayFileResourceHandler : ResourceHandler
                 if (dict.TryGetValue(id, out var list) && list is RSZObjectListResource objlist) {
                     objlist.Instances.Add(item);
                 } else {
-                    dict[id] = new RSZObjectListResource(item, file!);
+                    dict[id] = new RSZObjectListResource(item, Files[0]);
                 }
             } else {
-                dict[id] = new RSZObjectResource(item, file!);
+                dict[id] = new RSZObjectResource(item, Files[0]);
             }
         }
     }
@@ -97,7 +108,7 @@ public class ArrayFileResourceHandler : ResourceHandler
 
     private IList<object> GetObjectList(ContentWorkspace workspace, bool modify)
     {
-        UserFile userfile = workspace.ResourceManager.ReadFileResource<UserFile>(file!, modify);
+        UserFile userfile = workspace.ResourceManager.ReadFileResource<UserFile>(Files[0], modify);
 
         var instance = userfile.Instance!;
         if (string.IsNullOrEmpty(targetArrayField)) {

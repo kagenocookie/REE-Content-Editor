@@ -5,7 +5,7 @@ namespace ContentPatcher;
 
 public class RSZObjectResource(RszInstance instance, string file) : IContentResource
 {
-    public string ResourceIdentifier => Instance.RszClass.name;
+    public string ResourceTypeID => Instance.RszClass.name;
     public string FilePath => file;
     public RszInstance Instance { get; set; } = instance;
 

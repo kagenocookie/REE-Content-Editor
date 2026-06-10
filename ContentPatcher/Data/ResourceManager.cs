@@ -70,13 +70,18 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             data.baseTypes.AddRange(resources.Where(kv => kv.Value.config.Subclasses?.ContainsKey(classname) == true).Select(kv => kv.Key));
         }
 
+        foreach (var (type, res) in config.Resources) {
+            var data = new ResourceData(new ClassConfig() { Patcher = res.Patcher });
+            resources[type] = data;
+        }
+
         foreach (var (type, patch) in config.Entities) {
             entities[type] = new EntityData(patch);
 
             foreach (var field in patch.Fields) {
-                if (field is ICustomResourceField custom && custom.ResourceIdentifier != null) {
+                if (field is ICustomResourceField custom && custom.ResourceTypeId != null) {
                     var cfg = custom.CreateConfig();
-                    resources[custom.ResourceIdentifier] = new ResourceData(cfg);
+                    resources[custom.ResourceTypeId] = new ResourceData(cfg);
                 }
             }
         }
@@ -160,7 +165,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                 var realData = resourceEntity.Get(f);
                 var field = config.config.GetField(f);
                 if (field != null && realData != null) {
-                    modifiedResources.Add(realData.ResourceIdentifier);
+                    modifiedResources.Add(realData.ResourceTypeID);
                 }
             }
         }
@@ -314,7 +319,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         throw new NotImplementedException("Requested unknown resource " + type);
     }
 
-    private IContentResource? CreateEntityResourceInternal(ResourceEntity entity, CustomField field, ResourceState state, ResourceData data, JsonNode? initialData)
+    private IContentResource? CreateEntityResourceInternal(ResourceEntity entity, EntityField field, ResourceState state, ResourceData data, JsonNode? initialData)
     {
         var resourceConfig = data.config;
         var resourceId = 0L;
@@ -336,13 +341,13 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         } else {
             throw new Exception("New resource file should've been opened, wtf?");
         }
-        AddResource(fieldResource.ResourceIdentifier, resourceId, fieldResource, state);
+        AddResource(fieldResource.ResourceTypeID, resourceId, fieldResource, state);
         return fieldResource;
     }
 
-    public TResourceType CreateEntityResource<TResourceType>(ResourceEntity entity, CustomField field, ResourceState state, string? resourceKeyOverride = null) where TResourceType : IContentResource
+    public TResourceType CreateEntityResource<TResourceType>(ResourceEntity entity, EntityField field, ResourceState state, string? resourceTypeOverride = null) where TResourceType : IContentResource
     {
-        var key = resourceKeyOverride ?? field.ResourceIdentifier;
+        var key = resourceTypeOverride ?? field.ResourceTypeId;
         if (key == null) return Activator.CreateInstance<TResourceType>();
         if (resources.TryGetValue(key, out var data)) {
             if (data.baseInstances == null) {
@@ -370,7 +375,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
             var instances = (state == ResourceState.Base ? data.baseInstances : data.activeInstances ??= new());
             instances.Add(id, resource);
-            var resid = resource.ResourceIdentifier;
+            var resid = resource.ResourceTypeID;
             if (!string.IsNullOrEmpty(resid) && resid != resourceKey && resources.TryGetValue(resid, out var sub)) {
                 instances = (state == ResourceState.Base ? sub.baseInstances ??= new() : sub.activeInstances ??= new());
                 instances.Add(id, resource);
@@ -558,14 +563,14 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
         var entity = new ResourceEntity(id, type, data.config);
         foreach (var field in data.config.Fields) {
-            if (field.ResourceIdentifier == null || field.Condition?.IsEnabled(entity) == false) {
+            if (field.ResourceTypeId == null || field.Condition?.IsEnabled(entity) == false) {
                 continue;
             }
 
-            var resourceData = resources[field.ResourceIdentifier];
+            var resourceData = resources[field.ResourceTypeId];
             IContentResource? fieldResource = null;
             if (sourceEntity != null && sourceEntity.Get(field.name) is IContentResource src) {
-                resourceData = resources[src.ResourceIdentifier];
+                resourceData = resources[src.ResourceTypeID];
                 fieldResource = CreateEntityResourceInternal(entity, field, ResourceState.Active, resourceData, src.ToJson(workspace.Env));
             } else if (field.IsRequired) {
                 var resource = CreateEntityResourceInternal(entity, field, ResourceState.Active, resourceData, null);
@@ -623,7 +628,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         if (config.Subclasses != null) {
             foreach (var (subkey, sub) in config.Subclasses) {
                 if (sub.Patcher != null) {
-                    var subdata = resources[sub.Patcher.ResourceKey];
+                    var subdata = resources[sub.Patcher.ResourceTypeID];
                     sub.Patcher.ReadResources(workspace, config, subdata.baseInstances ??= new());
                     foreach (var (id, ss) in subdata.baseInstances) {
                         data.baseInstances[id] = ss;

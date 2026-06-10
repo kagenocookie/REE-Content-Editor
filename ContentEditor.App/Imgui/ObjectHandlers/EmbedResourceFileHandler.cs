@@ -9,7 +9,7 @@ namespace ContentEditor.App.EntityResources;
 [CustomFieldHandler(typeof(ResourceCustomField))]
 public class EmbeddedResourceFileHandler(ResourceCustomField field) : IObjectUIHandler, IObjectUIInstantiator
 {
-    public static Func<CustomField, IObjectUIHandler> GetFactory() => (field) => new EmbeddedResourceFileHandler((ResourceCustomField)field);
+    public static Func<EntityField, IObjectUIHandler> GetFactory() => (field) => new EmbeddedResourceFileHandler((ResourceCustomField)field);
 
     private FileHandle? file;
 

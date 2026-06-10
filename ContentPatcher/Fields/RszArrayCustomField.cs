@@ -3,10 +3,10 @@ using System.Text.Json.Nodes;
 namespace ContentPatcher;
 
 [ResourceField("objectArray")]
-public class RszArrayCustomField : CustomField, IMainField, IDiffableField
+public class RszArrayCustomField : EntityField, IMainField, IDiffableField
 {
     public string classname = null!;
-    public override string ResourceIdentifier => classname;
+    public override string ResourceTypeId => classname;
     bool IDiffableField.EnableDiff => true;
 
     public override void LoadParams(string fieldName, Dictionary<string, object>? param)

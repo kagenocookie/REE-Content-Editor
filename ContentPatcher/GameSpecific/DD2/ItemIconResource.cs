@@ -10,7 +10,7 @@ public class ItemIconResource : IContentResource
 {
     public ItemRectData data = new();
 
-    public string ResourceIdentifier => data.IconTexture + data.IconRect;
+    public string ResourceTypeID => data.IconTexture + data.IconRect;
     public string? FilePath => data.IconTexture;
 
     public IContentResource Clone() => new ItemIconResource() { data = data.Clone() };
@@ -44,9 +44,9 @@ public class ItemIconResource : IContentResource
 }
 
 [ResourceField("DD2_ItemIcon", "dd2")]
-public class ItemIconField : CustomField<ItemIconResource>
+public class ItemIconField : EntityField<ItemIconResource>
 {
-    public override string? ResourceIdentifier => null;
+    public override string? ResourceTypeId => null;
 
     public override void LoadParams(string fieldName, Dictionary<string, object>? param)
     {

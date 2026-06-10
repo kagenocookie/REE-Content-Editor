@@ -8,15 +8,15 @@ namespace ContentPatcher;
 
 public class EntityConfig
 {
-    public required CustomField[] Fields { get; init; }
-    public required CustomField[] DisplayFieldsOrder { get; init; }
+    public required EntityField[] Fields { get; init; }
+    public required EntityField[] DisplayFieldsOrder { get; init; }
     public long[]? CustomIDRange { get; init; }
     public EntityEnumInfo? PrimaryEnum { get; init; }
     public EntityEnumInfo[]? Enums { get; init; }
     public StringFormatter? StringFormatter { get; set; }
 
     public bool HasField(string name) => GetField(name) != null;
-    public CustomField? GetField(string name) => Fields.FirstOrDefault(f => f.name == name);
+    public EntityField? GetField(string name) => Fields.FirstOrDefault(f => f.name == name);
 }
 
 [YamlObject]
@@ -31,8 +31,8 @@ public partial class EntityConfigSerialized
 
     public EntityConfig ToRuntimeConfig(ContentWorkspace workspace)
     {
-        var fieldlist = new List<CustomField>();
-        var displaylist = new List<CustomField>();
+        var fieldlist = new List<EntityField>();
+        var displaylist = new List<EntityField>();
         foreach (var (name, data) in Fields) {
             var newfield = CustomTypeConfigSerialized.CreateField(name, data);
             fieldlist.Add(newfield);
@@ -42,15 +42,16 @@ public partial class EntityConfigSerialized
         foreach (var (name, data) in Fields) {
             var curIndex = fieldlist.FindIndex(f => f.name == name);
             var field = fieldlist[curIndex];
-            if (data.displayAfter != null) {
+            if (data.displayAfter != null && data.displayAfter != name) {
                 var otherIndex = displaylist.FindIndex(dl => dl.name == data.displayAfter);
                 if (otherIndex != -1) {
-                    if (otherIndex == Fields.Count) {
+                    displaylist.RemoveAt(curIndex);
+                    otherIndex = displaylist.FindIndex(dl => dl.name == data.displayAfter);
+                    if (otherIndex == displaylist.Count - 1) {
                         displaylist.Add(field);
                     } else {
                         displaylist.Insert(otherIndex + 1, field);
                     }
-                    displaylist.RemoveAt(curIndex);
                 }
             }
         }

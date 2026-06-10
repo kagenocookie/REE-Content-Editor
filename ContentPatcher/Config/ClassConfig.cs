@@ -51,12 +51,16 @@ public abstract class NestableFieldAccessor
     }
 }
 
+public class ResourceConfig
+{
+    public ResourceHandler? Patcher { get; set; }
+}
+
 public class ClassConfig
 {
     public NestableFieldAccessor[]? IDFields { get; set; }
     public NestableFieldAccessor[]? SubIDFields { get; set; }
     public string? Group { get; set; }
-    public string? Type { get; set; }
     public Dictionary<string, FieldConfig>? Fields { get; set; }
     public Dictionary<string, SubclassConfig>? Subclasses { get; set; }
     public ResourceHandler? Patcher { get; set; }
@@ -72,12 +76,11 @@ public class ClassConfig
         subConfig.IDFields = subConfig.IDFields ?? IDFields;
         subConfig.SubIDFields = subConfig.SubIDFields ?? SubIDFields;
         subConfig.Group = subConfig.Group ?? Group;
-        subConfig.Type = subConfig.Type ?? Type;
         subConfig.Fields = subConfig.Fields ?? Fields;
         subConfig.Patcher = subConfig.Patcher ?? Subclasses?.GetValueOrDefault(subclass)?.Patcher;
     }
 
-    public override string ToString() => $"{Group}/{Type}";
+    public override string ToString() => $"{Group}";
 }
 
 [YamlObject]
@@ -86,6 +89,7 @@ public partial class SerializedPatchConfigRoot
     public Dictionary<string, EntityConfigSerialized>? Entities { get; set; }
     public Dictionary<string, CustomTypeConfigSerialized>? Types { get; set; }
     public Dictionary<string, ClassConfigSerialized>? Classes { get; set; }
+    public Dictionary<string, ResourceConfigSerialized>? Resources { get; set; }
 }
 
 [YamlObject]
@@ -110,7 +114,6 @@ public partial class ClassConfigSerialized
         if (cls == null && (ID?.Length > 0 || SubID?.Length > 0)) {
             throw new ArgumentNullException(nameof(cls), "RSZ class is required when ID or SubID are present");
         }
-        target.Type = Type ?? target.Type;
         target.Group = Group ?? target.Group;
         target.Patcher = ResourceHandler.CreateInstance(cls!.name, Patcher) ?? target.Patcher;
         target.IDFields = ID?.Select(ff => CreateFieldGetter(env.RszParser, cls, ff)).ToArray() ?? target.IDFields;
@@ -151,6 +154,12 @@ public partial class ClassConfigSerialized
 
         throw new NotSupportedException("Unsupported field ID type " + obj.GetType().FullName + ": " + obj);
     }
+}
+
+[YamlObject]
+public partial class ResourceConfigSerialized
+{
+    public Dictionary<string, object>? Patcher { get; set; }
 }
 
 [YamlObject]

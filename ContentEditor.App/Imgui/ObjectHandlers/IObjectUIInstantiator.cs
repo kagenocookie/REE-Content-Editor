@@ -4,5 +4,5 @@ namespace ContentEditor.App;
 
 public interface IObjectUIInstantiator
 {
-    static abstract Func<CustomField, IObjectUIHandler> GetFactory();
+    static abstract Func<EntityField, IObjectUIHandler> GetFactory();
 }

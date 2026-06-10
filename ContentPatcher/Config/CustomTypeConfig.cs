@@ -5,8 +5,8 @@ namespace ContentPatcher;
 
 public class CustomTypeConfig
 {
-    public required CustomField[] Fields { get; init; }
-    public required CustomField[] DisplayFieldsOrder { get; init; }
+    public required EntityField[] Fields { get; init; }
+    public required EntityField[] DisplayFieldsOrder { get; init; }
 }
 
 [YamlObject]
@@ -19,8 +19,8 @@ public partial class CustomTypeConfigSerialized
 
     public CustomTypeConfig ToRuntimeConfig()
     {
-        var fieldlist = new List<CustomField>();
-        var displaylist = new List<CustomField>();
+        var fieldlist = new List<EntityField>();
+        var displaylist = new List<EntityField>();
         foreach (var (name, data) in Fields) {
             var newfield = CustomTypeConfigSerialized.CreateField(name, data);
             fieldlist.Add(newfield);
@@ -49,7 +49,7 @@ public partial class CustomTypeConfigSerialized
         return config;
     }
 
-    internal static CustomField CreateField(string name, CustomFieldSerialized data)
+    internal static EntityField CreateField(string name, CustomFieldSerialized data)
     {
         var field = ResolveFieldInstance(name, data);
         field.LoadParams(name, data.param);
@@ -61,12 +61,12 @@ public partial class CustomTypeConfigSerialized
         return field;
     }
 
-    private static CustomField ResolveFieldInstance(string name, CustomFieldSerialized data)
+    private static EntityField ResolveFieldInstance(string name, CustomFieldSerialized data)
     {
         if (customFieldTypes == null) {
             customFieldTypes = new();
             foreach (var type in typeof(ObjectCustomField).Assembly.GetTypes()) {
-                if (type.IsAbstract || !type.IsAssignableTo(typeof(CustomField))) continue;
+                if (type.IsAbstract || !type.IsAssignableTo(typeof(EntityField))) continue;
 
                 var attr = type.GetCustomAttribute<ResourceFieldAttribute>();
                 if (attr == null) continue;
@@ -75,7 +75,7 @@ public partial class CustomTypeConfigSerialized
             }
         }
         if (customFieldTypes.TryGetValue(data.type, out var t)) {
-            var inst = (CustomField)Activator.CreateInstance(t)!;
+            var inst = (EntityField)Activator.CreateInstance(t)!;
             inst.name = name;
             inst.label = data.label ?? name;
             return inst;

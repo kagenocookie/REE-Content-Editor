@@ -12,14 +12,14 @@ entities:
         param:
           classname: app.ItemCatalogUserData.ItemData
       name:
-        type: msg
+        type: single-msg
         label: Name
         required: true
         param:
           key: "Item_Name_{data._ItemIDStr}"
           file: natives/stm/message/gamesystem/item.msg.23
       caption:
-        type: msg
+        type: single-msg
         label: Caption
         required: true
         param:

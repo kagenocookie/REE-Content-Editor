@@ -5,7 +5,7 @@ namespace ContentEditor.App.ImguiHandling.EntityResources;
 [CustomFieldHandler(typeof(StringCustomField))]
 public class EntityStringFieldHandler(StringCustomField field) : IObjectUIHandler, IObjectUIInstantiator
 {
-    public static Func<CustomField, IObjectUIHandler> GetFactory() => (field) => new EntityStringFieldHandler((StringCustomField)field);
+    public static Func<EntityField, IObjectUIHandler> GetFactory() => (field) => new EntityStringFieldHandler((StringCustomField)field);
 
     public void OnIMGUI(UIContext context)
     {

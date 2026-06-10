@@ -8,7 +8,7 @@ namespace ContentEditor.App;
 [CustomFieldHandler(typeof(ObjectCustomField))]
 public sealed class ContentEditorRszInstanceHandler(ObjectCustomField field) : IObjectUIHandler, IObjectUIInstantiator
 {
-    public static Func<CustomField, IObjectUIHandler> GetFactory() => (field) => new ContentEditorRszInstanceHandler((ObjectCustomField)field);
+    public static Func<EntityField, IObjectUIHandler> GetFactory() => (field) => new ContentEditorRszInstanceHandler((ObjectCustomField)field);
 
     public void OnIMGUI(UIContext context)
     {

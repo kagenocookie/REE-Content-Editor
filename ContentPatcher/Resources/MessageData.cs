@@ -30,7 +30,7 @@ public class MessageData : IContentResource
             var name = entry.AttributeItems[i].Name;
             Attributes[string.IsNullOrEmpty(name) ? i.ToString() : name] = value ?? "";
         }
-        ResourceIdentifier = resourceIdentifier;
+        ResourceTypeID = resourceIdentifier;
     }
 
     public Guid Guid { get; set; }
@@ -38,7 +38,7 @@ public class MessageData : IContentResource
     public Dictionary<string, string> Messages { get; set; } = new((int)Language.Max);
     public Dictionary<string, string> Attributes { get; set; } = new();
 
-    public required string ResourceIdentifier { get; set; }
+    public required string ResourceTypeID { get; set; }
 
     public required string FilePath { get; set; }
 
@@ -57,7 +57,7 @@ public class MessageData : IContentResource
 
     public IContentResource Clone()
     {
-        return new MessageData() { MessageKey = MessageKey, Guid = Guid, Messages = Messages.ToDictionary(), ResourceIdentifier = ResourceIdentifier, FilePath = FilePath };
+        return new MessageData() { MessageKey = MessageKey, Guid = Guid, Messages = Messages.ToDictionary(), ResourceTypeID = ResourceTypeID, FilePath = FilePath };
     }
     public static MessageData FromJson(string json)
     {
@@ -69,7 +69,7 @@ public class MessageData : IContentResource
     {
         return new MessageData() {
             FilePath = "",
-            ResourceIdentifier = "",
+            ResourceTypeID = "",
             MessageKey = obj?[nameof(MessageKey)]?.AsValue()?.GetValue<string>() ?? "",
             Guid = obj?[nameof(Guid)]?.AsValue()?.GetValue<string>() is string str && Guid.TryParse(str, out var gg) ? gg : Guid.NewGuid(),
             Messages = obj?[nameof(Messages)].Deserialize<Dictionary<string, string>>() ?? new(),

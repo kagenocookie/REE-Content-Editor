@@ -35,7 +35,7 @@ entities:
           initial: "{id:enum(app.ropeway.EquipmentDefine.WeaponType)}"
         display_after: start
       displayName:
-        type: msg
+        type: single-msg
         required: true
         param:
           key: "WEAPON_NAME_{name}"

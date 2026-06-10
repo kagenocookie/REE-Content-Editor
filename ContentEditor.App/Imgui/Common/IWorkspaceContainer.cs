@@ -100,7 +100,7 @@ public static class UIContextExtensions
         return parent?.target as ResourceEntity;
     }
 
-    public static bool CreateEntityResource<TResourceType>(this UIContext context, ContentWorkspace workspace, CustomField field) where TResourceType : IContentResource
+    public static bool CreateEntityResource<TResourceType>(this UIContext context, ContentWorkspace workspace, EntityField field) where TResourceType : IContentResource
     {
         var entity = context.GetOwnerEntity();
         if (entity == null) {

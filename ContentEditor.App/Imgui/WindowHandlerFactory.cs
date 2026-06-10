@@ -34,7 +34,7 @@ public class OpenFileContext
 
 public static class WindowHandlerFactory
 {
-    private static Dictionary<Type, Func<CustomField, IObjectUIHandler>>? customFieldImguiHandlers;
+    private static Dictionary<Type, Func<EntityField, IObjectUIHandler>>? customFieldImguiHandlers;
 
     private static HashSet<string> NonEnumIntegerTypes = [
         "System.Byte", "System.SByte",
@@ -825,22 +825,24 @@ public static class WindowHandlerFactory
         return context;
     }
 
-    private static IObjectUIHandler? GetCustomFieldImguiHandler(ResourceEntity entity, CustomField field)
+    private static IObjectUIHandler? GetCustomFieldImguiHandler(ResourceEntity entity, EntityField field)
     {
         if (customFieldImguiHandlers == null) {
             customFieldImguiHandlers = new();
             foreach (var type in typeof(ContentEditorRszInstanceHandler).Assembly.GetTypes()) {
                 if (type.IsAbstract || !typeof(IObjectUIHandler).IsAssignableFrom(type)) continue;
 
-                var attr = type.GetCustomAttribute<CustomFieldHandlerAttribute>();
-                if (attr == null) continue;
+                var attrs = type.GetCustomAttributes<CustomFieldHandlerAttribute>();
+                if (!attrs.Any()) continue;
 
                 var method = type.GetInterfaceMap(typeof(IObjectUIInstantiator)).TargetMethods.First();
                 if (method == null) {
                     throw new Exception($"Invalid ObjectHandler type {type} - must implement {typeof(IObjectUIInstantiator)} for UI display");
                 }
 
-                customFieldImguiHandlers[attr.HandledFieldType] = (Func<CustomField, IObjectUIHandler>)method.Invoke(null, Array.Empty<object?>())!;
+                foreach (var attr in attrs) {
+                    customFieldImguiHandlers[attr.HandledFieldType] = (Func<EntityField, IObjectUIHandler>)method.Invoke(null, Array.Empty<object?>())!;
+                }
             }
         }
 

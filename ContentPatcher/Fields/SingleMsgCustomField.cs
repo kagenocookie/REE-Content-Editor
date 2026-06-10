@@ -5,14 +5,16 @@ using ReeLib.Common;
 
 namespace ContentPatcher;
 
-[ResourceField("msg")]
-public class SingleMsgCustomField : CustomField<MessageData>, ICustomResourceField, IDiffableField
+[ResourceField("single-msg")]
+public class SingleMsgCustomField : EntityField<MessageData>, ICustomResourceField, IDiffableField
 {
     public string keyFormat = null!;
     public StringFormatter? formatter;
     public string file = null!;
     public bool multiline;
-    public override string ResourceIdentifier => file;
+
+    bool IDiffableField.EnableDiff => true;
+    public override string ResourceTypeId => file;
 
     public override MessageData? ApplyValue(ContentWorkspace workspace, MessageData? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
     {
@@ -23,7 +25,7 @@ public class SingleMsgCustomField : CustomField<MessageData>, ICustomResourceFie
         if (currentResource == null) {
             string entityKey = FormatMessageKey(entity);
             var messageId = MurMur3HashUtils.GetHash(entityKey);
-            currentResource = new MessageData() { ResourceIdentifier = file, FilePath = file!, MessageKey = entityKey, Guid = Guid.NewGuid() };
+            currentResource = new MessageData() { ResourceTypeID = file, FilePath = file!, MessageKey = entityKey, Guid = Guid.NewGuid() };
             workspace.ResourceManager.AddResource(file, messageId, currentResource, state);
         }
         workspace.Diff.ApplyDiff(currentResource, data);
@@ -33,7 +35,7 @@ public class SingleMsgCustomField : CustomField<MessageData>, ICustomResourceFie
     public ClassConfig CreateConfig()
     {
         var cfg = new ClassConfig();
-        cfg.Patcher = new SingleMsgHandler() { file = file, ResourceKey = file };
+        cfg.Patcher = new MsgFileResourceHandler() { Files = [file], ResourceTypeID = file };
         cfg.IDFields = [NestableFieldAccessor.PlainReturn.Instance];
         // cfg.To_String = // msg key + msg value["en"]
         return cfg;
@@ -43,7 +45,7 @@ public class SingleMsgCustomField : CustomField<MessageData>, ICustomResourceFie
     {
         string entityKey = FormatMessageKey(entity);
         var messageId = MurMur3HashUtils.GetHash(entityKey);
-        var data = new MessageData() { FilePath = file!, Messages = new(), ResourceIdentifier = file!, MessageKey = entityKey, Guid = Guid.NewGuid() };
+        var data = new MessageData() { FilePath = file!, Messages = new(), ResourceTypeID = file!, MessageKey = entityKey, Guid = Guid.NewGuid() };
         if (initialData != null) {
             workspace.Diff.ApplyDiff(data, initialData!);
             data.MessageKey = entityKey;
@@ -53,7 +55,7 @@ public class SingleMsgCustomField : CustomField<MessageData>, ICustomResourceFie
 
     public IEnumerable<KeyValuePair<long, IContentResource>> FetchInstances(ResourceManager workspace)
     {
-        return workspace.GetResourceInstances(ResourceIdentifier);
+        return workspace.GetResourceInstances(ResourceTypeId);
     }
 
     public override MessageData? FetchResource(ResourceManager workspace, ResourceEntity entity, ResourceState state)

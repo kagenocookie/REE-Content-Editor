@@ -4,9 +4,9 @@ using VYaml.Annotations;
 namespace ContentPatcher;
 
 /// <summary>
-/// Describes a single custom field. One instance is created per entity and field, but shared between each entity instance.
+/// Describes a single custom entity field. One instance is created per entity and field, but shared between each entity instance.
 /// </summary>
-public abstract class CustomField
+public abstract class EntityField
 {
     public required string name = string.Empty;
     public string label = string.Empty;
@@ -14,7 +14,7 @@ public abstract class CustomField
     /// <summary>
     /// An identifier of the resource type for grouping the resources. Can be null in case the field does not have any actual instance data (only serves as a reference to a file or custom UI display). If null, object will not be diffable.
     /// </summary>
-    public abstract string? ResourceIdentifier { get; }
+    public abstract string? ResourceTypeId { get; }
 
     /// <summary>
     /// Condition for when the field is valid and displayed.
@@ -55,13 +55,13 @@ public abstract class CustomField
     {
     }
 
-    public override string ToString() => $"{name} [{ResourceIdentifier}]";
+    public override string ToString() => $"{name} [{ResourceTypeId}]";
 }
 
 /// <summary>
 /// <inheritdoc/>
 /// </summary>
-public abstract class CustomField<TContentType> : CustomField where TContentType : IContentResource
+public abstract class EntityField<TContentType> : EntityField where TContentType : IContentResource
 {
     public sealed override IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
     {
@@ -90,19 +90,18 @@ public interface IDiffableField
     }
 }
 
+/// <summary>
+/// An entity field that defines its own custom resource.
+/// </summary>
 public interface ICustomResourceField
 {
     /// <summary>
     /// An identifier of the field's resource type for grouping the resources. Can be null in case the field does not have any actual instance data (only serves as a reference to a file or custom UI display). If null, object will not be diffable.
     /// </summary>
-    string? ResourceIdentifier { get; }
+    string? ResourceTypeId { get; }
     IEnumerable<KeyValuePair<long, IContentResource>> FetchInstances(ResourceManager workspace);
     (long id, IContentResource resource) CreateResource(ContentWorkspace workspace, ClassConfig config, ResourceEntity entity, JsonNode? initialData);
     ClassConfig CreateConfig();
-}
-
-public interface ISecondaryField
-{
 }
 
 [YamlObject]

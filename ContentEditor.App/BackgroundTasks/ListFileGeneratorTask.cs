@@ -75,6 +75,7 @@ public class ListFileGeneratorTaskWindow : BaseWindowHandler
             context.AddChild("Options", this, new CsharpFlagsEnumFieldHandler<FileListGenerator.ScanFlags, int>() { HideNumberInput = true }, x => x!.options, (x, v) => x.options = v);
             context.AddChild("Include other game file lists", this, getter: x => x!.includeOtherGameLists, setter: (x, v) => x.includeOtherGameLists = v).AddDefaultHandler();
             context.AddChild("Latest PAK files only (based on last 15mins file modified date)", this, getter: x => x!.latestPAKsOnly, setter: (x, v) => x.latestPAKsOnly = v).AddDefaultHandler();
+            context.options |= UIOptions.DisableUndoRedo;
         }
         context.ShowChildrenUI();
         if (ImGui.Button("Generate")) {

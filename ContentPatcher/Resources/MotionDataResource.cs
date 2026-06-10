@@ -44,7 +44,7 @@ public class MotionDataResource : IContentResource
     public int VerificationId { get; set; }
 
     [JsonIgnore]
-    public string ResourceIdentifier => "mot_data";
+    public string ResourceTypeID => "mot_data";
 
     [JsonIgnore]
     public string? FilePath { get; private set; }

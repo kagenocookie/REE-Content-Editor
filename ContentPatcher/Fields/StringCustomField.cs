@@ -7,7 +7,7 @@ using ReeLib;
 namespace ContentPatcher;
 
 [ResourceField("string")]
-public class StringCustomField : CustomField<StringResource>, ICustomResourceField, IDiffableField
+public class StringCustomField : EntityField<StringResource>, ICustomResourceField, IDiffableField
 {
     public Regex? Regex { get; private set; }
     public string? RegexDescription { get; private set; }
@@ -15,7 +15,7 @@ public class StringCustomField : CustomField<StringResource>, ICustomResourceFie
     private string? initialFormatString;
     private StringFormatter? initialFormat;
     private bool allowDiff;
-    public override string? ResourceIdentifier => null;
+    public override string? ResourceTypeId => null;
 
     bool IDiffableField.EnableDiff => allowDiff;
 
@@ -67,7 +67,7 @@ public class StringCustomField : CustomField<StringResource>, ICustomResourceFie
 
     public IEnumerable<KeyValuePair<long, IContentResource>> FetchInstances(ResourceManager workspace)
     {
-        return ResourceIdentifier == null ? [] : workspace.GetResourceInstances(ResourceIdentifier);
+        return ResourceTypeId == null ? [] : workspace.GetResourceInstances(ResourceTypeId);
     }
 
     public override StringResource? FetchResource(ResourceManager workspace, ResourceEntity entity, ResourceState state)
@@ -89,7 +89,7 @@ public sealed class StringResource : IContentResource
     }
 
     public string Text { get; set; } = string.Empty;
-    public string ResourceIdentifier => "string";
+    public string ResourceTypeID => "string";
     public string? FilePath => null;
 
     public IContentResource Clone() => new StringResource() { Text = Text };

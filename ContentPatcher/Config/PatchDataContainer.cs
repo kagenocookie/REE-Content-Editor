@@ -13,6 +13,7 @@ using VYaml.Serialization;
 public class PatchDataContainer(string filepath)
 {
     private readonly Dictionary<string, ClassConfig> configs = new();
+    private readonly Dictionary<string, ResourceConfig> resources = new();
     private readonly Dictionary<string, EntityConfig> entities = new();
     private readonly Dictionary<string, CustomTypeConfig> customTypes = new();
     private readonly List<IEntitySetup> entitySetups = new();
@@ -22,6 +23,7 @@ public class PatchDataContainer(string filepath)
 
     public IEnumerable<KeyValuePair<string, ClassConfig>> Classes => configs;
     public IEnumerable<KeyValuePair<string, EntityConfig>> Entities => entities;
+    public IEnumerable<KeyValuePair<string, ResourceConfig>> Resources => resources;
     public IEnumerable<KeyValuePair<string, CustomTypeConfig>> CustomTypes => customTypes;
 
     public bool IsLoaded { get; private set; }
@@ -144,6 +146,18 @@ public class PatchDataContainer(string filepath)
                 var config = entity.ToRuntimeConfig(workspace);
                 var shortname = EntityHierarchy.Add(name, config);
                 entities.Add(shortname, config);
+            }
+
+            if (newDict.Resources != null) {
+                foreach (var (resType, resCfg) in newDict.Resources) {
+                    if (!resources.TryGetValue(resType, out var cfg)) {
+                        resources[resType] = cfg = new ();
+                    }
+
+                    if (resCfg.Patcher != null) {
+                        cfg.Patcher = ResourceHandler.CreateInstance(resType, resCfg.Patcher) ?? cfg.Patcher;
+                    }
+                }
             }
 
             if (newDict.Classes != null) foreach (var (cls, config) in newDict.Classes) {

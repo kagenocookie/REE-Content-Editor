@@ -5,17 +5,20 @@ using ReeLib.Msg;
 namespace ContentEditor.App;
 
 [CustomFieldHandler(typeof(SingleMsgCustomField))]
+[CustomFieldHandler(typeof(MsgField))]
 public class MessageDataUIHandler : IObjectUIHandler, IObjectUIInstantiator
 {
-    public static Func<CustomField, IObjectUIHandler> GetFactory() => (field) => new MessageDataUIHandler((SingleMsgCustomField)field);
+    public static Func<EntityField, IObjectUIHandler> GetFactory() => (field) => new MessageDataUIHandler(field);
 
     private static readonly string[] LanguageNames = Enum.GetNames<Language>();
     private static readonly Language[] LanguageValues = Enum.GetValues<Language>();
-    private SingleMsgCustomField field;
+    private EntityField field;
+    private bool multiline;
 
-    public MessageDataUIHandler(SingleMsgCustomField field)
+    public MessageDataUIHandler(EntityField field)
     {
         this.field = field;
+        multiline = (field as SingleMsgCustomField)?.multiline ?? (field as MsgField)?.multiline ?? false;
     }
 
     public void OnIMGUI(UIContext context)
@@ -46,7 +49,7 @@ public class MessageDataUIHandler : IObjectUIHandler, IObjectUIInstantiator
             }
             ImGui.SameLine();
             var msg = data.Get(lang) ?? "";
-            if (field.multiline) {
+            if (multiline) {
                 if (ImGui.InputTextMultiline(context.label, ref msg, 1024, new System.Numerics.Vector2(textWidth, 100))) {
                     data.Set(lang, msg);
                 }

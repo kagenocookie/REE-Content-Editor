@@ -25,7 +25,7 @@ entities:
           initial: "{id:enum(chainsaw.WeaponID)}"
         display_after: start
       displayName:
-        type: msg
+        type: single-msg
         required: true
         param:
           key: "CH_Mes_Main_WEAPON_NAME_{name:upper()}_00_0_000"

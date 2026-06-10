@@ -10,12 +10,12 @@ namespace ContentPatcher;
 /// This field type only serves as a UI reference to a resource file based on another field's data.
 /// </summary>
 [ResourceField("resource")]
-public class ResourceCustomField : CustomField
+public class ResourceCustomField : EntityField
 {
     public string resourceType = null!;
     public StringFormatter pathFormat = null!;
     public bool? ForcePreload;
-    public override string? ResourceIdentifier => null;
+    public override string? ResourceTypeId => null;
     private string pathFormatString = string.Empty;
 
     public string GetPath(ResourceEntity entity) => pathFormat.GetString(entity);
@@ -51,7 +51,7 @@ public class ResourceCustomField : CustomField
 
 public sealed class FileContentResource : IContentResource
 {
-    public string ResourceIdentifier => FilePath;
+    public string ResourceTypeID => FilePath;
     public string FilePath { get; set; } = string.Empty;
 
     public IContentResource Clone()

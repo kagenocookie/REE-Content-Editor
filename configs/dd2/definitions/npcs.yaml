@@ -60,7 +60,7 @@ entities:
           diffable: false
         display_after: start
       displayName:
-        type: msg
+        type: single-msg
         label: Name
         required: true
         param:

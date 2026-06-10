@@ -8,9 +8,9 @@ using ReeLib;
 namespace ContentEditor.App.DD2;
 
 [CustomFieldHandler(typeof(ItemIconField), "dd2")]
-public sealed class DD2ItemIconHandler(CustomField field) : IObjectUIHandler, IObjectUIInstantiator
+public sealed class DD2ItemIconHandler(EntityField field) : IObjectUIHandler, IObjectUIInstantiator
 {
-    public static Func<CustomField, IObjectUIHandler> GetFactory() => (field) => new DD2ItemIconHandler(field);
+    public static Func<EntityField, IObjectUIHandler> GetFactory() => (field) => new DD2ItemIconHandler(field);
 
     public void OnIMGUI(UIContext context)
     {
