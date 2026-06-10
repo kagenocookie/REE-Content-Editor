@@ -65,7 +65,7 @@ public class Bundle
     public Dictionary<string, long>? InitialInsertIds { get; set; }
 
     [JsonIgnore]
-    public string StorageFolder { get; set; } = "";
+    public string StoragePath { get; set; } = "";
 
     public bool HasResources => ResourceListing?.Count > 0;
 
@@ -247,7 +247,9 @@ public class Bundle
     public void Save()
     {
         Touch();
-        var outfilepath = Path.Combine(StorageFolder, "bundle.json");
+        var outfilepath = Path.GetExtension(StoragePath.AsSpan()).SequenceEqual(".json")
+            ? StoragePath
+            : Path.Combine(StoragePath, "bundle.json");
         Directory.CreateDirectory(Path.GetDirectoryName(outfilepath)!);
         using var fs = File.Create(outfilepath);
         JsonSerializer.Serialize(fs, this, jsonOptions);
