@@ -1262,6 +1262,7 @@ public class FileSearchWindow : IWindowHandler
 
     private void InvokeSearchMdf2(SearchContext context, string query)
     {
+        _ = uint.TryParse(query, out var hash);
         foreach (var (path, stream) in context.Env.GetFilesWithExtension("mdf2", context.Token)) {
 
             try {
@@ -1279,6 +1280,21 @@ public class FileSearchWindow : IWindowHandler
                     }
                     if (mat.Header.mmtrPath?.Contains(query, StringComparison.InvariantCultureIgnoreCase) == true) {
                         AddMatch(context, $"MMTR of material {mat.Header.matName}", path);
+                        continue;
+                    }
+                    if (hash != 0) {
+                        foreach (var pp in mat.Parameters) {
+                            if (pp.hash == hash || pp.asciiHash == hash) {
+                                AddMatch(context, $"Hash of parameter {pp.paramName}", path);
+                                break;
+                            }
+                        }
+                        foreach (var pp in mat.Textures) {
+                            if (pp.hash == hash || pp.asciiHash == hash) {
+                                AddMatch(context, $"Hash of texture type {pp.texType}", path);
+                                break;
+                            }
+                        }
                     }
                 }
             } catch (Exception e) {
