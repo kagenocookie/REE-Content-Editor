@@ -1,5 +1,5 @@
 using System.Reflection;
-using ContentEditor.App.Windowing;
+using ContentEditor.BackgroundTasks;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
@@ -23,6 +23,9 @@ public class EfxEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIns
     public InspectorContainer Inspector { get; private set; } = null!;
 
     protected override bool IsRevertable => context.Changed;
+
+    private MmtrTemplateDB? mmtrTemplateDB;
+    private bool _requestedMmtrDb;
 
     public EfxEditor(ContentWorkspace env, FileHandle file) : base(file)
     {
@@ -50,6 +53,14 @@ public class EfxEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIns
 
     protected override void DrawFileContents()
     {
+        if (mmtrTemplateDB == null) {
+            mmtrTemplateDB = MaterialParamCacheTask.TryDeserialize(Workspace, ref _requestedMmtrDb);
+            if (mmtrTemplateDB != null) {
+                foreach (var hashpair in mmtrTemplateDB.AsciiHashes) {
+                    MdfProperty.ParameterNameHashes.TryAdd(hashpair.Key, hashpair.Value);
+                }
+            }
+        }
         if (context.children.Count == 0) {
             context.AddChild("Data", File, new EfxFileImguiHandler());
         }
@@ -425,6 +436,45 @@ public class EffectGroupHandler() : IObjectUIHandler
             context.AddChild(context.label, context.Get<EffectGroup>(), new StringFieldHandler(), g => g!.groupName, (g, v) => g.groupName = v ?? "");
         }
         context.ShowChildrenUI();
+    }
+}
+
+[ObjectImguiHandler(typeof(MdfProperty), Stateless = true)]
+public class MdfPropertyHandler() : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        if (context.children.Count == 0) {
+            var property = context.Get<MdfProperty>();
+            context.AddChild("Property Name Hash", property, getter: g => g!.PropertyNameUTF8Hash, setter: (g, v) => g.PropertyNameUTF8Hash = v).AddDefaultHandler();
+            if (property.parameterType != MaterialParameterType.Texture) {
+                context.AddChild("MDF property index", property,
+                    new ConditionalUIHandler(NumericFieldHandler<int>.IntInstance, c => (c.target as MdfProperty)?.Version >= EfxVersion.RE3),
+                    g => g!.mdfPropertyIndex, (g, v) => g.mdfPropertyIndex = v);
+            }
+            context.AddChildContextSetter("MDF Parameter Value Count", property,
+                getter: g => g!.mdfParameterValueCount, setter: (ctx, g, v) => {
+                    g.mdfParameterValueCount = v;
+                    ctx.parent?.ClearChildren();
+                }).AddDefaultHandler();
+            context.AddChildContextSetter("Parameter Type", property,
+                getter: g => g!.parameterType, setter: (ctx, g, v) => {
+                    g.parameterType = v;
+                    ctx.parent?.ClearChildren();
+                }).AddDefaultHandler();
+            context.AddChild("Flags", property, getter: g => g!.flags, setter: (g, v) => g.flags = v).AddDefaultHandler();
+            if (property.parameterType == MaterialParameterType.Texture) {
+                context.AddChild("Texture Path", property, new ResourcePathPicker(context.GetWorkspace(), KnownFileFormats.Texture), g => g!.texturePath, (g, v) => g.texturePath = v ?? "");
+            }
+            if (property.parameterType == MaterialParameterType.Float && property.Name?.Contains("Color") == true) {
+                context.AddChild("Value", property, ColorVec4FieldHandler.Instance, g => g!.VectorValue, (g, v) => g.VectorValue = v);
+            } else if (property.parameterType == MaterialParameterType.Texture) {
+                context.AddChild("Texture Flags", property, getter: g => g!.TextureValue.uknInt, setter: (g, v) => g.TextureValue = g.TextureValue with { uknInt = v! }).AddDefaultHandler();
+            } else {
+                context.AddChild("Value", property, getter: g => g!.Value, setter: (g, v) => g.Value = v!).AddDefaultHandler();
+            }
+        }
+        context.ShowChildrenNestedUI();
     }
 }
 

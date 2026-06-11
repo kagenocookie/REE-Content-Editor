@@ -11,6 +11,7 @@ namespace ContentEditor.App.ImguiHandling;
 public class NumericFieldHandler<T>(ImGuiDataType type) : IObjectUIHandler where T : unmanaged
 {
     public static readonly NumericFieldHandler<T> FloatInstance = new NumericFieldHandler<T>(ImGuiDataType.Float);
+    public static readonly NumericFieldHandler<T> IntInstance = new NumericFieldHandler<T>(ImGuiDataType.S32);
     public static readonly NumericFieldHandler<T> UIntInstance = new NumericFieldHandler<T>(ImGuiDataType.U32);
 
     private static readonly Dictionary<Type, IObjectUIHandler> handlerTypes = new() {
@@ -256,5 +257,17 @@ public class ColorFieldHandler : Singleton<ColorFieldHandler>, IObjectUIHandler
             UndoRedo.RecordSet(context, Color.FromVector4(vec));
         }
         AppImguiHelpers.ShowValueContextMenu(in val, context);
+    }
+}
+
+public class ColorVec4FieldHandler : Singleton<ColorVec4FieldHandler>, IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        var vec = context.Get<Vector4>();
+        if (ImGui.ColorEdit4(context.label, ref vec.X, ImGuiColorEditFlags.Float)) {
+            UndoRedo.RecordSet(context, vec);
+        }
+        AppImguiHelpers.ShowValueContextMenu(in vec, context);
     }
 }

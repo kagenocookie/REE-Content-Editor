@@ -7,7 +7,6 @@ using ContentPatcher;
 using ReeLib;
 using ReeLib.Common;
 using ReeLib.Mdf;
-using ReeLib.via;
 using System.Numerics;
 using System.Reflection;
 using System.Text.Json;
@@ -116,36 +115,7 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
 
     protected override void DrawFileContents()
     {
-        if (mmtrTemplateDB == null) {
-            var cachePath = MaterialParamCacheTask.GetCachePath(Workspace.Game);
-            if (!_requestedMmtrDb) {
-                _requestedMmtrDb = true;
-                if (!System.IO.File.Exists(cachePath)) {
-                    // OK
-                } else if (!cachePath.TryDeserializeJsonFile<MmtrTemplateDB>(out var db, out var error)) {
-                    Logger.Warn("Could not load previous mmtr parameter cache from path " + cachePath + ":\n" + error);
-                } else if (db.GameDataHash == Workspace.VersionHash) {
-                    mmtrTemplateDB = db;
-                }
-
-                if (mmtrTemplateDB == null) {
-                    MainLoop.Instance.BackgroundTasks.Queue(new MaterialParamCacheTask(Workspace.Env));
-                } else {
-                    // have the paths in lowercase to ensure we can match them up case insensitively
-                    foreach (var key in mmtrTemplateDB.Templates.Keys.ToArray()) {
-                        if (mmtrTemplateDB.Templates.Remove(key, out var data)) {
-                            mmtrTemplateDB.Templates[key.ToLowerInvariant()] = data;
-                        }
-                    }
-                }
-            } else {
-                if (!MainLoop.Instance.BackgroundTasks.HasPendingTask<MaterialParamCacheTask>() &&
-                    System.IO.File.Exists(cachePath) &&
-                    cachePath.TryDeserializeJsonFile<MmtrTemplateDB>(out var db, out var error)) {
-                    mmtrTemplateDB = db;
-                }
-            }
-        }
+        mmtrTemplateDB ??= MaterialParamCacheTask.TryDeserialize(Workspace, ref _requestedMmtrDb);
 
         var isEmpty = context.children.Count == 0;
         if (context.children.Count == 0) {
@@ -844,9 +814,9 @@ public class ParamHeaderImguiHandler : IObjectUIHandler
                 default:
                 case 4:
                     if (param.paramName.Contains("color", StringComparison.OrdinalIgnoreCase)) {
-                        context.AddChild<ParamHeader, Color>(label, param, new ColorFieldHandler(), (p) => Color.FromVector4(p!.parameter), (p, v) => p.parameter = v.ToVector4());
+                        context.AddChild<ParamHeader, Vector4>(label, param, ColorVec4FieldHandler.Instance, (p) => p!.parameter, (p, v) => p.parameter = v);
                     } else {
-                        context.AddChild<ParamHeader, Vector4>(label, param, new Vector4FieldHandler(), (p) => p!.parameter, (p, v) => p.parameter = v);
+                        context.AddChild<ParamHeader, Vector4>(label, param, Vector4FieldHandler.Instance, (p) => p!.parameter, (p, v) => p.parameter = v);
                     }
                     break;
             }
