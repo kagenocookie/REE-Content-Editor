@@ -296,7 +296,13 @@ public class BundleManager
 
     public Bundle GetOrCreateBundle(string bundleName, string? storageFolder = null)
     {
-        return GetBundle(bundleName, null) ?? CreateBundle(bundleName, storageFolder)!;
+        var bundle = GetBundle(bundleName, null);
+        if (bundle != null) return bundle;
+
+        bundle = CreateBundle(bundleName, storageFolder)!;
+        bundle.Author = null;
+        bundle.Description = null;
+        return bundle;
     }
 
     public Bundle? CreateBundle(string newBundleName, string? storageFolder = null)
