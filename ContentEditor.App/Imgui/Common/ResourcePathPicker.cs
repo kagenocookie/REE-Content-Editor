@@ -373,7 +373,9 @@ public class ResourcePathPicker : IObjectUIHandler
 
             var customBasePath = AppConfig.Instance.BundleCustomBaseTargetPath.Get()?
                 .Replace("{AUTHOR}", bundle.Author)
-                .Replace("{BUNDLE_NAME}", bundle.Name);
+                .Replace("{BUNDLE_NAME}", bundle.Name)
+                .NormalizeFilepath()
+                .Trim('/');
 
             if (!string.IsNullOrEmpty(customBasePath) && (useNewTargetPath || file.TargetPath == null)) {
                 targetFilepath = Path.Combine(customBasePath, localFilepath).NormalizeFilepath();
