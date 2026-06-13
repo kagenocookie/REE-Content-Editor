@@ -37,9 +37,6 @@ public class Bundle
     [JsonPropertyName("updated_at_time")]
     public long UpdatedAtTime { get; set; }
 
-    [JsonPropertyName("is_folder_bundle")]
-    public string? IsFolderBundle { get; set; }
-
     [JsonPropertyName("depends_on")]
     public List<string>? DependsOn { get; set; }
 
@@ -253,6 +250,29 @@ public class Bundle
         Directory.CreateDirectory(Path.GetDirectoryName(outfilepath)!);
         using var fs = File.Create(outfilepath);
         JsonSerializer.Serialize(fs, this, jsonOptions);
+    }
+
+    public void CopyFrom(Bundle other)
+    {
+        ResourceListing = other.ResourceListing;
+        _localToTargetPathCache = null;
+        _targetToLocalPathCache = null;
+        Author = other.Author;
+        Description = other.Description;
+        Name = other.Name;
+        Version = other.Version;
+        Homepage = other.Homepage;
+        ImagePath = other.ImagePath;
+        CreatedAt = other.CreatedAt;
+        UpdatedAt = other.UpdatedAt;
+        UpdatedAtTime = other.UpdatedAtTime;
+        DependsOn = other.DependsOn;
+        LegacyData = other.LegacyData;
+        Entities = other.Entities;
+        Enums = other.Enums;
+        GameVersion = other.GameVersion;
+        BundleVersion = other.BundleVersion;
+        InitialInsertIds = other.InitialInsertIds;
     }
 
     public void Init(BundleManager bundleManager)
