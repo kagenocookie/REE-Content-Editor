@@ -523,14 +523,14 @@ public class HomeWindow : IWindowHandler
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleUnload, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconTertiary, Colors.IconTertiary, Colors.IconTertiary} )) {
                 window?.SetWorkspace(workspace!.Game, null);
             }
-            ImguiHelpers.Tooltip("Unload current Bundle"u8);
+            ImguiHelpers.Tooltip(Lang.Bundles.UnloadCurrentBundle);
         }
 
         ImguiHelpers.InlineVerticalSeparator();
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderContain, new[] { Colors.IconPrimary, Colors.IconSecondary })) {
             FileSystemUtils.ShowFileInExplorer(workspace?.BundleManager.AppBundlePath);
         }
-        ImguiHelpers.Tooltip("Open Bundles folder in File Explorer"u8);
+        ImguiHelpers.Tooltip(Lang.Bundles.OpenBundlesFolder);
         ImGui.SameLine();
         if (ImGui.Button($"{AppIcons.SI_GenericClear}")) {
             AppConfig.Settings.RecentBundles.Clear();

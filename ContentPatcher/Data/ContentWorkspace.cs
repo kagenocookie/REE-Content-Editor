@@ -312,6 +312,8 @@ public sealed class ContentWorkspace : IDisposable
                     bundle.Description = bundle.Description == null ? value : bundle.Description + "\n\n" + value;
                 } else if (key == "name") {
                     bundle.Description = "Mod name: " + (bundle.Description == null ? value : value + "\n\n" + bundle.Description);
+                } else if (key == "screenshot") {
+                    bundle.ImagePath = value;
                 }
             }
         }
@@ -359,6 +361,9 @@ public sealed class ContentWorkspace : IDisposable
             var ext = Path.GetExtension(file).ToLowerInvariant();
             if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".txt" || ext == ".json") {
                 // probably cover images
+                if (string.IsNullOrEmpty(bundle.ImagePath)) {
+                    bundle.ImagePath = localFile;
+                }
                 continue;
             }
             if (localFile.EndsWith(".pak")) {

@@ -14,6 +14,8 @@ public static partial class Lang
         public static readonly FixedString UnsavedChangesText_ThisFile = "You have unsaved changes in this file, do you wish to save the file first?";
         public static readonly InterpolatedString<string> UnsavedChangesText_SingleFile = "The file {0} has unsaved changes.\nAre you sure you wish to close it?";
 
+        public static readonly FixedString LinkCopied = "Link was copied!";
+        public static readonly FixedString URLOpened = "URL was opened!";
         public static readonly FixedString FilterInput = "Filter";
 
         public static readonly IconString WikiLink = new IconString("{0} Documentation Wiki", AppIcons.SI_GenericWiki);

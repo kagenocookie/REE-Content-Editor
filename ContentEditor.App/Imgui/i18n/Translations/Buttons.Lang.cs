@@ -34,10 +34,13 @@ public static partial class Lang
         public static readonly FixedString Paste_Hierarchy = "Paste (replace hierarchy)";
         public static readonly FixedString Paste_Json = "Paste from JSON";
         public static readonly FixedString Delete = "Delete";
+        public static readonly FixedString DeleteFile = "Delete File";
         public static readonly FixedString Clear = "Clear";
         public static readonly FixedString Clear_Tags = "Clear All Tags";
         public static readonly FixedString Undo = "Undo";
         public static readonly FixedString Redo = "Redo";
+        public static readonly FixedString Create = "Create";
+        public static readonly FixedString Reload = "Reload";
         public static readonly FixedString NewWorkspace = "Open New Workspace";
         public static readonly FixedString Show_GameObject = "Show GameObject";
 
