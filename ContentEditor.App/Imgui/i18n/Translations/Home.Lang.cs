@@ -48,7 +48,7 @@ public static partial class Lang
         public static readonly FixedString UninitializedBundles = "* Uninitialized bundle folders";
 
         public static readonly FixedString BundleDialog_Title = "Bundle Creation";
-        public static readonly InterpolatedString<string> BundleDialog_Text_PAK = "Select name for the bundle to be created from the loose mod:\n{0}";
-        public static readonly InterpolatedString<string> BundleDialog_Text_Loose = "Select name for the bundle to be created from the PAK file:\n{0}";
+        public static readonly InterpolatedString<string> BundleDialog_Text_PAK = "Select name for the bundle to be created from the PAK file:\n{0}";
+        public static readonly InterpolatedString<string> BundleDialog_Text_Loose = "Select name for the bundle to be created from the loose mod:\n{0}";
     }
 }

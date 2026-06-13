@@ -20,6 +20,8 @@ public static class FileFilters
     public static readonly FileFilter[] PfbFile = [new FileFilter("PFB", "pfb.*")];
 
     public static readonly FileFilter[] PakFile = [new FileFilter("PAK File", "pak")];
+    public static readonly FileFilter[] PakZipFile = [new FileFilter("PAK File", "pak"), new FileFilter("Archive File", "zip", "rar", "7z")];
+    public static readonly FileFilter[] PakZipFileAll = [new FileFilter("Any supported archive type", "pak", "zip", "rar", "7z"), .. PakZipFile];
     public static readonly FileFilter[] JsonFile = [new FileFilter("JSON", "json")];
     public static readonly FileFilter[] LangYamlFile = [new FileFilter("Language YAML", "lang.yaml")];
     public static readonly FileFilter[] CollectionJsonFile = [new FileFilter("Mesh Collection JSON", "collection.json")];

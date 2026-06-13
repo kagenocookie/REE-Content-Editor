@@ -17,6 +17,9 @@ using ReeLib;
 using ReeLib.Data;
 using ReeLib.Efx;
 using ReeLib.Tools;
+using SharpCompress.Archives;
+using SharpCompress.Archives.SevenZip;
+using SharpCompress.Readers;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
@@ -232,13 +235,26 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             var orderedPaks = paks.Order().ToArray();
             foreach (var pak in orderedPaks) AppConfig.Settings.RecentFiles.AddRecent(Workspace.Game, pak);
             AddSubwindow(new PakBrowser(workspace, orderedPaks));
+            filenames = filenames.Except(paks).ToArray();
+        }
+        var zips = filenames.Where(f => f.EndsWith(".zip") || f.EndsWith(".7z") || f.EndsWith(".rar"));
+        if (zips.Any()) {
+            var anyErrors = false;
+            foreach (var zipfile in zips) {
+                try {
+                    CreateBundleFromArchive(zipfile);
+                } catch (Exception e) {
+                    Logger.Error($"Failed to open archive file {zipfile}: {e.Message}");
+                    anyErrors = true;
+                }
+            }
+            if (anyErrors) {
+                AddSubwindow(new ErrorModal(Lang.Errors.FileLoad_Unsupported_Title, Lang.Errors.FileLoad_InvalidArchive));
+            }
+            filenames = filenames.Except(zips).ToArray();
         }
 
         foreach (var filename in filenames) {
-            if (filename.EndsWith(".pak")) {
-                continue;
-            }
-
             if (workspace.ResourceManager.TryGetOrLoadFile(filename, out var file)) {
                 file.Stream.Seek(0, SeekOrigin.Begin);
                 AddFileEditor(file);
@@ -418,7 +434,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem(Lang.Buttons.NewBundleFromPAK)) {
                     PlatformUtils.ShowFileDialog(pak =>
                         CreateBundleFromPakFile(pak[0]),
-                        filters: FileFilters.PakFile,
+                        filters: FileFilters.PakZipFileAll,
                         allowMultiple: false
                     );
                 }
@@ -493,10 +509,11 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             pak => CreateBundleFromPakFile(pak)
         ));
     }
-    public void CreateBundleFromLooseFileFolder(string folder)
+
+    public void CreateBundleFromLooseFileFolder(string folder, string? initialName = null, Action? postConfirmCallback = null)
     {
         var modinfoPath = Path.Combine(folder, "modinfo.ini");
-        var initialName = Path.GetFileName(folder);
+        initialName ??= Path.GetFileName(folder);
         if (File.Exists(modinfoPath)) {
             var modData = File.ReadAllLines(modinfoPath);
             var nameEntry = modData.FirstOrDefault(line => line.StartsWith("name") && line.Contains('='));
@@ -506,7 +523,10 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
 
         AddSubwindow(new NameInputDialog(Lang.Home.BundleDialog_Title, Lang.Home.BundleDialog_Text_Loose.FormatRef(folder),
-            initialName, FilenameRegex(), this, name => Workspace.InitializeUnlabelledBundle(name, folder)));
+            initialName, FilenameRegex(), this, name => {
+                Workspace.InitializeUnlabelledBundle(name, folder);
+                postConfirmCallback?.Invoke();
+            }));
     }
     public void CreateBundleFromPakFile(string pakPath)
     {
@@ -526,6 +546,27 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
         AddSubwindow(new NameInputDialog(Lang.Home.BundleDialog_Title, Lang.Home.BundleDialog_Text_PAK.FormatRef(pakPath),
             initialName, FilenameRegex(), this, name => Workspace.CreateBundleFromPAK(name, pakPath)));
+    }
+
+    public void CreateBundleFromArchive(string archiveFilepath)
+    {
+        var ext = Path.GetExtension(archiveFilepath);
+        if (ext == ".pak") {
+            CreateBundleFromPakFile(archiveFilepath);
+        } else {
+            using var fs = File.OpenRead(archiveFilepath);
+            var baseName = Path.GetFileNameWithoutExtension(archiveFilepath);
+            var tempfolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + "-" + baseName);
+            Directory.CreateDirectory(tempfolder);
+            try {
+                using var reader = ReaderFactory.OpenReader(fs);
+                reader.WriteAllToDirectory(tempfolder);
+            } catch (Exception) {
+                using var archive = ArchiveFactory.OpenArchive(fs);
+                archive.WriteToDirectory(tempfolder);
+            }
+            CreateBundleFromLooseFileFolder(tempfolder, baseName, () => Directory.Delete(tempfolder, true));
+        }
     }
 
     public void ShowLaunchGameMenu()

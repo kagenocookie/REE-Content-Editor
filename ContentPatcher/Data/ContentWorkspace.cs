@@ -5,6 +5,7 @@ using ContentEditor.Editor;
 using ContentPatcher.FileFormats;
 using ContentPatcher.StringFormatting;
 using ReeLib;
+using ReeLib.Pak;
 
 namespace ContentPatcher;
 
@@ -266,6 +267,12 @@ public sealed class ContentWorkspace : IDisposable
         pak.PakFilePriority = [pakFilepath];
         if (!pak.TryReadManifestFileList(pakFilepath)) {
             pak.AddFiles(Env.ListFile?.Files ?? []);
+            var gen = new FileListGenerator(Env.Config.GamePath, Platform) {
+                Flags = FileListGenerator.ScanFlags.Files
+            };
+            gen.PakFiles.Add(pakFilepath);
+            var scannedFiles = gen.Scan();
+            pak.AddFiles(scannedFiles);
         }
         Directory.CreateDirectory(bundlePath);
         pak.UnpackFilesTo(bundlePath);
@@ -329,8 +336,15 @@ public sealed class ContentWorkspace : IDisposable
                 if (file.EndsWith(".pak")) {
                     Logger.Info("Unpacking PAK file: " + file);
                     var pak = new PakReader();
+                    pak.PakFilePriority = [file];
                     if (!pak.TryReadManifestFileList(file)) {
                         pak.AddFiles(Env.ListFile?.Files ?? []);
+                        var gen = new FileListGenerator(Env.Config.GamePath, Platform) {
+                            Flags = FileListGenerator.ScanFlags.Files
+                        };
+                        gen.PakFiles.Add(file);
+                        var scannedFiles = gen.Scan();
+                        pak.AddFiles(scannedFiles);
                     }
                     var count = pak.UnpackFilesTo(bundlePath);
                     if (count == 0) {
