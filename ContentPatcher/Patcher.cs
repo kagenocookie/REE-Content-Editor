@@ -24,10 +24,13 @@ public class Patcher : IDisposable
 
     public string? OutputFilepath { get; set; }
     public bool IsPublishingMod { get; set; }
+    public bool AllowSymlinks { get; set; }
 
     public bool StoreGDeflateTexturesAsSubPak { get; set; } = false;
 
     private string? LoosePublishMetdataFilepath => Directory.Exists(OutputFilepath) ? Path.Combine(OutputFilepath, "_patch_metadata.json") : null;
+
+    private bool _symlinkFailed;
 
     public Patcher(GameConfig config)
     {
@@ -157,7 +160,7 @@ public class Patcher : IDisposable
         // prepare all modified files
         var needsSubPak = StoreGDeflateTexturesAsSubPak && Env.RequiresSubPaksForTextures;
         var hasTextures = false;
-        foreach (var file in workspace!.ResourceManager.GetModifiedResourceFiles()) {
+        foreach (var file in workspace!.ResourceManager.GetOpenFiles()) {
             var targetPath = file.TargetPath ?? file.Filepath;
             string fileOutput;
             if (needsSubPak && file.Format.format == KnownFileFormats.Texture) {
@@ -170,7 +173,16 @@ public class Patcher : IDisposable
             }
 
             Directory.CreateDirectory(Path.GetDirectoryName(fileOutput)!);
-            file.Loader.Save(workspace, file, fileOutput);
+            if (!isPak && !file.Modified && AllowSymlinks && !_symlinkFailed && File.Exists(file.Filepath)) {
+                try {
+                    File.CreateSymbolicLink(fileOutput, file.Filepath);
+                } catch (Exception e) {
+                    Logger.Warn($"Symblic link creation failed. Failling back to plain copy. Error: " + e.Message);
+                    _symlinkFailed = true;
+                }
+            } else {
+                file.Loader.Save(workspace, file, fileOutput);
+            }
             patch.Resources[targetPath] = new PatchedResourceMetadata() {
                 TargetFilepath = fileOutput,
                 SourceFilepath = file.Filepath,

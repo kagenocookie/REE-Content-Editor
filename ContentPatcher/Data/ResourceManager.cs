@@ -193,7 +193,6 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         if (resourceEntry.Replace) {
             if (File.Exists(fullLocalFilepath)) {
                 if (TryForceLoadFile(fullLocalFilepath, out var local, resourceEntry.Target)) {
-                    local.Modified = true;
                     openFiles[resourceEntry.Target] = local;
                     return true;
                 }
@@ -1125,21 +1124,6 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     public FileHandle? GetFileHandle(string filepath, string? targetPath = null)
     {
         return ReadOrGetFileResource(filepath, targetPath);
-    }
-
-    public TFileType? GetOpenFile<TFileType>(string filepath, bool markModified = false) where TFileType : BaseFile
-    {
-        filepath = PreprocessTargetFilepath(filepath) ?? filepath;
-        if (openFiles?.TryGetValue(filepath, out var handle) == true) {
-            var file = handle.GetFile<TFileType>();
-            if (markModified) {
-                handle.Modified = true;
-            }
-
-            return file;
-        }
-
-        return null;
     }
 
     public IEnumerable<FileHandle> GetOpenFiles() => openFiles.Values;

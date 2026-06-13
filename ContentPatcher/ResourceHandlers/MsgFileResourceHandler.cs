@@ -54,7 +54,7 @@ public class MsgFileResourceHandler : ResourceHandler
 
     public override void ModifyResources(ContentWorkspace workspace, ClassConfig config, IEnumerable<KeyValuePair<long, IContentResource>> resources)
     {
-        var msgFile = workspace.ResourceManager.GetOpenFile<MsgFile>(Files[0], true);
+        var msgFile = workspace.ResourceManager.ReadFileResource<MsgFile>(Files[0]);
         if (msgFile == null) {
             throw new NullReferenceException("Msg file was missing??");
         }

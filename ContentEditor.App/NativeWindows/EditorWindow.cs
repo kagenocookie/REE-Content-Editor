@@ -1064,14 +1064,15 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             var manager = singleBundle == null ? workspace.BundleManager : workspace.BundleManager.CreateBundleSpecificManager(singleBundle);
             var patchWorkspace = new ContentWorkspace(workspace.Env, workspace.Config, manager);
             var patcher = new Patcher(patchWorkspace);
+            patcher.IsPublishingMod = singleBundle != null;
+            patcher.StoreGDeflateTexturesAsSubPak = AppConfig.Instance.UseSubPakForLooseTextures;
             if (outputPath == "pak") {
                 patcher.OutputFilepath = patcher.FindActivePatchPak()
                     ?? (Workspace.Env.RequiresSubPaksForTextures ? PakUtils.GetNextSubPakFilepath(Workspace.Env.Config.GamePath) : PakUtils.GetNextPakFilepath(Workspace.Env.Config.GamePath));
             } else {
                 patcher.OutputFilepath = outputPath;
+                patcher.AllowSymlinks = !patcher.IsPublishingMod && AppConfig.Instance.UseSymlinkPatching.Get();
             }
-            patcher.IsPublishingMod = singleBundle != null;
-            patcher.StoreGDeflateTexturesAsSubPak = AppConfig.Instance.UseSubPakForLooseTextures;
             return patcher.Execute(singleBundle == null);
         } catch (Exception e) {
             Logger.Error(e, Lang.Errors.PatchFailed);

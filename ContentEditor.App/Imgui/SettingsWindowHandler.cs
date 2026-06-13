@@ -233,6 +233,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         }
         ShowSetting(config.LoadFromNatives, Lang.Settings.LoadFromNatives);
         ShowSetting(config.UseSubPakForLooseTextures, Lang.Settings.UseSubPakForLooseTextures);
+        ShowSetting(config.UseSymlinkPatching, Lang.Settings.UseSymlinkPatching);
 
         ImGui.SeparatorText(Lang.Settings.Section_Cache);
         var configPath = config.GameConfigBaseFilepath.Get();
