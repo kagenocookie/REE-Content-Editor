@@ -397,6 +397,7 @@ public class ResourcePathPicker : IObjectUIHandler
 
             if (!bundle.ContainsResource(targetFilepath)) {
                 bundle.AddResource(localFilepath, targetFilepath, file.Format.format.IsDefaultReplacedBundleResource());
+                workspace.Env.ResetListFile();
             }
 
             bundle.Save();
