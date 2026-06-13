@@ -47,7 +47,7 @@ public static partial class Lang
         public static readonly FixedString NewBundle = "New Bundle";
         public static readonly FixedString NewBundleFromPAK = "Create from archive/PAK file";
         public static readonly FixedString NewBundleFromLoose = "Create from loose file mod";
-        public static readonly FixedString BundleUnload = "Unload current bundle";
+        public static readonly InterpolatedString<string> BundleUnload = "Unload current bundle ({0})";
         public static readonly FixedString BundleFileRescan = "Rescan Bundle Files";
         public static readonly FixedString BundlePublish = "Publish Mod";
     }

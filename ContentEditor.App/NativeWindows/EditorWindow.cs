@@ -66,6 +66,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
     private string openFileFilter = "";
     private string recentFileFilter = "";
+    private string activeBundleFilter = "";
 
     private bool _workspaceSetupInProgress;
     private string? _resourceSetupFailure;
@@ -444,14 +445,18 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     });
                 }
                 ImGui.Separator();
-                if (workspace.CurrentBundle != null && ImGui.MenuItem(Lang.Buttons.BundleUnload)) {
+                if (workspace.CurrentBundle != null && ImGui.MenuItem(Lang.Buttons.BundleUnload.Format(workspace.CurrentBundle.Name))) {
                     SetWorkspace(workspace.Env.Config.Game, null);
                 }
+                ImGui.InputTextWithHint("##bundlefilter"u8, Lang.Home.BundleFilter, ref activeBundleFilter, 60);
                 var foundUnusedBundle = false;
                 foreach (var b in workspace.BundleManager.AllBundles.OrderBy(bb => (uint)AppConfig.Settings.RecentBundles.FindPrefixedIndex(bb.Name))) {
                     if (!foundUnusedBundle && AppConfig.Settings.RecentBundles.FindPrefixedIndex(b.Name) == -1) {
                         foundUnusedBundle = true;
                         ImGui.Separator();
+                    }
+                    if (!string.IsNullOrEmpty(activeBundleFilter) && !b.Name.Contains(activeBundleFilter, StringComparison.InvariantCultureIgnoreCase)) {
+                        continue;
                     }
                     if (ImGui.MenuItem(b.Name)) {
                         SetWorkspace(workspace.Env.Config.Game, b.Name);

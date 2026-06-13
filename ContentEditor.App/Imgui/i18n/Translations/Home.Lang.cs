@@ -44,6 +44,7 @@ public static partial class Lang
         public static readonly InterpolatedString<string> ActivePlatform = "Platform: {0}";
         public static readonly InterpolatedString<string> ActiveBundle = "Active Bundle: {0}";
         public static readonly InterpolatedString<string> NamedBundle = "Bundle: {0}";
+        public static readonly IconString BundleFilter = new IconString("{0} Search Bundles", AppIcons.Search);
         public static readonly FixedString OtherPlatforms = "Other platforms (untested)";
         public static readonly FixedString UninitializedBundles = "* Uninitialized bundle folders";
 

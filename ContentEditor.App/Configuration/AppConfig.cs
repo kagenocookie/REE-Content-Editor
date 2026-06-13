@@ -987,7 +987,7 @@ public class RecentFileList : List<string>
     public int FindPrefixedIndex(string path)
     {
         for (int i = 0; i < Count; i++) {
-            if (this[i].GetStringAfterDelimiter('|') == path) return i;
+            if (this[i].GetStringAfterDelimiter('|').SequenceEqual(path)) return i;
         }
 
         return -1;
