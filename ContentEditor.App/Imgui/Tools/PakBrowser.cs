@@ -197,7 +197,9 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
                 }
 
                 reader.CacheEntries(true);
-                currentList = new ListFileWrapper(reader.CachedPaths, contentWorkspace.Platform);
+                var platform = reader.DeterminePlatform();
+                if (platform.id == Platform.Unknown) platform = contentWorkspace.Platform;
+                currentList = new ListFileWrapper(reader.CachedPaths, platform);
                 hasInvalidatedPaks = reader.FileExists(0);
             }
         }
