@@ -91,7 +91,7 @@ public class GameObjectEditor : IObjectUIHandler
                 ImGui.SetNextItemWidth(w - (ImGui.GetCursorPosX() - start));
                 var timescaleNew = timescale;
                 if (ImGui.DragFloat(Lang.Fields.TimeScale, ref timescaleNew)) {
-                    UndoRedo.RecordCallbackSetter(context, go, timescale, timescaleNew, static (g, v) => g.TimeScale = v);
+                    UndoRedo.RecordCallbackSetter(context, go, timescale, timescaleNew, static (g, v) => g.TimeScale = v, $"{go.GetHashCode()}ts");
                 }
             }
         }
