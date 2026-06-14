@@ -9,16 +9,8 @@ namespace ContentEditor.App.ImguiHandling;
 [ObjectImguiHandler(typeof(GameObject), Stateless = true)]
 public class GameObjectEditor : IObjectUIHandler
 {
-    private static readonly MemberInfo[] BaseMembers = [
-        typeof(GameObject).GetField(nameof(GameObject.Tags))!,
-        typeof(GameObject).GetField(nameof(GameObject.Update))!,
-        typeof(GameObject).GetField(nameof(GameObject.Draw))!,
-    ];
-    private static readonly MemberInfo[] BaseMembers2 = [
-        typeof(GameObject).GetField(nameof(GameObject.TimeScale))!,
-    ];
     private static readonly MemberInfo[] SceneMembers = [
-        typeof(GameObject).GetField(nameof(GameObject.guid))!,
+        typeof(GameObject).GetField(nameof(GameObject.Guid))!,
         typeof(GameObject).GetField(nameof(GameObject.PrefabPath))!,
     ];
 
@@ -27,18 +19,82 @@ public class GameObjectEditor : IObjectUIHandler
         if (context.children.Count == 0) {
             var ws = context.GetWorkspace();
             var obj = context.Get<GameObject>();
-            context.AddChild<GameObject, string>("Name", obj, new ConfirmedStringFieldHandler(), c => c!.Name, (c, v) => c.Name = v ?? string.Empty);
-            WindowHandlerFactory.SetupObjectUIContext(context, typeof(GameObject), members: BaseMembers);
-            if (ws != null && RszFieldCache.GameObject.TimeScale.Exists(ws.Env.Classes.GameObject)) {
-                WindowHandlerFactory.SetupObjectUIContext(context, typeof(GameObject), members: BaseMembers2);
-            }
+            context.AddChild<GameObject, string>(Lang.Fields.Name, obj, StringFieldHandler.Instance, c => c!.Name, (c, v) => c.Name = v ?? string.Empty);
+            context.AddChild<GameObject, string>(Lang.Fields.Tags, obj, new TagListStringHandler(), c => c!.Tags, (c, v) => c.Tags = v ?? string.Empty);
+            context.AddChild<GameObject, GameObject>(Lang.Fields.Flags, obj, new GameObjectFlagsHandler());
             if (obj.Folder != null) {
                 WindowHandlerFactory.SetupObjectUIContext(context, typeof(GameObject), members: SceneMembers);
             }
-            context.AddChild("Components", obj.Components, new ComponentListEditor());
+            context.AddChild(Lang.Fields.Components, obj.Components, new ComponentListEditor());
         }
 
         context.ShowChildrenUI();
+    }
+
+    private class TagListStringHandler : IObjectUIHandler
+    {
+        public void OnIMGUI(UIContext context)
+        {
+            var tags = context.Get<string>() ?? "";
+            if (!context.StateBool) {
+                ImGui.SameLine();
+                if (string.IsNullOrEmpty(tags)) {
+                    ImGui.TextColored(Colors.Faded, Lang.Fields.TagsNone);
+                } else {
+                    ImGui.TextColored(Colors.Faded, tags);
+                }
+                if (ImGui.IsItemHovered()) {
+                    ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+                    if (ImGui.IsMouseReleased(ImGuiMouseButton.Left)) {
+                        context.StateBool = true;
+                        context.InputClassname = tags;
+                        ImGui.SetKeyboardFocusHere();
+                    }
+                }
+            }
+            if (context.StateBool) {
+                var str = context.InputClassname;
+                if (ImGui.InputText(Lang.Fields.Tags, ref str, 200)) {
+                    context.InputClassname = str;
+                }
+                if (ImGui.Button(Lang.Buttons.Confirm)) {
+                    context.StateBool = false;
+                    UndoRedo.RecordSet(context, context.InputClassname);
+                }
+                ImGui.SameLine();
+                if (ImGui.Button(Lang.Buttons.Cancel)) {
+                    context.StateBool = false;
+                }
+            }
+        }
+    }
+
+    private class GameObjectFlagsHandler : IObjectUIHandler
+    {
+        public void OnIMGUI(UIContext context)
+        {
+            var go = context.Get<GameObject>();
+            var update = go.Update;
+            var draw = go.Draw;
+            var timescale = go.TimeScale;
+            var w = ImGui.CalcItemWidth();
+            var start = ImGui.GetCursorPosX();
+            if (ImGui.Checkbox(Lang.Fields.Update, ref update)) {
+                UndoRedo.RecordCallbackSetter(context, go, !update, update, static (g, v) => g.Update = v);
+            }
+            ImGui.SameLine();
+            if (ImGui.Checkbox(Lang.Fields.Draw, ref draw)) {
+                UndoRedo.RecordCallbackSetter(context, go, !draw, draw, static (g, v) => g.Draw = v);
+            }
+            if (go.Instance != null && RszFieldCache.GameObject.TimeScale.Exists(go.Instance.RszClass)) {
+                ImGui.SameLine();
+                ImGui.SetNextItemWidth(w - (ImGui.GetCursorPosX() - start));
+                var timescaleNew = timescale;
+                if (ImGui.DragFloat(Lang.Fields.TimeScale, ref timescaleNew)) {
+                    UndoRedo.RecordCallbackSetter(context, go, timescale, timescaleNew, static (g, v) => g.TimeScale = v);
+                }
+            }
+        }
     }
 }
 

@@ -178,7 +178,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     public GameObject? Find(Guid guid)
     {
         foreach (var go in GetAllGameObjects()) {
-            if (go.guid == guid) {
+            if (go.Guid == guid) {
                 return go;
             }
         }
@@ -224,7 +224,7 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     public GameObject? FindGameObjectByGuid(Guid guid)
     {
         foreach (var obj in GetAllGameObjects()) {
-            if (obj.guid == guid) {
+            if (obj.Guid == guid) {
                 return obj;
             }
         }

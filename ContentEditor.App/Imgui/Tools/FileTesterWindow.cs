@@ -575,6 +575,7 @@ public partial class FileTesterWindow : IWindowHandler
             case KnownFileFormats.GpuCloth: return VerifyRewriteEquality<GpucFile>(source.GetFile<GpucFile>(), env);
             case KnownFileFormats.ShellFur: return VerifyRewriteEquality<SfurFile>(source.GetFile<SfurFile>(), env);
             case KnownFileFormats.EventList: return VerifyRewriteEquality<WelFile>(source.GetFile<WelFile>(), env);
+            case KnownFileFormats.Lod: return VerifyRewriteEquality<LodFile>(source.GetFile<LodFile>(), env);
             default: return null;
         }
     }

@@ -32,13 +32,13 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
     public bool Update;
     public bool Draw;
     public float TimeScale;
-    public Guid guid;
+    public Guid Guid;
     public string? PrefabPath;
     public readonly List<Component> Components = new();
 
     public void RandomizeGuids()
     {
-        guid = Guid.NewGuid();
+        Guid = Guid.NewGuid();
         foreach (var child in Children) child.RandomizeGuids();
     }
 
@@ -82,7 +82,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
     private RszInstance instance;
 
     string? IGameObject.Name => Name;
-    Guid IGameObjectWithGuid.Guid => guid;
+    Guid IGameObjectWithGuid.Guid => Guid;
     public RszInstance? Instance => instance;
     IList<RszInstance> IGameObject.Components => Components.Select(c => c.Data).ToList();
     IEnumerable<IGameObject> IGameObject.GetChildren() => Children;
@@ -105,7 +105,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         Folder = folder;
         Draw = true;
         TimeScale = -1;
-        guid = Guid.NewGuid();
+        Guid = Guid.NewGuid();
         Components.Add(Transform = new Transform(this, workspace));
         Transform.ComponentInit();
         Scene = scene;
@@ -145,7 +145,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         instance = source.Instance!;
         ImportInstanceFields();
         Scene = scene;
-        guid = source.Guid;
+        Guid = source.Guid;
         this.Folder = folder;
         PrefabPath = prefabs == null || !(source.Info?.prefabId >= 0) ? null : prefabs.ElementAtOrDefault(source.Info.prefabId)?.Path;
 
@@ -334,7 +334,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         };
         instance.ObjectTableIndex = -1;
         obj.Info ??= new();
-        obj.Info.guid = this.guid;
+        obj.Info.guid = this.Guid;
         if (prefabInfos != null && !string.IsNullOrEmpty(PrefabPath)) {
             var pfbId = prefabInfos.FindIndex(info => info.Path == PrefabPath);
             if (pfbId == -1) {
@@ -435,7 +435,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
             _parent = parent,
             PrefabPath = PrefabPath,
         };
-        if (guid != Guid.Empty) newObj.guid = Guid.NewGuid();
+        if (Guid != Guid.Empty) newObj.Guid = Guid.NewGuid();
 
         RszInstance.StoreClonedGameObject(this, newObj);
         // note: cloning children first so any component reference to children get resolved during the component clone

@@ -87,7 +87,7 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
         }
         if (obj is GameObject o) {
             if (!string.IsNullOrEmpty(nameMatch)) {
-                if (!o.Name.Contains(nameMatch, StringComparison.InvariantCultureIgnoreCase) && (!Guid.TryParse(nameMatch, out var guid) || o.guid != guid)) {
+                if (!o.Name.Contains(nameMatch, StringComparison.InvariantCultureIgnoreCase) && (!Guid.TryParse(nameMatch, out var guid) || o.Guid != guid)) {
                     return false;
                 }
             }
