@@ -105,6 +105,7 @@ public class LuaReflectionObject(object obj) : ILuaUserData, ILuaObjectWrapper
         }
         var getters = new Dictionary<string, Func<object, LuaValue>>();
         var setters = new Dictionary<string, Action<object, LuaValue>>();
+        var typeInfo = new LuaTable();
 
         foreach (var field in typelist.SelectMany(t => t.GetFields(reflectionOptions))) {
             if (reflectionIgnoredTypes.Contains(field.FieldType) || ignoredFields.Contains((field.DeclaringType ?? type, field.Name))) continue;
@@ -113,6 +114,7 @@ public class LuaReflectionObject(object obj) : ILuaUserData, ILuaObjectWrapper
 
             getters[field.Name] = (self) => LuaWrapper.ToLua(field.GetValue(self));
             setters[field.Name] = (self, value) => field.SetValue(self, LuaWrapper.FromLua(value, field.FieldType));
+            typeInfo[field.Name] = new LuaValue((field.FieldType.FullName ?? field.FieldType.Name) + " (Field)");
         }
 
         foreach (var prop in typelist.SelectMany(t => t.GetProperties(reflectionOptions))) {
@@ -125,6 +127,7 @@ public class LuaReflectionObject(object obj) : ILuaUserData, ILuaObjectWrapper
             if (prop.SetMethod != null) {
                 setters[prop.Name] = (self, value) => prop.SetValue(self, LuaWrapper.FromLua(value, prop.PropertyType));
             }
+            typeInfo[prop.Name] = new LuaValue((prop.PropertyType.FullName ?? prop.PropertyType.Name) + $" (Property{(prop.GetMethod != null ? " GET" : "")}{(prop.SetMethod != null ? " SET" : "")})");
         }
 
         foreach (var method in typelist.SelectMany(t => t.GetMethods(reflectionOptions))) {
@@ -173,6 +176,7 @@ public class LuaReflectionObject(object obj) : ILuaUserData, ILuaObjectWrapper
             }
 
             getters[method.Name] = (self) => func ?? LuaValue.Nil;
+            typeInfo[method.Name] = $":{method.Name}({string.Join(", ", pp.Select(p => $"{p.Name}: {p.ParameterType.FullName}"))})";
         }
 
         var typeNameGetter = new LuaFunction((context, token) => {
@@ -180,6 +184,7 @@ public class LuaReflectionObject(object obj) : ILuaUserData, ILuaObjectWrapper
             return new ValueTask<int>(context.Return(self.GetType().FullName ?? self.GetType().Name));
         });
         getters["get_type_name"] = (_) => typeNameGetter;
+        getters["type_info"] = (_) => typeInfo;
 
         index = new LuaFunction("index", (context, ct) => {
             var userData = context.GetArgument<object>(0);

@@ -79,6 +79,9 @@ public class LuaWrapper
         if (obj is RszInstance rsz) {
             return new LuaRszInstance(rsz);
         }
+        if (type.IsEnum) {
+            return type.GetEnumUnderlyingType() == typeof(ulong) ? LuaValue.FromObject((ulong)obj) : LuaValue.FromObject(Convert.ChangeType(obj, typeof(long)));
+        }
         var defaultConvert = LuaValue.FromObject(obj);
         if (defaultConvert.Type is not LuaValueType.Nil and not LuaValueType.LightUserData) {
             return defaultConvert;
