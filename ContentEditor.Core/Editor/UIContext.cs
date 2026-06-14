@@ -299,7 +299,11 @@ public class UIContext
             child.RevertImpl(eventData);
         }
         if (originalValue != null) {
-            Set(originalValue);
+            if (!originalValue.Equals(GetRaw())) {
+                Set(originalValue);
+            } else {
+                wasChanged = false;
+            }
         }
     }
 

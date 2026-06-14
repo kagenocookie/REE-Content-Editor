@@ -110,7 +110,7 @@ public class ComponentDataHandler : IObjectUIHandler
         }
     }
 
-    private bool DrawComponentTreeNode(UIContext context, RszInstance instance)
+    internal static bool DrawComponentTreeNode(UIContext context, RszInstance instance, bool allowRevert = true)
     {
         ImGui.BeginGroup();
 
@@ -149,29 +149,30 @@ public class ComponentDataHandler : IObjectUIHandler
         }
         // end name labels
 
-        // begin context buttons
-        ImGui.SameLine();
+        if (allowRevert) {
+            ImGui.SameLine();
 
-        float buttonWidth = ImGui.CalcTextSize($"{AppIcons.SI_Reset}").X + ImGui.GetStyle().FramePadding.X * 2;
-        float avail = ImGui.GetContentRegionAvail().X;
+            float buttonWidth = ImGui.CalcTextSize($"{AppIcons.SI_Reset}").X + ImGui.GetStyle().FramePadding.X * 2;
+            float avail = ImGui.GetContentRegionAvail().X;
 
-        float rightEdge = ImGui.GetCursorScreenPos().X + avail;
+            float rightEdge = ImGui.GetCursorScreenPos().X + avail;
 
-        float posX = rightEdge - buttonWidth;
+            float posX = rightEdge - buttonWidth;
 
-        ImGui.SetCursorScreenPos(new Vector2(posX, ImGui.GetCursorScreenPos().Y));
+            ImGui.SetCursorScreenPos(new Vector2(posX, ImGui.GetCursorScreenPos().Y));
 
-        ImGui.BeginDisabled(!context.IsChanged);
-        if (ImGui.Button($"{AppIcons.SI_Reset}")) {
-            try {
-                context.Revert();
-                context.ResetState();
-                // some components throw this while being reverted. data seems to be fine if we catch this though
-            } catch(NotImplementedException) {
+            ImGui.BeginDisabled(!context.IsChanged);
+            if (ImGui.Button($"{AppIcons.SI_Reset}")) {
+                try {
+                    context.Revert();
+                    context.ResetState();
+                    // some components throw this while being reverted. data seems to be fine if we catch this though
+                } catch (Exception e) {
+                    Logger.Error("Failed to revert value: " + e.Message);
+                }
             }
+            ImGui.EndDisabled();
         }
-        ImGui.EndDisabled();
-        // end context buttons
 
         ImGui.PopID();
         ImGui.EndGroup();
