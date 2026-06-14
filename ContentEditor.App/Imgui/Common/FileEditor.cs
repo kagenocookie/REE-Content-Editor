@@ -410,6 +410,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     {
         if (eventData.type == UIContextEvent.Changed) {
             Handle.Modified = true;
+            Context.SetChangedNoPropagate(true);
         }
         if (eventData.type == UIContextEvent.Reverting) {
             if (eventData.origin.IsChildOf(context)) {

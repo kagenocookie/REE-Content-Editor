@@ -81,15 +81,6 @@ public class EfxEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIns
         }
     }
 
-    // internal ObjectInspector SetInspector(object? target)
-    // {
-    //     var inspector = new ObjectInspector(this);
-    //     var window = WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, inspector, "Inspector");
-    //     Inspector.Add(inspector);
-    //     inspector.Target = target;
-    //     return inspector;
-    // }
-
     void IObjectUIHandler.OnIMGUI(UIContext container)
     {
         this.OnIMGUI();

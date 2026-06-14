@@ -11,7 +11,7 @@ Besides basic file editing, the tool is able to merge multiple changes to the sa
 - Devil May Cry 5
 - Pragmata
 
-Some files may not fully work for other RE ENGINE games.
+Some files may not fully work for other RE ENGINE games. Due to their complexity and frequent changes, .efx files may take longer to add support for new games compared to other file types.
 
 ## Setup - Windows
 - Install the .NET Desktop Runtime 10 or newer (https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
