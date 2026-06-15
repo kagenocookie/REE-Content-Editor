@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Github;
 using ContentEditor.App.ImguiHandling;
+using ContentEditor.App.Lua;
 using ContentEditor.BackgroundTasks;
 using ContentEditor.Core;
 using ContentEditor.Reversing;
@@ -18,7 +19,6 @@ using ReeLib.Data;
 using ReeLib.Efx;
 using ReeLib.Tools;
 using SharpCompress.Archives;
-using SharpCompress.Archives.SevenZip;
 using SharpCompress.Readers;
 using Silk.NET.Input;
 using Silk.NET.Maths;
@@ -724,7 +724,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
         if (ImGui.BeginMenu(Lang.Home.Menu_File)) {
             if (ImGui.BeginMenu(Lang.Home.Menu_CreateNew, workspace != null)) {
-                if (ImGui.MenuItem("Lua Script")) AddFileEditor(Workspace.ResourceManager.CreateNewFile(LuaFileLoader.Instance, "Script", "lua")!);
+                if (ImGui.MenuItem(Lang.Home.CreateNew_Lua)) AddFileEditor(Workspace.ResourceManager.CreateNewFile(LuaFileLoader.Instance, "Script", "lua")!);
                 ImGui.EndMenu();
             }
             ImGui.Separator();
@@ -767,7 +767,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                             }
                             ImGui.CloseCurrentPopup();
                         }
-                        ImGui.InputTextWithHint("Filter", $"{AppIcons.Search}", ref openFileFilter, 128);
+                        ImGui.InputTextWithHint(Lang.General.FilterInput, $"{AppIcons.Search}", ref openFileFilter, 128);
                         foreach (var file in files) {
                             if (!string.IsNullOrEmpty(openFileFilter) && !file.Filepath.Contains(openFileFilter, StringComparison.InvariantCultureIgnoreCase)) {
                                 continue;
@@ -824,7 +824,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     } else {
                         ImGui.InputTextWithHint(Lang.General.FilterInput, $"{AppIcons.Search}", ref recentFileFilter, 128);
                         ImGui.SameLine();
-                        if (ImGui.Button("Clear recent files")) {
+                        if (ImGui.Button(Lang.Buttons.ClearRecent)) {
                             recents.Clear();
                         }
                         int i = 0;
@@ -896,7 +896,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 }
             }
             if (workspace != null && ImGui.BeginMenu(Lang.Home.Menu_DataGeneration)) {
-                if (ImGui.MenuItem("Rebuild RSZ patch data")) {
+                if (ImGui.MenuItem(Lang.Tools.DataGeneration_RebuildRSZ)) {
                     if (!runningRszInference) {
                         runningRszInference = true;
                         Logger.Info("Starting RSZ data scan...");
@@ -918,7 +918,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     }
                 }
 
-                if (ImGui.MenuItem("Rebuild EFX data")) {
+                if (ImGui.MenuItem(Lang.Tools.DataGeneration_RebuildEFX)) {
                     if (!runningRszInference) {
                         runningRszInference = true;
                         var outDir = Path.Combine(Directory.GetCurrentDirectory(), "efx_structs");
@@ -932,7 +932,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     }
                 }
 
-                if (ImGui.MenuItem("Generate file extension cache")) {
+                if (ImGui.MenuItem(Lang.Tools.DataGeneration_ExtensionCache)) {
                     try {
                         var games = AppConfig.Instance.ConfiguredGames.Select(c => new GameIdentifier(c))
                             .Concat(Enum.GetValues<GameName>().Select(n => new GameIdentifier(n.ToString())))
@@ -946,11 +946,11 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     }
                 }
 
-                if (ImGui.MenuItem("Generate list file")) {
+                if (ImGui.MenuItem(Lang.Tools.DataGeneration_ListFile)) {
                     AddSubwindow(new ListFileGeneratorTaskWindow());
                 }
 
-                if (ImGui.MenuItem("Generate bookmarks from entities")) {
+                if (ImGui.MenuItem(Lang.Tools.DataGeneration_Bookmarks)) {
                     var list = PrefabLister.GenerateFileSets(workspace);
                     if (list != null) {
                         Logger.Info(JsonSerializer.Serialize(list, JsonConfig.configJsonOptions));
@@ -959,21 +959,25 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 ImGui.EndMenu();
             }
 
-            if (ImGui.MenuItem("IMGUI Test Window")) {
+            if (ImGui.MenuItem(Lang.Tools.ImguiTestWindow)) {
                 AddUniqueSubwindow(new ImguiTestWindow());
             }
-            if (ImGui.MenuItem("File testing")) {
+            if (ImGui.MenuItem(Lang.Tools.FileTester)) {
                 AddUniqueSubwindow(new FileTesterWindow());
             }
-            if (ImGui.MenuItem("Icon List")) {
+            if (ImGui.MenuItem(Lang.Tools.IconList)) {
                 AddUniqueSubwindow(new IconListWindow());
             }
-            if (ImGui.MenuItem("Dump translations")) {
+            if (ImGui.MenuItem(Lang.Tools.DumpTranslations)) {
                 var json = Lang.GetTranslationsJson();
                 PlatformUtils.ShowSaveFileDialog(path => {
                     var bytes = VYaml.Serialization.YamlSerializer.Serialize(json);
                     File.WriteAllBytes(path, bytes.Span);
                 }, Path.Combine(AppContext.BaseDirectory, "i18n", Lang.CurrentLanguage.ToString()+".lang.yaml"), FileFilters.LangYamlFile);
+            }
+            if (ImGui.MenuItem(Lang.Tools.DumpLuaTypes)) {
+                var gen = new LuaTypedefGenerator();
+                gen.Dump(Path.Combine(Environment.CurrentDirectory, "docs/lua_types"));
             }
             ImGui.EndMenu();
         }
@@ -1015,7 +1019,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         ShowGameSelectionMenu();
 
         if (ImGui.BeginMenu(Lang.Home.Menu_Scenes, enabled: workspace != null)) {
-            if (ImGui.Selectable($"{AppIcons.SI_GenericAdd} New scene")) {
+            if (ImGui.Selectable(Lang.Home.Scenes_New)) {
                 var file = Workspace.ResourceManager.CreateNewFile(KnownFileFormats.Scene);
                 if (file != null) {
                     var rawScene = file.GetCustomContent<RawScene>();

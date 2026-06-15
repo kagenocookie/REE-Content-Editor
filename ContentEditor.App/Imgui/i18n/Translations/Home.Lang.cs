@@ -51,5 +51,8 @@ public static partial class Lang
         public static readonly FixedString BundleDialog_Title = "Bundle Creation";
         public static readonly InterpolatedString<string> BundleDialog_Text_PAK = "Select name for the bundle to be created from the PAK file:\n{0}";
         public static readonly InterpolatedString<string> BundleDialog_Text_Loose = "Select name for the bundle to be created from the loose mod:\n{0}";
+
+        public static readonly FixedString CreateNew_Lua = "Lua Script";
+        public static readonly IconString Scenes_New = new IconString("{0} New scene", AppIcons.SI_GenericAdd);
     }
 }
