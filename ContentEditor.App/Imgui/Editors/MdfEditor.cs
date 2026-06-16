@@ -169,24 +169,24 @@ public class MdfFileImguiHandler : IObjectUIHandler
     private string matParamSearchQuery = string.Empty;
     private bool isMatParamMatchCase = false;
     private MaterialData? draggedMat;
+    private float materialListW = 250f; // SILVER: Maybe we should save this value?
 
     public void OnIMGUI(UIContext context)
     {
         var file = context.Get<MdfFile>();
 
-        ImGui.BeginChild("##MaterialList", new Vector2(250f, ImGui.GetContentRegionAvail().Y), ImGuiChildFlags.ResizeX);
+        ImGui.BeginChild("##MaterialList", new Vector2(materialListW, ImGui.GetContentRegionAvail().Y));
         ShowMaterialList(context, file);
         ImGui.EndChild();
 
         ImGui.SameLine();
-        ImguiHelpers.VerticalSeparator(ImguiHelpers.GetColor(ImGuiCol.Separator), 2,4, ImGui.GetContentRegionAvail().Y);
+        ImguiHelpers.VerticalSplitter(ref materialListW, 100, 500, 2, 2, ImGui.GetContentRegionAvail().Y);
         ImGui.SameLine();
 
-        ImGui.BeginChild("##MaterialData");
+        ImGui.BeginChild("##MaterialData", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y));
         ShowSelectedMaterialData(context, file);
         ImGui.EndChild();
     }
-
     private unsafe void ShowMaterialList(UIContext context, MdfFile file)
     {
         var list = file.Materials;
