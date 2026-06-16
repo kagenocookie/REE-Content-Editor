@@ -369,10 +369,10 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     private void ShowMacroCardContextMenu(MacroEntry macro)
     {
         if (ImGui.BeginPopupContextItem("macroCardPopup")) {
+            ImGui.PushStyleVarY(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing.Y * 1.5f);
             if (ImGui.MenuItem(Lang.MacroShelf.MenuItem_RunMacro)) {
                 RunMacro(macro);
             }
-            ImGui.Spacing();
             if (ImGui.MenuItem(Lang.MacroShelf.MenuItem_EditMacro)) {
                 isShowNewMacroMenu = true;
                 isEditMacroDataMode = true;
@@ -384,14 +384,13 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
                 macroDraft.IconColor = macro.IconColor;
                 macroDraft.IsGameSpecific = macro.IsGameSpecific;
             }
-            ImGui.Spacing();
             ImGui.Separator();
-            ImGui.Spacing();
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);
             if (ImGui.MenuItem(Lang.MacroShelf.MenuItem_DeleteMacro)) {
                 pendingDeleteMacro = macro;
             }
             ImGui.PopStyleColor();
+            ImGui.PopStyleVar();
             ImGui.EndPopup();
         }
     }

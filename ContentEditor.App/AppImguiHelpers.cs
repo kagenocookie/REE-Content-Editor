@@ -476,4 +476,13 @@ public static class AppImguiHelpers
         }
         return ellipsis;
     }
+    public static string FormatHotkeyString(string hotkey)
+    {
+        var parts = hotkey.Split("+", StringSplitOptions.TrimEntries);
+        if (parts.Length != 2) return hotkey;
+
+        string key = parts[0];
+        string modifiers = parts[1];
+        return (modifiers.Contains('C') ? "Ctrl + " : "") + (modifiers.Contains('S') ? "Shift + " : "") + (modifiers.Contains('A') ? "Alt + " : "") + key;
+    }
 }

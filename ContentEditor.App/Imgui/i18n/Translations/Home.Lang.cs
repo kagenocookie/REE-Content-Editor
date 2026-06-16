@@ -26,25 +26,29 @@ public static partial class Lang
 
         public static readonly FixedString Menu_File = "File";
         public static readonly FixedString Menu_CreateNew = "Create New";
-        public static readonly FixedString Menu_Open = "Open ...";
-        public static readonly FixedString Menu_SaveAll = "Save modified files";
-        public static readonly FixedString Menu_RevertAll = "Revert modified files";
+        public static readonly FixedString Menu_Open = "Open...";
+        public static readonly FixedString Menu_SaveAll = "Save Modified Files";
+        public static readonly FixedString Menu_RevertAll = "Revert Modified Files";
         public static readonly FixedString Menu_TooltipNoModifiedFiles = "No files have been modified yet.";
-        public static readonly FixedString Menu_OpenedFiles = "Opened files";
+        public static readonly FixedString Menu_OpenedFiles = "Opened Files";
         public static readonly FixedString Menu_NoFilesOpen = "No files open";
         public static readonly FixedString Menu_CloseAll = "Close all";
-        public static readonly FixedString Menu_RecentFiles = "Recent files";
+        public static readonly FixedString Menu_RecentFiles = "Recent Files";
         public static readonly FixedString RecentFiles_None = "No recent files";
         public static readonly FixedString Menu_Edit = "Edit";
         public static readonly FixedString Menu_DataGeneration = "Data Generation";
         public static readonly FixedString Menu_Windows = "Windows";
         public static readonly FixedString Menu_Scenes = "Scenes";
+        public static readonly IconString Menu_BlankPadding = new IconString("{0} ", AppIcons.SI_Blank);
+
+        public static readonly InterpolatedString<string> Tooltip_Undo = "Undo ({0})";
+        public static readonly InterpolatedString<string> Tooltip_Redo = "Redo ({0})";
 
         public static readonly InterpolatedString<string> ActiveGame = "Game: {0}";
         public static readonly InterpolatedString<string> ActivePlatform = "Platform: {0}";
         public static readonly InterpolatedString<string> ActiveBundle = "Active Bundle: {0}";
         public static readonly InterpolatedString<string> NamedBundle = "Bundle: {0}";
-        public static readonly IconString BundleFilter = new IconString("{0} Search Bundles", AppIcons.Search);
+        public static readonly IconString BundleFilter = new IconString("{0} Search Bundles", AppIcons.SI_GenericMagnifyingGlass);
         public static readonly FixedString OtherPlatforms = "Other platforms (untested)";
         public static readonly FixedString UninitializedBundles = "* Uninitialized bundle folders";
 
@@ -54,5 +58,6 @@ public static partial class Lang
 
         public static readonly FixedString CreateNew_Lua = "Lua Script";
         public static readonly IconString Scenes_New = new IconString("{0} New scene", AppIcons.SI_GenericAdd);
+        public static readonly IconString Hint_SearchRecentFiles = new IconString("{0} Search Recent Files", AppIcons.SI_GenericMagnifyingGlass);
     }
 }
