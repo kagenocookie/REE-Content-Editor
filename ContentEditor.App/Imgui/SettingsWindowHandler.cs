@@ -414,6 +414,8 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImguiKeybinding(Lang.Settings.Bind_TextureViewer_ResetView, config.Key_TextureViewer_ResetView);
         ImguiKeybinding(Lang.Settings.Bind_TextureViewer_ZoomIn, config.Key_TextureViewer_ZoomIn);
         ImguiKeybinding(Lang.Settings.Bind_TextureViewer_ZoomOut, config.Key_TextureViewer_ZoomOut);
+        ImguiKeybinding(Lang.Settings.Bind_TextureViewer_NextChannel, config.Key_TextureViewer_NextChannel);
+        ImguiKeybinding(Lang.Settings.Bind_TextureViewer_PrevChannel, config.Key_TextureViewer_PrevChannel);
     }
     private void ShowHotkeysSceneTab()
     {

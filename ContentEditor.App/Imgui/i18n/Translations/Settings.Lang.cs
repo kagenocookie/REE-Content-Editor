@@ -131,6 +131,8 @@ public static partial class Lang
         public static readonly FixedString Bind_TextureViewer_ResetView = "Reset View";
         public static readonly FixedString Bind_TextureViewer_ZoomIn = "Zoom In";
         public static readonly FixedString Bind_TextureViewer_ZoomOut = "Zoom Out";
+        public static readonly FixedString Bind_TextureViewer_NextChannel = "Next Channel";
+        public static readonly FixedString Bind_TextureViewer_PrevChannel = "Previous Channel";
         public static readonly FixedString Bind_Scene_Focus3D = "Focus Selected";
         public static readonly FixedString Bind_Scene_FocusUI = "Show Selected in UI";
         public static readonly FixedString Bind_Scene_Hide = "Hide Selected";
