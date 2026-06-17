@@ -209,12 +209,12 @@ public class MdfFileImguiHandler : IObjectUIHandler
             ImguiHelpers.Tooltip("Paste Material from clipboard");
         }
         ImGui.SameLine();
-        if (ImGui.Button($"{AppIcons.SI_GenericExport}")) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_TexExport, new[] { Colors.IconSecondary, Colors.IconPrimary })) {
             ImGui.OpenPopup("MdfTexExport");
         }
         ImguiHelpers.Tooltip("Export Textures");
         ImGui.SameLine();
-        if (ImGui.Button($"{AppIcons.SI_GenericImport}")) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_MaterialImport, new[] { Colors.IconPrimary, Colors.IconSecondary })) {
             PlatformUtils.ShowFileDialog(paths => { var path = paths[0];
                 ImportMatParamsFromEMVJson(path, file, context);
             }, filters: [new FileFilter("JSON", ["json"])]);
