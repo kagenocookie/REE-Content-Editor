@@ -159,7 +159,7 @@ public class HomeWindow : IWindowHandler
     {
         var data = context.Get<WindowData>();
         using (var _ = ImguiHelpers.Disabled(AppConfig.Instance.IsFirstTime)) {
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PakBrowse, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary }) && EditorWindow.CurrentWindow?.Workspace != null) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PakBrowse, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary }) && EditorWindow.CurrentWindow?.Workspace != null) {
                 EditorWindow.CurrentWindow?.AddSubwindow(new PakBrowser(EditorWindow.CurrentWindow.Workspace, null));
             }
             ImguiHelpers.Tooltip("Browse Game Files"u8);
