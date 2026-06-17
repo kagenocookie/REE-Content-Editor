@@ -451,6 +451,7 @@ public static class AppIcons
     public static readonly char SI_Blank = '\uee66';
     public static readonly char SI_Redo = '\uee67';
     public static readonly char SI_Undo = '\uee68';
+    public static readonly char[] SIC_PakBrowse = { '\uee69', '\uee6a', '\uee6b' };
 
     public static string PrependIcon(this string text, object target)
     {
