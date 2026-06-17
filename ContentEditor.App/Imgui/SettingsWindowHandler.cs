@@ -125,7 +125,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             bool isGroupSelected = selectedGroup == i;
 
             ImGui.PushStyleColor(ImGuiCol.Text, isGroupSelected ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text));
-            bool openSubGroup = ImGui.TreeNodeEx(group.Name, ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.FramePadding);
+            bool openSubGroup = ImGui.TreeNodeEx(group.Name, ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.FramePadding | (AppConfig.Instance.ExpandSettings ? ImGuiTreeNodeFlags.DefaultOpen : ImGuiTreeNodeFlags.None));
             ImGui.PopStyleColor();
 
             if (ImGui.IsItemClicked()) {
@@ -208,12 +208,6 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     private static void ShowPreferencesGeneralTab()
     {
         ImGui.Spacing();
-        var lang = config.PreferredLanguage.Get();
-        if (ImGui.Combo(Lang.Settings.PreferredLanguage, ref lang, Lang.SupportableLanguageNames)) {
-            var newLang = (Language)lang;
-            Lang.ChangeLanguage(newLang);
-            AppConfig.Instance.PreferredLanguage.Set(lang);
-        }
 
         ShowSetting(config.EnableUpdateCheck, Lang.Settings.AutoUpdate);
         ImGui.SameLine();
@@ -321,6 +315,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             }
         }
         ShowSetting(config.UseFullscreenAnimPlayback, Lang.Settings.UseFullscreenAnimPlayback);
+        ShowSetting(config.ExpandSettings, Lang.Settings.ExpandSettings);
 
         ImGui.SeparatorText(Lang.Settings.Section_Fields);
         ShowSetting(config.PrettyFieldLabels, Lang.Settings.PrettyFieldLabels);
@@ -340,6 +335,14 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             config.DateFormat.Set(dateFormat);
         }
         ShowSetting(config.ClockFormat, Lang.Settings.ClockFormat);
+
+        ImGui.SeparatorText(Lang.Settings.Section_Lang);
+        var lang = config.PreferredLanguage.Get();
+        if (ImGui.Combo(Lang.Settings.PreferredLanguage, ref lang, Lang.SupportableLanguageNames)) {
+            var newLang = (Language)lang;
+            Lang.ChangeLanguage(newLang);
+            AppConfig.Instance.PreferredLanguage.Set(lang);
+        }
     }
     private static void ShowDisplayThemeTab()
     {
@@ -385,7 +388,6 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
 
         ImguiKeybinding(Lang.Settings.Bind_Save, config.Key_Save);
         ImguiKeybinding(Lang.Settings.Bind_Open, config.Key_Open);
-        ImguiKeybinding(Lang.Settings.Bind_Back, config.Key_Back);
         ImguiKeybinding(Lang.Settings.Bind_Close, config.Key_Close);
         ImguiKeybinding(Lang.Settings.Bind_HomePage, config.Key_HomePage);
         ImguiKeybinding(Lang.Settings.Bind_OpenPakBrowser, config.Key_OpenPakBrowser);
@@ -394,6 +396,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     private void ShowHotkeysPakBrowserTab()
     {
         ImGui.Spacing();
+        ImguiKeybinding(Lang.Settings.Bind_Back, config.Key_Back);
         ImguiKeybinding(Lang.Settings.Bind_PakBrowser_OpenBookmarks, config.Key_PakBrowser_OpenBookmarks);
         ImguiKeybinding(Lang.Settings.Bind_PakBrowser_Bookmark, config.Key_PakBrowser_Bookmark);
         ImguiKeybinding(Lang.Settings.Bind_PakBrowser_JumpToPageTop, config.Key_PakBrowser_JumpToPageTop);

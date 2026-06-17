@@ -59,6 +59,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string WindowRect = "window_rect";
         public const string PauseAnimPlayerOnSeek = "pause_anim_player_on_seek";
         public const string UseFullscreenAnimPlayback = "use_fullscreen_anim_playback";
+        public const string ExpandSettings = "expand_settings";
         public const string DateFormat = "date_format";
         public const string ClockFormat = "clock_format";
         public const string DisableFileCloseWarning = "disable_close_warning";
@@ -318,6 +319,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
     public readonly SettingWrapper<bool> PauseAnimPlayerOnSeek = new SettingWrapper<bool>(Keys.PauseAnimPlayerOnSeek, _lock, true);
     public readonly SettingWrapper<bool> UseFullscreenAnimPlayback = new SettingWrapper<bool>(Keys.UseFullscreenAnimPlayback, _lock, false);
+    public readonly SettingWrapper<bool> ExpandSettings = new SettingWrapper<bool>(Keys.ExpandSettings, _lock, false);
     public readonly SettingWrapper<int> DateFormat = new SettingWrapper<int>(Keys.DateFormat, _lock, 0);
     public readonly SettingWrapper<bool> ClockFormat = new SettingWrapper<bool>(Keys.ClockFormat, _lock, false);
     public readonly SettingWrapper<bool> DisableFileCloseWarning = new SettingWrapper<bool>(Keys.DisableFileCloseWarning, _lock, false);
@@ -512,6 +514,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.QuaternionsDisableAutoNormalize, instance.QuaternionsDisableAutoNormalize.value.ToString(), null),
             (Keys.PauseAnimPlayerOnSeek, instance.PauseAnimPlayerOnSeek.value.ToString(), null),
             (Keys.UseFullscreenAnimPlayback, instance.UseFullscreenAnimPlayback.value.ToString(), null),
+            (Keys.ExpandSettings, instance.ExpandSettings.value.ToString(), null),
             (Keys.DateFormat, instance.DateFormat.value.ToString(), null),
             (Keys.ClockFormat, instance.ClockFormat.value.ToString(), null),
             (Keys.DisableFileCloseWarning, instance.DisableFileCloseWarning.value.ToString(), null),
@@ -700,6 +703,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.UseFullscreenAnimPlayback:
                             UseFullscreenAnimPlayback.value = ReadBool(value);
+                            break;
+                        case Keys.ExpandSettings:
+                            ExpandSettings.value = ReadBool(value);
                             break;
                         case Keys.ClockFormat:
                             ClockFormat.value = ReadBool(value);
