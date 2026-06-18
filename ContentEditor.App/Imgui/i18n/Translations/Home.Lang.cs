@@ -9,12 +9,12 @@ public static partial class Lang
     public static class Home
     {
         public static readonly IconString LaunchGame = new IconString("{0} Launch Game", AppIcons.Play);
-        public static readonly FixedString LaunchGame_LoosePatch = "Launch Game with Loose File patch";
-        public static readonly FixedString LaunchGame_PakPatch = "Launch Game with Pak File patch";
-        public static readonly FixedString ApplyPatches_Pak = "Apply patches (PAK)";
-        public static readonly FixedString ApplyPatches_Loose = "Apply patches (Loose File)";
+        public static readonly FixedString LaunchGame_LoosePatch = "Launch Game with Loose File Patch";
+        public static readonly FixedString LaunchGame_PakPatch = "Launch Game with Pak File Patch";
+        public static readonly FixedString ApplyPatches_Pak = "Apply Patches (PAK)";
+        public static readonly FixedString ApplyPatches_Loose = "Apply Patches (Loose File)";
         public static readonly FixedString ApplyPatches_CustomPath = "Patch to...";
-        public static readonly FixedString ApplyPatches_Revert = "Revert patches";
+        public static readonly IconString ApplyPatches_Revert = new IconString("{0} Revert Patches", AppIcons.SI_Reset);
         public static readonly FixedString SupportDevelopment = "Support development (Ko-Fi)";
         public static readonly FixedString NewVersion_Unspecific = "New version available!";
         public static readonly InterpolatedString<string> NewVersion_Specific = "New version ({0}) available!";
@@ -39,14 +39,13 @@ public static partial class Lang
         public static readonly FixedString Menu_DataGeneration = "Data Generation";
         public static readonly FixedString Menu_Windows = "Windows";
         public static readonly FixedString Menu_Scenes = "Scenes";
-        public static readonly IconString Menu_BlankPadding = new IconString("{0} ", AppIcons.SI_Blank);
 
         public static readonly InterpolatedString<string> Tooltip_Undo = "Undo ({0})";
         public static readonly InterpolatedString<string> Tooltip_Redo = "Redo ({0})";
 
         public static readonly InterpolatedString<string> ActiveGame = "Game: {0}";
-        public static readonly InterpolatedString<string> ActivePlatform = "Platform: {0}";
-        public static readonly InterpolatedString<string> ActiveBundle = "Active Bundle: {0}";
+        public static readonly InterpolatedString<string, char> ActivePlatform = "{1} Platform: {0}";
+        public static readonly InterpolatedString<string, char> ActiveBundle = "{1} Active Bundle: {0}";
         public static readonly InterpolatedString<string> NamedBundle = "Bundle: {0}";
         public static readonly IconString BundleFilter = new IconString("{0} Search Bundles", AppIcons.SI_GenericMagnifyingGlass);
         public static readonly FixedString OtherPlatforms = "Other platforms (untested)";

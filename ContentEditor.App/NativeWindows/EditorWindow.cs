@@ -387,16 +387,17 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
         var curGame = (env?.Config.Game ?? LastRequestedGame).name;
         if (ImGui.BeginMenu(Lang.Home.ActiveGame.Format((string.IsNullOrEmpty(curGame) ? "--" : curGame.ToUpper())))) {
+            ImGui.PushStyleVarY(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing.Y * 1.5f);
             if (env != null) {
-                if (ImGui.BeginMenu(Lang.Home.ActivePlatform.Format(env.Config.Platform.ToString()))) {
+                if (ImGui.BeginMenu(Lang.Home.ActivePlatform.Format(env.Config.Platform.ToString(), AppIcons.SI_Blank))) {
                     foreach (var otherPlat in PlatformIdentifier.GetAvailableDesktopPlatforms(env.Config.Game)) {
-                        if (ImGui.Selectable(otherPlat.ToString(), otherPlat == env.Config.Platform)) {
+                        if (ImGui.Selectable(Lang.General.BlankPadding.ToString() + otherPlat.ToString(), otherPlat == env.Config.Platform)) {
                             ChangePlatform(otherPlat);
                         }
                     }
                     ImGui.SeparatorText(Lang.Home.OtherPlatforms);
                     foreach (var otherPlat in PlatformIdentifier.NonDesktop) {
-                        if (ImGui.Selectable(otherPlat.ToString(), otherPlat == env.Config.Platform)) {
+                        if (ImGui.Selectable(Lang.General.BlankPadding.ToString() + otherPlat.ToString(), otherPlat == env.Config.Platform)) {
                             ChangePlatform(otherPlat);
                         }
                     }
@@ -407,47 +408,49 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             var games = AppConfig.Instance.GetGamelist();
             foreach (var (game, configured) in games) {
                 if (configured && fullSupportedGames.Contains(game)) {
-                    if (ImGui.MenuItem(Lang.TranslateGame(game))) SetWorkspace(game, null);
+                    if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.TranslateGame(game))) SetWorkspace(game, null);
                 }
             }
             ImGui.Separator();
             foreach (var (game, configured) in games) {
                 if (configured && !fullSupportedGames.Contains(game)) {
-                    if (ImGui.MenuItem(Lang.TranslateGame(game))) SetWorkspace(game, null);
+                    if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.TranslateGame(game))) SetWorkspace(game, null);
                 }
             }
             ImGui.Separator();
-            if (ImGui.MenuItem(Lang.Buttons.ConfigureGames)) {
+            if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Buttons.ConfigureGames)) {
                 AddUniqueSubwindow(new SettingsWindowHandler());
             }
-            if (workspace != null && !string.IsNullOrEmpty(workspace.Env.Config.GamePath) && ImGui.MenuItem(Lang.Buttons.Open_GameFolder)) {
+            if (workspace != null && !string.IsNullOrEmpty(workspace.Env.Config.GamePath) && ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Buttons.Open_GameFolder)) {
                 FileSystemUtils.ShowFileInExplorer(workspace.Env.Config.GamePath);
             }
+            ImGui.PopStyleVar();
             ImGui.EndMenu();
         }
 
         if (ImGui.BeginMenu(Lang.Home.NamedBundle.Format(workspace?.CurrentBundle?.Name ?? "--"), enabled: workspace != null)) {
             if (!workspace!.BundleManager.IsLoaded) workspace.BundleManager.LoadDataBundles();
-            if (ImGui.BeginMenu(Lang.Home.ActiveBundle.Format(workspace.Data.ContentBundle ?? ""))) {
-                if (ImGui.MenuItem(Lang.Buttons.NewBundle)) {
+            ImGui.PushStyleVarY(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing.Y * 1.5f);
+            if (ImGui.BeginMenu(Lang.Home.ActiveBundle.Format(workspace.Data.ContentBundle ?? "", AppIcons.SI_Blank))) {
+                if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Buttons.NewBundle)) {
                     ShowBundleManagement();
                 }
-                if (ImGui.MenuItem(Lang.Buttons.NewBundleFromPAK)) {
+                if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Buttons.NewBundleFromPAK)) {
                     PlatformUtils.ShowFileDialog(pak =>
                         CreateBundleFromPakFile(pak[0]),
                         filters: FileFilters.PakZipFileAll,
                         allowMultiple: false
                     );
                 }
-                if (ImGui.MenuItem(Lang.Buttons.NewBundleFromLoose)) {
+                if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Buttons.NewBundleFromLoose)) {
                     PlatformUtils.ShowFolderDialog(folder => {
                         CreateBundleFromLooseFileFolder(folder);
                     });
                 }
-                ImGui.Separator();
-                if (workspace.CurrentBundle != null && ImGui.MenuItem(Lang.Buttons.BundleUnload.Format(workspace.CurrentBundle.Name))) {
+                if (workspace.CurrentBundle != null && ImGui.MenuItem(Lang.Buttons.BundleUnload.Format(workspace.CurrentBundle.Name, AppIcons.SI_BundleLoadOrder))) {
                     SetWorkspace(workspace.Env.Config.Game, null);
                 }
+                ImGui.Separator();
                 ImGui.InputTextWithHint("##bundlefilter"u8, Lang.Home.BundleFilter, ref activeBundleFilter, 60);
                 var foundUnusedBundle = false;
                 foreach (var b in workspace.BundleManager.AllBundles.OrderBy(bb => (uint)AppConfig.Settings.RecentBundles.FindPrefixedIndex(bb.Name))) {
@@ -488,16 +491,17 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     FileSystemUtils.ShowFileInExplorer(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle));
                 }
                 var textEditor = AppConfig.Instance.ExternalTextEditor.Get();
-                if (!string.IsNullOrEmpty(textEditor) && ImGui.MenuItem(Lang.Buttons.Open_CurrentBundleTextEditor)) {
+                if (!string.IsNullOrEmpty(textEditor) && ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Buttons.Open_CurrentBundleTextEditor)) {
                     FileSystemUtils.OpenInExternalEditor(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle), textEditor);
                 }
-                if (ImGui.MenuItem(Lang.Buttons.BundleFileRescan)) {
+                if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Buttons.BundleFileRescan)) {
                     workspace.RescanFilesInBundle(workspace.CurrentBundle);
                 }
-                if (ImGui.MenuItem(Lang.Buttons.BundlePublish)) {
+                if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() +Lang.Buttons.BundlePublish)) {
                     AddUniqueSubwindow(new ModPublisherWindow(workspace));
                 }
             }
+            ImGui.PopStyleVar();
             ImGui.EndMenu();
         }
     }
@@ -639,29 +643,31 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, ImGui.GetStyle().FramePadding.Y));
         if (ImGui.BeginMenu($"{AppIcons.SI_Small_ArrowDown}")) {
             ImGui.PopStyleVar();
+            ImGui.PushStyleVarY(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing.Y * 1.5f);
             ImGui.PushStyleColor(ImGuiCol.Text, launchType == GameLaunchType.LooseFiles ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text));
-            if (ImGui.MenuItem(Lang.Home.LaunchGame_LoosePatch, launchType == GameLaunchType.LooseFiles)) {
+            if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Home.LaunchGame_LoosePatch, launchType == GameLaunchType.LooseFiles)) {
                 AppConfig.Instance.GameLaunchType.Set(launchType == GameLaunchType.LooseFiles ? (int)GameLaunchType.Normal : (int)GameLaunchType.LooseFiles);
             }
             ImGui.PopStyleColor();
             ImGui.PushStyleColor(ImGuiCol.Text, launchType == GameLaunchType.Pak ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text));
-            if (ImGui.MenuItem(Lang.Home.LaunchGame_PakPatch, launchType == GameLaunchType.Pak)) {
+            if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Home.LaunchGame_PakPatch, launchType == GameLaunchType.Pak)) {
                 AppConfig.Instance.GameLaunchType.Set(launchType == GameLaunchType.Pak ? (int)GameLaunchType.Normal : (int)GameLaunchType.Pak);
             }
             ImGui.PopStyleColor();
             ImGui.Separator();
-            if (ImGui.MenuItem(Lang.Home.ApplyPatches_Loose)) {
+            if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Home.ApplyPatches_Loose)) {
                 ApplyContentPatches(null);
             }
-            if (ImGui.MenuItem(Lang.Home.ApplyPatches_Pak)) {
+            if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Home.ApplyPatches_Pak)) {
                 ApplyContentPatches("pak");
             }
-            if (ImGui.MenuItem(Lang.Home.ApplyPatches_CustomPath)) {
+            if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Home.ApplyPatches_CustomPath)) {
                 PlatformUtils.ShowFolderDialog((path) => ApplyContentPatches(path), workspace.Env.Config.GamePath);
             }
             if (ImGui.MenuItem(Lang.Home.ApplyPatches_Revert)) {
                 RevertContentPatches();
             }
+            ImGui.PopStyleVar();
             ImGui.EndMenu();
         } else {
             ImGui.PopStyleVar();
@@ -728,25 +734,25 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
         if (ImGui.BeginMenu(Lang.Home.Menu_File)) {
             ImGui.PushStyleVarY(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing.Y * 1.5f);
-            if (ImGui.BeginMenu(Lang.Home.Menu_BlankPadding.ToString() + Lang.Home.Menu_CreateNew, workspace != null)) {
+            if (ImGui.BeginMenu(Lang.General.BlankPadding.ToString() + Lang.Home.Menu_CreateNew, workspace != null)) {
                 if (ImGui.MenuItem(Lang.Home.CreateNew_Lua)) AddFileEditor(Workspace.ResourceManager.CreateNewFile(LuaFileLoader.Instance, "Script", "lua")!);
                 ImGui.EndMenu();
             }
             ImGui.Separator();
-            if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Home.Menu_Open, false, workspace != null)) {
+            if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Home.Menu_Open, false, workspace != null)) {
                 ShowFileOpenDialog();
             }
             ImGui.SameLine();
             ImGui.TextColored(ImguiHelpers.GetColor(ImGuiCol.TextDisabled), AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Open.Get().ToString()));
             if (workspace != null) {
                 ImGui.BeginDisabled(!hasUnsavedFiles);
-                if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Home.Menu_SaveAll)) {
+                if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Home.Menu_SaveAll)) {
                     workspace.SaveModifiedFiles();
                 }
                 ImGui.SameLine();
                 ImGui.TextColored(ImguiHelpers.GetColor(ImGuiCol.TextDisabled), AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Save.Get().ToString()));
                 if (!hasUnsavedFiles && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) ImGui.SetItemTooltip(Lang.Home.Menu_TooltipNoModifiedFiles);
-                if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Home.Menu_RevertAll)) {
+                if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Home.Menu_RevertAll)) {
                     foreach (var file in workspace.ResourceManager.GetModifiedResourceFiles()) {
                         file.Revert(workspace);
                     }
@@ -755,7 +761,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 ImGui.EndDisabled();
                 var menuRight = ImGui.GetWindowPos().X + ImGui.GetWindowSize().X;
                 var maxWidth = menuRight + 600 >= Size.X ? Size.X - 48 * UI.UIScale : Size.X - menuRight - ImGui.GetStyle().WindowPadding.X * 3 - 80 * UI.UIScale;
-                if (ImGui.BeginMenu(Lang.Home.Menu_BlankPadding.ToString() + Lang.Home.Menu_OpenedFiles)) {
+                if (ImGui.BeginMenu(Lang.General.BlankPadding.ToString() + Lang.Home.Menu_OpenedFiles)) {
                     var files = workspace.ResourceManager.GetOpenFiles();
                     if (!files.Any()) {
                         ImGui.MenuItem(Lang.Home.Menu_NoFilesOpen, false);
@@ -827,7 +833,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     }
                     ImGui.EndMenu();
                 }
-                if (ImGui.BeginMenu(Lang.Home.Menu_BlankPadding.ToString() + Lang.Home.Menu_RecentFiles)) {
+                if (ImGui.BeginMenu(Lang.General.BlankPadding.ToString() + Lang.Home.Menu_RecentFiles)) {
                     var recents = AppConfig.Settings.RecentFiles;
                     if (recents == null || recents.Count == 0) {
                         ImGui.MenuItem(Lang.Home.RecentFiles_None, false);
@@ -871,7 +877,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 }
             }
             ImGui.Separator();
-            if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Buttons.Exit)) {
+            if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Buttons.Exit)) {
                 _window.Close();
             }
             ImGui.SameLine();
@@ -903,30 +909,30 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             }
             ImGui.Separator();
             if (workspace != null) {
-                if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Windows.RetargetDesigner)) {
+                if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Windows.RetargetDesigner)) {
                     AddUniqueSubwindow(new RetargetDesigner());
                 }
                 ImGui.Separator();
             }
-            if (workspace != null && ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Buttons.CheckForDataUpdate)) {
+            if (workspace != null && ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Buttons.CheckForDataUpdate)) {
                 if (RequestCloseAllSubwindows(true)) {
                     ResourceRepository.ResetCache(workspace.Game);
                     ResourceRepository.Initialize(true);
                     SetWorkspace(workspace.Game, workspace.CurrentBundle?.Name, true);
                 }
             }
-            if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Tools.ImguiTestWindow)) {
+            if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Tools.ImguiTestWindow)) {
                 AddUniqueSubwindow(new ImguiTestWindow());
             }
-            if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Tools.FileTester)) {
+            if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Tools.FileTester)) {
                 AddUniqueSubwindow(new FileTesterWindow());
             }
-            if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Tools.IconList)) {
+            if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Tools.IconList)) {
                 AddUniqueSubwindow(new IconListWindow());
             }
             ImGui.Separator();
-            if (workspace != null && ImGui.BeginMenu(Lang.Home.Menu_BlankPadding.ToString() + Lang.Home.Menu_DataGeneration)) {
-                if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Tools.DataGeneration_RebuildRSZ)) {
+            if (workspace != null && ImGui.BeginMenu(Lang.General.BlankPadding.ToString() + Lang.Home.Menu_DataGeneration)) {
+                if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Tools.DataGeneration_RebuildRSZ)) {
                     if (!runningRszInference) {
                         runningRszInference = true;
                         Logger.Info("Starting RSZ data scan...");
@@ -948,7 +954,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     }
                 }
 
-                if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Tools.DataGeneration_RebuildEFX)) {
+                if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Tools.DataGeneration_RebuildEFX)) {
                     if (!runningRszInference) {
                         runningRszInference = true;
                         var outDir = Path.Combine(Directory.GetCurrentDirectory(), "efx_structs");
@@ -962,7 +968,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     }
                 }
 
-                if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Tools.DataGeneration_ExtensionCache)) {
+                if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Tools.DataGeneration_ExtensionCache)) {
                     try {
                         var games = AppConfig.Instance.ConfiguredGames.Select(c => new GameIdentifier(c))
                             .Concat(Enum.GetValues<GameName>().Select(n => new GameIdentifier(n.ToString())))
@@ -976,11 +982,11 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     }
                 }
 
-                if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Tools.DataGeneration_ListFile)) {
+                if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Tools.DataGeneration_ListFile)) {
                     AddSubwindow(new ListFileGeneratorTaskWindow());
                 }
 
-                if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Tools.DataGeneration_Bookmarks)) {
+                if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Tools.DataGeneration_Bookmarks)) {
                     var list = PrefabLister.GenerateFileSets(workspace);
                     if (list != null) {
                         Logger.Info(JsonSerializer.Serialize(list, JsonConfig.configJsonOptions));
@@ -988,14 +994,14 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 }
                 ImGui.EndMenu();
             }
-            if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Tools.DumpTranslations)) {
+            if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Tools.DumpTranslations)) {
                 var json = Lang.GetTranslationsJson();
                 PlatformUtils.ShowSaveFileDialog(path => {
                     var bytes = VYaml.Serialization.YamlSerializer.Serialize(json);
                     File.WriteAllBytes(path, bytes.Span);
                 }, Path.Combine(AppContext.BaseDirectory, "i18n", Lang.CurrentLanguage.ToString()+".lang.yaml"), FileFilters.LangYamlFile);
             }
-            if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Tools.DumpLuaTypes)) {
+            if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Tools.DumpLuaTypes)) {
                 var gen = new LuaTypedefGenerator();
                 gen.Dump(Path.Combine(Environment.CurrentDirectory, "docs/lua_types"));
             }
@@ -1005,7 +1011,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
         if (ImGui.BeginMenu(Lang.Home.Menu_Windows)) {
             ImGui.PushStyleVarY(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing.Y * 1.5f);
-            if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Buttons.NewWorkspace)) {
+            if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Buttons.NewWorkspace)) {
                 UI.OpenWindow(workspace);
             }
             ImGui.Separator();
@@ -1018,17 +1024,17 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (ImGui.MenuItem(Lang.Windows.BundleManager)) {
                     ShowBundleManagement();
                 }
-                if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Windows.FileSearch)) {
+                if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Windows.FileSearch)) {
                     AddSubwindow(new FileSearchWindow());
                 }
-                if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Windows.TexturePacker)) {
+                if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Windows.TexturePacker)) {
                     AddSubwindow(new TextureChannelPacker()).Size = new Vector2(1280, 800);
                 }
-                if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Windows.BatchConvert)) {
+                if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Windows.BatchConvert)) {
                     AddSubwindow(new FileConverter()).Size = new Vector2(1280, 800);
                 }
                 if (workspace.Config.Entities.Any()) {
-                    if (ImGui.MenuItem(Lang.Home.Menu_BlankPadding.ToString() + Lang.Windows.Entities)) {
+                    if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.Windows.Entities)) {
                         AddSubwindow(new AppContentEditorWindow(workspace));
                     }
                 }

@@ -2,6 +2,7 @@ using ContentEditor.App.Lua;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
+using ReeLib;
 using System.Numerics;
 using System.Text.Json;
 
@@ -130,27 +131,33 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     {
         ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_AddMacro, ref isShowNewMacroMenu, new[] { Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary }, Colors.IconActive);
         ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_CreateMacro);
-        using (var _ = ImguiHelpers.Disabled(!isShowNewMacroMenu)) {
+        if (isShowNewMacroMenu) {
             if (ImGui.Button($"{AppIcons.SI_GenericClear}")) {
                 macroDraft = new();
                 isEditMacroDataMode = false;
             }
             ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_ClearMacroData);
+            ImGui.Separator();
         }
         if (ImGui.Button(DisplayMode == MacroDisplayMode.Compact ? $"{AppIcons.SI_ViewGridSmall}" : $"{AppIcons.List}")) {
             AppConfig.Instance.MacroDisplayMode = DisplayMode = DisplayMode == MacroDisplayMode.Full ? MacroDisplayMode.Compact : MacroDisplayMode.Full;
         }
         ImguiHelpers.Tooltip(DisplayMode == MacroDisplayMode.Compact ? Lang.MacroShelf.Tooltip_ViewTypeA : Lang.MacroShelf.Tooltip_ViewTypeB);
-        ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconActive);
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderScan, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary } )) {
             ScanForMacros();
         }
-        ImGui.PopStyleColor();
         ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_RescanMacros);
         if (ImGui.Button($"{AppIcons.SI_FolderOpen}")) {
             FileSystemUtils.ShowFileInExplorer(AppConfig.Instance.LuaUserPath);
         }
         ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_OpenMacrosFolder);
+        var textEditor = AppConfig.Instance.ExternalTextEditor.Get();
+        using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(textEditor))) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenInTextEditor, new[] { Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary })) {
+                FileSystemUtils.OpenInExternalEditor(AppConfig.Instance.LuaUserPath, textEditor);
+            }
+        }
+        ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_OpenMacrosFolderTextEditor);
         AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/Lua-API", true);
     }
     private void ShowNewMacroMenu()
@@ -368,6 +375,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     }
     private void ShowMacroCardContextMenu(MacroEntry macro)
     {
+        var textEditor = AppConfig.Instance.ExternalTextEditor.Get();
         if (ImGui.BeginPopupContextItem("macroCardPopup")) {
             ImGui.PushStyleVarY(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing.Y * 1.5f);
             if (ImGui.MenuItem(Lang.MacroShelf.MenuItem_RunMacro)) {
@@ -383,6 +391,11 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
                 macroDraft.Icon = macro.Icon!;
                 macroDraft.IconColor = macro.IconColor;
                 macroDraft.IsGameSpecific = macro.IsGameSpecific;
+            }
+            using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(textEditor))) {
+                if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.MacroShelf.MenuItem_OpenMacroInTextEditor)) {
+                    FileSystemUtils.OpenInExternalEditor(Path.Combine(AppConfig.Instance.LuaUserPath, macro.Path!), textEditor);
+                }
             }
             ImGui.Separator();
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.IconTertiary);

@@ -19,6 +19,7 @@ public static partial class Lang
         public static readonly FixedString Tooltip_NoDesc = "No description provided...";
         public static readonly FixedString Tooltip_ViewTypeA = "Compact View";
         public static readonly FixedString Tooltip_ViewTypeB = "Full View";
+        public static readonly FixedString Tooltip_OpenMacrosFolderTextEditor = "Open Macros folder in Text Editor";
 
         public static readonly FixedString Label_MacroLuaPath = "LUA Script Path";
         public static readonly FixedString Label_MacroName = "Macro Name";
@@ -37,6 +38,7 @@ public static partial class Lang
         public static readonly IconString MenuItem_RunMacro = new IconString("{0} Run Macro", AppIcons.Play);
         public static readonly IconString MenuItem_EditMacro = new IconString("{0} Edit Macro metadata", AppIcons.Pencil);
         public static readonly IconString MenuItem_DeleteMacro = new IconString("{0} Delete Macro", AppIcons.SI_GenericDelete2);
+        public static readonly FixedString MenuItem_OpenMacroInTextEditor = "Open Macro Script in Text Editor";
 
         public static readonly FixedString Error_InvalidLuaPath = "Lua file must be inside the User Lua folder!";
         public static readonly InterpolatedString<string> Confirm_DeleteMacroFile = new InterpolatedString<string>("Are you sure you want to delete the {0} macro?");
