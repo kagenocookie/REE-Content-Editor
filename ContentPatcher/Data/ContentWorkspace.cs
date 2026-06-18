@@ -359,7 +359,7 @@ public sealed class ContentWorkspace : IDisposable
             var localFile = file.NormalizeFilepath().Replace(bundlePathNorm, "").TrimStart('/');
             if (localFile == "modinfo.ini") continue;
             var ext = Path.GetExtension(file).ToLowerInvariant();
-            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".txt" || ext == ".json") {
+            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg") {
                 // probably cover images
                 if (string.IsNullOrEmpty(bundle.ImagePath)) {
                     bundle.ImagePath = localFile;
