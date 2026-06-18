@@ -209,7 +209,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
             ImguiHelpers.Tooltip("Paste Material from clipboard");
         }
         ImGui.SameLine();
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_TexExport, new[] { Colors.IconSecondary, Colors.IconPrimary })) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_TexExport, new[] { Colors.IconPrimary, Colors.IconSecondary })) {
             ImGui.OpenPopup("MdfTexExport");
         }
         ImguiHelpers.Tooltip("Export Textures");
