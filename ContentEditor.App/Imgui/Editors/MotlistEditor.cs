@@ -790,8 +790,8 @@ public class MotBoneClipHeaderHandler : IObjectUIHandler
 
     public void OnIMGUI(UIContext context)
     {
+        var instance = context.Get<BoneClipHeader>();
         if (context.children.Count == 0) {
-            var instance = context.Get<BoneClipHeader>();
             var ws = context.GetWorkspace();
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(BoneClipHeader), false, DisplayedFields);
             context.AddChild<BoneClipHeader, float>("Weight", instance, FloatRangeHandler.Range01, c => c!.weight, (c, v) => c.weight = v);
@@ -799,6 +799,10 @@ public class MotBoneClipHeaderHandler : IObjectUIHandler
         }
 
         context.ShowChildrenUI();
+        var parentMot = context.FindValueInParentValues<MotFile>();
+        if (parentMot != null && parentMot.GetBoneByHash(instance.boneHash) == null) {
+            ImGui.TextColored(Colors.Note, Lang.Animations.UndefinedBoneInMot);
+        }
     }
 }
 

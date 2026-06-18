@@ -1216,6 +1216,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         base.Dispose(disposing);
     }
 
-    [System.Text.RegularExpressions.GeneratedRegex("^[ a-zA-Z0-9_()-]+$")]
+    [System.Text.RegularExpressions.GeneratedRegex("^[ a-zA-Z0-9_()'-]+$")]
     public static partial System.Text.RegularExpressions.Regex FilenameRegex();
 }
