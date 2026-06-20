@@ -12,7 +12,7 @@ entities:
       # name and desc, now with enum injection support, might work by just modifying the msg files
       # assuming enum is enough to make the game generate the msg key strings correctly, otherwise we need a runtime patch as well
       name:
-        # msg is a built-in field type that handles msg file-by-key integration, assuming the same file for each message
+        # msg is a built-in field type that handles msg-by-key integration
         # it will get saved as a per-lang dictionary in the mod patch.json { en: "My English name", jp: "超日本人です" }
         type: msg
         label: Name
@@ -101,15 +101,15 @@ resources:
       type: msg
       key: "item_name_(\\d+)"
       files:
-      - natives/STM/Message/UI/ItemName.msg.22
-      - natives/STM/Message/UI/ItemName_END.msg.22
+      - Message/UI/ItemName.msg.22
+      - Message/UI/ItemName_END.msg.22
   item_detail:
     patcher:
       type: msg
       key: "item_detail_(\\d+)"
       files:
-      - natives/STM/Message/UI/ItemDetail.msg.22
-      - natives/STM/Message/UI/ItemDetail_END.msg.22
+      - Message/UI/ItemDetail.msg.22
+      - Message/UI/ItemDetail_END.msg.22
 
 classes:
   app.ItemCommonParam:
@@ -125,16 +125,16 @@ classes:
           type: multi-array
           path: _Params
           files:
-          - natives/STM/AppSystem/Item/ItemData/ItemData.user.2
-          - natives/STM/AppSystem/Item/ItemData/ExItemData.user.2
+          - AppSystem/Item/ItemData/ItemData.user.2
+          - AppSystem/Item/ItemData/ExItemData.user.2
       app.ItemWeaponParam:
         patcher:
           type: array-file
-          file: natives/STM/AppSystem/Item/ItemData/ItemWeaponData.user.2
+          file: AppSystem/Item/ItemData/ItemWeaponData.user.2
       app.ItemArmorParam:
         patcher:
           type: array-file
-          file: natives/STM/AppSystem/Item/ItemData/ItemArmorData.user.2
+          file: AppSystem/Item/ItemData/ItemArmorData.user.2
   app.ItemDataParam:
     to_string: "Item Data {_Id}"
     fields:
@@ -151,12 +151,12 @@ classes:
     id: [ID]
     patcher:
       type: array-file
-      file: natives/stm/appsystem/catalog/maincontents/userdata/weaponcatalogdata.user.2
+      file: appsystem/catalog/maincontents/userdata/weaponcatalogdata.user.2
   app.WeaponSetting.OffsetSetting:
     id: [ID]
     patcher:
       type: array-file
-      file: natives/stm/appsystem/equipment/wp/weaponsetting.user.2
+      file: appsystem/equipment/wp/weaponsetting.user.2
 
   app.EnhanceParamBase:
     id: [_ItemId]
@@ -173,11 +173,11 @@ classes:
       app.WeaponEnhanceParam:
         patcher:
           type: array-file
-          file: natives/stm/appsystem/item/itemdata/weaponenhancedata.user.2
+          file: appsystem/item/itemdata/weaponenhancedata.user.2
       app.ArmorEnhanceParam:
         patcher:
           type: array-file
-          file: natives/stm/appsystem/item/itemdata/armorenhancedata.user.2
+          file: appsystem/item/itemdata/armorenhancedata.user.2
 
   app.ItemMixParam:
     id: [_ItemId]
@@ -204,6 +204,18 @@ classes:
       _CombineItem: { label: 'Output item' }
       _CombineMakeNum: { label: 'Output count' }
     to_string: "{_CombineItem}: {_PairList}"
+  app.TopsPartsEnableItem:
+    to_string: "Tops PartsEnable {_Gender:enum(app.Gender)} Job={_Job:enum(app.Character.JobEnum)} | {_TopsStyle:enum(app.TopsStyle)}"
+  app.TopsAmPartsHiddenItem:
+    to_string: "TopsAm PartsHidden Job={_Job:enum(app.Character.JobEnum)} | {_AmMeshID:enum(app.CharacterEditDefine.TopsAmMeshID)}"
+  app.TopsAmPartsEnableItem:
+    to_string: "TopsAm PartsEnable Job={_Job:enum(app.Character.JobEnum)} | {_AmMeshID:enum(app.CharacterEditDefine.TopsAmMeshID)}"
+  app.TopsBdPartsHiddenItem:
+    to_string: "TopsBd PartsHidden Job={_Job:enum(app.Character.JobEnum)} | {_BdMeshID:enum(app.CharacterEditDefine.TopsBdMeshID)}"
+  app.PantsLgPartsHiddenItem:
+    to_string: "PantsLg PartsHidden Job={_Job:enum(app.Character.JobEnum)} | {_LgMeshID:enum(app.CharacterEditDefine.PantsLgMeshID)}"
+  app.TopsBtPrimaryPartsHiddenItem:
+    to_string: "BtPrimary PartsHidden Job={_Job:enum(app.Character.JobEnum)}"
 
 # custom user-defined types (mainly useful for the content editor part, not raw file editing)
 # need to have at least one field
