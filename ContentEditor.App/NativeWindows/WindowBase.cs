@@ -45,7 +45,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     public ReeLib.via.Color ClearColor { get; set; } = AppConfig.Instance.BackgroundColor;
 
-    public Vector2 Size => new Vector2(_window.Size.X, _window.Size.Y);
+    public Vector2 Size => new Vector2(_window.FramebufferSize.X, _window.FramebufferSize.Y);
 
     // public Vector2 Position => new Vector2(_window.Position.X, _window.Position.Y);
     public Vector2 Position => new Vector2(0, 0);
@@ -179,6 +179,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     internal void InitGraphics()
     {
         _gl = _window.CreateOpenGL();
+        _gl.Viewport(_window.FramebufferSize);
         _controller = new Silk.NET.OpenGL.Extensions.Hexa.ImGui.ImGuiController(_gl, _window, _inputContext, onConfigureIO: UI.ConfigureImgui);
         UI.ApplyTheme(AppConfig.Instance.Theme.Get() ?? "default");
         // RemoveDropCallback();
@@ -450,7 +451,6 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     private void OnFrameBufferResize(Vector2D<int> size)
     {
-        // Console.WriteLine("Framebufresize" + size + "on wind" + ID);
         _window.MakeCurrent();
         _gl.Viewport(size);
     }
