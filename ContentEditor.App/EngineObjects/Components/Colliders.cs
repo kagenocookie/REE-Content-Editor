@@ -191,6 +191,14 @@ public class Colliders(GameObject gameObject, RszInstance data) : Component(game
                             }
                             break;
                         }
+                    case "via.physics.MeshShape": {
+                            var mcolPath = RszFieldCache.MeshShape.Mesh.Get(subshape);
+                            if (!string.IsNullOrEmpty(mcolPath)) {
+                                var mtx = RszFieldCache.MeshShape.TransformMatrix.Get(subshape);
+                                gizmo.Mesh(mcolPath, mtx.ToSystem() * transform, wireMaterial);
+                            }
+                            break;
+                        }
                     default:
                         Logger.Debug($"Unsupported static compound shape type {subshape.RszClass.name}");
                         break;
@@ -215,6 +223,14 @@ public class Colliders(GameObject gameObject, RszInstance data) : Component(game
                     case "via.physics.CylinderShape":
                         gizmo.Cur.Add(transform, RszFieldCache.CylinderShape.Cylinder.Get(subshape));
                         break;
+                    case "via.physics.MeshShape": {
+                            var mcolPath = RszFieldCache.MeshShape.Mesh.Get(subshape);
+                            if (!string.IsNullOrEmpty(mcolPath)) {
+                                var mtx = RszFieldCache.MeshShape.TransformMatrix.Get(subshape);
+                                gizmo.Mesh(mcolPath, mtx.ToSystem() * transform, wireMaterial);
+                            }
+                            break;
+                        }
                     default:
                         Logger.Debug($"Unsupported static compound shape type {subshape.RszClass.name}");
                         break;
