@@ -229,6 +229,9 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ShowSetting(config.UseSubPakForLooseTextures, Lang.Settings.UseSubPakForLooseTextures);
         ShowSetting(config.UseSymlinkPatching, Lang.Settings.UseSymlinkPatching);
 
+        // consider moving to an "Import" tab if we get more import related settings
+        ShowExternalToolSetting(config.BlenderPath, FileFilters.ExecutableTool, Lang.Settings.BlenderPath);
+
         ImGui.SeparatorText(Lang.Settings.Section_Cache);
         var configPath = config.GameConfigBaseFilepath.Get();
         if (AppImguiHelpers.InputFolder(Lang.Settings.GameConfigBasePath.Text, ref configPath)) {
@@ -259,11 +262,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     {
         ImGui.Spacing();
 
-        var textEditor = config.ExternalTextEditor.Get() ?? "";
-        if (AppImguiHelpers.InputFilepath(Lang.Settings.ExternalTextEditor.Text, ref textEditor, FileFilters.ExecutableTool)) {
-            config.ExternalTextEditor.Set(textEditor);
-        }
-        ImguiHelpers.Tooltip(Lang.Settings.ExternalTextEditor.Tooltip);
+        ShowExternalToolSetting(config.ExternalTextEditor, FileFilters.ExecutableTool, Lang.Settings.ExternalTextEditor);
 
         var maxUndo = config.MaxUndoSteps.Get();
         if (ImGui.DragInt(Lang.Settings.MaxUndoSteps.Text, ref maxUndo, 0.25f, 0)) {
@@ -586,6 +585,34 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         }
         ImguiHelpers.Tooltip(text.Tooltip);
     }
+
+    private static void ShowExternalToolSetting(AppConfig.ClassSettingWrapper<string> setting, FileFilter[] filter, TextTooltip text)
+    {
+        var configPath = setting.Get();
+        var split = configPath?.Split('|', 2) ?? [];
+        var exePath = split.FirstOrDefault() ?? configPath ?? "";
+        var args = split.Skip(1).FirstOrDefault();
+        if (AppImguiHelpers.InputFilepath(text.Text, ref exePath, filter)) {
+            if (exePath.Contains('|')) {
+                split = exePath.Split('|', 2);
+                (exePath, args) = (split[0], split[1]);
+            }
+            if (string.IsNullOrEmpty(args)) {
+                setting.Set(exePath);
+            } else {
+                setting.Set($"{exePath}|{args}");
+            }
+        }
+        ImguiHelpers.Tooltip(text.Tooltip);
+        if (!string.IsNullOrEmpty(exePath)) {
+            args ??= "";
+            if (ImGui.InputText(Lang.Settings.ToolPathArgsLabel.Format(text.Text), ref args, 128)) {
+                setting.Set($"{exePath}|{args}");
+            }
+            ImguiHelpers.Tooltip(Lang.Settings.ToolPathArgsTooltip);
+        }
+    }
+
     private Dictionary<AppConfig.SettingWrapper<KeyBinding>, string> keyfilters = new();
 
     private bool ImguiKeybinding(ReadOnlySpan<byte> label, AppConfig.SettingWrapper<KeyBinding> setting)

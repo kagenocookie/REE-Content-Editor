@@ -68,6 +68,7 @@
     </None>
     <None Update="styles/*.*" CopyToOutputDirectory="PreserveNewest" />
     <None Update="i18n/*.*" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="scripts/*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -60,6 +60,14 @@ public static partial class Lang
         public static readonly TextTooltip RszPath = new ("RSZ Template JSON Path", "This setting should point to the correct rsz*.json for the chosen game.\nFor not yet fully supported games, you may need to manually provide the path to a valid RSZ JSON template before some files can be opened.");
         public static readonly TextTooltip RszPath_Custom = new ("Custom RSZ JSON Path", "The default RSZ json file is fetched automatically.\nChange this only if you know what you're doing - mainly for accessing files from older game versions");
         public static readonly TextTooltip ExternalTextEditor = new ("External Text Editor", "The preferred external tool to use for editing text files");
+
+        public static readonly InterpolatedString<TranslatableBase> ToolPathArgsLabel = "{0} Command Arguments";
+        public static readonly FixedString ToolPathArgsTooltip = """
+            The command line arguments to use when running the tool
+            {COMMAND} will be replaced with the predefined arguments.
+            If {COMMAND} is not present, it will be auto-appended at the end.
+            """;
+
         public static readonly FixedString ShowFPS = "Show FPS";
         public static readonly FixedString DateFormat = "Date Format";
 
@@ -92,6 +100,7 @@ public static partial class Lang
         public static readonly TextTooltip CacheFilepath = new TextTooltip("Cache file path", "The folder to use for general file caching. Must not be empty.");
         public static readonly TextTooltip ThumbnailCacheFilepath = new TextTooltip("Thumbnail cache file path", "The folder that cached thumbnails should be stored in. Must not be empty.");
         public static readonly TextTooltip BookmarksFilepath = new TextTooltip("User data file path", "The folder in which user created bookmarks and other data should be stored. Must not be empty.");
+        public static readonly TextTooltip BlenderPath = new TextTooltip("Blender Path", "The path to an installed blender executable. Will be used for interacting with .blend files.");
         public static readonly TextTooltip FontSize = new TextTooltip("UI Font Size", "The default font size for drawing text.");
         public static readonly TextTooltip MaxUnpackThreads = new TextTooltip("Max unpack threads", "The maximum number of threads to be used when unpacking.\nThe actual thread count is determined automatically by the .NET runtime.");
         public static readonly TextTooltip AutoExpand = new TextTooltip("Auto-expand field count", "RSZ object fields with less than the defined number of fields will initially auto expand.");

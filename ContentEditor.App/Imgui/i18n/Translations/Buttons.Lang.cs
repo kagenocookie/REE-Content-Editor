@@ -9,6 +9,7 @@ public static partial class Lang
         public static readonly FixedString Add = "Add";
         public static readonly FixedString Open = "Open";
         public static readonly FixedString Save = "Save";
+        public static readonly FixedString Rename = "Rename";
         public static readonly FixedString SaveAs = "Save As...";
         public static readonly FixedString SaveCopy = "Save Copy To...";
         public static readonly FixedString SaveToBundle = "Save to Bundle";
@@ -42,6 +43,8 @@ public static partial class Lang
         public static readonly IconString Redo = new IconString("{0} Redo", AppIcons.SI_Redo);
         public static readonly FixedString Create = "Create";
         public static readonly FixedString Reload = "Reload";
+        public static readonly FixedString ForceReload = "Force Reload";
+        public static readonly FixedString UpdateSceneCache = "Update Scene Cache";
         public static readonly FixedString NewWorkspace = "Open New Workspace";
         public static readonly FixedString Show_GameObject = "Show GameObject";
 

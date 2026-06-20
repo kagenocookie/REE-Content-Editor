@@ -62,10 +62,31 @@ public static class FileSystemUtils
         }
 
         var escapedFile = $"\"{fileOrFolder}\"";
-        Process.Start(new ProcessStartInfo(exePath) {
+        var (exe, args) = FormatProcessParams(exePath, escapedFile);
+        Process.Start(new ProcessStartInfo(exe) {
             UseShellExecute = false,
-            Arguments = escapedFile,
+            Arguments = args,
         });
+    }
+
+    public static (string exe, string args) FormatProcessParams(string toolPath, string ourArgs)
+    {
+        var split = toolPath?.Split('|', 2) ?? [];
+        var exePath = split.FirstOrDefault() ?? toolPath;
+        if (string.IsNullOrEmpty(exePath)) {
+            return default;
+        }
+
+        var args = split.Skip(1).FirstOrDefault();
+        if (string.IsNullOrEmpty(args)) {
+            args = ourArgs;
+        } else if (args.Contains("{COMMAND}")) {
+            args = args.Replace("{COMMAND}", ourArgs);
+        } else {
+            args = $"{args} {ourArgs}";
+        }
+
+        return (exePath, args);
     }
 
     public static void OpenURL(string url)

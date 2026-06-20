@@ -95,7 +95,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     public void ChangeMainMesh(string newMesh)
     {
-        if (Workspace.ResourceManager.TryResolveGameFile(newMesh, out var newFile) && newFile != Handle) {
+        if (Workspace.ResourceManager.TryGetOrLoadFile(newMesh, out var newFile) && newFile != Handle) {
             ChangeMainMesh(newFile);
         }
     }
@@ -104,6 +104,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     {
         Handle.References.Remove(this);
         Handle = newHandle;
+        MeshContexts[0].Handle = newHandle;
         ChangeMainMesh();
     }
 
@@ -119,6 +120,9 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     private void ChangeMainMesh(bool resetMdf = true)
     {
         var ctx = meshContexts.FirstOrDefault() ?? CreateAdditionalMesh(Handle);
+        if (ctx.Handle != Handle) {
+            ctx.Handle = Handle;
+        }
         if (!Handle.References.Contains(this)) Handle.References.Add(this);
         ctx.ChangeMesh(resetMdf);
         ctx.UI.RemoveChild(ctx.UI.GetChild<MeshFileHandler>());
@@ -775,21 +779,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 var window = EditorWindow.CurrentWindow!;
                 PlatformUtils.ShowFileDialog((files) => {
                     window.InvokeFromUIThread(() => {
-                        lastImportSourcePath = files[0];
-                        if (Workspace.ResourceManager.TryForceLoadFile(lastImportSourcePath, out var importedFile)) {
-                            using var _ = importedFile;
-                            var lodData = new MeshLodData().Read(meshContexts.FirstOrDefault()?.MeshFile.NativeMesh);
-                            var importAsset = importedFile.GetResource<CommonMeshResource>();
-                            var tmpHandler = new FileHandler(new MemoryStream(), Handle.Filepath);
-                            importAsset.NativeMesh.WriteTo(tmpHandler, false);
-                            Handle.Stream = tmpHandler.Stream.ToMemoryStream(disposeStream: false, forceCopy: true);
-                            Handle.Revert(Workspace);
-                            Handle.Modified = true;
-                            ChangeMainMesh();
-                            var ctx = meshContexts.First();
-                            ctx.AlignMatNamesToMdf();
-                            lodData.Apply(ctx.MeshFile.NativeMesh);
-                        }
+                        ForceReimportMainMesh(files[0]);
                     });
                 }, lastImportSourcePath, filters: FileFilters.MeshFilesAll);
             }
@@ -848,6 +838,10 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             }
             ImguiHelpers.Tooltip("Enable this to import the material names from the mesh name (separated with double underscore e.g. `Group_1__Head_mat`).\nIf unchecked, the actual material name is used instead."u8);
 
+            if (Handle.FileExtension.SequenceEqual("blend") || Path.GetExtension(lastImportSourcePath) == ".blend") {
+                ShowBlendImportSettings();
+            }
+
             ImGui.SeparatorText("Export Settings"u8);
             scale = AppConfig.Settings.Import.ExportScale;
             if (ImGui.InputFloat("Export Scale"u8, ref scale, "%.2f")) {
@@ -865,6 +859,165 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
             ImGui.Spacing();
             ImGui.Spacing();
+        }
+    }
+
+    private void ForceReimportMainMesh(string sourcePath)
+    {
+        lastImportSourcePath = sourcePath;
+        if (Workspace.ResourceManager.TryForceLoadFile(lastImportSourcePath, out var importedFile)) {
+            using var _ = importedFile;
+            var lodData = new MeshLodData().Read(meshContexts.FirstOrDefault()?.MeshFile.NativeMesh);
+            var importAsset = importedFile.GetResource<CommonMeshResource>();
+            var tmpHandler = new FileHandler(new MemoryStream(), Handle.Filepath);
+            importAsset.NativeMesh.WriteTo(tmpHandler, false);
+            Handle.Stream = tmpHandler.Stream.ToMemoryStream(disposeStream: false, forceCopy: true);
+            Handle.Revert(Workspace);
+            Handle.Modified = true;
+            ChangeMainMesh();
+            var ctx = meshContexts.First();
+            ctx.AlignMatNamesToMdf();
+            lodData.Apply(ctx.MeshFile.NativeMesh);
+        }
+    }
+
+    private BlendFileImportSettings? blendSettings;
+    private string? blendSettingsLoadError;
+
+    private void ShowBlendImportSettings()
+    {
+        var blendPath = Path.GetExtension(lastImportSourcePath) == ".blend" ? lastImportSourcePath ?? Handle.Filepath : Handle.Filepath;
+
+        ImGui.SeparatorText(Lang.MeshViewer.BlendImportSettings);
+        if (blendSettingsLoadError != null) {
+            ImGui.TextColored(Colors.Error, blendSettingsLoadError);
+            if (!ImGui.Button(Lang.Buttons.Reload)) return;
+
+            blendSettingsLoadError = null;
+        }
+
+        var settingsPath = blendPath + ".import_meta.json";
+        if (blendSettings == null) {
+            if (!File.Exists(settingsPath)) {
+                ImGui.TextColored(Colors.Warning, Lang.MeshViewer.BlendImportSettingsMissing);
+                return;
+            }
+
+            if (!settingsPath.TryDeserializeJsonFile(out blendSettings, out blendSettingsLoadError) || blendSettings == null) {
+                Logger.Error("Failed to load .blend file import settings " + blendSettingsLoadError);
+                return;
+            }
+        }
+
+        if (ImGui.Button(Lang.Buttons.UpdateSceneCache)) {
+            blendSettings.CachedSceneInfo = null;
+            blendSettings.SaveToFile(settingsPath);
+            blendSettings = null;
+            MeshLoader.TryUpdateBlendFileSceneInfo(blendPath);
+            return;
+        }
+        var scene = blendSettings.CachedSceneInfo;
+
+        if (scene == null) {
+            ImGui.TextColored(Colors.Warning, Lang.MeshViewer.BlendSceneUnavailable);
+            ImGui.SameLine();
+            if (ImGui.Button(Lang.Buttons.Reload)) {
+                blendSettings = null;
+            }
+            return;
+        }
+
+        if (blendSettings.Configs.Count > 0) {
+            var names = blendSettings.Configs.Select(a => a.Name).ToArray();
+            var selected = blendSettings.CurrentConfig;
+            if (ImguiHelpers.ValueCombo(Lang.MeshViewer.ImportConfig.String, names, names, ref selected)) {
+                blendSettings.CurrentConfig = selected;
+                blendSettings.SaveToFile(settingsPath);
+            }
+        }
+        ImGui.SameLine();
+        if (ImGui.Button(Lang.MeshViewer.CreateNewBlendImportConfig)) {
+            blendSettings.CurrentConfig = "ImportConfig".GetUniqueName(nn => blendSettings.Configs.Any(c => c.Name == nn));
+            blendSettings.Configs.Add(new BlendFileImportConfig() { Name = blendSettings.CurrentConfig });
+            blendSettings.SaveToFile(settingsPath);
+        }
+        ImGui.SameLine();
+        if (ImGui.Button(Lang.Buttons.Rename)) {
+            meshContexts[0].UI.StateBool = true;
+            meshContexts[0].UI.InputClassname = blendSettings.CurrentConfig ?? "";
+        }
+        var currentConfig = blendSettings.Configs.FirstOrDefault(c => c.Name == blendSettings.CurrentConfig);
+        if (currentConfig != null && meshContexts[0].UI.StateBool) {
+            var str = meshContexts[0].UI.InputClassname ?? "";
+            if (ImGui.InputText(Lang.MeshViewer.ImportConfigRename, ref str, 64)) {
+                meshContexts[0].UI.InputClassname = str;
+            }
+            using (var _ = ImguiHelpers.Disabled(string.IsNullOrWhiteSpace(meshContexts[0].UI.InputClassname))) {
+                if (ImGui.Button(Lang.Buttons.Confirm)) {
+                    meshContexts[0].UI.StateBool = false;
+                    currentConfig.Name = blendSettings.CurrentConfig = meshContexts[0].UI.InputClassname;
+                    blendSettings.SaveToFile(settingsPath);
+                }
+            }
+            ImGui.SameLine();
+            if (ImGui.Button(Lang.Buttons.Cancel)) {
+                meshContexts[0].UI.StateBool = false;
+            }
+        }
+        ImGui.Separator();
+
+        if (currentConfig != null) {
+            if (scene.Armatures.Count > 0) {
+                var arms = scene.Armatures.Select(a => a.Name)
+                    .Concat(scene.StandaloneObjects.Count > 0 ? ["<No armature>"] : [])
+                    .ToArray();
+
+                var selectedIdx = scene.Armatures.FindIndex(a => a.Name == currentConfig.SelectedArmature);
+                if (ImGui.Combo(Lang.MeshViewer.Armature.String, ref selectedIdx, arms, arms.Length)) {
+                    currentConfig.SelectedArmature = selectedIdx >= arms.Length ? null : arms[selectedIdx];
+                    blendSettings.SaveToFile(settingsPath);
+                }
+            }
+
+            var boolOpt = currentConfig.IncludeTangents;
+            if (ImGui.Checkbox(Lang.MeshViewer.IncludeTangents, ref boolOpt)) {
+                currentConfig.IncludeTangents = boolOpt;
+                blendSettings.SaveToFile(settingsPath);
+            }
+            ImguiHelpers.Tooltip(Lang.MeshViewer.IncludeTangentsToolTip);
+
+            boolOpt = currentConfig.ApplyRotations;
+            if (ImGui.Checkbox(Lang.MeshViewer.ApplyRotations, ref boolOpt)) {
+                currentConfig.ApplyRotations = boolOpt;
+                blendSettings.SaveToFile(settingsPath);
+            }
+            ImguiHelpers.Tooltip(Lang.MeshViewer.ApplyRotationsToolTip);
+
+            ImGui.SameLine();
+            var importAll = currentConfig.ImportAllMeshes;
+            if (ImGui.Checkbox(Lang.MeshViewer.ImportAllMeshes, ref importAll)) {
+                currentConfig.ImportAllMeshes = importAll;
+                blendSettings.SaveToFile(settingsPath);
+            }
+
+            using var _ = ImguiHelpers.Disabled(importAll);
+            var armature = scene.Armatures.FirstOrDefault(a => a.Name == currentConfig.SelectedArmature);
+            var objs = armature == null ? scene.StandaloneObjects : armature.Objects;
+            foreach (var obj in objs) {
+                var imported = importAll || currentConfig.ImportedObjects.Contains(obj.Name);
+                if (ImGui.Checkbox(obj.Name, ref imported)) {
+                    if (imported) {
+                        currentConfig.ImportedObjects.Add(obj.Name);
+                    } else {
+                        currentConfig.ImportedObjects.Remove(obj.Name);
+                    }
+                    blendSettings.SaveToFile(settingsPath);
+                }
+            }
+        }
+
+        if (ImGui.Button(Lang.Buttons.ForceReload)) {
+            ForceReimportMainMesh(blendPath);
         }
     }
 
@@ -906,7 +1059,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 foreach (var c in meshContexts) c.Animator?.Unload();
                 SetAnimation(ctx.animationSourceFile);
             }
-            ImguiHelpers.Tooltip("Force reload");
+            ImguiHelpers.Tooltip(Lang.Buttons.ForceReload);
         }
         ImGui.SameLine();
         AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/Animation-tools", true);

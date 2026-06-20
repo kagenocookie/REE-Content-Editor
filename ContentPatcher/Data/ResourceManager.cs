@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.Json.Nodes;
 using ContentEditor;
+using ContentEditor.App.FileLoaders;
 using ContentEditor.Core;
 using ReeLib;
 using ReeLib.Common;
@@ -988,6 +989,9 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         return handle;
     }
 
+    private readonly Dictionary<string, string> _importExceptions = new();
+    public string? GetLastFileImportError(string filepath) => _importExceptions.GetValueOrDefault(filepath);
+
     private FileHandle? CreateFileHandleInternal(string filepath, string? targetPath, Stream stream, bool allowDisposeStream = true)
     {
         var format = PathUtils.ParseFileFormat(filepath);
@@ -1009,6 +1013,10 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             }
         } catch (NotSupportedException e) {
             Logger.Error($"Unsupported file {filepath}: {e.Message}");
+            return null;
+        } catch (FileImportException e) {
+            Logger.Error($"Failed to load file {filepath}: {e.Message}");
+            _importExceptions[filepath] = e.Message;
             return null;
         } catch (Exception e) {
             Logger.Error(e, $"Failed to load file {filepath}");

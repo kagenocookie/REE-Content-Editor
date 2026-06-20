@@ -1,7 +1,10 @@
 using System.Globalization;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Assimp;
 using Assimp.Configs;
+using ContentEditor.App.Blender;
+using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
 
@@ -18,7 +21,7 @@ public partial class MeshLoader : IFileLoader,
         return format.format == KnownFileFormats.Mesh || MeshViewer.IsSupportedFileExtension(filepath);
     }
 
-    public static readonly HashSet<string> StandardFileExtensions = [".glb", ".gltf", ".obj", ".fbx", ".stl", ".ply"];
+    public static readonly HashSet<string> StandardFileExtensions = [".glb", ".gltf", ".obj", ".fbx", ".stl", ".ply", ".blend"];
 
     public IResourceFilePatcher? CreateDiffHandler() => null;
 
@@ -75,6 +78,16 @@ public partial class MeshLoader : IFileLoader,
 				throw new NotSupportedException("Unknown mesh type " + magic.ToString("X"));
             }
         } else {
+            var filepath = handle.Filepath;
+            var ext = Path.GetExtension(handle.Filepath.AsSpan());
+            var useDirectFilepath = false;
+            if (ext.SequenceEqual(".blend")) {
+                filepath = HandleBlenderImportConversion(filepath);
+                if (filepath == null) {
+                    return null;
+                }
+                useDirectFilepath = true;
+            }
             using AssimpContext importer = new AssimpContext();
             importer.SetConfig(new MeshVertexLimitConfig(ushort.MaxValue));
             importer.SetConfig(new VertexBoneWeightLimitConfig(16));
@@ -85,14 +98,14 @@ public partial class MeshLoader : IFileLoader,
                 PostProcessSteps.GenerateUVCoords |
                 PostProcessSteps.CalculateTangentSpace |
                 PostProcessSteps.SplitLargeMeshes;
-            if (Path.GetExtension(handle.Filepath) == ".gltf" && File.Exists(Path.ChangeExtension(handle.Filepath, ".bin"))) {
-                importedScene = importer.ImportFile(handle.Filepath, importFlags);
+            if (useDirectFilepath || ext == ".gltf" && File.Exists(Path.ChangeExtension(filepath, ".bin"))) {
+                importedScene = importer.ImportFile(filepath, importFlags);
             } else {
-                importedScene = importer.ImportFileFromStream(handle.Stream, importFlags, Path.GetExtension(handle.Filepath));
+                importedScene = importer.ImportFileFromStream(handle.Stream, importFlags, Path.GetExtension(filepath));
             }
 
             if (!importedScene.HasMeshes && !importedScene.HasAnimations) {
-                Logger.Error("No meshes or animations found in file " + handle.Filepath);
+                Logger.Error("No meshes or animations found in file " + filepath);
                 return null;
             }
 
@@ -106,6 +119,118 @@ public partial class MeshLoader : IFileLoader,
             resource.PreloadMeshBuffers();
 
             return resource;
+        }
+    }
+
+    public static bool TryUpdateBlendFileSceneInfo(string blendFilepath)
+    {
+        var importSettingsPath = blendFilepath + ".import_meta.json";
+        if (!File.Exists(importSettingsPath) || !importSettingsPath.TryDeserializeJsonFile<BlendFileImportSettings>(out var settings, out var err)) {
+            settings = new BlendFileImportSettings();
+            settings.SaveToFile(importSettingsPath);
+        }
+
+        return TryUpdateBlendFileSceneInfo(blendFilepath, settings);
+    }
+
+    private static bool TryUpdateBlendFileSceneInfo(string blendFilepath, BlendFileImportSettings settings)
+    {
+        settings.CacheTimeUtc = DateTime.UtcNow;
+        settings.CachedSceneInfo = BlenderInterop.GetSceneInfoAsync(blendFilepath).Result;
+        if (settings.CachedSceneInfo == null) {
+            return false;
+        }
+
+        foreach (var arm in settings.CachedSceneInfo.Armatures) {
+            var conf = settings.Configs.FirstOrDefault(c => c.SelectedArmature == arm.Name || c.Name == arm.Name);
+            if (conf != null) continue;
+
+            conf = new BlendFileImportConfig() {
+                SelectedArmature = arm.Name,
+                Name = arm.Name,
+                ImportAllMeshes = true,
+            };
+            settings.Configs.Add(conf);
+        }
+        if (settings.Configs.Count == 0) {
+            settings.Configs.Add(new BlendFileImportConfig() { Name = "default" });
+        }
+        settings.CurrentConfig = settings.Configs[0].Name;
+        settings.SaveToFile(blendFilepath + ".import_meta.json");
+        return true;
+    }
+
+    private static string? HandleBlenderImportConversion(string filepath)
+    {
+        if (string.IsNullOrEmpty(AppConfig.Instance.BlenderPath.Get())) {
+            throw new FileImportException("Currently unable to open .blend files, blender path is not configured.");
+        }
+
+        var importSettingsPath = filepath + ".import_meta.json";
+        if (!File.Exists(importSettingsPath) || !importSettingsPath.TryDeserializeJsonFile<BlendFileImportSettings>(out var settings, out var err)) {
+            settings = new BlendFileImportSettings();
+            settings.SaveToFile(importSettingsPath);
+        }
+
+        var writeTimeUtc = new FileInfo(filepath).LastWriteTimeUtc;
+        if (settings.CachedSceneInfo == null || writeTimeUtc > settings.CacheTimeUtc) {
+            if (!TryUpdateBlendFileSceneInfo(filepath, settings) || settings.CachedSceneInfo == null) {
+                throw new FileImportException("Could not retrieve .blend file scene info. File cannot be imported.");
+            }
+        }
+
+        BlendFileImportConfig? importConf = null;
+        if (settings.CurrentConfig != null) importConf = settings.Configs.FirstOrDefault(c => c.Name == settings.CurrentConfig);
+        importConf ??= settings.Configs.FirstOrDefault(c => c.Name == "default");
+
+        if (importConf == null) {
+            importConf = new BlendFileImportConfig();
+            if (settings.CachedSceneInfo.Armatures.Count > 0) {
+                importConf.SelectedArmature = settings.CachedSceneInfo.Armatures[0].Name;
+                importConf.Name = "default";
+                settings.Configs.Add(importConf);
+                settings.CurrentConfig = importConf.Name;
+                settings.SaveToFile(importSettingsPath);
+            }
+        }
+
+        var whitelist = new List<string>();
+        if (importConf.SelectedArmature != null) {
+            whitelist.Add(importConf.SelectedArmature);
+            if (importConf.ImportAllMeshes) {
+                var allMeshes = settings.CachedSceneInfo.Armatures.FirstOrDefault(a => a.Name == importConf.SelectedArmature)?.Objects.Select(o => o.Name);
+                if (allMeshes?.Any() == true)
+                    whitelist.AddRange(allMeshes);
+            } else {
+                whitelist.AddRange(importConf.ImportedObjects);
+            }
+        } else if (importConf.ImportAllMeshes) {
+            if (settings.CachedSceneInfo.Armatures.Count > 0) {
+                whitelist.AddRange(settings.CachedSceneInfo.StandaloneObjects.Select(o => o.Name));
+            }
+        } else {
+            whitelist.AddRange(importConf.ImportedObjects);
+        }
+
+        var whitelistStr = whitelist.Count == 0 ? "" : string.Join(", ", whitelist.Select(m => $"'{m}'"));
+        var outputPath = $"{filepath.NormalizeFilepath()}.{importConf.Name}.glb";
+        var importScript = BlenderInterop.GetScript("blender_mesh_import.py");
+
+        importScript = importScript
+            .Replace("'__IMPORT_WHITELIST__'", whitelistStr)
+            .Replace("__INCLUDE_TANGENTS__", importConf.IncludeTangents ? "True": "False")
+            .Replace("__APPLY_ROTATION__", importConf.ApplyRotations ? "True": "False")
+            .Replace("__OUTPUT_PATH__", outputPath);
+        if (File.Exists(outputPath)) {
+            File.Delete(outputPath);
+        }
+        try {
+            var exec = BlenderInterop.ExecuteBlenderScriptAsync(filepath, importScript, true, outputPath);
+            exec.Wait();
+            return outputPath;
+        } catch (Exception e) {
+            Logger.Error(e);
+            return null;
         }
     }
 
@@ -166,4 +291,30 @@ public partial class MeshLoader : IFileLoader,
     {
         return handle.GetResource<CommonMeshResource>().NativeMesh;
     }
+}
+
+public class BlendFileImportSettings
+{
+    public string? CurrentConfig { get; set; }
+    public DateTime CacheTimeUtc { get; set; }
+    public SceneInfo? CachedSceneInfo { get; set; }
+    public List<BlendFileImportConfig> Configs { get; set; } = [];
+
+    public void SaveToFile(string importSettingsPath)
+    {
+        using var fs = File.Create(importSettingsPath);
+        JsonSerializer.Serialize(fs, this, JsonConfig.configJsonOptions);
+    }
+}
+
+public class BlendFileImportConfig
+{
+    public string Name { get; set; } = "";
+    public bool IncludeTangents { get; set; }
+    public bool ApplyRotations { get; set; } = true;
+    public bool ImportAllMeshes { get; set; } = true;
+    public bool ImportTextures { get; set; }
+
+    public string? SelectedArmature { get; set; }
+    public List<string> ImportedObjects { get; set; } = [];
 }

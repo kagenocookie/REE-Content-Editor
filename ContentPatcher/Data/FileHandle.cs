@@ -30,6 +30,7 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
     }
 
     public ReadOnlySpan<char> Filename => Path.GetFileName(Filepath.AsSpan());
+    public ReadOnlySpan<char> FileExtension => PathUtils.GetExtensionWithoutPeriod(Filepath.AsSpan());
     public REFileFormat Format => PathUtils.ParseFileFormat(TargetPath ?? Filepath);
 
     public event Action? Saved;

@@ -262,6 +262,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             } else if (Path.IsPathRooted(filename) && !File.Exists(filename)) {
                 AddSubwindow(new ErrorModal(Lang.Errors.FileLoad_FileNotFound_Title, Lang.Errors.FileLoad_FileNotFound.FormatRef(filename)));
             } else {
+                var importError = workspace.ResourceManager.GetLastFileImportError(filename);
+                if (importError != null) {
+                    AddSubwindow(new ErrorModal(Lang.Errors.FileLoad_ImportError, importError));
+                    continue;
+                }
+
                 var fmt = PathUtils.ParseFileFormat(filename).format;
                 var canLoad = workspace.ResourceManager.CanLoadFile(filename);
                 if (!canLoad) {

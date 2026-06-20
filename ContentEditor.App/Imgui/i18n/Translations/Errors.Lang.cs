@@ -15,6 +15,7 @@ public static partial class Lang
         public static readonly FixedString FileLoad_FileNotFound_Title = "File not found";
         public static readonly InterpolatedString<string> FileLoad_FileNotFound = new("File could not be found:\n{0}");
         public static readonly FixedString FileLoad_Unsupported_Title = "Unsupported file";
+        public static readonly FixedString FileLoad_ImportError = "Failed to import";
         public static readonly FixedString FileLoad_InvalidArchive = "The given archive files couldn't be processed into bundles";
         public static readonly InterpolatedString<int, string> FileLoad_UnsupportedFormat = new("This file format ({0}) is not yet supported:\n{1}") { Converter1 = (f) => ((KnownFileFormats)f).ToString() };
         public static readonly InterpolatedString<string> FileLoad_UnsupportedFormatRSZ = new("""
