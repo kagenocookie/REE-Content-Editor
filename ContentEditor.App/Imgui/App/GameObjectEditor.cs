@@ -223,7 +223,9 @@ public class ComponentDataHandler : IObjectUIHandler
                         context.Revert();
                         context.ResetState();
                         // some components throw this while being reverted. data seems to be fine if we catch this though
-                    } catch (NotImplementedException) {
+                    } catch (NotImplementedException) { 
+                    } catch (Exception e) {
+                        Logger.Error("Failed to revert value: " + e.Message);
                     }
                 }
                 ImGui.PopStyleColor();
