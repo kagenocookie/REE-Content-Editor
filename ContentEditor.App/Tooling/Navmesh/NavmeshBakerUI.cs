@@ -30,6 +30,8 @@ public class NavmeshBakerUI(Scene baseScene, FileHandle mapFileHandle, UIContext
     private string colliderFilter = "";
     private bool forceReset = true;
 
+    private static HashSet<string> SupportedShapes = ["via.physics.MeshShape", "via.physics.CylinderShape", "via.physics.AabbShape", "via.physics.BoxShape"];
+
     public override void OnIMGUI()
     {
         ImGui.Text("Base scene: " + BaseScene.ResourcePath);
@@ -81,8 +83,8 @@ public class NavmeshBakerUI(Scene baseScene, FileHandle mapFileHandle, UIContext
                     if (colliders == null) continue;
 
                     foreach (var collider in colliders.EnumerableColliders) {
-                        // showing only mesh shapes for now until we add support for other collider types
-                        if (RszFieldCache.Collider.Shape.Get(collider).RszClass.name != "via.physics.MeshShape") continue;
+                        // if (RszFieldCache.Collider.Shape.Get(collider).RszClass.name != "via.physics.MeshShape") continue;
+                        if (!SupportedShapes.Contains(RszFieldCache.Collider.Shape.Get(collider).RszClass.name)) continue;
 
                         var cfil = RszFieldCache.Collider.CollisionFilter.Get(collider);
                         if (!string.IsNullOrEmpty(cfil)) cfils.Add(cfil);
@@ -150,6 +152,21 @@ public class NavmeshBakerUI(Scene baseScene, FileHandle mapFileHandle, UIContext
                             }
                             break;
                         }
+                    case "via.physics.BoxShape":
+                        geoList.Add(new ShapeGeomProvider(RszFieldCache.BoxShape.Box.Get(shape)));
+                        break;
+                    case "via.physics.AabbShape":
+                        geoList.Add(new ShapeGeomProvider(RszFieldCache.AabbShape.Aabb.Get(shape)));
+                        break;
+                    // case "via.physics.SphereShape":
+                    //     geoList.Add(new ShapeGeomProvider(RszFieldCache.SphereShape.Sphere.Get(shape)));
+                    //     break;
+                    // case "via.physics.CapsuleShape":
+                    //     geoList.Add(new ShapeGeomProvider(RszFieldCache.CapsuleShape.Capsule.Get(shape)));
+                    //     break;
+                    case "via.physics.CylinderShape":
+                        geoList.Add(new ShapeGeomProvider(RszFieldCache.CylinderShape.Cylinder.Get(shape)));
+                        break;
                     default:
                         Logger.Warn("Unsupported collider shape type for navmesh bake: " + shape.RszClass.name);
                         break;

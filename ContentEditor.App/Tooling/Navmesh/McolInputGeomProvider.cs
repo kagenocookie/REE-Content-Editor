@@ -1,15 +1,16 @@
-using System.Numerics;
-using System.Runtime.InteropServices;
+using ContentEditor.App.Graphics;
 using DotRecast.Core.Numerics;
 using DotRecast.Recast;
 using DotRecast.Recast.Geom;
 using ReeLib;
+using ReeLib.via;
 
 namespace ContentEditor.App.Tooling.Navmesh;
 
 public class McolInputGeomProvider : IInputGeomProvider
 {
     public McolFile Mcol { get; }
+    private AABB bounds;
 
     public McolInputGeomProvider(McolFile mcol)
     {
@@ -26,18 +27,22 @@ public class McolInputGeomProvider : IInputGeomProvider
         mesh = BuildMesh(mcol.bvh);
     }
 
-    private static RcTriMesh BuildMesh(BvhData bvh)
+    private RcTriMesh BuildMesh(BvhData bvh)
     {
-        var indices = new int[bvh.triangles.Count * 3];
+        ShapeBuilder builder = new(ShapeBuilder.GeometryType.Filled, MeshLayout.PositionOnly);
         for (int i = 0; i < bvh.triangles.Count; ++i) {
-            indices[i * 3 + 0] = bvh.triangles[i].posIndex1;
-            indices[i * 3 + 1] = bvh.triangles[i].posIndex2;
-            indices[i * 3 + 2] = bvh.triangles[i].posIndex3;
+            var tri = bvh.triangles[i];
+            builder.Add(new Triangle(bvh.vertices[tri.posIndex1], bvh.vertices[tri.posIndex2], bvh.vertices[tri.posIndex3]));
         }
-        var maxVertIndex = indices.Max() + 1;
-        // TODO handle other shapes
+        foreach (var shape in bvh.boxes) {
+            builder.Add(shape.box);
+        }
+        float[] vertFloats = [];
+        int[] indices = [];
+        AABB shapeBounds = AABB.MaxMin;
+        builder.UpdateMesh(ref vertFloats, ref indices, ref shapeBounds);
+        bounds = AABB.Combine([bounds, bvh.tree?.bounds ?? AABB.MaxMin]);
 
-        var vertFloats = MemoryMarshal.Cast<Vector3, float>(CollectionsMarshal.AsSpan(bvh.vertices).Slice(0, maxVertIndex)).ToArray();
         return new RcTriMesh(vertFloats, indices);
     }
 
@@ -55,12 +60,12 @@ public class McolInputGeomProvider : IInputGeomProvider
 
     public RcVec3f GetMeshBoundsMax()
     {
-        return Mcol.bvh?.tree?.bounds.maxpos ?? new Vector3();
+        return bounds.maxpos;
     }
 
     public RcVec3f GetMeshBoundsMin()
     {
-        return Mcol.bvh?.tree?.bounds.minpos ?? new Vector3();
+        return bounds.minpos;
     }
 
     public void AddConvexVolume(RcConvexVolume convexVolume)
