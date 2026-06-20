@@ -48,7 +48,7 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
                 window.InvokeFromUIThread(() => {
                     ExportMcolToMesh(File.bvh, fn);
                 });
-            }, lastFilepath ?? Path.ChangeExtension(Handle.Filename.ToString(), ".glb"), FileFilters.MeshFile);
+            }, lastFilepath ?? Path.ChangeExtension(Handle.Filename.ToString(), ".glb"), FileFilters.MeshFilesNoBlend);
 
         }
         ImGui.SameLine();
@@ -61,7 +61,7 @@ public class McolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
                     Handle.Modified = true;
                     context.ClearChildren();
                 });
-            }, lastFilepath ?? Path.ChangeExtension(Handle.Filename.ToString(), ".glb"), FileFilters.MeshFile);
+            }, lastFilepath ?? Path.ChangeExtension(Handle.Filename.ToString(), ".glb"), FileFilters.MeshFilesAllNoBlend);
         }
 
         ImGui.Spacing();

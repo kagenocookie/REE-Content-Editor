@@ -430,13 +430,15 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             addCollectionCtx.ResetState();
         }
         if (!string.IsNullOrEmpty(addCollectionPath)) {
-            if (Workspace.ResourceManager.TryResolveGameFile(addCollectionPath, out var resolvedFile) && resolvedFile.Format.format == KnownFileFormats.Mesh) {
+            if (Workspace.ResourceManager.TryGetOrLoadFile(addCollectionPath, out var resolvedFile) && resolvedFile.Format.format == KnownFileFormats.Mesh) {
                 if (!meshContexts.Any(c => c.Handle == resolvedFile) && ImGui.Button($"{AppIcons.SI_GenericAdd} Add")) {
                     AppConfig.Settings.RecentMeshes.AddRecent(Workspace.Game, addCollectionPath);
                     CreateAdditionalMesh(resolvedFile).ChangeMesh(true);
                 }
             } else {
-                if (Path.IsPathFullyQualified(addCollectionPath)) {
+                if (resolvedFile != null && resolvedFile.Format.format != KnownFileFormats.Mesh) {
+                    ImGui.TextColored(Colors.Warning, "External mesh files can't be opened directly under mesh collections.\nOpen it separately and convert to .mesh first."u8);
+                } else if (Path.IsPathFullyQualified(addCollectionPath)) {
                     ImGui.TextColored(Colors.Warning, """
                         Can't resolve .mesh file from the given path.
                         Re-check if you have the right file path and if the mesh is actually valid.
@@ -768,7 +770,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                     } finally {
                         exportInProgress = false;
                     }
-                }, PathUtils.GetFilenameWithoutExtensionOrVersion(Handle.Filename).ToString(), FileFilters.MeshFile);
+                }, PathUtils.GetFilenameWithoutExtensionOrVersion(Handle.Filename).ToString(), FileFilters.MeshFilesNoBlend);
             } else {
                 throw new NotImplementedException();
             }
@@ -1720,7 +1722,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
         animationPickerContext ??= UI.AddChild<MeshViewerContext, string>(
             "Animation File",
             this,
-            new ResourcePathPicker(Workspace, FileFilters.MeshFile, KnownFileFormats.MotionList, KnownFileFormats.Motion) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly },
+            new ResourcePathPicker(Workspace, FileFilters.MeshFilesAllNoBlend, KnownFileFormats.MotionList, KnownFileFormats.Motion) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly },
             (v) => v!.animationSourceFile,
             (v, p) => v.animationSourceFile = p ?? "");
 

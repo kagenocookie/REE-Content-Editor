@@ -28,8 +28,10 @@ public static class FileFilters
     public static readonly FileFilter[] ListFile = [new FileFilter("List file", "list"), new FileFilter("Any", "*")];
     public static readonly FileFilter[] Motlist = [new FileFilter("MOTLIST", "motlist")];
     public static readonly FileFilter[] GlbFile = [new FileFilter("GLB", "glb")];
-    public static readonly FileFilter[] MeshFile = [new FileFilter("FBX", "fbx"), new FileFilter("GLTF", "gltf"), new FileFilter("Blend", "blend"), ..GlbFile];
+    public static readonly FileFilter[] MeshFile = [new FileFilter("Mesh", "mesh")];
+    public static readonly FileFilter[] MeshFilesNoBlend = [new FileFilter("FBX", "fbx"), new FileFilter("GLTF", "gltf"), ..GlbFile];
     public static readonly FileFilter[] MeshFilesAll = [new FileFilter("Any mesh file", "fbx", "glb", "gltf", "blend"), ..MeshFile];
+    public static readonly FileFilter[] MeshFilesAllNoBlend = [new FileFilter("Any mesh file", "fbx", "glb", "gltf"), ..MeshFilesNoBlend];
 
     public static readonly FileFilter[] CsvJsonFile = [new FileFilter("CSV", "csv"), new FileFilter("JSON", "json")];
     public static readonly FileFilter[] CsvJsonFileAll = [new FileFilter("Supported message formats", "csv", "json"), new FileFilter("CSV", "csv"), new FileFilter("JSON", "json")];

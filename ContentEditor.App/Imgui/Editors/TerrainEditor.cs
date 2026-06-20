@@ -45,7 +45,7 @@ public class TerrainEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
                 window.InvokeFromUIThread(() => {
                     McolEditor.ExportMcolToMesh(File.bvh, fn);
                 });
-            }, lastFilepath ?? Handle.Filename.ToString(), FileFilters.MeshFile);
+            }, lastFilepath ?? Handle.Filename.ToString(), FileFilters.MeshFilesNoBlend);
         }
         ImGui.SameLine();
         if (ImGui.Button("Import mesh ...")) {
@@ -56,7 +56,7 @@ public class TerrainEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
                     ImportGlbIntoTerrain(File, fn);
                     context.ClearChildren();
                 });
-            }, lastFilepath ?? Handle.Filename.ToString(), FileFilters.MeshFilesAll);
+            }, lastFilepath ?? Handle.Filename.ToString(), FileFilters.MeshFilesAllNoBlend);
         }
 
         ImGui.Spacing();
