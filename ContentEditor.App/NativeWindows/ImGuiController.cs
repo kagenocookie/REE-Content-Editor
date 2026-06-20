@@ -199,8 +199,8 @@ public class ImGuiController : IDisposable
         io.DisplaySize = new Vector2(_windowWidth, _windowHeight);
 
         if (_windowWidth > 0 && _windowHeight > 0) {
-            io.DisplayFramebufferScale = new Vector2(_view.FramebufferSize.X / _windowWidth,
-                _view.FramebufferSize.Y / _windowHeight);
+            io.DisplayFramebufferScale = new Vector2(_view.FramebufferSize.X / (float)_windowWidth,
+                _view.FramebufferSize.Y / (float)_windowHeight);
         }
 
         io.DeltaTime = deltaSeconds; // DeltaTime is in seconds.
