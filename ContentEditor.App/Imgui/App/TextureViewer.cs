@@ -84,6 +84,16 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
 
     private record struct FormatPreset(string name, DxgiFormat format, MipGenOptions mips);
 
+    private static readonly TextureChannel[] ChannelOrder =
+    {
+        TextureChannel.RGBA,
+        TextureChannel.RGB,
+        TextureChannel.Red,
+        TextureChannel.Green,
+        TextureChannel.Blue,
+        TextureChannel.Alpha
+    };
+
     public TextureViewer(string path)
     {
         texturePath = path;
@@ -164,11 +174,10 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
             ImGui.SetNextWindowSize(new Vector2(texture.Width, texture.Height + ImGui.GetFrameHeight()));
         }
         var filename = fileHandle != null ? PathUtils.GetFilepathWithNormalExtensionOnly(fileHandle.Filename) : Path.GetFileName(texturePath.AsSpan());
-        if (!ImguiHelpers.BeginWindow(data, $"Tex: {filename}###Tex_{data.ID}", ImGuiWindowFlags.MenuBar | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)) {
+        if (!ImguiHelpers.BeginWindow(data, $"{AppIcons.SI_FileType_TEX} Texture: {filename}###Tex_{data.ID}", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)) {
             EditorWindow.CurrentWindow?.CloseSubwindow(data);
             return;
         }
-        ShowMenu();
         ImGui.BeginGroup();
         OnIMGUI();
         ImGui.EndGroup();
@@ -189,17 +198,6 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
         ImGui.Separator();
         ImGui.Spacing();
         ShowTexture();
-    }
-
-    private void ShowMenu()
-    {
-        if (ImGui.BeginMenuBar()) {
-            if (ImGui.BeginMenu($"{AppIcons.SI_GenericIO} Import / Export")) {
-                ShowExportMenu();
-                ImGui.EndMenu();
-            }
-            ImGui.EndMenuBar();
-        }
     }
 
     private bool SaveTextureToFile(string file)
@@ -491,6 +489,16 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
 
     private void ShowToolbar()
     {
+        if (ImGui.Button($"{AppIcons.SI_GenericIO} Import / Export")) {
+            ImGui.OpenPopup("IOPopup");
+        }
+        if (ImGui.BeginPopup("IOPopup")) {
+            ShowExportMenu();
+            ImGui.EndPopup();
+        }
+        ImGui.SameLine();
+        ImguiHelpers.VerticalSeparator();
+        ImGui.SameLine();
         if (texture != null) {
             using (var _ = ImguiHelpers.Disabled(fileHandle?.Modified != true || !File.Exists(texturePath))) {
                 if (ImGui.Button($"{AppIcons.SI_Save}")) {
@@ -625,6 +633,9 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
             ImGui.SameLine();
             ImguiHelpers.VerticalSeparator();
             ImGui.SameLine();
+
+            UpdateChannelsViaHotkeys();
+
             ImGui.Text("Channels:");
             ImGui.SameLine();
             if (ImGui.RadioButton("RGBA", currentChannel == TextureChannel.RGBA)) {
@@ -773,6 +784,20 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
         ResourcePathPicker.SaveFileToBundle(workspace, fileHandle, (savePath, localPath, targetPath) => {
             return fileHandle.Save(workspace, savePath);
         }, closeFile: false, useNewTargetPath: saveAsNewFile);
+    }
+
+    private void UpdateChannelsViaHotkeys()
+    {
+        if (!ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) || texture == null) return;
+
+        int dir = AppConfig.Instance.Key_TextureViewer_NextChannel.Get().IsPressed() ? 1 : AppConfig.Instance.Key_TextureViewer_PrevChannel.Get().IsPressed() ? -1 : 0;
+        if (dir == 0) return;
+
+        int channelIDX = Array.IndexOf(ChannelOrder, currentChannel);
+        channelIDX = (channelIDX + dir + ChannelOrder.Length) % ChannelOrder.Length;
+
+        currentChannel = ChannelOrder[channelIDX];
+        texture.SetChannel(currentChannel);
     }
 
     public bool RequestClose()

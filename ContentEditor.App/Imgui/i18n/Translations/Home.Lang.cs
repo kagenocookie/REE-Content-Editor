@@ -9,12 +9,12 @@ public static partial class Lang
     public static class Home
     {
         public static readonly IconString LaunchGame = new IconString("{0} Launch Game", AppIcons.Play);
-        public static readonly FixedString LaunchGame_LoosePatch = "Launch Game with Loose File patch";
-        public static readonly FixedString LaunchGame_PakPatch = "Launch Game with Pak File patch";
-        public static readonly FixedString ApplyPatches_Pak = "Apply patches (PAK)";
-        public static readonly FixedString ApplyPatches_Loose = "Apply patches (Loose File)";
+        public static readonly FixedString LaunchGame_LoosePatch = "Launch Game with Loose File Patch";
+        public static readonly FixedString LaunchGame_PakPatch = "Launch Game with Pak File Patch";
+        public static readonly FixedString ApplyPatches_Pak = "Apply Patches (PAK)";
+        public static readonly FixedString ApplyPatches_Loose = "Apply Patches (Loose File)";
         public static readonly FixedString ApplyPatches_CustomPath = "Patch to...";
-        public static readonly FixedString ApplyPatches_Revert = "Revert patches";
+        public static readonly IconString ApplyPatches_Revert = new IconString("{0} Revert Patches", AppIcons.SI_Reset);
         public static readonly FixedString SupportDevelopment = "Support development (Ko-Fi)";
         public static readonly FixedString NewVersion_Unspecific = "New version available!";
         public static readonly InterpolatedString<string> NewVersion_Specific = "New version ({0}) available!";
@@ -26,25 +26,28 @@ public static partial class Lang
 
         public static readonly FixedString Menu_File = "File";
         public static readonly FixedString Menu_CreateNew = "Create New";
-        public static readonly FixedString Menu_Open = "Open ...";
-        public static readonly FixedString Menu_SaveAll = "Save modified files";
-        public static readonly FixedString Menu_RevertAll = "Revert modified files";
+        public static readonly FixedString Menu_Open = "Open...";
+        public static readonly FixedString Menu_SaveAll = "Save Modified Files";
+        public static readonly FixedString Menu_RevertAll = "Revert Modified Files";
         public static readonly FixedString Menu_TooltipNoModifiedFiles = "No files have been modified yet.";
-        public static readonly FixedString Menu_OpenedFiles = "Opened files";
+        public static readonly FixedString Menu_OpenedFiles = "Opened Files";
         public static readonly FixedString Menu_NoFilesOpen = "No files open";
         public static readonly FixedString Menu_CloseAll = "Close all";
-        public static readonly FixedString Menu_RecentFiles = "Recent files";
+        public static readonly FixedString Menu_RecentFiles = "Recent Files";
         public static readonly FixedString RecentFiles_None = "No recent files";
         public static readonly FixedString Menu_Edit = "Edit";
         public static readonly FixedString Menu_DataGeneration = "Data Generation";
         public static readonly FixedString Menu_Windows = "Windows";
         public static readonly FixedString Menu_Scenes = "Scenes";
 
+        public static readonly InterpolatedString<string> Tooltip_Undo = "Undo ({0})";
+        public static readonly InterpolatedString<string> Tooltip_Redo = "Redo ({0})";
+
         public static readonly InterpolatedString<string> ActiveGame = "Game: {0}";
-        public static readonly InterpolatedString<string> ActivePlatform = "Platform: {0}";
-        public static readonly InterpolatedString<string> ActiveBundle = "Active Bundle: {0}";
+        public static readonly InterpolatedString<string, char> ActivePlatform = "{1} Platform: {0}";
+        public static readonly InterpolatedString<string, char> ActiveBundle = "{1} Active Bundle: {0}";
         public static readonly InterpolatedString<string> NamedBundle = "Bundle: {0}";
-        public static readonly IconString BundleFilter = new IconString("{0} Search Bundles", AppIcons.Search);
+        public static readonly IconString BundleFilter = new IconString("{0} Search Bundles", AppIcons.SI_GenericMagnifyingGlass);
         public static readonly FixedString OtherPlatforms = "Other platforms (untested)";
         public static readonly FixedString UninitializedBundles = "* Uninitialized bundle folders";
 
@@ -54,5 +57,6 @@ public static partial class Lang
 
         public static readonly FixedString CreateNew_Lua = "Lua Script";
         public static readonly IconString Scenes_New = new IconString("{0} New scene", AppIcons.SI_GenericAdd);
+        public static readonly IconString Hint_SearchRecentFiles = new IconString("{0} Search Recent Files", AppIcons.SI_GenericMagnifyingGlass);
     }
 }

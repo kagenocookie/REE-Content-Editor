@@ -59,6 +59,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string WindowRect = "window_rect";
         public const string PauseAnimPlayerOnSeek = "pause_anim_player_on_seek";
         public const string UseFullscreenAnimPlayback = "use_fullscreen_anim_playback";
+        public const string ExpandSettings = "expand_settings";
         public const string DateFormat = "date_format";
         public const string ClockFormat = "clock_format";
         public const string DisableFileCloseWarning = "disable_close_warning";
@@ -97,6 +98,8 @@ public class AppConfig : Singleton<AppConfig>
         public const string Key_TextureViewer_ResetView = "key_textureviewer_resetview";
         public const string Key_TextureViewer_ZoomIn = "key_textureviewer_zoomin";
         public const string Key_TextureViewer_ZoomOut = "key_textureviewer_zoomout";
+        public const string Key_TextureViewer_NextChannel = "key_textureviewer_nextchannel";
+        public const string Key_TextureViewer_PrevChannel = "key_textureviewer_prevchannel";
         public const string Key_Scene_Hide = "key_hide";
         public const string Key_Scene_UnhideAll = "key_unhide_all";
         public const string Key_Scene_Focus3D = "key_focus";
@@ -316,6 +319,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
     public readonly SettingWrapper<bool> PauseAnimPlayerOnSeek = new SettingWrapper<bool>(Keys.PauseAnimPlayerOnSeek, _lock, true);
     public readonly SettingWrapper<bool> UseFullscreenAnimPlayback = new SettingWrapper<bool>(Keys.UseFullscreenAnimPlayback, _lock, false);
+    public readonly SettingWrapper<bool> ExpandSettings = new SettingWrapper<bool>(Keys.ExpandSettings, _lock, false);
     public readonly SettingWrapper<int> DateFormat = new SettingWrapper<int>(Keys.DateFormat, _lock, 0);
     public readonly SettingWrapper<bool> ClockFormat = new SettingWrapper<bool>(Keys.ClockFormat, _lock, false);
     public readonly SettingWrapper<bool> DisableFileCloseWarning = new SettingWrapper<bool>(Keys.DisableFileCloseWarning, _lock, false);
@@ -364,6 +368,8 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<KeyBinding> Key_TextureViewer_ResetView = new SettingWrapper<KeyBinding>(Keys.Key_TextureViewer_ResetView, _lock, new KeyBinding(ImGuiKey.Keypad0, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_TextureViewer_ZoomIn = new SettingWrapper<KeyBinding>(Keys.Key_TextureViewer_ZoomIn, _lock, new KeyBinding(ImGuiKey.Equal, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_TextureViewer_ZoomOut = new SettingWrapper<KeyBinding>(Keys.Key_TextureViewer_ZoomOut, _lock, new KeyBinding(ImGuiKey.Minus, ctrl: true));
+    public readonly SettingWrapper<KeyBinding> Key_TextureViewer_NextChannel = new SettingWrapper<KeyBinding>(Keys.Key_TextureViewer_NextChannel, _lock, new KeyBinding(ImGuiKey.RightArrow));
+    public readonly SettingWrapper<KeyBinding> Key_TextureViewer_PrevChannel = new SettingWrapper<KeyBinding>(Keys.Key_TextureViewer_PrevChannel, _lock, new KeyBinding(ImGuiKey.LeftArrow));
     public readonly SettingWrapper<KeyBinding> Key_Scene_Hide = new SettingWrapper<KeyBinding>(Keys.Key_Scene_Hide, _lock, new KeyBinding(ImGuiKey.H));
     public readonly SettingWrapper<KeyBinding> Key_Scene_UnhideAll = new SettingWrapper<KeyBinding>(Keys.Key_Scene_UnhideAll, _lock, new KeyBinding(ImGuiKey.H, alt: true));
     public readonly SettingWrapper<KeyBinding> Key_Scene_Focus3D = new SettingWrapper<KeyBinding>(Keys.Key_Scene_Focus3D, _lock, new KeyBinding(ImGuiKey.F));
@@ -508,6 +514,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.QuaternionsDisableAutoNormalize, instance.QuaternionsDisableAutoNormalize.value.ToString(), null),
             (Keys.PauseAnimPlayerOnSeek, instance.PauseAnimPlayerOnSeek.value.ToString(), null),
             (Keys.UseFullscreenAnimPlayback, instance.UseFullscreenAnimPlayback.value.ToString(), null),
+            (Keys.ExpandSettings, instance.ExpandSettings.value.ToString(), null),
             (Keys.DateFormat, instance.DateFormat.value.ToString(), null),
             (Keys.ClockFormat, instance.ClockFormat.value.ToString(), null),
             (Keys.DisableFileCloseWarning, instance.DisableFileCloseWarning.value.ToString(), null),
@@ -547,6 +554,8 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.Key_TextureViewer_ResetView, instance.Key_TextureViewer_ResetView.value.ToString(), "Keys"),
             (Keys.Key_TextureViewer_ZoomIn, instance.Key_TextureViewer_ZoomIn.value.ToString(), "Keys"),
             (Keys.Key_TextureViewer_ZoomOut, instance.Key_TextureViewer_ZoomOut.value.ToString(), "Keys"),
+            (Keys.Key_TextureViewer_NextChannel, instance.Key_TextureViewer_NextChannel.value.ToString(), "Keys"),
+            (Keys.Key_TextureViewer_PrevChannel, instance.Key_TextureViewer_PrevChannel.value.ToString(), "Keys"),
             (Keys.Key_Scene_Hide, instance.Key_Scene_Hide.value.ToString(), "Keys"),
             (Keys.Key_Scene_UnhideAll, instance.Key_Scene_UnhideAll.value.ToString(), "Keys"),
             (Keys.Key_Scene_Focus3D, instance.Key_Scene_Focus3D.value.ToString(), "Keys"),
@@ -695,6 +704,9 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.UseFullscreenAnimPlayback:
                             UseFullscreenAnimPlayback.value = ReadBool(value);
                             break;
+                        case Keys.ExpandSettings:
+                            ExpandSettings.value = ReadBool(value);
+                            break;
                         case Keys.ClockFormat:
                             ClockFormat.value = ReadBool(value);
                             break;
@@ -807,6 +819,8 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.Key_TextureViewer_ResetView: if (KeyBinding.TryParse(value, out _key)) Key_TextureViewer_ResetView.value = _key; break;
                         case Keys.Key_TextureViewer_ZoomIn: if (KeyBinding.TryParse(value, out _key)) Key_TextureViewer_ZoomIn.value = _key; break;
                         case Keys.Key_TextureViewer_ZoomOut: if (KeyBinding.TryParse(value, out _key)) Key_TextureViewer_ZoomOut.value = _key; break;
+                        case Keys.Key_TextureViewer_NextChannel: if (KeyBinding.TryParse(value, out _key)) Key_TextureViewer_NextChannel.value = _key; break;
+                        case Keys.Key_TextureViewer_PrevChannel: if (KeyBinding.TryParse(value, out _key)) Key_TextureViewer_PrevChannel.value = _key; break;
                         case Keys.Key_Scene_Hide: if (KeyBinding.TryParse(value, out _key)) Key_Scene_Hide.value = _key; break;
                         case Keys.Key_Scene_UnhideAll: if (KeyBinding.TryParse(value, out _key)) Key_Scene_UnhideAll.value = _key; break;
                         case Keys.Key_Scene_Focus3D: if (KeyBinding.TryParse(value, out _key)) Key_Scene_Focus3D.value = _key; break;

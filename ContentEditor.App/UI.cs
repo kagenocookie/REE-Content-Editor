@@ -448,6 +448,13 @@ public static class AppIcons
     public static readonly char[] SIC_AddGroup = { '\uee5a', '\uee5b', '\uee5c', '\uee5d' };
     public static readonly char[] SIC_AddMacro = { '\uee5e', '\uee5f', '\uee60' };
     public static readonly char[] SIC_FolderScan = { '\uee61', '\uee62', '\uee63', '\uee64', '\uee65' };
+    public static readonly char SI_Blank = '\uee66';
+    public static readonly char SI_Redo = '\uee67';
+    public static readonly char SI_Undo = '\uee68';
+    public static readonly char[] SIC_PakBrowse = { '\uee69', '\uee6a', '\uee6b' };
+    public static readonly char[] SIC_TexExport = { '\uee6c', '\uee6d' };
+    public static readonly char[] SIC_MaterialImport = { '\uee6e', '\uee6f' };
+    public static readonly char[] SIC_FolderOpenInTextEditor = { '\uee70', '\uee71', '\uee72', '\uee73', '\uee74' };
 
     public static string PrependIcon(this string text, object target)
     {

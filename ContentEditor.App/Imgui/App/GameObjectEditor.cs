@@ -183,14 +183,15 @@ public class ComponentDataHandler : IObjectUIHandler
         object? componentFirstField = instance.Values.Length > 0 ? instance.Values[0] : null;
         if (componentFirstField is bool enabledBool) {
             ImGui.SameLine();
+            ImGui.SetCursorPosY(ImGui.GetCursorPos().Y + 1.75f);
             ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 2.0f);
-            // hacky way to make the checkbox a bit smaller, i guess we'd need a custom one if we wanna make it smaller without doing this
             ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(4, 1));
-
+            ImGui.PushStyleColor(ImGuiCol.FrameBg, Colors.IconOverlayBackground);
+            ImGui.PushStyleColor(ImGuiCol.Border, ImguiHelpers.GetColor(ImGuiCol.ButtonHovered));
             if (ImGui.Checkbox("##chkbox", ref enabledBool)) {
                 UndoRedo.RecordCallbackSetter(context, instance, instance.Values[0], enabledBool, (inst, val) => inst.Values[0] = val);
             }
-
+            ImGui.PopStyleColor(2);
             ImGui.PopStyleVar(2);
         }
         ImGui.SameLine();
@@ -209,25 +210,26 @@ public class ComponentDataHandler : IObjectUIHandler
             ImGui.SameLine();
 
             float buttonWidth = ImGui.CalcTextSize($"{AppIcons.SI_Reset}").X + ImGui.GetStyle().FramePadding.X * 2;
-            float avail = ImGui.GetContentRegionAvail().X;
-
-            float rightEdge = ImGui.GetCursorScreenPos().X + avail;
+            float rightEdge = ImGui.GetCursorScreenPos().X + ImGui.GetContentRegionAvail().X + ImGui.GetStyle().ItemInnerSpacing.X;
 
             float posX = rightEdge - buttonWidth;
 
             ImGui.SetCursorScreenPos(new Vector2(posX, ImGui.GetCursorScreenPos().Y));
 
-            ImGui.BeginDisabled(!context.IsChanged);
-            if (ImGui.Button($"{AppIcons.SI_Reset}")) {
-                try {
-                    context.Revert();
-                    context.ResetState();
-                    // some components throw this while being reverted. data seems to be fine if we catch this though
-                } catch (Exception e) {
-                    Logger.Error("Failed to revert value: " + e.Message);
+            using (var _ = ImguiHelpers.Disabled(!context.IsChanged)) {
+                ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
+                if (ImGui.Button($"{AppIcons.SI_Reset}")) {
+                    try {
+                        context.Revert();
+                        context.ResetState();
+                        // some components throw this while being reverted. data seems to be fine if we catch this though
+                    } catch (NotImplementedException) { 
+                    } catch (Exception e) {
+                        Logger.Error("Failed to revert value: " + e.Message);
+                    }
                 }
+                ImGui.PopStyleColor();
             }
-            ImGui.EndDisabled();
         }
 
         ImGui.PopID();

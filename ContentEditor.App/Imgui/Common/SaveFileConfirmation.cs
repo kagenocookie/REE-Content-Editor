@@ -1,10 +1,11 @@
 
-using System.Numerics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher;
+using Hexa.NET.ImGui;
+using System.Numerics;
 
 namespace ContentEditor.App;
 
@@ -44,24 +45,32 @@ public class SaveFileConfirmation : IWindowHandler
     public void OnWindow()
     {
         var size = parent.Size;
-        var modalSize = new Vector2(Math.Max(size.X / 2, 600), Math.Max(size.Y / 4, 200));
-        var btnHeight = UI.FontSize + ImGui.GetStyle().FramePadding.X * 2;
+        var style = ImGui.GetStyle();
+        float headerH = 40f;
+        var modalSize = new Vector2(Math.Max(ImGui.CalcTextSize(text).X + style.WindowPadding.X * 2, 600),
+            headerH + ImGui.CalcTextSize(text, ImGui.GetContentRegionAvail().X).Y + ImGui.GetFrameHeight() + style.ItemSpacing.Y * 4 + style.WindowPadding.Y * 2);
 
         ImGui.SetNextWindowFocus();
-        ImGui.SetNextWindowPos(parent.Position + new Vector2(size.X / 2 - modalSize.X / 2, size.Y / 2 - modalSize.Y / 2));
+        ImGui.SetNextWindowPos(parent.Position + (size - modalSize) * 0.5f);
         ImGui.SetNextWindowSize(modalSize);
-        ImGui.Begin(title, ImGuiWindowFlags.Modal|ImGuiWindowFlags.NoMove|ImGuiWindowFlags.NoDocking|ImGuiWindowFlags.NoResize);
-        ImGui.Spacing();
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 2);
+        ImGui.Begin(title, ImGuiWindowFlags.Modal | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoDecoration);
+        var draw = ImGui.GetWindowDrawList();
 
-        var ts = ImGui.CalcTextSize(title).X;
-        ImGui.Indent(ts / 2);
+        Vector2 headerMin = ImGui.GetCursorScreenPos() - style.WindowPadding;
+        Vector2 headerMax = new(headerMin.X + ImGui.GetWindowSize().X, headerMin.Y + headerH);
+        draw.AddRectFilled(headerMin, headerMax, ImGui.GetColorU32(ImGuiCol.Border), style.WindowRounding);
+
+        ImGui.Text($"{AppIcons.SI_Save}");
+        ImGui.SameLine();
+        ImGui.Text("Unsaved Changes");
+        ImGui.Dummy(new Vector2(0, style.ItemSpacing.Y * 2));
         ImGui.Text(text);
-        ImGui.Unindent(ts / 2);
+        ImGui.Dummy(new Vector2(0, style.ItemSpacing.Y * 2));
 
-        ImGui.Spacing();
-        ImGui.Spacing();
-        ImGui.Spacing();
-        if (ImGui.Button("Save", new Vector2(modalSize.X / 3 - 12, btnHeight))) {
+        ImGui.Separator();
+        float buttonW = (ImGui.GetContentRegionAvail().X - style.ItemSpacing.X * 2) / 3;
+        if (ImGui.Button("Save", new Vector2(buttonW, 0))) {
             var allSuccessful = true;
             foreach (var file in Files) {
                 if (!file.Save(context.GetWorkspace()!)) {
@@ -75,17 +84,17 @@ public class SaveFileConfirmation : IWindowHandler
             }
         }
         ImGui.SameLine();
-        if (ImGui.Button("Don't save (discard changes)", new Vector2(modalSize.X / 3 - 12, btnHeight))) {
+        if (ImGui.Button("Discard Changes", new Vector2(buttonW, 0))) {
             OnConfirmed?.Invoke();
             EditorWindow.CurrentWindow?.CloseSubwindow(this);
         }
         ImGui.SameLine();
-        if (ImGui.Button("Cancel", new Vector2(modalSize.X / 3 - 12, btnHeight))) {
+        if (ImGui.Button("Cancel", new Vector2(buttonW, 0))) {
             OnCancelled?.Invoke();
             EditorWindow.CurrentWindow?.CloseSubwindow(this);
         }
-
         ImGui.End();
+        ImGui.PopStyleVar();
     }
 
     void IWindowHandler.OnIMGUI() => OnWindow();

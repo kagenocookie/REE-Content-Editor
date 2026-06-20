@@ -615,6 +615,31 @@ public static class ImguiHelpers
 
         ImGui.Dummy(new Vector2(width, height));
     }
+    /// <summary>
+    /// A VerticalSeparator that can act as a resize splitter between 2 imgui elements.
+    /// </summary>
+    public static bool VerticalSplitter(ref float regionWidth, float regionMin = 100f, float regionMax = 500f, float splitterW = 2.0f, float splitterPadding = 2.0f, float? heightOverride = null)
+    {
+        var drawList = ImGui.GetWindowDrawList();
+        var pos = ImGui.GetCursorScreenPos();
+        float height = heightOverride ?? ImGui.GetFrameHeight();
+
+        ImGui.InvisibleButton("##VSplitter", new Vector2(splitterPadding * 2, height));// SILVER: This invis button is the splitter's hitbox
+        bool isActive = ImGui.IsItemActive();
+        bool isHovered = ImGui.IsItemHovered();
+
+        if (isActive) {
+            regionWidth += ImGui.GetIO().MouseDelta.X;
+            regionWidth = Math.Clamp(regionWidth, regionMin, regionMax);
+        }
+        if (isHovered || isActive) ImGui.SetMouseCursor(ImGuiMouseCursor.ResizeEw);
+
+        float x = pos.X + splitterPadding * 0.5f;
+        uint color = ImGui.GetColorU32(isActive ? ImGuiCol.SeparatorActive : isHovered ? ImGuiCol.SeparatorHovered : ImGuiCol.Separator);
+        drawList.AddLine(new Vector2(x, pos.Y), new Vector2(x, pos.Y + height), color, splitterW);
+
+        return isActive;
+    }
     public static unsafe void DrawOverlayIcon(string icon, float iconScale, float iconPosX, float iconPosY, Vector2 iconMin, Vector2 iconMax, Vector4 iconColor, Vector4 bgColor)
     {
         var drawList = ImGui.GetWindowDrawList();

@@ -18,10 +18,10 @@ public static partial class Lang
         public static readonly FixedString Exit = "Exit";
         public static readonly FixedString Open_Folder = "Open folder";
         public static readonly FixedString Open_ContainingFolder = "Open Containing Folder";
-        public static readonly FixedString Open_GameFolder = "Open game folder";
-        public static readonly FixedString Open_BundleFolder = "Open bundle folder";
-        public static readonly FixedString Open_CurrentBundleFolder = "Open current bundle folder";
-        public static readonly FixedString Open_CurrentBundleTextEditor = "Open current bundle folder in text editor";
+        public static readonly FixedString Open_GameFolder = "Open Game Folder";
+        public static readonly FixedString Open_BundleFolder = "Open Bundle Folder";
+        public static readonly IconString Open_CurrentBundleFolder = new IconString("{0} Open Current Bundle Folder", AppIcons.SI_FolderOpen);
+        public static readonly FixedString Open_CurrentBundleTextEditor = "Open Current Bundle Folder in Text Editor";
         public static readonly FixedString ClearRecent = "Clear recent files";
         public static readonly FixedString Close = "Close";
         public static readonly FixedString Confirm = "Confirm";
@@ -38,20 +38,20 @@ public static partial class Lang
         public static readonly FixedString DeleteFile = "Delete File";
         public static readonly FixedString Clear = "Clear";
         public static readonly FixedString Clear_Tags = "Clear All Tags";
-        public static readonly FixedString Undo = "Undo";
-        public static readonly FixedString Redo = "Redo";
+        public static readonly IconString Undo = new IconString("{0} Undo", AppIcons.SI_Undo);
+        public static readonly IconString Redo = new IconString("{0} Redo", AppIcons.SI_Redo);
         public static readonly FixedString Create = "Create";
         public static readonly FixedString Reload = "Reload";
         public static readonly FixedString NewWorkspace = "Open New Workspace";
         public static readonly FixedString Show_GameObject = "Show GameObject";
 
         public static readonly FixedString CheckUpdates = "Check For Updates";
-        public static readonly FixedString CheckForDataUpdate = "Check for updated game data cache";
-        public static readonly FixedString ConfigureGames = "Configure games ...";
+        public static readonly FixedString CheckForDataUpdate = "Check for Updated Game Data Cache";
+        public static readonly FixedString ConfigureGames = "Configure Games...";
         public static readonly FixedString NewBundle = "New Bundle";
-        public static readonly FixedString NewBundleFromPAK = "Create from archive/PAK file";
-        public static readonly FixedString NewBundleFromLoose = "Create from loose file mod";
-        public static readonly InterpolatedString<string> BundleUnload = "Unload current bundle ({0})";
+        public static readonly FixedString NewBundleFromPAK = "Create from Archive/PAK File";
+        public static readonly FixedString NewBundleFromLoose = "Create from Loose File Mod";
+        public static readonly InterpolatedString<string, char> BundleUnload = "{1} Unload Current Bundle ({0})";
         public static readonly FixedString BundleFileRescan = "Rescan Bundle Files";
         public static readonly FixedString BundlePublish = "Publish Mod";
     }

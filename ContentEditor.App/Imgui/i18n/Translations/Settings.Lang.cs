@@ -25,6 +25,7 @@ public static partial class Lang
         public static readonly FixedString Section_Fields = "Fields";
         public static readonly FixedString Section_FPS = "FPS";
         public static readonly FixedString Section_DateTime = "Date & Time";
+        public static readonly FixedString Section_Lang = "Language";
         public static readonly FixedString Section_Animator = "Animator";
         public static readonly FixedString Section_GroupList = "GroupList";
 
@@ -98,6 +99,7 @@ public static partial class Lang
         public static readonly TextTooltip MaxFPSBackground = new TextTooltip("Max FPS in background", "The maximum FPS when the editor window is not focused.");
         public static readonly TextTooltip ClockFormat = new TextTooltip("12-hour Clock", "Switch the time format from 24-hour to 12-hour clock.");
         public static readonly TextTooltip UseFullscreenAnimPlayback = new TextTooltip("Fullscreen Animation Playback Overlay", "Whether to keep the animation playback overlay in the top-right corner of the Mesh Viewer or make it fullscreen.");
+        public static readonly TextTooltip ExpandSettings = new TextTooltip("Auto-Expand Settings", "Whether the setting groups should be expanded by default.");
         public static readonly TextTooltip PrettyFieldLabels = new TextTooltip("Simplify field labels", "Whether to simplify field labels instead of showing the raw field names (e.g. \"Target Object\" instead of \"_TargetObject\").");
         public static readonly TextTooltip ShowQuaternionsAsEuler = new TextTooltip("Use Euler angles for quaternions", "Whether quaternions should be displayed as euler angles.");
         public static readonly TextTooltip QuaternionsDisableAutoNormalize = new TextTooltip("Disable quaternion auto-normalization", "Disables automatic normalization of quaternions for transforms.\nThis can make the object appear skewed and will cause issues with some functionality.\nUse at your own risk.");
@@ -131,6 +133,8 @@ public static partial class Lang
         public static readonly FixedString Bind_TextureViewer_ResetView = "Reset View";
         public static readonly FixedString Bind_TextureViewer_ZoomIn = "Zoom In";
         public static readonly FixedString Bind_TextureViewer_ZoomOut = "Zoom Out";
+        public static readonly FixedString Bind_TextureViewer_NextChannel = "Next Channel";
+        public static readonly FixedString Bind_TextureViewer_PrevChannel = "Previous Channel";
         public static readonly FixedString Bind_Scene_Focus3D = "Focus Selected";
         public static readonly FixedString Bind_Scene_FocusUI = "Show Selected in UI";
         public static readonly FixedString Bind_Scene_Hide = "Hide Selected";

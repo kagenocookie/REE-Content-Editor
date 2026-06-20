@@ -476,4 +476,9 @@ public static class AppImguiHelpers
         }
         return ellipsis;
     }
+    public static string FormatHotkeyString(string hotkey)
+    {
+        if (!KeyBinding.TryParse(hotkey, out var binding)) return hotkey;
+        return (binding.ctrl ? "Ctrl + " : "") + (binding.shift ? "Shift + " : "") + (binding.alt ? "Alt + " : "") + binding.Key;
+    }
 }
