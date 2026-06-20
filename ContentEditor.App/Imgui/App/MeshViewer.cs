@@ -786,6 +786,15 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 }, lastImportSourcePath, filters: FileFilters.MeshFilesAll);
             }
         }
+
+        if (!string.IsNullOrEmpty(lastImportSourcePath) && lastImportSourcePath != Handle.Filepath) {
+            ImGui.SameLine();
+            if (ImGui.Button(Lang.Buttons.ForceReimport)) {
+                ForceReimportMainMesh(lastImportSourcePath);
+            }
+            ImguiHelpers.Tooltip($"Re-import the mesh from the last used external mesh path:\n{lastImportSourcePath}");
+        }
+
         ImGui.SameLine();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_Settings}", ref showImportSettings, Colors.IconActive);
         ImguiHelpers.Tooltip("Show Settings");
@@ -1017,10 +1026,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                     blendSettings.SaveToFile(settingsPath);
                 }
             }
-        }
-
-        if (ImGui.Button(Lang.Buttons.ForceReload)) {
-            ForceReimportMainMesh(blendPath);
         }
     }
 

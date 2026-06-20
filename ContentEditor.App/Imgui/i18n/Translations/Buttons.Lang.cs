@@ -44,6 +44,7 @@ public static partial class Lang
         public static readonly FixedString Create = "Create";
         public static readonly FixedString Reload = "Reload";
         public static readonly FixedString ForceReload = "Force Reload";
+        public static readonly IconString ForceReimport = new("{0} Re-Import", AppIcons.SI_Update);
         public static readonly FixedString UpdateSceneCache = "Update Scene Cache";
         public static readonly FixedString NewWorkspace = "Open New Workspace";
         public static readonly FixedString Show_GameObject = "Show GameObject";
