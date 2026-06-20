@@ -986,6 +986,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             }
             ImguiHelpers.Tooltip(Lang.MeshViewer.IncludeTangentsToolTip);
 
+            ImGui.SameLine();
             boolOpt = currentConfig.ApplyRotations;
             if (ImGui.Checkbox(Lang.MeshViewer.ApplyRotations, ref boolOpt)) {
                 currentConfig.ApplyRotations = boolOpt;
