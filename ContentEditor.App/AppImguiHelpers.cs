@@ -478,11 +478,7 @@ public static class AppImguiHelpers
     }
     public static string FormatHotkeyString(string hotkey)
     {
-        var parts = hotkey.Split("+", StringSplitOptions.TrimEntries);
-        if (parts.Length != 2) return hotkey;
-
-        string key = parts[0];
-        string modifiers = parts[1];
-        return (modifiers.Contains('C') ? "Ctrl + " : "") + (modifiers.Contains('S') ? "Shift + " : "") + (modifiers.Contains('A') ? "Alt + " : "") + key;
+        if (!KeyBinding.TryParse(hotkey, out var binding)) return hotkey;
+        return (binding.ctrl ? "Ctrl + " : "") + (binding.shift ? "Shift + " : "") + (binding.alt ? "Alt + " : "") + binding.Key;
     }
 }
