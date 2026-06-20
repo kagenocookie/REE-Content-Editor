@@ -37,8 +37,8 @@ public class CompositeMesh(GameObject gameObject, RszInstance data) : Renderable
                 var group = instances[i] as RszInstance;
                 if (group != null) {
                     var meshBounds = coll.BoundingBox;
-                    var transforms = RszFieldCache.CompositeMesh.InstanceGroup.Transforms.Get(group);
-                    foreach (var inst in transforms.Cast<RszInstance>()) {
+                    var transforms = RszFieldCache.CompositeMesh.InstanceGroup.Transforms.Instances(group);
+                    foreach (var inst in transforms) {
                         if (!RszFieldCache.CompositeMesh.TransformController.Enabled.Get(inst)) continue;
 
                         var pos = RszFieldCache.CompositeMesh.TransformController.LocalPosition.Get(inst);

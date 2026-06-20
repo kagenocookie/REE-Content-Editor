@@ -72,14 +72,14 @@ public static partial class RszFieldCache
             /// <summary>
             /// Instance transforms
             /// </summary>
-            public static readonly RszFieldAccessorLastFallbacks<List<object>> Transforms =
+            public static readonly RszObjectList<RszFieldAccessorLastFallbacks<List<object>>> Transforms = new(
                 Last<List<object>>([
                     fi => fi.name == "Transform",
-                    fi => fi.array && fi.type == RszFieldType.Object,
+                    fi => fi.array && (fi.type == RszFieldType.Object || fi.type == RszFieldType.Data && fi.size == 4),
                     fi => fi.array && fi.size == 4
                 ])
                 .Object("via.render.CompositeMeshTransformController")
-                .Rename("Transform");
+                .Rename("Transform"));
         }
 
         [RszAccessor("via.render.CompositeMeshTransformController")]

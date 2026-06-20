@@ -179,6 +179,13 @@ public sealed class RszFieldAccessorLastFallbacks<T>(Func<RszField, bool>[] cond
     }
 }
 
+public sealed class RszObjectList<TInner>(TInner inner) : RszFieldAccessorBase<List<object>>(inner.Name)
+    where TInner : RszFieldAccessorBase<List<object>>
+{
+    public override int GetIndex(RszClass instanceClass) => inner.GetIndex(instanceClass);
+
+    public IEnumerable<RszInstance> Instances(RszInstance instance) => inner.Get(instance).Cast<RszInstance>();
+}
 
 /// <summary>
 /// Container for game-agonstic RSZ field lookup conditions.
