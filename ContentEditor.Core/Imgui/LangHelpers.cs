@@ -170,7 +170,7 @@ public abstract class TranslatableGroup
     public abstract IEnumerable<(string key, TranslatableBase text)> Translatables { get; }
 }
 
-public abstract class TranslatableBase
+public abstract class TranslatableBase : IComparable<TranslatableBase>
 {
     private string _format;
     public string Format {
@@ -212,9 +212,10 @@ public abstract class TranslatableBase
     public override int GetHashCode() => String.GetHashCode();
     public override string ToString() => String;
 
+    public int CompareTo(TranslatableBase? other) => ReferenceEquals(other, null) ? 1 : UTF8.SequenceCompareTo(other.UTF8);
+
     public static implicit operator TranslatableBase?(StringFormatter? formatter)
         => formatter == null ? null : new FormattedObjectString(formatter, null);
-
 }
 
 public class InterpolatedString<T>(string format) where T : IComparable<T>
@@ -256,4 +257,40 @@ public class InterpolatedString<T1, T2>(string format)
 
     public FixedStringUTF8 FormatRef(T1 value1, T2 value2) => new FixedStringUTF8(Format(value1, value2));
     public static implicit operator InterpolatedString<T1, T2>(string str) => new (str);
+}
+
+public sealed class TranslatedEnum<TEnum> : TranslatableGroup
+    where TEnum : struct, Enum
+{
+    private SortedList<TEnum, FixedString> Texts { get; } = new (
+        Enum.GetValues<TEnum>().Distinct().ToDictionary(val => val, v => new FixedString(v.ToString().PrettyPrint()))
+    );
+
+    public TEnum[] Values { get; }
+    public FixedString[] Names { get; }
+    public string[] NameStrings { get => field ??= Names.Select(n => n.ToString()).ToArray(); private set; }
+
+    public override IEnumerable<(string key, TranslatableBase text)> Translatables => Texts
+        .OrderBy(kv => kv.Key)
+        .Select(v => (v.Key.ToString(), (TranslatableBase)v.Value));
+
+    public TranslatedEnum()
+    {
+        Values = Texts.Keys.Order().ToArray();
+        Names = Texts.OrderBy(k => k.Key).Select(k => k.Value).ToArray();
+    }
+
+    public void ResetNames()
+    {
+        NameStrings = null!;
+    }
+
+    public FixedString Get(TEnum value)
+    {
+        if (Texts.TryGetValue(value, out var bytes)) {
+            return bytes;
+        }
+
+        return value.ToString();
+    }
 }

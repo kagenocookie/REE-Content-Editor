@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
 

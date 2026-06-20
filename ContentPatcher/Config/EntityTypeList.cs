@@ -1,3 +1,4 @@
+using ContentEditor.Core;
 
 namespace ContentPatcher;
 

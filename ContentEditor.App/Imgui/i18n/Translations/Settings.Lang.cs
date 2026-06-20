@@ -146,5 +146,11 @@ public static partial class Lang
         public static readonly FixedString Bind_UVS_IncreaseSpeed = "Increase Playback Speed";
         public static readonly FixedString Bind_UVS_DecreaseSpeed = "Decrease Playback Speed";
 
+        public static readonly TranslatedEnum<ImGuiKey> Keys = new TranslatedEnum<ImGuiKey>();
+
+        static Settings()
+        {
+            AppConfig.Instance.PreferredLanguage.ValueChanged += (_) => Keys.ResetNames();
+        }
     }
 }

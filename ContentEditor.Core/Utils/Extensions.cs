@@ -2,10 +2,11 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace ContentEditor.Core;
 
-public static class Extensions
+public static partial class Extensions
 {
     public static void RemoveAtAfter<T>(this List<T> list, int startingIndex)
     {
@@ -94,4 +95,27 @@ public static class Extensions
     public static Vector4 ToVec4(this Vector3 vec) => new Vector4(vec.X, vec.Y, vec.Z, 0);
     public static Quaternion ToQuaternion(this Vector4 vec) => Unsafe.As<Vector4, Quaternion>(ref vec);
     public static Vector4 ToVector4(this Quaternion vec) => Unsafe.As<Quaternion, Vector4>(ref vec);
+
+    [GeneratedRegex(@"(\P{Ll})(\P{Ll}\p{Ll})")]
+    private static partial Regex PascalCaseFixerRegex1();
+
+    [GeneratedRegex(@"(\p{Ll})(\p{Lu})")]
+    private static partial Regex PascalCaseFixerRegex2();
+
+    [GeneratedRegex(@"(\d)(\p{Ll})")]
+    private static partial Regex PascalCaseFixerRegex3();
+
+    [GeneratedRegex(@"(?:^| )(\p{Ll})")]
+    private static partial Regex CapitalizeRegex();
+
+    public static string PrettyPrint(this string name)
+    {
+        // https://stackoverflow.com/a/5796793/4721768
+        name = name.TrimStart('_');
+        name = PascalCaseFixerRegex1().Replace(name, "$1 $2");
+        name = PascalCaseFixerRegex2().Replace(name, "$1 $2"); // add spaces to aA letter sequences
+        name = PascalCaseFixerRegex3().Replace(name, "$1 $2"); // add spaces after numbers
+        name = CapitalizeRegex().Replace(name.Replace("_", " "), static f => f.Value.ToUpperInvariant());
+        return name;
+    }
 }

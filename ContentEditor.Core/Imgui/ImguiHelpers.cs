@@ -70,6 +70,15 @@ public static class ImguiHelpers
         }
         return false;
     }
+    public static bool FilterableCSharpEnumComboTranslated<TEnum>(ReadOnlySpan<byte> label, ref TEnum selected, ref string filter, TranslatedEnum<TEnum> strs) where TEnum : struct, Enum
+    {
+        var values = strs.Values;
+        var labels = strs.NameStrings;
+        if (FilterableCombo(label, labels, values, ref selected, ref filter)) {
+            return true;
+        }
+        return false;
+    }
     public static bool EnumCombo<TEnumSource>(string label, TEnumSource enumDescriptor, ref object? selected)
         where TEnumSource : IEnumDataSource
     {

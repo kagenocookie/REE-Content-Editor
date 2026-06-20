@@ -603,7 +603,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImGui.SameLine();
         ImGui.PopItemWidth();
         ImGui.SetNextItemWidth(ImGui.CalcItemWidth() - 200);
-        changed = ImguiHelpers.FilterableCSharpEnumCombo<ImGuiKey>(label, ref key.Key, ref filter) || changed;
+        changed = ImguiHelpers.FilterableCSharpEnumComboTranslated(label, ref key.Key, ref filter, Lang.Settings.Keys) || changed;
         if (!setting.IsInitial) {
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_Reset}")) {

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using ContentEditor.Core;
@@ -37,6 +38,7 @@ public static partial class Lang
         FixedString.SetTranslations(_plainTranslations, _contextTranslations);
         if (CurrentLanguage == language) return;
 
+        var t = Stopwatch.StartNew();
         if (Translatables.Count == 0) {
             FindTranslatables(typeof(Lang), null);
         }
@@ -45,6 +47,7 @@ public static partial class Lang
         _plainTranslations.Clear();
         _contextTranslations.Clear();
         LoadTranslations(language);
+        Logger.Info($"Language {language} loaded in {t.ElapsedMilliseconds} ms");
     }
 
     public static Dictionary<string, string> GetTranslationsJson()
