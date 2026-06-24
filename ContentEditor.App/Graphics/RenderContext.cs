@@ -168,7 +168,6 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
         }
 
         var mesh = CreateMeshInstanceHandle(resource, file);
-        mesh.SetMaterials(mesh.Material);
         return mesh;
     }
 

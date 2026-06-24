@@ -164,7 +164,8 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
     internal override unsafe void Render(RenderContext context)
     {
         // TODO - this may be better handled on the level of scene + component grouping instead of inside individual components
-        var render = AppConfig.Instance.RenderMeshes.Get();
+        // TODO - ideally don't have this occ check here and handle it differently somehow
+        var render = mesh?.Meshes.FirstOrDefault()?.MaterialNameHash == 2180083513 ?  AppConfig.Instance.RenderOcclusion.Get() : AppConfig.Instance.RenderMeshes.Get();
         if (!render) {
             return;
         }

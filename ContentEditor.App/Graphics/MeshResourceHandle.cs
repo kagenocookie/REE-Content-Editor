@@ -19,7 +19,6 @@ public sealed class MeshResourceHandle : IDisposable
     public bool Animatable => Bones != null && Meshes.Any(m => m.HasBones);
 
     public IEnumerable<Mesh> Submeshes => Meshes.AsReadOnly();
-    private readonly Dictionary<int, string> materialNames = new();
 
     internal MeshResourceHandle(Mesh mesh)
     {
@@ -38,9 +37,6 @@ public sealed class MeshResourceHandle : IDisposable
             Meshes.RemoveAt(i);
         }
     }
-
-    public string GetMaterialName(int index) => materialNames.GetValueOrDefault(index) ?? "";
-    internal void SetMaterialName(int index, string name) => materialNames[index] = name;
 
     public AABB BoundingBox => Meshes.Count == 0 ? default : Meshes.Aggregate(AABB.MaxMin, (bound, item) => item.BoundingBox.Extend(bound));
 

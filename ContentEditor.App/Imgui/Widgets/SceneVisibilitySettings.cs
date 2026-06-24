@@ -30,6 +30,7 @@ public class SceneVisibilitySettings : ISceneWidget
 
             ShowToggle("Axis Gizmos", $"{AppIcons.SI_Generic3Axis} ", Colors.IconPrimary, AppConfig.Instance.RenderAxis);
             ShowToggle("Meshes", $"{AppIcons.SI_FileType_MESH} ", Colors.FileTypeMESH, AppConfig.Instance.RenderMeshes);
+            ShowToggle("Occlusion", $"{AppIcons.EyeBlocked} ", Colors.Faded, AppConfig.Instance.RenderOcclusion);
             ShowToggle("MCOL - Physics Colliders", $"{AppIcons.SI_FileType_MCOL} ", Colors.FileTypeMCOL, AppConfig.Instance.RenderColliders);
             ShowToggle("RCOL - Request Set Colliders", $"{AppIcons.SI_FileType_RCOL} ", Colors.FileTypeRCOL, AppConfig.Instance.RenderRequestSetColliders);
             ShowToggle("Chains", $"{AppIcons.SI_MeshViewerChain} ", Colors.FileTypeCHAIN, AppConfig.Instance.RenderChains);

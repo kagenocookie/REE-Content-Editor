@@ -11,9 +11,9 @@ using Silk.NET.OpenGL;
 
 namespace ContentEditor.App.Graphics;
 
-public sealed class OpenGLRenderContext(GL gl) : RenderContext
+public sealed class OpenGLRenderContext : RenderContext
 {
-    public GL GL { get; } = gl;
+    public GL GL { get; }
 
     private uint _outputBuffer;
     private uint _outputTexDepthBuffer;
@@ -26,11 +26,27 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
     private readonly Dictionary<(string, ShaderFlags), Shader> shaders = new();
     private readonly Dictionary<(BuiltInMaterials, ShaderFlags), Material> builtInMaterials = new();
 
-    public readonly RenderBatch Batch = new RenderBatch(gl);
+    public readonly RenderBatch Batch;
 
     private bool _hasInitGizmos;
+    private bool _renderOcc;
 
     private const float GridCellSpacing = 5f;
+
+    public OpenGLRenderContext(GL gl)
+    {
+        GL = gl;
+        Batch = new RenderBatch(gl);
+        _renderOcc = AppConfig.Instance.RenderOcclusion;
+        AppConfig.Instance.RenderOcclusion.ValueChanged += OnOccRenderChanged;
+    }
+
+    private void OnOccRenderChanged(bool newValue)
+    {
+        _renderOcc = newValue;
+        // TODO force reload all meshes somehow
+        // also needs to happen to load normal meshes in case they were initially disabled
+    }
 
     public override IEnumerable<Material> GetPresetMaterials(EditorPresetMaterials preset)
     {
@@ -213,41 +229,67 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
         }
 
         var mainLod = meshFile.MeshData?.LODs.FirstOrDefault();
-        if (mainLod == null) {
-            // TODO support occ mesh display and some sort of user toggle
-            return handle;
-        }
-        MeshBoneHierarchy? boneList = null;
-        if (meshFile.BoneData?.Bones.Count > 0) {
-            boneList = meshFile.BoneData;
-        }
-
         var meshlist = meshResource.PreloadedMeshes;
-        if (meshlist == null) {
-            meshlist = new();
-            foreach (var group in mainLod.MeshGroups) {
+
+        if (mainLod == null) {
+            if (!_renderOcc || meshFile.OccluderMesh == null) {
+                return handle;
+            }
+            if (meshlist == null) {
+                meshlist = new();
+                foreach (var group in meshFile.OccluderMesh.MeshGroups) {
+                    foreach (var sub in group.Submeshes) {
+                        var newMesh = new TriangleMesh(GL, meshFile, sub);
+                        newMesh.MaterialNameHash = 2180083513; // empty string hash
+                        newMesh.MeshGroup = group.groupId;
+                        meshlist.Add(newMesh);
+                    }
+                }
+                meshResource.PreloadedMeshes = meshlist;
+            }
+
+            int meshIdx = 0;
+            foreach (var group in meshFile.OccluderMesh.MeshGroups) {
                 foreach (var sub in group.Submeshes) {
-                    var newMesh = new TriangleMesh(GL, meshFile, sub);
-                    newMesh.MaterialNameHash = MurMur3HashUtils.GetHash(meshFile.MaterialNames[sub.materialIndex]);
-                    newMesh.MeshGroup = group.groupId;
-                    meshlist.Add(newMesh);
+                    var newMesh = meshlist[meshIdx++].Clone();
+                    newMesh.Initialize(GL);
+                    newMesh.MaterialNameHash = 2180083513;
+                    handle.Meshes.Add(newMesh);
                 }
             }
-            meshResource.PreloadedMeshes = meshlist;
-        }
+        } else {
+            MeshBoneHierarchy? boneList = null;
+            if (meshFile.BoneData?.Bones.Count > 0) {
+                boneList = meshFile.BoneData;
+            }
 
-        // because the preloaded mesh list is shared globally per file, we can't reuse it directly because references are counted per rendercontext
-        // if this method got called, it means we definitely didn't have it locally yet, therefore always Clone() here
-        int meshIdx = 0;
-        foreach (var group in mainLod.MeshGroups) {
-            foreach (var sub in group.Submeshes) {
-                var newMesh = meshlist[meshIdx++].Clone();
-                newMesh.Initialize(GL);
-                newMesh.MaterialNameHash = MurMur3HashUtils.GetHash(meshFile.MaterialNames.ElementAtOrDefault(sub.materialIndex) ?? "");
-                handle.Bones = boneList;
-                handle.Meshes.Add(newMesh);
+            if (meshlist == null) {
+                meshlist = new();
+                foreach (var group in mainLod.MeshGroups) {
+                    foreach (var sub in group.Submeshes) {
+                        var newMesh = new TriangleMesh(GL, meshFile, sub);
+                        newMesh.MaterialNameHash = MurMur3HashUtils.GetHash(meshFile.MaterialNames[sub.materialIndex]);
+                        newMesh.MeshGroup = group.groupId;
+                        meshlist.Add(newMesh);
+                    }
+                }
+                meshResource.PreloadedMeshes = meshlist;
+            }
+
+            // because the preloaded mesh list is shared globally per file, we can't reuse it directly because references are counted per rendercontext
+            // if this method got called, it means we definitely didn't have it locally yet, therefore always Clone() here
+            int meshIdx = 0;
+            foreach (var group in mainLod.MeshGroups) {
+                foreach (var sub in group.Submeshes) {
+                    var newMesh = meshlist[meshIdx++].Clone();
+                    newMesh.Initialize(GL);
+                    newMesh.MaterialNameHash = MurMur3HashUtils.GetHash(meshFile.MaterialNames.ElementAtOrDefault(sub.materialIndex) ?? "");
+                    handle.Bones = boneList;
+                    handle.Meshes.Add(newMesh);
+                }
             }
         }
+
 
         return handle;
     }
@@ -350,9 +392,11 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
                 }
                 var mat = CreateDefaultMeshMaterial(flags, "default", null);
                 placeholder = new MaterialGroup(mat);
-            } else {
+            } else if (matNames.Any()) {
                 var mats = matNames.Select(name => CreateDefaultMeshMaterial(flags, name, null)).ToArray();
                 placeholder = new MaterialGroup(mats);
+            } else {
+                placeholder = new MaterialGroup([CreateDefaultMeshMaterial(flags, "", null)]);
             }
             AddMaterialTextureReferences(placeholder);
             MaterialRefs.Add((file, flags), placeholder);
@@ -603,6 +647,7 @@ public sealed class OpenGLRenderContext(GL gl) : RenderContext
 
     protected override void Dispose(bool disposing)
     {
+        AppConfig.Instance.RenderOcclusion.ValueChanged -= OnOccRenderChanged;
         if (_outputTexDepthBuffer != 0) {
             GL.DeleteRenderbuffer(_outputTexDepthBuffer);
         }
