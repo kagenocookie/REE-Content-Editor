@@ -15,6 +15,21 @@ public static partial class Lang
         public static readonly FixedString UnsavedChangesText_ThisFile = "You have unsaved changes in this file, do you wish to save the file first?";
         public static readonly InterpolatedString<string> UnsavedChangesText_SingleFile = "The file {0} has unsaved changes.\nAre you sure you wish to close it?";
 
+        public static readonly FixedString FileClose_KeptOpenMessage = """
+            Window has been closed but the file is still kept open in case it's needed.
+            If you want to re-open it or fully close it down, you can do that from the File > Open files menu.
+            Attempting to re-open a file from the same path will not reload the file unless it's closed down first.
+            """;
+        public static readonly FixedString FileClose_MultipleEditorsMessage = """
+            There are other windows referencing this file so the file is still kept open in memory.
+            If you want to re-open it or fully close it down, you can do that from the File > Open files menu.
+            Attempting to re-open a file from the same path will not reload the file unless it's closed down first.
+            """;
+
+        public static readonly FixedString UnsavedChanges_PreventReopen = """
+            The file has unsaved changes. Before reopening it, make sure you saved any changes you need and or the file down through the opened files menu.
+            """;
+
         public static readonly FixedString LinkCopied = "Link was copied!";
         public static readonly FixedString URLOpened = "URL was opened!";
         public static readonly FixedString FilterInput = "Filter";

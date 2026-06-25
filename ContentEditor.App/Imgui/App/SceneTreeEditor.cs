@@ -57,7 +57,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
             var ws = context.GetWorkspace()!;
             if (ws.ResourceManager.TryResolveGameFile(folder.ScenePath!, out var file)) {
                 var parentSceneEditor = context.FindHandlerInParents<SceneEditor>();
-                WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, new SceneEditor(ws, file, parentSceneEditor), "LinkedScene");
+                WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, new SceneEditor(ws, file, parentSceneEditor), $"LinkedScene {node}");
             } else {
                 ImGui.TextColored(Colors.Error, "Linked scene file not found: " + folder.ScenePath);
             }

@@ -715,6 +715,8 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     AddFileEditor(file);
                 }
             }
+        } else {
+            Logger.Warn("Could not resolve source file for scene " + scene.Name);
         }
     }
 

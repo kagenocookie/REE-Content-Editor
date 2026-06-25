@@ -471,3 +471,58 @@ public readonly record struct EditorUIEvent(UIContextEvent type, UIContext origi
 {
     public bool IsChangeFromChild => type is UIContextEvent.Changed or UIContextEvent.Reverted or UIContextEvent.Updated;
 }
+
+public static class UIContextExtensions
+{
+    public static IWindowHandler? GetWindowHandler(this UIContext context)
+    {
+        return context.FindValueInParentValues<WindowData>()?.Handler as IWindowHandler;
+    }
+
+    public static T? FindValueInParentValues<T>(this UIContext context) where T : class
+    {
+        return context.Cast<T>() ?? context.parent?.FindValueInParentValues<T>();
+    }
+
+    public static T? FindHandlerInParents<T>(this UIContext context, bool ignoreSelf = false) where T : class
+    {
+        if (ignoreSelf) {
+            return context.parent?.FindHandlerInParents<T>();
+        }
+
+        return context.uiHandler as T ?? context.parent?.FindHandlerInParents<T>();
+    }
+
+    public static UIContext? FindParentContextByHandler<T>(this UIContext context, bool ignoreSelf = false) where T : class
+    {
+        if (ignoreSelf) {
+            return context.parent?.FindParentContextByHandler<T>();
+        }
+        if (context.uiHandler is T) return context;
+
+        return context.parent?.FindParentContextByHandler<T>();
+    }
+
+    public static UIContext? FindParentContextByValue<T>(this UIContext context, bool ignoreSelf = false) where T : class
+    {
+        if (ignoreSelf) {
+            return context.parent?.FindParentContextByValue<T>();
+        }
+        if (context.Cast<T>() is T) return context;
+
+        return context.parent?.FindParentContextByValue<T>();
+    }
+
+    public static UIContext? FindInHierarchy(this UIContext context, UIContext endParent, Func<UIContext, bool> condition, bool includeSelf = false)
+    {
+        var p = includeSelf ? context : context.parent;
+        while (p != null && p != endParent) {
+            if (condition.Invoke(p)) {
+                return p;
+            }
+            p = p.parent;
+        }
+
+        return null;
+    }
+}

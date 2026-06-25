@@ -59,13 +59,15 @@ public class WindowData
         return value.Deserialize<T?>(JsonConfig.jsonOptions) ?? default!;
     }
 
-    public WindowData GetOrAddSubwindow(string key)
+    public WindowData GetOrAddSubwindow(string key, bool addContextChild)
     {
         if (Subwindows == null) Subwindows = new();
         if (Context == null) throw new Exception();
         if (!Subwindows.TryGetValue(key, out var data)) {
             Subwindows[key] = data = new WindowData() { ParentWindow = ParentWindow };
-            data.Context = Context.GetChild(key) ?? Context.AddChild(key, data);
+            if (addContextChild) {
+                data.Context = Context.GetChild(key) ?? Context.AddChild(key, data);
+            }
         }
 
         return data;
@@ -83,10 +85,15 @@ public class WindowData
     public static WindowData CreateEmbeddedWindow<THandler>(UIContext context, IRectWindow parentWindow, THandler handler, string label)
         where THandler : IWindowHandler, IObjectUIHandler
     {
-        var data = new WindowData() {
+        var parentWndData = context.FindValueInParentValues<WindowData>();
+        var data = parentWndData?.GetOrAddSubwindow(label + context.GetHashCode(), false);
+        data ??= new WindowData() {
             ParentWindow = parentWindow,
-            Handler = handler,
         };
+        if (data.Handler != null) {
+            (data.Handler as IDisposable)?.Dispose();
+        }
+        data.Handler = handler;
         data.Context = context.AddChild(label, data, handler);
         data.Handler.Init(data.Context);
         return data;

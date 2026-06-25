@@ -62,6 +62,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string ExpandSettings = "expand_settings";
         public const string DateFormat = "date_format";
         public const string ClockFormat = "clock_format";
+        public const string AutoCloseFiles = "auto_close_files";
         public const string DisableFileCloseWarning = "disable_close_warning";
         public const string UseMDFGroupedParams = "use_mdf_grouped_params";
         public const string UseMDFCompactView = "use_mdf_compact_view";
@@ -324,6 +325,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<int> DateFormat = new SettingWrapper<int>(Keys.DateFormat, _lock, 0);
     public readonly SettingWrapper<bool> ClockFormat = new SettingWrapper<bool>(Keys.ClockFormat, _lock, false);
     public readonly SettingWrapper<bool> DisableFileCloseWarning = new SettingWrapper<bool>(Keys.DisableFileCloseWarning, _lock, false);
+    public readonly SettingWrapper<bool> AutoCloseFiles = new SettingWrapper<bool>(Keys.AutoCloseFiles, _lock, true);
     public readonly SettingWrapper<bool> UseMDFGroupedParams = new SettingWrapper<bool>(Keys.UseMDFGroupedParams, _lock, false);
     public readonly SettingWrapper<bool> UseMDFCompactView = new SettingWrapper<bool>(Keys.UseMDFCompactView, _lock, false);
     public readonly SettingWrapper<bool> DisableScriptSafetyWarning = new SettingWrapper<bool>(Keys.DisableScriptSafetyWarning, _lock, false);
@@ -520,6 +522,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.DateFormat, instance.DateFormat.value.ToString(), null),
             (Keys.ClockFormat, instance.ClockFormat.value.ToString(), null),
             (Keys.DisableFileCloseWarning, instance.DisableFileCloseWarning.value.ToString(), null),
+            (Keys.AutoCloseFiles, instance.AutoCloseFiles.value.ToString(), null),
             (Keys.UseMDFGroupedParams, instance.UseMDFGroupedParams.value.ToString(), null),
             (Keys.UseMDFCompactView, instance.UseMDFCompactView.value.ToString(), null),
             (Keys.DisableScriptSafetyWarning, instance.DisableScriptSafetyWarning.value.ToString(), null),
@@ -715,6 +718,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.DisableFileCloseWarning:
                             DisableFileCloseWarning.value = ReadBool(value);
+                            break;
+                        case Keys.AutoCloseFiles:
+                            AutoCloseFiles.value = ReadBool(value);
                             break;
                         case Keys.RecentFiles:
                             JsonSettings.RecentFiles.AddRange(value.Split('|', StringSplitOptions.RemoveEmptyEntries));

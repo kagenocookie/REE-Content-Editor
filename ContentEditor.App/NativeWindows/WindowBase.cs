@@ -289,6 +289,11 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
 
     public void CloseSubwindow(WindowData subwindow)
     {
+        if (subwindow.Subwindows != null) {
+            foreach (var sub in subwindow.Subwindows) {
+                CloseSubwindow(sub.Value);
+            }
+        }
         removeSubwindows.Add(subwindow);
         var file = (subwindow.Handler as IFileHandleReferenceHolder)?.Handle;
         if (file != null && !AppConfig.Instance.DisableFileCloseWarning) {
@@ -297,11 +302,25 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
             if (!wnd.Workspace.ResourceManager.IsFileOpen(file)) {
                 return;
             }
-            wnd.Overlays.ShowToast(5, """
-                Window has been closed but the file is still kept open in case it's needed.
-                If you want to re-open it or fully close it down, you can do that from the File > Open files menu.
-                Attempting to re-open a file from the same path will not reload the file unless it's closed down first.
-                """,
+            var isLastEditor = (file.References.Count == 0 || file.References.Count == 1 && file.References[0] == subwindow.Handler);
+            if (!file.Modified && isLastEditor) {
+                var autoClose = AppConfig.Instance.AutoCloseFiles.Get();
+                if (autoClose) {
+                    // last _properly handled_ editor for this file
+                    // this means we're probably be able to safely close it down
+                    wnd.Workspace.ResourceManager.CloseFile(file);
+                    return;
+                }
+            }
+
+            if (!subwindows.Contains(subwindow)) {
+                // avoid spamming messages for embedded child file windows
+                return;
+            }
+
+            wnd.Overlays.ShowToast(
+                5,
+                isLastEditor ? Lang.General.FileClose_KeptOpenMessage.String : Lang.General.FileClose_MultipleEditorsMessage.String,
                 ("Disable This Warning", () => {
                     AppConfig.Instance.DisableFileCloseWarning.Set(true);
                     wnd.Overlays.ShowToast(2f, """
@@ -615,7 +634,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     {
         for (int i = 0; i < removeSubwindows.Count; i++) {
             var close = removeSubwindows[i];
-            if (subwindows.Remove(close)) {
+            if (subwindows.Remove(close) || close.ParentWindow != null && subwindows.Any(s => s.Subwindows?.ContainsValue(close) == true)) {
                 (close.Handler as IDisposable)?.Dispose();
                 close.Context.Get<WindowData>().Handler?.OnClosed();
             }

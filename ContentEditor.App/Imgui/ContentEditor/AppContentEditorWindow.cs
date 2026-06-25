@@ -93,7 +93,7 @@ public class AppContentEditorWindow : IWindowHandler, IWorkspaceContainer
         if (type == null || name == null) return;
         if (type is EntityConfig cfg) {
             data.Context ??= UIContext.CreateRootContext("ContentEditor", this);
-            var tab = data.GetOrAddSubwindow(name);
+            var tab = data.GetOrAddSubwindow(name, true);
             if (tab.Handler == null) {
                 tab.Handler = new EntityEditor(Workspace, name);
                 tab.Handler.Init(tab.Context!);

@@ -179,9 +179,17 @@ public sealed class RszFieldAccessorLastFallbacks<T>(Func<RszField, bool>[] cond
     }
 }
 
-public sealed class RszObjectList<TInner>(TInner inner) : RszFieldAccessorBase<List<object>>(inner.Name)
+public sealed class RszObjectList<TInner> : RszFieldAccessorBase<List<object>>
     where TInner : RszFieldAccessorBase<List<object>>
 {
+    private readonly TInner inner;
+
+    public RszObjectList(TInner inner) : base(inner.Name)
+    {
+        this.inner = inner;
+        Override = inner.Override;
+    }
+
     public override int GetIndex(RszClass instanceClass) => inner.GetIndex(instanceClass);
 
     public IEnumerable<RszInstance> Instances(RszInstance instance) => inner.Get(instance).Cast<RszInstance>();
