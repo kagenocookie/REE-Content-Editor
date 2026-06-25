@@ -181,8 +181,9 @@ public class Chain(GameObject gameObject, RszInstance data) : Component(gameObje
         Matrix4x4 joint2;
         gizmo.PushMaterial(inactiveCollisionMaterial, obscuredCollisionMaterial);
         foreach (var coll in collisions) {
-            //
             switch (coll.shape) {
+                case ChainCollisionShape.None:
+                    break;
                 case ChainCollisionShape.Capsule: {
                         if (coll.jointNameHash == 0 || coll.pairJointNameHash == 0) {
                             break;
@@ -205,6 +206,20 @@ public class Chain(GameObject gameObject, RszInstance data) : Component(gameObje
                         }
                         var p1 = (Matrix4x4.CreateTranslation(coll.position) * joint1 * transform).Translation;
                         gizmo.Cur.Add(new Sphere(p1, coll.radius));
+                    }
+                    break;
+                case ChainCollisionShape.OBB: {
+                        if (coll.jointNameHash == 0 || coll.pairJointNameHash == 0) {
+                            break;
+                        }
+                        if (!parentMesh.TryGetBoneTransform(coll.jointNameHash, out joint1) || !parentMesh.TryGetBoneTransform(coll.pairJointNameHash, out joint2)) {
+                            break;
+                        }
+                        var m1 = (Matrix4x4.CreateTranslation(coll.position) * joint1 * transform);
+                        var p1 = m1.Translation;
+                        var p2 = (Matrix4x4.CreateTranslation(coll.pairPosition) * joint2 * transform).Translation;
+                        // TODO verify if this is the right OBB chain joint2 handling. Maybe p2 - p1? any rotation?
+                        gizmo.Cur.Add(new OBB(m1, (p2)));
                     }
                     break;
                 default:
