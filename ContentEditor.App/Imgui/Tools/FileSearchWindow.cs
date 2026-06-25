@@ -1157,6 +1157,8 @@ public class FileSearchWindow : IWindowHandler
                         } else if (mot.Bones.Any(b => b.boneName.Equals(query, StringComparison.OrdinalIgnoreCase))) {
                             var desc = $"{mot.Name} (Bone match)";
                             AddMatch(context, desc, path);
+                        } else if (mot.Header.jointMapPath?.Equals(query, StringComparison.OrdinalIgnoreCase) == true) {
+                            AddMatch(context, mot.Name, path);
                         }
                     }
                 }

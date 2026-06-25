@@ -61,7 +61,7 @@ public class ListFileGeneratorTaskWindow : BaseWindowHandler
 {
     public override string HandlerName => "List File Generator";
 
-    private FileListGenerator.ScanFlags options = FileListGenerator.ScanFlags.Executable|FileListGenerator.ScanFlags.Files|FileListGenerator.ScanFlags.MaintainPreviousList;
+    private FileListGenerator.ScanFlags options = FileListGenerator.ScanFlags.Executable|FileListGenerator.ScanFlags.Files|FileListGenerator.ScanFlags.MaintainPreviousList|FileListGenerator.ScanFlags.ForceRetryUnknownExtensionVersions;
     private bool includeOtherGameLists;
     private bool latestPAKsOnly;
 

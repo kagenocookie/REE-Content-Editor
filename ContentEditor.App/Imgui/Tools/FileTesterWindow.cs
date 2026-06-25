@@ -4,7 +4,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using ContentEditor.App.FileLoaders;
@@ -49,6 +48,7 @@ public partial class FileTesterWindow : IWindowHandler
 
     private string? hashTest;
     private uint testedHash;
+    private static bool includePakFilesForHashBruteforce;
 
     private UIContext context = null!;
     private WindowData data = null!;
@@ -101,6 +101,10 @@ public partial class FileTesterWindow : IWindowHandler
                     wordlistCache = null;
                 }
                 ImguiHelpers.Tooltip("The word source can be either an executable or a word list text file");
+                if (wordlistFilepath.EndsWith(".exe")) {
+                    ImGui.Checkbox("Include All PAK file contents", ref includePakFilesForHashBruteforce);
+                    ImguiHelpers.Tooltip("Also include anything remotely word-looking from all PAK file contents.\nReading all files might take a bit.");
+                }
                 if (ImguiHelpers.InlineRadioGroup(["UTF-16", "Ascii", "UTF-8"], [0, 1, 2], ref wordlistHashType)) {
                     wordlistCache = null;
                 }
@@ -113,6 +117,9 @@ public partial class FileTesterWindow : IWindowHandler
                             IList<string> words;
                             if (Path.GetExtension(wordlistFilepath) == ".exe") {
                                 words = ExtractStringsFromExecutable(wordlistFilepath, wordlistHashType != 1);
+                                if (includePakFilesForHashBruteforce) {
+                                    AppendStringsFromFiles(wordlistFilepath, wordlistHashType == 2 ? Encoding.Unicode : Encoding.UTF8, words);
+                                }
                             } else {
                                 words = File.ReadAllLines(wordlistFilepath);
                             }
@@ -810,7 +817,8 @@ public partial class FileTesterWindow : IWindowHandler
     private static readonly SearchValues<char> IdentifierChars = SearchValues.Create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.:");
     private static List<string> ExtractStringsFromExecutable(string exePath, bool useUtf16)
     {
-        var rawWords = HashUtils.ExtractStrings(useUtf16 ? Encoding.Unicode : Encoding.ASCII, exePath, IdentifierChars, str => true);
+        var encoding = useUtf16 ? Encoding.Unicode : Encoding.ASCII;
+        var rawWords = HashUtils.ExtractStrings(encoding, exePath, IdentifierChars, str => true);
         if (useUtf16) {
             var asciiWords = HashUtils.ExtractStrings(Encoding.ASCII, exePath, IdentifierChars, str => true);
             rawWords = rawWords.Concat(asciiWords);
@@ -835,5 +843,20 @@ public partial class FileTesterWindow : IWindowHandler
             }
         }
         return words;
+    }
+
+    private static readonly SearchValues<char> HashChars = SearchValues.Create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 _.:@\\/|-");
+    private static void AppendStringsFromFiles(string exePath, Encoding encoding, IList<string> list)
+    {
+        var paks = PakUtils.ScanPakFiles(Path.GetDirectoryName(exePath)!);
+        var reader = new CachedMemoryPakReader() { PakFilePriority = paks, IncludeUnknownFilePaths = true };
+        var files = reader.ReadAllFiles(p => {
+            return string.IsNullOrEmpty(p.path) || !(PathUtils.ParseFileFormat(p.path).format is KnownFileFormats.Movie);
+        });
+        foreach (var (file, entry) in files) {
+            foreach (var line in HashUtils.ExtractStrings(encoding, file, entry.path, HashChars)) {
+                list.Add(line);
+            }
+        }
     }
 }
