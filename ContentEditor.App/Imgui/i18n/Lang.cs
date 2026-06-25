@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
+using System.Text.Json.Serialization;
 using ContentEditor.Core;
 using ReeLib.Msg;
 
@@ -121,6 +122,7 @@ public static partial class Lang
     private static void FindTranslatables(Type ownerType, string? path)
     {
         foreach (var field in ownerType.GetFields(BindingFlags.Static | BindingFlags.Public)) {
+            if (field.GetCustomAttribute<JsonIgnoreAttribute>() != null) continue;
             if (field.FieldType.IsAssignableTo(typeof(TranslatableBase))) {
                 Translatables[path == null ? field.Name : $"{path}.{field.Name}"] = (TranslatableBase)field.GetValue(null)!;
             } else if (field.FieldType.IsAssignableTo(typeof(TranslatableGroup))) {
@@ -132,6 +134,7 @@ public static partial class Lang
         }
 
         foreach (var prop in ownerType.GetProperties(BindingFlags.Static | BindingFlags.Public)) {
+            if (prop.GetCustomAttribute<JsonIgnoreAttribute>() != null) continue;
             if (prop.PropertyType.IsAssignableTo(typeof(TranslatableBase))) {
                 Translatables[path == null ? prop.Name : $"{path}.{prop.Name}"] = (TranslatableBase)prop.GetValue(null)!;
             } else if (prop.PropertyType.IsAssignableTo(typeof(TranslatableGroup))) {

@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using ContentEditor.Core;
 using ReeLib;
 
@@ -19,8 +20,9 @@ public static partial class Lang
         public static readonly FixedString FilterInput = "Filter";
 
         public static readonly IconString WikiLink = new IconString("{0} Documentation Wiki", AppIcons.SI_GenericWiki);
-        public static readonly FixedString WikiLink_NoIcon = $"{AppIcons.SI_GenericWiki}";
+        [JsonIgnore] public static readonly FixedString WikiLink_NoIcon = $"{AppIcons.SI_GenericWiki}";
         public static readonly FixedString WikiLink_Tooltip = "Open wiki for usage documentation";
-        public static readonly FixedString BlankPadding = $"{AppIcons.SI_Blank} ";
+
+        [JsonIgnore] public static readonly InterpolatedString<TranslatableBase> BlankPrefix = $"{AppIcons.SI_Blank} {{0}}";
     }
 }

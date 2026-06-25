@@ -476,9 +476,17 @@ public static class AppImguiHelpers
         }
         return ellipsis;
     }
-    public static string FormatHotkeyString(string hotkey)
+
+    public static bool HotkeyMenuItem(ReadOnlySpan<byte> text, KeyBinding hotkey, bool enabled = true)
     {
-        if (!KeyBinding.TryParse(hotkey, out var binding)) return hotkey;
-        return (binding.ctrl ? "Ctrl + " : "") + (binding.shift ? "Shift + " : "") + (binding.alt ? "Alt + " : "") + binding.Key;
+        var click = ImGui.MenuItem(text, false, enabled);
+        ImGui.SameLine();
+        ImGui.TextColored(ImguiHelpers.GetColor(ImGuiCol.TextDisabled), AppImguiHelpers.FormatHotkeyString(hotkey));
+        return click;
+    }
+
+    public static string FormatHotkeyString(KeyBinding hotkey)
+    {
+        return (hotkey.ctrl ? "Ctrl + " : "") + (hotkey.shift ? "Shift + " : "") + (hotkey.alt ? "Alt + " : "") + hotkey.Key;
     }
 }

@@ -24,7 +24,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         Workspace = workspace;
     }
     public ContentWorkspace Workspace { get; }
-    
+
     private static string MacroMasterListPath => Path.Combine(AppConfig.Instance.LuaUserPath, "lua_macroshelf_masterlist.json");
     private static string MacroGlobalFolderPath => Path.Combine(AppConfig.Instance.LuaUserPath, "macros", "global");
     private string MacroGameFolderPath => Path.Combine(AppConfig.Instance.LuaUserPath, "macros", Workspace.Game.name);
@@ -393,7 +393,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
                 macroDraft.IsGameSpecific = macro.IsGameSpecific;
             }
             using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(textEditor))) {
-                if (ImGui.MenuItem(Lang.General.BlankPadding.ToString() + Lang.MacroShelf.MenuItem_OpenMacroInTextEditor)) {
+                if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.MacroShelf.MenuItem_OpenMacroInTextEditor))) {
                     FileSystemUtils.OpenInExternalEditor(Path.Combine(AppConfig.Instance.LuaUserPath, macro.Path!), textEditor);
                 }
             }
