@@ -11,6 +11,7 @@ using ContentEditor.Editor;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Common;
+using ReeLib.Mesh;
 using ReeLib.via;
 
 namespace ContentEditor.App;
@@ -878,7 +879,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         lastImportSourcePath = sourcePath;
         if (Workspace.ResourceManager.TryForceLoadFile(lastImportSourcePath, out var importedFile)) {
             using var _ = importedFile;
-            var lodData = new MeshLodData().Read(meshContexts.FirstOrDefault()?.MeshFile.NativeMesh);
+            var lodData = new MeshExtraDataBackup().Read(meshContexts.FirstOrDefault()?.MeshFile.NativeMesh);
             var importAsset = importedFile.GetResource<CommonMeshResource>();
             var tmpHandler = new FileHandler(new MemoryStream(), Handle.Filepath);
             importAsset.NativeMesh.WriteTo(tmpHandler, false);
@@ -1354,22 +1355,28 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         isSynced = true;
     }
 
-    private class MeshLodData
+    private class MeshExtraDataBackup
     {
         public uint lodHash;
         public List<float> lodFactors = new();
         public List<float> shadowLodFactors = new();
+        public uint[]? hashes;
+        public Vector3[]? floats;
+        public NormalRecalcData? normalRecalcData;
 
-        public MeshLodData()
+        public MeshExtraDataBackup()
         {
         }
 
-        public MeshLodData Read(MeshFile? mesh)
+        public MeshExtraDataBackup Read(MeshFile? mesh)
         {
             if (mesh == null) return this;
             lodHash = mesh.Header.lodHash;
             lodFactors = mesh.MeshData?.LODs.Select(lod => lod.lodFactor).ToList() ?? new();
             shadowLodFactors = mesh.ShadowMesh?.LODs.Select(lod => lod.lodFactor).ToList() ?? new();
+            hashes = mesh?.Hashes?.ToArray();
+            floats = mesh?.FloatData?.ToArray();
+            normalRecalcData = mesh?.NormalRecalcData;
             return this;
         }
 
@@ -1381,6 +1388,15 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             }
             for (int i = 0; i < lodFactors.Count && i < mesh.ShadowMesh?.LODs.Count; i++) {
                 mesh.ShadowMesh.LODs[i].lodFactor = lodFactors[i];
+            }
+            if (hashes != null) {
+                mesh.Hashes = hashes.ToList();
+            }
+            if (floats != null) {
+                mesh.FloatData = floats.ToList();
+            }
+            if (normalRecalcData != null) {
+                mesh.NormalRecalcData = normalRecalcData;
             }
         }
     }

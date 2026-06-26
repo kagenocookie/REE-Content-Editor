@@ -33,7 +33,7 @@ public partial class CommonMeshResource(string name, Workspace workspace) : IRes
 
     public MeshFile NativeMesh
     {
-        get => _mesh ??= (ImportMeshFromAssimp(_scene!, MeshFile.GetGameVersionConfigs(GameVersion)[0], out importWarnings));
+        get => _mesh ??= (ImportMeshFromAssimp(_scene!, MeshFile.GetGameVersionConfigs(GameVersion)[0], out importWarnings, false));
         set => _mesh = value;
     }
 
@@ -70,6 +70,12 @@ public partial class CommonMeshResource(string name, Workspace workspace) : IRes
         None,
         QuestionableSkeletonRotation,
         TooManyDeformBones,
+    }
+
+    public MeshFile ReImportFromScene(bool isGltf)
+    {
+        _mesh = (ImportMeshFromAssimp(_scene!, MeshFile.GetGameVersionConfigs(GameVersion)[0], out importWarnings, isGltf));
+        return _mesh;
     }
 
     public void WriteTo(string filepath)

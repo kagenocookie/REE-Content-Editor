@@ -87,6 +87,7 @@ public partial class MeshLoader : IFileLoader,
                     return null;
                 }
                 useDirectFilepath = true;
+                ext = Path.GetExtension(filepath.AsSpan());
             }
             using AssimpContext importer = new AssimpContext();
             importer.SetConfig(new MeshVertexLimitConfig(ushort.MaxValue));
@@ -98,7 +99,7 @@ public partial class MeshLoader : IFileLoader,
                 PostProcessSteps.GenerateUVCoords |
                 PostProcessSteps.CalculateTangentSpace |
                 PostProcessSteps.SplitLargeMeshes;
-            if (useDirectFilepath || ext == ".gltf" && File.Exists(Path.ChangeExtension(filepath, ".bin"))) {
+            if (useDirectFilepath || ext.SequenceEqual(".gltf") && File.Exists(Path.ChangeExtension(filepath, ".bin"))) {
                 importedScene = importer.ImportFile(filepath, importFlags);
             } else {
                 importedScene = importer.ImportFileFromStream(handle.Stream, importFlags, Path.GetExtension(filepath));
@@ -109,13 +110,13 @@ public partial class MeshLoader : IFileLoader,
                 return null;
             }
 
+            var isGltf = ext.SequenceEqual(".gltf") || ext.SequenceEqual(".glb");
             var resource = new CommonMeshResource(name, workspace.Env) {
                 Scene = importedScene,
                 GameVersion = workspace.Env.Config.Game.GameEnum,
             };
             resource.ImportMaterials(importedScene);
-
-            var mesh = resource.NativeMesh;
+            var mesh = resource.ReImportFromScene(isGltf);
             resource.PreloadMeshBuffers();
 
             return resource;

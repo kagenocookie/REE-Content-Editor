@@ -27,7 +27,7 @@ public partial class CommonMeshResource : IResourceFile
 
     private static readonly Quaternion ZUpToYUpRotation = new Quaternion(-0.70710677f, 0, 0, 0.70710677f);
 
-    private static MeshFile ImportMeshFromAssimp(Assimp.Scene scene, string versionConfig, out MeshImportWarnings warnings)
+    private static MeshFile ImportMeshFromAssimp(Assimp.Scene scene, string versionConfig, out MeshImportWarnings warnings, bool isGltf)
     {
         var serializerVersion = MeshFile.GetSerializerVersion(versionConfig);
         var mesh = new MeshFile(new FileHandler());
@@ -96,6 +96,7 @@ public partial class CommonMeshResource : IResourceFile
         var maxWeightsPerVert = MeshFile.GetWeightLimit(versionConfig);
         bool allowExtraWeights = maxWeightsPerVert > 8;
         var maxWeighedBones = MeshFile.GetDeformBoneLimit(versionConfig);
+        var weightsBufferIndexCount = maxWeightsPerVert % 6 == 0 ? 6 : 8;
 
         var orderedMeshes = srcMeshes.OrderBy(m => (MeshLoader.GetMeshGroupFromName(GetMeshRealName(m)), MeshLoader.GetSubMeshIndexFromName(GetMeshRealName(m))));
 
@@ -117,6 +118,28 @@ public partial class CommonMeshResource : IResourceFile
         }
         if (occMeshes.Count > 0 && shadowMeshes.Count == 0 && mainMeshes.Count == 0) {
             mesh.MaterialNames.Clear();
+        }
+
+        if (mainBuffer.ShapeKeyWeights.Length > 0 && isGltf) {
+            // gltf gives us normalized weights (either assimp_gltf or blender exporter enforcing it)
+            // but "shape keys" are also weights and therefore we end up getting 0.5 main weights and 0.5 shape keys
+            // this should counteract that without having us lose precision
+            foreach (var m in srcMeshes) {
+                if (!m.HasBones) continue;
+
+                var vert1WeightSum = m.Bones.Sum(bb => bb.Name.StartsWith(ShapekeyPrefix) ? 0f : bb.VertexWeights.Where(vw => vw.VertexID == 0).FirstOrDefault().Weight);
+                var needDouble = (0.4f < vert1WeightSum && vert1WeightSum < 0.6f);
+
+                if (needDouble) {
+                    foreach (var b in m.Bones) {
+                        for (int i = 0; i < b.VertexWeights.Count; i++) {
+                            var ww = b.VertexWeights[i];
+                            ww.Weight *= 2;
+                            b.VertexWeights[i] = ww;
+                        }
+                    }
+                }
+            }
         }
 
         var boneIndexMap = new Dictionary<string, int>();
@@ -199,6 +222,14 @@ public partial class CommonMeshResource : IResourceFile
 
             return type1.CompareTo(type2) * 10000 + GetMeshRealName(a).CompareTo(GetMeshRealName(b));
         })).ToList();
+
+        void UpdateDeformBone(int boneIndex, MeshBuffer buffer, int vertIndex)
+        {
+            var targetBone = mesh.BoneData!.Bones[boneIndex];
+            if (targetBone.boundingBox.IsEmpty) targetBone.boundingBox = AABB.MaxMin;
+            targetBone.boundingBox = targetBone.boundingBox.AsAABB.Extend(Vector3.Transform(buffer.Positions[vertIndex], targetBone.inverseGlobalTransform.ToSystem()));
+            deformBones.TryAdd(boneIndex, targetBone);
+        }
 
         foreach (var aiMesh in sortedMeshes) {
             var nodeName = GetMeshRealName(aiMesh);
@@ -345,57 +376,53 @@ public partial class CommonMeshResource : IResourceFile
             }
 
             if (buffer.Weights.Length > 0) {
-                for (int i = 0; i < aiMesh.Bones.Count; i++) {
-                    var aiBone = aiMesh.Bones[i];
-                    if (aiBone.Name.StartsWith(SecondaryWeightDummyBonePrefix)) continue;
+                var (mergedWeights, extBuffer) = SanitizeAssimpWeights(aiMesh, boneIndexMap, false, weightsBufferIndexCount, buffer);
+                var (mergedWeightsShapekey, extShapeBuffer) = SanitizeAssimpWeights(aiMesh, boneIndexMap, true, weightsBufferIndexCount, buffer);
+                List<(int index, float weight)>[]?[] bothWeights = [mergedWeights, mergedWeightsShapekey];
+                if (extBuffer && allowExtraWeights) {
+                    buffer.ExtraWeights = new VertexBoneWeights[totalVertCount];
+                    for (int ew = 0; ew < totalVertCount; ew++) buffer.ExtraWeights[ew] = new VertexBoneWeights(serializerVersion);
+                }
+                for (int wtype = 0; wtype < 2; wtype++) {
+                    var isShapekey = wtype == 1;
+                    if (bothWeights[wtype] == null) continue;
+                    var weights = bothWeights[wtype]!;
 
-                    var isShapeKey = aiBone.Name.StartsWith(ShapekeyPrefix);
-                    int boneIndex;
-                    if (isShapeKey) {
-                        boneIndex = boneIndexMap[aiBone.Name.Replace(ShapekeyPrefix, "")];
-                    } else {
-                        boneIndex = boneIndexMap[aiBone.Name];
-                    }
-                    var hasWeight = false;
-                    var targetBone = mesh.BoneData!.Bones[boneIndex];
-                    var weightBuffer = isShapeKey ? buffer.ShapeKeyWeights : buffer.Weights;
-                    foreach (var entry in aiBone.VertexWeights) {
-                        if (entry.Weight == 0) continue;
+                    var wtBuffer = isShapekey ? buffer.ShapeKeyWeights : buffer.Weights!;
+                    for (int vert = 0; vert < weights.Length; vert++) {
+                        var mw = weights[vert];
+                        var outWeight = wtBuffer[vertOffset + vert];
+                        var indexCount = outWeight.IndexCount;
+                        var bone_i = 0;
+                        for (; bone_i < mw.Count && bone_i < indexCount; bone_i++) {
+                            var (boneIdx, weight) = mw[bone_i];
+                            outWeight.SetIndex(bone_i, boneIdx);
+                            outWeight.SetWeight(bone_i, weight);
+                            UpdateDeformBone(boneIdx, buffer, vertOffset + vert);
+                        }
 
-                        var outWeight = (weightBuffer[vertOffset + entry.VertexID] ??= new(serializerVersion));
-                        var weightIndex = Array.FindIndex(outWeight.boneWeights, bb => bb == 0);
-                        if (weightIndex == -1 || weightIndex >= outWeight.IndexCount) {
-                            var fail = true;
-                            if (allowExtraWeights && !isShapeKey) {
-                                if (buffer.ExtraWeights == null) {
-                                    buffer.ExtraWeights = new VertexBoneWeights[totalVertCount];
-                                    for (int ew = 0; ew < totalVertCount; ew++) buffer.ExtraWeights[ew] = new VertexBoneWeights(serializerVersion);
+                        if (mw.Count >= indexCount) {
+                            var indexLimit = indexCount;
+                            if (allowExtraWeights && !isShapekey) {
+                                outWeight = buffer.ExtraWeights![vertOffset + vert];
+                                indexLimit = indexCount * 2;
+                                for (; bone_i < mw.Count && bone_i < indexLimit; bone_i++) {
+                                    var (boneIdx, weight) = mw[bone_i];
+                                    outWeight.SetIndex(bone_i - indexCount, boneIdx);
+                                    outWeight.SetWeight(bone_i - indexCount, weight);
+                                    UpdateDeformBone(boneIdx, buffer, vertOffset + vert);
                                 }
-                                outWeight = buffer.ExtraWeights[vertOffset + entry.VertexID];
-                                weightIndex = Array.FindIndex(outWeight.boneWeights, bb => bb == 0);
-                                fail = (weightIndex == -1 || weightIndex >= outWeight.IndexCount);
                             }
-                            if (fail) {
-                                if (warnedBones.Add(aiBone.Name)) Log.Warn($"Too many weights (> {maxWeightsPerVert}) for {(isShapeKey ? "SHAPEKEY" : "")} bone {aiBone.Name}. Ignoring.");
-                                continue;
+
+                            if (mw.Count > indexLimit && warnedBones.Add(mesh.BoneData!.Bones[mw[bone_i].index].name)) {
+                                Log.Warn($"Too many weights (> {maxWeightsPerVert}) for{(isShapekey ? " SHAPEKEY" : "")} bone {mesh.BoneData!.Bones[mw[bone_i].index].name}. Ignoring extra weights.");
                             }
                         }
-                        outWeight.SetIndex(weightIndex, boneIndex);
-                        outWeight.SetWeight(weightIndex, entry.Weight);
-                        if (targetBone.boundingBox.IsEmpty) targetBone.boundingBox = AABB.MaxMin;
-                        targetBone.boundingBox = targetBone.boundingBox.AsAABB.Extend(Vector3.Transform(buffer.Positions[vertOffset + entry.VertexID], targetBone.inverseGlobalTransform.ToSystem()));
-                        hasWeight = true;
                     }
-                    if (hasWeight) deformBones.TryAdd(boneIndex, targetBone);
                 }
 
                 var hasLooseVerts = Array.IndexOf(buffer.Weights, null, vertOffset, vertCount) != -1;
                 if (hasLooseVerts) throw new Exception($"Found {buffer.Weights.AsSpan(vertOffset, vertCount).ToArray().Count(w => w == null)} unweighted vertices in imported mesh {nodeName} - this is not OK");
-
-                foreach (var wee in buffer.Weights.AsSpan(vertOffset, vertCount)) {
-                    // ensure normalized weights
-                    wee.NormalizeWeights();
-                }
             }
 
             if ((indicesCount % 2) != 0) indicesOffset++; // handle padding
@@ -450,6 +477,7 @@ public partial class CommonMeshResource : IResourceFile
             }
 
             if (mainBuffer.ExtraWeights != null) RemapDeformBones(mainBuffer.ExtraWeights, deformBones, mainBuffer.Weights);
+            if (mainBuffer.ShapeKeyWeights.Length > 0) RemapDeformBones(mainBuffer.ShapeKeyWeights, deformBones, null);
         }
 
         if (reuseBufferForShadows && mesh.ShadowMesh != null) {
@@ -463,6 +491,48 @@ public partial class CommonMeshResource : IResourceFile
         return mesh;
     }
 
+    /// <summary>
+    /// <para>Remap assimp's awful weight structure into a more reasonable vert -> bone weights mapping.</para>
+    /// Reorders the weights so they're in descending order, because that's important in some cases.
+    /// </summary>
+    private static (List<(int index, float weight)>[]?, bool needExtendedBuffer) SanitizeAssimpWeights(Mesh aiMesh, Dictionary<string, int> boneIndexMap, bool shapeKeys, int indexCount, MeshBuffer buffer)
+    {
+        if (shapeKeys && buffer.ShapeKeyWeights.Length == 0) return default;
+        var hasAnyWeights = false;
+        for (int boneIdx = 0; boneIdx < aiMesh.Bones.Count; boneIdx++) {
+            var b = aiMesh.Bones[boneIdx];
+            if (b.Name.StartsWith(ShapekeyPrefix) == shapeKeys) {
+                hasAnyWeights = true;
+                break;
+            }
+        }
+        if (!hasAnyWeights) return default;
+
+        bool needExtendedBuffer = false;
+        var mergedWeights = new List<(int index, float weight)>[aiMesh.VertexCount];
+        for (int i = 0; i < aiMesh.VertexCount; i++) mergedWeights[i] = new();
+        for (int boneIdx = 0; boneIdx < aiMesh.Bones.Count; boneIdx++) {
+            var bone = aiMesh.Bones[boneIdx];
+            if (bone.Name.StartsWith(ShapekeyPrefix) != shapeKeys) continue;
+            if (bone.Name.StartsWith(SecondaryWeightDummyBonePrefix)) continue;
+
+            var actualBoneIndex = boneIndexMap[bone.Name.Replace(ShapekeyPrefix, "")];
+            foreach (var vw in bone.VertexWeights) {
+                if (vw.Weight == 0) continue;
+                mergedWeights[vw.VertexID].Add((actualBoneIndex, vw.Weight));
+            }
+        }
+
+        foreach (var list in mergedWeights) {
+            list.Sort((a, b) => b.weight.CompareTo(a.weight));
+            if (list.Count > indexCount) {
+                needExtendedBuffer = true;
+            }
+        }
+
+        return (mergedWeights, needExtendedBuffer);
+    }
+
     private static void PreAllocateMeshBuffer(string versionConfig, MeshFile mesh, List<Mesh> srcMeshes, MeshBuffer mainBuffer)
     {
         var totalVertCount = srcMeshes.Sum(m => m.VertexCount);
@@ -471,6 +541,7 @@ public partial class CommonMeshResource : IResourceFile
         var paddedTriCount = totalTriCount + srcMeshes.Count(m => (m.FaceCount * 3) % 2 != 0);
         mainBuffer.Positions = new Vector3[totalVertCount];
         mesh.Header.flags |= ContentFlags.EnableRebraiding2;
+        var serializeVersion = MeshFile.GetSerializerVersion(versionConfig);
         if (srcMeshes.All(m => m.HasNormals && m.HasTangentBasis)) {
             mainBuffer.NormalsTangents = new QuantizedNorTan[totalVertCount];
         }
@@ -480,10 +551,12 @@ public partial class CommonMeshResource : IResourceFile
         if (srcMeshes.All(m => m.Bones.Count > 0 && m.Bones.Any(b => b.HasVertexWeights))) {
             mainBuffer.Weights = new VertexBoneWeights[totalVertCount];
             mesh.Header.flags |= ContentFlags.IsSkinning | ContentFlags.HasJoint;
+            for (int i = 0; i < totalVertCount; i++) mainBuffer.Weights[i] = new VertexBoneWeights(serializeVersion);
         }
-        if (srcMeshes.Any(m => m.Bones.Any(b => b.Name.StartsWith(ShapekeyPrefix)))) {
+        if (srcMeshes.Any(m => m.Bones.Any(b => b.Name.StartsWith(ShapekeyPrefix) && b.HasVertexWeights && b.VertexWeights.Any(w => w.Weight > 0)))) {
             mainBuffer.ShapeKeyWeights = new VertexBoneWeights[totalVertCount];
             mesh.Header.flags |= ContentFlags.HasVertexGroup;
+            for (int i = 0; i < totalVertCount; i++) mainBuffer.ShapeKeyWeights[i] = new VertexBoneWeights(serializeVersion);
         }
         if (srcMeshes.All(m => m.HasVertexColors(0))) {
             mainBuffer.Colors = new Color[totalVertCount];
