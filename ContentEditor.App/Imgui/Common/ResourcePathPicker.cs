@@ -360,7 +360,7 @@ public class ResourcePathPicker : IObjectUIHandler
                 Logger.Error("Chosen filepath is not inside the bundle folder! Use Save As instead if it was intentional.");
                 return;
             }
-            localFilepath = path.Replace(bundleFolder, "").TrimStart('/');
+            localFilepath = PathUtils.RemovePlatformPrefix(path.Replace(bundleFolder, "").TrimStart('/')).ToString();
             var newFilename = Path.GetFileName(path);
 
             if (File.Exists(path)) {
