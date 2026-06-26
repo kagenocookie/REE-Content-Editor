@@ -10,7 +10,9 @@ assignees: ''
 **Describe the bug**
 A clear and concise description of what the bug is.
 
-**Which game does the issue happen in?**
+**Which game does the issue happen with?**
+
+**Does anything written in [Common Issues](https://github.com/kagenocookie/REE-Content-Editor/wiki/Common-issues) help resolve the issue?**
 
 **If the issue is with any RSZ related files (.pfb, .scn, .user) or missing files (PAK Browser), have you tried running Edit > "Check for updated game data cache" and restarting the editor?**
 
