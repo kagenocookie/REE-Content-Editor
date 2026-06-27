@@ -91,6 +91,23 @@ public class DiffPatcher
                 instance.Values[fieldIndex] = new GameObjectRef(guid);
             } else {
                 var csType = RszInstance.RszFieldTypeToCSharpType(field.type);
+                // for struct types with multiple fields, we need to manually ensure all unspecified fields keep their original values
+                // a (1,1,1) => (1,2,1) change gets diff'd as (_,2,_); without this handling, we'd get (0,2,0) instead of (1,2,1) here
+                // the other, likely better option would be to force all fields into the diff json
+                // but that's difficult because it works on json nodes and not raw values so the actual type isn't known there
+                // instead, fully serialize the original value and override any fields given to us from the patch diff
+                // that way we keep all original field values intact; if we later change patch gen to force include all fields, this still works fine
+                if (diffprop.Value is JsonObject jsoNew) {
+                    var orgValueJson = instance.Values[fieldIndex] == null ? null : JsonSerializer.SerializeToNode(instance.Values[fieldIndex], env.JsonOptions);
+                    if (orgValueJson is JsonObject jsoOrg) {
+                        foreach (var (k, v) in jsoNew) {
+                            jsoOrg[k] = v == null ? null : v.DeepClone();
+                        }
+                        instance.Values[fieldIndex] = jsoOrg.Deserialize(csType, env.JsonOptions) ?? Activator.CreateInstance(csType)!;
+                        continue;
+                    }
+                }
+
                 instance.Values[fieldIndex] = diffprop.Value.Deserialize(csType, env.JsonOptions) ?? Activator.CreateInstance(csType)!;
             }
         }

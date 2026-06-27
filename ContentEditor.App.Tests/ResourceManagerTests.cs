@@ -1,3 +1,4 @@
+using System.Numerics;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
@@ -52,7 +53,7 @@ public class ResourceManagerTests
             .SetMessage(ReeLib.Msg.Language.English, "Original");
         rawMsg.Save();
 
-        var bundleMsg = _workspaceFixture.CreateBundleFile<MsgFile>("test.msg.22");
+        var (bundleMsg, _) = _workspaceFixture.CreateBundleFile<MsgFile>("test.msg.22");
         bundleMsg.AddNewEntry("key", guid)
             .SetMessage(ReeLib.Msg.Language.Japanese, "Unchanged")
             .SetMessage(ReeLib.Msg.Language.English, "Updated");
@@ -72,7 +73,7 @@ public class ResourceManagerTests
     {
         var bundle = _workspaceFixture.CreateTestBundle();
 
-        var bundleMsg = _workspaceFixture.CreateBundleFile<MsgFile>("test.msg.22");
+        var (bundleMsg, _) = _workspaceFixture.CreateBundleFile<MsgFile>("test.msg.22");
         var bundleEntry = bundleMsg.AddNewEntry("key", Guid.NewGuid());
         bundleEntry.SetMessage(ReeLib.Msg.Language.Japanese, "text");
         bundleMsg.Save();
@@ -94,7 +95,7 @@ public class ResourceManagerTests
         rawMsg.AddNewEntry("key", guid).SetMessage(ReeLib.Msg.Language.English, "Original");
         rawMsg.Save();
 
-        var bundleMsg = _workspaceFixture.CreateBundleFile<MsgFile>("test.msg.22", res => res.BaseFile = "test_original.msg.22");
+        var (bundleMsg, _) = _workspaceFixture.CreateBundleFile<MsgFile>("test.msg.22", res => res.BaseFile = "test_original.msg.22");
         bundleMsg.AddNewEntry("key", guid).SetMessage(ReeLib.Msg.Language.English, "Updated");
         bundleMsg.Save();
 
@@ -117,7 +118,7 @@ public class ResourceManagerTests
         rawMsg.AddNewEntry("key", guid).SetMessage(ReeLib.Msg.Language.English, "Original");
         rawMsg.Save();
 
-        var bundleMsg = _workspaceFixture.CreateBundleFile<MsgFile>("test.msg.22");
+        var (bundleMsg, _) = _workspaceFixture.CreateBundleFile<MsgFile>("test.msg.22");
         bundleMsg.AddNewEntry("key", guid).SetMessage(ReeLib.Msg.Language.English, "Updated");
         bundleMsg.Save();
 
@@ -132,6 +133,39 @@ public class ResourceManagerTests
         }
 
         Assert.That(file.GetFile<MsgFile>().FindEntryByKey("key")?.GetMessage(ReeLib.Msg.Language.English), Is.EqualTo("Updated"));
+    }
+
+    [Test]
+    public void ResourceManager_UserFileDiff_AppliesVector3Partially()
+    {
+        var bundle = _workspaceFixture.CreateTestBundle();
+
+        var raw = _workspaceFixture.CreateFile<UserFile>("test.user.2");
+        var transformCls = _workspace.Env.Classes.Transform;
+        var trans1 = _workspace.Env.CreateRszInstance(transformCls);
+        RszFieldCache.Transform.LocalPosition.Set(trans1, new Vector3(1, 1, 1));
+        raw.RSZ.AddToObjectTable(trans1);
+        raw.RebuildInfoTable();
+        raw.Save();
+
+        var (modified, res) = _workspaceFixture.CreateBundleFile<UserFile>("test.user.2");
+        var trans2 = _workspace.Env.CreateRszInstance(transformCls);
+        RszFieldCache.Transform.LocalPosition.Set(trans2, new Vector3(1, 2, 1));
+        modified.RSZ.AddToObjectTable(trans2);
+        modified.RebuildInfoTable();
+        modified.Save();
+
+        GenerateFileDiff("test.user.2");
+        _workspace.ResourceManager.CloseAllFiles();
+
+        var (userFile, userHandle) = _workspaceFixture.LoadTempFile<UserFile>("test.user.2");
+        userHandle.DiffHandler!.ApplyDiff(res.Diff!);
+
+        // the 1 values are unchanged from the original, so they shouldn't be present in the diff json
+        Assert.That(res.Diff?.ToJsonString(), !Contains.Substring("1"));
+
+        // but we still expect the original values to be kept for the 1s
+        Assert.That(RszFieldCache.Transform.LocalPosition.Get(userFile.Instance!), Is.EqualTo(new Vector3(1, 2, 1)));
     }
 
 

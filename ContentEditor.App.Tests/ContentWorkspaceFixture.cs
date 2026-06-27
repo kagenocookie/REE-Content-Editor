@@ -54,7 +54,7 @@ public sealed class ContentWorkspaceFixture : IDisposable
         return bundle;
     }
 
-    public TFile CreateBundleFile<TFile>(string localPath, Action<ResourceListItem>? modResource = null) where TFile : BaseFile
+    public (TFile file, ResourceListItem entry) CreateBundleFile<TFile>(string localPath, Action<ResourceListItem>? modResource = null) where TFile : BaseFile
     {
         if (Workspace.CurrentBundle == null) {
             CreateTestBundle(localPath);
@@ -64,7 +64,7 @@ public sealed class ContentWorkspaceFixture : IDisposable
         var file = CreateFile<TFile>(Path.Combine(bundleFolder, localPath));
         var res = Workspace.CurrentBundle.AddResource(localPath, localPath);
         modResource?.Invoke(res);
-        return file;
+        return (file, res);
     }
 
     public TFile CreateFile<TFile>(string path) where TFile : BaseFile
@@ -74,6 +74,17 @@ public sealed class ContentWorkspaceFixture : IDisposable
         Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
         file.Save();
         return file;
+    }
+
+    public (TFile file, FileHandle handle) LoadTempFile<TFile>(string path) where TFile : BaseFile
+    {
+        var fullPath = Path.Combine(Workspace.Env.Config.ChunkPath, "natives/STM", path);
+        if (!Workspace.ResourceManager.TryForceLoadFile(fullPath, out var handle)) {
+            Assert.Fail("Failed to load file " + path);
+        }
+
+        var file = handle!.GetFile<TFile>();
+        return (file, handle);
     }
 
     public void Dispose()
