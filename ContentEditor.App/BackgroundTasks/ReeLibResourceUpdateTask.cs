@@ -17,16 +17,21 @@ public class ReeLibResourceUpdateTask(Workspace workspace) : IBackgroundTask
 
     public async Task Execute(CancellationToken token = default)
     {
-        ResourceRepository.UpdateAndGet(Workspace.Config.Game);
-        Status = "Loading List File";
-        _ = Workspace.ListFile;
-        Status = "Loading RSZ JSON";
         try {
-            _ = Workspace.RszParser;
-        } catch {
-            // ignore, likely unsupported game
+            ResourceRepository.UpdateAndGet(Workspace.Config.Game);
+            Status = "Loading List File";
+            _ = Workspace.ListFile;
+            Status = "Loading RSZ JSON";
+            try {
+                _ = Workspace.RszParser;
+            } catch {
+                // ignore, likely unsupported game
+            }
+            Status = "Loading Type Cache";
+            _ = Workspace.TypeCache;
+        } catch (Exception e) {
+            Logger.Error(e, "Failed to setup game specific resources");
+            throw;
         }
-        Status = "Loading Type Cache";
-        _ = Workspace.TypeCache;
     }
 }
