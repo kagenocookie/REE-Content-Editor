@@ -91,7 +91,7 @@ public class BundleManager
                 Logger.Error("Found invalid, unnamed bundle " + bundleJsonFile);
                 continue;
             }
-            bundle.StoragePath = entry;
+            bundle.StoragePath = entry.NormalizeFilepath();
             bundle.Init(this);
 
             var idx = settings.BundleOrder.IndexOf(bundle.Name);
@@ -122,7 +122,7 @@ public class BundleManager
                 Logger.Error("Found invalid, unnamed bundle " + entry);
                 continue;
             }
-            bundle.StoragePath = entry;
+            bundle.StoragePath = entry.NormalizeFilepath();
             bundle.Init(this);
 
             // TODO figure out app/runtime bundle link
