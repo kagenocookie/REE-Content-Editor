@@ -192,16 +192,17 @@ public sealed class BackgroundTaskService : IDisposable
                     continue;
                 }
 
+                IBackgroundTask? task = null;
                 try {
-                    var task = CurrentTask;
+                    task = CurrentTask;
                     if (task != null) {
                         task.TaskStatus = TaskStatus.Running;
                         task.Execute(token).Wait();
                         task.TaskStatus = TaskStatus.RanToCompletion;
                     }
                 } catch (Exception e) {
-                    MainLoop.Instance.InvokeFromUIThread(() => Logger.Error($"Background task {CurrentTask} failed: " + e.Message));
-                    CurrentTask.TaskStatus = TaskStatus.Faulted;
+                    MainLoop.Instance.InvokeFromUIThread(() => Logger.Error($"Background task {task} failed: " + e.Message));
+                    task?.TaskStatus = TaskStatus.Faulted;
                 }
 
                 CurrentTask = null;
