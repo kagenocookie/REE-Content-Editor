@@ -80,6 +80,7 @@ public sealed class ContentWorkspace : IDisposable
             CurrentBundle = null;
             Data.Name = null;
             ResourceManager.SetBundle(BundleManager, null);
+            Env.ResetListFile();
             return;
         }
 
@@ -89,6 +90,7 @@ public sealed class ContentWorkspace : IDisposable
             EditedBundleManager = BundleManager.CreateBundleSpecificManager(bundle);
             CurrentBundle = EditedBundleManager.GetBundle(bundle, null);
             ResourceManager.SetBundle(EditedBundleManager, CurrentBundle);
+            Env.ResetListFile();
         }
     }
 
