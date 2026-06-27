@@ -296,7 +296,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         }
         removeSubwindows.Add(subwindow);
         var file = (subwindow.Handler as IFileHandleReferenceHolder)?.Handle;
-        if (file != null && !AppConfig.Instance.DisableFileCloseWarning) {
+        if (file != null) {
             var wnd = EditorWindow.CurrentWindow;
             if (wnd == null) return;
             if (!wnd.Workspace.ResourceManager.IsFileOpen(file)) {
@@ -313,7 +313,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
                 }
             }
 
-            if (!subwindows.Contains(subwindow)) {
+            if (AppConfig.Instance.DisableFileCloseWarning || !subwindows.Contains(subwindow)) {
                 // avoid spamming messages for embedded child file windows
                 return;
             }

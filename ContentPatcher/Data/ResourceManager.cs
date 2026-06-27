@@ -847,7 +847,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         if (Path.IsPathFullyQualified(filepath)) {
             if (!File.Exists(filepath)) return null;
 
-            if (includeActiveBundle && activeBundle?.HasResources == true && filepath.NormalizeFilepath().StartsWith(activeBundle.StoragePath.NormalizeFilepath())) {
+            if (includeActiveBundle && activeBundle?.HasResources == true && filepath.NormalizeFilepath().StartsWith(activeBundle.StoragePath)) {
                 handle = AttemptResolveBundleFile(filepath, targetPath, false);
             }
 
