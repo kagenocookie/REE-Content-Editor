@@ -1201,12 +1201,15 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
         if (anyNotClosed) return false;
 
-        if (workspace != null && WorkspaceManager.Instance.IsLastReference(workspace.Env) && workspace.ResourceManager.GetModifiedResourceFiles().Any()) {
-            AddSubwindow(new SaveFileConfirmation(Lang.General.UnsavedChanges, Lang.General.UnsavedChangesCloseAll, workspace.ResourceManager.GetModifiedResourceFiles(), this, () => {
-                workspace.ResourceManager.CloseAllFiles();
-                onConfirm?.Invoke();
-            }));
-            return false;
+        if (workspace != null) {
+            if (WorkspaceManager.Instance.IsLastReference(workspace.Env) && workspace.ResourceManager.GetModifiedResourceFiles().Any()) {
+                AddSubwindow(new SaveFileConfirmation(Lang.General.UnsavedChanges, Lang.General.UnsavedChangesCloseAll, workspace.ResourceManager.GetModifiedResourceFiles(), this, () => {
+                    workspace.ResourceManager.CloseAllFiles();
+                    onConfirm?.Invoke();
+                }));
+                return false;
+            }
+            workspace.ResourceManager.CloseAllFiles();
         }
 
         return true;
