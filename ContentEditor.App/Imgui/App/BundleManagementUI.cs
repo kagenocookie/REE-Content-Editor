@@ -564,31 +564,44 @@ public class BundleManagementUI : IWindowHandler
     {
         if (entry == null) return;
 
-        string target = entry.Target;
         if (ImGui.BeginPopup("EditTargetPath")) {
-            ImGui.SeparatorText(Lang.Bundles.EditTargetPathHeader);
-            ImGui.SetNextItemWidth(ImGui.CalcTextSize(target).X + 15);
-            if (ImGui.InputText("##target", ref target, 512)) {
-                var workspace = context.GetWorkspace();
-                entry.Target = workspace?.Env.GetTargetPath(target)
-                    ?? PathUtils.RemovePlatformPrefix(target).ToString();
-            }
-            ImGui.SameLine();
-            if (ImGui.Button($"{AppIcons.SI_Save}")) {
-                entry.Target = target;
-                bundle.Save();
-                ImGui.CloseCurrentPopup();
-            }
-            ImguiHelpers.Tooltip(Lang.Buttons.Save);
-            ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
                 ImGui.CloseCurrentPopup();
             }
             ImguiHelpers.Tooltip(Lang.Buttons.Cancel);
-            ImGui.TextColored(Colors.Note, "The final target file path this file should read as.\nThe platform specific natives/stm/ prefix will be automatically added\nduring patching or publishing and does not need to be included here."u8);
+            ImGui.SameLine();
+            if (ImGui.Button($"{AppIcons.SI_Save}")) {
+                bundle.Save();
+                ImGui.CloseCurrentPopup();
+            }
+            ImguiHelpers.Tooltip(Lang.Buttons.Save);
+
+            var inputLen = Math.Max(ImGui.CalcTextSize(entry.Target).X, ImGui.CalcTextSize(entry.BaseFile ?? "").X) + 15;
+
+            string path = entry.Target;
+            ImGui.SeparatorText(Lang.Bundles.EditTargetPathHeader);
+            ImGui.SetNextItemWidth(inputLen);
+            if (ImGui.InputText("##target", ref path, 512)) {
+                var workspace = context.GetWorkspace();
+                entry.Target = workspace?.Env.GetTargetPath(path)
+                    ?? PathUtils.RemovePlatformPrefix(path).ToString();
+            }
+            ImGui.TextColored(Colors.Note, Lang.Bundles.EditTargetPath_Description);
+
+            path = entry.BaseFile ?? "";
+            ImGui.SeparatorText(Lang.Bundles.BaseFilePath);
+            ImGui.SetNextItemWidth(inputLen);
+            if (ImGui.InputText("##baseFile", ref path, 512)) {
+                var workspace = context.GetWorkspace();
+                entry.BaseFile = workspace?.Env.GetTargetPath(path)
+                    ?? PathUtils.RemovePlatformPrefix(path).ToString();
+            }
+            ImGui.TextColored(Colors.Note, Lang.Bundles.BaseFilePath_Description);
+
             ImGui.EndPopup();
         }
     }
+
     private void OpenFileFromNode(HierarchyTreeWidget node, Bundle bundle)
     {
         if (node.EntryKey == null || openFileCallback == null) return;

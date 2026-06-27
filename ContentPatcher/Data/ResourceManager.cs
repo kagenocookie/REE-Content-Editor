@@ -658,7 +658,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     {
         try {
             using var fs = File.OpenRead(filepath);
-            fileHandle = CreateFileHandleInternal(filepath.NormalizeFilepath(), nativePathOverride, fs, true);
+            fileHandle = CreateFileHandleInternal(filepath.NormalizeFilepath(), nativePathOverride, fs, null, true);
             return fileHandle != null;
         } catch (Exception e) {
             Logger.Error("Failed to load file: " + e.Message);
@@ -766,7 +766,8 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                 return true;
             }
             openFiles[resolvedPath] = file = CreateRawStreamFileHandle(resolvedPath, streamingTargetPath, rawStream, true);
-            AttemptResolveBundleFile(ref file, streamingTargetPath, streamingTargetPath, streamingTargetPath);
+            var bundleFile = AttemptResolveBundleFile(streamingTargetPath, streamingTargetPath, true);
+            file = bundleFile ?? file;
             return true;
         }
 
@@ -846,32 +847,44 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         if (Path.IsPathFullyQualified(filepath)) {
             if (!File.Exists(filepath)) return null;
 
-            var file = File.OpenRead(filepath);
-            handle = CreateFileHandleInternal(filepath, targetPath, file);
+            if (includeActiveBundle && activeBundle?.HasResources == true && filepath.NormalizeFilepath().StartsWith(activeBundle.StoragePath.NormalizeFilepath())) {
+                handle = AttemptResolveBundleFile(filepath, targetPath, false);
+            }
+
+            if (handle == null) {
+                var file = File.OpenRead(filepath);
+                handle = CreateFileHandleInternal(filepath, targetPath, file, targetPath);
+            }
+
             if (handle == null) return null;
 
             openFiles.TryAdd(handle.TargetPath ?? handle.Filepath, handle);
             return handle;
         }
 
-        // if it's a relative path, always start by attempting to load the PAK sourced file, so we can have the base file for diffing
-        // could be optimized to only do so for actually diffable files, but usually there probably isn't enough modded files to make a meaningful difference
-        var stream = workspace.Env.FindSingleFile(filepath, out var resolvedFilename);
-        if (resolvedFilename != null) resolvedFilename = workspace.Env.RemoveBasePath(resolvedFilename).ToString();
-        if (stream != null) {
-            filepath = resolvedFilename ?? filepath;
-            handle = CreateFileHandleInternal(filepath, targetPath ?? (resolvedFilename != null && !Path.IsPathFullyQualified(resolvedFilename) ? resolvedFilename : null), stream);
+        if (includeActiveBundle) {
+            handle = AttemptResolveBundleFile(filepath, targetPath, false);
         }
 
-        if (includeActiveBundle) {
-            AttemptResolveBundleFile(ref handle, filepath, targetPath, resolvedFilename);
+        if (handle == null) {
+            // either no bundle, file is not in bundle, or bundle load failed
+            // this does mean we might end up loading the basegame file when a bundle file fails to load
+            // reasonable for some cases (dependency files) and confusing in some (opening bundle file directly),
+            // but surely the user noticed the error message
+            var stream = workspace.Env.FindSingleFile(filepath, out var resolvedFilename);
+            if (resolvedFilename != null) resolvedFilename = workspace.Env.RemoveBasePath(resolvedFilename).ToString();
+            if (stream != null) {
+                filepath = resolvedFilename ?? filepath;
+                var srcFile = targetPath ?? (resolvedFilename != null && !Path.IsPathFullyQualified(resolvedFilename) ? resolvedFilename : null);
+                handle = CreateFileHandleInternal(filepath, srcFile, stream, srcFile);
+            }
         }
 
         if (workspace.Env.AllowUseLooseFiles && handle?.HandleType != FileHandleType.Bundle) {
-            var looseStream = workspace.Env.FindSingleFile(resolvedFilename ?? filepath, out var loosePath, Workspace.FileSourceType.Loose);
+            var looseStream = workspace.Env.FindSingleFile(filepath, out var loosePath, Workspace.FileSourceType.Loose);
             if (looseStream != null) {
                 var useRawHandler = handle?.Loader is UnknownStreamFileLoader;
-                var looseHandle = useRawHandler ? CreateRawStreamFileHandle(loosePath ?? filepath, resolvedFilename, looseStream) : CreateFileHandleInternal(loosePath ?? filepath, resolvedFilename, looseStream)!;
+                var looseHandle = useRawHandler ? CreateRawStreamFileHandle(loosePath ?? filepath, filepath, looseStream) : CreateFileHandleInternal(loosePath ?? filepath, filepath, looseStream, filepath)!;
                 if (looseHandle != null) {
                     if (handle == null) {
                         handle = looseHandle;
@@ -888,7 +901,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         return handle;
     }
 
-    private bool AttemptResolveBundleFile([NotNullIfNotNull(nameof(handle))] ref FileHandle? handle, string filepath, string? targetPath, string? resolvedFilename)
+    private FileHandle? AttemptResolveBundleFile(string filepath, string? targetPath, bool rawFile)
     {
         // TODO should include dependency bundles as well here
         if (activeBundle?.HasResources == true && activeBundle.TryFindResource(targetPath ?? filepath, out var resourceListing, out var localPath)) {
@@ -896,43 +909,46 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             var fullBundleFilePath = workspace.BundleManager.ResolvePathToBundleFile(activeBundle, localPath);
             if (File.Exists(fullBundleFilePath)) {
                 using var bundleStream = File.OpenRead(fullBundleFilePath);
-                var useRawHandler = handle?.Loader is UnknownStreamFileLoader;
-                var activeHandle = useRawHandler ? CreateRawStreamFileHandle(fullBundleFilePath, resourceListing.Target, bundleStream) : CreateFileHandleInternal(fullBundleFilePath, resourceListing.Target, bundleStream);
-                // FileHandle? activeHandle = null; // testing diff apply behavior
-                if (handle != null) {
-                    if (activeHandle != null) {
-                        // reuse the temp file's diff handler since it should have internalized the source file within itself
-                        // this way we can use it as the diff base easily
-                        activeHandle.DiffHandler = handle.DiffHandler ?? activeHandle.DiffHandler;
-                    } else {
-                        // if bundle file fails to load, it may be outdated - try patching it with the diff instead
-                        if (handle.DiffHandler != null && resourceListing.Diff != null) {
-                            handle.DiffHandler.ApplyDiff(resourceListing.Diff);
-                            // re-open the original file, this way we have a distinct pristine base file in the differ
-                            // (ApplyDiff likely reused existing instances from the previous base file, meaning we'd have the same instances in the base and in the patched file)
-                            var newBaseHandle = useRawHandler ? CreateRawStreamFileHandle(fullBundleFilePath, resourceListing.Target, bundleStream) : CreateFileHandleInternal(filepath, targetPath ?? resolvedFilename, workspace.Env.GetRequiredFile(resolvedFilename!))!;
-                            activeHandle = new FileHandle(fullBundleFilePath, new MemoryStream(), FileHandleType.Memory, handle.Loader) {
-                                TargetPath = resourceListing.Target,
-                                ResourcePath = workspace.Env.GetResourcePath(resourceListing.Target).ToString(),
-                                DiffHandler = newBaseHandle.DiffHandler,
-                                Resource = handle.Resource,
-                            };
-                            activeHandle.Modified = true;
-                            Logger.Warn("Bundle file could not be loaded directly, using the last partial patch instead:\n" + fullBundleFilePath);
-                        } else {
-                            Logger.Error("Failed to load bundle file - it may be outdated and no partial patch is available:\n" + fullBundleFilePath);
-                            handle.Modified = true;
-                        }
-                    }
+                if (rawFile) {
+                    var rawHandle = CreateRawStreamFileHandle(fullBundleFilePath, resourceListing.Target, bundleStream);
+                    rawHandle.FileSource = activeBundle.Name;
+                    return rawHandle;
                 }
-                handle = activeHandle;
+
+                var handle = CreateFileHandleInternal(fullBundleFilePath, resourceListing.Target, bundleStream, resourceListing.BaseFile ?? resourceListing.Target);
                 if (handle != null) {
                     handle.FileSource = activeBundle.Name;
+                    return handle;
                 }
-                return activeHandle != null;
+
+                // file failed to load, what now? we can try fetching the base file and do a partial patch
+                var baseFilePath = resourceListing.BaseFile ?? resourceListing.Target;
+                var baseFile = rawFile || baseFilePath == null ? null : workspace.Env.GetFile(baseFilePath, Workspace.FileSourceType.Original);
+                var newBaseHandle = baseFile == null ? null : CreateFileHandleInternal(filepath, baseFilePath, baseFile, null);
+                if (string.IsNullOrEmpty(baseFilePath) || baseFile == null || newBaseHandle?.DiffHandler == null || resourceListing.Diff == null) {
+                    Logger.Error("Failed to load bundle file - it may be outdated and no partial patch is available:\n" + fullBundleFilePath);
+                    return null;
+                }
+
+                newBaseHandle.DiffHandler.ApplyDiff(resourceListing.Diff);
+                handle = new FileHandle(fullBundleFilePath, new MemoryStream(), FileHandleType.Bundle, newBaseHandle.Loader) {
+                    TargetPath = resourceListing.Target,
+                    ResourcePath = workspace.Env.GetResourcePath(resourceListing.Target).ToString(),
+                    DiffHandler = newBaseHandle.DiffHandler,
+                    Resource = newBaseHandle.Resource,
+                    FileSource = activeBundle.Name,
+                };
+                handle.Modified = true;
+                // reopen the base file to make sure it's a clean separate file
+                newBaseHandle.DiffHandler.LoadBase(
+                    workspace,
+                    CreateFileHandleInternal(filepath, baseFilePath, workspace.Env.GetRequiredFile(baseFilePath, Workspace.FileSourceType.Original), null)!);
+
+                Logger.Warn("Bundle file could not be loaded directly, but succeeded recovery using the last partial patch instead:\n" + fullBundleFilePath);
+                return handle;
             }
         }
-        return false;
+        return null;
     }
 
     public bool CanLoadFile(string filepath)
@@ -992,7 +1008,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     private readonly Dictionary<string, string> _importExceptions = new();
     public string? GetLastFileImportError(string filepath) => _importExceptions.GetValueOrDefault(filepath);
 
-    private FileHandle? CreateFileHandleInternal(string filepath, string? targetPath, Stream stream, bool allowDisposeStream = true)
+    private FileHandle? CreateFileHandleInternal(string filepath, string? targetPath, Stream stream, string? baseFilePath, bool allowDisposeStream = true)
     {
         var format = PathUtils.ParseFileFormat(filepath);
 
@@ -1025,12 +1041,12 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         handle.DiffHandler = handle.Loader.CreateDiffHandler();
         if (handle.DiffHandler == null) return handle;
 
-        if (handle.TargetPath != null && handle.HandleType is FileHandleType.Disk or FileHandleType.Bundle) {
-            var baseFile = workspace.Env.GetFile(handle.TargetPath);
+        if (baseFilePath != null && handle.HandleType is FileHandleType.Disk or FileHandleType.Bundle) {
+            var baseFile = workspace.Env.GetFile(baseFilePath);
             if (baseFile != null) {
-                var baseFileHandle = CreateFileHandleInternal(handle.TargetPath, handle.TargetPath, baseFile);
+                var baseFileHandle = CreateFileHandleInternal(baseFilePath, baseFilePath, baseFile, null);
                 if (baseFileHandle == null) {
-                    Logger.Warn("Failed to load base file " + handle.TargetPath);
+                    Logger.Warn("Failed to load base file " + baseFilePath);
                 } else {
                     handle.DiffHandler.LoadBase(workspace, baseFileHandle);
                 }
@@ -1077,12 +1093,15 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         return handle;
     }
 
-    public FileHandle CreateFileHandle(string filepath, string? nativeOrTargetPath, Stream stream, bool allowDispose = true, bool keepFileReference = true)
+    /// <summary>
+    /// Attempt to create a file handle for an arbitrary file stream and store it in the open files list. Does not load the base file so diffs won't work with the file.
+    /// </summary>
+    public FileHandle CreateCustomFileHandle(string filepath, string? nativeOrTargetPath, Stream stream, bool allowDispose = true, bool keepFileReference = true)
     {
         if (nativeOrTargetPath != null && nativeOrTargetPath.StartsWith("natives/", StringComparison.OrdinalIgnoreCase)) {
             nativeOrTargetPath = PathUtils.RemovePlatformPrefix(nativeOrTargetPath).ToString();
         }
-        var handle = this.CreateFileHandleInternal(filepath.NormalizeFilepath(), nativeOrTargetPath, stream, allowDispose);
+        var handle = CreateFileHandleInternal(filepath.NormalizeFilepath(), nativeOrTargetPath, stream, null, allowDispose);
         if (handle == null) {
             throw new NotSupportedException();
         }

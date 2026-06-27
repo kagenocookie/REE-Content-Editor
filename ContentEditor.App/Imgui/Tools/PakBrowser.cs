@@ -764,7 +764,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
                 if (stream == null) {
                     Logger.Error("Failed to open unknown file " + file);
                 } else {
-                    var handle = contentWorkspace.ResourceManager.CreateFileHandle(contentWorkspace.Env.AppendFileVersion(file), null, stream!);
+                    var handle = contentWorkspace.ResourceManager.CreateCustomFileHandle(contentWorkspace.Env.AppendFileVersion(file), null, stream!);
                     EditorWindow.CurrentWindow?.AddFileEditor(handle);
                 }
             } else if (PakFilePaths == null) {

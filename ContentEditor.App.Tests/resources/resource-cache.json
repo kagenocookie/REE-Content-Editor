@@ -1,0 +1,20 @@
+{
+  "LastUpdateCheckAtUtc": "2026-06-26T17:35:05.0506186Z",
+  "FileExtensionsPath": {
+    "Uri": "resources/file_extensions.json",
+    "LastUpdatedAt": "2026-05-02T09:31:46.4746737Z"
+  },
+  "LocalInfo": {
+    "dd2": {
+      "DataPath": "resources/dd2",
+      "LocalPaths": {
+        "LastUpdatedAtUtc": "2026-06-25T05:25:10.7868496Z",
+        "RszPatchFiles": [
+          "resources/agnostic_rsz.json"
+        ],
+        "FileList": "resources/dd2/files.list"
+      }
+    }
+  },
+  "DisableAutoUpdates": true
+}

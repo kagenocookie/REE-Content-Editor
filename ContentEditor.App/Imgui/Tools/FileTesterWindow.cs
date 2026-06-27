@@ -315,7 +315,7 @@ public partial class FileTesterWindow : IWindowHandler
 
                         FileHandle? file = null;
                         try {
-                            file = env.ResourceManager.CreateFileHandle(path, path, stream, allowDispose: false, keepFileReference: false);
+                            file = env.ResourceManager.CreateCustomFileHandle(path, path, stream, allowDispose: false, keepFileReference: false);
                             var diffDesc = ExecuteRewriteTest(env, format, file);
                             if (diffDesc == null) {
                                 success++;
@@ -507,7 +507,7 @@ public partial class FileTesterWindow : IWindowHandler
     {
         if (!env.ResourceManager.CanLoadFile(path)) return false;
         try {
-            var file = env.ResourceManager.CreateFileHandle(path, path, stream, allowDispose: false, keepFileReference: false);
+            var file = env.ResourceManager.CreateCustomFileHandle(path, path, stream, allowDispose: false, keepFileReference: false);
             if (file != null) {
                 env.ResourceManager.CloseFile(file);
                 return true;

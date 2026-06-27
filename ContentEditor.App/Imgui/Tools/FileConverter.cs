@@ -608,7 +608,7 @@ public class FileConverter : BaseWindowHandler
         protected override bool ChangeVersion(FileHandle file, int version, UpgradeContext context)
         {
             var msg = file.GetFile<MsgFile>();
-            msg.Header.Data.version = (uint)updateVersion;
+            msg.Header.version = updateVersion;
             return true;
         }
     }

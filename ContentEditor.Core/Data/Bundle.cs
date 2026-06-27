@@ -150,27 +150,28 @@ public class Bundle
         return null;
     }
 
-    public void AddResource(string localFilepath, string targetPath, bool replace = false)
+    public ResourceListItem AddResource(string localFilepath, string targetPath, bool replace = false)
     {
         ResourceListing ??= new();
         targetPath = targetPath.NormalizeFilepath();
         if (TryFindResource(targetPath, out var prevLocal, out var prevLocalPath) && prevLocalPath == localFilepath) {
             Logger.Error("Bundle already contains the file " + targetPath + "\nBundle local filepath: " + prevLocalPath);
-            return;
+            return prevLocal;
         }
         if (TryFindResourceByLocalPath(localFilepath, out var prev, out prevLocalPath)) {
             if (prevLocalPath == localFilepath) {
                 Logger.Error($"File {localFilepath} is already in the bundle!");
-                return;
+                return prev;
             }
             // if they're not case-sensitive equal, let it re-add with the newly given path
             ResourceListing.Remove(prevLocalPath);
         }
-        ResourceListing[localFilepath] = new ResourceListItem() { Target = targetPath, Replace = replace };
+        var item = ResourceListing[localFilepath] = new ResourceListItem() { Target = targetPath, Replace = replace };
         _targetToLocalPathCache![targetPath] = localFilepath;
         if (_localToTargetPathCache != null) {
             _localToTargetPathCache[localFilepath] = targetPath;
         }
+        return item;
     }
 
     public bool ContainsResource(string targetPath)
@@ -306,6 +307,9 @@ public class ResourceListItem
 {
     [JsonPropertyName("target")]
     public string Target { get; set; } = string.Empty;
+
+    [JsonPropertyName("baseFile")]
+    public string? BaseFile { get; set; }
 
     // ignore the diff system and always replace the target file
     [JsonPropertyName("replace")]

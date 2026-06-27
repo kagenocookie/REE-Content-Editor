@@ -490,7 +490,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     {
         try {
             using var fs = File.OpenRead(file);
-            var coll =  Workspace.ResourceManager.CreateFileHandle(file, null, fs, true, true).Resource as MeshCollection;
+            var coll =  Workspace.ResourceManager.CreateCustomFileHandle(file, null, fs, true, true).Resource as MeshCollection;
             if (coll == null || coll.Items.Count == 0) return;
             LoadCollection(coll);
             AppConfig.Settings.RecentFiles.AddRecent(Workspace.Game, file);

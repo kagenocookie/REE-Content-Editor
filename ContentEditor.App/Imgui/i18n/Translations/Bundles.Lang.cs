@@ -33,6 +33,13 @@ public static partial class Lang
         public static readonly FixedString OpenFileInEditor = "Open file in Editor";
         public static readonly FixedString EditTargetPathPopup = "EditTargetPath";
         public static readonly FixedString EditTargetPathHeader = "Edit Target Path";
+        public static readonly FixedString EditTargetPath_Description = "The final target file path this file should read as.\nThe platform specific natives/stm/ prefix will be automatically added\nduring patching or publishing and does not need to be included here.";
+        public static readonly FixedString BaseFilePath = "Base File Path";
+        public static readonly FixedString BaseFilePath_Description = """
+            The base game file to use for generating diffs and partial patching.
+            Does nothing if the file format does not support partial patching.
+            If unspecified, the target path will be used for matching the file to a vanilla one.
+            """;
         public static readonly FixedString FileCouldNotBeOpened = "File could not be opened";
         public static readonly InterpolatedString<string> CreatedAt = "Created at: {0}";
         public static readonly InterpolatedString<string> UpdatedAt = "Updated at: {0}";

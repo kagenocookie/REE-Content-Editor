@@ -693,7 +693,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     {
         if (workspace == null) return;
 
-        var file = workspace.ResourceManager.CreateFileHandle(discriminator + filepath, null, stream);
+        var file = workspace.ResourceManager.CreateCustomFileHandle(discriminator + filepath, null, stream);
         AddFileEditor(file);
     }
 
