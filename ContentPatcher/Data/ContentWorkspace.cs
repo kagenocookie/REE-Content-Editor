@@ -90,8 +90,8 @@ public sealed class ContentWorkspace : IDisposable
             EditedBundleManager = BundleManager.CreateBundleSpecificManager(bundle);
             CurrentBundle = EditedBundleManager.GetBundle(bundle, null);
             ResourceManager.SetBundle(EditedBundleManager, CurrentBundle);
-            Env.ResetListFile();
         }
+        Env.ResetListFile();
     }
 
     public int SaveModifiedFiles(IRectWindow? parent = null)

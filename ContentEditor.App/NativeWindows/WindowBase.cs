@@ -346,20 +346,6 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     {
         removeSubwindows.AddRange(subwindows);
     }
-    public bool RequestCloseAllSubwindows(bool workspaceChange)
-    {
-        bool anyNotClosed = false;
-        foreach (var window in subwindows.Where(sw => !IsDefaultWindow(sw, workspaceChange)).ToArray()) {
-            if (window.Handler?.RequestClose() == true) {
-                anyNotClosed = true;
-                continue;
-            }
-
-            removeSubwindows.Add(window);
-        }
-
-        return !anyNotClosed;
-    }
 
     internal void TriggerEvents()
     {

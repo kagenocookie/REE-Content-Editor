@@ -1,3 +1,4 @@
+using ContentEditor.App.Windowing;
 using ContentEditor.BackgroundTasks;
 using ReeLib;
 
@@ -67,5 +68,14 @@ public class WorkspaceManager : Singleton<WorkspaceManager>
                 Workspaces.Remove(env.Config.Game);
             }
         }
+    }
+
+    public bool IsLastReference(Workspace env)
+    {
+        if (Workspaces.TryGetValue(env.Config.Game, out var wref)) {
+            return wref.RefCount == 1;
+        }
+
+        return false;
     }
 }

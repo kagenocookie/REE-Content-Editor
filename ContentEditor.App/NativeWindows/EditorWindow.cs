@@ -95,11 +95,11 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         LastRequestedGame = game;
         // close all subwindows since they won't necessarily have the correct data anymore
         if (env != null && (env.Config.Game != game || forceReloadEnv)) {
-            if (!RequestCloseAllSubwindows(true)) return;
+            if (!RequestCloseAllSubwindows(true, () => SetWorkspace(game, bundle, forceReloadEnv))) return;
             WorkspaceManager.Instance.Release(env);
             env = null;
             workspace = null;
-        } else if (!RequestCloseAllSubwindows(false)) {
+        } else if (!RequestCloseAllSubwindows(false, () => SetWorkspace(game, bundle, forceReloadEnv))) {
             return;
         }
 
@@ -1187,6 +1187,29 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         } catch (Exception e) {
             Logger.Error(e, Lang.Errors.PatchRevertFailed);
         }
+    }
+
+    public bool RequestCloseAllSubwindows(bool workspaceChange, Action? onConfirm = null)
+    {
+        bool anyNotClosed = false;
+        foreach (var window in subwindows.Where(sw => !IsDefaultWindow(sw, workspaceChange)).ToArray()) {
+            if (window.Handler?.RequestClose() == true) {
+                anyNotClosed = true;
+                continue;
+            }
+            CloseSubwindow(window);
+        }
+        if (anyNotClosed) return false;
+
+        if (workspace != null && WorkspaceManager.Instance.IsLastReference(workspace.Env) && workspace.ResourceManager.GetModifiedResourceFiles().Any()) {
+            AddSubwindow(new SaveFileConfirmation(Lang.General.UnsavedChanges, Lang.General.UnsavedChangesCloseAll, workspace.ResourceManager.GetModifiedResourceFiles(), this, () => {
+                workspace.ResourceManager.CloseAllFiles();
+                onConfirm?.Invoke();
+            }));
+            return false;
+        }
+
+        return true;
     }
 
     protected override bool RequestAllowClose()

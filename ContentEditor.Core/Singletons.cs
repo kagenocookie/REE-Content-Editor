@@ -61,6 +61,7 @@ public class RefCounted<T>(T instance) where T : IDisposable
 {
     public T Instance => instance;
     private int refCount = 0;
+    public int RefCount => refCount;
 
     public void AddRef()
     {
