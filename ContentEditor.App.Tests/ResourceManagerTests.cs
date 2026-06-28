@@ -95,17 +95,21 @@ public class ResourceManagerTests
         rawMsg.AddNewEntry("key", guid).SetMessage(ReeLib.Msg.Language.English, "Original");
         rawMsg.Save();
 
+        _workspaceFixture.ResolveFile<MsgFile>("test_original.msg.22");
         var (bundleMsg, _) = _workspaceFixture.CreateBundleFile<MsgFile>("test.msg.22", res => res.BaseFile = "test_original.msg.22");
         bundleMsg.AddNewEntry("key", guid).SetMessage(ReeLib.Msg.Language.English, "Updated");
         bundleMsg.Save();
 
         var (file, resource) = GenerateFileDiff("test.msg.22");
+        var baseFile = _workspaceFixture.ResolveFile<MsgFile>("test_original.msg.22");
 
         Assert.That(file.FileSource, Is.EqualTo(bundle.Name));
         Assert.That(file.HandleType, Is.EqualTo(FileHandleType.Bundle));
         Assert.That(resource.Diff, Is.Not.Null);
         Assert.That(resource.Diff.ToJsonString(), Contains.Substring("Updated"));
         Assert.That(resource.Diff.ToJsonString(), !Contains.Substring("Unchanged"));
+        // make sure the base file was left untouched
+        Assert.That(baseFile.file.FindEntryByKey("key")?.GetMessage(ReeLib.Msg.Language.English), Is.EqualTo("Original"));
     }
 
     [Test]

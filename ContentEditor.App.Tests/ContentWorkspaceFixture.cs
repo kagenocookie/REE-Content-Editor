@@ -87,6 +87,16 @@ public sealed class ContentWorkspaceFixture : IDisposable
         return (file, handle);
     }
 
+    public (TFile file, FileHandle handle) ResolveFile<TFile>(string path) where TFile : BaseFile
+    {
+        if (!Workspace.ResourceManager.TryResolveGameFile(path, out var handle)) {
+            Assert.Fail("Failed to load file " + path);
+        }
+
+        var file = handle!.GetFile<TFile>();
+        return (file, handle);
+    }
+
     public void Dispose()
     {
         var chunks = Workspace.Env.Config.ChunkPath;

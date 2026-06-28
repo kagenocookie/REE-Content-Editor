@@ -55,7 +55,7 @@
     "7": {
         "crc": "7",
         "fields": [
-            { "name": "RequestSetGroups", "type": "Object", "size": 4, "align": 4, "original_type": "via.physics.RequestSetCollider.RequestSetGroup" }
+            { "name": "RequestSetGroups", "type": "Object", "size": 4, "align": 4, "array": true, "original_type": "via.physics.RequestSetCollider.RequestSetGroup" }
         ],
         "name": "via.physics.RequestSetCollider"
     },
