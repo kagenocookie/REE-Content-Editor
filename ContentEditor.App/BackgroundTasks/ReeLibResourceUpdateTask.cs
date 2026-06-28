@@ -30,7 +30,7 @@ public class ReeLibResourceUpdateTask(Workspace workspace) : IBackgroundTask
             Status = "Loading Type Cache";
             _ = Workspace.TypeCache;
         } catch (Exception e) {
-            Logger.Error(e, "Failed to setup game specific resources");
+            Logger.Error(e, $"Failed to setup game specific resources during {Status}");
             throw;
         }
     }
