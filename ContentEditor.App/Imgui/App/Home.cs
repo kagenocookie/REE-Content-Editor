@@ -41,6 +41,7 @@ public class HomeWindow : IWindowHandler
 
     private bool wasPreviouslyNotSetup;
     private DateTime notSetupTimeStart;
+    private static readonly TimeSpan SetupAutoSwitchDelay = TimeSpan.FromSeconds(1);
 
     private static Dictionary<string, Func<Vector4[]>> GameColors = new() // TODO SILVER: Add the rest of the games
     {
@@ -291,7 +292,7 @@ public class HomeWindow : IWindowHandler
                     ShowCommitLog();
                     ImGui.EndTabItem();
                 }
-                if (ImGui.BeginTabItem("Game Setup"u8, window?.ResourceSetupFailure != null || !isReady && DateTime.Now - notSetupTimeStart > TimeSpan.FromSeconds(0.5f) ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None)) {
+                if (ImGui.BeginTabItem("Game Setup"u8, window?.ResourceSetupFailure != null || !isReady && DateTime.Now - notSetupTimeStart > SetupAutoSwitchDelay ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None)) {
                     ShowGameConfigTab();
                     ImGui.EndTabItem();
                 }
@@ -300,6 +301,7 @@ public class HomeWindow : IWindowHandler
             ImGui.EndTabBar();
         }
     }
+
     private void ShowFirstTimeSetupTab()
     {
         ImGui.SeparatorText("Choose a theme and color");
