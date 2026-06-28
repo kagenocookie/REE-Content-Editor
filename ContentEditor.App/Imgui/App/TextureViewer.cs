@@ -187,7 +187,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
     public void OnIMGUI()
     {
         if (texture == null) {
-            if (texturePath == null) {
+            if (texturePath == null || !File.Exists(texturePath)) {
                 ImGui.Text("No texture selected");
                 return;
             }

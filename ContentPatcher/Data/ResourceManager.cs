@@ -658,7 +658,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     {
         try {
             using var fs = File.OpenRead(filepath);
-            fileHandle = CreateFileHandleInternal(filepath.NormalizeFilepath(), nativePathOverride, fs, null, true);
+            fileHandle = CreateFileHandleForStream(filepath.NormalizeFilepath(), nativePathOverride, fs, null, true);
             return fileHandle != null;
         } catch (Exception e) {
             Logger.Error("Failed to load file: " + e.Message);
@@ -853,7 +853,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
             if (handle == null) {
                 var file = File.OpenRead(filepath);
-                handle = CreateFileHandleInternal(filepath, targetPath, file, targetPath);
+                handle = CreateFileHandleForStream(filepath, targetPath, file, targetPath);
             }
 
             if (handle == null) return null;
@@ -876,7 +876,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             if (stream != null) {
                 filepath = resolvedFilename ?? filepath;
                 var srcFile = targetPath ?? (resolvedFilename != null && !Path.IsPathFullyQualified(resolvedFilename) ? resolvedFilename : null);
-                handle = CreateFileHandleInternal(filepath, srcFile, stream, srcFile);
+                handle = CreateFileHandleForStream(filepath, srcFile, stream, srcFile);
             }
         }
 
@@ -884,7 +884,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             var looseStream = workspace.Env.FindSingleFile(filepath, out var loosePath, Workspace.FileSourceType.Loose);
             if (looseStream != null) {
                 var useRawHandler = handle?.Loader is UnknownStreamFileLoader;
-                var looseHandle = useRawHandler ? CreateRawStreamFileHandle(loosePath ?? filepath, filepath, looseStream) : CreateFileHandleInternal(loosePath ?? filepath, filepath, looseStream, filepath)!;
+                var looseHandle = useRawHandler ? CreateRawStreamFileHandle(loosePath ?? filepath, filepath, looseStream) : CreateFileHandleForStream(loosePath ?? filepath, filepath, looseStream, filepath)!;
                 if (looseHandle != null) {
                     if (handle == null) {
                         handle = looseHandle;
@@ -915,7 +915,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                     return rawHandle;
                 }
 
-                var handle = CreateFileHandleInternal(fullBundleFilePath, resourceListing.Target, bundleStream, resourceListing.BaseFile ?? resourceListing.Target);
+                var handle = CreateFileHandleForStream(fullBundleFilePath, resourceListing.Target, bundleStream, resourceListing.BaseFile ?? resourceListing.Target);
                 if (handle != null) {
                     handle.FileSource = activeBundle.Name;
                     return handle;
@@ -924,7 +924,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                 // file failed to load, what now? we can try fetching the base file and do a partial patch
                 var baseFilePath = resourceListing.BaseFile ?? resourceListing.Target;
                 var baseFile = rawFile || baseFilePath == null ? null : workspace.Env.GetFile(baseFilePath, Workspace.FileSourceType.Original);
-                var newBaseHandle = baseFile == null ? null : CreateFileHandleInternal(filepath, baseFilePath, baseFile, null);
+                var newBaseHandle = baseFile == null ? null : CreateFileHandleForStream(filepath, baseFilePath, baseFile, null);
                 if (string.IsNullOrEmpty(baseFilePath) || baseFile == null || newBaseHandle?.DiffHandler == null || resourceListing.Diff == null) {
                     Logger.Error("Failed to load bundle file - it may be outdated and no partial patch is available:\n" + fullBundleFilePath);
                     return null;
@@ -942,7 +942,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                 // reopen the base file to make sure it's a clean separate file
                 newBaseHandle.DiffHandler.LoadBase(
                     workspace,
-                    CreateFileHandleInternal(filepath, baseFilePath, workspace.Env.GetRequiredFile(baseFilePath, Workspace.FileSourceType.Original), null)!);
+                    CreateFileHandleForStream(filepath, baseFilePath, workspace.Env.GetRequiredFile(baseFilePath, Workspace.FileSourceType.Original), null)!);
 
                 Logger.Warn("Bundle file could not be loaded directly, but succeeded recovery using the last partial patch instead:\n" + fullBundleFilePath);
                 return handle;
@@ -1008,7 +1008,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     private readonly Dictionary<string, string> _importExceptions = new();
     public string? GetLastFileImportError(string filepath) => _importExceptions.GetValueOrDefault(filepath);
 
-    private FileHandle? CreateFileHandleInternal(string filepath, string? targetPath, Stream stream, string? baseFilePath, bool allowDisposeStream = true)
+    private FileHandle? CreateFileHandleForStream(string filepath, string? targetPath, Stream stream, string? baseFilePath, bool allowDisposeStream = true)
     {
         var format = PathUtils.ParseFileFormat(filepath);
 
@@ -1044,7 +1044,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         if (baseFilePath != null && handle.HandleType is FileHandleType.Disk or FileHandleType.Bundle) {
             var baseFile = workspace.Env.GetFile(baseFilePath);
             if (baseFile != null) {
-                var baseFileHandle = CreateFileHandleInternal(baseFilePath, baseFilePath, baseFile, null);
+                var baseFileHandle = CreateFileHandleForStream(baseFilePath, baseFilePath, baseFile, null);
                 if (baseFileHandle == null) {
                     Logger.Warn("Failed to load base file " + baseFilePath);
                 } else {
@@ -1101,7 +1101,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         if (nativeOrTargetPath != null && nativeOrTargetPath.StartsWith("natives/", StringComparison.OrdinalIgnoreCase)) {
             nativeOrTargetPath = PathUtils.RemovePlatformPrefix(nativeOrTargetPath).ToString();
         }
-        var handle = CreateFileHandleInternal(filepath.NormalizeFilepath(), nativeOrTargetPath, stream, null, allowDispose);
+        var handle = CreateFileHandleForStream(filepath.NormalizeFilepath(), nativeOrTargetPath, stream, null, allowDispose);
         if (handle == null) {
             throw new NotSupportedException();
         }
