@@ -1,9 +1,21 @@
 # natives/stm/appsystem/event/timelineevent/actorplayerweapondisplayuserdata.user.3
 
+# natives/stm/appsystem/character/catalog/montage/bonusmontagecataloguserdata.user.3
+# => mapping of bonus => montage model/preset ID?
+
+# natives/stm/leveldesign/bonus/specialcontents/specialconfigcatalog.user.3
+# => might be needed to make bonuses unlock (ID000 == beat the game?)
+
+# natives/stm/leveldesign/bonus/specialcontents/speciallineupdatacatalog_001.user.3
+# => list of all available bonuses?
+
+# natives/stm/gameassets/character/characterprefab/cp_a1/cp_a100/userdata/cp_a100costumeuserdata.user.3
+# => another list of all available bonuses, except with some useless extra settings ??
+
 entities:
-  costumes.costume_catalog_unit:
+  costumes.timeline_costume:
     custom_id_range: [100000, 999999]
-    to_string: "Costume [{data[0]?._CostumeId}]"
+    to_string: "Timeline Costume [{data[0]?._CostumeId}]"
     fields:
       data:
         type: objectArray

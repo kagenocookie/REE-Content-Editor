@@ -118,6 +118,7 @@ public partial class FileTesterWindow : IWindowHandler
                             if (Path.GetExtension(wordlistFilepath) == ".exe") {
                                 words = ExtractStringsFromExecutable(wordlistFilepath, wordlistHashType != 1);
                                 if (includePakFilesForHashBruteforce) {
+                                    (words as List<string>)?.EnsureCapacity(1_000_000);
                                     AppendStringsFromFiles(wordlistFilepath, wordlistHashType == 2 ? Encoding.Unicode : Encoding.UTF8, words);
                                 }
                             } else {

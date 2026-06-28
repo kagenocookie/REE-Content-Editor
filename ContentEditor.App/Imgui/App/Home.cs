@@ -291,7 +291,7 @@ public class HomeWindow : IWindowHandler
                     ShowCommitLog();
                     ImGui.EndTabItem();
                 }
-                if (ImGui.BeginTabItem("Game Setup"u8, window?.ResourceSetupFailure != null || !isReady && !wasPreviouslyNotSetup && DateTime.Now - notSetupTimeStart > TimeSpan.FromSeconds(0.5f) ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None)) {
+                if (ImGui.BeginTabItem("Game Setup"u8, window?.ResourceSetupFailure != null || !isReady && DateTime.Now - notSetupTimeStart > TimeSpan.FromSeconds(0.5f) ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None)) {
                     ShowGameConfigTab();
                     ImGui.EndTabItem();
                 }
@@ -411,8 +411,14 @@ public class HomeWindow : IWindowHandler
                     ImGui.TextColored(Colors.Note, "Loading up workspace..."u8);
                 } else {
                     ImGui.TextColored(Colors.Error, "Workspace failed to set up:\n" + window.ResourceSetupFailure);
-                    if (ImGui.Button("Retry")) {
+                    if (ImGui.Button(Lang.Buttons.Retry)) {
                         window.SetWorkspace(window.LastRequestedGame, null, true);
+                    }
+                    ImGui.SameLine();
+                    if (ImGui.Button(Lang.Buttons.CheckForDataUpdate)) {
+                        ResourceRepository.ResetCache(window.LastRequestedGame);
+                        ResourceRepository.Initialize(true);
+                        window.SetWorkspace(window.LastRequestedGame, window.Workspace?.CurrentBundle?.Name, true);
                     }
                 }
                 ImGui.PopFont();
@@ -455,6 +461,12 @@ public class HomeWindow : IWindowHandler
 
         if (ImGui.Button("Open Local Resource Folder")) {
             FileSystemUtils.ShowFileInExplorer(ResourceRepository.LocalResourceRepositoryFolder);
+        }
+        ImGui.SameLine();
+        if (ImGui.Button(Lang.Buttons.CheckForDataUpdate)) {
+            ResourceRepository.ResetCache(window.LastRequestedGame);
+            ResourceRepository.Initialize(true);
+            window.SetWorkspace(window.LastRequestedGame, window.Workspace?.CurrentBundle?.Name, true);
         }
 
         var remote = ResourceRepository.RemoteInfo.Resources.GetValueOrDefault(game.name);

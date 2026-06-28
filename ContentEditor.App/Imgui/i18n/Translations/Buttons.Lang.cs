@@ -16,6 +16,7 @@ public static partial class Lang
         public static readonly FixedString SaveToBundleNewFile = "Save to Bundle as New File";
         public static readonly FixedString SeeChanges = "See Changes";
         public static readonly FixedString Revert = "Revert";
+        public static readonly FixedString Retry = "Retry";
         public static readonly FixedString Exit = "Exit";
         public static readonly FixedString Open_Folder = "Open folder";
         public static readonly FixedString Open_ContainingFolder = "Open Containing Folder";
