@@ -912,11 +912,11 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 }
                 ImGui.Separator();
             }
-            if (workspace != null && ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Buttons.CheckForDataUpdate))) {
+            if (LastRequestedGame != GameIdentifier.Unknown && ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Buttons.CheckForDataUpdate))) {
                 if (RequestCloseAllSubwindows(true)) {
-                    ResourceRepository.ResetCache(workspace.Game);
+                    ResourceRepository.ResetCache(LastRequestedGame);
                     ResourceRepository.Initialize(true);
-                    SetWorkspace(workspace.Game, workspace.CurrentBundle?.Name, true);
+                    SetWorkspace(LastRequestedGame, workspace?.CurrentBundle?.Name, true);
                 }
             }
             if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Tools.ImguiTestWindow))) {
