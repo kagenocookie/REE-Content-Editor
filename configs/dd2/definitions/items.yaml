@@ -208,8 +208,6 @@ classes:
     to_string: "Tops PartsEnable {_Gender:enum(app.Gender)} Job={_Job:enum(app.Character.JobEnum)} | {_TopsStyle:enum(app.TopsStyle)}"
   app.TopsAmPartsHiddenItem:
     to_string: "TopsAm PartsHidden Job={_Job:enum(app.Character.JobEnum)} | {_AmMeshID:enum(app.CharacterEditDefine.TopsAmMeshID)}"
-  app.TopsAmPartsEnableItem:
-    to_string: "TopsAm PartsEnable Job={_Job:enum(app.Character.JobEnum)} | {_AmMeshID:enum(app.CharacterEditDefine.TopsAmMeshID)}"
   app.TopsBdPartsHiddenItem:
     to_string: "TopsBd PartsHidden Job={_Job:enum(app.Character.JobEnum)} | {_BdMeshID:enum(app.CharacterEditDefine.TopsBdMeshID)}"
   app.PantsLgPartsHiddenItem:
