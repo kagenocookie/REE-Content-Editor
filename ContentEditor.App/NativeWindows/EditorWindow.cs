@@ -1211,7 +1211,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             }
             workspace.ResourceManager.CloseAllFiles();
         }
-
+        SceneManager.UnloadAllScenes();
         return true;
     }
 

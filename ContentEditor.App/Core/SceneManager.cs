@@ -78,7 +78,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
     {
         if (env == workspace) return;
 
-        ClearScenes();
+        UnloadAllScenes();
         env = workspace;
     }
 
@@ -124,7 +124,7 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
         MasterSceneChanged?.Invoke(scene);
     }
 
-    private void ClearScenes()
+    public void UnloadAllScenes()
     {
         foreach (var scene in scenes) {
             scene.Dispose();
@@ -135,6 +135,6 @@ public sealed class SceneManager(IRectWindow window) : IDisposable
 
     public void Dispose()
     {
-        ClearScenes();
+        UnloadAllScenes();
     }
 }
