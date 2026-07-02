@@ -300,6 +300,11 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                     edit?.DrawMainUI();
                     ImGui.EndMenu();
                 }
+                // if (Workspace.Env.ComponentAvailable<GpuCloth>() && ImGui.BeginMenu($"{AppIcons.SI_FileType_GPUC} GPUC")) {
+                //     mainCtx.GameObject.GetOrAddComponent<GpuCloth>();
+                //     Scene!.Root.SetEditMode(mainCtx.GameObject.GetOrAddComponent<GpuCloth>())?.DrawMainUI();
+                //     ImGui.EndMenu();
+                // }
                 if (ImGui.MenuItem(Lang.MeshViewer.Title_Animations)) showAnimationsMenu = !showAnimationsMenu;
                 if (showAnimationsMenu) ImguiHelpers.HighlightMenuItem(Lang.MeshViewer.Title_Animations);
                 var animWarns = GetAnimErrors();

@@ -528,6 +528,9 @@ public partial class FileTesterWindow : IWindowHandler
             if (other == current.Game) continue;
             // if (other == "re7") continue;
 
+            // efx exclusions
+            // if (other == "re9" || other == "mhsto3" || other == "pragmata" || other == "oniws") continue;
+
             var env = WorkspaceManager.Instance.GetWorkspace(other);
             ContentWorkspace? cw = null;
             try {
