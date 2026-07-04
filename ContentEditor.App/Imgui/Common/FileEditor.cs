@@ -6,6 +6,7 @@ using ContentEditor.Editor;
 using ContentPatcher;
 using ReeLib;
 using ReeLib.Common;
+using ReeLib.Efx;
 
 namespace ContentEditor.App.ImguiHandling;
 
@@ -252,8 +253,8 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                 }
 
                 var targetFile = Handle.GetFile<T>();
-                var clone = targetFile.DeepCloneGeneric();
-                UndoRedo.RecordCallback(context, () => DeepCloneUtil<T>.ReplaceFields(val, targetFile), () => DeepCloneUtil<T>.ReplaceFields(clone, targetFile));
+                var clone = (targetFile as ICloneable)?.Clone() ?? targetFile.DeepCloneGeneric();
+                UndoRedo.RecordCallback(context, () => val.CloneFieldsTo(targetFile), () => clone.CloneFieldsTo(targetFile));
                 UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, Reset, wnd);
             } catch (Exception e) {
                 Logger.Error($"Failed to deserialize {typeof(T).Name}: " + e.Message);
