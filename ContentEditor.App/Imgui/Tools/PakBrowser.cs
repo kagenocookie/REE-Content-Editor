@@ -151,7 +151,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         var list = workspace.Env.ListFile;
         if (list == null || workspace.CurrentBundle?.HasResources != true) return list;
 
-        return new ListFileWrapper(list.Files.Concat(workspace.CurrentBundle.Resources.Select(v => v.Target)), workspace.Platform, true);
+        return new ListFileWrapper(list.Files.Concat(workspace.CurrentBundle.Resources.Select(v => workspace.Env.PrependBasePath(v.Target))), workspace.Platform, true);
     }
     public void OnIMGUI()
     {
@@ -727,7 +727,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
 
         var bypassBundleFile = ImGui.IsKeyDown(ImGuiKey.ModAlt);
         if (!bypassBundleFile && IsFileOrFolderInBundle(file)) {
-            if (contentWorkspace.CurrentBundle?.TryFindResource(file, out var listing) == true) {
+            if (contentWorkspace.CurrentBundle?.TryFindResource(contentWorkspace.Env.RemoveBasePath(file).ToString(), out var listing) == true) {
                 if (contentWorkspace.ResourceManager.TryResolveGameFile(listing.Target, out var targetFile)) {
                     EditorWindow.CurrentWindow?.AddFileEditor(targetFile);
                     return true;
