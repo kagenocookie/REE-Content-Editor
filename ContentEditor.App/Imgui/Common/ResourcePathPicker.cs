@@ -368,7 +368,7 @@ public class ResourcePathPicker : IObjectUIHandler
             }
 
             if (useNewTargetPath) {
-                targetFilepath = localFilepath;
+                targetFilepath = PathUtils.RemovePlatformPrefix(localFilepath).ToString();
             }
 
             var customBasePath = AppConfig.Instance.BundleCustomBaseTargetPath.Get()?
@@ -378,7 +378,7 @@ public class ResourcePathPicker : IObjectUIHandler
                 .Trim('/');
 
             if (!string.IsNullOrEmpty(customBasePath) && (useNewTargetPath || file.TargetPath == null)) {
-                targetFilepath = Path.Combine(customBasePath, localFilepath).NormalizeFilepath();
+                targetFilepath = Path.Combine(customBasePath, PathUtils.RemovePlatformPrefix(localFilepath).ToString()).NormalizeFilepath();
             }
 
             if (bundle.TryFindResourceByLocalPath(localFilepath, out var previousListing) && previousListing.Target != targetFilepath) {
