@@ -24,6 +24,7 @@ public class GameObjectEditor : IObjectUIHandler
             context.AddChild<GameObject, GameObject>(Lang.Fields.Flags, obj, new GameObjectFlagsHandler());
             if (obj.Folder != null) {
                 WindowHandlerFactory.SetupObjectUIContext(context, typeof(GameObject), members: SceneMembers);
+                context.children[^1].uiHandler = new ResourcePathPicker(ws, ReeLib.KnownFileFormats.Prefab);
             }
             context.AddChild(Lang.Fields.Components, obj.Components, new ComponentListEditor());
         }
@@ -223,7 +224,7 @@ public class ComponentDataHandler : IObjectUIHandler
                         context.Revert();
                         context.ResetState();
                         // some components throw this while being reverted. data seems to be fine if we catch this though
-                    } catch (NotImplementedException) { 
+                    } catch (NotImplementedException) {
                     } catch (Exception e) {
                         Logger.Error("Failed to revert value: " + e.Message);
                     }

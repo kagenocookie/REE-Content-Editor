@@ -28,6 +28,7 @@ public class FolderDataEditor : IObjectUIHandler
                 if (ws != null && RszFieldCache.Folder.UniversalOffset.Exists(ws.Env.Classes.Folder)) {
                     WindowHandlerFactory.SetupObjectUIContext(context, typeof(Folder), members: Offset);
                 }
+                context.children[2].uiHandler = new ResourcePathPicker(ws, ReeLib.KnownFileFormats.Scene);
             }
         }
 
