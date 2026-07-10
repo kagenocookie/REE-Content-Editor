@@ -59,7 +59,7 @@ public class LuaScriptEditor : FileEditor
         currentScriptPath = Handle.Filepath;
         var scriptBasePath = AppConfig.Instance.LuaUserPath.NormalizeFilepath();
         if (scriptBasePath.StartsWith(currentScriptPath.NormalizeFilepath())) {
-            var relativeParts = Path.GetRelativePath(scriptBasePath, currentScriptPath).Normalize().Split('/', 2);
+            var relativeParts = Path.GetRelativePath(scriptBasePath, currentScriptPath).NormalizeFilepath().Split('/', 2);
             if (relativeParts.Length == 1) {
                 currentGroup = selectedGroup = "";
             } else {

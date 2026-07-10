@@ -289,6 +289,7 @@ public class ResourcePathPicker : IObjectUIHandler
 
     private void ApplyPathChange(UIContext context, string newPath, WindowBase? window = null)
     {
+        newPath = newPath.NormalizeFilepath();
         if (!Flags.HasFlag(PathPickerFlags.IsPathForIngame)) {
             UndoRedo.RecordSet(context, newPath, window);
             context.Filter = newPath;
