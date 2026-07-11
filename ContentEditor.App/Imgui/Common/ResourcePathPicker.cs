@@ -312,8 +312,9 @@ public class ResourcePathPicker : IObjectUIHandler
     }
 
     public delegate bool BundleSaveFileCallback(string savePath, string localPath, string targetPath);
+    public delegate void BundleSaveFileCallbackVoid(string savePath, string localPath, string targetPath);
 
-    public static void ShowSaveToBundle(IFileLoader loader, IResourceFile resource, ContentWorkspace workspace, string initialFilename, string? nativePath = null, Action? callback = null)
+    public static void ShowSaveToBundle(IFileLoader loader, IResourceFile resource, ContentWorkspace workspace, string initialFilename, string? nativePath = null, BundleSaveFileCallbackVoid? callback = null)
     {
         if (!string.IsNullOrEmpty(nativePath) && !Path.IsPathFullyQualified(initialFilename) && !initialFilename.IsNativePath()) nativePath = Path.Combine(Path.GetDirectoryName(nativePath)!, initialFilename).NormalizeFilepath();
 
@@ -321,7 +322,7 @@ public class ResourcePathPicker : IObjectUIHandler
 
         ResourcePathPicker.SaveFileToBundle(workspace, tempHandle, (savePath, localPath, nativePath) => {
             var saveSuccess = tempHandle.Save(workspace, savePath);
-            callback?.Invoke();
+            callback?.Invoke(savePath, localPath, nativePath);
             return saveSuccess;
         });
     }

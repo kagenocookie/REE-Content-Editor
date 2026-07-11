@@ -48,6 +48,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     };
 
     private string exportTemplate;
+    private bool _removeStreamingMesh;
 
     private readonly MeshCollection? collection;
     public CommonMeshResource? Mesh => meshContexts.FirstOrDefault()?.MeshFile;
@@ -711,6 +712,15 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         ImGui.SameLine();
         ImguiHelpers.ValueCombo("Mesh Version", MeshFile.AllVersionConfigsWithExtension, MeshFile.AllVersionConfigs, ref exportTemplate);
         var bundleConvert = Workspace.CurrentBundle != null && ImguiHelpers.SameLine() && ImGui.Button("Convert to bundle ...");
+        if (mesh.NativeMesh.RequiresStreamingData) {
+            if (MeshFile.SupportsStreamingMesh(exportTemplate)) {
+                ImGui.Checkbox(Lang.MeshViewer.RemoveStreamingMesh, ref _removeStreamingMesh);
+            } else {
+                _removeStreamingMesh = true;
+                using var _ = ImguiHelpers.Disabled(true);
+                ImGui.Checkbox(Lang.MeshViewer.RemoveStreamingMesh, ref _removeStreamingMesh);
+            }
+        }
         if (conv1 || bundleConvert) {
             var ver = MeshFile.GetFilePathVersion(exportTemplate);
             var ext = $".mesh.{ver}";
@@ -719,12 +729,43 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 mesh.NativeMesh.ChangeVersion(exportTemplate);
             }
             var exportMesh = mesh.NativeMesh.RewriteClone(Workspace);
+            FileHandler? streamingBuffer = null;
+            if (exportMesh.RequiresStreamingData) {
+                if (Workspace.ResourceManager.TryResolveStreamingBufferFile(Handle, out var streaming)) {
+                    exportMesh.LoadStreamingData(streamingBuffer = new FileHandler(streaming.Stream.ToMemoryStream(false, true)));
+                    if (_removeStreamingMesh || !MeshFile.SupportsStreamingMesh(exportTemplate)) {
+                        exportMesh.MergeStreamingMeshData();
+                        streamingBuffer = null;
+                    }
+                } else {
+                    Logger.Error("Failed to resolve streaming mesh buffer, the mesh might not fully convert");
+                }
+            }
             exportMesh.ChangeVersion(exportTemplate);
             if (bundleConvert) {
                 var tempres = new CommonMeshResource(defaultFilename, Workspace.Env) { NativeMesh = exportMesh };
-                ResourcePathPicker.ShowSaveToBundle(Handle.Loader, tempres, Workspace, defaultFilename, Handle.TargetPath);
+                ResourcePathPicker.ShowSaveToBundle(Handle.Loader, tempres, Workspace, defaultFilename, Handle.TargetPath, (savePath, localPath, targetPath) => {
+                    if (streamingBuffer != null) {
+                        var streamingTarget = PathUtils.GetStreamingPath(targetPath);
+                        var streamingLocal = PathUtils.GetStreamingPath(PathUtils.RemovePlatformPrefix(localPath).ToString());
+                        if (localPath.StartsWith("natives/")) streamingLocal = Workspace.Env.PrependBasePath(streamingLocal);
+                        var streamingSave = Path.Combine(Workspace.CurrentBundle!.StoragePath, streamingLocal);
+                        streamingBuffer.SaveAs(streamingSave);
+                        Workspace.CurrentBundle!.AddResource(streamingLocal, streamingTarget, true);
+                        Logger.Info($"Automatically copied streaming mesh buffer to {streamingSave}");
+                    }
+                });
             } else {
-                PlatformUtils.ShowSaveFileDialog((path) => exportMesh.SaveAs(path), defaultFilename);
+                PlatformUtils.ShowSaveFileDialog((path) => {
+                    exportMesh.SaveAs(path);
+                    if (streamingBuffer != null) {
+                        var baseFn = PathUtils.GetFilenameWithoutExtensionOrVersion(path).ToString();
+                        var suffixes = PathUtils.GetFilenameExtensionWithSuffixes(path).ToString();
+                        var streamingPath = Path.Combine(Path.GetDirectoryName(path)!, baseFn + "__streaming." + suffixes);
+                        streamingBuffer.SaveAs(streamingPath);
+                        Logger.Info($"Automatically copied streaming mesh buffer to {streamingPath}. Make sure to move it into the correct streaming folder or re-convert with the streaming mesh disabled.");
+                    }
+                }, defaultFilename);
             }
         }
     }

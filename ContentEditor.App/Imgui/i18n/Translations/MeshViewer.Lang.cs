@@ -38,5 +38,7 @@ public static partial class Lang
             Whether to automatically apply any rotations on the armature.
             Rotation can cause issues with skeleton orientation on import, this will attempt to automatically resolve that.
             """;
+
+        public static readonly FixedString RemoveStreamingMesh = "Remove Streaming Mesh";
     }
 }

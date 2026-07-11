@@ -332,7 +332,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
                     if (bundleConvert) {
                         var texLoader = fileHandle.Loader as TextureLoader ?? new TextureLoader();
                         var tempres = new BaseFileResource<TexFile>(tex);
-                        ResourcePathPicker.ShowSaveToBundle(texLoader, tempres, workspace, defaultFilename, fileHandle.TargetPath, () => {
+                        ResourcePathPicker.ShowSaveToBundle(texLoader, tempres, workspace, defaultFilename, fileHandle.TargetPath, (_,_,_) => {
                             dds.Dispose();
                             tex.Dispose();
                         });
