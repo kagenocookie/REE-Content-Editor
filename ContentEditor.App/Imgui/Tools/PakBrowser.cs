@@ -725,6 +725,11 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
             return true;
         }
 
+        if (PathUtils.ParseFileFormat(file).format == KnownFileFormats.Mesh && file.Contains("streaming/", StringComparison.OrdinalIgnoreCase)) {
+            Logger.Warn("Attempted to open streaming mesh. Opening the main non-streaming mesh instead.");
+            file = Workspace.PrependBasePath(PathUtils.GetNonStreamingPath(file).ToString());
+        }
+
         var bypassBundleFile = ImGui.IsKeyDown(ImGuiKey.ModAlt);
         if (!bypassBundleFile && IsFileOrFolderInBundle(file)) {
             if (contentWorkspace.CurrentBundle?.TryFindResource(contentWorkspace.Env.RemoveBasePath(file).ToString(), out var listing) == true) {
@@ -754,11 +759,6 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         }
 
         try {
-            if (PathUtils.ParseFileFormat(file).format == KnownFileFormats.Mesh && file.Contains("/streaming")) {
-                Logger.Warn("Attempted to open streaming mesh. Opening the main non-streaming mesh instead.");
-                file = PathUtils.GetNonStreamingPath(file).ToString();
-            }
-
             if (file.StartsWith(PakReader.UnknownFilePathPrefix)) {
                 var stream = reader!.GetUnknownFile(file);
                 if (stream == null) {
