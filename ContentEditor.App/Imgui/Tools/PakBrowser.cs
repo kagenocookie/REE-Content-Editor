@@ -787,20 +787,14 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
 
     private void ShowFileContextMenu(string file, bool isBookmarked, bool showSort = false)
     {
-
-        ImGui.SetNextWindowSize(new Vector2(250, 0));
+        ImGui.SetNextWindowSize(new Vector2(300 * UI.UIScale, 0));
         if (ImGui.BeginPopupContextItem()) {
             if (ImguiHelpers.ContextMenuItem("##CopyPath", AppIcons.SI_FileCopyPath, "Copy Path", Colors.IconPrimary)) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(file);
             }
             var isFolder = !Path.HasExtension(file);
-            if (ImguiHelpers.ContextMenuItem("##Extract", AppIcons.SIC_FileExtractTo, isFolder ? "Extract Folder to..." : "Extract File to...", new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary})) {
-                if (isFolder) {
-                    // show folder unpack dialog instead
-                    PlatformUtils.ShowFolderDialog((output) => {
-                        ExtractList(file, output);
-                    }, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
-                } else {
+            if (!isFolder) {
+                if (ImguiHelpers.ContextMenuItem("##ExtractFile", AppIcons.SIC_FileExtractTo, Lang.PakBrowser.ExtractFile.String, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary})) {
                     PlatformUtils.ShowSaveFileDialog((savePath) => {
                         var stream = file.StartsWith(PakReader.UnknownFilePathPrefix.AsSpan()[..^1]) ? reader!.GetUnknownFile(file) : reader!.GetFile(file);
                         if (stream == null) {
@@ -811,7 +805,14 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
                         using var fs = File.Create(savePath);
                         stream.WriteTo(fs);
                     }, Path.GetFileName(file));
+                    ImGui.CloseCurrentPopup();
                 }
+            }
+            if (ImguiHelpers.ContextMenuItem("##Extract", AppIcons.SIC_FileExtractTo, isFolder ? Lang.PakBrowser.ExtractFolder.String : Lang.PakBrowser.ExtractFileKeepPaths.String, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary})) {
+                // show folder unpack dialog instead
+                PlatformUtils.ShowFolderDialog((output) => {
+                    ExtractList(file, output);
+                }, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
                 ImGui.CloseCurrentPopup();
             }
             if (isBookmarked) {

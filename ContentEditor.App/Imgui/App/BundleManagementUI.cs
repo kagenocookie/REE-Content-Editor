@@ -568,7 +568,7 @@ public class BundleManagementUI : IWindowHandler
             if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
                 ImGui.CloseCurrentPopup();
             }
-            ImguiHelpers.Tooltip(Lang.Buttons.Cancel);
+            ImguiHelpers.Tooltip(Lang.Buttons.Close);
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_Save}")) {
                 bundle.Save();
