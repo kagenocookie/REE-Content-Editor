@@ -7,10 +7,10 @@ using ContentEditor.Core;
 using ReeLib;
 using ReeLib.Common;
 using ReeLib.Efx;
-using ReeLib.Msg;
 using ReeLib.Pfb;
 using ReeLib.Scn;
 using ReeLib.UVar;
+using ReeLib.via;
 
 namespace ContentEditor.App;
 
@@ -87,7 +87,7 @@ public class FileSearchWindow : IWindowHandler
         { "Userdata Reference", [RszFieldType.UserData] },
         { "Signed Integer", [RszFieldType.S64, RszFieldType.S32, RszFieldType.S16, RszFieldType.S8, RszFieldType.Enum] },
         { "Unsigned Integer", [RszFieldType.U64, RszFieldType.U32, RszFieldType.U16, RszFieldType.UByte, RszFieldType.Enum] },
-        { "Guid", [RszFieldType.Guid] },
+        { "Guid", [RszFieldType.Guid, RszFieldType.GameObjectRef, RszFieldType.Uri] },
     };
     private static readonly string[] RszFilterTypes = RszFilterableFields.Keys.ToArray();
 
@@ -189,6 +189,9 @@ public class FileSearchWindow : IWindowHandler
             var displayLabel = isCurrent ? usedLabel : $"[{game}] {usedLabel}";
             if (usedLabel == file) {
                 ImGui.Text(displayLabel);
+            } else if (usedLabel.Length > 100) {
+                ImGui.Text(displayLabel);
+                ImGui.Text("    " + file);
             } else {
                 ImGui.Text(displayLabel + " :  " + file);
             }
@@ -877,6 +880,8 @@ public class FileSearchWindow : IWindowHandler
             } else {
                 equalityComparer = (object? a, object? b) => ((a as RszInstance)?.RSZUserData as RSZUserDataInfo)?.Path?.Equals(b as string, StringComparison.InvariantCultureIgnoreCase) == true;
             }
+        } else if (fieldTypes.Contains(RszFieldType.Guid)) {
+            equalityComparer = (object? a, object? b) => a is GameObjectRef gr ? gr.guid == (Guid)b! : (Guid?)a == (Guid?)b;
         } else {
             equalityComparer = (object? a, object? b) => a == null || b == null ? a == b : Convert.ChangeType(a, b.GetType()).Equals(b) == true;
         }
