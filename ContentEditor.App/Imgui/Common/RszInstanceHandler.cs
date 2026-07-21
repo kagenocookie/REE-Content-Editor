@@ -568,7 +568,7 @@ public class ArrayRSZHandler : BaseListHandler
             Logger.Error("Could not determine array element type");
             return null;
         }
-        return RszInstance.CreateArrayItem(env.Env.RszParser, _field, classname);
+        return RszInstance.CreateArrayItem(env.Env.RszParser, _field, classname, env.Env.UsesEmbeddedUserdataAny);
     }
 }
 
@@ -887,22 +887,16 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                                 if (parentRsz == null) {
                                     Logger.Error("Can't find parent RSZ file!");
                                 } else {
-                                    var rsz = new RSZFile(ws.Env.RszFileOption, new FileHandler());
-                                    var newInstance = ws.Env.CreateRszInstance(context.ClassnameFilter);
-                                    rsz.AddToObjectTable(newInstance);
-                                    newInstance.Values[0] = $"assets:/UserData/{newInstance.RszClass.ShortName}_{System.Random.Shared.Next()}.user.json";
+                                    var cls = ws.Env.RszParser.GetRSZClass(context.ClassnameFilter);
+                                    if (cls == null) {
+                                        Logger.Error("Invalid classname " + context.ClassnameFilter);
+                                        return;
+                                    }
 
-                                    var uinfo = new RSZUserDataInfo_TDB_LE_67() {
-                                        ClassName = newInstance.RszClass.name,
-                                        typeId = newInstance.RszClass.typeId,
-                                        jsonPathHash = MurMur3HashUtils.GetHash((string)newInstance.Values[0]),
-                                        EmbeddedRSZ = rsz,
-                                    };
-                                    parentRsz.EmbeddedRSZFileList ??= new List<RSZFile>();
-                                    parentRsz.EmbeddedRSZFileList.Add(rsz);
-                                    parentRsz.RSZUserDataInfoList.Add(uinfo);
-                                    var rszLinkInstance = new RszInstance(newInstance.RszClass, uinfo);
-                                    context.Set(rszLinkInstance);
+                                    var uinfo = new RSZUserDataInfo_TDB_LE_67();
+                                    uinfo.ChangeClass(ws.Env.RszParser, ws.Env.RszFileOption, cls, $"assets:/UserData/{instance.RszClass.ShortName}_{System.Random.Shared.Next()}.user.json", parentRsz);
+                                    var rszLinkInstance = new RszInstance(cls, uinfo);
+                                    UndoRedo.RecordSet(context, rszLinkInstance);
                                     context.ResetState();
                                 }
                             }
@@ -944,6 +938,19 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                 ImguiHelpers.EndRect();
             } else {
                 ImGui.TextColored(Colors.Warning, "Invalid UserData instance");
+                if (ws != null && ImGui.Button("Create New")) {
+                    var parentRsz = context.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
+                    if (parentRsz == null) {
+                        Logger.Error("Can't find parent RSZ file!");
+                    } else {
+                        var cls = instance.RszClass;
+                        var uinfo = new RSZUserDataInfo_TDB_LE_67();
+                        uinfo.ChangeClass(ws.Env.RszParser, ws.Env.RszFileOption, cls, $"assets:/UserData/{cls.ShortName}_{System.Random.Shared.Next()}.user.json", parentRsz);
+                        var rszLinkInstance = new RszInstance(cls, uinfo);
+                        UndoRedo.RecordSet(context, rszLinkInstance);
+                        context.ResetState();
+                    }
+                }
             }
             return;
         }
@@ -980,11 +987,8 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
 
     private void HandleLinkedUserdata(UIContext context, RszInstance instance, ContentPatcher.ContentWorkspace ws)
     {
-        if (context.children.Count == 0 && !context.StateBool) {
-            RSZFile? file = null;
-            context.CachedString = "";
-
-            if (instance.RSZUserData is RSZUserDataInfo info) {
+        if (instance.RSZUserData is RSZUserDataInfo info) {
+            if (context.children.Count == 0) {
                 var pathCtx = context.AddChild(
                     "Userdata file path",
                     info,
@@ -1003,6 +1007,7 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                             return;
                         }
                         var file = fileHandle.GetFile<UserFile>();
+                        context.StateBool = false;
 
                         var rsz = ctx.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
                         if (rsz == null || !rsz.InstanceList.Any(ii => ii.RSZUserData?.InstanceId == info.InstanceId && ii != instance)) {
@@ -1022,7 +1027,14 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                         ctx.parent?.ClearChildren();
                     }
                 );
+            }
+
+            var didLoadingFail = context.StateBool;
+            if (!didLoadingFail && context.GetChild<UserDataFileEditor>() == null) {
+                context.CachedString = "";
+
                 if (string.IsNullOrEmpty(info.Path)) {
+                    context.ShowChildrenUI();
                     ImGui.TextColored(Colors.Error, "No path for user data");
                     return;
                 }
@@ -1030,22 +1042,24 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                 if (ws.ResourceManager.TryResolveGameFile(info.Path, out var handle)) {
                     WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, new UserDataFileEditor(ws, handle), "UserFile");
                 } else {
-                    context.StateBool = true;
+                    context.StateBool = didLoadingFail = true;
                     context.ClearChildren();
                 }
-            } else if (instance.RSZUserData is RSZUserDataInfo_TDB_LE_67 infoEmbedded) {
-                file = infoEmbedded.EmbeddedRSZ;
+            }
+        } else if (instance.RSZUserData is RSZUserDataInfo_TDB_LE_67 infoEmbedded) {
+            if (context.children.Count == 0) {
+                var file = infoEmbedded.EmbeddedRSZ;
                 // TODO re7?
-                if (file == null) {
-                    ImGui.TextColored(Colors.Error, "Missing embedded user data");
+                var rsz = context.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
+                if (file == null || rsz == null) {
+                    ImGui.TextColored(Colors.Error, "Invalid or missing embedded UserData instance");
+                    if (ImGui.Button("Create")) {
+                        infoEmbedded.ChangeClass(ws.Env.RszParser, ws.Env.RszFileOption, instance.RszClass, $"assets:/UserData/{instance.RszClass.ShortName}_{System.Random.Shared.Next()}.user.json", rsz);
+                        context.parent?.ClearChildren();
+                    }
                     return;
                 }
 
-                var rsz = context.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
-                if (rsz == null) {
-                    ImGui.TextColored(Colors.Warning, "Invalid UserData instance");
-                    return;
-                }
                 var user = new UserFile(ws.Env.RszFileOption, rsz.FileHandler, file);
                 var parentFileHandle = context.FindValueInParentValues<FileHandle>();
                 FileHandle childHandle;
@@ -1057,11 +1071,10 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
 
                 WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, new UserDataFileEditor(ws, childHandle), "UserFile");
             }
-
-            // context.AddChild("UserFile", file);
         }
 
         if (context.children.Count == 0 || context.GetChild<UserDataFileEditor>() == null) {
+            context.ShowChildrenUI();
             ImGui.TextColored(Colors.Error, "Failed to load or find UserData reference");
             ImGui.SameLine();
             if (ImGui.Button("Try again")) {

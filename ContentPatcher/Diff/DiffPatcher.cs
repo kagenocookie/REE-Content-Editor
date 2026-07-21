@@ -37,8 +37,7 @@ public class DiffPatcher
             var field = cls.fields[fieldIndex];
             var value = instance.Values[fieldIndex];
             if (field.array) {
-                instance.Values[fieldIndex] = ApplyRSZArrayDiff(value, diffprop.Value, field, env)
-                    ?? RszInstance.CreateArrayItem(env.RszParser, field)!;
+                instance.Values[fieldIndex] = ApplyRSZArrayDiff(value, diffprop.Value, field, env);
             } else if (field.type is RszFieldType.Object or RszFieldType.Struct) {
                 instance.Values[fieldIndex] = CreateOrApplyRSZDiff(value as RszInstance, diffprop.Value, field.original_type, env);
             } else if (field.type is RszFieldType.String or RszFieldType.RuntimeType or RszFieldType.Resource) {
@@ -132,8 +131,8 @@ public class DiffPatcher
         return instance;
     }
 
-    private object? ApplyRSZArrayDiff(object? value, JsonNode? diff, RszField field, Workspace env) => ApplyRSZArrayDiff(value, diff, field.type, field.original_type, env);
-    private object? ApplyRSZArrayDiff(object? value, JsonNode? diff, RszFieldType type, string? elementClassname, Workspace env)
+    private object ApplyRSZArrayDiff(object? value, JsonNode? diff, RszField field, Workspace env) => ApplyRSZArrayDiff(value, diff, field.type, field.original_type, env);
+    private object ApplyRSZArrayDiff(object? value, JsonNode? diff, RszFieldType type, string? elementClassname, Workspace env)
     {
         if (diff == null) return new List<object>(0);
 
@@ -144,7 +143,7 @@ public class DiffPatcher
             var jdiff = (JsonObject)diff;
             if (jdiff["$array"] != null) {
                 diff = jdiff["items"];
-                if (diff == null) return value;
+                if (diff == null) return list;
                 if (diff is JsonArray arrrr && arrrr.Count > 0 && arrrr[0] != null && arrrr[0]!.GetValueKind() == JsonValueKind.Object && ReadPatchAction(diff[0]!.AsObject()) == 0) {
                     // if the first item isn't a patch-annotated object, none of them will be
                     // in other words, this is a fully serialized, non-diffed array
@@ -157,7 +156,7 @@ public class DiffPatcher
                 }
             } else {
                 // TODO ID-enabled array, treat it basically like an object
-                return value;
+                return value!;
             }
         }
 
