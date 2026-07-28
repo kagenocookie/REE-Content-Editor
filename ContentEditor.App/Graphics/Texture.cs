@@ -382,7 +382,7 @@ public class Texture : IDisposable
         };
         dds.Header.Caps1 = DDSCaps.TEXTURE|DDSCaps.MIPMAP;
         dds.Header.pitchOrLinearSize = dds.Header.width * dds.Header.height * sizeof(int);
-        dds.Header.flags = HeaderFlags.HEIGHT|HeaderFlags.WIDTH|HeaderFlags.DEPTH|HeaderFlags.CAPS|HeaderFlags.MIPMAPCOUNT|HeaderFlags.LINEARSIZE;
+        dds.Header.flags = HeaderFlags.HEIGHT|HeaderFlags.WIDTH|HeaderFlags.DEPTH|HeaderFlags.CAPS|HeaderFlags.MIPMAPCOUNT|HeaderFlags.LINEARSIZE|HeaderFlags.PIXELFORMAT;
 
         stream.Capacity = Math.Max(stream.Capacity, (int)dds.Header.pitchOrLinearSize + 124);
         dds.Write();
