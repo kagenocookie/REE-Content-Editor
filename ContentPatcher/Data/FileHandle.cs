@@ -71,7 +71,9 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
         return true;
     }
 
-    public bool Save(ContentWorkspace workspace, string? newFilepath = null)
+    public bool Save(ContentWorkspace workspace, string? newFilepath = null) => Save(workspace, newFilepath, true);
+
+    private bool Save(ContentWorkspace workspace, string? newFilepath, bool allowRetry)
     {
         if (newFilepath == null && !File.Exists(Filepath)) {
             if (HandleType == FileHandleType.Disk && Path.IsPathFullyQualified(Filepath)) {
@@ -115,6 +117,16 @@ public sealed class FileHandle(string path, Stream stream, FileHandleType handle
             }
             Saved?.Invoke();
             return true;
+        } catch (ObjectDisposedException ce) {
+            if (allowRetry && Resource is IReeLibResourceFile res) {
+                res.FileHandler = new FileHandler(new MemoryStream(), Filepath);
+                if (Save(workspace, newFilepath, false)) {
+                    Logger.Info($"Successfully saved file after retry for stream write error. Try not to prematurely close files you still need to ensure no data gets lost. Error was: {ce.Message}");
+                    return true;
+                }
+            }
+            Logger.Error(ce, "Failed to save file " + Filepath);
+            return false;
         } catch (Exception e) {
             Logger.Error(e, "Failed to save file " + Filepath);
             return false;

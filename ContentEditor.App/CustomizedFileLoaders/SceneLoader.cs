@@ -46,10 +46,15 @@ public class SceneLoader : IFileLoader,
     }
 }
 
-public class RawScene(FileHandle handle, ScnFile file) : IResourceFile
+public class RawScene(FileHandle handle, ScnFile file) : IReeLibResourceFile
 {
     private Folder? _rootInstance;
     public ScnFile File => file;
+
+    public FileHandler FileHandler {
+        get => File.FileHandler;
+        set => File.FileHandler = value;
+    }
 
     public ScnFile GetExportedFile()
     {

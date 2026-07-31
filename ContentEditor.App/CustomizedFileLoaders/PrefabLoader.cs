@@ -58,10 +58,15 @@ public class PrefabLoader : IFileLoader,
     }
 }
 
-public class Prefab(FileHandle handle, PfbFile file) : IResourceFile
+public class Prefab(FileHandle handle, PfbFile file) : IReeLibResourceFile
 {
     private GameObject? _instance;
     public PfbFile File => file;
+
+    public FileHandler FileHandler {
+        get => File.FileHandler;
+        set => File.FileHandler = value;
+    }
 
     public PfbFile GetExportedFile()
     {

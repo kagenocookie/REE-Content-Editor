@@ -115,13 +115,3 @@ public class MessageData : IContentResource
     public JsonNode ToJson() => JsonSerializer.SerializeToNode(new { MessageKey, Guid, Messages, Attributes }, JsonConfig.jsonOptions)!;
     public JsonNode ToJson(Workspace env) => ToJson();
 }
-
-public class BaseFileResource<T>(T file) : IResourceFile where T : BaseFile
-{
-    public T File { get; } = file;
-
-    public void WriteTo(string filepath)
-    {
-        File.WriteTo(filepath);
-    }
-}
