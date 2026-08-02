@@ -126,7 +126,13 @@ public class PatchDataContainer(string filepath)
         foreach (var file in Directory.EnumerateFiles(directory, "*.yaml")) {
             var fs = File.OpenRead(file).ToMemoryStream();
             var memory = fs.GetBuffer().AsMemory(0, (int)fs.Length);
-            var newDict = YamlSerializer.Deserialize<SerializedPatchConfigRoot>(memory, yamlOptions);
+            SerializedPatchConfigRoot newDict;
+            try {
+                newDict = YamlSerializer.Deserialize<SerializedPatchConfigRoot>(memory, yamlOptions);
+            } catch (Exception e) {
+                Logger.Error(e, $"Failed to read yaml config {file}");
+                continue;
+            }
             if (newDict == null) continue;
 
             if (newDict.Types != null) foreach (var (name, customType) in newDict.Types) {
