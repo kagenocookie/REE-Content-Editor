@@ -18,10 +18,7 @@
     <ApplicationIcon>images/app_icon_light.ico</ApplicationIcon>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)' != 'Release'">
-    <OutputType>Exe</OutputType>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+  <PropertyGroup>
     <OutputType>WinExe</OutputType>
   </PropertyGroup>
 
