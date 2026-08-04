@@ -220,7 +220,7 @@ public partial class CommonMeshResource : IResourceFile
             var type1 = occMeshes.Contains(a) ? 2 : shadowMeshes.Contains(a) ? 1 : 0;
             var type2 = occMeshes.Contains(b) ? 2 : shadowMeshes.Contains(b) ? 1 : 0;
 
-            return type1.CompareTo(type2) * 10000 + GetMeshRealName(a).CompareTo(GetMeshRealName(b));
+            return type1.CompareTo(type2) * 10000 + MeshLoader.GetMeshGroupFromName(GetMeshRealName(a)).CompareTo(MeshLoader.GetMeshGroupFromName(GetMeshRealName(b)));
         })).ToList();
 
         void UpdateDeformBone(int boneIndex, MeshBuffer buffer, int vertIndex)
