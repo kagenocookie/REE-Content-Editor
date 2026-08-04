@@ -247,7 +247,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
     }
 
 
-    protected override void DrawFileContents()
+    protected unsafe override void DrawFileContents()
     {
         ImGui.PushID(Filename);
         if (File.Entries.Count == 0) {
@@ -388,7 +388,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
             ImGui.SameLine();
             ImGui.BeginChild("Message " + selected.Header.entryName);
             ImGui.Spacing();
-            ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Message").X - ImGui.GetStyle().FramePadding.X);
+            ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Sound ID").X - ImGui.GetStyle().FramePadding.X);
             ImGui.BeginDisabled();
             string entryGUID = selected.Header.guid.ToString();
             ImGui.InputText("##GUID", ref entryGUID, 128);
@@ -398,6 +398,11 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
                 EditorWindow.CurrentWindow?.CopyToClipboard(selected.Header.guid.ToString(), "GUID copied!");
             }
             ImguiHelpers.Tooltip("Copy GUID"u8);
+            var soundId = selected.Header.soundId;
+            if (ImGui.InputScalar("Sound ID"u8, ImGuiDataType.U32, &soundId)) {
+                UndoRedo.RecordCallbackSetter(context, selected.Header, selected.Header.soundId, soundId, (o, v) => o.soundId = v);
+            }
+            ImguiHelpers.Tooltip("The event trigger ID of the sound linked with this message"u8);
 
             var prevname = selected.Header.entryName;
             if (ImGui.InputText("Name", ref selected.Header.entryName, 128)) {
