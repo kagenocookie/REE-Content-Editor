@@ -98,8 +98,6 @@ public partial class CommonMeshResource : IResourceFile
         var maxWeighedBones = MeshFile.GetDeformBoneLimit(versionConfig);
         var weightsBufferIndexCount = maxWeightsPerVert % 6 == 0 ? 6 : 8;
 
-        var orderedMeshes = srcMeshes.OrderBy(m => (MeshLoader.GetMeshGroupFromName(GetMeshRealName(m)), MeshLoader.GetSubMeshIndexFromName(GetMeshRealName(m))));
-
         var secNodes = nodes.Where(n => n.Name.StartsWith(SecondaryWeightDummyBonePrefix) && n.Name != SecondaryWeightDummyBonePrefix).Select(n => n.Name.Replace(SecondaryWeightDummyBonePrefix, "")).ToHashSet();
 
         var materialNames = scene.Materials.Select(m => m.Name).ToArray();
