@@ -256,9 +256,9 @@ public class MdfFileImguiHandler : IObjectUIHandler
         }
 
         ImGui.Separator();
-        var visibleMaterials = string.IsNullOrEmpty(materialSearch)
-            ? list
-            : list.Where(mat => mat.Header.matName.Contains(materialSearch, StringComparison.OrdinalIgnoreCase)).ToList();
+        var visibleMaterials = list
+            .Where(mat => string.IsNullOrEmpty(materialSearch) || mat.Header.matName.Contains(materialSearch, StringComparison.OrdinalIgnoreCase))
+            .ToList();
         foreach (var mat in visibleMaterials) {
             int i = list.IndexOf(mat);
 
@@ -294,7 +294,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
         }
 
         var windowData = context.FindValueInParentValues<WindowData>();
-        if (windowData?.IsFocused == true && ImGui.IsWindowFocused() && !ImGui.GetIO().WantTextInput) {
+        if (windowData?.IsFocused == true && !ImGui.GetIO().WantTextInput) {
             if (CopyMaterialShortcut.IsPressed()) {
                 CopyMaterials(list.Where(selectedMaterials.Contains).ToList());
             }
