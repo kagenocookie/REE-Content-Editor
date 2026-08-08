@@ -384,15 +384,15 @@ public class MdfFileImguiHandler : IObjectUIHandler
     }
     private void ShowMaterialContextMenu(UIContext context, List<MaterialData> list, MaterialData mat)
     {
+        var contextSelection = list.Where(selectedMaterials.Contains).ToList();
+        if (contextSelection.Count == 0) contextSelection.Add(mat);
+
         if (ImGui.MenuItem(Lang.Buttons.Duplicate)) {
-            var clone = mat.Clone();
-            clone.Name = $"{mat.Name}_copy".GetUniqueName(str => list.Any(l => l.Name == str));
-            clone.Header.matNameHash = MurMur3HashUtils.GetHash(clone.Name);
-            UndoRedo.RecordListAdd(context, list, clone);
-            SelectOnlyMaterial(context, list, list.Count - 1);
+            var duplicates = DuplicateMaterials(context, list, contextSelection);
+            SelectMaterials(context, list, duplicates);
         }
         if (ImGui.MenuItem(Lang.Buttons.Copy)) {
-            CopyMaterials(selectedMaterials.Contains(mat) ? list.Where(selectedMaterials.Contains).ToList() : [mat]);
+            CopyMaterials(contextSelection);
         }
         using (var i = ImguiHelpers.Disabled(!HasMaterialsInClipboard())) {
             if (ImGui.MenuItem(Lang.Buttons.Paste)) {
@@ -492,6 +492,20 @@ public class MdfFileImguiHandler : IObjectUIHandler
         }
     }
 
+    private static List<MaterialData> DuplicateMaterials(UIContext context, List<MaterialData> list, IReadOnlyList<MaterialData> materials)
+    {
+        var duplicates = new List<MaterialData>(materials.Count);
+        foreach (var material in materials) {
+            var clone = material.Clone();
+            clone.Name = $"{material.Name}_copy".GetUniqueName(str => list.Any(l => l.Name == str) || duplicates.Any(l => l.Name == str));
+            clone.Header.matNameHash = MurMur3HashUtils.GetHash(clone.Name);
+            duplicates.Add(clone);
+        }
+
+        AddMaterials(context, list, duplicates);
+        return duplicates;
+    }
+
     private static bool HasMaterialsInClipboard()
         => VirtualClipboard.TryGetFromClipboard<MaterialData>(out _) || VirtualClipboard.TryGetFromClipboard<MaterialClipboardData>(out _);
 
@@ -513,18 +527,23 @@ public class MdfFileImguiHandler : IObjectUIHandler
             clones.Add(clone);
         }
 
+        AddMaterials(context, list, clones);
+        onMaterialsPasted?.Invoke(clones);
+    }
+
+    private static void AddMaterials(UIContext context, List<MaterialData> list, List<MaterialData> materials)
+    {
         UndoRedo.RecordCallback(
             context,
             () => {
-                list.AddRange(clones);
+                list.AddRange(materials);
                 context.children.Clear();
             },
             () => {
-                foreach (var clone in clones) list.Remove(clone);
+                foreach (var material in materials) list.Remove(material);
                 context.children.Clear();
             }
         );
-        onMaterialsPasted?.Invoke(clones);
     }
 
     private sealed class MaterialClipboardData(MaterialData[] materials)
