@@ -172,20 +172,32 @@ public class MdfFileImguiHandler : IObjectUIHandler
     private readonly HashSet<MaterialData> selectedMaterials = [];
     private MaterialData? materialSelectionAnchor;
     private bool isMaterialSelectionInitialized;
+    private bool isMaterialListWidthInitialized;
     private float materialListW = 250f; // SILVER: Maybe we should save this value?
+    private float materialListMaxW = 500f;
     private static readonly KeyBinding CopyMaterialShortcut = new(ImGuiKey.C, ctrl: true);
     private static readonly KeyBinding PasteMaterialShortcut = new(ImGuiKey.V, ctrl: true);
 
     public void OnIMGUI(UIContext context)
     {
         var file = context.Get<MdfFile>();
+        if (!isMaterialListWidthInitialized) {
+            isMaterialListWidthInitialized = true;
+            var style = ImGui.GetStyle();
+            var longestNameWidth = file.Materials.Count == 0
+                ? 0f
+                : file.Materials.Max(material => ImGui.CalcTextSize(string.IsNullOrEmpty(material.Header.matName) ? "<missingName>" : material.Header.matName).X);
+            var labelPadding = style.WindowPadding.X * 2 + style.FramePadding.X * 2 + style.ItemSpacing.X * 2 + style.ScrollbarSize;
+            materialListW = MathF.Max(materialListW, longestNameWidth + labelPadding);
+            materialListMaxW = MathF.Max(materialListMaxW, materialListW);
+        }
 
         ImGui.BeginChild("##MaterialList", new Vector2(materialListW, ImGui.GetContentRegionAvail().Y));
         ShowMaterialList(context, file);
         ImGui.EndChild();
 
         ImGui.SameLine();
-        ImguiHelpers.VerticalSplitter(ref materialListW, 100, 500, 2, 2, ImGui.GetContentRegionAvail().Y);
+        ImguiHelpers.VerticalSplitter(ref materialListW, 100, materialListMaxW, 2, 2, ImGui.GetContentRegionAvail().Y);
         ImGui.SameLine();
 
         ImGui.BeginChild("##MaterialData", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y));
