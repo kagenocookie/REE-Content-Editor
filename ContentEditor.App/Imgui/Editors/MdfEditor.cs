@@ -303,6 +303,11 @@ public class MdfFileImguiHandler : IObjectUIHandler
             }
         }
         ImGui.Separator();
+        if (ImGui.BeginPopupContextWindow("##MaterialListEmptyAreaMenu", ImGuiPopupFlags.MouseButtonRight | ImGuiPopupFlags.NoOpenOverItems)) {
+            var contextMaterial = list.FirstOrDefault(selectedMaterials.Contains) ?? list.ElementAtOrDefault(selectedIDX);
+            ShowMaterialContextMenu(context, list, contextMaterial);
+            ImGui.EndPopup();
+        }
 
         if (ImGui.BeginPopupModal("MdfTexExport")) {
             texExporter ??= new();
@@ -382,17 +387,19 @@ public class MdfFileImguiHandler : IObjectUIHandler
             ImGui.EndTabItem();
         }
     }
-    private void ShowMaterialContextMenu(UIContext context, List<MaterialData> list, MaterialData mat)
+    private void ShowMaterialContextMenu(UIContext context, List<MaterialData> list, MaterialData? mat)
     {
         var contextSelection = list.Where(selectedMaterials.Contains).ToList();
-        if (contextSelection.Count == 0) contextSelection.Add(mat);
+        if (contextSelection.Count == 0 && mat != null) contextSelection.Add(mat);
 
-        if (ImGui.MenuItem(Lang.Buttons.Duplicate)) {
-            var duplicates = DuplicateMaterials(context, list, contextSelection);
-            SelectMaterials(context, list, duplicates);
-        }
-        if (ImGui.MenuItem(Lang.Buttons.Copy)) {
-            CopyMaterials(contextSelection);
+        using (var _ = ImguiHelpers.Disabled(contextSelection.Count == 0)) {
+            if (ImGui.MenuItem(Lang.Buttons.Duplicate)) {
+                var duplicates = DuplicateMaterials(context, list, contextSelection);
+                SelectMaterials(context, list, duplicates);
+            }
+            if (ImGui.MenuItem(Lang.Buttons.Copy)) {
+                CopyMaterials(contextSelection);
+            }
         }
         using (var i = ImguiHelpers.Disabled(!HasMaterialsInClipboard())) {
             if (ImGui.MenuItem(Lang.Buttons.Paste)) {
@@ -400,11 +407,13 @@ public class MdfFileImguiHandler : IObjectUIHandler
             }
         }
         ImGui.Separator();
-        if (ImGui.MenuItem(Lang.Buttons.Delete)) {
-            int index = list.IndexOf(mat);
-            UndoRedo.RecordListRemove(context, list, mat);
-            int newIndex = list.Count == 0 ? -1 : Math.Clamp(index - 1, 0, list.Count - 1);
-            SelectOnlyMaterial(context, list, newIndex);
+        using (var _ = ImguiHelpers.Disabled(mat == null)) {
+            if (ImGui.MenuItem(Lang.Buttons.Delete)) {
+                int index = list.IndexOf(mat!);
+                UndoRedo.RecordListRemove(context, list, mat!);
+                int newIndex = list.Count == 0 ? -1 : Math.Clamp(index - 1, 0, list.Count - 1);
+                SelectOnlyMaterial(context, list, newIndex);
+            }
         }
     }
 
