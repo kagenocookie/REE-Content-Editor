@@ -170,6 +170,8 @@ public class MdfFileImguiHandler : IObjectUIHandler
     private bool isMatParamMatchCase = false;
     private MaterialData? draggedMat;
     private float materialListW = 250f; // SILVER: Maybe we should save this value?
+    private static readonly KeyBinding CopyMaterialShortcut = new(ImGuiKey.C, ctrl: true);
+    private static readonly KeyBinding PasteMaterialShortcut = new(ImGuiKey.V, ctrl: true);
 
     public void OnIMGUI(UIContext context)
     {
@@ -198,13 +200,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
         ImGui.SameLine();
         using (var __ = ImguiHelpers.Disabled(!VirtualClipboard.TryGetFromClipboard<MaterialData>(out _))) {
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_MaterialPaste, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary})) {
-                if (VirtualClipboard.TryGetFromClipboard<MaterialData>(out var pasted)) {
-                    var clone = pasted.Clone();
-                    clone.Header.matName = clone.Header.matName.GetUniqueName(str => list.Any(l => l.Header.matName == str));
-                    UndoRedo.RecordListAdd(context, list, clone);
-                    selectedIDX = list.Count - 1;
-                    context.children.Clear();
-                }
+                PasteMaterial(context, list, SelectMaterial);
             }
             ImguiHelpers.Tooltip("Paste Material from clipboard");
         }
@@ -294,6 +290,15 @@ public class MdfFileImguiHandler : IObjectUIHandler
                 ImGui.EndPopup();
             }
         }
+
+        if (ImGui.IsWindowFocused() && !ImGui.GetIO().WantTextInput) {
+            if (CopyMaterialShortcut.IsPressed() && list.ElementAtOrDefault(selectedIDX) is MaterialData selectedMaterial) {
+                CopyMaterial(selectedMaterial);
+            }
+            if (PasteMaterialShortcut.IsPressed()) {
+                PasteMaterial(context, list, SelectMaterial);
+            }
+        }
         ImGui.Separator();
 
         if (ImGui.BeginPopupModal("MdfTexExport")) {
@@ -302,6 +307,12 @@ public class MdfFileImguiHandler : IObjectUIHandler
                 ImGui.CloseCurrentPopup();
             }
             ImGui.EndPopup();
+        }
+
+        void SelectMaterial(int newIndex)
+        {
+            selectedIDX = newIndex;
+            context.children.Clear();
         }
     }
 
@@ -384,16 +395,11 @@ public class MdfFileImguiHandler : IObjectUIHandler
             onSelectIndexChanged?.Invoke(list.Count - 1);
         }
         if (ImGui.MenuItem(Lang.Buttons.Copy)) {
-            VirtualClipboard.CopyToClipboard(mat.Clone());
+            CopyMaterial(mat);
         }
         using (var i = ImguiHelpers.Disabled(!VirtualClipboard.TryGetFromClipboard<MaterialData>(out _))) {
             if (ImGui.MenuItem(Lang.Buttons.Paste)) {
-                if (VirtualClipboard.TryGetFromClipboard<MaterialData>(out var pasted)) {
-                    var clone = pasted.Clone();
-                    clone.Header.matName = clone.Header.matName.GetUniqueName(str => list.Any(l => l.Header.matName == str));
-                    UndoRedo.RecordListAdd(context, list, clone);
-                    onSelectIndexChanged?.Invoke(list.Count - 1);
-                }
+                PasteMaterial(context, list, onSelectIndexChanged);
             }
         }
         ImGui.Separator();
@@ -404,6 +410,22 @@ public class MdfFileImguiHandler : IObjectUIHandler
             onSelectIndexChanged?.Invoke(newIndex);
         }
     }
+
+    private static void CopyMaterial(MaterialData material)
+    {
+        VirtualClipboard.CopyToClipboard(material.Clone());
+    }
+
+    private static void PasteMaterial(UIContext context, List<MaterialData> list, Action<int>? onSelectIndexChanged)
+    {
+        if (!VirtualClipboard.TryGetFromClipboard<MaterialData>(out var pasted)) return;
+
+        var clone = pasted.Clone();
+        clone.Header.matName = clone.Header.matName.GetUniqueName(str => list.Any(l => l.Header.matName == str));
+        UndoRedo.RecordListAdd(context, list, clone);
+        onSelectIndexChanged?.Invoke(list.Count - 1);
+    }
+
     private void ShowMaterialParameterToolbar(UIContext context)
     {
         var workspace = context.GetWorkspace()!;
