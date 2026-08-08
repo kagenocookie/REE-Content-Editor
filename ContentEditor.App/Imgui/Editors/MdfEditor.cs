@@ -467,7 +467,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
             if (showOnlyBookmarked && !bookmarks!.IsBookmarked(workspace.Game.name, param.paramName)) {
                 continue;
             }
-            DrawMaterialParam(context, param, param.paramName);
+            DrawMaterialParam(context, param, param.paramName, mat.Parameters.IndexOf(param));
         }
 
         if (isGroupedParams && singles.Count > 0 && groups.Count > 0) {
@@ -486,7 +486,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
                     if (idx >= 0 && idx < shortName.Length) {
                         shortName = shortName.Substring(idx + 1);
                     }
-                    DrawMaterialParam(context, param, shortName);
+                    DrawMaterialParam(context, param, shortName, mat.Parameters.IndexOf(param));
                 }
                 ImGui.TreePop();
             }
@@ -519,9 +519,10 @@ public class MdfFileImguiHandler : IObjectUIHandler
         return (singles, groups);
     }
 
-    private void DrawMaterialParam(UIContext parent, ParamHeader param, string label)
+    private void DrawMaterialParam(UIContext parent, ParamHeader param, string label, int index)
     {
         ImGui.PushID(param.paramName);
+        label = $"{label} [{index}]";
         var ctx = parent.GetChild(label) ?? parent.AddChild(label, param);
         ctx.uiHandler ??= new ParamHeaderImguiHandler();
         ctx.uiHandler.OnIMGUI(ctx);
