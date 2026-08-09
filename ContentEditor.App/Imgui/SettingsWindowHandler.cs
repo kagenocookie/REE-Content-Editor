@@ -386,6 +386,8 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImguiKeybinding(Lang.Settings.Bind_Redo, config.Key_Redo);
         if (config.Key_Redo.Get().Key != ImGuiKey.Y) ImGui.TextColored(Colors.Warning, Lang.Settings.Warn_UndoRedoBinding);
 
+        ImguiKeybinding(Lang.Settings.Bind_Copy, config.Key_Copy);
+        ImguiKeybinding(Lang.Settings.Bind_Paste, config.Key_Paste);
         ImguiKeybinding(Lang.Settings.Bind_Save, config.Key_Save);
         ImguiKeybinding(Lang.Settings.Bind_Open, config.Key_Open);
         ImguiKeybinding(Lang.Settings.Bind_Close, config.Key_Close);

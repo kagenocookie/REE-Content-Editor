@@ -175,8 +175,6 @@ public class MdfFileImguiHandler : IObjectUIHandler
     private bool isMaterialListWidthInitialized;
     private float materialListW = 250f; // SILVER: Maybe we should save this value?
     private float materialListMaxW = 500f;
-    private static readonly KeyBinding CopyMaterialShortcut = new(ImGuiKey.C, ctrl: true);
-    private static readonly KeyBinding PasteMaterialShortcut = new(ImGuiKey.V, ctrl: true);
 
     public void OnIMGUI(UIContext context)
     {
@@ -307,10 +305,10 @@ public class MdfFileImguiHandler : IObjectUIHandler
 
         var windowData = context.FindValueInParentValues<WindowData>();
         if (windowData?.IsFocused == true && !ImGui.GetIO().WantTextInput) {
-            if (CopyMaterialShortcut.IsPressed()) {
+            if (AppConfig.Instance.Key_Copy.Get().IsPressed()) {
                 CopyMaterials(list.Where(selectedMaterials.Contains).ToList());
             }
-            if (PasteMaterialShortcut.IsPressed()) {
+            if (AppConfig.Instance.Key_Paste.Get().IsPressed()) {
                 PasteMaterials(context, list, pasted => SelectMaterials(context, list, pasted));
             }
         }
