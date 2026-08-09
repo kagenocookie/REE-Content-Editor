@@ -169,18 +169,33 @@ public class MdfFileImguiHandler : IObjectUIHandler
     private string matParamSearchQuery = string.Empty;
     private bool isMatParamMatchCase = false;
     private MaterialData? draggedMat;
+    private readonly HashSet<MaterialData> selectedMaterials = [];
+    private MaterialData? materialSelectionAnchor;
+    private bool isMaterialSelectionInitialized;
+    private bool isMaterialListWidthInitialized;
     private float materialListW = 250f; // SILVER: Maybe we should save this value?
+    private float materialListMaxW = 500f;
 
     public void OnIMGUI(UIContext context)
     {
         var file = context.Get<MdfFile>();
+        if (!isMaterialListWidthInitialized) {
+            isMaterialListWidthInitialized = true;
+            var style = ImGui.GetStyle();
+            var longestNameWidth = file.Materials.Count == 0
+                ? 0f
+                : file.Materials.Max(material => ImGui.CalcTextSize(string.IsNullOrEmpty(material.Header.matName) ? "<missingName>" : material.Header.matName).X);
+            var labelPadding = style.WindowPadding.X * 2 + style.FramePadding.X * 2 + style.ItemSpacing.X * 2 + style.ScrollbarSize;
+            materialListW = MathF.Max(materialListW, longestNameWidth + labelPadding);
+            materialListMaxW = MathF.Max(materialListMaxW, materialListW);
+        }
 
         ImGui.BeginChild("##MaterialList", new Vector2(materialListW, ImGui.GetContentRegionAvail().Y));
         ShowMaterialList(context, file);
         ImGui.EndChild();
 
         ImGui.SameLine();
-        ImguiHelpers.VerticalSplitter(ref materialListW, 100, 500, 2, 2, ImGui.GetContentRegionAvail().Y);
+        ImguiHelpers.VerticalSplitter(ref materialListW, 100, materialListMaxW, 2, 2, ImGui.GetContentRegionAvail().Y);
         ImGui.SameLine();
 
         ImGui.BeginChild("##MaterialData", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y));
@@ -190,21 +205,16 @@ public class MdfFileImguiHandler : IObjectUIHandler
     private unsafe void ShowMaterialList(UIContext context, MdfFile file)
     {
         var list = file.Materials;
+        SyncMaterialSelection(list);
 
         ImGui.TextColored(Colors.Faded, "Material List");
         ImGui.Separator();
         ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_MaterialAdd, ref isNewMaterialMenu, new[] { Colors.IconPrimary, Colors.IconSecondary }, Colors.IconActive);
         ImguiHelpers.Tooltip("Add new Material");
         ImGui.SameLine();
-        using (var __ = ImguiHelpers.Disabled(!VirtualClipboard.TryGetFromClipboard<MaterialData>(out _))) {
+        using (var __ = ImguiHelpers.Disabled(!HasMaterialsInClipboard())) {
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_MaterialPaste, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary})) {
-                if (VirtualClipboard.TryGetFromClipboard<MaterialData>(out var pasted)) {
-                    var clone = pasted.Clone();
-                    clone.Header.matName = clone.Header.matName.GetUniqueName(str => list.Any(l => l.Header.matName == str));
-                    UndoRedo.RecordListAdd(context, list, clone);
-                    selectedIDX = list.Count - 1;
-                    context.children.Clear();
-                }
+                PasteMaterials(context, list, pasted => SelectMaterials(context, list, pasted));
             }
             ImguiHelpers.Tooltip("Paste Material from clipboard");
         }
@@ -239,8 +249,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
                     if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
                         var mat = new MaterialData(new MaterialHeader { matName = newMaterialName });
                         UndoRedo.RecordListAdd(context, list, mat);
-                        selectedIDX = list.Count - 1;
-                        context.children.Clear();
+                        SelectOnlyMaterial(context, list, list.Count - 1);
                         newMaterialName = "";
                     }
                     ImGui.PopStyleColor();
@@ -257,16 +266,16 @@ public class MdfFileImguiHandler : IObjectUIHandler
         }
 
         ImGui.Separator();
-        for (int i = 0; i < list.Count; i++) {
-            var mat = list[i];
-            if (!string.IsNullOrEmpty(materialSearch) && !mat.Header.matName.Contains(materialSearch, StringComparison.OrdinalIgnoreCase)) {
-                continue;
-            }
+        var visibleMaterials = list
+            .Where(mat => string.IsNullOrEmpty(materialSearch) || mat.Header.matName.Contains(materialSearch, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        foreach (var mat in visibleMaterials) {
+            int i = list.IndexOf(mat);
 
-            bool selected = i == selectedIDX;
+            bool selected = selectedMaterials.Contains(mat);
             ImGui.PushStyleColor(ImGuiCol.Text, selected ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text));
             if (ImGui.Selectable(string.IsNullOrEmpty(mat.Header.matName) ? "<missingName>##"+i : mat.Header.matName, selected)) {
-                selectedIDX = i;
+                UpdateMaterialSelection(list, visibleMaterials, mat, i);
                 context.children.Clear();
             }
             ImGui.PopStyleColor();
@@ -280,21 +289,35 @@ public class MdfFileImguiHandler : IObjectUIHandler
                 var payload = ImGui.GetDragDropPayload();
                 if (payload.Handle != null && payload.IsDataType("MDF_MATERIAL")) {
                     if (draggedMat != null && mat != draggedMat && ImGui.AcceptDragDropPayload("MDF_MATERIAL").Handle != null) {
-                        if (selectedIDX == list.IndexOf(draggedMat)) {
-                            selectedIDX = i;
-                        }
+                        var activeMaterial = list.ElementAtOrDefault(selectedIDX);
                         UndoRedo.RecordListMove(context, context, list, draggedMat, list, mat);
+                        selectedIDX = activeMaterial == null ? -1 : list.IndexOf(activeMaterial);
                     }
                 }
                 ImGui.EndDragDropTarget();
             }
 
             if (ImGui.BeginPopupContextItem($"##MaterialID{i}")) {
-                ShowMaterialContextMenu(context,file.Materials, mat, newIndex => { selectedIDX = newIndex;  context.children.Clear(); });
+                ShowMaterialContextMenu(context, list, mat);
                 ImGui.EndPopup();
             }
         }
+
+        var windowData = context.FindValueInParentValues<WindowData>();
+        if (windowData?.IsFocused == true && !ImGui.GetIO().WantTextInput) {
+            if (AppConfig.Instance.Key_Copy.Get().IsPressed()) {
+                CopyMaterials(list.Where(selectedMaterials.Contains).ToList());
+            }
+            if (AppConfig.Instance.Key_Paste.Get().IsPressed()) {
+                PasteMaterials(context, list, pasted => SelectMaterials(context, list, pasted));
+            }
+        }
         ImGui.Separator();
+        if (ImGui.BeginPopupContextWindow("##MaterialListEmptyAreaMenu", ImGuiPopupFlags.MouseButtonRight | ImGuiPopupFlags.NoOpenOverItems)) {
+            var contextMaterial = list.FirstOrDefault(selectedMaterials.Contains) ?? list.ElementAtOrDefault(selectedIDX);
+            ShowMaterialContextMenu(context, list, contextMaterial);
+            ImGui.EndPopup();
+        }
 
         if (ImGui.BeginPopupModal("MdfTexExport")) {
             texExporter ??= new();
@@ -374,36 +397,181 @@ public class MdfFileImguiHandler : IObjectUIHandler
             ImGui.EndTabItem();
         }
     }
-    private static void ShowMaterialContextMenu(UIContext context, List<MaterialData> list, MaterialData mat, Action<int>? onSelectIndexChanged = null)
+    private void ShowMaterialContextMenu(UIContext context, List<MaterialData> list, MaterialData? mat)
     {
-        if (ImGui.MenuItem(Lang.Buttons.Duplicate)) {
-            var clone = mat.Clone();
-            clone.Name = $"{mat.Name}_copy".GetUniqueName(str => list.Any(l => l.Name == str));
-            clone.Header.matNameHash = MurMur3HashUtils.GetHash(clone.Name);
-            UndoRedo.RecordListAdd(context, list, clone);
-            onSelectIndexChanged?.Invoke(list.Count - 1);
+        var contextSelection = list.Where(selectedMaterials.Contains).ToList();
+        if (contextSelection.Count == 0 && mat != null) contextSelection.Add(mat);
+
+        using (var _ = ImguiHelpers.Disabled(contextSelection.Count == 0)) {
+            if (ImGui.MenuItem(Lang.Buttons.Duplicate)) {
+                var duplicates = DuplicateMaterials(context, list, contextSelection);
+                SelectMaterials(context, list, duplicates);
+            }
+            if (ImGui.MenuItem(Lang.Buttons.Copy)) {
+                CopyMaterials(contextSelection);
+            }
         }
-        if (ImGui.MenuItem(Lang.Buttons.Copy)) {
-            VirtualClipboard.CopyToClipboard(mat.Clone());
-        }
-        using (var i = ImguiHelpers.Disabled(!VirtualClipboard.TryGetFromClipboard<MaterialData>(out _))) {
+        using (var i = ImguiHelpers.Disabled(!HasMaterialsInClipboard())) {
             if (ImGui.MenuItem(Lang.Buttons.Paste)) {
-                if (VirtualClipboard.TryGetFromClipboard<MaterialData>(out var pasted)) {
-                    var clone = pasted.Clone();
-                    clone.Header.matName = clone.Header.matName.GetUniqueName(str => list.Any(l => l.Header.matName == str));
-                    UndoRedo.RecordListAdd(context, list, clone);
-                    onSelectIndexChanged?.Invoke(list.Count - 1);
-                }
+                PasteMaterials(context, list, pasted => SelectMaterials(context, list, pasted));
             }
         }
         ImGui.Separator();
-        if (ImGui.MenuItem(Lang.Buttons.Delete)) {
-            int index = list.IndexOf(mat);
-            UndoRedo.RecordListRemove(context, list, mat);
-            int newIndex = list.Count == 0 ? -1 : Math.Clamp(index - 1, 0, list.Count - 1);
-            onSelectIndexChanged?.Invoke(newIndex);
+        using (var _ = ImguiHelpers.Disabled(mat == null)) {
+            if (ImGui.MenuItem(Lang.Buttons.Delete)) {
+                int index = list.IndexOf(mat!);
+                UndoRedo.RecordListRemove(context, list, mat!);
+                int newIndex = list.Count == 0 ? -1 : Math.Clamp(index - 1, 0, list.Count - 1);
+                SelectOnlyMaterial(context, list, newIndex);
+            }
         }
     }
+
+    private void SyncMaterialSelection(List<MaterialData> list)
+    {
+        selectedMaterials.RemoveWhere(material => !list.Contains(material));
+        if (materialSelectionAnchor != null && !list.Contains(materialSelectionAnchor)) {
+            materialSelectionAnchor = null;
+        }
+
+        if (!isMaterialSelectionInitialized) {
+            isMaterialSelectionInitialized = true;
+            if (list.ElementAtOrDefault(selectedIDX) is MaterialData material) {
+                selectedMaterials.Add(material);
+                materialSelectionAnchor = material;
+            }
+        }
+
+        if (selectedIDX >= list.Count) {
+            selectedIDX = list.Count - 1;
+        }
+    }
+
+    private void UpdateMaterialSelection(List<MaterialData> list, List<MaterialData> visibleMaterials, MaterialData material, int materialIndex)
+    {
+        bool isCtrlDown = ImGui.IsKeyDown(ImGuiKey.ModCtrl);
+        bool isShiftDown = ImGui.IsKeyDown(ImGuiKey.ModShift);
+
+        if (isShiftDown) {
+            int anchorIndex = materialSelectionAnchor == null ? -1 : visibleMaterials.IndexOf(materialSelectionAnchor);
+            if (anchorIndex == -1) {
+                anchorIndex = visibleMaterials.IndexOf(list.ElementAtOrDefault(selectedIDX)!);
+            }
+            if (anchorIndex == -1) {
+                anchorIndex = visibleMaterials.IndexOf(material);
+            }
+
+            if (!isCtrlDown) selectedMaterials.Clear();
+            int clickedIndex = visibleMaterials.IndexOf(material);
+            for (int i = Math.Min(anchorIndex, clickedIndex); i <= Math.Max(anchorIndex, clickedIndex); i++) {
+                selectedMaterials.Add(visibleMaterials[i]);
+            }
+        } else if (isCtrlDown) {
+            if (!selectedMaterials.Add(material)) {
+                selectedMaterials.Remove(material);
+            }
+            materialSelectionAnchor = material;
+        } else {
+            selectedMaterials.Clear();
+            selectedMaterials.Add(material);
+            materialSelectionAnchor = material;
+        }
+
+        selectedIDX = materialIndex;
+    }
+
+    private void SelectOnlyMaterial(UIContext context, List<MaterialData> list, int index)
+    {
+        selectedMaterials.Clear();
+        selectedIDX = index;
+        materialSelectionAnchor = list.ElementAtOrDefault(index);
+        if (materialSelectionAnchor != null) {
+            selectedMaterials.Add(materialSelectionAnchor);
+        }
+        context.children.Clear();
+    }
+
+    private void SelectMaterials(UIContext context, List<MaterialData> list, IReadOnlyList<MaterialData> materials)
+    {
+        selectedMaterials.Clear();
+        selectedMaterials.UnionWith(materials);
+        materialSelectionAnchor = materials.LastOrDefault();
+        selectedIDX = materialSelectionAnchor == null ? -1 : list.IndexOf(materialSelectionAnchor);
+        context.children.Clear();
+    }
+
+    private static void CopyMaterials(IReadOnlyList<MaterialData> materials)
+    {
+        if (materials.Count == 0) return;
+
+        if (materials.Count == 1) {
+            VirtualClipboard.CopyToClipboard(materials[0].Clone());
+        } else {
+            VirtualClipboard.CopyToClipboard(new MaterialClipboardData(materials.Select(material => material.Clone()).ToArray()));
+        }
+    }
+
+    private static List<MaterialData> DuplicateMaterials(UIContext context, List<MaterialData> list, IReadOnlyList<MaterialData> materials)
+    {
+        var duplicates = new List<MaterialData>(materials.Count);
+        foreach (var material in materials) {
+            var clone = material.Clone();
+            clone.Name = $"{material.Name}_copy".GetUniqueName(str => list.Any(l => l.Name == str) || duplicates.Any(l => l.Name == str));
+            clone.Header.matNameHash = MurMur3HashUtils.GetHash(clone.Name);
+            duplicates.Add(clone);
+        }
+
+        AddMaterials(context, list, duplicates);
+        return duplicates;
+    }
+
+    private static bool HasMaterialsInClipboard()
+        => VirtualClipboard.TryGetFromClipboard<MaterialData>(out _) || VirtualClipboard.TryGetFromClipboard<MaterialClipboardData>(out _);
+
+    private static void PasteMaterials(UIContext context, List<MaterialData> list, Action<IReadOnlyList<MaterialData>>? onMaterialsPasted)
+    {
+        IReadOnlyList<MaterialData> pasted;
+        if (VirtualClipboard.TryGetFromClipboard<MaterialData>(out var singleMaterial)) {
+            pasted = [singleMaterial];
+        } else if (VirtualClipboard.TryGetFromClipboard<MaterialClipboardData>(out var materialClipboard)) {
+            pasted = materialClipboard.Materials;
+        } else {
+            return;
+        }
+
+        var clones = new List<MaterialData>(pasted.Count);
+        foreach (var material in pasted) {
+            var clone = material.Clone();
+            clone.Header.matName = clone.Header.matName.GetUniqueName(str => list.Any(l => l.Header.matName == str) || clones.Any(l => l.Header.matName == str));
+            clones.Add(clone);
+        }
+
+        AddMaterials(context, list, clones);
+        onMaterialsPasted?.Invoke(clones);
+    }
+
+    private static void AddMaterials(UIContext context, List<MaterialData> list, List<MaterialData> materials)
+    {
+        UndoRedo.RecordCallback(
+            context,
+            () => {
+                list.AddRange(materials);
+                context.children.Clear();
+            },
+            () => {
+                foreach (var material in materials) list.Remove(material);
+                context.children.Clear();
+            }
+        );
+    }
+
+    private sealed class MaterialClipboardData(MaterialData[] materials)
+    {
+        public MaterialData[] Materials { get; } = materials;
+
+        public override string ToString() => $"{Materials.Length} materials";
+    }
+
     private void ShowMaterialParameterToolbar(UIContext context)
     {
         var workspace = context.GetWorkspace()!;
@@ -467,7 +635,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
             if (showOnlyBookmarked && !bookmarks!.IsBookmarked(workspace.Game.name, param.paramName)) {
                 continue;
             }
-            DrawMaterialParam(context, param, param.paramName);
+            DrawMaterialParam(context, param, param.paramName, mat.Parameters.IndexOf(param));
         }
 
         if (isGroupedParams && singles.Count > 0 && groups.Count > 0) {
@@ -486,7 +654,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
                     if (idx >= 0 && idx < shortName.Length) {
                         shortName = shortName.Substring(idx + 1);
                     }
-                    DrawMaterialParam(context, param, shortName);
+                    DrawMaterialParam(context, param, shortName, mat.Parameters.IndexOf(param));
                 }
                 ImGui.TreePop();
             }
@@ -519,9 +687,10 @@ public class MdfFileImguiHandler : IObjectUIHandler
         return (singles, groups);
     }
 
-    private void DrawMaterialParam(UIContext parent, ParamHeader param, string label)
+    private void DrawMaterialParam(UIContext parent, ParamHeader param, string label, int index)
     {
         ImGui.PushID(param.paramName);
+        label = $"{label} [{index}]";
         var ctx = parent.GetChild(label) ?? parent.AddChild(label, param);
         ctx.uiHandler ??= new ParamHeaderImguiHandler();
         ctx.uiHandler.OnIMGUI(ctx);

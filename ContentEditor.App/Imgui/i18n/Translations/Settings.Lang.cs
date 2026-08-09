@@ -125,6 +125,8 @@ public static partial class Lang
 
         public static readonly FixedString Bind_Undo = "Undo";
         public static readonly FixedString Bind_Redo = "Redo";
+        public static readonly FixedString Bind_Copy = "Copy";
+        public static readonly FixedString Bind_Paste = "Paste";
         public static readonly FixedString Bind_Save = "Save Open Files";
         public static readonly FixedString Bind_Open = "Open File";
         public static readonly FixedString Bind_Back = "Back";

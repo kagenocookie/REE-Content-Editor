@@ -82,6 +82,8 @@ public class AppConfig : Singleton<AppConfig>
 
         public const string Key_Undo = "key_undo";
         public const string Key_Redo = "key_redo";
+        public const string Key_Copy = "key_copy";
+        public const string Key_Paste = "key_paste";
         public const string Key_Save = "key_save";
         public const string Key_Open = "key_open";
         public const string Key_OpenPakBrowser = "key_open_pak_browser";
@@ -354,6 +356,8 @@ public class AppConfig : Singleton<AppConfig>
 
     public readonly SettingWrapper<KeyBinding> Key_Undo = new SettingWrapper<KeyBinding>(Keys.Key_Undo, _lock, new KeyBinding(ImGuiKey.Z, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_Redo = new SettingWrapper<KeyBinding>(Keys.Key_Redo, _lock, new KeyBinding(ImGuiKey.Y, ctrl: true));
+    public readonly SettingWrapper<KeyBinding> Key_Copy = new SettingWrapper<KeyBinding>(Keys.Key_Copy, _lock, new KeyBinding(ImGuiKey.C, ctrl: true));
+    public readonly SettingWrapper<KeyBinding> Key_Paste = new SettingWrapper<KeyBinding>(Keys.Key_Paste, _lock, new KeyBinding(ImGuiKey.V, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_Save = new SettingWrapper<KeyBinding>(Keys.Key_Save, _lock, new KeyBinding(ImGuiKey.S, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_Open = new SettingWrapper<KeyBinding>(Keys.Key_Open, _lock, new KeyBinding(ImGuiKey.O, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_OpenPakBrowser = new SettingWrapper<KeyBinding>(Keys.Key_OpenPakBrowser, _lock, new KeyBinding(ImGuiKey.B, ctrl: true));
@@ -541,6 +545,8 @@ public class AppConfig : Singleton<AppConfig>
 
             (Keys.Key_Undo, instance.Key_Undo.value.ToString(), "Keys"),
             (Keys.Key_Redo, instance.Key_Redo.value.ToString(), "Keys"),
+            (Keys.Key_Copy, instance.Key_Copy.value.ToString(), "Keys"),
+            (Keys.Key_Paste, instance.Key_Paste.value.ToString(), "Keys"),
             (Keys.Key_Save, instance.Key_Save.value.ToString(), "Keys"),
             (Keys.Key_Open, instance.Key_Open.value.ToString(), "Keys"),
             (Keys.Key_OpenPakBrowser, instance.Key_OpenPakBrowser.value.ToString(), "Keys"),
@@ -813,6 +819,8 @@ public class AppConfig : Singleton<AppConfig>
                     switch (key) {
                         case Keys.Key_Undo: if (KeyBinding.TryParse(value, out var _key)) Key_Undo.value = _key; break;
                         case Keys.Key_Redo: if (KeyBinding.TryParse(value, out _key)) Key_Redo.value = _key; break;
+                        case Keys.Key_Copy: if (KeyBinding.TryParse(value, out _key)) Key_Copy.value = _key; break;
+                        case Keys.Key_Paste: if (KeyBinding.TryParse(value, out _key)) Key_Paste.value = _key; break;
                         case Keys.Key_Save: if (KeyBinding.TryParse(value, out _key)) Key_Save.value = _key; break;
                         case Keys.Key_Open: if (KeyBinding.TryParse(value, out _key)) Key_Open.value = _key; break;
                         case Keys.Key_OpenPakBrowser: if (KeyBinding.TryParse(value, out _key)) Key_OpenPakBrowser.value = _key; break;
