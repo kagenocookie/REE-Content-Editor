@@ -1834,7 +1834,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             }
             ImguiHelpers.Tooltip("Open current motlist in Motlist Editor");
             ImGui.SameLine();
-            if (ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_IgnoreRootMotion, ref ignoreRoot, new[] { Colors.IconTertiary, Colors.IconPrimary, Colors.IconPrimary }, Colors.IconActive)) {
+            if (ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_IgnoreRootMotion, ref ignoreRoot, [Colors.IconTertiary, Colors.IconPrimary, Colors.IconPrimary], Colors.IconActive)) {
                 AppConfig.Settings.MeshViewer.DisableRootMotion = ignoreRoot;
                 AppConfig.Settings.Save();
             }

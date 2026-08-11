@@ -139,7 +139,7 @@ public class HomeWindow : IWindowHandler
         ImGui.PushStyleColor(ImGuiCol.Button, Vector4.Zero);
         ImGui.PushStyleColor(ImGuiCol.ButtonHovered, Vector4.Zero);
         ImGui.PushStyleColor(ImGuiCol.ButtonActive, Vector4.Zero);
-        ImguiHelpers.ButtonMultiColor(AppIcons.REECE_LogoFull, new[] { Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary, Colors.IconSecondary });
+        ImguiHelpers.ButtonMultiColor(AppIcons.REECE_LogoFull, [Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary, Colors.IconSecondary]);
         ImGui.PopFont();
         ImGui.PopStyleColor(3);
     }
@@ -162,7 +162,7 @@ public class HomeWindow : IWindowHandler
     {
         var data = context.Get<WindowData>();
         using (var _ = ImguiHelpers.Disabled(AppConfig.Instance.IsFirstTime)) {
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PakBrowse, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary }) && EditorWindow.CurrentWindow?.Workspace != null) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PakBrowse, [Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary]) && EditorWindow.CurrentWindow?.Workspace != null) {
                 EditorWindow.CurrentWindow?.AddSubwindow(new PakBrowser(EditorWindow.CurrentWindow.Workspace, null));
             }
             ImguiHelpers.Tooltip("Browse Game Files"u8);
@@ -536,14 +536,14 @@ public class HomeWindow : IWindowHandler
         }
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(workspace?.CurrentBundle == null)) {
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleUnload, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconTertiary, Colors.IconTertiary, Colors.IconTertiary} )) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleUnload, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconTertiary, Colors.IconTertiary, Colors.IconTertiary])) {
                 window?.SetWorkspace(workspace!.Game, null);
             }
             ImguiHelpers.Tooltip(Lang.Bundles.UnloadCurrentBundle);
         }
 
         ImguiHelpers.InlineVerticalSeparator();
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderContain, new[] { Colors.IconPrimary, Colors.IconSecondary })) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderContain, [Colors.IconPrimary, Colors.IconSecondary])) {
             FileSystemUtils.ShowFileInExplorer(workspace?.BundleManager.AppBundlePath);
         }
         ImguiHelpers.Tooltip(Lang.Bundles.OpenBundlesFolder);
@@ -587,7 +587,7 @@ public class HomeWindow : IWindowHandler
         }
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(_activeBundleGameFilters.Count == 0)) {
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FilterClear, new[] { Colors.IconTertiary, Colors.IconPrimary })) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FilterClear, [Colors.IconTertiary, Colors.IconPrimary])) {
                 _activeBundleGameFilters.Clear();
             }
             ImguiHelpers.Tooltip("Clear Game Filters"u8);
@@ -852,7 +852,7 @@ public class HomeWindow : IWindowHandler
 
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(_activeRecentFileGameFilters.Count == 0)) {
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FilterClear, new[] { Colors.IconTertiary, Colors.IconPrimary })) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FilterClear, [Colors.IconTertiary, Colors.IconPrimary])) {
                 _activeRecentFileGameFilters.Clear();
             }
             ImguiHelpers.Tooltip("Clear Game Filters"u8);

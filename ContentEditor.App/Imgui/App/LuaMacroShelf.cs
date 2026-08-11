@@ -129,7 +129,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     }
     private void ShowSidebar()
     {
-        ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_AddMacro, ref isShowNewMacroMenu, new[] { Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary }, Colors.IconActive);
+        ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_AddMacro, ref isShowNewMacroMenu, [Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary], Colors.IconActive);
         ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_CreateMacro);
         if (isShowNewMacroMenu) {
             if (ImGui.Button($"{AppIcons.SI_GenericClear}")) {
@@ -143,7 +143,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
             AppConfig.Instance.MacroDisplayMode = DisplayMode = DisplayMode == MacroDisplayMode.Full ? MacroDisplayMode.Compact : MacroDisplayMode.Full;
         }
         ImguiHelpers.Tooltip(DisplayMode == MacroDisplayMode.Compact ? Lang.MacroShelf.Tooltip_ViewTypeA : Lang.MacroShelf.Tooltip_ViewTypeB);
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderScan, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary } )) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderScan, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary] )) {
             ScanForMacros();
         }
         ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_RescanMacros);
@@ -153,7 +153,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
         ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_OpenMacrosFolder);
         var textEditor = AppConfig.Instance.ExternalTextEditor.Get();
         using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(textEditor))) {
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenInTextEditor, new[] { Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary })) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenInTextEditor, [Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary])) {
                 FileSystemUtils.OpenInExternalEditor(AppConfig.Instance.LuaUserPath, textEditor);
             }
         }
@@ -235,7 +235,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
     private bool ShowMacroGroupsCombo(ref string group)
     {
         bool changed = false;
-        ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_AddGroup, ref isShowNewGroupMenu, new[] { Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary }, Colors.IconActive);
+        ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_AddGroup, ref isShowNewGroupMenu, [Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary], Colors.IconActive);
         ImguiHelpers.Tooltip(Lang.MacroShelf.Tooltip_NewGroup);
         ImGui.SameLine();
         var itemW = ImGui.CalcItemWidth();

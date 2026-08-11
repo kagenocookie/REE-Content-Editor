@@ -71,20 +71,20 @@ public class BundleManagementUI : IWindowHandler
     }
     private void ShowBundleToolbar()
     {
-        ImguiHelpers.ButtonMultiColor(AppIcons.SIC_InfoBundle, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.Info });
+        ImguiHelpers.ButtonMultiColor(AppIcons.SIC_InfoBundle, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.Info]);
         ImguiHelpers.Tooltip(Lang.Bundles.BundleCount.Format(bundleManager.AllBundles.Count, bundleManager.ActiveBundles.Count));
         ImguiHelpers.InlineVerticalSeparator();
-        ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_BundleAdd, ref isNewBundleMenu, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary }, Colors.IconActive);
+        ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_BundleAdd, ref isNewBundleMenu, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary], Colors.IconActive);
         ImguiHelpers.Tooltip(Lang.Bundles.NewBundle);
         ImGui.SameLine();
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleFromLooseFiles, new[] { Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary }) && createFromLooseFileFolder != null) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleFromLooseFiles, [Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary ]) && createFromLooseFileFolder != null) {
             PlatformUtils.ShowFolderDialog(folder => {
                 createFromLooseFileFolder(folder);
             });
         }
         ImguiHelpers.Tooltip(Lang.Bundles.CreateFromLooseFiles);
         ImGui.SameLine();
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleFromPakFile, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary }) && createFromPak != null) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleFromPakFile,[ Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary ]) && createFromPak != null) {
             PlatformUtils.ShowFileDialog(pak =>
                 createFromPak(pak[0]),
                 filters: FileFilters.PakFile,
@@ -99,7 +99,7 @@ public class BundleManagementUI : IWindowHandler
             }
             ImguiHelpers.Tooltip(Lang.Bundles.OpenGameFolder);
             ImGui.SameLine();
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderContain, new[] {Colors.IconPrimary, Colors.IconSecondary})) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderContain, [Colors.IconPrimary, Colors.IconSecondary])) {
                 FileSystemUtils.ShowFileInExplorer(bundleManager.AppBundlePath);
             }
             ImguiHelpers.Tooltip(Lang.Bundles.OpenBundlesFolder);
@@ -117,12 +117,12 @@ public class BundleManagementUI : IWindowHandler
         ImguiHelpers.AlignElementRight(ImGui.CalcTextSize(Lang.Bundles.ShowLoadOrder).X + ImGui.CalcTextSize($"{AppIcons.SI_GenericClose}").X * 5 + ImGui.GetStyle().ItemSpacing.X * 9);
         ImguiHelpers.ToggleButton(Lang.Bundles.ShowLoadOrder.ToString(), ref isShowLoadOrder, Colors.IconActive);
         ImGui.SameLine();
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PatchLooseFiles, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, })) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PatchLooseFiles,[ Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary])) {
             EditorWindow.CurrentWindow?.ApplyContentPatches(null);
         }
         ImguiHelpers.Tooltip(Lang.Bundles.ApplyPatchesLoose);
         ImGui.SameLine();
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PatchPakFile, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, })) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PatchPakFile, [ Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary])) {
             EditorWindow.CurrentWindow?.ApplyContentPatches("pak");
         }
         ImguiHelpers.Tooltip(Lang.Bundles.ApplyPatchesPak);
@@ -197,14 +197,14 @@ public class BundleManagementUI : IWindowHandler
                 ImguiHelpers.Tooltip(Lang.Bundles.SaveBundleMetadata);
 
                 ImGui.SameLine();
-                if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, new[] { Colors.IconSecondary, Colors.IconPrimary })) {
+                if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, [Colors.IconSecondary, Colors.IconPrimary ])) {
                     FileSystemUtils.ShowFileInExplorer(bundleManager.ResolvePathToBundleFile(selectedBundle!, ""));
                 }
                 ImguiHelpers.Tooltip(Lang.Bundles.OpenCurrentBundleFolder);
 
                 ImGui.SameLine();
                 using (var __ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
-                    if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleUnload, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconTertiary, Colors.IconTertiary, Colors.IconTertiary })) {
+                    if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleUnload, [ Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconTertiary, Colors.IconTertiary, Colors.IconTertiary ])) {
                         EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, null);
                     }
                     ImguiHelpers.Tooltip(Lang.Bundles.UnloadCurrentBundle);

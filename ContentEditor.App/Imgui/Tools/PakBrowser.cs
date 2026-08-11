@@ -203,7 +203,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
                 hasInvalidatedPaks = reader.FileExists(0);
             }
         }
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_InfoPAK, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.Info} )) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_InfoPAK, [Colors.IconPrimary, Colors.IconPrimary, Colors.Info])) {
             ImGui.OpenPopup("PAKInfoPopup"u8);
         }
         ImguiHelpers.Tooltip("PAK Info"u8);
@@ -269,16 +269,16 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         ImGui.Spacing();
         ImGui.Separator();
         if (isShowBookmarks) {
-            ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_BookmarkHide, ref isHideDefaults, new[] { Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary }, Colors.IconActive);
+            ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_BookmarkHide, ref isHideDefaults, [Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary], Colors.IconActive);
             ImguiHelpers.Tooltip("Hide Default Bookmarks"u8);
             _bookmarks.Defaults.IsHideBookmarks = isHideDefaults;
             using (var _ = ImguiHelpers.Disabled(_bookmarks.User.GetBookmarks(Workspace.Config.Game.name).Count == 0)) {
                 ImGui.SameLine();
-                ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_BookmarkCustomHide, ref isHideCustoms, new[] { Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary }, Colors.IconActive);
+                ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_BookmarkCustomHide, ref isHideCustoms, [Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary], Colors.IconActive);
                 ImguiHelpers.Tooltip("Hide Custom Bookmarks"u8);
                 _bookmarks.User.IsHideBookmarks = isHideCustoms;
                 ImGui.SameLine();
-                if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BookmarkCustomClear, new[] { Colors.IconPrimary, Colors.IconTertiary })) {
+                if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BookmarkCustomClear, [Colors.IconPrimary, Colors.IconTertiary])) {
                     ImGui.OpenPopup("Confirm Action"u8);
                 }
                 ImguiHelpers.Tooltip("Clear Custom Bookmarks");
@@ -346,7 +346,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
             ImguiHelpers.Tooltip("Filters");
             ImGui.SameLine();
             using (var _ = ImguiHelpers.Disabled(_activeTagFilter.Count == 0)) {
-                if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FilterClear, new[] { Colors.IconTertiary, Colors.IconPrimary })) {
+                if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FilterClear, [Colors.IconTertiary, Colors.IconPrimary])) {
                     _activeTagFilter.Clear();
                 }
                 ImguiHelpers.Tooltip("Clear Filters");
@@ -417,7 +417,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         ImGui.PopStyleColor();
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(unpackedFiles != null)) {
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PakExtractTo, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary})) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PakExtractTo, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary])) {
                 PlatformUtils.ShowFolderDialog(ExtractCurrentList, AppConfig.Instance.GetGameExtractPath(Workspace.Config.Game));
             }
             ImguiHelpers.Tooltip("Extract to...");

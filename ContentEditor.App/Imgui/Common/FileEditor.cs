@@ -131,12 +131,12 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             ImguiHelpers.Tooltip(Lang.Buttons.Save);
             var workspace = data.Context.GetWorkspace()!;
             ImGui.SameLine();
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_SaveAs, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary })) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_SaveAs, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary])) {
                 PlatformUtils.ShowSaveFileDialog((path) => SaveTo(path, true), GetSavePathSuggestion(Handle));
             }
             ImguiHelpers.Tooltip(Lang.Buttons.SaveAs);
             ImGui.SameLine();
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_SaveCopy, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary })) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_SaveCopy, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary])) {
                 SaveAs();
             }
             ImguiHelpers.Tooltip(Lang.Buttons.SaveCopy);
@@ -155,14 +155,14 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                 var isInBundle = Handle.IsInBundle(workspace, workspace.CurrentBundle);
                 if (!isInBundle) {
                     ImGui.SameLine();
-                    if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveTo, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
+                    if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveTo, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary])) {
                         SaveToBundle(workspace, false);
                     }
                     ImguiHelpers.Tooltip(Lang.Buttons.SaveToBundle);
                 }
 
                 ImGui.SameLine();
-                if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveAsNew, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
+                if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveAsNew, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary])) {
                     SaveToBundle(workspace, true);
                 }
                 ImguiHelpers.Tooltip(Lang.Buttons.SaveToBundleNewFile);
@@ -171,11 +171,11 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                     if (!workspace.CurrentBundle.TryFindResource(Handle.TargetPath ?? "", out var resourceListing)) {
                         ImGui.SameLine();
                         if (string.IsNullOrEmpty(Handle.TargetPath) && Handle.Modified) {
-                            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
+                            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, [Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary])) {
                                 Logger.Warn("File has unsaved changes. Please save the file first before storing in bundle.");
                             }
                         } else {
-                            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, new[] { Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
+                            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleContain, [Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary])) {
                                 var localPath = Path.GetRelativePath(workspace.BundleManager.GetBundleFolder(workspace.CurrentBundle), Handle.Filepath).NormalizeFilepath();
                                 var targetPath = !string.IsNullOrEmpty(Handle.TargetPath) ? Handle.TargetPath : workspace.Env.RemoveBasePath(localPath).ToString();
                                 if (Path.IsPathRooted(targetPath)) {
@@ -205,7 +205,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
         }
         if (Handle.HandleType is FileHandleType.Disk or FileHandleType.Bundle && System.IO.File.Exists(Handle.Filepath)) {
             if (CanSave) ImGui.SameLine();
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, new[] { Colors.IconSecondary, Colors.IconPrimary })) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, [Colors.IconSecondary, Colors.IconPrimary])) {
                 FileSystemUtils.ShowFileInExplorer(Handle.Filepath);
             }
             ImguiHelpers.Tooltip("Show in File Explorer\nFilepath: " + Handle.Filepath);

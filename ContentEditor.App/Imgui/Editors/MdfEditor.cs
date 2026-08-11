@@ -205,22 +205,22 @@ public class MdfFileImguiHandler : IObjectUIHandler
 
         ImGui.TextColored(Colors.Faded, "Material List");
         ImGui.Separator();
-        ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_MaterialAdd, ref isNewMaterialMenu, new[] { Colors.IconPrimary, Colors.IconSecondary }, Colors.IconActive);
+        ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_MaterialAdd, ref isNewMaterialMenu, [Colors.IconPrimary, Colors.IconSecondary], Colors.IconActive);
         ImguiHelpers.Tooltip("Add new Material");
         ImGui.SameLine();
         using (var __ = ImguiHelpers.Disabled(!HasMaterialsInClipboard())) {
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_MaterialPaste, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary})) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_MaterialPaste, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary])) {
                 PasteMaterials(context, list, pasted => SelectMaterials(context, list, pasted));
             }
             ImguiHelpers.Tooltip("Paste Material from clipboard");
         }
         ImGui.SameLine();
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_TexExport, new[] { Colors.IconPrimary, Colors.IconSecondary })) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_TexExport, [Colors.IconPrimary, Colors.IconSecondary])) {
             ImGui.OpenPopup("MdfTexExport");
         }
         ImguiHelpers.Tooltip("Export Textures");
         ImGui.SameLine();
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_MaterialImport, new[] { Colors.IconPrimary, Colors.IconSecondary })) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_MaterialImport, [Colors.IconPrimary, Colors.IconSecondary])) {
             PlatformUtils.ShowFileDialog(paths => { var path = paths[0];
                 ImportMatParamsFromEMVJson(path, file, context);
             }, filters: [new FileFilter("JSON", ["json"])]);
@@ -576,7 +576,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
         ImguiHelpers.Tooltip("Show only bookmarked parameters");
         using (var _ = ImguiHelpers.Disabled(mdfBookmarks?.GetBookmarks(workspace.Game.name).Count == 0)) {
             ImGui.SameLine();
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BookmarkClear, new[] { Colors.IconPrimary, Colors.IconTertiary })) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BookmarkClear, [Colors.IconPrimary, Colors.IconTertiary])) {
                 ImGui.OpenPopup("Confirm Action"u8);
             }
             ImguiHelpers.Tooltip("Clear material parameter bookmarks");

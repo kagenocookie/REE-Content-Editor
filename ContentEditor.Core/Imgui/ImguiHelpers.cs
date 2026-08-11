@@ -482,7 +482,7 @@ public static class ImguiHelpers
     /// <summary>
     /// Draws an imgui button that behaves like a checkbox with a multi-colored icon
     /// </summary>
-    public static bool ToggleButtonMultiColor(char[] icons, ref bool toggleBool, Vector4[] colors, Vector4 overrideColor, float frameSize = 2f)
+    public static bool ToggleButtonMultiColor(ReadOnlySpan<char> icons, ref bool toggleBool, ReadOnlySpan<Vector4> colors, Vector4 overrideColor, float frameSize = 2f)
     {
         var iconSize = ImGui.CalcTextSize(icons[0].ToString());
         var padding = ImGui.GetStyle().FramePadding;
@@ -498,7 +498,7 @@ public static class ImguiHelpers
             ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, frameSize);
         }
 
-        if (ImGui.Button("##ToggleButtonMultiColor" + string.Join("", icons), size)) {
+        if (ImGui.Button("##ToggleButtonMultiColor" + new string(icons), size)) {
             toggleBool = !toggleBool;
             changed = true;
         }
@@ -525,7 +525,7 @@ public static class ImguiHelpers
 
         return changed;
     }
-    public static bool ButtonMultiColor(char[] icons, Vector4[] colors, string? ID = null, string? label = null)
+    public static bool ButtonMultiColor(ReadOnlySpan<char> icons, ReadOnlySpan<Vector4> colors, string? ID = null, string? label = null)
     {
         var style = ImGui.GetStyle();
         var iconSize = ImGui.CalcTextSize(icons[0].ToString());
@@ -539,7 +539,7 @@ public static class ImguiHelpers
         bool changed = false;
         bool disabled = style.Alpha < 1.0f;
 
-        if (ImGui.Button("##ButtonMultiColor" + string.Join("", icons) + (ID ?? ""), size)) {
+        if (ImGui.Button("##ButtonMultiColor" + new string(icons) + (ID ?? ""), size)) {
             changed = true;
         }
 
@@ -554,8 +554,9 @@ public static class ImguiHelpers
         );
 
         for (int i = 0; i < icons.Length; i++) {
-            if (disabled) { colors[i].W *= style.DisabledAlpha; }
-            drawList.AddText(pos, ImGui.ColorConvertFloat4ToU32(colors[i]), icons[i].ToString());
+            var col = colors[i];
+            if (disabled) { col.W *= style.DisabledAlpha; }
+            drawList.AddText(pos, ImGui.ColorConvertFloat4ToU32(col), icons[i].ToString());
         }
 
         if (label != null) {
