@@ -60,6 +60,8 @@ public class HomeWindow : IWindowHandler
     };
 
     private int currentTipsIDX = 0;
+    private float tipTimer;
+    private float tipDuration = 15f;
     private static readonly Random randomTipsIDX = new();
 
     private readonly string[] tips = // SILVER: Probably not the best place/way to store these?
@@ -127,7 +129,7 @@ public class HomeWindow : IWindowHandler
         ImGui.SetCursorPosX(250 * UI.UIScale + ImGui.GetStyle().ItemSpacing.X * 2);
         float remainingTabsSpace = ImGui.GetContentRegionAvail().Y;
         if (remainingTabsSpace > tabsFooterHeight) ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (remainingTabsSpace - tabsFooterHeight));
-        ImGui.BeginChild("Tips", new Vector2(currentTabsWidth, tabsFooterHeight), ImGuiChildFlags.Borders);
+        ImGui.BeginChild("Tips", new Vector2(currentTabsWidth, tabsFooterHeight), ImGuiChildFlags.Borders, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
         ShowTips();
         ImGui.EndChild();
     }
@@ -907,24 +909,38 @@ public class HomeWindow : IWindowHandler
         }
         ImGui.EndChild();
     }
+
     private void ShowTips()
     {
+        tipTimer += ImGui.GetIO().DeltaTime;
+        if (tipTimer >= tipDuration) {
+            NextTip();
+            tipTimer = 0;
+        }
         if (ImGui.ArrowButton("##previous", ImGuiDir.Left)) {
-            currentTipsIDX--;
-            if (currentTipsIDX < 0) {
-                currentTipsIDX = tips.Length - 1;
-            }
+            PreviousTip();
+            tipTimer = 0;
         }
         ImGui.SameLine();
         if (ImGui.ArrowButton("##next", ImGuiDir.Right)) {
-            currentTipsIDX++;
-            if (currentTipsIDX >= tips.Length) {
-                currentTipsIDX = 0;
-            }
+            NextTip();
+            tipTimer = 0;
         }
         ImGui.SameLine();
         var currentTip = AppImguiHelpers.Ellipsize(tips[currentTipsIDX], ImGui.GetContentRegionAvail().X);
         ImGui.Text(currentTip);
+
+        float progress = tipTimer / tipDuration;
+        ImGui.ProgressBar(progress, new Vector2(-1, 2));
+    }
+    private void NextTip()
+    {
+        currentTipsIDX = (currentTipsIDX + 1) % tips.Length;
+    }
+    private void PreviousTip()
+    {
+        currentTipsIDX--;
+        if (currentTipsIDX < 0) currentTipsIDX = tips.Length - 1;
     }
     private static Vector4[] GetGameColors(string? prefix, bool hovered)
     {

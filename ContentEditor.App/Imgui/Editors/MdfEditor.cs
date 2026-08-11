@@ -97,13 +97,9 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     public override void OnIMGUI()
     {
         DrawFileControls(context.Get<WindowData>());
-        ImGui.SameLine();
-        ImguiHelpers.VerticalSeparator();
-        ImGui.SameLine();
+        ImguiHelpers.InlineVerticalSeparator();
         DrawFileSourceIcon();
-        ImGui.SameLine();
-        ImguiHelpers.VerticalSeparator();
-        ImGui.SameLine();
+        ImguiHelpers.InlineVerticalSeparator();
         var compactMode = AppConfig.Instance.UseMDFCompactView.Get();
         if (ImguiHelpers.ToggleButton($"{AppIcons.SI_LogCompact}", ref compactMode, Colors.TextActive)) {
             AppConfig.Instance.UseMDFCompactView.Set(compactMode);

@@ -19,6 +19,7 @@ public static partial class Lang
         public static readonly FixedString OpenGameFolder = "Open game folder in File Explorer";
         public static readonly FixedString OpenBundlesFolder = "Open Bundles folder in File Explorer";
         public static readonly FixedString PublishMod = "Publish Mod";
+        public static readonly IconString ShowLoadOrder = new IconString("{0} Show Load Order", AppIcons.SI_BundleLoadOrder);
         public static readonly FixedString ApplyPatchesLoose = "Apply patches (Loose file)";
         public static readonly FixedString ApplyPatchesPak = "Apply patches (PAK file)";
         public static readonly FixedString PatchTo = "Patch to...";
