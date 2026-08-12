@@ -18,23 +18,29 @@ public class SceneController(Scene scene)
     public float MoveSpeed { get; set; } = 8f;
     public float RotateSpeed { get; set; } = 2f;
     public float ZoomSpeed { get; set; } = 2f;
+    public bool UseMeshViewerCameraBindings { get; set; }
 
     private float camYaw, camPitch;
+    private bool orbitCameraDrag;
+    private Vector3 orbitTarget;
+    private float orbitDistance;
+    private bool hasCameraPivot;
+    private Vector3 cameraPivot;
 
     public void ShowCameraControls()
     {
         if (ImGui.RadioButton("Orthographic", Scene.ActiveCamera.ProjectionMode == CameraProjection.Orthographic)) {
             Scene.ActiveCamera.ProjectionMode = CameraProjection.Orthographic;
-            Scene.ActiveCamera.LookAt(Scene.RootFolder, true);
+            ResetCameraToScene();
         }
         ImGui.SameLine();
         if (ImGui.RadioButton("Perspective", Scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective)) {
             Scene.ActiveCamera.ProjectionMode = CameraProjection.Perspective;
-            Scene.ActiveCamera.LookAt(Scene.RootFolder, true);
+            ResetCameraToScene();
         }
         ImGui.SameLine();
         if (ImGui.Button($"{AppIcons.SI_ResetCamera}")) {
-            Scene.ActiveCamera.LookAt(Scene.RootFolder, true);
+            ResetCameraToScene();
         }
         ImguiHelpers.Tooltip("Reset View Camera");
         if (Scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective) {
@@ -111,13 +117,29 @@ public class SceneController(Scene scene)
 
     public void OnMouseDragStart(IMouse mouse, ImGuiMouseButton startButton, Vector2 position)
     {
-        if (startButton == ImGuiMouseButton.Right) {
+        var startCameraDrag = startButton == ImGuiMouseButton.Right;
+        orbitCameraDrag = false;
+        var initializeMouseDragDepth = false;
+        if (UseMeshViewerCameraBindings) {
+            var rotateBinding = AppConfig.Instance.Key_MeshViewer_CameraRotate.Get();
+            var startRotateDrag = IsDragStartBinding(rotateBinding, startButton);
+            var translateBinding = AppConfig.Instance.Key_MeshViewer_CameraTranslate.Get();
+            var startTranslateDrag = IsDragStartBinding(translateBinding, startButton);
+            startCameraDrag = startRotateDrag || startTranslateDrag;
+            orbitCameraDrag = startRotateDrag && rotateBinding.mouseDrag;
+            initializeMouseDragDepth = startRotateDrag || startTranslateDrag && translateBinding.mouseDrag;
+        }
+        if (startCameraDrag) {
             mouse.Cursor.CursorMode = CursorMode.Disabled;
             dragMode = DragMode.Rotation;
 
             var fwd = Scene.ActiveCamera.Transform.LocalForward;
             camYaw = MathF.Atan2(-fwd.X, -fwd.Z);
             camPitch = MathF.Asin(Math.Clamp(fwd.Y, -1f, 1f));
+
+            if (initializeMouseDragDepth) {
+                InitializeMouseDragDepth();
+            }
         }
     }
 
@@ -131,16 +153,43 @@ public class SceneController(Scene scene)
             }
         }
         dragMode = DragMode.None;
+        orbitCameraDrag = false;
     }
 
     public void OnMouseDrag(MouseButtonFlags buttons, Vector2 position, Vector2 delta)
     {
         if (dragMode == DragMode.Rotation) {
-            if (buttons == MouseButtonFlags.Right) {
+            var rotateCamera = buttons == MouseButtonFlags.Right;
+            var invertRotationDrag = false;
+            var translateWithMouseDrag = false;
+            var invertTranslationDrag = false;
+            if (UseMeshViewerCameraBindings) {
+                var rotateBinding = AppConfig.Instance.Key_MeshViewer_CameraRotate.Get();
+                rotateCamera = IsDragBindingActive(rotateBinding, buttons);
+                invertRotationDrag = rotateBinding.invertDrag;
+                var translateBinding = AppConfig.Instance.Key_MeshViewer_CameraTranslate.Get();
+                translateWithMouseDrag = translateBinding.mouseDrag && IsDragBindingActive(translateBinding, buttons);
+                invertTranslationDrag = translateBinding.invertDrag;
+            }
+            if (rotateCamera) {
                 var multiplier = 0.002f * RotateSpeed;
+                if (invertRotationDrag) multiplier = -multiplier;
                 camYaw = camYaw - delta.X * multiplier;
                 camPitch = Math.Clamp(camPitch - delta.Y * multiplier, -80f * MathF.PI / 180, 80f * MathF.PI / 180);
                 Scene.ActiveCamera.GameObject.Transform.LocalRotation = Quaternion.CreateFromYawPitchRoll(camYaw, camPitch, 0);
+                if (orbitCameraDrag) {
+                    Scene.ActiveCamera.Transform.Position = orbitTarget - Scene.ActiveCamera.Transform.Forward * orbitDistance;
+                } else if (UseMeshViewerCameraBindings) {
+                    cameraPivot = Scene.ActiveCamera.Transform.Position + Scene.ActiveCamera.Transform.Forward * orbitDistance;
+                }
+            } else if (translateWithMouseDrag) {
+                var multiplier = GetMouseDragWorldUnitsPerPixel();
+                if (invertTranslationDrag) multiplier = -multiplier;
+                var camera = Scene.ActiveCamera.Transform;
+                var translation = (camera.Right * delta.X - camera.Up * delta.Y) * multiplier;
+                camera.Position += translation;
+                cameraPivot += translation;
+                orbitTarget = cameraPivot;
             } else if (buttons == MouseButtonFlags.Left) {
                 Scene.ActiveCamera.GameObject.Transform.TranslateForwardAligned(new Vector3(-delta.X, 0, delta.Y) * -0.04f);
             } else if ((buttons & (MouseButtonFlags.Left|MouseButtonFlags.Right)) != 0) {
@@ -151,7 +200,12 @@ public class SceneController(Scene scene)
 
     public void Update(float deltaTime)
     {
-        if (dragMode == DragMode.Rotation) {
+        var translateCamera = dragMode == DragMode.Rotation;
+        if (UseMeshViewerCameraBindings) {
+            var binding = AppConfig.Instance.Key_MeshViewer_CameraTranslate.Get();
+            translateCamera = translateCamera && !binding.mouseDrag && binding.IsDown() && (!binding.wasd || IsWASDPressed());
+        }
+        if (translateCamera) {
             var moveVec = new Vector3();
             if (Keyboard.IsKeyPressed(Key.W)) moveVec.Z -= 1;
             if (Keyboard.IsKeyPressed(Key.S)) moveVec.Z += 1;
@@ -165,8 +219,95 @@ public class SceneController(Scene scene)
             }
             if (Keyboard.IsKeyPressed(Key.ShiftLeft)) moveVec *= 10;
 
-            Scene.ActiveCamera.GameObject.Transform.TranslateForwardAligned(MoveSpeed * moveVec * deltaTime);
+            var camera = Scene.ActiveCamera.Transform;
+            var previousPosition = camera.Position;
+            camera.TranslateForwardAligned(MoveSpeed * moveVec * deltaTime);
+            if (hasCameraPivot) cameraPivot += camera.Position - previousPosition;
         }
+    }
+
+    private static bool IsDragStartBinding(KeyBinding binding, ImGuiMouseButton startButton)
+    {
+        var startKey = startButton switch {
+            ImGuiMouseButton.Left => ImGuiKey.MouseLeft,
+            ImGuiMouseButton.Right => ImGuiKey.MouseRight,
+            ImGuiMouseButton.Middle => ImGuiKey.MouseMiddle,
+            _ => ImGuiKey.None,
+        };
+        return (binding.Key == startKey && binding.AreModifiersDown()) || (!IsMouseButton(binding.Key) && binding.IsDown());
+    }
+
+    private bool IsDragBindingActive(KeyBinding binding, MouseButtonFlags buttons)
+    {
+        var bindingButton = binding.Key switch {
+            ImGuiKey.MouseLeft => MouseButtonFlags.Left,
+            ImGuiKey.MouseRight => MouseButtonFlags.Right,
+            ImGuiKey.MouseMiddle => MouseButtonFlags.Middle,
+            _ => (MouseButtonFlags)0,
+        };
+        var bindingActive = bindingButton != 0
+            ? buttons == bindingButton && binding.AreModifiersDown()
+            : binding.IsDown();
+        return bindingActive && (!binding.wasd || IsWASDPressed());
+    }
+
+    private static bool IsMouseButton(ImGuiKey key) => key is ImGuiKey.MouseLeft or ImGuiKey.MouseRight or ImGuiKey.MouseMiddle;
+
+    private bool IsWASDPressed() => Keyboard.IsKeyPressed(Key.W) || Keyboard.IsKeyPressed(Key.A) || Keyboard.IsKeyPressed(Key.S) || Keyboard.IsKeyPressed(Key.D);
+
+    private void InitializeMouseDragDepth()
+    {
+        var camera = Scene.ActiveCamera.Transform;
+        EnsureCameraPivot();
+        orbitTarget = cameraPivot;
+        orbitDistance = Math.Max(Vector3.Distance(camera.Position, cameraPivot), 0.001f);
+    }
+
+    private void EnsureCameraPivot()
+    {
+        var camera = Scene.ActiveCamera.Transform;
+        if (hasCameraPivot) {
+            var pivotDirection = cameraPivot - camera.Position;
+            if (pivotDirection.LengthSquared() > 0.000001f && Vector3.Dot(Vector3.Normalize(pivotDirection), camera.Forward) > 0.999f) {
+                orbitDistance = pivotDirection.Length();
+                return;
+            }
+        }
+
+        var bounds = Scene.RootFolder.GetWorldSpaceBounds();
+        if (!bounds.IsInvalid) {
+            cameraPivot = bounds.Center;
+            var pivotDepth = Vector3.Dot(cameraPivot - camera.Position, camera.Forward);
+            if (pivotDepth <= 0.001f) cameraPivot = camera.Position + camera.Forward * Math.Max(bounds.Size.Length(), 0.1f);
+        } else {
+            cameraPivot = camera.Position + camera.Forward;
+        }
+        hasCameraPivot = true;
+        orbitDistance = Vector3.Distance(camera.Position, cameraPivot);
+    }
+
+    public void SetCameraPivot(Vector3 pivot)
+    {
+        cameraPivot = pivot;
+        hasCameraPivot = true;
+        orbitDistance = Math.Max(Vector3.Distance(Scene.ActiveCamera.Transform.Position, cameraPivot), 0.001f);
+    }
+
+    private void ResetCameraToScene()
+    {
+        var bounds = Scene.RootFolder.GetWorldSpaceBounds();
+        Scene.ActiveCamera.LookAt(bounds, true);
+        if (!bounds.IsInvalid) SetCameraPivot(bounds.Center);
+    }
+
+    private float GetMouseDragWorldUnitsPerPixel()
+    {
+        var camera = Scene.ActiveCamera;
+        var viewportHeight = Math.Max(Scene.RenderContext.ViewportSize.Y, 1.0f);
+        if (camera.ProjectionMode == CameraProjection.Orthographic) {
+            return camera.OrthoSize / viewportHeight;
+        }
+        return 2.0f * orbitDistance * MathF.Tan(camera.FieldOfView * 0.5f) / viewportHeight;
     }
 
     public void UpdateGizmo(EditorWindow window, GizmoManager manager)

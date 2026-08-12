@@ -26,7 +26,9 @@ public static partial class Lang
         public static readonly FixedString Section_FPS = "FPS";
         public static readonly FixedString Section_DateTime = "Date & Time";
         public static readonly FixedString Section_Lang = "Language";
+        public static readonly FixedString Section_Camera = "Camera";
         public static readonly FixedString Section_Animator = "Animator";
+        public static readonly FixedString Section_Editor = "Editor";
         public static readonly FixedString Section_GroupList = "GroupList";
 
         public static readonly FixedString Group_Preferences = "Preferences";
@@ -142,6 +144,16 @@ public static partial class Lang
         public static readonly FixedString Bind_MeshViewer_PrevAnimFrame = "Previous Frame";
         public static readonly FixedString Bind_MeshViewer_IncreaseAnimSpeed = "Increase Playback Speed";
         public static readonly FixedString Bind_MeshViewer_DecreaseAnimSpeed = "Decrease Playback Speed";
+        public static readonly FixedString Bind_MeshViewer_CameraTranslate = "Camera Translate";
+        public static readonly FixedString Bind_MeshViewer_CameraRotate = "Camera Rotate";
+        public static readonly FixedString Bind_MeshViewer_CameraZoom = "Camera Zoom";
+        public static readonly FixedString Bind_MeshViewer_MoveGeometry = "Move Geometry";
+        public static readonly FixedString Bind_MeshViewer_SelectAll = "Select/Deselect All";
+        public static readonly FixedString Key_MeshViewer_CameraTranslate = "Right Click + WASD";
+        public static readonly FixedString Key_MeshViewer_CameraRotate = "Right Click + WASD";
+        public static readonly FixedString Key_MeshViewer_CameraMouseDrag = "Mouse Middle + Drag";
+        public static readonly FixedString Key_MeshViewer_CameraMouseDragInvert = "Mouse Middle + Drag Invert";
+        public static readonly FixedString Key_MeshViewer_CameraZoom = "Mouse Scroll Wheel";
         public static readonly FixedString Bind_TextureViewer_ResetView = "Reset View";
         public static readonly FixedString Bind_TextureViewer_ZoomIn = "Zoom In";
         public static readonly FixedString Bind_TextureViewer_ZoomOut = "Zoom Out";

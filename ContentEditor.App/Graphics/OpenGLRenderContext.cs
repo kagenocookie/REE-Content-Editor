@@ -84,6 +84,16 @@ public sealed class OpenGLRenderContext : RenderContext
         return material.Clone();
     }
 
+    private Material CreateSolidMaterial(ShaderFlags flags)
+    {
+        if (!builtInMaterials.TryGetValue((BuiltInMaterials.Solid, flags), out var material)) {
+            material = new(GL, GetShader("Shaders/GLSL/solid.glsl", flags));
+            material.SetParameter("_MainColor", new Color(190, 190, 190, 255));
+            material.Name = "solid";
+        }
+        return material.Clone();
+    }
+
     private Material CreateWireMaterial(ShaderFlags flags)
     {
         if (!builtInMaterials.TryGetValue((BuiltInMaterials.Wireframe, flags), out var material)) {
@@ -117,6 +127,17 @@ public sealed class OpenGLRenderContext : RenderContext
         return material.Clone();
     }
 
+    private Material CreateEditVertexMaterial(ShaderFlags flags)
+    {
+        if (!builtInMaterials.TryGetValue((BuiltInMaterials.EditVertices, flags), out var material)) {
+            material = new(GL, GetShader("Shaders/GLSL/unshaded-color.glsl", flags));
+            material.SetParameter("_MainColor", new Color(255, 128, 0, 255));
+            material.SetParameter("_FadeMaxDistance", float.MaxValue);
+            material.Name = "edit_vertices";
+        }
+        return material.Clone();
+    }
+
     private Material CreateGizmoVertexColorMaterial(ShaderFlags flags)
     {
         if (!builtInMaterials.TryGetValue((BuiltInMaterials.GizmoVertexColor, flags), out var material)) {
@@ -136,8 +157,10 @@ public sealed class OpenGLRenderContext : RenderContext
             BuiltInMaterials.FilledWireframe => CreateFilledWireMaterial(flags),
             BuiltInMaterials.Wireframe => CreateWireMaterial(flags),
             BuiltInMaterials.MonoColor => CreateMonoMaterial(flags),
+            BuiltInMaterials.EditVertices => CreateEditVertexMaterial(flags),
             BuiltInMaterials.GizmoVertexColor => CreateGizmoVertexColorMaterial(flags),
             BuiltInMaterials.ViewShaded => CreateViewShadedMaterial(flags),
+            BuiltInMaterials.Solid => CreateSolidMaterial(flags),
             BuiltInMaterials.Standard => CreateStandardMaterial(flags),
             _ => throw new NotImplementedException("Unsupported material " + material),
         };
@@ -545,6 +568,33 @@ public sealed class OpenGLRenderContext : RenderContext
         }
     }
 
+    /// <summary>
+    /// Reads a top-left-origin rectangle from the current viewport depth buffer.
+    /// </summary>
+    public unsafe ViewportDepthRegion? ReadViewportDepth(int x, int y, int width, int height)
+    {
+        var viewportWidth = (int)ViewportSize.X;
+        var viewportHeight = (int)ViewportSize.Y;
+        if (_outputBuffer == 0 || viewportWidth <= 0 || viewportHeight <= 0 || width <= 0 || height <= 0) return null;
+
+        var left = Math.Clamp(x, 0, viewportWidth);
+        var top = Math.Clamp(y, 0, viewportHeight);
+        var right = Math.Clamp(x + width, left, viewportWidth);
+        var bottom = Math.Clamp(y + height, top, viewportHeight);
+        width = right - left;
+        height = bottom - top;
+        if (width <= 0 || height <= 0) return null;
+
+        var values = new float[width * height];
+        GL.GetInteger(GLEnum.ReadFramebufferBinding, out var previousFramebuffer);
+        GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, _outputBuffer);
+        fixed (float* output = values) {
+            GL.ReadPixels(left, viewportHeight - bottom, (uint)width, (uint)height, PixelFormat.DepthComponent, PixelType.Float, output);
+        }
+        GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, (uint)previousFramebuffer);
+        return new ViewportDepthRegion(left, top, width, height, values);
+    }
+
     private unsafe void UpdateRenderTarget()
     {
         _renderTargetTextureSizeOutdated = false;
@@ -665,5 +715,22 @@ public sealed class OpenGLRenderContext : RenderContext
         _missingTexture?.Dispose();
         Batch.Dispose();
         base.Dispose(disposing);
+    }
+}
+
+public readonly record struct ViewportDepthRegion(int X, int Y, int Width, int Height, float[] Values)
+{
+    public bool TryGetDepth(Vector2 viewportPosition, out float depth)
+    {
+        var localX = (int)MathF.Floor(viewportPosition.X) - X;
+        var localY = (int)MathF.Floor(viewportPosition.Y) - Y;
+        if ((uint)localX >= (uint)Width || (uint)localY >= (uint)Height) {
+            depth = 1.0f;
+            return false;
+        }
+
+        // OpenGL returns rows from bottom to top; viewport coordinates start at the top.
+        depth = Values[(Height - localY - 1) * Width + localX];
+        return true;
     }
 }

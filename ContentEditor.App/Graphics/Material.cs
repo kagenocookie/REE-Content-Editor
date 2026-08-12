@@ -209,7 +209,9 @@ public enum EditorPresetMaterials
 public enum BuiltInMaterials
 {
     ViewShaded,
+    Solid,
     MonoColor,
+    EditVertices,
     Wireframe,
     FilledWireframe,
     GizmoVertexColor,

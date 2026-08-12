@@ -140,6 +140,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                 SaveAs();
             }
             ImguiHelpers.Tooltip(Lang.Buttons.SaveCopy);
+            DrawAfterSaveCopyControls();
             if (Handle.DiffHandler != null && ImguiHelpers.SameLine() && Handle.HandleType is not FileHandleType.Memory) {
                 if (ImGui.Button($"{AppIcons.SI_FileChanges}")) {
                     var diff = Handle.DiffHandler.FindDiff(Handle);
@@ -218,6 +219,8 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             ImguiHelpers.Tooltip(Lang.Buttons.Revert);
         }
     }
+
+    protected virtual void DrawAfterSaveCopyControls() { }
 
     public void SaveAs()
     {

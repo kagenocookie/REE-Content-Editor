@@ -27,10 +27,14 @@ public class SceneVisibilitySettings : ISceneWidget
         ImguiHelpers.Tooltip("Object Visibility");
         if (ImGui.BeginPopup(WidgetName)) {
             ImGui.PushItemFlag(ImGuiItemFlags.AutoClosePopups, false);
+            var scene = context.Get<Scene>();
 
             ShowToggle("Axis Gizmos", $"{AppIcons.SI_Generic3Axis} ", Colors.IconPrimary, AppConfig.Instance.RenderAxis);
             ShowToggle("Meshes", $"{AppIcons.SI_FileType_MESH} ", Colors.FileTypeMESH, AppConfig.Instance.RenderMeshes);
             ShowToggle("Occlusion", $"{AppIcons.EyeBlocked} ", Colors.Faded, AppConfig.Instance.RenderOcclusion);
+            if (ShowToggle("Wireframe Overlay", $"{AppIcons.SI_ViewGridSmall} ", Colors.IconSecondary, scene.WireframeOverlay)) {
+                scene.WireframeOverlay = !scene.WireframeOverlay;
+            }
             ShowToggle("MCOL - Physics Colliders", $"{AppIcons.SI_FileType_MCOL} ", Colors.FileTypeMCOL, AppConfig.Instance.RenderColliders);
             ShowToggle("RCOL - Request Set Colliders", $"{AppIcons.SI_FileType_RCOL} ", Colors.FileTypeRCOL, AppConfig.Instance.RenderRequestSetColliders);
             ShowToggle("Chains", $"{AppIcons.SI_MeshViewerChain} ", Colors.FileTypeCHAIN, AppConfig.Instance.RenderChains);
@@ -44,14 +48,18 @@ public class SceneVisibilitySettings : ISceneWidget
 
     private static void ShowToggle(string text, string icon, Vector4 color, AppConfig.SettingWrapper<bool> setting)
     {
-        ImGui.PushStyleColor(ImGuiCol.Text, color with { W = setting.Get() ? 1 : 0.6f });
-        if (ImGui.Selectable(icon)) {
-            setting.Set(!setting);
-        }
+        if (ShowToggle(text, icon, color, setting.Get())) setting.Set(!setting);
+    }
+
+    private static bool ShowToggle(string text, string icon, Vector4 color, bool enabled)
+    {
+        ImGui.PushStyleColor(ImGuiCol.Text, color with { W = enabled ? 1 : 0.6f });
+        var toggled = ImGui.Selectable(icon);
         ImGui.PopStyleColor();
         ImGui.SameLine();
-        ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.Text) with { W = setting.Get() ? 1 : 0.6f });
+        ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.Text) with { W = enabled ? 1 : 0.6f });
         ImGui.Text(text);
         ImGui.PopStyleColor();
+        return toggled;
     }
 }

@@ -406,6 +406,15 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     private void ShowHotkeysMeshViewerTab()
     {
         ImGui.Spacing();
+        ImGui.SeparatorText(Lang.Settings.Section_Camera);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraTranslate, config.Key_MeshViewer_CameraTranslate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraTranslate.ToString(), mouseDragCompositeLabel: Lang.Settings.Key_MeshViewer_CameraMouseDrag.ToString(), invertedMouseDragCompositeLabel: Lang.Settings.Key_MeshViewer_CameraMouseDragInvert.ToString());
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraRotate, config.Key_MeshViewer_CameraRotate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraRotate.ToString(), mouseDragCompositeLabel: Lang.Settings.Key_MeshViewer_CameraMouseDrag.ToString(), invertedMouseDragCompositeLabel: Lang.Settings.Key_MeshViewer_CameraMouseDragInvert.ToString());
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraZoom, config.Key_MeshViewer_CameraZoom, labelOverrideKey: ImGuiKey.MouseWheelY, labelOverride: Lang.Settings.Key_MeshViewer_CameraZoom.ToString());
+        ImGui.Spacing();
+        ImGui.SeparatorText(Lang.Settings.Section_Editor);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_MoveGeometry, config.Key_MeshViewer_MoveGeometry);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_SelectAll, config.Key_MeshViewer_SelectAll);
+        ImGui.Spacing();
         ImGui.SeparatorText(Lang.Settings.Section_Animator);
         ImguiKeybinding(Lang.Settings.Bind_MeshViewer_PauseAnim, config.Key_MeshViewer_PauseAnim);
         ImguiKeybinding(Lang.Settings.Bind_MeshViewer_NextAnimFrame, config.Key_MeshViewer_NextAnimFrame);
@@ -617,8 +626,10 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     }
 
     private Dictionary<AppConfig.SettingWrapper<KeyBinding>, string> keyfilters = new();
+    private readonly Dictionary<(ImGuiKey key, string name), (string[] source, string[] labels)> keyLabelOverrides = new();
+    private readonly Dictionary<(string wasd, string mouseDrag, string invertedMouseDrag), (string[] source, string[] labels, (ImGuiKey key, bool wasd, bool mouseDrag, bool invertDrag)[] values)> compositeKeyOptions = new();
 
-    private bool ImguiKeybinding(ReadOnlySpan<byte> label, AppConfig.SettingWrapper<KeyBinding> setting)
+    private bool ImguiKeybinding(ReadOnlySpan<byte> label, AppConfig.SettingWrapper<KeyBinding> setting, ImGuiKey labelOverrideKey = ImGuiKey.None, string? labelOverride = null, string? wasdCompositeLabel = null, string? mouseDragCompositeLabel = null, string? invertedMouseDragCompositeLabel = null)
     {
         var key = setting.Get();
         var filter = keyfilters.GetValueOrDefault(setting) ?? "";
@@ -633,7 +644,49 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImGui.SameLine();
         ImGui.PopItemWidth();
         ImGui.SetNextItemWidth(ImGui.CalcItemWidth() - 200);
-        changed = ImguiHelpers.FilterableCSharpEnumComboTranslated(label, ref key.Key, ref filter, Lang.Settings.Keys) || changed;
+        if (wasdCompositeLabel != null && mouseDragCompositeLabel != null && invertedMouseDragCompositeLabel != null) {
+            var sourceLabels = Lang.Settings.Keys.NameStrings;
+            var compositeKey = (wasdCompositeLabel, mouseDragCompositeLabel, invertedMouseDragCompositeLabel);
+            if (!compositeKeyOptions.TryGetValue(compositeKey, out var cached) || !ReferenceEquals(cached.source, sourceLabels)) {
+                var labels = sourceLabels.Append(wasdCompositeLabel).Append(mouseDragCompositeLabel).Append(invertedMouseDragCompositeLabel).ToArray();
+                var values = Lang.Settings.Keys.Values.Select(key => (key, false, false, false))
+                    .Append((ImGuiKey.MouseRight, true, false, false))
+                    .Append((ImGuiKey.MouseMiddle, false, true, false))
+                    .Append((ImGuiKey.MouseMiddle, false, true, true))
+                    .ToArray();
+                compositeKeyOptions[compositeKey] = cached = (sourceLabels, labels, values);
+            }
+            var selected = (key.Key, key.wasd, key.mouseDrag, key.invertDrag);
+            if (ImguiHelpers.FilterableCombo(label, cached.labels, cached.values, ref selected, ref filter)) {
+                key.Key = selected.Key;
+                key.wasd = selected.wasd;
+                key.mouseDrag = selected.mouseDrag;
+                key.invertDrag = selected.invertDrag;
+                changed = true;
+            }
+        } else if (labelOverrideKey != ImGuiKey.None && labelOverride != null) {
+            var sourceLabels = Lang.Settings.Keys.NameStrings;
+            var cacheKey = (labelOverrideKey, labelOverride);
+            if (!keyLabelOverrides.TryGetValue(cacheKey, out var cached) || !ReferenceEquals(cached.source, sourceLabels)) {
+                var labels = (string[])sourceLabels.Clone();
+                var overrideIndex = Array.IndexOf(Lang.Settings.Keys.Values, labelOverrideKey);
+                if (overrideIndex != -1) labels[overrideIndex] = labelOverride;
+                keyLabelOverrides[cacheKey] = cached = (sourceLabels, labels);
+            }
+            if (ImguiHelpers.FilterableCombo(label, cached.labels, Lang.Settings.Keys.Values, ref key.Key, ref filter)) {
+                key.wasd = false;
+                key.mouseDrag = false;
+                key.invertDrag = false;
+                changed = true;
+            }
+        } else {
+            if (ImguiHelpers.FilterableCSharpEnumComboTranslated(label, ref key.Key, ref filter, Lang.Settings.Keys)) {
+                key.wasd = false;
+                key.mouseDrag = false;
+                key.invertDrag = false;
+                changed = true;
+            }
+        }
         if (!setting.IsInitial) {
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_Reset}")) {
