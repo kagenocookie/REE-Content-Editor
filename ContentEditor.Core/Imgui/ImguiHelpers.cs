@@ -688,6 +688,13 @@ public static class ImguiHelpers
         if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(text);
         ImGui.PopStyleColor();
     }
+    public static void TooltipColored(ReadOnlySpan<byte> text, Vector4? color = null)
+    {
+        color ??= GetColor(ImGuiCol.Text);
+        ImGui.PushStyleColor(ImGuiCol.Text, color.Value);
+        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(text);
+        ImGui.PopStyleColor();
+    }
     /// <summary>
     /// Draws a highlight over the last drawn menu bar item.
     /// </summary>

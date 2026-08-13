@@ -558,7 +558,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
             var pos = ImGui.GetCursorScreenPos();
             var click = ImGui.Button(displayName.ToString(), btnSize);
             ImGui.PopStyleColor();
-            ImGui.PushFont(null, UI.FontSizeLarge);
+            ImGui.PushFont(ImFontPtr.Null, UI.FontSizeLarge);
             if (Path.HasExtension(file)) {
                 if (isFilePreviewEnabled) {
                     var previewStatus = previewGenerator.FetchPreview(file, out var previewTex, thumbnailDiscriminator);

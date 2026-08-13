@@ -1,7 +1,7 @@
-using System.Numerics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
+using System.Numerics;
 
 namespace ContentEditor.App;
 
@@ -50,6 +50,9 @@ public class OverlaysWindow : IWindowHandler
         ShowTimedTooltip();
         ShowBackgroundTasks(size);
         ShowToasts(size);
+        if (AppConfig.Instance.Key_HotkeyHint.Get().IsDown()) {
+            ShowHotkeyHints(size);
+        }
     }
 
     private void ShowHelpText(Vector2 size)
@@ -185,6 +188,149 @@ public class OverlaysWindow : IWindowHandler
         public int ID { get; } = id;
     }
 
+    private class HotkeyHintGroup
+    {
+        public required FixedString GroupName { get; set; }
+        public List<HotkeyHint> HotkeyList { get; set; } = new();
+    }
+    private class HotkeyHint
+    {
+        public required FixedString Description { get; set; }
+        public Func<string>? Hotkey { get; set; }
+        public bool IsSeparator { get; set; }
+    }
+    private static readonly HotkeyHintGroup globalHotkeys = new()
+    {
+        GroupName = Lang.Settings.Group_Global, HotkeyList = {
+            new HotkeyHint { Description = Lang.Settings.Bind_Undo, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Undo.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_Redo, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Redo.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_Copy, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Copy.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_Paste, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Paste.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_Open, Hotkey = () => AppImguiHelpers.FormatHotkeyString( AppConfig.Instance.Key_Open.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_Save, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Save.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_Close, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Close.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_HomePage, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_HomePage.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_OpenPakBrowser, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_OpenPakBrowser.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_OpenMacroShelf, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_OpenMacroShelf.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_ShowHotkeyHints, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_HotkeyHint.Get())},
+        }
+    };
+    private static readonly HotkeyHintGroup pakBrowserHotkeys = new() {
+        GroupName = Lang.Settings.Group_Pak, HotkeyList = {
+            new HotkeyHint { Description = Lang.Settings.Bind_Back, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Back.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_PakBrowser_OpenBookmarks, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_PakBrowser_OpenBookmarks.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_PakBrowser_Bookmark, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_PakBrowser_Bookmark.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_PakBrowser_JumpToPageTop, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_PakBrowser_JumpToPageTop.Get())},
+        }
+    };
+    private static readonly HotkeyHintGroup meshViewerHotkeys = new() {
+        GroupName = Lang.Settings.Group_Mesh, HotkeyList = {
+            new HotkeyHint { Description = Lang.Settings.Section_Animator, IsSeparator = true},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_PauseAnim, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_PauseAnim.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_NextAnimFrame, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_NextAnimFrame.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_PrevAnimFrame, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_PrevAnimFrame.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_IncreaseAnimSpeed, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_IncreaseAnimSpeed.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_DecreaseAnimSpeed, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_DecreaseAnimSpeed.Get())},
+        }
+    };
+    private static readonly HotkeyHintGroup textureViewerHotkeys = new() {
+        GroupName = Lang.Settings.Group_Texture, HotkeyList = {
+            new HotkeyHint { Description = Lang.Settings.Bind_TextureViewer_ResetView, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_TextureViewer_ResetView.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_TextureViewer_ZoomIn, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_TextureViewer_ZoomIn.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_TextureViewer_ZoomOut, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_TextureViewer_ZoomOut.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_TextureViewer_NextChannel, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_TextureViewer_NextChannel.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_TextureViewer_PrevChannel, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_TextureViewer_PrevChannel.Get())},
+        }
+    };
+    private static readonly HotkeyHintGroup sceneHotkeys = new() {
+        GroupName = Lang.Settings.Group_Scene, HotkeyList = {
+            new HotkeyHint {Description = Lang.Settings.Bind_Scene_Focus3D, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Scene_Focus3D.Get())},
+            new HotkeyHint {Description = Lang.Settings.Bind_Scene_FocusUI, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Scene_FocusUI.Get())},
+            new HotkeyHint {Description = Lang.Settings.Bind_Scene_Hide, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Scene_Hide.Get())},
+            new HotkeyHint {Description = Lang.Settings.Bind_Scene_UnhideAll, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Scene_UnhideAll.Get())},
+            new HotkeyHint {Description = Lang.Settings.Bind_Scene_Delete, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Scene_Delete.Get())},
+        }
+    };
+    private static readonly HotkeyHintGroup uvsHotkeys = new() {
+        GroupName = Lang.Settings.Group_UVS, HotkeyList = {
+            new HotkeyHint {Description = Lang.Settings.Bind_UVS_Pause, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_UVS_Pause.Get())},
+            new HotkeyHint {Description = Lang.Settings.Bind_UVS_NextPattern, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_UVS_NextPattern.Get())},
+            new HotkeyHint {Description = Lang.Settings.Bind_UVS_PrevPattern, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_UVS_PrevPattern.Get())},
+            new HotkeyHint {Description = Lang.Settings.Bind_UVS_IncreaseSpeed, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_UVS_IncreaseSpeed.Get())},
+            new HotkeyHint {Description = Lang.Settings.Bind_UVS_DecreaseSpeed, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_UVS_DecreaseSpeed.Get())},
+        }
+    };
+    private static object? lastWinHandler = null;
+    private static float hotkeyHintAnimStartTime = -1f;
+
+    public static void ShowHotkeyHints(Vector2 size)
+    {
+        var currWinHandler = EditorWindow.CurrentWindow?.FocusedWindow?.Handler;
+        var currGroup = currWinHandler switch {
+            ContentEditor.App.PakBrowser => pakBrowserHotkeys,
+            ContentEditor.App.MeshViewer => meshViewerHotkeys,
+            ContentEditor.App.TextureViewer => textureViewerHotkeys,
+            ContentEditor.App.SceneView => sceneHotkeys,
+            ContentEditor.App.ImguiHandling.UVSequenceFileEditor => uvsHotkeys,
+            _ => globalHotkeys
+        };
+        if (currWinHandler != lastWinHandler) {
+            lastWinHandler = currWinHandler;
+            hotkeyHintAnimStartTime = (float)ImGui.GetTime();
+        }
+        var animT = hotkeyHintAnimStartTime < 0f ? 1f : Math.Clamp(((float)ImGui.GetTime() - hotkeyHintAnimStartTime) / 0.5f, 0f, 1f);
+        var animEase = animT * animT * (3f - 2f * animT);
+        var descW = currGroup.HotkeyList.Max(x => ImGui.CalcTextSize(x.Description).X);
+        var hotkeyW = currGroup.HotkeyList.Where(x => x.Hotkey is not null).Select(x => ImGui.CalcTextSize(x.Hotkey!()).X).Max();
+        var hintOverlayW = Math.Max(250, descW + hotkeyW + ImGui.GetStyle().ItemSpacing.X + ImGui.GetStyle().WindowPadding.X * 2);
+        var pos = new Vector2(size.X - hintOverlayW - ImGui.GetStyle().WindowPadding.X * 3, ImGui.GetStyle().WindowPadding.Y * 3);
+
+        ImGui.SetNextWindowPos(pos, ImGuiCond.Always);
+        ImGui.SetNextWindowSize(new Vector2(hintOverlayW, 0), ImGuiCond.Always);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, ImGui.GetStyle().WindowRounding);
+        ImGui.PushStyleVar(ImGuiStyleVar.Alpha, animEase);
+        if (ImGui.Begin("##HotkeyHints", ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoTitleBar)) {
+            var drawList = ImGui.GetWindowDrawList();
+            var windowPos = ImGui.GetWindowPos();
+            var windowSize = ImGui.GetWindowSize();
+            var revealH = windowSize.Y * animEase;
+            var headerColor = ImGui.GetColorU32(Colors.IconOverlay);
+
+            drawList.PushClipRect(windowPos, windowPos + new Vector2(windowSize.X, revealH), true);
+            drawList.AddRectFilled(windowPos, windowPos + new Vector2(windowSize.X, 34 * UI.UIScale), headerColor);
+            drawList.AddRectFilled(new Vector2(windowPos.X + windowSize.X - 4, windowPos.Y), windowPos + windowSize, headerColor);
+
+            ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.WindowBg));
+            ImGui.Text("Hotkeys: " + currGroup.GroupName);
+            ImGui.PopStyleColor();
+            ImGui.Spacing();
+            if (ImGui.BeginTable("##HotkeyTable", 2, ImGuiTableFlags.RowBg)) {
+                ImGui.TableSetupColumn("Description", ImGuiTableColumnFlags.WidthStretch);
+                ImGui.TableSetupColumn("Hotkey", ImGuiTableColumnFlags.WidthFixed, hotkeyW);
+
+                foreach (var hotkey in currGroup.HotkeyList) {
+                    if (hotkey.IsSeparator) {
+                        ImGui.TableNextRow();
+                        ImGui.TableSetColumnIndex(0);
+
+                        ImGui.SeparatorText(hotkey.Description);
+                        continue;
+                    }
+                    ImGui.TableNextRow();
+
+                    ImGui.TableSetColumnIndex(0);
+                    ImGui.Text(hotkey.Description);
+
+                    ImGui.TableSetColumnIndex(1);
+                    ImGui.TextDisabled(hotkey.Hotkey!());
+                }
+                ImGui.EndTable();
+            }
+            drawList.PopClipRect();
+        }
+        ImGui.End();
+        ImGui.PopStyleVar(2);
+    }
     public bool RequestClose()
     {
         return false;

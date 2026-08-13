@@ -342,7 +342,7 @@ public class LuaMacroShelf : IWindowHandler, IKeepEnabledWhileSaving
             var drawList = ImGui.GetWindowDrawList();
             float iconSize = UI.FontSize * 2;
             float iconPadding = 10;
-            ImGui.PushFont(null, iconSize);
+            ImGui.PushFont(ImFontPtr.Null, iconSize);
             drawList.AddText(pos + new Vector2(iconPadding, (macroCardH - iconSize) * 0.5f), macro.IconColor, ResolveMacroIcon(macro.Icon!));
             ImGui.PopFont();
 
