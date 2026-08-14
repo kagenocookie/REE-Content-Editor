@@ -1036,6 +1036,7 @@ public struct KeyBinding : IEquatable<KeyBinding>
         var shiftDown = ImGui.IsKeyDown(ImGuiKey.ModShift);
         if (shift ? !shiftDown : shiftDown && !allowExtraShift) return false;
         if (alt != ImGui.IsKeyDown(ImGuiKey.ModAlt)) return false;
+        if (Key != ImGuiKey.MouseRight && ImGui.IsKeyDown(ImGuiKey.MouseRight)) return false;
         return true;
     }
 
