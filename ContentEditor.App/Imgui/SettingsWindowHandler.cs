@@ -406,10 +406,20 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     private void ShowHotkeysMeshViewerTab()
     {
         ImGui.Spacing();
-        ImGui.SeparatorText(Lang.Settings.Section_Camera);
+        ImGui.SeparatorText(Lang.Settings.Section_FPSCamera);
         ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraTranslate, config.Key_MeshViewer_CameraTranslate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraTranslate.ToString(), mouseDragCompositeLabel: Lang.Settings.Key_MeshViewer_CameraMouseDrag.ToString(), invertedMouseDragCompositeLabel: Lang.Settings.Key_MeshViewer_CameraMouseDragInvert.ToString());
         ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraRotate, config.Key_MeshViewer_CameraRotate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraRotate.ToString(), mouseDragCompositeLabel: Lang.Settings.Key_MeshViewer_CameraMouseDrag.ToString(), invertedMouseDragCompositeLabel: Lang.Settings.Key_MeshViewer_CameraMouseDragInvert.ToString());
         ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraZoom, config.Key_MeshViewer_CameraZoom, labelOverrideKey: ImGuiKey.MouseWheelY, labelOverride: Lang.Settings.Key_MeshViewer_CameraZoom.ToString());
+        ImGui.Spacing();
+        ImGui.SeparatorText(Lang.Settings.Section_OrthoCamera);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraTranslate, config.Key_MeshViewer_OrthoCameraTranslate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraTranslate.ToString(), mouseDragCompositeLabel: Lang.Settings.Key_MeshViewer_CameraMouseDrag.ToString(), invertedMouseDragCompositeLabel: Lang.Settings.Key_MeshViewer_CameraMouseDragInvert.ToString());
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraRotate, config.Key_MeshViewer_OrthoCameraRotate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraRotate.ToString(), mouseDragCompositeLabel: Lang.Settings.Key_MeshViewer_CameraMouseDrag.ToString(), invertedMouseDragCompositeLabel: Lang.Settings.Key_MeshViewer_CameraMouseDragInvert.ToString());
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraZoom, config.Key_MeshViewer_OrthoCameraZoom, labelOverrideKey: ImGuiKey.MouseWheelY, labelOverride: Lang.Settings.Key_MeshViewer_CameraZoom.ToString());
+        ImGui.Spacing();
+        ImGui.SeparatorText(Lang.Settings.Section_PivotCamera);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraTranslate, config.Key_MeshViewer_PivotCameraTranslate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraTranslate.ToString(), mouseDragCompositeLabel: Lang.Settings.Key_MeshViewer_CameraMouseDrag.ToString(), invertedMouseDragCompositeLabel: Lang.Settings.Key_MeshViewer_CameraMouseDragInvert.ToString());
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraRotate, config.Key_MeshViewer_PivotCameraRotate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraRotate.ToString(), mouseDragCompositeLabel: Lang.Settings.Key_MeshViewer_CameraMouseDrag.ToString(), invertedMouseDragCompositeLabel: Lang.Settings.Key_MeshViewer_CameraMouseDragInvert.ToString());
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraZoom, config.Key_MeshViewer_PivotCameraZoom, labelOverrideKey: ImGuiKey.MouseWheelY, labelOverride: Lang.Settings.Key_MeshViewer_CameraZoom.ToString());
         ImGui.Spacing();
         ImGui.SeparatorText(Lang.Settings.Section_Editor);
         ImguiKeybinding(Lang.Settings.Bind_MeshViewer_MoveGeometry, config.Key_MeshViewer_MoveGeometry);
@@ -633,7 +643,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     {
         var key = setting.Get();
         var filter = keyfilters.GetValueOrDefault(setting) ?? "";
-        ImGui.PushID(label);
+        ImGui.PushID(setting.SettingKey);
         var changed = false;
         ImGui.PushItemWidth(50);
         changed = ImGui.Checkbox(Lang.Settings.Key_Ctrl, ref key.ctrl);

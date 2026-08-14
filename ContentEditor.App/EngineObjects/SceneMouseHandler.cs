@@ -229,7 +229,7 @@ public class SceneMouseHandler(Scene scene)
         if (scene.Controller.ZoomSpeed > 0) {
             float wheel = MouseWheelDelta.Y;
             if (scene.Controller.UseMeshViewerCameraBindings) {
-                var zoomBinding = AppConfig.Instance.Key_MeshViewer_CameraZoom.Get();
+                var zoomBinding = scene.Controller.GetCameraZoomBinding();
                 if (zoomBinding.Key == ImGuiKey.MouseWheelY) {
                     if (!zoomBinding.AreModifiersDown()) wheel = 0;
                 } else {

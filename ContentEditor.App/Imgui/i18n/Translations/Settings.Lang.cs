@@ -27,6 +27,9 @@ public static partial class Lang
         public static readonly FixedString Section_DateTime = "Date & Time";
         public static readonly FixedString Section_Lang = "Language";
         public static readonly FixedString Section_Camera = "Camera";
+        public static readonly FixedString Section_FPSCamera = "FPS Camera";
+        public static readonly FixedString Section_OrthoCamera = "Ortho Camera";
+        public static readonly FixedString Section_PivotCamera = "Pivot Camera";
         public static readonly FixedString Section_Animator = "Animator";
         public static readonly FixedString Section_Editor = "Editor";
         public static readonly FixedString Section_GroupList = "GroupList";

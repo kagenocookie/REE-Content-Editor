@@ -99,9 +99,15 @@ public class AppConfig : Singleton<AppConfig>
         public const string Key_MeshViewer_PrevAnimFrame = "key_meshviewer_prevanimframe";
         public const string Key_MeshViewer_IncreaseAnimSpeed = "key_meshviewer_increaseanimspeed";
         public const string Key_MeshViewer_DecreaseAnimSpeed = "key_meshviewer_decreaseanimspeed";
-        public const string Key_MeshViewer_CameraTranslate = "key_meshviewer_camera_translate_v2";
-        public const string Key_MeshViewer_CameraRotate = "key_meshviewer_camera_rotate_v3";
-        public const string Key_MeshViewer_CameraZoom = "key_meshviewer_camera_zoom_v2";
+        public const string Key_MeshViewer_CameraTranslate = "key_meshviewer_fps_camera_translate";
+        public const string Key_MeshViewer_CameraRotate = "key_meshviewer_fps_camera_rotate";
+        public const string Key_MeshViewer_CameraZoom = "key_meshviewer_fps_camera_zoom";
+        public const string Key_MeshViewer_OrthoCameraTranslate = "key_meshviewer_ortho_camera_translate";
+        public const string Key_MeshViewer_OrthoCameraRotate = "key_meshviewer_ortho_camera_rotate";
+        public const string Key_MeshViewer_OrthoCameraZoom = "key_meshviewer_ortho_camera_zoom";
+        public const string Key_MeshViewer_PivotCameraTranslate = "key_meshviewer_pivot_camera_translate";
+        public const string Key_MeshViewer_PivotCameraRotate = "key_meshviewer_pivot_camera_rotate";
+        public const string Key_MeshViewer_PivotCameraZoom = "key_meshviewer_pivot_camera_zoom";
         public const string Key_MeshViewer_MoveGeometry = "key_meshviewer_move_geometry";
         public const string Key_MeshViewer_SelectAll = "key_meshviewer_select_all";
         public const string Key_TextureViewer_ResetView = "key_textureviewer_resetview";
@@ -381,6 +387,12 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<KeyBinding> Key_MeshViewer_CameraTranslate = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_CameraTranslate, _lock, new KeyBinding(ImGuiKey.MouseRight, wasd: true));
     public readonly SettingWrapper<KeyBinding> Key_MeshViewer_CameraRotate = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_CameraRotate, _lock, new KeyBinding(ImGuiKey.MouseRight));
     public readonly SettingWrapper<KeyBinding> Key_MeshViewer_CameraZoom = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_CameraZoom, _lock, new KeyBinding(ImGuiKey.MouseWheelY));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_OrthoCameraTranslate = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_OrthoCameraTranslate, _lock, new KeyBinding(ImGuiKey.MouseMiddle, shift: true, mouseDrag: true, invertDrag: true));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_OrthoCameraRotate = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_OrthoCameraRotate, _lock, new KeyBinding(ImGuiKey.MouseMiddle, mouseDrag: true));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_OrthoCameraZoom = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_OrthoCameraZoom, _lock, new KeyBinding(ImGuiKey.MouseWheelY));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_PivotCameraTranslate = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_PivotCameraTranslate, _lock, new KeyBinding(ImGuiKey.MouseMiddle, shift: true, mouseDrag: true, invertDrag: true));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_PivotCameraRotate = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_PivotCameraRotate, _lock, new KeyBinding(ImGuiKey.MouseMiddle, mouseDrag: true));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_PivotCameraZoom = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_PivotCameraZoom, _lock, new KeyBinding(ImGuiKey.MouseWheelY));
     public readonly SettingWrapper<KeyBinding> Key_MeshViewer_MoveGeometry = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_MoveGeometry, _lock, new KeyBinding(ImGuiKey.G));
     public readonly SettingWrapper<KeyBinding> Key_MeshViewer_SelectAll = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_SelectAll, _lock, new KeyBinding(ImGuiKey.A));
     public readonly SettingWrapper<KeyBinding> Key_TextureViewer_ResetView = new SettingWrapper<KeyBinding>(Keys.Key_TextureViewer_ResetView, _lock, new KeyBinding(ImGuiKey.Keypad0, ctrl: true));
@@ -576,6 +588,12 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.Key_MeshViewer_CameraTranslate, instance.Key_MeshViewer_CameraTranslate.value.ToString(), "Keys"),
             (Keys.Key_MeshViewer_CameraRotate, instance.Key_MeshViewer_CameraRotate.value.ToString(), "Keys"),
             (Keys.Key_MeshViewer_CameraZoom, instance.Key_MeshViewer_CameraZoom.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_OrthoCameraTranslate, instance.Key_MeshViewer_OrthoCameraTranslate.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_OrthoCameraRotate, instance.Key_MeshViewer_OrthoCameraRotate.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_OrthoCameraZoom, instance.Key_MeshViewer_OrthoCameraZoom.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_PivotCameraTranslate, instance.Key_MeshViewer_PivotCameraTranslate.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_PivotCameraRotate, instance.Key_MeshViewer_PivotCameraRotate.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_PivotCameraZoom, instance.Key_MeshViewer_PivotCameraZoom.value.ToString(), "Keys"),
             (Keys.Key_MeshViewer_MoveGeometry, instance.Key_MeshViewer_MoveGeometry.value.ToString(), "Keys"),
             (Keys.Key_MeshViewer_SelectAll, instance.Key_MeshViewer_SelectAll.value.ToString(), "Keys"),
             (Keys.Key_TextureViewer_ResetView, instance.Key_TextureViewer_ResetView.value.ToString(), "Keys"),
@@ -854,6 +872,12 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.Key_MeshViewer_CameraTranslate: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_CameraTranslate.value = _key; break;
                         case Keys.Key_MeshViewer_CameraRotate: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_CameraRotate.value = _key; break;
                         case Keys.Key_MeshViewer_CameraZoom: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_CameraZoom.value = _key; break;
+                        case Keys.Key_MeshViewer_OrthoCameraTranslate: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_OrthoCameraTranslate.value = _key; break;
+                        case Keys.Key_MeshViewer_OrthoCameraRotate: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_OrthoCameraRotate.value = _key; break;
+                        case Keys.Key_MeshViewer_OrthoCameraZoom: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_OrthoCameraZoom.value = _key; break;
+                        case Keys.Key_MeshViewer_PivotCameraTranslate: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_PivotCameraTranslate.value = _key; break;
+                        case Keys.Key_MeshViewer_PivotCameraRotate: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_PivotCameraRotate.value = _key; break;
+                        case Keys.Key_MeshViewer_PivotCameraZoom: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_PivotCameraZoom.value = _key; break;
                         case Keys.Key_MeshViewer_MoveGeometry: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_MoveGeometry.value = _key; break;
                         case Keys.Key_MeshViewer_SelectAll: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_SelectAll.value = _key; break;
                         case Keys.Key_TextureViewer_ResetView: if (KeyBinding.TryParse(value, out _key)) Key_TextureViewer_ResetView.value = _key; break;

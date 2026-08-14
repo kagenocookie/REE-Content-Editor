@@ -133,9 +133,9 @@ public class SceneController(Scene scene)
         orbitCameraDrag = startCameraDrag && CameraMode != SceneCameraMode.FPSCamera;
         var initializeMouseDragDepth = orbitCameraDrag;
         if (UseMeshViewerCameraBindings) {
-            var rotateBinding = AppConfig.Instance.Key_MeshViewer_CameraRotate.Get();
+            var rotateBinding = GetCameraRotateBinding();
             var startRotateDrag = IsDragStartBinding(rotateBinding, startButton);
-            var translateBinding = AppConfig.Instance.Key_MeshViewer_CameraTranslate.Get();
+            var translateBinding = GetCameraTranslateBinding();
             var startTranslateDrag = IsDragStartBinding(translateBinding, startButton);
             startCameraDrag = startRotateDrag || startTranslateDrag;
             orbitCameraDrag = startRotateDrag && CameraMode != SceneCameraMode.FPSCamera;
@@ -176,10 +176,10 @@ public class SceneController(Scene scene)
             var translateWithMouseDrag = false;
             var invertTranslationDrag = false;
             if (UseMeshViewerCameraBindings) {
-                var rotateBinding = AppConfig.Instance.Key_MeshViewer_CameraRotate.Get();
+                var rotateBinding = GetCameraRotateBinding();
                 rotateCamera = IsDragBindingActive(rotateBinding, buttons);
                 invertRotationDrag = rotateBinding.invertDrag;
-                var translateBinding = AppConfig.Instance.Key_MeshViewer_CameraTranslate.Get();
+                var translateBinding = GetCameraTranslateBinding();
                 translateWithMouseDrag = translateBinding.mouseDrag && IsDragBindingActive(translateBinding, buttons, includeFpsVerticalMovement: true);
                 invertTranslationDrag = translateBinding.invertDrag;
             }
@@ -213,7 +213,7 @@ public class SceneController(Scene scene)
     {
         var translateCamera = dragMode == DragMode.Rotation;
         if (UseMeshViewerCameraBindings) {
-            var binding = AppConfig.Instance.Key_MeshViewer_CameraTranslate.Get();
+            var binding = GetCameraTranslateBinding();
             var fpsCamera = CameraMode == SceneCameraMode.FPSCamera;
             translateCamera = translateCamera && !binding.mouseDrag
                 && binding.IsDown(allowExtraShift: fpsCamera)
@@ -271,6 +271,24 @@ public class SceneController(Scene scene)
     }
 
     private static bool IsMouseButton(ImGuiKey key) => key is ImGuiKey.MouseLeft or ImGuiKey.MouseRight or ImGuiKey.MouseMiddle;
+
+    private KeyBinding GetCameraTranslateBinding() => CameraMode switch {
+        SceneCameraMode.OrthoCamera => AppConfig.Instance.Key_MeshViewer_OrthoCameraTranslate.Get(),
+        SceneCameraMode.PivotCamera => AppConfig.Instance.Key_MeshViewer_PivotCameraTranslate.Get(),
+        _ => AppConfig.Instance.Key_MeshViewer_CameraTranslate.Get(),
+    };
+
+    private KeyBinding GetCameraRotateBinding() => CameraMode switch {
+        SceneCameraMode.OrthoCamera => AppConfig.Instance.Key_MeshViewer_OrthoCameraRotate.Get(),
+        SceneCameraMode.PivotCamera => AppConfig.Instance.Key_MeshViewer_PivotCameraRotate.Get(),
+        _ => AppConfig.Instance.Key_MeshViewer_CameraRotate.Get(),
+    };
+
+    public KeyBinding GetCameraZoomBinding() => CameraMode switch {
+        SceneCameraMode.OrthoCamera => AppConfig.Instance.Key_MeshViewer_OrthoCameraZoom.Get(),
+        SceneCameraMode.PivotCamera => AppConfig.Instance.Key_MeshViewer_PivotCameraZoom.Get(),
+        _ => AppConfig.Instance.Key_MeshViewer_CameraZoom.Get(),
+    };
 
     private bool IsCameraTranslationKeyPressed() => IsWASDPressed() || CameraMode == SceneCameraMode.FPSCamera && (Keyboard.IsKeyPressed(Key.Q) || Keyboard.IsKeyPressed(Key.E));
 
