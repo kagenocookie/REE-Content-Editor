@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text;
 using ContentEditor.BackgroundTasks;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -475,11 +476,18 @@ public class EfxExpressionAttributeEditor : IObjectUIHandler
     private readonly Dictionary<int, string> pendingStrings = new();
     private readonly Dictionary<int, string> confirmedStrings = new();
 
-    public void OnIMGUI(UIContext context)
+    public unsafe void OnIMGUI(UIContext context)
     {
         var attr = context.Get<EFXAttribute>();
         if (context.children.Count == 0) {
             EFXAttributeImguiHandler.AddBaseFields(context, attr.GetType());
+
+            if (attr is IMaterialExpressionAttribute matExprr && matExprr.MaterialExpressions != null) {
+                var indicesChild = context.GetChildByValue(matExprr.MaterialExpressions.indices);
+                if (indicesChild == null) {
+                    context.AddChild<IMaterialExpressionAttribute, uint[]>("Material Indices", matExprr, new ResizableArrayHandler<uint>(), getter: a => a!.MaterialExpressions?.indices, setter: (a, v) => a!.MaterialExpressions!.indices = v);
+                }
+            }
         }
 
         context.ShowChildrenUI();
@@ -497,13 +505,130 @@ public class EfxExpressionAttributeEditor : IObjectUIHandler
             return;
         }
 
+        var w = ImGui.CalcItemWidth();
+
+        if (attr is IMaterialExpressionAttribute matExpr) {
+            if (matExpr.MaterialExpressions == null) {
+                if (ImGui.Button("Create material expressions")) {
+                    var newExpr = new EFXMaterialExpressionList(efx.Header.Version);
+                    UndoRedo.RecordCallbackSetter(
+                        context, matExpr, null, newExpr,
+                        static (obj, value) => obj.MaterialExpressions = value,
+                        $"{context.label} Material Expression");
+                }
+                return;
+            }
+
+            if (ImGui.TreeNode("Material expressions"u8)) {
+                if (matExpr.MaterialExpressions.ParsedExpressions == null) {
+                    matExpr.MaterialExpressions.ParsedExpressions = EfxExpressionTreeUtils.ReconstructExpressionTreeList(data.Expression.Expressions, efx);
+                }
+
+                var exprCount = matExpr.MaterialExpressions.ExpressionCount;
+                for (int i = 0; i < exprCount; i++) {
+                    ImGui.PushID(i);
+                    var exp = matExpr.MaterialExpressions.expressions[i];
+                    var parsed = matExpr.MaterialExpressions.ParsedExpressions[i];
+                    if (ImGui.Button($"{AppIcons.SI_GenericDelete}")) {
+                        UndoRedo.RecordCallback(context, () => {
+                            matExpr.MaterialExpressions.expressions.RemoveAt(i);
+                            matExpr.MaterialExpressions.ParsedExpressions.RemoveAt(i);
+                        }, () => {
+                            matExpr.MaterialExpressions.expressions.Insert(i, exp);
+                            matExpr.MaterialExpressions.ParsedExpressions.Insert(i, parsed);
+                        });
+                        i--;
+                        exprCount--;
+                        ImGui.PopID();
+                        continue;
+                    }
+                    ImGui.SameLine();
+                    // TODO fetch actual property names from mdf2
+                    if (!ImguiHelpers.TreeNodeSuffix(Encoding.UTF8.GetBytes(i.ToString()), exp.mdfPropertyHash.ToString())) {
+                        ImGui.PopID();
+                        continue;
+                    }
+
+                    var u32 = exp.mdfPropertyHash;
+                    if (ImGui.InputScalar("MDF Property Hash"u8, ImGuiDataType.U32, &u32)) {
+                        UndoRedo.RecordCallbackSetter(context, exp, exp.mdfPropertyHash, u32, static (e, v) => e.mdfPropertyHash = v, $"{context.label} MDF prop {i} hash");
+                    }
+                    var propIndex = exp.propertyComponentIndex;
+                    if (ImGui.InputScalar("Property Component Index"u8, ImGuiDataType.U32, &propIndex)) {
+                        UndoRedo.RecordCallbackSetter(context, exp, exp.propertyComponentIndex, propIndex, static (e, v) => e.propertyComponentIndex = v, $"{context.label} MDF prop {i} component index");
+                    }
+                    u32 = exp.unkn1;
+                    if (ImGui.InputScalar("Unknown 1"u8, ImGuiDataType.U32, &u32)) {
+                        UndoRedo.RecordCallbackSetter(context, exp, exp.unkn1, u32, static (e, v) => e.unkn1 = v, $"{context.label} MDF prop {i} unkn1");
+                    }
+                    u32 = exp.unkn2;
+                    if (ImGui.InputScalar("Unknown 2"u8, ImGuiDataType.U32, &u32)) {
+                        UndoRedo.RecordCallbackSetter(context, exp, exp.unkn2, u32, static (e, v) => e.unkn2 = v, $"{context.label} MDF prop {i} unkn2");
+                    }
+                    u32 = (uint)exp.unkn5.value;
+                    if (ImGui.InputScalar("Unknown 3"u8, ImGuiDataType.U32, &u32)) {
+                        UndoRedo.RecordCallbackSetter(context, exp, exp.unkn5, new UndeterminedFieldType(u32), static (e, v) => e.unkn5 = v, $"{context.label} MDF prop {i} unkn5");
+                    }
+
+                    var expStoreIndex = -1 - i; // use same array as base expressions except negative so there's no conflits /shrug
+                    if (!confirmedStrings.TryGetValue(expStoreIndex, out var orgStr)) {
+                        confirmedStrings[expStoreIndex] = orgStr = parsed.root.ToString()!;
+                    }
+                    var str = pendingStrings.GetValueOrDefault(expStoreIndex) ?? orgStr;
+                    ImGui.Text("Expression");
+                    if (ImguiHelpers.TextMultilineAutoResize("##expression", ref str, w - 230, 300, UI.FontSize)) {
+                        pendingStrings[expStoreIndex] = str;
+                    }
+                    if (orgStr != str) {
+                        if (ImGui.Button(Lang.Buttons.Revert)) {
+                            pendingStrings.Remove(expStoreIndex);
+                        }
+                        ImGui.SameLine();
+                        var err = GetExpressionError(str, parsed.parameters);
+                        if (err == null) {
+                            if (ImGui.Button(Lang.Buttons.Confirm)) {
+                                int index = i;
+                                void UpdateExpression(string text)
+                                {
+                                    var parsed = EfxExpressionStringParser.Parse(text, exp.parameters ?? new(0));
+                                    exp.parameters = parsed.parameters.ToList();
+                                    exp.components.Clear();
+                                    EfxExpressionTreeUtils.FlattenExpressions(exp.components, parsed, efx);
+                                    matExpr.MaterialExpressions.ParsedExpressions![index] = parsed;
+                                    confirmedStrings[expStoreIndex] = text;
+                                }
+                                UndoRedo.RecordCallback(context, () => UpdateExpression(str), () => UpdateExpression(orgStr));
+                            }
+                        } else {
+                            ImGui.TextColored(Colors.Error, err);
+                        }
+                    }
+
+                    ImGui.TreePop();
+                    ImGui.PopID();
+                }
+
+                if (ImGui.Button(Lang.Buttons.Add)) {
+                    var newExp = new EFXMaterialExpression(efx.Header.Version);
+                    var newPex = new EFXExpressionTree() { };
+                    UndoRedo.RecordCallback(context, () => {
+                        matExpr.MaterialExpressions.expressions.Add(newExp);
+                        matExpr.MaterialExpressions.ParsedExpressions.Add(newPex);
+                    }, () => {
+                        matExpr.MaterialExpressions.expressions.Remove(newExp);
+                        matExpr.MaterialExpressions.ParsedExpressions.Remove(newPex);
+                    });
+                }
+                ImGui.TreePop();
+            }
+        }
+
         var bits = data.ExpressionBits;
         if (data.Expression.ParsedExpressions == null) {
             data.Expression.ParsedExpressions = EfxExpressionTreeUtils.ReconstructExpressionTreeList(data.Expression.Expressions, efx);
         }
 
         var set = 0;
-        var w = ImGui.CalcItemWidth();
         var typeInfo = ws.Env.EfxCacheData.EnumAttributeTypes[attr.type];
         for (int i = 0; i < bits.BitCount; ++i) {
             int myBitIndex = i;
@@ -552,18 +677,19 @@ public class EfxExpressionAttributeEditor : IObjectUIHandler
                     pendingStrings[myBitIndex] = str;
                 }
                 if (orgStr != str) {
-                    if (ImGui.Button("Revert")) {
+                    if (ImGui.Button(Lang.Buttons.Revert)) {
                         pendingStrings.Remove(myBitIndex);
                     }
                     ImGui.SameLine();
                     var err = GetExpressionError(str, parsed.parameters);
                     if (err == null) {
-                        if (ImGui.Button("Confirm")) {
+                        if (ImGui.Button(Lang.Buttons.Confirm)) {
                             void UpdateExpression(string text)
                             {
                                 var index = bits.GetBitInsertIndex(myBitIndex);
                                 var parsed = EfxExpressionStringParser.Parse(text, data.Expression!.expressions[index].parameters ?? new(0));
                                 data.Expression!.expressions[index].parameters = parsed.parameters.ToList();
+                                data.Expression!.expressions[index].components.Clear();
                                 EfxExpressionTreeUtils.FlattenExpressions(data.Expression!.expressions[index].components, parsed, efx);
                                 data.Expression!.ParsedExpressions![index] = parsed;
                                 confirmedStrings[myBitIndex] = text;

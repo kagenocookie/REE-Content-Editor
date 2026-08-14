@@ -259,3 +259,5 @@ public class ResizableArrayHandler : BaseListHandler
         UndoRedo.RecordSet(context, newArray, mergeMode: UndoRedoMergeMode.NeverMerge);
     }
 }
+
+public class ResizableArrayHandler<T>() : ResizableArrayHandler(typeof(T), typeof(T[])) { }
