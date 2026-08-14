@@ -30,11 +30,11 @@ public class SceneController(Scene scene)
     public void ShowCameraControls()
     {
         ImGui.TextUnformatted("Camera Mode");
-        if (ImGui.RadioButton("FPS Camera", CameraMode == SceneCameraMode.FPSCamera)) SetCameraMode(SceneCameraMode.FPSCamera, true);
+        if (ImGui.RadioButton("FPS Camera", CameraMode == SceneCameraMode.FPSCamera)) SetCameraMode(SceneCameraMode.FPSCamera);
         ImGui.SameLine();
-        if (ImGui.RadioButton("Pivot Camera", CameraMode == SceneCameraMode.PivotCamera)) SetCameraMode(SceneCameraMode.PivotCamera, true);
+        if (ImGui.RadioButton("Pivot Camera", CameraMode == SceneCameraMode.PivotCamera)) SetCameraMode(SceneCameraMode.PivotCamera);
         ImGui.SameLine();
-        if (ImGui.RadioButton("Ortho Camera", CameraMode == SceneCameraMode.OrthoCamera)) SetCameraMode(SceneCameraMode.OrthoCamera, true);
+        if (ImGui.RadioButton("Ortho Camera", CameraMode == SceneCameraMode.OrthoCamera)) SetCameraMode(SceneCameraMode.OrthoCamera);
         ImGui.SameLine();
         if (ImGui.Button($"{AppIcons.SI_ResetCamera}")) {
             ResetCameraToScene();
