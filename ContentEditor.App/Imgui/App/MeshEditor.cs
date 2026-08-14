@@ -867,8 +867,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
         if (reference.Bone.Parent != null) {
             return GetBoneViewportPosition(new BoneReference(reference.Context, reference.Bone.Parent));
         }
-        var world = Vector3.Transform(Vector3.Zero, reference.Context.GameObject.Transform.WorldTransform);
-        return subscribedScene.ActiveCamera.WorldToViewportXYPosition(world, true, true);
+        return GetBoneViewportPosition(reference);
     }
 
     private Vector2 GetBoneElementViewportPosition(BoneElementReference reference)
@@ -1285,7 +1284,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
         var tail = GetBoneWorldPosition(reference.Bone);
         var head = reference.Bone.Bone.Parent != null
             ? GetBoneWorldPosition(new BoneReference(reference.Bone.Context, reference.Bone.Bone.Parent))
-            : Vector3.Transform(Vector3.Zero, reference.Bone.Context.GameObject.Transform.WorldTransform);
+            : tail;
         return reference.Element switch {
             BoneElement.Head => head,
             BoneElement.Tail => tail,
@@ -1455,13 +1454,11 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
                 screenPositions[bone.index] = camera.WorldToScreenPosition(worldPosition, false, true);
             }
 
-            var rootPosition = camera.WorldToScreenPosition(
-                Vector3.Transform(Vector3.Zero, context.GameObject.Transform.WorldTransform), false, true);
             foreach (var bone in bones) {
+                var tail = screenPositions[bone.index];
                 var head = bone.parentIndex >= 0 && (uint)bone.parentIndex < (uint)screenPositions.Length
                     ? screenPositions[bone.parentIndex]
-                    : rootPosition;
-                var tail = screenPositions[bone.index];
+                    : tail;
                 if (head.X == float.MaxValue || tail.X == float.MaxValue) continue;
                 drawList.AddLine(head, tail, armatureLineColor, armatureSelected ? lineThickness + 1.0f : lineThickness);
                 drawList.AddCircleFilled(head, dotRadius, armatureDotColor);
@@ -1470,10 +1467,10 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
 
             foreach (var element in selectedBoneElements.Where(element => element.Bone.Context == context)) {
                 var bone = element.Bone.Bone;
+                var tail = screenPositions[bone.index];
                 var head = bone.parentIndex >= 0 && (uint)bone.parentIndex < (uint)screenPositions.Length
                     ? screenPositions[bone.parentIndex]
-                    : rootPosition;
-                var tail = screenPositions[bone.index];
+                    : tail;
                 if (head.X == float.MaxValue || tail.X == float.MaxValue) continue;
                 switch (element.Element) {
                     case BoneElement.Head:
