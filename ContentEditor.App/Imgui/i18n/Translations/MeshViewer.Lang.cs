@@ -11,8 +11,8 @@ public static partial class Lang
         public static readonly FixedString Editor_Objects = "Objects";
         public static readonly FixedString Editor_Submeshes = "Submeshes";
         public static readonly FixedString Editor_NoSubmeshes = "No submeshes are available.";
-        public static readonly FixedString Editor_ModeObject = "Object (1)";
-        public static readonly FixedString Editor_ModeEdit = "Edit (2)";
+        public static readonly FixedString Editor_ModeObject = "Object";
+        public static readonly FixedString Editor_ModeEdit = "Edit";
         public static readonly FixedString Editor_Options = "Options";
         public static readonly FixedString Editor_OptionsTitle = "Mesh Editor Options";
         public static readonly FixedString Editor_Vertices = "Vertices";

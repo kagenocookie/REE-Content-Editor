@@ -119,9 +119,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
 
         var viewportHovered = ImGui.IsMouseHoveringRect(viewportPosition, viewportPosition + viewportSize);
         if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) || viewportHovered) {
-            var keyboard = EditorWindow.CurrentWindow?.LastKeyboard;
-            if (keyboard?.IsKeyPressed(Key.Number1) == true) SetInteractionMode(EditorInteractionMode.Object);
-            if (keyboard?.IsKeyPressed(Key.Number2) == true) SetInteractionMode(EditorInteractionMode.Edit);
+            //var keyboard = EditorWindow.CurrentWindow?.LastKeyboard;
             var selectAllPressed = AppConfig.Instance.Key_MeshViewer_SelectAll.Get().IsPressed();
             if (interactionMode == EditorInteractionMode.Object && selectAllPressed) ToggleAllObjects();
             if (interactionMode == EditorInteractionMode.Edit) {
