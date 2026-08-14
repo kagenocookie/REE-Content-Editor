@@ -651,6 +651,19 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         changed = ImGui.Checkbox(Lang.Settings.Key_Shift, ref key.shift) || changed;
         ImGui.SameLine();
         changed = ImGui.Checkbox(Lang.Settings.Key_Alt, ref key.alt) || changed;
+        if (invertSetting != null) {
+            ImGui.SameLine();
+            var canInvert = !key.wasd && key.Key is ImGuiKey.MouseRight or ImGuiKey.MouseMiddle;
+            ImGui.BeginDisabled(!canInvert);
+            var invert = invertSetting.Get();
+            if (ImGui.Checkbox(Lang.Settings.Key_Invert, ref invert)) invertSetting.Set(invert);
+            ImGui.EndDisabled();
+            if (ImGui.IsItemHovered(canInvert ? ImGuiHoveredFlags.None : ImGuiHoveredFlags.AllowWhenDisabled)) {
+                ImGui.SetItemTooltip(canInvert
+                    ? Lang.Settings.Key_InvertMouseInputTooltip
+                    : Lang.Settings.Key_InvertMouseInputUnavailableTooltip);
+            }
+        }
         ImGui.SameLine();
         ImGui.PopItemWidth();
         ImGui.SetNextItemWidth(ImGui.CalcItemWidth() - 200);
@@ -686,19 +699,6 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             if (ImguiHelpers.FilterableCSharpEnumComboTranslated(label, ref key.Key, ref filter, Lang.Settings.Keys)) {
                 key.wasd = false;
                 changed = true;
-            }
-        }
-        if (invertSetting != null) {
-            ImGui.SameLine();
-            var canInvert = !key.wasd && key.Key is ImGuiKey.MouseRight or ImGuiKey.MouseMiddle;
-            ImGui.BeginDisabled(!canInvert);
-            var invert = invertSetting.Get();
-            if (ImGui.Checkbox(Lang.Settings.Key_Invert, ref invert)) invertSetting.Set(invert);
-            ImGui.EndDisabled();
-            if (ImGui.IsItemHovered(canInvert ? ImGuiHoveredFlags.None : ImGuiHoveredFlags.AllowWhenDisabled)) {
-                ImGui.SetItemTooltip(canInvert
-                    ? Lang.Settings.Key_InvertMouseInputTooltip
-                    : Lang.Settings.Key_InvertMouseInputUnavailableTooltip);
             }
         }
         if (!setting.IsInitial || invertSetting?.IsInitial == false) {
