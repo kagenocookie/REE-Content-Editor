@@ -61,7 +61,9 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
         }
 
         if (ProjectionMode == CameraProjection.Orthographic) {
-            offset = Vector3.Normalize(offset) * 0.01f;
+            var boundsRadius = bounds.Size.Length() * 0.5f;
+            var cameraDistance = bounds.IsEmpty ? Math.Max(offset.Length(), NearPlane + 0.01f) : boundsRadius + NearPlane + 0.01f;
+            offset = Vector3.Normalize(offset) * cameraDistance;
         } else if (!resetPosition) {
             var optimalDistance = offset.Length();
             var selfpos = Transform.Position;
