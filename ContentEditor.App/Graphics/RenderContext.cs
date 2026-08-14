@@ -9,6 +9,40 @@ using ReeLib.via;
 
 namespace ContentEditor.App.Graphics;
 
+public enum MeshDisplayMode
+{
+    Default,
+    Solid,
+    Wireframe,
+}
+
+public readonly record struct MeshPreviewRenderOptions(
+    MeshDisplayMode DisplayMode,
+    IReadOnlySet<int>? HiddenSubmeshIndices,
+    IReadOnlySet<int>? HighlightedSubmeshIndices,
+    IReadOnlySet<int>? EditSubmeshIndices,
+    bool WireframeOverlay,
+    bool EditWireframeOverlay,
+    bool ShowEditVertices,
+    float EditVertexPointSize
+);
+
+public readonly record struct ViewportDepthRegion(int X, int Y, int Width, int Height, float[] Values)
+{
+    public bool TryGetDepth(Vector2 viewportPosition, out float depth)
+    {
+        var localX = (int)MathF.Floor(viewportPosition.X) - X;
+        var localY = (int)MathF.Floor(viewportPosition.Y) - Y;
+        if ((uint)localX >= (uint)Width || (uint)localY >= (uint)Height) {
+            depth = 1.0f;
+            return false;
+        }
+
+        depth = Values[(Height - localY - 1) * Width + localX];
+        return true;
+    }
+}
+
 public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
 {
     public float DeltaTime { get; internal set; }
@@ -67,7 +101,9 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
     /// Render a simple mesh (static, single mesh with no animation)
     /// </summary>
     public abstract void RenderSimple(MeshHandle handle, in Matrix4x4 transform);
+    public abstract void RenderPreview(MeshHandle handle, in Matrix4x4 transform, in MeshPreviewRenderOptions options);
     public abstract void RenderInstanced(MeshHandle handle, List<Matrix4x4> transforms);
+    public abstract ViewportDepthRegion? ReadViewportDepth(int x, int y, int width, int height);
 
     public abstract MaterialGroup LoadMaterialGroup(FileHandle file, ShaderFlags flags = ShaderFlags.None);
     protected abstract Material LoadUpdatedMaterial(FileHandle file, MaterialGroup group, MaterialGroupWrapper.MaterialLookupData material);

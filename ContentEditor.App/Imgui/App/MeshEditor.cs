@@ -34,7 +34,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
     private readonly HashSet<SubmeshReference> hiddenSubmeshes = [];
     private readonly HashSet<MeshViewerContext> hiddenArmatures = [];
     private readonly Dictionary<MeshViewerContext, Vector2[]> armatureScreenPositions = [];
-    private readonly Dictionary<MeshViewerContext, SubmeshLabelCache> submeshLabelCache = [];
+    private readonly Dictionary<MeshViewerContext, SubmeshCache> submeshCache = [];
     private SubmeshReference? submeshSelectionAnchor;
     private SubmeshReference? scrollToSubmesh;
     private readonly HashSet<VertexReference> selectedVertices = [];
@@ -46,6 +46,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
     private Vector3 moveAnchorWorld;
     private Vector3 moveStartWorld;
     private Vector2 moveStartScreen;
+    private Vector3? lastMovePreviewDelta;
     private MoveConstraint moveConstraint;
     private bool extendVertexSelection;
     private bool toggleVertexSelection;
@@ -67,6 +68,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
     private float panelWidth;
     private bool panelWidthInitialized;
     private bool panelWidthUserResized;
+    private bool renderStateDirty;
 
     private readonly record struct SubmeshReference(MeshViewerContext Context, int Index);
     private readonly record struct VertexReference(MeshViewerContext Context, MeshBuffer Buffer, int Index);
@@ -77,7 +79,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
     private readonly record struct MirrorGridKey(int X, int Y, int Z);
     private sealed record VisibilityState(HashSet<SubmeshReference> Submeshes, HashSet<MeshViewerContext> Armatures);
     private readonly record struct SubmeshLabel(byte[] UTF8);
-    private sealed record SubmeshLabelCache(object NativeMesh, SubmeshLabel[] Labels);
+    private sealed record SubmeshCache(object NativeMesh, SubmeshLabel[] Labels, Submesh[] Submeshes);
 
     private enum BoneElement
     {
@@ -102,7 +104,8 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
     public void ShowButton(MeshViewerContext context)
     {
         EnsureSceneSubscription();
-        ApplyRenderState();
+        if (renderStateDirty) ApplyRenderState();
+        else UpdateEditVertexPointSizes();
         if (ImGui.MenuItem(Lang.MeshViewer.Title_Editor, "", IsEnabled)) {
             SetEnabled(!IsEnabled);
         }
@@ -962,7 +965,8 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
 
     private ViewportDepthRegion? ReadSelectionDepth(Vector2 min, Vector2 max)
     {
-        if (subscribedScene?.RenderContext is not OpenGLRenderContext context) return null;
+        var context = subscribedScene?.RenderContext;
+        if (context == null) return null;
         var left = (int)MathF.Floor(min.X);
         var top = (int)MathF.Floor(min.Y);
         var right = (int)MathF.Ceiling(max.X) + 1;
@@ -980,25 +984,19 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
     private IEnumerable<VertexReference> EnumerateEditableVertices()
     {
         var seen = new HashSet<VertexReference>();
-        foreach (var context in Viewer.MeshContexts) {
-            if (!context.GameObject.ShouldDraw) continue;
-            var lod = context.MeshFile.NativeMesh.MeshData?.LODs.FirstOrDefault();
-            var renderMeshes = context.Component.MeshHandle?.Meshes.ToArray();
-            if (lod == null || renderMeshes == null) continue;
+        foreach (var selectedSubmesh in selectedSubmeshes) {
+            var context = selectedSubmesh.Context;
+            var handle = context.Component.MeshHandle;
+            if (handle == null || !context.GameObject.ShouldDraw || hiddenSubmeshes.Contains(selectedSubmesh)) continue;
+            var cache = GetSubmeshCache(context);
+            if ((uint)selectedSubmesh.Index >= (uint)cache.Submeshes.Length || (uint)selectedSubmesh.Index >= (uint)handle.MeshCount) continue;
+            var renderMesh = handle.GetMesh(selectedSubmesh.Index);
+            if (!handle.GetMeshPartEnabled(renderMesh.MeshGroup)) continue;
 
-            var submeshIndex = 0;
-            foreach (var group in lod.MeshGroups) {
-                foreach (var submesh in group.Submeshes) {
-                    var currentSubmeshIndex = submeshIndex++;
-                    var renderMesh = renderMeshes.ElementAtOrDefault(currentSubmeshIndex);
-                    if (renderMesh == null || !context.Component.MeshHandle!.GetMeshPartEnabled(renderMesh.MeshGroup)) continue;
-                    if (context.Component.HiddenPreviewSubmeshIndices?.Contains(currentSubmeshIndex) == true) continue;
-                    if (!selectedSubmeshes.Contains(new SubmeshReference(context, currentSubmeshIndex))) continue;
-                    for (var localIndex = 0; localIndex < submesh.vertCount; localIndex++) {
-                        var vertex = new VertexReference(context, submesh.Buffer, submesh.vertsIndexOffset + localIndex);
-                        if (seen.Add(vertex)) yield return vertex;
-                    }
-                }
+            var submesh = cache.Submeshes[selectedSubmesh.Index];
+            for (var localIndex = 0; localIndex < submesh.vertCount; localIndex++) {
+                var vertex = new VertexReference(context, submesh.Buffer, submesh.vertsIndexOffset + localIndex);
+                if (seen.Add(vertex)) yield return vertex;
             }
         }
     }
@@ -1154,12 +1152,15 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
         moveStartScreen = subscribedScene.Mouse.MouseScreenPosition;
         moveStartWorld = subscribedScene.ActiveCamera.ScreenToWorldPositionReproject(moveStartScreen, moveAnchorWorld);
         moveConstraint = MoveConstraint.None;
+        lastMovePreviewDelta = null;
     }
 
     private void UpdateMovePreview()
     {
         if (subscribedScene == null || !IsMoving) return;
         var worldDelta = GetConstrainedMoveDelta(subscribedScene.Mouse.MouseScreenPosition);
+        if (lastMovePreviewDelta == worldDelta) return;
+        lastMovePreviewDelta = worldDelta;
         if (moveOriginalPositions != null) ApplyMovedPositions(moveOriginalPositions, worldDelta);
         if (moveOriginalBoneTransforms != null) ApplyMovedBones(moveOriginalBoneTransforms, worldDelta);
     }
@@ -1217,18 +1218,26 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
 
     private void ApplyMovedPositions(IReadOnlyDictionary<VertexReference, Vector3> originals, Vector3 worldDelta)
     {
+        var inverseWorldTransforms = new Dictionary<MeshViewerContext, Matrix4x4>();
+        foreach (var context in originals.Keys.Select(vertex => vertex.Context).Distinct()) {
+            if (Matrix4x4.Invert(context.GameObject.Transform.WorldTransform, out var inverseWorld)) {
+                inverseWorldTransforms[context] = inverseWorld;
+            }
+        }
         foreach (var (vertex, original) in originals) {
+            if (!inverseWorldTransforms.TryGetValue(vertex.Context, out var inverseWorld)) continue;
             var deltaSign = moveVertexDeltaSigns?.GetValueOrDefault(vertex, Vector3.One) ?? Vector3.One;
-            var world = GetVertexWorldPosition(vertex, original) + worldDelta * deltaSign;
-            if (!Matrix4x4.Invert(vertex.Context.GameObject.Transform.WorldTransform, out var inverse)) continue;
-            var posedLocal = Vector3.Transform(world, inverse);
-            if (TryGetSkinMatrix(vertex, out var skinMatrix) && Matrix4x4.Invert(skinMatrix, out var inverseSkin)) {
+            var hasSkinMatrix = TryGetSkinMatrix(vertex, out var skinMatrix);
+            var local = hasSkinMatrix ? Vector3.Transform(original, skinMatrix) : original;
+            var world = Vector3.Transform(local, vertex.Context.GameObject.Transform.WorldTransform) + worldDelta * deltaSign;
+            var posedLocal = Vector3.Transform(world, inverseWorld);
+            if (hasSkinMatrix && Matrix4x4.Invert(skinMatrix, out var inverseSkin)) {
                 vertex.Buffer.Positions[vertex.Index] = Vector3.Transform(posedLocal, inverseSkin);
             } else {
                 vertex.Buffer.Positions[vertex.Index] = posedLocal;
             }
         }
-        RefreshEditedRenderMeshes(originals.Keys.Select(vertex => vertex.Context).Distinct());
+        RefreshEditedRenderMeshes(originals.Keys);
     }
 
     private Dictionary<BoneReference, BoneTransformState> CaptureBoneTransforms(IEnumerable<MeshViewerContext> contexts)
@@ -1365,21 +1374,29 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
         if (markModified) {
             foreach (var context in contexts) context.Handle.Modified = true;
         }
-        RefreshEditedRenderMeshes(contexts);
+        RefreshEditedRenderMeshes(positions.Keys);
     }
 
-    private static void RefreshEditedRenderMeshes(IEnumerable<MeshViewerContext> contexts)
+    private void RefreshEditedRenderMeshes(IEnumerable<VertexReference> vertices)
     {
-        foreach (var context in contexts) {
-            var lod = context.MeshFile.NativeMesh.MeshData?.LODs.FirstOrDefault();
-            var renderMeshes = context.Component.MeshHandle?.Meshes.ToArray();
-            if (lod == null || renderMeshes == null) continue;
-
-            var submeshIndex = 0;
-            foreach (var group in lod.MeshGroups) {
-                foreach (var submesh in group.Submeshes) {
-                    renderMeshes.ElementAtOrDefault(submeshIndex++)?.UpdateVertexPositions(submesh.Positions);
-                }
+        foreach (var contextVertices in vertices.GroupBy(vertex => vertex.Context)) {
+            var context = contextVertices.Key;
+            var handle = context.Component.MeshHandle;
+            if (handle == null) continue;
+            var changedIndices = contextVertices
+                .GroupBy(vertex => vertex.Buffer)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.Select(vertex => vertex.Index).Distinct().Order().ToArray());
+            var submeshes = GetSubmeshCache(context).Submeshes;
+            var submeshCount = Math.Min(submeshes.Length, handle.MeshCount);
+            for (var submeshIndex = 0; submeshIndex < submeshCount; submeshIndex++) {
+                var submesh = submeshes[submeshIndex];
+                if (!changedIndices.TryGetValue(submesh.Buffer, out var indices)) continue;
+                var firstIndex = Array.BinarySearch(indices, submesh.vertsIndexOffset);
+                if (firstIndex < 0) firstIndex = ~firstIndex;
+                if ((uint)firstIndex >= (uint)indices.Length || indices[firstIndex] >= submesh.vertsIndexOffset + submesh.vertCount) continue;
+                handle.GetMesh(submeshIndex).UpdateVertexPositions(submesh.Positions);
             }
         }
     }
@@ -1396,6 +1413,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
         moveVertexDeltaSigns = null;
         moveBoneDeltaSigns = null;
         moveConstraint = MoveConstraint.None;
+        lastMovePreviewDelta = null;
 
         ApplyMoveState(originalPositions, originalBones, false);
         UndoRedo.RecordCallback(null,
@@ -1414,6 +1432,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
         moveVertexDeltaSigns = null;
         moveBoneDeltaSigns = null;
         moveConstraint = MoveConstraint.None;
+        lastMovePreviewDelta = null;
         ApplyMoveState(originalPositions, originalBones, false);
     }
 
@@ -1672,17 +1691,36 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
             context.Component.ShowEditVertices = editMode && selectedIndices.Count > 0;
             context.Component.EditVertexPointSize = GetAdaptiveVertexPointSize(context);
         }
+        renderStateDirty = false;
+    }
+
+    private void UpdateEditVertexPointSizes()
+    {
+        if (!IsEnabled || interactionMode != EditorInteractionMode.Edit) return;
+        foreach (var context in selectedSubmeshes.Select(submesh => submesh.Context).Distinct()) {
+            context.Component.EditVertexPointSize = GetAdaptiveVertexPointSize(context);
+        }
     }
 
     private SubmeshLabel GetSubmeshLabel(MeshViewerContext context, int meshIndex, int meshGroup)
     {
+        var cache = GetSubmeshCache(context);
+        return meshIndex >= 0 && meshIndex < cache.Labels.Length
+            ? cache.Labels[meshIndex]
+            : new SubmeshLabel(TranslatableBase.GetNullTerminatedUTF8($"Submesh {meshIndex}  |  Group {meshGroup}"));
+    }
+
+    private SubmeshCache GetSubmeshCache(MeshViewerContext context)
+    {
         var nativeMesh = context.MeshFile.NativeMesh;
-        if (!submeshLabelCache.TryGetValue(context, out var cache) || !ReferenceEquals(cache.NativeMesh, nativeMesh)) {
+        if (!submeshCache.TryGetValue(context, out var cache) || !ReferenceEquals(cache.NativeMesh, nativeMesh)) {
             var labels = new List<SubmeshLabel>();
+            var submeshes = new List<Submesh>();
             var lod = nativeMesh.MeshData?.LODs.FirstOrDefault();
             if (lod != null) {
                 foreach (var group in lod.MeshGroups) {
                     foreach (var submesh in group.Submeshes) {
+                        submeshes.Add(submesh);
                         var materialName = nativeMesh.MaterialNames.ElementAtOrDefault(submesh.materialIndex);
                         var label = string.IsNullOrEmpty(materialName)
                             ? $"Submesh {labels.Count}  |  Group {group.groupId}"
@@ -1702,17 +1740,15 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
                     fallbackIndex++;
                 }
             }
-            submeshLabelCache[context] = cache = new SubmeshLabelCache(nativeMesh, labels.ToArray());
+            submeshCache[context] = cache = new SubmeshCache(nativeMesh, labels.ToArray(), submeshes.ToArray());
         }
-
-        return meshIndex >= 0 && meshIndex < cache.Labels.Length
-            ? cache.Labels[meshIndex]
-            : new SubmeshLabel(TranslatableBase.GetNullTerminatedUTF8($"Submesh {meshIndex}  |  Group {meshGroup}"));
+        return cache;
     }
 
-    internal void InvalidateSubmeshLabels(MeshViewerContext context)
+    internal void InvalidateSubmeshCache(MeshViewerContext context)
     {
-        submeshLabelCache.Remove(context);
+        submeshCache.Remove(context);
+        renderStateDirty = true;
     }
 
     //This is because for higher res displays it tends to not fit well otherwise
@@ -1741,7 +1777,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
     {
         CancelMove();
         CloseOptions();
-        submeshLabelCache.Clear();
+        submeshCache.Clear();
         IsEnabled = false;
         DisplayMode = MeshDisplayMode.Default;
         ClearAllSelection();

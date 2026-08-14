@@ -399,7 +399,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     private void RemoveSubmesh(MeshViewerContext ctx)
     {
-        meshEditor.InvalidateSubmeshLabels(ctx);
+        meshEditor.InvalidateSubmeshCache(ctx);
         meshContexts.Remove(ctx);
         context.RemoveChild(ctx.UI);
         (scene?.RootFolder as INodeObject<GameObject>)?.RemoveChild(ctx.GameObject);
@@ -1713,11 +1713,11 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             }
         }
         Handle.Modified = true;
-        viewer.MeshEditor.InvalidateSubmeshLabels(this);
+        viewer.MeshEditor.InvalidateSubmeshCache(this);
     }
     public void ChangeMesh(bool resetMdf = true)
     {
-        viewer.MeshEditor.InvalidateSubmeshLabels(this);
+        viewer.MeshEditor.InvalidateSubmeshCache(this);
         if (!Handle.References.Contains(viewer)) Handle.References.Add(viewer);
         var isInitial = !Component.HasMesh;
         var mesh = MeshFile;

@@ -8,13 +8,6 @@ using ReeLib.via;
 
 namespace ContentEditor.App;
 
-public enum MeshDisplayMode
-{
-    Default,
-    Solid,
-    Wireframe,
-}
-
 [RszComponentClass("via.render.Mesh")]
 public class MeshComponent(GameObject gameObject, RszInstance data) : RenderableComponent(gameObject, data),
     IFixedClassnameComponent,
@@ -35,8 +28,6 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
     public bool EditWireframeOverlay { get; set; }
     public bool ShowEditVertices { get; set; }
     public float EditVertexPointSize { get; set; } = 6.0f;
-
-    private readonly Dictionary<(BuiltInMaterials material, ShaderFlags flags), Material> previewMaterials = new();
 
     public override AABB LocalBounds => mesh?.BoundingBox ?? AABB.Invalid;
 
@@ -177,7 +168,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         IsStatic = true;
     }
 
-    internal override unsafe void Render(RenderContext context)
+    internal override void Render(RenderContext context)
     {
         // TODO - this may be better handled on the level of scene + component grouping instead of inside individual components
         // TODO - ideally don't have this occ check here and handle it differently somehow
@@ -194,86 +185,17 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         }
         if (mesh != null) {
             ref readonly var transform = ref GameObject.Transform.WorldTransform;
-            if (context is OpenGLRenderContext ogl && (PreviewDisplayMode != MeshDisplayMode.Default || HiddenPreviewSubmeshIndices?.Count > 0)) {
-                mesh.PrepareSubmeshParts();
-                var previewMaterial = PreviewDisplayMode == MeshDisplayMode.Default
-                    ? null
-                    : GetPreviewMaterial(context, mesh, PreviewDisplayMode == MeshDisplayMode.Solid ? BuiltInMaterials.Solid : BuiltInMaterials.Wireframe);
-                foreach (var (submeshIndex, materialIndex) in mesh.EnabledSubmeshIndices) {
-                    if (HiddenPreviewSubmeshIndices?.Contains(submeshIndex) == true) continue;
-                    ogl.Batch.Simple.Add(new NormalRenderBatchItem(previewMaterial ?? mesh.GetMaterial(materialIndex), mesh.GetMesh(submeshIndex), transform, mesh));
-                }
-            } else {
-                context.RenderSimple(mesh, transform);
-            }
-
-            if (context is OpenGLRenderContext overlayContext && HighlightedSubmeshIndices?.Count > 0) {
-                var highlightMaterial = GetPreviewMaterial(context, mesh, BuiltInMaterials.MonoColor);
-                foreach (var selectedIndex in HighlightedSubmeshIndices) {
-                    if ((uint)selectedIndex >= (uint)mesh.Meshes.Count()) continue;
-                    if (HiddenPreviewSubmeshIndices?.Contains(selectedIndex) == true) continue;
-                    var selectedMesh = mesh.GetMesh(selectedIndex);
-                    if (mesh.GetMeshPartEnabled(selectedMesh.MeshGroup)) {
-                        overlayContext.Batch.Gizmo.Add(new GizmoRenderBatchItem(highlightMaterial, selectedMesh, transform, null, mesh, true));
-                    }
-                }
-            }
-
-            if (context is OpenGLRenderContext wireframeContext && (Scene?.WireframeOverlay == true || EditWireframeOverlay) && PreviewDisplayMode != MeshDisplayMode.Wireframe) {
-                mesh.PrepareSubmeshParts();
-                var wireframeMaterial = GetPreviewMaterial(context, mesh, BuiltInMaterials.Wireframe);
-                foreach (var (submeshIndex, _) in mesh.EnabledSubmeshIndices) {
-                    if (HiddenPreviewSubmeshIndices?.Contains(submeshIndex) == true) continue;
-                    if (Scene?.WireframeOverlay != true && EditSubmeshIndices?.Contains(submeshIndex) != true) continue;
-                    wireframeContext.Batch.Gizmo.Add(new GizmoRenderBatchItem(wireframeMaterial, mesh.GetMesh(submeshIndex), transform, null, mesh, true));
-                }
-            }
-
-            if (context is OpenGLRenderContext vertexContext && ShowEditVertices) {
-                mesh.PrepareSubmeshParts();
-                var vertexMaterial = GetPreviewMaterial(context, mesh, BuiltInMaterials.EditVertices);
-                foreach (var (submeshIndex, _) in mesh.EnabledSubmeshIndices) {
-                    if (HiddenPreviewSubmeshIndices?.Contains(submeshIndex) == true) continue;
-                    if (EditSubmeshIndices?.Contains(submeshIndex) != true) continue;
-                    vertexContext.Batch.Gizmo.Add(new GizmoRenderBatchItem(vertexMaterial, mesh.GetMesh(submeshIndex), transform, null, mesh, true, Silk.NET.OpenGL.PrimitiveType.Points, EditVertexPointSize));
-                }
-            }
+            context.RenderPreview(mesh, transform, new MeshPreviewRenderOptions(
+                PreviewDisplayMode,
+                HiddenPreviewSubmeshIndices,
+                HighlightedSubmeshIndices,
+                EditSubmeshIndices,
+                Scene?.WireframeOverlay == true,
+                EditWireframeOverlay,
+                ShowEditVertices,
+                EditVertexPointSize
+            ));
         }
-    }
-
-    private Material GetPreviewMaterial(RenderContext context, MeshHandle meshHandle, BuiltInMaterials materialType)
-    {
-        var flags = ShaderFlags.None;
-        if (meshHandle.HasArmature) {
-            flags |= ShaderFlags.EnableSkinning;
-            if (meshHandle.Meshes.FirstOrDefault()?.layout.Is6Weight == true) flags |= ShaderFlags.Use6Weights;
-        }
-        var key = (materialType, flags);
-        if (previewMaterials.TryGetValue(key, out var material)) return material;
-
-        material = context.GetBuiltInMaterial(materialType, flags);
-        switch (materialType) {
-            case BuiltInMaterials.Solid:
-                material.Name = "mesh_editor_solid";
-                material.SetParameter("_MainColor", new Color(190, 190, 190, 255));
-                break;
-            case BuiltInMaterials.Wireframe:
-                material.Name = "mesh_editor_wireframe";
-                material.SetParameter("_InnerColor", new Color(200, 200, 200, 255));
-                material.SetParameter("_OuterColor", new Color(0, 0, 0, 0));
-                break;
-            case BuiltInMaterials.MonoColor:
-                material.Name = "mesh_editor_selection";
-                material.SetParameter("_MainColor", new Color(255, 128, 0, 150));
-                material.BlendMode = new MaterialBlendMode(true, Silk.NET.OpenGL.BlendingFactor.SrcAlpha, Silk.NET.OpenGL.BlendingFactor.OneMinusSrcAlpha);
-                break;
-            case BuiltInMaterials.EditVertices:
-                material.Name = "mesh_editor_vertices";
-                material.SetParameter("_MainColor", new Color(255, 128, 0, 255));
-                break;
-        }
-        previewMaterials[key] = material;
-        return material;
     }
 
     public void CollectPickables(PickableData data)

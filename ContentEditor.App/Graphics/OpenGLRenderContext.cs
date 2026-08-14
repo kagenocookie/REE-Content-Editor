@@ -25,6 +25,7 @@ public sealed class OpenGLRenderContext : RenderContext
 
     private readonly Dictionary<(string, ShaderFlags), Shader> shaders = new();
     private readonly Dictionary<(BuiltInMaterials, ShaderFlags), Material> builtInMaterials = new();
+    private readonly Dictionary<(BuiltInMaterials, ShaderFlags), Material> meshPreviewMaterials = new();
 
     public readonly RenderBatch Batch;
 
@@ -469,6 +470,100 @@ public sealed class OpenGLRenderContext : RenderContext
         }
     }
 
+    public override void RenderPreview(MeshHandle handle, in Matrix4x4 transform, in MeshPreviewRenderOptions options)
+    {
+        handle.PrepareSubmeshParts();
+        if (options.DisplayMode == MeshDisplayMode.Default && options.HiddenSubmeshIndices?.Count is not > 0) {
+            RenderSimple(handle, transform);
+        } 
+        else {
+            var previewMaterial = options.DisplayMode == MeshDisplayMode.Default
+                ? null
+                : GetMeshPreviewMaterial(handle, options.DisplayMode == MeshDisplayMode.Solid ? BuiltInMaterials.Solid : BuiltInMaterials.Wireframe);
+            foreach (var (submeshIndex, materialIndex) in handle.EnabledSubmeshIndices) {
+                if (options.HiddenSubmeshIndices?.Contains(submeshIndex) == true) continue;
+                Batch.Simple.Add(new NormalRenderBatchItem(previewMaterial ?? handle.GetMaterial(materialIndex), handle.GetMesh(submeshIndex), transform, handle));
+            }
+        }
+
+        if (options.HighlightedSubmeshIndices?.Count > 0) {
+            var highlightMaterial = GetMeshPreviewMaterial(handle, BuiltInMaterials.MonoColor);
+            foreach (var submeshIndex in options.HighlightedSubmeshIndices) {
+                if (!TryGetPreviewMesh(handle, submeshIndex, options.HiddenSubmeshIndices, out var selectedMesh)) continue;
+                Batch.Gizmo.Add(new GizmoRenderBatchItem(highlightMaterial, selectedMesh, transform, null, handle, true));
+            }
+        }
+
+        if ((options.WireframeOverlay || options.EditWireframeOverlay) && options.DisplayMode != MeshDisplayMode.Wireframe) {
+            var wireframeMaterial = GetMeshPreviewMaterial(handle, BuiltInMaterials.Wireframe);
+            if (options.WireframeOverlay) {
+                foreach (var (submeshIndex, _) in handle.EnabledSubmeshIndices) {
+                    if (options.HiddenSubmeshIndices?.Contains(submeshIndex) == true) continue;
+                    Batch.Gizmo.Add(new GizmoRenderBatchItem(wireframeMaterial, handle.GetMesh(submeshIndex), transform, null, handle, true));
+                }
+            } 
+            else if (options.EditSubmeshIndices != null) {
+                foreach (var submeshIndex in options.EditSubmeshIndices) {
+                    if (!TryGetPreviewMesh(handle, submeshIndex, options.HiddenSubmeshIndices, out var selectedMesh)) continue;
+                    Batch.Gizmo.Add(new GizmoRenderBatchItem(wireframeMaterial, selectedMesh, transform, null, handle, true));
+                }
+            }
+        }
+
+        if (options.ShowEditVertices && options.EditSubmeshIndices != null) {
+            var vertexMaterial = GetMeshPreviewMaterial(handle, BuiltInMaterials.EditVertices);
+            foreach (var submeshIndex in options.EditSubmeshIndices) {
+                if (!TryGetPreviewMesh(handle, submeshIndex, options.HiddenSubmeshIndices, out var selectedMesh)) continue;
+                Batch.Gizmo.Add(new GizmoRenderBatchItem(vertexMaterial, selectedMesh, transform, null, handle, true, PrimitiveType.Points, options.EditVertexPointSize));
+            }
+        }
+    }
+
+    private static bool TryGetPreviewMesh(MeshHandle handle, int submeshIndex, IReadOnlySet<int>? hiddenSubmeshIndices, out Mesh mesh)
+    {
+        if ((uint)submeshIndex >= (uint)handle.MeshCount || hiddenSubmeshIndices?.Contains(submeshIndex) == true) {
+            mesh = null!;
+            return false;
+        }
+        mesh = handle.GetMesh(submeshIndex);
+        return handle.GetMeshPartEnabled(mesh.MeshGroup);
+    }
+
+    private Material GetMeshPreviewMaterial(MeshHandle handle, BuiltInMaterials materialType)
+    {
+        var flags = ShaderFlags.None;
+        if (handle.HasArmature) {
+            flags |= ShaderFlags.EnableSkinning;
+            if (handle.Meshes.FirstOrDefault()?.layout.Is6Weight == true) flags |= ShaderFlags.Use6Weights;
+        }
+        var key = (materialType, flags);
+        if (meshPreviewMaterials.TryGetValue(key, out var material)) return material;
+
+        material = GetBuiltInMaterial(materialType, flags);
+        switch (materialType) {
+            case BuiltInMaterials.Solid:
+                material.Name = "mesh_editor_solid";
+                material.SetParameter("_MainColor", new Color(190, 190, 190, 255));
+                break;
+            case BuiltInMaterials.Wireframe:
+                material.Name = "mesh_editor_wireframe";
+                material.SetParameter("_InnerColor", new Color(200, 200, 200, 255));
+                material.SetParameter("_OuterColor", new Color(0, 0, 0, 0));
+                break;
+            case BuiltInMaterials.MonoColor:
+                material.Name = "mesh_editor_selection";
+                material.SetParameter("_MainColor", new Color(255, 128, 0, 150));
+                material.BlendMode = new MaterialBlendMode(true, BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+                break;
+            case BuiltInMaterials.EditVertices:
+                material.Name = "mesh_editor_vertices";
+                material.SetParameter("_MainColor", new Color(255, 128, 0, 255));
+                break;
+        }
+        meshPreviewMaterials[key] = material;
+        return material;
+    }
+
     public override void RenderInstanced(MeshHandle handle, List<Matrix4x4> transforms)
     {
         handle.PrepareSubmeshParts();
@@ -571,7 +666,7 @@ public sealed class OpenGLRenderContext : RenderContext
     /// <summary>
     /// Reads a top-left-origin rectangle from the current viewport depth buffer.
     /// </summary>
-    public unsafe ViewportDepthRegion? ReadViewportDepth(int x, int y, int width, int height)
+    public override unsafe ViewportDepthRegion? ReadViewportDepth(int x, int y, int width, int height)
     {
         var viewportWidth = (int)ViewportSize.X;
         var viewportHeight = (int)ViewportSize.Y;
@@ -715,22 +810,5 @@ public sealed class OpenGLRenderContext : RenderContext
         _missingTexture?.Dispose();
         Batch.Dispose();
         base.Dispose(disposing);
-    }
-}
-
-public readonly record struct ViewportDepthRegion(int X, int Y, int Width, int Height, float[] Values)
-{
-    public bool TryGetDepth(Vector2 viewportPosition, out float depth)
-    {
-        var localX = (int)MathF.Floor(viewportPosition.X) - X;
-        var localY = (int)MathF.Floor(viewportPosition.Y) - Y;
-        if ((uint)localX >= (uint)Width || (uint)localY >= (uint)Height) {
-            depth = 1.0f;
-            return false;
-        }
-
-        // OpenGL returns rows from bottom to top; viewport coordinates start at the top.
-        depth = Values[(Height - localY - 1) * Width + localX];
-        return true;
     }
 }
