@@ -34,6 +34,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
     private readonly HashSet<SubmeshReference> hiddenSubmeshes = [];
     private readonly HashSet<MeshViewerContext> hiddenArmatures = [];
     private readonly Dictionary<MeshViewerContext, Vector2[]> armatureScreenPositions = [];
+    private readonly Dictionary<MeshViewerContext, SubmeshLabelCache> submeshLabelCache = [];
     private SubmeshReference? submeshSelectionAnchor;
     private SubmeshReference? scrollToSubmesh;
     private readonly HashSet<VertexReference> selectedVertices = [];
@@ -75,6 +76,8 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
     private readonly record struct BoneTransformState(Matrix4x4 Local, Matrix4x4 Global, Matrix4x4 InverseGlobal);
     private readonly record struct MirrorGridKey(int X, int Y, int Z);
     private sealed record VisibilityState(HashSet<SubmeshReference> Submeshes, HashSet<MeshViewerContext> Armatures);
+    private readonly record struct SubmeshLabel(byte[] UTF8);
+    private sealed record SubmeshLabelCache(object NativeMesh, SubmeshLabel[] Labels);
 
     private enum BoneElement
     {
@@ -256,30 +259,34 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
             if (meshes == null) continue;
 
             if (contexts.Count > 1) ImGui.SeparatorText(context.ShortName);
+            ImGui.PushID(contextIndex);
             var submeshIndex = 0;
             foreach (var mesh in meshes) {
                 hasSubmeshes = true;
                 var submesh = new SubmeshReference(context, submeshIndex);
                 var selected = selectedSubmeshes.Contains(submesh);
                 var label = GetSubmeshLabel(context, submeshIndex, mesh.MeshGroup);
-                var labelWidth = ImGui.CalcTextSize(label).X + ImGui.GetStyle().FramePadding.X * 2.0f;
-                if (ShowVisibilityButton($"submesh_visibility_{contextIndex}_{submeshIndex}", !hiddenSubmeshes.Contains(submesh))) {
+                var labelWidth = ImGui.CalcTextSize(label.UTF8).X + ImGui.GetStyle().FramePadding.X * 2.0f;
+                ImGui.PushID(submeshIndex);
+                if (ShowVisibilityButton("visibility", !hiddenSubmeshes.Contains(submesh))) {
                     ToggleSubmeshVisibility(submesh);
                 }
                 ImGui.SameLine();
                 var selectableWidth = Math.Max(labelWidth, ImGui.GetContentRegionAvail().X);
-                if (ImGui.Selectable($"{label}##submesh_{contextIndex}_{submeshIndex}", selected, ImGuiSelectableFlags.None, new Vector2(selectableWidth, 0))) {
+                if (ImGui.Selectable(label.UTF8, selected, ImGuiSelectableFlags.None, new Vector2(selectableWidth, 0))) {
                     SelectSubmesh(submesh, ImGui.IsKeyDown(ImGuiKey.ModShift), ImGui.IsKeyDown(ImGuiKey.ModCtrl), false);
                 }
                 if (labelWidth > ImGui.GetWindowSize().X - ImGui.GetStyle().WindowPadding.X * 2.0f) {
-                    ImguiHelpers.Tooltip(label);
+                    ImguiHelpers.Tooltip(label.UTF8);
                 }
                 if (scrollToSubmesh == submesh) {
                     ImGui.SetScrollHereY();
                     scrollToSubmesh = null;
                 }
+                ImGui.PopID();
                 submeshIndex++;
             }
+            ImGui.PopID();
 
         }
 
@@ -1667,24 +1674,45 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
         }
     }
 
-    private static string GetSubmeshLabel(MeshViewerContext context, int meshIndex, int meshGroup)
+    private SubmeshLabel GetSubmeshLabel(MeshViewerContext context, int meshIndex, int meshGroup)
     {
         var nativeMesh = context.MeshFile.NativeMesh;
-        var lod = nativeMesh.MeshData?.LODs.FirstOrDefault();
-        if (lod != null) {
-            var flattenedIndex = 0;
-            foreach (var group in lod.MeshGroups) {
-                for (int submeshIndex = 0; submeshIndex < group.Submeshes.Count; submeshIndex++) {
-                    var submesh = group.Submeshes[submeshIndex];
-                    if (flattenedIndex++ != meshIndex) continue;
-                    var materialName = nativeMesh.MaterialNames.ElementAtOrDefault(submesh.materialIndex);
-                    return string.IsNullOrEmpty(materialName)
-                        ? $"Submesh {meshIndex}  |  Group {group.groupId}"
-                        : $"Submesh {meshIndex}  |  Group {group.groupId}  |  {materialName}";
+        if (!submeshLabelCache.TryGetValue(context, out var cache) || !ReferenceEquals(cache.NativeMesh, nativeMesh)) {
+            var labels = new List<SubmeshLabel>();
+            var lod = nativeMesh.MeshData?.LODs.FirstOrDefault();
+            if (lod != null) {
+                foreach (var group in lod.MeshGroups) {
+                    foreach (var submesh in group.Submeshes) {
+                        var materialName = nativeMesh.MaterialNames.ElementAtOrDefault(submesh.materialIndex);
+                        var label = string.IsNullOrEmpty(materialName)
+                            ? $"Submesh {labels.Count}  |  Group {group.groupId}"
+                            : $"Submesh {labels.Count}  |  Group {group.groupId}  |  {materialName}";
+                        labels.Add(new SubmeshLabel(TranslatableBase.GetNullTerminatedUTF8(label)));
+                    }
                 }
             }
+            var meshes = context.Component.MeshHandle?.Meshes;
+            if (meshes != null) {
+                var fallbackIndex = 0;
+                foreach (var mesh in meshes) {
+                    if (fallbackIndex >= labels.Count) {
+                        var label = $"Submesh {fallbackIndex}  |  Group {mesh.MeshGroup}";
+                        labels.Add(new SubmeshLabel(TranslatableBase.GetNullTerminatedUTF8(label)));
+                    }
+                    fallbackIndex++;
+                }
+            }
+            submeshLabelCache[context] = cache = new SubmeshLabelCache(nativeMesh, labels.ToArray());
         }
-        return $"Submesh {meshIndex}  |  Group {meshGroup}";
+
+        return meshIndex >= 0 && meshIndex < cache.Labels.Length
+            ? cache.Labels[meshIndex]
+            : new SubmeshLabel(TranslatableBase.GetNullTerminatedUTF8($"Submesh {meshIndex}  |  Group {meshGroup}"));
+    }
+
+    internal void InvalidateSubmeshLabels(MeshViewerContext context)
+    {
+        submeshLabelCache.Remove(context);
     }
 
     //This is because for higher res displays it tends to not fit well otherwise
@@ -1700,7 +1728,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
             if (meshes == null) continue;
             var meshIndex = 0;
             foreach (var mesh in meshes) {
-                width = Math.Max(width, ImGui.CalcTextSize(GetSubmeshLabel(context, meshIndex, mesh.MeshGroup)).X);
+                width = Math.Max(width, ImGui.CalcTextSize(GetSubmeshLabel(context, meshIndex, mesh.MeshGroup).UTF8).X);
                 meshIndex++;
             }
         }
@@ -1713,6 +1741,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
     {
         CancelMove();
         CloseOptions();
+        submeshLabelCache.Clear();
         IsEnabled = false;
         DisplayMode = MeshDisplayMode.Default;
         ClearAllSelection();
