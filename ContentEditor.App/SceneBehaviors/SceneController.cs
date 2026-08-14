@@ -26,6 +26,7 @@ public class SceneController(Scene scene)
     private float orbitDistance;
     private bool hasCameraPivot;
     private Vector3 cameraPivot;
+    private bool keypad5WasDown;
 
     public void ShowCameraControls()
     {
@@ -211,6 +212,23 @@ public class SceneController(Scene scene)
 
     public void Update(float deltaTime)
     {
+        var keypad5Down = Keyboard.IsKeyPressed(Key.Keypad5);
+        if (Scene.Mouse.IsViewportHovered && keypad5Down && !keypad5WasDown && new KeyBinding(ImGuiKey.Keypad5).AreModifiersDown()) {
+            var nextMode = CameraMode switch {
+                SceneCameraMode.FPSCamera => SceneCameraMode.PivotCamera,
+                SceneCameraMode.PivotCamera => SceneCameraMode.OrthoCamera,
+                _ => SceneCameraMode.FPSCamera,
+            };
+            SetCameraMode(nextMode);
+            if (UseMeshViewerCameraBindings) {
+                AppConfig.Settings.MeshViewer.CameraMode = nextMode;
+            } else {
+                AppConfig.Settings.SceneView.CameraMode = nextMode;
+            }
+            AppConfig.Settings.Save();
+        }
+        keypad5WasDown = keypad5Down;
+
         var translateCamera = dragMode == DragMode.Rotation;
         if (UseMeshViewerCameraBindings) {
             var binding = GetCameraTranslateBinding();
