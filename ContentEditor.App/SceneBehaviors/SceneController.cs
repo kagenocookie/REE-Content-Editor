@@ -23,7 +23,6 @@ public class SceneController(Scene scene)
 
     private float camYaw, camPitch;
     private bool orbitCameraDrag;
-    private Vector3 orbitTarget;
     private float orbitDistance;
     private bool hasCameraPivot;
     private Vector3 cameraPivot;
@@ -191,7 +190,7 @@ public class SceneController(Scene scene)
                 camPitch = Math.Clamp(camPitch - delta.Y * multiplier, -80f * MathF.PI / 180, 80f * MathF.PI / 180);
                 Scene.ActiveCamera.GameObject.Transform.LocalRotation = Quaternion.CreateFromYawPitchRoll(camYaw, camPitch, 0);
                 if (CameraMode != SceneCameraMode.FPSCamera && orbitCameraDrag) {
-                    Scene.ActiveCamera.Transform.Position = orbitTarget - Scene.ActiveCamera.Transform.Forward * orbitDistance;
+                    Scene.ActiveCamera.Transform.Position = cameraPivot - Scene.ActiveCamera.Transform.Forward * orbitDistance;
                 }
             } else if (translateWithMouseDrag) {
                 var multiplier = GetMouseDragWorldUnitsPerPixel();
@@ -201,7 +200,6 @@ public class SceneController(Scene scene)
                 camera.Position += translation;
                 if (CameraMode != SceneCameraMode.FPSCamera) {
                     cameraPivot += translation;
-                    orbitTarget = cameraPivot;
                 }
             } else if (buttons == MouseButtonFlags.Left) {
                 Scene.ActiveCamera.GameObject.Transform.TranslateForwardAligned(new Vector3(-delta.X, 0, delta.Y) * -0.04f);
@@ -288,7 +286,6 @@ public class SceneController(Scene scene)
                 : 1.0f;
         } else {
             EnsureCameraPivot();
-            orbitTarget = cameraPivot;
             orbitDistance = Math.Max(Vector3.Distance(camera.Position, cameraPivot), 0.001f);
         }
     }
@@ -343,7 +340,6 @@ public class SceneController(Scene scene)
         var zoomAmount = wheel * ZoomSpeed * Math.Max(orbitDistance, 0.1f) * 0.1f;
         orbitDistance = Math.Max(orbitDistance - zoomAmount, 0.001f);
         camera.Position = cameraPivot - camera.Forward * orbitDistance;
-        orbitTarget = cameraPivot;
     }
 
     private void ResetCameraToScene()
