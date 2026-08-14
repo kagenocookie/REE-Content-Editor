@@ -121,7 +121,11 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
         if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) || viewportHovered) {
             //var keyboard = EditorWindow.CurrentWindow?.LastKeyboard;
             var selectAllPressed = AppConfig.Instance.Key_MeshViewer_SelectAll.Get().IsPressed();
-            if (interactionMode == EditorInteractionMode.Object && selectAllPressed) ToggleAllObjects();
+            if (interactionMode == EditorInteractionMode.Object) {
+                if (selectAllPressed) ToggleAllObjects();
+                if (AppConfig.Instance.Key_Scene_Hide.Get().IsPressed()) HideSelectedObjects();
+                if (AppConfig.Instance.Key_Scene_UnhideAll.Get().IsPressed()) UnhideAllObjects();
+            }
             if (interactionMode == EditorInteractionMode.Edit) {
                 if (!IsMoving && selectAllPressed) ToggleAllEditableElements();
                 if (!IsMoving && (selectedVertices.Count > 0 || selectedBoneElements.Count > 0) && AppConfig.Instance.Key_MeshViewer_MoveGeometry.Get().IsPressed()) BeginMove();
@@ -605,6 +609,24 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
         submeshSelectionAnchor = submeshes.Count > 0 ? submeshes[0] : null;
         selectedVertices.Clear();
         selectedBoneElements.Clear();
+        ApplyRenderState();
+    }
+
+    private void HideSelectedObjects()
+    {
+        if (selectedSubmeshes.Count == 0 && selectedArmatures.Count == 0) return;
+
+        hiddenSubmeshes.UnionWith(selectedSubmeshes);
+        hiddenArmatures.UnionWith(selectedArmatures);
+        ClearAllSelection();
+    }
+
+    private void UnhideAllObjects()
+    {
+        if (hiddenSubmeshes.Count == 0 && hiddenArmatures.Count == 0) return;
+
+        hiddenSubmeshes.Clear();
+        hiddenArmatures.Clear();
         ApplyRenderState();
     }
 
