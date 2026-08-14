@@ -963,17 +963,18 @@ public struct KeyBinding : IEquatable<KeyBinding>
         return AreModifiersDown();
     }
 
-    public bool IsDown()
+    public bool IsDown(bool allowExtraShift = false)
     {
         if (Key == ImGuiKey.None || !ImGui.IsKeyDown(Key)) return false;
-        return AreModifiersDown();
+        return AreModifiersDown(allowExtraShift);
     }
 
-    public bool AreModifiersDown()
+    public bool AreModifiersDown(bool allowExtraShift = false)
     {
         // strictly check modifiers, so ctrl+shift+s doesn't trigger a ctrl+s hotkey
         if (ctrl != ImGui.IsKeyDown(ImGuiKey.ModCtrl)) return false;
-        if (shift != ImGui.IsKeyDown(ImGuiKey.ModShift)) return false;
+        var shiftDown = ImGui.IsKeyDown(ImGuiKey.ModShift);
+        if (shift ? !shiftDown : shiftDown && !allowExtraShift) return false;
         if (alt != ImGui.IsKeyDown(ImGuiKey.ModAlt)) return false;
         return true;
     }

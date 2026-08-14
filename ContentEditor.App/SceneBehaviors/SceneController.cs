@@ -181,7 +181,7 @@ public class SceneController(Scene scene)
                 rotateCamera = IsDragBindingActive(rotateBinding, buttons);
                 invertRotationDrag = rotateBinding.invertDrag;
                 var translateBinding = AppConfig.Instance.Key_MeshViewer_CameraTranslate.Get();
-                translateWithMouseDrag = translateBinding.mouseDrag && IsDragBindingActive(translateBinding, buttons);
+                translateWithMouseDrag = translateBinding.mouseDrag && IsDragBindingActive(translateBinding, buttons, includeFpsVerticalMovement: true);
                 invertTranslationDrag = translateBinding.invertDrag;
             }
             if (rotateCamera) {
@@ -216,7 +216,10 @@ public class SceneController(Scene scene)
         var translateCamera = dragMode == DragMode.Rotation;
         if (UseMeshViewerCameraBindings) {
             var binding = AppConfig.Instance.Key_MeshViewer_CameraTranslate.Get();
-            translateCamera = translateCamera && !binding.mouseDrag && binding.IsDown() && (!binding.wasd || IsWASDPressed());
+            var fpsCamera = CameraMode == SceneCameraMode.FPSCamera;
+            translateCamera = translateCamera && !binding.mouseDrag
+                && binding.IsDown(allowExtraShift: fpsCamera)
+                && (!binding.wasd || IsCameraTranslationKeyPressed());
         }
         if (translateCamera) {
             var moveVec = new Vector3();
@@ -224,13 +227,16 @@ public class SceneController(Scene scene)
             if (Keyboard.IsKeyPressed(Key.S)) moveVec.Z += 1;
             if (Keyboard.IsKeyPressed(Key.A)) moveVec.X -= 1;
             if (Keyboard.IsKeyPressed(Key.D)) moveVec.X += 1;
-            if (Keyboard.IsKeyPressed(Key.E)) moveVec.Y += 1;
-            if (Keyboard.IsKeyPressed(Key.Q)) moveVec.Y -= 1;
+            if (CameraMode == SceneCameraMode.FPSCamera) {
+                if (Keyboard.IsKeyPressed(Key.E)) moveVec.Y += 1;
+                if (Keyboard.IsKeyPressed(Key.Q)) moveVec.Y -= 1;
+            }
             if (Scene.ActiveCamera.ProjectionMode == CameraProjection.Orthographic) {
                 // redirect W/S to ortho up/down
                 moveVec.Y -= moveVec.Z;
             }
-            if (Keyboard.IsKeyPressed(Key.ShiftLeft)) moveVec *= 10;
+            if (CameraMode == SceneCameraMode.FPSCamera
+                && (Keyboard.IsKeyPressed(Key.ShiftLeft) || Keyboard.IsKeyPressed(Key.ShiftRight))) moveVec *= 10;
 
             var camera = Scene.ActiveCamera.Transform;
             var previousPosition = camera.Position;
@@ -239,7 +245,7 @@ public class SceneController(Scene scene)
         }
     }
 
-    private static bool IsDragStartBinding(KeyBinding binding, ImGuiMouseButton startButton)
+    private bool IsDragStartBinding(KeyBinding binding, ImGuiMouseButton startButton)
     {
         var startKey = startButton switch {
             ImGuiMouseButton.Left => ImGuiKey.MouseLeft,
@@ -247,10 +253,12 @@ public class SceneController(Scene scene)
             ImGuiMouseButton.Middle => ImGuiKey.MouseMiddle,
             _ => ImGuiKey.None,
         };
-        return (binding.Key == startKey && binding.AreModifiersDown()) || (!IsMouseButton(binding.Key) && binding.IsDown());
+        var allowExtraShift = CameraMode == SceneCameraMode.FPSCamera;
+        return (binding.Key == startKey && binding.AreModifiersDown(allowExtraShift))
+            || (!IsMouseButton(binding.Key) && binding.IsDown(allowExtraShift));
     }
 
-    private bool IsDragBindingActive(KeyBinding binding, MouseButtonFlags buttons)
+    private bool IsDragBindingActive(KeyBinding binding, MouseButtonFlags buttons, bool includeFpsVerticalMovement = false)
     {
         var bindingButton = binding.Key switch {
             ImGuiKey.MouseLeft => MouseButtonFlags.Left,
@@ -259,12 +267,14 @@ public class SceneController(Scene scene)
             _ => (MouseButtonFlags)0,
         };
         var bindingActive = bindingButton != 0
-            ? buttons == bindingButton && binding.AreModifiersDown()
-            : binding.IsDown();
-        return bindingActive && (!binding.wasd || IsWASDPressed());
+            ? buttons == bindingButton && binding.AreModifiersDown(CameraMode == SceneCameraMode.FPSCamera)
+            : binding.IsDown(CameraMode == SceneCameraMode.FPSCamera);
+        return bindingActive && (!binding.wasd || (includeFpsVerticalMovement ? IsCameraTranslationKeyPressed() : IsWASDPressed()));
     }
 
     private static bool IsMouseButton(ImGuiKey key) => key is ImGuiKey.MouseLeft or ImGuiKey.MouseRight or ImGuiKey.MouseMiddle;
+
+    private bool IsCameraTranslationKeyPressed() => IsWASDPressed() || CameraMode == SceneCameraMode.FPSCamera && (Keyboard.IsKeyPressed(Key.Q) || Keyboard.IsKeyPressed(Key.E));
 
     private bool IsWASDPressed() => Keyboard.IsKeyPressed(Key.W) || Keyboard.IsKeyPressed(Key.A) || Keyboard.IsKeyPressed(Key.S) || Keyboard.IsKeyPressed(Key.D);
 
