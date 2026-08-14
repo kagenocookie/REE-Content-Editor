@@ -74,6 +74,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
     private readonly record struct BoneHit(BoneElementReference Reference, float DistanceSquared);
     private readonly record struct BoneTransformState(Matrix4x4 Local, Matrix4x4 Global, Matrix4x4 InverseGlobal);
     private readonly record struct MirrorGridKey(int X, int Y, int Z);
+    private sealed record VisibilityState(HashSet<SubmeshReference> Submeshes, HashSet<MeshViewerContext> Armatures);
 
     private enum BoneElement
     {
@@ -303,23 +304,16 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
 
     private void ToggleSubmeshVisibility(SubmeshReference submesh)
     {
-        if (!hiddenSubmeshes.Add(submesh)) {
-            hiddenSubmeshes.Remove(submesh);
-        } else {
-            selectedSubmeshes.Remove(submesh);
-            selectedVertices.RemoveWhere(vertex => vertex.Context == submesh.Context);
-        }
-        ApplyRenderState();
+        var state = CaptureVisibilityState();
+        if (!state.Submeshes.Add(submesh)) state.Submeshes.Remove(submesh);
+        RecordVisibilityState(state);
     }
 
     private void ToggleArmatureVisibility(MeshViewerContext context)
     {
-        if (!hiddenArmatures.Add(context)) {
-            hiddenArmatures.Remove(context);
-        } else {
-            selectedArmatures.Remove(context);
-            selectedBoneElements.RemoveWhere(element => element.Bone.Context == context);
-        }
+        var state = CaptureVisibilityState();
+        if (!state.Armatures.Add(context)) state.Armatures.Remove(context);
+        RecordVisibilityState(state);
     }
 
     private void SetEnabled(bool enabled)
@@ -616,17 +610,45 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
     {
         if (selectedSubmeshes.Count == 0 && selectedArmatures.Count == 0) return;
 
-        hiddenSubmeshes.UnionWith(selectedSubmeshes);
-        hiddenArmatures.UnionWith(selectedArmatures);
-        ClearAllSelection();
+        var state = CaptureVisibilityState();
+        state.Submeshes.UnionWith(selectedSubmeshes);
+        state.Armatures.UnionWith(selectedArmatures);
+        RecordVisibilityState(state);
     }
 
     private void UnhideAllObjects()
     {
         if (hiddenSubmeshes.Count == 0 && hiddenArmatures.Count == 0) return;
 
+        RecordVisibilityState(new VisibilityState([], []));
+    }
+
+    private VisibilityState CaptureVisibilityState() => new([.. hiddenSubmeshes], [.. hiddenArmatures]);
+
+    private void RecordVisibilityState(VisibilityState state)
+    {
+        if (hiddenSubmeshes.SetEquals(state.Submeshes) && hiddenArmatures.SetEquals(state.Armatures)) return;
+
+        var previous = CaptureVisibilityState();
+        UndoRedo.RecordCallback(null,
+            () => ApplyVisibilityState(state),
+            () => ApplyVisibilityState(previous));
+    }
+
+    private void ApplyVisibilityState(VisibilityState state)
+    {
         hiddenSubmeshes.Clear();
+        hiddenSubmeshes.UnionWith(state.Submeshes);
         hiddenArmatures.Clear();
+        hiddenArmatures.UnionWith(state.Armatures);
+
+        selectedSubmeshes.RemoveWhere(hiddenSubmeshes.Contains);
+        selectedArmatures.RemoveWhere(hiddenArmatures.Contains);
+        var hiddenSubmeshContexts = hiddenSubmeshes.Select(submesh => submesh.Context).ToHashSet();
+        selectedVertices.RemoveWhere(vertex => hiddenSubmeshContexts.Contains(vertex.Context));
+        selectedBoneElements.RemoveWhere(element => hiddenArmatures.Contains(element.Bone.Context));
+        if (submeshSelectionAnchor is { } anchor && hiddenSubmeshes.Contains(anchor)) submeshSelectionAnchor = null;
+        if (scrollToSubmesh is { } scrollTarget && hiddenSubmeshes.Contains(scrollTarget)) scrollToSubmesh = null;
         ApplyRenderState();
     }
 
