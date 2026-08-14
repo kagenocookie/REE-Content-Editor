@@ -76,12 +76,12 @@ public class Prefab(FileHandle handle, PfbFile file) : IReeLibResourceFile
 
     public GameObject GetSharedInstance()
     {
-        return _instance ??= Instantiate();
+        return _instance ??= new GameObject(file.GameObjects![0]);
     }
 
     public GameObject Instantiate(Scene? scene = null)
     {
-        return new GameObject(file.GameObjects![0], scene);
+        return new GameObject(file.GameObjects![0].Clone(), scene);
     }
 
     public void WriteTo(string filepath)
