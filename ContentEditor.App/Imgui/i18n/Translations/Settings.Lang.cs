@@ -79,6 +79,9 @@ public static partial class Lang
         public static readonly FixedString Key_Ctrl = "Ctrl";
         public static readonly FixedString Key_Shift = "Shift";
         public static readonly FixedString Key_Alt = "Alt";
+        public static readonly FixedString Key_Invert = "Invert";
+        public static readonly FixedString Key_InvertMouseInputTooltip = "Invert the mouse drag direction.";
+        public static readonly FixedString Key_InvertMouseInputUnavailableTooltip = "Use with 'Mouse Right' or 'Mouse Middle'.";
 
         public static readonly FixedString Author = "Author";
         public static readonly FixedString Homepage = "Homepage";
@@ -154,8 +157,6 @@ public static partial class Lang
         public static readonly FixedString Bind_MeshViewer_SelectAll = "Select/Deselect All";
         public static readonly FixedString Key_MeshViewer_CameraTranslate = "Right Click + WASD";
         public static readonly FixedString Key_MeshViewer_CameraRotate = "Right Click + WASD";
-        public static readonly FixedString Key_MeshViewer_CameraMouseDrag = "Mouse Middle + Drag";
-        public static readonly FixedString Key_MeshViewer_CameraMouseDragInvert = "Mouse Middle + Drag Invert";
         public static readonly FixedString Key_MeshViewer_CameraZoom = "Mouse Scroll Wheel";
         public static readonly FixedString Bind_TextureViewer_ResetView = "Reset View";
         public static readonly FixedString Bind_TextureViewer_ZoomIn = "Zoom In";

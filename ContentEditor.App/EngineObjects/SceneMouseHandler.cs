@@ -235,6 +235,9 @@ public class SceneMouseHandler(Scene scene)
                 } else {
                     wheel = IsViewportHovered && zoomBinding.IsPressed() ? 1 : 0;
                 }
+                if (zoomBinding.Key is ImGuiKey.MouseRight or ImGuiKey.MouseMiddle && scene.Controller.GetCameraZoomInvert()) {
+                    wheel = -wheel;
+                }
             }
             if (Math.Abs(wheel) > float.Epsilon) {
                 scene.Controller.ZoomCamera(wheel);
