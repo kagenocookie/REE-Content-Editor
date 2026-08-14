@@ -237,15 +237,7 @@ public class SceneMouseHandler(Scene scene)
                 }
             }
             if (Math.Abs(wheel) > float.Epsilon) {
-                if (scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective) {
-                    var zoom = scene.ActiveCamera.GameObject.Transform.LocalForward * (wheel * scene.Controller.ZoomSpeed * 0.1f);
-                    scene.ActiveCamera.GameObject.Transform.LocalPosition += zoom;
-                } else {
-                    float ortho = scene.ActiveCamera.OrthoSize;
-                    ortho *= (1.0f - wheel * scene.Controller.ZoomSpeed * 0.1f);
-                    ortho = Math.Clamp(ortho, 0.01f, 100.0f);
-                    scene.ActiveCamera.OrthoSize = ortho;
-                }
+                scene.Controller.ZoomCamera(wheel);
             }
             MouseWheelDelta = Vector2.Zero;
         }

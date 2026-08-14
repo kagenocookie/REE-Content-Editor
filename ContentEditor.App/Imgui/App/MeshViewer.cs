@@ -177,7 +177,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (mainCtx == null) {
             ChangeMainMesh();
             mainCtx = meshContexts.First();
-            scene.ActiveCamera.ProjectionMode = AppConfig.Settings.MeshViewer.DefaultProjection;
+            scene.Controller.SetCameraMode(AppConfig.Settings.MeshViewer.CameraMode);
             CenterCameraToSceneObject();
             if (collection != null) LoadCollection(collection);
         }
@@ -288,8 +288,24 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (ImGui.Button($"{AppIcons.SI_GenericCamera}")) ImGui.OpenPopup("CameraSettings");
         if (ImGui.BeginPopup("CameraSettings")) {
             scene!.Controller.ShowCameraControls();
+            SaveCameraControlSettings();
             ImGui.EndPopup();
         }
+    }
+
+    private void SaveCameraControlSettings()
+    {
+        if (scene == null) return;
+        var changed = false;
+        if (scene.Controller.CameraMode != AppConfig.Settings.MeshViewer.CameraMode) {
+            AppConfig.Settings.MeshViewer.CameraMode = scene.Controller.CameraMode;
+            changed = true;
+        }
+        if (Math.Abs(scene.Controller.MoveSpeed - AppConfig.Settings.MeshViewer.MoveSpeed) > 0.001f) {
+            AppConfig.Settings.MeshViewer.MoveSpeed = scene.Controller.MoveSpeed;
+            changed = true;
+        }
+        if (changed) AppConfig.Settings.Save();
     }
 
     private bool ShowMenu(MeshViewerContext mainCtx)
@@ -300,14 +316,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             if (ImGui.MenuItem($"{AppIcons.SI_GenericCamera} Controls")) ImGui.OpenPopup("CameraSettings");
             if (scene != null && ImGui.BeginPopup("CameraSettings")) {
                 scene.Controller.ShowCameraControls();
-                if (scene.ActiveCamera.ProjectionMode != AppConfig.Settings.MeshViewer.DefaultProjection) {
-                    AppConfig.Settings.MeshViewer.DefaultProjection = scene.ActiveCamera.ProjectionMode;
-                    AppConfig.Settings.Save();
-                }
-                if (Math.Abs(scene.Controller.MoveSpeed - AppConfig.Settings.MeshViewer.MoveSpeed) > 0.001f) {
-                    AppConfig.Settings.MeshViewer.MoveSpeed = scene.Controller.MoveSpeed;
-                    AppConfig.Settings.Save();
-                }
+                SaveCameraControlSettings();
                 ImGui.EndPopup();
             }
 
@@ -1427,7 +1436,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (scene == null || other.scene == null) return;
 
         scene.ActiveCamera.Transform.CopyFrom(other.scene.ActiveCamera.Transform);
-        scene.ActiveCamera.ProjectionMode = other.scene.ActiveCamera.ProjectionMode;
+        scene.Controller.SetCameraMode(other.scene.Controller.CameraMode);
         scene.ActiveCamera.NearPlane = other.scene.ActiveCamera.NearPlane;
         scene.ActiveCamera.FarPlane = other.scene.ActiveCamera.FarPlane;
         scene.ActiveCamera.FieldOfView = other.scene.ActiveCamera.FieldOfView;

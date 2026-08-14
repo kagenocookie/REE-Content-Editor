@@ -31,6 +31,10 @@ public class SceneCameraControls : ISceneWidget
 
         if (ImGui.BeginPopup(WidgetName)) {
             scene.Controller.ShowCameraControls();
+            if (scene.Controller.CameraMode != AppConfig.Settings.SceneView.CameraMode) {
+                AppConfig.Settings.SceneView.CameraMode = scene.Controller.CameraMode;
+                AppConfig.Settings.Save();
+            }
             if (Math.Abs(scene.Controller.MoveSpeed - AppConfig.Settings.SceneView.MoveSpeed) > 0.001f) {
                 AppConfig.Settings.SceneView.MoveSpeed = scene.Controller.MoveSpeed;
                 AppConfig.Settings.Save();

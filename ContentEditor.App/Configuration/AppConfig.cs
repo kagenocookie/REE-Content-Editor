@@ -1096,7 +1096,7 @@ public class RecentFileList : List<string>
 
 public record SceneViewSettings
 {
-    public CameraProjection DefaultProjection { get; set; } = CameraProjection.Perspective;
+    public SceneCameraMode CameraMode { get; set; } = SceneCameraMode.FPSCamera;
     public float MoveSpeed { get; set; } = 8f;
 }
 public record DevSettings
@@ -1188,7 +1188,7 @@ public record MeshViewerSettings
     public const float DefaultEditorVertexSelectionRadius = 14f;
     public const float DefaultEditorMirrorRadius = 0.001f;
 
-    public CameraProjection DefaultProjection { get; set; } = CameraProjection.Orthographic;
+    public SceneCameraMode CameraMode { get; set; } = SceneCameraMode.FPSCamera;
     public float MoveSpeed { get; set; } = 5f;
     public bool DisableRootMotion { get; set; } = true;
     public float EditorVertexSize { get; set; } = DefaultEditorVertexSize;

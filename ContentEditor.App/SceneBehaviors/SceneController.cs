@@ -19,6 +19,7 @@ public class SceneController(Scene scene)
     public float RotateSpeed { get; set; } = 2f;
     public float ZoomSpeed { get; set; } = 2f;
     public bool UseMeshViewerCameraBindings { get; set; }
+    public SceneCameraMode CameraMode { get; private set; } = SceneCameraMode.FPSCamera;
 
     private float camYaw, camPitch;
     private bool orbitCameraDrag;
@@ -29,15 +30,12 @@ public class SceneController(Scene scene)
 
     public void ShowCameraControls()
     {
-        if (ImGui.RadioButton("Orthographic", Scene.ActiveCamera.ProjectionMode == CameraProjection.Orthographic)) {
-            Scene.ActiveCamera.ProjectionMode = CameraProjection.Orthographic;
-            ResetCameraToScene();
-        }
+        ImGui.TextUnformatted("Camera Mode");
+        if (ImGui.RadioButton("FPS Camera", CameraMode == SceneCameraMode.FPSCamera)) SetCameraMode(SceneCameraMode.FPSCamera, true);
         ImGui.SameLine();
-        if (ImGui.RadioButton("Perspective", Scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective)) {
-            Scene.ActiveCamera.ProjectionMode = CameraProjection.Perspective;
-            ResetCameraToScene();
-        }
+        if (ImGui.RadioButton("Pivot Camera", CameraMode == SceneCameraMode.PivotCamera)) SetCameraMode(SceneCameraMode.PivotCamera, true);
+        ImGui.SameLine();
+        if (ImGui.RadioButton("Ortho Camera", CameraMode == SceneCameraMode.OrthoCamera)) SetCameraMode(SceneCameraMode.OrthoCamera, true);
         ImGui.SameLine();
         if (ImGui.Button($"{AppIcons.SI_ResetCamera}")) {
             ResetCameraToScene();
@@ -50,7 +48,7 @@ public class SceneController(Scene scene)
             }
         } else {
             float ortho = Scene.ActiveCamera.OrthoSize;
-            if (ImGui.SliderFloat("Field of View", ref ortho, 0.1f, 10.0f)) {
+            if (ImGui.SliderFloat("Orthographic Size", ref ortho, 0.1f, 10.0f)) {
                 Scene.ActiveCamera.OrthoSize = ortho;
             }
         }
@@ -115,18 +113,33 @@ public class SceneController(Scene scene)
         }
     }
 
+    public void SetCameraMode(SceneCameraMode mode, bool resetCamera = false)
+    {
+        CameraMode = mode;
+        Scene.ActiveCamera.ProjectionMode = mode == SceneCameraMode.OrthoCamera
+            ? CameraProjection.Orthographic
+            : CameraProjection.Perspective;
+        orbitCameraDrag = false;
+        if (mode == SceneCameraMode.FPSCamera) {
+            hasCameraPivot = false;
+        } else {
+            EnsureCameraPivot();
+        }
+        if (resetCamera) ResetCameraToScene();
+    }
+
     public void OnMouseDragStart(IMouse mouse, ImGuiMouseButton startButton, Vector2 position)
     {
         var startCameraDrag = startButton == ImGuiMouseButton.Right;
-        orbitCameraDrag = false;
-        var initializeMouseDragDepth = false;
+        orbitCameraDrag = startCameraDrag && CameraMode != SceneCameraMode.FPSCamera;
+        var initializeMouseDragDepth = orbitCameraDrag;
         if (UseMeshViewerCameraBindings) {
             var rotateBinding = AppConfig.Instance.Key_MeshViewer_CameraRotate.Get();
             var startRotateDrag = IsDragStartBinding(rotateBinding, startButton);
             var translateBinding = AppConfig.Instance.Key_MeshViewer_CameraTranslate.Get();
             var startTranslateDrag = IsDragStartBinding(translateBinding, startButton);
             startCameraDrag = startRotateDrag || startTranslateDrag;
-            orbitCameraDrag = startRotateDrag && rotateBinding.mouseDrag;
+            orbitCameraDrag = startRotateDrag && CameraMode != SceneCameraMode.FPSCamera;
             initializeMouseDragDepth = startRotateDrag || startTranslateDrag && translateBinding.mouseDrag;
         }
         if (startCameraDrag) {
@@ -177,10 +190,8 @@ public class SceneController(Scene scene)
                 camYaw = camYaw - delta.X * multiplier;
                 camPitch = Math.Clamp(camPitch - delta.Y * multiplier, -80f * MathF.PI / 180, 80f * MathF.PI / 180);
                 Scene.ActiveCamera.GameObject.Transform.LocalRotation = Quaternion.CreateFromYawPitchRoll(camYaw, camPitch, 0);
-                if (orbitCameraDrag) {
+                if (CameraMode != SceneCameraMode.FPSCamera && orbitCameraDrag) {
                     Scene.ActiveCamera.Transform.Position = orbitTarget - Scene.ActiveCamera.Transform.Forward * orbitDistance;
-                } else if (UseMeshViewerCameraBindings) {
-                    cameraPivot = Scene.ActiveCamera.Transform.Position + Scene.ActiveCamera.Transform.Forward * orbitDistance;
                 }
             } else if (translateWithMouseDrag) {
                 var multiplier = GetMouseDragWorldUnitsPerPixel();
@@ -188,8 +199,10 @@ public class SceneController(Scene scene)
                 var camera = Scene.ActiveCamera.Transform;
                 var translation = (camera.Right * delta.X - camera.Up * delta.Y) * multiplier;
                 camera.Position += translation;
-                cameraPivot += translation;
-                orbitTarget = cameraPivot;
+                if (CameraMode != SceneCameraMode.FPSCamera) {
+                    cameraPivot += translation;
+                    orbitTarget = cameraPivot;
+                }
             } else if (buttons == MouseButtonFlags.Left) {
                 Scene.ActiveCamera.GameObject.Transform.TranslateForwardAligned(new Vector3(-delta.X, 0, delta.Y) * -0.04f);
             } else if ((buttons & (MouseButtonFlags.Left|MouseButtonFlags.Right)) != 0) {
@@ -222,7 +235,7 @@ public class SceneController(Scene scene)
             var camera = Scene.ActiveCamera.Transform;
             var previousPosition = camera.Position;
             camera.TranslateForwardAligned(MoveSpeed * moveVec * deltaTime);
-            if (hasCameraPivot) cameraPivot += camera.Position - previousPosition;
+            if (CameraMode != SceneCameraMode.FPSCamera && hasCameraPivot) cameraPivot += camera.Position - previousPosition;
         }
     }
 
@@ -258,9 +271,16 @@ public class SceneController(Scene scene)
     private void InitializeMouseDragDepth()
     {
         var camera = Scene.ActiveCamera.Transform;
-        EnsureCameraPivot();
-        orbitTarget = cameraPivot;
-        orbitDistance = Math.Max(Vector3.Distance(camera.Position, cameraPivot), 0.001f);
+        if (CameraMode == SceneCameraMode.FPSCamera) {
+            var bounds = Scene.RootFolder.GetWorldSpaceBounds();
+            orbitDistance = !bounds.IsInvalid
+                ? Math.Max(Math.Abs(Vector3.Dot(bounds.Center - camera.Position, camera.Forward)), 0.001f)
+                : 1.0f;
+        } else {
+            EnsureCameraPivot();
+            orbitTarget = cameraPivot;
+            orbitDistance = Math.Max(Vector3.Distance(camera.Position, cameraPivot), 0.001f);
+        }
     }
 
     private void EnsureCameraPivot()
@@ -288,9 +308,32 @@ public class SceneController(Scene scene)
 
     public void SetCameraPivot(Vector3 pivot)
     {
+        if (CameraMode == SceneCameraMode.FPSCamera) return;
         cameraPivot = pivot;
         hasCameraPivot = true;
         orbitDistance = Math.Max(Vector3.Distance(Scene.ActiveCamera.Transform.Position, cameraPivot), 0.001f);
+    }
+
+    public void ZoomCamera(float wheel)
+    {
+        if (CameraMode == SceneCameraMode.OrthoCamera) {
+            var ortho = Scene.ActiveCamera.OrthoSize;
+            ortho *= 1.0f - wheel * ZoomSpeed * 0.1f;
+            Scene.ActiveCamera.OrthoSize = Math.Clamp(ortho, 0.01f, 100.0f);
+            return;
+        }
+
+        var camera = Scene.ActiveCamera.Transform;
+        if (CameraMode == SceneCameraMode.FPSCamera) {
+            camera.LocalPosition += camera.LocalForward * (wheel * ZoomSpeed * 0.1f);
+            return;
+        }
+
+        EnsureCameraPivot();
+        var zoomAmount = wheel * ZoomSpeed * Math.Max(orbitDistance, 0.1f) * 0.1f;
+        orbitDistance = Math.Max(orbitDistance - zoomAmount, 0.001f);
+        camera.Position = cameraPivot - camera.Forward * orbitDistance;
+        orbitTarget = cameraPivot;
     }
 
     private void ResetCameraToScene()
@@ -319,6 +362,13 @@ public class SceneController(Scene scene)
             }
         }
     }
+}
+
+public enum SceneCameraMode
+{
+    FPSCamera,
+    PivotCamera,
+    OrthoCamera,
 }
 
 [Flags]

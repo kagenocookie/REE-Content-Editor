@@ -262,8 +262,8 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
         if (ImGui.MenuItem(Lang.SceneView.MenuItem_CamControls)) ImGui.OpenPopup("CameraSettings");
         if (Scene != null && ImGui.BeginPopup("CameraSettings")) {
             Scene.Controller.ShowCameraControls();
-            if (Scene.ActiveCamera.ProjectionMode != AppConfig.Settings.SceneView.DefaultProjection) {
-                AppConfig.Settings.SceneView.DefaultProjection = Scene.ActiveCamera.ProjectionMode;
+            if (Scene.Controller.CameraMode != AppConfig.Settings.SceneView.CameraMode) {
+                AppConfig.Settings.SceneView.CameraMode = Scene.Controller.CameraMode;
                 AppConfig.Settings.Save();
             }
             if (Math.Abs(Scene.Controller.MoveSpeed - AppConfig.Settings.SceneView.MoveSpeed) > 0.001f) {
