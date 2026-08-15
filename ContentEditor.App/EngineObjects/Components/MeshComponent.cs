@@ -185,16 +185,26 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         }
         if (mesh != null) {
             ref readonly var transform = ref GameObject.Transform.WorldTransform;
-            context.RenderPreview(mesh, transform, new MeshPreviewRenderOptions(
-                PreviewDisplayMode,
-                HiddenPreviewSubmeshIndices,
-                HighlightedSubmeshIndices,
-                EditSubmeshIndices,
-                Scene?.WireframeOverlay == true,
-                EditWireframeOverlay,
-                ShowEditVertices,
-                EditVertexPointSize
-            ));
+            if (PreviewDisplayMode == MeshDisplayMode.Default
+                && HiddenPreviewSubmeshIndices?.Count is not > 0
+                && HighlightedSubmeshIndices?.Count is not > 0
+                && Scene?.WireframeOverlay != true
+                && !EditWireframeOverlay
+                && !ShowEditVertices) {
+                context.RenderSimple(mesh, transform);
+            } 
+            else {
+                context.RenderPreview(mesh, transform, new MeshPreviewRenderOptions(
+                    PreviewDisplayMode,
+                    HiddenPreviewSubmeshIndices,
+                    HighlightedSubmeshIndices,
+                    EditSubmeshIndices,
+                    Scene?.WireframeOverlay == true,
+                    EditWireframeOverlay,
+                    ShowEditVertices,
+                    EditVertexPointSize
+                ));
+            }
         }
     }
 

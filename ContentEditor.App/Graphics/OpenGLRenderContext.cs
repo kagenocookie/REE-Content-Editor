@@ -473,17 +473,12 @@ public sealed class OpenGLRenderContext : RenderContext
     public override void RenderPreview(MeshHandle handle, in Matrix4x4 transform, in MeshPreviewRenderOptions options)
     {
         handle.PrepareSubmeshParts();
-        if (options.DisplayMode == MeshDisplayMode.Default && options.HiddenSubmeshIndices?.Count is not > 0) {
-            RenderSimple(handle, transform);
-        } 
-        else {
-            var previewMaterial = options.DisplayMode == MeshDisplayMode.Default
-                ? null
-                : GetMeshPreviewMaterial(handle, options.DisplayMode == MeshDisplayMode.Solid ? BuiltInMaterials.Solid : BuiltInMaterials.Wireframe);
-            foreach (var (submeshIndex, materialIndex) in handle.EnabledSubmeshIndices) {
-                if (options.HiddenSubmeshIndices?.Contains(submeshIndex) == true) continue;
-                Batch.Simple.Add(new NormalRenderBatchItem(previewMaterial ?? handle.GetMaterial(materialIndex), handle.GetMesh(submeshIndex), transform, handle));
-            }
+        var previewMaterial = options.DisplayMode == MeshDisplayMode.Default
+            ? null
+            : GetMeshPreviewMaterial(handle, options.DisplayMode == MeshDisplayMode.Solid ? BuiltInMaterials.Solid : BuiltInMaterials.Wireframe);
+        foreach (var (submeshIndex, materialIndex) in handle.EnabledSubmeshIndices) {
+            if (options.HiddenSubmeshIndices?.Contains(submeshIndex) == true) continue;
+            Batch.Simple.Add(new NormalRenderBatchItem(previewMaterial ?? handle.GetMaterial(materialIndex), handle.GetMesh(submeshIndex), transform, handle));
         }
 
         if (options.HighlightedSubmeshIndices?.Count > 0) {
