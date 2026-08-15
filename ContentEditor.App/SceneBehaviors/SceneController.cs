@@ -193,10 +193,6 @@ public class SceneController(Scene scene)
                 if (CameraMode != SceneCameraMode.FPSCamera) {
                     cameraPivot += translation;
                 }
-            } else if (buttons == MouseButtonFlags.Left) {
-                Scene.ActiveCamera.GameObject.Transform.TranslateForwardAligned(new Vector3(-delta.X, 0, delta.Y) * -0.04f);
-            } else if ((buttons & (MouseButtonFlags.Left|MouseButtonFlags.Right)) != 0) {
-                Scene.ActiveCamera.GameObject.Transform.TranslateForwardAligned(new Vector3(delta.X, -delta.Y, 0) * 0.04f);
             }
         }
     }
