@@ -167,7 +167,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             scene.Type = SceneType.Independent;
             scene.Root.Controller.Keyboard = EditorWindow.CurrentWindow.LastKeyboard;
             scene.Root.Controller.MoveSpeed = AppConfig.Settings.MeshViewer.MoveSpeed;
-            scene.Root.Controller.UseMeshViewerCameraBindings = true;
+            scene.Root.Controller.CameraModeChanged += SaveMeshViewerCameraMode;
             scene.OwnRenderContext.AddDefaultSceneGizmos();
             scene.AddWidget<SceneVisibilitySettings>();
         }
@@ -297,15 +297,18 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     {
         if (scene == null) return;
         var changed = false;
-        if (scene.Controller.CameraMode != AppConfig.Settings.MeshViewer.CameraMode) {
-            AppConfig.Settings.MeshViewer.CameraMode = scene.Controller.CameraMode;
-            changed = true;
-        }
         if (Math.Abs(scene.Controller.MoveSpeed - AppConfig.Settings.MeshViewer.MoveSpeed) > 0.001f) {
             AppConfig.Settings.MeshViewer.MoveSpeed = scene.Controller.MoveSpeed;
             changed = true;
         }
         if (changed) AppConfig.Settings.Save();
+    }
+
+    private static void SaveMeshViewerCameraMode(SceneCameraMode mode)
+    {
+        if (AppConfig.Settings.MeshViewer.CameraMode == mode) return;
+        AppConfig.Settings.MeshViewer.CameraMode = mode;
+        AppConfig.Settings.Save();
     }
 
     private bool ShowMenu(MeshViewerContext mainCtx)
@@ -1424,6 +1427,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     {
         Handle?.References.Remove(this);
         if (scene != null) {
+            scene.Root.Controller.CameraModeChanged -= SaveMeshViewerCameraMode;
             meshEditor.Dispose();
             _skeletonBuilder?.Dispose();
             _skeletonBuilder = null;

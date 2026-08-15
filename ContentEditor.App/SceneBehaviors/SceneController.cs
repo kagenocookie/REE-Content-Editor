@@ -18,8 +18,8 @@ public class SceneController(Scene scene)
     public float MoveSpeed { get; set; } = 8f;
     public float RotateSpeed { get; set; } = 2f;
     public float ZoomSpeed { get; set; } = 2f;
-    public bool UseMeshViewerCameraBindings { get; set; }
     public SceneCameraMode CameraMode { get; private set; } = SceneCameraMode.FPSCamera;
+    public event Action<SceneCameraMode>? CameraModeChanged;
 
     private float camYaw, camPitch;
     private bool orbitCameraDrag;
@@ -115,6 +115,7 @@ public class SceneController(Scene scene)
 
     public void SetCameraMode(SceneCameraMode mode, bool resetCamera = false)
     {
+        var changed = CameraMode != mode;
         CameraMode = mode;
         Scene.ActiveCamera.ProjectionMode = mode == SceneCameraMode.OrthoCamera
             ? CameraProjection.Orthographic
@@ -126,22 +127,18 @@ public class SceneController(Scene scene)
             EnsureCameraPivot();
         }
         if (resetCamera) ResetCameraToScene();
+        if (changed) CameraModeChanged?.Invoke(mode);
     }
 
     public void OnMouseDragStart(IMouse mouse, ImGuiMouseButton startButton, Vector2 position)
     {
-        var startCameraDrag = startButton == ImGuiMouseButton.Right;
-        orbitCameraDrag = startCameraDrag && CameraMode != SceneCameraMode.FPSCamera;
-        var initializeMouseDragDepth = orbitCameraDrag;
-        if (UseMeshViewerCameraBindings) {
-            var rotateBinding = GetCameraRotateBinding();
-            var startRotateDrag = IsDragStartBinding(rotateBinding, startButton);
-            var translateBinding = GetCameraTranslateBinding();
-            var startTranslateDrag = IsDragStartBinding(translateBinding, startButton);
-            startCameraDrag = startRotateDrag || startTranslateDrag;
-            orbitCameraDrag = startRotateDrag && CameraMode != SceneCameraMode.FPSCamera;
-            initializeMouseDragDepth = orbitCameraDrag || startTranslateDrag && IsCameraMouseDragBinding(translateBinding);
-        }
+        var rotateBinding = GetCameraRotateBinding();
+        var startRotateDrag = IsDragStartBinding(rotateBinding, startButton);
+        var translateBinding = GetCameraTranslateBinding();
+        var startTranslateDrag = IsDragStartBinding(translateBinding, startButton);
+        var startCameraDrag = startRotateDrag || startTranslateDrag;
+        orbitCameraDrag = startRotateDrag && CameraMode != SceneCameraMode.FPSCamera;
+        var initializeMouseDragDepth = orbitCameraDrag || startTranslateDrag && IsCameraMouseDragBinding(translateBinding);
         if (startCameraDrag) {
             mouse.Cursor.CursorMode = CursorMode.Disabled;
             dragMode = DragMode.Rotation;
@@ -172,18 +169,12 @@ public class SceneController(Scene scene)
     public void OnMouseDrag(MouseButtonFlags buttons, Vector2 position, Vector2 delta)
     {
         if (dragMode == DragMode.Rotation) {
-            var rotateCamera = buttons == MouseButtonFlags.Right;
-            var invertRotationDrag = false;
-            var translateWithMouseDrag = false;
-            var invertTranslationDrag = false;
-            if (UseMeshViewerCameraBindings) {
-                var rotateBinding = GetCameraRotateBinding();
-                rotateCamera = IsDragBindingActive(rotateBinding, buttons);
-                invertRotationDrag = IsCameraMouseDragBinding(rotateBinding) && GetCameraRotateInvert();
-                var translateBinding = GetCameraTranslateBinding();
-                translateWithMouseDrag = IsCameraMouseDragBinding(translateBinding) && IsDragBindingActive(translateBinding, buttons);
-                invertTranslationDrag = GetCameraTranslateInvert();
-            }
+            var rotateBinding = GetCameraRotateBinding();
+            var rotateCamera = IsDragBindingActive(rotateBinding, buttons);
+            var invertRotationDrag = IsCameraMouseDragBinding(rotateBinding) && GetCameraRotateInvert();
+            var translateBinding = GetCameraTranslateBinding();
+            var translateWithMouseDrag = IsCameraMouseDragBinding(translateBinding) && IsDragBindingActive(translateBinding, buttons);
+            var invertTranslationDrag = GetCameraTranslateInvert();
             if (rotateCamera) {
                 var multiplier = 0.002f * RotateSpeed;
                 if (invertRotationDrag) multiplier = -multiplier;
@@ -220,23 +211,15 @@ public class SceneController(Scene scene)
                 _ => SceneCameraMode.FPSCamera,
             };
             SetCameraMode(nextMode);
-            if (UseMeshViewerCameraBindings) {
-                AppConfig.Settings.MeshViewer.CameraMode = nextMode;
-            } else {
-                AppConfig.Settings.SceneView.CameraMode = nextMode;
-            }
-            AppConfig.Settings.Save();
         }
         keypad5WasDown = keypad5Down;
 
         var translateCamera = dragMode == DragMode.Rotation;
-        if (UseMeshViewerCameraBindings) {
-            var binding = GetCameraTranslateBinding();
-            var fpsCamera = CameraMode == SceneCameraMode.FPSCamera;
-            translateCamera = translateCamera && !IsCameraMouseDragBinding(binding)
-                && binding.IsDown(allowExtraShift: fpsCamera)
-                && (!binding.wasd || IsCameraTranslationKeyPressed());
-        }
+        var binding = GetCameraTranslateBinding();
+        var fpsCamera = CameraMode == SceneCameraMode.FPSCamera;
+        translateCamera = translateCamera && !IsCameraMouseDragBinding(binding)
+            && binding.IsDown(allowExtraShift: fpsCamera)
+            && (!binding.wasd || IsCameraTranslationKeyPressed());
         if (translateCamera) {
             var moveVec = new Vector3();
             if (Keyboard.IsKeyPressed(Key.W)) moveVec.Z -= 1;

@@ -228,16 +228,14 @@ public class SceneMouseHandler(Scene scene)
     {
         if (scene.Controller.ZoomSpeed > 0) {
             float wheel = MouseWheelDelta.Y;
-            if (scene.Controller.UseMeshViewerCameraBindings) {
-                var zoomBinding = scene.Controller.GetCameraZoomBinding();
-                if (zoomBinding.Key == ImGuiKey.MouseWheelY) {
-                    if (!zoomBinding.AreModifiersDown()) wheel = 0;
-                } else {
-                    wheel = IsViewportHovered && zoomBinding.IsPressed() ? 1 : 0;
-                }
-                if (zoomBinding.Key is ImGuiKey.MouseRight or ImGuiKey.MouseMiddle && scene.Controller.GetCameraZoomInvert()) {
-                    wheel = -wheel;
-                }
+            var zoomBinding = scene.Controller.GetCameraZoomBinding();
+            if (zoomBinding.Key == ImGuiKey.MouseWheelY) {
+                if (!zoomBinding.AreModifiersDown()) wheel = 0;
+            } else {
+                wheel = IsViewportHovered && zoomBinding.IsPressed() ? 1 : 0;
+            }
+            if (zoomBinding.Key is ImGuiKey.MouseRight or ImGuiKey.MouseMiddle && scene.Controller.GetCameraZoomInvert()) {
+                wheel = -wheel;
             }
             if (Math.Abs(wheel) > float.Epsilon) {
                 scene.Controller.ZoomCamera(wheel);

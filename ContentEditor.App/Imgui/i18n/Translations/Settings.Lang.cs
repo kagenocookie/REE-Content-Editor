@@ -46,7 +46,7 @@ public static partial class Lang
         public static readonly FixedString Group_Global = "Global";
         public static readonly FixedString Group_Pak = "Pak Browser";
         public static readonly FixedString Group_Scene = "Scene";
-        public static readonly FixedString Group_Mesh = "Mesh Viewer";
+        public static readonly FixedString Group_Mesh = "3D Controls";
         public static readonly FixedString Group_Texture = "Texture Viewer";
         public static readonly FixedString Group_UVS = "UVS Editor";
         public static readonly FixedString Group_Resident = "Resident Evil";
