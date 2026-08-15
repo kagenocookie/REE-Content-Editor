@@ -280,56 +280,63 @@ public class OverlaysWindow : IWindowHandler
         }
         var animT = hotkeyHintAnimStartTime < 0f ? 1f : Math.Clamp(((float)ImGui.GetTime() - hotkeyHintAnimStartTime) / 0.5f, 0f, 1f);
         var animEase = animT * animT * (3f - 2f * animT);
+
+        var style = ImGui.GetStyle();
+        var lineH = ImGui.GetTextLineHeight();
         var descW = currGroup.HotkeyList.Max(x => ImGui.CalcTextSize(x.Description).X);
         var hotkeyW = currGroup.HotkeyList.Where(x => x.Hotkey is not null).Select(x => ImGui.CalcTextSize(x.Hotkey!()).X).Max();
-        var hintOverlayW = Math.Max(250, descW + hotkeyW + ImGui.GetStyle().ItemSpacing.X + ImGui.GetStyle().WindowPadding.X * 2);
-        var pos = new Vector2(size.X - hintOverlayW - ImGui.GetStyle().WindowPadding.X * 3, ImGui.GetStyle().WindowPadding.Y * 3);
+        var hintOverlayW = Math.Max(250, descW + hotkeyW + style.ItemSpacing.X + style.WindowPadding.X * 2);
+        var hkCount = currGroup.HotkeyList.Count;
 
-        ImGui.SetNextWindowPos(pos, ImGuiCond.Always);
-        ImGui.SetNextWindowSize(new Vector2(hintOverlayW, 0), ImGuiCond.Always);
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, ImGui.GetStyle().WindowRounding);
-        ImGui.PushStyleVar(ImGuiStyleVar.Alpha, animEase);
-        if (ImGui.Begin("##HotkeyHints", ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoNav | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoTitleBar)) {
-            var drawList = ImGui.GetWindowDrawList();
-            var windowPos = ImGui.GetWindowPos();
-            var windowSize = ImGui.GetWindowSize();
-            var revealH = windowSize.Y * animEase;
-            var headerColor = ImGui.GetColorU32(Colors.IconOverlay);
-
-            drawList.PushClipRect(windowPos, windowPos + new Vector2(windowSize.X, revealH), true);
-            drawList.AddRectFilled(windowPos, windowPos + new Vector2(windowSize.X, 34 * UI.UIScale), headerColor);
-            drawList.AddRectFilled(new Vector2(windowPos.X + windowSize.X - 4, windowPos.Y), windowPos + windowSize, headerColor);
-
-            ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.WindowBg));
-            ImGui.Text("Hotkeys: " + currGroup.GroupName);
-            ImGui.PopStyleColor();
-            ImGui.Spacing();
-            if (ImGui.BeginTable("##HotkeyTable", 2, ImGuiTableFlags.RowBg)) {
-                ImGui.TableSetupColumn("Description", ImGuiTableColumnFlags.WidthStretch);
-                ImGui.TableSetupColumn("Hotkey", ImGuiTableColumnFlags.WidthFixed, hotkeyW);
-
-                foreach (var hotkey in currGroup.HotkeyList) {
-                    if (hotkey.IsSeparator) {
-                        ImGui.TableNextRow();
-                        ImGui.TableSetColumnIndex(0);
-
-                        ImGui.SeparatorText(hotkey.Description);
-                        continue;
-                    }
-                    ImGui.TableNextRow();
-
-                    ImGui.TableSetColumnIndex(0);
-                    ImGui.Text(hotkey.Description);
-
-                    ImGui.TableSetColumnIndex(1);
-                    ImGui.TextDisabled(hotkey.Hotkey!());
-                }
-                ImGui.EndTable();
-            }
-            drawList.PopClipRect();
+        var rowH = new float[hkCount];
+        var rowOffsetH = new float[hkCount];
+        float cursorH = style.WindowPadding.Y + lineH + style.ItemSpacing.Y;
+        for (int i = 0; i < hkCount; i++) {
+            var hk = currGroup.HotkeyList[i];
+            var h = hk.IsSeparator ? lineH + style.SeparatorTextPadding.Y * 2f : lineH + style.CellPadding.Y * 2f;
+            rowOffsetH[i] = cursorH;
+            rowH[i] = h;
+            cursorH += h;
         }
-        ImGui.End();
-        ImGui.PopStyleVar(2);
+
+        var windowPos = new Vector2(size.X - hintOverlayW - style.WindowPadding.X * 3, style.WindowPadding.Y * 3);
+        var windowSize = new Vector2(hintOverlayW, cursorH + style.WindowPadding.Y);
+        var revealH = windowSize.Y * animEase;
+        var drawList = ImGui.GetForegroundDrawList();
+        var headerColor = ImGui.GetColorU32(Colors.IconOverlay);
+        var textColor = ImGui.GetColorU32(ImGuiCol.Text);
+
+        ImGui.PushStyleVar(ImGuiStyleVar.Alpha, animEase);
+        drawList.AddRectFilled(windowPos, windowPos + windowSize, ImGui.GetColorU32(ImGuiCol.WindowBg), style.WindowRounding);
+        drawList.PushClipRect(windowPos, windowPos + new Vector2(windowSize.X, revealH), true);
+        drawList.AddRectFilled(windowPos, windowPos + new Vector2(windowSize.X, 34 * UI.UIScale), headerColor);
+        drawList.AddRectFilled(new Vector2(windowPos.X + windowSize.X - 4, windowPos.Y), windowPos + windowSize, headerColor);
+
+        var headerText = "Hotkeys: " + currGroup.GroupName;
+        drawList.AddText(new Vector2(windowPos.X + style.WindowPadding.X, windowPos.Y + style.WindowPadding.Y), ImGui.GetColorU32(ImGuiCol.WindowBg), headerText);
+
+        var column0W = windowPos.X + style.WindowPadding.X;
+        var column1W = windowPos.X + windowSize.X - style.WindowPadding.X - hotkeyW;
+        int rowIDX = 0;
+        for (int i = 0; i < hkCount; i++) {
+            var hk = currGroup.HotkeyList[i];
+            var rowMin = new Vector2(windowPos.X, windowPos.Y + rowOffsetH[i]);
+            var rowMax = new Vector2(windowPos.X + windowSize.X, windowPos.Y + rowOffsetH[i] + rowH[i]);
+
+            if (hk.IsSeparator) {
+                var sepH = rowMin.Y + rowH[i] * 0.5f;
+                drawList.AddText(new Vector2(column0W, rowMin.Y + style.SeparatorTextPadding.Y), textColor, hk.Description);
+                drawList.AddLine(new Vector2(column0W + ImGui.CalcTextSize(hk.Description).X + style.ItemSpacing.X, sepH), new Vector2(rowMax.X - style.WindowPadding.X, sepH), ImGui.GetColorU32(ImGuiCol.Separator), 2f * UI.UIScale);
+                continue;
+            }
+
+            drawList.AddRectFilled(rowMin, rowMax, ImGui.GetColorU32(rowIDX++ % 2 == 0 ? ImGuiCol.TableRowBg : ImGuiCol.TableRowBgAlt));
+            drawList.AddText(new Vector2(column0W, rowMin.Y + style.CellPadding.Y), textColor, hk.Description);
+            drawList.AddText(new Vector2(column1W, rowMin.Y + style.CellPadding.Y), ImGui.GetColorU32(ImGuiCol.TextDisabled), hk.Hotkey!());
+        }
+
+        drawList.PopClipRect();
+        ImGui.PopStyleVar();
     }
     public bool RequestClose()
     {
