@@ -84,7 +84,7 @@ public class ConsoleWindow : IWindowHandler, IKeepEnabledWhileSaving
             ImguiHelpers.Tabs(tabs, ref currentTab, true);
             ImGui.SameLine();
             var list = GetListForTab(currentTab);
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_LogCopyAll, new[] {Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary})) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_LogCopyAll, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary])) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(string.Join("\n", list.Select(l => l.message)), "Copied!");
             }
             ImguiHelpers.Tooltip("Copy All");

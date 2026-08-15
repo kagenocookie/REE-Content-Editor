@@ -101,17 +101,17 @@ public class ChainEditMode : EditModeHandler
             }
         }
 
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FileType_ChainNew, new[] {Colors.IconSecondary, Colors.IconPrimary}, null, "New Chain")) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FileType_ChainNew, [Colors.IconSecondary, Colors.IconPrimary], null, "New Chain")) {
             filePath = Scene.Workspace.ResourceManager.CreateNewFile(KnownFileFormats.Chain)!.Filepath;
         }
         if (Chain2Available) {
             ImGui.SameLine();
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FileType_Chain2New, new[] { Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary }, null, "New Chain2")) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FileType_Chain2New, [Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary], null, "New Chain2")) {
                 filePath = Scene.Workspace.ResourceManager.CreateNewFile(KnownFileFormats.Chain2)!.Filepath;
             }
         }
         ImGui.SameLine();
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FileType_CLSPNew, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary }, null, "New CLSP")) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FileType_CLSPNew, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary], null, "New CLSP")) {
             filePath = Scene.Workspace.ResourceManager.CreateNewFile(KnownFileFormats.CollisionShapePreset)!.Filepath;
         }
 

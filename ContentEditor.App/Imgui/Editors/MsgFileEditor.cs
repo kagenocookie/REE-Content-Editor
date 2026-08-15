@@ -275,14 +275,14 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
         ImguiHelpers.Tooltip("Create new entry"u8);
         using (var _ = ImguiHelpers.Disabled(!(selectedRow >= 0 && selectedRow < File.Entries.Count))) {
             ImGui.SameLine();
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_Copy, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_Copy, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary])) {
                 var data = new MessageData(File.Entries[selectedRow], Filename, "");
                 EditorWindow.CurrentWindow?.CopyToClipboard(data.ToJson().ToJsonString(), "Entry copied!");
             }
             ImguiHelpers.Tooltip("Copy entry"u8);
         }
         ImGui.SameLine();
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_Paste, new[] {Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary})) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_Paste, [Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary])) {
             var clipboard = EditorWindow.CurrentWindow?.GetClipboard();
             if (clipboard != null) {
                 try {

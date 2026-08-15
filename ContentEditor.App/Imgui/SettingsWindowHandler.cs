@@ -394,6 +394,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImguiKeybinding(Lang.Settings.Bind_HomePage, config.Key_HomePage);
         ImguiKeybinding(Lang.Settings.Bind_OpenPakBrowser, config.Key_OpenPakBrowser);
         ImguiKeybinding(Lang.Settings.Bind_OpenMacroShelf, config.Key_OpenMacroShelf);
+        ImguiKeybinding(Lang.Settings.Bind_ShowHotkeyHints, config.Key_HotkeyHint);
     }
     private void ShowHotkeysPakBrowserTab()
     {

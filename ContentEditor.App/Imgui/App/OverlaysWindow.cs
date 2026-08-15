@@ -1,7 +1,7 @@
-using System.Numerics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
+using System.Numerics;
 
 namespace ContentEditor.App;
 
@@ -50,6 +50,9 @@ public class OverlaysWindow : IWindowHandler
         ShowTimedTooltip();
         ShowBackgroundTasks(size);
         ShowToasts(size);
+        if (AppConfig.Instance.Key_HotkeyHint.Get().IsDown()) {
+            ShowHotkeyHints(size);
+        }
     }
 
     private void ShowHelpText(Vector2 size)
@@ -185,6 +188,156 @@ public class OverlaysWindow : IWindowHandler
         public int ID { get; } = id;
     }
 
+    private class HotkeyHintGroup
+    {
+        public required FixedString GroupName { get; set; }
+        public List<HotkeyHint> HotkeyList { get; set; } = new();
+    }
+    private class HotkeyHint
+    {
+        public required FixedString Description { get; set; }
+        public Func<string>? Hotkey { get; set; }
+        public bool IsSeparator { get; set; }
+    }
+    private static readonly HotkeyHintGroup globalHotkeys = new()
+    {
+        GroupName = Lang.Settings.Group_Global, HotkeyList = {
+            new HotkeyHint { Description = Lang.Settings.Bind_Undo, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Undo.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_Redo, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Redo.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_Copy, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Copy.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_Paste, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Paste.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_Open, Hotkey = () => AppImguiHelpers.FormatHotkeyString( AppConfig.Instance.Key_Open.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_Save, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Save.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_Close, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Close.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_HomePage, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_HomePage.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_OpenPakBrowser, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_OpenPakBrowser.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_OpenMacroShelf, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_OpenMacroShelf.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_ShowHotkeyHints, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_HotkeyHint.Get())},
+        }
+    };
+    private static readonly HotkeyHintGroup pakBrowserHotkeys = new() {
+        GroupName = Lang.Settings.Group_Pak, HotkeyList = {
+            new HotkeyHint { Description = Lang.Settings.Bind_Back, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Back.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_PakBrowser_OpenBookmarks, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_PakBrowser_OpenBookmarks.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_PakBrowser_Bookmark, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_PakBrowser_Bookmark.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_PakBrowser_JumpToPageTop, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_PakBrowser_JumpToPageTop.Get())},
+        }
+    };
+    private static readonly HotkeyHintGroup meshViewerHotkeys = new() {
+        GroupName = Lang.Settings.Group_Mesh, HotkeyList = {
+            new HotkeyHint { Description = Lang.Settings.Section_Animator, IsSeparator = true},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_PauseAnim, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_PauseAnim.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_NextAnimFrame, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_NextAnimFrame.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_PrevAnimFrame, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_PrevAnimFrame.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_IncreaseAnimSpeed, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_IncreaseAnimSpeed.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_DecreaseAnimSpeed, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_DecreaseAnimSpeed.Get())},
+        }
+    };
+    private static readonly HotkeyHintGroup textureViewerHotkeys = new() {
+        GroupName = Lang.Settings.Group_Texture, HotkeyList = {
+            new HotkeyHint { Description = Lang.Settings.Bind_TextureViewer_ResetView, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_TextureViewer_ResetView.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_TextureViewer_ZoomIn, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_TextureViewer_ZoomIn.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_TextureViewer_ZoomOut, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_TextureViewer_ZoomOut.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_TextureViewer_NextChannel, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_TextureViewer_NextChannel.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_TextureViewer_PrevChannel, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_TextureViewer_PrevChannel.Get())},
+        }
+    };
+    private static readonly HotkeyHintGroup sceneHotkeys = new() {
+        GroupName = Lang.Settings.Group_Scene, HotkeyList = {
+            new HotkeyHint {Description = Lang.Settings.Bind_Scene_Focus3D, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Scene_Focus3D.Get())},
+            new HotkeyHint {Description = Lang.Settings.Bind_Scene_FocusUI, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Scene_FocusUI.Get())},
+            new HotkeyHint {Description = Lang.Settings.Bind_Scene_Hide, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Scene_Hide.Get())},
+            new HotkeyHint {Description = Lang.Settings.Bind_Scene_UnhideAll, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Scene_UnhideAll.Get())},
+            new HotkeyHint {Description = Lang.Settings.Bind_Scene_Delete, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_Scene_Delete.Get())},
+        }
+    };
+    private static readonly HotkeyHintGroup uvsHotkeys = new() {
+        GroupName = Lang.Settings.Group_UVS, HotkeyList = {
+            new HotkeyHint {Description = Lang.Settings.Bind_UVS_Pause, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_UVS_Pause.Get())},
+            new HotkeyHint {Description = Lang.Settings.Bind_UVS_NextPattern, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_UVS_NextPattern.Get())},
+            new HotkeyHint {Description = Lang.Settings.Bind_UVS_PrevPattern, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_UVS_PrevPattern.Get())},
+            new HotkeyHint {Description = Lang.Settings.Bind_UVS_IncreaseSpeed, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_UVS_IncreaseSpeed.Get())},
+            new HotkeyHint {Description = Lang.Settings.Bind_UVS_DecreaseSpeed, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_UVS_DecreaseSpeed.Get())},
+        }
+    };
+    private static object? lastWinHandler = null;
+    private static float hotkeyHintAnimStartTime = -1f;
+
+    public static void ShowHotkeyHints(Vector2 size)
+    {
+        var currWinHandler = EditorWindow.CurrentWindow?.FocusedWindow?.Handler;
+        var currGroup = currWinHandler switch {
+            ContentEditor.App.PakBrowser => pakBrowserHotkeys,
+            ContentEditor.App.MeshViewer => meshViewerHotkeys,
+            ContentEditor.App.TextureViewer => textureViewerHotkeys,
+            ContentEditor.App.SceneView => sceneHotkeys,
+            ContentEditor.App.ImguiHandling.UVSequenceFileEditor => uvsHotkeys,
+            _ => globalHotkeys
+        };
+        if (currWinHandler != lastWinHandler) {
+            lastWinHandler = currWinHandler;
+            hotkeyHintAnimStartTime = (float)ImGui.GetTime();
+        }
+        var animT = hotkeyHintAnimStartTime < 0f ? 1f : Math.Clamp(((float)ImGui.GetTime() - hotkeyHintAnimStartTime) / 0.5f, 0f, 1f);
+        var animEase = animT * animT * (3f - 2f * animT);
+
+        var style = ImGui.GetStyle();
+        var lineH = ImGui.GetTextLineHeight();
+        var descW = currGroup.HotkeyList.Max(x => ImGui.CalcTextSize(x.Description).X);
+        var hotkeyW = currGroup.HotkeyList.Where(x => x.Hotkey is not null).Select(x => ImGui.CalcTextSize(x.Hotkey!()).X).Max();
+        var hintOverlayW = Math.Max(250, descW + hotkeyW + style.ItemSpacing.X + style.WindowPadding.X * 2);
+        var hkCount = currGroup.HotkeyList.Count;
+
+        var rowH = new float[hkCount];
+        var rowOffsetH = new float[hkCount];
+        float cursorH = style.WindowPadding.Y + lineH + style.ItemSpacing.Y;
+        for (int i = 0; i < hkCount; i++) {
+            var hk = currGroup.HotkeyList[i];
+            var h = hk.IsSeparator ? lineH + style.SeparatorTextPadding.Y * 2f : lineH + style.CellPadding.Y * 2f;
+            rowOffsetH[i] = cursorH;
+            rowH[i] = h;
+            cursorH += h;
+        }
+
+        var windowPos = new Vector2(size.X - hintOverlayW - style.WindowPadding.X * 3, style.WindowPadding.Y * 3);
+        var windowSize = new Vector2(hintOverlayW, cursorH + style.WindowPadding.Y);
+        var revealH = windowSize.Y * animEase;
+        var drawList = ImGui.GetForegroundDrawList();
+        var headerColor = ImGui.GetColorU32(Colors.IconOverlay);
+        var textColor = ImGui.GetColorU32(ImGuiCol.Text);
+
+        ImGui.PushStyleVar(ImGuiStyleVar.Alpha, animEase);
+        drawList.AddRectFilled(windowPos, windowPos + windowSize, ImGui.GetColorU32(ImGuiCol.WindowBg), style.WindowRounding);
+        drawList.PushClipRect(windowPos, windowPos + new Vector2(windowSize.X, revealH), true);
+        drawList.AddRectFilled(windowPos, windowPos + new Vector2(windowSize.X, 34 * UI.UIScale), headerColor);
+        drawList.AddRectFilled(new Vector2(windowPos.X + windowSize.X - 4, windowPos.Y), windowPos + windowSize, headerColor);
+
+        var headerText = "Hotkeys: " + currGroup.GroupName;
+        drawList.AddText(new Vector2(windowPos.X + style.WindowPadding.X, windowPos.Y + style.WindowPadding.Y), ImGui.GetColorU32(ImGuiCol.WindowBg), headerText);
+
+        var column0W = windowPos.X + style.WindowPadding.X;
+        var column1W = windowPos.X + windowSize.X - style.WindowPadding.X - hotkeyW;
+        int rowIDX = 0;
+        for (int i = 0; i < hkCount; i++) {
+            var hk = currGroup.HotkeyList[i];
+            var rowMin = new Vector2(windowPos.X, windowPos.Y + rowOffsetH[i]);
+            var rowMax = new Vector2(windowPos.X + windowSize.X, windowPos.Y + rowOffsetH[i] + rowH[i]);
+
+            if (hk.IsSeparator) {
+                var sepH = rowMin.Y + rowH[i] * 0.5f;
+                drawList.AddText(new Vector2(column0W, rowMin.Y + style.SeparatorTextPadding.Y), textColor, hk.Description);
+                drawList.AddLine(new Vector2(column0W + ImGui.CalcTextSize(hk.Description).X + style.ItemSpacing.X, sepH), new Vector2(rowMax.X - style.WindowPadding.X, sepH), ImGui.GetColorU32(ImGuiCol.Separator), 2f * UI.UIScale);
+                continue;
+            }
+
+            drawList.AddRectFilled(rowMin, rowMax, ImGui.GetColorU32(rowIDX++ % 2 == 0 ? ImGuiCol.TableRowBg : ImGuiCol.TableRowBgAlt));
+            drawList.AddText(new Vector2(column0W, rowMin.Y + style.CellPadding.Y), textColor, hk.Description);
+            drawList.AddText(new Vector2(column1W, rowMin.Y + style.CellPadding.Y), ImGui.GetColorU32(ImGuiCol.TextDisabled), hk.Hotkey!());
+        }
+
+        drawList.PopClipRect();
+        ImGui.PopStyleVar();
+    }
     public bool RequestClose()
     {
         return false;

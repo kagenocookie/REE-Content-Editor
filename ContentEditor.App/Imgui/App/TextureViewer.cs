@@ -513,7 +513,7 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
             }
             ImGui.SameLine();
 
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_SaveAs, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary })) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_SaveAs, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary])) {
                 var baseName = PathUtils.GetFilepathWithoutExtensionOrVersion(texturePath ?? texture.Path);
                 var fileFilter = FileFilters.TextureFile;
                 var currentTexExt = fileHandle?.Loader is TextureLoader ? PathUtils.GetFilenameExtensionWithSuffixes(texture.Path).ToString() : null;
@@ -530,14 +530,14 @@ public class TextureViewer : IWindowHandler, IDisposable, IFileHandleReferenceHo
             if (fileHandle?.Format.format == KnownFileFormats.Texture && workspace.CurrentBundle != null) {
                 if (!fileHandle.IsInBundle(workspace, workspace.CurrentBundle)) {
                     ImGui.SameLine();
-                    if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveTo, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
+                    if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveTo, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary])) {
                         SaveToBundle(workspace, false);
                     }
                     ImguiHelpers.Tooltip("Save to Bundle");
                 }
 
                 ImGui.SameLine();
-                if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveAsNew, new[] { Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary })) {
+                if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleSaveAsNew, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary])) {
                     SaveToBundle(workspace, true);
                 }
                 ImguiHelpers.Tooltip("Save to Bundle as New File");

@@ -39,6 +39,8 @@ public static partial class Lang
         public static readonly FixedString Menu_DataGeneration = "Data Generation";
         public static readonly FixedString Menu_Windows = "Windows";
         public static readonly FixedString Menu_Scenes = "Scenes";
+        public static readonly FixedString Menu_SetupFileAssociations = "Setup File Type Associations";
+        public static readonly FixedString Menu_SetupFileAssociations_Linux_FreezeWarning = "System might freeze for a couple of seconds...";
 
         public static readonly InterpolatedString<string> Tooltip_Undo = "Undo ({0})";
         public static readonly InterpolatedString<string> Tooltip_Redo = "Redo ({0})";
@@ -58,5 +60,33 @@ public static partial class Lang
         public static readonly FixedString CreateNew_Lua = "Lua Script";
         public static readonly IconString Scenes_New = new IconString("{0} New scene", AppIcons.SI_GenericAdd);
         public static readonly IconString Hint_SearchRecentFiles = new IconString("{0} Search Recent Files", AppIcons.SI_GenericMagnifyingGlass);
+
+        public static readonly FixedString Button_OpenFile = "Open File";
+        public static readonly IconString Button_SupportDev = new IconString("{0} Support Development", AppIcons.SI_GenericHeart);
+        public static readonly FixedString Tooltip_BrowseFiles = "Browse Game Files";
+        public static readonly FixedString Tooltip_ThemeEditor = "Theme Editor";
+        public static readonly FixedString Tooltip_Settings = "Settings";
+        public static readonly FixedString Tooltip_GitHub = "GitHub";
+        public static readonly FixedString Tooltip_Wiki = "Wiki";
+        public static readonly FixedString Tooltip_Discord = "Discord";
+        public static readonly FixedString Tooltip_NewVersion = "New version available!";
+        public static readonly InterpolatedString<string> Tooltip_LatestVersion = "New version {0} available!";
+        public static readonly FixedString Tooltip_FirstTimeSetup_Theme = "You can modify or create new custom themes through Edit > Theme Editor.";
+        public static readonly FixedString Tooltip_FirstTimeSetup_SceneBGColor = "You can change this color at any time in Settings > Display > Theme.";
+        public static readonly FixedString Tooltip_FirstTimeSetup_CustomGame = "Select this if you wish to configure a game outside of the predefined list.\nCustom games may not fully work.";
+        public static readonly FixedString Tooltip_FirstTimeSetup_CustomGameNote = "This is a custom defined game. The app may need an upgrade to fully support all files, some files may not load correctly.";
+        public static readonly FixedString Tooltip_FirstTimeSetup_GamePath = "This is the path to the game (where the .exe file is located).";
+        public static readonly FixedString Tab_FirstTimeSetup = "First Time Setup";
+        public static readonly FixedString Tab_Bundles = "Bundles";
+        public static readonly FixedString Tab_Updates_A = "Updates *";
+        public static readonly FixedString Tab_Updates_B = "Updates";
+        public static readonly FixedString Tab_LatestChanges = "Latest Changes";
+        public static readonly FixedString Tab_GameSetup = "Game Setup";
+        public static readonly FixedString Sep_ThemeColor = "Choose a theme and color";
+        public static readonly FixedString Sep_ChooseGame = "Choose the game you wish to mod";
+        public static readonly FixedString FirstTimeSetup_Note = "Complete the First Time Setup to select a game.";
+        public static readonly FixedString FirstTimeSetup_CustomGame = "Custom Game";
+        public static readonly InterpolatedString<string> AppVersion = "Version: {0}";
+
     }
 }
