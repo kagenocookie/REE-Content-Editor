@@ -88,7 +88,8 @@ internal sealed partial class MainLoop : IDisposable
             if (game != null) {
                 window.SetWorkspace(game, null);
             }
-            Task.Delay(openDelayMs).ContinueWith(_ => {
+            Task.Delay(openDelayMs).ContinueWith(async _ => {
+                while (!window.IsReady || window.Workspace == null) await Task.Delay(100);
                 window.InvokeFromUIThread(() => {
                     if (game == null) {
                         window.Overlays.ShowToast(15f, """
@@ -100,7 +101,8 @@ internal sealed partial class MainLoop : IDisposable
                 });
             });
         } else {
-            Task.Delay(openDelayMs).ContinueWith(_ => {
+            Task.Delay(openDelayMs).ContinueWith(async _ => {
+                while (!window.IsReady || window.Workspace == null) await Task.Delay(100);
                 window.InvokeFromUIThread(() => {
                     (windows.First() as EditorWindow)?.OpenFiles(filepaths);
                 });
