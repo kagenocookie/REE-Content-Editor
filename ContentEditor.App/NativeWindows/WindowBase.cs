@@ -531,7 +531,7 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         _gl.Enable(Silk.NET.OpenGL.EnableCap.DepthTest);
         _gl.ClearColor(System.Drawing.Color.FromArgb(ClearColor.BGRA));
         _gl.Clear(ClearBufferMask.ColorBufferBit|ClearBufferMask.DepthBufferBit);
-        ImGui.PushFont(null, UI.FontSize);
+        ImGui.PushFont(ImFontPtr.Null, UI.FontSize);
 
         Render((float)delta);
         HandleExtDragDrop();

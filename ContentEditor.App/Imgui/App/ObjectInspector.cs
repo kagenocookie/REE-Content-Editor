@@ -46,7 +46,7 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
             ImGui.TextColored(Colors.Faded, "No object selected");
             return;
         }
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FileDuplicate, new[] { Colors.IconSecondary, ImguiHelpers.GetColor(ImGuiCol.Text), ImguiHelpers.GetColor(ImGuiCol.Text) })) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FileDuplicate, [Colors.IconSecondary, ImguiHelpers.GetColor(ImGuiCol.Text), ImguiHelpers.GetColor(ImGuiCol.Text)])) {
             if (parentWindow is IInspectorController inspectorController) {
                 var newInspector = inspectorController.Inspector.AddInspector(_target);
             } else {
