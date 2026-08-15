@@ -15,6 +15,7 @@ using ContentEditor.Core;
 using ContentEditor.Reversing;
 using ContentPatcher;
 using ReeLib;
+using ReeLib.Common;
 using ReeLib.Data;
 using ReeLib.Efx;
 using ReeLib.Tools;
@@ -878,6 +879,15 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                         }
                     }
                     ImGui.EndMenu();
+                }
+            }
+            ImGui.Separator();
+            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+                if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Home.Menu_SetupFileAssociations))) {
+                    Logger.Warn(Lang.Home.Menu_SetupFileAssociations_Linux_FreezeWarning);
+                    Task.Delay(1000).ContinueWith(_ => {
+                        InvokeFromUIThread(FileTypeHelpers.SetupLinuxFileRegistrations);
+                    });
                 }
             }
             ImGui.Separator();

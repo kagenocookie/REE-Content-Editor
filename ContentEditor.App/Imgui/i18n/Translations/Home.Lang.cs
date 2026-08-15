@@ -39,6 +39,8 @@ public static partial class Lang
         public static readonly FixedString Menu_DataGeneration = "Data Generation";
         public static readonly FixedString Menu_Windows = "Windows";
         public static readonly FixedString Menu_Scenes = "Scenes";
+        public static readonly FixedString Menu_SetupFileAssociations = "Setup File Type Associations";
+        public static readonly FixedString Menu_SetupFileAssociations_Linux_FreezeWarning = "System might freeze for a couple of seconds...";
 
         public static readonly InterpolatedString<string> Tooltip_Undo = "Undo ({0})";
         public static readonly InterpolatedString<string> Tooltip_Redo = "Redo ({0})";
