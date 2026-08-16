@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
@@ -35,19 +36,33 @@ public sealed class MeshPreviewRenderOptions
         || ShowEditVertices && EditSubmeshIndices?.Count > 0;
 }
 
-public readonly record struct ViewportDepthRegion(int X, int Y, int Width, int Height, float[] Values)
+public sealed class ViewportDepthRegion(int x, int y, int width, int height, float[] values) : IDisposable
 {
+    private float[]? values = values;
+
+    public int X { get; } = x;
+    public int Y { get; } = y;
+    public int Width { get; } = width;
+    public int Height { get; } = height;
+
     public bool TryGetDepth(Vector2 viewportPosition, out float depth)
     {
         var localX = (int)MathF.Floor(viewportPosition.X) - X;
         var localY = (int)MathF.Floor(viewportPosition.Y) - Y;
-        if ((uint)localX >= (uint)Width || (uint)localY >= (uint)Height) {
+        var buffer = values;
+        if (buffer == null || (uint)localX >= (uint)Width || (uint)localY >= (uint)Height) {
             depth = 1.0f;
             return false;
         }
 
-        depth = Values[(Height - localY - 1) * Width + localX];
+        depth = buffer[(Height - localY - 1) * Width + localX];
         return true;
+    }
+
+    public void Dispose()
+    {
+        var buffer = Interlocked.Exchange(ref values, null);
+        if (buffer != null) ArrayPool<float>.Shared.Return(buffer);
     }
 }
 

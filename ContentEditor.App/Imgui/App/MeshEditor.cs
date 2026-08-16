@@ -731,7 +731,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
         var min = Vector2.Min(start, end);
         var max = Vector2.Max(start, end);
         var camera = subscribedScene.ActiveCamera;
-        var depth = ReadSelectionDepth(min, max);
+        using var depth = ReadSelectionDepth(min, max);
         var boxedSubmeshes = new HashSet<SubmeshReference>();
         var boxedArmatures = new HashSet<MeshViewerContext>();
 
@@ -919,7 +919,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
         }
         candidates.Sort(static (left, right) => left.distanceSquared.CompareTo(right.distanceSquared));
 
-        var depth = ReadSelectionDepth(
+        using var depth = ReadSelectionDepth(
             viewportPosition - new Vector2(vertexSelectionRadius),
             viewportPosition + new Vector2(vertexSelectionRadius));
         VertexReference? closest = null;
@@ -944,7 +944,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
         var min = Vector2.Min(start, end);
         var max = Vector2.Max(start, end);
         var camera = subscribedScene.ActiveCamera;
-        var depth = ReadSelectionDepth(min, max);
+        using var depth = ReadSelectionDepth(min, max);
         var boxVertices = new HashSet<VertexReference>();
         foreach (var vertex in EnumerateEditableVertices()) {
             var world = GetVertexWorldPosition(vertex, vertex.Buffer.Positions[vertex.Index]);

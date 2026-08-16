@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Diagnostics;
 using System.Numerics;
 using ContentEditor.App.FileLoaders;
@@ -675,14 +676,22 @@ public sealed class OpenGLRenderContext : RenderContext
         height = bottom - top;
         if (width <= 0 || height <= 0) return null;
 
-        var values = new float[width * height];
         GL.GetInteger(GLEnum.ReadFramebufferBinding, out var previousFramebuffer);
-        GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, _outputBuffer);
-        fixed (float* output = values) {
-            GL.ReadPixels(left, viewportHeight - bottom, (uint)width, (uint)height, PixelFormat.DepthComponent, PixelType.Float, output);
+        var values = ArrayPool<float>.Shared.Rent(checked(width * height));
+        try {
+            GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, _outputBuffer);
+            fixed (float* output = values) {
+                GL.ReadPixels(left, viewportHeight - bottom, (uint)width, (uint)height, PixelFormat.DepthComponent, PixelType.Float, output);
+            }
+            return new ViewportDepthRegion(left, top, width, height, values);
+        } 
+        catch {
+            ArrayPool<float>.Shared.Return(values);
+            throw;
+        } 
+        finally {
+            GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, (uint)previousFramebuffer);
         }
-        GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, (uint)previousFramebuffer);
-        return new ViewportDepthRegion(left, top, width, height, values);
     }
 
     private unsafe void UpdateRenderTarget()
