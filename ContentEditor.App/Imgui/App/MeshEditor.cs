@@ -483,7 +483,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
             var handle = context.Component.MeshHandle;
             if (handle == null || !context.GameObject.ShouldDraw) continue;
 
-            var hit = handle.Handle.GetIntersection(ray, context.GameObject.Transform.WorldTransform, context.Component.HiddenPreviewSubmeshIndices);
+            var hit = handle.Handle.GetIntersection(ray, context.GameObject.Transform.WorldTransform, context.Component.PreviewRenderOptions?.HiddenSubmeshIndices);
             if (!hit.IsHit || hit.distanceSquared >= closestDistance) continue;
             closestContext = context;
             closestSubmesh = hit.meshIndex;
@@ -1676,20 +1676,39 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
     private void ApplyRenderState()
     {
         foreach (var context in Viewer.MeshContexts) {
-            context.Component.PreviewDisplayMode = DisplayMode;
             var selectedIndices = selectedSubmeshes
                 .Where(submesh => submesh.Context == context)
                 .Select(submesh => submesh.Index)
                 .ToHashSet();
-            context.Component.HiddenPreviewSubmeshIndices = IsEnabled
+            var hiddenIndices = IsEnabled
                 ? hiddenSubmeshes.Where(submesh => submesh.Context == context).Select(submesh => submesh.Index).ToHashSet()
                 : null;
-            context.Component.HighlightedSubmeshIndices = IsEnabled && interactionMode == EditorInteractionMode.Object ? selectedIndices : null;
+            var highlightedIndices = IsEnabled && interactionMode == EditorInteractionMode.Object ? selectedIndices : null;
             var editMode = IsEnabled && interactionMode == EditorInteractionMode.Edit;
-            context.Component.EditSubmeshIndices = editMode ? selectedIndices : null;
-            context.Component.EditWireframeOverlay = editMode;
-            context.Component.ShowEditVertices = editMode && selectedIndices.Count > 0;
-            context.Component.EditVertexPointSize = GetAdaptiveVertexPointSize(context);
+            var editIndices = editMode ? selectedIndices : null;
+            var wireframeOverlay = context.Component.Scene?.WireframeOverlay == true;
+            var showEditVertices = editMode && selectedIndices.Count > 0;
+            var previewActive = DisplayMode != MeshDisplayMode.Default
+                || hiddenIndices?.Count > 0
+                || highlightedIndices?.Count > 0
+                || wireframeOverlay
+                || editMode && editIndices?.Count > 0
+                || showEditVertices;
+            if (!previewActive) {
+                context.Component.PreviewRenderOptions = null;
+                continue;
+            }
+
+            var options = context.Component.PreviewRenderOptions ?? new MeshPreviewRenderOptions();
+            options.DisplayMode = DisplayMode;
+            options.HiddenSubmeshIndices = hiddenIndices;
+            options.HighlightedSubmeshIndices = highlightedIndices;
+            options.EditSubmeshIndices = editIndices;
+            options.WireframeOverlay = wireframeOverlay;
+            options.EditWireframeOverlay = editMode;
+            options.ShowEditVertices = showEditVertices;
+            options.EditVertexPointSize = GetAdaptiveVertexPointSize(context);
+            context.Component.PreviewRenderOptions = options;
         }
         renderStateDirty = false;
     }
@@ -1698,7 +1717,8 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
     {
         if (!IsEnabled || interactionMode != EditorInteractionMode.Edit) return;
         foreach (var context in selectedSubmeshes.Select(submesh => submesh.Context).Distinct()) {
-            context.Component.EditVertexPointSize = GetAdaptiveVertexPointSize(context);
+            var options = context.Component.PreviewRenderOptions;
+            if (options != null) options.EditVertexPointSize = GetAdaptiveVertexPointSize(context);
         }
     }
 

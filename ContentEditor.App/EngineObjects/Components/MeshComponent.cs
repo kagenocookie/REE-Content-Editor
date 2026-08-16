@@ -21,13 +21,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
     private MaterialGroup? material;
 
     public MeshHandle? MeshHandle => mesh;
-    public MeshDisplayMode PreviewDisplayMode { get; set; }
-    public IReadOnlySet<int>? HiddenPreviewSubmeshIndices { get; set; }
-    public IReadOnlySet<int>? HighlightedSubmeshIndices { get; set; }
-    public IReadOnlySet<int>? EditSubmeshIndices { get; set; }
-    public bool EditWireframeOverlay { get; set; }
-    public bool ShowEditVertices { get; set; }
-    public float EditVertexPointSize { get; set; } = 6.0f;
+    public MeshPreviewRenderOptions? PreviewRenderOptions { get; set; }
 
     public override AABB LocalBounds => mesh?.BoundingBox ?? AABB.Invalid;
 
@@ -63,6 +57,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
     internal override void OnActivate()
     {
         base.OnActivate();
+        SetWireframeOverlay(Scene!.WireframeOverlay);
 
         RefreshIfActive();
     }
@@ -185,27 +180,25 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         }
         if (mesh != null) {
             ref readonly var transform = ref GameObject.Transform.WorldTransform;
-            if (PreviewDisplayMode == MeshDisplayMode.Default
-                && HiddenPreviewSubmeshIndices?.Count is not > 0
-                && HighlightedSubmeshIndices?.Count is not > 0
-                && Scene?.WireframeOverlay != true
-                && !EditWireframeOverlay
-                && !ShowEditVertices) {
+            var previewOptions = PreviewRenderOptions;
+            if (previewOptions == null) {
                 context.RenderSimple(mesh, transform);
-            } 
-            else {
-                context.RenderPreview(mesh, transform, new MeshPreviewRenderOptions(
-                    PreviewDisplayMode,
-                    HiddenPreviewSubmeshIndices,
-                    HighlightedSubmeshIndices,
-                    EditSubmeshIndices,
-                    Scene?.WireframeOverlay == true,
-                    EditWireframeOverlay,
-                    ShowEditVertices,
-                    EditVertexPointSize
-                ));
+            } else {
+                context.RenderPreview(mesh, transform, previewOptions);
             }
         }
+    }
+
+    internal void SetWireframeOverlay(bool enabled)
+    {
+        var options = PreviewRenderOptions;
+        if (options == null) {
+            if (!enabled) return;
+            options = PreviewRenderOptions = new MeshPreviewRenderOptions();
+        }
+
+        options.WireframeOverlay = enabled;
+        if (!options.IsActive) PreviewRenderOptions = null;
     }
 
     public void CollectPickables(PickableData data)

@@ -16,16 +16,24 @@ public enum MeshDisplayMode
     Wireframe,
 }
 
-public readonly record struct MeshPreviewRenderOptions(
-    MeshDisplayMode DisplayMode,
-    IReadOnlySet<int>? HiddenSubmeshIndices,
-    IReadOnlySet<int>? HighlightedSubmeshIndices,
-    IReadOnlySet<int>? EditSubmeshIndices,
-    bool WireframeOverlay,
-    bool EditWireframeOverlay,
-    bool ShowEditVertices,
-    float EditVertexPointSize
-);
+public sealed class MeshPreviewRenderOptions
+{
+    public MeshDisplayMode DisplayMode { get; set; }
+    public IReadOnlySet<int>? HiddenSubmeshIndices { get; set; }
+    public IReadOnlySet<int>? HighlightedSubmeshIndices { get; set; }
+    public IReadOnlySet<int>? EditSubmeshIndices { get; set; }
+    public bool WireframeOverlay { get; set; }
+    public bool EditWireframeOverlay { get; set; }
+    public bool ShowEditVertices { get; set; }
+    public float EditVertexPointSize { get; set; } = 6.0f;
+
+    public bool IsActive => DisplayMode != MeshDisplayMode.Default
+        || HiddenSubmeshIndices?.Count > 0
+        || HighlightedSubmeshIndices?.Count > 0
+        || WireframeOverlay
+        || EditWireframeOverlay && EditSubmeshIndices?.Count > 0
+        || ShowEditVertices && EditSubmeshIndices?.Count > 0;
+}
 
 public readonly record struct ViewportDepthRegion(int X, int Y, int Width, int Height, float[] Values)
 {
@@ -101,7 +109,7 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
     /// Render a simple mesh (static, single mesh with no animation)
     /// </summary>
     public abstract void RenderSimple(MeshHandle handle, in Matrix4x4 transform);
-    public abstract void RenderPreview(MeshHandle handle, in Matrix4x4 transform, in MeshPreviewRenderOptions options);
+    public abstract void RenderPreview(MeshHandle handle, in Matrix4x4 transform, MeshPreviewRenderOptions options);
     public abstract void RenderInstanced(MeshHandle handle, List<Matrix4x4> transforms);
     public abstract ViewportDepthRegion? ReadViewportDepth(int x, int y, int width, int height);
 

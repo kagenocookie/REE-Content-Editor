@@ -470,7 +470,7 @@ public sealed class OpenGLRenderContext : RenderContext
         }
     }
 
-    public override void RenderPreview(MeshHandle handle, in Matrix4x4 transform, in MeshPreviewRenderOptions options)
+    public override void RenderPreview(MeshHandle handle, in Matrix4x4 transform, MeshPreviewRenderOptions options)
     {
         handle.PrepareSubmeshParts();
         var previewMaterial = options.DisplayMode == MeshDisplayMode.Default
