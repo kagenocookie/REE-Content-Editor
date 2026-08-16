@@ -72,11 +72,11 @@ public static partial class FileTypeHelpers
             mimes.Add(mimeType);
             sb.AppendLine($@"    <mime-type type=""{mimeType}"">");
             sb.AppendLine($"        <comment>{formatName}</comment>");
+            sb.AppendLine($@"        <sub-class-of type=""{GeneralMimeType}""/>");
             sb.AppendLine(@"        <icon name=""ContentEditor.App""/>");
             sb.AppendLine(@"        <magic priority=""60"">");
-            sb.AppendLine($@"            <match offset=""{offset}"" type=""little32"" value=""{magic}"" />");
+            sb.AppendLine($@"            <match offset=""{offset}"" type=""little32"" value=""0x{magic.ToString("X")}""/>");
             sb.AppendLine("        </magic>");
-            sb.AppendLine($@"       <sub-class-of type=""{GeneralMimeType}""/>");
 
             var altFormats = AltFormats.GetValueOrDefault(format) ?? [format];
             var exts = altFormats.SelectMany(fmt2 => FileFormatExtensions.KnownFileExtensions.Where(ext => FileFormatExtensions.ExtensionToEnum(ext) == fmt2)).ToArray();
