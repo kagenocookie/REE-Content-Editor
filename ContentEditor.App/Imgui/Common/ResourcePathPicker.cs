@@ -184,23 +184,23 @@ public class ResourcePathPicker : IObjectUIHandler
                         });
                 }
             }
-            if (workspace.CurrentBundle != null && ImGui.Selectable("Save to bundle ...")) {
-                if (workspace.ResourceManager.TryResolveGameFile(currentPath, out var file)) {
-                    var wnd = EditorWindow.CurrentWindow!;
-                    SaveFileToBundle(workspace, file, (savePath, localPath, nativePath) => {
-                        if (!file.Save(workspace, savePath)) return false;
+            if (workspace.CurrentBundle != null) {
+                var saveToB = ImGui.Selectable(Lang.Buttons.SaveToBundle);
+                var saveBundleNew = ImGui.Selectable(Lang.Buttons.SaveToBundleNewFile);
+                if (saveToB || saveBundleNew) {
+                    if (workspace.ResourceManager.TryResolveGameFile(currentPath, out var file)) {
+                        var wnd = EditorWindow.CurrentWindow!;
+                        SaveFileToBundle(workspace, file, (savePath, localPath, nativePath) => {
+                            if (!file.Save(workspace, savePath)) return false;
 
-                        Logger.Info("File saved to " + savePath);
-                        if (delayedSaveCallback != null) {
-
-                        }
-                        delayedSaveCallback?.Invoke(nativePath);
-                        return true;
-                    });
-                } else {
-                    Logger.Error("File could not be found!");
+                            Logger.Info("File saved to " + savePath);
+                            delayedSaveCallback?.Invoke(nativePath);
+                            return true;
+                        }, useNewTargetPath: saveBundleNew);
+                    } else {
+                        Logger.Error("File could not be found!");
+                    }
                 }
-                ImGui.CloseCurrentPopup();
             }
             if (ImGui.Selectable("Find files ...")) {
                 var exts = fileFilters ?? [];

@@ -568,7 +568,8 @@ public static class ImguiHelpers
 
         return changed;
     }
-    private static bool ContextMenuItemInternal( string id, ReadOnlySpan<char> icons, string label, ReadOnlySpan<Vector4> iconColors,  float iconPadding, float separatorPadding, float separatorWidth)
+
+    private static bool ContextMenuItemInternal(string id, ReadOnlySpan<char> icons, TranslatableBase label, ReadOnlySpan<Vector4> iconColors, float iconPadding, float separatorPadding, float separatorWidth)
     {
         var style = ImGui.GetStyle();
         var drawList = ImGui.GetWindowDrawList();
@@ -592,15 +593,16 @@ public static class ImguiHelpers
         drawList.AddRectFilled(new Vector2(x, min.Y + separatorPadding), new Vector2(x + separatorWidth, max.Y - separatorPadding), ImGui.GetColorU32(ImGuiCol.TextDisabled));
 
         x += separatorWidth + iconPadding;
-        drawList.AddText( new Vector2(x, textY), ImGui.GetColorU32(ImGuiCol.Text), label);
+        drawList.AddText(new Vector2(x, textY), ImGui.GetColorU32(ImGuiCol.Text), label);
 
         return activated;
     }
-    public static bool ContextMenuItem( string id, char icon, string label, Vector4 iconColor, float iconPadding = 6f, float separatorPadding = 4f, float separatorWidth = 2f)
+    public static bool ContextMenuItem(string id, char icon, TranslatableBase label, Vector4 iconColor, float iconPadding = 6f, float separatorPadding = 4f, float separatorWidth = 2f)
     {
-        return ContextMenuItemInternal(id, new ReadOnlySpan<char>(new[] { icon }), label, new ReadOnlySpan<Vector4>(new[] { iconColor }), iconPadding, separatorPadding, separatorWidth);
+        return ContextMenuItemInternal(id, [icon], label, [iconColor], iconPadding, separatorPadding, separatorWidth);
     }
-    public static bool ContextMenuItem( string id, char[] icons, string label, Vector4[] iconColors, float iconPadding = 6f, float separatorPadding = 4f, float separatorWidth = 2f)
+
+    public static bool ContextMenuItem(string id, char[] icons, TranslatableBase label, ReadOnlySpan<Vector4> iconColors, float iconPadding = 6f, float separatorPadding = 4f, float separatorWidth = 2f)
     {
         return ContextMenuItemInternal(id, icons, label, iconColors, iconPadding, separatorPadding, separatorWidth);
     }

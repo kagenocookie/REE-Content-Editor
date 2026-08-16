@@ -34,7 +34,12 @@ public static partial class Lang
         public static readonly FixedString OpenFileInEditor = "Open file in Editor";
         public static readonly FixedString EditTargetPathPopup = "EditTargetPath";
         public static readonly FixedString EditTargetPathHeader = "Edit Target Path";
-        public static readonly FixedString EditTargetPath_Description = "The final target file path this file should read as.\nThe platform specific natives/stm/ prefix will be automatically added\nduring patching or publishing and does not need to be included here.";
+        public static readonly FixedString EditTargetPath_Description = """
+            The final target file path this file should read as ingame, you can change it as needed.
+            If the file is already open in a file editor, you might need to re-open it after changing the target path for the editor to update.
+            It does not have to be identical to what the file is currently saved as and it will never be automatically changed.
+            The platform specific natives/stm/ prefix will be automatically added during patching or publishing and shouldn't be included here.
+            """;
         public static readonly FixedString BaseFilePath = "Base File Path";
         public static readonly FixedString BaseFilePath_Description = """
             The base game file to use for generating diffs and partial patching.
