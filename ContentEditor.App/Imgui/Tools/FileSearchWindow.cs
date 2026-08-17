@@ -684,7 +684,7 @@ public class FileSearchWindow : IWindowHandler
     private void InvokeSearchMsg(SearchContext context, string query)
     {
         var lang = Lang.CurrentLanguage;
-        foreach (var (path, stream) in context.Env.GetFilesWithExtension("msg", context.Token)) {
+        foreach (var (path, stream) in FindAllFiles("msg", context)) {
             try {
                 if (context.Token.IsCancellationRequested) return;
 
@@ -731,7 +731,7 @@ public class FileSearchWindow : IWindowHandler
             if (!context.Env.TryGetFileExtensionVersion(ext, out _)) {
                 continue;
             }
-            foreach (var (path, stream) in context.Env.GetFilesWithExtension(ext, context.Token)) {
+            foreach (var (path, stream) in FindAllFiles(ext, context)) {
                 try {
                     if (context.Token.IsCancellationRequested) return;
 
@@ -794,7 +794,7 @@ public class FileSearchWindow : IWindowHandler
             if (!context.Env.TryGetFileExtensionVersion(ext, out _)) {
                 continue;
             }
-            foreach (var (path, stream) in context.Env.GetFilesWithExtension(ext, context.Token)) {
+            foreach (var (path, stream) in FindAllFiles(ext, context)) {
                 try {
                     if (context.Token.IsCancellationRequested) return;
 
@@ -867,6 +867,31 @@ public class FileSearchWindow : IWindowHandler
         }
     }
 
+    private static IEnumerable<(string, Stream)> FindAllFiles(string extension, SearchContext context)
+    {
+        var bundle = context.Window.Workspace.CurrentBundle;
+        FileStream? fileStream = null;
+        try {
+            foreach (var (path, stream) in context.Env.GetFilesWithExtension(extension, context.Token)) {
+                if (bundle == null) {
+                    yield return (path, stream);
+                } else {
+                    var targetPath = context.Env.RemoveBasePath(path).ToString();
+                    if (bundle.TryFindResource(targetPath, out var bundleFile, out var bundleLocal) == true && File.Exists(Path.Combine(bundle.StoragePath, bundleLocal))) {
+                        fileStream = File.OpenRead(Path.Combine(bundle.StoragePath, bundleLocal));
+                        yield return (path, fileStream);
+                        fileStream?.Dispose();
+                        fileStream = null;
+                    } else {
+                        yield return (path, stream);
+                    }
+                }
+            }
+        } finally {
+            fileStream?.Dispose();
+        }
+    }
+
     private void InvokeRszSearchField(SearchContext context, string[] exts, Func<RszFileOption, FileHandler, BaseRszFile> fileFact, string filterType, bool array, object? queryValue)
     {
         var fieldTypes = RszFilterableFields[filterType];
@@ -890,7 +915,7 @@ public class FileSearchWindow : IWindowHandler
             if (!context.Env.TryGetFileExtensionVersion(ext, out _)) {
                 continue;
             }
-            foreach (var (path, stream) in context.Env.GetFilesWithExtension(ext, context.Token)) {
+            foreach (var (path, stream) in FindAllFiles(ext, context)) {
                 try {
                     if (context.Token.IsCancellationRequested) return;
 
@@ -1066,7 +1091,7 @@ public class FileSearchWindow : IWindowHandler
 
     private void InvokeSearchEfx(SearchContext context, EfxAttributeType type, string query)
     {
-        foreach (var (path, stream) in context.Env.GetFilesWithExtension("efx", context.Token)) {
+        foreach (var (path, stream) in FindAllFiles("efx", context)) {
             try {
                 if (context.Token.IsCancellationRequested) return;
 
@@ -1098,7 +1123,7 @@ public class FileSearchWindow : IWindowHandler
     private void InvokeSearchUvar(SearchContext context, Variable.TypeKind type, string query)
     {
         _ = Guid.TryParse(query, out var guid);
-        foreach (var (path, stream) in context.Env.GetFilesWithExtension("uvar", context.Token)) {
+        foreach (var (path, stream) in FindAllFiles("uvar", context)) {
             try {
                 if (context.Token.IsCancellationRequested) return;
 
@@ -1146,7 +1171,7 @@ public class FileSearchWindow : IWindowHandler
         if (string.IsNullOrEmpty(query)) {
             return;
         }
-        foreach (var (path, stream) in context.Env.GetFilesWithExtension("motlist", context.Token)) {
+        foreach (var (path, stream) in FindAllFiles("motlist", context)) {
             try {
                 if (context.Token.IsCancellationRequested) return;
 
@@ -1174,7 +1199,7 @@ public class FileSearchWindow : IWindowHandler
             }
         }
 
-        foreach (var (path, stream) in context.Env.GetFilesWithExtension("mot", context.Token)) {
+        foreach (var (path, stream) in FindAllFiles("mot", context)) {
             try {
                 if (context.Token.IsCancellationRequested) return;
 
@@ -1199,7 +1224,7 @@ public class FileSearchWindow : IWindowHandler
     private void InvokeSearchGui(SearchContext context, string query)
     {
         var hasGuid = Guid.TryParse(query, out var guid);
-        foreach (var (path, stream) in context.Env.GetFilesWithExtension("gui", context.Token)) {
+        foreach (var (path, stream) in FindAllFiles("gui", context)) {
 
             try {
                 if (context.Token.IsCancellationRequested) return;
@@ -1270,7 +1295,7 @@ public class FileSearchWindow : IWindowHandler
     private void InvokeSearchMdf2(SearchContext context, string query)
     {
         _ = uint.TryParse(query, out var hash);
-        foreach (var (path, stream) in context.Env.GetFilesWithExtension("mdf2", context.Token)) {
+        foreach (var (path, stream) in FindAllFiles("mdf2", context)) {
 
             try {
                 if (context.Token.IsCancellationRequested) return;
