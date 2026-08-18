@@ -20,6 +20,7 @@ public class MeshHandle
     public List<(int subMeshIndex, int matIndex)> EnabledSubmeshIndices { get; } = new();
 
     public IEnumerable<Mesh> Meshes => Handle.Meshes.AsReadOnly();
+    public int MeshCount => Handle.Meshes.Count;
     public AABB BoundingBox => Handle.BoundingBox;
     private readonly HashSet<int> DisabledParts = new(0);
     public bool IsEmpty => Handle.Meshes.Count == 0;

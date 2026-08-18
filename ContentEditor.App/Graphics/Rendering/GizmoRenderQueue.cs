@@ -15,6 +15,7 @@ public class GizmoRenderQueue(GL gl) : RenderQueue<GizmoRenderBatchItem>
         uint lastMaterialHash = uint.MaxValue;
         uint lastMeshId = uint.MaxValue;
         foreach (ref readonly var item in itemspan) {
+            gl.DepthFunc(item.allowEqualDepth ? DepthFunction.Lequal : DepthFunction.Less);
             if (lastShaderId != item.material.Shader.ID) {
                 item.material.Shader.Use();
                 context.BindMaterial(item.material);
@@ -30,8 +31,10 @@ public class GizmoRenderQueue(GL gl) : RenderQueue<GizmoRenderBatchItem>
             }
 
             item.material.BindModel(item.matrix);
+            item.meshHandle?.BindForRender(item.material);
 
-            gl.DrawArrays(item.mesh.MeshType, 0, (uint)item.mesh.Indices.Length);
+            gl.PointSize(item.pointSize);
+            gl.DrawArrays(item.primitiveType ?? item.mesh.MeshType, 0, (uint)item.mesh.Indices.Length);
         }
 
         gl.DepthFunc(DepthFunction.Greater);
@@ -53,8 +56,10 @@ public class GizmoRenderQueue(GL gl) : RenderQueue<GizmoRenderBatchItem>
 
             item.obscuredMaterial.BindModel(item.matrix);
 
-            gl.DrawArrays(item.mesh.MeshType, 0, (uint)item.mesh.Indices.Length);
+            gl.PointSize(item.pointSize);
+            gl.DrawArrays(item.primitiveType ?? item.mesh.MeshType, 0, (uint)item.mesh.Indices.Length);
         }
+        gl.PointSize(1.0f);
         gl.DepthFunc(DepthFunction.Less);
 
         Items.Clear();
@@ -67,15 +72,23 @@ public readonly struct GizmoRenderBatchItem : RenderQueueItem
     public readonly Mesh mesh;
     public readonly Matrix4x4 matrix;
     public readonly Material? obscuredMaterial;
+    public readonly MeshHandle? meshHandle;
+    public readonly bool allowEqualDepth;
+    public readonly PrimitiveType? primitiveType;
+    public readonly float pointSize;
 
     public readonly ulong SortingKey => unchecked((ulong)material.Shader.ID << 48) | ((ulong)material.Hash << 24) | (mesh.ID & 0xffffff);
 
-    public GizmoRenderBatchItem(Material material, Mesh mesh, Matrix4x4 matrix, Material? obscuredMaterial = null) : this()
+    public GizmoRenderBatchItem(Material material, Mesh mesh, Matrix4x4 matrix, Material? obscuredMaterial = null, MeshHandle? meshHandle = null, bool allowEqualDepth = false, PrimitiveType? primitiveType = null, float pointSize = 1.0f) : this()
     {
         this.material = material;
         this.mesh = mesh;
         this.matrix = matrix;
         this.obscuredMaterial = obscuredMaterial;
+        this.meshHandle = meshHandle;
+        this.allowEqualDepth = allowEqualDepth;
+        this.primitiveType = primitiveType;
+        this.pointSize = pointSize;
     }
     public GizmoRenderBatchItem(MeshHandle handle, int meshAndMatIndex, Matrix4x4 matrix, int obscuredMatIndex = -1) : this()
     {
@@ -83,5 +96,7 @@ public readonly struct GizmoRenderBatchItem : RenderQueueItem
         this.mesh = handle.Handle.Meshes[meshAndMatIndex];
         this.matrix = matrix;
         this.obscuredMaterial = obscuredMatIndex == -1 ? null : handle.Material.Materials[meshAndMatIndex];
+        this.meshHandle = handle;
+        this.pointSize = 1.0f;
     }
 }

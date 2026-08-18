@@ -1,7 +1,6 @@
 #ifdef VERTEX_PROGRAM
 
 #include "includes/vertex_attr.glsl";
-
 #include "includes/global.glsl";
 
 uniform mat4 uModel;
@@ -10,15 +9,16 @@ uniform mat4 uModel;
 #include "includes/anim_headers.glsl";
 #endif
 
-out vec3 worldPos;
+out vec3 fNorm;
 
 void main()
 {
 #include "includes/anim_vert.glsl";
 #include "includes/instance_transform.glsl";
-    vec4 wpos = transform * finalPosition;
-    worldPos = wpos.xyz;
-    gl_Position = uProjectionView * wpos;
+
+    gl_Position = uProjectionView * transform * finalPosition;
+    mat3 normalMatrix = transpose(inverse(mat3(transform)));
+    fNorm = normalize(normalMatrix * finalNorm);
 }
 #endif
 
@@ -26,20 +26,16 @@ void main()
 
 #include "includes/global.glsl";
 
+in vec3 fNorm;
 uniform vec4 _MainColor;
-uniform float _FadeMaxDistance;
-in vec3 worldPos;
 
 layout(location = 0) out vec4 FragColor;
 
 void main()
 {
-    float colorMult = 1.0;
-    if (_FadeMaxDistance < 1000000) {
-        colorMult = clamp(1 - length(uCameraPosition - worldPos) / _FadeMaxDistance, 0, 1);
-    }
-    FragColor = _MainColor * colorMult;
-    if (FragColor.a <= 0) discard;
+    vec4 fwd = vec4(0.0, 0.0, 1.0, 0.0) * uView;
+    float light = clamp(dot(fwd.xyz, normalize(fNorm)), 0.25, 1.0);
+    FragColor = vec4(_MainColor.rgb * light, _MainColor.a);
 }
 
 #endif

@@ -29,6 +29,8 @@ public abstract class Mesh : IDisposable
 
     public PrimitiveType MeshType { get; set; } = PrimitiveType.Triangles;
 
+    private bool ownsVertexData = true;
+
     protected Mesh()
     {
     }
@@ -135,6 +137,7 @@ public abstract class Mesh : IDisposable
         target.MeshGroup = MeshGroup;
         target.layout = layout;
         target.MeshType = MeshType;
+        target.ownsVertexData = false;
     }
 
     protected void CopyGeometryData(Mesh target)
@@ -148,5 +151,30 @@ public abstract class Mesh : IDisposable
         target.MeshGroup = MeshGroup;
         target.layout = layout;
         target.MeshType = MeshType;
+    }
+
+    public void UpdateVertexPositions(ReadOnlySpan<Vector3> positions)
+    {
+        if (!ownsVertexData) {
+            VertexData = (float[])VertexData.Clone();
+            ownsVertexData = true;
+        }
+
+        var vertexSize = layout.VertexSize;
+        var drawVertexCount = Math.Min(Indices.Length, VertexData.Length / vertexSize);
+        BoundingBox = AABB.MaxMin;
+        for (var drawVertex = 0; drawVertex < drawVertexCount; drawVertex++) {
+            var sourceVertex = Indices[drawVertex];
+            if ((uint)sourceVertex >= (uint)positions.Length) continue;
+
+            var position = positions[sourceVertex];
+            var offset = drawVertex * vertexSize;
+            VertexData[offset] = position.X;
+            VertexData[offset + 1] = position.Y;
+            VertexData[offset + 2] = position.Z;
+            BoundingBox = BoundingBox.Extend(position);
+        }
+
+        VBO.UpdateBuffer(VertexData);
     }
 }

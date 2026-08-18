@@ -192,7 +192,7 @@ public abstract class TranslatableBase : IComparable<TranslatableBase>
         _format = format;
     }
 
-    internal static byte[] GetNullTerminatedUTF8(string str)
+    public static byte[] GetNullTerminatedUTF8(string str)
     {
         int byteCount = Encoding.UTF8.GetByteCount(str);
         var bytes = new byte[byteCount + 1];

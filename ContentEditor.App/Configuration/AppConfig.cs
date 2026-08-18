@@ -100,6 +100,26 @@ public class AppConfig : Singleton<AppConfig>
         public const string Key_MeshViewer_PrevAnimFrame = "key_meshviewer_prevanimframe";
         public const string Key_MeshViewer_IncreaseAnimSpeed = "key_meshviewer_increaseanimspeed";
         public const string Key_MeshViewer_DecreaseAnimSpeed = "key_meshviewer_decreaseanimspeed";
+        public const string Key_MeshViewer_CameraTranslate = "key_meshviewer_fps_camera_translate";
+        public const string Key_MeshViewer_CameraRotate = "key_meshviewer_fps_camera_rotate";
+        public const string Key_MeshViewer_CameraZoom = "key_meshviewer_fps_camera_zoom";
+        public const string Key_MeshViewer_CameraTranslateInvert = "key_meshviewer_fps_camera_translate_invert";
+        public const string Key_MeshViewer_CameraRotateInvert = "key_meshviewer_fps_camera_rotate_invert";
+        public const string Key_MeshViewer_CameraZoomInvert = "key_meshviewer_fps_camera_zoom_invert";
+        public const string Key_MeshViewer_OrthoCameraTranslate = "key_meshviewer_ortho_camera_translate";
+        public const string Key_MeshViewer_OrthoCameraRotate = "key_meshviewer_ortho_camera_rotate";
+        public const string Key_MeshViewer_OrthoCameraZoom = "key_meshviewer_ortho_camera_zoom";
+        public const string Key_MeshViewer_OrthoCameraTranslateInvert = "key_meshviewer_ortho_camera_translate_invert";
+        public const string Key_MeshViewer_OrthoCameraRotateInvert = "key_meshviewer_ortho_camera_rotate_invert";
+        public const string Key_MeshViewer_OrthoCameraZoomInvert = "key_meshviewer_ortho_camera_zoom_invert";
+        public const string Key_MeshViewer_PivotCameraTranslate = "key_meshviewer_pivot_camera_translate";
+        public const string Key_MeshViewer_PivotCameraRotate = "key_meshviewer_pivot_camera_rotate";
+        public const string Key_MeshViewer_PivotCameraZoom = "key_meshviewer_pivot_camera_zoom";
+        public const string Key_MeshViewer_PivotCameraTranslateInvert = "key_meshviewer_pivot_camera_translate_invert";
+        public const string Key_MeshViewer_PivotCameraRotateInvert = "key_meshviewer_pivot_camera_rotate_invert";
+        public const string Key_MeshViewer_PivotCameraZoomInvert = "key_meshviewer_pivot_camera_zoom_invert";
+        public const string Key_MeshViewer_MoveGeometry = "key_meshviewer_move_geometry";
+        public const string Key_MeshViewer_SelectAll = "key_meshviewer_select_all";
         public const string Key_TextureViewer_ResetView = "key_textureviewer_resetview";
         public const string Key_TextureViewer_ZoomIn = "key_textureviewer_zoomin";
         public const string Key_TextureViewer_ZoomOut = "key_textureviewer_zoomout";
@@ -375,6 +395,26 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<KeyBinding> Key_MeshViewer_PrevAnimFrame = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_PrevAnimFrame, _lock, new KeyBinding(ImGuiKey.LeftArrow));
     public readonly SettingWrapper<KeyBinding> Key_MeshViewer_IncreaseAnimSpeed = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_IncreaseAnimSpeed, _lock, new KeyBinding(ImGuiKey.UpArrow));
     public readonly SettingWrapper<KeyBinding> Key_MeshViewer_DecreaseAnimSpeed = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_DecreaseAnimSpeed, _lock, new KeyBinding(ImGuiKey.DownArrow));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_CameraTranslate = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_CameraTranslate, _lock, new KeyBinding(ImGuiKey.MouseRight, wasd: true));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_CameraRotate = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_CameraRotate, _lock, new KeyBinding(ImGuiKey.MouseRight));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_CameraZoom = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_CameraZoom, _lock, new KeyBinding(ImGuiKey.MouseWheelY));
+    public readonly SettingWrapper<bool> Key_MeshViewer_CameraTranslateInvert = new SettingWrapper<bool>(Keys.Key_MeshViewer_CameraTranslateInvert, _lock, false);
+    public readonly SettingWrapper<bool> Key_MeshViewer_CameraRotateInvert = new SettingWrapper<bool>(Keys.Key_MeshViewer_CameraRotateInvert, _lock, false);
+    public readonly SettingWrapper<bool> Key_MeshViewer_CameraZoomInvert = new SettingWrapper<bool>(Keys.Key_MeshViewer_CameraZoomInvert, _lock, false);
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_OrthoCameraTranslate = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_OrthoCameraTranslate, _lock, new KeyBinding(ImGuiKey.MouseMiddle, shift: true));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_OrthoCameraRotate = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_OrthoCameraRotate, _lock, new KeyBinding(ImGuiKey.MouseMiddle));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_OrthoCameraZoom = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_OrthoCameraZoom, _lock, new KeyBinding(ImGuiKey.MouseWheelY));
+    public readonly SettingWrapper<bool> Key_MeshViewer_OrthoCameraTranslateInvert = new SettingWrapper<bool>(Keys.Key_MeshViewer_OrthoCameraTranslateInvert, _lock, true);
+    public readonly SettingWrapper<bool> Key_MeshViewer_OrthoCameraRotateInvert = new SettingWrapper<bool>(Keys.Key_MeshViewer_OrthoCameraRotateInvert, _lock, false);
+    public readonly SettingWrapper<bool> Key_MeshViewer_OrthoCameraZoomInvert = new SettingWrapper<bool>(Keys.Key_MeshViewer_OrthoCameraZoomInvert, _lock, false);
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_PivotCameraTranslate = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_PivotCameraTranslate, _lock, new KeyBinding(ImGuiKey.MouseMiddle, shift: true));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_PivotCameraRotate = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_PivotCameraRotate, _lock, new KeyBinding(ImGuiKey.MouseMiddle));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_PivotCameraZoom = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_PivotCameraZoom, _lock, new KeyBinding(ImGuiKey.MouseWheelY));
+    public readonly SettingWrapper<bool> Key_MeshViewer_PivotCameraTranslateInvert = new SettingWrapper<bool>(Keys.Key_MeshViewer_PivotCameraTranslateInvert, _lock, true);
+    public readonly SettingWrapper<bool> Key_MeshViewer_PivotCameraRotateInvert = new SettingWrapper<bool>(Keys.Key_MeshViewer_PivotCameraRotateInvert, _lock, false);
+    public readonly SettingWrapper<bool> Key_MeshViewer_PivotCameraZoomInvert = new SettingWrapper<bool>(Keys.Key_MeshViewer_PivotCameraZoomInvert, _lock, false);
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_MoveGeometry = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_MoveGeometry, _lock, new KeyBinding(ImGuiKey.G));
+    public readonly SettingWrapper<KeyBinding> Key_MeshViewer_SelectAll = new SettingWrapper<KeyBinding>(Keys.Key_MeshViewer_SelectAll, _lock, new KeyBinding(ImGuiKey.A));
     public readonly SettingWrapper<KeyBinding> Key_TextureViewer_ResetView = new SettingWrapper<KeyBinding>(Keys.Key_TextureViewer_ResetView, _lock, new KeyBinding(ImGuiKey.Keypad0, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_TextureViewer_ZoomIn = new SettingWrapper<KeyBinding>(Keys.Key_TextureViewer_ZoomIn, _lock, new KeyBinding(ImGuiKey.Equal, ctrl: true));
     public readonly SettingWrapper<KeyBinding> Key_TextureViewer_ZoomOut = new SettingWrapper<KeyBinding>(Keys.Key_TextureViewer_ZoomOut, _lock, new KeyBinding(ImGuiKey.Minus, ctrl: true));
@@ -566,6 +606,26 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.Key_MeshViewer_PrevAnimFrame, instance.Key_MeshViewer_PrevAnimFrame.value.ToString(), "Keys"),
             (Keys.Key_MeshViewer_IncreaseAnimSpeed, instance.Key_MeshViewer_IncreaseAnimSpeed.value.ToString(), "Keys"),
             (Keys.Key_MeshViewer_DecreaseAnimSpeed, instance.Key_MeshViewer_DecreaseAnimSpeed.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_CameraTranslate, instance.Key_MeshViewer_CameraTranslate.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_CameraRotate, instance.Key_MeshViewer_CameraRotate.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_CameraZoom, instance.Key_MeshViewer_CameraZoom.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_CameraTranslateInvert, instance.Key_MeshViewer_CameraTranslateInvert.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_CameraRotateInvert, instance.Key_MeshViewer_CameraRotateInvert.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_CameraZoomInvert, instance.Key_MeshViewer_CameraZoomInvert.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_OrthoCameraTranslate, instance.Key_MeshViewer_OrthoCameraTranslate.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_OrthoCameraRotate, instance.Key_MeshViewer_OrthoCameraRotate.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_OrthoCameraZoom, instance.Key_MeshViewer_OrthoCameraZoom.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_OrthoCameraTranslateInvert, instance.Key_MeshViewer_OrthoCameraTranslateInvert.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_OrthoCameraRotateInvert, instance.Key_MeshViewer_OrthoCameraRotateInvert.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_OrthoCameraZoomInvert, instance.Key_MeshViewer_OrthoCameraZoomInvert.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_PivotCameraTranslate, instance.Key_MeshViewer_PivotCameraTranslate.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_PivotCameraRotate, instance.Key_MeshViewer_PivotCameraRotate.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_PivotCameraZoom, instance.Key_MeshViewer_PivotCameraZoom.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_PivotCameraTranslateInvert, instance.Key_MeshViewer_PivotCameraTranslateInvert.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_PivotCameraRotateInvert, instance.Key_MeshViewer_PivotCameraRotateInvert.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_PivotCameraZoomInvert, instance.Key_MeshViewer_PivotCameraZoomInvert.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_MoveGeometry, instance.Key_MeshViewer_MoveGeometry.value.ToString(), "Keys"),
+            (Keys.Key_MeshViewer_SelectAll, instance.Key_MeshViewer_SelectAll.value.ToString(), "Keys"),
             (Keys.Key_TextureViewer_ResetView, instance.Key_TextureViewer_ResetView.value.ToString(), "Keys"),
             (Keys.Key_TextureViewer_ZoomIn, instance.Key_TextureViewer_ZoomIn.value.ToString(), "Keys"),
             (Keys.Key_TextureViewer_ZoomOut, instance.Key_TextureViewer_ZoomOut.value.ToString(), "Keys"),
@@ -840,6 +900,26 @@ public class AppConfig : Singleton<AppConfig>
                         case Keys.Key_MeshViewer_PrevAnimFrame: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_PrevAnimFrame.value = _key; break;
                         case Keys.Key_MeshViewer_IncreaseAnimSpeed: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_IncreaseAnimSpeed.value = _key; break;
                         case Keys.Key_MeshViewer_DecreaseAnimSpeed: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_DecreaseAnimSpeed.value = _key; break;
+                        case Keys.Key_MeshViewer_CameraTranslate: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_CameraTranslate.value = _key; break;
+                        case Keys.Key_MeshViewer_CameraRotate: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_CameraRotate.value = _key; break;
+                        case Keys.Key_MeshViewer_CameraZoom: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_CameraZoom.value = _key; break;
+                        case Keys.Key_MeshViewer_CameraTranslateInvert: Key_MeshViewer_CameraTranslateInvert.value = ReadBool(value); break;
+                        case Keys.Key_MeshViewer_CameraRotateInvert: Key_MeshViewer_CameraRotateInvert.value = ReadBool(value); break;
+                        case Keys.Key_MeshViewer_CameraZoomInvert: Key_MeshViewer_CameraZoomInvert.value = ReadBool(value); break;
+                        case Keys.Key_MeshViewer_OrthoCameraTranslate: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_OrthoCameraTranslate.value = _key; break;
+                        case Keys.Key_MeshViewer_OrthoCameraRotate: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_OrthoCameraRotate.value = _key; break;
+                        case Keys.Key_MeshViewer_OrthoCameraZoom: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_OrthoCameraZoom.value = _key; break;
+                        case Keys.Key_MeshViewer_OrthoCameraTranslateInvert: Key_MeshViewer_OrthoCameraTranslateInvert.value = ReadBool(value); break;
+                        case Keys.Key_MeshViewer_OrthoCameraRotateInvert: Key_MeshViewer_OrthoCameraRotateInvert.value = ReadBool(value); break;
+                        case Keys.Key_MeshViewer_OrthoCameraZoomInvert: Key_MeshViewer_OrthoCameraZoomInvert.value = ReadBool(value); break;
+                        case Keys.Key_MeshViewer_PivotCameraTranslate: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_PivotCameraTranslate.value = _key; break;
+                        case Keys.Key_MeshViewer_PivotCameraRotate: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_PivotCameraRotate.value = _key; break;
+                        case Keys.Key_MeshViewer_PivotCameraZoom: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_PivotCameraZoom.value = _key; break;
+                        case Keys.Key_MeshViewer_PivotCameraTranslateInvert: Key_MeshViewer_PivotCameraTranslateInvert.value = ReadBool(value); break;
+                        case Keys.Key_MeshViewer_PivotCameraRotateInvert: Key_MeshViewer_PivotCameraRotateInvert.value = ReadBool(value); break;
+                        case Keys.Key_MeshViewer_PivotCameraZoomInvert: Key_MeshViewer_PivotCameraZoomInvert.value = ReadBool(value); break;
+                        case Keys.Key_MeshViewer_MoveGeometry: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_MoveGeometry.value = _key; break;
+                        case Keys.Key_MeshViewer_SelectAll: if (KeyBinding.TryParse(value, out _key)) Key_MeshViewer_SelectAll.value = _key; break;
                         case Keys.Key_TextureViewer_ResetView: if (KeyBinding.TryParse(value, out _key)) Key_TextureViewer_ResetView.value = _key; break;
                         case Keys.Key_TextureViewer_ZoomIn: if (KeyBinding.TryParse(value, out _key)) Key_TextureViewer_ZoomIn.value = _key; break;
                         case Keys.Key_TextureViewer_ZoomOut: if (KeyBinding.TryParse(value, out _key)) Key_TextureViewer_ZoomOut.value = _key; break;
@@ -900,29 +980,40 @@ public struct KeyBinding : IEquatable<KeyBinding>
     public bool ctrl;
     public bool shift;
     public bool alt;
+    public bool wasd;
 
     private ImGuiKey ModKey => Key | (ctrl ? ImGuiKey.ModCtrl : 0) | (shift ? ImGuiKey.ModShift : 0) | (alt ? ImGuiKey.ModAlt : 0);
 
-    public KeyBinding(ImGuiKey key, bool ctrl = false, bool shift = false, bool alt = false)
+    public KeyBinding(ImGuiKey key, bool ctrl = false, bool shift = false, bool alt = false, bool wasd = false)
     {
         Key = key;
         this.ctrl = ctrl;
         this.shift = shift;
         this.alt = alt;
+        this.wasd = wasd;
     }
 
     public static bool TryParse(string str, out KeyBinding binding)
     {
+        var parts = str.Split('|');
+        str = parts[0];
+        for (var index = 1; index < parts.Length; index++) {
+            if (parts[index] != "WASD") {
+                binding = default;
+                return false;
+            }
+        }
+        var wasd = parts.AsSpan(1).Contains("WASD", StringComparer.Ordinal);
         var plus = str.IndexOf('+');
         if (plus == -1) {
             if (Enum.TryParse<ImGuiKey>(str, out var key)) {
-                binding = new KeyBinding(key);
+                binding = new KeyBinding(key, wasd: wasd);
                 return true;
             }
         } else {
             var mods = str.AsSpan().Slice(plus + 1);
             if (Enum.TryParse<ImGuiKey>(str.AsSpan().Slice(0, plus).TrimEnd(), out var key)) {
-                binding = new KeyBinding(key, ctrl: mods.Contains('C'), shift: mods.Contains('S'), alt: mods.Contains('A'));
+                binding = new KeyBinding(key, ctrl: mods.Contains('C'), shift: mods.Contains('S'), alt: mods.Contains('A'), wasd: wasd);
                 return true;
             }
         }
@@ -933,27 +1024,34 @@ public struct KeyBinding : IEquatable<KeyBinding>
     public bool IsPressed()
     {
         if (Key == ImGuiKey.None || !ImGui.IsKeyPressed(Key)) return false;
-        return AreModifierKeysDown();
+        return AreModifiersDown();
     }
 
-    public bool IsDown()
+    public bool IsDown(bool allowExtraShift = false)
     {
         if (Key == ImGuiKey.None || !ImGui.IsKeyDown(Key)) return false;
-        return AreModifierKeysDown();
+        return AreModifiersDown(allowExtraShift);
     }
 
-    public bool AreModifierKeysDown()
+    public bool AreModifiersDown(bool allowExtraShift = false)
     {
         // strictly check modifiers, so ctrl+shift+s doesn't trigger a ctrl+s hotkey
         if (ctrl != ImGui.IsKeyDown(ImGuiKey.ModCtrl)) return false;
-        if (shift != ImGui.IsKeyDown(ImGuiKey.ModShift)) return false;
+        var shiftDown = ImGui.IsKeyDown(ImGuiKey.ModShift);
+        if (shift ? !shiftDown : shiftDown && !allowExtraShift) return false;
         if (alt != ImGui.IsKeyDown(ImGuiKey.ModAlt)) return false;
+        if (Key != ImGuiKey.MouseRight && ImGui.IsKeyDown(ImGuiKey.MouseRight)) return false;
         return true;
     }
 
-    public bool Equals(KeyBinding other) => other.Key == Key && other.ctrl == ctrl && other.shift == shift && other.alt == alt;
+    public bool Equals(KeyBinding other) => other.Key == Key && other.ctrl == ctrl && other.shift == shift && other.alt == alt && other.wasd == wasd;
 
-    public override string ToString() => ctrl || shift || alt ? $"{Key}+{(ctrl ? "C" : "")}{(shift ? "S" : "")}{(alt ? "A" : "")}" : Key.ToString();
+    public override string ToString()
+    {
+        var key = ctrl || shift || alt ? $"{Key}+{(ctrl ? "C" : "")}{(shift ? "S" : "")}{(alt ? "A" : "")}" : Key.ToString();
+        if (wasd) key += "|WASD";
+        return key;
+    }
 }
 
 public class AppJsonSettings
@@ -1062,7 +1160,7 @@ public class RecentFileList : List<string>
 
 public record SceneViewSettings
 {
-    public CameraProjection DefaultProjection { get; set; } = CameraProjection.Perspective;
+    public SceneCameraMode CameraMode { get; set; } = SceneCameraMode.FPSCamera;
     public float MoveSpeed { get; set; } = 8f;
 }
 public record DevSettings
@@ -1150,9 +1248,20 @@ public record ImportSettings
 
 public record MeshViewerSettings
 {
-    public CameraProjection DefaultProjection { get; set; } = CameraProjection.Orthographic;
+    public const float DefaultEditorVertexSize = 6f;
+    public const float DefaultEditorVertexSelectionRadius = 14f;
+    public const float DefaultEditorMirrorRadius = 0.001f;
+
+    public SceneCameraMode CameraMode { get; set; } = SceneCameraMode.FPSCamera;
     public float MoveSpeed { get; set; } = 5f;
     public bool DisableRootMotion { get; set; } = true;
+    public float EditorVertexSize { get; set; } = DefaultEditorVertexSize;
+    public float EditorVertexSelectionRadius { get; set; } = DefaultEditorVertexSelectionRadius;
+    public bool EditorMirrorX { get; set; }
+    public bool EditorMirrorY { get; set; }
+    public bool EditorMirrorZ { get; set; }
+    public float EditorMirrorRadius { get; set; } = DefaultEditorMirrorRadius;
+    public bool EditorOptionsStayOnTop { get; set; }
 }
 
 public class BundleDefaults

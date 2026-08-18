@@ -6,11 +6,17 @@
 
 uniform mat4 uModel;
 
+#ifdef ENABLE_SKINNING
+#include "includes/anim_headers.glsl";
+#endif
+
 out vec3 barys;
 
 void main()
 {
-    gl_Position = uProjectionView * uModel * vec4(vPos, 1.0);
+#include "includes/anim_vert.glsl";
+#include "includes/instance_transform.glsl";
+    gl_Position = uProjectionView * transform * finalPosition;
     switch (vVertID % 3) {
         case 0: barys = vec3(1.0, 0.0, 0.0); break;
         case 1: barys = vec3(0.0, 1.0, 0.0); break;

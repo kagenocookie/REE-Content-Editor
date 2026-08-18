@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
@@ -8,6 +9,62 @@ using ReeLib;
 using ReeLib.via;
 
 namespace ContentEditor.App.Graphics;
+
+public enum MeshDisplayMode
+{
+    Default,
+    Solid,
+    Wireframe,
+}
+
+public sealed class MeshPreviewRenderOptions
+{
+    public MeshDisplayMode DisplayMode { get; set; }
+    public IReadOnlySet<int>? HiddenSubmeshIndices { get; set; }
+    public IReadOnlySet<int>? HighlightedSubmeshIndices { get; set; }
+    public IReadOnlySet<int>? EditSubmeshIndices { get; set; }
+    public bool WireframeOverlay { get; set; }
+    public bool EditWireframeOverlay { get; set; }
+    public bool ShowEditVertices { get; set; }
+    public float EditVertexPointSize { get; set; } = 6.0f;
+
+    public bool IsActive => DisplayMode != MeshDisplayMode.Default
+        || HiddenSubmeshIndices?.Count > 0
+        || HighlightedSubmeshIndices?.Count > 0
+        || WireframeOverlay
+        || EditWireframeOverlay && EditSubmeshIndices?.Count > 0
+        || ShowEditVertices && EditSubmeshIndices?.Count > 0;
+}
+
+public sealed class ViewportDepthRegion(int x, int y, int width, int height, float[] values) : IDisposable
+{
+    private float[]? values = values;
+
+    public int X { get; } = x;
+    public int Y { get; } = y;
+    public int Width { get; } = width;
+    public int Height { get; } = height;
+
+    public bool TryGetDepth(Vector2 viewportPosition, out float depth)
+    {
+        var localX = (int)MathF.Floor(viewportPosition.X) - X;
+        var localY = (int)MathF.Floor(viewportPosition.Y) - Y;
+        var buffer = values;
+        if (buffer == null || (uint)localX >= (uint)Width || (uint)localY >= (uint)Height) {
+            depth = 1.0f;
+            return false;
+        }
+
+        depth = buffer[(Height - localY - 1) * Width + localX];
+        return true;
+    }
+
+    public void Dispose()
+    {
+        var buffer = Interlocked.Exchange(ref values, null);
+        if (buffer != null) ArrayPool<float>.Shared.Return(buffer);
+    }
+}
 
 public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
 {
@@ -67,7 +124,9 @@ public abstract class RenderContext : IDisposable, IFileHandleReferenceHolder
     /// Render a simple mesh (static, single mesh with no animation)
     /// </summary>
     public abstract void RenderSimple(MeshHandle handle, in Matrix4x4 transform);
+    public abstract void RenderPreview(MeshHandle handle, in Matrix4x4 transform, MeshPreviewRenderOptions options);
     public abstract void RenderInstanced(MeshHandle handle, List<Matrix4x4> transforms);
+    public abstract ViewportDepthRegion? ReadViewportDepth(int x, int y, int width, int height);
 
     public abstract MaterialGroup LoadMaterialGroup(FileHandle file, ShaderFlags flags = ShaderFlags.None);
     protected abstract Material LoadUpdatedMaterial(FileHandle file, MaterialGroup group, MaterialGroupWrapper.MaterialLookupData material);

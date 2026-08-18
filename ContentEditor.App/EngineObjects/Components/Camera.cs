@@ -61,7 +61,9 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
         }
 
         if (ProjectionMode == CameraProjection.Orthographic) {
-            offset = Vector3.Normalize(offset) * 0.01f;
+            var boundsRadius = bounds.Size.Length() * 0.5f;
+            var cameraDistance = bounds.IsEmpty ? Math.Max(offset.Length(), NearPlane + 0.01f) : boundsRadius + NearPlane + 0.01f;
+            offset = Vector3.Normalize(offset) * cameraDistance;
         } else if (!resetPosition) {
             var optimalDistance = offset.Length();
             var selfpos = Transform.Position;
@@ -83,17 +85,23 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
     /// </summary>
     public Vector2 WorldToViewportXYPosition(Vector3 worldPosition, bool limitToViewport = true, bool limitToFront = true)
     {
+        var position = WorldToViewportPosition(worldPosition, limitToViewport, limitToFront);
+        return new Vector2(position.X, position.Y);
+    }
+
+    public Vector3 WorldToViewportPosition(Vector3 worldPosition, bool limitToViewport = true, bool limitToFront = true)
+    {
         if (Scene == null) return new();
 
         var size = Scene.RenderContext.ViewportSize;
         var vec = Project(ViewProjectionMatrix, size, worldPosition);
         if (limitToFront && vec.W < 0) {
-            return new Vector2(float.MaxValue);
+            return new Vector3(float.MaxValue);
         }
         if (limitToViewport) {
-            if (vec.X < 0 || vec.Y < 0 || vec.X > size.X || vec.Y > size.Y) return new Vector2(float.MaxValue);
+            if (vec.X < 0 || vec.Y < 0 || vec.X > size.X || vec.Y > size.Y) return new Vector3(float.MaxValue);
         }
-        return new Vector2(vec.X, vec.Y);
+        return new Vector3(vec.X, vec.Y, vec.Z);
     }
 
     /// <summary>
@@ -161,7 +169,11 @@ public sealed class Camera : Component, IConstructorComponent, IFixedClassnameCo
         if (Scene == null) return new();
 
         if (ProjectionMode == CameraProjection.Orthographic) {
-            return new Ray() { from = Transform.Position, dir = Transform.Forward };
+            var orthoRelative = viewportPos / Scene.RenderContext.ViewportSize - new Vector2(0.5f);
+            var rayOrigin = Transform.Position
+                + Transform.Right * (orthoRelative.X * OrthoSize * AspectRatio)
+                - Transform.Up * (orthoRelative.Y * OrthoSize);
+            return new Ray() { from = rayOrigin, dir = Transform.Forward };
         }
 
         var relative = viewportPos / Scene.RenderContext.ViewportSize - new Vector2(0.5f);

@@ -42,7 +42,7 @@ public sealed class MeshResourceHandle : IDisposable
 
     public override string ToString() => $"[Mesh {HandleID} / {Meshes.Count} submeshes]";
 
-    public IntersectionInfo GetIntersection(Ray ray, in Matrix4x4 worldMatrix)
+    public IntersectionInfo GetIntersection(Ray ray, in Matrix4x4 worldMatrix, IReadOnlySet<int>? excludedMeshIndices = null)
     {
         Matrix4x4.Invert(worldMatrix, out var invMat);
         var localRay = new Ray() {
@@ -51,6 +51,7 @@ public sealed class MeshResourceHandle : IDisposable
         };
         var info = IntersectionInfo.Default;
         for (int meshIndex = 0; meshIndex < Meshes.Count; meshIndex++) {
+            if (excludedMeshIndices?.Contains(meshIndex) == true) continue;
             var mesh = Meshes[meshIndex];
             if (mesh.MeshType != Silk.NET.OpenGL.PrimitiveType.Triangles) continue;
 

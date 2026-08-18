@@ -97,8 +97,8 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
         AppImguiHelpers.Image(Scene.RenderContext.RenderTargetTextureHandle, expectedSize, new System.Numerics.Vector2(0, 1), new System.Numerics.Vector2(1, 0));
         Scene.RenderUI();
         ImGui.SetCursorPos(c);
-        ImGui.InvisibleButton("##image", expectedSize, ImGuiButtonFlags.MouseButtonLeft | ImGuiButtonFlags.MouseButtonRight);
-        var meshClick = ImGui.IsItemClicked(ImGuiMouseButton.Right) || ImGui.IsItemClicked(ImGuiMouseButton.Left);
+        ImGui.InvisibleButton("##image", expectedSize, ImGuiButtonFlags.MouseButtonLeft | ImGuiButtonFlags.MouseButtonRight | ImGuiButtonFlags.MouseButtonMiddle);
+        var meshClick = ImGui.IsItemClicked(ImGuiMouseButton.Right) || ImGui.IsItemClicked(ImGuiMouseButton.Left) || ImGui.IsItemClicked(ImGuiMouseButton.Middle);
         var hoveredMesh = ImGui.IsItemHovered();
 
         if (!Scene.HasRenderables) {
@@ -111,7 +111,7 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
             if (!isDragging) {
                 isDragging = true;
             }
-        } else if (isDragging && !ImGui.IsMouseDown(ImGuiMouseButton.Left) && !ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
+        } else if (isDragging && !ImGui.IsMouseDown(ImGuiMouseButton.Left) && !ImGui.IsMouseDown(ImGuiMouseButton.Right) && !ImGui.IsMouseDown(ImGuiMouseButton.Middle)) {
             isDragging = false;
         }
 
@@ -262,10 +262,6 @@ public class SceneView : IWindowHandler, IKeepEnabledWhileSaving
         if (ImGui.MenuItem(Lang.SceneView.MenuItem_CamControls)) ImGui.OpenPopup("CameraSettings");
         if (Scene != null && ImGui.BeginPopup("CameraSettings")) {
             Scene.Controller.ShowCameraControls();
-            if (Scene.ActiveCamera.ProjectionMode != AppConfig.Settings.SceneView.DefaultProjection) {
-                AppConfig.Settings.SceneView.DefaultProjection = Scene.ActiveCamera.ProjectionMode;
-                AppConfig.Settings.Save();
-            }
             if (Math.Abs(Scene.Controller.MoveSpeed - AppConfig.Settings.SceneView.MoveSpeed) > 0.001f) {
                 AppConfig.Settings.SceneView.MoveSpeed = Scene.Controller.MoveSpeed;
                 AppConfig.Settings.Save();

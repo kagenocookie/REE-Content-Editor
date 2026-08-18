@@ -134,7 +134,7 @@ public class SceneMouseHandler(Scene scene)
         }
 
         if (middleDown != downMB) {
-            if (middleDown) {
+            if (!middleDown) {
                 HandleMouseUp(mouse, ImGuiMouseButton.Middle, mouseScreenPos);
             } else if (isHovered) {
                 HandleMouseDown(ImGuiMouseButton.Middle, mouseScreenPos);
@@ -169,7 +169,10 @@ public class SceneMouseHandler(Scene scene)
         Released?.Invoke(button, position);
         if ((position - lastDownPos).Length() < ClickMaxDistance) {
             var now = DateTime.Now;
-            if ((now - ClickTime(button)).TotalSeconds < DoubleClickIntervalSeconds) {
+            var previousClickPosition = ClickPosition(button);
+            if ((now - ClickTime(button)).TotalSeconds < DoubleClickIntervalSeconds
+                && previousClickPosition is { } previous
+                && Vector2.Distance(position, previous) < ClickMaxDistance) {
                 DoubleClicked?.Invoke(button, position);
             } else {
                 // TODO delay click until DoubleClickIntervalSeconds has passed?
@@ -183,6 +186,16 @@ public class SceneMouseHandler(Scene scene)
             StopDragging?.Invoke(position);
             scene.Controller.OnMouseDragEnd(mouse, dragStartButton, position, _dragStartPos + ViewportOffset);
         }
+    }
+
+    public void ResetClickSequence()
+    {
+        lastClickLB = default;
+        lastClickRB = default;
+        lastClickMB = default;
+        clickPositionLB = null;
+        clickPositionRB = null;
+        clickPositionMB = null;
     }
 
     public void HandleMouseMove(IMouse mouse, Vector2 position)
@@ -215,16 +228,17 @@ public class SceneMouseHandler(Scene scene)
     {
         if (scene.Controller.ZoomSpeed > 0) {
             float wheel = MouseWheelDelta.Y;
+            var zoomBinding = scene.Controller.GetCameraZoomBinding();
+            if (zoomBinding.Key == ImGuiKey.MouseWheelY) {
+                if (!zoomBinding.AreModifiersDown()) wheel = 0;
+            } else {
+                wheel = IsViewportHovered && zoomBinding.IsPressed() ? 1 : 0;
+            }
+            if (zoomBinding.Key is ImGuiKey.MouseRight or ImGuiKey.MouseMiddle && scene.Controller.GetCameraZoomInvert()) {
+                wheel = -wheel;
+            }
             if (Math.Abs(wheel) > float.Epsilon) {
-                if (scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective) {
-                    var zoom = scene.ActiveCamera.GameObject.Transform.LocalForward * (wheel * scene.Controller.ZoomSpeed * 0.1f);
-                    scene.ActiveCamera.GameObject.Transform.LocalPosition += zoom;
-                } else {
-                    float ortho = scene.ActiveCamera.OrthoSize;
-                    ortho *= (1.0f - wheel * scene.Controller.ZoomSpeed * 0.1f);
-                    ortho = Math.Clamp(ortho, 0.01f, 100.0f);
-                    scene.ActiveCamera.OrthoSize = ortho;
-                }
+                scene.Controller.ZoomCamera(wheel);
             }
             MouseWheelDelta = Vector2.Zero;
         }

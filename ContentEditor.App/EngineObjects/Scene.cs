@@ -71,6 +71,17 @@ public sealed class Scene : NodeTreeContainer, IDisposable, IAsyncResourceReceiv
     private HashSet<string> _requestedScenes = new(0);
 
     public bool HasRenderables => !Renderable.IsEmpty || childScenes.Any(ch => ch.HasRenderables);
+    private bool wireframeOverlay;
+    public bool WireframeOverlay {
+        get => wireframeOverlay;
+        set {
+            if (wireframeOverlay == value) return;
+            wireframeOverlay = value;
+            foreach (var component in Renderable.components.OfType<MeshComponent>()) {
+                component.SetWireframeOverlay(value);
+            }
+        }
+    }
 
     Vector2 IRectWindow.Size => renderContext.ViewportSize;
     Vector2 IRectWindow.Position => renderContext.ViewportOffset + renderContext.UIOffset;

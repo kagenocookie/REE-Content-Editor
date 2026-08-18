@@ -7,6 +7,27 @@ public static partial class Lang
 {
     public static class MeshViewer
     {
+        public static readonly FixedString Title_Editor = "Editor";
+        public static readonly FixedString Editor_Objects = "Objects";
+        public static readonly FixedString Editor_Submeshes = "Submeshes";
+        public static readonly FixedString Editor_NoSubmeshes = "No submeshes are available.";
+        public static readonly FixedString Editor_ModeObject = "Object";
+        public static readonly FixedString Editor_ModeEdit = "Edit";
+        public static readonly FixedString Editor_Options = "Options";
+        public static readonly FixedString Editor_OptionsTitle = "Mesh Editor Options";
+        public static readonly FixedString Editor_Vertices = "Vertices";
+        public static readonly FixedString Editor_Selected = "Selected";
+        public static readonly FixedString Editor_VertexInstructions = "Click a visible vertex to select it, or click and drag to box-select. Hold Shift to add to the selection, or Ctrl to toggle. Press G to move the selection. While moving, X, Y, or Z constrains movement to that global axis; Shift plus an axis excludes it. Left-click or Enter confirms, and right-click or Escape cancels.";
+        public static readonly FixedString Editor_Moving = "Moving vertices";
+        public static readonly FixedString Editor_VertexSize = "Vertex size";
+        public static readonly FixedString Editor_SelectionRadius = "Selection radius";
+        public static readonly FixedString Editor_MirrorAxes = "Global axis mirroring";
+        public static readonly FixedString Editor_MirrorRadius = "Mirror radius";
+        public static readonly FixedString Editor_ExportReminder = "*Use 'Export Mesh' to write mesh with Edits*";
+        public static readonly FixedString Editor_StayOnTop = "Stay on top";
+        public static readonly FixedString Display_Default = "Default";
+        public static readonly FixedString Display_Solid = "Solid";
+        public static readonly FixedString Display_Wireframe = "Wireframe";
         public static readonly IconString Title_Animations = new("{0} Animations", AppIcons.SI_Animation);
 
         public static readonly FixedString Error_MaterialCountMismatch = """

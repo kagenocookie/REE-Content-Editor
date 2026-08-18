@@ -80,6 +80,8 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     private List<MeshViewerContext> meshContexts = new();
     internal IReadOnlyList<MeshViewerContext> MeshContexts => meshContexts.AsReadOnly();
     private MeshViewerContext? _animationListContext;
+    private readonly MeshEditor meshEditor;
+    internal MeshEditor MeshEditor => meshEditor;
 
     protected override void Reset()
     {
@@ -92,6 +94,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         windowFlags = ImGuiWindowFlags.MenuBar;
         Workspace = workspace;
         this.collection = collection;
+        meshEditor = new MeshEditor(this);
         exportTemplate = (file.Resource as CommonMeshResource)?.NativeMesh.CurrentVersionConfig ?? MeshFile.GetGameVersionConfigs(workspace.Game).First();
     }
 
@@ -141,8 +144,18 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         var go = meshContexts.FirstOrDefault()?.GameObject;
         if (go == null || scene == null) return;
 
-        scene.ActiveCamera.LookAt(go, true);
-        scene.ActiveCamera.OrthoSize = go.GetWorldSpaceBounds().Size.Length() * 0.7f;
+        var bounds = go.GetWorldSpaceBounds();
+        scene.ActiveCamera.LookAt(go, true); //The pivot helps massively for getting camera rotation/translate correct as you zoom in and out.
+        var pivot = bounds.IsInvalid || bounds.minpos == Vector3.Zero && bounds.maxpos == Vector3.Zero ? go.Transform.Position : bounds.Center;
+        scene.Root.Controller.SetCameraPivot(pivot);
+        scene.ActiveCamera.OrthoSize = bounds.Size.Length() * 0.7f;
+    }
+
+    protected override void DrawAfterSaveCopyControls()
+    {
+        if (!meshEditor.WasEverEnabled) return;
+        ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X * 2.0f);
+        ImGui.TextUnformatted(Lang.MeshViewer.Editor_ExportReminder);
     }
 
     protected override void DrawFileContents() => throw new NotImplementedException();
@@ -154,6 +167,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             scene.Type = SceneType.Independent;
             scene.Root.Controller.Keyboard = EditorWindow.CurrentWindow.LastKeyboard;
             scene.Root.Controller.MoveSpeed = AppConfig.Settings.MeshViewer.MoveSpeed;
+            scene.Root.Controller.CameraModeChanged += SaveMeshViewerCameraMode;
             scene.OwnRenderContext.AddDefaultSceneGizmos();
             scene.AddWidget<SceneVisibilitySettings>();
         }
@@ -163,7 +177,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (mainCtx == null) {
             ChangeMainMesh();
             mainCtx = meshContexts.First();
-            scene.ActiveCamera.ProjectionMode = AppConfig.Settings.MeshViewer.DefaultProjection;
+            scene.Controller.SetCameraMode(AppConfig.Settings.MeshViewer.CameraMode);
             CenterCameraToSceneObject();
             if (collection != null) LoadCollection(collection);
         }
@@ -185,7 +199,10 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (!ShowMenu(mainCtx) && !isSynced) {
             embeddedMenuPos = ImGui.GetCursorPos();
         }
-        var expectedSize = ImGui.GetWindowSize() - ImGui.GetCursorPos() - ImGui.GetStyle().WindowPadding;
+        var availableSize = ImGui.GetWindowSize() - ImGui.GetCursorPos() - ImGui.GetStyle().WindowPadding;
+        var editorPanelWidth = meshEditor.HasSidePanel ? meshEditor.GetPanelWidth(availableSize.X) : 0;
+        var expectedSize = availableSize;
+        if (meshEditor.HasSidePanel) expectedSize.X -= editorPanelWidth + MeshEditor.SplitterWidth;
         expectedSize.X = Math.Max(expectedSize.X, 4);
         expectedSize.Y = Math.Max(expectedSize.Y, 4);
         var nativeSize = data.ParentWindow.Size;
@@ -196,6 +213,8 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (scene.RenderContext.RenderTargetTextureHandle == 0) return;
 
         var c = ImGui.GetCursorPos();
+        var editorSplitterPosition = c + new Vector2(expectedSize.X, 0);
+        var editorPanelPosition = editorSplitterPosition + new Vector2(MeshEditor.SplitterWidth, 0);
         var cc = ImGui.GetCursorScreenPos();
         scene.OwnRenderContext.ViewportOffset = cc;
         AppImguiHelpers.Image(scene.RenderContext.RenderTargetTextureHandle, expectedSize, new System.Numerics.Vector2(0, 1), new System.Numerics.Vector2(1, 0));
@@ -205,10 +224,19 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
         scene.RenderUI();
         ImGui.SetCursorPos(c);
-        ImGui.InvisibleButton("##image", expectedSize, ImGuiButtonFlags.MouseButtonLeft | ImGuiButtonFlags.MouseButtonRight);
+        ImGui.SetNextItemAllowOverlap();
+        ImGui.InvisibleButton("##image", expectedSize, ImGuiButtonFlags.MouseButtonLeft | ImGuiButtonFlags.MouseButtonRight | ImGuiButtonFlags.MouseButtonMiddle);
         // need to store the click/hover events for after so we can handle clicks on the empty area below the info window same as a mesh image click event
-        var meshClick = ImGui.IsItemClicked(ImGuiMouseButton.Right) || ImGui.IsItemClicked(ImGuiMouseButton.Left);
+        var meshClick = ImGui.IsItemClicked(ImGuiMouseButton.Right) || ImGui.IsItemClicked(ImGuiMouseButton.Left) || ImGui.IsItemClicked(ImGuiMouseButton.Middle);
         var hoveredMesh = ImGui.IsItemHovered();
+
+        if (meshEditor.IsEnabled) {
+            ImGui.SetCursorPos(c + new Vector2(10.0f * UI.UIScale));
+            if (meshEditor.ShowViewportModeControls(cc, expectedSize)) {
+                hoveredMesh = false;
+                meshClick = false;
+            }
+        }
 
         if (isSynced) {
             isSynced = false;
@@ -231,14 +259,21 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
 
         // 3D view controls
-        meshClick = meshClick || ImGui.IsItemClicked(ImGuiMouseButton.Right) || ImGui.IsItemClicked(ImGuiMouseButton.Left);
+        meshClick = meshClick || ImGui.IsItemClicked(ImGuiMouseButton.Right) || ImGui.IsItemClicked(ImGuiMouseButton.Left) || ImGui.IsItemClicked(ImGuiMouseButton.Middle);
         if (!isSynced) ShowPlaybackControls(meshComponent);
+
+        if (meshEditor.HasSidePanel) {
+            ImGui.SetCursorPos(editorSplitterPosition);
+            meshEditor.ShowSplitter(expectedSize.Y, availableSize.X);
+            ImGui.SetCursorPos(editorPanelPosition);
+            meshEditor.ShowPanel(new Vector2(editorPanelWidth, expectedSize.Y));
+        }
 
         if (meshClick) {
             if (!isDragging) {
                 isDragging = true;
             }
-        } else if (isDragging && !ImGui.IsMouseDown(ImGuiMouseButton.Left) && !ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
+        } else if (isDragging && !ImGui.IsMouseDown(ImGuiMouseButton.Left) && !ImGui.IsMouseDown(ImGuiMouseButton.Right) && !ImGui.IsMouseDown(ImGuiMouseButton.Middle)) {
             isDragging = false;
         }
 
@@ -253,24 +288,38 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (ImGui.Button($"{AppIcons.SI_GenericCamera}")) ImGui.OpenPopup("CameraSettings");
         if (ImGui.BeginPopup("CameraSettings")) {
             scene!.Controller.ShowCameraControls();
+            SaveCameraControlSettings();
             ImGui.EndPopup();
         }
+    }
+
+    private void SaveCameraControlSettings()
+    {
+        if (scene == null) return;
+        var changed = false;
+        if (Math.Abs(scene.Controller.MoveSpeed - AppConfig.Settings.MeshViewer.MoveSpeed) > 0.001f) {
+            AppConfig.Settings.MeshViewer.MoveSpeed = scene.Controller.MoveSpeed;
+            changed = true;
+        }
+        if (changed) AppConfig.Settings.Save();
+    }
+
+    private static void SaveMeshViewerCameraMode(SceneCameraMode mode)
+    {
+        if (AppConfig.Settings.MeshViewer.CameraMode == mode) return;
+        AppConfig.Settings.MeshViewer.CameraMode = mode;
+        AppConfig.Settings.Save();
     }
 
     private bool ShowMenu(MeshViewerContext mainCtx)
     {
         if (ImGui.BeginMenuBar()) {
+            meshEditor.ShowButton(mainCtx);
+            ImguiHelpers.VerticalSeparator();
             if (ImGui.MenuItem($"{AppIcons.SI_GenericCamera} Controls")) ImGui.OpenPopup("CameraSettings");
             if (scene != null && ImGui.BeginPopup("CameraSettings")) {
                 scene.Controller.ShowCameraControls();
-                if (scene.ActiveCamera.ProjectionMode != AppConfig.Settings.MeshViewer.DefaultProjection) {
-                    AppConfig.Settings.MeshViewer.DefaultProjection = scene.ActiveCamera.ProjectionMode;
-                    AppConfig.Settings.Save();
-                }
-                if (Math.Abs(scene.Controller.MoveSpeed - AppConfig.Settings.MeshViewer.MoveSpeed) > 0.001f) {
-                    AppConfig.Settings.MeshViewer.MoveSpeed = scene.Controller.MoveSpeed;
-                    AppConfig.Settings.Save();
-                }
+                SaveCameraControlSettings();
                 ImGui.EndPopup();
             }
 
@@ -353,6 +402,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     private void RemoveSubmesh(MeshViewerContext ctx)
     {
+        meshEditor.InvalidateSubmeshCache(ctx);
         meshContexts.Remove(ctx);
         context.RemoveChild(ctx.UI);
         (scene?.RootFolder as INodeObject<GameObject>)?.RemoveChild(ctx.GameObject);
@@ -796,9 +846,23 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (ImGui.Button($"{AppIcons.SI_GenericExport} Export Mesh")) {
             // potential export enhancement: include (embed?) textures
             if (meshContexts.FirstOrDefault()?.MeshFile is CommonMeshResource assmesh) {
+                var nativeMeshExtension = Handle.Format.version > 0
+                    ? $"mesh.{Handle.Format.version}"
+                    : PathUtils.GetFilenameExtensionWithSuffixes(Handle.Filename).ToString();
+                FileFilter[] exportFilters = [
+                    ..FileFilters.MeshFilesNoBlend,
+                    new FileFilter("RE Engine Mesh", nativeMeshExtension),
+                ];
                 PlatformUtils.ShowSaveFileDialog((exportPath) => {
                     exportInProgress = true;
                     try {
+                        if (exportPath.EndsWith($".{nativeMeshExtension}", StringComparison.OrdinalIgnoreCase)) {
+                            if (!assmesh.NativeMesh.SaveOrWriteTo(Handle, exportPath)) {
+                                Logger.Error($"Native mesh export failed: {exportPath}");
+                            }
+                            return;
+                        }
+
                         var animator = PrimaryAnimator;
                         IEnumerable<MotFileBase>? mots = null;
                         if (exportAnimations && animator?.File != null) {
@@ -817,7 +881,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                     } finally {
                         exportInProgress = false;
                     }
-                }, PathUtils.GetFilenameWithoutExtensionOrVersion(Handle.Filename).ToString(), FileFilters.MeshFilesNoBlend);
+                }, PathUtils.GetFilenameWithoutExtensionOrVersion(Handle.Filename).ToString(), exportFilters);
             } else {
                 throw new NotImplementedException();
             }
@@ -1363,6 +1427,8 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     {
         Handle?.References.Remove(this);
         if (scene != null) {
+            scene.Root.Controller.CameraModeChanged -= SaveMeshViewerCameraMode;
+            meshEditor.Dispose();
             _skeletonBuilder?.Dispose();
             _skeletonBuilder = null;
             EditorWindow.CurrentWindow?.SceneManager.UnloadScene(scene);
@@ -1375,7 +1441,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         if (scene == null || other.scene == null) return;
 
         scene.ActiveCamera.Transform.CopyFrom(other.scene.ActiveCamera.Transform);
-        scene.ActiveCamera.ProjectionMode = other.scene.ActiveCamera.ProjectionMode;
+        scene.Controller.SetCameraMode(other.scene.Controller.CameraMode);
         scene.ActiveCamera.NearPlane = other.scene.ActiveCamera.NearPlane;
         scene.ActiveCamera.FarPlane = other.scene.ActiveCamera.FarPlane;
         scene.ActiveCamera.FieldOfView = other.scene.ActiveCamera.FieldOfView;
@@ -1558,6 +1624,8 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             UpdateMaterial();
         }
         ImguiHelpers.Tooltip("Reset MDF"u8);
+        ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X * 3.0f);
+        viewer.MeshEditor.ShowDisplayModeControls();
         if (mdfPickerContext == null) {
             mdfPickerContext = UI.AddChild<MeshViewerContext, string>(
                 "MDF2 Material",
@@ -1649,9 +1717,11 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             }
         }
         Handle.Modified = true;
+        viewer.MeshEditor.InvalidateSubmeshCache(this);
     }
     public void ChangeMesh(bool resetMdf = true)
     {
+        viewer.MeshEditor.InvalidateSubmeshCache(this);
         if (!Handle.References.Contains(viewer)) Handle.References.Add(viewer);
         var isInitial = !Component.HasMesh;
         var mesh = MeshFile;

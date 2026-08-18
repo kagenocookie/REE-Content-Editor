@@ -26,7 +26,12 @@ public static partial class Lang
         public static readonly FixedString Section_FPS = "FPS";
         public static readonly FixedString Section_DateTime = "Date & Time";
         public static readonly FixedString Section_Lang = "Language";
+        public static readonly FixedString Section_Camera = "Camera";
+        public static readonly FixedString Section_FPSCamera = "FPS Camera";
+        public static readonly FixedString Section_OrthoCamera = "Ortho Camera";
+        public static readonly FixedString Section_PivotCamera = "Pivot Camera";
         public static readonly FixedString Section_Animator = "Animator";
+        public static readonly FixedString Section_Editor = "Editor";
         public static readonly FixedString Section_GroupList = "GroupList";
 
         public static readonly FixedString Group_Preferences = "Preferences";
@@ -41,7 +46,7 @@ public static partial class Lang
         public static readonly FixedString Group_Global = "Global";
         public static readonly FixedString Group_Pak = "Pak Browser";
         public static readonly FixedString Group_Scene = "Scene";
-        public static readonly FixedString Group_Mesh = "Mesh Viewer";
+        public static readonly FixedString Group_Mesh = "3D Controls";
         public static readonly FixedString Group_Texture = "Texture Viewer";
         public static readonly FixedString Group_UVS = "UVS Editor";
         public static readonly FixedString Group_Resident = "Resident Evil";
@@ -74,6 +79,9 @@ public static partial class Lang
         public static readonly FixedString Key_Ctrl = "Ctrl";
         public static readonly FixedString Key_Shift = "Shift";
         public static readonly FixedString Key_Alt = "Alt";
+        public static readonly FixedString Key_Invert = "Invert";
+        public static readonly FixedString Key_InvertMouseInputTooltip = "Invert the mouse drag direction.";
+        public static readonly FixedString Key_InvertMouseInputUnavailableTooltip = "Use with 'Mouse Right' or 'Mouse Middle'.";
 
         public static readonly FixedString Author = "Author";
         public static readonly FixedString Homepage = "Homepage";
@@ -143,6 +151,14 @@ public static partial class Lang
         public static readonly FixedString Bind_MeshViewer_PrevAnimFrame = "Previous Frame";
         public static readonly FixedString Bind_MeshViewer_IncreaseAnimSpeed = "Increase Playback Speed";
         public static readonly FixedString Bind_MeshViewer_DecreaseAnimSpeed = "Decrease Playback Speed";
+        public static readonly FixedString Bind_MeshViewer_CameraTranslate = "Camera Translate";
+        public static readonly FixedString Bind_MeshViewer_CameraRotate = "Camera Rotate";
+        public static readonly FixedString Bind_MeshViewer_CameraZoom = "Camera Zoom";
+        public static readonly FixedString Bind_MeshViewer_MoveGeometry = "Move Geometry";
+        public static readonly FixedString Bind_MeshViewer_SelectAll = "Select/Deselect All";
+        public static readonly FixedString Key_MeshViewer_CameraTranslate = "Right Click + WASD";
+        public static readonly FixedString Key_MeshViewer_CameraRotate = "Right Click + WASD";
+        public static readonly FixedString Key_MeshViewer_CameraZoom = "Mouse Scroll Wheel";
         public static readonly FixedString Bind_TextureViewer_ResetView = "Reset View";
         public static readonly FixedString Bind_TextureViewer_ZoomIn = "Zoom In";
         public static readonly FixedString Bind_TextureViewer_ZoomOut = "Zoom Out";

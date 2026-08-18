@@ -1129,10 +1129,20 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
 
         scene.Controller.Keyboard = _inputContext.Keyboards[0];
         scene.Controller.MoveSpeed = AppConfig.Settings.SceneView.MoveSpeed;
+        scene.Controller.CameraModeChanged -= SaveSceneViewCameraMode;
+        scene.Controller.CameraModeChanged += SaveSceneViewCameraMode;
+        scene.Controller.SetCameraMode(AppConfig.Settings.SceneView.CameraMode);
         scene.AddWidget<SceneVisibilitySettings>();
         var data = AddUniqueSubwindow(new SceneView(Workspace, scene));
         data.Position = new Vector2(0, viewportOffset.Y);
         data.Size = new Vector2(Size.X, Size.Y - viewportOffset.Y);
+    }
+
+    private static void SaveSceneViewCameraMode(SceneCameraMode mode)
+    {
+        if (AppConfig.Settings.SceneView.CameraMode == mode) return;
+        AppConfig.Settings.SceneView.CameraMode = mode;
+        AppConfig.Settings.Save();
     }
 
     protected override void OnIMGUI()

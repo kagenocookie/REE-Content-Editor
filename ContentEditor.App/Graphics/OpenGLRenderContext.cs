@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Diagnostics;
 using System.Numerics;
 using ContentEditor.App.FileLoaders;
@@ -25,6 +26,7 @@ public sealed class OpenGLRenderContext : RenderContext
 
     private readonly Dictionary<(string, ShaderFlags), Shader> shaders = new();
     private readonly Dictionary<(BuiltInMaterials, ShaderFlags), Material> builtInMaterials = new();
+    private readonly Dictionary<(BuiltInMaterials, ShaderFlags), Material> meshPreviewMaterials = new();
 
     public readonly RenderBatch Batch;
 
@@ -84,6 +86,16 @@ public sealed class OpenGLRenderContext : RenderContext
         return material.Clone();
     }
 
+    private Material CreateSolidMaterial(ShaderFlags flags)
+    {
+        if (!builtInMaterials.TryGetValue((BuiltInMaterials.Solid, flags), out var material)) {
+            material = new(GL, GetShader("Shaders/GLSL/solid.glsl", flags));
+            material.SetParameter("_MainColor", new Color(190, 190, 190, 255));
+            material.Name = "solid";
+        }
+        return material.Clone();
+    }
+
     private Material CreateWireMaterial(ShaderFlags flags)
     {
         if (!builtInMaterials.TryGetValue((BuiltInMaterials.Wireframe, flags), out var material)) {
@@ -117,6 +129,17 @@ public sealed class OpenGLRenderContext : RenderContext
         return material.Clone();
     }
 
+    private Material CreateEditVertexMaterial(ShaderFlags flags)
+    {
+        if (!builtInMaterials.TryGetValue((BuiltInMaterials.EditVertices, flags), out var material)) {
+            material = new(GL, GetShader("Shaders/GLSL/unshaded-color.glsl", flags));
+            material.SetParameter("_MainColor", new Color(255, 128, 0, 255));
+            material.SetParameter("_FadeMaxDistance", float.MaxValue);
+            material.Name = "edit_vertices";
+        }
+        return material.Clone();
+    }
+
     private Material CreateGizmoVertexColorMaterial(ShaderFlags flags)
     {
         if (!builtInMaterials.TryGetValue((BuiltInMaterials.GizmoVertexColor, flags), out var material)) {
@@ -136,8 +159,10 @@ public sealed class OpenGLRenderContext : RenderContext
             BuiltInMaterials.FilledWireframe => CreateFilledWireMaterial(flags),
             BuiltInMaterials.Wireframe => CreateWireMaterial(flags),
             BuiltInMaterials.MonoColor => CreateMonoMaterial(flags),
+            BuiltInMaterials.EditVertices => CreateEditVertexMaterial(flags),
             BuiltInMaterials.GizmoVertexColor => CreateGizmoVertexColorMaterial(flags),
             BuiltInMaterials.ViewShaded => CreateViewShadedMaterial(flags),
+            BuiltInMaterials.Solid => CreateSolidMaterial(flags),
             BuiltInMaterials.Standard => CreateStandardMaterial(flags),
             _ => throw new NotImplementedException("Unsupported material " + material),
         };
@@ -446,6 +471,95 @@ public sealed class OpenGLRenderContext : RenderContext
         }
     }
 
+    public override void RenderPreview(MeshHandle handle, in Matrix4x4 transform, MeshPreviewRenderOptions options)
+    {
+        handle.PrepareSubmeshParts();
+        var previewMaterial = options.DisplayMode == MeshDisplayMode.Default
+            ? null
+            : GetMeshPreviewMaterial(handle, options.DisplayMode == MeshDisplayMode.Solid ? BuiltInMaterials.Solid : BuiltInMaterials.Wireframe);
+        foreach (var (submeshIndex, materialIndex) in handle.EnabledSubmeshIndices) {
+            if (options.HiddenSubmeshIndices?.Contains(submeshIndex) == true) continue;
+            Batch.Simple.Add(new NormalRenderBatchItem(previewMaterial ?? handle.GetMaterial(materialIndex), handle.GetMesh(submeshIndex), transform, handle));
+        }
+
+        if (options.HighlightedSubmeshIndices?.Count > 0) {
+            var highlightMaterial = GetMeshPreviewMaterial(handle, BuiltInMaterials.MonoColor);
+            foreach (var submeshIndex in options.HighlightedSubmeshIndices) {
+                if (!TryGetPreviewMesh(handle, submeshIndex, options.HiddenSubmeshIndices, out var selectedMesh)) continue;
+                Batch.Gizmo.Add(new GizmoRenderBatchItem(highlightMaterial, selectedMesh, transform, null, handle, true));
+            }
+        }
+
+        if ((options.WireframeOverlay || options.EditWireframeOverlay) && options.DisplayMode != MeshDisplayMode.Wireframe) {
+            var wireframeMaterial = GetMeshPreviewMaterial(handle, BuiltInMaterials.Wireframe);
+            if (options.WireframeOverlay) {
+                foreach (var (submeshIndex, _) in handle.EnabledSubmeshIndices) {
+                    if (options.HiddenSubmeshIndices?.Contains(submeshIndex) == true) continue;
+                    Batch.Gizmo.Add(new GizmoRenderBatchItem(wireframeMaterial, handle.GetMesh(submeshIndex), transform, null, handle, true));
+                }
+            } 
+            else if (options.EditSubmeshIndices != null) {
+                foreach (var submeshIndex in options.EditSubmeshIndices) {
+                    if (!TryGetPreviewMesh(handle, submeshIndex, options.HiddenSubmeshIndices, out var selectedMesh)) continue;
+                    Batch.Gizmo.Add(new GizmoRenderBatchItem(wireframeMaterial, selectedMesh, transform, null, handle, true));
+                }
+            }
+        }
+
+        if (options.ShowEditVertices && options.EditSubmeshIndices != null) {
+            var vertexMaterial = GetMeshPreviewMaterial(handle, BuiltInMaterials.EditVertices);
+            foreach (var submeshIndex in options.EditSubmeshIndices) {
+                if (!TryGetPreviewMesh(handle, submeshIndex, options.HiddenSubmeshIndices, out var selectedMesh)) continue;
+                Batch.Gizmo.Add(new GizmoRenderBatchItem(vertexMaterial, selectedMesh, transform, null, handle, true, PrimitiveType.Points, options.EditVertexPointSize));
+            }
+        }
+    }
+
+    private static bool TryGetPreviewMesh(MeshHandle handle, int submeshIndex, IReadOnlySet<int>? hiddenSubmeshIndices, out Mesh mesh)
+    {
+        if ((uint)submeshIndex >= (uint)handle.MeshCount || hiddenSubmeshIndices?.Contains(submeshIndex) == true) {
+            mesh = null!;
+            return false;
+        }
+        mesh = handle.GetMesh(submeshIndex);
+        return handle.GetMeshPartEnabled(mesh.MeshGroup);
+    }
+
+    private Material GetMeshPreviewMaterial(MeshHandle handle, BuiltInMaterials materialType)
+    {
+        var flags = ShaderFlags.None;
+        if (handle.HasArmature) {
+            flags |= ShaderFlags.EnableSkinning;
+            if (handle.Meshes.FirstOrDefault()?.layout.Is6Weight == true) flags |= ShaderFlags.Use6Weights;
+        }
+        var key = (materialType, flags);
+        if (meshPreviewMaterials.TryGetValue(key, out var material)) return material;
+
+        material = GetBuiltInMaterial(materialType, flags);
+        switch (materialType) {
+            case BuiltInMaterials.Solid:
+                material.Name = "mesh_editor_solid";
+                material.SetParameter("_MainColor", new Color(190, 190, 190, 255));
+                break;
+            case BuiltInMaterials.Wireframe:
+                material.Name = "mesh_editor_wireframe";
+                material.SetParameter("_InnerColor", new Color(200, 200, 200, 255));
+                material.SetParameter("_OuterColor", new Color(0, 0, 0, 0));
+                break;
+            case BuiltInMaterials.MonoColor:
+                material.Name = "mesh_editor_selection";
+                material.SetParameter("_MainColor", new Color(255, 128, 0, 150));
+                material.BlendMode = new MaterialBlendMode(true, BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+                break;
+            case BuiltInMaterials.EditVertices:
+                material.Name = "mesh_editor_vertices";
+                material.SetParameter("_MainColor", new Color(255, 128, 0, 255));
+                break;
+        }
+        meshPreviewMaterials[key] = material;
+        return material;
+    }
+
     public override void RenderInstanced(MeshHandle handle, List<Matrix4x4> transforms)
     {
         handle.PrepareSubmeshParts();
@@ -542,6 +656,41 @@ public sealed class OpenGLRenderContext : RenderContext
             }
             foreach (var gizmo in Gizmos) gizmo.Render(this);
             Batch.Gizmo.Render(this);
+        }
+    }
+
+    /// <summary>
+    /// Reads a top-left-origin rectangle from the current viewport depth buffer.
+    /// </summary>
+    public override unsafe ViewportDepthRegion? ReadViewportDepth(int x, int y, int width, int height)
+    {
+        var viewportWidth = (int)ViewportSize.X;
+        var viewportHeight = (int)ViewportSize.Y;
+        if (_outputBuffer == 0 || viewportWidth <= 0 || viewportHeight <= 0 || width <= 0 || height <= 0) return null;
+
+        var left = Math.Clamp(x, 0, viewportWidth);
+        var top = Math.Clamp(y, 0, viewportHeight);
+        var right = Math.Clamp(x + width, left, viewportWidth);
+        var bottom = Math.Clamp(y + height, top, viewportHeight);
+        width = right - left;
+        height = bottom - top;
+        if (width <= 0 || height <= 0) return null;
+
+        GL.GetInteger(GLEnum.ReadFramebufferBinding, out var previousFramebuffer);
+        var values = ArrayPool<float>.Shared.Rent(checked(width * height));
+        try {
+            GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, _outputBuffer);
+            fixed (float* output = values) {
+                GL.ReadPixels(left, viewportHeight - bottom, (uint)width, (uint)height, PixelFormat.DepthComponent, PixelType.Float, output);
+            }
+            return new ViewportDepthRegion(left, top, width, height, values);
+        } 
+        catch {
+            ArrayPool<float>.Shared.Return(values);
+            throw;
+        } 
+        finally {
+            GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, (uint)previousFramebuffer);
         }
     }
 

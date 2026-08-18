@@ -225,12 +225,27 @@ public class OverlaysWindow : IWindowHandler
     };
     private static readonly HotkeyHintGroup meshViewerHotkeys = new() {
         GroupName = Lang.Settings.Group_Mesh, HotkeyList = {
+            new HotkeyHint { Description = Lang.Settings.Section_FPSCamera, IsSeparator = true},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_CameraTranslate, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_CameraTranslate.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_CameraRotate, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_CameraRotate.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_CameraZoom, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_CameraZoom.Get())},
+            new HotkeyHint { Description = Lang.Settings.Section_OrthoCamera, IsSeparator = true},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_CameraTranslate, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_OrthoCameraTranslate.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_CameraRotate, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_OrthoCameraRotate.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_CameraZoom, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_OrthoCameraZoom.Get())},
+            new HotkeyHint { Description = Lang.Settings.Section_PivotCamera, IsSeparator = true},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_CameraTranslate, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_PivotCameraTranslate.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_CameraRotate, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_PivotCameraRotate.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_CameraZoom, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_PivotCameraZoom.Get())},
             new HotkeyHint { Description = Lang.Settings.Section_Animator, IsSeparator = true},
             new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_PauseAnim, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_PauseAnim.Get())},
             new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_NextAnimFrame, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_NextAnimFrame.Get())},
             new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_PrevAnimFrame, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_PrevAnimFrame.Get())},
             new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_IncreaseAnimSpeed, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_IncreaseAnimSpeed.Get())},
             new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_DecreaseAnimSpeed, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_DecreaseAnimSpeed.Get())},
+            new HotkeyHint { Description = "Mesh Editor", IsSeparator = true},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_MoveGeometry, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_MoveGeometry.Get())},
+            new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_SelectAll, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_SelectAll.Get())},
         }
     };
     private static readonly HotkeyHintGroup textureViewerHotkeys = new() {

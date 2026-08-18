@@ -21,6 +21,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
     private MaterialGroup? material;
 
     public MeshHandle? MeshHandle => mesh;
+    public MeshPreviewRenderOptions? PreviewRenderOptions { get; set; }
 
     public override AABB LocalBounds => mesh?.BoundingBox ?? AABB.Invalid;
 
@@ -56,6 +57,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
     internal override void OnActivate()
     {
         base.OnActivate();
+        SetWireframeOverlay(Scene!.WireframeOverlay);
 
         RefreshIfActive();
     }
@@ -161,7 +163,7 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         IsStatic = true;
     }
 
-    internal override unsafe void Render(RenderContext context)
+    internal override void Render(RenderContext context)
     {
         // TODO - this may be better handled on the level of scene + component grouping instead of inside individual components
         // TODO - ideally don't have this occ check here and handle it differently somehow
@@ -178,8 +180,25 @@ public class MeshComponent(GameObject gameObject, RszInstance data) : Renderable
         }
         if (mesh != null) {
             ref readonly var transform = ref GameObject.Transform.WorldTransform;
-            context.RenderSimple(mesh, transform);
+            var previewOptions = PreviewRenderOptions;
+            if (previewOptions == null) {
+                context.RenderSimple(mesh, transform);
+            } else {
+                context.RenderPreview(mesh, transform, previewOptions);
+            }
         }
+    }
+
+    internal void SetWireframeOverlay(bool enabled)
+    {
+        var options = PreviewRenderOptions;
+        if (options == null) {
+            if (!enabled) return;
+            options = PreviewRenderOptions = new MeshPreviewRenderOptions();
+        }
+
+        options.WireframeOverlay = enabled;
+        if (!options.IsActive) PreviewRenderOptions = null;
     }
 
     public void CollectPickables(PickableData data)
