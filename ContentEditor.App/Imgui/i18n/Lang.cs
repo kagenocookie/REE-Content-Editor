@@ -39,7 +39,6 @@ public static partial class Lang
         FixedString.SetTranslations(_plainTranslations, _contextTranslations);
         if (CurrentLanguage == language) return;
 
-        var t = Stopwatch.StartNew();
         if (Translatables.Count == 0) {
             FindTranslatables(typeof(Lang), null);
         }
@@ -47,8 +46,14 @@ public static partial class Lang
         CurrentLanguage = language;
         _plainTranslations.Clear();
         _contextTranslations.Clear();
-        LoadTranslations(language);
-        Logger.Info($"Language {language} loaded in {t.ElapsedMilliseconds} ms");
+        if (LoadTranslations(language) || language == Language.English) {
+            Logger.Info($"Language {language} loaded");
+        } else {
+            Logger.Warn($"""
+                No UI translations available for language {language} ({Lang.TranslateLanguage(language)}).
+                You can run Edit > Dump Translations, save the file as i18n/{language}.lang.yaml and add your own translations there.
+                """);
+        }
     }
 
     public static Dictionary<string, string> GetTranslationsJson()
