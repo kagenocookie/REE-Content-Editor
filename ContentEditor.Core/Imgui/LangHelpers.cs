@@ -10,59 +10,78 @@ public class FixedInterpolatedString<T> : TranslatableBase where T : IComparable
     private readonly T param;
     private string _formattedString;
     private byte[] bytes;
+    private string renderedFormat = "";
 
-    public override ReadOnlySpan<byte> UTF8 => bytes;
-    public override string String => _formattedString;
+    public override ReadOnlySpan<byte> UTF8 { get { RefreshTranslation(); return bytes; } }
+    public override string String { get { RefreshTranslation(); return _formattedString; } }
+
+    private void RefreshTranslation()
+    {
+        if (renderedFormat != UiText.T(Format)) Reset();
+    }
 
     public FixedInterpolatedString(string format, T param) : base(format)
     {
         this.param = param;
         _formattedString = string.Format(format, param);
-        bytes = Encoding.UTF8.GetBytes(_formattedString);
+        bytes = GetNullTerminatedUTF8(_formattedString);
     }
 
     protected override void Reset()
     {
-        bytes = Encoding.UTF8.GetBytes(string.Format(Format, param));
+        renderedFormat = UiText.T(Format);
+        _formattedString = string.Format(renderedFormat, param);
+        bytes = GetNullTerminatedUTF8(_formattedString);
     }
 }
 
 public sealed class FixedString(string fmt) : TranslatableBase(fmt)
 {
     private byte[] bytes = GetNullTerminatedUTF8(fmt);
-    public override ReadOnlySpan<byte> UTF8 => bytes;
-    public override string String => Format;
+    private string rendered = fmt;
+    public override ReadOnlySpan<byte> UTF8 {
+        get {
+            if (rendered != String) Reset();
+            return bytes;
+        }
+    }
+    public override string String => UiText.T(Format);
 
     protected override void Reset()
     {
-        bytes = GetNullTerminatedUTF8(Format);
+        rendered = String;
+        bytes = GetNullTerminatedUTF8(rendered);
     }
 
-    private static readonly Dictionary<string, FixedString> _cached = new();
-    public static FixedString Cached(string str) => _cached.GetValueOrDefault(str) ?? (_cached[str] = GetTranslation(str) ?? new FixedString(str));
+    private static readonly Dictionary<(string text, string? context), FixedString> _cached = new();
+    public static FixedString Cached(string str) => Cached(str, null);
     public static TranslatableBase CachedNullFallback(string? str, TranslatableBase fallback) => str == null ? fallback : Cached(str);
-    public static FixedString Cached(string str, string context) => _cached.GetValueOrDefault(str) ?? (_cached[str] = GetTranslation(str, context) ?? new FixedString(str));
+    public static FixedString Cached(string str, string? context)
+        => _cached.GetValueOrDefault((str, context)) ?? (_cached[(str, context)] = new FixedString(context == null ? GetTranslation(str) : GetTranslation(str, context)));
 
     private static Dictionary<string, string> _plainTranslations = new();
     private static Dictionary<string, Dictionary<string, string>> _contextTranslations = new();
 
-    public static string GetTranslation(string text) => _plainTranslations.GetValueOrDefault(text) ?? text;
+    public static string GetTranslation(string text) => _plainTranslations.GetValueOrDefault(text) ?? UiText.T(text);
     public static string GetTranslation(string text, string context)
         => _contextTranslations.GetValueOrDefault(context)?.GetValueOrDefault(text)
         ?? _plainTranslations.GetValueOrDefault(text)
-        ?? text;
+        ?? UiText.T(text);
 
     public static void SetTranslations(Dictionary<string, string> plainTranslations, Dictionary<string, Dictionary<string, string>> contextSpecificTranslations)
     {
         _plainTranslations = plainTranslations;
         _contextTranslations = contextSpecificTranslations;
+        foreach (var (key, cached) in _cached) {
+            cached.Format = key.context == null ? GetTranslation(key.text) : GetTranslation(key.text, key.context);
+        }
     }
 
     public static void OverrideTranslation(string source, string target)
     {
         _plainTranslations[source] = target;
-        if (_cached.TryGetValue(source, out var cached)) {
-            cached.Format = target;
+        foreach (var (key, cached) in _cached) {
+            if (key.text == source) cached.Format = key.context == null ? target : GetTranslation(source, key.context);
         }
     }
 
@@ -218,16 +237,20 @@ public abstract class TranslatableBase : IComparable<TranslatableBase>
         => formatter == null ? null : new FormattedObjectString(formatter, null);
 }
 
-public class InterpolatedString<T>(string format) where T : IComparable<T>
+public class InterpolatedString<T>(string format) : TranslatableBase(format) where T : IComparable<T>
 {
     private SortedList<T, byte[]> Bytes { get; } = new SortedList<T, byte[]>();
 
     public Func<T, string> Converter { get; init; } = static (a) => a.ToString() ?? "";
 
-    public byte[] Format(T value)
+    public override string String => base.Format;
+    public override ReadOnlySpan<byte> UTF8 => GetNullTerminatedUTF8(base.Format);
+    protected override void Reset() => Bytes.Clear();
+
+    public new byte[] Format(T value)
     {
         if (!Bytes.TryGetValue(value, out var bytes)) {
-            Bytes[value] = bytes = TranslatableBase.GetNullTerminatedUTF8(string.Format(format, Converter(value)));
+            Bytes[value] = bytes = TranslatableBase.GetNullTerminatedUTF8(string.Format(base.Format, Converter(value)));
         }
 
         return bytes;
@@ -237,7 +260,7 @@ public class InterpolatedString<T>(string format) where T : IComparable<T>
     public static implicit operator InterpolatedString<T>(string str) => new (str);
 }
 
-public class InterpolatedString<T1, T2>(string format)
+public class InterpolatedString<T1, T2>(string format) : TranslatableBase(format)
     where T1 : IComparable<T1>
     where T2 : IComparable<T2>
 {
@@ -246,10 +269,14 @@ public class InterpolatedString<T1, T2>(string format)
     public Func<T1, string> Converter1 { get; init; } = static (a) => a.ToString() ?? "";
     public Func<T2, string> Converter2 { get; init; } = static (a) => a.ToString() ?? "";
 
-    public byte[] Format(T1 value1, T2 value2)
+    public override string String => base.Format;
+    public override ReadOnlySpan<byte> UTF8 => GetNullTerminatedUTF8(base.Format);
+    protected override void Reset() => Bytes.Clear();
+
+    public new byte[] Format(T1 value1, T2 value2)
     {
         if (!Bytes.TryGetValue((value1, value2), out var bytes)) {
-            Bytes[(value1, value2)] = bytes = TranslatableBase.GetNullTerminatedUTF8(string.Format(format, Converter1(value1), Converter2(value2)));
+            Bytes[(value1, value2)] = bytes = TranslatableBase.GetNullTerminatedUTF8(string.Format(base.Format, Converter1(value1), Converter2(value2)));
         }
 
         return bytes;
@@ -268,7 +295,17 @@ public sealed class TranslatedEnum<TEnum> : TranslatableGroup
 
     public TEnum[] Values { get; }
     public FixedString[] Names { get; }
-    public string[] NameStrings { get => field ??= Names.Select(n => n.ToString()).ToArray(); private set; }
+    private string[]? nameStrings;
+    private int namesRevision = -1;
+    public string[] NameStrings {
+        get {
+            if (nameStrings == null || namesRevision != UiText.Revision) {
+                nameStrings = Names.Select(n => n.ToString()).ToArray();
+                namesRevision = UiText.Revision;
+            }
+            return nameStrings;
+        }
+    }
 
     public override IEnumerable<(string key, TranslatableBase text)> Translatables => Texts
         .OrderBy(kv => kv.Key)
@@ -282,7 +319,7 @@ public sealed class TranslatedEnum<TEnum> : TranslatableGroup
 
     public void ResetNames()
     {
-        NameStrings = null!;
+        nameStrings = null;
     }
 
     public FixedString Get(TEnum value)

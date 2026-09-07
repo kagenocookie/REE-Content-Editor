@@ -88,7 +88,7 @@ public class AsyncTranslationTask : IBackgroundTask
         return false;
     }
 
-    public override string ToString() => "Translating";
+    public override string ToString() => UiText.T("Translating");
 
     public static void ResetCachedTranslations()
     {

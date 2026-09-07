@@ -160,7 +160,7 @@ public class ResourcePathPicker : IObjectUIHandler
         }
 
         if (ImGui.BeginPopupContextItem()) {
-            if (!string.IsNullOrWhiteSpace(pendingPath) && ImGui.Selectable("Open file")) {
+            if (!string.IsNullOrWhiteSpace(pendingPath) && ImGui.Selectable(UiText.Label("Open file"))) {
                 ImGui.CloseCurrentPopup();
                 if (workspace.ResourceManager.TryResolveGameFile(currentPath, out var newFileHandle)) {
                     EditorWindow.CurrentWindow?.AddFileEditor(newFileHandle);
@@ -168,7 +168,7 @@ public class ResourcePathPicker : IObjectUIHandler
                     Logger.Error("Failed to load file: " + currentPath);
                 }
             }
-            if (!string.IsNullOrWhiteSpace(pendingPath) && ImGui.Selectable("Extract file ...")) {
+            if (!string.IsNullOrWhiteSpace(pendingPath) && ImGui.Selectable(UiText.Label("Extract file ..."))) {
                 ImGui.CloseCurrentPopup();
                 var resolvedPath = workspace.Env.ResolveFilepath(currentPath);
                 if (resolvedPath == null) {
@@ -202,7 +202,7 @@ public class ResourcePathPicker : IObjectUIHandler
                     }
                 }
             }
-            if (ImGui.Selectable("Find files ...")) {
+            if (ImGui.Selectable(UiText.Label("Find files ..."))) {
                 var exts = fileFilters ?? [];
                 var extRegex = string.Join("|", exts.SelectMany(e => e.extensions).Distinct()).Replace(".*", "");
                 if (exts.Length == 0) {
@@ -234,9 +234,9 @@ public class ResourcePathPicker : IObjectUIHandler
                 ImGui.SetNextWindowSizeConstraints(new Vector2(rect.X - buttonMargin, ImGui.GetTextLineHeightWithSpacing() * 5), new Vector2(float.MaxValue));
                 if (ImGui.BeginPopup("Suggestions"u8)) {
                     ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-                    ImGui.InputTextWithHint("##Filter"u8, $"{AppIcons.Search} Filter", ref searchFilter, 100);
+                    ImGui.InputTextWithHint("##Filter"u8, UiText.F($"{AppIcons.Search} Filter"), ref searchFilter, 100);
 
-                    ImGui.SeparatorText("Suggestions from active bundle"u8);
+                    ImGui.SeparatorText(UiText.Utf8("Suggestions from active bundle"));
                     bool matchedAny = false;
                     foreach (var suggest in bundleFiles) {
                         var suggestDisplay = flags.HasFlag(PathPickerFlags.UseTargetPath) ? suggest : workspace.Env.GetResourcePath(suggest).ToString();
@@ -250,7 +250,7 @@ public class ResourcePathPicker : IObjectUIHandler
                         }
                     }
                     if (!matchedAny) {
-                        ImGui.TextColored(Colors.Faded, "No matching results"u8);
+                        ImGui.TextColored(Colors.Faded, UiText.Utf8("No matching results"));
                     }
                     ImGui.EndPopup();
                 }
@@ -258,11 +258,11 @@ public class ResourcePathPicker : IObjectUIHandler
         }
 
         if (!flags.HasFlag(PathPickerFlags.NoConfirmation) && pendingPath != currentPath && (!string.IsNullOrEmpty(pendingPath) || !string.IsNullOrEmpty(currentPath))) {
-            if (ImGui.Button("Update path")) {
+            if (ImGui.Button(UiText.Label("Update path"))) {
                 currentPath = pendingPath;
                 changed = true;
             }
-            if (ImguiHelpers.SameLine() && ImGui.Button("Cancel change")) {
+            if (ImguiHelpers.SameLine() && ImGui.Button(UiText.Label("Cancel change"))) {
                 pendingPath = currentPath ?? "";
                 changed = true;
             }
@@ -271,14 +271,14 @@ public class ResourcePathPicker : IObjectUIHandler
         // validate resource file paths
         if (flags.HasFlag(PathPickerFlags.IsPathForIngame) && !flags.HasFlag(PathPickerFlags.UseTargetPath)) {
             if ((Path.IsPathFullyQualified(pendingPath) || PathUtils.ParseFileFormat(pendingPath).version != -1 || pendingPath.Contains("natives/"))) {
-                ImGui.TextColored(Colors.Warning, "The given file path may not resolve properly ingame.\nEnsure it's an internal path (without the natives/stm/ part and no file extension version)");
+                ImGui.TextColored(Colors.Warning, UiText.T("The given file path may not resolve properly ingame.\nEnsure it's an internal path (without the natives/stm/ part and no file extension version)"));
             }
         }
 
         if (!flags.HasFlag(PathPickerFlags.DisableFormatWarning) && formats.Length > 0 && fileFilters?.Length > 0 && !string.IsNullOrEmpty(currentPath)) {
             var parsed = PathUtils.ParseFileFormat(pendingPath);
             if (!formats.Contains(parsed.format)) {
-                ImGui.TextColored(Colors.Warning, "The file may be an incorrect type. Expected file types: " + string.Join(", ", fileFilters.SelectMany(x => x.extensions)).Replace(".*", ""));
+                ImGui.TextColored(Colors.Warning, UiText.T("The file may be an incorrect type. Expected file types: ") + string.Join(", ", fileFilters.SelectMany(x => x.extensions)).Replace(".*", ""));
             }
         }
 
@@ -394,7 +394,7 @@ public class ResourcePathPicker : IObjectUIHandler
             }
 
             if (useNewTargetPath) {
-                workspace.UI.ShowMessage($"Saved as new file to bundle with target path:\n{targetFilepath}\nPath can be modified through the Bundle Manager");
+                workspace.UI.ShowMessage(UiText.F($"Saved as new file to bundle with target path:\n{targetFilepath}\nPath can be modified through the Bundle Manager"));
             }
 
             if (!bundle.ContainsResource(targetFilepath)) {

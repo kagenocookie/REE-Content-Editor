@@ -65,18 +65,18 @@ public class BookmarksPanel
         bool isHideCustoms = _bookmarks.User.IsHideBookmarks;
 
         ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_BookmarkHide, ref isHideDefaults, [Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary], Colors.IconActive);
-        ImguiHelpers.Tooltip("Hide Default Bookmarks"u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Hide Default Bookmarks"));
         _bookmarks.Defaults.IsHideBookmarks = isHideDefaults;
         using (var _ = ImguiHelpers.Disabled(_bookmarks.User.GetBookmarks(Workspace.Config.Game.name).Count == 0)) {
             ImGui.SameLine();
             ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_BookmarkCustomHide, ref isHideCustoms, [Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary], Colors.IconActive);
-            ImguiHelpers.Tooltip("Hide Custom Bookmarks"u8);
+            ImguiHelpers.Tooltip(UiText.Utf8("Hide Custom Bookmarks"));
             _bookmarks.User.IsHideBookmarks = isHideCustoms;
             ImGui.SameLine();
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BookmarkCustomClear, [Colors.IconPrimary, Colors.IconTertiary])) {
                 ImGui.OpenPopup("Confirm Action"u8);
             }
-            ImguiHelpers.Tooltip("Clear Custom Bookmarks");
+            ImguiHelpers.Tooltip(UiText.T("Clear Custom Bookmarks"));
             AppImguiHelpers.ShowActionModal(Lang.General.ConfirmTitle, $"{AppIcons.SI_GenericDelete2}", Colors.IconTertiary,
                 Lang.PakBrowser.ConfirmDeleteBookmarks.FormatRef(Lang.TranslateGame(Workspace.Config.Game.name)),
                 () => {
@@ -87,26 +87,26 @@ public class BookmarksPanel
         }
         ImGui.SameLine();
 
-        string filterModeName = _filterMode switch {
+        string filterModeName = UiText.T(_filterMode switch {
             FilterMode.AnyMatch => "Any",
             FilterMode.AllMatch => "All",
             FilterMode.ExactMatch => "Exact",
             _ => "?"
-        };
+        });
         string filterLabelDisplayText = _activeTagFilter.Count == 0 ? $"{AppIcons.SI_Filter}" : $"{AppIcons.SI_Filter} : " + _activeTagFilter.Count.ToString();
         Vector2 filterLabelSize = ImGui.CalcTextSize(filterLabelDisplayText);
         float filterComboWidth = filterLabelSize.X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
         float searchBarWidth = 260f;
         ImguiHelpers.AlignElementRight(((ImGui.CalcTextSize($"{AppIcons.SI_GenericClose}").X + ImGui.GetStyle().FramePadding.X * 2) + ImGui.GetStyle().ItemSpacing.X) * 2 + filterComboWidth + searchBarWidth + ImGui.GetStyle().ItemSpacing.X);
         ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isBookmarkSearchMatchCase, Colors.IconActive);
-        ImguiHelpers.Tooltip("Match Case");
+        ImguiHelpers.Tooltip(UiText.T("Match Case"));
         ImGui.SameLine();
         ImGui.SetNextItemWidth(searchBarWidth);
-        AppImguiHelpers.ClearableInputText("##BookmarkSearch"u8, $"{AppIcons.SI_GenericMagnifyingGlass} Search Comments", ref bookmarkSearch, 64);
+        AppImguiHelpers.ClearableInputText("##BookmarkSearch"u8, UiText.F($"{AppIcons.SI_GenericMagnifyingGlass} Search Comments"), ref bookmarkSearch, 64);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(filterComboWidth);
         if (ImGui.BeginCombo("##TagFilterCombo"u8, filterLabelDisplayText, ImGuiComboFlags.HeightLargest)) {
-            ImGui.TextDisabled("Filter Mode:");
+            ImGui.TextDisabled(UiText.T("Filter Mode:"));
             ImGui.SameLine();
 
             if (ImGui.SmallButton(filterModeName)) {
@@ -119,10 +119,10 @@ public class BookmarksPanel
             }
 
             if (ImGui.BeginItemTooltip()) {
-                ImGui.SeparatorText("Filter Modes");
-                ImGui.BulletText("Any: Keep entries with at least one matching tag");
-                ImGui.BulletText("All: Keep entries containing all active tags");
-                ImGui.BulletText("Exact: Keep entries with tags exactly matching the active filters");
+                ImGui.SeparatorText(UiText.T("Filter Modes"));
+                ImGui.BulletText(UiText.T("Any: Keep entries with at least one matching tag"));
+                ImGui.BulletText(UiText.T("All: Keep entries containing all active tags"));
+                ImGui.BulletText(UiText.T("Exact: Keep entries with tags exactly matching the active filters"));
                 ImGui.EndTooltip();
             }
             ImGui.Separator();
@@ -139,13 +139,13 @@ public class BookmarksPanel
             }
             ImGui.EndCombo();
         }
-        ImguiHelpers.Tooltip("Filters");
+        ImguiHelpers.Tooltip(UiText.T("Filters"));
         ImGui.SameLine();
         using (var _ = ImguiHelpers.Disabled(_activeTagFilter.Count == 0)) {
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FilterClear, [Colors.IconTertiary, Colors.IconPrimary])) {
                 _activeTagFilter.Clear();
             }
-            ImguiHelpers.Tooltip("Clear Filters");
+            ImguiHelpers.Tooltip(UiText.T("Clear Filters"));
         }
         bool showDefaultTable = _bookmarks.Defaults.GetBookmarks(Workspace.Config.Game.name).Count > 0 && !_bookmarks.Defaults.IsHideBookmarks;
         bool showCustomTable = _bookmarks.User.GetBookmarks(Workspace.Config.Game.name).Count > 0 && !_bookmarks.User.IsHideBookmarks;
@@ -175,7 +175,7 @@ public class BookmarksPanel
         var filteredBookmarks = FilterBookmarks(bookmarks.ToList(), activeTagFilter, searchText, _filterMode);
 
         if (filteredBookmarks.Count == 0) {
-            ImGui.SeparatorText(label + " [No Matches Found]");
+            ImGui.SeparatorText(label + UiText.T(" [No Matches Found]"));
             return;
         }
 
@@ -191,11 +191,11 @@ public class BookmarksPanel
         ImGui.SeparatorText(label);
         if (ImGui.BeginChild($"{label}_Scroll", new Vector2(0, currDisplayHeight), childFlags)) {
             if (ImGui.BeginTable($"{label}Table", columnNum, bookmarkTableFlags)) {
-                ImGui.TableSetupColumn("Path"u8, ImGuiTableColumnFlags.WidthStretch);
-                ImGui.TableSetupColumn("Tags"u8, ImGuiTableColumnFlags.WidthStretch);
-                ImGui.TableSetupColumn("Comment"u8, ImGuiTableColumnFlags.WidthStretch);
+                ImGui.TableSetupColumn(UiText.LabelUtf8("Path"), ImGuiTableColumnFlags.WidthStretch);
+                ImGui.TableSetupColumn(UiText.LabelUtf8("Tags"), ImGuiTableColumnFlags.WidthStretch);
+                ImGui.TableSetupColumn(UiText.LabelUtf8("Comment"), ImGuiTableColumnFlags.WidthStretch);
                 if (manager == _bookmarks.User) {
-                    ImGui.TableSetupColumn("Order"u8, ImGuiTableColumnFlags.WidthFixed, ((ImGui.GetFrameHeight() * 2f) + ImGui.GetStyle().ItemSpacing.X * 3f));
+                    ImGui.TableSetupColumn(UiText.LabelUtf8("Order"), ImGuiTableColumnFlags.WidthFixed, ((ImGui.GetFrameHeight() * 2f) + ImGui.GetStyle().ItemSpacing.X * 3f));
                 }
                 ImGui.TableHeadersRow();
 
@@ -292,16 +292,16 @@ public class BookmarksPanel
 
     private void ShowBookmarksContextMenu(BookmarkManager manager, BookmarkManager.BookmarkEntry bm)
     {
-        if (ImguiHelpers.ContextMenuItem("##CopyPath", AppIcons.SI_FileCopyPath, "Copy Path", Colors.IconPrimary)) {
+        if (ImguiHelpers.ContextMenuItem("##CopyPath", AppIcons.SI_FileCopyPath, UiText.T("Copy Path"), Colors.IconPrimary)) {
             EditorWindow.CurrentWindow?.CopyToClipboard(bm.Path);
         }
-        if (ImguiHelpers.ContextMenuItem("##JumptoLocation", AppIcons.SIC_FileJumpTo, "Jump to file Location", [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary])) {
+        if (ImguiHelpers.ContextMenuItem("##JumptoLocation", AppIcons.SIC_FileJumpTo, UiText.T("Jump to file Location"), [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary])) {
             _navigateTo(bm.Path);
         }
-        if (ImguiHelpers.ContextMenuItem("##RemoveBookmarks", AppIcons.SIC_BookmarkRemove, "Remove from Bookmarks", [Colors.IconPrimary, Colors.IconTertiary])) {
+        if (ImguiHelpers.ContextMenuItem("##RemoveBookmarks", AppIcons.SIC_BookmarkRemove, UiText.T("Remove from Bookmarks"), [Colors.IconPrimary, Colors.IconTertiary])) {
             manager.RemoveBookmark(Workspace.Config.Game.name, bm.Path);
         }
-        if (ImGui.BeginMenu($"{AppIcons.SI_GenericTag} | Tags")) {
+        if (ImGui.BeginMenu(UiText.FormatLabel($"{AppIcons.SI_GenericTag} | Tags"))) {
             ImGui.PushItemFlag(ImGuiItemFlags.AutoClosePopups, false);
             foreach (var tag in BookmarkManager.TagInfoMap.Keys) {
                 bool hasTag = bm.Tags.Contains(tag);
@@ -327,7 +327,7 @@ public class BookmarksPanel
             editingCustomBookmark = bm.Path;
             customBookmarkComment = bm.Comment;
         }
-        if (ImGui.InputTextWithHint("Edit Comment"u8, "Press Enter to save"u8, ref customBookmarkComment, 64, ImGuiInputTextFlags.EnterReturnsTrue)) {
+        if (ImGui.InputTextWithHint(UiText.LabelUtf8("Edit Comment"), UiText.Utf8("Press Enter to save"), ref customBookmarkComment, 64, ImGuiInputTextFlags.EnterReturnsTrue)) {
             bm.Comment = customBookmarkComment;
             manager.SaveBookmarks();
             editingCustomBookmark = null;

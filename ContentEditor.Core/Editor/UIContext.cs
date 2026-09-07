@@ -359,7 +359,7 @@ public class UIContext
         if (uiHandler != null) {
             uiHandler.OnIMGUI(this);
         } else {
-            ImGui.TextColored(Colors.Error, $"{label} (unsupported type {GetRaw()?.GetType().Name ?? "NULL"} for value {GetRaw()})");
+            ImGui.TextColored(Colors.Error, UiText.F($"{label} (unsupported type {GetRaw()?.GetType().Name ?? "NULL"} for value {GetRaw()})"));
         }
     }
 

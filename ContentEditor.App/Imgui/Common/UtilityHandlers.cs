@@ -233,7 +233,7 @@ public class InstanceTypePickerHandler<T>(Type?[] classOptions, Func<UIContext, 
             ImguiHelpers.ValueCombo(context._label, labels, classOptions!, ref chosenType);
         }
         if (chosenType != curType) {
-            if (ImGui.Button("Change")) {
+            if (ImGui.Button(UiText.Label("Change"))) {
                 T? newInstance;
                 if (chosenType == null) {
                     newInstance = default;
@@ -246,7 +246,7 @@ public class InstanceTypePickerHandler<T>(Type?[] classOptions, Func<UIContext, 
             }
 
             ImGui.SameLine();
-            if (ImGui.Button("Cancel")) {
+            if (ImGui.Button(UiText.Label("Cancel"))) {
                 chosenType = null;
             }
         }

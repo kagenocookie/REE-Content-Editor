@@ -26,7 +26,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
             if (!string.IsNullOrEmpty(fo.ScenePath)) {
                 if (expandContents && fo.ChildScene == null) {
                     fo.RequestLoad();
-                    ImGui.TextColored(Colors.Info, "Loading scene ...");
+                    ImGui.TextColored(Colors.Info, UiText.T("Loading scene ..."));
                 }
 
                 return [];
@@ -59,7 +59,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                 var parentSceneEditor = context.FindHandlerInParents<SceneEditor>();
                 WindowData.CreateEmbeddedWindow(context, context.GetWindow()!, new SceneEditor(ws, file, parentSceneEditor), $"LinkedScene {node}");
             } else {
-                ImGui.TextColored(Colors.Error, "Linked scene file not found: " + folder.ScenePath);
+                ImGui.TextColored(Colors.Error, UiText.T("Linked scene file not found: ") + folder.ScenePath);
             }
         }
     }
@@ -135,12 +135,12 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
 
         if (ImGui.BeginPopupContextItem(label)) {
             if (scene?.IsActive == true) {
-                if (ImGui.Selectable($"{AppIcons.Search} Focus in 3D view")) {
+                if (ImGui.Selectable(UiText.FormatLabel($"{AppIcons.Search} Focus in 3D view"))) {
                     if (node is Folder f) scene.ActiveCamera.LookAt(f, false);
                     else if (node is GameObject go) scene.ActiveCamera.LookAt(go, false);
                 }
 
-                if (ImGui.MenuItem($"{AppIcons.Eye} Toggle children Visibility")) {
+                if (ImGui.MenuItem(UiText.FormatLabel($"{AppIcons.Eye} Toggle children Visibility"))) {
                     var visible = node.VisibilityChildren.FirstOrDefault()?.ShouldDrawSelf == true;
                     foreach (var child in node.VisibilityChildren) child.ShouldDrawSelf = !visible;
                 }
@@ -149,7 +149,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
             }
 
             if ((node is GameObject || node is Folder && string.IsNullOrEmpty(((Folder)node).ScenePath))) {
-                if (ImGui.Selectable($"{AppIcons.SI_SceneGameObject} New GameObject")) {
+                if (ImGui.Selectable(UiText.FormatLabel($"{AppIcons.SI_SceneGameObject} New GameObject"))) {
                     var ws = context.GetWorkspace();
                     var newgo = new GameObject("New_GameObject", ws!.Env, folder ?? (node as GameObject)?.Folder, scene);
                     UndoRedo.RecordAddChild(context, newgo, (INodeObject<GameObject>)node);
@@ -157,23 +157,23 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                     rootEditor?.SetPrimaryInspector(newgo);
                 }
 
-                if (ImGui.BeginMenu($"{AppIcons.SI_FileType_PFB} Instantiate Prefab")) {
+                if (ImGui.BeginMenu(UiText.FormatLabel($"{AppIcons.SI_FileType_PFB} Instantiate Prefab"))) {
                     var ws = context.GetWorkspace()!;
                     _bookmarks ??= new BookmarkHolder(ws);
                     var items = _bookmarks.GetByTag("Prefab");
                     if (!items.Any()) {
-                        ImGui.TextColored(Colors.Note, "No prefab bookmarks found!");
+                        ImGui.TextColored(Colors.Note, UiText.T("No prefab bookmarks found!"));
                     } else {
-                        ResourcePathPicker.Show("Specific prefab"u8, ref prefabFilepath, ref prefabFilepath, ref prefabFilter, ws, [KnownFileFormats.Prefab], FileFilters.PfbFile, ResourcePathPicker.PathPickerFlags.NoConfirmation|ResourcePathPicker.PathPickerFlags.UseTargetPath);
+                        ResourcePathPicker.Show(UiText.LabelUtf8("Specific prefab"), ref prefabFilepath, ref prefabFilepath, ref prefabFilter, ws, [KnownFileFormats.Prefab], FileFilters.PfbFile, ResourcePathPicker.PathPickerFlags.NoConfirmation|ResourcePathPicker.PathPickerFlags.UseTargetPath);
                         FileHandle? file = null;
                         if (!string.IsNullOrEmpty(prefabFilepath)) {
                             ws.ResourceManager.TryResolveGameFile(prefabFilepath, out file);
-                            if (file != null && !ImGui.Button("Instantiate"u8)) {
+                            if (file != null && !ImGui.Button(UiText.LabelUtf8("Instantiate"))) {
                                 file = null;
                             }
                         }
                         ImGui.Separator();
-                        ImGui.InputTextWithHint("Filter"u8, $"{AppIcons.Search}", ref context.Filter, 50);
+                        ImGui.InputTextWithHint(UiText.LabelUtf8("Filter"), $"{AppIcons.Search}", ref context.Filter, 50);
                         var filter = context.Filter;
                         foreach (var item in items) {
                             if (!string.IsNullOrEmpty(filter) && !item.Comment.Contains(filter, StringComparison.OrdinalIgnoreCase) && !item.Path.Contains(filter, StringComparison.OrdinalIgnoreCase)) {
@@ -200,11 +200,11 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
             }
 
             if (node is GameObject gameObject) {
-                if (ImGui.Selectable($"{AppIcons.SI_Copy} Copy GameObject")) {
+                if (ImGui.Selectable(UiText.FormatLabel($"{AppIcons.SI_Copy} Copy GameObject"))) {
                     VirtualClipboard.CopyToClipboard(gameObject.Clone());
                     ImGui.CloseCurrentPopup();
                 }
-                if (VirtualClipboard.TryGetFromClipboard<GameObject>(out var clipboardObject) && ImGui.Selectable($"{AppIcons.SI_Paste} Paste as child")) {
+                if (VirtualClipboard.TryGetFromClipboard<GameObject>(out var clipboardObject) && ImGui.Selectable(UiText.FormatLabel($"{AppIcons.SI_Paste} Paste as child"))) {
                     var clone = clipboardObject.Clone();
                     UndoRedo.RecordAddChild<GameObject>(context, clone, gameObject);
                     clone.MakeNameUnique();
@@ -215,19 +215,19 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                 var parent = ((INodeObject<GameObject>)gameObject).GetParent();
                 // the sole root instance mustn't be deleted or duplicated (pfb)
                 if (parent != null) {
-                    if (ImGui.Selectable($"{AppIcons.SI_FileExtractTo} Duplicate")) {
+                    if (ImGui.Selectable(UiText.FormatLabel($"{AppIcons.SI_FileExtractTo} Duplicate"))) {
                         var clone = gameObject.Clone();
                         UndoRedo.RecordAddChild<GameObject>(context, clone, parent, parent.GetChildIndex(gameObject) + 1);
                         clone.MakeNameUnique();
                         rootEditor?.SetPrimaryInspector(clone);
                     }
-                    if (ImGui.Selectable($"{AppIcons.SI_GenericDelete} Delete")) {
+                    if (ImGui.Selectable(UiText.FormatLabel($"{AppIcons.SI_GenericDelete} Delete"))) {
                         UndoRedo.RecordRemoveChild(context, gameObject);
                     }
                 }
 
             } else if (folder != null) {
-                if (string.IsNullOrEmpty(folder.ScenePath) && ImGui.Selectable($"{AppIcons.SI_Folder} New folder")) {
+                if (string.IsNullOrEmpty(folder.ScenePath) && ImGui.Selectable(UiText.FormatLabel($"{AppIcons.SI_Folder} New folder"))) {
                     var ws = context.GetWorkspace();
                     var newFolder = new Folder("New_Folder", ws!.Env, scene);
                     UndoRedo.RecordAddChild(context, newFolder, folder);
@@ -235,7 +235,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                     GetRootInspector(context)?.SetPrimaryInspector(newFolder);
                 }
 
-                if (VirtualClipboard.TryGetFromClipboard<GameObject>(out var clipboardObject) && ImGui.Selectable($"{AppIcons.SI_Paste} Paste GameObject")) {
+                if (VirtualClipboard.TryGetFromClipboard<GameObject>(out var clipboardObject) && ImGui.Selectable(UiText.FormatLabel($"{AppIcons.SI_Paste} Paste GameObject"))) {
                     var clone = clipboardObject.Clone();
                     UndoRedo.RecordAddChild<GameObject>(context, clone, folder);
                     clone.MakeNameUnique();
@@ -245,24 +245,24 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
 
                 if (folder.Parent != null) {
                     // TODO need proper icon
-                    if (ImGui.Selectable($"{AppIcons.SI_FileExtractTo} Duplicate")) {
+                    if (ImGui.Selectable(UiText.FormatLabel($"{AppIcons.SI_FileExtractTo} Duplicate"))) {
                         var clone = folder.Clone();
                         UndoRedo.RecordAddChild(context, clone, folder.Parent, folder.Parent.GetChildIndex(folder) + 1);
                         clone.MakeNameUnique();
                         rootEditor?.SetPrimaryInspector(clone);
                     }
-                    if (ImGui.Selectable($"{AppIcons.SI_GenericDelete} Delete")) {
+                    if (ImGui.Selectable(UiText.FormatLabel($"{AppIcons.SI_GenericDelete} Delete"))) {
                         UndoRedo.RecordRemoveChild(context, folder);
                     }
                 }
 
                 if (folder.ChildScene?.Folders.Any() == true) {
-                    if (ImGui.BeginMenu($"{AppIcons.List} Load subfolders")) {
+                    if (ImGui.BeginMenu(UiText.FormatLabel($"{AppIcons.List} Load subfolders"))) {
                         var loadType = (Scene.LoadType?)null;
-                        if (ImGui.Selectable("Direct children")) loadType = Scene.LoadType.Default;
-                        if (ImGui.Selectable("Direct preloaded children")) loadType = Scene.LoadType.PreloadedOnly;
-                        if (ImGui.Selectable("All children")) loadType = Scene.LoadType.LoadChildren | Scene.LoadType.IncludeNested;
-                        if (ImGui.Selectable("All preloaded children")) loadType = Scene.LoadType.PreloadedOnly | Scene.LoadType.LoadChildren | Scene.LoadType.IncludeNested;
+                        if (ImGui.Selectable(UiText.Label("Direct children"))) loadType = Scene.LoadType.Default;
+                        if (ImGui.Selectable(UiText.Label("Direct preloaded children"))) loadType = Scene.LoadType.PreloadedOnly;
+                        if (ImGui.Selectable(UiText.Label("All children"))) loadType = Scene.LoadType.LoadChildren | Scene.LoadType.IncludeNested;
+                        if (ImGui.Selectable(UiText.Label("All preloaded children"))) loadType = Scene.LoadType.PreloadedOnly | Scene.LoadType.LoadChildren | Scene.LoadType.IncludeNested;
                         if (loadType != null) {
                             try {
                                 foreach (var subfolder in folder.ChildScene.Folders) {
@@ -317,7 +317,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
             ImGui.SetDragDropPayload(node.GetType().Name, null, 0);
             var icon = AppIcons.GetIcon(node);
             dragSource = node;
-            ImGui.Text("Moving: " + (icon == '\0' ? node.ToString() : icon + " " + node.ToString()));
+            ImGui.Text(UiText.T("Moving: ") + (icon == '\0' ? node.ToString() : icon + " " + node.ToString()));
             ImGui.EndDragDropSource();
             ImGui.GetWindowDrawList().AddRect(
                 startPos,
@@ -440,7 +440,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
     {
         if (context.TryCast<Folder>(out var folder)) {
             ImGui.Spacing();
-            if (ImGui.Button($"{AppIcons.SI_GenericAdd} Add Folder")) {
+            if (ImGui.Button(UiText.FormatLabel($"{AppIcons.SI_GenericAdd} Add Folder"))) {
                 var ws = context.GetWorkspace();
                 var newFolder = new Folder("New_Folder", ws!.Env, folder.Scene);
                 UndoRedo.RecordAddChild(context, newFolder, folder);
@@ -448,7 +448,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                 GetRootInspector(context)?.SetPrimaryInspector(newFolder);
             }
             ImGui.SameLine();
-            if (ImGui.Button($"{AppIcons.SI_GenericAdd} Add GameObject")) {
+            if (ImGui.Button(UiText.FormatLabel($"{AppIcons.SI_GenericAdd} Add GameObject"))) {
                 var ws = context.GetWorkspace();
                 var newgo = new GameObject("New_GameObject", ws!.Env, folder, folder.Scene);
                 UndoRedo.RecordAddChild(context, newgo, (INodeObject<GameObject>)folder);
@@ -468,25 +468,21 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
         if (!GetChildren(node).Skip(1).Any()) return;
 
         // temporary (?) workaround for not having a clickable 3D view
-        if (ImGui.BeginMenu($"{AppIcons.Search} Bisect find")) {
+        if (ImGui.BeginMenu(UiText.FormatLabel($"{AppIcons.Search} Bisect find"))) {
             if (bisectTemp.Count == 0 || bisectTemp.Keys.First() != node) {
                 bisectTemp.Clear();
                 bisectTemp[node] = (new(), GetChildren(node).Cast<IVisibilityTarget>().Where(c => c.ShouldDrawSelf).ToList());
             }
 
-            ImGui.Text("Remaining objects: " + bisectTemp[node].pending.Count);
+            ImGui.Text(UiText.T("Remaining objects: ") + bisectTemp[node].pending.Count);
             ImGui.SameLine();
             ImGui.Button("?"u8);
             if (ImGui.IsItemHovered()) {
-                ImGui.SetItemTooltip("""
-                    This is a tool for finding objects across large child lists.
-                    Half of this object's children will be hidden one at a time
-                    You just need to mark whether or not you can still see the object you're trying to locate.
-                    """u8);
+                ImGui.SetItemTooltip(UiText.Utf8("This is a tool for finding objects across large child lists.\r\nHalf of this object's children will be hidden one at a time\r\nYou just need to mark whether or not you can still see the object you're trying to locate."));
             }
 
-            var biYes = ImGui.Selectable("Object is visible", ImGuiSelectableFlags.NoAutoClosePopups);
-            var biNo = ImGui.Selectable("Object NOT visible", ImGuiSelectableFlags.NoAutoClosePopups);
+            var biYes = ImGui.Selectable(UiText.Label("Object is visible"), ImGuiSelectableFlags.NoAutoClosePopups);
+            var biNo = ImGui.Selectable(UiText.Label("Object NOT visible"), ImGuiSelectableFlags.NoAutoClosePopups);
             if (biYes || biNo) {
                 var children = GetChildren(node).Cast<IVisibilityTarget>().ToList();
                 var matched = children.Where(ch => biYes ? !ch.ShouldDrawSelf : ch.ShouldDrawSelf);
@@ -511,7 +507,7 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                     }
                 }
             }
-            if (ImGui.Selectable("Reset")) {
+            if (ImGui.Selectable(UiText.Label("Reset"))) {
                 foreach (var ch in GetChildren(node).Cast<IVisibilityTarget>()) ch.ShouldDrawSelf = true;
                 bisectTemp.Clear();
             }

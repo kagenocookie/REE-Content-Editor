@@ -25,7 +25,7 @@ public class AutocompleteStringHandler(bool requireListedChoice, string[]? sugge
             return;
         }
         if (requireListedChoice && !currentSuggestions.Any()) {
-            ImGui.TextColored(Colors.Info, "No options available");
+            ImGui.TextColored(Colors.Info, UiText.T("No options available"));
             return;
         }
 

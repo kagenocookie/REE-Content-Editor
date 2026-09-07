@@ -14,7 +14,7 @@ public class MaterialParamCacheTask(Workspace workspace) : FileCacheTaskBase(wor
     protected override string GetCacheFilePath(GameIdentifier game) => GetCachePath(game);
     public static string GetCachePath(GameIdentifier game) => Path.Combine(GetBaseCacheDir(game.name), "materials.json");
 
-    public override string ToString() => $"Caching material parameter data";
+    public override string ToString() => UiText.T("Caching material parameter data");
 
     protected override string FilterPattern => ".*\\.mdf2\\..*";
 

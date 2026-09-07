@@ -50,7 +50,7 @@ public class ThemeEditor : IWindowHandler
     public void OnIMGUI()
     {
         ImGui.Button($"{AppIcons.SI_GenericInfo}");
-        ImguiHelpers.Tooltip("Change any settings you wish in the below style editor section. You can use the IMGUI Test Window to preview most components.\nOnce you're satisfied with your changes, press \"Save\" and store it in the styles folder.");
+        ImguiHelpers.Tooltip(UiText.T("Change any settings you wish in the below style editor section. You can use the IMGUI Test Window to preview most components.\nOnce you're satisfied with your changes, press \"Save\" and store it in the styles folder."));
         ImGui.SameLine();
         if (ImGui.Button($"{AppIcons.SI_Save}")) {
             var themeData = DefaultThemes.GetCurrentStyleData() + "\n\n" + UI.GetImNodesThemeStyleData();
@@ -61,13 +61,13 @@ public class ThemeEditor : IWindowHandler
                 File.WriteAllText(path, themeData);
             }, initialFile: Path.GetFullPath(Path.Combine(themePath, "custom_theme.theme.txt")), filters: FileFilters.ThemeFile);
         }
-        ImguiHelpers.Tooltip("Save");
+        ImguiHelpers.Tooltip(UiText.T("Save"));
         ImGui.SameLine();
-        if (ImGui.Button("Open IMGUI Test Window")) {
+        if (ImGui.Button(UiText.Label("Open IMGUI Test Window"))) {
             EditorWindow.CurrentWindow?.AddUniqueSubwindow(new ImguiTestWindow());
         }
         var theme = AppConfig.Instance.Theme.Get();
-        if (ImguiHelpers.ValueCombo("Theme", DefaultThemes.AvailableThemes, DefaultThemes.AvailableThemes, ref theme)) {
+        if (ImguiHelpers.ValueCombo(UiText.Label("Theme"), DefaultThemes.AvailableThemes, DefaultThemes.AvailableThemes, ref theme)) {
             UI.ApplyTheme(theme!);
             AppConfig.Instance.Theme.Set(theme);
         }
@@ -80,7 +80,7 @@ public class ThemeEditor : IWindowHandler
         } else {
             ImNodes.SetCurrentContext(nodeCtx.Value);
         }
-        ImGui.SeparatorText("Style Editor");
+        ImGui.SeparatorText(UiText.T("Style Editor"));
         ImguiHelpers.Tabs(["Built-in", "Nodes", "Contextual"], ref tab, true);
         ImGui.BeginChild("Styles");
         if (tab == 0) {
@@ -102,7 +102,7 @@ public class ThemeEditor : IWindowHandler
 
         ImGui.BeginTabBar("Node Styles");
         var style = ImNodes.GetStyle();
-        if (ImGui.BeginTabItem("Sizes")) {
+        if (ImGui.BeginTabItem(UiText.Label("Sizes"))) {
             ImGui.SliderFloat(nameof(ImNodesStylePtr.LinkHoverDistance), ref style.LinkHoverDistance, 0, 32);
             ImGui.SliderFloat(nameof(ImNodesStylePtr.LinkLineSegmentsPerLength), ref style.LinkLineSegmentsPerLength, 0, 1);
             ImGui.SliderFloat(nameof(ImNodesStylePtr.LinkThickness), ref style.LinkThickness, 0, 32);
@@ -123,7 +123,7 @@ public class ThemeEditor : IWindowHandler
 
             ImGui.EndTabItem();
         }
-        if (ImGui.BeginTabItem("Colors")) {
+        if (ImGui.BeginTabItem(UiText.Label("Colors"))) {
             foreach (var col in Enum.GetValues<ImNodesCol>()) {
                 if (col == ImNodesCol.Count) continue;
 
@@ -142,16 +142,16 @@ public class ThemeEditor : IWindowHandler
         ImNodes.BeginNodeEditor();
 
         ImNodes.BeginNode(0);
-            ImNodes.BeginNodeTitleBar(); ImGui.Text("Node Title 1"); ImNodes.EndNodeTitleBar();
-            ImGui.Text("Sample text inside node");
+            ImNodes.BeginNodeTitleBar(); ImGui.Text(UiText.T("Node Title 1")); ImNodes.EndNodeTitleBar();
+            ImGui.Text(UiText.T("Sample text inside node"));
             AppImguiHelpers.NodeSeparator(0);
             ImNodes.BeginInputAttribute(0);
-            ImGui.Text("Input 1");
+            ImGui.Text(UiText.T("Input 1"));
             ImNodes.EndInputAttribute();
 
             ImNodes.BeginOutputAttribute(0);
-            using (var _ = ImguiHelpers.ScopedIndent(AppImguiHelpers.NodeContentAvailX(0) - ImGui.CalcTextSize("Output 1"u8).X)) {
-                ImGui.Text("Output 1"u8);
+            using (var _ = ImguiHelpers.ScopedIndent(AppImguiHelpers.NodeContentAvailX(0) - ImGui.CalcTextSize(UiText.Utf8("Output 1")).X)) {
+                ImGui.Text(UiText.Utf8("Output 1"));
             }
             ImNodes.EndOutputAttribute();
 
@@ -167,18 +167,18 @@ public class ThemeEditor : IWindowHandler
         ImNodes.EndNode();
 
         ImNodes.BeginNode(1);
-            ImNodes.BeginNodeTitleBar(); ImGui.Text("Node Title 2"); ImNodes.EndNodeTitleBar();
-            ImGui.Text("More text");
-            ImGui.Text("Line 2");
+            ImNodes.BeginNodeTitleBar(); ImGui.Text(UiText.T("Node Title 2")); ImNodes.EndNodeTitleBar();
+            ImGui.Text(UiText.T("More text"));
+            ImGui.Text(UiText.T("Line 2"));
             AppImguiHelpers.NodeSeparator(1);
 
             ImNodes.BeginInputAttribute(1);
-            ImGui.Text("Input 2");
+            ImGui.Text(UiText.T("Input 2"));
             ImNodes.EndInputAttribute();
 
             ImNodes.BeginOutputAttribute(50);
-            using (var _ = ImguiHelpers.ScopedIndent(AppImguiHelpers.NodeContentAvailX(1) - ImGui.CalcTextSize("Output 3"u8).X)) {
-                ImGui.Text("Output 3"u8);
+            using (var _ = ImguiHelpers.ScopedIndent(AppImguiHelpers.NodeContentAvailX(1) - ImGui.CalcTextSize(UiText.Utf8("Output 3")).X)) {
+                ImGui.Text(UiText.Utf8("Output 3"));
             }
             ImNodes.EndOutputAttribute();
         ImNodes.EndNode();
@@ -211,7 +211,7 @@ public class ThemeEditor : IWindowHandler
                             ShowColorFields(tab.Fields);
                             break;
                         default:
-                            ImGui.Text("Lorem Ipsum");
+                            ImGui.Text(UiText.T("Lorem Ipsum"));
                             break;
                     }
                     ImGui.EndTabItem();
@@ -264,7 +264,7 @@ public class ThemeEditor : IWindowHandler
             }
 
             ImGui.Spacing();
-            ImGui.TextColored(col, $"Lorem ipsum dolor sit amet | {AppIcons.SI_GenericMagnifyingGlass} | {AppIcons.SI_GenericQmark}");
+            ImGui.TextColored(col, UiText.F($"Lorem ipsum dolor sit amet | {AppIcons.SI_GenericMagnifyingGlass} | {AppIcons.SI_GenericQmark}"));
         }
 
         ImGui.EndChild();

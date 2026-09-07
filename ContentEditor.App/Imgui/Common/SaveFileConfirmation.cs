@@ -63,14 +63,14 @@ public class SaveFileConfirmation : IWindowHandler
 
         ImGui.Text($"{AppIcons.SI_Save}");
         ImGui.SameLine();
-        ImGui.Text("Unsaved Changes");
+        ImGui.Text(UiText.T("Unsaved Changes"));
         ImGui.Dummy(new Vector2(0, style.ItemSpacing.Y * 2));
         ImGui.Text(text);
         ImGui.Dummy(new Vector2(0, style.ItemSpacing.Y * 2));
 
         ImGui.Separator();
         float buttonW = (ImGui.GetContentRegionAvail().X - style.ItemSpacing.X * 2) / 3;
-        if (ImGui.Button("Save", new Vector2(buttonW, 0))) {
+        if (ImGui.Button(UiText.Label("Save"), new Vector2(buttonW, 0))) {
             var allSuccessful = true;
             foreach (var file in Files) {
                 if (!file.Save(context.GetWorkspace()!)) {
@@ -84,12 +84,12 @@ public class SaveFileConfirmation : IWindowHandler
             }
         }
         ImGui.SameLine();
-        if (ImGui.Button("Discard Changes", new Vector2(buttonW, 0))) {
+        if (ImGui.Button(UiText.Label("Discard Changes"), new Vector2(buttonW, 0))) {
             OnConfirmed?.Invoke();
             EditorWindow.CurrentWindow?.CloseSubwindow(this);
         }
         ImGui.SameLine();
-        if (ImGui.Button("Cancel", new Vector2(buttonW, 0))) {
+        if (ImGui.Button(UiText.Label("Cancel"), new Vector2(buttonW, 0))) {
             OnCancelled?.Invoke();
             EditorWindow.CurrentWindow?.CloseSubwindow(this);
         }

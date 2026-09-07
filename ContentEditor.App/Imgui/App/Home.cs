@@ -146,7 +146,7 @@ public class HomeWindow : IWindowHandler
     private static void ShowWelcomeText()
     {
         ImGui.PushFont(ImFontPtr.Null, UI.FontSizeLarge + 100);
-        const string text = "Welcome to Content Editor";
+        var text = UiText.T("Welcome to Content Editor");
         var textSize = ImGui.CalcTextSize(text);
         var availSpace = ImGui.GetContentRegionAvail();
         var posX = (availSpace.X - textSize.X - 250 - ImGui.GetStyle().ItemSpacing.X) * 0.5f;
@@ -304,14 +304,14 @@ public class HomeWindow : IWindowHandler
     {
         ImGui.SeparatorText(Lang.Home.Sep_ThemeColor);
         var theme = AppConfig.Instance.Theme.Get();
-        if (ImguiHelpers.ValueCombo("Theme", DefaultThemes.AvailableThemes, DefaultThemes.AvailableThemes, ref theme)) {
+        if (ImguiHelpers.ValueCombo(UiText.Label("Theme"), DefaultThemes.AvailableThemes, DefaultThemes.AvailableThemes, ref theme)) {
             UI.ApplyTheme(theme!);
             AppConfig.Instance.Theme.Set(theme);
         }
         ImguiHelpers.Tooltip(Lang.Home.Tooltip_FirstTimeSetup_Theme);
 
         var color = AppConfig.Instance.BackgroundColor.Get().ToVector4();
-        if (ImGui.ColorEdit4("Scene Background Color", ref color)) {
+        if (ImGui.ColorEdit4(UiText.Label("Scene Background Color"), ref color)) {
             var newColor = ReeLib.via.Color.FromVector4(color);
             AppConfig.Instance.BackgroundColor.Set(newColor);
             foreach (var wnd in MainLoop.Instance.Windows) {
@@ -330,7 +330,7 @@ public class HomeWindow : IWindowHandler
                 ImGui.Button($"{AppIcons.SI_GenericInfo}");
                 ImguiHelpers.TooltipColored(Lang.Home.Tooltip_FirstTimeSetup_CustomGameNote, Colors.Note);
             }
-            ImGui.InputText("Game Short Name", ref chosenGame, 20);
+            ImGui.InputText(UiText.Label("Game Short Name"), ref chosenGame, 20);
             ImguiHelpers.IsRequired();
             chosenGame = chosenGame.Replace(" ", "");
         } else {
@@ -345,7 +345,7 @@ public class HomeWindow : IWindowHandler
             var extractPath = AppConfig.Instance.GetGameExtractPath(chosenGame);
             var isCustomGame = !Enum.TryParse<GameName>(chosenGame, out _);
 
-            if (AppImguiHelpers.InputFolder("Game Path"u8, ref gamepath) && Directory.Exists(gamepath)) {
+            if (AppImguiHelpers.InputFolder(UiText.LabelUtf8("Game Path"), ref gamepath) && Directory.Exists(gamepath)) {
                 AppConfig.Instance.SetGamePath(chosenGame, gamepath);
             }
             if (!ImGui.IsItemActive() && string.IsNullOrEmpty(gamepath) && !string.IsNullOrEmpty(gameExe)) {
@@ -381,7 +381,7 @@ public class HomeWindow : IWindowHandler
             }
         }
         ImGui.SameLine();
-        string finishText = "Finish Setup";
+        string finishText = UiText.T("Finish Setup");
         ImguiHelpers.AlignElementRight(ImGui.CalcTextSize(finishText).X + ImGui.GetStyle().ItemSpacing.X + ImGui.GetStyle().FramePadding.X);
         using (var _ = ImguiHelpers.Disabled((string.IsNullOrEmpty(chosenGame) || string.IsNullOrEmpty(AppConfig.Instance.GetGamePath(chosenGame)) || string.IsNullOrEmpty(AppConfig.Instance.GetGameExecutablePath(chosenGame))))) {
             if (ImGui.Button(finishText)) {
@@ -397,7 +397,7 @@ public class HomeWindow : IWindowHandler
         var updateInProgress = MainLoop.Instance.BackgroundTasks.HasPendingTask<ReeLibResourceUpdateTask>();
         if (updateInProgress) {
             ImGui.PushFont(ImFontPtr.Null, UI.FontSize * 2);
-            ImGui.TextColored(Colors.Info, "Resource update is currently in progress."u8);
+            ImGui.TextColored(Colors.Info, UiText.Utf8("Resource update is currently in progress."));
             ImGui.Spacing();
             ImGui.PopFont();
             OverlaysWindow.ShowBackgroundTaskProgress(ImGui.GetContentRegionAvail().X);
@@ -408,9 +408,9 @@ public class HomeWindow : IWindowHandler
             if (!updateInProgress) {
                 ImGui.PushFont(ImFontPtr.Null, UI.FontSize * 2);
                 if (window.ResourceSetupFailure == null) {
-                    ImGui.TextColored(Colors.Note, "Loading up workspace..."u8);
+                    ImGui.TextColored(Colors.Note, UiText.Utf8("Loading up workspace..."));
                 } else {
-                    ImGui.TextColored(Colors.Error, "Workspace failed to set up:\n" + window.ResourceSetupFailure);
+                    ImGui.TextColored(Colors.Error, UiText.T("Workspace failed to set up:\n") + window.ResourceSetupFailure);
                     if (ImGui.Button(Lang.Buttons.Retry)) {
                         window.SetWorkspace(window.LastRequestedGame, null, true);
                     }
@@ -428,7 +428,7 @@ public class HomeWindow : IWindowHandler
         var workspace = EditorWindow.CurrentWindow?.Workspace;
         if (workspace == null || string.IsNullOrEmpty(workspace.Game.name)) {
             ImGui.PushFont(ImFontPtr.Null, UI.FontSize * 2);
-            ImGui.TextColored(Colors.Error, "Game is not selected! Select a game from the main toolbar.");
+            ImGui.TextColored(Colors.Error, UiText.T("Game is not selected! Select a game from the main toolbar."));
             ImGui.PopFont();
             return;
         }
@@ -441,25 +441,25 @@ public class HomeWindow : IWindowHandler
         var filelist = AppConfig.Instance.GetGameFilelist(game);
         var isCustomGame = game.GameEnum == GameName.unknown;
 
-        ImGui.SeparatorText("Paths");
+        ImGui.SeparatorText(UiText.T("Paths"));
         if (AppImguiHelpers.InputFolder(Lang.Settings.GamePath.Text, ref gamepath)) {
             AppConfig.Instance.SetGamePath(game, gamepath);
         }
         if (AppImguiHelpers.InputFilepath(Lang.Settings.ExePath.Text, ref gameExe, FileFilters.Executable)) {
             AppConfig.Instance.SetGameExecutablePath(game, gameExe);
         }
-        if (Directory.Exists(gamepath) && ImGui.Button("Auto-Detect Executable path")) {
+        if (Directory.Exists(gamepath) && ImGui.Button(UiText.Label("Auto-Detect Executable path"))) {
             AppConfig.Instance.SetGameExecutablePath(game, AppUtils.FindGameExecutable(gamepath, game.name) ?? gameExe);
         }
-        ImGui.SeparatorText("Resources");
+        ImGui.SeparatorText(UiText.T("Resources"));
         if (ResourceRepository.RemoteInfo.FileExtensions == null) {
-            ImGui.TextColored(Colors.Warning, "Remote resource data has not been fetched yet.");
+            ImGui.TextColored(Colors.Warning, UiText.T("Remote resource data has not been fetched yet."));
         } else {
             // TODO make FileExtensionsPath accessible
             // ImGui.TextColored(Colors.Faded, "Last file extension cache update: " + Languages.FormatDate(ResourceRepository.RemoteInfo.FileExtensions.LastUpdatedAt));
         }
 
-        if (ImGui.Button("Open Local Resource Folder")) {
+        if (ImGui.Button(UiText.Label("Open Local Resource Folder"))) {
             FileSystemUtils.ShowFileInExplorer(ResourceRepository.LocalResourceRepositoryFolder);
         }
         ImGui.SameLine();
@@ -471,12 +471,12 @@ public class HomeWindow : IWindowHandler
 
         var remote = ResourceRepository.RemoteInfo.Resources.GetValueOrDefault(game.name);
         if (isCustomGame) {
-            ImGui.TextColored(Colors.Info, "This is a custom game. All resource files need to be manually defined.");
+            ImGui.TextColored(Colors.Info, UiText.T("This is a custom game. All resource files need to be manually defined."));
         } else if (remote == null) {
-            ImGui.TextColored(Colors.Info, "No known resource lists currently available for this game. All resource files need to be manually defined.");
+            ImGui.TextColored(Colors.Info, UiText.T("No known resource lists currently available for this game. All resource files need to be manually defined."));
         }
 
-        ImGui.TextColored(Colors.Info, "This game's resource data was last updated at: " + Lang.FormatDate(remote?.LastUpdatedAtUtc));
+        ImGui.TextColored(Colors.Info, UiText.T("This game's resource data was last updated at: ") + Lang.FormatDate(remote?.LastUpdatedAtUtc));
 
         var rszFullySupported = remote?.IsRSZFullySupported == true;
 
@@ -489,9 +489,9 @@ public class HomeWindow : IWindowHandler
         // TODO show actual currently used file path
         ImguiHelpers.Tooltip(rszLabel.Tooltip);
         if (remote?.RszPatchFiles.Length > 0) {
-            ImGui.TextColored(Colors.Info, $"Remote URL: {remote.RszPatchFiles[0]}");
+            ImGui.TextColored(Colors.Info, UiText.F($"Remote URL: {remote.RszPatchFiles[0]}"));
             if (ImGui.IsItemClicked()) {
-                window.CopyToClipboard(remote.RszPatchFiles[0], "URL copied!");
+                window.CopyToClipboard(remote.RszPatchFiles[0], UiText.T("URL copied!"));
             }
             // TODO
             // ImGui.SameLine();
@@ -505,9 +505,9 @@ public class HomeWindow : IWindowHandler
         }
         // TODO show actual currently used file path
         if (!string.IsNullOrEmpty(remote?.FileList)) {
-            ImGui.TextColored(Colors.Info, $"Remote URL: {remote.FileList}");
+            ImGui.TextColored(Colors.Info, UiText.F($"Remote URL: {remote.FileList}"));
             if (ImGui.IsItemClicked()) {
-                window.CopyToClipboard(remote.FileList, "URL copied!");
+                window.CopyToClipboard(remote.FileList, UiText.T("URL copied!"));
             }
             // TODO
             // ImGui.SameLine();
@@ -524,7 +524,7 @@ public class HomeWindow : IWindowHandler
         var workspace = window?.Workspace;
         bool isCompactView = ImGui.GetWindowWidth() <= 550 * UI.UIScale;
         ImGui.Spacing();
-        if (ImGui.Button(isCompactView ? $"{AppIcons.SI_Bundle}" : $"{AppIcons.SI_Bundle} Bundle Manager")) {
+        if (ImGui.Button(isCompactView ? $"{AppIcons.SI_Bundle}" : UiText.FormatLabel($"{AppIcons.SI_Bundle} Bundle Manager"))) {
             window?.ShowBundleManagement();
         }
         if (isCompactView) {
@@ -548,21 +548,21 @@ public class HomeWindow : IWindowHandler
             AppConfig.Settings.RecentBundles.Clear();
             AppConfig.Instance.SaveJsonConfig();
         }
-        ImguiHelpers.Tooltip("Clear recent bundles list"u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Clear recent bundles list"));
 
         ImguiHelpers.InlineVerticalSeparator();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isBundleFilterMatchCase, Colors.IconActive);
-        ImguiHelpers.Tooltip("Match Case"u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Match Case"));
         ImGui.SameLine();
         string filterLabelDisplayText;
         if (isCompactView) {
             filterLabelDisplayText = _activeBundleGameFilters.Count == 0 ? $"{AppIcons.SI_Filter}" : $"{AppIcons.SI_Filter} {_activeBundleGameFilters.Count}";
         } else {
-            filterLabelDisplayText = _activeBundleGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} All Games" : $"{AppIcons.SI_Filter} {_activeBundleGameFilters.Count} Selected";
+            filterLabelDisplayText = _activeBundleGameFilters.Count == 0 ? UiText.F($"{AppIcons.SI_Filter} All Games") : UiText.F($"{AppIcons.SI_Filter} {_activeBundleGameFilters.Count} Selected");
         }
         float filterComboWidth = ImGui.CalcTextSize(filterLabelDisplayText).X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - (((filterComboWidth + ImGui.GetStyle().ItemSpacing.X) + (ImGui.GetStyle().FramePadding.X + ImGui.GetStyle().ItemSpacing.X) * 3) + (ImGui.GetStyle().ItemSpacing.X) * 6));
-        AppImguiHelpers.ClearableInputText("##BundleFilter"u8, isCompactView ? $"{AppIcons.SI_GenericMagnifyingGlass} Search" : Lang.Home.BundleFilter.ToString(), ref bundleFilter, 128);
+        AppImguiHelpers.ClearableInputText("##BundleFilter"u8, isCompactView ? UiText.F($"{AppIcons.SI_GenericMagnifyingGlass} Search") : Lang.Home.BundleFilter.ToString(), ref bundleFilter, 128);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(filterComboWidth);
         if (ImGui.BeginCombo("##BundleGameFilterCombo", filterLabelDisplayText, ImGuiComboFlags.HeightLargest)) {
@@ -586,13 +586,13 @@ public class HomeWindow : IWindowHandler
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FilterClear, [Colors.IconTertiary, Colors.IconPrimary])) {
                 _activeBundleGameFilters.Clear();
             }
-            ImguiHelpers.Tooltip("Clear Game Filters"u8);
+            ImguiHelpers.Tooltip(UiText.Utf8("Clear Game Filters"));
         }
         ImguiHelpers.InlineVerticalSeparator();
         if (ImGui.Button(DisplayMode == BundleDisplayMode.Grid ? $"{AppIcons.SI_ViewGridSmall}" : $"{AppIcons.List}")) {
             AppConfig.Instance.BundleDisplayMode = DisplayMode = DisplayMode == BundleDisplayMode.Grid ? BundleDisplayMode.List : BundleDisplayMode.Grid;
         }
-        ImguiHelpers.Tooltip(DisplayMode == BundleDisplayMode.Grid ? "Grid View"u8 : "List View"u8);
+        ImguiHelpers.Tooltip(DisplayMode == BundleDisplayMode.Grid ? UiText.Utf8("Grid View") : UiText.Utf8("List View"));
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.Spacing();
@@ -698,14 +698,14 @@ public class HomeWindow : IWindowHandler
     {
         ImGui.Spacing();
         using (var _ = ImguiHelpers.Disabled(AutoUpdater.UpdateCheckInProgress)) {
-            if (ImGui.Button($"{AppIcons.SI_Update} Check for updates")) {
+            if (ImGui.Button(UiText.FormatLabel($"{AppIcons.SI_Update} Check for updates"))) {
                 AutoUpdater.CheckForUpdateInBackground();
             }
         }
         var releases = AppConfig.Settings.Changelogs.FindCurrentAndNewReleaseList();
         if (releases.Count == 0) {
-            ImGui.Text($"No release data is currently available. You can manually check the repository for changes: {GithubApi.MainRepositoryUrl}");
-            if (ImGui.Button("Open in browser")) {
+            ImGui.Text(UiText.F($"No release data is currently available. You can manually check the repository for changes: {GithubApi.MainRepositoryUrl}"));
+            if (ImGui.Button(UiText.Label("Open in browser"))) {
                 FileSystemUtils.OpenURL(GithubApi.MainRepositoryUrl);
             }
             return;
@@ -713,13 +713,13 @@ public class HomeWindow : IWindowHandler
         foreach (var release in releases) {
             if (!string.IsNullOrEmpty(release.TagName)) {
                 ImGui.PushFont(ImFontPtr.Null, UI.FontSize * 2);
-                ImGui.Text("Version " + release.TagName);
+                ImGui.Text(UiText.T("Version ") + release.TagName);
                 ImGui.PopFont();
-                ImGui.TextColored(Colors.Faded, $"Release date: {Lang.FormatDate(release.ReleaseDate.ToLocalTime())}");
+                ImGui.TextColored(Colors.Faded, UiText.F($"Release date: {Lang.FormatDate(release.ReleaseDate.ToLocalTime())}"));
 
                 if (release.TagName == AppConfig.Version) {
                     ImGui.SameLine();
-                    ImGui.TextColored(Colors.Success, "(Current version)");
+                    ImGui.TextColored(Colors.Success, UiText.T("(Current version)"));
                 } else {
                     ImGui.SameLine();
                     if (ImGui.Button($"{AppIcons.Download}")) {
@@ -728,12 +728,12 @@ public class HomeWindow : IWindowHandler
                         if (string.IsNullOrEmpty(downloadLink)) downloadLink = GithubApi.LatestReleaseUrl;
                         FileSystemUtils.OpenURL(downloadLink);
                     }
-                    ImguiHelpers.Tooltip("Download this version"u8);
+                    ImguiHelpers.Tooltip(UiText.Utf8("Download this version"));
                     ImGui.SameLine();
                     if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
                         FileSystemUtils.OpenURL(release.HtmlUrl ?? GithubApi.LatestReleaseUrl);
                     }
-                    ImguiHelpers.Tooltip("Open release details in browser"u8);
+                    ImguiHelpers.Tooltip(UiText.Utf8("Open release details in browser"));
                 }
 
                 ImGui.Spacing();
@@ -742,7 +742,7 @@ public class HomeWindow : IWindowHandler
                     ChangelogRenderData[release.TagName] = renderData = release.Body?.Split("\n", StringSplitOptions.TrimEntries).ToArray() ?? [];
                 }
                 if (renderData.Length == 0) {
-                    ImGui.Text("No changelog data available for this release");
+                    ImGui.Text(UiText.T("No changelog data available for this release"));
                 } else {
                     foreach (var line in renderData) {
                         if (line == "") {
@@ -760,7 +760,7 @@ public class HomeWindow : IWindowHandler
                         if (line.Contains("https://") && ImGui.IsItemClicked(ImGuiMouseButton.Left)) {
                             var url = line.Substring(line.IndexOf("https://"));
                             FileSystemUtils.OpenURL(url);
-                            EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Opening URL in browser: " + url, 3f);
+                            EditorWindow.CurrentWindow?.Overlays.ShowTooltip(UiText.T("Opening URL in browser: ") + url, 3f);
                         }
                         if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {
                             EditorWindow.CurrentWindow?.CopyToClipboard(line);
@@ -776,8 +776,8 @@ public class HomeWindow : IWindowHandler
 
     private void ShowCommitLog()
     {
-        ImGui.TextColored(Colors.Info, "The latest changes are always available in the debug builds.\nThese might not yet be fully tested and some features may be incomplete.\nA GitHub account is required to download."u8);
-        if (ImGui.Button("View debug builds")) {
+        ImGui.TextColored(Colors.Info, UiText.Utf8("The latest changes are always available in the debug builds.\nThese might not yet be fully tested and some features may be incomplete.\nA GitHub account is required to download."));
+        if (ImGui.Button(UiText.Label("View debug builds"))) {
             FileSystemUtils.OpenURL("https://github.com/kagenocookie/REE-Content-Editor/actions");
         }
         ImGui.Separator();
@@ -791,7 +791,7 @@ public class HomeWindow : IWindowHandler
             ImGui.Text(commit.Commit.Message ?? "<no message>");
             if (AppConfig.RevisionHash != null && commit.Sha?.StartsWith(AppConfig.RevisionHash) == true) {
                 ImGui.SameLine();
-                ImGui.TextColored(Colors.Success, "(current)");
+                ImGui.TextColored(Colors.Success, UiText.T("(current)"));
             }
             ImGui.Spacing();
         }
@@ -805,7 +805,7 @@ public class HomeWindow : IWindowHandler
             AppConfig.Settings.RecentFiles.Clear();
             AppConfig.Instance.SaveJsonConfig();
         }
-        ImguiHelpers.Tooltip("Clear recent files"u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Clear recent files"));
 
         ImguiHelpers.InlineVerticalSeparator();
         var favorites = AppConfig.Settings.GetGameSettings(curGame)?.Favorites;
@@ -820,10 +820,10 @@ public class HomeWindow : IWindowHandler
 
         ImguiHelpers.InlineVerticalSeparator();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isRecentFileFilterMatchCase, Colors.IconActive);
-        ImguiHelpers.Tooltip("Match Case"u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Match Case"));
 
         ImGui.SameLine();
-        string filterLabelDisplayText = _activeRecentFileGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} " + "All Games" : $"{AppIcons.SI_Filter} " + $"{_activeRecentFileGameFilters.Count} Selected";
+        string filterLabelDisplayText = _activeRecentFileGameFilters.Count == 0 ? $"{AppIcons.SI_Filter} " + UiText.T("All Games") : $"{AppIcons.SI_Filter} " + UiText.F($"{_activeRecentFileGameFilters.Count} Selected");
         float filterComboWidth = ImGui.CalcTextSize(filterLabelDisplayText).X + ImGui.GetStyle().FramePadding.X * 2 + ImGui.GetStyle().ItemSpacing.X + ImGui.GetFontSize();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - (((filterComboWidth + ImGui.GetStyle().ItemSpacing.X) + (ImGui.GetStyle().FramePadding.X + ImGui.GetStyle().ItemSpacing.X) * 3)));
         AppImguiHelpers.ClearableInputText("##RecentFileFilter"u8, Lang.Home.Hint_SearchRecentFiles.ToString(), ref recentFileFilter, 128);
@@ -851,7 +851,7 @@ public class HomeWindow : IWindowHandler
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FilterClear, [Colors.IconTertiary, Colors.IconPrimary])) {
                 _activeRecentFileGameFilters.Clear();
             }
-            ImguiHelpers.Tooltip("Clear Game Filters"u8);
+            ImguiHelpers.Tooltip(UiText.Utf8("Clear Game Filters"));
         }
 
         ImGui.Spacing();
@@ -887,7 +887,7 @@ public class HomeWindow : IWindowHandler
                 break;
             }
             if (ImGui.BeginPopupContextItem()) {
-                if (Path.IsPathRooted(fileToOpen) && ImGui.Selectable($"{AppIcons.SI_Blank} Open Containing Folder")) {
+                if (Path.IsPathRooted(fileToOpen) && ImGui.Selectable(UiText.FormatLabel($"{AppIcons.SI_Blank} Open Containing Folder"))) {
                     FileSystemUtils.ShowFileInExplorer(Path.GetDirectoryName(fileToOpen.ToString()));
                 }
                 if (!string.IsNullOrEmpty(curGame)) {
@@ -901,7 +901,7 @@ public class HomeWindow : IWindowHandler
         }
         if (!isReady) ImGui.EndDisabled();
         if (!foundMatchingFile) {
-            ImGui.TextDisabled(!string.IsNullOrEmpty(recentFileFilter) || _activeRecentFileGameFilters.Count > 0 ? "No files match the current filters." : "There are no recent files.");
+            ImGui.TextDisabled(!string.IsNullOrEmpty(recentFileFilter) || _activeRecentFileGameFilters.Count > 0 ? UiText.T("No files match the current filters.") : UiText.T("There are no recent files."));
         }
         ImGui.EndChild();
     }
@@ -923,7 +923,7 @@ public class HomeWindow : IWindowHandler
             tipTimer = 0;
         }
         ImGui.SameLine();
-        var currentTip = AppImguiHelpers.Ellipsize(tips[currentTipsIDX], ImGui.GetContentRegionAvail().X);
+        var currentTip = AppImguiHelpers.Ellipsize(UiText.T(tips[currentTipsIDX]), ImGui.GetContentRegionAvail().X);
         ImGui.Text(currentTip);
 
         float progress = tipTimer / tipDuration;

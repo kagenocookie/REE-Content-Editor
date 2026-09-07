@@ -1,0 +1,680 @@
+# 简体中文界面语言包。保留占位符、快捷键及文件格式名称。
+Home.LaunchGame: '{0} 启动游戏'
+Home.LaunchGame_LoosePatch: '使用散装文件补丁启动游戏'
+Home.LaunchGame_PakPatch: '使用 PAK 补丁启动游戏'
+Home.ApplyPatches_Pak: '应用补丁（PAK）'
+Home.ApplyPatches_Loose: '应用补丁（散装文件）'
+Home.ApplyPatches_CustomPath: '输出补丁到…'
+Home.ApplyPatches_Revert: '{0} 撤销补丁'
+Home.SupportDevelopment: '支持开发（Ko-Fi）'
+Home.NewVersion_Unspecific: '有新版本可用！'
+Home.ShowFavoritesOnly: '显示收藏文件'
+Home.ShowFavoritesOnly_NoFavorites: '尚未收藏任何文件。可在最近打开文件的右键菜单中添加收藏。'
+Home.File_MarkAsFavorite: '{0} 添加到收藏'
+Home.File_RemoveFromFavorites: '{0} 取消收藏'
+Home.Menu_File: '文件'
+Home.Menu_CreateNew: '新建'
+Home.Menu_Open: '打开…'
+Home.Menu_SaveAll: '保存已修改文件'
+Home.Menu_RevertAll: '还原已修改文件'
+Home.Menu_TooltipNoModifiedFiles: '尚未修改任何文件。'
+Home.Menu_OpenedFiles: '已打开文件'
+Home.Menu_NoFilesOpen: '没有打开的文件'
+Home.Menu_CloseAll: '全部关闭'
+Home.Menu_RecentFiles: '最近打开'
+Home.RecentFiles_None: '没有最近打开的文件'
+Home.Menu_Edit: '编辑'
+Home.Menu_DataGeneration: '数据生成'
+Home.Menu_Windows: '窗口'
+Home.Menu_Scenes: '场景'
+Home.Menu_SetupFileAssociations: '设置文件类型关联'
+Home.Menu_SetupFileAssociations_Linux_FreezeWarning: '系统可能会短暂卡顿几秒…'
+Home.BundleFilter: '{0} 搜索模组包'
+Home.OtherPlatforms: '其他平台（未经测试）'
+Home.UninitializedBundles: '* 尚未初始化的模组包文件夹'
+Home.BundleDialog_Title: '创建模组包'
+Home.CreateNew_Lua: 'Lua 脚本'
+Home.Scenes_New: '{0} 新建场景'
+Home.Hint_SearchRecentFiles: '{0} 搜索最近打开的文件'
+Home.Button_OpenFile: '打开文件'
+Home.Button_SupportDev: '{0} 支持开发'
+Home.Tooltip_BrowseFiles: '浏览游戏文件'
+Home.Tooltip_ThemeEditor: '主题编辑器'
+Home.Tooltip_Settings: '设置'
+Home.Tooltip_GitHub: 'GitHub'
+Home.Tooltip_Wiki: '使用文档'
+Home.Tooltip_Discord: 'Discord'
+Home.Tooltip_NewVersion: '有新版本可用！'
+Home.Tooltip_FirstTimeSetup_Theme: '可通过“编辑 > 主题编辑器”修改或创建主题。'
+Home.Tooltip_FirstTimeSetup_SceneBGColor: '可随时在“设置 > 显示 > 主题”中修改此颜色。'
+Home.Tooltip_FirstTimeSetup_CustomGame: '选择预设列表以外的游戏。自定义游戏可能无法完全正常工作。'
+Home.Tooltip_FirstTimeSetup_CustomGameNote: '这是自定义游戏。部分文件可能无法正确加载，需要更新应用以获得完整支持。'
+Home.Tooltip_FirstTimeSetup_GamePath: '游戏所在路径（包含 .exe 文件的文件夹）。'
+Home.Tab_FirstTimeSetup: '首次设置'
+Home.Tab_Bundles: '模组包'
+Home.Tab_Updates_A: '更新 *'
+Home.Tab_Updates_B: '更新'
+Home.Tab_LatestChanges: '最新变更'
+Home.Tab_GameSetup: '游戏设置'
+Home.Sep_ThemeColor: '选择主题和颜色'
+Home.Sep_ChooseGame: '选择要制作模组的游戏'
+Home.FirstTimeSetup_Note: '请完成首次设置以选择游戏。'
+Home.FirstTimeSetup_CustomGame: '自定义游戏'
+Buttons.Add: '添加'
+Buttons.Open: '打开'
+Buttons.Save: '保存'
+Buttons.Rename: '重命名'
+Buttons.SaveAs: '另存为…'
+Buttons.SaveCopy: '保存副本到…'
+Buttons.SaveToBundle: '保存到模组包'
+Buttons.SaveToBundleNewFile: '作为新文件保存到模组包'
+Buttons.SeeChanges: '查看变更'
+Buttons.Revert: '还原'
+Buttons.Retry: '重试'
+Buttons.Exit: '退出'
+Buttons.Open_Folder: '打开文件夹'
+Buttons.Open_ContainingFolder: '打开所在文件夹'
+Buttons.Open_GameFolder: '打开游戏文件夹'
+Buttons.Open_BundleFolder: '打开模组包文件夹'
+Buttons.Open_CurrentBundleFolder: '{0} 打开当前模组包文件夹'
+Buttons.Open_CurrentBundleTextEditor: '在文本编辑器中打开当前模组包文件夹'
+Buttons.ClearRecent: '清空最近打开记录'
+Buttons.Close: '关闭'
+Buttons.Confirm: '确认'
+Buttons.Cancel: '取消'
+Buttons.Duplicate: '创建副本'
+Buttons.Copy: '复制'
+Buttons.Copy_Batch: '批量复制'
+Buttons.Copy_Json: '复制为 JSON'
+Buttons.Paste: '粘贴'
+Buttons.Paste_Replace: '粘贴（替换数值）'
+Buttons.Paste_Hierarchy: '粘贴（替换层级）'
+Buttons.Paste_Json: '从 JSON 粘贴'
+Buttons.Delete: '删除'
+Buttons.DeleteFile: '删除文件'
+Buttons.Clear: '清空'
+Buttons.Clear_Tags: '清空所有标签'
+Buttons.Undo: '{0} 撤销'
+Buttons.Redo: '{0} 重做'
+Buttons.Create: '创建'
+Buttons.Reload: '重新加载'
+Buttons.ForceReload: '强制重新加载'
+Buttons.ForceReimport: '{0} 重新导入'
+Buttons.UpdateSceneCache: '更新场景缓存'
+Buttons.NewWorkspace: '打开新工作区'
+Buttons.Show_GameObject: '显示游戏对象'
+Buttons.CheckUpdates: '检查更新'
+Buttons.CheckForDataUpdate: '检查游戏数据缓存更新'
+Buttons.ConfigureGames: '配置游戏…'
+Buttons.NewBundle: '新建模组包'
+Buttons.NewBundleFromPAK: '从压缩包或 PAK 文件创建'
+Buttons.NewBundleFromLoose: '从散装文件模组创建'
+Buttons.BundleFileRescan: '重新扫描模组包文件'
+Buttons.BundlePublish: '发布模组'
+General.ConfirmTitle: '确认操作'
+General.UnsavedChanges: '未保存的更改'
+General.UnsavedChangesText: '部分文件尚未保存。确定要关闭窗口吗？'
+General.UnsavedChangesText_ThisFile: '当前文件尚未保存，是否先保存文件？'
+General.UnsavedChangesCloseAll: "部分文件尚未保存。继续将丢失所有更改。\n可通过“文件”菜单重新打开文件。"
+General.FileClose_KeptOpenMessage: "窗口已关闭，但文件仍保留在内存中以备使用。\n可通过“文件 > 已打开文件”重新打开或完全关闭文件。\n完全关闭前，从相同路径打开文件不会重新加载内容。"
+General.FileClose_MultipleEditorsMessage: "其他窗口仍在使用此文件，因此文件会保留在内存中。\n可通过“文件 > 已打开文件”重新打开或完全关闭文件。\n完全关闭前，从相同路径打开文件不会重新加载内容。"
+General.UnsavedChanges_PreventReopen: '文件尚未保存。重新打开前，请先保存所需更改，并通过已打开文件菜单关闭文件。'
+General.LinkCopied: '链接已复制！'
+General.URLOpened: '链接已打开！'
+General.FilterInput: '筛选'
+General.WikiLink: '{0} 使用文档'
+General.WikiLink_Tooltip: '打开 Wiki 查看使用说明'
+Windows.Settings: '{0} 设置'
+Windows.ThemeEditor: '{0} 主题编辑器'
+Windows.RetargetDesigner: '重定向设计器'
+Windows.PakBrowser: '{0} PAK 文件浏览器'
+Windows.BundleManager: '{0} 模组包管理器'
+Windows.FileSearch: '文件搜索'
+Windows.TexturePacker: '纹理通道打包器'
+Windows.BatchConvert: '批量文件转换'
+Windows.Entities: '实体'
+Windows.MacroShelf: '{0} 宏工具栏'
+Fields.Name: '名称'
+Fields.Tags: '标签'
+Fields.TagsNone: '标签：无'
+Fields.Flags: '标志'
+Fields.Components: '组件'
+Fields.Update: '更新'
+Fields.Draw: '绘制'
+Fields.TimeScale: '时间缩放'
+Settings.Warn_Transparency: '窗口透明度将在重启应用后生效。'
+Settings.Warn_UndoRedoBinding: '文本输入框获得焦点时，撤销和重做仍使用默认快捷键。'
+Settings.Note_CustomGame: '*这是自定义游戏。部分文件可能无法正确加载，需要更新应用以获得完整支持。'
+Settings.Note_FullySupported: '*此游戏已获得完整支持，可自动获取游戏专用数据。'
+Settings.Note_ChangesNeedRestart: '*这些设置可能需要重启应用才会生效。'
+Settings.Button_UpdateUI: '更新界面'
+Settings.Button_CheckUpdatesNow: '立即检查'
+Settings.Button_OpenThemeEditor: '打开主题编辑器'
+Settings.Section_Performance: '性能'
+Settings.Section_Debug: '调试'
+Settings.Section_Cache: '缓存'
+Settings.Section_BundleDefaults: '模组包默认设置'
+Settings.Section_Fields: '字段'
+Settings.Section_FPS: '帧率'
+Settings.Section_DateTime: '日期与时间'
+Settings.Section_Lang: '语言'
+Settings.Section_Camera: '相机'
+Settings.Section_FPSCamera: '第一人称相机'
+Settings.Section_OrthoCamera: '正交相机'
+Settings.Section_PivotCamera: '环绕相机'
+Settings.Section_Animator: '动画播放器'
+Settings.Section_MeshEditor: '网格编辑器'
+Settings.Section_GroupList: '分组列表'
+Settings.Group_Preferences: '偏好设置'
+Settings.Group_Display: '显示'
+Settings.Group_Hotkeys: '快捷键'
+Settings.Group_Games: '游戏'
+Settings.Group_General: '常规'
+Settings.Group_Editing: '编辑'
+Settings.Group_Bundles: '模组包'
+Settings.Group_Theme: '主题'
+Settings.Group_Global: '全局'
+Settings.Group_Pak: 'PAK 浏览器'
+Settings.Group_Scene: '场景'
+Settings.Group_Mesh: '3D 控制'
+Settings.Group_Texture: '纹理查看器'
+Settings.Group_UVS: 'UVS 编辑器'
+Settings.Group_Resident: '生化危机'
+Settings.Group_Monster: '怪物猎人'
+Settings.Group_Other: '其他'
+Settings.Group_Custom: '自定义'
+Settings.Section_AddCustom: '添加自定义游戏'
+Settings.CustomGames: '自定义游戏'
+Settings.Custom_ShortName: '简称'
+Settings.GamePath.Text: '游戏路径'
+Settings.GamePath.Tooltip: '游戏的完整路径，应指向包含 .exe 和 .pak 文件的文件夹。'
+Settings.ExePath.Text: '游戏可执行文件'
+Settings.ExePath.Tooltip: '游戏可执行文件的完整路径。'
+Settings.FileList.Text: '文件列表'
+Settings.FileList.Tooltip: '已获得部分或完整支持的游戏通常无需设置。自动下载失败时，也可在此指定文件路径。'
+Settings.FileList_Custom.Text: '文件列表'
+Settings.FileList_Custom.Tooltip: '包含游戏所有文件路径的列表文件。'
+Settings.ExtractPath.Text: '游戏文件解包路径'
+Settings.ExtractPath.Tooltip: '解包文件时使用的默认路径，可留空。'
+Settings.RszPath.Text: 'RSZ 模板 JSON 路径'
+Settings.RszPath.Tooltip: '所选游戏对应的 rsz*.json 路径。尚未获得完整支持的游戏可能需要手动提供有效模板才能打开文件。'
+Settings.RszPath_Custom.Text: '自定义 RSZ JSON 路径'
+Settings.RszPath_Custom.Tooltip: '默认 RSZ JSON 会自动下载。仅在确有需要时修改，例如访问旧版游戏文件。'
+Settings.ExternalTextEditor.Text: '外部文本编辑器'
+Settings.ExternalTextEditor.Tooltip: '编辑文本文件时使用的外部工具。'
+Settings.ToolPathArgsTooltip: "运行工具时使用的命令行参数。\n{COMMAND} 会替换为预设参数；若未包含 {COMMAND}，则自动追加到末尾。"
+Settings.ShowFPS: '显示帧率'
+Settings.DateFormat: '日期格式'
+Settings.Key_Invert: '反转'
+Settings.Key_InvertMouseInputTooltip: '反转鼠标拖动方向。'
+Settings.Key_InvertMouseInputUnavailableTooltip: '与鼠标右键或中键配合使用。'
+Settings.Author: '作者'
+Settings.Homepage: '主页'
+Settings.Description: '描述'
+Settings.Theme: '主题'
+Settings.BackgroundColor: '背景颜色'
+Settings.PreferredLanguage: '首选语言'
+Settings.MinLogLevel: '最低日志级别'
+Settings.LogToFile: '输出日志到文件'
+Settings.LogToFile_Tooltip: "启用后，日志也会写入 {0}。\n修改后需要重启应用。"
+Settings.AutoUpdate.Text: '自动检查更新'
+Settings.AutoUpdate.Tooltip: '定期检查 GitHub 上的新版本。'
+Settings.EnableKeyboardNav.Text: '启用键盘导航'
+Settings.EnableKeyboardNav.Tooltip: '使用方向键在字段之间移动。'
+Settings.DisableFileCloseWarning.Text: '关闭编辑窗口时不提示文件仍打开'
+Settings.DisableFileCloseWarning.Tooltip: '关闭仍引用已打开文件的窗口时，不再显示提醒。'
+Settings.LoadFromNatives.Text: '从 natives/ 文件夹加载文件'
+Settings.LoadFromNatives.Tooltip: '优先读取当前游戏 natives 文件夹中的散装文件，与游戏的加载方式类似。'
+Settings.UseSubPakForLooseTextures.Text: '将纹理存入子 PAK（MHWilds 及更新游戏）'
+Settings.UseSubPakForLooseTextures.Tooltip: '即使输出散装文件，也将纹理存入子 PAK。当前 REFramework 通常不再需要此选项，新游戏出现问题时可尝试启用。'
+Settings.UseSymlinkPatching.Text: '使用符号链接应用补丁'
+Settings.UseSymlinkPatching.Tooltip: '尽可能使用符号链接代替复制文件，减少磁盘写入和存储占用。在 Windows 上需要以管理员身份运行编辑器。'
+Settings.RemoteDataSource.Text: '资源数据源'
+Settings.RemoteDataSource.Tooltip: '检查更新及下载游戏资源缓存的数据源。留空时使用默认 GitHub 仓库。'
+Settings.EnableGpuTexCompression.Text: '启用 GPU 纹理压缩'
+Settings.EnableGpuTexCompression.Tooltip: '使用更快的 GPU 压缩，仅支持 Windows。发生问题时可关闭，改用 CPU 压缩。'
+Settings.GameConfigBasePath.Text: '游戏配置根目录'
+Settings.GameConfigBasePath.Tooltip: '包含游戏专用实体配置的文件夹。未指定时使用默认相对路径。'
+Settings.ResourcesFilepath.Text: '资源数据存储路径'
+Settings.ResourcesFilepath.Tooltip: '存放自动下载的游戏专用资源文件。'
+Settings.CacheFilepath.Text: '缓存路径'
+Settings.CacheFilepath.Tooltip: '通用文件缓存目录，不能为空。'
+Settings.ThumbnailCacheFilepath.Text: '缩略图缓存路径'
+Settings.ThumbnailCacheFilepath.Tooltip: '缩略图缓存目录，不能为空。'
+Settings.BookmarksFilepath.Text: '用户数据路径'
+Settings.BookmarksFilepath.Tooltip: '存放用户书签等数据的目录，不能为空。'
+Settings.BookmarksDisplayMode.Text: '在独立窗口显示书签'
+Settings.BookmarksDisplayMode.Tooltip: '在独立窗口显示书签，而非嵌入 PAK 浏览器。'
+Settings.BlenderPath.Text: 'Blender 路径'
+Settings.BlenderPath.Tooltip: '已安装的 Blender 可执行文件路径，用于处理 .blend 文件。'
+Settings.FontSize.Text: '界面字号'
+Settings.FontSize.Tooltip: '绘制文字时使用的默认字号。'
+Settings.MaxUnpackThreads.Text: '最大解包线程数'
+Settings.MaxUnpackThreads.Tooltip: '解包时允许使用的最大线程数，实际数量由 .NET 运行时决定。'
+Settings.AutoExpand.Text: '自动展开字段数'
+Settings.AutoExpand.Tooltip: '字段数量少于此值的 RSZ 对象会自动展开。'
+Settings.MaxFPS.Text: '最高帧率'
+Settings.MaxFPS.Tooltip: '界面渲染的最高帧率。'
+Settings.MaxFPSBackground.Text: '后台最高帧率'
+Settings.MaxFPSBackground.Tooltip: '编辑器窗口未获得焦点时的最高帧率。'
+Settings.ClockFormat.Text: '12 小时制'
+Settings.ClockFormat.Tooltip: '将时间显示从 24 小时制切换为 12 小时制。'
+Settings.UseFullscreenAnimPlayback.Text: '全屏动画播放控件'
+Settings.UseFullscreenAnimPlayback.Tooltip: '将播放控件铺满窗口，而非放在网格查看器右上角。'
+Settings.ExpandSettings.Text: '自动展开设置'
+Settings.ExpandSettings.Tooltip: '默认展开设置分组。'
+Settings.PrettyFieldLabels.Text: '简化字段标签'
+Settings.PrettyFieldLabels.Tooltip: '显示易读标签，例如将 _TargetObject 显示为 Target Object。'
+Settings.AutoCloseFiles.Text: '自动关闭文件'
+Settings.AutoCloseFiles.Tooltip: '文件无未保存更改且最后一个编辑窗口关闭时，自动关闭文件。关闭此选项后需从菜单手动关闭。此功能为实验性功能，部分文件可能出现问题。'
+Settings.ShowQuaternionsAsEuler.Text: '以欧拉角显示四元数'
+Settings.ShowQuaternionsAsEuler.Tooltip: '将四元数转换为欧拉角显示。'
+Settings.QuaternionsDisableAutoNormalize.Text: '禁用四元数自动归一化'
+Settings.QuaternionsDisableAutoNormalize.Tooltip: '关闭变换四元数的自动归一化，可能导致对象倾斜并影响部分功能，请谨慎使用。'
+Settings.PauseAnimPlayerOnSeek.Text: '拖动进度条时暂停动画'
+Settings.PauseAnimPlayerOnSeek.Tooltip: '通过滑块定位时暂停动画播放器。'
+Settings.BundleDefaultSaveFullPath.Text: '使用完整路径保存模组包文件'
+Settings.BundleDefaultSaveFullPath.Tooltip: '向当前模组包添加文件时，默认使用完整相对路径，而非直接放在根目录。'
+Settings.MaxUndoSteps.Text: '最大撤销步数'
+Settings.MaxUndoSteps.Tooltip: '可撤销的最大操作步数。值越高，长时间编辑后的内存占用越大。'
+Settings.CustomBundleBasePath.Text: '模组包文件基础路径'
+Settings.CustomBundleBasePath.Tooltip: '保存新文件到模组包时添加的默认路径前缀。支持 {AUTHOR} 和 {BUNDLE_NAME}，例如 {AUTHOR}/{BUNDLE_NAME}/。'
+Settings.Bind_Undo: '撤销'
+Settings.Bind_Redo: '重做'
+Settings.Bind_Copy: '复制'
+Settings.Bind_Paste: '粘贴'
+Settings.Bind_Save: '保存已打开文件'
+Settings.Bind_Open: '打开文件'
+Settings.Bind_Back: '返回'
+Settings.Bind_Close: '关闭当前窗口'
+Settings.Bind_HomePage: '显示或隐藏主页'
+Settings.Bind_OpenPakBrowser: '打开 PAK 文件浏览器'
+Settings.Bind_OpenMacroShelf: '打开宏工具栏'
+Settings.Bind_ShowHotkeyHints: '显示快捷键提示'
+Settings.Bind_PakBrowser_OpenBookmarks: '打开书签'
+Settings.Bind_PakBrowser_Bookmark: '收藏当前路径'
+Settings.Bind_PakBrowser_JumpToPageTop: '跳转到页首'
+Settings.Bind_MeshViewer_PauseAnim: '暂停/播放'
+Settings.Bind_MeshViewer_NextAnimFrame: '下一帧'
+Settings.Bind_MeshViewer_PrevAnimFrame: '上一帧'
+Settings.Bind_MeshViewer_IncreaseAnimSpeed: '加快播放速度'
+Settings.Bind_MeshViewer_DecreaseAnimSpeed: '减慢播放速度'
+Settings.Bind_MeshViewer_CameraTranslate: '平移相机'
+Settings.Bind_MeshViewer_CameraRotate: '旋转相机'
+Settings.Bind_MeshViewer_CameraZoom: '缩放相机'
+Settings.Bind_MeshViewer_MoveGeometry: '移动几何体'
+Settings.Bind_MeshViewer_SelectAll: '全选/取消全选'
+Settings.Bind_MeshViewer_VertexSelection: '选择顶点'
+Settings.Bind_MeshViewer_EdgeSelection: '选择边'
+Settings.Bind_MeshViewer_FaceSelection: '选择面'
+Settings.Key_MeshViewer_CameraTranslate: '鼠标右键 + WASD'
+Settings.Key_MeshViewer_CameraRotate: '鼠标右键 + WASD'
+Settings.Key_MeshViewer_CameraZoom: '鼠标滚轮'
+Settings.Bind_TextureViewer_ResetView: '重置视图'
+Settings.Bind_TextureViewer_ZoomIn: '放大'
+Settings.Bind_TextureViewer_ZoomOut: '缩小'
+Settings.Bind_TextureViewer_NextChannel: '下一通道'
+Settings.Bind_TextureViewer_PrevChannel: '上一通道'
+Settings.Bind_Scene_Focus3D: '聚焦所选对象'
+Settings.Bind_Scene_FocusUI: '在界面中显示所选对象'
+Settings.Bind_Scene_Hide: '隐藏所选对象'
+Settings.Bind_Scene_UnhideAll: '显示所有对象'
+Settings.Bind_Scene_Delete: '删除所选对象'
+Settings.Bind_UVS_Pause: '暂停/播放'
+Settings.Bind_UVS_NextPattern: '下一个图案'
+Settings.Bind_UVS_PrevPattern: '上一个图案'
+Settings.Bind_UVS_IncreaseSpeed: '加快播放速度'
+Settings.Bind_UVS_DecreaseSpeed: '减慢播放速度'
+Animations.UndefinedBoneInMot: "此骨骼未在当前动作的骨骼列表中定义。\n保存后名称会丢失，且在游戏中可能无法播放动画。\n如需动画效果，请将其添加到骨骼列表。"
+Bundles.Bundle: "模组包"
+Bundles.Title: "模组包"
+Bundles.ConfirmDeleteBundleFile: "确定要从 {1} 中删除 {0} 吗？"
+Bundles.LoadOrder: "加载顺序"
+Bundles.NewBundle: "新建模组包"
+Bundles.BundleCount: "模组包总数：{0} | 已启用：{1}"
+Bundles.CreateFromLooseFiles: "从散装文件创建模组包"
+Bundles.CreateFromPakFile: "从 PAK 文件创建模组包"
+Bundles.OpenGameFolder: "在资源管理器中打开游戏文件夹"
+Bundles.OpenBundlesFolder: "在资源管理器中打开模组包文件夹"
+Bundles.PublishMod: "发布模组"
+Bundles.ShowLoadOrder: "{0} 显示加载顺序"
+Bundles.ApplyPatchesLoose: "应用补丁（散装文件）"
+Bundles.ApplyPatchesPak: "应用补丁（PAK 文件）"
+Bundles.PatchTo: "输出补丁到…"
+Bundles.RevertPatches: "撤销补丁"
+Bundles.BundleAlreadyExists: "模组包已存在！"
+Bundles.NoBundlesFound: "未找到模组包！"
+Bundles.SelectBundle: "选择模组包以查看详情"
+Bundles.SaveBundleMetadata: "保存模组包信息"
+Bundles.OpenCurrentBundleFolder: "在资源管理器中打开当前模组包文件夹"
+Bundles.UnloadCurrentBundle: "卸载当前模组包"
+Bundles.RebuildPatchDiffs: "强制重建补丁差异"
+Bundles.OpenFileInEditor: "在编辑器中打开文件"
+Bundles.EditTargetPathPopup: "编辑目标路径"
+Bundles.EditTargetPathHeader: "编辑目标路径"
+Bundles.EditTargetPath_Description: "游戏中读取此文件时使用的最终目标路径，可按需修改。\n如果文件已在编辑器中打开，修改后可能需要重新打开才能更新。\n此路径无需与当前保存路径相同，也不会被自动修改。\n平台前缀 natives/stm/ 会在应用补丁或发布时自动添加，请勿在此填写。"
+Bundles.BaseFilePath: "基础文件路径"
+Bundles.BaseFilePath_Description: "生成差异和增量补丁时使用的原版游戏文件。\n对于不支持增量补丁的格式，此设置无效。\n留空时，使用目标路径匹配原版文件。"
+Bundles.FileCouldNotBeOpened: "无法打开文件"
+Bundles.CreatedAt: "创建时间：{0}"
+Bundles.UpdatedAt: "更新时间：{0}"
+Bundles.EditTargetPathHelp: "游戏中读取此文件时使用的最终目标路径。\n平台前缀 natives/stm/ 会在应用补丁或发布时自动添加，无需在此填写。"
+Bundles.ShowChangesTooltip: "查看变更\n增量补丁生成时间：{0}"
+Bundles.BundleNamePlaceholder: "在此输入模组包名称…"
+Bundles.NameVersion_ReadOnly: "模组包：{0}（{1}）"
+Bundles.Author_ReadOnly: "作者：{0}"
+Bundles.Homepage_ReadOnly: "主页：{0}"
+Bundles.Description_ReadOnly: "描述：\n{0}"
+Bundles.BundleLastUpdate_ReadOnly: "上次更新：{0}"
+Bundles.Author: "作者"
+Bundles.Homepage: "主页"
+Bundles.Version: "版本"
+Bundles.Description: "描述"
+Bundles.Image: "图片"
+Bundles.Preview: "预览"
+Bundles.EntityType: "类型"
+Bundles.LegacyEntities: "旧版实体"
+Bundles.Entities: "实体"
+Bundles.Files: "文件"
+Bundles.UnknownLegacyEntityType: "未知旧版实体类型"
+Buttons.BundleUnload: "{1} 卸载当前模组包（{0}）"
+EditMode.Button_ResetGeometry: "重置预览几何体"
+EditMode.Button_BakeNavmesh: "烘焙导航网格…"
+EditMode.StoredFiles: "已存储文件"
+EditMode.Navmesh_NodeEditWarning: "除非明确了解其用途，否则请勿手动编辑连接或配对节点。"
+EditMode.Navmesh_SceneModeToolbar: "导航网格控制"
+EditMode.Navmesh_SceneMode: "场景点击操作"
+EditMode.Navmesh_AttrFill: "填充模式"
+EditMode.Navmesh_Attribute: "属性筛选"
+Errors.FileLoad_NotReady_Title: "工作区尚未就绪"
+Errors.FileLoad_NotReady_Message: "请等待工作区加载完毕后再打开文件。"
+Errors.FileLoad_GameUnset_Title: "尚未选择游戏"
+Errors.FileLoad_GameUnset_Message: "请先选择游戏。"
+Errors.FileLoad_FileNotFound_Title: "未找到文件"
+Errors.FileLoad_FileNotFound: "找不到文件：\n{0}"
+Errors.FileLoad_Unsupported_Title: "不支持的文件"
+Errors.FileLoad_ImportError: "导入失败"
+Errors.FileLoad_InvalidArchive: "无法将所选压缩包转换为模组包。"
+Errors.FileLoad_UnsupportedFormat: "尚不支持此文件格式（{0}）：\n{1}"
+Errors.FileLoad_UnsupportedFormatRSZ: "文件无法打开或不受支持：\n{0}\n\n此格式基于 RSZ，请确认已选择正确的游戏。"
+Errors.FileLoad_NotEditable: "不支持编辑此文件：\n{0}"
+Errors.FileLoad_UnknownError: "文件无法打开或不受支持：\n{0}"
+Errors.ExeNotFound: "找不到游戏可执行文件：{0}"
+Errors.PatchFailed: "补丁程序执行失败"
+Errors.PatchRevertFailed: "撤销补丁失败"
+Errors.OpenedInExternalEditor_Title: "已在外部编辑器中打开"
+Errors.OpenedInExternalEditor_Text: "文件已在配置的外部编辑器中打开。"
+General.UnsavedChangesText_SingleFile: "文件 {0} 尚未保存。\n确定要关闭吗？"
+Home.NewVersion_Specific: "有新版本（{0}）可用！"
+Home.Tooltip_Undo: "撤销（{0}）"
+Home.Tooltip_Redo: "重做（{0}）"
+Home.ActiveGame: "游戏：{0}"
+Home.ActivePlatform: "{1} 平台：{0}"
+Home.ActiveBundle: "{1} 当前模组包：{0}"
+Home.NamedBundle: "模组包：{0}"
+Home.BundleDialog_Text_PAK: "为从下列 PAK 文件创建的模组包命名：\n{0}"
+Home.BundleDialog_Text_Loose: "为从下列散装模组创建的模组包命名：\n{0}"
+Home.Tooltip_LatestVersion: "有新版本 {0} 可用！"
+Home.AppVersion: "版本：{0}"
+MacroShelf.Tooltip_CreateMacro: "新建宏"
+MacroShelf.Tooltip_ClearMacroData: "清空宏数据"
+MacroShelf.Tooltip_RescanMacros: "重新扫描宏文件夹"
+MacroShelf.Tooltip_OpenMacrosFolder: "在资源管理器中打开宏文件夹"
+MacroShelf.Tooltip_IconColor: "图标颜色"
+MacroShelf.Tooltip_MacroType: "此宏是适用于多个游戏，还是仅适用于当前游戏。"
+MacroShelf.Tooltip_NewGroup: "创建分组"
+MacroShelf.Tooltip_AddGroup: "添加分组"
+MacroShelf.Tooltip_NoDesc: "未提供描述…"
+MacroShelf.Tooltip_ViewTypeA: "紧凑视图"
+MacroShelf.Tooltip_ViewTypeB: "完整视图"
+MacroShelf.Tooltip_OpenMacrosFolderTextEditor: "在文本编辑器中打开宏文件夹"
+MacroShelf.Label_MacroLuaPath: "Lua 脚本路径"
+MacroShelf.Label_MacroName: "宏名称"
+MacroShelf.Label_MacroDesc: "描述"
+MacroShelf.Label_MacroGroup: "分组"
+MacroShelf.Label_MacroIcon: "图标"
+MacroShelf.Label_MacroType: "游戏专用"
+MacroShelf.Label_NoMacros: "尚未添加宏。"
+MacroShelf.Label_MacroTypeA: "类型：游戏专用"
+MacroShelf.Label_MacroTypeB: "类型：全局"
+MacroShelf.Hint_NewGroup: "在此输入新分组名称…"
+MacroShelf.Button_AddMacro: "{0} 添加宏"
+MacroShelf.Button_SaveMacro: "{0} 保存宏"
+MacroShelf.MenuItem_RunMacro: "{0} 运行宏"
+MacroShelf.MenuItem_EditMacro: "{0} 编辑宏信息"
+MacroShelf.MenuItem_DeleteMacro: "{0} 删除宏"
+MacroShelf.MenuItem_OpenMacroInTextEditor: "在文本编辑器中打开宏脚本"
+MacroShelf.Error_InvalidLuaPath: "Lua 文件必须位于用户 Lua 文件夹内！"
+MacroShelf.Confirm_DeleteMacroFile: "确定要删除宏 {0} 吗？"
+Material.ConfirmDeleteBookmarks: "确定要删除 {0} 的所有材质参数书签吗？"
+MeshViewer.Title_Editor: "编辑器"
+MeshViewer.Editor_Objects: "对象"
+MeshViewer.Editor_Submeshes: "子网格"
+MeshViewer.Editor_NoSubmeshes: "没有可用的子网格。"
+MeshViewer.Editor_ModeObject: "对象"
+MeshViewer.Editor_ModeEdit: "编辑"
+MeshViewer.Editor_Options: "选项"
+MeshViewer.Editor_OptionsTitle: "网格编辑器选项"
+MeshViewer.Editor_Vertices: "顶点"
+MeshViewer.Editor_Selected: "已选择"
+MeshViewer.Editor_VertexInstructions: "点击可见顶点或拖动框选。按住 Shift 添加选择，按住 Ctrl 切换选择。按 G 移动所选顶点；移动时按 X、Y、Z 限制到对应的全局轴，配合 Shift 则排除该轴。左键或 Enter 确认，右键或 Escape 取消。"
+MeshViewer.Editor_Moving: "正在移动顶点"
+MeshViewer.Editor_VertexSize: "顶点大小"
+MeshViewer.Editor_SelectionRadius: "选择半径"
+MeshViewer.Editor_MirrorAxes: "全局轴镜像"
+MeshViewer.Editor_MirrorRadius: "镜像半径"
+MeshViewer.Editor_ExportReminder: "*使用“导出网格”保存编辑后的网格*"
+MeshViewer.Editor_StayOnTop: "保持置顶"
+MeshViewer.Display_Default: "默认"
+MeshViewer.Display_Solid: "实体"
+MeshViewer.Display_Wireframe: "线框"
+MeshViewer.Title_Animations: "{0} 动画"
+MeshViewer.Error_MaterialCountMismatch: "网格材质数量与 MDF2 不一致，游戏中的纹理将显示异常。\n请确保两者数量一致。"
+MeshViewer.Error_MaterialNotFound: "网格引用了所选 MDF2 中不存在的材质名称。\n对应子网格在游戏中将不可见。"
+MeshViewer.BlendImportSettings: "Blend 文件导入设置"
+MeshViewer.BlendImportSettingsMissing: "未找到此文件的 .blend 导入设置。"
+MeshViewer.BlendSceneUnavailable: "场景信息不可用。"
+MeshViewer.ImportConfig: "导入配置"
+MeshViewer.ImportConfigRename: "新名称"
+MeshViewer.Armature: "骨架"
+MeshViewer.CreateNewBlendImportConfig: "添加导入配置"
+MeshViewer.ImportAllMeshes: "导入所有网格"
+MeshViewer.IncludeTangents: "包含切线"
+MeshViewer.IncludeTangentsToolTip: "使用 Blender 导出的切线，或自动生成切线。\n多数网格不受影响，但某些着色器缺少切线时会出现显示问题。\n部分网格依赖切线，但 Blender 不一定能成功导出。"
+MeshViewer.ApplyRotations: "应用骨架旋转"
+MeshViewer.ApplyRotationsToolTip: "自动应用骨架上的旋转。\n旋转可能导致导入时骨架朝向异常，此选项会尝试自动修正。"
+MeshViewer.RemoveStreamingMesh: "移除流式加载网格"
+PakBrowser.ConfirmDeleteBookmarks: "确定要删除 {0} 的所有自定义书签吗？"
+PakBrowser.ExtractFolder: "解包文件夹到…"
+PakBrowser.ExtractFileKeepPaths: "解包文件（保留路径）…"
+PakBrowser.ExtractFile: "解包文件到…"
+PakBrowser.ExtractTo: "解包到…"
+PakBrowser.Tooltip_ClearFilters: "清除筛选条件"
+PakBrowser.Tooltip_HideUnsupported: "隐藏不支持的格式"
+SceneView.Label_NoActiveScene: "没有活动场景，请从“场景”菜单启用一个场景。"
+SceneView.Label_LoadingScene: "正在加载场景 {0}…"
+SceneView.Label_SceneNo3D: "场景 {0} 不包含 3D 内容"
+SceneView.Label_EditTypeA: "正在编辑：--"
+SceneView.Label_EditTypeB: "正在编辑："
+SceneView.Tooltip_ReOpenScnEditor: "重新打开场景编辑器"
+SceneView.Tooltip_OpenMacroShelf: "打开宏工具栏"
+SceneView.Tooltip_FocusObj: "聚焦目标对象"
+SceneView.MenuItem_CamControls: "{0} 控制"
+Settings.ToolPathArgsLabel: "{0} 命令行参数"
+Settings.Key_Ctrl: "Ctrl"
+Settings.Key_Shift: "Shift"
+Settings.Key_Alt: "Alt"
+Settings.Keys.None: "未绑定"
+Settings.Keys.NamedKeyCount: "命名按键数量"
+Settings.Keys.NamedKeyBegin: "命名按键起点"
+Settings.Keys.LeftArrow: "左方向键"
+Settings.Keys.RightArrow: "右方向键"
+Settings.Keys.UpArrow: "上方向键"
+Settings.Keys.DownArrow: "下方向键"
+Settings.Keys.PageUp: "上一页"
+Settings.Keys.PageDown: "下一页"
+Settings.Keys.Home: "行首"
+Settings.Keys.End: "行尾"
+Settings.Keys.Insert: "插入"
+Settings.Keys.Delete: "删除"
+Settings.Keys.Backspace: "退格"
+Settings.Keys.Space: "空格"
+Settings.Keys.Enter: "回车"
+Settings.Keys.Escape: "退出（Esc）"
+Settings.Keys.LeftCtrl: "左 Ctrl"
+Settings.Keys.LeftShift: "左 Shift"
+Settings.Keys.LeftAlt: "左 Alt"
+Settings.Keys.LeftSuper: "左 Super"
+Settings.Keys.RightCtrl: "右 Ctrl"
+Settings.Keys.RightShift: "右 Shift"
+Settings.Keys.RightAlt: "右 Alt"
+Settings.Keys.RightSuper: "右 Super"
+Settings.Keys.Menu: "菜单"
+Settings.Keys.Key0: "数字 0"
+Settings.Keys.Key1: "数字 1"
+Settings.Keys.Key2: "数字 2"
+Settings.Keys.Key3: "数字 3"
+Settings.Keys.Key4: "数字 4"
+Settings.Keys.Key5: "数字 5"
+Settings.Keys.Key6: "数字 6"
+Settings.Keys.Key7: "数字 7"
+Settings.Keys.Key8: "数字 8"
+Settings.Keys.Key9: "数字 9"
+Settings.Keys.A: "A"
+Settings.Keys.B: "B"
+Settings.Keys.C: "C"
+Settings.Keys.D: "D"
+Settings.Keys.E: "E"
+Settings.Keys.F: "F"
+Settings.Keys.G: "G"
+Settings.Keys.H: "H"
+Settings.Keys.I: "I"
+Settings.Keys.J: "J"
+Settings.Keys.K: "K"
+Settings.Keys.L: "L"
+Settings.Keys.M: "M"
+Settings.Keys.N: "N"
+Settings.Keys.O: "O"
+Settings.Keys.P: "P"
+Settings.Keys.Q: "Q"
+Settings.Keys.R: "R"
+Settings.Keys.S: "S"
+Settings.Keys.T: "T"
+Settings.Keys.U: "U"
+Settings.Keys.V: "V"
+Settings.Keys.W: "W"
+Settings.Keys.X: "X"
+Settings.Keys.Y: "Y"
+Settings.Keys.Z: "Z"
+Settings.Keys.F1: "F1"
+Settings.Keys.F2: "F2"
+Settings.Keys.F3: "F3"
+Settings.Keys.F4: "F4"
+Settings.Keys.F5: "F5"
+Settings.Keys.F6: "F6"
+Settings.Keys.F7: "F7"
+Settings.Keys.F8: "F8"
+Settings.Keys.F9: "F9"
+Settings.Keys.F10: "F10"
+Settings.Keys.F11: "F11"
+Settings.Keys.F12: "F12"
+Settings.Keys.F13: "F13"
+Settings.Keys.F14: "F14"
+Settings.Keys.F15: "F15"
+Settings.Keys.F16: "F16"
+Settings.Keys.F17: "F17"
+Settings.Keys.F18: "F18"
+Settings.Keys.F19: "F19"
+Settings.Keys.F20: "F20"
+Settings.Keys.F21: "F21"
+Settings.Keys.F22: "F22"
+Settings.Keys.F23: "F23"
+Settings.Keys.F24: "F24"
+Settings.Keys.Apostrophe: "单引号"
+Settings.Keys.Comma: "逗号"
+Settings.Keys.Minus: "减号"
+Settings.Keys.Period: "句点"
+Settings.Keys.Slash: "斜杠"
+Settings.Keys.Semicolon: "分号"
+Settings.Keys.Equal: "等号"
+Settings.Keys.LeftBracket: "左方括号"
+Settings.Keys.Backslash: "反斜杠"
+Settings.Keys.RightBracket: "右方括号"
+Settings.Keys.GraveAccent: "反引号"
+Settings.Keys.CapsLock: "大写锁定"
+Settings.Keys.ScrollLock: "滚动锁定"
+Settings.Keys.NumLock: "数字锁定"
+Settings.Keys.PrintScreen: "截屏"
+Settings.Keys.Pause: "暂停"
+Settings.Keys.Keypad0: "小键盘 0"
+Settings.Keys.Keypad1: "小键盘 1"
+Settings.Keys.Keypad2: "小键盘 2"
+Settings.Keys.Keypad3: "小键盘 3"
+Settings.Keys.Keypad4: "小键盘 4"
+Settings.Keys.Keypad5: "小键盘 5"
+Settings.Keys.Keypad6: "小键盘 6"
+Settings.Keys.Keypad7: "小键盘 7"
+Settings.Keys.Keypad8: "小键盘 8"
+Settings.Keys.Keypad9: "小键盘 9"
+Settings.Keys.KeypadDecimal: "小键盘 小数点"
+Settings.Keys.KeypadDivide: "小键盘 除号"
+Settings.Keys.KeypadMultiply: "小键盘 乘号"
+Settings.Keys.KeypadSubtract: "小键盘 减号"
+Settings.Keys.KeypadAdd: "小键盘 加号"
+Settings.Keys.KeypadEnter: "小键盘 回车"
+Settings.Keys.KeypadEqual: "小键盘 等号"
+Settings.Keys.AppBack: "应用后退"
+Settings.Keys.AppForward: "应用前进"
+Settings.Keys.Oem102: "OEM 102 键"
+Settings.Keys.GamepadStart: "手柄 开始"
+Settings.Keys.GamepadBack: "手柄 返回"
+Settings.Keys.GamepadFaceLeft: "手柄 面板键左"
+Settings.Keys.GamepadFaceRight: "手柄 面板键右"
+Settings.Keys.GamepadFaceUp: "手柄 面板键上"
+Settings.Keys.GamepadFaceDown: "手柄 面板键下"
+Settings.Keys.GamepadDpadLeft: "手柄 方向键左"
+Settings.Keys.GamepadDpadRight: "手柄 方向键右"
+Settings.Keys.GamepadDpadUp: "手柄 方向键上"
+Settings.Keys.GamepadDpadDown: "手柄 方向键下"
+Settings.Keys.GamepadL1: "手柄 L1"
+Settings.Keys.GamepadR1: "手柄 R1"
+Settings.Keys.GamepadL2: "手柄 L2"
+Settings.Keys.GamepadR2: "手柄 R2"
+Settings.Keys.GamepadL3: "手柄 L3"
+Settings.Keys.GamepadR3: "手柄 R3"
+Settings.Keys.GamepadLStickLeft: "手柄 左摇杆左"
+Settings.Keys.GamepadLStickRight: "手柄 左摇杆右"
+Settings.Keys.GamepadLStickUp: "手柄 左摇杆上"
+Settings.Keys.GamepadLStickDown: "手柄 左摇杆下"
+Settings.Keys.GamepadRStickLeft: "手柄 右摇杆左"
+Settings.Keys.GamepadRStickRight: "手柄 右摇杆右"
+Settings.Keys.GamepadRStickUp: "手柄 右摇杆上"
+Settings.Keys.GamepadRStickDown: "手柄 右摇杆下"
+Settings.Keys.MouseLeft: "鼠标左键"
+Settings.Keys.MouseRight: "鼠标右键"
+Settings.Keys.MouseMiddle: "鼠标中键"
+Settings.Keys.MouseX1: "鼠标侧键 1"
+Settings.Keys.MouseX2: "鼠标侧键 2"
+Settings.Keys.MouseWheelX: "鼠标水平滚轮"
+Settings.Keys.MouseWheelY: "鼠标垂直滚轮"
+Settings.Keys.ReservedForModCtrl: "修饰键保留位 Ctrl"
+Settings.Keys.ReservedForModShift: "修饰键保留位 Shift"
+Settings.Keys.ReservedForModAlt: "修饰键保留位 Alt"
+Settings.Keys.ReservedForModSuper: "修饰键保留位 Super"
+Settings.Keys.NamedKeyEnd: "命名按键终点"
+Settings.Keys.ModCtrl: "修饰键 Ctrl"
+Settings.Keys.ModShift: "修饰键 Shift"
+Settings.Keys.ModAlt: "修饰键 Alt"
+Settings.Keys.ModSuper: "修饰键 Super"
+Settings.Keys.ModMask: "修饰键掩码"
+Tools.DataGeneration_RebuildRSZ: "重建 RSZ 补丁数据"
+Tools.DataGeneration_RebuildEFX: "重建 EFX 数据"
+Tools.DataGeneration_ExtensionCache: "生成文件扩展名缓存"
+Tools.DataGeneration_ListFile: "生成文件列表"
+Tools.DataGeneration_Bookmarks: "从实体生成书签"
+Tools.ImguiTestWindow: "ImGui 测试窗口"
+Tools.FileTester: "文件测试"
+Tools.IconList: "图标列表"
+Tools.DumpTranslations: "导出翻译"
+Tools.DumpLuaTypes: "导出编辑器 Lua 类型"
+UVS.PatternLabel: "图案 {0}"

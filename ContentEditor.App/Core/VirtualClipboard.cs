@@ -19,7 +19,7 @@ internal static class VirtualClipboard
     public static void CopyToClipboard(object data, string? extraNote = null)
     {
         var id = Store(data);
-        EditorWindow.CurrentWindow!.CopyToClipboard($"CE_VCP:{id}:{data.GetType().Name}|{data}", $"Copied to clipboard:\n{data}{(extraNote == null ? "" : $"\n\nNOTE: {extraNote}")}");
+        EditorWindow.CurrentWindow!.CopyToClipboard($"CE_VCP:{id}:{data.GetType().Name}|{data}", UiText.F($"Copied to clipboard:\n{data}{(extraNote == null ? "" : $"\n\nNOTE: {extraNote}")}"));
     }
 
     public static bool VerifyClipboardType<T>()

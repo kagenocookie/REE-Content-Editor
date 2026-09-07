@@ -241,8 +241,8 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
 
     public bool ShowAdvancedSearchButton()
     {
-        ImguiHelpers.ToggleButton($"{AppIcons.SI_Settings}##filter_adv", ref showSearch, Colors.IconActive);
-        ImguiHelpers.Tooltip("Advanced filtering"u8);
+        ImguiHelpers.ToggleButton(UiText.FormatLabel($"{AppIcons.SI_Settings}##filter_adv"), ref showSearch, Colors.IconActive);
+        ImguiHelpers.Tooltip(UiText.Utf8("Advanced filtering"));
         return showSearch;
     }
 
@@ -283,12 +283,7 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
         if (ImGui.InputTextWithHint("##Filter"u8, $"{AppIcons.SI_GenericMagnifyingGlass}", ref filter, 200)) {
             SetQuery(filter);
         }
-        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("""
-            Search by object name.
-            Can use "c:" prefix to search by a GameObject component, e.g. "c:render.mesh"
-            Can use "v:" prefix to search by a field value, e.g. "v:sm34.mesh"
-            Can use "f:" prefix to filter values by field name, e.g. "f:itemID"
-            """u8);
+        if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(UiText.Utf8("Search by object name.\r\nCan use \"c:\" prefix to search by a GameObject component, e.g. \"c:render.mesh\"\r\nCan use \"v:\" prefix to search by a field value, e.g. \"v:sm34.mesh\"\r\nCan use \"f:\" prefix to filter values by field name, e.g. \"f:itemID\""));
         if (!string.IsNullOrEmpty(Query)) {
             ImGui.SameLine();
             ImGui.SetCursorScreenPos(new Vector2(ImGui.GetItemRectMax().X - ImGui.GetFrameHeight() - ImGui.GetStyle().FramePadding.X, ImGui.GetItemRectMin().Y));
@@ -304,20 +299,17 @@ public class RszSearchHelper : IObjectUIHandler, IFilterRoot
     public void ShowAdvancedFilterSettings()
     {
         var changed = false;
-        changed |= ImGui.InputText("Name"u8, ref nameMatch, 200);
+        changed |= ImGui.InputText(UiText.LabelUtf8("Name"), ref nameMatch, 200);
         changed |= ImGui.InputText("##Classname"u8, ref classnameMatch, 200, ImGuiInputTextFlags.CharsNoBlank);
 
         ImGui.SameLine();
         changed |= ImguiHelpers.ToggleButton($"{AppIcons.SI_FileType_CFIL}", ref classnameComponentOnly, Colors.IconActive);
-        ImguiHelpers.Tooltip("""
-            Match GameObject components only.
-            Otherwise, will consider it a match if any nested object has a matching classname.
-            """u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Match GameObject components only.\r\nOtherwise, will consider it a match if any nested object has a matching classname."));
         ImGui.SameLine();
-        ImGui.Text("Classname");
+        ImGui.Text(UiText.T("Classname"));
 
-        changed |= ImGui.InputText("Field Name"u8, ref fieldMatch, 200, ImGuiInputTextFlags.CharsNoBlank);
-        changed |= ImGui.InputText("Value"u8, ref valueMatch, 200, ImGuiInputTextFlags.CharsNoBlank);
+        changed |= ImGui.InputText(UiText.LabelUtf8("Field Name"), ref fieldMatch, 200, ImGuiInputTextFlags.CharsNoBlank);
+        changed |= ImGui.InputText(UiText.LabelUtf8("Value"), ref valueMatch, 200, ImGuiInputTextFlags.CharsNoBlank);
         if (changed) {
             var matchStr = nameMatch;
             if (!string.IsNullOrEmpty(classnameMatch)) {

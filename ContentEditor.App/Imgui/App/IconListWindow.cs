@@ -45,7 +45,7 @@ public class IconListWindow : IWindowHandler
             IconNamesMulti = iconFields.Select(f => f.Name).ToArray();
         }
 
-        ImGui.InputText("Filter", ref filter, 30);
+        ImGui.InputText(UiText.Label("Filter"), ref filter, 30);
         var count = 0;
         for (int i = 0; i < Icons.Length; i++) {
             var name = IconNames[i];
@@ -57,7 +57,7 @@ public class IconListWindow : IWindowHandler
             ImguiHelpers.Tooltip(name);
         }
 
-        ImGui.SeparatorText("Multi-color");
+        ImGui.SeparatorText(UiText.T("Multi-color"));
         count = 0;
         for (int i = 0; i < IconsMulti.Length; i++) {
             var name = IconNamesMulti[i];

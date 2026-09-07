@@ -71,7 +71,7 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
-        if (ImGui.Button("Translate names")) {
+        if (ImGui.Button(UiText.Label("Translate names"))) {
             var lang = AppConfig.Instance.Language;
             foreach (var set in File.RequestSets) {
                 TranslationService.QueueTranslation(set.Info.Name, lang, (s, translated) => {
@@ -173,13 +173,13 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
             HandleContextMenu(context);
             if (show) {
                 var inspector = context.FindHandlerInParents<IInspectorController>();
-                if (ImGui.Selectable("Info", inspector?.Inspector.PrimaryTarget == item)) {
+                if (ImGui.Selectable(UiText.Label("Info"), inspector?.Inspector.PrimaryTarget == item)) {
                     inspector?.Inspector.SetPrimaryInspector(item!);
                 }
-                if (ImguiHelpers.SelectableSuffix($"UserData", item.Instance?.ToString(), inspector?.Inspector.PrimaryTarget == item.Instance)) {
+                if (ImguiHelpers.SelectableSuffix(UiText.F($"UserData"), item.Instance?.ToString(), inspector?.Inspector.PrimaryTarget == item.Instance)) {
                     inspector?.Inspector.SetPrimaryInspector(item.Instance!);
                 }
-                if (ImguiHelpers.SelectableSuffix($"Group", item.Group?.Info.Name, inspector?.Inspector.PrimaryTarget == item.Group)) {
+                if (ImguiHelpers.SelectableSuffix(UiText.F($"Group"), item.Group?.Info.Name, inspector?.Inspector.PrimaryTarget == item.Group)) {
                     inspector?.Inspector.SetPrimaryInspector(item.Group!);
                 }
                 ImGui.TreePop();
@@ -190,12 +190,12 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
         {
             if (ImGui.BeginPopupContextItem(context.label)) {
                 var item = context.Get<RequestSet>();
-                if (ImGui.Selectable("Delete")) {
+                if (ImGui.Selectable(UiText.Label("Delete"))) {
                     var list = context.parent!.Get<List<RequestSet>>();
                     UndoRedo.RecordListRemove(context.parent, list, context.Get<RequestSet>());
                 }
-                var dup1 = ImGui.Selectable("Duplicate");
-                var dup2 = ImGui.Selectable("Duplicate (reuse group)");
+                var dup1 = ImGui.Selectable(UiText.Label("Duplicate"));
+                var dup2 = ImGui.Selectable(UiText.Label("Duplicate (reuse group)"));
                 if (dup1 || dup2) {
                     var list = context.parent!.Get<List<RequestSet>>();
                     var clone = item.Clone(dup1);
@@ -204,11 +204,11 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
                     var rcol = context.FindHandlerInParents<RcolEditor>()!.File;
                     UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Do, () => rcol.InsertNewRequestSet(clone));
                 }
-                if (ImGui.Selectable("Copy")) {
+                if (ImGui.Selectable(UiText.Label("Copy"))) {
                     VirtualClipboard.CopyToClipboard(item.Clone());
                 }
                 if (VirtualClipboard.TryGetFromClipboard<RequestSet>(out var newSet)) {
-                    if (ImGui.Selectable("Paste (replace)")) {
+                    if (ImGui.Selectable(UiText.Label("Paste (replace)"))) {
                         var editor = context.FindHandlerInParents<RcolEditor>();
                         var rcol = editor?.File;
                         var groupExists = newSet.Group != null && rcol?.Groups.Contains(newSet.Group) == true;
@@ -227,7 +227,7 @@ public class RequestSetListEditor : DictionaryListImguiHandler<string, RequestSe
                             }
                         });
                     }
-                    if (ImGui.Selectable("Paste (new)")) {
+                    if (ImGui.Selectable(UiText.Label("Paste (new)"))) {
                         var list = context.parent!.Get<List<RequestSet>>();
                         var editor = context.FindHandlerInParents<RcolEditor>();
                         var rcol = editor?.File;

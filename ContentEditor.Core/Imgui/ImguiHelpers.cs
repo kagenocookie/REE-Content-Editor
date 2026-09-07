@@ -55,7 +55,7 @@ public static class ImguiHelpers
         var values = Enum.GetValues<TEnum>();
         var labels = Enum.GetNames<TEnum>();
         var selectedIndex = Array.IndexOf(values, selected);
-        if (ImGui.Combo(label, ref selectedIndex, labels, labels.Length, height)) {
+        if (ImGui.Combo(label, ref selectedIndex, labels.Select(UiText.T).ToArray(), labels.Length, height)) {
             selected = values[selectedIndex];
             return true;
         }
@@ -86,7 +86,7 @@ public static class ImguiHelpers
         var values = enumDescriptor.GetValues();
         // could be optimized with a dictionary lookup instead of array index - but we can add that later
         var selectedIndex = Array.IndexOf(values, selected);
-        if (ImGui.Combo(label, ref selectedIndex, labels, labels.Length)) {
+        if (ImGui.Combo(label, ref selectedIndex, labels.Select(UiText.T).ToArray(), labels.Length)) {
             selected = values[selectedIndex];
             return true;
         }
@@ -98,7 +98,7 @@ public static class ImguiHelpers
         var changed = false;
         for (int i = 0; i < labels.Length; ++i) {
             if (i != 0) ImGui.SameLine();
-            if (ImGui.RadioButton(labels[i], values[i].Equals(selected))) {
+            if (ImGui.RadioButton(UiText.Label(labels[i]), values[i].Equals(selected))) {
                 changed = true;
                 selected = values[i];
             }
@@ -109,7 +109,7 @@ public static class ImguiHelpers
     public static bool ValueCombo<TValue>(string label, string[] labels, TValue[] values, [AllowNull] ref TValue selected, int height = -1)
     {
         var selectedIndex = Array.IndexOf(values, selected);
-        if (ImGui.Combo(label, ref selectedIndex, labels, labels.Length, height)) {
+        if (ImGui.Combo(label, ref selectedIndex, labels.Select(UiText.T).ToArray(), labels.Length, height)) {
             selected = values[selectedIndex];
             return true;
         }
@@ -145,13 +145,13 @@ public static class ImguiHelpers
     public static bool FilterableCombo<TValue>(ReadOnlySpan<byte> label, string[] labels, ReadOnlySpan<TValue> values, ref TValue? selected, ref string filter)
     {
         var selectedIndex = values!.BoxedIndexOf(selected);
-        if (!ImGui.BeginCombo(label, selectedIndex == -1 ? selected?.ToString() ?? "" : labels[selectedIndex])) {
+        if (!ImGui.BeginCombo(label, selectedIndex == -1 ? selected?.ToString() ?? "" : UiText.T(labels[selectedIndex]))) {
             return false;
         }
 
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
         if (ImGui.IsWindowAppearing()) ImGui.SetKeyboardFocusHere();
-        ImGui.InputTextWithHint("##filter"u8, "Filter..."u8, ref filter, 48);
+        ImGui.InputTextWithHint("##filter"u8, UiText.Utf8("Filter..."), ref filter, 48);
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.Spacing();
@@ -160,9 +160,9 @@ public static class ImguiHelpers
         var changed = false;
         for (int i = 0; i < count; ++i) {
             var text = string.IsNullOrEmpty(labels[i]) ? "<empty>##" + i : labels[i];
-            if (!string.IsNullOrEmpty(filter) && !text.Contains(filter, StringComparison.InvariantCultureIgnoreCase)) continue;
+            if (!string.IsNullOrEmpty(filter) && !text.Contains(filter, StringComparison.InvariantCultureIgnoreCase) && !UiText.T(text).Contains(filter, StringComparison.InvariantCultureIgnoreCase)) continue;
 
-            if (ImGui.Selectable(text, selected != null && selected.Equals(values[i]))) {
+            if (ImGui.Selectable(UiText.Label(text), selected != null && selected.Equals(values[i]))) {
                 selected = values[i];
                 changed = true;
             }
@@ -191,7 +191,7 @@ public static class ImguiHelpers
         var tabMargin = ImGui.GetStyle().FramePadding.X * 4;
         var x = 0f;
         for (int i = 0; i < tabs.Length; ++i) {
-            var tab = tabs[i];
+            var tab = UiText.T(tabs[i]);
             var tabWidth = ImGui.CalcTextSize(tab).X + tabMargin;
             if (i > 0) {
                 if (x + tabWidth >= w_total) {
@@ -243,7 +243,7 @@ public static class ImguiHelpers
             flags |= ImGuiWindowFlags.UnsavedDocument;
         }
         var open = true;
-        ImGui.Begin(name ?? data.Name ?? $"{data.Handler}##{data.ID}", ref open, flags);
+        ImGui.Begin(UiText.Label(name ?? data.Name ?? $"{data.Handler}##{data.ID}"), ref open, flags);
         if (data.Context != null) {
             data.Context.StateBool = ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows|ImGuiFocusedFlags.NoPopupHierarchy);
         }

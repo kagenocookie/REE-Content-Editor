@@ -52,9 +52,9 @@ public class UvarExpressionGraph : IWorkspaceContainer, IWindowHandler
 
     protected void DrawFileContents()
     {
-        ImGui.Text("Edited Variable: " + ContextHint);
+        ImGui.Text(UiText.T("Edited Variable: ") + ContextHint);
         ImGui.SameLine();
-        if (ImGui.Button("Consolidate node IDs")) {
+        if (ImGui.Button(UiText.Label("Consolidate node IDs"))) {
             ConsolidateNodeIDs();
         }
         DrawNodes();
@@ -144,7 +144,7 @@ public class UvarExpressionGraph : IWorkspaceContainer, IWindowHandler
         }
         if (ImGui.BeginPopup("NodeCtx")) {
             var pos = ImGui.GetMousePosOnOpeningCurrentPopup();
-            if (ImGui.BeginMenu("Create")) {
+            if (ImGui.BeginMenu(UiText.Label("Create"))) {
                 foreach (var type in UvarNode.NodeTypes) {
                     if (ImGui.Selectable(type)) {
                         var newNode = UvarNode.Create(type);
@@ -155,7 +155,7 @@ public class UvarExpressionGraph : IWorkspaceContainer, IWindowHandler
                 }
                 ImGui.EndMenu();
             }
-            if (contextMenuNode != null && ImGui.Selectable("Delete")) {
+            if (contextMenuNode != null && ImGui.Selectable(UiText.Label("Delete"))) {
                 RemoveNodes([contextMenuNode]);
             }
             ImGui.EndPopup();
@@ -285,8 +285,8 @@ public class UvarExpressionGraph : IWorkspaceContainer, IWindowHandler
         ImGui.Text($"{node.Name} (#{node.nodeId})");
         ImGui.SameLine();
         var isOutput = node.nodeId == Expression.outputNodeId;
-        using (var _ = ImguiHelpers.ScopedIndent(contentAvail - ImGui.CalcTextSize("Result"u8).X - 32 * UI.UIScale - ImGui.GetStyle().FramePadding.X * 4)) {
-            if (ImGui.Checkbox("Result"u8, ref isOutput)) {
+        using (var _ = ImguiHelpers.ScopedIndent(contentAvail - ImGui.CalcTextSize(UiText.Utf8("Result")).X - 32 * UI.UIScale - ImGui.GetStyle().FramePadding.X * 4)) {
+            if (ImGui.Checkbox(UiText.LabelUtf8("Result"), ref isOutput)) {
                 if (isOutput) {
                     UndoRedo.RecordCallbackSetter(ParentContext, Expression, Expression.outputNodeId, node.nodeId, (ex, id) => ex.outputNodeId = id);
                 }
@@ -299,7 +299,7 @@ public class UvarExpressionGraph : IWorkspaceContainer, IWindowHandler
             if (actualParam == null) {
                 ImGui.Text(param.Name);
                 ImGui.SameLine();
-                ImGui.Button("Create"u8);
+                ImGui.Button(UiText.LabelUtf8("Create"));
             } else {
                 switch (actualParam.type) {
                     case NodeParameter.NodeValueType.Int32: {
@@ -333,7 +333,7 @@ public class UvarExpressionGraph : IWorkspaceContainer, IWindowHandler
                             if (Guid.TryParse(str, out var newguid)) {
                                 UndoRedo.RecordCallbackSetter(ParentContext, actualParam, guid, newguid, (c, v) => c.value = v, actualParam.GetHashCode().ToString());
                             } else {
-                                ImGui.TextColored(Colors.Error, "Invalid GUID"u8);
+                                ImGui.TextColored(Colors.Error, UiText.Utf8("Invalid GUID"));
                             }
                         }
                         break;
@@ -364,8 +364,8 @@ public class UvarExpressionGraph : IWorkspaceContainer, IWindowHandler
 
         if (!isOutput) {
             ImNodes.BeginOutputAttribute(node.nodeId, ImNodesPinShape.Circle);
-            using (var _ = ImguiHelpers.ScopedIndent(contentAvail - ImGui.CalcTextSize("Output"u8).X)) {
-                ImGui.Text("Output"u8);
+            using (var _ = ImguiHelpers.ScopedIndent(contentAvail - ImGui.CalcTextSize(UiText.Utf8("Output")).X)) {
+                ImGui.Text(UiText.Utf8("Output"));
             }
             ImNodes.EndOutputAttribute();
         }

@@ -109,7 +109,7 @@ public class RetargetDesigner : BaseWindowHandler
 
         if (motFileOptions == null) {
             if (string.IsNullOrEmpty(sampleMotlist)) {
-                ImGui.TextColored(Colors.Note, "Please select a valid mot or motlist file");
+                ImGui.TextColored(Colors.Note, UiText.T("Please select a valid mot or motlist file"));
             } else if (meshViewer1 != null && loadedMotlist != sampleMotlist) {
                 loadedMotlist = sampleMotlist;
                 if (meshViewer1.PrimaryAnimator == null) {
@@ -122,7 +122,7 @@ public class RetargetDesigner : BaseWindowHandler
             }
         }
         if (!hideSetup && motFileOptions?.Length > 0) {
-            if (ImguiHelpers.ValueCombo("Sample motion", motFileOptions, motFileOptions, ref motFile)) {
+            if (ImguiHelpers.ValueCombo(UiText.Label("Sample motion"), motFileOptions, motFileOptions, ref motFile)) {
                 meshViewer1!.PrimaryAnimator!.SetActiveMotion(motFile);
                 if (meshViewer1!.PrimaryAnimator.ActiveMotion != null) {
                     meshViewer2?.SetAnimation(meshViewer1!.PrimaryAnimator.ActiveMotion);
@@ -133,17 +133,17 @@ public class RetargetDesigner : BaseWindowHandler
         if (ImGui.ArrowButton("##hideSetup", hideSetup ? ImGuiDir.Down : ImGuiDir.Up)) {
             hideSetup = !hideSetup;
         }
-        if (retargetedMotion != null && ImguiHelpers.SameLine() && ImGui.TreeNode("Mot data")) {
+        if (retargetedMotion != null && ImguiHelpers.SameLine() && ImGui.TreeNode(UiText.Label("Mot data"))) {
             new MotFileHandler().OnIMGUI(UIContext.CreateRootContext("DATA", retargetedMotion));
             ImGui.TreePop();
         }
         ImGui.SameLine();
-        if (ImGui.Button("Reload configs")) {
+        if (ImGui.Button(UiText.Label("Reload configs"))) {
             remaps = null;
             remapOptions = null;
         }
         ImGui.SameLine();
-        var createNew = ImGui.Button("Create new config");
+        var createNew = ImGui.Button(UiText.Label("Create new config"));
         if (remaps == null) {
             remaps = RetargetDesigner.LoadRetargetingConfigs();
         }
@@ -152,7 +152,7 @@ public class RetargetDesigner : BaseWindowHandler
         }
 
         ImGui.SameLine();
-        if (ImguiHelpers.ValueCombo("Remap config", remapOptions, remapOptions, ref remapConfig)) {
+        if (ImguiHelpers.ValueCombo(UiText.Label("Remap config"), remapOptions, remapOptions, ref remapConfig)) {
             forceRefreshConfig = true;
         }
         if (createNew) {
@@ -201,32 +201,32 @@ public class RetargetDesigner : BaseWindowHandler
     {
         if (selectedRemap == null || mesh1?.NativeMesh.BoneData == null || mesh2?.NativeMesh.BoneData == null) return false;
 
-        if (ImGui.Button("Force refresh")) {
+        if (ImGui.Button(UiText.Label("Force refresh"))) {
             forceRefreshConfig = true;
         }
         ImGui.SameLine();
-        if (ImGui.Button("Copy as JSON")) {
+        if (ImGui.Button(UiText.Label("Copy as JSON"))) {
             var data = JsonSerializer.Serialize(selectedRemap, JsonConfig.jsonOptionsIncludeFields);
             EditorWindow.CurrentWindow!.CopyToClipboard(data);
         }
         ImGui.SameLine();
-        if (ImGui.Button("Auto-compute Transformation Matrices")) {
+        if (ImGui.Button(UiText.Label("Auto-compute Transformation Matrices"))) {
             ComputeTranforms(selectedRemap, mesh1, mesh2);
         }
 
         ImGui.SameLine();
-        ImGui.InputText("Filter bones...", ref boneFilter, 100);
+        ImGui.InputText(UiText.Label("Filter bones..."), ref boneFilter, 100);
         var changed = false;
         ImGui.BeginChild("retargetBones", new Vector2(0, 200));
         var targetBones = unmappedName.Concat(mesh2.NativeMesh.BoneData.Bones.Select(b => b.name)).ToArray();
         var srcBones = mesh1.NativeMesh.BoneData.Bones.Select(b => b.name);
         if (selectedMotion != null) srcBones = srcBones.Concat(selectedMotion.Bones.Select(b => b.boneName)).Distinct();
         if (ImGui.BeginTable("##retarget_bones", 5, ImGuiTableFlags.Resizable | ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.BordersOuterV | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY)) {
-            ImGui.TableSetupColumn("Source", ImGuiTableColumnFlags.WidthStretch, 0.075f);
-            ImGui.TableSetupColumn("Target", ImGuiTableColumnFlags.WidthStretch, 0.075f);
-            ImGui.TableSetupColumn("Base Rotation", ImGuiTableColumnFlags.WidthStretch, 0.3f);
-            ImGui.TableSetupColumn("Local Rotation", ImGuiTableColumnFlags.WidthStretch, 0.3f);
-            ImGui.TableSetupColumn("Translation", ImGuiTableColumnFlags.WidthStretch, 0.25f);
+            ImGui.TableSetupColumn(UiText.Label("Source"), ImGuiTableColumnFlags.WidthStretch, 0.075f);
+            ImGui.TableSetupColumn(UiText.Label("Target"), ImGuiTableColumnFlags.WidthStretch, 0.075f);
+            ImGui.TableSetupColumn(UiText.Label("Base Rotation"), ImGuiTableColumnFlags.WidthStretch, 0.3f);
+            ImGui.TableSetupColumn(UiText.Label("Local Rotation"), ImGuiTableColumnFlags.WidthStretch, 0.3f);
+            ImGui.TableSetupColumn(UiText.Label("Translation"), ImGuiTableColumnFlags.WidthStretch, 0.25f);
             ImGui.TableSetupScrollFreeze(0, 1);
             ImGui.TableHeadersRow();
             foreach (var srcBone in srcBones.Order()) {

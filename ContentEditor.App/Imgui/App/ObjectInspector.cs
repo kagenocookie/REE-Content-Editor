@@ -43,7 +43,7 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
             context.AddChild("Target", Target).AddDefaultHandler();
         }
         if (_target == null) {
-            ImGui.TextColored(Colors.Faded, "No object selected");
+            ImGui.TextColored(Colors.Faded, UiText.T("No object selected"));
             return;
         }
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FileDuplicate, [Colors.IconSecondary, ImguiHelpers.GetColor(ImGuiCol.Text), ImguiHelpers.GetColor(ImGuiCol.Text)])) {
@@ -53,14 +53,14 @@ public class ObjectInspector : IWindowHandler, IUIContextEventHandler, IObjectUI
                 EditorWindow.CurrentWindow?.AddSubwindow(new ObjectInspector(parentWindow) { _target = _target });
             }
         }
-        ImguiHelpers.Tooltip("Duplicate Window"u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Duplicate Window"));
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
         if (Target is IPathedObject pathed) {
-            ImGui.TextColored(Colors.Faded, $"Target: [{Target?.GetType().Name}] {Target}: {pathed.Path}");
+            ImGui.TextColored(Colors.Faded, UiText.F($"Target: [{Target?.GetType().Name}] {Target}: {pathed.Path}"));
         } else {
-            ImGui.TextColored(Colors.Faded, $"Target: [{Target?.GetType().Name}] {Target}");
+            ImGui.TextColored(Colors.Faded, UiText.F($"Target: [{Target?.GetType().Name}] {Target}"));
         }
         ImGui.Spacing();
         context.ShowChildrenUI();

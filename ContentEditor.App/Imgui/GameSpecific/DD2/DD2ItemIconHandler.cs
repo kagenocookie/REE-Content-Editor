@@ -18,7 +18,7 @@ public sealed class DD2ItemIconHandler(EntityField field) : IObjectUIHandler, IO
         var data = entity?.Get("data") as RSZObjectResource;
         var workspace = context.GetWorkspace();
         if (entity == null || data == null || workspace == null) {
-            ImGui.TextColored(Colors.Error, $"{field.label} field requires a valid item entity and workspace");
+            ImGui.TextColored(Colors.Error, UiText.F($"{field.label} field requires a valid item entity and workspace"));
             return;
         }
 
@@ -29,7 +29,7 @@ public sealed class DD2ItemIconHandler(EntityField field) : IObjectUIHandler, IO
             var sequenceId = iconNo / 1000;
             var patternId = iconNo % 1000;
             if (sequenceId >= 10 || patternId >= 100) {
-                ImGui.TextColored(Colors.Error, $"Invalid IconNo {iconNo} for presumed vanilla item");
+                ImGui.TextColored(Colors.Error, UiText.F($"Invalid IconNo {iconNo} for presumed vanilla item"));
                 return;
             }
             var texture = context.GetChildValue<Texture>();
@@ -53,7 +53,7 @@ public sealed class DD2ItemIconHandler(EntityField field) : IObjectUIHandler, IO
             ImGui.Text(context.label);
             if (workspace != null) {
                 ImGui.SameLine();
-                if (ImGui.Button("Add custom icon")) {
+                if (ImGui.Button(UiText.Label("Add custom icon"))) {
                     context.Set(new ItemIconResource());
                 }
             }
@@ -72,7 +72,7 @@ public sealed class DD2ItemIconHandler(EntityField field) : IObjectUIHandler, IO
         );
         texHandler.ShowUI();
 
-        if (ImGui.Button("Remove custom icon")) {
+        if (ImGui.Button(UiText.Label("Remove custom icon"))) {
             context.ClearChildren();
             context.Set<object?>(null);
             return;
@@ -84,7 +84,7 @@ public sealed class DD2ItemIconHandler(EntityField field) : IObjectUIHandler, IO
             if (texPath != null && (texture == null || texture.Path?.Contains(texPath) != true)) {
                 var texfile = workspace.Env.FindSingleFile(workspace.Env.AppendFileVersion(texPath));
                 if (texfile == null) {
-                    ImGui.TextColored(Colors.Danger, "Texture not found");
+                    ImGui.TextColored(Colors.Danger, UiText.T("Texture not found"));
                     return;
                 }
                 context.ClearChildren();
@@ -98,8 +98,8 @@ public sealed class DD2ItemIconHandler(EntityField field) : IObjectUIHandler, IO
 
             var v0 = new Vector2(instance.data.IconRect.x,instance.data.IconRect.y);
             var v1 = new Vector2(instance.data.IconRect.w,instance.data.IconRect.h);
-            var changed = ImGui.DragFloat2("Margin Top/Left", ref v0, 0.05f, 0, texture.Width);
-            changed = ImGui.DragFloat2("Margin Bottom/Right", ref v1, 0.05f, 0, texture.Height) || changed;
+            var changed = ImGui.DragFloat2(UiText.Label("Margin Top/Left"), ref v0, 0.05f, 0, texture.Width);
+            changed = ImGui.DragFloat2(UiText.Label("Margin Bottom/Right"), ref v1, 0.05f, 0, texture.Height) || changed;
             if (changed) {
                 instance.data.IconRect.x = v0.X;
                 instance.data.IconRect.y = v0.Y;
