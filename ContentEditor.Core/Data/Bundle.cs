@@ -8,61 +8,19 @@ using System.Text.Json.Serialization;
 using ReeLib;
 using ReeLib.Common;
 
-public class Bundle
+public class Bundle : BaseBundle
 {
-    [JsonPropertyName("author")]
-    public string? Author { get; set; }
-
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
-
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
-
-    [JsonPropertyName("homepage")]
-    public string? Homepage { get; set; }
-
-    [JsonPropertyName("version")]
-    public string? Version { get; set; }
-
-    [JsonPropertyName("image")]
-    public string? ImagePath { get; set; }
-
-    [JsonPropertyName("created_at")]
-    public string? CreatedAt { get; set; }
-
-    [JsonPropertyName("updated_at")]
-    public string? UpdatedAt { get; set; }
-
-    [JsonPropertyName("updated_at_time")]
-    public long UpdatedAtTime { get; set; }
-
-    [JsonPropertyName("depends_on")]
-    public List<string>? DependsOn { get; set; }
-
-    [JsonPropertyName("data")]
-    public List<JsonObject>? LegacyData { get; set; }
-
-    [JsonPropertyName("entities")]
-    public List<Entity> Entities { get; set; } = new();
-
     [JsonPropertyName("resource_listing")]
     public SortedDictionary<string, ResourceListItem>? ResourceListing { get; set; }
 
     [JsonPropertyName("enums")]
     public Dictionary<string, Dictionary<string, JsonElement>>? Enums { get; set; }
 
-    [JsonPropertyName("game_version")]
-    public string? GameVersion { get; set; }
-
-    [JsonPropertyName("bundle_version")]
-    public int BundleVersion { get; set; }
-
-    [JsonPropertyName("initial_insert_ids")]
-    public Dictionary<string, long>? InitialInsertIds { get; set; }
+    [JsonPropertyName("entities")]
+    public List<Entity> Entities { get; set; } = new();
 
     [JsonIgnore]
-    public string StoragePath { get; set; } = "";
+    public RuntimeBundle? RuntimeBundle { get; internal set; }
 
     public bool HasResources => ResourceListing?.Count > 0;
 
@@ -90,19 +48,9 @@ public class Bundle
         _localToTargetPathCache ??= ResourceListing?
             .ToDictionary(item => item.Key, item => item.Value.Target, PakHashedPathComparer.Instance) ?? new(0, PakHashedPathComparer.Instance);
 
-    private static readonly JsonSerializerOptions jsonOptions = new() {
-        WriteIndented = true,
-        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-        IgnoreReadOnlyProperties = true,
-        IgnoreReadOnlyFields = true,
-    };
-
-    public void Touch()
+    public override void Touch()
     {
-        UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss \\U\\T\\C");
-        UpdatedAtTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        if (CreatedAt == null) CreatedAt = UpdatedAt;
+        base.Touch();
         _targetToLocalPathCache = null;
         _localToTargetPathCache = null;
     }
@@ -242,17 +190,6 @@ public class Bundle
             """;
     }
 
-    public void Save()
-    {
-        Touch();
-        var outfilepath = Path.GetExtension(StoragePath.AsSpan()).SequenceEqual(".json")
-            ? StoragePath
-            : Path.Combine(StoragePath, "bundle.json");
-        Directory.CreateDirectory(Path.GetDirectoryName(outfilepath)!);
-        using var fs = File.Create(outfilepath);
-        JsonSerializer.Serialize(fs, this, jsonOptions);
-    }
-
     public void CopyFrom(Bundle other)
     {
         ResourceListing = other.ResourceListing;
@@ -268,12 +205,49 @@ public class Bundle
         UpdatedAt = other.UpdatedAt;
         UpdatedAtTime = other.UpdatedAtTime;
         DependsOn = other.DependsOn;
-        LegacyData = other.LegacyData;
         Entities = other.Entities;
         Enums = other.Enums;
         GameVersion = other.GameVersion;
-        BundleVersion = other.BundleVersion;
         InitialInsertIds = other.InitialInsertIds;
+    }
+
+    public void CopyFrom(RuntimeBundle other)
+    {
+        CreatedAt = other.CreatedAt;
+        ImagePath = other.ImagePath;
+        UpdateFrom(other);
+    }
+
+    public void UpdateFrom(RuntimeBundle other)
+    {
+        Author = other.Author;
+        Description = other.Description;
+        Name = other.Name;
+        Version = other.Version;
+        Homepage = other.Homepage;
+        UpdatedAt = other.UpdatedAt;
+        UpdatedAtTime = other.UpdatedAtTime;
+        DependsOn = other.DependsOn;
+        InitialInsertIds = other.InitialInsertIds;
+    }
+
+    public void Save()
+    {
+        Touch();
+        var outfilepath = Path.Combine(StoragePath, "bundle.json");
+        if (!Directory.Exists(outfilepath)) {
+            if (RuntimeBundle != null && File.Exists(RuntimeBundle.StoragePath)) {
+                Logger.Info($"Creating main desktop bundle counterpart for runtime-only bundle {Name}");
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(outfilepath)!);
+        }
+        using var fs = File.Create(outfilepath);
+        JsonSerializer.Serialize(fs, this, jsonOptions);
+        if (RuntimeBundle != null) {
+            RuntimeBundle.CopyFrom(this);
+            RuntimeBundle.Save();
+        }
     }
 
     public void Init(BundleManager bundleManager)

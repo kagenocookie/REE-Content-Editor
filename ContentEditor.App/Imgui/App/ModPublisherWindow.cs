@@ -60,6 +60,9 @@ public class ModPublisherWindow : IWindowHandler
                 }
                 if (window.ApplyContentPatches(outputPath, bundle.Name)) {
                     File.WriteAllText(Path.Combine(outputPath, "bundle.json"), JsonSerializer.Serialize(bundle, JsonConfig.jsonOptions));
+                    if (bundle.RuntimeBundle != null) {
+                        WriteFile(Path.Combine(outputPath, "reframework/data/usercontent/bundles/" + bundle.RuntimeBundle.Name + ".json"), JsonSerializer.Serialize(bundle, JsonConfig.jsonOptions));
+                    }
                 }
             });
         }
@@ -77,7 +80,11 @@ public class ModPublisherWindow : IWindowHandler
                 if (!string.IsNullOrEmpty(bundle.ImagePath) && File.Exists(Path.Combine(bundlePath, bundle.ImagePath))) {
                     File.Copy(Path.Combine(bundlePath, bundle.ImagePath), Path.Combine(outputPath, bundle.ImagePath), true);
                 }
-                if (!window.ApplyContentPatches(outputPath, bundle.Name)) {
+                if (window.ApplyContentPatches(outputPath, bundle.Name)) {
+                    if (bundle.RuntimeBundle != null) {
+                        WriteFile(Path.Combine(outputPath, "reframework/data/usercontent/bundles/" + bundle.RuntimeBundle.Name + ".json"), JsonSerializer.Serialize(bundle, JsonConfig.jsonOptions));
+                    }
+                } else {
                     Logger.Error("Publishing failed");
                 }
             }, null, FileFilters.PakFile);
@@ -122,6 +129,15 @@ public class ModPublisherWindow : IWindowHandler
         if (bundle.Entities.Count == 0 && !bundle.HasResources) {
             ImGui.TextColored(Colors.Info, "There is currently no content inside the bundle.");
         }
+    }
+
+    private static void WriteFile(string filepath, string contents)
+    {
+        var dir = Path.GetDirectoryName(filepath);
+        if (!string.IsNullOrEmpty(dir)) {
+            Directory.CreateDirectory(dir);
+        }
+        File.WriteAllText(filepath, contents);
     }
 
     public void OnWindow() => this.ShowDefaultWindow(context);

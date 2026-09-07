@@ -53,6 +53,8 @@ public class BundleManagementUI : IWindowHandler
     private float leftSideW = 525;
     private bool isShowLoadOrder = false;
 
+    private Bundle? deletingBundle;
+
     public void Init(UIContext context)
     {
         this.context = context;
@@ -186,6 +188,7 @@ public class BundleManagementUI : IWindowHandler
         ImGui.SeparatorText(Lang.Bundles.Title);
         ImGui.BeginChild("##Bundles", new Vector2(bundlesX, bundlesY), ImGuiWindowFlags.NoScrollbar);
         ImGui.PushItemWidth(400);
+        var workspace = EditorWindow.CurrentWindow?.Workspace;
         if (bundleManager.AllBundles.Count == 0) {
             ImGui.TextColored(Colors.Info, Lang.Bundles.NoBundlesFound);
         } else if (!isPreview) {
@@ -203,11 +206,18 @@ public class BundleManagementUI : IWindowHandler
                 ImguiHelpers.Tooltip(Lang.Bundles.OpenCurrentBundleFolder);
 
                 ImGui.SameLine();
-                using (var __ = ImguiHelpers.Disabled(EditorWindow.CurrentWindow?.Workspace.CurrentBundle == null)) {
+                using (var __ = ImguiHelpers.Disabled(workspace?.CurrentBundle == null)) {
                     if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BundleUnload, [ Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconTertiary, Colors.IconTertiary, Colors.IconTertiary ])) {
-                        EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, null);
+                        EditorWindow.CurrentWindow?.SetWorkspace(workspace!.Env.Config.Game, null);
                     }
                     ImguiHelpers.Tooltip(Lang.Bundles.UnloadCurrentBundle);
+                }
+                ImGui.SameLine();
+                using (var __ = ImguiHelpers.Disabled(selectedBundle == null)) {
+                    if (ImGui.Button($"{AppIcons.SI_GenericDelete}")) {
+                        deletingBundle = selectedBundle;
+                    }
+                    ImguiHelpers.Tooltip(Lang.Bundles.DeleteCurrentBundle);
                 }
                 if (selectedBundle?.HasResources == true) {
                     ImGui.SameLine();
@@ -217,7 +227,7 @@ public class BundleManagementUI : IWindowHandler
                             r.DiffTime = default;
                         }
                         selectedBundle.Save();
-                        if (selectedBundle == EditorWindow.CurrentWindow?.Workspace.CurrentBundle) {
+                        if (selectedBundle == workspace?.CurrentBundle) {
                             context.GetWorkspace()?.SaveBundle(true);
                         }
                     }
@@ -230,6 +240,26 @@ public class BundleManagementUI : IWindowHandler
                 data.SetPersistentData("selectedBundle", selectedName);
             }
             data.SetPersistentData("bundleFilter", filter);
+        }
+
+        if (deletingBundle != null) {
+            ImGui.OpenPopup(Lang.Bundles.DeleteBundleConfirmationTitle);
+            AppImguiHelpers.ShowActionModal(Lang.Bundles.DeleteBundleConfirmationTitle, $"{AppIcons.SI_GenericDelete2}", Colors.IconTertiary,
+                Lang.Bundles.DeleteBundleConfirmation.FormatRef(deletingBundle.Name),
+                () => {
+                    bundleManager.DeleteBundle(deletingBundle);
+                    if (deletingBundle == workspace?.CurrentBundle) {
+                        workspace.SetBundle(null);
+                    }
+                    if (selectedBundle == deletingBundle) {
+                        data.SetPersistentData("selectedBundle", "");
+                    }
+                    deletingBundle = null;
+                },
+                () => {
+                    deletingBundle = null;
+                }
+            );
         }
 
         var bundle = selectedName != null ? bundleManager.GetBundle(selectedName, null) : null;
@@ -259,7 +289,7 @@ public class BundleManagementUI : IWindowHandler
             var previousSelectedName = data.GetPersistentData<string>("activeBundleObserved");
             if (selectedName != previousSelectedName) {
                 data.SetPersistentData("activeBundleObserved", selectedName);
-                if (EditorWindow.CurrentWindow?.Workspace.CurrentBundle?.Name != bundle.Name) {
+                if (workspace?.CurrentBundle?.Name != bundle.Name) {
                     EditorWindow.CurrentWindow?.SetWorkspace(EditorWindow.CurrentWindow.Workspace.Env.Config.Game, bundle.Name);
                 }
             }
@@ -290,6 +320,7 @@ public class BundleManagementUI : IWindowHandler
                             var srcPath = str;
                             str = Path.Combine(bundleFolder, Path.GetFileName(str));
                             try {
+                                Directory.CreateDirectory(bundleFolder);
                                 File.Copy(srcPath, str, true);
                                 EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Image copied to bundle folder", 4);
                             } catch (Exception e) {
@@ -316,13 +347,13 @@ public class BundleManagementUI : IWindowHandler
         ImGui.EndChild();
         ImGui.Separator();
         if (bundle != null) {
-            var legacyEntityTypes = bundle.LegacyData?.Where(ld => ld.TryGetPropertyValue("type", out _)).Select(ld => ld["type"]!.GetValue<string>()).Distinct();
+            var legacyEntityTypes = bundle.RuntimeBundle?.LegacyData?.Where(ld => ld.TryGetPropertyValue("type", out _)).Select(ld => ld["type"]!.GetValue<string>()).Distinct();
             if (legacyEntityTypes?.Any() == true) {
                 if (ImGui.TreeNode(Lang.Bundles.LegacyEntities)) {
                     var types = allOption.Concat(legacyEntityTypes).ToArray();
                     ImGui.Combo(Lang.Bundles.EntityType.String, ref selectedLegacyEntityType, types, types.Length);
                     var entityFilter = selectedLegacyEntityType > 0 && selectedLegacyEntityType < types.Length ? types[selectedLegacyEntityType] : null;
-                    foreach (var e in bundle.LegacyData!) {
+                    foreach (var e in bundle.RuntimeBundle!.LegacyData!) {
                         if (!e.TryGetPropertyValue("type", out var type)) {
                             continue;
                         }
@@ -386,6 +417,7 @@ public class BundleManagementUI : IWindowHandler
 
     private void ShowBundleThumbnail(Bundle bundle, float width, string bundleFolder, bool isPreview)
     {
+        if (!Directory.Exists(bundleFolder)) return;
         var resolvedBundleFilepath = "";
         if (!string.IsNullOrEmpty(bundle.ImagePath) && !Path.IsPathFullyQualified(bundle.ImagePath)) {
             var p = Path.Combine(bundleFolder, bundle.ImagePath);

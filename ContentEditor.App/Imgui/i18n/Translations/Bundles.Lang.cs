@@ -29,7 +29,13 @@ public static partial class Lang
         public static readonly FixedString SelectBundle = "Select a bundle to view its details";
         public static readonly FixedString SaveBundleMetadata = "Save bundle metadata";
         public static readonly FixedString OpenCurrentBundleFolder = "Open Current Bundle folder in File Explorer";
+        public static readonly FixedString DeleteCurrentBundle = "Delete this Bundle";
         public static readonly FixedString UnloadCurrentBundle = "Unload current Bundle";
+        public static readonly FixedString DeleteBundleConfirmationTitle = "Deleting Bundle";
+        public static readonly InterpolatedString<string> DeleteBundleConfirmation = """
+            Are you sure you wish to delete the bundle {0}?
+            This will delete all of the bundle's edited files and runtime bundle data and is not recoverable.
+            """;
         public static readonly FixedString RebuildPatchDiffs = "Force Rebuild Patch Diffs";
         public static readonly FixedString OpenFileInEditor = "Open file in Editor";
         public static readonly FixedString EditTargetPathPopup = "EditTargetPath";
