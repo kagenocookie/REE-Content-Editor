@@ -35,7 +35,7 @@ public partial class CommonMeshResource : IResourceFile
         var scale = GetImportScale();
         warnings = MeshImportWarnings.None;
 
-        mesh.Header.BufferCount = 1;
+        mesh.Header.BufferCountFlag = 1;
 
         var mainBuffer = new MeshBuffer();
         mesh.MeshBuffer = mainBuffer;

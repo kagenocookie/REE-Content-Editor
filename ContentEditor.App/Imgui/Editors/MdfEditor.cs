@@ -244,6 +244,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
                 if (!isInvalidName) {
                     if (ImGui.Button($"{AppIcons.SI_GenericAdd}")) {
                         var mat = new MaterialData(new MaterialHeader { matName = newMaterialName });
+                        mat.Header.isOnimushaVariant = list.FirstOrDefault()?.Header.isOnimushaVariant ?? (context.GetWorkspace()?.Game.GameEnum == GameName.oniws);
                         UndoRedo.RecordListAdd(context, list, mat);
                         SelectOnlyMaterial(context, list, list.Count - 1);
                         newMaterialName = "";
