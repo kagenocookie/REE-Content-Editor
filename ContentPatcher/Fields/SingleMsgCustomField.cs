@@ -5,8 +5,8 @@ using ReeLib.Common;
 
 namespace ContentPatcher;
 
-[ResourceField("single-msg")]
-public class SingleMsgCustomField : EntityField<MessageData>, ICustomResourceField, IDiffableField
+[ResourceField("single-msg", typeof(MsgFileResourceHandler))]
+public class SingleMsgCustomField : CustomEntityFieldHandler<MessageData>, IDiffableField
 {
     public string keyFormat = null!;
     public StringFormatter? formatter;
@@ -15,6 +15,13 @@ public class SingleMsgCustomField : EntityField<MessageData>, ICustomResourceFie
 
     bool IDiffableField.EnableDiff => true;
     public override string ResourceTypeId => file;
+
+    public override void LoadParams(EntityFieldConfig data)
+    {
+        keyFormat = data.RequireResourceSettings.Key ?? "";
+        file = data.RequireResourceSettings.SingleFile;
+        multiline = data.GetParam<bool>("multiline", false);
+    }
 
     public override MessageData? ApplyValue(ContentWorkspace workspace, MessageData? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
     {
@@ -32,16 +39,16 @@ public class SingleMsgCustomField : EntityField<MessageData>, ICustomResourceFie
         return currentResource;
     }
 
-    public ClassConfig CreateConfig()
+    public ResourceConfig CreateConfig()
     {
-        var cfg = new ClassConfig();
-        cfg.Patcher = new MsgFileResourceHandler() { Files = [file], ResourceTypeID = file };
-        cfg.IDFields = [NestableFieldAccessor.PlainReturn.Instance];
+        var cfg = new ResourceConfig(file);
+        cfg.Patcher = new MsgFileResourceHandler() { Config = cfg, Files = [file] };
+        cfg.IDGenerator = IDGenerator.CreateGenerator([new NestableFieldAccessor.PlainReturn()]);
         // cfg.To_String = // msg key + msg value["en"]
         return cfg;
     }
 
-    public (long id, IContentResource resource) CreateResource(ContentWorkspace workspace, ClassConfig config, ResourceEntity entity, JsonNode? initialData)
+    public override (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData)
     {
         string entityKey = FormatMessageKey(entity);
         var messageId = MurMur3HashUtils.GetHash(entityKey);
@@ -53,16 +60,24 @@ public class SingleMsgCustomField : EntityField<MessageData>, ICustomResourceFie
         return (messageId, data);
     }
 
-    public IEnumerable<KeyValuePair<long, IContentResource>> FetchInstances(ResourceManager workspace)
-    {
-        return workspace.GetResourceInstances(ResourceTypeId);
-    }
-
-    public override MessageData? FetchResource(ResourceManager workspace, ResourceEntity entity, ResourceState state)
+    public override (long id, IContentResource? resource) LoadValue(ContentWorkspace workspace, ResourceEntity entity, ResourceState state)
     {
         string entityKey = FormatMessageKey(entity);
         var messageId = MurMur3HashUtils.GetHash(entityKey);
-        var data = workspace.GetResourceInstance(file, messageId, state) as MessageData;
+        var data = workspace.ResourceManager.GetResourceInstance(file, messageId, state) as MessageData;
+        if (data != null) {
+            data.MessageKey = entityKey;
+            return (messageId, data);
+        }
+
+        return (-1, null);
+    }
+
+    public override MessageData? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
+    {
+        string entityKey = FormatMessageKey(entity);
+        var messageId = MurMur3HashUtils.GetHash(entityKey);
+        var data = workspace.ResourceManager.GetResourceInstance(file, messageId, state) as MessageData;
         if (data != null) {
             data.MessageKey = entityKey;
         }
@@ -75,13 +90,5 @@ public class SingleMsgCustomField : EntityField<MessageData>, ICustomResourceFie
             formatter = new StringFormatter(keyFormat, FormatterSettings.CreateFullEntityFormatter(entity.Config));
         }
         return formatter.GetString(entity);
-    }
-
-    public override void LoadParams(string fieldName, Dictionary<string, object>? param)
-    {
-        ArgumentNullException.ThrowIfNull(param);
-        keyFormat = (string)param["key"];
-        file = (string)param["file"];
-        multiline = param.GetValueOrDefault("multiline") is bool b ? b : false;
     }
 }

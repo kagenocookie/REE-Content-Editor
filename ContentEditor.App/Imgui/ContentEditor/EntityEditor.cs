@@ -7,7 +7,7 @@ namespace ContentEditor.App.DD2;
 public class EntityEditor : IWindowHandler
 {
     public string HandlerName => nameof(EntityEditor);
-    public bool HasUnsavedChanges => data?.Context?.GetChildByValue<ResourceEntity>()?.Changed == true;
+    public bool HasUnsavedChanges => data?.Context?.GetChildByValue<Entity>()?.Changed == true;
     private long initialId = -1;
 
     public EntityEditor(ContentWorkspace workspace, string entityType)

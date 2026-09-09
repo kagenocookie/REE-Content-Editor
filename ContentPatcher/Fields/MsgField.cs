@@ -6,7 +6,7 @@ using ReeLib.Common;
 namespace ContentPatcher;
 
 [ResourceField("msg")]
-public class MsgField : EntityField<MessageData>, IDiffableField
+public class MsgField : EntityFieldValueHandler<MessageData>, IDiffableField
 {
     public string keyFormat = null!;
     public StringFormatter? formatter;
@@ -16,24 +16,18 @@ public class MsgField : EntityField<MessageData>, IDiffableField
     bool IDiffableField.EnableDiff => true;
     public override string ResourceTypeId => resourceType;
 
-    public override void LoadParams(string fieldName, Dictionary<string, object>? param)
+    public override void LoadParams(EntityFieldConfig param)
     {
-        ArgumentNullException.ThrowIfNull(param, nameof(param));
-        keyFormat = (string)param["key"];
-        resourceType = (string)param["resource"];
-        multiline = param.GetValueOrDefault("multiline") is bool bb ? bb : false;
+        keyFormat = param.RequireParam<string>("key");
+        resourceType = param.RequireParam<string>("resource");
+        multiline = param.GetParam<bool>("multiline", false);
     }
 
-    public IEnumerable<KeyValuePair<long, IContentResource>> FetchInstances(ResourceManager resources)
-    {
-        return resources.GetResourceInstances(resourceType);
-    }
-
-    public override IContentResource? FetchResource(ResourceManager resources, ResourceEntity entity, ResourceState state)
+    public override IContentResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
     {
         string entityKey = FormatMessageKey(entity);
         var messageId = MurMur3HashUtils.GetHash(entityKey);
-        return resources.GetResourceInstance(resourceType, messageId, state);
+        return workspace.ResourceManager.GetResourceInstance(resourceType, messageId, state);
     }
 
     public override MessageData? ApplyValue(ContentWorkspace workspace, MessageData? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
@@ -45,7 +39,7 @@ public class MsgField : EntityField<MessageData>, IDiffableField
         if (currentResource == null) {
             string entityKey = FormatMessageKey(entity);
             var messageId = MurMur3HashUtils.GetHash(entityKey);
-            var inst = workspace.ResourceManager.CreateEntityResource<MessageData>(entity, this, state, resourceType);
+            var inst = workspace.ResourceManager.CreateEntityResource<MessageData>(entity, Field, state, resourceType);
             workspace.Diff.ApplyDiff(inst, data);
             return inst;
         }

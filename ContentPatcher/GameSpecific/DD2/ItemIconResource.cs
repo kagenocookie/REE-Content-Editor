@@ -43,12 +43,12 @@ public class ItemIconResource : IContentResource
     }
 }
 
-[ResourceField("DD2_ItemIcon", "dd2")]
-public class ItemIconField : EntityField<ItemIconResource>
+[ResourceField("DD2_ItemIcon", null, "dd2")]
+public class ItemIconField : EntityFieldValueHandler<ItemIconResource>
 {
     public override string? ResourceTypeId => null;
 
-    public override void LoadParams(string fieldName, Dictionary<string, object>? param)
+    public override void LoadParams(EntityFieldConfig param)
     {
     }
 
@@ -64,8 +64,8 @@ public class ItemIconField : EntityField<ItemIconResource>
         return currentResource;
     }
 
-    public override IContentResource? FetchResource(ResourceManager resources, ResourceEntity entity, ResourceState state)
+    public override IContentResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
     {
-        return entity.Get(name);
+        return entity.Get(Field.name);
     }
 }

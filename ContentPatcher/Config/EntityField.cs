@@ -1,25 +1,29 @@
 using System.Text.Json.Nodes;
-using VYaml.Annotations;
 
 namespace ContentPatcher;
 
 /// <summary>
 /// Describes a single custom entity field. One instance is created per entity and field, but shared between each entity instance.
 /// </summary>
-public abstract class EntityField
+public sealed class EntityField
 {
     public required string name = string.Empty;
+    public required EntityFieldConfig config;
     public string label = string.Empty;
+
+    public ResourceConfig Resource { get; set; } = null!;
+
+    public EntityFieldValueHandler ValueHandler { get; set; } = null!;
 
     /// <summary>
     /// An identifier of the resource type for grouping the resources. Can be null in case the field does not have any actual instance data (only serves as a reference to a file or custom UI display). If null, object will not be diffable.
     /// </summary>
-    public abstract string? ResourceTypeId { get; }
+    public string? ResourceTypeId => ValueHandler.ResourceTypeId;
 
     /// <summary>
     /// Condition for when the field is valid and displayed.
     /// </summary>
-    public CustomFieldCondition? Condition { get; set; }
+    public EntityFieldCondition? Condition { get; set; }
 
     /// <summary>
     /// Denotes that the field must have a value for a valid entity. The resource will be automatically created during new entity creation.
@@ -32,14 +36,29 @@ public abstract class EntityField
     /// </summary>
     public bool IsNotStandaloneValue { get; set; }
 
+    public NestableFieldAccessor? IdField { get; set; }
+
+    public override string ToString() => $"{name} [{ResourceTypeId}]";
+}
+
+public abstract class EntityFieldValueHandler
+{
+    public EntityField Field { get; internal set; } = null!;
+
+    /// <summary>
+    /// An identifier of the resource type for grouping the resources. Can be null in case the field does not have any actual instance data (only serves as a reference to a file or custom UI display). If null, object will not be diffable.
+    /// </summary>
+    public abstract string? ResourceTypeId { get; }
+
     /// <summary>
     /// Try and fetch a resource instance for the entity's field value from the resource manager.
     /// </summary>
     /// <param name="resources"></param>
     /// <param name="entity"></param>
+    /// <param name="resourceId"></param>
     /// <param name="state"></param>
     /// <returns></returns>
-    public abstract IContentResource? FetchResource(ResourceManager resources, ResourceEntity entity, ResourceState state);
+    public abstract IContentResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state);
 
     /// <summary>
     /// Apply a data JSON on top of an existing resource object or create a new resource.
@@ -47,21 +66,19 @@ public abstract class EntityField
     /// <returns>A resource representing the applied data. Can be the same instance that was given.</returns>
     public abstract IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state);
 
-    public virtual void LoadParams(string fieldName, Dictionary<string, object>? param)
+    public virtual void LoadParams(EntityFieldConfig param)
     {
     }
 
     public virtual void EntitySetup(EntityConfig entityConfig, ContentWorkspace workspace)
     {
     }
-
-    public override string ToString() => $"{name} [{ResourceTypeId}]";
 }
 
 /// <summary>
 /// <inheritdoc/>
 /// </summary>
-public abstract class EntityField<TContentType> : EntityField where TContentType : IContentResource
+public abstract class EntityFieldValueHandler<TContentType> : EntityFieldValueHandler where TContentType : IContentResource
 {
     public sealed override IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
     {
@@ -73,7 +90,6 @@ public abstract class EntityField<TContentType> : EntityField where TContentType
 
 public interface IMainField
 {
-    IEnumerable<KeyValuePair<long, IContentResource>> FetchInstances(ResourceManager workspace);
 }
 
 public interface IDiffableField
@@ -91,38 +107,32 @@ public interface IDiffableField
 }
 
 /// <summary>
-/// An entity field that defines its own custom resource.
+/// An entity-specific resource field that's relies on an entity's data to work and can't be a standalone resource.
 /// </summary>
-public interface ICustomResourceField
+public abstract class CustomEntityFieldHandler : EntityFieldValueHandler
 {
+    // /// <summary>
+    // /// An identifier of the field's resource type for grouping the resources. Can be null in case the field does not have any actual instance data (only serves as a reference to a file or custom UI display). If null, object will not be diffable.
+    // /// </summary>
+    // string? ResourceTypeId { get; }
+
     /// <summary>
-    /// An identifier of the field's resource type for grouping the resources. Can be null in case the field does not have any actual instance data (only serves as a reference to a file or custom UI display). If null, object will not be diffable.
+    /// Create an entity-specific value for this field.
     /// </summary>
-    string? ResourceTypeId { get; }
-    IEnumerable<KeyValuePair<long, IContentResource>> FetchInstances(ResourceManager workspace);
-    (long id, IContentResource resource) CreateResource(ContentWorkspace workspace, ClassConfig config, ResourceEntity entity, JsonNode? initialData);
-    ClassConfig CreateConfig();
+    public abstract (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData);
+
+    public abstract (long id, IContentResource? resource) LoadValue(ContentWorkspace workspace, ResourceEntity entity, ResourceState state);
 }
 
-[YamlObject]
-public partial class CustomFieldSerialized
+/// <summary>
+/// <inheritdoc/>
+/// </summary>
+public abstract class CustomEntityFieldHandler<TContentType> : CustomEntityFieldHandler where TContentType : IContentResource
 {
-    public string type = string.Empty;
-    public string? label;
-    [YamlMember("when_classname")]
-    public CustomFieldClassnameCondition? whenClassname;
-    [YamlMember("required")]
-    public bool isRequired;
-    [YamlMember("display_after")]
-    public string? displayAfter;
-    [YamlMember("not_standalone")]
-    public bool IsNotStandalone;
-    public Dictionary<string, object>? param;
-}
+    public sealed override IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
+    {
+        return ApplyValue(workspace, (TContentType?)currentResource, data, entity, state);
+    }
 
-[YamlObject]
-public partial class CustomFieldClassnameCondition
-{
-    public string field = string.Empty;
-    public string classname = string.Empty;
+    public abstract TContentType? ApplyValue(ContentWorkspace workspace, TContentType? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state);
 }

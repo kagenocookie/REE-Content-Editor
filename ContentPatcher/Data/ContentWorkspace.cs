@@ -134,7 +134,7 @@ public sealed class ContentWorkspace : IDisposable
             // we don't check for file.Modified because it can be marked as false but still be different from the current diff
             // e.g. if we manually replaced the file or undo'ed our changes
             if (forceDiffAllFiles) {
-                foreach (var info in bundle.Resources) {
+                foreach (var info in bundle.Files) {
                     FileHandle? file;
                     try {
                         file = ResourceManager.GetFileHandle(info.Target);

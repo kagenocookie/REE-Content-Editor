@@ -9,8 +9,8 @@ namespace ContentPatcher;
 /// <inheritdoc/><br/>
 /// This field type only serves as a UI reference to a resource file based on another field's data.
 /// </summary>
-[ResourceField("resource")]
-public class ResourceCustomField : EntityField
+[ResourceField("resource_link")]
+public class ResourceLinkCustomField : EntityFieldValueHandler
 {
     public string resourceType = null!;
     public StringFormatter pathFormat = null!;
@@ -20,11 +20,10 @@ public class ResourceCustomField : EntityField
 
     public string GetPath(ResourceEntity entity) => pathFormat.GetString(entity);
 
-    public override void LoadParams(string fieldName, Dictionary<string, object>? param)
+    public override void LoadParams(EntityFieldConfig data)
     {
-        ArgumentNullException.ThrowIfNull(param);
-        resourceType = (string)param["type"];
-        pathFormatString = (string)param["path"];
+        resourceType = data.RequireParam<string>("type");
+        pathFormatString = data.RequireParam<string>("path");
     }
 
     public override void EntitySetup(EntityConfig entityConfig, ContentWorkspace workspace)
@@ -32,7 +31,7 @@ public class ResourceCustomField : EntityField
         pathFormat = new StringFormatter(pathFormatString, FormatterSettings.CreateFullEntityFormatter(entityConfig, workspace));
     }
 
-    public override IContentResource? FetchResource(ResourceManager resources, ResourceEntity entity, ResourceState state)
+    public override IContentResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
     {
         // would we want to force-open the referenced file here?
         // var path = GetPath(entity);

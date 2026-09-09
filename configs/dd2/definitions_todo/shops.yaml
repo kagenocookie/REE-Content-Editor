@@ -1,0 +1,39 @@
+entities:
+  shop:
+    to_string: "Shop {id}: {Data._ShopNameId:translate()}"
+    fields:
+    - name: Data
+      # inline resource definition instead of "type" field...
+      # would be nice, but is it practical, code wise? I hope so...
+      resource:
+        file: appsystem/item/itemshopdata/itemshopdata.user.2
+        type: array-file
+        id: [_ShopId]
+
+classes:
+  app.ItemShopParam:
+    to_string: "{_ShopId}: {_ShopNameId:translate()}"
+    fields:
+      _ShopNameId: { translate_guid: true, translate_fallback_enum: ShopNameOverrides }
+
+  app.ItemShopSellParam:
+    id: [_ItemId]
+    to_string: "{_ItemId}"
+    fields:
+      _ItemId: { enum: app.ItemIDEnum }
+
+  app.ItemShopBuyParam:
+    id: [_ItemId, _Stock, _ReleaseQuestId]
+    to_string: "{_ItemId} [{_Stock} stock, quest {_ReleaseQuestId}]"
+    fields:
+      _ItemId: { enum: app.ItemIDEnum }
+
+  app.GenerateTableData:
+    id: [_TableID]
+    group: spawns
+    type: autoset_spawns
+
+  app.GenerateRowData:
+    id: [_ManualSetGuid, _AutoSetGuid] ## TODO: verify are these really unique?
+    fields:
+      _CharaID: { enum: app.CharacterID }

@@ -37,12 +37,12 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
     private sealed class ResourceData
     {
-        public ClassConfig config;
+        public ResourceConfig config;
         public Dictionary<long, IContentResource>? baseInstances;
         public Dictionary<long, IContentResource>? activeInstances;
         public readonly List<string> baseTypes = new(0);
 
-        public ResourceData(ClassConfig config)
+        public ResourceData(ResourceConfig config)
         {
             this.config = config;
         }
@@ -64,31 +64,22 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     {
         this.workspace = workspace;
         SetupFileLoaders();
-        foreach (var (classname, patch) in config.Classes) {
-            var data = new ResourceData(patch);
-            resources[classname] = data;
-
-            data.baseTypes.AddRange(resources.Where(kv => kv.Value.config.Subclasses?.ContainsKey(classname) == true).Select(kv => kv.Key));
-        }
 
         foreach (var (type, res) in config.Resources) {
-            var data = new ResourceData(new ClassConfig() { Patcher = res.Patcher });
+            var data = new ResourceData(res);
             resources[type] = data;
         }
 
         foreach (var (type, patch) in config.Entities) {
             entities[type] = new EntityData(patch);
 
-            foreach (var field in patch.Fields) {
-                if (field is ICustomResourceField custom && custom.ResourceTypeId != null) {
-                    var cfg = custom.CreateConfig();
-                    resources[custom.ResourceTypeId] = new ResourceData(cfg);
-                }
-            }
+            // foreach (var field in patch.Fields) {
+            //     if (field.ValueHandler is ICustomEntityField custom && custom.ResourceTypeId != null) {
+            //         var cfg = custom.CreateConfig();
+            //         resources[custom.ResourceTypeId] = new ResourceData(cfg);
+            //     }
+            // }
         }
-
-        // foreach (var (type, cusType) in config.CustomTypes) {
-        // }
     }
 
     private void SetupFileLoaders()
@@ -179,7 +170,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             }
             var patcher = resourceData.config.Patcher;
             if (patcher != null && resourceData.baseInstances != null) {
-                patcher.ModifyResources(workspace, resourceData.config, resourceData.baseInstances);
+                patcher.ModifyResources(workspace, resourceData.baseInstances);
             }
         }
 
@@ -322,18 +313,72 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         throw new NotImplementedException("Requested unknown resource " + type);
     }
 
-    private IContentResource? CreateEntityResourceInternal(ResourceEntity entity, EntityField field, ResourceState state, ResourceData data, JsonNode? initialData)
+    private long EntityToFieldResourceId(EntityField field, ResourceEntity entity)
     {
-        var resourceConfig = data.config;
-        var resourceId = 0L;
+        // if it's a subresource, we need to inherit the parent resource's ID
+        if (field.Resource.ParentResource != null) {
+            var parentFieldName = entity.FieldValues.FirstOrDefault(f => f.Value?.ResourceTypeID == field.Resource.ParentResource.Type).Key;
+            if (parentFieldName == null) {
+                Logger.Warn($"Could not find parent resource of {field} for entity {entity}");
+                return 0;
+            }
+
+            var parentField = entity.Config.GetField(parentFieldName);
+            if (parentField == null) {
+                Logger.Warn($"Could not find parent resource of {field} for entity {entity}");
+                return 0;
+            }
+
+            var parentId = EntityToFieldResourceId(parentField, entity);
+            return parentId;
+        }
+
+        // could also be a specific "other field"'s field/value
+        if (field.IdField != null) {
+            return Convert.ToInt64(field.IdField.Get(entity));
+        }
+
+        if (field.ValueHandler is CustomEntityFieldHandler customField) {
+            // customField.GetComputedId()
+        }
+
+        // TODO or some custom enum mapping?
+
+        // or fallback to entity == resource id (in case the IDs don't matter / are purely arbitrary)
+        return entity.Id;
+    }
+
+    private IContentResource? CreateEntityFieldInternal(ResourceEntity entity, EntityField field, ResourceState state, ResourceConfig resourceConfig, JsonNode? initialData, long resourceId = -1)
+    {
+        IContentResource? fieldResource;
+        if (field.ValueHandler is CustomEntityFieldHandler customField) {
+            (resourceId, fieldResource) = customField.CreateValue(workspace, entity, initialData);
+            if (resourceId == -1) resourceId = EntityToFieldResourceId(field, entity);
+            entity.Set(field.name, fieldResource);
+            if (fieldResource == null) return null;
+
+            if (fieldResource.FilePath == null) {
+                // ignore - there's no file here
+            } else if (openFiles.TryGetValue(fieldResource.FilePath, out var file)) {
+                file.Modified = true;
+            } else {
+                throw new Exception("New resource file should've been opened, wtf?");
+            }
+            AddResource(fieldResource.ResourceTypeID, resourceId, fieldResource, state);
+        } else {
+            if (resourceId == -1) resourceId = EntityToFieldResourceId(field, entity);
+            fieldResource = CreateResourceInternal(resourceId, resourceConfig, state, initialData);
+            entity.Set(field.name, fieldResource);
+        }
+        return fieldResource;
+    }
+
+    private IContentResource? CreateResourceInternal(long resourceId, ResourceConfig resource, ResourceState state, JsonNode? initialData)
+    {
         IContentResource? fieldResource = null;
 
-        if (field is ICustomResourceField customField) {
-            (resourceId, fieldResource) = customField.CreateResource(workspace, resourceConfig, entity, initialData);
-            entity.Set(field.name, fieldResource);
-        } else if (resourceConfig.Patcher != null) {
-            (resourceId, fieldResource) = resourceConfig.Patcher.CreateResource(workspace, resourceConfig, entity, initialData);
-            entity.Set(field.name, fieldResource);
+        if (resource.Patcher != null) {
+            fieldResource = resource.Patcher.CreateResource(workspace, resourceId, initialData);
         }
         if (fieldResource == null) return null;
 
@@ -359,13 +404,53 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             }
 
             if (data.config.Patcher != null) {
-                return (TResourceType?)CreateEntityResourceInternal(entity, field, state, data, null)
+                return (TResourceType?)CreateEntityFieldInternal(entity, field, state, data.config, null)
                     ?? throw new Exception($"Failed to create entity {entity} field {field} resource");
             }
 
             throw new NotImplementedException($"Unable to create new entity {entity} field {field} resource");
         }
         throw new NotImplementedException();
+    }
+
+    public (long id, IContentResource resource) CreateResource(string resourceType, ResourceState state, IContentResource? sourceResource = null)
+    {
+        if (!resources.TryGetValue(resourceType, out var data)) {
+            throw new Exception("Unknown resource type " + resourceType);
+        }
+
+        var idRange = data.config.CustomIDRange;
+        if (idRange == null) {
+            throw new Exception($"Resource type {resourceType} does not have a custom ID range defined");
+        }
+
+        if (data.baseInstances == null) {
+            data.baseInstances = new();
+            ReadObjectSourceData(data.config, data);
+        }
+
+        var instanceList = state == ResourceState.Active ? data.activeInstances! : data.baseInstances!;
+        int attempts = 100;
+        long id;
+        do {
+            id = Random.Shared.NextInt64(idRange[0], idRange[1]);
+            // TODO verify uniqueness with inactive bundles as well
+            // TODO use bundle-defined initial IDs
+            if (attempts-- <= 0) {
+                throw new Exception($"Could not generate a new ID for resource type {resourceType}");
+            }
+        } while (instanceList.ContainsKey(id) == true);
+
+        // TODO for enum_mapping: generate enum label based on entity id
+        if (data.config.Patcher != null) {
+            var newResource = CreateResourceInternal(id, data.config, state, sourceResource?.ToJson(workspace.Env));
+            if (newResource == null) {
+                throw new Exception($"Failed to create new {resourceType} resource");
+            }
+            return (id, newResource);
+        }
+
+        throw new Exception($"Unable to create new {resourceType} resources");
     }
 
     public void AddResource(string resourceKey, long id, IContentResource resource, ResourceState state)
@@ -407,6 +492,25 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         return null;
     }
 
+    public IContentResource? GetActiveResourceInstance(ResourceEntity entity, IContentResource resource)
+    {
+        if (resources.TryGetValue(resource.ResourceTypeID, out var data)) {
+            if (data.baseInstances == null) {
+                GetResourceInstances(resource.ResourceTypeID);
+            }
+            data.activeInstances ??= new();
+            // if (!data.activeInstances.TryGetValue(resource, out var active)) {
+            //     if (data.baseInstances!.TryGetValue(id, out active)) {
+            //         data.activeInstances[id] = active = active.Clone();
+            //     }
+            // }
+
+            // return active;
+        }
+        // resource.ResourceTypeID
+        return resource.Clone();
+    }
+
     /// <summary>
     /// Gets the active resource of the given type and id. This instance is a copy of the base data with the active edited bundle applied on top.
     /// </summary>
@@ -438,31 +542,76 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
     private Dictionary<long, ResourceEntity> LoadBaseEntityInstances(string type, EntityData data)
     {
-        var dict = new Dictionary<long, ResourceEntity>();
+        var entityDict = new Dictionary<long, ResourceEntity>();
         List<ResourceEntity>? newEntities = null;
-        foreach (var field in data.config.Fields) {
-            if (field is not IMainField mainField) continue;
-
-            foreach (var (id, instance) in mainField.FetchInstances(this)) {
-                if (!dict.TryGetValue(id, out var entity)) {
-                    if (field.IsNotStandaloneValue) {
-                        continue;
+        IEnumerable<KeyValuePair<long, IContentResource>>? ids = null;
+        foreach (var (primaryResourceId, primaryResource) in GetResourceInstances(data.config.PrimaryField.Resource.Type)) {
+            var entity = new ResourceEntity(primaryResourceId, type, data.config);
+            entity.Set(data.config.PrimaryField.name, primaryResource);
+            if (data.config.IDField != data.config.PrimaryField) {
+                // ids = GetResourceInstances(data.config.IDField.Resource.Type);
+                if (data.config.IDField.ValueHandler is CustomEntityFieldHandler custom) {
+                    var (newId, idres) = custom.LoadValue(workspace, entity, ResourceState.Base);
+                    if (newId != -1) {
+                        entity.Id = newId;
+                    } else {
+                        // 0 entries are sometimes expected (e.g. app.TopsStyle)
+                        Logger.Warn("Failed to determine ID for entity " + entity);
                     }
+                    entity.Set(data.config.IDField.name, idres);
+                }
+                // var fieldId = data.config.IDField.IdField == null ? entity.Id : Convert.ToInt64(data.config.IDField.IdField.Get(entity));
+                // var fieldValue = data.config.IDField.ValueHandler.FetchResource(workspace, entity, fieldId, ResourceState.Base);
+                //
+            }
 
-                    dict[id] = entity = new ResourceEntity(id, type, data.config);
-                    newEntities ??= new();
-                    newEntities.Add(entity);
+            if (entityDict.TryGetValue(entity.Id, out var previousEntity)) {
+                // note: I think this technically shouldn't happen
+                entity = previousEntity;
+                if (data.config.IDField != data.config.PrimaryField) {
+                    previousEntity.Set(data.config.IDField.name, entity.Get(data.config.IDField.name));
+                }
+            } else {
+                newEntities ??= new();
+                newEntities.Add(entity);
+            }
+
+            // foreach (var field in data.config.Fields) {
+            //     if (field == data.config.PrimaryField || field == data.config.IDField) {
+            //         continue;
+            //     }
+
+            //     if (field.ValueHandler is not IMainField mainField || field.IdField != null) continue;
+
+            //     foreach (var (resourceId, instance) in GetResourceInstances(field.Resource.Type)) {
+            //         // if (!entityDict.TryGetValue(id, out var entity)) {
+            //         //     if (field.IsNotStandaloneValue) {
+            //         //         continue;
+            //         //     }
+
+            //         //     entity = new ResourceEntity(id, type, data.config);
+            //         //     newEntities ??= new();
+            //         //     newEntities.Add(entity);
+            //         // }
+
+            //         // entity.Set(field.name, instance);
+
+            //         var fieldId = field.IdField == null ? entity.Id : Convert.ToInt64(field.IdField.Get(entity));
+            //         var fieldValue = field.ValueHandler.FetchResource(workspace, entity, fieldId, ResourceState.Base);
+            //         entity.Set(field.name, fieldValue);
+            //     }
+            // }
+
+
+            foreach (var field in data.config.Fields) {
+                if (field == data.config.PrimaryField || field == data.config.IDField) {
+                    continue;
                 }
 
-                entity.Set(field.name, instance);
-            }
-        }
+                // if (!(field.ValueHandler is not IMainField mainField || field.IdField != null)) continue;
 
-        foreach (var (id, entity) in dict) {
-            foreach (var field in data.config.Fields) {
-                if (field is IMainField) continue;
-
-                var fieldValue = field.FetchResource(this, entity, ResourceState.Base);
+                var fieldId = field.IdField == null ? entity.Id : Convert.ToInt64(field.IdField.Get(entity));
+                var fieldValue = field.ValueHandler.FetchResource(workspace, entity, fieldId, ResourceState.Base);
                 entity.Set(field.name, fieldValue);
             }
         }
@@ -470,11 +619,12 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         if (newEntities != null) {
             // generate new entity strings in a separate step so we have all initial fields ready
             foreach (var entity in newEntities) {
+                entityDict[entity.Id] = entity;
                 entity.Label = data.config.StringFormatter?.GetString(entity) ?? $"{type} {entity.Id}";
             }
         }
 
-        return dict;
+        return entityDict;
     }
 
     private void LoadBundleEntitiesAsBase(Bundle bundle, string type, EntityData data)
@@ -484,13 +634,49 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         foreach (var sourceEntity in bundle.GetEntities(type)) {
             if (!data.instances.TryGetValue(sourceEntity.Id, out var entity)) {
                 data.instances[sourceEntity.Id] = entity = new ResourceEntity(sourceEntity, data.config);
-                entity.LoadResources(this, ResourceState.Base);
+                LoadSingleEntityResources(entity, ResourceState.Base);
             } else {
                 entity.Data = sourceEntity.Data;
             }
 
             entity.ApplyDataValues(workspace, ResourceState.Base);
             data.config.PrimaryEnum?.UpdateEnum(workspace, entity);
+        }
+    }
+
+    /// <summary>
+    /// Fetches all referenced resources with the given state. If Active state, resources will be copied from the base state data if found.
+    /// </summary>
+    private void LoadSingleEntityResources(ResourceEntity entity, ResourceState state)
+    {
+        foreach (var field in entity.Config.Fields) {
+            if (field.Condition?.IsEnabled(entity) == false) {
+                continue;
+            }
+
+            var fieldId = field.IdField == null ? entity.Id : Convert.ToInt64(field.IdField.Get(entity));
+
+            var value = entity.Get(field.name);
+            if (value != null) {
+                // TODO: bypass the value handler and go directly for the resource?
+                // how do we determine the resource ID (for cases where it's different from the entity id)
+
+                entity.FieldValues[field.name] = field.ValueHandler.FetchResource(workspace, entity, fieldId, state);
+            }
+
+            // note: I'm not sure if the custom field case needs to be handled here
+            // if (field.ValueHandler is CustomEntityFieldHandler custom) {
+            //     var (resid, res) = custom.LoadValue(workspace, entity, state);
+            //     if (resid == -1 || res == null) {
+            //         // fall back to default resource fetch
+            //         entity.FieldValues[field.name] = field.ValueHandler.FetchResource(workspace, entity, fieldId, state);
+            //         continue;
+            //     }
+            //     if (field == entity.Config.IDField && entity.Id != resid) {
+            //         entity.Id = resid;
+            //     }
+            //     entity.FieldValues[field.name] = res;
+            // }
         }
     }
 
@@ -503,17 +689,6 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                 if (bundle == activeBundle) continue;
 
                 LoadBundleEntitiesAsBase(bundle, type, data);
-
-                // foreach (var sourceEntity in bundle.GetEntities(type)) {
-                //     if (!data.instances.TryGetValue(sourceEntity.Id, out var entity)) {
-                //         data.instances[sourceEntity.Id] = entity = new ResourceEntity(sourceEntity, data.config);
-                //         entity.LoadResources(this, ResourceState.Base);
-                //     } else {
-                //         entity.Data = sourceEntity.Data;
-                //     }
-
-                //     entity.ApplyValues(workspace, entity, ResourceState.Base);
-                // }
             }
         }
 
@@ -535,7 +710,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             } else {
                 entity.Data = sourceEntity.Data;
             }
-            entity.LoadResources(this, ResourceState.Active);
+            LoadSingleEntityResources(entity, ResourceState.Active);
             entity.ApplyDataValues(workspace, ResourceState.Active);
             data.config.PrimaryEnum?.UpdateEnum(workspace, entity);
         }
@@ -547,25 +722,41 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             throw new ArgumentException("Unknown entity type " + type, nameof(type));
         }
 
-        if (data.config.CustomIDRange == null) {
-            throw new Exception($"Entity type {type} does not have a custom ID range defined");
+        if (data.config.PrimaryField == null) {
+            throw new Exception($"Entity type {type} does not have a primary field");
+        }
+
+        var resourceKey = data.config.PrimaryField.ResourceTypeId;
+        if (resourceKey == null) {
+            throw new Exception($"Entity type {type} primary field {data.config.PrimaryField} is not instantiable");
         }
 
         var sourceEntity = sourceEntityId == null ? null : data.instances![sourceEntityId.Value];
 
-        int attempts = 100;
+        ResourceEntity entity;
         long id;
-        do {
-            id = Random.Shared.NextInt64(data.config.CustomIDRange[0], data.config.CustomIDRange[1]);
-            // TODO verify uniqueness with inactive bundles as well
-            // TODO use bundle-defined initial IDs
-            if (attempts-- <= 0) {
-                throw new Exception($"Could not generate a new ID for entity type {type}");
-            }
-        } while (data.instances!.ContainsKey(id) == true);
+        if (data.config.IDField != null && data.config.IDField != data.config.PrimaryField) {
+            if (data.config.IDField.ResourceTypeId == null) throw new Exception($"ID field must have a resource type ID {data.config.IDField}");
+            var idField = data.config.GetField(data.config.IDField.name)!;
 
-        var entity = new ResourceEntity(id, type, data.config);
+            IContentResource idResource;
+            (id, idResource) = CreateResource(resourceKey, ResourceState.Active);
+            entity = new ResourceEntity(id, type, data.config);
+            entity.Set(idField.name, idResource);
+
+            var primaryResource = CreateEntityFieldInternal(entity, data.config.PrimaryField, ResourceState.Active, data.config.PrimaryField.Resource, sourceEntity?.Get(data.config.PrimaryField.name)?.ToJson(workspace.Env));
+            entity.Set(data.config.PrimaryField.name, primaryResource);
+        } else {
+            var (primaryId, primaryResource) = CreateResource(resourceKey, ResourceState.Active, sourceEntity?.Get(data.config.PrimaryField.name));
+            entity = new ResourceEntity(primaryId, type, data.config);
+            entity.Set(data.config.PrimaryField.name, primaryResource);
+        }
+
         foreach (var field in data.config.Fields) {
+            if (field == data.config.PrimaryField || field == data.config.IDField) {
+                // we already instantiated this one, skip it
+                continue;
+            }
             if (field.ResourceTypeId == null || field.Condition?.IsEnabled(entity) == false) {
                 continue;
             }
@@ -574,17 +765,18 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             IContentResource? fieldResource = null;
             if (sourceEntity != null && sourceEntity.Get(field.name) is IContentResource src) {
                 resourceData = resources[src.ResourceTypeID];
-                fieldResource = CreateEntityResourceInternal(entity, field, ResourceState.Active, resourceData, src.ToJson(workspace.Env));
+                fieldResource = CreateEntityFieldInternal(entity, field, ResourceState.Active, resourceData.config, src.ToJson(workspace.Env));
             } else if (field.IsRequired) {
-                var resource = CreateEntityResourceInternal(entity, field, ResourceState.Active, resourceData, null);
+                var resource = CreateEntityFieldInternal(entity, field, ResourceState.Active, resourceData.config, null);
                 if (resource == null) {
                     throw new Exception($"Could not create field value for entity {entity} field {field}");
                 }
             }
         }
-        entity.Label = data.config.StringFormatter?.GetString(entity) ?? $"{type} {id}";
-        data.instances[id] = entity;
-        data.activatedInstances.Add(id);
+
+        entity.Label = data.config.StringFormatter?.GetString(entity) ?? $"{type} {entity.Id}";
+        data.instances![entity.Id] = entity;
+        data.activatedInstances.Add(entity.Id);
         if (activeBundle != null) {
             activeBundle.Entities.Add(entity);
         }
@@ -612,7 +804,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
 
             if (data.instances!.TryGetValue(entityId, out var entity)) {
                 if (data.activatedInstances.Add(entityId)) {
-                    entity.LoadResources(this, ResourceState.Active);
+                    LoadSingleEntityResources(entity, ResourceState.Active);
                 }
                 return entity;
             }
@@ -623,22 +815,10 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         return null;
     }
 
-    private void ReadObjectSourceData(ClassConfig config, ResourceData data)
+    private void ReadObjectSourceData(ResourceConfig config, ResourceData data)
     {
         data.baseInstances ??= new();
-        config.Patcher?.ReadResources(workspace, config, data.baseInstances);
-
-        if (config.Subclasses != null) {
-            foreach (var (subkey, sub) in config.Subclasses) {
-                if (sub.Patcher != null) {
-                    var subdata = resources[sub.Patcher.ResourceTypeID];
-                    sub.Patcher.ReadResources(workspace, config, subdata.baseInstances ??= new());
-                    foreach (var (id, ss) in subdata.baseInstances) {
-                        data.baseInstances[id] = ss;
-                    }
-                }
-            }
-        }
+        config.Patcher?.ReadResources(workspace, data.baseInstances);
     }
 
     /// <summary>
@@ -969,7 +1149,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         return null;
     }
 
-    public FileHandle? CreateNewFile(KnownFileFormats format)
+    public FileHandle? CreateNewFile(KnownFileFormats format, string? filepath = null)
     {
         var ext = workspace.Env.GetFileExtensionsForFormat(format).FirstOrDefault();
         if (ext == null) {
@@ -989,12 +1169,17 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             return null;
         }
 
-        return CreateNewFile(loader, format.ToString(), ext);
+        return CreateNewFile(loader, filepath ?? format.ToString(), ext);
     }
 
     public FileHandle? CreateNewFile(IFileLoader loader, string baseName, string extension)
     {
-        string filename = $"{baseName}_{Random.Shared.Next().ToString("X")}.{extension}";
+        string filename;
+        if (baseName.EndsWith(extension)) {
+            filename = baseName;
+        } else {
+            filename = $"{baseName}_{Random.Shared.Next().ToString("X")}.{extension}";
+        }
         var handle = CreateRawStreamFileHandle(filename, null, new MemoryStream(), true, FileHandleType.New);
         handle.Loader = loader;
         var newFileResource = loader.CreateNewFile(workspace, handle);
@@ -1168,13 +1353,13 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         }
 
         if (formats.Length == 0) {
-            foreach (var entry in activeBundle.Resources) {
+            foreach (var entry in activeBundle.Files) {
                 yield return entry.Target;
             }
             yield break;
         }
 
-        foreach (var entry in activeBundle.Resources) {
+        foreach (var entry in activeBundle.Files) {
             var fileFormat = PathUtils.ParseFileFormat(entry.Target);
             if (formats.Contains(fileFormat.format)) {
                 yield return entry.Target;

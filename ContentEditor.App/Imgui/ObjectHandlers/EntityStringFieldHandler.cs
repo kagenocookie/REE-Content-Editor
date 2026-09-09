@@ -5,7 +5,7 @@ namespace ContentEditor.App.ImguiHandling.EntityResources;
 [CustomFieldHandler(typeof(StringCustomField))]
 public class EntityStringFieldHandler(StringCustomField field) : IObjectUIHandler, IObjectUIInstantiator
 {
-    public static Func<EntityField, IObjectUIHandler> GetFactory() => (field) => new EntityStringFieldHandler((StringCustomField)field);
+    public static Func<EntityField, IObjectUIHandler> GetFactory() => (field) => new EntityStringFieldHandler((StringCustomField)field.ValueHandler);
 
     public void OnIMGUI(UIContext context)
     {
@@ -14,20 +14,20 @@ public class EntityStringFieldHandler(StringCustomField field) : IObjectUIHandle
             ImGui.TextColored(Colors.Error, context.label + ": Entity not found");
             return;
         }
-        var data = entity.Get(field.name) as StringResource;
+        var data = entity.Get(field) as StringResource;
         if (data == null) {
-            if (!field.IsRequired) {
+            if (!field.Field.IsRequired) {
                 ImGui.Text(context.label + ": NULL");
                 ImGui.SameLine();
                 if (ImGui.Button("Add")) {
                     data = new StringResource("");
-                    entity.Set(field.name, data);
+                    entity.Set(field, data);
                 }
                 return;
             }
 
             data = new StringResource("");
-            entity.Set(field.name, data);
+            entity.Set(field, data);
         }
 
         var text = data.Text;

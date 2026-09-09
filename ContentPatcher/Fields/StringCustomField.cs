@@ -6,8 +6,8 @@ using ReeLib;
 
 namespace ContentPatcher;
 
-[ResourceField("string")]
-public class StringCustomField : EntityField<StringResource>, ICustomResourceField, IDiffableField
+[ResourceField("string", typeof(NoopResourceHandler<StringCustomField>))]
+public class StringCustomField : CustomEntityFieldHandler<StringResource>, IDiffableField
 {
     public Regex? Regex { get; private set; }
     public string? RegexDescription { get; private set; }
@@ -19,14 +19,16 @@ public class StringCustomField : EntityField<StringResource>, ICustomResourceFie
 
     bool IDiffableField.EnableDiff => allowDiff;
 
-    public override void LoadParams(string fieldName, Dictionary<string, object>? param)
+    public override void LoadParams(EntityFieldConfig data)
     {
-        var pattern = param?.GetValueOrDefault("regex") as string;
-        if (pattern != null) Regex = new Regex(pattern);
-        RegexDescription = param?.GetValueOrDefault("regexDescription") as string;
-        Tooltip = param?.GetValueOrDefault("tooltip") as string;
-        initialFormatString = param?.GetValueOrDefault("initial") as string;
-        allowDiff = param?.GetValueOrDefault("diffable") is bool b ? b : true;
+        if (data.TryGetParam<string>("regex", out var pattern)) {
+            Regex = new Regex(pattern);
+        }
+
+        RegexDescription = data.GetParam<string>("regexDescription");
+        Tooltip = data.GetParam<string>("tooltip");
+        initialFormatString = data.GetParam<string>("initial");
+        allowDiff = data.GetParam<bool>("diffable", true);
     }
 
     public override void EntitySetup(EntityConfig entityConfig, ContentWorkspace workspace)
@@ -43,40 +45,45 @@ public class StringCustomField : EntityField<StringResource>, ICustomResourceFie
         }
         var newStr = data.GetValue<string>();
         if (currentResource?.Text != newStr) {
-            entity.Set(name, currentResource = new StringResource(data.GetValue<string>()));
+            entity.Set(Field.name, currentResource = new StringResource(data.GetValue<string>()));
         }
         return currentResource;
     }
 
-    public ClassConfig CreateConfig()
+    public ResourceConfig CreateConfig()
     {
-        var cfg = new ClassConfig();
-        cfg.IDFields = [NestableFieldAccessor.PlainReturn.Instance];
+        var cfg = new ResourceConfig("");
+        cfg.IDGenerator = IDGenerator.GetGenerator(RszFieldType.String);
         return cfg;
     }
 
-    public (long id, IContentResource resource) CreateResource(ContentWorkspace workspace, ClassConfig config, ResourceEntity entity, JsonNode? initialData)
+    public override (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData)
     {
         if (Regex != null) {
             // assume it's expected to be unique - always start empty maybe?
-            return (Random.Shared.NextInt64(), new StringResource(string.Empty));
+            return (-1, new StringResource(string.Empty));
         } else {
-            return (Random.Shared.NextInt64(), new StringResource(initialData?.GetValue<string>() ?? string.Empty));
+            return (-1, new StringResource(initialData?.GetValue<string>() ?? string.Empty));
         }
     }
 
     public IEnumerable<KeyValuePair<long, IContentResource>> FetchInstances(ResourceManager workspace)
     {
-        return ResourceTypeId == null ? [] : workspace.GetResourceInstances(ResourceTypeId);
+        return Field.Resource.Type == null ? [] : workspace.GetResourceInstances(Field.Resource.Type);
     }
 
-    public override StringResource? FetchResource(ResourceManager workspace, ResourceEntity entity, ResourceState state)
+    public override StringResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
     {
-        var res = entity.Get(name) as StringResource;
+        var res = entity.Get(Field.name) as StringResource;
         if (res == null) {
             res = new StringResource(initialFormat?.GetString(entity) ?? string.Empty);
         }
         return res;
+    }
+
+    public override (long id, IContentResource? resource) LoadValue(ContentWorkspace workspace, ResourceEntity entity, ResourceState state)
+    {
+        throw new NotImplementedException();
     }
 }
 

@@ -5,10 +5,10 @@ using ReeLib;
 
 namespace ContentEditor.App;
 
-[CustomFieldHandler(typeof(ObjectCustomField))]
-public sealed class ContentEditorRszInstanceHandler(ObjectCustomField field) : IObjectUIHandler, IObjectUIInstantiator
+[CustomFieldHandler(typeof(ObjectField))]
+public sealed class ContentEditorRszInstanceHandler(ObjectField field) : IObjectUIHandler, IObjectUIInstantiator
 {
-    public static Func<EntityField, IObjectUIHandler> GetFactory() => (field) => new ContentEditorRszInstanceHandler((ObjectCustomField)field);
+    public static Func<EntityField, IObjectUIHandler> GetFactory() => (field) => new ContentEditorRszInstanceHandler((ObjectField)field.ValueHandler);
 
     public void OnIMGUI(UIContext context)
     {
@@ -20,7 +20,7 @@ public sealed class ContentEditorRszInstanceHandler(ObjectCustomField field) : I
                 ImGui.SameLine();
                 ImGui.PushID(context.label);
                 if (ImGui.Button("Create")) {
-                    context.CreateEntityResource<RSZObjectResource>(workspace, field);
+                    context.CreateEntityResource<RSZObjectResource>(workspace, field.Field);
                 }
                 ImGui.PopID();
             }

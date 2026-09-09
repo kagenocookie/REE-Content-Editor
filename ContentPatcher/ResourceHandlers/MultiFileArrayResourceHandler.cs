@@ -20,47 +20,50 @@ public class MultiFileArrayResourceHandler : ResourceHandler
         public override string ToString() => $"{path} [{list.Count}] ({file})";
     }
 
-    public static MultiFileArrayResourceHandler Deserialize(string resourceTypeId, Dictionary<string, object> data)
+    public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new ObjectArray();
+
+    public static MultiFileArrayResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
     {
         return new MultiFileArrayResourceHandler() {
-            ResourceTypeID = resourceTypeId,
-            path = (string)data["path"],
-            Files = ((IEnumerable<object>)data["files"]).Cast<string>().ToList(),
-            nonUniqueIds = data.GetValueOrDefault("nonUniqueIds") is bool bb ? bb : false,
+            Config = resource,
+            path = data.Field ?? throw new Exception("Field is required for multi-array patcher!"),
+            Files = data.TargetFiles.ToList(),
+            nonUniqueIds = data.Params?.GetValueOrDefault("nonUniqueIds") is bool bb ? bb : false,
         };
     }
 
-    public override (long id, IContentResource resource) CreateResource(ContentWorkspace workspace, ClassConfig config, ResourceEntity entity, JsonNode? initialData)
+    public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
     {
         // always store new resources on the first path, the idea is that it probably doesn't matter which because the catalogs are usually just merged for runtime anyway
         var file = Files[0];
-        var inst = RszInstance.CreateInstance(workspace.Env.RszParser, workspace.Env.RszParser.GetRSZClass(ResourceTypeID)!);
+        var inst = RszInstance.CreateInstance(workspace.Env.RszParser, workspace.Env.RszParser.GetRSZClass(Config.Type)!);
         workspace.Diff.ApplyDiff(inst, initialData);
-        if (config.IDFields?.Length == 1) {
-            var idField = config.IDFields[0].Field;
+        var idgen = Config.IDGeneratorRequired;
+        if (idgen.Fields.Length == 1) {
+            var idField = idgen.Fields[0].Field;
             var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
-            config.IDFields[0].Set(inst, Convert.ChangeType(entity.Id, fieldType));
+            idgen.Fields[0].Set(inst, Convert.ChangeType(id, fieldType));
         } else {
             throw new NotImplementedException("Unsupported rsz object id combination");
         }
-        return (entity.Id, new RSZObjectResource(inst, file));
+        return new RSZObjectResource(inst, file);
     }
 
-    public override void ReadResources(ContentWorkspace workspace, ClassConfig config, Dictionary<long, IContentResource> dict)
+    public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)
     {
         var items = GetObjectList(workspace, false);
         if (items.Count == 0) return;
 
         var firstInstance = items.SelectMany(i => i.list).First();
-        var idGenerator = IDGenerator.GetGenerator(firstInstance, config.IDFields!);
-        if (config.SubIDFields?.Length > 0) {
+        var idGenerator = Config.IDGeneratorRequired;
+        if (Config.SubIDGenerator != null) {
             throw new NotImplementedException("Sub ID not yet supported for multi file resources");
         }
 
         foreach (var item in items) {
             var file = item.file;
             foreach (var elem in item.list.OfType<RszInstance>()) {
-                var id = idGenerator.GetID(elem, config.IDFields!);
+                var id = idGenerator.GetID(elem);
                 if (nonUniqueIds) {
                     id = AppUtils.StableHashCombine((uint)id, MurMur3HashUtils.GetHash(file));
                 }
@@ -69,7 +72,7 @@ public class MultiFileArrayResourceHandler : ResourceHandler
         }
     }
 
-    public override void ModifyResources(ContentWorkspace workspace, ClassConfig config, IEnumerable<KeyValuePair<long, IContentResource>> resources)
+    public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
     {
         var items = GetObjectList(workspace, true);
         if (items.Count == 0) return;

@@ -596,7 +596,7 @@ public static class WindowHandlerFactory
         var ws = context.GetWorkspace();
         if (ws != null) {
             if (context.parent?.target is RszInstance parent) {
-                fieldConfig = ws.Config.Get(parent.RszClass.name, field.name);
+                fieldConfig = ws.Config.GetClassFieldConfig(parent.RszClass.name, field.name);
                 if (fieldConfig != null) {
                     if (fieldConfig.Handler != null && customHandlers.TryGetValue(fieldConfig.Handler, out var customhandler)) {
                         return context.uiHandler = customhandler.Invoke();
@@ -607,7 +607,7 @@ public static class WindowHandlerFactory
                 }
             }
 
-            patchConfig = ws.Config.Get(field.original_type);
+            patchConfig = ws.Config.GetClassConfig(field.original_type);
             if (patchConfig != null) {
                 // TODO
             }
@@ -826,7 +826,7 @@ public static class WindowHandlerFactory
                 continue;
             }
 
-            var handler = GetCustomFieldImguiHandler(entity, field);
+            var handler = GetCustomFieldImguiHandler(field);
             if (handler != null) {
                 var child = context.AddChild(field.label, entity, getter: (ctx) => ((ResourceEntity)ctx.target!).Get(field.name), setter: (ctx, val) => ((ResourceEntity)ctx.target!).Set(field.name, val as IContentResource));
                 child.uiHandler = handler;
@@ -835,7 +835,7 @@ public static class WindowHandlerFactory
         return context;
     }
 
-    private static IObjectUIHandler? GetCustomFieldImguiHandler(ResourceEntity entity, EntityField field)
+    private static IObjectUIHandler? GetCustomFieldImguiHandler(EntityField field)
     {
         if (customFieldImguiHandlers == null) {
             customFieldImguiHandlers = new();
@@ -856,7 +856,7 @@ public static class WindowHandlerFactory
             }
         }
 
-        if (customFieldImguiHandlers.TryGetValue(field.GetType(), out var handler)) {
+        if (customFieldImguiHandlers.TryGetValue(field.ValueHandler.GetType(), out var handler)) {
             return handler.Invoke(field);
         }
 

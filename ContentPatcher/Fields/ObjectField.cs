@@ -3,28 +3,27 @@ using System.Text.Json.Nodes;
 namespace ContentPatcher;
 
 [ResourceField("object")]
-public class ObjectCustomField : EntityField, IMainField, IDiffableField
+public class ObjectField : EntityFieldValueHandler, IMainField, IDiffableField, IResourceValueContainer
 {
     public string classname = null!;
     public override string ResourceTypeId => classname;
     public bool? forceNested;
     bool IDiffableField.EnableDiff => true;
 
-    public override void LoadParams(string fieldName, Dictionary<string, object>? param)
+    public override void LoadParams(EntityFieldConfig data)
     {
-        ArgumentNullException.ThrowIfNull(param, nameof(param));
-        classname = (string)param["classname"];
-        if (param.TryGetValue("nested", out var nested)) forceNested = (bool)nested;
+        classname = data.RequireResourceSettings.Classname!;
+        if (data.TryGetParam<bool>("nested", out bool nested)) {
+            forceNested = nested;
+        }
     }
 
-    public IEnumerable<KeyValuePair<long, IContentResource>> FetchInstances(ResourceManager resources)
-    {
-        return resources.GetResourceInstances(classname);
-    }
+    public NestableFieldAccessor? GetAccessor(ContentWorkspace workspace, string path)
+        => NestableFieldAccessor.CreateForClass(workspace.Env.RszParser, Field.Resource.RszClass, path);
 
-    public override IContentResource? FetchResource(ResourceManager resources, ResourceEntity entity, ResourceState state)
+    public override IContentResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
     {
-        return resources.GetResourceInstance(classname, entity.Id, state);
+        return workspace.ResourceManager.GetResourceInstance(Field.Resource.Type, resourceId, state);
     }
 
     public override IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
@@ -35,7 +34,7 @@ public class ObjectCustomField : EntityField, IMainField, IDiffableField
         }
         if (currentResource == null) {
             var resourceKey = data["$type"]?.GetValue<string>() ?? classname;
-            var inst = workspace.ResourceManager.CreateEntityResource<RSZObjectResource>(entity, this, state, resourceKey);
+            var inst = workspace.ResourceManager.CreateEntityResource<RSZObjectResource>(entity, Field, state, resourceKey);
             workspace.Diff.ApplyDiff(inst.Instance, data);
             return inst;
         }

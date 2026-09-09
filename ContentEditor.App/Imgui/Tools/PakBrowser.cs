@@ -145,7 +145,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         var list = workspace.Env.ListFile;
         if (list == null || workspace.CurrentBundle?.HasResources != true) return list;
 
-        return new ListFileWrapper(list.Files.Concat(workspace.CurrentBundle.Resources.Select(v => workspace.Env.PrependBasePath(v.Target))), workspace.Platform, true);
+        return new ListFileWrapper(list.Files.Concat(workspace.CurrentBundle.Files.Select(v => workspace.Env.PrependBasePath(v.Target))), workspace.Platform, true);
     }
     public void OnIMGUI()
     {
@@ -904,7 +904,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
             return contentWorkspace.CurrentBundle.ContainsResource(path);
         }
 
-        foreach (var p in contentWorkspace.CurrentBundle.Resources) {
+        foreach (var p in contentWorkspace.CurrentBundle.Files) {
             if (p.Target.StartsWith(path, StringComparison.OrdinalIgnoreCase)) return true;
         }
         return false;

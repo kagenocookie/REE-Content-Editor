@@ -1,7 +1,7 @@
 # additional files:
-# costume weapon positioning settings: natives/stm/sectionroot/userdata/system/equipment/weaponequippedpositionuserdata.user.2
+# costume weapon positioning settings: SectionRoot/userdata/system/equipment/weaponequippedpositionuserdata.user.2
 
-# TODO hardcoded-catalog patcher: natives/stm/sectionroot/userdata/ropewayweaponuserdata.user.2
+# TODO hardcoded-catalog patcher: SectionRoot/userdata/ropewayweaponuserdata.user.2
 
 entities:
   weapon:
@@ -18,49 +18,47 @@ entities:
       #     field: "{name:lower()}"
       #     classname: app.ropeway.gamemastering.item.WeaponElement
       catalog:
-        type: object
         label: Catalog data
         required: true
-        param:
+        resource:
+          type: array-file
+          id: [_Type]
           classname: app.ropeway.WeaponPrefabUserData.WeaponParam
+          file: SectionRoot/UserData/System/Equipment/WeaponPrefabUserData_Catalog_1st.user.2
           nested: false
       name:
-        type: string
         label: Weapon code name
         required: true
-        param:
-          regex: "^WP[0-9_]{4}$"
-          regexDescription: "Example: WP9000"
-          tooltip: Enter a code name for the weapon. This should be unique across all weapons and is used for enum entries.
-          initial: "{id:enum(app.ropeway.EquipmentDefine.WeaponType)}"
+        resource:
+          type: string
+          param:
+            regex: "^WP[0-9_]{4}$"
+            regexDescription: "Example: WP9000"
+            tooltip: Enter a code name for the weapon. This should be unique across all weapons and is used for enum entries.
+            initial: "{id:enum(app.ropeway.EquipmentDefine.WeaponType)}"
         display_after: start
       displayName:
-        type: single-msg
         required: true
-        param:
+        resource:
+          type: single-msg
           key: "WEAPON_NAME_{name}"
-          file: natives/stm/sectionroot/message/mes_item/mes_item_name.msg.50397457
+          file: SectionRoot/Message/mes_item/mes_item_name.msg
         display_after: name
       prefab:
-        type: resource
         label: Weapon prefab
         required: true
         param:
-          type: Prefab
+          type: resource_link
+          resource_type: prefab
           path: "{catalog?.Prefab?.Path}"
 
 classes:
   app.ropeway.WeaponPrefabUserData.WeaponParam:
-    id: [_Type]
     to_string: "Weapon {_Type:enum(app.ropeway.EquipmentDefine.WeaponType)} ({_Name}) {Prefab.Path}"
-    patcher:
-      type: array-file
-      file: natives/stm/sectionroot/userdata/system/equipment/weaponprefabuserdata_catalog_1st.user.2
   # app.ropeway.gamemastering.item.WeaponElement:
-  #   patcher:
-  #     type: hardcoded-catalog
-  #     classname: app.ropeway.gamemastering.item.WeaponElementList
-  #     file: natives/stm/sectionroot/userdata/ropewayweaponuserdata.user.2
+  #   type: hardcoded-catalog
+  #   classname: app.ropeway.gamemastering.item.WeaponElementList
+  #   file: SectionRoot/userdata/ropewayweaponuserdata.user.2
   app.ropeway.WeaponEquippedPositionUserData.PlayerParam:
     to_string: "{PlayerType:enum(app.ropeway.PlayerDefine.PlayerType)}"
   app.ropeway.WeaponEquippedPositionUserData.CostumeParam:

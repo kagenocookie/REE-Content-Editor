@@ -1,6 +1,17 @@
 entities:
   items.style.TopsStyle:
     group: styles
+    # runtime_entities:
+    # - runtime_type: TopsStyle
+    #   runtime_id_field: styleHash
+    #   handling: prefab_catalog_path
+    #   path_field: furmasks.1910070090
+    #   filepath: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_f_Tops.user
+    # - runtime_type: TopsStyle
+    #   runtime_id_field: styleHash
+    #   handling: prefab_catalog_path
+    #   path_field: furmasks.2776536455
+    #   filepath: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_m_Tops.user
     enums:
     - name: ce.TopsStyleNo
       primary: true
@@ -83,42 +94,41 @@ entities:
 classes:
   app.TopsSwapItem:
     id: [_TopsStyle]
-    subId: [_Gender]
+    sub_id: [_Gender]
     to_string: "{class_shortname} {_TopsStyle:enum(app.TopsStyle)} {_Gender:enum(app.Gender)}"
     group: item
     patcher:
       type: array-file
-      file: natives/stm/appsystem/charaedit/ch000/swapdata/topsswapdata.user.2
+      file: appsystem/charaedit/ch000/swapdata/topsswapdata.user.2
   app.PantsSwapItem:
     id: [_PantsStyle]
-    subId: [_Gender]
+    sub_id: [_Gender]
     to_string: "{class_shortname} {_PantsStyle:enum(app.PantsStyle)} {_Gender:enum(app.Gender)}"
     group: item
     patcher:
       type: array-file
-      file: natives/stm/appsystem/charaedit/ch000/swapdata/pantsswapdata.user.2
+      file: appsystem/charaedit/ch000/swapdata/pantsswapdata.user.2
   app.HelmSwapItem:
     id: [_HelmStyle]
-    subId: [_Gender]
+    sub_id: [_Gender]
     to_string: "{class_shortname} {_HelmStyle:enum(app.HelmStyle)} {_Gender:enum(app.Gender)}"
     group: item
     patcher:
       type: array-file
-      file: natives/stm/appsystem/charaedit/ch000/swapdata/Helmswapdata.user.2
+      file: appsystem/charaedit/ch000/swapdata/Helmswapdata.user.2
   app.MantleSwapItem:
     id: [_MantleStyle]
-    subId: [_Gender]
+    sub_id: [_Gender]
     to_string: "{class_shortname} {_MantleStyle:enum(app.MantleStyle)} {_Gender:enum(app.Gender)}"
     group: item
     patcher:
       type: array-file
-      file: natives/stm/appsystem/charaedit/ch000/swapdata/mantleswapdata.user.2
+      file: appsystem/charaedit/ch000/swapdata/mantleswapdata.user.2
   app.FacewearSwapItem:
     id: [_Style]
-    subId: [_Gender]
+    sub_id: [_Gender]
     to_string: "{class_shortname} {_Style:enum(app.FacewearStyle)} {_Gender:enum(app.Gender)}"
     group: item
     patcher:
       type: array-file
-      file: natives/stm/appsystem/charaedit/ch000/swapdata/Facewearswapdata.user.2
-
+      file: appsystem/charaedit/ch000/swapdata/Facewearswapdata.user.2

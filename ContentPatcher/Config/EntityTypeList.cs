@@ -2,7 +2,7 @@ using ContentEditor.Core;
 
 namespace ContentPatcher;
 
-public class EntityTypeList(string name)
+public class EntityTypeList<T>(string name) where T : class
 {
     private readonly List<object> items = new();
     private readonly Dictionary<string, object> itemsDict = new();
@@ -10,7 +10,7 @@ public class EntityTypeList(string name)
     private string[]? _names;
     public string[] Names {
         get {
-            if (_names == null) _names = items.Select(it => (it as EntityTypeList)?.Name ?? itemsDict.First(kv => kv.Value == it).Key).ToArray();
+            if (_names == null) _names = items.Select(it => (it as EntityTypeList<T>)?.Name ?? itemsDict.First(kv => kv.Value == it).Key).ToArray();
             return _names;
         }
     }
@@ -31,12 +31,12 @@ public class EntityTypeList(string name)
     }
     public int Count => items.Count;
 
-    public (object, string name) Get(int index) => (items[index], Names[index]);
-    public object Get(string name) => itemsDict[name];
+    /// <returns>`itemOrList` is either a `T` or a `EntityTypeList<T>`</returns>
+    public (object itemOrList, string name) Get(int index) => (items[index], Names[index]);
 
     public string Name { get; } = name;
 
-    public void Add(EntityTypeList sublist)
+    public void Add(EntityTypeList<T> sublist)
     {
         if (itemsDict.ContainsKey(sublist.Name)) {
             throw new Exception("Duplicate entity type registration attempt: " + sublist.Name);
@@ -45,7 +45,7 @@ public class EntityTypeList(string name)
         items.Add(sublist);
     }
 
-    public string Add(string path, EntityConfig entityType)
+    public string Add(string path, T entityType)
     {
         var dot = path.IndexOf('.');
         if (dot == -1) {
@@ -59,15 +59,15 @@ public class EntityTypeList(string name)
         } else {
             var subname = path.Substring(0, dot);
             if (!itemsDict.TryGetValue(subname, out var subitem)) {
-                itemsDict[subname] = subitem = new EntityTypeList(subname);
+                itemsDict[subname] = subitem = new EntityTypeList<T>(subname);
                 items.Add(subitem);
-            } else if (subitem is not EntityTypeList) {
+            } else if (subitem is not EntityTypeList<T>) {
                 throw new Exception("Invalid entity type path - conflict found: " + path);
             }
 
-            var sublist = subitem as EntityTypeList;
+            var sublist = subitem as EntityTypeList<T>;
             if (sublist == null) {
-                sublist = new EntityTypeList(subname);
+                sublist = new EntityTypeList<T>(subname);
             }
             return sublist.Add(path.Substring(dot + 1), entityType);
         }

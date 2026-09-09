@@ -18,7 +18,7 @@ public class MessageDataUIHandler : IObjectUIHandler, IObjectUIInstantiator
     public MessageDataUIHandler(EntityField field)
     {
         this.field = field;
-        multiline = (field as SingleMsgCustomField)?.multiline ?? (field as MsgField)?.multiline ?? false;
+        multiline = (field.ValueHandler as SingleMsgCustomField)?.multiline ?? (field.ValueHandler as MsgField)?.multiline ?? false;
     }
 
     public void OnIMGUI(UIContext context)

@@ -1,116 +1,25 @@
 using System.Numerics;
 using System.Text.RegularExpressions;
+using ContentEditor;
 using ContentEditor.Editor;
 using ContentPatcher.StringFormatting;
 using VYaml.Annotations;
 
 namespace ContentPatcher;
 
-public class EntityConfig
+public class EntityConfig(string name)
 {
-    public required EntityField[] Fields { get; init; }
-    public required EntityField[] DisplayFieldsOrder { get; init; }
-    public long[]? CustomIDRange { get; init; }
+    public string Name { get; internal set; } = name;
+    public EntityField PrimaryField { get; set; } = null!;
+    public EntityField IDField { get; set; } = null!;
+    public EntityField[] Fields { get; set; } = [];
+    public EntityField[] DisplayFieldsOrder { get; set; } = [];
     public EntityEnumInfo? PrimaryEnum { get; init; }
     public EntityEnumInfo[]? Enums { get; init; }
     public StringFormatter? StringFormatter { get; set; }
 
     public bool HasField(string name) => GetField(name) != null;
     public EntityField? GetField(string name) => Fields.FirstOrDefault(f => f.name == name);
-}
 
-[YamlObject]
-public partial class EntityConfigSerialized
-{
-    public Dictionary<string, CustomFieldSerialized> Fields = null!;
-    [YamlMember("to_string")]
-    public string? To_String { get; set; }
-    [YamlMember("custom_id_range")]
-    public long[]? CustomIDRange { get; set; }
-    public EntityEnumInfo[]? Enums { get; set; }
-
-    public EntityConfig ToRuntimeConfig(ContentWorkspace workspace)
-    {
-        var fieldlist = new List<EntityField>();
-        var displaylist = new List<EntityField>();
-        foreach (var (name, data) in Fields) {
-            var newfield = CustomTypeConfigSerialized.CreateField(name, data);
-            fieldlist.Add(newfield);
-            displaylist.Add(newfield);
-        }
-
-        foreach (var (name, data) in Fields) {
-            var curIndex = fieldlist.FindIndex(f => f.name == name);
-            var field = fieldlist[curIndex];
-            if (data.displayAfter != null && data.displayAfter != name) {
-                var otherIndex = displaylist.FindIndex(dl => dl.name == data.displayAfter);
-                if (otherIndex != -1) {
-                    displaylist.RemoveAt(curIndex);
-                    otherIndex = displaylist.FindIndex(dl => dl.name == data.displayAfter);
-                    if (otherIndex == displaylist.Count - 1) {
-                        displaylist.Add(field);
-                    } else {
-                        displaylist.Insert(otherIndex + 1, field);
-                    }
-                }
-            }
-        }
-
-        var config = new EntityConfig() {
-            Fields = fieldlist.ToArray(),
-            DisplayFieldsOrder = displaylist.ToArray(),
-            CustomIDRange = CustomIDRange,
-            PrimaryEnum = Enums?.FirstOrDefault(e => e.primary),
-            // Enums = Enums?.Where(e => !e.primary).ToArray(),
-            Enums = Enums?.ToArray(),
-        };
-        if (To_String != null) {
-            config.StringFormatter = new StringFormatter(To_String, FormatterSettings.CreateFullEntityFormatter(config, workspace));
-        }
-        if (config.Enums != null) {
-            foreach (var ee in config.Enums) {
-                ee.Init(workspace, config);
-            }
-        }
-
-        foreach (var field in config.Fields) {
-            field.EntitySetup(config, workspace);
-        }
-
-        return config;
-    }
-}
-
-[YamlObject]
-public partial class EntityEnumInfo
-{
-    public string name = string.Empty;
-    public string? format;
-    public bool primary;
-
-    [GeneratedRegex("[^0-9a-zA-Z_]")]
-    private static partial Regex NonAlphanumericRegex();
-
-    [YamlIgnore]
-    private StringFormatter? formatter;
-
-    internal void Init(ContentWorkspace workspace, EntityConfig config)
-    {
-        formatter = format == null ? null : new StringFormatter(format, FormatterSettings.CreateFullEntityFormatter(config, workspace));
-    }
-
-    public void UpdateEnum<T>(ContentWorkspace workspace, T value, string label) where T : IBinaryInteger<T>
-    {
-        var desc = workspace.Env.TypeCache.GetEnumDescriptor(name);
-        desc.AddValue(value, label);
-    }
-
-    public void UpdateEnum(ContentWorkspace workspace, ResourceEntity entity)
-    {
-        // NOTE: we don't currently have a way of resetting custom enum entries. Probably not worth the effort to fix
-        // May cause issues if the user swaps bundles or if we ever support changing IDs in runtime.
-
-        var desc = workspace.Env.TypeCache.GetEnumDescriptor(name);
-        desc.AddValue(entity.Id, formatter?.GetString(entity) ?? NonAlphanumericRegex().Replace(entity.Label, ""), entity.Label);
-    }
+    public override string ToString() => Name;
 }

@@ -1,30 +1,28 @@
-entities:
-  costume:
-    to_string: "Costume {closet._CharacterID.Hash:enum(ce.CharacterDefine)} #{id}"
-    fields:
-      closet:
-        type: object
-        param:
-          classname: app.Costume.Closet
-          nested: false
+# entities:
+#   costume:
+#     to_string: "Costume {closet._CharacterID.Hash:enum(ce.CharacterDefine)} #{id}"
+#     fields:
+#       closet:
+#         type: object
+#         param:
+#           classname: app.Costume.Closet
+#           nested: false
 
-classes:
+resources:
   app.Costume.Closet:
     id: [{ path: _CharacterID.Hash, class: app.ObjectDefine }]
-    to_string: "Closet {_CharacterID.Hash:enum(ce.CharacterDefine)} (#{_CharacterID.Hash})"
-    patcher:
-      type: multi-array
-      path: _Closets
+    type: multi-array
+    field: _Closets
+    params:
       nonUniqueIds: true
-      files:
-      - natives/stm/singletonuserdata/catalog/costumecataloguserdata_1st_maincontents.user.3
-      - natives/stm/singletonuserdata/catalog/costumecataloguserdata_2nd_maincontents.user.3
-      - natives/stm/singletonuserdata/catalog/dlc/costumecataloguserdata_dlc0001.user.3
-      - natives/stm/singletonuserdata/catalog/dlc/costumecataloguserdata_dlc0002.user.3
+    files:
+    - natives/stm/singletonuserdata/catalog/costumecataloguserdata_1st_maincontents.user.3
+    - natives/stm/singletonuserdata/catalog/costumecataloguserdata_2nd_maincontents.user.3
+    - natives/stm/singletonuserdata/catalog/dlc/costumecataloguserdata_dlc0001.user.3
+    - natives/stm/singletonuserdata/catalog/dlc/costumecataloguserdata_dlc0002.user.3
 
-  app.Costume.Outfit:
-    id: [{ path: _CostumeIDHash._TypeSelectHash, class: app.CostumeIDSelector }]
-    to_string: "Outfit {_CostumeIDHash._TypeSelectHash:enum(ce.CostumeID)} [{_CostumeIDHash._TypeSelectHash}]"
+  # app.Costume.Outfit:
+  #   id: [{ path: _CostumeIDHash._TypeSelectHash, class: app.CostumeIDSelector }]
     # patcher:
     #   type: multi-array
     #   path: _Closets.*._Outfits
@@ -33,6 +31,12 @@ classes:
     #   - natives/stm/singletonuserdata/catalog/costumecataloguserdata_2nd_maincontents.user.3
     #   - natives/stm/singletonuserdata/catalog/dlc/costumecataloguserdata_dlc0001.user.3
     #   - natives/stm/singletonuserdata/catalog/dlc/costumecataloguserdata_dlc0002.user.3
+
+classes:
+  app.Costume.Closet:
+    to_string: "Closet {_CharacterID.Hash:enum(ce.CharacterDefine)} (#{_CharacterID.Hash})"
+  app.Costume.Outfit:
+    to_string: "Outfit {_CostumeIDHash._TypeSelectHash:enum(ce.CostumeID)} [{_CostumeIDHash._TypeSelectHash}]"
   app.Costume.Part:
     to_string: "{_Name} | Path={_Prefab.Path}"
   app.CostumeIDSelector:

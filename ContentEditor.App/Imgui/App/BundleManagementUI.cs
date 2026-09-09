@@ -222,7 +222,7 @@ public class BundleManagementUI : IWindowHandler
                 if (selectedBundle?.HasResources == true) {
                     ImGui.SameLine();
                     if (ImGui.Button(Lang.Bundles.RebuildPatchDiffs)) {
-                        foreach (var r in selectedBundle.Resources) {
+                        foreach (var r in selectedBundle.Files) {
                             r.Diff = null;
                             r.DiffTime = default;
                         }

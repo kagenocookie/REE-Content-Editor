@@ -4,7 +4,7 @@ using ReeLib;
 
 namespace ContentEditor.App;
 
-[CustomFieldHandler(typeof(RszArrayCustomField))]
+[CustomFieldHandler(typeof(ObjectArray))]
 public sealed class ContentEditorRszInstanceListHandler(EntityField field) : IObjectUIHandler, IObjectUIInstantiator
 {
     public static Func<EntityField, IObjectUIHandler> GetFactory() => (field) => new ContentEditorRszInstanceListHandler(field);

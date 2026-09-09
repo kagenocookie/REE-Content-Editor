@@ -5,23 +5,25 @@ using ReeLib.Msg;
 
 namespace ContentPatcher;
 
-[ResourcePatcher("msg", nameof(Deserialize))]
+[ResourcePatcher("keyed_message", nameof(Deserialize))]
 public class MsgFileResourceHandler : ResourceHandler
 {
     private Regex? keyFormat;
 
-    public static MsgFileResourceHandler Deserialize(string resourceTypeId, Dictionary<string, object> data)
+    public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new ObjectArray();
+
+    public static MsgFileResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
     {
-        var files = new List<string>(((IEnumerable<object>)data["files"]).Cast<string>());
-        var keyFormat = data.GetValueOrDefault("key") as string ?? "";
+        var files = data.TargetFiles.ToList();
+        var keyFormat = data.Key;
         return new MsgFileResourceHandler() {
+            Config = resource,
             Files = files,
             keyFormat = string.IsNullOrEmpty(keyFormat) ? null : new Regex(keyFormat),
-            ResourceTypeID = resourceTypeId,
         };
     }
 
-    public override void ReadResources(ContentWorkspace workspace, ClassConfig config, Dictionary<long, IContentResource> dict)
+    public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)
     {
         foreach (var file in Files) {
             var msg = workspace.ResourceManager.ReadFileResource<MsgFile>(file);
@@ -31,7 +33,7 @@ public class MsgFileResourceHandler : ResourceHandler
                 var id = entry.Header.EntryHash;
                 if (keyFormat?.IsMatch(entry.Name) == false) continue;
 
-                var msgData = new MessageData() { ResourceTypeID = ResourceTypeID, FilePath = file, MessageKey = entry.Name, Guid = entry.Guid };
+                var msgData = new MessageData() { ResourceTypeID = Config.Type, FilePath = file, MessageKey = entry.Name, Guid = entry.Guid };
                 for (int i = 0; i < entry.Strings.Length; ++i) {
                     var str = entry.Strings[i];
                     if (string.IsNullOrEmpty(str)) continue;
@@ -52,7 +54,7 @@ public class MsgFileResourceHandler : ResourceHandler
         }
     }
 
-    public override void ModifyResources(ContentWorkspace workspace, ClassConfig config, IEnumerable<KeyValuePair<long, IContentResource>> resources)
+    public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
     {
         var msgFile = workspace.ResourceManager.ReadFileResource<MsgFile>(Files[0]);
         if (msgFile == null) {

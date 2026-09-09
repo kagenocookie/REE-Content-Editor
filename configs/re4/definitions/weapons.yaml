@@ -43,11 +43,11 @@ entities:
         param:
           classname: chainsaw.WeaponDetailCustomUserdata.WeaponDetailStage
       prefab:
-        type: resource
         label: Weapon prefab
         required: true
         param:
-          type: Prefab
+          type: resource_link
+          resource_type: prefab
           path: "{data?._Prefab?.Path}"
 
 classes:

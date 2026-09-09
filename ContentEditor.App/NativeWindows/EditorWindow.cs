@@ -1041,7 +1041,12 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 }
                 if (workspace.Config.Entities.Any()) {
                     if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Windows.Entities))) {
-                        AddSubwindow(new AppContentEditorWindow(workspace));
+                        AddSubwindow(new EntitiesWindow(workspace));
+                    }
+                }
+                if (workspace.Config.Resources.Any()) {
+                    if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Windows.Resources))) {
+                        AddSubwindow(new EntityResourcesWindow(workspace));
                     }
                 }
                 if (AppImguiHelpers.HotkeyMenuItem(Lang.Windows.MacroShelf, AppConfig.Instance.Key_OpenMacroShelf.Get())) {

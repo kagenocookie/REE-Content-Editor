@@ -44,7 +44,7 @@ public sealed class DD2ItemIconHandler(EntityField field) : IObjectUIHandler, IO
 
             var (uv0, uv1) = pattern.GetBoundingPoints();
             ImGui.Image(texture.AsTextureRef(), new Vector2(200, 200), uv0, uv1);
-            if (entity.Id < entity.Config.CustomIDRange![0]) {
+            if (entity.Id < entity.Config.PrimaryField?.Resource.CustomIDRange![0]) {
                 return;
             }
         }

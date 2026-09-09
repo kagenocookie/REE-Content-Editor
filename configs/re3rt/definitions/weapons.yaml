@@ -42,11 +42,11 @@ entities:
           file: natives/stm/escape/message/mes_weapon.msg.67305745
         display_after: name
       prefab:
-        type: resource
         label: Weapon prefab
         required: true
-        param:
-          type: Prefab
+        resource:
+          type: resource_link
+          resource_type: prefab
           path: "{catalog?.Prefab?.Path}"
 
 classes:

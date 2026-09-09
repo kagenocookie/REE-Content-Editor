@@ -19,6 +19,9 @@ public class Bundle : BaseBundle
     [JsonPropertyName("entities")]
     public List<Entity> Entities { get; set; } = new();
 
+    [JsonPropertyName("resources")]
+    public Dictionary<string, Dictionary<long, JsonNode>> Resources { get; set; } = new();
+
     [JsonIgnore]
     public RuntimeBundle? RuntimeBundle { get; internal set; }
 
@@ -28,7 +31,7 @@ public class Bundle : BaseBundle
     public IEnumerable<(string localPath, ResourceListItem resource)> ResourcesEntries => ResourceListing?.Select(kv => (kv.Key, kv.Value)) ?? [];
 
     [JsonIgnore]
-    public IEnumerable<ResourceListItem> Resources => ResourceListing?.Values ?? Enumerable.Empty<ResourceListItem>();
+    public IEnumerable<ResourceListItem> Files => ResourceListing?.Values ?? Enumerable.Empty<ResourceListItem>();
 
     [JsonIgnore]
     public IEnumerable<string> ResourceLocalPaths => ResourceListing?.Keys ?? Enumerable.Empty<string>();
@@ -83,6 +86,32 @@ public class Bundle : BaseBundle
         }
         Entities.Add(updated);
         return EntityRecordUpdateType.Addded;
+    }
+
+    /// <summary>
+    /// Update / replace an existing entity resources or add it in.
+    /// </summary>
+    public EntityRecordUpdateType RecordEntityResource(string type, long id, JsonNode data)
+    {
+        if (!Resources.TryGetValue(type, out var resDict)) {
+            Resources[type] = resDict = new Dictionary<long, JsonNode>();
+        }
+
+        var exists = resDict.TryGetValue(id, out var storedRes);
+        resDict[id] = data;
+        if (storedRes == data) return EntityRecordUpdateType.AlreadyRecorded;
+        if (exists) return EntityRecordUpdateType.Updated;
+        return EntityRecordUpdateType.Addded;
+    }
+
+    public Dictionary<string, JsonElement> AddEnumData(string enumClassname)
+    {
+        Enums ??= new();
+        if (!Enums.TryGetValue(enumClassname, out var eee)) {
+            Enums[enumClassname] = eee = new();
+        }
+
+        return eee;
     }
 
     public bool ContainsEntity(Entity e) => FindEntity(e.Type, e.Id) != null;

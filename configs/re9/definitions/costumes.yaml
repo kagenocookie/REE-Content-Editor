@@ -37,7 +37,7 @@ entities:
 classes:
   app.TimelineEventCostumeCatalog.Unit:
     id: [_CostumeId]
-    subId: [_CostumeVariationId]
+    sub_id: [_CostumeVariationId]
     to_string: "Costume {_CostumeId} (Variation: {_CostumeVariationId})"
     patcher:
       type: array-file
@@ -56,7 +56,7 @@ classes:
   app.CharacterMontagePresetCatalogUserData.Entry:
     # TODO nested IDs not supported yet
     # id: [_Preset._ModelID]
-    # subId: [_Preset._ID]
+    # sub_id: [_Preset._ID]
     to_string: "Montage Preset Entry [{_Preset._ModelID} / {_Preset._ID}] {:path(_Preset)}"
     # patcher:
     #   type: array-file

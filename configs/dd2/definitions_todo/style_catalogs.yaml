@@ -1,0 +1,134 @@
+entities:
+  # items.catalogs.Body:
+  #   group: styles
+  #   to_string: "Body {data._Species:enum(app.Species)} {data._Gender:enum(app.Gender)}"
+  #   custom_id_range: [1000, 9999999]
+  #   fields:
+  #     - name: data
+  #       type: object
+  #       label: Data
+  #       required: true
+  #       param:
+  #         type: object
+  #         classname: app.BodyMeshSwapItem
+  #         nested: false
+  #     - name: mesh
+  #       type: object
+  #       label: Mesh Catalog Item
+  #       required: true
+  #       field_id: { field: data, class: app.BodyMeshSwapItem, path: _MeshID }
+  #       param:
+  #         classname: BodyMesh
+
+  # items.catalogs.Beard:
+  #   group: styles
+  #   # enums:
+  #   # - name: app.BeardStyle
+  #   #   format: "Beard_{id:D03}"
+  #   #   primary: true
+  #   to_string: "Beard Mesh {data._BeardStyle:enum(app.BeardStyle)}"
+  #   custom_id_range: [1000, 9999999]
+  #   fields:
+  #     - name: data
+  #       type: object
+  #       label: Data
+  #       required: true
+  #       param:
+  #         type: object
+  #         classname: app.BeardSwapItem
+  #         nested: false
+  #     - name: mesh
+  #       type: object
+  #       label: Body Catalog Item
+  #       required: true
+  #       field_id: { field: data, class: app.BeardSwapItem, path: _MeshID }
+  #       param:
+  #         classname: BeardMesh
+  #     - name: skin
+  #       type: object
+  #       label: Skin Catalog Item
+  #       required: true
+  #       field_id: { field: data, class: app.BeardSwapItem, path: _SkinID }
+  #       param:
+  #         classname: BeardSkin
+  #     - name: meshPrefab
+  #       type: resource
+  #       label: Mesh Prefab
+  #       required: true
+  #       param:
+  #         type: Prefab
+  #         path: "{mesh?._Prefab?.Path}"
+  #     - name: skinPrefab
+  #       type: resource
+  #       label: Skin Prefab
+  #       required: true
+  #       param:
+  #         type: Prefab
+  #         path: "{skin?._Prefab?.Path}"
+
+classes:
+  app.PartSwapCatalog.Item:
+    to_string: "{classname} {_Hash}"
+
+  app.BodyMeshSwapItem:
+    to_string: "{class_shortname} {_MeshID:enum(app.CharacterEditDefine.BodyMeshID)} ({_Species:enum(app.Species)} {_Gender:enum(app.Gender)})"
+  app.BodySkinSwapItem:
+    to_string: "{class_shortname} {_SkinStyle:enum(app.SkinStyle)} ({_Species:enum(app.Species)} {_Gender:enum(app.Gender)})"
+
+  app.BeardSwapItem:
+    to_string: "{class_shortname} {_BeardStyle:enum(app.BeardStyle)} {_Species:enum(app.Species)}"
+
+  # app.BodyMeshSwapItem:
+  #   id: [_Species, _Gender]
+  #   to_string: "{class_shortname} {_MeshID:enum(app.CharacterEditDefine.BodyMeshID)} ({_Species:enum(app.Species)} {_Gender:enum(app.Gender)})"
+  #   group: style
+  #   patcher:
+  #     type: array-file
+  #     file: AppSystem/CharaEdit/ch000/SwapData/BodyMeshSwapData.user.2
+  # app.BodySkinSwapItem:
+  #   id: [_SkinStyle]
+  #   sub_id: [_Species, _Gender]
+  #   to_string: "{class_shortname} {_SkinStyle:enum(app.SkinStyle)} ({_Species:enum(app.Species)} {_Gender:enum(app.Gender)})"
+  #   group: style
+  #   patcher:
+  #     type: array-file
+  #     file: AppSystem/CharaEdit/ch000/SwapData/BodySkinSwapData.user.2
+
+  # app.BeardSwapItem:
+  #   id: [_BeardStyle]
+  #   to_string: "{class_shortname} {_BeardStyle:enum(app.BeardStyle)} {_Species:enum(app.Species)}"
+  #   group: style
+  #   patcher:
+  #     type: array-file
+  #     file: AppSystem/CharaEdit/ch000/SwapData/BeardSwapData.user.2
+
+resources:
+  BodyMesh:
+    type: array-file
+    classname: app.PartSwapCatalog.Item
+    # id: [_Hash]
+    files:
+    - AppSystem/CharaEdit/ch000/Catalog/BodyMeshCatalog.user.2
+  BodySkin:
+    type: array-file
+    classname: app.PartSwapCatalog.Item
+    files:
+    - AppSystem/CharaEdit/ch000/Catalog/BodySkinCatalog.user.2
+
+  BeardMesh:
+    type: array-file
+    classname: app.PartSwapCatalog.Item
+    files:
+    - AppSystem/CharaEdit/ch000/Catalog/BeardMeshCatalog.user.2
+  BeardSkin:
+    type: array-file
+    classname: app.PartSwapCatalog.Item
+    files:
+    - AppSystem/CharaEdit/ch000/Catalog/BeardSkinCatalog.user.2
+
+  # TopsCatalog:
+  #   patcher:
+  #     type: dd2-catalog-scn
+  #     files:
+  #     - AppSystem/CharaEdit/ch000/CatalogHolder/TopsCatalogHolder_Chunk0.pfb.17
+  #     - AppSystem/CharaEdit/ch000/CatalogHolder/TopsCatalogHolder_Chunk1.pfb.17
