@@ -3,7 +3,7 @@ using ContentPatcher;
 
 namespace ContentEditor.App;
 
-public class ContentEditorEntityImguiHandler : IObjectUIHandler
+public class EntityHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {

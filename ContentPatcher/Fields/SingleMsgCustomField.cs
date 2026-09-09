@@ -32,27 +32,18 @@ public class SingleMsgCustomField : CustomEntityFieldHandler<MessageData>, IDiff
         if (currentResource == null) {
             string entityKey = FormatMessageKey(entity);
             var messageId = MurMur3HashUtils.GetHash(entityKey);
-            currentResource = new MessageData() { ResourceTypeID = file, FilePath = file!, MessageKey = entityKey, Guid = Guid.NewGuid() };
+            currentResource = new MessageData() { ResourceTypeID = file, FileResourcePath = file!, MessageKey = entityKey, Guid = Guid.NewGuid() };
             workspace.ResourceManager.AddResource(file, messageId, currentResource, state);
         }
         workspace.Diff.ApplyDiff(currentResource, data);
         return currentResource;
     }
 
-    public ResourceConfig CreateConfig()
-    {
-        var cfg = new ResourceConfig(file);
-        cfg.Patcher = new MsgFileResourceHandler() { Config = cfg, Files = [file] };
-        cfg.IDGenerator = IDGenerator.CreateGenerator([new NestableFieldAccessor.PlainReturn()]);
-        // cfg.To_String = // msg key + msg value["en"]
-        return cfg;
-    }
-
     public override (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData)
     {
         string entityKey = FormatMessageKey(entity);
         var messageId = MurMur3HashUtils.GetHash(entityKey);
-        var data = new MessageData() { FilePath = file!, Messages = new(), ResourceTypeID = file!, MessageKey = entityKey, Guid = Guid.NewGuid() };
+        var data = new MessageData() { FileResourcePath = file!, Messages = new(), ResourceTypeID = file!, MessageKey = entityKey, Guid = Guid.NewGuid() };
         if (initialData != null) {
             workspace.Diff.ApplyDiff(data, initialData!);
             data.MessageKey = entityKey;
@@ -60,17 +51,17 @@ public class SingleMsgCustomField : CustomEntityFieldHandler<MessageData>, IDiff
         return (messageId, data);
     }
 
-    public override (long id, IContentResource? resource) LoadValue(ContentWorkspace workspace, ResourceEntity entity, ResourceState state)
+    public override IAddressableContentResource? LoadValue(ContentWorkspace workspace, ResourceEntity entity, ResourceState state)
     {
         string entityKey = FormatMessageKey(entity);
         var messageId = MurMur3HashUtils.GetHash(entityKey);
         var data = workspace.ResourceManager.GetResourceInstance(file, messageId, state) as MessageData;
         if (data != null) {
             data.MessageKey = entityKey;
-            return (messageId, data);
+            return data;
         }
 
-        return (-1, null);
+        return null;
     }
 
     public override MessageData? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)

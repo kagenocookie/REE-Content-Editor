@@ -27,8 +27,8 @@ public class PatchDataContainer(string filepath)
 
     public bool IsLoaded { get; private set; }
 
-    public EntityTypeList<EntityConfig> EntityHierarchy { get; } = new("");
-    public EntityTypeList<ResourceConfig> ResourceHierarchy { get; } = new("");
+    public HierarchyTypeList<EntityConfig> EntityHierarchy { get; } = new("");
+    public HierarchyTypeList<ResourceConfig> ResourceHierarchy { get; } = new("");
 
     public ClassConfig? GetClassConfig(string classname) => configs.GetValueOrDefault(classname);
     public FieldConfig? GetClassFieldConfig(string classname, string fieldName) => configs.GetValueOrDefault(classname)?.Fields?.GetValueOrDefault(fieldName);
@@ -151,8 +151,8 @@ public class PatchDataContainer(string filepath)
         if (newDict.Resources != null) {
             foreach (var (resType, resCfg) in newDict.Resources) {
                 var cfg = SetupResourceConfig(workspace, resType, resCfg);
-                if (!resCfg.DisallowStandaloneEditing) {
-                    var shortname = ResourceHierarchy.Add(resType, cfg);
+                if (!resCfg.DisallowStandaloneEditing && resCfg.ParentResource == null) {
+                    var shortname = ResourceHierarchy.Add(resType, cfg, resCfg.DisplayName);
                     resources.Add(shortname, cfg);
                 }
                 resources.Add(resType, cfg);
@@ -204,12 +204,14 @@ public class PatchDataContainer(string filepath)
 
     private ResourceConfig SetupResourceConfig(ContentWorkspace workspace, string resType, EntityResourceConfigSerialized resCfg)
     {
-        ResourceConfig cfg = new(resType) {
+        var cfg = new ResourceConfig(resType) {
             CustomIDRange = resCfg.CustomIDRange,
+            DisplayName = resCfg.DisplayName ?? resType.GetStringAfterLastDelimiter('.').ToString(),
         };
         if (resCfg.ParentResource != null) {
             if (resources.TryGetValue(resCfg.ParentResource, out var parent)) {
                 cfg.ParentResource = parent;
+                cfg.CustomIDRange = parent.CustomIDRange;
                 parent.SubResources.Add(cfg);
             } else {
                 Logger.Warn($"Resource {resType} parent resource {resCfg.ParentResource} was not found. Make sure the parent resource gets declared before sub resources");
@@ -219,7 +221,7 @@ public class PatchDataContainer(string filepath)
         if (resCfg.Subclasses?.Count > 0) {
             cfg.Subtypes ??= new ();
             foreach (var (subType, subConfig) in resCfg.Subclasses) {
-                ResourceConfig sub = new(resType) { CustomIDRange = resCfg.CustomIDRange };
+                var sub = new ResourceConfig(resType) { CustomIDRange = resCfg.CustomIDRange };
                 // all subtypes must inherit id range from base resource type
                 if (subConfig.CustomIDRange != null) {
                     Logger.Warn($"Resource subtype {resType}->{subType} has a custom ID range defined. ID ranges are only allowed on root resources. Will be ignored.");
@@ -325,7 +327,7 @@ public class PatchDataContainer(string filepath)
         if (config.PrimaryField == null) {
             config.PrimaryField = config.Fields[0];
         }
-        config.IDField = config.Fields.FirstOrDefault(f => f.name == entity.IDField);
+        config.IDField = config.Fields.FirstOrDefault(f => f.name == entity.IDField)!;
         config.IDField ??= config.PrimaryField;
         return config;
     }

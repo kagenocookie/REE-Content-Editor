@@ -48,7 +48,7 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
         return currentResource;
     }
 
-    public override (long id, IContentResource resource) LoadValue(ContentWorkspace workspace, ResourceEntity entity, ResourceState state)
+    public override IContentResource LoadValue(ContentWorkspace workspace, ResourceEntity entity, ResourceState state)
     {
         // note: do we want proper ResourceState handling for this one too?
         return DetermineEnumResource(workspace, entity);
@@ -61,16 +61,16 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
             return res;
         }
 
-        return DetermineEnumResource(workspace, entity).res;
+        return DetermineEnumResource(workspace, entity);
     }
 
-    private (long id, EnumMappingResource res) DetermineEnumResource(ContentWorkspace workspace, ResourceEntity entity)
+    private EnumMappingResource DetermineEnumResource(ContentWorkspace workspace, ResourceEntity entity)
     {
         var enumdesc = workspace.Env.TypeCache.GetEnumDescriptor(Field.Resource.RszClassRequired.name, RszFieldType.U32);
         var value = Convert.ChangeType(idGetter.Get(entity), enumdesc.BackingType);
         if (value == null) {
             Logger.Error($"Failed to determine enum value for entity {entity}");
-            return (-1, new EnumMappingResource("", -1));
+            return new EnumMappingResource("", -1) { ID = -1 };
         }
 
         var label = enumdesc.GetLabel(value);
@@ -81,7 +81,7 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
         var virtualEnum = workspace.Env.TypeCache.CreateEnum(virtualEnumName, "System.UInt32");
         virtualEnum?.AddValue(id, label);
 
-        return (id, new EnumMappingResource(label, Convert.ToInt64(value)));
+        return new EnumMappingResource(label, Convert.ToInt64(value)) { ID = id };
     }
 
     public override (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData)
@@ -104,7 +104,7 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
         var virtualEnum = workspace.Env.TypeCache.CreateEnum(virtualEnumName, "System.UInt32");
         virtualEnum?.AddValue(id, label);
 
-        return (id, new EnumMappingResource(label, value));
+        return (id, new EnumMappingResource(label, value) { ID = id });
     }
 
     private long GetIDFromLabel(string label)
@@ -147,7 +147,7 @@ public class EnumMapResourceHandler : ResourceHandler
     }
 }
 
-public sealed class EnumMappingResource : IContentResource
+public sealed class EnumMappingResource : IAddressableContentResource
 {
     public EnumMappingResource() {}
     public EnumMappingResource(string label, long value = -1)
@@ -159,7 +159,9 @@ public sealed class EnumMappingResource : IContentResource
     public string Label { get; set; } = string.Empty;
     public long Value { get; set; }
     public string ResourceTypeID => "enum_mapping";
-    public string? FilePath => null;
+    public string? FileResourcePath => null;
+
+    public long ID { get; set; }
 
     public IContentResource Clone() => new EnumMappingResource() { Label = Label };
 

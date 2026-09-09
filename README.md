@@ -171,12 +171,15 @@ The patcher also outputs separate .txt files into the `reframework/data/injected
 All the patching logic is based on 3 layers of modifications: files, resource objects and entities, each built on top of the previous layers.
 
 - Files represent the individual .user, .msg, .pfb, etc files, identified by their filepath. Every editable file goes under this layer.
-- Resource objects are individual unique objects within one or multiple files. These always support partial patching.
-- Entities group together multiple resources into one logical and more easily digestable unit. These allow "Content Editor" style centralized editing of data.
+- Resource objects are individual unique objects within one or spread across multiple files. These should have some sort of unique ID and support partial patching.
+- Entities group together multiple resources into one logical and more easily digestable unit. These allow "Content Editor" style centralized editing of related data.
 
-Patchable resources and entities are defined in `configs/<game>/definitions/*.yaml` files, intended to be easily extendable without modifying the code based on predefined patcher methods.
+Patchable resources and entities are defined in `configs/<game>/definitions/*.yaml` files, intended to be easily extendable without modifying the code based on predefined resource types and patching methods. These files also support some additional configuration for object display to make things easier to navigate and edit.
 
-There are some cases where doing a full overwrite of files may be required because the patch generation can't reliably detect some types of changes. You can mark a file as `"replace": true` in the bundle json file for those cases, which will fully replace the files instead of doing partial patching.
+***Files***
+All files can be edited directly and saved in a bundle. Some file formats support partial patching where it will compare the modified file with the original game file and store only the actual change, while others only support simple replacement. By default, .user files will be makred as partially patched files while .scn or .pfb files will get stored a replace, this can be manually changed from the per-file bundle settings.
+
+There are some cases where doing a full overwrite of files may be required because the partial patch generation can't reliably detect some types of changes. You can mark a file as `"replace": true` in the bundle json file for those cases, which will fully replace the files instead of doing partial patching.
 - Removal of objects may not always get detected correctly or just not handled at all
 - Inserting new elements in the middle of an array or reordering them may not always interact correctly with multiple mods. Adding elements at the end is perfectly fine, and the app generally only lets you do that.
 - Renaming existing GameObjects or folders may not work as expected because the pfb/scn patching relies on consistent names
@@ -185,19 +188,25 @@ There are some cases where doing a full overwrite of files may be required becau
 
 Represents a single uniquely identifiable "object". This can be anything from an individual translation message entry, an item's base data / icon / name / description field, or a quest name / summary / log entry / condition set / etc...
 
-A resource needs to be individually editable, it can be either a whole file, or a single object within the file, or possibly an object that doesn't have a specific file (multiple potential files) but is still stored in exactly one place.
+Some resources can be edited directly, others must be edited from within the context of an entity. Directly editable ones can be accessed from the `Windows > Resources` menu option.
+
+A resource needs to be individually editable, it can be either a whole file, or a single object within the file. Some resources can originate from multiple files (multiple catalogs), but they still map to a single final object.
 
 ***Entity***
 
 An entity is, effectively, a group of resources. In the case of an item, it would contain all the individual resources needed for an item to work - name and description message, icon, base data, enhance requirements, crafting combinations, ...
 
+Entities can be accessed from the `Windows > Entities` menu option.
+
 Each entity needs to have a unique integer (int64) ID. Where possible, this is directly equivalent to the game IDs, but where those aren't available, can be a hashed combination of fields (e.g. a GUID or multiple fields hashed together into an integer).
+
+Entities can also have local resources that don't strictly have a patchable resource (like custom string names that may be required for some of the catalog entries or enum modifications).
 
 ***Bundle***
 
 A bundle can contain any number of data modifications, effectively describes a single "mod" or "patch". There is always the bundle.json file containing all information on what it changes and how. Can also contain any number of raw modified files, linked to by the resource_listing field of the bundle json, to tell the patcher where to place the file and if it should be a full replacement or a partial patch.
 
-One bundle modifying the same file as a direct file and through entities at the same time is "undefined" and may or may not work as expected. During the patching process, direct file modifications are processed before entities within the individual bundle.
+One bundle modifying the same file as a direct file and through entities at the same time is "undefined" and may or may not work as expected. During the patching process, direct file modifications are processed before entity resources within the individual bundle.
 
 ## Contributing
 Pull requests are welcome. There are several open issues for bigger features for anyone interested in helping, but if you feel like anything else could be improved upon, feel free to make a feature request or contribute yourself. I'm willing to assist with pointers regarding implementation details.

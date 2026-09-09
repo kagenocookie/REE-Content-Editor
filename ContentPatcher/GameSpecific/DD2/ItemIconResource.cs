@@ -11,7 +11,7 @@ public class ItemIconResource : IContentResource
     public ItemRectData data = new();
 
     public string ResourceTypeID => data.IconTexture + data.IconRect;
-    public string? FilePath => data.IconTexture;
+    public string? FileResourcePath => data.IconTexture;
 
     public IContentResource Clone() => new ItemIconResource() { data = data.Clone() };
 

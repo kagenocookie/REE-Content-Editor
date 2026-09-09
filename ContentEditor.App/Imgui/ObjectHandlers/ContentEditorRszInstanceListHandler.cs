@@ -22,7 +22,7 @@ public sealed class ContentEditorRszInstanceListHandler(EntityField field) : IOb
             if (workspace != null) {
                 ImGui.PushID(context.label);
                 if (ImGui.Button("Create")) {
-                    context.CreateEntityResource<RSZObjectListResource>(workspace, field);
+                    context.CreateEntityResource(workspace, field);
                 }
                 ImGui.PopID();
             }

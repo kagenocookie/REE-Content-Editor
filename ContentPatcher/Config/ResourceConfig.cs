@@ -5,7 +5,8 @@ namespace ContentPatcher;
 public class ResourceConfig(string type)
 {
     public string Type { get; } = type;
-    public long[]? CustomIDRange { get; init; }
+    public string DisplayName { get; init; } = type;
+    public long[]? CustomIDRange { get; set; }
     public RszClass? RszClass { get; set; }
     public IDGenerator? IDGenerator { get; set; }
     public IDGenerator? SubIDGenerator { get; set; }

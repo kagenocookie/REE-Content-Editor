@@ -33,7 +33,7 @@ public class MsgFileResourceHandler : ResourceHandler
                 var id = entry.Header.EntryHash;
                 if (keyFormat?.IsMatch(entry.Name) == false) continue;
 
-                var msgData = new MessageData() { ResourceTypeID = Config.Type, FilePath = file, MessageKey = entry.Name, Guid = entry.Guid };
+                var msgData = new MessageData() { ResourceTypeID = Config.Type, FileResourcePath = file, MessageKey = entry.Name, Guid = entry.Guid };
                 for (int i = 0; i < entry.Strings.Length; ++i) {
                     var str = entry.Strings[i];
                     if (string.IsNullOrEmpty(str)) continue;

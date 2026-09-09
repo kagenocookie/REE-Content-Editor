@@ -16,6 +16,8 @@ public static partial class Lang
         public static readonly FixedString UnsavedChangesCloseAll = "Some files have unsaved changes. If you continue, all changes will be lost.\nYou can reopen the files through the File menu";
         public static readonly InterpolatedString<string> UnsavedChangesText_SingleFile = "The file {0} has unsaved changes.\nAre you sure you wish to close it?";
 
+        public static readonly FixedString ObjectIsNull = "Object is currently unset / null";
+
         public static readonly FixedString FileClose_KeptOpenMessage = """
             Window has been closed but the file is still kept open in case it's needed.
             If you want to re-open it or fully close it down, you can do that from the File > Open files menu.

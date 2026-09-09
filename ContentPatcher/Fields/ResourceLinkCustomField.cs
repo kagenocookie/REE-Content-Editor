@@ -50,8 +50,8 @@ public class ResourceLinkCustomField : EntityFieldValueHandler
 
 public sealed class FileContentResource : IContentResource
 {
-    public string ResourceTypeID => FilePath;
-    public string FilePath { get; set; } = string.Empty;
+    public string ResourceTypeID => FileResourcePath;
+    public string FileResourcePath { get; set; } = string.Empty;
 
     public IContentResource Clone()
     {
@@ -63,5 +63,5 @@ public sealed class FileContentResource : IContentResource
         throw new NotImplementedException();
     }
 
-    public override string ToString() => FilePath;
+    public override string ToString() => FileResourcePath;
 }

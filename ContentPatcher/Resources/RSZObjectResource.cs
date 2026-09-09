@@ -6,7 +6,7 @@ namespace ContentPatcher;
 public class RSZObjectResource(RszInstance instance, string file, string? resourceType = null) : IContentResource
 {
     public string ResourceTypeID => resourceType ?? Instance.RszClass.name;
-    public string FilePath => file;
+    public string FileResourcePath => file;
     public RszInstance Instance { get; set; } = instance;
 
     public IContentResource Clone() => new RSZObjectResource(Instance.Clone(), file, resourceType);

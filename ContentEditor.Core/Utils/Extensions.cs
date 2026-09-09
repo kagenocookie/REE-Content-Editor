@@ -87,6 +87,13 @@ public static partial class Extensions
         return str.AsSpan(pos + 1);
     }
 
+    public static ReadOnlySpan<char> GetStringAfterLastDelimiter(this string str, char delimiter)
+    {
+        var pos = str.LastIndexOf(delimiter);
+        if (pos == -1) return str;
+        return str.AsSpan(pos + 1);
+    }
+
     public static uint ToArgb(this Vector4 vec) => (uint)((byte)(vec.X * 255) + ((byte)(vec.Y * 255) << 8) + ((byte)(vec.Z * 255) << 16) + ((byte)(vec.W * 255) << 24));
     public static Vector2 ToVec2(this Vector4 vec) => new Vector2(vec.X, vec.Y);
     public static Vector3 ToVec3(this Vector4 vec) => new Vector3(vec.X, vec.Y, vec.Z);

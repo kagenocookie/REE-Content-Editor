@@ -2,9 +2,9 @@ using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 
-namespace ContentEditor.App.DD2;
+namespace ContentEditor.App;
 
-public class ResourceEditor : IWindowHandler
+public class ResourceEditor : IWindowHandler, IObjectUIHandler
 {
     public string HandlerName => nameof(ResourceEditor);
     public bool HasUnsavedChanges => data?.Context?.GetChildByValue<IContentResource>()?.Changed == true;
@@ -19,8 +19,13 @@ public class ResourceEditor : IWindowHandler
 
     private ContentWorkspace workspace;
     private readonly string resourceType;
-    private WindowData data = null!;
+    private WindowData data = new();
     protected UIContext context = null!;
+
+    public long SelectedResourceId {
+        get => data.GetOrAddPersistentData<long>("selectedResource", -1);
+        set => data.SetPersistentData<long>("selectedResource", value);
+    }
 
     public void Init(UIContext context)
     {
@@ -32,26 +37,27 @@ public class ResourceEditor : IWindowHandler
     }
 
     public void OnWindow() => this.ShowDefaultWindow(context);
-    public void OnIMGUI()
+    public void OnIMGUI() => OnIMGUI(data.Context);
+    public void OnIMGUI(UIContext context)
     {
         if (workspace == null) {
             ImGui.TextColored(Colors.Warning, "Couldn't get game configuration");
             return;
         }
 
-        if (data.Context == null) {
+        if (context == null) {
             ImGui.TextColored(Colors.Error, "Missing UI container");
             return;
         }
 
         var instances = workspace.ResourceManager.GetResourceInstances(resourceType);
-        var selectedId = data.GetOrAddPersistentData<long>("selectedResource", -1);
+        var selectedId = SelectedResourceId;
 
-        if (FilterableResourceCombo("Resource"u8, instances, ref selectedId, ref data.Context.Filter)) {
-            data.SetPersistentData("selectedResource", selectedId);
+        if (FilterableResourceCombo("Resource"u8, instances, ref selectedId, ref context.Filter)) {
+            SelectedResourceId = selectedId;
             // note: we can clear children safely, any changes are still stored in the resource manager
             // just gotta figure out how to keep those changes tracked in bundle
-            data.Context.ClearChildren();
+            context.ClearChildren();
         }
 
         if (selectedId == -1) {
@@ -75,25 +81,19 @@ public class ResourceEditor : IWindowHandler
         ImGui.Separator();
         if (ImGui.Button("Duplicate")) {
             (selectedId, selected) = workspace.ResourceManager.CreateResource(resourceType, ResourceState.Active, selected);
-            data.Context.children.Clear();
-            data.SetPersistentData("selectedResource", selectedId);
+            context.children.Clear();
+            SelectedResourceId = selectedId;
         }
 
-        var child = data.Context.GetChildByValue<ResourceEntity>();
+        var child = context.GetChildByValue<IContentResource>();
         if (child == null) {
-            child = data.Context.AddChild("selected", selected);
-            WindowHandlerFactory.CreateResourceEntityHandler(child);
+            child = context.AddChild("selected", selected, new ResourceDisplayHandler());
         }
 
         if (child.Changed && workspace.CurrentBundle == null) {
             ImGui.TextColored(Colors.Warning, "No active bundle. Changes can't be saved. Create a bundle please.");
         }
         child.ShowUI();
-        if (child.Changed && workspace.CurrentBundle != null) {
-            if (workspace.CurrentBundle.RecordEntityResource(resourceType, selectedId, selected.ToJson(workspace.Env)) == Bundle.EntityRecordUpdateType.Addded) {
-                Logger.Info($"Entity {selected.Label} added to current bundle {workspace.CurrentBundle.Name}");
-            }
-        }
     }
 
     private static bool FilterableResourceCombo<TEntityBaseType>(ReadOnlySpan<byte> label, IEnumerable<KeyValuePair<long, TEntityBaseType>> entities, ref long selected, ref string filter)

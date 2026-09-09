@@ -2,21 +2,21 @@ using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 
-namespace ContentEditor.App.DD2;
+namespace ContentEditor.App;
 
-public class EntityEditor : IWindowHandler
+public class EntitySelector : IWindowHandler
 {
-    public string HandlerName => nameof(EntityEditor);
+    public string HandlerName => nameof(EntitySelector);
     public bool HasUnsavedChanges => data?.Context?.GetChildByValue<Entity>()?.Changed == true;
     private long initialId = -1;
 
-    public EntityEditor(ContentWorkspace workspace, string entityType)
+    public EntitySelector(ContentWorkspace workspace, string entityType)
     {
         this.workspace = workspace;
         this.entityType = entityType;
     }
 
-    public EntityEditor(ContentWorkspace workspace, Entity initialEntity)
+    public EntitySelector(ContentWorkspace workspace, Entity initialEntity)
     {
         this.workspace = workspace;
         this.entityType = initialEntity.Type;
@@ -76,7 +76,7 @@ public class EntityEditor : IWindowHandler
                 ImGui.CloseCurrentPopup();
             }
             if (ImGui.Button("Reopen in new window")) {
-                EditorWindow.CurrentWindow?.AddSubwindow(new EntityEditor(workspace, selected));
+                EditorWindow.CurrentWindow?.AddSubwindow(new EntitySelector(workspace, selected));
                 ImGui.CloseCurrentPopup();
             }
             ImGui.EndPopup();
@@ -97,7 +97,7 @@ public class EntityEditor : IWindowHandler
                 selected.Label = newName;
                 data.Context.Changed = true;
                 selected.Config.PrimaryEnum?.UpdateEnum(workspace, selected);
-                if (workspace.CurrentBundle != null && workspace.CurrentBundle.RecordEntity(selected) == Bundle.EntityRecordUpdateType.Addded) {
+                if (workspace.CurrentBundle != null && workspace.CurrentBundle.RecordEntity(selected) == Bundle.EntityRecordUpdateType.Added) {
                     Logger.Info($"Entity {selected.Label} added to current bundle {workspace.CurrentBundle.Name}");
                 }
                 data.Context.RemoveChild(renameCtx);
@@ -114,7 +114,7 @@ public class EntityEditor : IWindowHandler
         var child = data.Context.GetChildByValue<ResourceEntity>();
         if (child == null) {
             child = data.Context.AddChild("selected", selected);
-            WindowHandlerFactory.CreateResourceEntityHandler(child);
+            WindowHandlerFactory.CreateEntityHandler(child);
         }
 
         if (child.Changed && workspace.CurrentBundle == null) {
@@ -122,7 +122,7 @@ public class EntityEditor : IWindowHandler
         }
         child.ShowUI();
         if (child.Changed && workspace.CurrentBundle != null) {
-            if (workspace.CurrentBundle.RecordEntity(selected) == Bundle.EntityRecordUpdateType.Addded) {
+            if (workspace.CurrentBundle.RecordEntity(selected) == Bundle.EntityRecordUpdateType.Added) {
                 Logger.Info($"Entity {selected.Label} added to current bundle {workspace.CurrentBundle.Name}");
             }
         }

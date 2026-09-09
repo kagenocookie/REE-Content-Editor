@@ -357,9 +357,9 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             entity.Set(field.name, fieldResource);
             if (fieldResource == null) return null;
 
-            if (fieldResource.FilePath == null) {
+            if (fieldResource.FileResourcePath == null) {
                 // ignore - there's no file here
-            } else if (openFiles.TryGetValue(fieldResource.FilePath, out var file)) {
+            } else if (openFiles.TryGetValue(fieldResource.FileResourcePath, out var file)) {
                 file.Modified = true;
             } else {
                 throw new Exception("New resource file should've been opened, wtf?");
@@ -382,9 +382,9 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         }
         if (fieldResource == null) return null;
 
-        if (fieldResource.FilePath == null) {
+        if (fieldResource.FileResourcePath == null) {
             // ignore - there's no file here
-        } else if (openFiles.TryGetValue(fieldResource.FilePath, out var file)) {
+        } else if (TryResolveGameFile(fieldResource.FileResourcePath, out var file)) {
             file.Modified = true;
         } else {
             throw new Exception("New resource file should've been opened, wtf?");
@@ -393,10 +393,16 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         return fieldResource;
     }
 
-    public TResourceType CreateEntityResource<TResourceType>(ResourceEntity entity, EntityField field, ResourceState state, string? resourceTypeOverride = null) where TResourceType : IContentResource
+    public T CreateEntityResource<T>(ResourceEntity entity, EntityField field, ResourceState state, string? resourceTypeOverride = null) where T : IContentResource
+        => (T)CreateEntityResource(entity, field, state, resourceTypeOverride);
+
+    public IContentResource CreateEntityResource(ResourceEntity entity, EntityField field, ResourceState state, string? resourceTypeOverride = null)
     {
         var key = resourceTypeOverride ?? field.ResourceTypeId;
-        if (key == null) return Activator.CreateInstance<TResourceType>();
+        if (key == null) {
+            throw new Exception("Can't create unknown resource type");
+        }
+
         if (resources.TryGetValue(key, out var data)) {
             if (data.baseInstances == null) {
                 data.baseInstances = new();
@@ -404,24 +410,20 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             }
 
             if (data.config.Patcher != null) {
-                return (TResourceType?)CreateEntityFieldInternal(entity, field, state, data.config, null)
+                return CreateEntityFieldInternal(entity, field, state, data.config, null)
                     ?? throw new Exception($"Failed to create entity {entity} field {field} resource");
             }
 
             throw new NotImplementedException($"Unable to create new entity {entity} field {field} resource");
         }
+
         throw new NotImplementedException();
     }
 
-    public (long id, IContentResource resource) CreateResource(string resourceType, ResourceState state, IContentResource? sourceResource = null)
+    public (long id, IContentResource resource) CreateResource(string resourceType, ResourceState state, IContentResource? sourceResource = null, long id = -1)
     {
         if (!resources.TryGetValue(resourceType, out var data)) {
             throw new Exception("Unknown resource type " + resourceType);
-        }
-
-        var idRange = data.config.CustomIDRange;
-        if (idRange == null) {
-            throw new Exception($"Resource type {resourceType} does not have a custom ID range defined");
         }
 
         if (data.baseInstances == null) {
@@ -429,17 +431,23 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             ReadObjectSourceData(data.config, data);
         }
 
-        var instanceList = state == ResourceState.Active ? data.activeInstances! : data.baseInstances!;
-        int attempts = 100;
-        long id;
-        do {
-            id = Random.Shared.NextInt64(idRange[0], idRange[1]);
-            // TODO verify uniqueness with inactive bundles as well
-            // TODO use bundle-defined initial IDs
-            if (attempts-- <= 0) {
-                throw new Exception($"Could not generate a new ID for resource type {resourceType}");
+        if (id == -1) {
+            var idRange = data.config.CustomIDRange;
+            if (idRange == null) {
+                throw new Exception($"Resource type {resourceType} does not have a custom ID range defined");
             }
-        } while (instanceList.ContainsKey(id) == true);
+
+            var instanceList = state == ResourceState.Active ? data.activeInstances! : data.baseInstances!;
+            int attempts = 100;
+            do {
+                id = Random.Shared.NextInt64(idRange[0], idRange[1]);
+                // TODO verify uniqueness with inactive bundles as well
+                // TODO use bundle-defined initial IDs
+                if (attempts-- <= 0) {
+                    throw new Exception($"Could not generate a new ID for resource type {resourceType}");
+                }
+            } while (instanceList.ContainsKey(id) == true);
+        }
 
         // TODO for enum_mapping: generate enum label based on entity id
         if (data.config.Patcher != null) {
@@ -544,25 +552,21 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     {
         var entityDict = new Dictionary<long, ResourceEntity>();
         List<ResourceEntity>? newEntities = null;
-        IEnumerable<KeyValuePair<long, IContentResource>>? ids = null;
         foreach (var (primaryResourceId, primaryResource) in GetResourceInstances(data.config.PrimaryField.Resource.Type)) {
             var entity = new ResourceEntity(primaryResourceId, type, data.config);
             entity.Set(data.config.PrimaryField.name, primaryResource);
             if (data.config.IDField != data.config.PrimaryField) {
                 // ids = GetResourceInstances(data.config.IDField.Resource.Type);
                 if (data.config.IDField.ValueHandler is CustomEntityFieldHandler custom) {
-                    var (newId, idres) = custom.LoadValue(workspace, entity, ResourceState.Base);
-                    if (newId != -1) {
-                        entity.Id = newId;
+                    var idres = custom.LoadValue(workspace, entity, ResourceState.Base);
+                    // note: 0 entries are sometimes expected (e.g. app.TopsStyle), using -1 as invalid instead
+                    if (idres is IAddressableContentResource addrId && addrId.ID != -1) {
+                        entity.Id = addrId.ID;
                     } else {
-                        // 0 entries are sometimes expected (e.g. app.TopsStyle)
                         Logger.Warn("Failed to determine ID for entity " + entity);
                     }
                     entity.Set(data.config.IDField.name, idres);
                 }
-                // var fieldId = data.config.IDField.IdField == null ? entity.Id : Convert.ToInt64(data.config.IDField.IdField.Get(entity));
-                // var fieldValue = data.config.IDField.ValueHandler.FetchResource(workspace, entity, fieldId, ResourceState.Base);
-                //
             }
 
             if (entityDict.TryGetValue(entity.Id, out var previousEntity)) {
@@ -1291,7 +1295,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         }
         var handle = CreateFileHandleForStream(filepath.NormalizeFilepath(), nativeOrTargetPath, stream, null, allowDispose);
         if (handle == null) {
-            throw new NotSupportedException();
+            throw new NotSupportedException($"File not supported or not found: {filepath}");
         }
         string filekey = handle.TargetPath ?? handle.Filepath;
         if (keepFileReference && !openFiles.TryAdd(filekey, handle)) {
@@ -1306,7 +1310,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     {
         var resource = ReadOrGetFileResource(filepath, null);
         if (resource == null) {
-            throw new NotSupportedException();
+            throw new NotSupportedException($"File not supported or not found: {filepath}");
         }
         var file = resource.GetFile<TFileType>();
 
@@ -1405,6 +1409,24 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     public bool IsFileOpen(FileHandle file)
     {
         return openFiles.ContainsKey(file.Filepath) || file.TargetPath != null && openFiles.ContainsKey(file.TargetPath);
+    }
+
+    public IEnumerable<(IContentResource? resource, ResourceConfig resourceType)> GetSubResources(IAddressableContentResource resource)
+        => GetSubResources(resource, resource.ID);
+
+    public IEnumerable<(IContentResource? resource, ResourceConfig resourceType)> GetSubResources(IContentResource resource, long resourceId)
+    {
+        if (resources.TryGetValue(resource.ResourceTypeID, out var rr)) {
+            foreach (var sub in rr.config.SubResources) {
+                var instance = GetResourceInstance(sub.Type, resourceId, ResourceState.Active);
+                yield return (instance, sub);
+            }
+        }
+    }
+
+    public ResourceConfig? GetResourceConfig(string resourceTypeID)
+    {
+        return resources.GetValueOrDefault(resourceTypeID)?.config;
     }
 
     /// <summary>

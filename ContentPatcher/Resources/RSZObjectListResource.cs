@@ -8,7 +8,7 @@ public class RSZObjectListResource : IContentResource
     private string resourceType;
     private string file;
     public string ResourceTypeID => resourceType;
-    public string FilePath => file;
+    public string FileResourcePath => file;
 
     public RSZObjectListResource(string resourceType, string file)
     {

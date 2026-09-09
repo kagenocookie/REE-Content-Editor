@@ -78,6 +78,8 @@ public partial class EntityResourceConfigSerialized
     [YamlMember("sub_id")]
     public string[]? SubID { get; set; }
 
+    public string? DisplayName { get; set; }
+
     [YamlMember("custom_id_range")]
     public long[]? CustomIDRange { get; set; }
 

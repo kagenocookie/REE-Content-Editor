@@ -85,7 +85,7 @@ public class Bundle : BaseBundle
             }
         }
         Entities.Add(updated);
-        return EntityRecordUpdateType.Addded;
+        return EntityRecordUpdateType.Added;
     }
 
     /// <summary>
@@ -101,7 +101,7 @@ public class Bundle : BaseBundle
         resDict[id] = data;
         if (storedRes == data) return EntityRecordUpdateType.AlreadyRecorded;
         if (exists) return EntityRecordUpdateType.Updated;
-        return EntityRecordUpdateType.Addded;
+        return EntityRecordUpdateType.Added;
     }
 
     public Dictionary<string, JsonElement> AddEnumData(string enumClassname)
@@ -302,7 +302,7 @@ public class Bundle : BaseBundle
     {
         AlreadyRecorded,
         Updated,
-        Addded,
+        Added,
     }
 }
 

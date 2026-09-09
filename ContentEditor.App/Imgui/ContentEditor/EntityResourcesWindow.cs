@@ -1,4 +1,3 @@
-using ContentEditor.App.DD2;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -65,7 +64,7 @@ public class EntityResourcesWindow : IWindowHandler, IWorkspaceContainer
                 type = conf;
                 break;
             } else {
-                curLevelList = (EntityTypeList<ResourceConfig>)cur.Item1;
+                curLevelList = (HierarchyTypeList<ResourceConfig>)cur.Item1;
             }
             i++;
         }
@@ -75,8 +74,10 @@ public class EntityResourcesWindow : IWindowHandler, IWorkspaceContainer
             data.Context ??= UIContext.CreateRootContext("EntityResources", this);
             var tab = data.GetOrAddSubwindow(name, true);
             if (tab.Handler == null) {
-                tab.Handler = new ResourceEditor(Workspace, name);
+                var editor = new ResourceEditor(Workspace, name);
+                tab.Handler = editor;
                 tab.Handler.Init(tab.Context!);
+                tab.Context.uiHandler = editor;
             }
 
             ImGui.Spacing();

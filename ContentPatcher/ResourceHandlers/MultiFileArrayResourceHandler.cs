@@ -83,7 +83,7 @@ public class MultiFileArrayResourceHandler : ResourceHandler
         }
 
         foreach (var (_, item) in resources) {
-            var file = item.FilePath;
+            var file = item.FileResourcePath;
             var container = items.FirstOrDefault(it => it.file == file);
             if (container == null) {
                 Logger.Error("Multi-file resource pointing to unknown file " + file);

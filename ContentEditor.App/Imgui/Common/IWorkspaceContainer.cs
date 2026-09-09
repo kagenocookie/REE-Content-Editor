@@ -48,14 +48,14 @@ public static class UIContextExtensions
         return parent?.target as ResourceEntity;
     }
 
-    public static bool CreateEntityResource<TResourceType>(this UIContext context, ContentWorkspace workspace, EntityField field) where TResourceType : IContentResource
+    public static bool CreateEntityResource(this UIContext context, ContentWorkspace workspace, EntityField field)
     {
         var entity = context.GetOwnerEntity();
         if (entity == null) {
             Logger.Error("Could not find parent entity");
             return false;
         }
-        var newInstance = workspace.ResourceManager.CreateEntityResource<TResourceType>(entity, field, ResourceState.Active);
+        var newInstance = workspace.ResourceManager.CreateEntityResource(entity, field, ResourceState.Active);
         context.Set(newInstance);
         context.children.Clear();
         return true;

@@ -50,13 +50,6 @@ public class StringCustomField : CustomEntityFieldHandler<StringResource>, IDiff
         return currentResource;
     }
 
-    public ResourceConfig CreateConfig()
-    {
-        var cfg = new ResourceConfig("");
-        cfg.IDGenerator = IDGenerator.GetGenerator(RszFieldType.String);
-        return cfg;
-    }
-
     public override (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData)
     {
         if (Regex != null) {
@@ -81,9 +74,9 @@ public class StringCustomField : CustomEntityFieldHandler<StringResource>, IDiff
         return res;
     }
 
-    public override (long id, IContentResource? resource) LoadValue(ContentWorkspace workspace, ResourceEntity entity, ResourceState state)
+    public override IContentResource? LoadValue(ContentWorkspace workspace, ResourceEntity entity, ResourceState state)
     {
-        throw new NotImplementedException();
+        return new StringResource(initialFormat?.GetString(entity) ?? string.Empty);
     }
 }
 
@@ -97,7 +90,7 @@ public sealed class StringResource : IContentResource
 
     public string Text { get; set; } = string.Empty;
     public string ResourceTypeID => "string";
-    public string? FilePath => null;
+    public string? FileResourcePath => null;
 
     public IContentResource Clone() => new StringResource() { Text = Text };
 

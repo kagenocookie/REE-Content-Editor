@@ -3,11 +3,12 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using ContentEditor.Core;
 using ReeLib;
+using ReeLib.Common;
 using ReeLib.Msg;
 
 namespace ContentPatcher;
 
-public class MessageData : IContentResource
+public class MessageData : IAddressableContentResource
 {
     public MessageData()
     {
@@ -18,7 +19,7 @@ public class MessageData : IContentResource
     {
         MessageKey = entry.Name;
         Guid = entry.Guid;
-        FilePath = filename;
+        FileResourcePath = filename;
         for (int i = 0; i < entry.Strings.Length; i++) {
             var str = entry.Strings[i];
             if (!string.IsNullOrEmpty(str)) {
@@ -40,7 +41,9 @@ public class MessageData : IContentResource
 
     public required string ResourceTypeID { get; set; }
 
-    public required string FilePath { get; set; }
+    public required string FileResourcePath { get; set; }
+
+    public long ID => MurMur3HashUtils.GetHash(MessageKey);
 
     public string? Get(Language lang) => Messages.GetValueOrDefault(lang.ToString());
     public string? Get(string lang) => Messages.GetValueOrDefault(lang);
@@ -57,7 +60,7 @@ public class MessageData : IContentResource
 
     public IContentResource Clone()
     {
-        return new MessageData() { MessageKey = MessageKey, Guid = Guid, Messages = Messages.ToDictionary(), ResourceTypeID = ResourceTypeID, FilePath = FilePath };
+        return new MessageData() { MessageKey = MessageKey, Guid = Guid, Messages = Messages.ToDictionary(), ResourceTypeID = ResourceTypeID, FileResourcePath = FileResourcePath };
     }
     public static MessageData FromJson(string json)
     {
@@ -68,7 +71,7 @@ public class MessageData : IContentResource
     public static MessageData FromJson(JsonObject? obj)
     {
         return new MessageData() {
-            FilePath = "",
+            FileResourcePath = "",
             ResourceTypeID = "",
             MessageKey = obj?[nameof(MessageKey)]?.AsValue()?.GetValue<string>() ?? "",
             Guid = obj?[nameof(Guid)]?.AsValue()?.GetValue<string>() is string str && Guid.TryParse(str, out var gg) ? gg : Guid.NewGuid(),

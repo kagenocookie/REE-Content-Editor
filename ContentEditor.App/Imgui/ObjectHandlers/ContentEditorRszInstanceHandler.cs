@@ -20,7 +20,7 @@ public sealed class ContentEditorRszInstanceHandler(ObjectField field) : IObject
                 ImGui.SameLine();
                 ImGui.PushID(context.label);
                 if (ImGui.Button("Create")) {
-                    context.CreateEntityResource<RSZObjectResource>(workspace, field.Field);
+                    context.CreateEntityResource(workspace, field.Field);
                 }
                 ImGui.PopID();
             }

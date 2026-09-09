@@ -6,15 +6,20 @@ using ReeLib.Pfb;
 
 namespace ContentPatcher;
 
-public class ResourcePathResource(string type, string path) : IContentResource
+public class ResourcePathResource(string type, string path) : IAddressableContentResource
 {
     public string ResourceTypeID { get; } = type;
-    public string FilePath { get; set; } = path;
+    public string FileResourcePath { get; set; } = path;
 
     public RszInstance? CatalogEntry { get; set; }
     public string ResourcePath { get; set; } = "";
 
-    public IContentResource Clone() => new ResourcePathResource(ResourceTypeID, FilePath) { ResourcePath = ResourcePath };
+    public long ID => CatalogEntry == null ? -1 : IDGenerator.GenerateID(CatalogEntry);
+
+    public IContentResource Clone() => new ResourcePathResource(ResourceTypeID, FileResourcePath) {
+        ResourcePath = ResourcePath,
+        CatalogEntry = CatalogEntry?.Clone(),
+    };
 
     public JsonNode ToJson(Workspace env) => JsonValue.Create(ResourcePath);
 
@@ -40,7 +45,7 @@ public class ResourcePathResourceValueHandler : EntityFieldValueHandler
 public class ResourceProxyPrefabHandler : ResourceHandler
 {
     private RszFieldAccessorBase<List<object>> arrayAccessor = null!;
-    private KnownFileFormats ResourceType { get; set; }
+    public KnownFileFormats ResourceType { get; set; }
 
     public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new ResourcePathResourceValueHandler();
 
@@ -130,6 +135,10 @@ public class ResourceProxyPrefabHandler : ResourceHandler
         } else {
             throw new NotImplementedException("Unsupported rsz object id combination");
         }
+        if (workspace.ResourceManager.TryResolveGameFile(Files[0], out var file)) {
+            var user = file.GetFile<UserFile>().Instance!;
+            arrayAccessor.Get(user).Add(inst);
+        }
         return new ResourcePathResource(Config.Type, Files[0]) { CatalogEntry = inst };
     }
 
@@ -137,9 +146,23 @@ public class ResourceProxyPrefabHandler : ResourceHandler
     {
         Debug.Assert(componentClass != null);
         Debug.Assert(PrefabToResourceField != null);
+        var idgen = Config.IDGeneratorRequired;
         foreach (var (id, rawRes) in resources) {
             if (rawRes is not ResourcePathResource res) {
                 continue;
+            }
+
+            if (!workspace.ResourceManager.TryResolveGameFile(res.FileResourcePath, out var catFile)) {
+                Logger.Error("Failed to resolve catalog file " + (res.FileResourcePath));
+                continue;
+            }
+
+            var catalog = catFile.GetFile<UserFile>().Instance!;
+            var list = arrayAccessor.Get(catalog);
+            if (res.CatalogEntry == null) {
+                res.CatalogEntry = list.FirstOrDefault(item => idgen.GetID((RszInstance)item) == id) as RszInstance;
+            } else if (list.Contains(res.CatalogEntry)) {
+                catFile.Modified = true;
             }
 
             if (res.CatalogEntry == null) {
@@ -148,15 +171,7 @@ public class ResourceProxyPrefabHandler : ResourceHandler
                     return;
                 }
                 res.CatalogEntry = workspace.Env.CreateRszInstance(catalogEntryClass);
-            }
-
-            if (workspace.ResourceManager.TryResolveGameFile(rawRes.FilePath ?? "", out var catFile)) {
-                var catalog = catFile.GetFile<UserFile>().Instance!;
-                var list = arrayAccessor.Get(catalog);
-                if (list.Contains(res.CatalogEntry)) {
-                    list.Add(res.CatalogEntry);
-                    catFile.Modified = true;
-                }
+                list.Add(res.CatalogEntry);
             }
 
             if (PrefabLinkField.Get(res.CatalogEntry) is not RszInstance viaPrefab) {
@@ -165,7 +180,7 @@ public class ResourceProxyPrefabHandler : ResourceHandler
             }
             var prefabPath = viaPrefab.Get(RszFieldCache.Prefab.Path);
             if (string.IsNullOrEmpty(prefabPath)) {
-                RszFieldCache.Prefab.Path.Set(viaPrefab, prefabPath = string.Concat(PathUtils.GetFilepathWithoutExtensionOrVersion(rawRes.FilePath), ".pfb"));
+                RszFieldCache.Prefab.Path.Set(viaPrefab, prefabPath = string.Concat(PathUtils.GetFilepathWithoutExtensionOrVersion(rawRes.FileResourcePath), ".pfb"));
                 catFile?.Modified = true;
             }
 
@@ -187,20 +202,5 @@ public class ResourceProxyPrefabHandler : ResourceHandler
             }
             PrefabToResourceField.Set(componentClass, res.ResourcePath);
         }
-    }
-
-    private List<(RszInstance entry, string sourceFile)> GetCatalogEntries(ContentWorkspace workspace, bool modify)
-    {
-        List<(RszInstance, string)> instances = new();
-        foreach (var filepath in Files) {
-            var instance = workspace.ResourceManager.ReadFileResource<UserFile>(filepath, modify).Instance!;
-
-            var list = arrayAccessor.Get(instance);
-            foreach (var item in list.Cast<RszInstance>()) {
-                instances.Add((item, filepath));
-            }
-        }
-
-        return instances;
     }
 }

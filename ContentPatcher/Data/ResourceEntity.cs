@@ -53,6 +53,12 @@ public class ResourceEntity : Entity
         return FieldValues.GetValueOrDefault(name) as T;
     }
 
+    public long GetFieldId(string field)
+    {
+        var fieldCfg = Config.GetField(field);
+        return fieldCfg?.IdField == null ? Id : Convert.ToInt64(fieldCfg.IdField.Get(this));
+    }
+
     public Dictionary<string, JsonNode?>? CalculateDiff(ContentWorkspace workspace)
     {
         var differ = new DiffMaker();

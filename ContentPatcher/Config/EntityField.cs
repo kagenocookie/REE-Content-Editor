@@ -121,7 +121,7 @@ public abstract class CustomEntityFieldHandler : EntityFieldValueHandler
     /// </summary>
     public abstract (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData);
 
-    public abstract (long id, IContentResource? resource) LoadValue(ContentWorkspace workspace, ResourceEntity entity, ResourceState state);
+    public abstract IContentResource? LoadValue(ContentWorkspace workspace, ResourceEntity entity, ResourceState state);
 }
 
 /// <summary>

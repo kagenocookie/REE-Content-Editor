@@ -1,4 +1,3 @@
-using ContentEditor.App.DD2;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -65,7 +64,7 @@ public class EntitiesWindow : IWindowHandler, IWorkspaceContainer
                 type = conf;
                 break;
             } else {
-                curLevelList = (EntityTypeList<EntityConfig>)cur.Item1;
+                curLevelList = (HierarchyTypeList<EntityConfig>)cur.Item1;
             }
             i++;
         }
@@ -75,7 +74,7 @@ public class EntitiesWindow : IWindowHandler, IWorkspaceContainer
             data.Context ??= UIContext.CreateRootContext("ContentEditor", this);
             var tab = data.GetOrAddSubwindow(name, true);
             if (tab.Handler == null) {
-                tab.Handler = new EntityEditor(Workspace, name);
+                tab.Handler = new EntitySelector(Workspace, name);
                 tab.Handler.Init(tab.Context!);
             }
 
