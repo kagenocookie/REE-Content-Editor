@@ -9,6 +9,7 @@ public static partial class Lang
     {
         public static readonly FixedString Title_Editor = "Editor";
         public static readonly FixedString Editor_Objects = "Objects";
+        public static readonly FixedString Editor_Outliner = "Outliner";
         public static readonly FixedString Editor_Submeshes = "Submeshes";
         public static readonly FixedString Editor_NoSubmeshes = "No submeshes are available.";
         public static readonly FixedString Editor_ModeObject = "Object";

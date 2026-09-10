@@ -30,8 +30,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     public Scene? Scene => scene;
 
     private const float TopMargin = 64;
-
-
     public Animator? PrimaryAnimator => meshContexts.FirstOrDefault()?.Animator;
     public IEnumerable<Animator> Animators => meshContexts.Select(m => m.Animator!).Where(a => a != null);
     private float playbackSpeed = 1.0f;
@@ -273,7 +271,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             ImGui.SetCursorPos(editorSplitterPosition);
             meshEditor.ShowSplitter(expectedSize.Y, availableSize.X);
             ImGui.SetCursorPos(editorPanelPosition);
-            meshEditor.ShowPanel(new Vector2(editorPanelWidth, expectedSize.Y));
+            meshEditor.ShowObjectOutlinerPanel(new Vector2(editorPanelWidth, expectedSize.Y));
         }
 
         if (meshClick) {
@@ -345,7 +343,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             if (!isSynced && mainCtx.GameObject != null) {
                 ImguiHelpers.VerticalSeparator();
                 if (ImGui.MenuItem($"{AppIcons.SI_SceneGameObject4} Mesh Collection")) ImGui.OpenPopup("MeshList");
-                if (ImGui.MenuItem($"{AppIcons.SI_MeshViewerMeshGroup} Mesh Groups")) ImGui.OpenPopup("MeshGroups");
                 if (ImGui.MenuItem($"{AppIcons.SI_FileType_MDF} Material")) ImGui.OpenPopup("Material");
                 if (ImGui.MenuItem($"{AppIcons.SI_GenericInfo}")) ImGui.OpenPopup("MeshInfo");
                 ImguiHelpers.Tooltip("Mesh Info");
@@ -398,10 +395,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 }
                 if (ImGui.BeginPopup("Material")) {
                     mainCtx.ShowMaterialSettings();
-                    ImGui.EndPopup();
-                }
-                if (ImGui.BeginPopup("MeshGroups")) {
-                    ShowMeshGroupSettings(mainCtx.Component);
                     ImGui.EndPopup();
                 }
                 if (ImGui.BeginPopup("Export")) {
@@ -505,10 +498,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                     if (ctx.IsAnimatable && ImGui.BeginMenu($"{AppIcons.SI_Animation} Animation")) {
                         EnsureAnimationsInit();
                         ctx.ShowAnimSettings(meshContexts, ctx != meshContexts[0]);
-                        ImGui.EndMenu();
-                    }
-                    if (ImGui.BeginMenu($"{AppIcons.SI_MeshViewerMeshGroup} Mesh Groups")) {
-                        ShowMeshGroupSettings(ctx.Component);
                         ImGui.EndMenu();
                     }
                     if (ImGui.BeginMenu($"{AppIcons.SI_FileType_MDF} Material")) {
@@ -651,25 +640,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     private UIContext? addCollectionCtx;
     private string addCollectionPath = "";
-
-    private void ShowMeshGroupSettings(MeshComponent meshComponent)
-    {
-        var meshGroupIds = meshComponent.MeshHandle?.Meshes.Select(m => m.MeshGroup).Order().Distinct();
-        var parts = RszFieldCache.Mesh.PartsEnable.Get(meshComponent.Data);
-        if (meshGroupIds == null || parts == null) {
-            ImGui.TextColored(Colors.Error, "Could not resolve enabled parts for current game.");
-            return;
-        }
-        foreach (var group in meshGroupIds) {
-            if (group < 0 || group >= parts.Count) continue;
-
-            var enabled = (bool)parts[group];
-            if (ImGui.Checkbox(group.ToString(), ref enabled)) {
-                parts[group] = (object)enabled;
-                meshComponent.RefreshIfActive();
-            }
-        }
-    }
 
     private static void ShowMeshInfo(MeshViewerContext ctx, bool allowEditing)
     {

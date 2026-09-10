@@ -1279,7 +1279,6 @@ public record MeshViewerSettings
     public bool EditorMirrorY { get; set; }
     public bool EditorMirrorZ { get; set; }
     public float EditorMirrorRadius { get; set; } = DefaultEditorMirrorRadius;
-    public bool EditorOptionsStayOnTop { get; set; }
 }
 
 public class BundleDefaults
