@@ -17,17 +17,10 @@ public class RSZObjectListResource : IContentResource
         Instances = [];
     }
 
-    public RSZObjectListResource(RszInstance instance, string file)
-    {
-        Instances = [instance];
-        resourceType = instance.RszClass.name;
-        this.file = file;
-    }
-
-    private RSZObjectListResource(List<RszInstance> instances, string? resourceType, string file)
+    private RSZObjectListResource(List<RszInstance> instances, string resourceType, string file)
     {
         Instances = instances;
-        this.resourceType = resourceType ?? instances.FirstOrDefault()?.RszClass.name ?? throw new Exception();
+        this.resourceType = resourceType;
         this.file = file;
     }
 

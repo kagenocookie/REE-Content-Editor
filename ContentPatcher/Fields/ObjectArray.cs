@@ -7,7 +7,7 @@ namespace ContentPatcher;
 public class ObjectArray : EntityFieldValueHandler, IMainField, IDiffableField, IResourceValueContainer
 {
     private string? elementClassname;
-    public override string ResourceTypeId => Field.Resource.Type;
+    public override string ResourceTypeId => Field.Config.Type;
     bool IDiffableField.EnableDiff => true;
 
     public override void LoadParams(EntityFieldConfig param)
@@ -17,7 +17,7 @@ public class ObjectArray : EntityFieldValueHandler, IMainField, IDiffableField, 
 
     public override IContentResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
     {
-        var instance = workspace.ResourceManager.GetResourceInstance(Field.Resource.Type, resourceId, state);
+        var instance = workspace.ResourceManager.GetResourceInstance(Field.Config.Type, resourceId, state);
         elementClassname ??= (instance as RSZObjectListResource)?.Instances.FirstOrDefault()?.RszClass.name;
         return instance;
     }
@@ -43,7 +43,7 @@ public class ObjectArray : EntityFieldValueHandler, IMainField, IDiffableField, 
 
     public NestableFieldAccessor? GetAccessor(ContentWorkspace workspace, string path)
     {
-        var clsAcc = NestableFieldAccessor.CreateForClass(workspace.Env.RszParser, Field.Resource.RszClass, path);
+        var clsAcc = NestableFieldAccessor.CreateForClass(workspace.Env.RszParser, Field.Config.RszClass, path);
         return new NestableFieldAccessor.Custom<RSZObjectListResource>(clsAcc.Field, l => clsAcc.Get(l.Instances[0])!, (l, v) => {
             foreach (var inst in l.Instances) {
                 clsAcc.Set(inst, v!);

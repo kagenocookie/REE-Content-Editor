@@ -2,10 +2,10 @@ using ReeLib;
 
 namespace ContentPatcher;
 
-[ResourcePatcher("user-singleton", nameof(Deserialize))]
-public class UserFileSingletonResourceHandler : ResourceHandler
+[ResourcePatcher("user-singleton")]
+public class UserFileSingletonResourceHandler : ResourceHandler, IResourceHandlerStatic
 {
-    public static UserFileSingletonResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
+    public static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
     {
         return new UserFileSingletonResourceHandler() {
             Files = [data.SingleFile],

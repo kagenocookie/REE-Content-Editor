@@ -6,6 +6,7 @@ entities:
     fields:
     - name: data
       type: items.styles.TopsStyle
+      display_after: styleNo
       field_id: { field: styleNo, path: value }
       # enums:
       # - name: app.TopsStyle
@@ -21,16 +22,6 @@ entities:
           new_label_format: "Tops_{id:D03}"
           label_id_parse: "Tops_(\\d+)"
           value_from: { field: data, path: _TopsStyle }
-    jsonExample: {
-      id: 3,
-      fields: {
-        StyleNo: {
-          id: 3,
-          label: Tops_003,
-          value: 5123123627
-        }
-      }
-    }
 
 
 # enum mapping creation flow

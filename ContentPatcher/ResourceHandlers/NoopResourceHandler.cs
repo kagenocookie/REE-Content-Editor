@@ -1,12 +1,13 @@
 namespace ContentPatcher;
 
-public class NoopResourceHandler<T> : ResourceHandler where T : EntityFieldValueHandler, new()
+public class NoopResourceHandler<TFieldType> : ResourceHandler, IResourceHandlerStatic
+    where TFieldType : EntityFieldValueHandler, new()
 {
-    public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new T();
+    public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new TFieldType();
 
-    public static NoopResourceHandler<T> Create(ResourceConfig resource)
+    public static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
     {
-        return new NoopResourceHandler<T>() { Config = resource };
+        return new NoopResourceHandler<TFieldType>() { Config = resource };
     }
 
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)

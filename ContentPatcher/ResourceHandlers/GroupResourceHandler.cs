@@ -2,12 +2,12 @@ using System.Text.Json.Nodes;
 
 namespace ContentPatcher;
 
-[ResourcePatcher("group", nameof(Deserialize))]
-public class GroupResourceHandler : ResourceHandler
+[ResourcePatcher("group")]
+public class GroupResourceHandler : ResourceHandler, IResourceHandlerStatic
 {
-    public override EntityFieldValueHandler CreateValueHandler(EntityField field) => Config.Subtypes!.First().Value.Patcher!.CreateValueHandler(field);
+    public override EntityFieldValueHandler CreateValueHandler(EntityField field) => Config.Subtypes!.First().Value.Resource!.CreateValueHandler(field);
 
-    public static GroupResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
+    public static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
     {
         return new GroupResourceHandler() {
             Config = resource,
@@ -21,8 +21,8 @@ public class GroupResourceHandler : ResourceHandler
         foreach (var (subtype, sub) in Config.Subtypes) {
             if (initialData?.AsObject().TryGetPropertyValue("$type", out var typeStr) == true && typeStr?.GetValueKind() == System.Text.Json.JsonValueKind.String) {
                 var type = typeStr.GetValue<string>();
-                if ((type == subtype || type == sub.RszClass?.name) && sub.Patcher != null) {
-                    return sub.Patcher.CreateResource(workspace, id, initialData);
+                if ((type == subtype || type == sub.RszClass?.name) && sub.Resource != null) {
+                    return sub.Resource.CreateResource(workspace, id, initialData);
                 }
             }
         }
@@ -34,7 +34,7 @@ public class GroupResourceHandler : ResourceHandler
         if (Config.Subtypes == null) throw new Exception($"Missing subtypes for group resource {Config}");
 
         foreach (var (type, sub) in Config.Subtypes) {
-            sub.Patcher?.ReadResources(workspace, dict);
+            sub.Resource?.ReadResources(workspace, dict);
         }
     }
 
@@ -43,7 +43,7 @@ public class GroupResourceHandler : ResourceHandler
         if (Config.Subtypes == null) throw new Exception($"Missing subtypes for group resource {Config}");
 
         foreach (var (type, sub) in Config.Subtypes) {
-            sub.Patcher?.ModifyResources(workspace, resources);
+            sub.Resource?.ModifyResources(workspace, resources);
         }
     }
 }

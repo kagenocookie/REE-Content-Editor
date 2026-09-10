@@ -62,7 +62,7 @@ public class StringCustomField : CustomEntityFieldHandler<StringResource>, IDiff
 
     public IEnumerable<KeyValuePair<long, IContentResource>> FetchInstances(ResourceManager workspace)
     {
-        return Field.Resource.Type == null ? [] : workspace.GetResourceInstances(Field.Resource.Type);
+        return Field.Config.Type == null ? [] : workspace.GetResourceInstances(Field.Config.Type);
     }
 
     public override StringResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)

@@ -12,18 +12,18 @@ public class ObjectField : EntityFieldValueHandler, IMainField, IDiffableField, 
 
     public override void LoadParams(EntityFieldConfig data)
     {
-        classname = data.RequireResourceSettings.Classname!;
+        classname = data.resource?.Classname ?? data.type;
         if (data.TryGetParam<bool>("nested", out bool nested)) {
             forceNested = nested;
         }
     }
 
     public NestableFieldAccessor? GetAccessor(ContentWorkspace workspace, string path)
-        => NestableFieldAccessor.CreateForClass(workspace.Env.RszParser, Field.Resource.RszClass, path);
+        => NestableFieldAccessor.CreateForClass(workspace.Env.RszParser, Field.Config.RszClass, path);
 
     public override IContentResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
     {
-        return workspace.ResourceManager.GetResourceInstance(Field.Resource.Type, resourceId, state);
+        return workspace.ResourceManager.GetResourceInstance(Field.Config.Type, resourceId, state);
     }
 
     public override IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)

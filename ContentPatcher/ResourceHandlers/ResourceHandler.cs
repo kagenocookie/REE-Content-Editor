@@ -20,8 +20,8 @@ public abstract class ResourceHandler
         foreach (var t in pTypes) {
             if (t.IsAssignableTo(typeof(ResourceHandler)) && !t.IsAbstract && t.GetCustomAttribute<ResourcePatcherAttribute>() != null) {
                 var attr = t.GetCustomAttribute<ResourcePatcherAttribute>()!;
-                var deserializer = attr.DeserializeMethod;
-                var method = t.GetMethod(deserializer, BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Static)!;
+                var statics = t.GetInterfaceMap(typeof(IResourceHandlerStatic));
+                var method = statics.TargetMethods[0];
                 patchers.Add(attr.PatcherType, (resourceKey, data, ws) => (ResourceHandler)method.Invoke(null, [resourceKey, data, ws])!);
             }
             else if (t.IsAssignableTo(typeof(EntityFieldValueHandler)) && !t.IsAbstract && t.GetCustomAttribute<ResourceFieldAttribute>() != null) {
@@ -33,12 +33,12 @@ public abstract class ResourceHandler
         }
     }
 
-    public static ResourceHandler CreateInstance(ResourceConfig res, EntityResourceConfigSerialized config, ContentWorkspace workspace)
+    public static ResourceHandler CreateInstance(ResourceConfig resource, EntityResourceConfigSerialized config, ContentWorkspace workspace)
     {
         if (string.IsNullOrEmpty(config.Type)) throw new ArgumentException("Patcher must have a type field", nameof(config));
 
         if (patchers.TryGetValue(config.Type, out var func)) {
-            return func.Invoke(res, config, workspace);
+            return func.Invoke(resource, config, workspace);
         }
 
         if (fieldTypes.TryGetValue(config.Type, out var custom)) {
@@ -47,10 +47,12 @@ public abstract class ResourceHandler
             }
 
             if (custom.handlerType != null) {
-                var attr = custom.handlerType.GetCustomAttribute<ResourcePatcherAttribute>();
-                if (attr != null && patchers.TryGetValue(attr.PatcherType, out func)) {
-                    return func.Invoke(res, config, workspace);
-                }
+                // var attr = custom.handlerType.GetCustomAttribute<ResourcePatcherAttribute>();
+                // if (attr != null && patchers.TryGetValue(attr.PatcherType, out func)) {
+                //     return func.Invoke(res, config, workspace);
+                // }
+                var attr = custom.handlerType.GetInterfaceMap(typeof(IResourceHandlerStatic));
+                return (ResourceHandler)attr.TargetMethods[0].Invoke(null, [resource, config, workspace])!;
             }
         }
 
@@ -69,4 +71,9 @@ public abstract class ResourceHandler
 
     public virtual IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
         => throw new NotImplementedException($"Can't create new resources of type {Config.Type}");
+}
+
+public interface IResourceHandlerStatic
+{
+    abstract static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace);
 }

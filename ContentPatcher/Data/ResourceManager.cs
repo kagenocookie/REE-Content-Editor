@@ -168,7 +168,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                 // should get transferred via the bundle's file copy mechanism
                 continue;
             }
-            var patcher = resourceData.config.Patcher;
+            var patcher = resourceData.config.Resource;
             if (patcher != null && resourceData.baseInstances != null) {
                 patcher.ModifyResources(workspace, resourceData.baseInstances);
             }
@@ -316,8 +316,8 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     private long EntityToFieldResourceId(EntityField field, ResourceEntity entity)
     {
         // if it's a subresource, we need to inherit the parent resource's ID
-        if (field.Resource.ParentResource != null) {
-            var parentFieldName = entity.FieldValues.FirstOrDefault(f => f.Value?.ResourceTypeID == field.Resource.ParentResource.Type).Key;
+        if (field.Config.ParentResource != null) {
+            var parentFieldName = entity.FieldValues.FirstOrDefault(f => f.Value?.ResourceTypeID == field.Config.ParentResource.Type).Key;
             if (parentFieldName == null) {
                 Logger.Warn($"Could not find parent resource of {field} for entity {entity}");
                 return 0;
@@ -377,8 +377,8 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     {
         IContentResource? fieldResource = null;
 
-        if (resource.Patcher != null) {
-            fieldResource = resource.Patcher.CreateResource(workspace, resourceId, initialData);
+        if (resource.Resource != null) {
+            fieldResource = resource.Resource.CreateResource(workspace, resourceId, initialData);
         }
         if (fieldResource == null) return null;
 
@@ -409,7 +409,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                 ReadObjectSourceData(data.config, data);
             }
 
-            if (data.config.Patcher != null) {
+            if (data.config.Resource != null) {
                 return CreateEntityFieldInternal(entity, field, state, data.config, null)
                     ?? throw new Exception($"Failed to create entity {entity} field {field} resource");
             }
@@ -450,7 +450,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         }
 
         // TODO for enum_mapping: generate enum label based on entity id
-        if (data.config.Patcher != null) {
+        if (data.config.Resource != null) {
             var newResource = CreateResourceInternal(id, data.config, state, sourceResource?.ToJson(workspace.Env));
             if (newResource == null) {
                 throw new Exception($"Failed to create new {resourceType} resource");
@@ -552,7 +552,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     {
         var entityDict = new Dictionary<long, ResourceEntity>();
         List<ResourceEntity>? newEntities = null;
-        foreach (var (primaryResourceId, primaryResource) in GetResourceInstances(data.config.PrimaryField.Resource.Type)) {
+        foreach (var (primaryResourceId, primaryResource) in GetResourceInstances(data.config.PrimaryField.Config.Type)) {
             var entity = new ResourceEntity(primaryResourceId, type, data.config);
             entity.Set(data.config.PrimaryField.name, primaryResource);
             if (data.config.IDField != data.config.PrimaryField) {
@@ -748,7 +748,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             entity = new ResourceEntity(id, type, data.config);
             entity.Set(idField.name, idResource);
 
-            var primaryResource = CreateEntityFieldInternal(entity, data.config.PrimaryField, ResourceState.Active, data.config.PrimaryField.Resource, sourceEntity?.Get(data.config.PrimaryField.name)?.ToJson(workspace.Env));
+            var primaryResource = CreateEntityFieldInternal(entity, data.config.PrimaryField, ResourceState.Active, data.config.PrimaryField.Config, sourceEntity?.Get(data.config.PrimaryField.name)?.ToJson(workspace.Env));
             entity.Set(data.config.PrimaryField.name, primaryResource);
         } else {
             var (primaryId, primaryResource) = CreateResource(resourceKey, ResourceState.Active, sourceEntity?.Get(data.config.PrimaryField.name));
@@ -822,7 +822,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
     private void ReadObjectSourceData(ResourceConfig config, ResourceData data)
     {
         data.baseInstances ??= new();
-        config.Patcher?.ReadResources(workspace, data.baseInstances);
+        config.Resource?.ReadResources(workspace, data.baseInstances);
     }
 
     /// <summary>

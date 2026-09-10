@@ -11,7 +11,7 @@ public sealed class EntityField
     public required EntityFieldConfig config;
     public string label = string.Empty;
 
-    public ResourceConfig Resource { get; set; } = null!;
+    public ResourceConfig Config { get; set; } = null!;
 
     public EntityFieldValueHandler ValueHandler { get; set; } = null!;
 

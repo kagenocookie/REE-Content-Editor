@@ -4,64 +4,60 @@ entities:
     - name: app.ItemIDEnum
       format: "It{id:06}"
       primary: true # denotes that the entity label should override this enum's corresponding display labels (entity id == enum value)
-    custom_id_range: [30000, 65000]
     # SmartFormat library is used for all string interpolation functionality
     # can fetch entity fields as well as nested object fields with "."
     to_string: "Item {id}: {name}"
     fields:
-      - name: name
-        label: Name
-        required: true
-        resource:
-          type: keyed_message
-          key: "item_name_(\\d+)"
-          files:
-          - Message/UI/ItemName.msg
-          - Message/UI/ItemName_END.msg
-          params:
-            new_key_format: "item_name_{id}"
-      - name: description
-        label: Description
-        required: true
-        resource:
-          type: keyed_message
-          key: "item_detail_(\\d+)"
-          files:
-          - Message/UI/ItemDetail.msg
-          - Message/UI/ItemDetail_END.msg
-          params:
-            new_key_format: "item_detail_{id}"
-            multiline: true
+    - name: name
+      label: Name
+      required: true
+      resource:
+        type: keyed_message
+        key: "item_name_(\\d+)"
+        files:
+        - Message/UI/ItemName.msg
+        - Message/UI/ItemName_END.msg
+        params:
+          new_key_format: "item_name_{id}"
+    - name: description
+      label: Description
+      required: true
+      resource:
+        type: keyed_message
+        key: "item_detail_(\\d+)"
+        files:
+        - Message/UI/ItemDetail.msg
+        - Message/UI/ItemDetail_END.msg
+        params:
+          new_key_format: "item_detail_{id}"
+          multiline: true
 
-      - name: data
-        type: app.ItemCommonParam
-        label: Data
-        required: true
-      - name: icon
-        display_after: description
-        # if we used vanilla tech, there would be a uvs file, added to the item master uvs file, and then an ID taken from there
-        # alternatively we use content editor runtime tech, the patch needs to be saved as a CE bundle with tex and rect info
-        type: DD2_ItemIcon
-      - name: armorEnhanceData
-        label: Enhance data
-        display_after: icon
-        when:
-          property: classname
-          field: data
-          classname: app.ItemArmorParam
-        resource:
-          type: objectArray
-          classname: app.ArmorEnhanceParam
-      - name: weaponEnhanceData
-        label: Enhance data
-        display_after: icon
-        when:
-          property: classname
-          field: data
-          classname: app.ItemWeaponParam
-        resource:
-          type: objectArray
-          classname: app.WeaponEnhanceParam
+    - name: data
+      type: app.ItemCommonParam
+      label: Data
+      required: true
+    - name: icon
+      display_after: description
+      # if we used vanilla tech, there would be a uvs file, added to the item master uvs file, and then an ID taken from there
+      # alternatively we use content editor runtime tech, the patch needs to be saved as a CE bundle with tex and rect info
+      type: DD2_ItemIcon
+      field_type: DD2_ItemIcon
+    - name: armorEnhanceData
+      label: Enhance data
+      type: app.ArmorEnhanceParam
+      display_after: icon
+      when:
+        field: data
+        property: classname
+        classname: app.ItemArmorParam
+    - name: weaponEnhanceData
+      label: Enhance data
+      type: app.WeaponEnhanceParam
+      display_after: icon
+      when:
+        field: data
+        property: classname
+        classname: app.ItemWeaponParam
   items.weapon:
     enums:
     - name: app.WeaponID
@@ -70,51 +66,41 @@ entities:
     custom_id_range: [1000, 100000]
     to_string: 'Weapon {id:enum(app.WeaponID)} (#{id}): {id:reverseLookupEntity(item_data|\{data?._WeaponId@ItemWeaponParam\}|\{label\}|Unknown item)}'
     fields:
-      data:
-        type: object
+      - name: data
         label: Data
-        param:
-          classname: app.WeaponCatalogData.Data
-      name:
+        type: app.WeaponCatalogData.Data
+      - name: name
         type: string
         label: Weapon ID name
         required: true
-        param:
+        display_after: start
+        resource:
+          type: string
           regex: "^wp[0-9_]+$"
           regexDescription: "Example: wp00_000"
           tooltip: Enter a name for the weapon ID. This should be unique across all weapons.
           initial: "{id:enum(app.WeaponID)}"
           diffable: false
-        display_after: start
-      offsets:
-        type: object
+      - name: offsets
+        type: app.WeaponSetting.OffsetSetting
         label: Offset setting
-        param:
-          classname: app.WeaponSetting.OffsetSetting
-      prefab:
-        type: resource
-        label: Weapon prefab
-        required: true
-        param:
-          type: Prefab
-          path: "{data?.Prefab?.Path}"
+      # - name: prefab
+      #   label: Weapon prefab
+      #   required: true
+      #   resource: # TODO figure this one out
+      #     type: resource
+      #     resource_type: prefab
+      #     path: "{data?.Prefab?.Path}"
 
 resources:
 
   app.ItemCommonParam:
-    # id: [_Id]
-    # type: array-file
-    # type: item_data
-    # files:
-    # - AppSystem/Item/ItemData/ItemData.user
-    # - AppSystem/Item/ItemData/ExItemData.user
-    # - AppSystem/Item/ItemData/ItemWeaponData.user
-    # - AppSystem/Item/ItemData/ItemArmorData.user
+    id: [_Id]
+    custom_id_range: [30000, 65000]
     type: group
     not_standalone: true
     subclasses:
       app.ItemDataParam:
-        # id: [_Id]
         type: array-file
         path: _Params
         files:
@@ -140,18 +126,35 @@ resources:
     not_standalone: true
     file: AppSystem/Equipment/wp/WeaponSetting.user
 
-  app.EnhanceParamBase:
+  # app.EnhanceParamBase:
+  #   id: [_ItemId]
+  #   sub_id: [_Type, _EnhanceNo]
+  #   type: group
+  #   not_standalone: true
+  #   subclasses:
+  #     app.WeaponEnhanceParam:
+  #       type: array-file
+  #       file: AppSystem/Item/ItemData/WeaponEnhanceData.user
+  #       classname: app.WeaponEnhanceParam
+  #     app.ArmorEnhanceParam:
+  #       type: array-file
+  #       file: AppSystem/Item/ItemData/ArmorEnhanceData.user
+  #       classname: app.ArmorEnhanceParam
+
+  app.WeaponEnhanceParam:
     id: [_ItemId]
     sub_id: [_Type, _EnhanceNo]
-    type: item_enhance
+    type: array-file
+    file: AppSystem/Item/ItemData/WeaponEnhanceData.user
     not_standalone: true
-    subclasses:
-      app.WeaponEnhanceParam:
-        type: array-file
-        file: AppSystem/Item/ItemData/WeaponEnhanceData.user
-      app.ArmorEnhanceParam:
-        type: array-file
-        file: AppSystem/Item/ItemData/ArmorEnhanceData.user
+    classname: app.WeaponEnhanceParam
+  app.ArmorEnhanceParam:
+    id: [_ItemId]
+    sub_id: [_Type, _EnhanceNo]
+    type: array-file
+    file: AppSystem/Item/ItemData/ArmorEnhanceData.user
+    not_standalone: true
+    classname: app.ArmorEnhanceParam
 
   # app.ItemMixParam:
   #   id: [_ItemId]

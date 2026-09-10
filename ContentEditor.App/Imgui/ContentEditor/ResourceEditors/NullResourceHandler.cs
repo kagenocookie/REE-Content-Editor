@@ -1,5 +1,3 @@
-// ResourcePathResource
-
 using ContentEditor;
 using ContentEditor.App.ImguiHandling;
 using ContentPatcher;

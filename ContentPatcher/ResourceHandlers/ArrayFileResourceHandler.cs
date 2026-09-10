@@ -3,19 +3,19 @@ using ReeLib;
 
 namespace ContentPatcher;
 
-[ResourcePatcher("array-file", nameof(Deserialize))]
-public class ArrayFileResourceHandler : ResourceHandler
+[ResourcePatcher("array-file")]
+public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
 {
     private string? classname;
     private RszFieldAccessorBase<IList<object>> arrayAccessor = null!;
 
     public override EntityFieldValueHandler CreateValueHandler(EntityField field) => Config.SubIDGenerator == null ? new ObjectField() : new ObjectArray();
 
-    public static ArrayFileResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
+    public static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
     {
         return new ArrayFileResourceHandler() {
             Config = resource,
-            Files = [data.SingleFile],
+            Files = data.TargetFiles.ToList(),
             classname = data.Classname,
             arrayAccessor = data.GetDirectFieldAccessor<IList<object>>(static f => f.array && f.type == RszFieldType.Object),
         };
@@ -62,48 +62,59 @@ public class ArrayFileResourceHandler : ResourceHandler
 
         var idGenerator = Config.IDGeneratorRequired;
         var subIdGenerator = Config.SubIDGenerator;
-        foreach (var item in items.OfType<RszInstance>()) {
-            var id = idGenerator.GetID(item);
+        foreach (var item in items) {
+            var id = idGenerator.GetID(item.instance);
             if (subIdGenerator != null) {
-                if (dict.TryGetValue(id, out var list) && list is RSZObjectListResource objlist) {
-                    objlist.Instances.Add(item);
-                } else {
-                    dict[id] = new RSZObjectListResource(item, Files[0]);
+                if (!dict.TryGetValue(id, out var list) || list is not RSZObjectListResource objlist) {
+                    dict[id] = objlist = new RSZObjectListResource(Config.Type, item.file);
                 }
+                objlist.Instances.Add(item.instance);
             } else {
-                dict[id] = new RSZObjectResource(item, Files[0]);
+                dict[id] = new RSZObjectResource(item.instance, item.file);
             }
         }
     }
 
     public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
     {
-        var items = GetObjectList(workspace, true);
-        if (items.Count == 0) return;
-        // the current expected behavior is that we read _all_ the resources in ReadResources, meaning we can just clear and re-add everything here
-
         var dict = new Dictionary<long, RszInstance>();
+        var outFiles = new Dictionary<string, IList<object>>();
         if (Config.SubIDGenerator != null) {
-            items.Clear();
             foreach (var (id, resource) in resources) {
                 var list = (RSZObjectListResource)resource;
+                if (!outFiles.TryGetValue(list.FileResourcePath, out var outList)) {
+                    var userfile = workspace.ResourceManager.ReadFileResource<UserFile>(list.FileResourcePath, true);
+                    outFiles[list.FileResourcePath] = outList = arrayAccessor.Get(userfile.Instance!);
+                    outList.Clear();
+                }
+
                 foreach (var item in list.Instances) {
-                    items.Add(item);
+                    outList.Add(item);
                 }
             }
         } else {
-            items.Clear();
             foreach (var (_, item) in resources) {
-                items.Add(((RSZObjectResource)item).Instance);
+                var citem = (RSZObjectResource)item;
+                if (!outFiles.TryGetValue(citem.FileResourcePath, out var outList)) {
+                    var userfile = workspace.ResourceManager.ReadFileResource<UserFile>(citem.FileResourcePath, true);
+                    outFiles[citem.FileResourcePath] = outList = arrayAccessor.Get(userfile.Instance!);
+                    outList.Clear();
+                }
+
+                outList.Add(citem.Instance);
             }
         }
     }
 
-    private IList<object> GetObjectList(ContentWorkspace workspace, bool modify)
+    private IList<(RszInstance instance, string file)> GetObjectList(ContentWorkspace workspace, bool modify)
     {
-        UserFile userfile = workspace.ResourceManager.ReadFileResource<UserFile>(Files[0], modify);
-        var instance = userfile.Instance!;
-        var items = arrayAccessor.Get(instance);
-        return items;
+        List<(RszInstance, string)> list = new();
+        foreach (var filepath in Files) {
+            var userfile = workspace.ResourceManager.ReadFileResource<UserFile>(filepath, modify);
+            var instance = userfile.Instance!;
+            var items = arrayAccessor.Get(instance);
+            list.AddRange((items.Cast<RszInstance>().Select(ii => (ii, filepath))));
+        }
+        return list;
     }
 }

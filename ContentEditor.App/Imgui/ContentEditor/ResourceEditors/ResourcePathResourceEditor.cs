@@ -1,5 +1,3 @@
-// ResourcePathResource
-
 using ContentEditor;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.Core;
@@ -24,7 +22,7 @@ public class ResourcePathResourceEditor : IObjectUIHandler
             if (workspace == null) return;
 
             var config = workspace.ResourceManager.GetResourceConfig(context.EntityParams.ResourceType);
-            if (config?.Patcher is ResourceProxyPrefabHandler ppp) {
+            if (config?.Resource is ResourceProxyPrefabHandler ppp) {
                 context.AddChild("Resource Path", res, new ResourcePathPicker(workspace, ppp.ResourceType), c => c!.ResourcePath, (c, v) => c.ResourcePath = v ?? "");
                 if (res.CatalogEntry?.Fields.Length > 2) {
                     var cc = context.AddChild("Catalog Data", res, getter: (r) => r!.CatalogEntry);

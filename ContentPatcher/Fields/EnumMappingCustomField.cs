@@ -66,7 +66,7 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
 
     private EnumMappingResource DetermineEnumResource(ContentWorkspace workspace, ResourceEntity entity)
     {
-        var enumdesc = workspace.Env.TypeCache.GetEnumDescriptor(Field.Resource.RszClassRequired.name, RszFieldType.U32);
+        var enumdesc = workspace.Env.TypeCache.GetEnumDescriptor(Field.Config.RszClassRequired.name, RszFieldType.U32);
         var value = Convert.ChangeType(idGetter.Get(entity), enumdesc.BackingType);
         if (value == null) {
             Logger.Error($"Failed to determine enum value for entity {entity}");
@@ -88,11 +88,11 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
     {
         var label = newLabelFormat.GetString(entity);
         var value = MurMur3HashUtils.GetHash(label);
-        if (Field.Resource.RszClass != null) {
-            var enumdesc = workspace.Env.TypeCache.GetEnumDescriptor(Field.Resource.RszClass.name, RszFieldType.U32);
+        if (Field.Config.RszClass != null) {
+            var enumdesc = workspace.Env.TypeCache.GetEnumDescriptor(Field.Config.RszClass.name, RszFieldType.U32);
             enumdesc.AddValue(value, label);
             if (workspace.CurrentBundle != null) {
-                var entries = workspace.CurrentBundle.AddEnumData(Field.Resource.RszClass.name);
+                var entries = workspace.CurrentBundle.AddEnumData(Field.Config.RszClass.name);
                 entries[label] = enumdesc.GetValue(label);
             }
         }
@@ -128,12 +128,12 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
     }
 }
 
-[ResourcePatcher("enum_mapping", nameof(Deserialize))]
-public class EnumMapResourceHandler : ResourceHandler
+[ResourcePatcher("enum_mapping")]
+public class EnumMapResourceHandler : ResourceHandler, IResourceHandlerStatic
 {
     public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new EnumMappingCustomField();
 
-    public static EnumMapResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
+    public static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
     {
         return new EnumMapResourceHandler() { Config = resource };
     }

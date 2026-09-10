@@ -14,9 +14,9 @@ public class EntityHandler : IObjectUIHandler
             EditorWindow.CurrentWindow?.CopyToClipboard(instance.Id.ToString(), "ID copied!");
         }
 
-        int i = 0;
-        foreach (var child in context.children) {
-            ImGui.PushID(i++);
+        for (int i = 0; i < context.children.Count; i++) {
+            var child = context.children[i];
+            ImGui.PushID(i);
             child.ShowUI();
             ImGui.PopID();
         }

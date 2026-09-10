@@ -43,6 +43,9 @@ public class ItemIconResource : IContentResource
     }
 }
 
+[ResourcePatcher("DD2_ItemIcon")]
+public class DD2IconResourceHandler : NoopResourceHandler<ItemIconField> { }
+
 [ResourceField("DD2_ItemIcon", null, "dd2")]
 public class ItemIconField : EntityFieldValueHandler<ItemIconResource>
 {

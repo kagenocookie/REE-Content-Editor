@@ -5,8 +5,8 @@ using ReeLib.Common;
 
 namespace ContentPatcher;
 
-[ResourcePatcher("multi-array", nameof(Deserialize))]
-public class MultiFileArrayResourceHandler : ResourceHandler
+[ResourcePatcher("multi-array")]
+public class MultiFileArrayResourceHandler : ResourceHandler, IResourceHandlerStatic
 {
     private string path = "";
     private bool nonUniqueIds = false;
@@ -22,7 +22,7 @@ public class MultiFileArrayResourceHandler : ResourceHandler
 
     public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new ObjectArray();
 
-    public static MultiFileArrayResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
+    public static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
     {
         return new MultiFileArrayResourceHandler() {
             Config = resource,

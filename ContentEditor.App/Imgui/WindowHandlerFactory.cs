@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using System.Numerics;
 using System.Reflection;
+using ContentEditor.App.DD2;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.ImguiHandling.Chain;
@@ -817,22 +818,114 @@ public static class WindowHandlerFactory
     }
     #endregion
 
-    public static UIContext CreateResourceEntityHandler(UIContext context)
+    public static UIContext CreateEntityHandler(UIContext context)
     {
         var entity = context.Get<ResourceEntity>();
-        context.uiHandler = new ContentEditorEntityImguiHandler();
+        context.uiHandler = new EntityHandler();
         foreach (var field in entity.Config.DisplayFieldsOrder) {
             if (field.Condition?.IsEnabled(entity) == false) {
                 continue;
             }
 
             var handler = GetCustomFieldImguiHandler(field);
+            var child = context.AddChild(field.label, entity, getter: (ctx) => ((ResourceEntity)ctx.target!).Get(field.name), setter: (ctx, val) => ((ResourceEntity)ctx.target!).Set(field.name, val as IContentResource));
             if (handler != null) {
-                var child = context.AddChild(field.label, entity, getter: (ctx) => ((ResourceEntity)ctx.target!).Get(field.name), setter: (ctx, val) => ((ResourceEntity)ctx.target!).Set(field.name, val as IContentResource));
                 child.uiHandler = handler;
+            } else {
+                SetupEntityResourceContent(child, field);
             }
         }
         return context;
+    }
+
+    public static void SetupResourceContent(UIContext context)
+    {
+        var resource = context.Get<IContentResource>();
+        if (resource == null) {
+            return;
+        }
+
+        long resourceId;
+        if (resource is IAddressableContentResource addrResource && addrResource.ID != -1) {
+            resourceId = addrResource.ID;
+        } else {
+            resourceId = context.FindHandlerInParents<ResourceEditor>()?.SelectedResourceId ?? -1;
+        }
+        context.EntityParams = new EntityParams() {
+            ResourceType = resource.ResourceTypeID,
+            ResourceId = resourceId,
+        };
+
+        var workspace = context.GetWorkspace();
+        if (workspace == null || string.IsNullOrEmpty(resource.ResourceTypeID)) {
+            context.AddChild(resource.Label, resource, setter: (c, v) => c.target = v).AddDefaultHandler();
+            context.children[^1].EntityParams = context.EntityParams;
+            return;
+        }
+
+        var config = workspace.ResourceManager.GetResourceConfig(resource.ResourceTypeID);
+        var displayName = config?.DisplayName ?? workspace.Config.ResourceHierarchy.GetFriendlyName(resource.ResourceTypeID);
+        context.AddChild(displayName, resource, setter: (c, v) => c.target = v).AddDefaultHandler();
+        context.children[^1].EntityParams = context.EntityParams;
+
+        if (resourceId == -1) return;
+
+        AddSubResourceUI(context, workspace, resourceId);
+    }
+
+    public static void SetupEntityResourceContent(UIContext context, EntityField entityField)
+    {
+        var resource = context.Get<IContentResource>();
+        var entity = context.GetOwnerEntity();
+        var resourceId = entity?.GetFieldId(entityField.name) ?? -1;
+        if (resourceId == -1) {
+            resourceId = (resource as IAddressableContentResource)?.ID ?? -1;
+        }
+
+        context.EntityParams = new EntityParams() {
+            EntityField = entityField.name,
+            ResourceType = resource.ResourceTypeID,
+            ResourceId = resourceId,
+            Entity = entity
+        };
+
+        if (resource == null) {
+            context.uiHandler = new NullResourceHandler();
+            return;
+        }
+
+        var workspace = context.GetWorkspace();
+        if (workspace == null || string.IsNullOrEmpty(resource.ResourceTypeID)) {
+            context.AddChildContextSetter<IContentResource, IContentResource>(resource.Label, resource, setter: (c, s, v) => c.GetOwnerEntity()?.Set(entityField.name, v)).AddDefaultHandler();
+            context.children[^1].EntityParams = context.EntityParams;
+            return;
+        }
+
+        var config = workspace.ResourceManager.GetResourceConfig(resource.ResourceTypeID);
+        var displayName = config?.DisplayName ?? workspace.Config.ResourceHierarchy.GetFriendlyName(resource.ResourceTypeID);
+        context.AddChildContextSetter<IContentResource, IContentResource>(displayName, resource, setter: (c, s, v) => c.GetOwnerEntity()?.Set(entityField.name, v));
+        context.uiHandler = CreateUIHandler(resource, resource.GetType());
+        context.children[^1].EntityParams = context.EntityParams;
+
+        if (resourceId == -1) return;
+
+        AddSubResourceUI(context, workspace, resourceId);
+    }
+
+    private static void AddSubResourceUI(UIContext context, ContentWorkspace workspace, long resourceId)
+    {
+        var resource = context.Get<IContentResource>();
+        foreach (var (sub, subType) in workspace.ResourceManager.GetSubResources(resource, resourceId)) {
+            UIContext child;
+            if (sub != null) {
+                child = context.AddChild(subType.DisplayName, sub, setter: (c, v) => c.target = v);
+                child.AddDefaultHandler();
+            } else {
+                child = context.AddChild(subType.DisplayName, null, new NullResourceHandler(), setter: (c, v) => c.target = v);
+            }
+            child.EntityParams = context.EntityParams!.Clone();
+            child.EntityParams.ResourceType = subType.Type;
+        }
     }
 
     private static IObjectUIHandler? GetCustomFieldImguiHandler(EntityField field)

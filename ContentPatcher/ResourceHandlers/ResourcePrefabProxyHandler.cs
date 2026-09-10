@@ -41,8 +41,8 @@ public class ResourcePathResourceValueHandler : EntityFieldValueHandler
     }
 }
 
-[ResourcePatcher("resource_proxy_pfb", nameof(Deserialize))]
-public class ResourceProxyPrefabHandler : ResourceHandler
+[ResourcePatcher("resource_proxy_pfb")]
+public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStatic
 {
     private RszFieldAccessorBase<List<object>> arrayAccessor = null!;
     public KnownFileFormats ResourceType { get; set; }
@@ -59,7 +59,7 @@ public class ResourceProxyPrefabHandler : ResourceHandler
     private static readonly RszFieldAccessorFirst<uint> CatalogIdField = new RszFieldAccessorFirst<uint>(f => f.type == RszFieldType.U32);
     private NestableFieldAccessor? PrefabToResourceField { get; set; }
 
-    public static ResourceProxyPrefabHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
+    public static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
     {
         return new ResourceProxyPrefabHandler() {
             Config = resource,

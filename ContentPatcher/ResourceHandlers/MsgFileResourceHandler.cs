@@ -5,14 +5,14 @@ using ReeLib.Msg;
 
 namespace ContentPatcher;
 
-[ResourcePatcher("keyed_message", nameof(Deserialize))]
-public class MsgFileResourceHandler : ResourceHandler
+[ResourcePatcher("keyed_message")]
+public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
 {
     private Regex? keyFormat;
 
     public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new ObjectArray();
 
-    public static MsgFileResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
+    public static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
     {
         var files = data.TargetFiles.ToList();
         var keyFormat = data.Key;

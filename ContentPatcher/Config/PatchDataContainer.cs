@@ -221,14 +221,16 @@ public class PatchDataContainer(string filepath)
         if (resCfg.Subclasses?.Count > 0) {
             cfg.Subtypes ??= new ();
             foreach (var (subType, subConfig) in resCfg.Subclasses) {
-                var sub = new ResourceConfig(resType) { CustomIDRange = resCfg.CustomIDRange };
-                // all subtypes must inherit id range from base resource type
                 if (subConfig.CustomIDRange != null) {
                     Logger.Warn($"Resource subtype {resType}->{subType} has a custom ID range defined. ID ranges are only allowed on root resources. Will be ignored.");
                 }
+                // all subtypes must inherit id range from base resource type
                 subConfig.CustomIDRange = resCfg.CustomIDRange;
+                // inherit ID settings only if there are no more specific ones
+                subConfig.ID ??= resCfg.ID;
+                subConfig.SubID ??= resCfg.SubID;
 
-                SetupResourceConfig(workspace, subType, subConfig);
+                var sub = SetupResourceConfig(workspace, subType, subConfig);
                 cfg.Subtypes[subType] = sub;
             }
         }
@@ -253,7 +255,7 @@ public class PatchDataContainer(string filepath)
                 }
             }
         }
-        cfg.Patcher = ResourceHandler.CreateInstance(cfg, resCfg, workspace);
+        cfg.Resource = ResourceHandler.CreateInstance(cfg, resCfg, workspace);
         return cfg;
     }
 
@@ -336,22 +338,25 @@ public class PatchDataContainer(string filepath)
     {
         var data = field.config;
         if (data.resource != null) {
-            field.Resource = SetupResourceConfig(workspace, entity.Name + "__" + field.name, data.resource);
-            resources.TryAdd(field.Resource.Patcher.Config.Type, field.Resource);
+            field.Config = SetupResourceConfig(workspace, entity.Name + "__" + field.name, data.resource);
+            resources.TryAdd(field.Config.Resource.Config.Type, field.Config);
         } else if (!string.IsNullOrEmpty(data.type) && resources.TryGetValue(data.type, out var globalResource)) {
-            field.Resource = globalResource;
+            field.Config = globalResource;
+        } else if (!string.IsNullOrEmpty(data.fieldType)) {
+            var resCfg = new EntityResourceConfigSerialized() { Type = data.fieldType };
+            field.Config = SetupResourceConfig(workspace, entity.Name + "__" + field.name, resCfg);
         } else {
             throw new Exception($"Missing resource or type for field {field.name} of {entity}");
         }
-        if (field.Resource.Patcher == null) {
-            throw new Exception($"Missing patcher for resource {field.Resource}");
+        if (field.Config.Resource == null) {
+            throw new Exception($"Missing patcher for resource {field.Config}");
         }
 
         // TODO allow custom field override
         if (!string.IsNullOrEmpty(field.config.fieldType)) {
-            field.ValueHandler = field.Resource.Patcher.CreateValueHandler(field);
+            field.ValueHandler = field.Config.Resource.CreateValueHandler(field);
         }
-        field.ValueHandler ??= field.Resource.Patcher.CreateValueHandler(field);
+        field.ValueHandler ??= field.Config.Resource.CreateValueHandler(field);
         field.ValueHandler.Field = field;
         field.ValueHandler.LoadParams(data);
         if (data.condition != null) {
