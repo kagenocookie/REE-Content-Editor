@@ -399,7 +399,7 @@ public partial class CommonMeshResource : IResourceFile
                             UpdateDeformBone(boneIdx, buffer, vertOffset + vert);
                         }
 
-                        if (mw.Count >= indexCount) {
+                        if (mw.Count > indexCount) {
                             var indexLimit = indexCount;
                             if (allowExtraWeights && !isShapekey) {
                                 outWeight = buffer.ExtraWeights![vertOffset + vert];
