@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Assimp;
 using ContentEditor.App.Graphics;

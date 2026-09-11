@@ -39,7 +39,7 @@ public class KeyedMessage : EntityFieldValueHandler<MessageData>, IDiffableField
         if (currentResource == null) {
             string entityKey = keyFormat.GetString(entity);
             var messageId = MurMur3HashUtils.GetHash(entityKey);
-            var inst = workspace.ResourceManager.CreateEntityResource<MessageData>(entity, Field, state, Field.Config.Type);
+            var inst = workspace.ResourceManager.CreateEntityResource<MessageData>(entity, Field, state);
             workspace.Diff.ApplyDiff(inst, data);
             return inst;
         }

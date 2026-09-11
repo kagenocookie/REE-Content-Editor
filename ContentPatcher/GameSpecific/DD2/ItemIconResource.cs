@@ -46,7 +46,7 @@ public class ItemIconResource : IContentResource
 [ResourceField("DD2_ItemIcon", null, "dd2")]
 public class ItemIconField : CustomEntityFieldHandler<ItemIconResource>
 {
-    public override string? ResourceTypeId => null;
+    public override string? ResourceType => null;
 
     public override void LoadParams(EntityFieldConfig param)
     {

@@ -28,7 +28,7 @@ public class ResourcePathResource(string type, string path) : IAddressableConten
 
 public class ResourcePathResourceValueHandler : EntityFieldValueHandler
 {
-    public override string? ResourceTypeId => throw new NotImplementedException();
+    public override string? ResourceType => throw new NotImplementedException();
 
     public override IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
     {

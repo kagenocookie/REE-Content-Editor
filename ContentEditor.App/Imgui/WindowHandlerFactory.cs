@@ -876,7 +876,7 @@ public static class WindowHandlerFactory
 
         context.EntityParams = new EntityParams() {
             EntityField = entityField.name,
-            ResourceType = entityField.ResourceTypeId,
+            ResourceType = entityField.ResourceType,
             ResourceId = resourceId,
             Entity = entity
         };

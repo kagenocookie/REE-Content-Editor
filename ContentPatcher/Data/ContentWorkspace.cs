@@ -14,7 +14,7 @@ public sealed class ContentWorkspace : IDisposable
     public Workspace Env { get; }
     public ResourceManager ResourceManager { get; }
     public ContentWorkspaceData Data { get; set; } = new();
-    public PatchDataContainer Config { get; }
+    public PatchConfigContainer Config { get; }
     public BundleManager BundleManager { get; set; }
     public BundleManager? EditedBundleManager { get; private set; }
     public Bundle? CurrentBundle { get; private set; }
@@ -25,7 +25,7 @@ public sealed class ContentWorkspace : IDisposable
     public UIService UI { get; set; } = new UIServiceStub();
     public string VersionHash { get; private set; }
 
-    public ContentWorkspace(Workspace env, PatchDataContainer patchConfig, BundleManager? rootBundleManager = null)
+    public ContentWorkspace(Workspace env, PatchConfigContainer patchConfig, BundleManager? rootBundleManager = null)
     {
         Env = env;
         Config = patchConfig;

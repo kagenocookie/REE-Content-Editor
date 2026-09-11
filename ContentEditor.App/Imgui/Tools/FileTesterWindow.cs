@@ -442,7 +442,7 @@ public partial class FileTesterWindow : IWindowHandler
         }
         ContentWorkspace? cw = null;
         try {
-            cw = new ContentWorkspace(env, new PatchDataContainer("!"));
+            cw = new ContentWorkspace(env, new PatchConfigContainer("!"));
             cw.ResourceManager.SetupFileLoaders(typeof(MeshLoader).Assembly);
             try {
                 cw.Env.PakReader.EnableConsoleLogging = false;
@@ -534,7 +534,7 @@ public partial class FileTesterWindow : IWindowHandler
             var env = WorkspaceManager.Instance.GetWorkspace(other);
             ContentWorkspace? cw = null;
             try {
-                cw = new ContentWorkspace(env, new PatchDataContainer("!"));
+                cw = new ContentWorkspace(env, new PatchConfigContainer("!"));
                 cw.ResourceManager.SetupFileLoaders(typeof(MeshLoader).Assembly);
                 Logger.Info("Starting search for game " + env.Config.Game);
                 cw.Env.PakReader.EnableConsoleLogging = false;

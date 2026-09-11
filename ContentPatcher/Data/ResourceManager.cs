@@ -10,7 +10,7 @@ using ReeLib.Common;
 
 namespace ContentPatcher;
 
-public sealed class ResourceManager(PatchDataContainer config) : IDisposable
+public sealed class ResourceManager(PatchConfigContainer config) : IDisposable
 {
     private readonly Dictionary<string, ResourceData> resources = new();
     private readonly Dictionary<string, EntityData> entities = new();
@@ -393,12 +393,12 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         return fieldResource;
     }
 
-    public T CreateEntityResource<T>(ResourceEntity entity, EntityField field, ResourceState state, string? resourceTypeOverride = null) where T : IContentResource
-        => (T)CreateEntityResource(entity, field, state, resourceTypeOverride);
+    public T CreateEntityResource<T>(ResourceEntity entity, EntityField field, ResourceState state) where T : IContentResource
+        => (T)CreateEntityResource(entity, field, state);
 
-    public IContentResource CreateEntityResource(ResourceEntity entity, EntityField field, ResourceState state, string? resourceTypeOverride = null)
+    public IContentResource CreateEntityResource(ResourceEntity entity, EntityField field, ResourceState state)
     {
-        var key = resourceTypeOverride ?? field.ResourceTypeId;
+        var key = field.ResourceType;
         if (key == null) {
             throw new Exception("Can't create unknown resource type");
         }
@@ -730,7 +730,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
             throw new Exception($"Entity type {type} does not have a primary field");
         }
 
-        var resourceKey = data.config.PrimaryField.ResourceTypeId;
+        var resourceKey = data.config.PrimaryField.ResourceType;
         if (resourceKey == null) {
             throw new Exception($"Entity type {type} primary field {data.config.PrimaryField} is not instantiable");
         }
@@ -740,7 +740,7 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         ResourceEntity entity;
         long id;
         if (data.config.IDField != null && data.config.IDField != data.config.PrimaryField) {
-            if (data.config.IDField.ResourceTypeId == null) throw new Exception($"ID field must have a resource type ID {data.config.IDField}");
+            if (data.config.IDField.ResourceType == null) throw new Exception($"ID field must have a resource type ID {data.config.IDField}");
             var idField = data.config.GetField(data.config.IDField.name)!;
 
             IContentResource idResource;
@@ -761,11 +761,11 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
                 // we already instantiated this one, skip it
                 continue;
             }
-            if (field.ResourceTypeId == null || field.Condition?.IsEnabled(entity) == false) {
+            if (field.ResourceType == null || field.Condition?.IsEnabled(entity) == false) {
                 continue;
             }
 
-            var resourceData = resources[field.ResourceTypeId];
+            var resourceData = resources[field.ResourceType];
             IContentResource? fieldResource = null;
             if (sourceEntity != null && sourceEntity.Get(field.name) is IContentResource src) {
                 resourceData = resources[src.ResourceTypeID];

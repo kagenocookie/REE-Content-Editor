@@ -26,7 +26,7 @@ public class ObjectField : EntityFieldValueHandler, IMainField, IDiffableField, 
         }
         if (currentResource == null) {
             var resourceKey = data["$type"]?.GetValue<string>() ?? Field.Config.RszClassRequired.name;
-            var inst = workspace.ResourceManager.CreateEntityResource<RSZObjectResource>(entity, Field, state, resourceKey);
+            var inst = workspace.ResourceManager.CreateEntityResource<RSZObjectResource>(entity, Field, state);
             workspace.Diff.ApplyDiff(inst.Instance, data);
             return inst;
         }

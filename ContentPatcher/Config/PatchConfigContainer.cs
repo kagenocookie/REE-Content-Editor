@@ -9,9 +9,9 @@ using ReeLib;
 using VYaml.Annotations;
 using VYaml.Serialization;
 
-public class PatchDataContainer(string filepath)
+public class PatchConfigContainer(string filepath)
 {
-    private readonly Dictionary<string, ClassConfig> configs = new();
+    private readonly Dictionary<string, ClassConfig> classes = new();
     private readonly Dictionary<string, ResourceConfig> resources = new();
     private readonly Dictionary<string, EntityConfig> entities = new();
     private readonly Dictionary<string, CustomTypeConfig> customTypes = new();
@@ -20,7 +20,7 @@ public class PatchDataContainer(string filepath)
     private string DefinitionFilepath { get; } = Path.Combine(filepath, "definitions");
     private string EnumFilepath { get; } = Path.Combine(filepath, "enums");
 
-    public IReadOnlyDictionary<string, ClassConfig> Classes => configs;
+    public IReadOnlyDictionary<string, ClassConfig> Classes => classes;
     public IReadOnlyDictionary<string, EntityConfig> Entities => entities;
     public IReadOnlyDictionary<string, ResourceConfig> Resources => resources;
     public IReadOnlyDictionary<string, CustomTypeConfig> CustomTypes => customTypes;
@@ -30,8 +30,8 @@ public class PatchDataContainer(string filepath)
     public HierarchyTypeList<EntityConfig> EntityHierarchy { get; } = new("");
     public HierarchyTypeList<ResourceConfig> ResourceHierarchy { get; } = new("");
 
-    public ClassConfig? GetClassConfig(string classname) => configs.GetValueOrDefault(classname);
-    public FieldConfig? GetClassFieldConfig(string classname, string fieldName) => configs.GetValueOrDefault(classname)?.Fields?.GetValueOrDefault(fieldName);
+    public ClassConfig? GetClassConfig(string classname) => classes.GetValueOrDefault(classname);
+    public FieldConfig? GetClassFieldConfig(string classname, string fieldName) => classes.GetValueOrDefault(classname)?.Fields?.GetValueOrDefault(fieldName);
     public EntityConfig? GetEntityConfig(string entityType) => entities.GetValueOrDefault(entityType);
 
     public void Load(ContentWorkspace workspace)
@@ -42,7 +42,7 @@ public class PatchDataContainer(string filepath)
             entitySetups.AddRange(setupTypes.Select(t => (IEntitySetup)Activator.CreateInstance(t)!)!);
         }
         IsLoaded = true;
-        configs.Clear();
+        classes.Clear();
         foreach (var setup in entitySetups) {
             if (setup.SupportedGames?.Length > 0 && !setup.SupportedGames.Contains(workspace.Game.name)) {
                 continue;
@@ -61,7 +61,7 @@ public class PatchDataContainer(string filepath)
 
     private void AddDefaultConfigs()
     {
-        configs["via.GameObject"] = new ClassConfig() {
+        classes["via.GameObject"] = new ClassConfig() {
             StringFormatter = new StringFormatter("{Name}", FormatterSettings.DefaultFormatter)
         };
     }
@@ -179,8 +179,8 @@ public class PatchDataContainer(string filepath)
                 continue;
             }
 
-            if (!configs.TryGetValue(cls, out var runtimeConfig)) {
-                configs[cls] = runtimeConfig = new();
+            if (!classes.TryGetValue(cls, out var runtimeConfig)) {
+                classes[cls] = runtimeConfig = new();
             }
 
             // config.MergeIntoRuntimeConfig(workspace.Env, rszClass, runtimeConfig);

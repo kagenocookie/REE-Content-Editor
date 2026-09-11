@@ -366,8 +366,8 @@ public class FileConverter : BaseWindowHandler
         originalEnv.Config.PakFiles = workspace.Env.PakReader.PakFilePriority.Where(sourcePaks.Contains).ToArray();
         updatedEnv.Config.PakFiles = workspace.Env.PakReader.PakFilePriority.Where(targetPaks.Contains).ToArray();
 
-        var originalWs = new ContentWorkspace(originalEnv, new PatchDataContainer("!"), null);
-        var updatedWs = new ContentWorkspace(updatedEnv, new PatchDataContainer("!"), null);
+        var originalWs = new ContentWorkspace(originalEnv, new PatchConfigContainer("!"), null);
+        var updatedWs = new ContentWorkspace(updatedEnv, new PatchConfigContainer("!"), null);
         originalWs.ResourceManager.SetupFileLoaders(typeof(MeshLoader).Assembly);
         updatedWs.ResourceManager.SetupFileLoaders(typeof(MeshLoader).Assembly);
 

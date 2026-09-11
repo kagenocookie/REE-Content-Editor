@@ -15,7 +15,7 @@ public class ResourceLinkCustomField : EntityFieldValueHandler
     public string resourceType = null!;
     public StringFormatter pathFormat = null!;
     public bool? ForcePreload;
-    public override string? ResourceTypeId => null;
+    public override string? ResourceType => null;
     private string pathFormatString = string.Empty;
 
     public string GetPath(ResourceEntity entity) => pathFormat.GetString(entity);

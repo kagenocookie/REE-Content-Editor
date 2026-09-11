@@ -7,7 +7,7 @@ namespace ContentPatcher;
 public class ObjectArray : EntityFieldValueHandler, IMainField, IDiffableField, IResourceValueContainer
 {
     private string? elementClassname;
-    public override string ResourceTypeId => Field.Config.Type;
+    public override string ResourceType => Field.Config.Type;
     bool IDiffableField.EnableDiff => true;
 
     public override void LoadParams(EntityFieldConfig param)
@@ -30,7 +30,7 @@ public class ObjectArray : EntityFieldValueHandler, IMainField, IDiffableField, 
         }
         if (currentResource == null) {
             var resourceKey = (data as JsonArray)?.Count > 0 ? data[0]?["$type"]?.GetValue<string>() ?? elementClassname : elementClassname;
-            var inst = workspace.ResourceManager.CreateEntityResource<RSZObjectListResource>(entity, Field, state, resourceKey);
+            var inst = workspace.ResourceManager.CreateEntityResource<RSZObjectListResource>(entity, Field, state);
             workspace.Diff.ApplyDiff(inst.Instances, data, resourceKey);
             return inst;
         }

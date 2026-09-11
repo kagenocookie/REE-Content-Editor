@@ -15,7 +15,7 @@ public class StringCustomField : CustomEntityFieldHandler<StringResource>, IDiff
     private string? initialFormatString;
     private StringFormatter? initialFormat;
     private bool allowDiff;
-    public override string? ResourceTypeId => null;
+    public override string? ResourceType => null;
 
     bool IDiffableField.EnableDiff => allowDiff;
 

@@ -5,7 +5,7 @@ using ReeLib;
 namespace ContentEditor.App;
 
 [ObjectImguiHandler(typeof(RSZObjectListResource))]
-public sealed class ContentEditorRszInstanceListHandler : IObjectUIHandler
+public sealed class ObjectListResourceHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -13,7 +13,7 @@ public sealed class ContentEditorRszInstanceListHandler : IObjectUIHandler
         var field = context.GetEntityField<ObjectArray>()!;
         if (context.children.Count == 0) {
             var child = context.AddChild(context.label, list);
-            child.uiHandler = new ArrayRSZHandler(new RszField() { name = "", type = RszFieldType.Object, original_type = field.ResourceTypeId! });
+            child.uiHandler = new ArrayRSZHandler(new RszField() { name = "", type = RszFieldType.Object, original_type = field.ResourceType });
         }
         if (list == null) {
             ImGui.Text(context.label);

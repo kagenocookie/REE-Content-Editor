@@ -16,7 +16,7 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
     private string virtualEnumName = "";
     private StringFormatter newLabelFormat = null!;
     private NestableFieldAccessor idGetter = null!;
-    public override string? ResourceTypeId => virtualEnumName;
+    public override string? ResourceType => virtualEnumName;
     private long fallbackId;
 
     public override void LoadParams(EntityFieldConfig data)

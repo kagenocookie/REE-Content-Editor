@@ -135,7 +135,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         this.env = env;
 
         var configPath = Path.Combine(AppConfig.Instance.ConfigBasePath, env.Config.Game.name);
-        var patchConfig = this.workspace?.Config ?? new PatchDataContainer(Path.GetFullPath(configPath));
+        var patchConfig = this.workspace?.Config ?? new PatchConfigContainer(Path.GetFullPath(configPath));
 
         var workspace = new ContentWorkspace(env, patchConfig, this.workspace?.BundleManager);
         ChangeWorkspace(workspace, bundle);

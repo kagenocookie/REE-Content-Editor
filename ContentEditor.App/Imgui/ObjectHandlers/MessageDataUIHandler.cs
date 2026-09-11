@@ -23,7 +23,7 @@ public class MessageDataUIHandler : IObjectUIHandler
             ImGui.SameLine();
             if (ImGui.Button("Create message")) {
                 var entity = context.GetOwnerEntity()!;
-                var newData = context.GetWorkspace()!.ResourceManager.CreateEntityResource(entity, field, ResourceState.Active, null);
+                var newData = context.GetWorkspace()!.ResourceManager.CreateEntityResource(entity, field, ResourceState.Active);
                 UndoRedo.RecordSet(context, newData);
             }
         } else {

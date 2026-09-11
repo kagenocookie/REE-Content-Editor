@@ -18,7 +18,7 @@ public sealed class EntityField
     /// <summary>
     /// An identifier of the resource type for grouping the resources. Can be null in case the field does not have any actual instance data (only serves as a reference to a file or custom UI display). If null, object will not be diffable.
     /// </summary>
-    public string? ResourceTypeId => ValueHandler.ResourceTypeId;
+    public string? ResourceType => ValueHandler.ResourceType;
 
     /// <summary>
     /// Condition for when the field is valid and displayed.
@@ -38,7 +38,7 @@ public sealed class EntityField
 
     public NestableFieldAccessor? IdField { get; set; }
 
-    public override string ToString() => $"{name} [{ResourceTypeId}]";
+    public override string ToString() => $"{name} [{ResourceType}]";
 }
 
 public abstract class EntityFieldValueHandler
@@ -48,7 +48,7 @@ public abstract class EntityFieldValueHandler
     /// <summary>
     /// An identifier of the resource type for grouping the resources. Can be null in case the field does not have any actual instance data (only serves as a reference to a file or custom UI display). If null, object will not be diffable.
     /// </summary>
-    public virtual string? ResourceTypeId => Field.Config.Type;
+    public virtual string? ResourceType => Field.Config.Type;
 
     /// <summary>
     /// Try and fetch a resource instance for the entity's field value from the resource manager.

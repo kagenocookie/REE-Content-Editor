@@ -69,7 +69,7 @@ public class Patcher : IDisposable
         if (workspace == null) {
             var configPath = $"configs/{env.Config.Game.name}";
             // 2. load game-specific patch config / overrides
-            workspace = new ContentWorkspace(env, new PatchDataContainer(configPath));
+            workspace = new ContentWorkspace(env, new PatchConfigContainer(configPath));
         }
         runtimeEnumsPath = Path.Combine(config.GamePath, EnumsRelativePath);
         nativesPath = Path.Combine(config.GamePath, env.BasePath);
