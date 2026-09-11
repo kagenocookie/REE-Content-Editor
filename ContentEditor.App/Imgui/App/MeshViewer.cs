@@ -200,41 +200,56 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             embeddedMenuPos = ImGui.GetCursorPos();
         }
         var availableSize = ImGui.GetWindowSize() - ImGui.GetCursorPos() - ImGui.GetStyle().WindowPadding;
-        var editorPanelWidth = meshEditor.HasSidePanel ? meshEditor.GetPanelWidth(availableSize.X) : 0;
+        var editorPanelWidth = meshEditor.GetOutlinerPanelWidth(availableSize.X);
         var expectedSize = availableSize;
-        if (meshEditor.HasSidePanel) expectedSize.X -= editorPanelWidth + MeshEditor.SplitterWidth;
+        expectedSize.X -= editorPanelWidth + MeshEditor.SplitterWidth;
         expectedSize.X = Math.Max(expectedSize.X, 4);
         expectedSize.Y = Math.Max(expectedSize.Y, 4);
-        var nativeSize = data.ParentWindow.Size;
-        float meshSize = meshComponent.LocalBounds.Size.Length();
-        scene.ActiveCamera.FarPlane = meshSize + 100.0f;
+        float meshViewerSize = meshComponent.LocalBounds.Size.Length();
+        scene.ActiveCamera.FarPlane = meshViewerSize + 100.0f;
         scene.RenderContext.SetRenderToTexture(expectedSize);
 
         if (scene.RenderContext.RenderTargetTextureHandle == 0) return;
 
         var c = ImGui.GetCursorPos();
-        var editorSplitterPosition = c + new Vector2(expectedSize.X, 0);
-        var editorPanelPosition = editorSplitterPosition + new Vector2(MeshEditor.SplitterWidth, 0);
+
+        Vector2 editorPanelPosition;
+        Vector2 editorSplitterPosition;
+        Vector2 imagePosition;
+        if (meshEditor.isOutlinerOnLeft) {
+            editorPanelPosition = c;
+            editorSplitterPosition = editorPanelPosition + new Vector2(editorPanelWidth, 0);
+            imagePosition = editorSplitterPosition + new Vector2(MeshEditor.SplitterWidth, 0);
+        } else {
+            imagePosition = c;
+            editorSplitterPosition = c + new Vector2(expectedSize.X, 0);
+            editorPanelPosition = editorSplitterPosition + new Vector2(MeshEditor.SplitterWidth, 0);
+        }
+        if (embeddedMenuPos != null) embeddedMenuPos = imagePosition;
+
+        ImGui.SetCursorPos(imagePosition);
         var cc = ImGui.GetCursorScreenPos();
         scene.OwnRenderContext.ViewportOffset = cc;
         AppImguiHelpers.Image(scene.RenderContext.RenderTargetTextureHandle, expectedSize, new System.Numerics.Vector2(0, 1), new System.Numerics.Vector2(1, 0));
         if (embeddedMenuPos != null) {
             ImGui.SetCursorPos(embeddedMenuPos.Value);
-            ShowEmbeddedMenu(meshComponent);
+            ShowEmbeddedMenuForRetargetDesigner(meshComponent);
         }
         scene.RenderUI();
-        ImGui.SetCursorPos(c);
+        ImGui.SetCursorPos(imagePosition);
         ImGui.SetNextItemAllowOverlap();
-        ImGui.InvisibleButton("##image", expectedSize, ImGuiButtonFlags.MouseButtonLeft | ImGuiButtonFlags.MouseButtonRight | ImGuiButtonFlags.MouseButtonMiddle);
+        ImGui.InvisibleButton("##MasterScene", expectedSize, ImGuiButtonFlags.MouseButtonLeft | ImGuiButtonFlags.MouseButtonRight | ImGuiButtonFlags.MouseButtonMiddle);
         // need to store the click/hover events for after so we can handle clicks on the empty area below the info window same as a mesh image click event
         var meshClick = ImGui.IsItemClicked(ImGuiMouseButton.Right) || ImGui.IsItemClicked(ImGuiMouseButton.Left) || ImGui.IsItemClicked(ImGuiMouseButton.Middle);
         var hoveredMesh = ImGui.IsItemHovered();
 
+        var overlayLeftOffset = meshEditor.isOutlinerOnLeft ? editorPanelWidth + MeshEditor.SplitterWidth + 10.0f * UI.UIScale : 0.0f;
+        var overlayRightPanelWidth = !meshEditor.isOutlinerOnLeft ? meshEditor.outlinerWidth : 0.0f;
         if (meshEditor.IsEnabled) {
-            var modeControlsHovered = ShowMeshEditorModesOverlay();
+            var modeControlsHovered = ShowMeshEditorModesOverlay(overlayLeftOffset);
             var modeControlsHeight = ImGui.GetItemRectSize().Y;
 
-            ImGui.SetCursorPos(c + new Vector2(10.0f * UI.UIScale, 10.0f * UI.UIScale + modeControlsHeight + ImGui.GetStyle().ItemSpacing.Y));
+            ImGui.SetCursorPos(imagePosition + new Vector2(10.0f * UI.UIScale, 10.0f * UI.UIScale + modeControlsHeight + ImGui.GetStyle().ItemSpacing.Y));
             var viewportControlsHovered = meshEditor.ShowViewportModeControls(cc, expectedSize);
 
             if (modeControlsHovered || viewportControlsHovered) {
@@ -248,11 +263,11 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
 
         if (showAnimationsMenu) {
-            ImGui.SetCursorPos(new Vector2(20, TopMargin));
+            ImGui.SetCursorPos(new Vector2(20 + overlayLeftOffset, TopMargin));
             ImGui.PushStyleColor(ImGuiCol.ChildBg, 0);
-            ImGui.BeginChild("OverlayControlsContainer", new Vector2(500, ImGui.GetContentRegionAvail().Y - ImGui.GetStyle().WindowPadding.Y), ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AlwaysAutoResize, ImGuiWindowFlags.NoMove);
+            ImGui.BeginChild("AnimatorControlsOverlay", new Vector2(500, ImGui.GetContentRegionAvail().Y - ImGui.GetStyle().WindowPadding.Y), ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AlwaysAutoResize, ImGuiWindowFlags.NoMove);
             ImGui.PushStyleColor(ImGuiCol.ChildBg, ImguiHelpers.GetColor(ImGuiCol.WindowBg) with { W = 0.5f });
-            ImGui.BeginChild("OverlayControls", new Vector2(500, AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().Y - 80 : 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders);
+            ImGui.BeginChild("AnimatorControls", new Vector2(500, AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().Y - 80 : 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders);
 
             ImGui.SameLine();
             ShowRootAnimationList();
@@ -261,18 +276,15 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             ImGui.EndChild();
             hoveredMesh = hoveredMesh || ImGui.IsWindowHovered();
             ImGui.EndChild();
+            if (!isSynced) ShowPlaybackControls(meshComponent, overlayLeftOffset, overlayRightPanelWidth);
         }
 
         // 3D view controls
         meshClick = meshClick || ImGui.IsItemClicked(ImGuiMouseButton.Right) || ImGui.IsItemClicked(ImGuiMouseButton.Left) || ImGui.IsItemClicked(ImGuiMouseButton.Middle);
-        if (!isSynced) ShowPlaybackControls(meshComponent);
-
-        if (meshEditor.HasSidePanel) {
-            ImGui.SetCursorPos(editorSplitterPosition);
-            meshEditor.ShowSplitter(expectedSize.Y, availableSize.X);
-            ImGui.SetCursorPos(editorPanelPosition);
-            meshEditor.ShowObjectOutlinerPanel(new Vector2(editorPanelWidth, expectedSize.Y));
-        }
+        ImGui.SetCursorPos(editorSplitterPosition);
+        meshEditor.ShowSplitter(expectedSize.Y, availableSize.X);
+        ImGui.SetCursorPos(editorPanelPosition);
+        meshEditor.ShowObjectOutlinerPanel(new Vector2(editorPanelWidth, expectedSize.Y));
 
         if (meshClick) {
             if (!isDragging) {
@@ -287,7 +299,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
     }
 
-    private void ShowEmbeddedMenu(MeshComponent meshComponent)
+    private void ShowEmbeddedMenuForRetargetDesigner(MeshComponent meshComponent)
     {
         ImGui.SetCursorPos(ImGui.GetCursorPos() + new Vector2(6, 6));
         if (ImGui.Button($"{AppIcons.SI_GenericCamera}")) ImGui.OpenPopup("CameraSettings");
@@ -323,13 +335,13 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 meshEditor.ShowMeshEditorButton(mainCtx);
             }
             ImguiHelpers.VerticalSeparator();
-            if (ImGui.MenuItem($"{AppIcons.SI_GenericCamera} Controls")) ImGui.OpenPopup("CameraSettings");
+            if (ImGui.MenuItem($"{AppIcons.SI_GenericCamera} Camera")) ImGui.OpenPopup("CameraSettings");
             if (scene != null && ImGui.BeginPopup("CameraSettings")) {
                 scene.Controller.ShowCameraControls();
                 SaveCameraControlSettings();
                 ImGui.EndPopup();
             }
-            ImGui.Text($"{AppIcons.SI_FileType_SSS} Rendering: {GetDisplayModeName(meshEditor.DisplayMode)}");
+            ImGui.Text($"{AppIcons.SI_SceneRender} Rendering: {GetDisplayModeName(meshEditor.DisplayMode)}");
             ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, ImGui.GetStyle().FramePadding.Y));
             ImGui.PushItemFlag(ImGuiItemFlags.AutoClosePopups, false);
             if (ImGui.BeginMenu($"{AppIcons.SI_Small_ArrowDown}")) {
@@ -342,9 +354,9 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             ImGui.PopItemFlag();
             if (!isSynced && mainCtx.GameObject != null) {
                 ImguiHelpers.VerticalSeparator();
-                if (ImGui.MenuItem($"{AppIcons.SI_SceneGameObject4} Mesh Collection")) ImGui.OpenPopup("MeshList");
+                //if (ImGui.MenuItem($"{AppIcons.SI_SceneGameObject4} Mesh Collection")) ImGui.OpenPopup("MeshList");
                 if (ImGui.MenuItem($"{AppIcons.SI_FileType_MDF} Material")) ImGui.OpenPopup("Material");
-                if (ImGui.MenuItem($"{AppIcons.SI_GenericInfo}")) ImGui.OpenPopup("MeshInfo");
+                if (ImGui.MenuItem($"{AppIcons.SI_GenericInfo} Mesh Info")) ImGui.OpenPopup("MeshInfo");
                 ImguiHelpers.Tooltip("Mesh Info");
                 var mdfErrors = mainCtx.GetMdfErrors();
                 if (!mdfErrors.IsEmpty) {
@@ -389,10 +401,10 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                     ShowMeshInfo(mainCtx, true);
                     ImGui.EndPopup();
                 }
-                if (ImGui.BeginPopup("MeshList")) {
-                    ShowMeshCollections();
-                    ImGui.EndPopup();
-                }
+                //if (ImGui.BeginPopup("MeshList")) {
+                //    ShowMeshCollections();
+                //    ImGui.EndPopup();
+                //}
                 if (ImGui.BeginPopup("Material")) {
                     mainCtx.ShowMaterialSettings();
                     ImGui.EndPopup();
@@ -443,8 +455,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             ctx.UpdateMaterial(true);
         }
     }
-
-
     private void RemoveSubmesh(MeshViewerContext ctx)
     {
         meshEditor.InvalidateSubmeshCache(ctx);
@@ -465,10 +475,38 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
     }
 
-    private void ShowMeshCollections()
+    public void ShowMeshCollections()
     {
         int groupId = 0;
         EnsureAnimationsInit();
+        if (ImGui.Button($"{AppIcons.SI_Save}")) {
+            var collection = GetSerializedCollection();
+            var collectionsDir = Path.Combine(AppConfig.Instance.GetGameUserPath(Workspace.Game), "mesh_collections");
+            Directory.CreateDirectory(collectionsDir);
+            PlatformUtils.ShowSaveFileDialog((path) => {
+                using var fs = File.Create(path);
+                JsonSerializer.Serialize(fs, collection, JsonConfig.configJsonOptions);
+            }, Path.Combine(collectionsDir, Handle.Filename.ToString() + ".collection.json"), FileFilters.CollectionJsonFile);
+        }
+        ImguiHelpers.Tooltip("Save Collection");
+        ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_GenericImport}")) {
+            var collectionsDir = Path.Combine(AppConfig.Instance.GetGameUserPath(Workspace.Game), "mesh_collections/");
+            PlatformUtils.ShowFileDialog((files) => {
+                MainLoop.Instance.InvokeFromUIThread(() => {
+                    LoadCollection(files[0]);
+                });
+            }, collectionsDir, FileFilters.CollectionJsonFile);
+        }
+        ImguiHelpers.Tooltip("Load Collection");
+        ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_GenericClear}")) {
+            while (meshContexts.Count > 1) {
+                RemoveSubmesh(meshContexts.Last());
+            }
+        }
+        ImguiHelpers.Tooltip("Remove all additional meshes");
+        ImGui.Spacing();
         foreach (var ctxGroup in meshContexts.GroupBy(c => c.Animator?.owner)) {
             if (groupId == 1) {
                 ImGui.Separator();
@@ -512,7 +550,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             }
             if (groupId++ >= 1) ImGui.Separator();
         }
-
         ImGui.SeparatorText("Add Mesh");
         if (addCollectionCtx == null) {
             addCollectionCtx = context.AddChild<MeshViewer, string>(
@@ -548,30 +585,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                         Re-check if you have the right file path and if the mesh is actually valid.
                         """u8);
                 }
-            }
-        }
-
-        ImGui.SeparatorText("Manage Collection");
-        if (ImGui.Selectable($"{AppIcons.SI_Save} Save collection")) {
-            var collection = GetSerializedCollection();
-            var collectionsDir = Path.Combine(AppConfig.Instance.GetGameUserPath(Workspace.Game), "mesh_collections");
-            Directory.CreateDirectory(collectionsDir);
-            PlatformUtils.ShowSaveFileDialog((path) => {
-                using var fs = File.Create(path);
-                JsonSerializer.Serialize(fs, collection, JsonConfig.configJsonOptions);
-            }, Path.Combine(collectionsDir, Handle.Filename.ToString() + ".collection.json"), FileFilters.CollectionJsonFile);
-        }
-        if (ImGui.Selectable($"{AppIcons.SI_GenericImport} Load collection")) {
-            var collectionsDir = Path.Combine(AppConfig.Instance.GetGameUserPath(Workspace.Game), "mesh_collections/");
-            PlatformUtils.ShowFileDialog((files) => {
-                MainLoop.Instance.InvokeFromUIThread(() => {
-                    LoadCollection(files[0]);
-                });
-            }, collectionsDir, FileFilters.CollectionJsonFile);
-        }
-        if (ImGui.Selectable($"{AppIcons.SI_GenericClear} Remove all additional meshes")) {
-            while (meshContexts.Count > 1) {
-                RemoveSubmesh(meshContexts.Last());
             }
         }
     }
@@ -1208,10 +1221,10 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Animation File").X - ImGui.GetStyle().ScrollbarSize);
         ctx.ShowAnimSettings(meshContexts, false);
     }
-    private bool ShowMeshEditorModesOverlay()
+    private bool ShowMeshEditorModesOverlay(float leftOffset = 0)
     {
         var hovered = false;
-        ImGui.SetCursorPos(new Vector2(20, TopMargin));
+        ImGui.SetCursorPos(new Vector2(20 + leftOffset, TopMargin));
         ImGui.PushStyleColor(ImGuiCol.ChildBg, 0);
         ImGui.BeginChild("MeshEditorModesOverlay", default, ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize, ImGuiWindowFlags.NoMove);
         ImGui.PushStyleColor(ImGuiCol.ChildBg, ImguiHelpers.GetColor(ImGuiCol.WindowBg) with { W = 0.5f });
@@ -1362,7 +1375,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         return true;
     }
 
-    private void ShowPlaybackControls(MeshComponent meshComponent)
+    private void ShowPlaybackControls(MeshComponent meshComponent, float leftOffset = 0, float rightPanelWidth = 0)
     {
         var animator = PrimaryAnimator;
         if (animator?.ActiveMotion == null) return;
@@ -1372,13 +1385,16 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         var timestamp = $"{animator.CurrentTime:0.00} / {animator.TotalTime:0.00} ({animator.CurrentFrame:000} / {animator.TotalFrames:000})";
         var timestampSize = ImGui.CalcTextSize(timestamp) + new Vector2(5 * 48, 0);
         if (AppConfig.Instance.UseFullscreenAnimPlayback) {
-            ImGui.SetCursorPos(new Vector2(20, ImGui.GetWindowHeight() - ImGui.GetContentRegionAvail().Y - ImGui.GetStyle().WindowPadding.Y - 80));
+            ImGui.SetCursorPos(new Vector2(20 + leftOffset, ImGui.GetWindowHeight() - ImGui.GetContentRegionAvail().Y - ImGui.GetStyle().WindowPadding.Y - 80));
         } else {
-            ImGui.SetCursorPos(new Vector2(windowSize.X - timestampSize.X - ImGui.GetStyle().WindowPadding.X * 2 - 100, TopMargin));
+            ImGui.SetCursorPos(new Vector2(windowSize.X - (meshEditor.isOutlinerOnLeft ? rightPanelWidth :(meshEditor.isOutlinerCollapsed ? ImGui.GetFrameHeight() + ImGui.GetStyle().WindowPadding.X * 2.0f : rightPanelWidth))
+                - timestampSize.X - ImGui.GetStyle().WindowPadding.X * 2 - 100, TopMargin));
         }
 
         ImGui.PushStyleColor(ImGuiCol.ChildBg, ImguiHelpers.GetColor(ImGuiCol.WindowBg) with { W = 0.5f });
-        ImGui.BeginChild("PlaybackControls", new Vector2(AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().X - ImGui.GetStyle().WindowPadding.X : timestampSize.X + 50, 80), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
+        ImGui.BeginChild("PlaybackControls", new Vector2(AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().X -
+            (meshEditor.isOutlinerOnLeft ? rightPanelWidth : (meshEditor.isOutlinerCollapsed ? ImGui.GetFrameHeight() + ImGui.GetStyle().WindowPadding.X * 2.0f : rightPanelWidth)) - ImGui.GetStyle().FramePadding.X * 2 : timestampSize.X + 50, 80),
+            ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);// SILVER: man you know its bad when I start doing line breaks
 
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
         if (ImGui.Button((animator.IsPlaying ? AppIcons.Pause : AppIcons.Play).ToString()) || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_MeshViewer_PauseAnim.Get().IsPressed() && !ImGui.GetIO().WantCaptureKeyboard) {

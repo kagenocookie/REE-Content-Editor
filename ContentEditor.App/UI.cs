@@ -462,6 +462,10 @@ public static class AppIcons
     public static readonly char[] SIC_MeshEditorSelectionFace = { '\uee88', '\uee89', '\uee8a' };
     public static readonly char SI_MeshEditorModeObject = '\uee8b';
     public static readonly char SI_MeshEditorModeEdit = '\uee8c';
+    public static readonly char SI_SceneRender = '\uee8d';
+    public static readonly char[] SIC_MeshEditorOutlinerGroups = { '\uee8e', '\uee8f', '\uee90', '\uee91' };
+    public static readonly char[] SIC_MeshEditorOutlinerHighlight = { '\uee92', '\uee93', '\uee94', '\uee95' };
+    public static readonly char[] SIC_FolderOpenGameFile = { '\uee96', '\uee97', '\uee98', '\uee99' };
 
     public static string PrependIcon(this string text, object target)
     {

@@ -26,6 +26,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     private static readonly string[] DateFormats = ["DD/MM/YYYY [ EU ]", "MM/DD/YYYY [ US ]", "YYYY/MM/DD [ JP ]"];
     private string customGameNameInput = "", customGameFilepath = "";
     private static HashSet<string>? fullSupportedGames;
+    // SILVER: If a tool has 2 or more settings, consider creating a separate tab.
     private enum SubGroupID
     {
         Preferences_General,
@@ -33,11 +34,13 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         Preferences_Bundles,
         Display_General,
         Display_Theme,
+        Display_MeshViewer,
         Hotkeys_Global,
         Hotkeys_PakBrowser,
         Hotkeys_MeshViewer,
         Hotkeys_TextureViewer,
         Hotkeys_Scene,
+        Hotkeys_Camera,
         Hotkeys_UVSEditor,
         Games_ResidentEvil,
         Games_MonsterHunter,
@@ -66,10 +69,12 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         new SettingGroup { Name = Lang.Settings.Group_Display, SubGroups = {
                 new SettingSubGroup { Name = Lang.Settings.Group_General, ID = SubGroupID.Display_General},
                 new SettingSubGroup { Name = Lang.Settings.Group_Theme, ID = SubGroupID.Display_Theme},
+                new SettingSubGroup { Name = Lang.Settings.Group_Mesh, ID = SubGroupID.Display_MeshViewer},
             }
         },
         new SettingGroup { Name = Lang.Settings.Group_Hotkeys, SubGroups = {
                 new SettingSubGroup { Name = Lang.Settings.Group_Global, ID = SubGroupID.Hotkeys_Global},
+                new SettingSubGroup { Name = Lang.Settings.Group_Camera, ID = SubGroupID.Hotkeys_Camera},
                 new SettingSubGroup { Name = Lang.Settings.Group_Pak, ID = SubGroupID.Hotkeys_PakBrowser},
                 new SettingSubGroup { Name = Lang.Settings.Group_Scene, ID = SubGroupID.Hotkeys_Scene},
                 new SettingSubGroup { Name = Lang.Settings.Group_Mesh, ID = SubGroupID.Hotkeys_MeshViewer},
@@ -191,12 +196,14 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             case SubGroupID.Preferences_Bundles: ShowBundlesEditingTab(); break;
             case SubGroupID.Display_General: ShowDisplayGeneralTab(); break;
             case SubGroupID.Display_Theme: ShowDisplayThemeTab(); break;
+            case SubGroupID.Display_MeshViewer: ShowDisplayMeshViewerTab(); break;
             case SubGroupID.Hotkeys_Global: ShowHotkeysGlobalTab(); break;
             case SubGroupID.Hotkeys_PakBrowser: ShowHotkeysPakBrowserTab(); break;
             case SubGroupID.Hotkeys_MeshViewer: ShowHotkeysMeshViewerTab(); break;
             case SubGroupID.Hotkeys_TextureViewer: ShowHotkeysTextureViewerTab(); break;
             case SubGroupID.Hotkeys_Scene: ShowHotkeysSceneTab(); break;
             case SubGroupID.Hotkeys_UVSEditor: ShowHotkeysUVSEditorTab(); break;
+            case SubGroupID.Hotkeys_Camera: ShowHotkeysCameraTab(); break;
             case SubGroupID.Games_ResidentEvil: ShowGamesResidentEvilTab(); break;
             case SubGroupID.Games_MonsterHunter: ShowGamesMonsterHunterTab(); break;
             case SubGroupID.Games_Other: ShowGamesOtherTab(); break;
@@ -314,7 +321,6 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
                 UI.FontSizeLarge = UI.FontSize * UI.FontSizeLargeMultiplier;
             }
         }
-        ShowSetting(config.UseFullscreenAnimPlayback, Lang.Settings.UseFullscreenAnimPlayback);
         ShowSetting(config.ExpandSettings, Lang.Settings.ExpandSettings);
         ShowSetting(config.UseBookmarkWindow, Lang.Settings.BookmarksDisplayMode);
 
@@ -377,6 +383,12 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             ImGui.TextColored(Colors.Warning, Lang.Settings.Warn_Transparency);
         }
     }
+    private static void ShowDisplayMeshViewerTab()
+    {
+        ImGui.Spacing();
+        ShowSetting(config.ShowMeshViewerOutlinerOnLeftSide, Lang.Settings.ShowMeshViewerOutlinerOnLeftSide);
+        ShowSetting(config.UseFullscreenAnimPlayback, Lang.Settings.UseFullscreenAnimPlayback);
+    }
     private void ShowHotkeysGlobalTab()
     {
         ImGui.Spacing();
@@ -407,21 +419,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     }
     private void ShowHotkeysMeshViewerTab()
     {
-        ImGui.Spacing();
-        ImGui.SeparatorText(Lang.Settings.Section_FPSCamera);
-        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraTranslate, config.Key_MeshViewer_CameraTranslate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraTranslate.ToString(), invertSetting: config.Key_MeshViewer_CameraTranslateInvert);
-        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraRotate, config.Key_MeshViewer_CameraRotate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraRotate.ToString(), invertSetting: config.Key_MeshViewer_CameraRotateInvert);
-        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraZoom, config.Key_MeshViewer_CameraZoom, labelOverrideKey: ImGuiKey.MouseWheelY, labelOverride: Lang.Settings.Key_MeshViewer_CameraZoom.ToString(), invertSetting: config.Key_MeshViewer_CameraZoomInvert);
-        ImGui.Spacing();
-        ImGui.SeparatorText(Lang.Settings.Section_OrthoCamera);
-        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraTranslate, config.Key_MeshViewer_OrthoCameraTranslate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraTranslate.ToString(), invertSetting: config.Key_MeshViewer_OrthoCameraTranslateInvert);
-        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraRotate, config.Key_MeshViewer_OrthoCameraRotate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraRotate.ToString(), invertSetting: config.Key_MeshViewer_OrthoCameraRotateInvert);
-        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraZoom, config.Key_MeshViewer_OrthoCameraZoom, labelOverrideKey: ImGuiKey.MouseWheelY, labelOverride: Lang.Settings.Key_MeshViewer_CameraZoom.ToString(), invertSetting: config.Key_MeshViewer_OrthoCameraZoomInvert);
-        ImGui.Spacing();
-        ImGui.SeparatorText(Lang.Settings.Section_PivotCamera);
-        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraTranslate, config.Key_MeshViewer_PivotCameraTranslate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraTranslate.ToString(), invertSetting: config.Key_MeshViewer_PivotCameraTranslateInvert);
-        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraRotate, config.Key_MeshViewer_PivotCameraRotate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraRotate.ToString(), invertSetting: config.Key_MeshViewer_PivotCameraRotateInvert);
-        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraZoom, config.Key_MeshViewer_PivotCameraZoom, labelOverrideKey: ImGuiKey.MouseWheelY, labelOverride: Lang.Settings.Key_MeshViewer_CameraZoom.ToString(), invertSetting: config.Key_MeshViewer_PivotCameraZoomInvert);
+        
         ImGui.Spacing();
         ImGui.SeparatorText(Lang.Settings.Section_MeshEditor);
         ImguiKeybinding(Lang.Settings.Bind_MeshViewer_VertexSelection, config.Key_MeshViewer_VertexSelection);
@@ -436,6 +434,24 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImguiKeybinding(Lang.Settings.Bind_MeshViewer_PrevAnimFrame, config.Key_MeshViewer_PrevAnimFrame);
         ImguiKeybinding(Lang.Settings.Bind_MeshViewer_IncreaseAnimSpeed, config.Key_MeshViewer_IncreaseAnimSpeed);
         ImguiKeybinding(Lang.Settings.Bind_MeshViewer_DecreaseAnimSpeed, config.Key_MeshViewer_DecreaseAnimSpeed);
+    }
+    private void ShowHotkeysCameraTab()
+    {
+        ImGui.Spacing();
+        ImGui.SeparatorText(Lang.Settings.Section_FPSCamera);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraTranslate, config.Key_MeshViewer_CameraTranslate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraTranslate.ToString(), invertSetting: config.Key_MeshViewer_CameraTranslateInvert);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraRotate, config.Key_MeshViewer_CameraRotate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraRotate.ToString(), invertSetting: config.Key_MeshViewer_CameraRotateInvert);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraZoom, config.Key_MeshViewer_CameraZoom, labelOverrideKey: ImGuiKey.MouseWheelY, labelOverride: Lang.Settings.Key_MeshViewer_CameraZoom.ToString(), invertSetting: config.Key_MeshViewer_CameraZoomInvert);
+        ImGui.Spacing();
+        ImGui.SeparatorText(Lang.Settings.Section_PivotCamera);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraTranslate, config.Key_MeshViewer_PivotCameraTranslate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraTranslate.ToString(), invertSetting: config.Key_MeshViewer_PivotCameraTranslateInvert);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraRotate, config.Key_MeshViewer_PivotCameraRotate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraRotate.ToString(), invertSetting: config.Key_MeshViewer_PivotCameraRotateInvert);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraZoom, config.Key_MeshViewer_PivotCameraZoom, labelOverrideKey: ImGuiKey.MouseWheelY, labelOverride: Lang.Settings.Key_MeshViewer_CameraZoom.ToString(), invertSetting: config.Key_MeshViewer_PivotCameraZoomInvert);
+        ImGui.Spacing();
+        ImGui.SeparatorText(Lang.Settings.Section_OrthoCamera);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraTranslate, config.Key_MeshViewer_OrthoCameraTranslate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraTranslate.ToString(), invertSetting: config.Key_MeshViewer_OrthoCameraTranslateInvert);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraRotate, config.Key_MeshViewer_OrthoCameraRotate, wasdCompositeLabel: Lang.Settings.Key_MeshViewer_CameraRotate.ToString(), invertSetting: config.Key_MeshViewer_OrthoCameraRotateInvert);
+        ImguiKeybinding(Lang.Settings.Bind_MeshViewer_CameraZoom, config.Key_MeshViewer_OrthoCameraZoom, labelOverrideKey: ImGuiKey.MouseWheelY, labelOverride: Lang.Settings.Key_MeshViewer_CameraZoom.ToString(), invertSetting: config.Key_MeshViewer_OrthoCameraZoomInvert);
     }
     private void ShowHotkeysTextureViewerTab()
     {
