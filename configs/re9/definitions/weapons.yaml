@@ -5,7 +5,6 @@
 
 entities:
   weapons.weapon:
-    custom_id_range: [100000, 999999]
     # lord forgive me
     to_string: "Weapon [{data._WeaponID}]: {data._WeaponParameter?._WeaponResourceParam?.ResourceData?[0]?._WeaponItemIDStrArray?[0]:translate_fmt(Item_Name_$0)}"
     fields:
@@ -29,6 +28,7 @@ resources:
     classname: app.WeaponParamCatalogUserData.Data
     id: [_WeaponID]
     type: array-file
+    custom_id_range: [100000, 999999]
     files:
     - gameassets/weapon/catalog/weaponparamcataloguserdata.user
     - gameassets/weapon/catalog/weaponparamcataloguserdata_firstchunk.user

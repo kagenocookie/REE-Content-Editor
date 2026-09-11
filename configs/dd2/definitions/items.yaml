@@ -106,7 +106,6 @@ resources:
     subclasses:
       app.ItemDataParam:
         type: array-file
-        path: _Params
         files:
         - AppSystem/Item/ItemData/ItemData.user
         - AppSystem/Item/ItemData/ExItemData.user

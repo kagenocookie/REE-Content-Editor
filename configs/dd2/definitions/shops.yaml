@@ -8,6 +8,8 @@ entities:
         type: array-file
         classname: app.ItemShopParam
         id: [_ShopId]
+        params:
+          nested: false
 
 classes:
   app.ItemShopParam:

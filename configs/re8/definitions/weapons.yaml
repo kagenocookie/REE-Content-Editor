@@ -12,7 +12,7 @@ entities:
         type: app.ItemSpecificationData.SpecUnit
         label: Data
         required: true
-        reource:
+        resource:
           params:
             nested: false
       # prefab:
