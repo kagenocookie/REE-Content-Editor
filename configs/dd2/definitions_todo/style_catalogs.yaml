@@ -8,7 +8,7 @@ entities:
   #       type: object
   #       label: Data
   #       required: true
-  #       param:
+  #       params:
   #         type: object
   #         classname: app.BodyMeshSwapItem
   #         nested: false
@@ -17,7 +17,7 @@ entities:
   #       label: Mesh Catalog Item
   #       required: true
   #       field_id: { field: data, class: app.BodyMeshSwapItem, path: _MeshID }
-  #       param:
+  #       params:
   #         classname: BodyMesh
 
   # items.catalogs.Beard:
@@ -33,7 +33,7 @@ entities:
   #       type: object
   #       label: Data
   #       required: true
-  #       param:
+  #       params:
   #         type: object
   #         classname: app.BeardSwapItem
   #         nested: false
@@ -42,27 +42,27 @@ entities:
   #       label: Body Catalog Item
   #       required: true
   #       field_id: { field: data, class: app.BeardSwapItem, path: _MeshID }
-  #       param:
+  #       params:
   #         classname: BeardMesh
   #     - name: skin
   #       type: object
   #       label: Skin Catalog Item
   #       required: true
   #       field_id: { field: data, class: app.BeardSwapItem, path: _SkinID }
-  #       param:
+  #       params:
   #         classname: BeardSkin
   #     - name: meshPrefab
   #       type: resource
   #       label: Mesh Prefab
   #       required: true
-  #       param:
+  #       params:
   #         type: Prefab
   #         path: "{mesh?._Prefab?.Path}"
   #     - name: skinPrefab
   #       type: resource
   #       label: Skin Prefab
   #       required: true
-  #       param:
+  #       params:
   #         type: Prefab
   #         path: "{skin?._Prefab?.Path}"
 

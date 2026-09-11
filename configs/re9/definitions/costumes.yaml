@@ -17,12 +17,9 @@ entities:
     custom_id_range: [100000, 999999]
     to_string: "Timeline Costume [{data[0]?._CostumeId}]"
     fields:
-      data:
-        type: objectArray
-        label: Data
-        required: true
-        param:
-          classname: app.TimelineEventCostumeCatalog.Unit
+    - name: data
+      type: costumes.timeline_unit
+      required: true
   # costumes.montage_preset:
   #   custom_id_range: [100000, 999999]
   #   to_string: "Montage Preset [{data._Preset._ModelID} / {data._Preset._ID}]"
@@ -31,18 +28,19 @@ entities:
   #       type: objectArray
   #       label: Data
   #       required: true
-  #       param:
+  #       params:
   #         classname: app.CharacterMontagePresetCatalogUserData.Entry
 
-classes:
-  app.TimelineEventCostumeCatalog.Unit:
+resources:
+  costumes.timeline_unit:
     id: [_CostumeId]
     sub_id: [_CostumeVariationId]
+    classname: app.TimelineEventCostumeCatalog.Unit
+    type: array-file
+    file: natives/stm/event/resource/costumecatalog/ch0200.user.3
+classes:
+  app.TimelineEventCostumeCatalog.Unit:
     to_string: "Costume {_CostumeId} (Variation: {_CostumeVariationId})"
-    patcher:
-      type: array-file
-      file: natives/stm/event/resource/costumecatalog/ch0200.user.3
-      # file: natives/stm/event/resource/costumecatalog/ch1300.user.3
   app.MontageData.MontageParts:
     to_string: "{_PartsName}: {_PrefabResource?.Path}"
   app.BounsMontageData:

@@ -241,7 +241,7 @@ classes:
 #         type: _GuiRect
 #       icon_path:
 #         type: resource
-#         param:
+#         params:
 #           resource_type: tex
 #     example: # (this wouldn't be here but in the mod patch.json file and edited through UI)
 #       icon_path: npc_outfits_for_arisen/npc_item_icons_01.tex.760230703

@@ -1,6 +1,6 @@
 # TODO
-# weapon specific hold settings: natives/stm/appsystem/character/characterprefab/playercommon/userdata/playerweaponhold.user.3
-# weapon category settings: natives/stm/gameassets/character/additionaldata/weaponcategoryfordamageconfiguration/weaponcategoryfordamageconfiguration.user.3
+# weapon specific hold settings: appsystem/character/characterprefab/playercommon/userdata/playerweaponhold.user
+# weapon category settings: gameassets/character/additionaldata/weaponcategoryfordamageconfiguration/weaponcategoryfordamageconfiguration.user
 # support multiple catalog files
 
 entities:
@@ -9,72 +9,79 @@ entities:
     # lord forgive me
     to_string: "Weapon [{data._WeaponID}]: {data._WeaponParameter?._WeaponResourceParam?.ResourceData?[0]?._WeaponItemIDStrArray?[0]:translate_fmt(Item_Name_$0)}"
     fields:
-      data:
-        type: object
-        label: Data
-        required: true
-        param:
-          classname: app.WeaponParamCatalogUserData.Data
-      mesh_catalog:
-        type: object
-        label: Mesh Catalog
-        not_standalone: true
-        required: true
-        param:
-          classname: app.WeaponCatalogUserData.Data
+    - name: data
+      type: weapons.params
+      required: true
+    - name: mesh_catalog
+      type: weapons.catalog
+      label: Mesh Catalog
+      not_standalone: true
+      required: true
   weapons.accessory:
     to_string: "Accessory [{data._ID}]"
     fields:
-      data:
-        type: object
-        label: Data
-        required: true
-        param:
-          classname: app.WeaponAccessoryCatalogUserData.Data
+    - name: data
+      type: weapons.accessory_data
+      required: true
+
+resources:
+  weapons.params:
+    classname: app.WeaponParamCatalogUserData.Data
+    id: [_WeaponID]
+    type: array-file
+    files:
+    - gameassets/weapon/catalog/weaponparamcataloguserdata.user
+    - gameassets/weapon/catalog/weaponparamcataloguserdata_firstchunk.user
+  weapons.catalog:
+    id: [_WeaponID]
+    classname: app.WeaponCatalogUserData.Data
+    type: array-file
+    files:
+    - gameassets/weapon/catalog/weaponcataloguserdata.user
+    - gameassets/weapon/catalog/weaponcataloguserdata_firstchunk.user
+  weapons.sling_preset:
+    id: [_WeaponID]
+    type: array-file
+    classname: app.PlayerSlingWeaponChainPresetConfiguration.PlayerSlingWeaponChainPresetUserData.SlingWeaponChainPresetData
+    file: appsystem/character/characterprefab/playercommon/userdata/playerslingweaponchainpresetuserdata.user
+  weapons.attachment_catalog:
+    id: [_AttachmentID]
+    type: array-file
+    classname: app.WeaponAttachmentCatalogUserData.Data
+    files:
+    - gameassets/weapon/catalog/weaponattachmentcatalog.user
+    - gameassets/content/dlc/dlc_02/weaponattachmentcatalog_dlc_02.user
+  weapons.attachment_param_catalog:
+    id: [_AttachmentID]
+    type: array-file
+    classname: app.WeaponAttachmentParamCatalogUserData.Data
+    files:
+    - gameassets/weapon/catalog/weaponattachmentparamcataloguserdata.user
+    - gameassets/content/dlc/dlc_02/weaponattachmentparamcataloguserdata_dlc_02.user
+
+  # app.WeaponAccessoryParamBase.Data:
+  #   id: [_ID]
+  weapons.accessory_data:
+    id: [_ID]
+    type: array-file
+    classname: app.WeaponAccessoryCatalogUserData.Data
+    files:
+    - gameassets/weapon/catalog/weaponaccessorycataloguserdata.user
+    - gameassets/weapon/catalog/weaponaccessorycataloguserdata_firstchunk.user
 
 classes:
   app.WeaponCatalogUserData.Data:
-    id: [_WeaponID]
     to_string: "Weapon {_WeaponID}"
-    patcher:
-      type: array-file
-      file: natives/stm/gameassets/weapon/catalog/weaponcataloguserdata.user.3
-      # file: natives/stm/gameassets/weapon/catalog/weaponcataloguserdata_firstchunk.user.3
   app.WeaponParamCatalogUserData.Data:
-    id: [_WeaponID]
     to_string: "Weapon Param {_WeaponID}"
-    patcher:
-      type: array-file
-      file: natives/stm/gameassets/weapon/catalog/weaponparamcataloguserdata.user.3
-      # file: natives/stm/gameassets/weapon/catalog/weaponparamcataloguserdata_firstchunk.user.3
   app.PlayerSlingWeaponChainPresetConfiguration.PlayerSlingWeaponChainPresetUserData.SlingWeaponChainPresetData:
-    id: [_WeaponID]
     to_string: "Sling Weapon Chain Preset {_WeaponID}"
-    patcher:
-      type: array-file
-      file: natives/stm/appsystem/character/characterprefab/playercommon/userdata/playerslingweaponchainpresetuserdata.user.3
   app.WeaponAttachmentCatalogUserData.Data:
-    id: [_AttachmentID]
     to_string: "Weapon Attachment Param {_AttachmentID}"
-    patcher:
-      type: array-file
-      file: natives/stm/gameassets/weapon/catalog/weaponattachmentcatalog.user.3
-      # file: natives/stm/gameassets/content/dlc/dlc_02/weaponattachmentcatalog_dlc_02.user.3
   app.WeaponAttachmentParamCatalogUserData.Data:
-    id: [_AttachmentID]
     to_string: "Weapon Attachment Param {_AttachmentID}"
-    patcher:
-      type: array-file
-      file: natives/stm/gameassets/weapon/catalog/weaponattachmentparamcataloguserdata.user.3
-      # file: natives/stm/gameassets/content/dlc/dlc_02/weaponattachmentparamcataloguserdata_dlc_02.user.3
 
   app.WeaponAccessoryParamBase.Data:
-    id: [_ID]
     to_string: "Accessory Param {_ID}"
   app.WeaponAccessoryCatalogUserData.Data:
-    id: [_ID]
     to_string: "AccessoryCatalog {_ID}"
-    patcher:
-      type: array-file
-      file: natives/stm/gameassets/weapon/catalog/weaponaccessorycataloguserdata.user.3
-      # file: natives/stm/gameassets/weapon/catalog/weaponaccessorycataloguserdata_firstchunk.user.3

@@ -154,6 +154,7 @@ public class PatchConfigContainer(string filepath)
                 if (!resCfg.DisallowStandaloneEditing && resCfg.ParentResource == null) {
                     var shortname = ResourceHierarchy.Add(resType, cfg, resCfg.DisplayName);
                     resources.Add(shortname, cfg);
+                    if (shortname == resType) continue;
                 }
                 resources.Add(resType, cfg);
             }
@@ -270,7 +271,7 @@ public class PatchConfigContainer(string filepath)
             var newfield = new EntityField() {
                 name = data.name,
                 config = data,
-                label = data.label ?? data.name,
+                label = data.label ?? data.name.PrettyPrint(),
             };
             fieldlist.Add(newfield);
             displaylist.Add(newfield);

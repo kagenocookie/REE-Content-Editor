@@ -12,13 +12,13 @@
 #         type: object
 #         label: Data
 #         required: true
-#         param:
+#         params:
 #           classname: app.ItemSpecificationData.SpecUnit
 #           nested: false
 #       # prefab:
 #       #   label: Weapon prefab
 #       #   required: true
-#       #   param:
+#       #   params:
 #       #     type: resource_link
 #       #     resource_type: prefab
 #       #     path: "{catalog?.Prefab?.Path}"

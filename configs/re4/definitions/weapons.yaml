@@ -8,67 +8,71 @@ entities:
       primary: true
     to_string: "Weapon {name} {displayName}"
     fields:
-      data:
-        type: object
+      - name: data
+        type: weapons.CatalogData
         label: Data
         required: true
-        param:
-          classname: chainsaw.WeaponCatalogUserData.Data
-      name:
-        type: string
+      - name: name
         label: Weapon code name
         required: true
-        param:
-          regex: "^wp[0-9_]+$"
-          regexDescription: "Example: wp6000"
-          tooltip: Enter a code name for the weapon. This should be unique across all weapons and is used for enum entries.
-          initial: "{id:enum(chainsaw.WeaponID)}"
+        resource:
+          type: string
+          params:
+            regex: "^wp[0-9_]+$"
+            regexDescription: "Example: wp6000"
+            tooltip: Enter a code name for the weapon. This should be unique across all weapons and is used for enum entries.
+            initial: "{id:enum(chainsaw.WeaponID)}"
         display_after: start
-      displayName:
-        type: single-msg
+      - name: displayName
         required: true
-        param:
-          key: "CH_Mes_Main_WEAPON_NAME_{name:upper()}_00_0_000"
+        field_type: keyed_message
+        resource:
+          type: msg
           file: natives/stm/_chainsaw/message/mes_main_item/ch_mes_main_item_name.msg.22
+          params:
+            key_format: "CH_Mes_Main_WEAPON_NAME_{name:upper()}_00_0_000"
         display_after: name
-      equip_data:
-        type: object
+      - name: equip_data
+        type: weapons.EquipParam
         label: Equip data
-        param:
-          classname: chainsaw.WeaponEquipParamCatalogUserData.Data
-          nested: true
-      upgrades:
-        type: object
+        resource:
+          params:
+            nested: true
+      - name: upgrades
         label: Upgrades
-        param:
-          classname: chainsaw.WeaponDetailCustomUserdata.WeaponDetailStage
-      prefab:
-        label: Weapon prefab
-        required: true
-        param:
-          type: resource_link
-          resource_type: prefab
-          path: "{data?._Prefab?.Path}"
+        type: weapons.Upgrades
+      # - name: prefab
+      #   label: Weapon prefab
+      #   required: true
+      #   params:
+      #     type: resource_link
+      #     resource_type: prefab
+      #     path: "{data?._Prefab?.Path}"
+
+resources:
+  weapons.CatalogData:
+    id: [_WeaponID]
+    type: array-file
+    classname: chainsaw.WeaponCatalogUserData.Data
+    file: natives/stm/_chainsaw/appsystem/weapon/weaponcataloguserdata_1st.user.2
+  weapons.EquipParam:
+    id: [_WeaponID]
+    type: array-file
+    classname: chainsaw.WeaponEquipParamCatalogUserData.Data
+    file: natives/stm/_anotherorder/appsystem/weapon/weaponequipparamcataloguserdata_ao.user.2
+  weapons.Upgrades:
+    id: [_WeaponID]
+    type: array-file
+    classname: chainsaw.WeaponDetailCustomUserdata.WeaponDetailStage
+    file: natives/stm/_anotherorder/appsystem/weaponcustom/weapondetailcustomuserdata_ao.user.2
 
 classes:
   chainsaw.WeaponCatalogUserData.Data:
-    id: [_WeaponID]
     to_string: "Weapon {_WeaponID:enum(chainsaw.WeaponID)} {_Prefab.Path}"
-    patcher:
-      type: array-file
-      file: natives/stm/_chainsaw/appsystem/weapon/weaponcataloguserdata_1st.user.2
   chainsaw.WeaponEquipParamCatalogUserData.Data:
-    id: [_WeaponID]
     to_string: "Weapon {_WeaponID:enum(chainsaw.WeaponID)}"
-    patcher:
-      type: array-file
-      file: natives/stm/_anotherorder/appsystem/weapon/weaponequipparamcataloguserdata_ao.user.2
   chainsaw.WeaponDetailCustomUserdata.WeaponDetailStage:
-    id: [_WeaponID]
     to_string: "Weapon {_WeaponID:enum(chainsaw.WeaponID)}"
-    patcher:
-      type: array-file
-      file: natives/stm/_anotherorder/appsystem/weaponcustom/weapondetailcustomuserdata_ao.user.2
   chainsaw.WeaponDetailCustomUserdata.CommonCustom:
     to_string: "{_CommonCustomCategory:enum(chainsaw.CommonCustomCategory)}"
   chainsaw.WeaponDetailCustomUserdata.IndividualCustom:

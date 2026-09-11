@@ -1,17 +1,18 @@
-# entities:
-#   costume:
-#     to_string: "Costume {closet._CharacterID.Hash:enum(ce.CharacterDefine)} #{id}"
-#     fields:
-#       closet:
-#         type: object
-#         param:
-#           classname: app.Costume.Closet
-#           nested: false
+entities:
+  costume:
+    to_string: "Costume {closet._CharacterID.Hash:enum(ce.CharacterDefine)} #{id}"
+    fields:
+      - name: closet
+        type: costume.closets
+        resource:
+          params:
+            nested: false
 
 resources:
-  app.Costume.Closet:
+  costume.closets:
     id: [{ path: _CharacterID.Hash, class: app.ObjectDefine }]
     type: multi-array
+    classname: app.Costume.Closet
     field: _Closets
     params:
       nonUniqueIds: true
