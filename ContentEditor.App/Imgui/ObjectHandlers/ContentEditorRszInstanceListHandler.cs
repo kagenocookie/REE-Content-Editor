@@ -21,7 +21,7 @@ public sealed class ContentEditorRszInstanceListHandler(EntityField field) : IOb
             var workspace = context.GetWorkspace();
             if (workspace != null) {
                 ImGui.PushID(context.label);
-                if (ImGui.Button("Create")) {
+                if (ImGui.Button(UiText.Label("Create"))) {
                     context.CreateEntityResource<RSZObjectListResource>(workspace, field);
                 }
                 ImGui.PopID();

@@ -201,7 +201,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
             case SubGroupID.Games_MonsterHunter: ShowGamesMonsterHunterTab(); break;
             case SubGroupID.Games_Other: ShowGamesOtherTab(); break;
             case SubGroupID.Games_Custom: ShowGamesCustomTab(); break;
-            default: ImGui.Text("Lorem Ipsum"); break;
+            default: ImGui.Text(UiText.T("Lorem Ipsum")); break;
         }
     }
 
@@ -253,7 +253,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
         ImGui.SeparatorText(Lang.Settings.Section_Debug);
         ShowSetting(config.LogToFile, Lang.Settings.LogToFile, Lang.Settings.LogToFile_Tooltip.UTF8);
         var logLevel = config.LogLevel.Get();
-        if (ImGui.Combo(Lang.Settings.MinLogLevel.String, ref logLevel, LogLevels, LogLevels.Length)) {
+        if (ImGui.Combo(Lang.Settings.MinLogLevel.String, ref logLevel, LogLevels.Select(UiText.T).ToArray(), LogLevels.Length)) {
             config.LogLevel.Set(logLevel);
         }
     }
@@ -332,17 +332,17 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
 
         ImGui.SeparatorText(Lang.Settings.Section_DateTime);
         var dateFormat = config.DateFormat.Get();
-        if (ImGui.Combo(Lang.Settings.DateFormat.String, ref dateFormat, DateFormats, DateFormats.Length)) {
+        if (ImGui.Combo(Lang.Settings.DateFormat.String, ref dateFormat, DateFormats.Select(UiText.T).ToArray(), DateFormats.Length)) {
             config.DateFormat.Set(dateFormat);
         }
         ShowSetting(config.ClockFormat, Lang.Settings.ClockFormat);
 
         ImGui.SeparatorText(Lang.Settings.Section_Lang);
-        var lang = config.PreferredLanguage.Get();
+        var lang = Array.IndexOf(Lang.SupportableLanguages, config.Language);
         if (ImGui.Combo(Lang.Settings.PreferredLanguage, ref lang, Lang.SupportableLanguageNames)) {
-            var newLang = (Language)lang;
+            var newLang = Lang.SupportableLanguages[lang];
             Lang.ChangeLanguage(newLang);
-            AppConfig.Instance.PreferredLanguage.Set(lang);
+            AppConfig.Instance.PreferredLanguage.Set((int)newLang);
         }
     }
     private static void ShowDisplayThemeTab()

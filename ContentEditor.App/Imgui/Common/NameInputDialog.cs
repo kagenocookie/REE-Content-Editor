@@ -62,10 +62,10 @@ public class NameInputDialog : IWindowHandler
 
         ImGui.Spacing();
         ImGui.Spacing();
-        ImGui.InputText("Name", ref input, 300);
+        ImGui.InputText(UiText.Label("Name"), ref input, 300);
         var valid = validationRegex == null || validationRegex.IsMatch(input);
         if (!valid) {
-            ImGui.TextColored(Colors.Error, "Chosen name contains invalid characters");
+            ImGui.TextColored(Colors.Error, UiText.T("Chosen name contains invalid characters"));
         }
 
 
@@ -73,13 +73,13 @@ public class NameInputDialog : IWindowHandler
         ImGui.Spacing();
         ImGui.Spacing();
         if (!valid) ImGui.BeginDisabled();
-        if (ImGui.Button("Confirm", new Vector2(modalSize.X / 2 - 12, btnHeight))) {
+        if (ImGui.Button(UiText.Label("Confirm"), new Vector2(modalSize.X / 2 - 12, btnHeight))) {
             OnConfirmed.Invoke(input);
             EditorWindow.CurrentWindow?.CloseSubwindow(this);
         }
         if (!valid) ImGui.EndDisabled();
         ImGui.SameLine();
-        if (ImGui.Button("Cancel", new Vector2(modalSize.X / 2 - 12, btnHeight))) {
+        if (ImGui.Button(UiText.Label("Cancel"), new Vector2(modalSize.X / 2 - 12, btnHeight))) {
             OnCancelled?.Invoke();
             EditorWindow.CurrentWindow?.CloseSubwindow(this);
         }

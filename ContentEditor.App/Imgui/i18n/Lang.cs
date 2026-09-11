@@ -12,6 +12,16 @@ public static partial class Lang
     public static Language CurrentLanguage { get; private set; } = Language.English;
 
     private static Dictionary<string, TranslatableBase> Translatables { get; } = new();
+    private static readonly Dictionary<string, string> DefaultTranslations = new();
+
+    private static void EnsureTranslatables()
+    {
+        if (Translatables.Count != 0) return;
+        FindTranslatables(typeof(Lang), null);
+        foreach (var (key, text) in Translatables) {
+            DefaultTranslations[key] = text.Format;
+        }
+    }
 
     // ignore Arabic because we have no way of RTL text
     // ignore Thai because font
@@ -26,7 +36,7 @@ public static partial class Lang
 
     public static string FormatDate(DateTime? dateTime)
     {
-        return dateTime == null ? "[unknown date]" : FormatDate(dateTime.Value);
+        return dateTime == null ? UiText.T("[unknown date]") : FormatDate(dateTime.Value);
     }
 
     public static string FormatDate(DateTime dateTime)
@@ -39,11 +49,19 @@ public static partial class Lang
         FixedString.SetTranslations(_plainTranslations, _contextTranslations);
         if (CurrentLanguage == language) return;
 
-        if (Translatables.Count == 0) {
-            FindTranslatables(typeof(Lang), null);
+        EnsureTranslatables();
+
+        // Restore built-in English before applying a potentially incomplete pack.
+        // An English YAML file is optional, so it cannot be the only fallback.
+        foreach (var (key, text) in Translatables) {
+            text.Format = DefaultTranslations[key];
         }
 
         CurrentLanguage = language;
+        var uiPath = Path.Combine(TranslationsBasePath, language + ".ui.json");
+        UiText.SetTranslations(File.Exists(uiPath)
+            ? System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(uiPath)) ?? new()
+            : new Dictionary<string, string>());
         _plainTranslations.Clear();
         _contextTranslations.Clear();
         if (LoadTranslations(language) || language == Language.English) {
@@ -54,13 +72,12 @@ public static partial class Lang
                 You can run Edit > Dump Translations, save the file as i18n/{language}.lang.yaml and add your own translations there.
                 """);
         }
+        FixedString.SetTranslations(_plainTranslations, _contextTranslations);
     }
 
     public static Dictionary<string, string> GetTranslationsJson()
     {
-        if (Translatables.Count == 0) {
-            FindTranslatables(typeof(Lang), null);
-        }
+        EnsureTranslatables();
         var output = new Dictionary<string, string>();
         foreach (var (key, str) in Translatables) {
             output[key] = str.Format;
@@ -69,7 +86,7 @@ public static partial class Lang
             output[key] = tl;
         }
         foreach (var (context, list) in _contextTranslations) {
-            foreach (var (key, tl) in _plainTranslations) {
+            foreach (var (key, tl) in list) {
                 output[context + "." + key] = tl;
             }
         }

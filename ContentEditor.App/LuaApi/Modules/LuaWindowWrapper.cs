@@ -21,7 +21,7 @@ public partial class LuaWindowWrapper(EditorWindow window)
             if (window.Workspace.ResourceManager.TryGetOrLoadFile(filepath, out var rawHandle)) {
                 window.AddFileEditor(rawHandle);
             } else {
-                window.AddSubwindow(new ErrorModal("Unsupported file", "File is not supported:\n" + filepath));
+                window.AddSubwindow(new ErrorModal(UiText.T("Unsupported file"), UiText.T("File is not supported:\n") + filepath));
             }
         }
     }

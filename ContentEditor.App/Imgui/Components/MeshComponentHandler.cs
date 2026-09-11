@@ -83,7 +83,7 @@ public class CompositeMeshInstanceGroupHandler : NestedRszInstanceHandler
                 }
                 component.focusedGroupElementIndex = -1;
             }
-            ImguiHelpers.Tooltip("Focus on this mesh group gizmo");
+            ImguiHelpers.Tooltip(UiText.T("Focus on this mesh group gizmo"));
             ImGui.SameLine();
             if (component.focusedGroup == instance) {
                 var count = instance.Get(RszFieldCache.CompositeMesh.InstanceGroup.Transforms).Count;

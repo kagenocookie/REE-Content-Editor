@@ -266,7 +266,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
                 }
                 ImGui.SameLine();
                 var label = contexts.Count > 1 ? $"{AppIcons.SI_FileType_FBXSKEL} {context.ShortName} {Lang.MeshViewer.Armature}" : $"{AppIcons.SI_FileType_FBXSKEL} {Lang.MeshViewer.Armature}";
-                if (ImGui.Selectable($"{label}##armature_{contextIndex}", selectedArmatures.Contains(context), ImGuiSelectableFlags.None, new Vector2(Math.Max(ImGui.CalcTextSize(label).X, ImGui.GetContentRegionAvail().X), 0))) {
+                if (ImGui.Selectable(UiText.FormatLabel($"{label}##armature_{contextIndex}"), selectedArmatures.Contains(context), ImGuiSelectableFlags.None, new Vector2(Math.Max(ImGui.CalcTextSize(label).X, ImGui.GetContentRegionAvail().X), 0))) {
                     SelectArmature(context, ImGui.IsKeyDown(ImGuiKey.ModShift), ImGui.IsKeyDown(ImGuiKey.ModCtrl));
                 }
             }
@@ -327,7 +327,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
         var clicked = ImGui.SmallButton($"{(visible ? AppIcons.Eye : AppIcons.EyeBlocked)}");
         ImGui.PopStyleColor(2);
         ImGui.PopID();
-        ImguiHelpers.Tooltip(visible ? "Hide"u8 : "Show"u8);
+        ImguiHelpers.Tooltip(visible ? UiText.Utf8("Hide") : UiText.Utf8("Show"));
         return clicked;
     }
 
@@ -1998,11 +1998,11 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
             ImGui.AlignTextToFramePadding();
             ImGui.TextUnformatted(Lang.MeshViewer.Editor_MirrorAxes);
             ImGui.SameLine();
-            var mirrorChanged = ImGui.Checkbox("X##MirrorAxis", ref editor.mirrorX);
+            var mirrorChanged = ImGui.Checkbox(UiText.Label("X##MirrorAxis"), ref editor.mirrorX);
             ImGui.SameLine();
-            mirrorChanged |= ImGui.Checkbox("Y##MirrorAxis", ref editor.mirrorY);
+            mirrorChanged |= ImGui.Checkbox(UiText.Label("Y##MirrorAxis"), ref editor.mirrorY);
             ImGui.SameLine();
-            mirrorChanged |= ImGui.Checkbox("Z##MirrorAxis", ref editor.mirrorZ);
+            mirrorChanged |= ImGui.Checkbox(UiText.Label("Z##MirrorAxis"), ref editor.mirrorZ);
             if (mirrorChanged) {
                 AppConfig.Settings.MeshViewer.EditorMirrorX = editor.mirrorX;
                 AppConfig.Settings.MeshViewer.EditorMirrorY = editor.mirrorY;
@@ -2040,11 +2040,11 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
             var changed = ImGui.SliderFloat(label, ref value, minimum, maximum, format, flags);
             if (showReset) {
                 ImGui.SameLine();
-                if (ImGui.Button($"{AppIcons.SI_Reset}##Reset{id}")) {
+                if (ImGui.Button(UiText.FormatLabel($"{AppIcons.SI_Reset}##Reset{id}"))) {
                     value = defaultValue;
                     changed = true;
                 }
-                ImguiHelpers.Tooltip("Reset to default"u8);
+                ImguiHelpers.Tooltip(UiText.Utf8("Reset to default"));
             }
             return changed;
         }
@@ -2131,8 +2131,8 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
                         submeshes.Add(submesh);
                         var materialName = nativeMesh.MaterialNames.ElementAtOrDefault(submesh.materialIndex);
                         var label = string.IsNullOrEmpty(materialName)
-                            ? $"Submesh {labels.Count}  |  Group {group.groupId}"
-                            : $"Submesh {labels.Count}  |  Group {group.groupId}  |  {materialName}";
+                            ? UiText.F($"Submesh {labels.Count}  |  Group {group.groupId}")
+                            : UiText.F($"Submesh {labels.Count}  |  Group {group.groupId}  |  {materialName}");
                         labels.Add(new SubmeshLabel(TranslatableBase.GetNullTerminatedUTF8(label)));
                     }
                 }
@@ -2142,7 +2142,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
                 var fallbackIndex = 0;
                 foreach (var mesh in meshes) {
                     if (fallbackIndex >= labels.Count) {
-                        var label = $"Submesh {fallbackIndex}  |  Group {mesh.MeshGroup}";
+                        var label = UiText.F($"Submesh {fallbackIndex}  |  Group {mesh.MeshGroup}");
                         labels.Add(new SubmeshLabel(TranslatableBase.GetNullTerminatedUTF8(label)));
                     }
                     fallbackIndex++;

@@ -44,11 +44,11 @@ public class FileConverter : BaseWindowHandler
     private bool sourceChanged = true;
     public override void OnIMGUI()
     {
-        sourceChanged |= AppImguiHelpers.InputFolder("Source Folder"u8, ref sourceFolder);
-        ImguiHelpers.Tooltip("The folder containing the files you wish to upgrade.");
+        sourceChanged |= AppImguiHelpers.InputFolder(UiText.LabelUtf8("Source Folder"), ref sourceFolder);
+        ImguiHelpers.Tooltip(UiText.T("The folder containing the files you wish to upgrade."));
 
-        AppImguiHelpers.InputFolder("Destination Folder"u8, ref destinationFolder);
-        ImguiHelpers.Tooltip("The folder into which to store the upgraded files.");
+        AppImguiHelpers.InputFolder(UiText.LabelUtf8("Destination Folder"), ref destinationFolder);
+        ImguiHelpers.Tooltip(UiText.T("The folder into which to store the upgraded files."));
 
         // TODO non-RT to RT conversion option
 
@@ -62,17 +62,17 @@ public class FileConverter : BaseWindowHandler
         }
         mode = (ConversionMode)mode_n;
         if (sourceFolder == destinationFolder) {
-            ImGui.TextColored(Colors.Warning, "The source and target folders should not be the same."u8);
+            ImGui.TextColored(Colors.Warning, UiText.Utf8("The source and target folders should not be the same."));
             return;
         }
 
         if (mode == ConversionMode.Upgrade) {
             ImGui.SameLine();
-            ImGui.TextColored(Colors.Note, "Upgrade mode is intended for upgrading files from one version of a game to another (e.g. updating from a previous patch)."u8);
+            ImGui.TextColored(Colors.Note, UiText.Utf8("Upgrade mode is intended for upgrading files from one version of a game to another (e.g. updating from a previous patch)."));
         }
         if (mode == ConversionMode.Conversion) {
             ImGui.SameLine();
-            ImGui.TextColored(Colors.Note, "Conversion mode is used to batch convert several files to a different file format."u8);
+            ImGui.TextColored(Colors.Note, UiText.Utf8("Conversion mode is used to batch convert several files to a different file format."));
         }
 
         if (sourcePaks.Count == 0) {
@@ -88,7 +88,7 @@ public class FileConverter : BaseWindowHandler
             notUpgradeableFileList.Clear();
             upgradeableFileList.Clear();
             if (!Directory.Exists(sourceFolder)) {
-                ImGui.TextColored(Colors.Error, $"Folder {sourceFolder} not found");
+                ImGui.TextColored(Colors.Error, UiText.F($"Folder {sourceFolder} not found"));
                 return;
             }
 
@@ -117,18 +117,18 @@ public class FileConverter : BaseWindowHandler
         }
 
         using (var _ = ImguiHelpers.Disabled(!allConverterSettingsReady)) {
-            if (ImGui.Button(mode == ConversionMode.Conversion ? "Start conversion"u8 : "Start upgrade"u8)) {
+            if (ImGui.Button(mode == ConversionMode.Conversion ? UiText.LabelUtf8("Start conversion") : UiText.LabelUtf8("Start upgrade"))) {
                 AttemptConvert();
             }
             if (mode == ConversionMode.Upgrade) {
                 ImGui.SameLine();
-                if (ImGui.Button("Find Vanilla Changes"u8)) {
+                if (ImGui.Button(UiText.LabelUtf8("Find Vanilla Changes"))) {
                     CompareChangedFiles();
                 }
             }
             if (!allConverterSettingsReady) {
                 ImGui.SameLine();
-                ImGui.TextColored(Colors.Faded, "Ensure all the file format conversion settings are either fully configured or disabled");
+                ImGui.TextColored(Colors.Faded, UiText.T("Ensure all the file format conversion settings are either fully configured or disabled"));
             }
         }
         var avail = ImGui.GetContentRegionAvail();
@@ -139,7 +139,7 @@ public class FileConverter : BaseWindowHandler
 
         if (ImGui.BeginTabBar("UpgradeTabs"u8)) {
             var unconvertable = new List<REFileFormatFull>();
-            if (ImGui.BeginTabItem("File Formats"u8)) {
+            if (ImGui.BeginTabItem(UiText.LabelUtf8("File Formats"))) {
                 var allReady = true;
                 var atLeastOneReady = false;
                 var shownConverters = new HashSet<FileConversionHandler>();
@@ -155,7 +155,7 @@ public class FileConverter : BaseWindowHandler
                     var label = string.IsNullOrEmpty(converter.Label) ? $"{firstFmt}" : converter.Label;
                     ImGui.Checkbox(label, ref converter.enabled);
                     if (converter.SourceFormats.Count >= 2 && ImGui.BeginItemTooltip()) {
-                        ImGui.SeparatorText("Format List"u8);
+                        ImGui.SeparatorText(UiText.Utf8("Format List"));
                         foreach (var fmt in converter.SourceFormats) {
                             ImGui.BulletText(fmt.ToString());
                         }
@@ -177,7 +177,7 @@ public class FileConverter : BaseWindowHandler
 
                 allConverterSettingsReady = allReady && atLeastOneReady;
 
-                if (unconvertable.Count > 0 && ImGui.TreeNode("Not convertable file formats")) {
+                if (unconvertable.Count > 0 && ImGui.TreeNode(UiText.Label("Not convertable file formats"))) {
                     foreach (var format in unconvertable) {
                         ImGui.Text(format.ToString());
                         if (ImGui.IsItemClicked(ImGuiMouseButton.Left)) {
@@ -188,22 +188,19 @@ public class FileConverter : BaseWindowHandler
                 }
                 ImGui.EndTabItem();
             }
-            if (mode == ConversionMode.Upgrade && ImGui.BeginTabItem("PAK List"u8)) {
-                ImGui.TextColored(Colors.Note, """
-                    The PAK file list is used to compare the files with their original counterparts and only apply the minimal necessary changes to make the file equivalent.
-                    This may or may not work correctly for all files depending on what kind of changes have been made both on the mod side and on the original file side.
-                    """u8);
+            if (mode == ConversionMode.Upgrade && ImGui.BeginTabItem(UiText.LabelUtf8("PAK List"))) {
+                ImGui.TextColored(Colors.Note, UiText.Utf8("The PAK file list is used to compare the files with their original counterparts and only apply the minimal necessary changes to make the file equivalent.\r\nThis may or may not work correctly for all files depending on what kind of changes have been made both on the mod side and on the original file side."));
                 foreach (var pak in workspace.Env.PakReader.PakFilePriority) {
                     ImGui.PushID(pak);
                     var source = sourcePaks.Contains(pak);
-                    if (ImGui.Checkbox("Source"u8, ref source)) {
+                    if (ImGui.Checkbox(UiText.LabelUtf8("Source"), ref source)) {
                         if (source) sourcePaks.Add(pak);
                         else sourcePaks.Remove(pak);
                     }
 
                     var target = targetPaks.Contains(pak);
                     ImGui.SameLine();
-                    if (ImGui.Checkbox("Target"u8, ref target)) {
+                    if (ImGui.Checkbox(UiText.LabelUtf8("Target"), ref target)) {
                         if (target) targetPaks.Add(pak);
                         else targetPaks.Remove(pak);
                     }
@@ -216,23 +213,23 @@ public class FileConverter : BaseWindowHandler
                 }
                 ImGui.EndTabItem();
             }
-            if (ImGui.BeginTabItem("File List"u8)) {
+            if (ImGui.BeginTabItem(UiText.LabelUtf8("File List"))) {
                 ImGui.SetNextItemOpen(true, ImGuiCond.Appearing);
-                if (ImGui.TreeNode($"Convertable Files ({upgradeableFileList.Count})")) {
+                if (ImGui.TreeNode(UiText.FormatLabel($"Convertable Files ({upgradeableFileList.Count})"))) {
                     foreach (var file in upgradeableFileList) {
                         ImGui.Text(file);
                         if (mode == ConversionMode.Upgrade && !file.StartsWith("natives")) {
                             ImGui.SameLine();
                             ImGui.PushID(file);
                             ImGui.Button($"{AppIcons.SI_GenericWarning}");
-                            ImguiHelpers.TooltipColored("The file path is not contained in the natives/ path, the upgrader is unable to compare with original game files.\nRSZ data upgrade will be attempted but might not work as expected.", Colors.Warning);
+                            ImguiHelpers.TooltipColored(UiText.T("The file path is not contained in the natives/ path, the upgrader is unable to compare with original game files.\nRSZ data upgrade will be attempted but might not work as expected."), Colors.Warning);
                             ImGui.PopID();
                         }
                     }
                     ImGui.TreePop();
                 }
 
-                if (notUpgradeableFileList.Count > 0 && ImGui.TreeNode($"NOT Convertable Files ({notUpgradeableFileList.Count})")) {
+                if (notUpgradeableFileList.Count > 0 && ImGui.TreeNode(UiText.FormatLabel($"NOT Convertable Files ({notUpgradeableFileList.Count})"))) {
                     foreach (var file in notUpgradeableFileList) {
                         ImGui.Text(file);
                     }
@@ -251,7 +248,7 @@ public class FileConverter : BaseWindowHandler
             if (string.IsNullOrEmpty(destinationFolder) || !Path.IsPathFullyQualified(destinationFolder)) {
                 return;
             }
-            if (ImGui.Button("Create destination folder"u8)) {
+            if (ImGui.Button(UiText.LabelUtf8("Create destination folder"))) {
                 try {
                     Directory.CreateDirectory(destinationFolder);
                 } catch (Exception e) {
@@ -420,21 +417,21 @@ public class FileConverter : BaseWindowHandler
             ImGui.SameLine();
             var allext = mode == ConversionMode.Conversion ? AllVersionsInclExportsExt : TexFile.AllVersionConfigsWithExtension;
             var all = mode == ConversionMode.Conversion ? AllVersionsInclExports : TexFile.AllVersionConfigs;
-            ImGui.SetNextItemWidth(Math.Max(ImGui.CalcItemWidth() / 2, ImGui.CalcTextSize("RE9/Pragmata (.tex.2508131343) ____"u8).X));
-            ImguiHelpers.ValueCombo("Target format", allext, all, ref exportFormat);
+            ImGui.SetNextItemWidth(Math.Max(ImGui.CalcItemWidth() / 2, ImGui.CalcTextSize(UiText.Utf8("RE9/Pragmata (.tex.2508131343) ____")).X));
+            ImguiHelpers.ValueCombo(UiText.Label("Target format"), allext, all, ref exportFormat);
             if (mode == ConversionMode.Conversion && SourceFormats.Any(f => f.extension.Equals("png", StringComparison.OrdinalIgnoreCase) || f.extension.Equals("tga", StringComparison.OrdinalIgnoreCase)) && exportFormat != "png" && exportFormat != "tga") {
                 ImGui.Indent(8);
-                ImGui.Checkbox("Generate MipMaps", ref generateMips);
-                ImguiHelpers.Tooltip("Only used for PNG/TGA source files");
+                ImGui.Checkbox(UiText.Label("Generate MipMaps"), ref generateMips);
+                ImguiHelpers.Tooltip(UiText.T("Only used for PNG/TGA source files"));
 
                 ImGui.SameLine();
-                ImGui.Checkbox("Automatically determine sRGB mode", ref autoSrgb);
-                ImguiHelpers.Tooltip("sRGB or non-sRGB will be guessed and swapped automatically per file based on the file name.\nOnly used for PNG/TGA source files.");
+                ImGui.Checkbox(UiText.Label("Automatically determine sRGB mode"), ref autoSrgb);
+                ImguiHelpers.Tooltip(UiText.T("sRGB or non-sRGB will be guessed and swapped automatically per file based on the file name.\nOnly used for PNG/TGA source files."));
 
                 ImGui.SameLine();
-                ImGui.SetNextItemWidth(Math.Max(ImGui.CalcItemWidth() / 2, ImGui.CalcTextSize("BC7_UNORM_SRGB"u8).X));
-                ImguiHelpers.FilterableCombo("DXGI format"u8, PrioritizedFormatStrings, PrioritizedFormatList, ref dxgiFormat, ref dxgiFilter);
-                ImguiHelpers.Tooltip("Only used for PNG/TGA source files");
+                ImGui.SetNextItemWidth(Math.Max(ImGui.CalcItemWidth() / 2, ImGui.CalcTextSize(UiText.Utf8("BC7_UNORM_SRGB")).X));
+                ImguiHelpers.FilterableCombo(UiText.LabelUtf8("DXGI format"), PrioritizedFormatStrings, PrioritizedFormatList, ref dxgiFormat, ref dxgiFilter);
+                ImguiHelpers.Tooltip(UiText.T("Only used for PNG/TGA source files"));
                 ImGui.Unindent(8);
             }
 
@@ -559,7 +556,7 @@ public class FileConverter : BaseWindowHandler
         public override bool ShowSettings(ConversionMode mode)
         {
             ImGui.SameLine();
-            ImguiHelpers.ValueCombo("Export format", MeshFile.AllVersionConfigsWithExtension, MeshFile.AllVersionConfigs, ref exportFormat);
+            ImguiHelpers.ValueCombo(UiText.Label("Export format"), MeshFile.AllVersionConfigsWithExtension, MeshFile.AllVersionConfigs, ref exportFormat);
             return !string.IsNullOrEmpty(exportFormat);
         }
 
@@ -591,8 +588,8 @@ public class FileConverter : BaseWindowHandler
 
         public override bool ShowSettings(ConversionMode mode)
         {
-            ImGui.InputInt("New file version", ref updateVersion);
-            ImGui.TextColored(Colors.Note, "Leave the value at 0 to keep the current version");
+            ImGui.InputInt(UiText.Label("New file version"), ref updateVersion);
+            ImGui.TextColored(Colors.Note, UiText.T("Leave the value at 0 to keep the current version"));
             return true;
         }
 
@@ -629,13 +626,13 @@ public class FileConverter : BaseWindowHandler
 
         public override bool ShowSettings(ConversionMode mode)
         {
-            AppImguiHelpers.InputFilepath("Source Version RSZ JSON"u8, ref sourceRszJsonPath, FileFilters.JsonFile);
-            ImguiHelpers.Tooltip("The RSZ JSON of the source file game version.");
+            AppImguiHelpers.InputFilepath(UiText.LabelUtf8("Source Version RSZ JSON"), ref sourceRszJsonPath, FileFilters.JsonFile);
+            ImguiHelpers.Tooltip(UiText.T("The RSZ JSON of the source file game version."));
 
-            AppImguiHelpers.InputFilepath("Target Version RSZ JSON"u8, ref targetRszJsonPath, FileFilters.JsonFile);
-            ImguiHelpers.Tooltip("The RSZ JSON of the upgraded game version.");
+            AppImguiHelpers.InputFilepath(UiText.LabelUtf8("Target Version RSZ JSON"), ref targetRszJsonPath, FileFilters.JsonFile);
+            ImguiHelpers.Tooltip(UiText.T("The RSZ JSON of the upgraded game version."));
 
-            ImGui.TextColored(Colors.Note, "Both RSZ JSON paths are optional. If unspecified, the currently active one will be used.");
+            ImGui.TextColored(Colors.Note, UiText.T("Both RSZ JSON paths are optional. If unspecified, the currently active one will be used."));
             return true;
         }
 

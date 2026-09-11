@@ -30,25 +30,25 @@ public class SceneController(Scene scene)
 
     public void ShowCameraControls()
     {
-        ImGui.TextUnformatted("Camera Mode");
-        if (ImGui.RadioButton("FPS Camera", CameraMode == SceneCameraMode.FPSCamera)) SetCameraMode(SceneCameraMode.FPSCamera);
+        ImGui.TextUnformatted(UiText.T("Camera Mode"));
+        if (ImGui.RadioButton(UiText.Label("FPS Camera"), CameraMode == SceneCameraMode.FPSCamera)) SetCameraMode(SceneCameraMode.FPSCamera);
         ImGui.SameLine();
-        if (ImGui.RadioButton("Pivot Camera", CameraMode == SceneCameraMode.PivotCamera)) SetCameraMode(SceneCameraMode.PivotCamera);
+        if (ImGui.RadioButton(UiText.Label("Pivot Camera"), CameraMode == SceneCameraMode.PivotCamera)) SetCameraMode(SceneCameraMode.PivotCamera);
         ImGui.SameLine();
-        if (ImGui.RadioButton("Ortho Camera", CameraMode == SceneCameraMode.OrthoCamera)) SetCameraMode(SceneCameraMode.OrthoCamera);
+        if (ImGui.RadioButton(UiText.Label("Ortho Camera"), CameraMode == SceneCameraMode.OrthoCamera)) SetCameraMode(SceneCameraMode.OrthoCamera);
         ImGui.SameLine();
         if (ImGui.Button($"{AppIcons.SI_ResetCamera}")) {
             ResetCameraToScene();
         }
-        ImguiHelpers.Tooltip("Reset View Camera");
+        ImguiHelpers.Tooltip(UiText.T("Reset View Camera"));
         if (Scene.ActiveCamera.ProjectionMode == CameraProjection.Perspective) {
             float fov = Scene.ActiveCamera.FieldOfView;
-            if (ImGui.SliderAngle("Field of View", ref fov, 10.0f, 120.0f)) {
+            if (ImGui.SliderAngle(UiText.Label("Field of View"), ref fov, 10.0f, 120.0f)) {
                 Scene.ActiveCamera.FieldOfView = fov;
             }
         } else {
             float ortho = Scene.ActiveCamera.OrthoSize;
-            if (ImGui.SliderFloat("Orthographic Size", ref ortho, 0.1f, 10.0f)) {
+            if (ImGui.SliderFloat(UiText.Label("Orthographic Size"), ref ortho, 0.1f, 10.0f)) {
                 Scene.ActiveCamera.OrthoSize = ortho;
             }
         }
@@ -56,27 +56,27 @@ public class SceneController(Scene scene)
         var moveSpeed = MoveSpeed;
         var rotateSpeed = RotateSpeed;
         var zoomSpeed = ZoomSpeed;
-        if (ImGui.SliderFloat("Move Speed", ref moveSpeed, 1.0f, 50.0f)) {
+        if (ImGui.SliderFloat(UiText.Label("Move Speed"), ref moveSpeed, 1.0f, 50.0f)) {
             MoveSpeed = moveSpeed;
         }
-        ImguiHelpers.Tooltip("[Hold] Left Shift to move 10x faster.");
-        if (ImGui.SliderFloat("Rotate Speed", ref rotateSpeed, 0.1f, 10.0f)) {
+        ImguiHelpers.Tooltip(UiText.T("[Hold] Left Shift to move 10x faster."));
+        if (ImGui.SliderFloat(UiText.Label("Rotate Speed"), ref rotateSpeed, 0.1f, 10.0f)) {
             RotateSpeed = rotateSpeed;
         }
-        if (ImGui.SliderFloat("Zoom Speed", ref zoomSpeed, 0.01f, 1.0f)) {
+        if (ImGui.SliderFloat(UiText.Label("Zoom Speed"), ref zoomSpeed, 0.01f, 1.0f)) {
             ZoomSpeed = zoomSpeed;
         }
         ImGui.Spacing();
         var pos = Scene.ActiveCamera.Transform.Position;
-        if (ImGui.DragFloat3("Position", ref pos, 0.01f)) {
+        if (ImGui.DragFloat3(UiText.Label("Position"), ref pos, 0.01f)) {
             Scene.ActiveCamera.Transform.Position = pos;
         }
         if (ImGui.BeginPopupContextItem("Pos")) {
-            if (ImGui.Selectable("Copy value")) {
+            if (ImGui.Selectable(UiText.Label("Copy value"))) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(pos, JsonConfig.jsonOptionsIncludeFields), $"Copied position!");
                 ImGui.CloseCurrentPopup();
             }
-            if (ImGui.Selectable("Paste value")) {
+            if (ImGui.Selectable(UiText.Label("Paste value"))) {
                 if (EditorWindow.CurrentWindow?.GetClipboard()?.TryDeserializeJson<Vector3>(out pos, out var err, JsonConfig.jsonOptionsIncludeFields) == true) {
                     Scene.ActiveCamera.Transform.Position = pos;
                 }
@@ -86,24 +86,24 @@ public class SceneController(Scene scene)
         }
         if (AppConfig.Instance.ShowQuaternionsAsEuler) {
             var euler = Scene.ActiveCamera.Transform.Rotation.ToEuler();
-            if (ImGui.DragFloat3("Rotation", ref euler, 0.01f)) {
+            if (ImGui.DragFloat3(UiText.Label("Rotation"), ref euler, 0.01f)) {
                 euler *= TransformExtensions.Deg2Rad;
                 Scene.ActiveCamera.Transform.Rotation = Quaternion.CreateFromYawPitchRoll(euler.Y, euler.X, euler.Z);
             }
         } else {
             var rot = Scene.ActiveCamera.Transform.Rotation.ToVector4();
-            if (ImGui.DragFloat4("Rot", ref rot, 0.01f)) {
+            if (ImGui.DragFloat4(UiText.Label("Rot"), ref rot, 0.01f)) {
                 Scene.ActiveCamera.Transform.Rotation = rot.ToQuaternion();
             }
         }
 
         if (ImGui.BeginPopupContextItem("Rot")) {
             var rot = Scene.ActiveCamera.Transform.Rotation;
-            if (ImGui.Selectable("Copy value")) {
+            if (ImGui.Selectable(UiText.Label("Copy value"))) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(JsonSerializer.Serialize(rot, JsonConfig.jsonOptionsIncludeFields), $"Copied position!");
                 ImGui.CloseCurrentPopup();
             }
-            if (ImGui.Selectable("Paste value")) {
+            if (ImGui.Selectable(UiText.Label("Paste value"))) {
                 if (EditorWindow.CurrentWindow?.GetClipboard()?.TryDeserializeJson<Quaternion>(out rot, out var err, JsonConfig.jsonOptionsIncludeFields) == true) {
                     Scene.ActiveCamera.Transform.Rotation = rot;
                 }

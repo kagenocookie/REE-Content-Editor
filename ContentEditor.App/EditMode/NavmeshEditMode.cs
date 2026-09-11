@@ -101,7 +101,7 @@ public class NavmeshEditMode : EditModeHandler
                 loadedFile = file;
                 loadedFile.ModifiedChanged += OnFileChanged;
             } else if (!string.IsNullOrEmpty(filepath)) {
-                ImGui.TextColored(Colors.Warning, "File not found");
+                ImGui.TextColored(Colors.Warning, UiText.T("File not found"));
             }
         }
 

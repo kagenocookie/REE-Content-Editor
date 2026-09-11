@@ -18,7 +18,7 @@ public static class PlatformUtils
                         if (filterString != null) {
                             filterString += "|";
                         }
-                        filterString += $"{filter.name} (*.{ext})|*.{ext}";
+                        filterString += $"{UiText.T(filter.name)} (*.{ext})|*.{ext}";
                     }
                 } else {
                     var substr = string.Join(", ", filter.extensions.Select(ext => $"*.{ext}"));
@@ -26,7 +26,7 @@ public static class PlatformUtils
                     if (filterString != null) {
                         filterString += "|";
                     }
-                    filterString += $"{filter.name} ({substr})|{substr2}";
+                    filterString += $"{UiText.T(filter.name)} ({substr})|{substr2}";
                 }
             }
         }

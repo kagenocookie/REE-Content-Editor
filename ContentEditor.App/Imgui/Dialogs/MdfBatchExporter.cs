@@ -35,9 +35,9 @@ public class MdfBatchExporter
                 }
             }
         }
-        ImGui.SeparatorText("Material texture export");
+        ImGui.SeparatorText(UiText.T("Material texture export"));
         var matNames = allMats.Select(m => m.Key).ToArray();
-        if (ImGui.Button("Select All")) {
+        if (ImGui.Button(UiText.Label("Select All"))) {
             foreach (var mat in allMats) {
                 var data = _exportTextures[mat.Key] = new ();
                 foreach (var tex in mat.First().Textures) {
@@ -46,17 +46,17 @@ public class MdfBatchExporter
                 }
             }
         }
-        if (ImguiHelpers.SameLine() && ImGui.Button("Clear Selection")) {
+        if (ImguiHelpers.SameLine() && ImGui.Button(UiText.Label("Clear Selection"))) {
             _exportTextures.Clear();
         }
-        if (ImguiHelpers.SameLine() && ImGui.Button("Reset Selection")) {
+        if (ImguiHelpers.SameLine() && ImGui.Button(UiText.Label("Reset Selection"))) {
             _exportTextures = null;
         }
         ImGui.SameLine();
-        ImGui.SetNextItemWidth(ImGui.GetFrameHeightWithSpacing() + ImGui.CalcTextSize("DDS").X);
-        ImguiHelpers.CSharpEnumCombo("Export Format", ref _exportFormat);
+        ImGui.SetNextItemWidth(ImGui.GetFrameHeightWithSpacing() + ImGui.CalcTextSize(UiText.T("DDS")).X);
+        ImguiHelpers.CSharpEnumCombo(UiText.Label("Export Format"), ref _exportFormat);
 
-        ImguiHelpers.ValueCombo("Material", matNames, matNames, ref _exportSelectedMat);
+        ImguiHelpers.ValueCombo(UiText.Label("Material"), matNames, matNames, ref _exportSelectedMat);
         if (!string.IsNullOrEmpty(_exportSelectedMat)) {
             ImGui.Separator();
             var mat = allMats.FirstOrDefault(mm => mm.Key == _exportSelectedMat);
@@ -84,12 +84,12 @@ public class MdfBatchExporter
         }
         var confirmed = false;
         ImGui.Separator();
-        if (ImGui.Button("Cancel")) {
+        if (ImGui.Button(UiText.Label("Cancel"))) {
             _exportTextures = null;
             confirmed = true;
         }
         ImGui.SameLine();
-        if (ImGui.Button("Export")) {
+        if (ImGui.Button(UiText.Label("Export"))) {
             var wnd = EditorWindow.CurrentWindow;
             PlatformUtils.ShowFolderDialog((target) => {
                 wnd!.InvokeFromUIThread(() => {

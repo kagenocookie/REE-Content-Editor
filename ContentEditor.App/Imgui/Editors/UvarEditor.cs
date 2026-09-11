@@ -138,7 +138,7 @@ public class UvarExpressionEditor : LazyPlainObjectHandler
     {
         var show = base.DoTreeNode(context, instance);
         ImGui.SameLine();
-        if (ImGui.Button("Graph Edit")) {
+        if (ImGui.Button(UiText.Label("Graph Edit"))) {
             var variable = context.FindValueInParentValues<Variable>();
             EditorWindow.CurrentWindow?.AddSubwindow(new UvarExpressionGraph(context.FindValueInParentValues<UVarFile>()!, context.Get<UvarExpression>(), context, variable?.Name ?? "Unknown Expression Graph"));
         }

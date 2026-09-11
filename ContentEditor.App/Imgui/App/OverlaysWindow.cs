@@ -59,9 +59,9 @@ public class OverlaysWindow : IWindowHandler
     {
         string? helptext = null;
         if (!AppConfig.Instance.HasAnyGameConfigured) {
-            helptext = "Go into the Tools > Settings menu and configure the game(s) you wish to edit";
+            helptext = UiText.T("Go into the Tools > Settings menu and configure the game(s) you wish to edit");
         } else if (context.GetWorkspace() == null) {
-            helptext = "Activate the game you wish to edit in the menu";
+            helptext = UiText.T("Activate the game you wish to edit in the menu");
         } else if (ShowHelp) {
             //helptext = "Drag & drop a supported RE Engine resource file here or use the menu to open one.\nYou can access the game files directly using the Windows > PAK File Browser option.";
         }
@@ -71,7 +71,7 @@ public class OverlaysWindow : IWindowHandler
             var wndSize = new Vector2(Math.Min(600, size.X), Math.Min(20 + linecount * 20, size.Y)) * UI.UIScale;
             ImGui.SetNextWindowPos(new Vector2((size.X - wndSize.X) / 2, (size.Y - wndSize.Y) / 2));
             ImGui.SetNextWindowSize(wndSize);
-            ImGui.Begin("Guide", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoBringToFrontOnFocus);
+            ImGui.Begin(UiText.Label("Guide"), ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoFocusOnAppearing | ImGuiWindowFlags.NoBringToFrontOnFocus);
             ImguiHelpers.TextCentered(helptext);
             if (editorWindow != null && ImGui.IsItemClicked()) {
                 PlatformUtils.ShowFileDialog((files) => {
@@ -105,7 +105,7 @@ public class OverlaysWindow : IWindowHandler
             ImGui.SetNextWindowPos(size - taskWindowSize - ImGui.GetStyle().WindowPadding, ImGuiCond.Appearing);
             ImGui.SetNextWindowSize(taskWindowSize, ImGuiCond.Appearing);
             ImGui.SetNextWindowCollapsed(false, ImGuiCond.Appearing);
-            if (ImGui.Begin("Background Tasks", ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoFocusOnAppearing)) {
+            if (ImGui.Begin(UiText.Label("Background Tasks"), ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoFocusOnAppearing)) {
                 ShowBackgroundTaskProgress(ImGui.GetWindowWidth());
             }
             ImGui.End();
@@ -116,7 +116,7 @@ public class OverlaysWindow : IWindowHandler
     {
         var bg = MainLoop.Instance.BackgroundTasks;
         var runningTasks = bg.PendingTasks;
-        ImGui.Text("Pending background tasks: " + runningTasks);
+        ImGui.Text(UiText.T("Pending background tasks: ") + runningTasks);
 
         var jobSize = new Vector2(maxWidth - ImGui.GetStyle().WindowPadding.X * 2, 30);
         foreach (var (job, progress) in bg.CurrentJobs) {
@@ -160,7 +160,7 @@ public class OverlaysWindow : IWindowHandler
                     int c = 0;
                     foreach (var (label, act) in toast.Buttons) {
                         if (c++ > 0) ImGui.SameLine();
-                        if (ImGui.Button(string.IsNullOrEmpty(label) ? "Confirm" : label)) {
+                        if (ImGui.Button(string.IsNullOrEmpty(label) ? UiText.Label("Confirm") : label)) {
                             act.Invoke();
                             close = true;
                         }
@@ -330,7 +330,7 @@ public class OverlaysWindow : IWindowHandler
         drawList.AddRectFilled(windowPos, windowPos + new Vector2(windowSize.X, 34 * UI.UIScale), headerColor);
         drawList.AddRectFilled(new Vector2(windowPos.X + windowSize.X - 4, windowPos.Y), windowPos + windowSize, headerColor);
 
-        var headerText = "Hotkeys: " + currGroup.GroupName;
+        var headerText = UiText.T("Hotkeys: ") + currGroup.GroupName;
         drawList.AddText(new Vector2(windowPos.X + style.WindowPadding.X, windowPos.Y + style.WindowPadding.Y), ImGui.GetColorU32(ImGuiCol.WindowBg), headerText);
 
         var column0W = windowPos.X + style.WindowPadding.X;

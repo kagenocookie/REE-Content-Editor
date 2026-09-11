@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using ContentEditor.App;
+using ContentEditor.Core;
 
 namespace ContentEditor.BackgroundTasks;
 
@@ -30,14 +31,15 @@ public sealed class BackgroundTaskService : IDisposable
                 var worker = workers[i];
                 var task = worker.CurrentTask;
                 if (task != null) {
-                    var status = task.Status ?? "Finalizing";
+                    var status = UiText.T(task.Status ?? "Finalizing");
+                    var taskName = UiText.T(worker.ToString());
                     var pct = task.Progress;
                     if (pct > 1) {
-                        list.Add(($"{status} | {Math.Round(pct * 10) / 10} | {worker}", pct));
+                        list.Add(($"{status} | {Math.Round(pct * 10) / 10} | {taskName}", pct));
                     } else if (pct >= 0) {
-                        list.Add(($"{status} | {Math.Round(pct * 100)}% | {worker}", pct));
+                        list.Add(($"{status} | {Math.Round(pct * 100)}% | {taskName}", pct));
                     } else {
-                        list.Add(($"{status} | {worker}", -1));
+                        list.Add(($"{status} | {taskName}", -1));
                     }
                 }
             }

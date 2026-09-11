@@ -158,7 +158,7 @@ public class BundleManagementUI : IWindowHandler
                         newBundle.Save();
                         newBundleName = "";
                     } else {
-                        WindowManager.Instance.ShowError("Bundle already exists!", data);
+                        WindowManager.Instance.ShowError(UiText.T("Bundle already exists!"), data);
                     }
                 }
                 ImGui.PopStyleColor();
@@ -192,7 +192,7 @@ public class BundleManagementUI : IWindowHandler
             using (var _ = ImguiHelpers.Disabled(selectedBundle == null)) {
                 if (ImGui.Button($"{AppIcons.SI_Save}")) {
                     selectedBundle!.Save();
-                    EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Saved!", 1f);
+                    EditorWindow.CurrentWindow?.Overlays.ShowTooltip(UiText.T("Saved!"), 1f);
                 }
                 ImguiHelpers.Tooltip(Lang.Bundles.SaveBundleMetadata);
 
@@ -291,7 +291,7 @@ public class BundleManagementUI : IWindowHandler
                             str = Path.Combine(bundleFolder, Path.GetFileName(str));
                             try {
                                 File.Copy(srcPath, str, true);
-                                EditorWindow.CurrentWindow?.Overlays.ShowTooltip("Image copied to bundle folder", 4);
+                                EditorWindow.CurrentWindow?.Overlays.ShowTooltip(UiText.T("Image copied to bundle folder"), 4);
                             } catch (Exception e) {
                                 Logger.Error("Unable to copy file into bundle: " + e.Message);
                             }
@@ -541,7 +541,7 @@ public class BundleManagementUI : IWindowHandler
                     openFileCallback!(path);
                 }
             }
-            ImguiHelpers.Tooltip("Open file in Editor");
+            ImguiHelpers.Tooltip(UiText.T("Open file in Editor"));
         }
     }
     private void ShowEditTargetPathButton(ResourceListItem? entry, Bundle bundle)

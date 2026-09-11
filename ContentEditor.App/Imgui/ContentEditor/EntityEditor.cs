@@ -41,19 +41,19 @@ public class EntityEditor : IWindowHandler
     public void OnIMGUI()
     {
         if (workspace == null) {
-            ImGui.TextColored(Colors.Warning, "Couldn't get game configuration");
+            ImGui.TextColored(Colors.Warning, UiText.T("Couldn't get game configuration"));
             return;
         }
 
         if (data.Context == null) {
-            ImGui.TextColored(Colors.Error, "Missing UI container");
+            ImGui.TextColored(Colors.Error, UiText.T("Missing UI container"));
             return;
         }
 
         var instances = workspace.ResourceManager.GetEntityInstances(entityType);
         var selectedId = data.GetOrAddPersistentData<long>("selectedEntity", -1);
 
-        if (ImguiHelpers.FilterableEntityCombo("Entity"u8, instances, ref selectedId, ref data.Context.Filter)) {
+        if (ImguiHelpers.FilterableEntityCombo(UiText.LabelUtf8("Entity"), instances, ref selectedId, ref data.Context.Filter)) {
             data.SetPersistentData("selectedEntity", selectedId);
             // note: we can clear children safely, any changes are still stored in the resource manager
             // just gotta figure out how to keep those changes tracked in bundle
@@ -66,16 +66,16 @@ public class EntityEditor : IWindowHandler
 
         var selected = workspace.ResourceManager.GetActiveEntityInstance(entityType, selectedId);
         if (selected == null) {
-            ImGui.TextColored(Colors.Warning, "Selected object could not be found");
+            ImGui.TextColored(Colors.Warning, UiText.T("Selected object could not be found"));
             return;
         }
 
         if (ImGui.BeginPopupContextItem(entityType)) {
-            if (ImGui.Button("Change label")) {
+            if (ImGui.Button(UiText.Label("Change label"))) {
                 data.Context.AddChild("Rename", selected.Label);
                 ImGui.CloseCurrentPopup();
             }
-            if (ImGui.Button("Reopen in new window")) {
+            if (ImGui.Button(UiText.Label("Reopen in new window"))) {
                 EditorWindow.CurrentWindow?.AddSubwindow(new EntityEditor(workspace, selected));
                 ImGui.CloseCurrentPopup();
             }
@@ -86,14 +86,14 @@ public class EntityEditor : IWindowHandler
         if (renameCtx?.Get<string>() != null) {
             ImGui.Indent(16);
             var newName = renameCtx.Get<string>();
-            if (ImGui.InputText("New label", ref newName, 200)) {
+            if (ImGui.InputText(UiText.Label("New label"), ref newName, 200)) {
                 data.Context.GetChildByValue<string>()!.target = newName;
             }
             ImGui.Unindent(16);
-            if (ImGui.Button("Cancel rename")) {
+            if (ImGui.Button(UiText.Label("Cancel rename"))) {
                 data.Context.RemoveChild(renameCtx);
             }
-            if (newName != selected.Label && ImguiHelpers.SameLine() && ImGui.Button("Confirm rename")) {
+            if (newName != selected.Label && ImguiHelpers.SameLine() && ImGui.Button(UiText.Label("Confirm rename"))) {
                 selected.Label = newName;
                 data.Context.Changed = true;
                 selected.Config.PrimaryEnum?.UpdateEnum(workspace, selected);
@@ -105,7 +105,7 @@ public class EntityEditor : IWindowHandler
         }
 
         ImGui.Separator();
-        if (ImGui.Button("Duplicate")) {
+        if (ImGui.Button(UiText.Label("Duplicate"))) {
             selected = workspace.ResourceManager.CreateEntity(selected.Type, selected.Id);
             data.Context.children.Clear();
             data.SetPersistentData("selectedEntity", selected.Id);
@@ -118,7 +118,7 @@ public class EntityEditor : IWindowHandler
         }
 
         if (child.Changed && workspace.CurrentBundle == null) {
-            ImGui.TextColored(Colors.Warning, "No active bundle. Changes can't be saved. Create a bundle please.");
+            ImGui.TextColored(Colors.Warning, UiText.T("No active bundle. Changes can't be saved. Create a bundle please."));
         }
         child.ShowUI();
         if (child.Changed && workspace.CurrentBundle != null) {

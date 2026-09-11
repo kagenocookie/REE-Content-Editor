@@ -110,13 +110,13 @@ public class CsharpFlagsEnumFieldHandler<T, TUnderlying>() : IObjectUIHandler
         var totalPadding = startX * 2;
         var w_total = endX - totalPadding;
         if (!HideNumberInput) {
-            ImGui.Text("Flags: ");
+            ImGui.Text(UiText.T("Flags: "));
         }
         ImGui.SameLine();
         var tabMargin = ImGui.GetStyle().FramePadding.X * 2 + 32; // how do we determine checkbox size properly?
 
         ImGui.PushID(context.label);
-        var x = ImGui.CalcTextSize("Flags: ").X + ImGui.GetStyle().FramePadding.X;
+        var x = ImGui.CalcTextSize(UiText.T("Flags: ")).X + ImGui.GetStyle().FramePadding.X;
         for (int i = 0; i < Names.Length; ++i) {
             var label = Names[i];
             var flagValue = Values[i];

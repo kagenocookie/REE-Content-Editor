@@ -81,7 +81,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
                 }
             }, Handle.Filename.ToString() + ".csv", FileFilters.CsvJsonFile);
         }
-        ImguiHelpers.Tooltip("Export to file"u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Export to file"));
         ImGui.SameLine();
         if (ImGui.Button($"{AppIcons.SI_GenericImport}")) {
             PlatformUtils.ShowFileDialog((files) => {
@@ -98,7 +98,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
                 }
             }, null, FileFilters.CsvJsonFileAll);
         }
-        ImguiHelpers.Tooltip("Import from file"u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Import from file"));
     }
 
     private void ExportToJson(string path)
@@ -255,7 +255,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
         }
         ImGui.Separator();
         ImGui.SetNextItemWidth(Math.Min(300, ImGui.CalcItemWidth()));
-        ImguiHelpers.ValueCombo("Language", LangOptions, LangValues, ref selectedLanguage);
+        ImguiHelpers.ValueCombo(UiText.Label("Language"), LangOptions, LangValues, ref selectedLanguage);
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
@@ -272,14 +272,14 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
             filter = string.Empty;
         }
         ImGui.PopStyleColor();
-        ImguiHelpers.Tooltip("Create new entry"u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Create new entry"));
         using (var _ = ImguiHelpers.Disabled(!(selectedRow >= 0 && selectedRow < File.Entries.Count))) {
             ImGui.SameLine();
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_Copy, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary])) {
                 var data = new MessageData(File.Entries[selectedRow], Filename, "");
                 EditorWindow.CurrentWindow?.CopyToClipboard(data.ToJson().ToJsonString(), "Entry copied!");
             }
-            ImguiHelpers.Tooltip("Copy entry"u8);
+            ImguiHelpers.Tooltip(UiText.Utf8("Copy entry"));
         }
         ImGui.SameLine();
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_Paste, [Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary])) {
@@ -308,7 +308,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
                 }
             }
         }
-        ImguiHelpers.Tooltip("Paste as new entry"u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Paste as new entry"));
         using (var _ = ImguiHelpers.Disabled(!(selectedRow >= 0 && selectedRow < File.Entries.Count))) {
 
             ImGui.SameLine();
@@ -317,17 +317,17 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
                 ShowDeleteConfirm(selectedRow);
             }
             ImGui.PopStyleColor();
-            ImguiHelpers.Tooltip("Delete entry"u8);
+            ImguiHelpers.Tooltip(UiText.Utf8("Delete entry"));
         }
         ImGui.SameLine();
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isMessageSearchMatchCase, Colors.IconActive);
-        ImguiHelpers.Tooltip("Match Case"u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Match Case"));
         ImGui.SameLine();
         ImGui.SetNextItemWidth(Math.Min(400, ImGui.GetContentRegionAvail().X));
-        AppImguiHelpers.ClearableInputText("##MessageFilter"u8, $"{AppIcons.SI_GenericMagnifyingGlass} Filter", ref filter, 64);
-        ImguiHelpers.Tooltip("Filter by Name, Message content or GUID"u8);
+        AppImguiHelpers.ClearableInputText("##MessageFilter"u8, UiText.F($"{AppIcons.SI_GenericMagnifyingGlass} Filter"), ref filter, 64);
+        ImguiHelpers.Tooltip(UiText.Utf8("Filter by Name, Message content or GUID"));
 
         var size = ImGui.GetContentRegionAvail();
         var msgListHovered = false;
@@ -336,9 +336,9 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
         ImGui.BeginChild("msg_list", size, ImGuiChildFlags.ResizeX);
         var langIndex = (int)selectedLanguage;
         if (ImGui.BeginTable("Messages", 3, ImGuiTableFlags.Sortable | ImGuiTableFlags.Resizable | ImGuiTableFlags.ScrollY | ImGuiTableFlags.RowBg)) {
-            ImGui.TableSetupColumn(" Index", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize, 60 * UI.UIScale);
-            ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 0.3f);
-            ImGui.TableSetupColumn("Message", ImGuiTableColumnFlags.WidthStretch, 0.7f);
+            ImGui.TableSetupColumn(UiText.Label(" Index"), ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize, 60 * UI.UIScale);
+            ImGui.TableSetupColumn(UiText.Label("Name"), ImGuiTableColumnFlags.WidthStretch, 0.3f);
+            ImGui.TableSetupColumn(UiText.Label("Message"), ImGuiTableColumnFlags.WidthStretch, 0.7f);
             ImGui.TableSetupScrollFreeze(0, 1);
             ImGui.TableHeadersRow();
             var sort = ImGui.TableGetSortSpecs();
@@ -388,7 +388,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
             ImGui.SameLine();
             ImGui.BeginChild("Message " + selected.Header.entryName);
             ImGui.Spacing();
-            ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Sound ID").X - ImGui.GetStyle().FramePadding.X);
+            ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize(UiText.T("Sound ID")).X - ImGui.GetStyle().FramePadding.X);
             ImGui.BeginDisabled();
             string entryGUID = selected.Header.guid.ToString();
             ImGui.InputText("##GUID", ref entryGUID, 128);
@@ -397,15 +397,15 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
             if (ImGui.Button($"{AppIcons.SI_Copy}##0")) {
                 EditorWindow.CurrentWindow?.CopyToClipboard(selected.Header.guid.ToString(), "GUID copied!");
             }
-            ImguiHelpers.Tooltip("Copy GUID"u8);
+            ImguiHelpers.Tooltip(UiText.Utf8("Copy GUID"));
             var soundId = selected.Header.soundId;
-            if (ImGui.InputScalar("Sound ID"u8, ImGuiDataType.U32, &soundId)) {
+            if (ImGui.InputScalar(UiText.LabelUtf8("Sound ID"), ImGuiDataType.U32, &soundId)) {
                 UndoRedo.RecordCallbackSetter(context, selected.Header, selected.Header.soundId, soundId, (o, v) => o.soundId = v);
             }
-            ImguiHelpers.Tooltip("The event trigger ID of the sound linked with this message"u8);
+            ImguiHelpers.Tooltip(UiText.Utf8("The event trigger ID of the sound linked with this message"));
 
             var prevname = selected.Header.entryName;
-            if (ImGui.InputText("Name", ref selected.Header.entryName, 128)) {
+            if (ImGui.InputText(UiText.Label("Name"), ref selected.Header.entryName, 128)) {
                 UndoRedo.RecordCallbackSetter(context,
                     selected,
                     prevname,
@@ -416,7 +416,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
                 Handle.Modified = true;
             }
             var msg = selected.Strings[langIndex];
-            if (ImGui.InputTextMultiline("Message", ref msg, 1024, new System.Numerics.Vector2(ImGui.CalcItemWidth(), 300))) {
+            if (ImGui.InputTextMultiline(UiText.Label("Message"), ref msg, 1024, new System.Numerics.Vector2(ImGui.CalcItemWidth(), 300))) {
                 UndoRedo.RecordCallbackSetter(context,
                     selected,
                     selected.Strings[langIndex],
@@ -427,12 +427,12 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
                 Handle.Modified = true;
             }
             ImGui.PopItemWidth();
-            ImGui.SeparatorText("Attributes");
+            ImGui.SeparatorText(UiText.T("Attributes"));
             ImGui.BeginChild("Attributes");
             for (int i = 0; i < File.AttributeItems.Count; i++) {
                 var attr = File.AttributeItems[i];
                 var attrValue = selected.AttributeValues![i];
-                var attrLabel = string.IsNullOrEmpty(attr.Name) ? $"[Attr {i}]" : attr.Name;
+                var attrLabel = string.IsNullOrEmpty(attr.Name) ? UiText.F($"[Attr {i}]") : attr.Name;
                 switch (attr.ValueType) {
                     case AttributeValueType.Long:
                         var l = (long)attrValue;
@@ -474,7 +474,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
                         }
                         break;
                     case AttributeValueType.Empty:
-                        ImGui.Text("Empty: " + attrLabel);
+                        ImGui.Text(UiText.T("Empty: ") + attrLabel);
                         break;
                 }
             }
@@ -487,7 +487,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
     private void ShowDeleteConfirm(int index)
     {
         var entry = File.Entries[index];
-        EditorWindow.CurrentWindow!.AddSubwindow(new ConfirmationDialog("Deleting entry", $"Are you sure you wish to delete the entry {entry.Name}?", this, () => {
+        EditorWindow.CurrentWindow!.AddSubwindow(new ConfirmationDialog(UiText.T("Deleting entry"), UiText.F($"Are you sure you wish to delete the entry {entry.Name}?"), this, () => {
             selectedRow = -1;
             UndoRedo.RecordCallback(
                 context,

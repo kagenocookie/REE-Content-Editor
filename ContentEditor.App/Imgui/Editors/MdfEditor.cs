@@ -105,7 +105,7 @@ public class MdfEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
             AppConfig.Instance.UseMDFCompactView.Set(compactMode);
             context.children.Clear();
         }
-        ImguiHelpers.Tooltip("Toggle compact view"u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Toggle compact view"));
         DrawFileContents();
     }
 
@@ -180,7 +180,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
             var style = ImGui.GetStyle();
             var longestNameWidth = file.Materials.Count == 0
                 ? 0f
-                : file.Materials.Max(material => ImGui.CalcTextSize(string.IsNullOrEmpty(material.Header.matName) ? "<missingName>" : material.Header.matName).X);
+                : file.Materials.Max(material => ImGui.CalcTextSize(string.IsNullOrEmpty(material.Header.matName) ? UiText.T("<missingName>") : material.Header.matName).X);
             var labelPadding = style.WindowPadding.X * 2 + style.FramePadding.X * 2 + style.ItemSpacing.X * 2 + style.ScrollbarSize;
             materialListW = MathF.Max(materialListW, longestNameWidth + labelPadding);
             materialListMaxW = MathF.Max(materialListMaxW, materialListW);
@@ -203,22 +203,22 @@ public class MdfFileImguiHandler : IObjectUIHandler
         var list = file.Materials;
         SyncMaterialSelection(list);
 
-        ImGui.TextColored(Colors.Faded, "Material List");
+        ImGui.TextColored(Colors.Faded, UiText.T("Material List"));
         ImGui.Separator();
         ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_MaterialAdd, ref isNewMaterialMenu, [Colors.IconPrimary, Colors.IconSecondary], Colors.IconActive);
-        ImguiHelpers.Tooltip("Add new Material");
+        ImguiHelpers.Tooltip(UiText.T("Add new Material"));
         ImGui.SameLine();
         using (var __ = ImguiHelpers.Disabled(!HasMaterialsInClipboard())) {
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_MaterialPaste, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary])) {
                 PasteMaterials(context, list, pasted => SelectMaterials(context, list, pasted));
             }
-            ImguiHelpers.Tooltip("Paste Material from clipboard");
+            ImguiHelpers.Tooltip(UiText.T("Paste Material from clipboard"));
         }
         ImGui.SameLine();
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_TexExport, [Colors.IconPrimary, Colors.IconSecondary])) {
             ImGui.OpenPopup("MdfTexExport");
         }
-        ImguiHelpers.Tooltip("Export Textures");
+        ImguiHelpers.Tooltip(UiText.T("Export Textures"));
         ImGui.SameLine();
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_MaterialImport, [Colors.IconPrimary, Colors.IconSecondary])) {
             PlatformUtils.ShowFileDialog(paths => { var path = paths[0];
@@ -229,13 +229,13 @@ public class MdfFileImguiHandler : IObjectUIHandler
             FileSystemUtils.OpenURL("https://github.com/SilverEzredes/EMV-Engine-SILVER");
         }
         if (ImGui.BeginItemTooltip()) {
-            ImGui.Text("Import Material parameters from EMV JSON");
-            ImGui.TextColored(Colors.Info, "REECE compatible JSON files can only be saved using\nEMV Engine Silver (right-click to open link)");
+            ImGui.Text(UiText.T("Import Material parameters from EMV JSON"));
+            ImGui.TextColored(Colors.Info, UiText.T("REECE compatible JSON files can only be saved using\nEMV Engine Silver (right-click to open link)"));
             ImGui.EndTooltip();
         }
         ImGui.SameLine();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-        AppImguiHelpers.ClearableInputText("##MaterialSearch"u8, $"{AppIcons.SI_GenericMagnifyingGlass} Search", ref materialSearch, 64);
+        AppImguiHelpers.ClearableInputText("##MaterialSearch"u8, UiText.F($"{AppIcons.SI_GenericMagnifyingGlass} Search"), ref materialSearch, 64);
         if (isNewMaterialMenu) {
             ImGui.Separator();
             using (var _ = ImguiHelpers.Disabled(string.IsNullOrEmpty(newMaterialName))) {
@@ -250,16 +250,16 @@ public class MdfFileImguiHandler : IObjectUIHandler
                         newMaterialName = "";
                     }
                     ImGui.PopStyleColor();
-                    ImguiHelpers.Tooltip("Add");
+                    ImguiHelpers.Tooltip(UiText.T("Add"));
                 } else {
                     ImGui.Button($"{AppIcons.SI_GenericClose}");
-                    ImguiHelpers.Tooltip("A Material with the same name already exists");
+                    ImguiHelpers.Tooltip(UiText.T("A Material with the same name already exists"));
                     ImGui.PopStyleColor();
                 }
             }
             ImGui.SameLine();
             ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-            ImGui.InputTextWithHint("##NewMaterialNameField", "Enter material name here...", ref newMaterialName, 64);
+            ImGui.InputTextWithHint("##NewMaterialNameField", UiText.T("Enter material name here..."), ref newMaterialName, 64);
         }
 
         ImGui.Separator();
@@ -271,7 +271,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
 
             bool selected = selectedMaterials.Contains(mat);
             ImGui.PushStyleColor(ImGuiCol.Text, selected ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text));
-            if (ImGui.Selectable(string.IsNullOrEmpty(mat.Header.matName) ? "<missingName>##"+i : mat.Header.matName, selected)) {
+            if (ImGui.Selectable(string.IsNullOrEmpty(mat.Header.matName) ? UiText.T("<missingName>##")+i : mat.Header.matName, selected)) {
                 UpdateMaterialSelection(list, visibleMaterials, mat, i);
                 context.children.Clear();
             }
@@ -330,7 +330,7 @@ public class MdfFileImguiHandler : IObjectUIHandler
     private void ShowSelectedMaterialData(UIContext context, MdfFile file)
     {
         if (selectedIDX < 0 || selectedIDX >= file.Materials.Count) {
-            ImGui.TextColored(Colors.Note, "No material selected");
+            ImGui.TextColored(Colors.Note, UiText.T("No material selected"));
             return;
         }
 
@@ -574,13 +574,13 @@ public class MdfFileImguiHandler : IObjectUIHandler
         var workspace = context.GetWorkspace()!;
         var mdfBookmarks = context.FindHandlerInParents<MdfEditor>()?.MDFBookmarks;
         ImguiHelpers.ToggleButton($"{AppIcons.SI_Bookmark}", ref isShowOnlyBookmarkedParams, Colors.IconActive);
-        ImguiHelpers.Tooltip("Show only bookmarked parameters");
+        ImguiHelpers.Tooltip(UiText.T("Show only bookmarked parameters"));
         using (var _ = ImguiHelpers.Disabled(mdfBookmarks?.GetBookmarks(workspace.Game.name).Count == 0)) {
             ImGui.SameLine();
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_BookmarkClear, [Colors.IconPrimary, Colors.IconTertiary])) {
                 ImGui.OpenPopup("Confirm Action"u8);
             }
-            ImguiHelpers.Tooltip("Clear material parameter bookmarks");
+            ImguiHelpers.Tooltip(UiText.T("Clear material parameter bookmarks"));
             AppImguiHelpers.ShowActionModal(Lang.General.ConfirmTitle, $"{AppIcons.SI_GenericDelete2}", Colors.IconTertiary,
                 Lang.Material.ConfirmDeleteBookmarks.FormatRef(Lang.TranslateGame(workspace.Game.name)),
                 () => {
@@ -596,12 +596,12 @@ public class MdfFileImguiHandler : IObjectUIHandler
         if (ImguiHelpers.ToggleButton($"{AppIcons.SI_SortAZ}", ref isAlphabetSortParams, Colors.IconActive)) {
             context.children.Clear();
         }
-        ImguiHelpers.Tooltip("Sort parameters alphabetical"u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Sort parameters alphabetical"));
         ImGui.SameLine();
         if (ImguiHelpers.ToggleButton($"{AppIcons.SI_MDFGroupParams}", ref isGroupedParams, Colors.IconActive)) {
             context.children.Clear();
         }
-        ImguiHelpers.Tooltip("Toggle grouped parameter view"u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Toggle grouped parameter view"));
         if (isGroupedParams != AppConfig.Instance.UseMDFGroupedParams.Get()) {
             AppConfig.Instance.UseMDFGroupedParams.Set(isGroupedParams);
         }
@@ -609,10 +609,10 @@ public class MdfFileImguiHandler : IObjectUIHandler
         ImguiHelpers.VerticalSeparator();
         ImGui.SameLine();
         ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericMatchCase}", ref isMatParamMatchCase, Colors.IconActive);
-        ImguiHelpers.Tooltip("Match Case");
+        ImguiHelpers.Tooltip(UiText.T("Match Case"));
         ImGui.SameLine();
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().FramePadding.X);
-        AppImguiHelpers.ClearableInputText("##MatParamSearch"u8, $"{AppIcons.SI_GenericMagnifyingGlass} Filter parameters", ref matParamSearchQuery, 64);
+        AppImguiHelpers.ClearableInputText("##MatParamSearch"u8, UiText.F($"{AppIcons.SI_GenericMagnifyingGlass} Filter parameters"), ref matParamSearchQuery, 64);
     }
 
     private void ShowMaterialParameters(UIContext context, MaterialData mat)
@@ -790,7 +790,7 @@ public class TexHeaderImguiHandler : IObjectUIHandler
                 EditorWindow.CurrentWindow?.AddSubwindow( new TextureViewer(workspace, texHandle));
             }
         }
-        ImguiHelpers.Tooltip("Open Texture"u8);
+        ImguiHelpers.Tooltip(UiText.Utf8("Open Texture"));
         ImGui.SameLine();
         var editor = context.FindHandlerInParents<MdfEditor>();
         var mdf = context.FindHandlerInParents<MdfFileImguiHandler>();
@@ -801,7 +801,7 @@ public class TexHeaderImguiHandler : IObjectUIHandler
                     UndoRedo.RecordSet(context.GetChild(0)!, defaultPath ?? "systems/rendering/NullWhite.tex");
                     UndoRedo.AttachClearState(context.GetChild(0)!);
                 }
-                ImguiHelpers.Tooltip("Set to null texture"u8);
+                ImguiHelpers.Tooltip(UiText.Utf8("Set to null texture"));
             }
         }
         ImGui.SameLine();
@@ -953,11 +953,11 @@ public class ParamHeaderImguiHandler : IObjectUIHandler
             }
             ImGui.SameLine();
             ImGui.PopStyleColor();
-            ImguiHelpers.Tooltip(isBookmarked ? "Remove parameter from bookmarks": "Add parameter to bookmarks");
+            ImguiHelpers.Tooltip(isBookmarked ? UiText.T("Remove parameter from bookmarks"): UiText.T("Add parameter to bookmarks"));
 
             using (var _ = ImguiHelpers.Disabled(!hasDefaultComment)) {
                 ImGui.Button($"{AppIcons.SI_GenericQmark}");
-                ImguiHelpers.Tooltip(hasDefaultComment ? paramEntry!.Comment : "To be documented");
+                ImguiHelpers.Tooltip(hasDefaultComment ? paramEntry!.Comment : UiText.T("To be documented"));
                 ImGui.SameLine();
             }
         }

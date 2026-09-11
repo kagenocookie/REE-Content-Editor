@@ -107,11 +107,11 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     {
         ImGui.Button($"{AppIcons.SI_FileSource}");
         if (Handle.FileSource != null) {
-            ImguiHelpers.TooltipColored($"File source: {Handle.HandleType} - {Handle.FileSource} ({Handle.TargetPath})", Colors.Faded);
+            ImguiHelpers.TooltipColored(UiText.F($"File source: {Handle.HandleType} - {Handle.FileSource} ({Handle.TargetPath})"), Colors.Faded);
         } else if (!string.IsNullOrEmpty(Handle.TargetPath)) {
-            ImguiHelpers.TooltipColored($"File source: {Handle.HandleType} ({Handle.TargetPath})", Colors.Faded);
+            ImguiHelpers.TooltipColored(UiText.F($"File source: {Handle.HandleType} ({Handle.TargetPath})"), Colors.Faded);
         } else {
-            ImguiHelpers.TooltipColored($"File source: {Handle.HandleType}", Colors.Faded);
+            ImguiHelpers.TooltipColored(UiText.F($"File source: {Handle.HandleType}"), Colors.Faded);
         }
         if (ImGui.IsItemClicked()) {
             EditorWindow.CurrentWindow?.CopyToClipboard(Handle.TargetPath ?? Handle.Filepath, "Path copied!");
@@ -145,7 +145,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                 if (ImGui.Button($"{AppIcons.SI_FileChanges}")) {
                     var diff = Handle.DiffHandler.FindDiff(Handle);
                     if (diff == null) {
-                        EditorWindow.CurrentWindow?.Overlays.ShowTooltip("No changes detected compared to the base file", 3f);
+                        EditorWindow.CurrentWindow?.Overlays.ShowTooltip(UiText.T("No changes detected compared to the base file"), 3f);
                     } else {
                         EditorWindow.CurrentWindow?.AddSubwindow(new JsonViewer(diff, Handle.Filepath, Handle));
                     }
@@ -190,16 +190,16 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
                                 }
                                 workspace.CurrentBundle.Save();
                             }
-                            ImguiHelpers.Tooltip("Store in bundle\nFile is located in the bundle folder but is not marked as part of the bundle. This will store the path into the bundle json.");
+                            ImguiHelpers.Tooltip(UiText.T("Store in bundle\nFile is located in the bundle folder but is not marked as part of the bundle. This will store the path into the bundle json."));
                         }
                     } else if (Handle.DiffHandler != null) {
                         ImGui.SameLine();
                         var replace = resourceListing.Replace;
-                        if (ImGui.Checkbox("Replace File", ref replace)) {
+                        if (ImGui.Checkbox(UiText.Label("Replace File"), ref replace)) {
                             resourceListing.Replace = replace;
                             Handle.Modified = true;
                         }
-                        ImguiHelpers.Tooltip("When true, the file is treated as a full replacement and not partially patched.\nThis is required if you need to remove anything from the base file.\n\nWhen false, the file will be partially patched.\nThis is useful to allow multiple mods to affect a small part of a shared file, but may cause issues in specific cases like removed or reordered items.");
+                        ImguiHelpers.Tooltip(UiText.T("When true, the file is treated as a full replacement and not partially patched.\nThis is required if you need to remove anything from the base file.\n\nWhen false, the file will be partially patched.\nThis is useful to allow multiple mods to affect a small part of a shared file, but may cause issues in specific cases like removed or reordered items."));
                     }
                 }
             }
@@ -209,7 +209,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenFileExplorer, [Colors.IconSecondary, Colors.IconPrimary])) {
                 FileSystemUtils.ShowFileInExplorer(Handle.Filepath);
             }
-            ImguiHelpers.Tooltip("Show in File Explorer\nFilepath: " + Handle.Filepath);
+            ImguiHelpers.Tooltip(UiText.T("Show in File Explorer\nFilepath: ") + Handle.Filepath);
         }
         if (HasUnsavedChanges && IsRevertable) {
             ImGui.SameLine();
@@ -332,7 +332,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
     protected bool TryRead(BaseFile file, bool ignorePreviousFailure = false)
     {
         if (failedToReadfile && !ignorePreviousFailure) {
-            ImGui.TextColored(Colors.Error, "Failed to read file");
+            ImGui.TextColored(Colors.Error, UiText.T("Failed to read file"));
             return false;
         }
 
@@ -341,7 +341,7 @@ public abstract class FileEditor : IWindowHandler, IRectWindow, IDisposable, IFo
             return !failedToReadfile;
         } catch (Exception e) {
             failedToReadfile = true;
-            EditorWindow.CurrentWindow?.AddSubwindow(new ErrorModal("Read error", $"Failed to read file {Handle.Filepath}:\n\n{e.Message}", this));
+            EditorWindow.CurrentWindow?.AddSubwindow(new ErrorModal(UiText.T("Read error"), UiText.F($"Failed to read file {Handle.Filepath}:\n\n{e.Message}"), this));
             return false;
         }
     }

@@ -55,12 +55,12 @@ public class ConfirmationDialog : IWindowHandler
         ImGui.Spacing();
         ImGui.Spacing();
         ImGui.Spacing();
-        if (ImGui.Button("Confirm", new Vector2(modalSize.X / 2 - 12, btnHeight))) {
+        if (ImGui.Button(UiText.Label("Confirm"), new Vector2(modalSize.X / 2 - 12, btnHeight))) {
             OnConfirmed.Invoke();
             EditorWindow.CurrentWindow?.CloseSubwindow(this);
         }
         ImGui.SameLine();
-        if (ImGui.Button("Cancel", new Vector2(modalSize.X / 2 - 12, btnHeight))) {
+        if (ImGui.Button(UiText.Label("Cancel"), new Vector2(modalSize.X / 2 - 12, btnHeight))) {
             OnCancelled?.Invoke();
             EditorWindow.CurrentWindow?.CloseSubwindow(this);
         }

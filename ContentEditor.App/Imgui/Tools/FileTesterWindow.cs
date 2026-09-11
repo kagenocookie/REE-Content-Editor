@@ -76,40 +76,40 @@ public partial class FileTesterWindow : IWindowHandler
 
     public unsafe void OnIMGUI()
     {
-        if (ImGui.TreeNode("Tools")) {
+        if (ImGui.TreeNode(UiText.Label("Tools"))) {
             hashTest ??= "";
-            if (ImGui.TreeNode("Hash calculation")) {
+            if (ImGui.TreeNode(UiText.Label("Hash calculation"))) {
                 ImGui.PushItemWidth(ImGui.CalcItemWidth() / 4);
-                ImGui.InputText("Hash test", ref hashTest, 300);
+                ImGui.InputText(UiText.Label("Hash test"), ref hashTest, 300);
                 ImGui.SameLine();
-                ImGui.Text("UTF16 hash: " + MurMur3HashUtils.GetHash(hashTest));
+                ImGui.Text(UiText.T("UTF16 hash: ") + MurMur3HashUtils.GetHash(hashTest));
                 if (ImGui.IsItemClicked()) EditorWindow.CurrentWindow?.CopyToClipboard(MurMur3HashUtils.GetHash(hashTest).ToString());
                 ImGui.SameLine();
-                ImGui.Text("Ascii hash: " + MurMur3HashUtils.GetAsciiHash(hashTest));
+                ImGui.Text(UiText.T("Ascii hash: ") + MurMur3HashUtils.GetAsciiHash(hashTest));
                 if (ImGui.IsItemClicked()) EditorWindow.CurrentWindow?.CopyToClipboard(MurMur3HashUtils.GetAsciiHash(hashTest).ToString());
                 ImGui.SameLine();
-                ImGui.Text("UTF8 hash: " + MurMur3HashUtils.GetUTF8Hash(hashTest));
+                ImGui.Text(UiText.T("UTF8 hash: ") + MurMur3HashUtils.GetUTF8Hash(hashTest));
                 if (ImGui.IsItemClicked()) EditorWindow.CurrentWindow?.CopyToClipboard(MurMur3HashUtils.GetUTF8Hash(hashTest).ToString());
                 ImGui.PopItemWidth();
                 ImGui.TreePop();
             }
 
-            if (ImGui.TreeNode("Hash bruteforce")) {
-                if (ImGui.IsItemHovered()) ImGui.SetItemTooltip("Will attempt to match the given UTF16 hash with a word list (lowercase, uppercase, capital case variants are attempted) or executable file");
+            if (ImGui.TreeNode(UiText.Label("Hash bruteforce"))) {
+                if (ImGui.IsItemHovered()) ImGui.SetItemTooltip(UiText.T("Will attempt to match the given UTF16 hash with a word list (lowercase, uppercase, capital case variants are attempted) or executable file"));
                 wordlistFilepath ??= AppConfig.Instance.GetGameExecutablePath(context.GetWorkspace()?.Game ?? default) ?? "";
-                if (AppImguiHelpers.InputFilepath("Words Source"u8, ref wordlistFilepath)) {
+                if (AppImguiHelpers.InputFilepath(UiText.LabelUtf8("Words Source"), ref wordlistFilepath)) {
                     wordlistCache = null;
                 }
-                ImguiHelpers.Tooltip("The word source can be either an executable or a word list text file");
+                ImguiHelpers.Tooltip(UiText.T("The word source can be either an executable or a word list text file"));
                 if (wordlistFilepath.EndsWith(".exe")) {
-                    ImGui.Checkbox("Include All PAK file contents", ref includePakFilesForHashBruteforce);
-                    ImguiHelpers.Tooltip("Also include anything remotely word-looking from all PAK file contents.\nReading all files might take a bit.");
+                    ImGui.Checkbox(UiText.Label("Include All PAK file contents"), ref includePakFilesForHashBruteforce);
+                    ImguiHelpers.Tooltip(UiText.T("Also include anything remotely word-looking from all PAK file contents.\nReading all files might take a bit."));
                 }
                 if (ImguiHelpers.InlineRadioGroup(["UTF-16", "Ascii", "UTF-8"], [0, 1, 2], ref wordlistHashType)) {
                     wordlistCache = null;
                 }
-                ImguiHelpers.InputScalar<uint>("Tested hash", ImGuiDataType.U32, ref testedHash);
-                if (!string.IsNullOrEmpty(wordlistFilepath) && ImGui.Button("Find")) {
+                ImguiHelpers.InputScalar<uint>(UiText.Label("Tested hash"), ImGuiDataType.U32, ref testedHash);
+                if (!string.IsNullOrEmpty(wordlistFilepath) && ImGui.Button(UiText.Label("Find"))) {
                     if (testedHash == 2180083513) {
                         Logger.Info("Requested hash is an empty string's hash!");
                     } else {
@@ -151,15 +151,15 @@ public partial class FileTesterWindow : IWindowHandler
                 ImGui.TreePop();
             }
 
-            if (ImGui.TreeNode("Enum string hash reversing")) {
-                ImguiHelpers.Tooltip("Attempt to find a hash based on a fixed string (intended for unnamed enum strings)");
-                ImguiHelpers.InputScalar<uint>("Hash", ImGuiDataType.U32, ref testedHash);
-                ImGui.InputText("String Format", ref hashGuessFormat, 100);
-                ImguiHelpers.Tooltip("Use the {ID} placeholder where a 0-padded integer should be (e.g. a fixed length number like 00531)");
-                ImGui.DragInt("Max integer ID", ref hashGuessMaxValue);
-                ImguiHelpers.Tooltip("The highest ID number the string can have. All numbers from 0 to max will be attempted.");
+            if (ImGui.TreeNode(UiText.Label("Enum string hash reversing"))) {
+                ImguiHelpers.Tooltip(UiText.T("Attempt to find a hash based on a fixed string (intended for unnamed enum strings)"));
+                ImguiHelpers.InputScalar<uint>(UiText.Label("Hash"), ImGuiDataType.U32, ref testedHash);
+                ImGui.InputText(UiText.Label("String Format"), ref hashGuessFormat, 100);
+                ImguiHelpers.Tooltip(UiText.T("Use the {ID} placeholder where a 0-padded integer should be (e.g. a fixed length number like 00531)"));
+                ImGui.DragInt(UiText.Label("Max integer ID"), ref hashGuessMaxValue);
+                ImguiHelpers.Tooltip(UiText.T("The highest ID number the string can have. All numbers from 0 to max will be attempted."));
 
-                if (ImGui.Button("Execute")) {
+                if (ImGui.Button(UiText.Label("Execute"))) {
                     var maxDigits = (int)Math.Ceiling(Math.Log10(hashGuessMaxValue));
                     var numFormatString = $"D0{maxDigits}";
                     var found = false;
@@ -177,7 +177,7 @@ public partial class FileTesterWindow : IWindowHandler
                 ImGui.TreePop();
             }
 
-            if (ImGui.Button("Test RSZ field overrides")) {
+            if (ImGui.Button(UiText.Label("Test RSZ field overrides"))) {
                 Logger.Info("Starting RSZ override test...");
 
                 Task.Run(() => {
@@ -205,22 +205,22 @@ public partial class FileTesterWindow : IWindowHandler
         }
 
         if (allFormats) ImGui.BeginDisabled();
-        if (ImguiHelpers.FilterableCombo("File type"u8, FormatLabels, Formats, ref format, ref formatFilter)) {
+        if (ImguiHelpers.FilterableCombo(UiText.LabelUtf8("File type"), FormatLabels, Formats, ref format, ref formatFilter)) {
             AppConfig.Settings.Dev.LastFileTestFormat = format;
             AppConfig.Settings.Save();
         }
         if (allFormats) ImGui.EndDisabled();
         ImGui.SameLine();
-        ImGui.Checkbox("Test all known file formats", ref allFormats);
+        ImGui.Checkbox(UiText.Label("Test all known file formats"), ref allFormats);
 
-        ImGui.Checkbox("Try all configured games", ref allVersions);
+        ImGui.Checkbox(UiText.Label("Try all configured games"), ref allVersions);
         ImGui.SameLine();
-        ImGui.Checkbox("Execute read/write test", ref testRewrite);
+        ImGui.Checkbox(UiText.Label("Execute read/write test"), ref testRewrite);
         ImGui.SameLine();
-        ImGui.Checkbox("Smoke test", ref smokeTest);
+        ImGui.Checkbox(UiText.Label("Smoke test"), ref smokeTest);
 
         if (format != KnownFileFormats.Unknown || allFormats) {
-            if (ImGui.Button("Execute")) {
+            if (ImGui.Button(UiText.Label("Execute"))) {
                 KnownFileFormats[] formats = [format];
                 if (allFormats) {
                     var exts = Enum.GetValues<KnownFileFormats>().SelectMany(Workspace!.Env.GetFileExtensionsForFormat).ToArray();
@@ -250,16 +250,16 @@ public partial class FileTesterWindow : IWindowHandler
 
         if (!results.IsEmpty) {
             ImGui.SameLine();
-            if (cancellationTokenSource != null && ImGui.Button("Stop")) {
+            if (cancellationTokenSource != null && ImGui.Button(UiText.Label("Stop"))) {
                 cancellationTokenSource?.Cancel();
                 cancellationTokenSource = null;
             }
             ImGui.SameLine();
-            if (ImGui.Button("Clear results")) {
+            if (ImGui.Button(UiText.Label("Clear results"))) {
                 results.Clear();
             }
             ImGui.SameLine();
-            if (ImGui.Button("Copy result summary")) {
+            if (ImGui.Button(UiText.Label("Copy result summary"))) {
                 var str = string.Join("\n", results.OrderBy(r => r.Key.ToString()).Select(data => $"{data.Key}: {data.Value.success}/{data.Value.success + data.Value.fails.Count}"));
                 EditorWindow.CurrentWindow?.CopyToClipboard(str, "Copied!");
             }
@@ -269,11 +269,11 @@ public partial class FileTesterWindow : IWindowHandler
                     if (!hiddenGames.Add(game)) hiddenGames.Remove(game);
                 }
                 if (!hiddenGames.Contains(game) && !results.fails.IsEmpty) {
-                    ImGui.TextColored(Colors.Warning, "List of files that failed to read:");
+                    ImGui.TextColored(Colors.Warning, UiText.T("List of files that failed to read:"));
                     foreach (var file in results.fails) {
                         ImGui.Text(file);
                         if (ImGui.IsItemClicked()) {
-                            EditorWindow.CurrentWindow!.CopyToClipboard(file, "Copied file path!");
+                            EditorWindow.CurrentWindow!.CopyToClipboard(file, UiText.T("Copied file path!"));
                         }
                     }
                 }
@@ -286,7 +286,7 @@ public partial class FileTesterWindow : IWindowHandler
         results.Clear();
         var workspace = (data.ParentWindow as IWorkspaceContainer)?.Workspace;
         if (workspace == null) {
-            ImGui.TextColored(Colors.Error, "Workspace not configured");
+            ImGui.TextColored(Colors.Error, UiText.T("Workspace not configured"));
             return Task.CompletedTask;
         }
         var isLoadable = workspace.Env.GetFileExtensionsForFormat(format).Any(ext => workspace.ResourceManager.CanLoadFile("." + ext));
@@ -351,7 +351,7 @@ public partial class FileTesterWindow : IWindowHandler
         results.Clear();
         var workspace = (data.ParentWindow as IWorkspaceContainer)?.Workspace;
         if (workspace == null) {
-            ImGui.TextColored(Colors.Error, "Workspace not configured");
+            ImGui.TextColored(Colors.Error, UiText.T("Workspace not configured"));
             return Task.CompletedTask;
         }
         var isLoadable = workspace.Env.GetFileExtensionsForFormat(format).Any(ext => workspace.ResourceManager.CanLoadFile("." + ext));

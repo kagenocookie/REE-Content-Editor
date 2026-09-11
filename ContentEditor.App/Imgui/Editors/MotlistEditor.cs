@@ -99,7 +99,7 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
     protected override void DrawFileControls(WindowData data)
     {
         if (Handle.Resource is CommonMeshResource mesh) {
-            if (ImGui.Button("Save As Motlist ...")) {
+            if (ImGui.Button(UiText.Label("Save As Motlist ..."))) {
                 Workspace.Env.TryGetFileExtensionVersion("motlist", out var version);
                 var ext = ".motlist." + version;
                 PlatformUtils.ShowSaveFileDialog((path) => {
@@ -109,7 +109,7 @@ public class MotlistEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler
             }
             if (Workspace.CurrentBundle != null) {
                 ImGui.SameLine();
-                if (ImGui.Button("Save Motlist To Bundle ...")) {
+                if (ImGui.Button(UiText.Label("Save Motlist To Bundle ..."))) {
                     Workspace.Env.TryGetFileExtensionVersion("motlist", out var version);
                     var ext = ".motlist." + version;
                     ResourcePathPicker.ShowSaveToBundle(new MotListFileLoader(), new BaseFileResource<MotlistFile>(mesh.Motlist), Workspace, Path.ChangeExtension(Handle.Filename.ToString(), ext));
@@ -283,7 +283,7 @@ public class MotionCamListEditor : FileEditor, IWorkspaceContainer, IObjectUIHan
     protected override void DrawFileControls(WindowData data)
     {
         if (Handle.Resource is CommonMeshResource mesh) {
-            if (ImGui.Button("Save As Motlist ...")) {
+            if (ImGui.Button(UiText.Label("Save As Motlist ..."))) {
                 Workspace.Env.TryGetFileExtensionVersion("motlist", out var version);
                 var ext = ".motlist." + version;
                 PlatformUtils.ShowSaveFileDialog((path) => {
@@ -293,7 +293,7 @@ public class MotionCamListEditor : FileEditor, IWorkspaceContainer, IObjectUIHan
             }
             if (Workspace.CurrentBundle != null) {
                 ImGui.SameLine();
-                if (ImGui.Button("Save Motlist To Bundle ...")) {
+                if (ImGui.Button(UiText.Label("Save Motlist To Bundle ..."))) {
                     Workspace.Env.TryGetFileExtensionVersion("motlist", out var version);
                     var ext = ".motlist." + version;
                     ResourcePathPicker.ShowSaveToBundle(new MotListFileLoader(), new BaseFileResource<MotlistFile>(mesh.Motlist), Workspace, Path.ChangeExtension(Handle.Filename.ToString(), ext));
@@ -409,7 +409,7 @@ public class MotFileBaseHandler : IObjectUIHandler
             ImguiHelpers.BeginRect();
             context.ShowChildrenUI();
             if (instance == null) {
-                ImGui.TextColored(Colors.Info, "Motion not defined");
+                ImGui.TextColored(Colors.Info, UiText.T("Motion not defined"));
             }
             ImguiHelpers.EndRect(4);
             ImGui.Spacing();
@@ -553,7 +553,7 @@ public class TrackHandler : IObjectUIHandler
         if (instance == null) {
             ImGui.Text(context.label);
             ImGui.SameLine();
-            if (ImGui.Button("Create")) {
+            if (ImGui.Button(UiText.Label("Create"))) {
                 var editor = context.FindHandlerInParents<MotlistEditor>()?.File.Header.version.GetMotVersion()
                     ?? context.FindHandlerInParents<MotionCamListEditor>()?.File.Header.version.GetMotcamVersion().GetMotVersion();
                 if (editor == null) {
@@ -716,7 +716,7 @@ public class MotBoneHandler : IObjectUIHandler
             WindowHandlerFactory.SetupObjectUIContext(context, typeof(MotBone), false, DisplayedFields);
         }
 
-        var show = ImguiHelpers.TreeNodeSuffix("Bone"u8, instance.ToString());
+        var show = ImguiHelpers.TreeNodeSuffix(UiText.LabelUtf8("Bone"), instance.ToString());
         if (ImGui.BeginPopupContextItem("Bone")) {
             var boneCtx = context.FindParentContextByValue<MotBone>();
             if (boneCtx != null && ImGui.Selectable(Lang.Buttons.Copy)) {
@@ -855,7 +855,7 @@ public class MotFileListHandler : ListHandler
             VirtualClipboard.CopyToClipboard(listRef);
         }
 
-        if (VirtualClipboard.TryGetFromClipboard<MotlistFileBase>(out var list) && ImGui.Selectable("Batch paste")) {
+        if (VirtualClipboard.TryGetFromClipboard<MotlistFileBase>(out var list) && ImGui.Selectable(UiText.Label("Batch paste"))) {
             batchTransfer = new MotBatchTransfer(context.GetWorkspace()!, list, FindMotlist(context) ?? throw new NullReferenceException("Missing motlist file parent"), context.GetEditor()!.Handle);
         }
 

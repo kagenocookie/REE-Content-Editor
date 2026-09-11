@@ -30,13 +30,13 @@ public abstract class DialogBase(string PopupName)
             TriggerShow();
         }
         if (Closable) {
-            isOpen = ImGui.BeginPopupModal(PopupName, ref isOpen);
+            isOpen = ImGui.BeginPopupModal(UiText.Label(PopupName), ref isOpen);
             if (!isOpen) {
                 return true;
             }
 
         } else {
-            isOpen = ImGui.BeginPopupModal(PopupName);
+            isOpen = ImGui.BeginPopupModal(UiText.Label(PopupName));
         }
         if (isOpen) {
             if (Show()) {
@@ -52,7 +52,7 @@ public abstract class DialogBase(string PopupName)
 
     public void TriggerShow()
     {
-        ImGui.OpenPopup(PopupName);
+        ImGui.OpenPopup(UiText.Label(PopupName));
         isOpen = true;
     }
 
