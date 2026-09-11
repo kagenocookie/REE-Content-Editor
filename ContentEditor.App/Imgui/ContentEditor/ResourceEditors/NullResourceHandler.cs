@@ -8,9 +8,9 @@ public class NullResourceHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
-        // ImGui.Text(context.label);
         var workspace = context.GetWorkspace();
         if (workspace == null || workspace.CurrentBundle == null) {
+            ImGui.Text(context.label);
             return;
         }
         var param = context.EntityParams;

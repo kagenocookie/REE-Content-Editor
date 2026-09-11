@@ -1,8 +1,20 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ContentPatcher;
 
 public class NoopResourceHandler<TFieldType> : ResourceHandler, IResourceHandlerStatic
     where TFieldType : EntityFieldValueHandler, new()
 {
+    public NoopResourceHandler()
+    {
+    }
+
+    [SetsRequiredMembers]
+    public NoopResourceHandler(ResourceConfig config)
+    {
+        Config = config;
+    }
+
     public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new TFieldType();
 
     public static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)

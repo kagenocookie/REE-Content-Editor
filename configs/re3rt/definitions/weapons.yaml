@@ -44,13 +44,14 @@ entities:
           params:
             key_format: "Weapon_{name:lower()}"
         display_after: name
-      # - name: prefab
-      #   label: Weapon prefab
-      #   required: true
-      #   resource:
-      #     type: resource_link
-      #     resource_type: prefab
-      #     path: "{catalog?.Prefab?.Path}"
+      - name: prefab
+        label: Weapon prefab
+        required: true
+        field_type: resource_link
+        resource:
+          resource_type: prefab
+          params:
+            path: "{catalog?.Prefab?.Path}"
 
 resources:
   offline.WeaponPrefabUserData.WeaponParam:

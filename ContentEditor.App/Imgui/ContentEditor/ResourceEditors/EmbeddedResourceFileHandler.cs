@@ -2,11 +2,10 @@ using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
-using ReeLib;
 
 namespace ContentEditor.App.EntityResources;
 
-[ObjectImguiHandler(typeof(ResourceLinkCustomField))]
+[ObjectImguiHandler(typeof(FileContentResource))]
 public class EmbeddedResourceFileHandler : IObjectUIHandler
 {
     private FileHandle? file;

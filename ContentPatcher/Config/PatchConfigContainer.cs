@@ -355,6 +355,7 @@ public class PatchConfigContainer(string filepath)
             // handle fields with no resources (entity-only fields)
             field.ValueHandler = ResourceHandler.CreateValueHandler(data.fieldType, workspace);
             var resCfg = new EntityResourceConfigSerialized() { Type = data.fieldType };
+            field.config.type ??= data.fieldType;
             field.Config = SetupResourceConfig(workspace, entity.Name + "__" + field.name, resCfg, false);
             field.Config.Resource = (field.ValueHandler as CustomEntityFieldHandler)?.CreateResourceHandler(field.Config)
                 ?? throw new Exception($"Field {data.name} declared with field type {data.fieldType} but no resource provided.");

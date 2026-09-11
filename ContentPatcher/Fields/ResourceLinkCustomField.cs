@@ -10,19 +10,21 @@ namespace ContentPatcher;
 /// This field type only serves as a UI reference to a resource file based on another field's data.
 /// </summary>
 [ResourceField("resource_link")]
-public class ResourceLinkCustomField : EntityFieldValueHandler
+public class ResourceLinkCustomField : CustomEntityFieldHandler
 {
-    public string resourceType = null!;
+    public KnownFileFormats resourceType;
     public StringFormatter pathFormat = null!;
     public bool? ForcePreload;
     public override string? ResourceType => null;
     private string pathFormatString = string.Empty;
 
+    public override ResourceHandler? CreateResourceHandler(ResourceConfig config) => new NoopResourceHandler<ResourceLinkCustomField>(config);
+
     public string GetPath(ResourceEntity entity) => pathFormat.GetString(entity);
 
     public override void LoadParams(EntityFieldConfig data)
     {
-        resourceType = data.RequireParam<string>("type");
+        resourceType = data.resource?.ResourceType ?? KnownFileFormats.Unknown;
         pathFormatString = data.RequireParam<string>("path");
     }
 
@@ -34,17 +36,18 @@ public class ResourceLinkCustomField : EntityFieldValueHandler
     public override IContentResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
     {
         // would we want to force-open the referenced file here?
-        // var path = GetPath(entity);
-        // if (resource?.Text == null) return null;
-        // if (resources.TryGetOrLoadFile(resource.Text, out var file)) {
-        // }
-        // return new StringResource(path);
-        return null;
+        var path = GetPath(entity);
+        return new FileContentResource(path);
     }
 
     public override IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
     {
         return null;
+    }
+
+    public override (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData)
+    {
+        return (-1, new FileContentResource());
     }
 }
 
@@ -53,15 +56,18 @@ public sealed class FileContentResource : IContentResource
     public string ResourceTypeID => FileResourcePath;
     public string FileResourcePath { get; set; } = string.Empty;
 
-    public IContentResource Clone()
+    public FileContentResource()
     {
-        throw new NotImplementedException();
     }
 
-    public JsonNode ToJson(Workspace env)
+    public FileContentResource(string fileResourcePath)
     {
-        throw new NotImplementedException();
+        FileResourcePath = fileResourcePath;
     }
+
+    public IContentResource Clone() => new FileContentResource(FileResourcePath);
+
+    public JsonNode ToJson(Workspace env) => new JsonObject();
 
     public override string ToString() => FileResourcePath;
 }

@@ -27,7 +27,7 @@ public partial class EntityConfigSerialized
 public partial class EntityFieldConfig
 {
     public string name = string.Empty;
-    public string type = string.Empty;
+    public string? type = string.Empty;
     public string? label;
     public EntityFieldConditionData? condition;
     [YamlMember("required")]

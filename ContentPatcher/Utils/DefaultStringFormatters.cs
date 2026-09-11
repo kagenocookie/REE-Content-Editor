@@ -2,6 +2,7 @@ using System.Collections;
 using System.Globalization;
 using ContentEditor.Editor;
 using ReeLib;
+using ReeLib.Il2cpp;
 using SmartFormat;
 using SmartFormat.Core.Extensions;
 using SmartFormat.Core.Settings;
@@ -283,14 +284,21 @@ public class EnumLabelFormatter(Workspace env) : IFormatter
             return true;
         }
 
-        var enumDesc = env.TypeCache.GetEnumDescriptor(formattingInfo.FormatterOptions);
+        EnumDescriptor? enumDesc;
+        var rawLabel = formattingInfo.FormatterOptions.StartsWith('#');
+        if (rawLabel) {
+            enumDesc = env.TypeCache.GetEnumDescriptor(formattingInfo.FormatterOptions.Substring(1));
+        } else {
+            enumDesc = env.TypeCache.GetEnumDescriptor(formattingInfo.FormatterOptions);
+        }
         if (enumDesc == null) {
             formattingInfo.Write(formattingInfo.CurrentValue.ToString() ?? string.Empty);
             return true;
         }
 
-        // should probably also handle enumDesc.IsFlags somehow
-        var label = enumDesc.GetDisplayLabel(Convert.ChangeType(formattingInfo.CurrentValue, enumDesc.BackingType));
+        var label = rawLabel
+            ? enumDesc.GetLabel(Convert.ChangeType(formattingInfo.CurrentValue, enumDesc.BackingType))
+            : enumDesc.GetDisplayLabel(Convert.ChangeType(formattingInfo.CurrentValue, enumDesc.BackingType));
         formattingInfo.Write(label ?? formattingInfo.CurrentValue.ToString() ?? string.Empty);
         return true;
     }

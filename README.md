@@ -171,13 +171,13 @@ The patcher also outputs separate .txt files into the `reframework/data/injected
 All the patching logic is based on 3 layers of modifications: files, resource objects and entities, each built on top of the previous layers.
 
 - Files represent the individual .user, .msg, .pfb, etc files, identified by their filepath. Every editable file goes under this layer.
-- Resource objects are individual unique objects within one or spread across multiple files. These should have some sort of unique ID and support partial patching.
+- Resource objects are individual unique objects within one or spread across multiple files (for example individual catalog entries). These should have some sort of unique ID and support partial patching.
 - Entities group together multiple resources into one logical and more easily digestable unit. These allow "Content Editor" style centralized editing of related data.
 
 Patchable resources and entities are defined in `configs/<game>/definitions/*.yaml` files, intended to be easily extendable without modifying the code based on predefined resource types and patching methods. These files also support some additional configuration for object display to make things easier to navigate and edit.
 
 ***Files***
-All files can be edited directly and saved in a bundle. Some file formats support partial patching where it will compare the modified file with the original game file and store only the actual change, while others only support simple replacement. By default, .user files will be makred as partially patched files while .scn or .pfb files will get stored a replace, this can be manually changed from the per-file bundle settings.
+All files can be edited directly and saved in a bundle. Some file formats support partial patching where it will compare the modified file with the original game file and store only the actual change, while others only support simple replacement. By default, .user files will be makred as partially patched files while .scn or .pfb files will get stored as replace, this can be manually changed from the per-file bundle settings.
 
 There are some cases where doing a full overwrite of files may be required because the partial patch generation can't reliably detect some types of changes. You can mark a file as `"replace": true` in the bundle json file for those cases, which will fully replace the files instead of doing partial patching.
 - Removal of objects may not always get detected correctly or just not handled at all
@@ -212,7 +212,7 @@ One bundle modifying the same file as a direct file and through entities at the 
 Pull requests are welcome. There are several open issues for bigger features for anyone interested in helping, but if you feel like anything else could be improved upon, feel free to make a feature request or contribute yourself. I'm willing to assist with pointers regarding implementation details.
 
 ## Credits
-- Everyone who contributed to or was acknowledged in [RE-Engine-Lib](https://github.com/kagenocookie/RE-Engine-Lib)
+- Everyone who contributed to or was acknowledged in this project or [RE-Engine-Lib](https://github.com/kagenocookie/RE-Engine-Lib)
 - alphaZomega: mot bone remapping configs for re2 and re3
 
 ## Disclaimer
