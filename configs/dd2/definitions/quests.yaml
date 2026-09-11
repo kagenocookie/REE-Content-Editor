@@ -5,48 +5,53 @@
 entities:
   quests.quest_data:
     fields:
-      - name: context
-        label: Context Data
-        type: quests.ContextData
-        required: true
-      - name: variables
-        label: Variable Data
-        type: quests.VariableData
-      - name: deliver
-        label: Deliver Data
-        type: quests.DeliverData
-      - name: after_story
-        label: After Story Data
-        type: quests.AfterStoryData
-      - name: quest_log
-        label: Quest Logs
-        type: quests.LogItem
+    - name: context
+      label: Context Data
+      type: quests.ContextData
+      required: true
+    - name: variables
+      label: Variable Data
+      type: quests.VariableData
+    - name: deliver
+      label: Deliver Data
+      type: quests.DeliverData
+    - name: after_story
+      label: After Story Data
+      type: quests.AfterStoryData
+    - name: quest_log
+      label: Quest Logs
+      type: quests.LogItem
 
 resources:
   quests.ContextData:
     id: [_IDValue]
     type: array-file
-    file: natives/stm/appsystem/quest/userdata/questcontext.user.2
+    file: AppSystem/Quest/UserData/QuestContext.user
     field: ContextDataArray
+    classname: app.QuestContextData.ContextData
   quests.VariableData:
     id: [_IDValue]
     type: array-file
-    file: natives/stm/appsystem/quest/userdata/questcontext.user.2
+    file: AppSystem/Quest/UserData/QuestContext.user
     field: VariableDataArray
+    classname: app.QuestContextData.VariableData
   quests.DeliverData:
     id: [_IDValue]
     type: array-file
-    file: natives/stm/appsystem/quest/userdata/questcontext.user.2
+    file: AppSystem/Quest/UserData/QuestContext.user
     field: DeliverDataArray
+    classname: app.QuestContextData.DeliverData
   quests.AfterStoryData:
     id: [_IDValue]
     type: array-file
-    file: natives/stm/appsystem/quest/userdata/questcontext.user.2
+    file: AppSystem/Quest/UserData/QuestContext.user
     field: AfterStoryDataArray
+    classname: app.QuestContextData.AfterStoryData
   quests.LogItem:
     id: [_Id]
     type: array-file
-    file: natives/stm/appsystem/catalog/maincontents/userdata/questlogcatalog.user.2
+    file: AppSystem/Catalog/MainContents/UserData/QuestLogCatalog.user
+    classname: app.QuestLogCatalog.Item
 
 classes:
   app.QuestContextData.ContextData:

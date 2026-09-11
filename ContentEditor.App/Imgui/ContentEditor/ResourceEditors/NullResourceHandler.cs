@@ -22,7 +22,9 @@ public class NullResourceHandler : IObjectUIHandler
                 var field = param.EntityField == null ? null : entity?.Config.GetField(param.EntityField);
                 IContentResource resource;
                 if (entity != null && field != null) {
-                    resource = workspace.ResourceManager.CreateEntityResource(entity, field, ResourceState.Active);
+                    context.CreateEntityResource(workspace, field);
+                    return;
+                    // resource = workspace.ResourceManager.CreateEntityResource(entity, field, ResourceState.Active);
                 } else {
                     resource = workspace.ResourceManager.CreateResource(param.ResourceType, ResourceState.Active, id: param.ResourceId).resource;
                 }

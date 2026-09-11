@@ -36,6 +36,7 @@ public class MessageData : IAddressableContentResource
 
     public Guid Guid { get; set; }
     public required string MessageKey { get; set; } = string.Empty;
+    public uint SoundID { get; set; }
     public Dictionary<string, string> Messages { get; set; } = new((int)Language.Max);
     public Dictionary<string, string> Attributes { get; set; } = new();
 
@@ -60,7 +61,14 @@ public class MessageData : IAddressableContentResource
 
     public IContentResource Clone()
     {
-        return new MessageData() { MessageKey = MessageKey, Guid = Guid, Messages = Messages.ToDictionary(), ResourceTypeID = ResourceTypeID, FileResourcePath = FileResourcePath };
+        return new MessageData() {
+            MessageKey = MessageKey,
+            SoundID = SoundID,
+            Guid = Guid,
+            Messages = Messages.ToDictionary(),
+            ResourceTypeID = ResourceTypeID,
+            FileResourcePath = FileResourcePath,
+        };
     }
     public static MessageData FromJson(string json)
     {
@@ -73,6 +81,7 @@ public class MessageData : IAddressableContentResource
         return new MessageData() {
             FileResourcePath = "",
             ResourceTypeID = "",
+            SoundID = obj?[nameof(SoundID)]?.AsValue()?.GetValue<uint>() ?? 0,
             MessageKey = obj?[nameof(MessageKey)]?.AsValue()?.GetValue<string>() ?? "",
             Guid = obj?[nameof(Guid)]?.AsValue()?.GetValue<string>() is string str && Guid.TryParse(str, out var gg) ? gg : Guid.NewGuid(),
             Messages = obj?[nameof(Messages)].Deserialize<Dictionary<string, string>>() ?? new(),
@@ -86,6 +95,7 @@ public class MessageData : IAddressableContentResource
             var index = Enum.Parse<Language>(msg.Key);
             entry.Strings[(int)index] = msg.Value;
         }
+        entry.Header.soundId = SoundID;
         foreach (var attr in Attributes) {
             if (!int.TryParse(attr.Key, out var index)) {
                 index = entry.AttributeItems.FindIndex(it => it.Name == attr.Key);

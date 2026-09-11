@@ -1424,8 +1424,9 @@ public sealed class ResourceManager(PatchDataContainer config) : IDisposable
         }
     }
 
-    public ResourceConfig? GetResourceConfig(string resourceTypeID)
+    public ResourceConfig? GetResourceConfig(string? resourceTypeID)
     {
+        if (resourceTypeID == null) return null;
         return resources.GetValueOrDefault(resourceTypeID)?.config;
     }
 

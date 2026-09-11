@@ -59,6 +59,19 @@ public abstract class ResourceHandler
         throw new ArgumentException($"Unknown patcher type {config.Type}");
     }
 
+    public static EntityFieldValueHandler CreateValueHandler(string type, ContentWorkspace workspace)
+    {
+        if (fieldTypes.TryGetValue(type, out var custom)) {
+            if (custom.gameWhitelist?.Length > 0 && !custom.gameWhitelist.Contains(workspace.Game.name)) {
+                throw new ArgumentException($"Field type {type} not allowed for game {workspace.Game}");
+            }
+
+            return custom.func.Invoke();
+        }
+
+        throw new ArgumentException($"Unknown field type {type}");
+    }
+
     /// <summary>
     /// Read all available resource files.
     /// </summary>

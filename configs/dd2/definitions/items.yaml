@@ -1,5 +1,6 @@
 entities:
   items.item_data:
+    primary_field: data
     enums:
     - name: app.ItemIDEnum
       format: "It{id:06}"
@@ -11,25 +12,27 @@ entities:
     - name: name
       label: Name
       required: true
+      field_type: keyed_message
       resource:
-        type: keyed_message
-        key: "item_name_(\\d+)"
+        type: msg
         files:
         - Message/UI/ItemName.msg
         - Message/UI/ItemName_END.msg
         params:
-          new_key_format: "item_name_{id}"
+          key_pattern: "item_name_(\\d+)"
+          key_format: "item_name_{id}"
     - name: description
       label: Description
       required: true
+      field_type: keyed_message
       resource:
-        type: keyed_message
-        key: "item_detail_(\\d+)"
+        type: msg
         files:
         - Message/UI/ItemDetail.msg
         - Message/UI/ItemDetail_END.msg
         params:
-          new_key_format: "item_detail_{id}"
+          key_pattern: "item_detail_(\\d+)"
+          key_format: "item_detail_{id}"
           multiline: true
 
     - name: data
@@ -76,11 +79,12 @@ entities:
         display_after: start
         resource:
           type: string
-          regex: "^wp[0-9_]+$"
-          regexDescription: "Example: wp00_000"
-          tooltip: Enter a name for the weapon ID. This should be unique across all weapons.
-          initial: "{id:enum(app.WeaponID)}"
-          diffable: false
+          params:
+            regex: "^wp[0-9_]+$"
+            regexDescription: "Example: wp00_000"
+            tooltip: Enter a name for the weapon ID. This should be unique across all weapons.
+            initial: "{id:enum(app.WeaponID)}"
+            diffable: false
       - name: offsets
         type: app.WeaponSetting.OffsetSetting
         label: Offset setting

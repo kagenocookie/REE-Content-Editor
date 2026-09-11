@@ -1,21 +1,22 @@
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using ContentEditor;
 using ReeLib;
 using ReeLib.Msg;
 
 namespace ContentPatcher;
 
-[ResourcePatcher("keyed_message")]
+[ResourcePatcher("msg")]
 public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
 {
     private Regex? keyFormat;
 
-    public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new ObjectArray();
+    public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new KeyedMessage();
 
     public static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
     {
         var files = data.TargetFiles.ToList();
-        var keyFormat = data.Key;
+        var keyFormat = data.Params?.GetValueOrDefault("key_pattern") as string;
         return new MsgFileResourceHandler() {
             Config = resource,
             Files = files,
@@ -31,9 +32,15 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
             var langs = msg.Languages!;
             foreach (var entry in msg.Entries) {
                 var id = entry.Header.EntryHash;
-                if (keyFormat?.IsMatch(entry.Name) == false) continue;
+                if (keyFormat != null && !keyFormat.IsMatch(entry.Name)) continue;
 
-                var msgData = new MessageData() { ResourceTypeID = Config.Type, FileResourcePath = file, MessageKey = entry.Name, Guid = entry.Guid };
+                var msgData = new MessageData() {
+                    ResourceTypeID = Config.Type,
+                    FileResourcePath = file,
+                    MessageKey = entry.Name,
+                    Guid = entry.Guid,
+                    SoundID = entry.Header.soundId,
+                };
                 for (int i = 0; i < entry.Strings.Length; ++i) {
                     var str = entry.Strings[i];
                     if (string.IsNullOrEmpty(str)) continue;
@@ -56,22 +63,29 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
 
     public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
     {
-        var msgFile = workspace.ResourceManager.ReadFileResource<MsgFile>(Files[0]);
-        if (msgFile == null) {
-            throw new NullReferenceException("Msg file was missing??");
-        }
-
-        foreach (var (hash, entry) in resources) {
-            var data = ((MessageData)entry);
-            var msgEntry = msgFile.FindEntryByKeyHash((uint)hash);
-            if (msgEntry == null) {
-                // TODO figure out if we need the "unknown" field
-                msgEntry = msgFile.AddNewEntry(data.MessageKey);
+        foreach (var file in Files) {
+            var msgFile = workspace.ResourceManager.ReadFileResource<MsgFile>(file);
+            if (msgFile == null) {
+                Logger.Warn($"Could not load msg file {file}");
+                continue;
             }
 
-            foreach (var (lang, text) in ((MessageData)entry).Messages) {
-                var langIndex = (int)Enum.Parse<Language>(lang);
-                msgEntry.Strings[langIndex] = text;
+            foreach (var (hash, entry) in resources) {
+                var data = ((MessageData)entry);
+                var msgEntry = msgFile.FindEntryByKeyHash((uint)hash);
+                if (msgEntry == null) {
+                    if (!string.IsNullOrEmpty(data.FileResourcePath)) {
+                        continue;
+                    }
+
+                    data.FileResourcePath = file;
+                    msgEntry = msgFile.AddNewEntry(data.MessageKey);
+                }
+
+                foreach (var (lang, text) in ((MessageData)entry).Messages) {
+                    var langIndex = (int)Enum.Parse<Language>(lang);
+                    msgEntry.Strings[langIndex] = text;
+                }
             }
         }
     }

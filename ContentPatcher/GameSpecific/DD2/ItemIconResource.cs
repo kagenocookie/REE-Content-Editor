@@ -43,11 +43,8 @@ public class ItemIconResource : IContentResource
     }
 }
 
-[ResourcePatcher("DD2_ItemIcon")]
-public class DD2IconResourceHandler : NoopResourceHandler<ItemIconField> { }
-
 [ResourceField("DD2_ItemIcon", null, "dd2")]
-public class ItemIconField : EntityFieldValueHandler<ItemIconResource>
+public class ItemIconField : CustomEntityFieldHandler<ItemIconResource>
 {
     public override string? ResourceTypeId => null;
 
@@ -70,5 +67,17 @@ public class ItemIconField : EntityFieldValueHandler<ItemIconResource>
     public override IContentResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
     {
         return entity.Get(Field.name);
+    }
+
+    public override ResourceHandler? CreateResourceHandler(ResourceConfig config) => new NoopResourceHandler<ItemIconField>() { Config = config };
+
+    public override (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override IContentResource? LoadValue(ContentWorkspace workspace, ResourceEntity entity, ResourceState state)
+    {
+        throw new NotImplementedException();
     }
 }

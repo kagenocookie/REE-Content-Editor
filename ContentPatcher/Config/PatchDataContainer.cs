@@ -202,7 +202,7 @@ public class PatchDataContainer(string filepath)
         }
     }
 
-    private ResourceConfig SetupResourceConfig(ContentWorkspace workspace, string resType, EntityResourceConfigSerialized resCfg)
+    private ResourceConfig SetupResourceConfig(ContentWorkspace workspace, string resType, EntityResourceConfigSerialized resCfg, bool addResourceHandler = true)
     {
         var cfg = new ResourceConfig(resType) {
             CustomIDRange = resCfg.CustomIDRange,
@@ -230,7 +230,7 @@ public class PatchDataContainer(string filepath)
                 subConfig.ID ??= resCfg.ID;
                 subConfig.SubID ??= resCfg.SubID;
 
-                var sub = SetupResourceConfig(workspace, subType, subConfig);
+                var sub = SetupResourceConfig(workspace, subType, subConfig, addResourceHandler);
                 cfg.Subtypes[subType] = sub;
             }
         }
@@ -255,7 +255,9 @@ public class PatchDataContainer(string filepath)
                 }
             }
         }
-        cfg.Resource = ResourceHandler.CreateInstance(cfg, resCfg, workspace);
+        if (addResourceHandler) {
+            cfg.Resource = ResourceHandler.CreateInstance(cfg, resCfg, workspace);
+        }
         return cfg;
     }
 
@@ -278,14 +280,19 @@ public class PatchDataContainer(string filepath)
             var curIndex = fieldlist.FindIndex(f => f.name == data.name);
             var field = fieldlist[curIndex];
             if (data.displayAfter != null && data.displayAfter != data.name) {
-                var otherIndex = displaylist.FindIndex(dl => dl.name == data.displayAfter);
-                if (otherIndex != -1) {
+                if (data.displayAfter == "start") {
                     displaylist.RemoveAt(curIndex);
-                    otherIndex = displaylist.FindIndex(dl => dl.name == data.displayAfter);
-                    if (otherIndex == displaylist.Count - 1) {
-                        displaylist.Add(field);
-                    } else {
-                        displaylist.Insert(otherIndex + 1, field);
+                    displaylist.Insert(0, field);
+                } else {
+                    var otherIndex = displaylist.FindIndex(dl => dl.name == data.displayAfter);
+                    if (otherIndex != -1) {
+                        displaylist.RemoveAt(curIndex);
+                        otherIndex = displaylist.FindIndex(dl => dl.name == data.displayAfter);
+                        if (otherIndex == displaylist.Count - 1) {
+                            displaylist.Add(field);
+                        } else {
+                            displaylist.Insert(otherIndex + 1, field);
+                        }
                     }
                 }
             }
@@ -339,12 +346,17 @@ public class PatchDataContainer(string filepath)
         var data = field.config;
         if (data.resource != null) {
             field.Config = SetupResourceConfig(workspace, entity.Name + "__" + field.name, data.resource);
-            resources.TryAdd(field.Config.Resource.Config.Type, field.Config);
+            field.config.type ??= field.Config.Type;
+            resources.TryAdd(field.Config.Type, field.Config);
         } else if (!string.IsNullOrEmpty(data.type) && resources.TryGetValue(data.type, out var globalResource)) {
             field.Config = globalResource;
         } else if (!string.IsNullOrEmpty(data.fieldType)) {
+            // handle fields with no resources (entity-only fields)
+            field.ValueHandler = ResourceHandler.CreateValueHandler(data.fieldType, workspace);
             var resCfg = new EntityResourceConfigSerialized() { Type = data.fieldType };
-            field.Config = SetupResourceConfig(workspace, entity.Name + "__" + field.name, resCfg);
+            field.Config = SetupResourceConfig(workspace, entity.Name + "__" + field.name, resCfg, false);
+            field.Config.Resource = (field.ValueHandler as CustomEntityFieldHandler)?.CreateResourceHandler(field.Config)
+                ?? throw new Exception($"Field {data.name} declared with field type {data.fieldType} but no resource provided.");
         } else {
             throw new Exception($"Missing resource or type for field {field.name} of {entity}");
         }
@@ -352,9 +364,8 @@ public class PatchDataContainer(string filepath)
             throw new Exception($"Missing patcher for resource {field.Config}");
         }
 
-        // TODO allow custom field override
-        if (!string.IsNullOrEmpty(field.config.fieldType)) {
-            field.ValueHandler = field.Config.Resource.CreateValueHandler(field);
+        if (field.ValueHandler == null && !string.IsNullOrEmpty(data.fieldType)) {
+            field.ValueHandler = ResourceHandler.CreateValueHandler(data.fieldType, workspace);
         }
         field.ValueHandler ??= field.Config.Resource.CreateValueHandler(field);
         field.ValueHandler.Field = field;
@@ -371,39 +382,6 @@ public class PatchDataContainer(string filepath)
         field.IsNotStandaloneValue = data.IsNotStandalone;
         return field;
     }
-
-    // private EntityField CreateFieldInstance(EntityFieldConfig data)
-    // {
-    //     if (fieldTypes == null) {
-    //         fieldTypes = new();
-    //         foreach (var type in typeof(ObjectCustomField).Assembly.GetTypes()) {
-    //             if (type.IsAbstract || !type.IsAssignableTo(typeof(EntityField))) continue;
-
-    //             var attr = type.GetCustomAttribute<ResourceFieldAttribute>();
-    //             if (attr == null) continue;
-
-    //             fieldTypes[attr.PatcherType] = type;
-    //         }
-    //     }
-
-    //     string? resourceType = null;
-    //     if (!string.IsNullOrEmpty(data.resource?.Type)) {
-    //         if (resources.TryGetValue(data.resource.Type, out var rest)) {
-    //             resourceType = rest.Patcher?.FieldValueType;
-    //         }
-    //     }
-
-    //     resourceType ??= data.type;
-    //     if (fieldTypes.TryGetValue(resourceType, out var t)) {
-    //         var inst = (EntityField)Activator.CreateInstance(t)!;
-    //         inst.name = data.name;
-    //         inst.config = data;
-    //         inst.label = data.label ?? data.name;
-    //         return inst;
-    //     }
-
-    //     throw new NotImplementedException($"Unknown field type {resourceType} for field {data.name}");
-    // }
 
     private static readonly YamlSerializerOptions yamlOptions = new YamlSerializerOptions {
         NamingConvention = NamingConvention.LowerCamelCase,

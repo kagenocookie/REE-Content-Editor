@@ -5,14 +5,11 @@ namespace ContentPatcher;
 [ResourceField("object")]
 public class ObjectField : EntityFieldValueHandler, IMainField, IDiffableField, IResourceValueContainer
 {
-    public string classname = null!;
-    public override string ResourceTypeId => classname;
     public bool? forceNested;
     bool IDiffableField.EnableDiff => true;
 
     public override void LoadParams(EntityFieldConfig data)
     {
-        classname = data.resource?.Classname ?? data.type;
         if (data.TryGetParam<bool>("nested", out bool nested)) {
             forceNested = nested;
         }
@@ -21,11 +18,6 @@ public class ObjectField : EntityFieldValueHandler, IMainField, IDiffableField, 
     public NestableFieldAccessor? GetAccessor(ContentWorkspace workspace, string path)
         => NestableFieldAccessor.CreateForClass(workspace.Env.RszParser, Field.Config.RszClass, path);
 
-    public override IContentResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
-    {
-        return workspace.ResourceManager.GetResourceInstance(Field.Config.Type, resourceId, state);
-    }
-
     public override IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
     {
         if (data == null) {
@@ -33,7 +25,7 @@ public class ObjectField : EntityFieldValueHandler, IMainField, IDiffableField, 
             return null;
         }
         if (currentResource == null) {
-            var resourceKey = data["$type"]?.GetValue<string>() ?? classname;
+            var resourceKey = data["$type"]?.GetValue<string>() ?? Field.Config.RszClassRequired.name;
             var inst = workspace.ResourceManager.CreateEntityResource<RSZObjectResource>(entity, Field, state, resourceKey);
             workspace.Diff.ApplyDiff(inst.Instance, data);
             return inst;

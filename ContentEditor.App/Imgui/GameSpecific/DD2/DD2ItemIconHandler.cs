@@ -7,18 +7,17 @@ using ReeLib;
 
 namespace ContentEditor.App.DD2;
 
-[CustomFieldHandler(typeof(ItemIconField), "dd2")]
-public sealed class DD2ItemIconHandler(EntityField field) : IObjectUIHandler, IObjectUIInstantiator
+[ObjectImguiHandler(typeof(ItemIconField))]
+public sealed class DD2ItemIconHandler : IObjectUIHandler
 {
-    public static Func<EntityField, IObjectUIHandler> GetFactory() => (field) => new DD2ItemIconHandler(field);
-
     public void OnIMGUI(UIContext context)
     {
         var entity = context.GetOwnerEntity();
         var data = entity?.Get("data") as RSZObjectResource;
         var workspace = context.GetWorkspace();
         if (entity == null || data == null || workspace == null) {
-            ImGui.TextColored(Colors.Error, $"{field.label} field requires a valid item entity and workspace");
+            var field = context.EntityParams?.EntityField;
+            ImGui.TextColored(Colors.Error, $"{field} field requires a valid item entity and workspace");
             return;
         }
 

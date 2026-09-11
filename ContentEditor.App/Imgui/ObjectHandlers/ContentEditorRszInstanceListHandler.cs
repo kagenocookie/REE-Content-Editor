@@ -4,14 +4,13 @@ using ReeLib;
 
 namespace ContentEditor.App;
 
-[CustomFieldHandler(typeof(ObjectArray))]
-public sealed class ContentEditorRszInstanceListHandler(EntityField field) : IObjectUIHandler, IObjectUIInstantiator
+[ObjectImguiHandler(typeof(RSZObjectListResource))]
+public sealed class ContentEditorRszInstanceListHandler : IObjectUIHandler
 {
-    public static Func<EntityField, IObjectUIHandler> GetFactory() => (field) => new ContentEditorRszInstanceListHandler(field);
-
     public void OnIMGUI(UIContext context)
     {
         var list = context.Get<RSZObjectListResource>()?.Instances;
+        var field = context.GetEntityField<ObjectArray>()!;
         if (context.children.Count == 0) {
             var child = context.AddChild(context.label, list);
             child.uiHandler = new ArrayRSZHandler(new RszField() { name = "", type = RszFieldType.Object, original_type = field.ResourceTypeId! });
@@ -22,7 +21,7 @@ public sealed class ContentEditorRszInstanceListHandler(EntityField field) : IOb
             if (workspace != null) {
                 ImGui.PushID(context.label);
                 if (ImGui.Button("Create")) {
-                    context.CreateEntityResource(workspace, field);
+                    context.CreateEntityResource(workspace, field.Field);
                 }
                 ImGui.PopID();
             }

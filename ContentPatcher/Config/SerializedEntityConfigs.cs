@@ -66,7 +66,7 @@ public partial class EntityFieldConfig
     }
 
     public T RequireParam<T>(string key)
-        => resource?.Params?.GetValueOrDefault(key) is T vvv ? vvv : throw new Exception($"Resource type {type} requires {typeof(T)} parameter {key}");
+        => resource?.Params?.GetValueOrDefault(key) is T vvv ? vvv : throw new Exception($"Resource {type} requires {typeof(T)} parameter {key}");
 }
 
 [YamlObject(NamingConvention.SnakeCase)]

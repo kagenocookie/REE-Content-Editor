@@ -14,7 +14,6 @@ public class SingleMsgCustomField : CustomEntityFieldHandler<MessageData>, IDiff
     public bool multiline;
 
     bool IDiffableField.EnableDiff => true;
-    public override string ResourceTypeId => file;
 
     public override void LoadParams(EntityFieldConfig data)
     {

@@ -6,16 +6,16 @@ entities:
     to_string: "{id:enum(app.Character.JobEnum)}"
     fields:
       - name: job_info
+        label: Job Info
         type: jobs.JobInformation
-        label: Data
         required: true
       - name: custom_skills
+        label: Custom Skills
         type: jobs.CustomSkillSet
-        label: Data
         required: true
       - name: normal_skills
+        label: Normal Skills
         type: jobs.NormalSkillSet
-        label: Data
         required: true
 
 resources:
@@ -23,17 +23,17 @@ resources:
     id: [_JobID]
     type: array-file
     classname: app.JobInformationParam
-    file: natives/stm/appsystem/gui/jobmenu/jobinformationdata.user.2
-  jobs.CustomSkillset:
+    file: AppSystem/Gui/JobMenu/JobInformationData.user
+  jobs.CustomSkillSet:
     id: [_Job]
     type: array-file
     classname: app.CustomSkillSet
-    file: natives/stm/appsystem/gui/jobmenu/customskillinformationdata.user.2
-  jobs.NormalSkillset:
+    file: AppSystem/Gui/JobMenu/CustomSkillInformationData.user
+  jobs.NormalSkillSet:
     id: [_Job]
     type: array-file
     classname: app.NormalSkillSet
-    file: natives/stm/appsystem/gui/jobmenu/normalskillinformationdata.user.2
+    file: AppSystem/Gui/JobMenu/NormalSkillInformationData.user
 
 classes:
   app.CustomSkillInformationParam:

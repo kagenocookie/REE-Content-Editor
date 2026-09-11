@@ -2,14 +2,13 @@ using ContentPatcher;
 
 namespace ContentEditor.App.ImguiHandling.EntityResources;
 
-[CustomFieldHandler(typeof(StringCustomField))]
-public class EntityStringFieldHandler(StringCustomField field) : IObjectUIHandler, IObjectUIInstantiator
+[ObjectImguiHandler(typeof(StringResource))]
+public class EntityStringFieldHandler : IObjectUIHandler
 {
-    public static Func<EntityField, IObjectUIHandler> GetFactory() => (field) => new EntityStringFieldHandler((StringCustomField)field.ValueHandler);
-
     public void OnIMGUI(UIContext context)
     {
         var entity = context.GetOwnerEntity();
+        var field = context.GetEntityField<StringCustomField>()!;
         if (entity == null) {
             ImGui.TextColored(Colors.Error, context.label + ": Entity not found");
             return;

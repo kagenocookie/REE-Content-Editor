@@ -3,14 +3,12 @@
 entities:
   events.event:
     to_string: "Event {id}: {select_data._StartLocation:enum(app.AIKeyLocation)}"
-    custom_id_range: [10000, 999000]
     fields:
       - name: select_data
         type: app.SuddenQuestSelectData
         label: Data
   events.event_context:
     to_string: "Event context {id}: {data._Data._Type:enum(app.QuestDefine.SuddenQuestType)} - NPC={data._Data._NpcID:enum(app.CharacterID)}"
-    custom_id_range: [10000, 999000]
     fields:
       - name: data
         type: app.SuddenQuestContextData
@@ -29,14 +27,20 @@ entities:
 resources:
   app.SuddenQuestSelectData:
     id: [_SerialNum]
+    custom_id_range: [10000, 999000]
     type: array-file
     file: natives/stm/appsystem/quest/userdata/questsudden/suddenquesttable.user.2
     field: _SelectDataArray
+    params:
+      nested: false
   app.SuddenQuestContextData:
     id: [_SerialNum]
+    custom_id_range: [10000, 999000]
     type: array-file
     file: natives/stm/appsystem/quest/userdata/questsudden/suddenquesttable.user.2
     field: _ContextDataArray
+    params:
+      nested: false
   app.DomainQueryGenerateTable.DomainQueryGenetateTableElement:
     id: [_RequestID]
     type: array-file

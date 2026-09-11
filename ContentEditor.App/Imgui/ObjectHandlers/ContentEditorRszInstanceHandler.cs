@@ -5,14 +5,13 @@ using ReeLib;
 
 namespace ContentEditor.App;
 
-[CustomFieldHandler(typeof(ObjectField))]
-public sealed class ContentEditorRszInstanceHandler(ObjectField field) : IObjectUIHandler, IObjectUIInstantiator
+[ObjectImguiHandler(typeof(RSZObjectResource))]
+public sealed class ContentEditorRszInstanceHandler : IObjectUIHandler
 {
-    public static Func<EntityField, IObjectUIHandler> GetFactory() => (field) => new ContentEditorRszInstanceHandler((ObjectField)field.ValueHandler);
-
     public void OnIMGUI(UIContext context)
     {
         var instance = context.Get<RSZObjectResource>();
+        var field = context.GetEntityField<ObjectField>();
         if (instance == null) {
             ImGui.Text(context.label);
             var workspace = context.GetWorkspace();
@@ -20,19 +19,19 @@ public sealed class ContentEditorRszInstanceHandler(ObjectField field) : IObject
                 ImGui.SameLine();
                 ImGui.PushID(context.label);
                 if (ImGui.Button("Create")) {
-                    context.CreateEntityResource(workspace, field.Field);
+                    context.CreateEntityResource(workspace, field?.Field);
                 }
                 ImGui.PopID();
             }
             return;
         }
-        if (context.children.Count == 0) {
+        if (context.children.Count == 0 || context.children[0].uiHandler == null) {
             var child = context.AddChild(context.label, instance.Instance, setter: (ctx, val) => instance.Instance = (RszInstance?)val!);
             WindowHandlerFactory.SetupRSZInstanceHandler(child);
         }
         ImGui.Spacing();
         ImguiHelpers.BeginRect();
-        var nested = field.forceNested ?? instance.Instance.Fields.Length > 2;
+        var nested = field?.forceNested ?? instance.Instance.Fields.Length > 2;
         if (nested) {
             if (ImGui.TreeNode(context.label)) {
                 context.children[0].ShowUI();

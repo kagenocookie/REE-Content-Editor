@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using System.Numerics;
 using System.Reflection;
-using ContentEditor.App.DD2;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.ImguiHandling.Chain;
@@ -35,8 +34,6 @@ public class OpenFileContext
 
 public static class WindowHandlerFactory
 {
-    private static Dictionary<Type, Func<EntityField, IObjectUIHandler>>? customFieldImguiHandlers;
-
     private static HashSet<string> NonEnumIntegerTypes = [
         "System.Byte", "System.SByte",
         "System.Int16", "System.UInt16",
@@ -827,13 +824,8 @@ public static class WindowHandlerFactory
                 continue;
             }
 
-            var handler = GetCustomFieldImguiHandler(field);
             var child = context.AddChild(field.label, entity, getter: (ctx) => ((ResourceEntity)ctx.target!).Get(field.name), setter: (ctx, val) => ((ResourceEntity)ctx.target!).Set(field.name, val as IContentResource));
-            if (handler != null) {
-                child.uiHandler = handler;
-            } else {
-                SetupEntityResourceContent(child, field);
-            }
+            SetupEntityResourceContent(child, field);
         }
         return context;
     }
@@ -875,7 +867,7 @@ public static class WindowHandlerFactory
 
     public static void SetupEntityResourceContent(UIContext context, EntityField entityField)
     {
-        var resource = context.Get<IContentResource>();
+        var resource = context.Get<IContentResource?>();
         var entity = context.GetOwnerEntity();
         var resourceId = entity?.GetFieldId(entityField.name) ?? -1;
         if (resourceId == -1) {
@@ -884,7 +876,7 @@ public static class WindowHandlerFactory
 
         context.EntityParams = new EntityParams() {
             EntityField = entityField.name,
-            ResourceType = resource.ResourceTypeID,
+            ResourceType = entityField.ResourceTypeId,
             ResourceId = resourceId,
             Entity = entity
         };
@@ -894,18 +886,16 @@ public static class WindowHandlerFactory
             return;
         }
 
+        context.uiHandler = EntityFieldHandler.Instance;
         var workspace = context.GetWorkspace();
+        var child = context.AddChildContextSetter<IContentResource, IContentResource>(entityField.label, resource, setter: (c, s, v) => c.GetOwnerEntity()?.Set(entityField.name, v));
+        child.EntityParams = context.EntityParams;
         if (workspace == null || string.IsNullOrEmpty(resource.ResourceTypeID)) {
-            context.AddChildContextSetter<IContentResource, IContentResource>(resource.Label, resource, setter: (c, s, v) => c.GetOwnerEntity()?.Set(entityField.name, v)).AddDefaultHandler();
-            context.children[^1].EntityParams = context.EntityParams;
+            child.AddDefaultHandler();
             return;
         }
 
-        var config = workspace.ResourceManager.GetResourceConfig(resource.ResourceTypeID);
-        var displayName = config?.DisplayName ?? workspace.Config.ResourceHierarchy.GetFriendlyName(resource.ResourceTypeID);
-        context.AddChildContextSetter<IContentResource, IContentResource>(displayName, resource, setter: (c, s, v) => c.GetOwnerEntity()?.Set(entityField.name, v));
-        context.uiHandler = CreateUIHandler(resource, resource.GetType());
-        context.children[^1].EntityParams = context.EntityParams;
+        child.uiHandler = CreateUIHandler(resource, resource.GetType());
 
         if (resourceId == -1) return;
 
@@ -926,34 +916,6 @@ public static class WindowHandlerFactory
             child.EntityParams = context.EntityParams!.Clone();
             child.EntityParams.ResourceType = subType.Type;
         }
-    }
-
-    private static IObjectUIHandler? GetCustomFieldImguiHandler(EntityField field)
-    {
-        if (customFieldImguiHandlers == null) {
-            customFieldImguiHandlers = new();
-            foreach (var type in typeof(ContentEditorRszInstanceHandler).Assembly.GetTypes()) {
-                if (type.IsAbstract || !typeof(IObjectUIHandler).IsAssignableFrom(type)) continue;
-
-                var attrs = type.GetCustomAttributes<CustomFieldHandlerAttribute>();
-                if (!attrs.Any()) continue;
-
-                var method = type.GetInterfaceMap(typeof(IObjectUIInstantiator)).TargetMethods.First();
-                if (method == null) {
-                    throw new Exception($"Invalid ObjectHandler type {type} - must implement {typeof(IObjectUIInstantiator)} for UI display");
-                }
-
-                foreach (var attr in attrs) {
-                    customFieldImguiHandlers[attr.HandledFieldType] = (Func<EntityField, IObjectUIHandler>)method.Invoke(null, Array.Empty<object?>())!;
-                }
-            }
-        }
-
-        if (customFieldImguiHandlers.TryGetValue(field.ValueHandler.GetType(), out var handler)) {
-            return handler.Invoke(field);
-        }
-
-        return null;
     }
 
     public static string GetString(this RszInstance instance)

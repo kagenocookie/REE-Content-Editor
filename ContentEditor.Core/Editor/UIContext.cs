@@ -66,8 +66,8 @@ public class UIContext
         originalValue = GetRaw();
     }
 
-    public T[]? GetStateArray<T>() => GetStateOrNull(6)?.value as T[];
-    public void SetStateArray<T>(T[] list) => GetStateRef<T[]>(6, list) = list;
+    public T[]? GetStateArray<T>() => GetStateOrNull(7)?.value as T[];
+    public void SetStateArray<T>(T[] list) => GetStateRef<T[]>(7, list) = list;
 
     public string InitFilterDefault(string? defaultFilter) => GetStateRef<string>(2, defaultFilter ?? "");
 

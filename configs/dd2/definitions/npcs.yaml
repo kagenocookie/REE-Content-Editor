@@ -32,7 +32,6 @@ entities:
     - name: app.CharacterID
       format: "{name}"
       primary: true
-    custom_id_range: [1000, 999999]
     to_string: "NPC {name}: {displayName}"
     fields:
       - name: data
@@ -48,28 +47,33 @@ entities:
         display_after: start
         resource:
           type: string
-          regex: "^ch3[0-9_]{5}$"
-          regexDescription: "Example: ch302345"
-          tooltip: Enter a code name for the NPC. This should be unique across all characters, used for translation keys and file names.
-          initial: "{id:enum_name(app.CharacterID)}"
-          diffable: false
+          params:
+            diffable: false
+            regex: "^ch3[0-9_]{5}$"
+            regexDescription: "Example: ch302345"
+            tooltip: Enter a code name for the NPC. This should be unique across all characters, used for translation keys and file names.
+            initial: "{id:enum_name(app.CharacterID)}"
       - name: displayName
         label: Name
         required: true
         display_after: name
         resource:
-          type: single-msg
-          key: "Mes_{name}" # if data._SubNPC -> _X1 suffix
+          type: msg
           file: Message/UI/CharacterName.msg
+          params:
+            key_format: "Mes_{name}"  # if data._SubNPC -> _X1 suffix
 
 resources:
   npc.CharacterData:
-    id: [_CharacterID]
+    id: [ID]
     type: array-file
+    custom_id_range: [1000, 999999]
     file: AppSystem/ch/ch300/UserData/CharacterDataList.user
+    classname: app.CharacterData
   npc.EditData:
     id: [_CharacterID]
     type: array-file
+    classname: app.charaedit.ch000.EditDataTable.Data
     file: AppSystem/CharaEdit/ch000/EditDataTable_Npc.user
 
 classes:

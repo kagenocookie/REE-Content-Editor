@@ -1,29 +1,22 @@
 using ContentEditor.App.ImguiHandling;
+using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib.Msg;
 
 namespace ContentEditor.App;
 
-[CustomFieldHandler(typeof(SingleMsgCustomField))]
-[CustomFieldHandler(typeof(MsgField))]
-public class MessageDataUIHandler : IObjectUIHandler, IObjectUIInstantiator
+[ObjectImguiHandler(typeof(MessageData))]
+public class MessageDataUIHandler : IObjectUIHandler
 {
-    public static Func<EntityField, IObjectUIHandler> GetFactory() => (field) => new MessageDataUIHandler(field);
-
     private static readonly string[] LanguageNames = Enum.GetNames<Language>();
     private static readonly Language[] LanguageValues = Enum.GetValues<Language>();
-    private EntityField field;
-    private bool multiline;
 
-    public MessageDataUIHandler(EntityField field)
-    {
-        this.field = field;
-        multiline = (field.ValueHandler as SingleMsgCustomField)?.multiline ?? (field.ValueHandler as MsgField)?.multiline ?? false;
-    }
+    private Language selectedLanguage = (Language)AppConfig.Instance.PreferredLanguage.Get();
 
     public void OnIMGUI(UIContext context)
     {
         var data = context.Get<MessageData?>();
+        var field = context.GetEntityField()!;
 
         if (data == null) {
             ImGui.Text("No translations for " + context.label);
@@ -34,29 +27,27 @@ public class MessageDataUIHandler : IObjectUIHandler, IObjectUIInstantiator
                 UndoRedo.RecordSet(context, newData);
             }
         } else {
-            // TODO app configurable default language?
-            var lang = context.InitFilterDefault(Language.English.ToString());
-            var langIndex = Array.IndexOf(LanguageNames, lang);
-
             var w = ImGui.CalcItemWidth();
-            var langWidth = ImGui.CalcTextSize(lang).X + ImGui.GetStyle().FramePadding.X * 2 + 32;
+            var langWidth = ImGui.CalcTextSize(selectedLanguage.ToString()).X + ImGui.GetStyle().FramePadding.X * 2 + 32;
             var textWidth = w - langWidth - ImGui.GetStyle().FramePadding.X * 2;
 
             ImGui.PushID(context.label);
             ImGui.SetNextItemWidth(langWidth);
-            if (ImGui.Combo("##language", ref langIndex, LanguageNames, LanguageNames.Length)) {
-                context.Filter = lang = LanguageNames[langIndex];
+
+            if (ImguiHelpers.FilterableCSharpEnumCombo<Language>("##language"u8, ref selectedLanguage, ref context.Filter)) {
+                context.Filter = "";
             }
             ImGui.SameLine();
-            var msg = data.Get(lang) ?? "";
+            var msg = data.Get(selectedLanguage) ?? "";
+            var multiline = (field.ValueHandler as KeyedMessage)?.multiline ?? (field.ValueHandler as SingleMsgCustomField)?.multiline ?? false;
             if (multiline) {
                 if (ImGui.InputTextMultiline(context.label, ref msg, 1024, new System.Numerics.Vector2(textWidth, 100))) {
-                    data.Set(lang, msg);
+                    data.Set(selectedLanguage, msg);
                 }
             } else {
                 ImGui.SetNextItemWidth(textWidth);
                 if (ImGui.InputText(context.label, ref msg, 1024)) {
-                    data.Set(lang, msg);
+                    data.Set(selectedLanguage, msg);
                 }
             }
             ImGui.PopID();

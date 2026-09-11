@@ -1,9 +1,6 @@
-# grid -> weather mapping: editdata/gridattribute/weather/gridattributeweather.user
-# main weather data: AppSystem/Weather/WeatherUserData.user
-
 # additional data:
-# - post effect settings: AppSystem/Weather/Weatherposteffectuserdata.user
 # - weather schedules: AppSystem/Weather/Weatherschedulesetting1.user  (and additional 2-6 files)
+# - grid -> weather mapping: editdata/gridattribute/weather/gridattributeweather.user
 
 entities:
   weather:
@@ -19,7 +16,19 @@ entities:
         classname: app.WeatherUserData.WeatherData
         params:
           nested: false
+    - name: postEffects
+      label: Post Effects
+      required: true
+      display_after: start
+      resource:
+        id: [Area, Weather]
+        sub_id: [StartHour, EndHour]
+        type: array-file
+        file: AppSystem/Weather/WeatherPostEffectUserData.user
+        classname: app.WeatherManager.WeatherPostEffect.PostEffectData
 
 classes:
   app.WeatherUserData.WeatherData:
     to_string: "Weather Data {Area:enum(app.WeatherArea)} {Weather:enum(app.WeatherManager.WeatherEnum)}"
+  app.WeatherManager.WeatherPostEffect.PostEffectData:
+    to_string: "Weather Effects {Area:enum(app.WeatherArea)} {Weather:enum(app.WeatherManager.WeatherEnum)} [{StartHour}~{EndHour}]"
