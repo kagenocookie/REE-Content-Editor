@@ -7,7 +7,7 @@ using ReeLib;
 
 namespace ContentEditor.App.DD2;
 
-[ObjectImguiHandler(typeof(ItemIconField))]
+[ObjectImguiHandler(typeof(ItemIconResource))]
 public sealed class DD2ItemIconHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)

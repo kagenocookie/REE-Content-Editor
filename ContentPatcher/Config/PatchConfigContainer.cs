@@ -344,7 +344,7 @@ public class PatchConfigContainer(string filepath)
     internal EntityField SetupEntityField(ContentWorkspace workspace, EntityField field, EntityConfig entity)
     {
         var data = field.config;
-        if (data.resource != null) {
+        if (!string.IsNullOrEmpty(data.resource?.Type)) {
             field.Config = SetupResourceConfig(workspace, entity.Name + "__" + field.name, data.resource);
             field.config.type ??= field.Config.Type;
             resources.TryAdd(field.Config.Type, field.Config);
