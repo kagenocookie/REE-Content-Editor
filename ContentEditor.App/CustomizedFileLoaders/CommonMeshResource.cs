@@ -114,7 +114,10 @@ public partial class CommonMeshResource(string name, Workspace workspace) : IRes
 
     private string? LoadAssimpTexture(Assimp.Scene scene, TextureSlot texture)
     {
-        Debug.Assert(MainLoop.IsMainThread);
+        if (!MainLoop.IsMainThread) {
+            Logger.Warn("Attempted to load texture from non-main thread");
+            return null;
+        }
 
         if (!texture.FilePath.StartsWith('*')) {
             return texture.FilePath;
