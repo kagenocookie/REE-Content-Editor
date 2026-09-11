@@ -50,19 +50,6 @@ public class SingleMsgCustomField : CustomEntityFieldHandler<MessageData>, IDiff
         return (messageId, data);
     }
 
-    public override IAddressableContentResource? LoadValue(ContentWorkspace workspace, ResourceEntity entity, ResourceState state)
-    {
-        string entityKey = FormatMessageKey(entity);
-        var messageId = MurMur3HashUtils.GetHash(entityKey);
-        var data = workspace.ResourceManager.GetResourceInstance(file, messageId, state) as MessageData;
-        if (data != null) {
-            data.MessageKey = entityKey;
-            return data;
-        }
-
-        return null;
-    }
-
     public override MessageData? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
     {
         string entityKey = FormatMessageKey(entity);

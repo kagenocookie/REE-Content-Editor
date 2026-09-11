@@ -55,7 +55,7 @@ public abstract class EntityFieldValueHandler
     /// </summary>
     /// <param name="resources"></param>
     /// <param name="entity"></param>
-    /// <param name="resourceId"></param>
+    /// <param name="resourceId">The resource ID assumed by the entity. May by wrong or -1 for entity-specific fields. Will be -1 for "ID field" on entity load.</param>
     /// <param name="state"></param>
     /// <returns></returns>
     public virtual IContentResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
@@ -122,11 +122,9 @@ public abstract class CustomEntityFieldHandler : EntityFieldValueHandler
     public virtual ResourceHandler? CreateResourceHandler(ResourceConfig config) => null;
 
     /// <summary>
-    /// Create an entity-specific value for this field.
+    /// Create an entity-specific value for this field and its ID. If the object doesn't have a custom id, it can return -1 which will then auto determine the ID based on the entity.
     /// </summary>
     public abstract (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData);
-
-    public abstract IContentResource? LoadValue(ContentWorkspace workspace, ResourceEntity entity, ResourceState state);
 }
 
 /// <summary>

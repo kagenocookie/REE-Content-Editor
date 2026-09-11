@@ -558,7 +558,7 @@ public sealed class ResourceManager(PatchConfigContainer config) : IDisposable
             if (data.config.IDField != data.config.PrimaryField) {
                 // ids = GetResourceInstances(data.config.IDField.Resource.Type);
                 if (data.config.IDField.ValueHandler is CustomEntityFieldHandler custom) {
-                    var idres = custom.LoadValue(workspace, entity, ResourceState.Base);
+                    var idres = custom.FetchResource(workspace, entity, -1, ResourceState.Base);
                     // note: 0 entries are sometimes expected (e.g. app.TopsStyle), using -1 as invalid instead
                     if (idres is IAddressableContentResource addrId && addrId.ID != -1) {
                         entity.Id = addrId.ID;

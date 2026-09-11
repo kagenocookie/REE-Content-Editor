@@ -67,16 +67,11 @@ public class StringCustomField : CustomEntityFieldHandler<StringResource>, IDiff
 
     public override StringResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
     {
-        var res = entity.Get(Field.name) as StringResource;
+        var res = entity.Get<StringResource>(Field.name);
         if (res == null) {
             res = new StringResource(initialFormat?.GetString(entity) ?? string.Empty);
         }
         return res;
-    }
-
-    public override IContentResource? LoadValue(ContentWorkspace workspace, ResourceEntity entity, ResourceState state)
-    {
-        return new StringResource(initialFormat?.GetString(entity) ?? string.Empty);
     }
 }
 

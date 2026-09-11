@@ -13,7 +13,7 @@ public sealed class DD2ItemIconHandler : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var entity = context.GetOwnerEntity();
-        var data = entity?.Get("data") as RSZObjectResource;
+        var data = entity?.Get<RSZObjectResource>("data");
         var workspace = context.GetWorkspace();
         if (entity == null || data == null || workspace == null) {
             var field = context.EntityParams?.EntityField;

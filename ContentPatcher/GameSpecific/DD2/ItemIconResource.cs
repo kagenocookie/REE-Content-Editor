@@ -64,20 +64,15 @@ public class ItemIconField : CustomEntityFieldHandler<ItemIconResource>
         return currentResource;
     }
 
-    public override IContentResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
+    public override ItemIconResource FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
     {
-        return entity.Get(Field.name) ?? new ItemIconResource();
+        return entity.Get<ItemIconResource>(Field.name) ?? new ItemIconResource();
     }
 
     public override ResourceHandler? CreateResourceHandler(ResourceConfig config) => new NoopResourceHandler<ItemIconField>() { Config = config };
 
     public override (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData)
     {
-        throw new NotImplementedException();
-    }
-
-    public override IContentResource? LoadValue(ContentWorkspace workspace, ResourceEntity entity, ResourceState state)
-    {
-        throw new NotImplementedException();
+        return (-1, new ItemIconResource());
     }
 }

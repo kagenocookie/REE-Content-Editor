@@ -39,7 +39,7 @@ public class MessageDataUIHandler : IObjectUIHandler
             }
             ImGui.SameLine();
             var msg = data.Get(selectedLanguage) ?? "";
-            var multiline = (field.ValueHandler as KeyedMessage)?.multiline ?? (field.ValueHandler as SingleMsgCustomField)?.multiline ?? false;
+            var multiline = (field.ValueHandler as KeyedMessage)?.multiline ?? false;
             if (multiline) {
                 if (ImGui.InputTextMultiline(context.label, ref msg, 1024, new System.Numerics.Vector2(textWidth, 100))) {
                     data.Set(selectedLanguage, msg);

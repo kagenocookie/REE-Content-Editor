@@ -48,20 +48,10 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
         return currentResource;
     }
 
-    public override IContentResource LoadValue(ContentWorkspace workspace, ResourceEntity entity, ResourceState state)
-    {
-        // note: do we want proper ResourceState handling for this one too?
-        return DetermineEnumResource(workspace, entity);
-    }
-
     public override EnumMappingResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
     {
         // note: do we want proper ResourceState handling for this one too?
-        if (entity.Get(Field.name) is EnumMappingResource res) {
-            return res;
-        }
-
-        return DetermineEnumResource(workspace, entity);
+        return entity.Get<EnumMappingResource>(Field.name) ?? DetermineEnumResource(workspace, entity);
     }
 
     private EnumMappingResource DetermineEnumResource(ContentWorkspace workspace, ResourceEntity entity)

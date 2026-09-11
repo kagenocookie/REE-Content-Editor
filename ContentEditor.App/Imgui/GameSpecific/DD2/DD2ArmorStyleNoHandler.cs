@@ -12,7 +12,7 @@ public sealed class DD2ArmorStyleNoHandler : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var entity = context.GetOwnerEntity();
-        var data = entity?.Get("data") as RSZObjectResource;
+        var data = entity?.Get<RSZObjectResource>("data");
         var workspace = context.GetWorkspace();
         if (entity == null || data == null || workspace == null) {
             ImGui.TextColored(Colors.Error, $"StyleNo field requires a valid item entity and workspace");
