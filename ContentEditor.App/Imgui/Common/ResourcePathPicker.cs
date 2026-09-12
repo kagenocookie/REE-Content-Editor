@@ -39,14 +39,18 @@ public class ResourcePathPicker : IObjectUIHandler
         /// </summary>
         DisableFormatWarning = 8,
         /// <summary>
-        /// Disable file content preview / dropdown.
+        /// Hide file content preview / dropdown button.
         /// </summary>
-        DisableContentPreview = 16,
+        HideContentPreview = 16,
+        /// <summary>
+        /// Hide the "Open in new window" button.
+        /// </summary>
+        HideOpenInWindow = 32,
 
         IngameDefault = IsPathForIngame,
         IngameDefaultNoConfirm = IsPathForIngame|NoConfirmation,
-        EditorOnly = UseTargetPath|NoConfirmation|DisableFormatWarning|DisableContentPreview,
-        EditorOnlyConfirmed = UseTargetPath|DisableFormatWarning|DisableContentPreview,
+        EditorOnly = UseTargetPath|NoConfirmation|DisableFormatWarning|HideContentPreview,
+        EditorOnlyConfirmed = UseTargetPath|DisableFormatWarning|HideContentPreview,
     }
 
     public ResourcePathPicker()
@@ -122,24 +126,26 @@ public class ResourcePathPicker : IObjectUIHandler
         var newPath = context.InitFilterDefault(currentPath);
         var ws = workspace ??= context.GetWorkspace();
         var wnd = context.GetNativeWindow();
-        var allowPreview = !Flags.HasFlag(PathPickerFlags.DisableContentPreview);
+        var allowPreview = !Flags.HasFlag(PathPickerFlags.HideContentPreview);
         var showPreview = allowPreview && context.StateBool;
 
         var w = ImGui.CalcItemWidth();
         ImGui.PushID(context.label);
 
         var x = ImGui.GetCursorPosX();
-        ImGui.BeginDisabled(string.IsNullOrEmpty(currentPath) && ws != null);
-        if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
-            if (ws!.ResourceManager.TryResolveGameFile(currentPath, out var handle)) {
-                EditorWindow.CurrentWindow?.AddFileEditor(handle);
-            } else {
-                Logger.Warn("Failed to open file " + currentPath);
+        if (!Flags.HasFlag(PathPickerFlags.HideOpenInWindow)) {
+            ImGui.BeginDisabled(string.IsNullOrEmpty(currentPath) && ws != null);
+            if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
+                if (ws!.ResourceManager.TryResolveGameFile(currentPath, out var handle)) {
+                    EditorWindow.CurrentWindow?.AddFileEditor(handle);
+                } else {
+                    Logger.Warn("Failed to open file " + currentPath);
+                }
             }
+            ImguiHelpers.Tooltip(Lang.General.OpenInNewWindow);
+            ImGui.SameLine();
+            ImGui.EndDisabled();
         }
-        ImguiHelpers.Tooltip(Lang.General.OpenInNewWindow);
-        ImGui.SameLine();
-        ImGui.EndDisabled();
 
         if (allowPreview) {
             if (ImguiHelpers.ToggleButton($"{AppIcons.Eye}", ref showPreview, Colors.IconActive)) {

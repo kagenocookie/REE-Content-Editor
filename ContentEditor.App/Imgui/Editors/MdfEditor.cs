@@ -759,7 +759,7 @@ public class MatHeaderImguiHandler : IObjectUIHandler
             context.AddChildContextSetter<MaterialHeader, string>(
                 "MMTR path",
                 data,
-                new ResourcePathPicker(ws, KnownFileFormats.MasterMaterial) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefault|ResourcePathPicker.PathPickerFlags.DisableContentPreview },
+                new ResourcePathPicker(ws, KnownFileFormats.MasterMaterial) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefault|ResourcePathPicker.PathPickerFlags.HideContentPreview },
                 (p) => p!.mmtrPath,
                 (c, p, v) => {
                     p.mmtrPath = v ?? "";
@@ -813,7 +813,7 @@ public class MeshGpbfImguiHandler : IObjectUIHandler
         if (context.children.Count == 0) {
             var tex = context.Get<GpuBufferEntry>();
             context.AddChild<GpuBufferEntry, string>("Name", tex, new StringFieldHandler(), (p) => p!.name, (p, v) => p.name = v ?? string.Empty);
-            context.AddChild<GpuBufferEntry, string>("Path", tex, new ResourcePathPicker(context.GetWorkspace(), KnownFileFormats.ByteBuffer) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefaultNoConfirm|ResourcePathPicker.PathPickerFlags.DisableContentPreview }, (p) => p!.path, (p, v) => p.path = v ?? string.Empty);
+            context.AddChild<GpuBufferEntry, string>("Path", tex, new ResourcePathPicker(context.GetWorkspace(), KnownFileFormats.ByteBuffer) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefaultNoConfirm|ResourcePathPicker.PathPickerFlags.HideContentPreview }, (p) => p!.path, (p, v) => p.path = v ?? string.Empty);
         }
 
         var w = ImGui.CalcItemWidth();

@@ -1859,10 +1859,26 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
         animationPickerContext ??= UI.AddChild<MeshViewerContext, string>(
             "Animation File",
             this,
-            new ResourcePathPicker(Workspace, FileFilters.MeshFilesAllNoBlend, KnownFileFormats.MotionList, KnownFileFormats.Motion) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly },
+            new ResourcePathPicker(Workspace, FileFilters.MeshFilesAllNoBlend, KnownFileFormats.MotionList, KnownFileFormats.Motion) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly|ResourcePathPicker.PathPickerFlags.HideOpenInWindow },
             (v) => v!.animationSourceFile,
             (v, p) => v.animationSourceFile = p ?? "");
 
+        var animator = Animator;
+        ImGui.BeginDisabled(!(animator?.AnimationCount > 0));
+        if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
+            if (animator!.File!.Format.format == KnownFileFormats.Motion) {
+                var fakeMotlist = new MotlistFile(new FileHandler());
+                var ff = animator.File.GetFile<MotFile>();
+                fakeMotlist.MotFiles.Add(ff);
+                var fakeHandle = FileHandle.CreateEmbedded(new MotListFileLoader(), new BaseFileResource<MotlistFile>(fakeMotlist));
+                EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, fakeHandle));
+            } else {
+                EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, animator.File!));
+            }
+        }
+        ImguiHelpers.Tooltip("Open current motlist in Motlist Editor");
+        ImGui.SameLine();
+        ImGui.EndDisabled();
         animationPickerContext.ShowUI();
 
         var settings = AppConfig.Settings;
@@ -1886,7 +1902,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             }
         }
 
-        var animator = Animator;
+        animator = Animator;
         if (animator?.AnimationCount > 0) {
             ImGui.Separator();
             ImGui.Spacing();
