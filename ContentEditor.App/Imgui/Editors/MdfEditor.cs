@@ -759,7 +759,7 @@ public class MatHeaderImguiHandler : IObjectUIHandler
             context.AddChildContextSetter<MaterialHeader, string>(
                 "MMTR path",
                 data,
-                new ResourcePathPicker(ws, KnownFileFormats.MasterMaterial) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefault },
+                new ResourcePathPicker(ws, KnownFileFormats.MasterMaterial) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefault|ResourcePathPicker.PathPickerFlags.DisableContentPreview },
                 (p) => p!.mmtrPath,
                 (c, p, v) => {
                     p.mmtrPath = v ?? "";
@@ -785,13 +785,6 @@ public class TexHeaderImguiHandler : IObjectUIHandler
     {
         var tex = context.Get<TexHeader>();
         var workspace = context.GetWorkspace()!;
-        if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}") && tex.texPath != null) {
-            if (workspace.ResourceManager.TryResolveGameFile(tex.texPath, out var texHandle)) {
-                EditorWindow.CurrentWindow?.AddSubwindow( new TextureViewer(workspace, texHandle));
-            }
-        }
-        ImguiHelpers.Tooltip("Open Texture"u8);
-        ImGui.SameLine();
         var editor = context.FindHandlerInParents<MdfEditor>();
         var mdf = context.FindHandlerInParents<MdfFileImguiHandler>();
         var mat = mdf == null ? null : editor?.File.Materials.ElementAtOrDefault(mdf.selectedIDX);
@@ -820,7 +813,7 @@ public class MeshGpbfImguiHandler : IObjectUIHandler
         if (context.children.Count == 0) {
             var tex = context.Get<GpuBufferEntry>();
             context.AddChild<GpuBufferEntry, string>("Name", tex, new StringFieldHandler(), (p) => p!.name, (p, v) => p.name = v ?? string.Empty);
-            context.AddChild<GpuBufferEntry, string>("Path", tex, new ResourcePathPicker(context.GetWorkspace(), KnownFileFormats.ByteBuffer) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefaultNoConfirm }, (p) => p!.path, (p, v) => p.path = v ?? string.Empty);
+            context.AddChild<GpuBufferEntry, string>("Path", tex, new ResourcePathPicker(context.GetWorkspace(), KnownFileFormats.ByteBuffer) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefaultNoConfirm|ResourcePathPicker.PathPickerFlags.DisableContentPreview }, (p) => p!.path, (p, v) => p.path = v ?? string.Empty);
         }
 
         var w = ImGui.CalcItemWidth();

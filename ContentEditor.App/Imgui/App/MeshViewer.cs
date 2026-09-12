@@ -1891,19 +1891,6 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             ImGui.Separator();
             ImGui.Spacing();
             var ignoreRoot = animator.IgnoreRootMotion;
-            if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
-                if (animator.File!.Format.format == KnownFileFormats.Motion) {
-                    var fakeMotlist = new MotlistFile(new FileHandler());
-                    var ff = animator.File.GetFile<MotFile>();
-                    fakeMotlist.MotFiles.Add(ff);
-                    var fakeHandle = FileHandle.CreateEmbedded(new MotListFileLoader(), new BaseFileResource<MotlistFile>(fakeMotlist));
-                    EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, fakeHandle));
-                } else {
-                    EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, animator.File!));
-                }
-            }
-            ImguiHelpers.Tooltip("Open current motlist in Motlist Editor");
-            ImGui.SameLine();
             if (ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_IgnoreRootMotion, ref ignoreRoot, [Colors.IconTertiary, Colors.IconPrimary, Colors.IconPrimary], Colors.IconActive)) {
                 AppConfig.Settings.MeshViewer.DisableRootMotion = ignoreRoot;
                 AppConfig.Settings.Save();

@@ -143,7 +143,7 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
             go.Components.Add(comp = workspace.Env.CreateRszInstance(componentClass));
             catFile.Modified = true;
         }
-        PrefabToResourceField!.Set(componentClass, resource.ResourcePath);
+        PrefabToResourceField!.Set(comp, resource.ResourcePath);
     }
 
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)

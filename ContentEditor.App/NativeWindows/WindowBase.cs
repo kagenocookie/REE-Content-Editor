@@ -295,45 +295,51 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
             }
         }
         removeSubwindows.Add(subwindow);
-        var file = (subwindow.Handler as IFileHandleReferenceHolder)?.Handle;
-        if (file != null) {
-            var wnd = EditorWindow.CurrentWindow;
-            if (wnd == null) return;
-            if (!wnd.Workspace.ResourceManager.IsFileOpen(file)) {
-                return;
-            }
-            var isLastEditor = (file.References.Count == 0 || file.References.Count == 1 && file.References[0] == subwindow.Handler);
-            if (!file.Modified && isLastEditor) {
-                var autoClose = AppConfig.Instance.AutoCloseFiles.Get();
-                if (autoClose) {
-                    // last _properly handled_ editor for this file
-                    // this means we're probably be able to safely close it down
-                    wnd.Workspace.ResourceManager.CloseFile(file);
-                    return;
-                }
-            }
-
-            if (AppConfig.Instance.DisableFileCloseWarning || !subwindows.Contains(subwindow)) {
-                // avoid spamming messages for embedded child file windows
-                return;
-            }
-
-            wnd.Overlays.ShowToast(
-                5,
-                isLastEditor ? Lang.General.FileClose_KeptOpenMessage.String : Lang.General.FileClose_MultipleEditorsMessage.String,
-                ("Disable This Warning", () => {
-                    AppConfig.Instance.DisableFileCloseWarning.Set(true);
-                    wnd.Overlays.ShowToast(2f, """
-                        Warning can be re-enabled from settings anytime.
-                        You can still manually force close files from the menu.
-                        """);
-                }),
-                ("Close File", () => {
-                    wnd.Workspace.ResourceManager.CloseFile(file);
-                })
-            );
-        }
     }
+
+    private void HandleFileWindowClose(WindowData subwindow, bool wasMainWindow)
+    {
+        var file = (subwindow.Handler as IFileHandleReferenceHolder)?.Handle;
+        if (file == null) return;
+
+        var wnd = EditorWindow.CurrentWindow;
+        if (wnd == null) return;
+        if (!wnd.Workspace.ResourceManager.IsFileOpen(file)) {
+            return;
+        }
+
+        var isLastEditor = (file.References.Count == 0 || file.References.Count == 1 && file.References[0] == subwindow.Handler);
+        if (!file.Modified && isLastEditor) {
+            var autoClose = AppConfig.Instance.AutoCloseFiles.Get();
+            if (autoClose) {
+                // last _properly handled_ editor for this file
+                // this means we're probably be able to safely close it down
+                wnd.Workspace.ResourceManager.CloseFile(file);
+                return;
+            }
+        }
+
+        if (AppConfig.Instance.DisableFileCloseWarning || !wasMainWindow) {
+            // avoid spamming messages for embedded child file windows
+            return;
+        }
+
+        wnd.Overlays.ShowToast(
+            5,
+            isLastEditor ? Lang.General.FileClose_KeptOpenMessage.String : Lang.General.FileClose_MultipleEditorsMessage.String,
+            ("Disable This Warning", () => {
+                AppConfig.Instance.DisableFileCloseWarning.Set(true);
+                wnd.Overlays.ShowToast(2f, """
+                    Warning can be re-enabled from settings anytime.
+                    You can still manually force close files from the menu.
+                    """);
+            }),
+            ("Close File", () => {
+                wnd.Workspace.ResourceManager.CloseFile(file);
+            })
+        );
+    }
+
     private void CloseHomeIfOpen()
     {
         var home = subwindows.FirstOrDefault(w => w.Handler is HomeWindow);
@@ -620,7 +626,11 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
     {
         for (int i = 0; i < removeSubwindows.Count; i++) {
             var close = removeSubwindows[i];
-            if (subwindows.Remove(close) || close.ParentWindow != null && subwindows.Any(s => s.Subwindows?.ContainsValue(close) == true)) {
+            var isMain = subwindows.Remove(close);
+            if (isMain || close.ParentWindow != null && subwindows.Any(s => s.Subwindows?.ContainsValue(close) == true)) {
+                // ensure any nested contexts get disposed
+                close.Context.ClearChildren();
+                HandleFileWindowClose(close, isMain);
                 (close.Handler as IDisposable)?.Dispose();
                 close.Context.Get<WindowData>().Handler?.OnClosed();
             }

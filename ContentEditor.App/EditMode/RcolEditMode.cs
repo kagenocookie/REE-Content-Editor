@@ -80,15 +80,6 @@ public class RcolEditMode : EditModeHandler
                 filePicker?.ResetState();
             }
         }
-
-        if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(rcolPath, out var file)) {
-            var rcol = file.GetFile<RcolFile>();
-            if (ImGui.Button("Open Editor")) {
-                OpenEditor(file);
-            }
-        } else if (!string.IsNullOrEmpty(rcolPath)) {
-            ImGui.TextColored(Colors.Warning, "File not found");
-        }
     }
 
     public override void OnIMGUI()

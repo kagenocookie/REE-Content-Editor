@@ -114,23 +114,6 @@ public class ChainEditMode : EditModeHandler
         if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FileType_CLSPNew, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary], null, "New CLSP")) {
             filePath = Scene.Workspace.ResourceManager.CreateNewFile(KnownFileFormats.CollisionShapePreset)!.Filepath;
         }
-
-        if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(filePath, out var file)) {
-            if (ImGui.Button("Open Chain")) {
-                OpenEditor(file);
-            }
-        } else if (!string.IsNullOrEmpty(filePath)) {
-            ImGui.TextColored(Colors.Warning, "Chain file not found");
-        }
-
-        if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(clspPath, out var file2)) {
-            if (file != null) ImGui.SameLine();
-            if (ImGui.Button("Open CLSP")) {
-                OpenEditor(file2);
-            }
-        } else if (!string.IsNullOrEmpty(clspPath)) {
-            ImGui.TextColored(Colors.Warning, "Chain file not found");
-        }
     }
 
     public override void OnIMGUI()
