@@ -1,17 +1,41 @@
 entities:
-  items.styles.TopsStyle:
+  items.styles.tops.TopsStyle:
     primary_field: data
     id_field: styleNo
-    to_string: "Tops Style {id}: {data.0._TopsStyle:enum(app.TopsStyle)}"
+    to_string: "Tops Style {id}: {data._TopsStyle:enum(app.TopsStyle)}"
+    display_name: Style
     fields:
     - name: data
-      type: items.styles.TopsStyle
       display_after: styleNo
       field_id: { field: styleNo, path: value }
       # enums:
       # - name: app.TopsStyle
       #   new_label_format: "Tops_{data._TopsStyle:D03}"
       #   primary: true
+      resource:
+        # file: AppSystem/CharaEdit/ch000/SwapData/TopsSwapData.user
+        # type: array-file
+        # id: [_TopsStyle]
+        # sub_id: [_Gender]
+        # custom_id_range: [10000, 10000000]
+        # classname: app.TopsSwapItem
+        type: group
+        id: [_TopsStyle]
+        custom_id_range: [10000, 10000000]
+        classname: app.TopsSwapItem
+        subtypes:
+          male:
+            file: AppSystem/CharaEdit/ch000/SwapData/TopsSwapData.user
+            type: array-file
+            filter:
+              property: _Gender
+              equals: 2776536455
+          female:
+            file: AppSystem/CharaEdit/ch000/SwapData/TopsSwapData.user
+            type: array-file
+            filter:
+              property: _Gender
+              equals: 1910070090
     - name: styleNo
       resource:
         type: enum_mapping
@@ -22,7 +46,85 @@ entities:
           new_label_format: "Tops_{id:D03}"
           label_id_parse: "Tops_(\\d+)"
           value_from: { field: data, path: _TopsStyle }
+    - name: furmask
+      field_id: { field: styleNo, path: value }
+      resource:
+        type: group
+        subtypes:
+          male:
+            file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_m_Tops.user
+            # classname: app.PartSwapCatalog.Item
+            type: resource_proxy_pfb
+            resource_type: texture
+          female:
+            file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_f_Tops.user
+            # classname: app.PartSwapCatalog.Item
+            type: resource_proxy_pfb
+            resource_type: texture
 
+  items.styles.tops.TopsBdMesh:
+    to_string: "{id:enum(app.CharacterEditDefine.TopsBdMeshID)} | {mesh.path}"
+    display_name: Body Mesh
+    enums:
+    - name: "app.CharacterEditDefine.TopsBdMeshID"
+      format: "tops_{id}_bd"
+      primary: true
+    fields:
+    - name: mesh
+      resource:
+        custom_id_range: [10000, 10000000]
+        # catalog entry ID field should be auto determinable here
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBdMeshCatalog_Default.user
+        # `type` tells it how to handle the catalog entry
+        # resource_proxy_pfb: the entity is an object that contains a via.Prefab and it also has an ID field somewhere
+        # optionally we can manually configure but it should reasonably know how to auto determine the prefab and ID fields
+        # this one specifically is just a pfb containing a resource path (awful shit, really)
+        # the resource part inside the actual pfb will be auto handled to: 1. find single non-transform component, 2. find a resource field
+        # additionally, check for any "Enabled" flags and set them true, or maybe we can explicitly configure classname default values instead of looking for an enable flag
+        type: resource_proxy_pfb
+        # `value_type` could work kinda like a mime type for determining REECE field display and storage format; in this case a resource of type "KnownFileFormats.Texture"
+        # in other words, the entity will only store a string path in the JSON and map it out to a pfb file ({resource_without_extension}.pfb) on patching
+        # although we already know by resource_proxy_pfb that it's a resource string, we didn't know specifically what kind of string
+        resource_type: mesh
+    - name: chain
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBdChainCatalog_Default.user
+        type: resource_proxy_pfb
+        resource_type: chain
+    - name: cloth
+      label: GPU Cloth
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBdGpuClothCatalog_Default.user
+        type: resource_proxy_pfb
+        resource_type: gpuCloth
+    - name: clsp
+      label: Collision Shape Preset
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBdCollisionShapePresetCatalog_Default.user
+        type: resource_proxy_pfb
+        resource_type: collisionShapePreset
+    - name: sfur
+      label: Shell Fur
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBdShellFurCatalog_Default.user
+        type: resource_proxy_pfb
+        resource_type: shellFur
+
+  items.styles.tops.TopsBdSkin:
+    to_string: "{id:enum(app.CharacterEditDefine.TopsBdSkinID)} | {skin.path}"
+    display_name: Body Skin
+    enums:
+    - name: app.CharacterEditDefine.TopsBdSkinID
+      format: "tops_bd_{id}"
+      primary: true
+    fields:
+    - name: skin
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBdSkinCatalog_Default.user
+        to_string: "{id:enum(app.CharacterEditDefine.TopsBdSkinID)} | {path}"
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        resource_type: meshMaterial
 
 # enum mapping creation flow
 # existing style
@@ -41,106 +143,108 @@ entities:
 # return { value: data._TopsStyle, label: "tops_54123", id: 54123 }
 
 resources:
-  items.styles.TopsStyle:
-    file: AppSystem/CharaEdit/ch000/SwapData/TopsSwapData.user
-    type: array-file
-    id: [_TopsStyle]
-    sub_id: [_Gender]
-    custom_id_range: [10000, 10000000]
-    classname: app.TopsSwapItem
-    # prevent direct editing - all editing of this data should be done from entities
-    not_standalone: true
-    # note: we don't want to control the app.TopsStyle enum from here because we have two objects per enum value and that would complicate things
-    # the enum should be controlled by the entity instead
-    resources:
-    - { key: bd_mesh, type: TopsBdMesh, name: Body Mesh, field: _BdMeshID }
-    - { key: bd_skin, type: TopsBdSkin, name: Body Skin, field: _BdSkinID }
-    - { key: bd_cloth, type: TopsBdCloth, name: Body Cloth, field: _BdMeshID }
-    - { key: bd_chain, type: TopsBdChain, name: Body Chain, field: _BdMeshID }
-    - { key: bd_clsp, type: TopsBdClsp, name: Body Collision Shape Preset, field: _BdMeshID }
-    - { key: bd_sfur, type: TopsBdSfur, name: Body Shell Fur, field: _BdMeshID }
-    - { key: bd_mesh_sub, type: TopsBdMesh, name: Body Sub Mesh, field: _BdSubMeshID }
-    - { key: bd_skin_sub, type: TopsBdSkin, name: Body Sub Skin, field: _BdSubSkinID }
-    - { key: bd_cloth_sub, type: TopsBdCloth, name: Body Sub Cloth, field: _BdSubMeshID }
-    - { key: bd_chain_sub, type: TopsBdChain, name: Body Sub Chain, field: _BdSubMeshID }
-    - { key: bd_clsp_sub, type: TopsBdClsp, name: Body Sub Collision Shape Preset, field: _BdMeshID }
-    - { key: bd_sfur_sub, type: TopsBdSfur, name: Body Sub Shell Fur, field: _BdMeshID }
-    - { key: wb_mesh, type: TopsWbMesh, name: Waistband Mesh, field: _WbMeshID }
-    - { key: wb_skin, type: TopsWbSkin, name: Waistband Skin, field: _WbSkinID }
-    - { key: wb_mesh_sub, type: TopsWbMesh, name: Waistband Sub Mesh, field: _WbSubMeshID }
-    - { key: wb_skin_sub, type: TopsWbSkin, name: Waistband Sub Skin, field: _WbSubSkinID }
-    - { key: am_mesh, type: TopsAmMesh, name: Arm Mesh, field: _AmMeshID }
-    - { key: am_skin, type: TopsAmSkin, name: Arm Skin, field: _AmSkinID }
-    - { key: am_mesh_sub, type: TopsAmMesh, name: Arm Sub Mesh, field: _AmSubMeshID }
-    - { key: am_skin_sub, type: TopsAmSkin, name: Arm Sub Skin, field: _AmSubSkinID }
-    - { key: bt_mesh, type: TopsBtMesh, name: Belt Mesh, field: _BtMeshID }
-    - { key: bt_skin, type: TopsBtSkin, name: Belt Skin, field: _BtSkinID }
-    - { key: bt_mesh_sub, type: TopsBtMesh, name: Belt Sub Mesh, field: _BtSubMeshID }
-    - { key: bt_skin_sub, type: TopsBtSkin, name: Belt Sub Skin, field: _BtSubSkinID }
-    - { key: furmask_male, type: FurMask_Tops_M, name: Fur Mask Male, field: _TopsStyle }
-    - { key: furmask_female, type: FurMask_Tops_F, name: Fur Mask Female, field: _TopsStyle }
+  # items.styles.TopsStyle:
+  #   file: AppSystem/CharaEdit/ch000/SwapData/TopsSwapData.user
+  #   type: array-file
+  #   id: [_TopsStyle]
+  #   sub_id: [_Gender]
+  #   custom_id_range: [10000, 10000000]
+  #   classname: app.TopsSwapItem
+  #   # prevent direct editing - all editing of this data should be done from entities
+  #   not_standalone: true
+  #   # note: we don't want to control the app.TopsStyle enum from here because we have two objects per enum value and that would complicate things
+  #   # the enum should be controlled by the entity instead
+  #   resources:
+  #   - { key: bd_mesh, type: TopsBdMesh, name: Body Mesh, field: _BdMeshID }
+  #   - { key: bd_skin, type: TopsBdSkin, name: Body Skin, field: _BdSkinID }
+  #   - { key: bd_cloth, type: TopsBdCloth, name: Body Cloth, field: _BdMeshID }
+  #   - { key: bd_chain, type: TopsBdChain, name: Body Chain, field: _BdMeshID }
+  #   - { key: bd_clsp, type: TopsBdClsp, name: Body Collision Shape Preset, field: _BdMeshID }
+  #   - { key: bd_sfur, type: TopsBdSfur, name: Body Shell Fur, field: _BdMeshID }
+  #   - { key: bd_mesh_sub, type: TopsBdMesh, name: Body Sub Mesh, field: _BdSubMeshID }
+  #   - { key: bd_skin_sub, type: TopsBdSkin, name: Body Sub Skin, field: _BdSubSkinID }
+  #   - { key: bd_cloth_sub, type: TopsBdCloth, name: Body Sub Cloth, field: _BdSubMeshID }
+  #   - { key: bd_chain_sub, type: TopsBdChain, name: Body Sub Chain, field: _BdSubMeshID }
+  #   - { key: bd_clsp_sub, type: TopsBdClsp, name: Body Sub Collision Shape Preset, field: _BdMeshID }
+  #   - { key: bd_sfur_sub, type: TopsBdSfur, name: Body Sub Shell Fur, field: _BdMeshID }
+  #   - { key: wb_mesh, type: TopsWbMesh, name: Waistband Mesh, field: _WbMeshID }
+  #   - { key: wb_skin, type: TopsWbSkin, name: Waistband Skin, field: _WbSkinID }
+  #   - { key: wb_mesh_sub, type: TopsWbMesh, name: Waistband Sub Mesh, field: _WbSubMeshID }
+  #   - { key: wb_skin_sub, type: TopsWbSkin, name: Waistband Sub Skin, field: _WbSubSkinID }
+  #   - { key: am_mesh, type: TopsAmMesh, name: Arm Mesh, field: _AmMeshID }
+  #   - { key: am_skin, type: TopsAmSkin, name: Arm Skin, field: _AmSkinID }
+  #   - { key: am_mesh_sub, type: TopsAmMesh, name: Arm Sub Mesh, field: _AmSubMeshID }
+  #   - { key: am_skin_sub, type: TopsAmSkin, name: Arm Sub Skin, field: _AmSubSkinID }
+  #   - { key: bt_mesh, type: TopsBtMesh, name: Belt Mesh, field: _BtMeshID }
+  #   - { key: bt_skin, type: TopsBtSkin, name: Belt Skin, field: _BtSkinID }
+  #   - { key: bt_mesh_sub, type: TopsBtMesh, name: Belt Sub Mesh, field: _BtSubMeshID }
+  #   - { key: bt_skin_sub, type: TopsBtSkin, name: Belt Sub Skin, field: _BtSubSkinID }
+  #   - { key: furmask_male, type: FurMask_Tops_M, name: Fur Mask Male, field: _TopsStyle }
+  #   - { key: furmask_female, type: FurMask_Tops_F, name: Fur Mask Female, field: _TopsStyle }
 
-  items.catalogs.TopsBdMesh:
-    display_name: Tops Body Mesh
-    custom_id_range: [10000, 10000000]
-    # catalog entry ID field should be auto determinable here
-    file: AppSystem/CharaEdit/ch000/Catalog/TopsBdMeshCatalog_Default.user
-    # `type` tells it how to handle the catalog entry
-    # resource_proxy_pfb: the entity is an object that contains a via.Prefab and it also has an ID field somewhere
-    # optionally we can manually configure but it should reasonably know how to auto determine the prefab and ID fields
-    # this one specifically is just a pfb containing a resource path (awful shit, really)
-    # the resource part inside the actual pfb will be auto handled to: 1. find single non-transform component, 2. find a resource field
-    # additionally, check for any "Enabled" flags and set them true, or maybe we can explicitly configure classname default values instead of looking for an enable flag
-    type: resource_proxy_pfb
-    # `value_type` could work kinda like a mime type for determining REECE field display and storage format; in this case a resource of type "KnownFileFormats.Texture"
-    # in other words, the entity will only store a string path in the JSON and map it out to a pfb file ({resource_without_extension}.pfb) on patching
-    # although we already know by resource_proxy_pfb that it's a resource string, we didn't know specifically what kind of string
-    # value_type would probably be a parameter of the catalog_entry_type so maybe just do resource_type: Mesh here
-    # value_type: resource/Mesh
-    resource_type: mesh
-    # enums:
-    # - name: "app.CharacterEditDefine.TopsBdMeshID"
-    #   format: "tops_bd_{id}"
-    #   primary: true
-  items.catalogs.TopsBdSkin:
-    custom_id_range: [10000, 10000000]
-    file: AppSystem/CharaEdit/ch000/Catalog/TopsBdSkinCatalog_Default.user
-    enums:
-    - name: app.CharacterEditDefine.TopsBdSkinID
-      format: "tops_bd_{id}"
-      primary: true
-    type: resource_proxy_pfb
-    resource_type: texture
-  items.catalogs.TopsBdChain:
-    file: AppSystem/CharaEdit/ch000/Catalog/TopsBdChainCatalog_Default.user
-    # `parent_resource` denotes that this resource relies on another resource existing and inherits its ID from the parent
-    parent_resource: TopsBdMesh
-    enums:
-    - name: app.CharacterEditDefine.TopsBdMeshID
-      format: "tops_bd_{id}"
-    type: resource_proxy_pfb
-    resource_type: chain
-  items.catalogs.TopsBdCloth:
-    file: AppSystem/CharaEdit/ch000/Catalog/TopsBdGpuClothCatalog_Default.user
-    parent_resource: TopsBdMesh
-    enums:
-    - name: app.CharacterEditDefine.TopsBdMeshID
-    type: resource_proxy_pfb
-    resource_type: gpuCloth
-  items.catalogs.TopsBdClsp:
-    file: AppSystem/CharaEdit/ch000/Catalog/TopsBdCollisionShapePresetCatalog_Default.user
-    parent_resource: TopsBdMesh
-    enums:
-    - name: app.CharacterEditDefine.TopsBdMeshID
-    type: resource_proxy_pfb
-    resource_type: collisionShapePreset
-  items.catalogs.TopsBdSfur:
-    file: AppSystem/CharaEdit/ch000/Catalog/TopsBdShellFurCatalog_Default.user
-    parent_resource: TopsBdMesh
-    enums:
-    - name: app.CharacterEditDefine.TopsBdMeshID
-    type: resource_proxy_pfb
-    resource_type: shellFur
+  # items.catalogs.TopsBdMesh:
+  #   display_name: Tops Body Mesh
+  #   custom_id_range: [10000, 10000000]
+  #   to_string: "{id:enum(app.CharacterEditDefine.TopsBdMeshID)} | {path}"
+  #   enums:
+  #   - name: "app.CharacterEditDefine.TopsBdMeshID"
+  #     format: "tops_{id}_bd"
+  #     primary: true
+  #   # catalog entry ID field should be auto determinable here
+  #   file: AppSystem/CharaEdit/ch000/Catalog/TopsBdMeshCatalog_Default.user
+  #   # `type` tells it how to handle the catalog entry
+  #   # resource_proxy_pfb: the entity is an object that contains a via.Prefab and it also has an ID field somewhere
+  #   # optionally we can manually configure but it should reasonably know how to auto determine the prefab and ID fields
+  #   # this one specifically is just a pfb containing a resource path (awful shit, really)
+  #   # the resource part inside the actual pfb will be auto handled to: 1. find single non-transform component, 2. find a resource field
+  #   # additionally, check for any "Enabled" flags and set them true, or maybe we can explicitly configure classname default values instead of looking for an enable flag
+  #   type: resource_proxy_pfb
+  #   # `value_type` could work kinda like a mime type for determining REECE field display and storage format; in this case a resource of type "KnownFileFormats.Texture"
+  #   # in other words, the entity will only store a string path in the JSON and map it out to a pfb file ({resource_without_extension}.pfb) on patching
+  #   # although we already know by resource_proxy_pfb that it's a resource string, we didn't know specifically what kind of string
+  #   # value_type would probably be a parameter of the catalog_entry_type so maybe just do resource_type: Mesh here
+  #   # value_type: resource/Mesh
+  #   resource_type: mesh
+  # items.catalogs.TopsBdSkin:
+  #   custom_id_range: [10000, 10000000]
+  #   file: AppSystem/CharaEdit/ch000/Catalog/TopsBdSkinCatalog_Default.user
+  #   to_string: "{id:enum(app.CharacterEditDefine.TopsBdSkinID)} | {path}"
+  #   enums:
+  #   - name: app.CharacterEditDefine.TopsBdSkinID
+  #     format: "tops_bd_{id}"
+  #     primary: true
+  #   type: resource_proxy_pfb
+  #   resource_type: texture
+  # items.catalogs.TopsBdChain:
+  #   file: AppSystem/CharaEdit/ch000/Catalog/TopsBdChainCatalog_Default.user
+  #   # `parent_resource` denotes that this resource relies on another resource existing and inherits its ID from the parent
+  #   parent_resource: TopsBdMesh
+  #   enums:
+  #   - name: app.CharacterEditDefine.TopsBdMeshID
+  #     format: "tops_bd_{id}"
+  #   type: resource_proxy_pfb
+  #   resource_type: chain
+  # items.catalogs.TopsBdCloth:
+  #   file: AppSystem/CharaEdit/ch000/Catalog/TopsBdGpuClothCatalog_Default.user
+  #   parent_resource: TopsBdMesh
+  #   enums:
+  #   - name: app.CharacterEditDefine.TopsBdMeshID
+  #   type: resource_proxy_pfb
+  #   resource_type: gpuCloth
+  # items.catalogs.TopsBdClsp:
+  #   file: AppSystem/CharaEdit/ch000/Catalog/TopsBdCollisionShapePresetCatalog_Default.user
+  #   parent_resource: TopsBdMesh
+  #   enums:
+  #   - name: app.CharacterEditDefine.TopsBdMeshID
+  #   type: resource_proxy_pfb
+  #   resource_type: collisionShapePreset
+  # items.catalogs.TopsBdSfur:
+  #   file: AppSystem/CharaEdit/ch000/Catalog/TopsBdShellFurCatalog_Default.user
+  #   parent_resource: TopsBdMesh
+  #   enums:
+  #   - name: app.CharacterEditDefine.TopsBdMeshID
+  #   type: resource_proxy_pfb
+  #   resource_type: shellFur
 
   items.catalogs.TopsWbMesh:
     custom_id_range: [10000, 10000000]
@@ -215,18 +319,39 @@ resources:
     type: resource_proxy_pfb
     resource_type: meshMaterial
 
-  items.furmask.FurMask_Tops_F:
-    file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_f_Tops.user
-    # TODO try and find a way where we don't need to specify the classnames on every single resource either
-    # classname: app.PartSwapCatalog.Item
-    type: resource_proxy_pfb
-    resource_type: texture
-  items.furmask.FurMask_Tops_M:
-    file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_m_Tops.user
-    # classname: app.PartSwapCatalog.Item
-    type: resource_proxy_pfb
-    resource_type: texture
+  # items.furmask.TopsFurMask:
+  #   type: group
+  #   subclasses:
+  #     male:
+  #       file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_m_Tops.user
+  #       # classname: app.PartSwapCatalog.Item
+  #       type: resource_proxy_pfb
+  #       resource_type: texture
+  #     female:
+  #       file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_f_Tops.user
+  #       # classname: app.PartSwapCatalog.Item
+  #       type: resource_proxy_pfb
+  #       resource_type: texture
 
 classes:
   app.TopsSwapItem:
     to_string: "{class_shortname} {_TopsStyle:enum(app.TopsStyle)} {_Gender:enum(app.Gender)}"
+    fields:
+      _TopsStyle: { readOnly: true }
+      _Gender: { readOnly: true }
+      _BdMeshID: { entity: TopsBdMesh, label: Body Mesh }
+      _BdSkinID: { entity: TopsBdSkin, label: Body Skin }
+      _BdSubMeshID: { entity: TopsBdMesh, label: Body Sub Mesh }
+      _BdSubSkinID: { entity: TopsBdSkin, label: Body Sub Skin }
+      # _WbMeshID: { entity: TopsWbMesh, label: Waistband Mesh }
+      # _WbSkinID: { entity: TopsWbSkin, label: Waistband Skin }
+      # _WbSubMeshID: { entity: TopsWbMesh, label: Waistband Sub Mesh }
+      # _WbSubSkinID: { entity: TopsWbSkin, label: Waistband Sub Skin }
+      # _AmMeshID: { entity: TopsAmMesh, label: Arm Mesh }
+      # _AmSkinID: { entity: TopsAmSkin, label: Arm Skin }
+      # _AmSubMeshID: { entity: TopsAmMesh, label: Arm Sub Mesh }
+      # _AmSubSkinID: { entity: TopsAmSkin, label: Arm Sub Skin }
+      # _BtMeshID: { entity: TopsBtMesh, label: Belt Mesh }
+      # _BtSkinID: { entity: TopsBtSkin, label: Belt Skin }
+      # _BtSubMeshID: { entity: TopsBtMesh, label: Belt Sub Mesh }
+      # _BtSubSkinID: { entity: TopsBtSkin, label: Belt Sub Skin }

@@ -7,33 +7,28 @@ entities:
     fields:
       - name: job_info
         label: Job Info
-        type: jobs.JobInformation
         required: true
+        resource:
+          id: [_JobID]
+          type: array-file
+          classname: app.JobInformationParam
+          file: AppSystem/Gui/JobMenu/JobInformationData.user
       - name: custom_skills
         label: Custom Skills
-        type: jobs.CustomSkillSet
         required: true
+        resource:
+          id: [_Job]
+          type: array-file
+          classname: app.CustomSkillSet
+          file: AppSystem/Gui/JobMenu/CustomSkillInformationData.user
       - name: normal_skills
         label: Normal Skills
-        type: jobs.NormalSkillSet
         required: true
-
-resources:
-  jobs.JobInformation:
-    id: [_JobID]
-    type: array-file
-    classname: app.JobInformationParam
-    file: AppSystem/Gui/JobMenu/JobInformationData.user
-  jobs.CustomSkillSet:
-    id: [_Job]
-    type: array-file
-    classname: app.CustomSkillSet
-    file: AppSystem/Gui/JobMenu/CustomSkillInformationData.user
-  jobs.NormalSkillSet:
-    id: [_Job]
-    type: array-file
-    classname: app.NormalSkillSet
-    file: AppSystem/Gui/JobMenu/NormalSkillInformationData.user
+        resource:
+          id: [_Job]
+          type: array-file
+          classname: app.NormalSkillSet
+          file: AppSystem/Gui/JobMenu/NormalSkillInformationData.user
 
 classes:
   app.CustomSkillInformationParam:

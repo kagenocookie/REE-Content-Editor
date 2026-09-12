@@ -21,7 +21,7 @@ public sealed class ObjectListResourceHandler : IObjectUIHandler
             if (workspace != null) {
                 ImGui.PushID(context.label);
                 if (ImGui.Button("Create")) {
-                    context.CreateEntityResource(workspace, field.Field);
+                    context.CreateEntityResource(workspace, field.Field, context.EntityParams?.ResourceType);
                 }
                 ImGui.PopID();
             }

@@ -68,7 +68,7 @@ public static class UIContextExtensions
         return (entity as ResourceEntity)?.Config.GetField(field)?.ValueHandler as T;
     }
 
-    public static bool CreateEntityResource(this UIContext context, ContentWorkspace workspace, EntityField? field)
+    public static bool CreateEntityResource(this UIContext context, ContentWorkspace workspace, EntityField? field, string? resourceType)
     {
         // TODO: this one probably shouldn't be needed anymore
         // we have a dedicated NullResourceHandler that should be able to handle any resource
@@ -81,7 +81,7 @@ public static class UIContextExtensions
             Logger.Error("Could not find parent entity");
             return false;
         }
-        var newInstance = workspace.ResourceManager.CreateEntityResource(entity, field, ResourceState.Active);
+        var newInstance = workspace.ResourceManager.CreateEntityResource(entity, field, ResourceState.Active, resourceType);
         context.Set(newInstance);
         context.children.Clear();
         return true;

@@ -16,3 +16,5 @@ classes:
     to_string: "LVupParam {Level}"
   app.JobStatusParam:
     to_string: "Job {Job:enum(app.Character.JobEnum)}"
+  app.EditTable.EditData:
+    to_string: "EditData {_MainSection}/{_SubSection}: {_DisplayName}"

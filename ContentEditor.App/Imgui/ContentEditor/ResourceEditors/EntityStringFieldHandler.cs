@@ -13,19 +13,19 @@ public class EntityStringFieldHandler : IObjectUIHandler
             ImGui.TextColored(Colors.Error, context.label + ": Entity not found");
             return;
         }
-        var data = entity.Get(field) as StringResource;
+        var data = entity.Get<StringResource>(field);
         if (data == null) {
             if (!field.Field.IsRequired) {
                 ImGui.Text(context.label + ": NULL");
                 ImGui.SameLine();
                 if (ImGui.Button("Add")) {
-                    data = new StringResource("");
+                    data = new StringResource(field.Field.Config, "");
                     entity.Set(field, data);
                 }
                 return;
             }
 
-            data = new StringResource("");
+            data = new StringResource(field.Field.Config, "");
             entity.Set(field, data);
         }
 

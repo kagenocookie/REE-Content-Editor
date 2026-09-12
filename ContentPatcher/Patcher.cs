@@ -69,7 +69,7 @@ public class Patcher : IDisposable
         if (workspace == null) {
             var configPath = $"configs/{env.Config.Game.name}";
             // 2. load game-specific patch config / overrides
-            workspace = new ContentWorkspace(env, new PatchConfigContainer(configPath));
+            workspace = new ContentWorkspace(env, new PatchConfig(configPath));
         }
         runtimeEnumsPath = Path.Combine(config.GamePath, EnumsRelativePath);
         nativesPath = Path.Combine(config.GamePath, env.BasePath);
@@ -106,7 +106,7 @@ public class Patcher : IDisposable
         if (workspace == null) throw new NullReferenceException("Workspace was not setup");
 
         foreach (var bundle in workspace.BundleManager.ActiveBundles) {
-            if (!bundle.HasResources) continue;
+            if (!bundle.HasFiles) continue;
 
             var hasAnyUndiffedResources = bundle.Files.Any(e => e.Diff == null && e.DiffTime < new DateTime(2025, 1, 1)) == true;
             if (hasAnyUndiffedResources) {

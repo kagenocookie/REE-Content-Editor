@@ -19,7 +19,7 @@ public sealed class ObjectResourceHandler : IObjectUIHandler
                 ImGui.SameLine();
                 ImGui.PushID(context.label);
                 if (ImGui.Button("Create")) {
-                    context.CreateEntityResource(workspace, field?.Field);
+                    context.CreateEntityResource(workspace, field?.Field, context.EntityParams?.ResourceType);
                 }
                 ImGui.PopID();
             }
@@ -29,8 +29,6 @@ public sealed class ObjectResourceHandler : IObjectUIHandler
             var child = context.AddChild(context.label, instance.Instance, setter: (ctx, val) => instance.Instance = (RszInstance?)val!);
             WindowHandlerFactory.SetupRSZInstanceHandler(child);
         }
-        ImGui.Spacing();
-        ImguiHelpers.BeginRect();
         var nested = field?.forceNested ?? instance.Instance.Fields.Length > 2;
         if (nested) {
             if (ImGui.TreeNode(context.label)) {
@@ -40,7 +38,5 @@ public sealed class ObjectResourceHandler : IObjectUIHandler
         } else {
             context.children[0].ShowUI();
         }
-        ImguiHelpers.EndRect(4);
-        ImGui.Spacing();
     }
 }

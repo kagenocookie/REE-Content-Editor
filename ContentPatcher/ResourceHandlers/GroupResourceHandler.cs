@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Text.Json.Nodes;
+using ReeLib;
 
 namespace ContentPatcher;
 
@@ -7,7 +9,7 @@ public class GroupResourceHandler : ResourceHandler, IResourceHandlerStatic
 {
     public override EntityFieldValueHandler CreateValueHandler(EntityField field) => Config.Subtypes!.First().Value.Resource!.CreateValueHandler(field);
 
-    public static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
+    public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
     {
         return new GroupResourceHandler() {
             Config = resource,
@@ -18,23 +20,37 @@ public class GroupResourceHandler : ResourceHandler, IResourceHandlerStatic
     {
         if (Config.Subtypes == null) throw new Exception($"Missing subtypes for group resource {Config}");
 
-        foreach (var (subtype, sub) in Config.Subtypes) {
-            if (initialData?.AsObject().TryGetPropertyValue("$type", out var typeStr) == true && typeStr?.GetValueKind() == System.Text.Json.JsonValueKind.String) {
-                var type = typeStr.GetValue<string>();
-                if ((type == subtype || type == sub.RszClass?.name) && sub.Resource != null) {
-                    return sub.Resource.CreateResource(workspace, id, initialData);
-                }
-            }
+        if (initialData is not JsonObject obj || obj.Count == 0) {
+            throw new Exception($"Creating blank resources of type {Config} is not supported");
         }
-        throw new Exception($"Creating blank resources of type {Config} is not supported");
+
+        var group = new GroupedResource(Config, Config.Subtypes.Keys);
+        foreach (var (type, data) in obj) {
+            if (!Config.Subtypes.TryGetValue(type, out var sub)) {
+                throw new Exception($"Unknown {Config} subresource type {type}");
+            }
+
+            var inst = sub.Resource.CreateResource(workspace, id, data);
+            group.Set(type, inst);
+        }
+        return group;
     }
 
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)
     {
         if (Config.Subtypes == null) throw new Exception($"Missing subtypes for group resource {Config}");
 
+        var subdict = new Dictionary<long, IContentResource>();
+        var keys = Config.Subtypes.Keys;
         foreach (var (type, sub) in Config.Subtypes) {
-            sub.Resource?.ReadResources(workspace, dict);
+            sub.Resource?.ReadResources(workspace, subdict);
+            foreach (var (id, res) in subdict) {
+                if (!dict.TryGetValue(id, out var existing) || existing is not GroupedResource group) {
+                    dict[id] = group = new GroupedResource(Config, keys);
+                }
+                group.Set(type, res);
+            }
+            subdict.Clear();
         }
     }
 
@@ -45,5 +61,54 @@ public class GroupResourceHandler : ResourceHandler, IResourceHandlerStatic
         foreach (var (type, sub) in Config.Subtypes) {
             sub.Resource?.ModifyResources(workspace, resources);
         }
+    }
+}
+
+public class GroupedResource(ResourceConfig config, IEnumerable<string>? initialKeys = null) : IContentResource, IValueProvider
+{
+    public ResourceConfig ResourceType { get; } = config;
+
+    public string? FileResourcePath => null;
+
+    private Dictionary<string, IContentResource?> subresources = initialKeys?.Any() == true
+        ? new (initialKeys.Select(k => new KeyValuePair<string, IContentResource?>(k, null)))
+        : new();
+
+    public IReadOnlyDictionary<string, IContentResource?> Resources => subresources;
+
+    public object MainValue {
+        get {
+            var sub = subresources.FirstOrDefault(kv => kv.Value != null).Value;
+            return (sub as IValueProvider)?.MainValue ?? sub ?? this;
+        }
+    }
+
+    public void Set(string key, IContentResource? resource)
+    {
+        Debug.Assert(subresources.ContainsKey(key));
+        subresources[key] = resource;
+    }
+
+    public IContentResource? Get(string key)
+    {
+        return subresources[key];
+    }
+
+    public IContentResource Clone()
+    {
+        var dict = subresources.ToDictionary(kv => kv.Key, kv => kv.Value?.Clone());
+        return new GroupedResource(ResourceType) {
+            subresources = dict
+        };
+    }
+
+    public JsonNode ToJson(Workspace env)
+    {
+        var obj = new JsonObject();
+        foreach (var (type, sub) in subresources) {
+            obj[type] = sub?.ToJson(env);
+        }
+
+        return obj;
     }
 }

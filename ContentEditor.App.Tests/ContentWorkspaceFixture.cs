@@ -37,7 +37,7 @@ public sealed class ContentWorkspaceFixture : IDisposable
 
         Workspace = new ContentWorkspace(
             new Workspace(config) { AllowUsePackedFiles = false },
-            new PatchConfigContainer("!")
+            new PatchConfig("!")
         );
     }
 

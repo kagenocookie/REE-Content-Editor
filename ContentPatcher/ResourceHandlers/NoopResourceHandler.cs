@@ -17,7 +17,7 @@ public class NoopResourceHandler<TFieldType> : ResourceHandler, IResourceHandler
 
     public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new TFieldType();
 
-    public static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
+    public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
     {
         return new NoopResourceHandler<TFieldType>() { Config = resource };
     }

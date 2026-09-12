@@ -11,7 +11,7 @@ public abstract class ResourceHandler
 
     public abstract EntityFieldValueHandler CreateValueHandler(EntityField field);
 
-    private static readonly Dictionary<string, Func<ResourceConfig, EntityResourceConfigSerialized, ContentWorkspace, ResourceHandler>> patchers = new();
+    private static readonly Dictionary<string, Func<ResourceConfig, ResourceConfigSerialized, ContentWorkspace, ResourceHandler>> patchers = new();
     private static readonly Dictionary<string, (string[]? gameWhitelist, Type? handlerType, Func<EntityFieldValueHandler> func)> fieldTypes = new();
     static ResourceHandler()
     {
@@ -33,7 +33,7 @@ public abstract class ResourceHandler
         }
     }
 
-    public static ResourceHandler CreateInstance(ResourceConfig resource, EntityResourceConfigSerialized config, ContentWorkspace workspace)
+    public static ResourceHandler CreateInstance(ResourceConfig resource, ResourceConfigSerialized config, ContentWorkspace workspace)
     {
         if (string.IsNullOrEmpty(config.Type)) throw new ArgumentException("Patcher must have a type field", nameof(config));
 
@@ -88,5 +88,5 @@ public abstract class ResourceHandler
 
 public interface IResourceHandlerStatic
 {
-    abstract static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace);
+    abstract static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace);
 }

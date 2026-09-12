@@ -18,10 +18,22 @@ entities:
       #     field: "{name:lower()}"
       #     classname: offline.gamemastering.item.WeaponElement
       - name: catalog
-        type: offline.WeaponPrefabUserData.WeaponParam
         label: Catalog data
         required: true
         resource:
+          id: [_Type]
+          type: array-file
+          classname: offline.WeaponPrefabUserData.WeaponParam
+          file: sectionroot/userdata/system/equipment/weaponprefabuserdata.user
+          params:
+            nested: false
+      - name: motionResources
+        required: true
+        resource:
+          id: [_WeaponType]
+          type: array-file
+          classname: offline.survivor.motion.WeaponCharacterMotionResourcePrefabSettings
+          file: sectionroot/userdata/system/equipment/weaponcharactermotionresourceuserdata.user
           params:
             nested: false
       - name: name
@@ -53,18 +65,6 @@ entities:
           params:
             path: "{catalog?.Prefab?.Path}"
 
-resources:
-  offline.WeaponPrefabUserData.WeaponParam:
-    id: [_Type]
-    type: array-file
-    classname: offline.WeaponPrefabUserData.WeaponParam
-    file: sectionroot/userdata/system/equipment/weaponprefabuserdata.user
-  offline.survivor.motion.WeaponCharacterMotionResourceContainer:
-    id: [_WeaponType]
-    type: array-file
-    classname: offline.survivor.motion.WeaponCharacterMotionResourcePrefabSettings
-    file: sectionroot/userdata/system/equipment/weaponcharactermotionresourceuserdata.user
-
   # offline.gamemastering.item.WeaponElement:
   #   type: hardcoded-catalog
   #   classname: offline.gamemastering.item.WeaponElementList
@@ -74,7 +74,7 @@ classes:
   offline.WeaponPrefabUserData.WeaponParam:
     to_string: "Weapon {_Type:enum(offline.EquipmentDefine.WeaponType)} ({_Name}) {Prefab.Path}"
   offline.survivor.motion.WeaponCharacterMotionResourceContainer:
-    to_string: "Weapon {_WeaponType:enum(offline.EquipmentDefine.WeaponType)} Motions"
+    to_string: "Motion Prefab {Prefab.Path}"
   offline.WeaponEquippedPositionUserData.PlayerParam:
     to_string: "{PlayerType:enum(offline.PlayerDefine.PlayerType)}"
   offline.WeaponEquippedPositionUserData.CostumeParam:

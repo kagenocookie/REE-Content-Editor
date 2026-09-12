@@ -20,6 +20,10 @@
             "description": "Name of the primary field used for the entity ID. If unspecified, the first field is used.",
             "type": "string"
           },
+          "display_name": {
+            "description": "Name of the primary field used for the entity ID. If unspecified, the first field is used.",
+            "type": "string"
+          },
           "id_field": {
             "description": "The field to use for determining the entity ID. Defaults to using the primary field.",
             "type": "string"
@@ -40,7 +44,7 @@
           }
         },
         "required": ["fields"],
-        "additionalProperties": true
+        "additionalProperties": false
       }
     },
     "resources": {
@@ -71,6 +75,10 @@
               "properties": {
                 "enum": {
                   "description": "Enum classname override for displaying this field instead of its default",
+                  "type": "string"
+                },
+                "entity": {
+                  "description": "Show an entity selector of this type for the field",
                   "type": "string"
                 },
                 "translate_guid": {
@@ -170,7 +178,7 @@
         },
         "when": {
           "description": "Custom condition to determine whether this field should be used.",
-          "$ref": "#/definitions/resourceCondition"
+          "$ref": "#/definitions/entityCondition"
         },
         "resource": {
           "description": "Inline resource configuration for this field. Supports file paths, ID fields, and nested resource references.",
@@ -186,7 +194,7 @@
         "type": {
           "description": "Resource loading and patching type",
           "type": "string",
-          "enum": ["array-file", "multi-array", "resource_proxy_pfb", "enum_mapping", "string", "msg", "group"]
+          "enum": ["array-file", "multi-array", "resource_proxy_pfb", "enum_mapping", "string", "msg", "group", "merged-group"]
         },
         "custom_id_range": {
           "description": "Single file path for this resource.",
@@ -197,8 +205,8 @@
             "type": "integer"
           }
         },
-        "subclasses": {
-          "description": "List of RSZ subclasses of this resource. Used by the group resource type to merge multiple classes into one resource with a shared ID pool",
+        "subtypes": {
+          "description": "List of subresources of this resource. Used by group resource stype to merge multiple classes into one resource with a shared ID pool",
           "type": "object",
           "additionalProperties": {
             "type": "object",
@@ -223,6 +231,10 @@
             "type": "string"
           },
           "minItems": 1
+        },
+        "filter": {
+          "description": "Custom filter condition for matching objects.",
+          "$ref": "#/definitions/resourceCondition"
         },
         "id": {
           "description": "Array of field names that uniquely identify this resource.",
@@ -402,6 +414,22 @@
       "description": "Conditional loading specification for fields and resources.",
       "type": "object",
       "properties": {
+        "property": {
+          "description": "Nested property within the field object to compare.",
+          "type": "string"
+        },
+        "equals": {
+          "description": "Value to compare against (enum name or literal value). Used with property.",
+          "type": ["string", "number", "boolean", "integer"]
+        }
+      },
+      "required": ["property", "equals"],
+      "additionalProperties": false
+    },
+    "entityCondition": {
+      "description": "Conditional loading specification for fields and resources.",
+      "type": "object",
+      "properties": {
         "field": {
           "description": "Field name to check.",
           "type": "string"
@@ -410,16 +438,12 @@
           "description": "Nested property within the field object to compare.",
           "type": "string"
         },
-        "classname": {
-          "description": "Exact classname to match. When specified, property and equals are ignored.",
-          "type": "string"
-        },
         "equals": {
           "description": "Value to compare against (enum name or literal value). Used with property.",
           "type": ["string", "number", "boolean", "integer"]
         }
       },
-      "required": ["field"],
+      "required": ["property", "equals"],
       "additionalProperties": false
     }
   }

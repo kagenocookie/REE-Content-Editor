@@ -31,7 +31,7 @@ public class SingleMsgCustomField : CustomEntityFieldHandler<MessageData>, IDiff
         if (currentResource == null) {
             string entityKey = FormatMessageKey(entity);
             var messageId = MurMur3HashUtils.GetHash(entityKey);
-            currentResource = new MessageData() { ResourceTypeID = file, FileResourcePath = file!, MessageKey = entityKey, Guid = Guid.NewGuid() };
+            currentResource = new MessageData() { ResourceType = Field.Config, FileResourcePath = file!, MessageKey = entityKey, Guid = Guid.NewGuid() };
             workspace.ResourceManager.AddResource(file, messageId, currentResource, state);
         }
         workspace.Diff.ApplyDiff(currentResource, data);
@@ -42,7 +42,7 @@ public class SingleMsgCustomField : CustomEntityFieldHandler<MessageData>, IDiff
     {
         string entityKey = FormatMessageKey(entity);
         var messageId = MurMur3HashUtils.GetHash(entityKey);
-        var data = new MessageData() { FileResourcePath = file!, Messages = new(), ResourceTypeID = file!, MessageKey = entityKey, Guid = Guid.NewGuid() };
+        var data = new MessageData() { FileResourcePath = file!, Messages = new(), ResourceType = Field.Config, MessageKey = entityKey, Guid = Guid.NewGuid() };
         if (initialData != null) {
             workspace.Diff.ApplyDiff(data, initialData!);
             data.MessageKey = entityKey;

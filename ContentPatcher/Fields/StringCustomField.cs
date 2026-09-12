@@ -45,7 +45,7 @@ public class StringCustomField : CustomEntityFieldHandler<StringResource>, IDiff
         }
         var newStr = data.GetValue<string>();
         if (currentResource?.Text != newStr) {
-            entity.Set(Field.name, currentResource = new StringResource(data.GetValue<string>()));
+            entity.Set(Field.name, currentResource = new StringResource(Field.Config, data.GetValue<string>()));
         }
         return currentResource;
     }
@@ -54,9 +54,9 @@ public class StringCustomField : CustomEntityFieldHandler<StringResource>, IDiff
     {
         if (Regex != null) {
             // assume it's expected to be unique - always start empty maybe?
-            return (-1, new StringResource(string.Empty));
+            return (-1, new StringResource(Field.Config, string.Empty));
         } else {
-            return (-1, new StringResource(initialData?.GetValue<string>() ?? string.Empty));
+            return (-1, new StringResource(Field.Config, initialData?.GetValue<string>() ?? string.Empty));
         }
     }
 
@@ -69,7 +69,7 @@ public class StringCustomField : CustomEntityFieldHandler<StringResource>, IDiff
     {
         var res = entity.Get<StringResource>(Field.name);
         if (res == null) {
-            res = new StringResource(initialFormat?.GetString(entity) ?? string.Empty);
+            res = new StringResource(Field.Config, initialFormat?.GetString(entity) ?? string.Empty);
         }
         return res;
     }
@@ -77,17 +77,21 @@ public class StringCustomField : CustomEntityFieldHandler<StringResource>, IDiff
 
 public sealed class StringResource : IContentResource
 {
-    public StringResource() {}
-    public StringResource(string str)
+    public StringResource(ResourceConfig config)
     {
+        ResourceType = config;
+    }
+    public StringResource(ResourceConfig config, string str)
+    {
+        ResourceType = config;
         Text = str;
     }
 
     public string Text { get; set; } = string.Empty;
-    public string ResourceTypeID => "string";
+    public ResourceConfig ResourceType { get; }
     public string? FileResourcePath => null;
 
-    public IContentResource Clone() => new StringResource() { Text = Text };
+    public IContentResource Clone() => new StringResource(ResourceType, Text);
 
     public JsonNode ToJson(Workspace env) => JsonValue.Create(Text);
 

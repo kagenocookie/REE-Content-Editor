@@ -135,7 +135,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         this.env = env;
 
         var configPath = Path.Combine(AppConfig.Instance.ConfigBasePath, env.Config.Game.name);
-        var patchConfig = this.workspace?.Config ?? new PatchConfigContainer(Path.GetFullPath(configPath));
+        var patchConfig = this.workspace?.Config ?? new PatchConfig(Path.GetFullPath(configPath));
 
         var workspace = new ContentWorkspace(env, patchConfig, this.workspace?.BundleManager);
         ChangeWorkspace(workspace, bundle);
@@ -1042,11 +1042,6 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 if (workspace.Config.Entities.Any()) {
                     if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Windows.Entities))) {
                         AddSubwindow(new EntitiesWindow(workspace));
-                    }
-                }
-                if (workspace.Config.Resources.Any()) {
-                    if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Windows.Resources))) {
-                        AddSubwindow(new EntityResourcesWindow(workspace));
                     }
                 }
                 if (AppImguiHelpers.HotkeyMenuItem(Lang.Windows.MacroShelf, AppConfig.Instance.Key_OpenMacroShelf.Get())) {

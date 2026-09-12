@@ -10,7 +10,7 @@ public class NullResourceHandler : IObjectUIHandler
     {
         var workspace = context.GetWorkspace();
         if (workspace == null || workspace.CurrentBundle == null) {
-            ImGui.Text(context.label);
+            ImGui.Text(context.label + ": NULL");
             return;
         }
         var param = context.EntityParams;
@@ -22,7 +22,7 @@ public class NullResourceHandler : IObjectUIHandler
                 var field = param.EntityField == null ? null : entity?.Config.GetField(param.EntityField);
                 IContentResource resource;
                 if (entity != null && field != null) {
-                    context.CreateEntityResource(workspace, field);
+                    context.CreateEntityResource(workspace, field, param.ResourceType);
                     return;
                     // resource = workspace.ResourceManager.CreateEntityResource(entity, field, ResourceState.Active);
                 } else {

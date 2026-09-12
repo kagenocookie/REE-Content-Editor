@@ -15,7 +15,7 @@ public class MessageData : IAddressableContentResource
     }
 
     [SetsRequiredMembers]
-    public MessageData(MessageEntry entry, string filename, string resourceIdentifier)
+    public MessageData(MessageEntry entry, string filename, ResourceConfig? resourceIdentifier = null)
     {
         MessageKey = entry.Name;
         Guid = entry.Guid;
@@ -31,7 +31,7 @@ public class MessageData : IAddressableContentResource
             var name = entry.AttributeItems[i].Name;
             Attributes[string.IsNullOrEmpty(name) ? i.ToString() : name] = value ?? "";
         }
-        ResourceTypeID = resourceIdentifier;
+        ResourceType = resourceIdentifier ?? ResourceConfig.Placeholder;
     }
 
     public Guid Guid { get; set; }
@@ -40,7 +40,7 @@ public class MessageData : IAddressableContentResource
     public Dictionary<string, string> Messages { get; set; } = new((int)Language.Max);
     public Dictionary<string, string> Attributes { get; set; } = new();
 
-    public required string ResourceTypeID { get; set; }
+    public required ResourceConfig ResourceType { get; set; }
 
     public required string FileResourcePath { get; set; }
 
@@ -66,21 +66,21 @@ public class MessageData : IAddressableContentResource
             SoundID = SoundID,
             Guid = Guid,
             Messages = Messages.ToDictionary(),
-            ResourceTypeID = ResourceTypeID,
+            ResourceType = ResourceType,
             FileResourcePath = FileResourcePath,
         };
     }
-    public static MessageData FromJson(string json)
+    public static MessageData FromJson(string json, ResourceConfig? config = null)
     {
         var obj = JsonSerializer.Deserialize<JsonObject>(json);
-        return FromJson(obj);
+        return FromJson(obj, config);
     }
 
-    public static MessageData FromJson(JsonObject? obj)
+    public static MessageData FromJson(JsonObject? obj, ResourceConfig? config = null)
     {
         return new MessageData() {
             FileResourcePath = "",
-            ResourceTypeID = "",
+            ResourceType = config ?? ResourceConfig.Placeholder,
             SoundID = obj?[nameof(SoundID)]?.AsValue()?.GetValue<uint>() ?? 0,
             MessageKey = obj?[nameof(MessageKey)]?.AsValue()?.GetValue<string>() ?? "",
             Guid = obj?[nameof(Guid)]?.AsValue()?.GetValue<string>() is string str && Guid.TryParse(str, out var gg) ? gg : Guid.NewGuid(),

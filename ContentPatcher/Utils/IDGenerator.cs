@@ -56,7 +56,7 @@ public abstract class IDGenerator(NestableFieldAccessor[] fields)
         if (fields.Length == 2) {
             var gen1 = CreateSingleGenerator([fields[0]]);
             var gen2 = CreateSingleGenerator([fields[1]]);
-            return new DoubleIDGenerator(gen1, gen2);
+            return new TwoIDGenerator(gen1, gen2);
         }
 
         throw new NotImplementedException("Unsupported ID field combination");
@@ -115,7 +115,7 @@ public abstract class IDGenerator(NestableFieldAccessor[] fields)
         public override long GetID(object value) => (long)(ulong)Fields[0].Get(value)!;
     }
 
-    private sealed class DoubleIDGenerator(IDGenerator id1, IDGenerator id2) : IDGenerator(id1.Fields.Concat(id2.Fields).ToArray())
+    private sealed class TwoIDGenerator(IDGenerator id1, IDGenerator id2) : IDGenerator(id1.Fields.Concat(id2.Fields).ToArray())
     {
         public override long GetID(object value) => id1.GetID(value) | (id2.GetID(value) << 32);
     }

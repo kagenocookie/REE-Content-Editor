@@ -37,7 +37,7 @@ public class ResourceLinkCustomField : CustomEntityFieldHandler
     {
         // would we want to force-open the referenced file here?
         var path = GetPath(entity);
-        return new FileContentResource(path);
+        return new FileContentResource(Field.Config, path);
     }
 
     public override IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
@@ -47,25 +47,27 @@ public class ResourceLinkCustomField : CustomEntityFieldHandler
 
     public override (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData)
     {
-        return (-1, new FileContentResource());
+        return (-1, new FileContentResource(Field.Config));
     }
 }
 
 public sealed class FileContentResource : IContentResource
 {
-    public string ResourceTypeID => FileResourcePath;
+    public ResourceConfig ResourceType { get; }
     public string FileResourcePath { get; set; } = string.Empty;
 
-    public FileContentResource()
+    public FileContentResource(ResourceConfig config)
     {
+        ResourceType = config;
     }
 
-    public FileContentResource(string fileResourcePath)
+    public FileContentResource(ResourceConfig config, string fileResourcePath)
     {
+        ResourceType = config;
         FileResourcePath = fileResourcePath;
     }
 
-    public IContentResource Clone() => new FileContentResource(FileResourcePath);
+    public IContentResource Clone() => new FileContentResource(ResourceType, FileResourcePath);
 
     public JsonNode ToJson(Workspace env) => new JsonObject();
 

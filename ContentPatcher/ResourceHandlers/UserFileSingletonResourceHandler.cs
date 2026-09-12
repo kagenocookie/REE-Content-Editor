@@ -5,7 +5,7 @@ namespace ContentPatcher;
 [ResourcePatcher("user-singleton")]
 public class UserFileSingletonResourceHandler : ResourceHandler, IResourceHandlerStatic
 {
-    public static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
+    public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
     {
         return new UserFileSingletonResourceHandler() {
             Files = [data.SingleFile],
@@ -21,7 +21,7 @@ public class UserFileSingletonResourceHandler : ResourceHandler, IResourceHandle
 
         var instance = userfile.Instance!;
         var id = Config.IDGeneratorRequired.GetID(instance);
-        dict[id] = new RSZObjectResource(instance, Files[0]);
+        dict[id] = new RSZObjectResource(Config, instance, Files[0]);
     }
 
     public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)

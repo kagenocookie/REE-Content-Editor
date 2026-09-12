@@ -6,17 +6,18 @@ using ReeLib;
 
 namespace ContentPatcher.DD2;
 
-public class ItemIconResource : IContentResource
+public class ItemIconResource(ResourceConfig config) : IContentResource
 {
     public ItemRectData data = new();
 
-    public string ResourceTypeID => data.IconTexture + data.IconRect;
+    public ResourceConfig ResourceType { get; } = config;
     public string? FileResourcePath => data.IconTexture;
 
-    public IContentResource Clone() => new ItemIconResource() { data = data.Clone() };
+    public IContentResource Clone() => new ItemIconResource(ResourceType) { data = data.Clone() };
 
     public JsonNode ToJson(Workspace env) => JsonSerializer.SerializeToNode(data, JsonConfig.jsonOptionsIncludeFields)!;
-    public static ItemIconResource.ItemRectData FromJson(JsonNode json) => json.Deserialize<ItemIconResource.ItemRectData>(JsonConfig.jsonOptionsIncludeFields)!;
+    public static ItemIconResource.ItemRectData FromJson(JsonNode json)
+        => json.Deserialize<ItemIconResource.ItemRectData>(JsonConfig.jsonOptionsIncludeFields)!;
 
     public class ItemRectData
     {
@@ -56,7 +57,7 @@ public class ItemIconField : CustomEntityFieldHandler<ItemIconResource>
     {
         var parsedData = data == null ? null : ItemIconResource.FromJson(data);
         if (currentResource == null) {
-            currentResource = new ItemIconResource() {};
+            currentResource = new ItemIconResource(Field.Config) {};
             currentResource.data.IconRect.w = 144;
             currentResource.data.IconRect.h = 160;
         }
@@ -66,13 +67,13 @@ public class ItemIconField : CustomEntityFieldHandler<ItemIconResource>
 
     public override ItemIconResource FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
     {
-        return entity.Get<ItemIconResource>(Field.name) ?? new ItemIconResource();
+        return entity.Get<ItemIconResource>(Field.name) ?? new ItemIconResource(Field.Config);
     }
 
     public override ResourceHandler? CreateResourceHandler(ResourceConfig config) => new NoopResourceHandler<ItemIconField>() { Config = config };
 
     public override (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData)
     {
-        return (-1, new ItemIconResource());
+        return (-1, new ItemIconResource(Field.Config));
     }
 }

@@ -44,7 +44,7 @@ public class MotionDataResource : IContentResource
     public int VerificationId { get; set; }
 
     [JsonIgnore]
-    public string ResourceTypeID => "mot_data";
+    public ResourceConfig ResourceType => ResourceConfig.NamedPlaceholder("mot_data");
 
     [JsonIgnore]
     public string? FileResourcePath { get; private set; }

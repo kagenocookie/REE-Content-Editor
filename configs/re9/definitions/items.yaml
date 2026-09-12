@@ -27,7 +27,6 @@ entities:
     - name: gui_data
       type: items.gui_data
       label: GUI Data
-      not_standalone: true
     - name: detail_search
       type: items.detail_search_data
       label: Details Prefab

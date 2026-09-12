@@ -19,6 +19,7 @@ public class EntityHandler : IObjectUIHandler
             ImGui.PushID(i);
             child.ShowUI();
             ImGui.PopID();
+            ImGui.Spacing();
         }
     }
 }

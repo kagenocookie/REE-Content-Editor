@@ -36,11 +36,20 @@ entities:
     fields:
       - name: data
         label: Data
-        type: npc.CharacterData
         required: true
+        resource:
+          id: [ID]
+          type: array-file
+          custom_id_range: [1000, 999999]
+          file: AppSystem/ch/ch300/UserData/CharacterDataList.user
+          classname: app.CharacterData
       - name: edit_data
         label: Customization
-        type: npc.EditData
+        resource:
+          id: [_CharacterID]
+          type: array-file
+          classname: app.charaedit.ch000.EditDataTable.Data
+          file: AppSystem/CharaEdit/ch000/EditDataTable_Npc.user
       - name: name
         label: NPC internal code name
         required: true
@@ -62,19 +71,6 @@ entities:
           file: Message/UI/CharacterName.msg
           params:
             key_format: "Mes_{name}"  # if data._SubNPC -> _X1 suffix
-
-resources:
-  npc.CharacterData:
-    id: [ID]
-    type: array-file
-    custom_id_range: [1000, 999999]
-    file: AppSystem/ch/ch300/UserData/CharacterDataList.user
-    classname: app.CharacterData
-  npc.EditData:
-    id: [_CharacterID]
-    type: array-file
-    classname: app.charaedit.ch000.EditDataTable.Data
-    file: AppSystem/CharaEdit/ch000/EditDataTable_Npc.user
 
 classes:
   app.charaedit.ch000.EditDataTable.Data:
@@ -99,3 +95,7 @@ classes:
     to_string: "Generic NPC Data: {_Voice:enum(app.CharacterData.VoiceDefine)} {_Prefab.Path}"
   app.LipSyncCatalogUserData.CharacterElement:
     to_string: "NPC Data: {_CharacterID:enum(app.CharacterID)}"
+  app.charaedit.ch000.CostumeData:
+    to_string: "Costume Data {_TopsStyle:enum(app.TopsStyle)} {_PantsStyle:enum(app.PantsStyle)}"
+  app.charaedit.ch000.AppearanceData:
+    to_string: "Appearance Data [AppearanceID={_AppearanceID}]"

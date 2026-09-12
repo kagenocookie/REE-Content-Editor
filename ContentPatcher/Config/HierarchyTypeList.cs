@@ -91,4 +91,20 @@ public class HierarchyTypeList<T>(string name) where T : class
             return sublist.Add(path.Substring(dot + 1), entityType, friendlyName);
         }
     }
+
+    public void SortEntries()
+    {
+        items.Sort((a, b) => {
+            var strA = (a as HierarchyTypeList<T>)?.Name ?? itemsDict.First(kv => kv.Value == a).Key;
+            var strB = (b as HierarchyTypeList<T>)?.Name ?? itemsDict.First(kv => kv.Value == b).Key;
+            return strA.CompareTo(strB);
+        });
+        // sort only the root entries - this way the leaf entries stay in the more easily controllable definition order
+
+        // foreach (var sub in items) {
+        //     if (sub is HierarchyTypeList<T> hsub) {
+        //         hsub.SortEntries();
+        //     }
+        // }
+    }
 }

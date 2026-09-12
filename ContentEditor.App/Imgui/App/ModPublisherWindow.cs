@@ -98,7 +98,7 @@ public class ModPublisherWindow : IWindowHandler
 
             ImGui.TreePop();
         }
-        if (bundle.HasResources && ImGui.TreeNode("Files")) {
+        if (bundle.HasFiles && ImGui.TreeNode("Files")) {
             foreach (var (localPath, resource) in bundle.ResourcesEntries) {
                 ImGui.PushID(localPath);
                 if (ImGui.Button("Open")) {
@@ -126,7 +126,7 @@ public class ModPublisherWindow : IWindowHandler
 
             ImGui.TreePop();
         }
-        if (bundle.Entities.Count == 0 && !bundle.HasResources) {
+        if (bundle.Entities.Count == 0 && !bundle.HasFiles) {
             ImGui.TextColored(Colors.Info, "There is currently no content inside the bundle.");
         }
     }

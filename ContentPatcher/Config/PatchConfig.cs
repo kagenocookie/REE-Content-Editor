@@ -9,7 +9,7 @@ using ReeLib;
 using VYaml.Annotations;
 using VYaml.Serialization;
 
-public class PatchConfigContainer(string filepath)
+public class PatchConfig(string filepath)
 {
     private readonly Dictionary<string, ClassConfig> classes = new();
     private readonly Dictionary<string, ResourceConfig> resources = new();
@@ -28,10 +28,9 @@ public class PatchConfigContainer(string filepath)
     public bool IsLoaded { get; private set; }
 
     public HierarchyTypeList<EntityConfig> EntityHierarchy { get; } = new("");
-    public HierarchyTypeList<ResourceConfig> ResourceHierarchy { get; } = new("");
 
     public ClassConfig? GetClassConfig(string classname) => classes.GetValueOrDefault(classname);
-    public FieldConfig? GetClassFieldConfig(string classname, string fieldName) => classes.GetValueOrDefault(classname)?.Fields?.GetValueOrDefault(fieldName);
+    public ClassFieldConfig? GetClassFieldConfig(string classname, string fieldName) => classes.GetValueOrDefault(classname)?.Fields?.GetValueOrDefault(fieldName);
     public EntityConfig? GetEntityConfig(string entityType) => entities.GetValueOrDefault(entityType);
 
     public void Load(ContentWorkspace workspace)
@@ -112,6 +111,7 @@ public class PatchConfigContainer(string filepath)
         LoadConfigsFromDir(workspace, DefinitionFilepath, false);
         var globalPath = Path.Combine(Path.GetDirectoryName(filepath)!, "global/definitions");
         LoadConfigsFromDir(workspace, globalPath, true);
+        EntityHierarchy.SortEntries();
     }
 
     private void LoadConfigsFromDir(ContentWorkspace workspace, string directory, bool noWarnings)
@@ -120,9 +120,9 @@ public class PatchConfigContainer(string filepath)
         foreach (var file in Directory.EnumerateFiles(directory, "*.yaml")) {
             var fs = File.OpenRead(file).ToMemoryStream();
             var memory = fs.GetBuffer().AsMemory(0, (int)fs.Length);
-            SerializedPatchConfigRoot newDict;
+            SerializedPatchConfig newDict;
             try {
-                newDict = YamlSerializer.Deserialize<SerializedPatchConfigRoot>(memory, yamlOptions);
+                newDict = YamlSerializer.Deserialize<SerializedPatchConfig>(memory, yamlOptions);
             } catch (Exception e) {
                 Logger.Error(e, $"Failed to read yaml config {file}");
                 continue;
@@ -137,7 +137,7 @@ public class PatchConfigContainer(string filepath)
         }
     }
 
-    private void LoadYamlConfig(ContentWorkspace workspace, SerializedPatchConfigRoot newDict, ref bool noWarnings)
+    private void LoadYamlConfig(ContentWorkspace workspace, SerializedPatchConfig newDict, ref bool noWarnings)
     {
         // if (newDict.Types != null) foreach (var (name, customType) in newDict.Types) {
         //     if (customType.Fields == null || customType.Fields.Count == 0) {
@@ -151,11 +151,6 @@ public class PatchConfigContainer(string filepath)
         if (newDict.Resources != null) {
             foreach (var (resType, resCfg) in newDict.Resources) {
                 var cfg = SetupResourceConfig(workspace, resType, resCfg);
-                if (!resCfg.DisallowStandaloneEditing && resCfg.ParentResource == null) {
-                    var shortname = ResourceHierarchy.Add(resType, cfg, resCfg.DisplayName);
-                    resources.Add(shortname, cfg);
-                    if (shortname == resType) continue;
-                }
                 resources.Add(resType, cfg);
             }
         }
@@ -167,7 +162,7 @@ public class PatchConfigContainer(string filepath)
 
             var config = SetupEntityConfig(workspace, entity, name);
 
-            var shortname = EntityHierarchy.Add(name, config);
+            var shortname = EntityHierarchy.Add(name, config, entity.DisplayName);
             entities.Add(shortname, config);
         }
 
@@ -203,35 +198,27 @@ public class PatchConfigContainer(string filepath)
         }
     }
 
-    private ResourceConfig SetupResourceConfig(ContentWorkspace workspace, string resType, EntityResourceConfigSerialized resCfg, bool addResourceHandler = true)
+    private ResourceConfig SetupResourceConfig(ContentWorkspace workspace, string resType, ResourceConfigSerialized resCfg, bool addResourceHandler = true)
     {
         var cfg = new ResourceConfig(resType) {
             CustomIDRange = resCfg.CustomIDRange,
             DisplayName = resCfg.DisplayName ?? resType.GetStringAfterLastDelimiter('.').ToString(),
         };
-        if (resCfg.ParentResource != null) {
-            if (resources.TryGetValue(resCfg.ParentResource, out var parent)) {
-                cfg.ParentResource = parent;
-                cfg.CustomIDRange = parent.CustomIDRange;
-                parent.SubResources.Add(cfg);
-            } else {
-                Logger.Warn($"Resource {resType} parent resource {resCfg.ParentResource} was not found. Make sure the parent resource gets declared before sub resources");
-            }
-        }
 
-        if (resCfg.Subclasses?.Count > 0) {
+        if (resCfg.Subtypes?.Count > 0) {
             cfg.Subtypes ??= new ();
-            foreach (var (subType, subConfig) in resCfg.Subclasses) {
+            foreach (var (subType, subConfig) in resCfg.Subtypes) {
                 if (subConfig.CustomIDRange != null) {
                     Logger.Warn($"Resource subtype {resType}->{subType} has a custom ID range defined. ID ranges are only allowed on root resources. Will be ignored.");
                 }
                 // all subtypes must inherit id range from base resource type
                 subConfig.CustomIDRange = resCfg.CustomIDRange;
                 // inherit ID settings only if there are no more specific ones
-                subConfig.ID ??= resCfg.ID;
-                subConfig.SubID ??= resCfg.SubID;
+                // subConfig.ID ??= resCfg.ID;
+                // subConfig.SubID ??= resCfg.SubID;
 
-                var sub = SetupResourceConfig(workspace, subType, subConfig, addResourceHandler);
+                var sub = SetupResourceConfig(workspace, resType + "." + subType, subConfig, addResourceHandler);
+                sub.ParentResource = cfg;
                 cfg.Subtypes[subType] = sub;
             }
         }
@@ -240,6 +227,13 @@ public class PatchConfigContainer(string filepath)
             cfg.RszClass = workspace.Env.RszParser.GetRSZClass(resCfg.Classname);
         } else {
             cfg.RszClass = workspace.Env.RszParser.GetRSZClass(resType);
+        }
+        if (resCfg.filter != null) {
+            if (resCfg.filter.property == "classname") {
+                cfg.Filter = new WhenClassnameCondition(resCfg.filter.property, resCfg.filter.equals as string ?? "");
+            } else {
+                cfg.Filter = new WhenFieldValueCondition(resCfg.filter.property, resCfg.filter.equals);
+            }
         }
 
         if (resCfg.ID != null || resCfg.SubID != null) {
@@ -254,6 +248,14 @@ public class PatchConfigContainer(string filepath)
                 if (subids?.Length > 0) {
                     cfg.SubIDGenerator = IDGenerator.DefineGenerator(cfg.RszClass, subids);
                 }
+            }
+        }
+        // subtypes values are inherited unless specified otherwise
+        if (cfg.Subtypes != null) {
+            foreach (var sub in cfg.Subtypes) {
+                sub.Value.RszClass ??= cfg.RszClass;
+                sub.Value.IDGenerator ??= cfg.IDGenerator;
+                sub.Value.SubIDGenerator ??= cfg.SubIDGenerator;
             }
         }
         if (addResourceHandler) {
@@ -354,7 +356,7 @@ public class PatchConfigContainer(string filepath)
         } else if (!string.IsNullOrEmpty(data.fieldType)) {
             // handle fields with no resources (entity-only fields)
             field.ValueHandler = ResourceHandler.CreateValueHandler(data.fieldType, workspace);
-            var resCfg = new EntityResourceConfigSerialized() { Type = data.fieldType };
+            var resCfg = new ResourceConfigSerialized() { Type = data.fieldType };
             field.config.type ??= data.fieldType;
             field.Config = SetupResourceConfig(workspace, entity.Name + "__" + field.name, resCfg, false);
             field.Config.Resource = (field.ValueHandler as CustomEntityFieldHandler)?.CreateResourceHandler(field.Config)
@@ -388,4 +390,13 @@ public class PatchConfigContainer(string filepath)
     private static readonly YamlSerializerOptions yamlOptions = new YamlSerializerOptions {
         NamingConvention = NamingConvention.LowerCamelCase,
     };
+}
+
+[YamlObject]
+public partial class SerializedPatchConfig
+{
+    public Dictionary<string, EntityConfigSerialized>? Entities { get; set; }
+    // public Dictionary<string, CustomTypeConfigSerialized>? Types { get; set; }
+    public Dictionary<string, ClassConfigSerialized>? Classes { get; set; }
+    public Dictionary<string, ResourceConfigSerialized>? Resources { get; set; }
 }

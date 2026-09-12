@@ -1,8 +1,8 @@
 entities:
   shop:
-    to_string: "Shop {id}: {Data._ShopNameId:translate()}"
+    to_string: "Shop {id}: {data._ShopNameId:translate()}"
     fields:
-    - name: Data
+    - name: data
       resource:
         file: AppSystem/Item/ItemShopData/ItemShopData.user
         type: array-file

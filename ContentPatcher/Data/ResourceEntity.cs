@@ -53,6 +53,11 @@ public class ResourceEntity : Entity
         return FieldValues.GetValueOrDefault(name) as T;
     }
 
+    public T? Get<T>(EntityFieldValueHandler handler) where T : class, IContentResource
+    {
+        return FieldValues.GetValueOrDefault(handler.Field.name) as T;
+    }
+
     public long GetFieldId(string field)
     {
         var fieldCfg = Config.GetField(field);

@@ -19,13 +19,10 @@ public class Bundle : BaseBundle
     [JsonPropertyName("entities")]
     public List<Entity> Entities { get; set; } = new();
 
-    [JsonPropertyName("resources")]
-    public Dictionary<string, Dictionary<long, JsonNode>> Resources { get; set; } = new();
-
     [JsonIgnore]
     public RuntimeBundle? RuntimeBundle { get; internal set; }
 
-    public bool HasResources => ResourceListing?.Count > 0;
+    public bool HasFiles => ResourceListing?.Count > 0;
 
     [JsonIgnore]
     public IEnumerable<(string localPath, ResourceListItem resource)> ResourcesEntries => ResourceListing?.Select(kv => (kv.Key, kv.Value)) ?? [];
@@ -85,22 +82,6 @@ public class Bundle : BaseBundle
             }
         }
         Entities.Add(updated);
-        return EntityRecordUpdateType.Added;
-    }
-
-    /// <summary>
-    /// Update / replace an existing entity resources or add it in.
-    /// </summary>
-    public EntityRecordUpdateType RecordEntityResource(string type, long id, JsonNode data)
-    {
-        if (!Resources.TryGetValue(type, out var resDict)) {
-            Resources[type] = resDict = new Dictionary<long, JsonNode>();
-        }
-
-        var exists = resDict.TryGetValue(id, out var storedRes);
-        resDict[id] = data;
-        if (storedRes == data) return EntityRecordUpdateType.AlreadyRecorded;
-        if (exists) return EntityRecordUpdateType.Updated;
         return EntityRecordUpdateType.Added;
     }
 

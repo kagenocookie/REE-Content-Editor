@@ -1,7 +1,6 @@
 # TODO
 # weapon specific hold settings: appsystem/character/characterprefab/playercommon/userdata/playerweaponhold.user
 # weapon category settings: gameassets/character/additionaldata/weaponcategoryfordamageconfiguration/weaponcategoryfordamageconfiguration.user
-# support multiple catalog files
 
 entities:
   weapons.weapon:
@@ -9,36 +8,39 @@ entities:
     to_string: "Weapon [{data._WeaponID}]: {data._WeaponParameter?._WeaponResourceParam?.ResourceData?[0]?._WeaponItemIDStrArray?[0]:translate_fmt(Item_Name_$0)}"
     fields:
     - name: data
-      type: weapons.params
       required: true
+      resource:
+        classname: app.WeaponParamCatalogUserData.Data
+        id: [_WeaponID]
+        type: array-file
+        custom_id_range: [100000, 999999]
+        files:
+        - gameassets/weapon/catalog/weaponparamcataloguserdata.user
+        - gameassets/weapon/catalog/weaponparamcataloguserdata_firstchunk.user
     - name: mesh_catalog
-      type: weapons.catalog
       label: Mesh Catalog
-      not_standalone: true
       required: true
+      resource:
+        id: [_WeaponID]
+        classname: app.WeaponCatalogUserData.Data
+        type: array-file
+        files:
+        - gameassets/weapon/catalog/weaponcataloguserdata.user
+        - gameassets/weapon/catalog/weaponcataloguserdata_firstchunk.user
   weapons.accessory:
     to_string: "Accessory [{data._ID}]"
     fields:
     - name: data
-      type: weapons.accessory_data
       required: true
+      resource:
+        id: [_ID]
+        type: array-file
+        classname: app.WeaponAccessoryCatalogUserData.Data
+        files:
+        - gameassets/weapon/catalog/weaponaccessorycataloguserdata.user
+        - gameassets/weapon/catalog/weaponaccessorycataloguserdata_firstchunk.user
 
 resources:
-  weapons.params:
-    classname: app.WeaponParamCatalogUserData.Data
-    id: [_WeaponID]
-    type: array-file
-    custom_id_range: [100000, 999999]
-    files:
-    - gameassets/weapon/catalog/weaponparamcataloguserdata.user
-    - gameassets/weapon/catalog/weaponparamcataloguserdata_firstchunk.user
-  weapons.catalog:
-    id: [_WeaponID]
-    classname: app.WeaponCatalogUserData.Data
-    type: array-file
-    files:
-    - gameassets/weapon/catalog/weaponcataloguserdata.user
-    - gameassets/weapon/catalog/weaponcataloguserdata_firstchunk.user
   weapons.sling_preset:
     id: [_WeaponID]
     type: array-file
@@ -61,13 +63,6 @@ resources:
 
   # app.WeaponAccessoryParamBase.Data:
   #   id: [_ID]
-  weapons.accessory_data:
-    id: [_ID]
-    type: array-file
-    classname: app.WeaponAccessoryCatalogUserData.Data
-    files:
-    - gameassets/weapon/catalog/weaponaccessorycataloguserdata.user
-    - gameassets/weapon/catalog/weaponaccessorycataloguserdata_firstchunk.user
 
 classes:
   app.WeaponCatalogUserData.Data:

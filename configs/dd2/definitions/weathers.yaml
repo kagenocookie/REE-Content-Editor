@@ -22,8 +22,7 @@ entities:
       display_after: start
       resource:
         id: [Area, Weather]
-        sub_id: [StartHour, EndHour]
-        type: array-file
+        type: multi-array
         file: AppSystem/Weather/WeatherPostEffectUserData.user
         classname: app.WeatherManager.WeatherPostEffect.PostEffectData
 

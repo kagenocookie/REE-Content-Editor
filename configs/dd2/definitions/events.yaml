@@ -5,14 +5,30 @@ entities:
     to_string: "Event {id}: {select_data._StartLocation:enum(app.AIKeyLocation)}"
     fields:
       - name: select_data
-        type: app.SuddenQuestSelectData
         label: Data
+        resource:
+          id: [_SerialNum]
+          custom_id_range: [10000, 999000]
+          type: array-file
+          classname: app.SuddenQuestSelectData
+          file: appsystem/quest/userdata/questsudden/suddenquesttable.user
+          field: _SelectDataArray
+          params:
+            nested: false
   events.event_context:
     to_string: "Event context {id}: {data._Data._Type:enum(app.QuestDefine.SuddenQuestType)} - NPC={data._Data._NpcID:enum(app.CharacterID)}"
     fields:
       - name: data
-        type: app.SuddenQuestContextData
         label: Data
+        resource:
+          id: [_SerialNum]
+          custom_id_range: [10000, 999000]
+          classname: app.SuddenQuestContextData
+          type: array-file
+          file: appsystem/quest/userdata/questsudden/suddenquesttable.user
+          field: _ContextDataArray
+          params:
+            nested: false
   events.event_spawns:
     enums:
     - name: app.DomainQueryGenerateRequestID
@@ -21,30 +37,13 @@ entities:
     to_string: "Event spawn table {id}: {id:enum(app.DomainQueryGenerateRequestID)}"
     fields:
       - name: data
-        type: app.DomainQueryGenerateTable.DomainQueryGenetateTableElement
         label: Data
+        resource:
+          id: [_RequestID]
+          classname: app.DomainQueryGenerateTable.DomainQueryGenetateTableElement
+          type: array-file
+          file: leveldesign/generate/domainquerygenerate/domainquerygeneratetable.user
 
-resources:
-  app.SuddenQuestSelectData:
-    id: [_SerialNum]
-    custom_id_range: [10000, 999000]
-    type: array-file
-    file: natives/stm/appsystem/quest/userdata/questsudden/suddenquesttable.user.2
-    field: _SelectDataArray
-    params:
-      nested: false
-  app.SuddenQuestContextData:
-    id: [_SerialNum]
-    custom_id_range: [10000, 999000]
-    type: array-file
-    file: natives/stm/appsystem/quest/userdata/questsudden/suddenquesttable.user.2
-    field: _ContextDataArray
-    params:
-      nested: false
-  app.DomainQueryGenerateTable.DomainQueryGenetateTableElement:
-    id: [_RequestID]
-    type: array-file
-    file: natives/stm/leveldesign/generate/domainquerygenerate/domainquerygeneratetable.user.2
   # app.GenerateRowData:
   #   id: [_ManualSetGuid, _AutoSetGuid] ## TODO: verify are these really unique?
   # app.GenerateTableData:

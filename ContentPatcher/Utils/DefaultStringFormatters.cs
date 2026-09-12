@@ -23,6 +23,22 @@ public static class FormatterSettings
     {
         var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
         fmt.AddExtensions(new EntityStringFormatterSource(config));
+        if (workspace != null) {
+            fmt.AddExtensions(new ResourceStringFormatter(workspace));
+        }
+        ApplyDefaultFormatters(fmt);
+        if (workspace != null) ApplyWorkspaceFormatters(fmt, workspace);
+        else {
+            fmt.AddExtensions(new RszFieldStringFormatterSource(null));
+        }
+        fmt.AddExtensions(new NullFallbackSource());
+        return fmt;
+    }
+
+    public static SmartFormatter CreateResourceFormatter(ResourceConfig resource, ContentWorkspace workspace)
+    {
+        var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
+        fmt.AddExtensions(new ResourceStringFormatter(workspace));
         ApplyDefaultFormatters(fmt);
         if (workspace != null) ApplyWorkspaceFormatters(fmt, workspace);
         else {
@@ -168,13 +184,49 @@ public class EntityStringFormatterSource(EntityConfig config) : ISource
 
         var target = config.GetField(selectorInfo.SelectorText);
         if (target != null) {
-            selectorInfo.Result = entity.Get(selectorInfo.SelectorText);
+            var fieldValue = entity.Get(selectorInfo.SelectorText);
+            if (fieldValue is IValueProvider fv) {
+                selectorInfo.Result = fv.MainValue;
+            } else {
+                selectorInfo.Result = fieldValue;
+            }
             return true;
         }
 
         if (selectorInfo.SelectorOperator.Contains('?')) return false;
 
         throw new Exception($"Invalid field {selectorInfo.SelectorText} for entity type {entity.Type}");
+    }
+}
+
+public class ResourceStringFormatter(ContentWorkspace workspace) : ISource
+{
+    public bool TryEvaluateSelector(ISelectorInfo selectorInfo)
+    {
+        if (selectorInfo.CurrentValue is not IContentResource resource) {
+            return false;
+        }
+
+        if (selectorInfo.SelectorText == "id" && resource is IAddressableContentResource addressable) {
+            selectorInfo.Result = addressable.ID;
+            return true;
+        }
+        if (selectorInfo.SelectorText == "label") {
+            selectorInfo.Result = resource.Label;
+            return true;
+        }
+
+        if (resource is IResourceValueContainer values) {
+            var acc = values.GetAccessor(workspace, selectorInfo.SelectorText);
+            if (acc != null) {
+                selectorInfo.Result = acc.Get(resource);
+                return true;
+            }
+        }
+
+        if (selectorInfo.SelectorOperator.Contains('?')) return false;
+
+        throw new Exception($"Invalid field {selectorInfo.SelectorText} for resource {resource}");
     }
 }
 

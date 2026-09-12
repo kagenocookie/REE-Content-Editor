@@ -60,8 +60,8 @@ public abstract class NestableFieldAccessor
                 return null;
             }
 
-            if (field is RSZObjectResource rszi) {
-                return accessor.Get(rszi);
+            if (field is IValueProvider rv) {
+                return accessor.Get(rv.MainValue);
             } else {
                 return accessor.Get(field);
             }
@@ -74,11 +74,8 @@ public abstract class NestableFieldAccessor
                 Logger.Error($"Could not set unknown field {entityField} for entity {instance}");
                 return;
             }
-            if (field is RSZObjectResource rszo) {
-                var rszInstance = (field as RSZObjectResource)?.Instance;
-                if (rszInstance == null) return;
-
-                accessor.Set(rszInstance, value!);
+            if (field is IValueProvider rv) {
+                accessor.Set(rv.MainValue, value!);
             } else {
                 accessor.Set(field, value!);
             }
@@ -104,17 +101,17 @@ public abstract class NestableFieldAccessor
         }
     }
 
-    public static NestableFieldAccessor CreateForClass(RszParser parser, RszClass? cls, object obj)
+    public static NestableFieldAccessor CreateForClass(RszParser parser, RszClass? cls, object pathConfig)
     {
         // TODO: need cleanup of this method
-        if (obj is string str) {
+        if (pathConfig is string str) {
             if (cls == null) {
                 throw new Exception("Missing required class for pure string accessor");
             }
             return new NestableFieldAccessor.SimpleField(cls, str);
         }
 
-        if (obj is Dictionary<object, object> dict) {
+        if (pathConfig is Dictionary<object, object> dict) {
             var path = (string)dict["path"];
             if (dict.TryGetValue("class", out var innerClassRaw) && innerClassRaw is string innerClass) {
                 var innerCls = parser.GetRSZClass(innerClass)
@@ -134,7 +131,7 @@ public abstract class NestableFieldAccessor
             throw new NotSupportedException("Unsupported field " + path + " with config " + JsonSerializer.Serialize(dict));
         }
 
-        throw new NotSupportedException("Unsupported field ID type " + obj.GetType().FullName + ": " + obj);
+        throw new NotSupportedException("Unsupported field ID type " + pathConfig.GetType().FullName + ": " + pathConfig);
     }
 
     public static NestableFieldAccessor CreateForEntity(ContentWorkspace workspace, EntityConfig entity, Dictionary<object, object> dict)

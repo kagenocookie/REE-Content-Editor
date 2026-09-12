@@ -13,10 +13,10 @@ public sealed class DD2ItemIconHandler : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var entity = context.GetOwnerEntity();
+        var field = context.GetEntityField()!;
         var data = entity?.Get<RSZObjectResource>("data");
         var workspace = context.GetWorkspace();
         if (entity == null || data == null || workspace == null) {
-            var field = context.EntityParams?.EntityField;
             ImGui.TextColored(Colors.Error, $"{field} field requires a valid item entity and workspace");
             return;
         }
@@ -50,10 +50,10 @@ public sealed class DD2ItemIconHandler : IObjectUIHandler
 
         if (instance == null) {
             ImGui.Text(context.label);
-            if (workspace != null) {
+            if (workspace != null && field != null) {
                 ImGui.SameLine();
                 if (ImGui.Button("Add custom icon")) {
-                    context.Set(new ItemIconResource());
+                    context.Set(new ItemIconResource(field.Config));
                 }
             }
             return;

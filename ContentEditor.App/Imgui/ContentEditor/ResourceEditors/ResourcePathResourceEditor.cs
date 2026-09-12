@@ -21,9 +21,16 @@ public class ResourcePathResourceEditor : IObjectUIHandler
             var workspace = context.GetWorkspace();
             if (workspace == null) return;
 
-            var config = workspace.ResourceManager.GetResourceConfig(context.EntityParams.ResourceType);
-            if (config?.Resource is ResourceProxyPrefabHandler ppp) {
-                context.AddChild("Resource Path", res, new ResourcePathPicker(workspace, ppp.ResourceType), c => c!.ResourcePath, (c, v) => c.ResourcePath = v ?? "");
+            if (res.ResourceType.Resource is ResourceProxyPrefabHandler proxy) {
+                context.AddChild(context.label, res, new ResourcePathPicker(workspace, proxy.ResourceType),
+                    c => c!.ResourcePath,
+                    (c, v) => {
+                        c.ResourcePath = v ?? "";
+                        // modify/create the catalog entry as well
+                        proxy.UpdateCatalogEntry(c, context.EntityParams.ResourceId, workspace);
+                    }
+                );
+                // only show full catalog entry data if it has more than just id and via.Prefab fields
                 if (res.CatalogEntry?.Fields.Length > 2) {
                     var cc = context.AddChild("Catalog Data", res, getter: (r) => r!.CatalogEntry);
                     cc.uiHandler = new NestedRszInstanceHandler();

@@ -1,6 +1,5 @@
 entities:
   items.item_data:
-    primary_field: data
     enums:
     - name: app.ItemIDEnum
       format: "It{id:06}"
@@ -9,10 +8,33 @@ entities:
     # can fetch entity fields as well as nested object fields with "."
     to_string: "Item {id}: {name}"
     fields:
+    - name: data
+      required: true
+      resource:
+        id: [_Id]
+        custom_id_range: [30000, 65000]
+        type: merged-group
+        classname: app.ItemCommonParam
+        subtypes:
+          app.ItemDataParam:
+            type: array-file
+            classname: app.ItemDataParam
+            files:
+            - AppSystem/Item/ItemData/ItemData.user
+            - AppSystem/Item/ItemData/ExItemData.user
+          app.ItemWeaponParam:
+            type: array-file
+            classname: app.ItemWeaponParam
+            file: AppSystem/Item/ItemData/ItemWeaponData.user
+          app.ItemArmorParam:
+            type: array-file
+            classname: app.ItemArmorParam
+            file: AppSystem/Item/ItemData/ItemArmorData.user
     - name: name
       label: Name
       required: true
       field_type: keyed_message
+      display_after: start
       resource:
         type: msg
         files:
@@ -25,6 +47,7 @@ entities:
       label: Description
       required: true
       field_type: keyed_message
+      display_after: name
       resource:
         type: msg
         files:
@@ -34,11 +57,6 @@ entities:
           key_pattern: "item_detail_(\\d+)"
           key_format: "item_detail_{id}"
           multiline: true
-
-    - name: data
-      type: app.ItemCommonParam
-      label: Data
-      required: true
     - name: icon
       display_after: description
       # if we used vanilla tech, there would be a uvs file, added to the item master uvs file, and then an ID taken from there
@@ -52,26 +70,41 @@ entities:
       when:
         field: data
         property: classname
-        classname: app.ItemArmorParam
+        equals: app.ItemArmorParam
+      resource:
+        id: [_ItemId]
+        sub_id: [_Type, _EnhanceNo]
+        type: array-file
+        file: AppSystem/Item/ItemData/ArmorEnhanceData.user
+        classname: app.ArmorEnhanceParam
     - name: weaponEnhanceData
       label: Enhance data
-      type: app.WeaponEnhanceParam
       display_after: icon
       when:
         field: data
         property: classname
-        classname: app.ItemWeaponParam
+        equals: app.ItemWeaponParam
+      resource:
+        id: [_ItemId]
+        sub_id: [_Type, _EnhanceNo]
+        type: array-file
+        file: AppSystem/Item/ItemData/WeaponEnhanceData.user
+        classname: app.WeaponEnhanceParam
   items.weapon:
     enums:
     - name: app.WeaponID
       format: "{name}"
       primary: true # denotes that the entity label should override this enum's corresponding display labels (entity id == enum value)
-    custom_id_range: [1000, 100000]
     to_string: 'Weapon {id:enum(app.WeaponID)} (#{id}): {id:reverseLookupEntity(item_data|\{data?._WeaponId@ItemWeaponParam\}|\{label\}|Unknown item)}'
     fields:
       - name: data
         label: Data
-        type: app.WeaponCatalogData.Data
+        resource:
+          id: [ID]
+          custom_id_range: [1000, 100000]
+          type: array-file
+          classname: app.WeaponCatalogData.Data
+          file: AppSystem/Catalog/MainContents/Userdata/WeaponCatalogData.user
       - name: name
         type: string
         label: Weapon ID name
@@ -86,78 +119,20 @@ entities:
             initial: "{id:enum(app.WeaponID)}"
             diffable: false
       - name: offsets
-        type: app.WeaponSetting.OffsetSetting
         label: Offset setting
+        resource:
+          id: [ID]
+          type: array-file
+          classname: app.WeaponSetting.OffsetSetting
+          file: AppSystem/Equipment/wp/WeaponSetting.user
       # - name: prefab
       #   label: Weapon prefab
       #   required: true
-      #   resource: # TODO figure this one out
-      #     type: resource
+      #   field_type: resource_link
+      #   resource:
       #     resource_type: prefab
-      #     path: "{data?.Prefab?.Path}"
-
-resources:
-
-  app.ItemCommonParam:
-    id: [_Id]
-    custom_id_range: [30000, 65000]
-    type: group
-    not_standalone: true
-    subclasses:
-      app.ItemDataParam:
-        type: array-file
-        files:
-        - AppSystem/Item/ItemData/ItemData.user
-        - AppSystem/Item/ItemData/ExItemData.user
-      app.ItemWeaponParam:
-        type: array-file
-        file: AppSystem/Item/ItemData/ItemWeaponData.user
-      app.ItemArmorParam:
-        type: array-file
-        file: AppSystem/Item/ItemData/ItemArmorData.user
-        resources:
-        - { key: TopsStyle, type: items.styles.TopsStyle, name: Style, field: _StyleNo, when: { field: _EquipCategory, equals: 1 } }
-        - { key: PantsStyle, type: items.styles.PantsStyle, name: Style, field: _StyleNo, when: { field: _EquipCategory, equals: 2 } }
-  app.WeaponCatalogData.Data:
-    id: [ID]
-    type: array-file
-    not_standalone: true
-    file: AppSystem/Catalog/MainContents/Userdata/WeaponCatalogData.user
-  app.WeaponSetting.OffsetSetting:
-    id: [ID]
-    type: array-file
-    not_standalone: true
-    file: AppSystem/Equipment/wp/WeaponSetting.user
-
-  # app.EnhanceParamBase:
-  #   id: [_ItemId]
-  #   sub_id: [_Type, _EnhanceNo]
-  #   type: group
-  #   not_standalone: true
-  #   subclasses:
-  #     app.WeaponEnhanceParam:
-  #       type: array-file
-  #       file: AppSystem/Item/ItemData/WeaponEnhanceData.user
-  #       classname: app.WeaponEnhanceParam
-  #     app.ArmorEnhanceParam:
-  #       type: array-file
-  #       file: AppSystem/Item/ItemData/ArmorEnhanceData.user
-  #       classname: app.ArmorEnhanceParam
-
-  app.WeaponEnhanceParam:
-    id: [_ItemId]
-    sub_id: [_Type, _EnhanceNo]
-    type: array-file
-    file: AppSystem/Item/ItemData/WeaponEnhanceData.user
-    not_standalone: true
-    classname: app.WeaponEnhanceParam
-  app.ArmorEnhanceParam:
-    id: [_ItemId]
-    sub_id: [_Type, _EnhanceNo]
-    type: array-file
-    file: AppSystem/Item/ItemData/ArmorEnhanceData.user
-    not_standalone: true
-    classname: app.ArmorEnhanceParam
+      #     params:
+      #       path: "{data?.Prefab?.Path}"
 
   # app.ItemMixParam:
   #   id: [_ItemId]
@@ -183,6 +158,11 @@ classes:
   app.ItemArmorParam:
     fields:
       _StyleNo: { handler: DD2.ArmorStyle }
+    # - { key: HelmStyle, type: items.styles.HelmStyle, name: Style, field: _StyleNo, when: { field: _EquipCategory, equals: 2 } }
+    # - { key: TopsStyle, type: items.styles.TopsStyle, name: Style, field: _StyleNo, when: { field: _EquipCategory, equals: 3 } }
+    # - { key: PantsStyle, type: items.styles.PantsStyle, name: Style, field: _StyleNo, when: { field: _EquipCategory, equals: 4 } }
+    # - { key: MantleStyle, type: items.styles.MantleStyle, name: Style, field: _StyleNo, when: { field: _EquipCategory, equals: 5 } }
+    # - { key: FacewearStyle, type: items.styles.FacewearStyle, name: Style, field: _StyleNo, when: { field: _EquipCategory, equals: 7 } }
 
   app.EnhanceParamBase:
     to_string: "{_Type:enum(app.EnhanceType)} {_EnhanceNo}"

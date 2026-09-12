@@ -3,35 +3,19 @@ entities:
     to_string: "Costume {closet._CharacterID.Hash:enum(ce.CharacterDefine)} #{id}"
     fields:
       - name: closet
-        type: costume.closets
         resource:
+          id: [{ path: _CharacterID.Hash, class: app.ObjectDefine }]
+          type: multi-array
+          classname: app.Costume.Closet
+          field: _Closets
           params:
+            nonUniqueIds: true
             nested: false
-
-resources:
-  costume.closets:
-    id: [{ path: _CharacterID.Hash, class: app.ObjectDefine }]
-    type: multi-array
-    classname: app.Costume.Closet
-    field: _Closets
-    params:
-      nonUniqueIds: true
-    files:
-    - natives/stm/singletonuserdata/catalog/costumecataloguserdata_1st_maincontents.user.3
-    - natives/stm/singletonuserdata/catalog/costumecataloguserdata_2nd_maincontents.user.3
-    - natives/stm/singletonuserdata/catalog/dlc/costumecataloguserdata_dlc0001.user.3
-    - natives/stm/singletonuserdata/catalog/dlc/costumecataloguserdata_dlc0002.user.3
-
-  # app.Costume.Outfit:
-  #   id: [{ path: _CostumeIDHash._TypeSelectHash, class: app.CostumeIDSelector }]
-    # patcher:
-    #   type: multi-array
-    #   path: _Closets.*._Outfits
-    #   files:
-    #   - natives/stm/singletonuserdata/catalog/costumecataloguserdata_1st_maincontents.user.3
-    #   - natives/stm/singletonuserdata/catalog/costumecataloguserdata_2nd_maincontents.user.3
-    #   - natives/stm/singletonuserdata/catalog/dlc/costumecataloguserdata_dlc0001.user.3
-    #   - natives/stm/singletonuserdata/catalog/dlc/costumecataloguserdata_dlc0002.user.3
+          files:
+          - natives/stm/singletonuserdata/catalog/costumecataloguserdata_1st_maincontents.user.3
+          - natives/stm/singletonuserdata/catalog/costumecataloguserdata_2nd_maincontents.user.3
+          - natives/stm/singletonuserdata/catalog/dlc/costumecataloguserdata_dlc0001.user.3
+          - natives/stm/singletonuserdata/catalog/dlc/costumecataloguserdata_dlc0002.user.3
 
 classes:
   app.Costume.Closet:

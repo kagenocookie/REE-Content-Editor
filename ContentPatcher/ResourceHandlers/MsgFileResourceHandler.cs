@@ -13,7 +13,7 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
 
     public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new KeyedMessage();
 
-    public static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
+    public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
     {
         var files = data.TargetFiles.ToList();
         var keyFormat = data.Params?.GetValueOrDefault("key_pattern") as string;
@@ -35,7 +35,7 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
                 if (keyFormat != null && !keyFormat.IsMatch(entry.Name)) continue;
 
                 var msgData = new MessageData() {
-                    ResourceTypeID = Config.Type,
+                    ResourceType = Config,
                     FileResourcePath = file,
                     MessageKey = entry.Name,
                     Guid = entry.Guid,

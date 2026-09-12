@@ -43,7 +43,7 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
         }
         var newStr = data.GetValue<string>();
         if (currentResource?.Label != newStr) {
-            entity.Set(Field.name, currentResource = new EnumMappingResource(data.GetValue<string>()));
+            entity.Set(Field.name, currentResource = new EnumMappingResource(Field.Config, data.GetValue<string>()));
         }
         return currentResource;
     }
@@ -60,7 +60,7 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
         var value = Convert.ChangeType(idGetter.Get(entity), enumdesc.BackingType);
         if (value == null) {
             Logger.Error($"Failed to determine enum value for entity {entity}");
-            return new EnumMappingResource("", -1) { ID = -1 };
+            return new EnumMappingResource(Field.Config, "", -1) { ID = -1 };
         }
 
         var label = enumdesc.GetLabel(value);
@@ -71,7 +71,7 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
         var virtualEnum = workspace.Env.TypeCache.CreateEnum(virtualEnumName, "System.UInt32");
         virtualEnum?.AddValue(id, label);
 
-        return new EnumMappingResource(label, Convert.ToInt64(value)) { ID = id };
+        return new EnumMappingResource(Field.Config, label, Convert.ToInt64(value)) { ID = id };
     }
 
     public override (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData)
@@ -94,7 +94,7 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
         var virtualEnum = workspace.Env.TypeCache.CreateEnum(virtualEnumName, "System.UInt32");
         virtualEnum?.AddValue(id, label);
 
-        return (id, new EnumMappingResource(label, value) { ID = id });
+        return (id, new EnumMappingResource(Field.Config, label, value) { ID = id });
     }
 
     private long GetIDFromLabel(string label)
@@ -123,7 +123,7 @@ public class EnumMapResourceHandler : ResourceHandler, IResourceHandlerStatic
 {
     public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new EnumMappingCustomField();
 
-    public static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
+    public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
     {
         return new EnumMapResourceHandler() { Config = resource };
     }
@@ -137,25 +137,46 @@ public class EnumMapResourceHandler : ResourceHandler, IResourceHandlerStatic
     }
 }
 
-public sealed class EnumMappingResource : IAddressableContentResource
+public sealed class EnumMappingResource : IAddressableContentResource, IResourceValueContainer
 {
-    public EnumMappingResource() {}
-    public EnumMappingResource(string label, long value = -1)
+    public EnumMappingResource(ResourceConfig config)
     {
+        ResourceType = config;
+    }
+    public EnumMappingResource(ResourceConfig config, string label, long value = -1)
+    {
+        ResourceType = config;
         Label = label;
         Value = value;
     }
 
     public string Label { get; set; } = string.Empty;
     public long Value { get; set; }
-    public string ResourceTypeID => "enum_mapping";
+    public ResourceConfig ResourceType { get; }
     public string? FileResourcePath => null;
 
     public long ID { get; set; }
 
-    public IContentResource Clone() => new EnumMappingResource() { Label = Label };
+    public IContentResource Clone() => new EnumMappingResource(ResourceType, Label);
 
     public JsonNode ToJson(Workspace env) => JsonValue.Create(Label);
 
     public override string ToString() => Label;
+
+    public NestableFieldAccessor? GetAccessor(ContentWorkspace workspace, string path)
+    {
+        if (path == "value") {
+            return new NestableFieldAccessor.Custom<EnumMappingResource>(RszFieldType.S64, m => m.Value, (m, v) => m.Value = Convert.ToInt64(v));
+        }
+
+        if (path == "id") {
+            return new NestableFieldAccessor.Custom<EnumMappingResource>(RszFieldType.S64, m => m.ID, (m, v) => m.ID = Convert.ToInt64(v));
+        }
+
+        if (path == "label") {
+            return new NestableFieldAccessor.Custom<EnumMappingResource>(RszFieldType.String, m => m.Label, (m, v) => m.Label = v as string ?? "");
+        }
+
+        return null;
+    }
 }

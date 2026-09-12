@@ -11,7 +11,7 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
 
     public override EntityFieldValueHandler CreateValueHandler(EntityField field) => Config.SubIDGenerator == null ? new ObjectField() : new ObjectArray();
 
-    public static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
+    public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
     {
         return new ArrayFileResourceHandler() {
             Config = resource,
@@ -25,7 +25,7 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
     {
         var idgen = Config.IDGeneratorRequired;
         if (Config.SubIDGenerator != null) {
-            var list = new RSZObjectListResource(Config.Type, Files[0]);
+            var list = new RSZObjectListResource(Config, Files[0]);
             workspace.Diff.ApplyDiff(list.Instances, initialData, classname ?? Config.Type);
             foreach (var inst in list.Instances) {
                 if (idgen.Fields?.Length == 1) {
@@ -39,6 +39,9 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
                 } else {
                     throw new NotImplementedException("Unsupported rsz object id combination");
                 }
+                if (Config.Filter is ISettable settable) {
+                    settable.Set(inst);
+                }
             }
             return list;
         } else {
@@ -51,33 +54,55 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
             } else {
                 throw new NotImplementedException("Unsupported rsz object id combination");
             }
-            return new RSZObjectResource(inst, Files[0], Config.Type);
+            if (Config.Filter is ISettable settable) {
+                settable.Set(inst);
+            }
+            return new RSZObjectResource(Config, inst, Files[0]);
         }
     }
 
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)
     {
-        var items = GetObjectList(workspace, false);
-        if (items.Count == 0) return;
-
         var idGenerator = Config.IDGeneratorRequired;
         var subIdGenerator = Config.SubIDGenerator;
-        foreach (var item in items) {
-            var id = idGenerator.GetID(item.instance);
-            if (subIdGenerator != null) {
-                if (!dict.TryGetValue(id, out var list) || list is not RSZObjectListResource objlist) {
-                    dict[id] = objlist = new RSZObjectListResource(Config.Type, item.file);
+
+        foreach (var filepath in Files) {
+            var userfile = workspace.ResourceManager.ReadFileResource<UserFile>(filepath, false);
+            var items = arrayAccessor.Get(userfile.Instance!);
+            foreach (var item in items.Cast<RszInstance>()) {
+                if (Config.Filter?.IsEnabled(item) == false) {
+                    continue;
                 }
-                objlist.Instances.Add(item.instance);
-            } else {
-                dict[id] = new RSZObjectResource(item.instance, item.file);
+                var id = idGenerator.GetID(item);
+                if (subIdGenerator != null) {
+                    if (!dict.TryGetValue(id, out var list) || list is not RSZObjectListResource objlist) {
+                        dict[id] = objlist = new RSZObjectListResource(Config, filepath);
+                    }
+                    objlist.Instances.Add(item);
+                } else {
+                    dict[id] = new RSZObjectResource(Config, item, filepath);
+                }
+            }
+        }
+    }
+
+    private void ClearList(IList<object> list)
+    {
+        if (Config.Filter == null) {
+            list.Clear();
+            return;
+        }
+
+        for (int i = list.Count - 1; i >= 0; i--) {
+            var item = list[i];
+            if (Config.Filter.IsEnabled(item)) {
+                list.RemoveAt(i);
             }
         }
     }
 
     public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
     {
-        var dict = new Dictionary<long, RszInstance>();
         var outFiles = new Dictionary<string, IList<object>>();
         if (Config.SubIDGenerator != null) {
             foreach (var (id, resource) in resources) {
@@ -85,7 +110,7 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
                 if (!outFiles.TryGetValue(list.FileResourcePath, out var outList)) {
                     var userfile = workspace.ResourceManager.ReadFileResource<UserFile>(list.FileResourcePath, true);
                     outFiles[list.FileResourcePath] = outList = arrayAccessor.Get(userfile.Instance!);
-                    outList.Clear();
+                    ClearList(outList);
                 }
 
                 foreach (var item in list.Instances) {
@@ -98,23 +123,11 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
                 if (!outFiles.TryGetValue(citem.FileResourcePath, out var outList)) {
                     var userfile = workspace.ResourceManager.ReadFileResource<UserFile>(citem.FileResourcePath, true);
                     outFiles[citem.FileResourcePath] = outList = arrayAccessor.Get(userfile.Instance!);
-                    outList.Clear();
+                    ClearList(outList);
                 }
 
                 outList.Add(citem.Instance);
             }
         }
-    }
-
-    private IList<(RszInstance instance, string file)> GetObjectList(ContentWorkspace workspace, bool modify)
-    {
-        List<(RszInstance, string)> list = new();
-        foreach (var filepath in Files) {
-            var userfile = workspace.ResourceManager.ReadFileResource<UserFile>(filepath, modify);
-            var instance = userfile.Instance!;
-            var items = arrayAccessor.Get(instance);
-            list.AddRange((items.Cast<RszInstance>().Select(ii => (ii, filepath))));
-        }
-        return list;
     }
 }

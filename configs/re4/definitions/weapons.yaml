@@ -9,9 +9,13 @@ entities:
     to_string: "Weapon {name} {displayName}"
     fields:
       - name: data
-        type: weapons.CatalogData
         label: Data
         required: true
+        resource:
+          id: [_WeaponID]
+          type: array-file
+          classname: chainsaw.WeaponCatalogUserData.Data
+          file: natives/stm/_chainsaw/appsystem/weapon/weaponcataloguserdata_1st.user.2
       - name: name
         label: Weapon code name
         required: true
@@ -33,14 +37,21 @@ entities:
             key_format: "CH_Mes_Main_WEAPON_NAME_{name:upper()}_00_0_000"
         display_after: name
       - name: equip_data
-        type: weapons.EquipParam
         label: Equip data
         resource:
+          id: [_WeaponID]
+          type: array-file
+          classname: chainsaw.WeaponEquipParamCatalogUserData.Data
+          file: natives/stm/_anotherorder/appsystem/weapon/weaponequipparamcataloguserdata_ao.user.2
           params:
             nested: true
       - name: upgrades
         label: Upgrades
-        type: weapons.Upgrades
+        resource:
+          id: [_WeaponID]
+          type: array-file
+          classname: chainsaw.WeaponDetailCustomUserdata.WeaponDetailStage
+          file: natives/stm/_anotherorder/appsystem/weaponcustom/weapondetailcustomuserdata_ao.user.2
       - name: prefab
         label: Weapon prefab
         required: true
@@ -49,23 +60,6 @@ entities:
           resource_type: prefab
           params:
             path: "{data?._Prefab?.Path}"
-
-resources:
-  weapons.CatalogData:
-    id: [_WeaponID]
-    type: array-file
-    classname: chainsaw.WeaponCatalogUserData.Data
-    file: natives/stm/_chainsaw/appsystem/weapon/weaponcataloguserdata_1st.user.2
-  weapons.EquipParam:
-    id: [_WeaponID]
-    type: array-file
-    classname: chainsaw.WeaponEquipParamCatalogUserData.Data
-    file: natives/stm/_anotherorder/appsystem/weapon/weaponequipparamcataloguserdata_ao.user.2
-  weapons.Upgrades:
-    id: [_WeaponID]
-    type: array-file
-    classname: chainsaw.WeaponDetailCustomUserdata.WeaponDetailStage
-    file: natives/stm/_anotherorder/appsystem/weaponcustom/weapondetailcustomuserdata_ao.user.2
 
 classes:
   chainsaw.WeaponCatalogUserData.Data:

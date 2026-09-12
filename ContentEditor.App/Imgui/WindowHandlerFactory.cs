@@ -564,7 +564,7 @@ public static class WindowHandlerFactory
     #endregion
 
     #region RSZ based handlers
-    public static IObjectUIHandler CreateRSZFieldElementHandlerRaw(UIContext context, RszField field, out FieldConfig? fieldConfig, out ClassConfig? patchConfig)
+    public static IObjectUIHandler CreateRSZFieldElementHandlerRaw(UIContext context, RszField field, out ClassFieldConfig? fieldConfig, out ClassConfig? patchConfig)
     {
         static IObjectUIHandler? TryCreateEnumHandlerRaw(ContentWorkspace? workspace, string fieldClassname, RszFieldType fallbackType)
         {
@@ -830,42 +830,7 @@ public static class WindowHandlerFactory
         return context;
     }
 
-    public static void SetupResourceContent(UIContext context)
-    {
-        var resource = context.Get<IContentResource>();
-        if (resource == null) {
-            return;
-        }
-
-        long resourceId;
-        if (resource is IAddressableContentResource addrResource && addrResource.ID != -1) {
-            resourceId = addrResource.ID;
-        } else {
-            resourceId = context.FindHandlerInParents<ResourceEditor>()?.SelectedResourceId ?? -1;
-        }
-        context.EntityParams = new EntityParams() {
-            ResourceType = resource.ResourceTypeID,
-            ResourceId = resourceId,
-        };
-
-        var workspace = context.GetWorkspace();
-        if (workspace == null || string.IsNullOrEmpty(resource.ResourceTypeID)) {
-            context.AddChild(resource.Label, resource, setter: (c, v) => c.target = v).AddDefaultHandler();
-            context.children[^1].EntityParams = context.EntityParams;
-            return;
-        }
-
-        var config = workspace.ResourceManager.GetResourceConfig(resource.ResourceTypeID);
-        var displayName = config?.DisplayName ?? workspace.Config.ResourceHierarchy.GetFriendlyName(resource.ResourceTypeID);
-        context.AddChild(displayName, resource, setter: (c, v) => c.target = v).AddDefaultHandler();
-        context.children[^1].EntityParams = context.EntityParams;
-
-        if (resourceId == -1) return;
-
-        AddSubResourceUI(context, workspace, resourceId);
-    }
-
-    public static void SetupEntityResourceContent(UIContext context, EntityField entityField)
+    public static void SetupEntityResourceContent(UIContext context, EntityField entityField, ResourceConfig? subtype = null)
     {
         var resource = context.Get<IContentResource?>();
         var entity = context.GetOwnerEntity();
@@ -873,10 +838,13 @@ public static class WindowHandlerFactory
         if (resourceId == -1) {
             resourceId = (resource as IAddressableContentResource)?.ID ?? -1;
         }
+        if (subtype != null && entityField.Config.Subtypes?.ContainsValue(subtype) != true) {
+            Logger.Warn($"Potentially wrong sub resource given for entity {entity} field {entityField}");
+        }
 
         context.EntityParams = new EntityParams() {
             EntityField = entityField.name,
-            ResourceType = entityField.ResourceType,
+            ResourceType = subtype?.Type ?? entityField.ResourceType,
             ResourceId = resourceId,
             Entity = entity
         };
@@ -886,36 +854,7 @@ public static class WindowHandlerFactory
             return;
         }
 
-        context.uiHandler = EntityFieldHandler.Instance;
-        var workspace = context.GetWorkspace();
-        var child = context.AddChildContextSetter<IContentResource, IContentResource>(entityField.label, resource, setter: (c, s, v) => c.GetOwnerEntity()?.Set(entityField.name, v));
-        child.EntityParams = context.EntityParams;
-        if (workspace == null || string.IsNullOrEmpty(resource.ResourceTypeID)) {
-            child.AddDefaultHandler();
-            return;
-        }
-
-        child.uiHandler = CreateUIHandler(resource, resource.GetType());
-
-        if (resourceId == -1) return;
-
-        AddSubResourceUI(context, workspace, resourceId);
-    }
-
-    private static void AddSubResourceUI(UIContext context, ContentWorkspace workspace, long resourceId)
-    {
-        var resource = context.Get<IContentResource>();
-        foreach (var (sub, subType) in workspace.ResourceManager.GetSubResources(resource, resourceId)) {
-            UIContext child;
-            if (sub != null) {
-                child = context.AddChild(subType.DisplayName, sub, setter: (c, v) => c.target = v);
-                child.AddDefaultHandler();
-            } else {
-                child = context.AddChild(subType.DisplayName, null, new NullResourceHandler(), setter: (c, v) => c.target = v);
-            }
-            child.EntityParams = context.EntityParams!.Clone();
-            child.EntityParams.ResourceType = subType.Type;
-        }
+        context.uiHandler = CreateUIHandler(resource, resource.GetType());
     }
 
     public static string GetString(this RszInstance instance)

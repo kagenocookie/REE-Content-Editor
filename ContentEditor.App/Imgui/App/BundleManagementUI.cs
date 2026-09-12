@@ -219,7 +219,7 @@ public class BundleManagementUI : IWindowHandler
                     }
                     ImguiHelpers.Tooltip(Lang.Bundles.DeleteCurrentBundle);
                 }
-                if (selectedBundle?.HasResources == true) {
+                if (selectedBundle?.HasFiles == true) {
                     ImGui.SameLine();
                     if (ImGui.Button(Lang.Bundles.RebuildPatchDiffs)) {
                         foreach (var r in selectedBundle.Files) {
@@ -389,7 +389,7 @@ public class BundleManagementUI : IWindowHandler
                 ImGui.TreePop();
             }
 
-            if (bundle.HasResources && ImGui.TreeNodeEx(Lang.Bundles.Files, ImGuiTreeNodeFlags.Framed)) {
+            if (bundle.HasFiles && ImGui.TreeNodeEx(Lang.Bundles.Files, ImGuiTreeNodeFlags.Framed)) {
                 ImGui.Indent(-ImGui.GetStyle().IndentSpacing);
                 ImGui.Spacing();
                 ImGui.PushStyleVar(ImGuiStyleVar.TreeLinesSize, 1.5f);

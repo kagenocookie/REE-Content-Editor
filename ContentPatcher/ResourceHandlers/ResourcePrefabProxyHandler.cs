@@ -6,9 +6,9 @@ using ReeLib.Pfb;
 
 namespace ContentPatcher;
 
-public class ResourcePathResource(string type, string path) : IAddressableContentResource
+public class ResourcePathResource(ResourceConfig type, string path) : IAddressableContentResource, IResourceValueContainer
 {
-    public string ResourceTypeID { get; } = type;
+    public ResourceConfig ResourceType { get; } = type;
     public string FileResourcePath { get; set; } = path;
 
     public RszInstance? CatalogEntry { get; set; }
@@ -16,10 +16,19 @@ public class ResourcePathResource(string type, string path) : IAddressableConten
 
     public long ID => CatalogEntry == null ? -1 : IDGenerator.GenerateID(CatalogEntry);
 
-    public IContentResource Clone() => new ResourcePathResource(ResourceTypeID, FileResourcePath) {
-        ResourcePath = ResourcePath,
+    public IContentResource Clone() => new ResourcePathResource(ResourceType, FileResourcePath) {
+        ResourcePath = ResourcePath, // TODOourning npc?
         CatalogEntry = CatalogEntry?.Clone(),
     };
+
+    public NestableFieldAccessor? GetAccessor(ContentWorkspace workspace, string path)
+    {
+        switch (path) {
+            case "path":
+                return new NestableFieldAccessor.Custom<ResourcePathResource>(RszFieldType.String, d => d.ResourcePath, (c, v) => c.ResourcePath = (string)v!);
+            default: return null;
+        }
+    }
 
     public JsonNode ToJson(Workspace env) => JsonValue.Create(ResourcePath);
 
@@ -28,17 +37,18 @@ public class ResourcePathResource(string type, string path) : IAddressableConten
 
 public class ResourcePathResourceValueHandler : EntityFieldValueHandler
 {
-    public override string? ResourceType => throw new NotImplementedException();
+    // public override string? ResourceType => throw new NotImplementedException();
 
     public override IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
     {
         throw new NotImplementedException();
     }
 
-    public override IContentResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
-    {
-        throw new NotImplementedException();
-    }
+    // public override IContentResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
+    // {
+    //     // Field.Config.Resource.
+    //     throw new NotImplementedException();
+    // }
 }
 
 [ResourcePatcher("resource_proxy_pfb")]
@@ -59,7 +69,7 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
     private static readonly RszFieldAccessorFirst<uint> CatalogIdField = new RszFieldAccessorFirst<uint>(f => f.type == RszFieldType.U32);
     private NestableFieldAccessor? PrefabToResourceField { get; set; }
 
-    public static ResourceHandler Deserialize(ResourceConfig resource, EntityResourceConfigSerialized data, ContentWorkspace workspace)
+    public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
     {
         return new ResourceProxyPrefabHandler() {
             Config = resource,
@@ -67,6 +77,73 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
             ResourceType = data.ResourceType,
             arrayAccessor = data.GetDirectFieldAccessor<List<object>>(static f => f.array && f.type == RszFieldType.Object),
         };
+    }
+
+    public void UpdateCatalogEntry(ResourcePathResource resource, long id, ContentWorkspace workspace)
+    {
+        Debug.Assert(componentClass != null);
+        if (!workspace.ResourceManager.TryResolveGameFile(resource.FileResourcePath, out var catFile)) {
+            Logger.Error("Failed to resolve catalog file " + (resource.FileResourcePath));
+            return;
+        }
+        var idgen = resource.ResourceType.IDGeneratorRequired;
+
+        var catalog = catFile.GetFile<UserFile>().Instance!;
+        var list = arrayAccessor.Get(catalog);
+        if (resource.CatalogEntry == null) {
+            resource.CatalogEntry = list.FirstOrDefault(item => idgen.GetID((RszInstance)item) == id) as RszInstance;
+        } else if (list.Contains(resource.CatalogEntry)) {
+            catFile.Modified = true;
+        }
+
+        if (resource.CatalogEntry == null) {
+            // TODO load or create entry
+            if (catalogEntryClass == null) {
+                Logger.Error("Unknown catalog class for resource " + Config);
+                return;
+            }
+
+            resource.CatalogEntry = workspace.Env.CreateRszInstance(catalogEntryClass);
+        }
+
+        if (resource.CatalogEntry == null) {
+            if (catalogEntryClass == null) {
+                Logger.Error("Unknown catalog class for resource " + Config);
+                return;
+            }
+            resource.CatalogEntry = workspace.Env.CreateRszInstance(catalogEntryClass);
+            catFile.Modified = true;
+        }
+
+        if (PrefabLinkField.Get(resource.CatalogEntry) is not RszInstance viaPrefab) {
+            PrefabLinkField.Set(resource.CatalogEntry, viaPrefab = workspace.Env.CreateRszInstance(workspace.Env.Classes.Prefab));
+            catFile.Modified = true;
+        }
+        var prefabPath = viaPrefab.Get(RszFieldCache.Prefab.Path);
+        if (string.IsNullOrEmpty(prefabPath)) {
+            RszFieldCache.Prefab.Path.Set(viaPrefab, prefabPath = string.Concat(PathUtils.GetFilepathWithoutExtensionOrVersion(resource.FileResourcePath), ".pfb"));
+            catFile.Modified = true;
+        }
+
+        if (!workspace.ResourceManager.TryResolveGameFile(prefabPath, out var pfbHandle)) {
+            pfbHandle = workspace.ResourceManager.CreateNewFile(KnownFileFormats.Prefab, prefabPath)!;
+        }
+
+        var pfb = pfbHandle.GetFile<PfbFile>();
+        var go = pfb.GameObjects.FirstOrDefault();
+        if (go == null) {
+            go = new ReeLib.Pfb.PfbGameObject() { Instance = workspace.Env.CreateRszInstance(workspace.Env.Classes.GameObject) };
+            go.Components.Add(workspace.Env.CreateRszInstance(workspace.Env.Classes.Transform));
+            pfb.GameObjects.Add(go);
+            catFile.Modified = true;
+        }
+
+        var comp = go.Components.FirstOrDefault(c => c.RszClass == componentClass);
+        if (comp == null) {
+            go.Components.Add(comp = workspace.Env.CreateRszInstance(componentClass));
+            catFile.Modified = true;
+        }
+        PrefabToResourceField!.Set(componentClass, resource.ResourcePath);
     }
 
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)
@@ -85,7 +162,7 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
                 var prefab = PrefabLinkField.Get(item);
                 var prefabPath = prefab?.Get(RszFieldCache.Prefab.Path);
                 if (string.IsNullOrEmpty(prefabPath)) {
-                    dict[id] = new ResourcePathResource(Config.Type, "");
+                    dict[id] = new ResourcePathResource(Config, "");
                     continue;
                 }
 
@@ -115,7 +192,7 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
                     continue;
                 }
 
-                dict[id] = new ResourcePathResource(Config.Type, filepath) { ResourcePath = resourcePath, CatalogEntry = item };
+                dict[id] = new ResourcePathResource(Config, filepath) { ResourcePath = resourcePath, CatalogEntry = item };
             }
         }
     }
@@ -139,7 +216,7 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
             var user = file.GetFile<UserFile>().Instance!;
             arrayAccessor.Get(user).Add(inst);
         }
-        return new ResourcePathResource(Config.Type, Files[0]) { CatalogEntry = inst };
+        return new ResourcePathResource(Config, Files[0]) { CatalogEntry = inst };
     }
 
     public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
@@ -152,55 +229,60 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
                 continue;
             }
 
-            if (!workspace.ResourceManager.TryResolveGameFile(res.FileResourcePath, out var catFile)) {
-                Logger.Error("Failed to resolve catalog file " + (res.FileResourcePath));
-                continue;
-            }
+            UpdateCatalogEntry(res, id, workspace);
+            // if (UpdateCatalogEntry(res, id, workspace)) {
+            //     catFile.Modified = true;
+            // }
 
-            var catalog = catFile.GetFile<UserFile>().Instance!;
-            var list = arrayAccessor.Get(catalog);
-            if (res.CatalogEntry == null) {
-                res.CatalogEntry = list.FirstOrDefault(item => idgen.GetID((RszInstance)item) == id) as RszInstance;
-            } else if (list.Contains(res.CatalogEntry)) {
-                catFile.Modified = true;
-            }
+            // if (!workspace.ResourceManager.TryResolveGameFile(res.FileResourcePath, out var catFile)) {
+            //     Logger.Error("Failed to resolve catalog file " + (res.FileResourcePath));
+            //     continue;
+            // }
 
-            if (res.CatalogEntry == null) {
-                if (catalogEntryClass == null) {
-                    Logger.Error("Unknown catalog class for resource " + Config);
-                    return;
-                }
-                res.CatalogEntry = workspace.Env.CreateRszInstance(catalogEntryClass);
-                list.Add(res.CatalogEntry);
-            }
+            // var catalog = catFile.GetFile<UserFile>().Instance!;
+            // var list = arrayAccessor.Get(catalog);
+            // if (res.CatalogEntry == null) {
+            //     res.CatalogEntry = list.FirstOrDefault(item => idgen.GetID((RszInstance)item) == id) as RszInstance;
+            // } else if (list.Contains(res.CatalogEntry)) {
+            //     catFile.Modified = true;
+            // }
 
-            if (PrefabLinkField.Get(res.CatalogEntry) is not RszInstance viaPrefab) {
-                PrefabLinkField.Set(res.CatalogEntry, viaPrefab = workspace.Env.CreateRszInstance(workspace.Env.Classes.Prefab));
-                catFile?.Modified = true;
-            }
-            var prefabPath = viaPrefab.Get(RszFieldCache.Prefab.Path);
-            if (string.IsNullOrEmpty(prefabPath)) {
-                RszFieldCache.Prefab.Path.Set(viaPrefab, prefabPath = string.Concat(PathUtils.GetFilepathWithoutExtensionOrVersion(rawRes.FileResourcePath), ".pfb"));
-                catFile?.Modified = true;
-            }
+            // if (res.CatalogEntry == null) {
+            //     if (catalogEntryClass == null) {
+            //         Logger.Error("Unknown catalog class for resource " + Config);
+            //         return;
+            //     }
+            //     res.CatalogEntry = workspace.Env.CreateRszInstance(catalogEntryClass);
+            //     list.Add(res.CatalogEntry);
+            // }
 
-            if (!workspace.ResourceManager.TryResolveGameFile(prefabPath, out var pfbHandle)) {
-                pfbHandle = workspace.ResourceManager.CreateNewFile(KnownFileFormats.Prefab, prefabPath)!;
-            }
+            // if (PrefabLinkField.Get(res.CatalogEntry) is not RszInstance viaPrefab) {
+            //     PrefabLinkField.Set(res.CatalogEntry, viaPrefab = workspace.Env.CreateRszInstance(workspace.Env.Classes.Prefab));
+            //     catFile?.Modified = true;
+            // }
+            // var prefabPath = viaPrefab.Get(RszFieldCache.Prefab.Path);
+            // if (string.IsNullOrEmpty(prefabPath)) {
+            //     RszFieldCache.Prefab.Path.Set(viaPrefab, prefabPath = string.Concat(PathUtils.GetFilepathWithoutExtensionOrVersion(rawRes.FileResourcePath), ".pfb"));
+            //     catFile?.Modified = true;
+            // }
 
-            var pfb = pfbHandle.GetFile<PfbFile>();
-            var go = pfb.GameObjects.FirstOrDefault();
-            if (go == null) {
-                go = new ReeLib.Pfb.PfbGameObject() { Instance = workspace.Env.CreateRszInstance(workspace.Env.Classes.GameObject) };
-                go.Components.Add(workspace.Env.CreateRszInstance(workspace.Env.Classes.Transform));
-                pfb.GameObjects.Add(go);
-            }
+            // if (!workspace.ResourceManager.TryResolveGameFile(prefabPath, out var pfbHandle)) {
+            //     pfbHandle = workspace.ResourceManager.CreateNewFile(KnownFileFormats.Prefab, prefabPath)!;
+            // }
 
-            var comp = go.Components.FirstOrDefault(c => c.RszClass == componentClass);
-            if (comp == null) {
-                go.Components.Add(comp = workspace.Env.CreateRszInstance(componentClass));
-            }
-            PrefabToResourceField.Set(componentClass, res.ResourcePath);
+            // var pfb = pfbHandle.GetFile<PfbFile>();
+            // var go = pfb.GameObjects.FirstOrDefault();
+            // if (go == null) {
+            //     go = new ReeLib.Pfb.PfbGameObject() { Instance = workspace.Env.CreateRszInstance(workspace.Env.Classes.GameObject) };
+            //     go.Components.Add(workspace.Env.CreateRszInstance(workspace.Env.Classes.Transform));
+            //     pfb.GameObjects.Add(go);
+            // }
+
+            // var comp = go.Components.FirstOrDefault(c => c.RszClass == componentClass);
+            // if (comp == null) {
+            //     go.Components.Add(comp = workspace.Env.CreateRszInstance(componentClass));
+            // }
+            // PrefabToResourceField.Set(componentClass, res.ResourcePath);
         }
     }
 }

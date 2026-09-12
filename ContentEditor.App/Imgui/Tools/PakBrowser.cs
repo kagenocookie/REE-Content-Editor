@@ -143,7 +143,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
     private static ListFileWrapper? LocalizeListFile(ContentWorkspace workspace)
     {
         var list = workspace.Env.ListFile;
-        if (list == null || workspace.CurrentBundle?.HasResources != true) return list;
+        if (list == null || workspace.CurrentBundle?.HasFiles != true) return list;
 
         return new ListFileWrapper(list.Files.Concat(workspace.CurrentBundle.Files.Select(v => workspace.Env.PrependBasePath(v.Target))), workspace.Platform, true);
     }
@@ -238,7 +238,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
         }
         ImguiHelpers.Tooltip("Toggle Compact File Paths"u8);
         ImGui.SameLine();
-        if (contentWorkspace.CurrentBundle?.HasResources == true) {
+        if (contentWorkspace.CurrentBundle?.HasFiles == true) {
             var resetCache = ImguiHelpers.ToggleButton($"{AppIcons.SI_FileType_PAK}", ref includeBasegameFiles, Colors.IconActive);
             ImguiHelpers.Tooltip("Show base game files"u8);
             ImGui.SameLine();
@@ -896,7 +896,7 @@ public partial class PakBrowser(ContentWorkspace contentWorkspace, string[]? pak
     }
     private bool IsFileOrFolderInBundle(string path)
     {
-        if (contentWorkspace.CurrentBundle?.HasResources != true) return false;
+        if (contentWorkspace.CurrentBundle?.HasFiles != true) return false;
 
         path = Workspace.RemoveBasePath(path).ToString();
 
