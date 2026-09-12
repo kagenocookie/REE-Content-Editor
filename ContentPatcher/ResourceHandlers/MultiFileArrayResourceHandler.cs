@@ -41,7 +41,7 @@ public class MultiFileArrayResourceHandler : ResourceHandler, IResourceHandlerSt
     {
         var idGenerator = Config.IDGeneratorRequired;
         foreach (var filepath in Files) {
-            var userfile = workspace.ResourceManager.ReadFileResource<UserFile>(filepath, false);
+            var userfile = workspace.ResourceManager.GetFileContents<UserFile>(filepath);
             var items = arrayAccessor.Get(userfile.Instance!);
             if (items == null) continue;
 
@@ -64,7 +64,7 @@ public class MultiFileArrayResourceHandler : ResourceHandler, IResourceHandlerSt
         foreach (var (id, resource) in resources) {
             var list = (RSZObjectListResource)resource;
             if (!outFiles.TryGetValue(list.FileResourcePath, out var outList)) {
-                var userfile = workspace.ResourceManager.ReadFileResource<UserFile>(list.FileResourcePath, true);
+                var userfile = workspace.ResourceManager.GetFileContents<UserFile>(list.FileResourcePath, true);
                 // outFiles[list.FileResourcePath] = outList = (List<object>)userfile.Instance!.GetNestedFieldValue(path)!;
                 outFiles[list.FileResourcePath] = outList = (List<object>)arrayAccessor.Get(userfile.Instance!);
                 outList.Clear();

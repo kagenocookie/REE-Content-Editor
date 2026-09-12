@@ -151,7 +151,7 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
         var idGenerator = Config.IDGenerator;
         List<(RszInstance, string)> instances = new();
         foreach (var filepath in Files) {
-            var instance = workspace.ResourceManager.ReadFileResource<UserFile>(filepath, false).Instance!;
+            var instance = workspace.ResourceManager.GetFileContents<UserFile>(filepath).Instance!;
 
             var list = arrayAccessor.Get(instance);
             foreach (var item in list.Cast<RszInstance>()) {
@@ -170,6 +170,7 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
                     Logger.Warn("Failed to load prefab file " + prefabPath);
                     continue;
                 }
+                workspace.ResourceManager.CloseFile(pfbHandle, true);
 
                 var pfb = pfbHandle.GetFile<PfbFile>();
                 var component = pfb.GameObjects.First().Components.First(c => c.RszClass.name != "via.Transform");

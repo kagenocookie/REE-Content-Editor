@@ -32,13 +32,14 @@ public sealed class DD2ItemIconHandler : IObjectUIHandler
                 return;
             }
             var texture = context.GetChildValue<Texture>();
-            var uvsFile = workspace.ResourceManager.ReadFileResource<UvsFile>("gui/ui01/common/item/c00/uvs_ui01c00.uvs.8");
+            var uvsFile = workspace.ResourceManager.GetFileContents<UvsFile>("gui/ui01/common/item/c00/uvs_ui01c00.uvs");
             var pattern = uvsFile.Sequences[sequenceId].patterns[patternId];
             var texPath = uvsFile.Textures[pattern.textureIndex].path;
             if (texture == null || texture.Path?.Contains(texPath) != true) {
                 context.ClearChildren();
-                var tex = workspace.ResourceManager.ReadFileResource<TexFile>(workspace.Env.AppendFileVersion(texPath));
+                var (th, tex) = workspace.ResourceManager.GetFileHandleAndContents<TexFile>(workspace.Env.AppendFileVersion(texPath));
                 context.AddChild("texture", texture = new Texture().LoadFromTex(tex));
+                workspace.ResourceManager.CloseFile(th, true);
             }
 
             var (uv0, uv1) = pattern.GetBoundingPoints();
@@ -87,8 +88,9 @@ public sealed class DD2ItemIconHandler : IObjectUIHandler
                     return;
                 }
                 context.ClearChildren();
-                var tex = workspace.ResourceManager.ReadFileResource<TexFile>(workspace.Env.AppendFileVersion(texPath));
+                var (th, tex) = workspace.ResourceManager.GetFileHandleAndContents<TexFile>(workspace.Env.AppendFileVersion(texPath));
                 context.AddChild("texture", texture = new Texture().LoadFromTex(tex));
+                workspace.ResourceManager.CloseFile(th, true);
             }
 
             if (string.IsNullOrEmpty(instance.data.IconTexture) || texture == null) {

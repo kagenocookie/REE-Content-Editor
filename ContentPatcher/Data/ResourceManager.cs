@@ -1158,6 +1158,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         }
         var handle = CreateRawStreamFileHandle(filename, null, new MemoryStream(), true, FileHandleType.New);
         handle.Loader = loader;
+        handle.Modified = true;
         var newFileResource = loader.CreateNewFile(workspace, handle);
         if (newFileResource == null) {
             return null;
@@ -1278,16 +1279,33 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         return handle;
     }
 
-    public TFileType ReadFileResource<TFileType>(string filepath, bool markModified = false) where TFileType : BaseFile
+    public (FileHandle, TFileType) GetFileHandleAndContents<TFileType>(string filepath) where TFileType : BaseFile
     {
-        var resource = ReadOrGetFileResource(filepath, null);
-        if (resource == null) {
+        var handle = ReadOrGetFileResource(filepath, null);
+        if (handle == null) {
             throw new NotSupportedException($"File not supported or not found: {filepath}");
         }
-        var file = resource.GetFile<TFileType>();
+        var file = handle.GetFile<TFileType>();
+        return (handle, file);
+    }
+
+    /// <summary>
+    /// Resolve the file path for a specific file type and get its contents.
+    /// </summary>
+    /// <param name="filepath">The file path to load.</param>
+    /// <param name="markModified">Whether to mark the file as modified. If false, the file will be auto-closed afterwards (removed from the open file list) if no other references are active.</param>
+    /// <returns></returns>
+    public TFileType GetFileContents<TFileType>(string filepath, bool markModified = false) where TFileType : BaseFile
+    {
+        var (handle, file) = GetFileHandleAndContents<TFileType>(filepath);
+        if (handle == null) {
+            throw new NotSupportedException($"File not supported or not found: {filepath}");
+        }
 
         if (markModified) {
-            resource.Modified = true;
+            handle.Modified = true;
+        } else {
+            CloseFile(handle, true);
         }
 
         return file;
@@ -1352,8 +1370,13 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         }
     }
 
-    public void CloseFile(FileHandle file)
+    public void CloseFile(FileHandle file, bool onlyIfNoReferences = false)
     {
+        if (onlyIfNoReferences && file.References.Count > 0) {
+            // TODO maybe add a IsPatcher check so we don't always open every entity file twice?
+            return;
+        }
+
         if (!openFiles.Remove(file.Filepath, out _) && file.TargetPath != null) {
             openFiles.Remove(file.TargetPath, out _);
         }

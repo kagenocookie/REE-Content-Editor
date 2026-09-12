@@ -67,7 +67,7 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
         var subIdGenerator = Config.SubIDGenerator;
 
         foreach (var filepath in Files) {
-            var userfile = workspace.ResourceManager.ReadFileResource<UserFile>(filepath, false);
+            var userfile = workspace.ResourceManager.GetFileContents<UserFile>(filepath);
             var items = arrayAccessor.Get(userfile.Instance!);
             foreach (var item in items.Cast<RszInstance>()) {
                 if (Config.Filter?.IsEnabled(item) == false) {
@@ -108,7 +108,7 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
             foreach (var (id, resource) in resources) {
                 var list = (RSZObjectListResource)resource;
                 if (!outFiles.TryGetValue(list.FileResourcePath, out var outList)) {
-                    var userfile = workspace.ResourceManager.ReadFileResource<UserFile>(list.FileResourcePath, true);
+                    var userfile = workspace.ResourceManager.GetFileContents<UserFile>(list.FileResourcePath, true);
                     outFiles[list.FileResourcePath] = outList = arrayAccessor.Get(userfile.Instance!);
                     ClearList(outList);
                 }
@@ -121,7 +121,7 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
             foreach (var (_, item) in resources) {
                 var citem = (RSZObjectResource)item;
                 if (!outFiles.TryGetValue(citem.FileResourcePath, out var outList)) {
-                    var userfile = workspace.ResourceManager.ReadFileResource<UserFile>(citem.FileResourcePath, true);
+                    var userfile = workspace.ResourceManager.GetFileContents<UserFile>(citem.FileResourcePath, true);
                     outFiles[citem.FileResourcePath] = outList = arrayAccessor.Get(userfile.Instance!);
                     ClearList(outList);
                 }

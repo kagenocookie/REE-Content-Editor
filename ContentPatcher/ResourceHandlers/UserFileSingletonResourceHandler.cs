@@ -17,7 +17,7 @@ public class UserFileSingletonResourceHandler : ResourceHandler, IResourceHandle
 
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)
     {
-        var userfile = workspace.ResourceManager.ReadFileResource<UserFile>(Files[0]);
+        var userfile = workspace.ResourceManager.GetFileContents<UserFile>(Files[0]);
 
         var instance = userfile.Instance!;
         var id = Config.IDGeneratorRequired.GetID(instance);

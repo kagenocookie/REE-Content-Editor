@@ -27,7 +27,7 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)
     {
         foreach (var file in Files) {
-            var msg = workspace.ResourceManager.ReadFileResource<MsgFile>(file);
+            var msg = workspace.ResourceManager.GetFileContents<MsgFile>(file);
 
             var langs = msg.Languages!;
             foreach (var entry in msg.Entries) {
@@ -64,7 +64,7 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
     public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
     {
         foreach (var file in Files) {
-            var msgFile = workspace.ResourceManager.ReadFileResource<MsgFile>(file);
+            var msgFile = workspace.ResourceManager.GetFileContents<MsgFile>(file, true);
             if (msgFile == null) {
                 Logger.Warn($"Could not load msg file {file}");
                 continue;
