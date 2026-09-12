@@ -162,12 +162,12 @@ public class HomeWindow : IWindowHandler
     {
         var data = context.Get<WindowData>();
         using (var _ = ImguiHelpers.Disabled(AppConfig.Instance.IsFirstTime)) {
-            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PakBrowse, [Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary]) && EditorWindow.CurrentWindow?.Workspace != null) {
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_PakBrowse, [Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary], null, Lang.Home.Tooltip_BrowseFiles.String) && EditorWindow.CurrentWindow?.Workspace != null) {
                 EditorWindow.CurrentWindow?.AddSubwindow(new PakBrowser(EditorWindow.CurrentWindow.Workspace, null));
             }
-            ImguiHelpers.Tooltip(Lang.Home.Tooltip_BrowseFiles);
             ImGui.SameLine();
-            if (ImGui.Button(Lang.Home.Button_OpenFile)) {
+            ImguiHelpers.AlignElementRight((ImGui.CalcTextSize($"{AppIcons.SI_Settings}").X + ImGui.GetStyle().FramePadding.X * 2) * 2 + ImGui.GetStyle().ItemSpacing.X);
+            if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_FolderOpenGameFile, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary])) {
                 PlatformUtils.ShowFileDialog((files) => {
                     MainLoop.Instance.MainWindow.InvokeFromUIThread(() => {
                         Logger.Info(string.Join("\n", files));
@@ -175,12 +175,7 @@ public class HomeWindow : IWindowHandler
                     });
                 });
             }
-            ImGui.SameLine();
-            ImguiHelpers.AlignElementRight((ImGui.CalcTextSize($"{AppIcons.SI_Settings}").X + ImGui.GetStyle().FramePadding.X * 2) * 2 + ImGui.GetStyle().ItemSpacing.X);
-            if (ImGui.Button($"{AppIcons.Pencil}")) {
-                EditorWindow.CurrentWindow?.AddUniqueSubwindow(new ThemeEditor());
-            }
-            ImguiHelpers.Tooltip(Lang.Home.Tooltip_ThemeEditor);
+            ImguiHelpers.Tooltip(Lang.Home.Button_OpenFile);
             ImGui.SameLine();
             if (ImGui.Button($"{AppIcons.SI_Settings}")) {
                 EditorWindow.CurrentWindow?.AddUniqueSubwindow(new SettingsWindowHandler());
