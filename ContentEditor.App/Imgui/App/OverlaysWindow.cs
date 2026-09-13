@@ -243,7 +243,7 @@ public class OverlaysWindow : IWindowHandler
             new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_PrevAnimFrame, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_PrevAnimFrame.Get())},
             new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_IncreaseAnimSpeed, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_IncreaseAnimSpeed.Get())},
             new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_DecreaseAnimSpeed, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_DecreaseAnimSpeed.Get())},
-            new HotkeyHint { Description = "Mesh Editor", IsSeparator = true},
+            new HotkeyHint { Description = Lang.Settings.Section_MeshEditor, IsSeparator = true},
             new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_VertexSelection, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_VertexSelection.Get())},
             new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_EdgeSelection, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_EdgeSelection.Get())},
             new HotkeyHint { Description = Lang.Settings.Bind_MeshViewer_FaceSelection, Hotkey = () => AppImguiHelpers.FormatHotkeyString(AppConfig.Instance.Key_MeshViewer_FaceSelection.Get())},
@@ -322,7 +322,6 @@ public class OverlaysWindow : IWindowHandler
         var revealH = windowSize.Y * animEase;
         var drawList = ImGui.GetForegroundDrawList();
         var headerColor = ImGui.GetColorU32(Colors.IconOverlay);
-        var textColor = ImGui.GetColorU32(ImGuiCol.Text);
 
         ImGui.PushStyleVar(ImGuiStyleVar.Alpha, animEase);
         drawList.AddRectFilled(windowPos, windowPos + windowSize, ImGui.GetColorU32(ImGuiCol.WindowBg), style.WindowRounding);
@@ -340,16 +339,14 @@ public class OverlaysWindow : IWindowHandler
             var hk = currGroup.HotkeyList[i];
             var rowMin = new Vector2(windowPos.X, windowPos.Y + rowOffsetH[i]);
             var rowMax = new Vector2(windowPos.X + windowSize.X, windowPos.Y + rowOffsetH[i] + rowH[i]);
-
             if (hk.IsSeparator) {
                 var sepH = rowMin.Y + rowH[i] * 0.5f;
-                drawList.AddText(new Vector2(column0W, rowMin.Y + style.SeparatorTextPadding.Y), textColor, hk.Description);
+                drawList.AddText(new Vector2(column0W, rowMin.Y + style.SeparatorTextPadding.Y), ImGui.GetColorU32(Colors.TextActive), hk.Description);
                 drawList.AddLine(new Vector2(column0W + ImGui.CalcTextSize(hk.Description).X + style.ItemSpacing.X, sepH), new Vector2(rowMax.X - style.WindowPadding.X, sepH), ImGui.GetColorU32(ImGuiCol.Separator), 2f * UI.UIScale);
                 continue;
             }
-
             drawList.AddRectFilled(rowMin, rowMax, ImGui.GetColorU32(rowIDX++ % 2 == 0 ? ImGuiCol.TableRowBg : ImGuiCol.TableRowBgAlt));
-            drawList.AddText(new Vector2(column0W, rowMin.Y + style.CellPadding.Y), textColor, hk.Description);
+            drawList.AddText(new Vector2(column0W, rowMin.Y + style.CellPadding.Y), ImGui.GetColorU32(ImGuiCol.Text), hk.Description);
             drawList.AddText(new Vector2(column1W, rowMin.Y + style.CellPadding.Y), ImGui.GetColorU32(ImGuiCol.TextDisabled), hk.Hotkey!());
         }
 

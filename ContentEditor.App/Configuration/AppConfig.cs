@@ -60,6 +60,8 @@ public class AppConfig : Singleton<AppConfig>
         public const string WindowRect = "window_rect";
         public const string PauseAnimPlayerOnSeek = "pause_anim_player_on_seek";
         public const string UseFullscreenAnimPlayback = "use_fullscreen_anim_playback";
+        public const string ShowMeshViewerOutlinerOnLeftSide = "show_meshviewer_outliner_leftside";
+        public const string UseMeshViewerOutlinerHighlight = "meshviewer_outliner_highlight";
         public const string ExpandSettings = "expand_settings";
         public const string DateFormat = "date_format";
         public const string ClockFormat = "clock_format";
@@ -348,6 +350,8 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
     public readonly SettingWrapper<bool> PauseAnimPlayerOnSeek = new SettingWrapper<bool>(Keys.PauseAnimPlayerOnSeek, _lock, true);
     public readonly SettingWrapper<bool> UseFullscreenAnimPlayback = new SettingWrapper<bool>(Keys.UseFullscreenAnimPlayback, _lock, false);
+    public readonly SettingWrapper<bool> ShowMeshViewerOutlinerOnLeftSide = new SettingWrapper<bool>(Keys.ShowMeshViewerOutlinerOnLeftSide, _lock, false);
+    public readonly SettingWrapper<bool> UseMeshViewerOutlinerHighlight = new SettingWrapper<bool>(Keys.UseMeshViewerOutlinerHighlight, _lock, true);
     public readonly SettingWrapper<bool> ExpandSettings = new SettingWrapper<bool>(Keys.ExpandSettings, _lock, false);
     public readonly SettingWrapper<int> DateFormat = new SettingWrapper<int>(Keys.DateFormat, _lock, 0);
     public readonly SettingWrapper<bool> ClockFormat = new SettingWrapper<bool>(Keys.ClockFormat, _lock, false);
@@ -572,6 +576,8 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.QuaternionsDisableAutoNormalize, instance.QuaternionsDisableAutoNormalize.value.ToString(), null),
             (Keys.PauseAnimPlayerOnSeek, instance.PauseAnimPlayerOnSeek.value.ToString(), null),
             (Keys.UseFullscreenAnimPlayback, instance.UseFullscreenAnimPlayback.value.ToString(), null),
+            (Keys.ShowMeshViewerOutlinerOnLeftSide, instance.ShowMeshViewerOutlinerOnLeftSide.value.ToString(), null),
+            (Keys.UseMeshViewerOutlinerHighlight, instance.UseMeshViewerOutlinerHighlight.value.ToString(), null),
             (Keys.ExpandSettings, instance.ExpandSettings.value.ToString(), null),
             (Keys.DateFormat, instance.DateFormat.value.ToString(), null),
             (Keys.ClockFormat, instance.ClockFormat.value.ToString(), null),
@@ -790,6 +796,12 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.UseFullscreenAnimPlayback:
                             UseFullscreenAnimPlayback.value = ReadBool(value);
+                            break;
+                        case Keys.ShowMeshViewerOutlinerOnLeftSide:
+                            ShowMeshViewerOutlinerOnLeftSide.value = ReadBool(value);
+                            break;
+                        case Keys.UseMeshViewerOutlinerHighlight:
+                            UseMeshViewerOutlinerHighlight.value = ReadBool(value);
                             break;
                         case Keys.ExpandSettings:
                             ExpandSettings.value = ReadBool(value);
@@ -1279,7 +1291,6 @@ public record MeshViewerSettings
     public bool EditorMirrorY { get; set; }
     public bool EditorMirrorZ { get; set; }
     public float EditorMirrorRadius { get; set; } = DefaultEditorMirrorRadius;
-    public bool EditorOptionsStayOnTop { get; set; }
 }
 
 public class BundleDefaults

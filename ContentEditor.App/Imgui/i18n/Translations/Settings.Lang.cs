@@ -45,8 +45,9 @@ public static partial class Lang
         public static readonly FixedString Group_Theme = "Theme";
         public static readonly FixedString Group_Global = "Global";
         public static readonly FixedString Group_Pak = "Pak Browser";
+        public static readonly FixedString Group_Camera = "Camera";
         public static readonly FixedString Group_Scene = "Scene";
-        public static readonly FixedString Group_Mesh = "3D Controls";
+        public static readonly FixedString Group_Mesh = "Mesh Viewer";
         public static readonly FixedString Group_Texture = "Texture Viewer";
         public static readonly FixedString Group_UVS = "UVS Editor";
         public static readonly FixedString Group_Resident = "Resident Evil";
@@ -116,6 +117,7 @@ public static partial class Lang
         public static readonly TextTooltip MaxFPSBackground = new TextTooltip("Max FPS in background", "The maximum FPS when the editor window is not focused.");
         public static readonly TextTooltip ClockFormat = new TextTooltip("12-hour Clock", "Switch the time format from 24-hour to 12-hour clock.");
         public static readonly TextTooltip UseFullscreenAnimPlayback = new TextTooltip("Fullscreen Animation Playback Overlay", "Whether to keep the animation playback overlay in the top-right corner of the Mesh Viewer or make it fullscreen.");
+        public static readonly TextTooltip ShowMeshViewerOutlinerOnLeftSide = new TextTooltip("Show Outliner on Left Side", "Whether to display the Outliner on the left side instead of the right side of the Mesh Viewer.");
         public static readonly TextTooltip ExpandSettings = new TextTooltip("Auto-expand Settings", "Whether the setting groups should be expanded by default.");
         public static readonly TextTooltip PrettyFieldLabels = new TextTooltip("Simplify field labels", "Whether to simplify field labels instead of showing the raw field names (e.g. \"Target Object\" instead of \"_TargetObject\").");
         public static readonly TextTooltip AutoCloseFiles = new TextTooltip("Auto close files", "Whether to automatically close down files after their last editor window is closed when there's no unsaved changes.\nIf disabled, files will always stay open until explicitly closed through the menu.\nExperimental. Might cause issues with some files.");
