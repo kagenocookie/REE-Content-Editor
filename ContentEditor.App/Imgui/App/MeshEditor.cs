@@ -116,7 +116,7 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
         else UpdateEditVertexPointSizes();
         
         ImGui.PushStyleColor(ImGuiCol.Button, IsEnabled ? ImguiHelpers.GetColor(ImGuiCol.TabSelected) with { W = 0.25f } : Vector4.Zero);
-        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_MeshEditor, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary], null, Lang.MeshViewer.Title_Editor.String)) {
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_MeshEditor, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary], null, Lang.MeshViewer.Menu_Editor.String)) {
             SetEnabled(!IsEnabled);
         }
         ImGui.PopStyleColor();

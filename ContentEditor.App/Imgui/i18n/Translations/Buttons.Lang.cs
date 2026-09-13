@@ -7,6 +7,7 @@ public static partial class Lang
     public static class Buttons
     {
         public static readonly FixedString Add = "Add";
+        public static readonly IconString AddWithIcon = new IconString("{0} Add", AppIcons.SI_GenericAdd);
         public static readonly FixedString Open = "Open";
         public static readonly FixedString Save = "Save";
         public static readonly FixedString Rename = "Rename";
