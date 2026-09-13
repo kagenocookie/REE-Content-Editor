@@ -40,6 +40,17 @@ public partial class EntityConfigSerialized
     public string? PrimaryField { get; set; }
 
     public ZeroEntity? ZeroEntity { get; set; }
+
+    public RuntimeMappingConfig? RuntimeMapping { get; set; }
+}
+
+[YamlObject(NamingConvention.SnakeCase)]
+public partial class RuntimeMappingConfig
+{
+    public string runtimeType = "";
+    public Dictionary<string, string> ToRuntime { get; set; } = new();
+    public Dictionary<string, string> ToDesktop { get; set; } = new();
+    public Dictionary<string, string> ToBoth { get; set; } = new();
 }
 
 [YamlObject(NamingConvention.SnakeCase)]
@@ -51,13 +62,15 @@ public partial class EntityFieldConfig
 
     [YamlMember("when")]
     public EntityFieldConditionData? condition;
+    [YamlMember("when_any")]
+    public EntityFieldConditionData[]? multiConditionsAny;
     [YamlMember("required")]
     public bool isRequired;
     public string? displayAfter;
     [YamlMember("not_standalone")]
     public bool isNotStandalone;
 
-    public Dictionary<string, object>? fieldId;
+    public EntityProperty? fieldId;
 
     public string? fieldType;
 

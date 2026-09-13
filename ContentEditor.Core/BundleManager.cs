@@ -18,6 +18,7 @@ public class BundleManager
         }
     }
     public List<SerializedEnum> Enums { get; } = new();
+    public BundleRuntimeMapping? Mapping { get; set; }
 
     public List<string> UninitializedBundleFolders { get; } = new();
 
@@ -128,7 +129,8 @@ public class BundleManager
             if (mainBundle == null) {
                 mainBundle = new Bundle() { StoragePath = ConstructBundleFolder(runtimeBundle.Name) };
                 mainBundle.CopyFrom(runtimeBundle);
-                // TODO auto-migrate legacy data
+                mainBundle.RuntimeBundle = runtimeBundle;
+                MigrateRuntimeToDesktop(mainBundle);
                 mainBundle.Touch();
 
                 var idx = settings.BundleOrder.IndexOf(runtimeBundle.Name);
@@ -143,6 +145,7 @@ public class BundleManager
             if (runtimeBundle.UpdatedAtTime > mainBundle.UpdatedAtTime) {
                 Logger.Info($"Updating main bundle data from changes in runtime bundle {mainBundle.Name}...");
                 mainBundle.UpdateFrom(runtimeBundle);
+                MigrateRuntimeToDesktop(mainBundle);
             }
         }
 
@@ -170,6 +173,44 @@ public class BundleManager
         RefreshEnums();
         if (bundleImports.Created.Count > 0) EntitiesCreated?.Invoke(bundleImports.Created);
         if (bundleImports.Updated.Count > 0) EntitiesUpdated?.Invoke(bundleImports.Updated);
+    }
+
+    private void MigrateRuntimeToDesktop(Bundle bundle)
+    {
+        if (Mapping == null || bundle.RuntimeBundle?.RuntimeEntities == null) return;
+
+        foreach (var runtimeEntityRaw in bundle.RuntimeBundle.RuntimeEntities) {
+            MinimalEntity? runtimeEntity;
+            try {
+                runtimeEntity = runtimeEntityRaw.Deserialize<MinimalEntity>(JsonConfig.luaJsonOptions);
+                if (runtimeEntity == null) {
+                    continue;
+                }
+            } catch (Exception) {
+                continue;
+            }
+
+            if (runtimeEntity.Id == 0 || string.IsNullOrEmpty(runtimeEntity.Type)) {
+                continue;
+            }
+
+            if (!Mapping.HasRuntimeMapping(runtimeEntity.Type, out var editorType)) {
+                continue;
+            }
+
+            var desktopEntity = bundle.GetEntity(editorType, runtimeEntity.Id);
+            if (desktopEntity == null) {
+                desktopEntity = new Entity() { Id = runtimeEntity.Id, Type = editorType };
+                bundle.RecordEntity(desktopEntity);
+            }
+            desktopEntity.Label = runtimeEntity.Label;
+
+            if (Mapping.MapToDesktop(runtimeEntity.Type, runtimeEntityRaw, desktopEntity)) {
+                Logger.Info($"Auto-migrated bundle \"{bundle.Name}\" runtime entity \"{runtimeEntity}\" to desktop entity");
+            } else {
+                Logger.Warn($"Failed to migrate bundle \"{bundle.Name}\" runtime entity \"{runtimeEntity}\" to desktop entity \"{desktopEntity}\"");
+            }
+        }
     }
 
     private void RefreshEnums()

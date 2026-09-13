@@ -3,11 +3,12 @@ using System.Text.RegularExpressions;
 using ContentEditor.Editor;
 using ContentPatcher.StringFormatting;
 using ReeLib.Common;
+using ReeLib.Msg;
 
 namespace ContentPatcher;
 
 [ResourceField("keyed_message", typeof(MsgFileResourceHandler))]
-public class KeyedMessage : EntityFieldValueHandler<MessageData>, IDiffableField
+public class KeyedMessage : CustomEntityFieldHandler<MessageData>, IDiffableField
 {
     private StringFormatter keyFormat = null!;
     public bool multiline;
@@ -30,6 +31,29 @@ public class KeyedMessage : EntityFieldValueHandler<MessageData>, IDiffableField
         return workspace.ResourceManager.GetResourceInstance(Field.Config.Type, key, state);
     }
 
+    public override (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData)
+    {
+        var key = keyFormat.GetString(entity);
+        var id = MurMur3HashUtils.GetHash(key);
+
+        var msgData = new MessageData() {
+            ResourceType = Field.Config,
+            FileResourcePath = Field.Config.Resource.Files[0],
+            MessageKey = key,
+            Guid = Guid.NewGuid(),
+            Messages = new (),
+        };
+        if (initialData != null) {
+            if (initialData.GetValueKind() == System.Text.Json.JsonValueKind.String) {
+                msgData.Messages[nameof(Language.English)] = initialData.GetValue<string>();
+            } else {
+                workspace.Diff.ApplyDiff(msgData, initialData);
+            }
+        }
+        Field.Config.Resource.ModifyResources(workspace, [new KeyValuePair<long, IContentResource>(id, msgData) ]);
+        return (id, msgData);
+    }
+
     public override MessageData? ApplyValue(ContentWorkspace workspace, MessageData? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
     {
         if (data == null) {
@@ -39,7 +63,7 @@ public class KeyedMessage : EntityFieldValueHandler<MessageData>, IDiffableField
         if (currentResource == null) {
             string entityKey = keyFormat.GetString(entity);
             var messageId = MurMur3HashUtils.GetHash(entityKey);
-            var inst = workspace.ResourceManager.CreateEntityResource<MessageData>(entity, Field, state);
+            var inst = workspace.ResourceManager.CreateEntityResource<MessageData>(entity, Field, state, initialData: data);
             workspace.Diff.ApplyDiff(inst, data);
             return inst;
         }

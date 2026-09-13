@@ -83,7 +83,7 @@ public abstract class ResourceHandler
     public abstract void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources);
 
     public virtual IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
-        => throw new NotImplementedException($"Can't create new resources of type {Config.Type}");
+        => throw new NotImplementedException($"Can't create new resources of type {Config.Resource} ({Config.Type})");
 }
 
 public interface IResourceHandlerStatic

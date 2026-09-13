@@ -2,10 +2,9 @@
 
 entities:
   events.event:
-    to_string: "Event {id}: {select_data._StartLocation:enum(app.AIKeyLocation)}"
+    to_string: "Event {id}: {data._StartLocation:enum(app.AIKeyLocation)}"
     fields:
-      - name: select_data
-        label: Data
+      - name: data
         resource:
           id: [_SerialNum]
           custom_id_range: [10000, 999000]
@@ -15,6 +14,11 @@ entities:
           field: _SelectDataArray
           params:
             nested: false
+    runtime_mapping:
+      runtime_type: event
+      to_both:
+        data: data
+
   events.event_context:
     to_string: "Event context {id}: {data._Data._Type:enum(app.QuestDefine.SuddenQuestType)} - NPC={data._Data._NpcID:enum(app.CharacterID)}"
     fields:
@@ -29,6 +33,11 @@ entities:
           field: _ContextDataArray
           params:
             nested: false
+    runtime_mapping:
+      runtime_type: event_context
+      to_both:
+        data._Data: data
+
   events.event_spawns:
     enums:
     - name: app.DomainQueryGenerateRequestID

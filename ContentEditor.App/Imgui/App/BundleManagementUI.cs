@@ -347,13 +347,13 @@ public class BundleManagementUI : IWindowHandler
         ImGui.EndChild();
         ImGui.Separator();
         if (bundle != null) {
-            var legacyEntityTypes = bundle.RuntimeBundle?.LegacyData?.Where(ld => ld.TryGetPropertyValue("type", out _)).Select(ld => ld["type"]!.GetValue<string>()).Distinct();
+            var legacyEntityTypes = bundle.RuntimeBundle?.RuntimeEntities?.Where(ld => ld.TryGetPropertyValue("type", out _)).Select(ld => ld["type"]!.GetValue<string>()).Distinct();
             if (legacyEntityTypes?.Any() == true) {
-                if (ImGui.TreeNode(Lang.Bundles.LegacyEntities)) {
+                if (ImGui.TreeNodeEx(Lang.Bundles.LegacyEntities, ImGuiTreeNodeFlags.Framed)) {
                     var types = allOption.Concat(legacyEntityTypes).ToArray();
                     ImGui.Combo(Lang.Bundles.EntityType.String, ref selectedLegacyEntityType, types, types.Length);
                     var entityFilter = selectedLegacyEntityType > 0 && selectedLegacyEntityType < types.Length ? types[selectedLegacyEntityType] : null;
-                    foreach (var e in bundle.RuntimeBundle!.LegacyData!) {
+                    foreach (var e in bundle.RuntimeBundle!.RuntimeEntities!) {
                         if (!e.TryGetPropertyValue("type", out var type)) {
                             continue;
                         }

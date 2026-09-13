@@ -6,6 +6,15 @@ namespace ContentPatcher;
 public interface IResourceCondition
 {
     bool IsEnabled(object? resource);
+
+    public static IResourceCondition Deserialize(EntityFieldConditionData data)
+    {
+        if (data.property == "classname") {
+            return new WhenClassnameCondition(data.property, data.equals as string ?? "");
+        } else {
+            return new WhenFieldValueCondition(data.property, data.equals);
+        }
+    }
 }
 
 public interface ISettable
@@ -13,14 +22,15 @@ public interface ISettable
     void Set(object target);
 }
 
-public sealed record EntityFieldCondition(string field, IResourceCondition condition)
+public class WhenAnyCondition(IResourceCondition[] subconditions) : IResourceCondition
 {
-    public bool IsEnabled(ResourceEntity entity)
+    public bool IsEnabled(object? resource)
     {
-        var value = entity.Get(field);
-        if (value == null) return false;
+        foreach (var c in subconditions) {
+            if (c.IsEnabled(resource)) return true;
+        }
 
-        return condition.IsEnabled(value);
+        return false;
     }
 }
 
@@ -41,12 +51,15 @@ public class WhenFieldValueCondition(string field, object? compareValue) : IReso
 {
     public bool IsEnabled(object? resource)
     {
-        var instance = (resource as RSZObjectResource)?.Instance ?? (resource as RszInstance);
-        if (instance == null) {
+        object? fieldValue;
+        if (resource is IPropertyContainer props) {
+            fieldValue = props.Get(field);
+        } else if (resource is RszInstance rsz) {
+            fieldValue = rsz.GetNestedFieldValue(field);
+        } else {
             throw new Exception($"Invalid field {field} for field condition - must be an RszInstance or RSZObjectInstance");
         }
 
-        var fieldValue = instance.GetNestedFieldValue(field);
         if (fieldValue == compareValue) return true;
         if (fieldValue == null || compareValue == null) return false;
 
@@ -59,16 +72,23 @@ public class WhenFieldValueCondition(string field, object? compareValue) : IReso
 
     public void Set(object target)
     {
+        if (compareValue == null) {
+            // I _think_ we don't want this to happen but let's not exception just yet
+            Logger.Error($"Attempted to set null value for {target} field {field}");
+        }
+
         var instance = (target as RSZObjectResource)?.Instance ?? (target as RszInstance);
         if (instance == null) {
             throw new Exception($"Invalid field {field} for field condition - must be an RszInstance or RSZObjectInstance");
         }
-        if (compareValue == null) {
-            // I _think_ we don't want this to happen but let's not exception just yet
-            Logger.Error($"Attempted to set null value for {instance} field {field}");
-        }
 
-        instance.SetNestedFieldValue(field, compareValue!);
+        if (target is IPropertyContainer props) {
+            props.Set(field, compareValue);
+        } else if (target is RszInstance rsz) {
+            instance.SetNestedFieldValue(field, compareValue!);
+        } else {
+            throw new Exception($"Invalid field {field} for field condition - must be an RszInstance or RSZObjectInstance");
+        }
     }
 }
 

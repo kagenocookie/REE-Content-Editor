@@ -10,12 +10,12 @@ using ReeLib.Common;
 namespace ContentPatcher;
 
 [ResourceField("enum_mapping", typeof(EnumMapResourceHandler))]
-public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResource>, IResourceValueContainer
+public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResource>
 {
     public Regex? ParseRegex { get; private set; }
     private string virtualEnumName = "";
     private StringFormatter newLabelFormat = null!;
-    private NestableFieldAccessor idGetter = null!;
+    private EntityProperty idProperty = null!;
     public override string? ResourceType => virtualEnumName;
     private long fallbackId;
 
@@ -33,7 +33,7 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
         newLabelFormat = new StringFormatter(format, FormatterSettings.CreateFullEntityFormatter(entityConfig, workspace));
 
         var valueFrom = Field.config.RequireParam<Dictionary<object, object>>("value_from");
-        idGetter = NestableFieldAccessor.CreateForEntity(workspace, entityConfig, valueFrom);
+        idProperty = EntityProperty.Deserialize(workspace, valueFrom);
     }
 
     public override EnumMappingResource? ApplyValue(ContentWorkspace workspace, EnumMappingResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
@@ -57,14 +57,22 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
     private EnumMappingResource DetermineEnumResource(ContentWorkspace workspace, ResourceEntity entity)
     {
         var enumdesc = workspace.Env.TypeCache.GetEnumDescriptor(Field.Config.RszClassRequired.name, RszFieldType.U32);
-        var value = Convert.ChangeType(idGetter.Get(entity), enumdesc.BackingType);
+        var value = Convert.ChangeType(idProperty.Get(entity) ?? entity.Id, enumdesc.BackingType);
         if (value == null) {
             Logger.Error($"Failed to determine enum value for entity {entity}");
             return new EnumMappingResource(Field.Config, "", -1) { ID = -1 };
         }
 
         var label = enumdesc.GetLabel(value);
-        var id = GetIDFromLabel(label);
+        long id;
+        if (string.IsNullOrEmpty(label)) {
+            // imported values that lack enum definitions
+            // TODO make sure we insert custom bundled enum entries before we do the loading here
+            id = entity.Id;
+            label = newLabelFormat.GetString(entity);
+        } else {
+            id = GetIDFromLabel(label);
+        }
         if (id == -1) {
             id = fallbackId;
         }
@@ -106,16 +114,6 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
 
         return -1;
     }
-
-    public NestableFieldAccessor? GetAccessor(ContentWorkspace workspace, string path)
-    {
-        if (path == "value") {
-            var valueType = RszInstance.RszFieldTypeToCSharpType(idGetter.Field.type);
-            return new NestableFieldAccessor.Custom<EnumMappingResource>(idGetter.Field.type, m => Convert.ChangeType(m.Value, valueType), (m, v) => m.Value = Convert.ToInt64(v));
-        }
-
-        return null;
-    }
 }
 
 [ResourcePatcher("enum_mapping")]
@@ -137,7 +135,7 @@ public class EnumMapResourceHandler : ResourceHandler, IResourceHandlerStatic
     }
 }
 
-public sealed class EnumMappingResource : IAddressableContentResource, IResourceValueContainer
+public sealed class EnumMappingResource : IAddressableContentResource, IPropertyContainer
 {
     public EnumMappingResource(ResourceConfig config)
     {
@@ -163,20 +161,34 @@ public sealed class EnumMappingResource : IAddressableContentResource, IResource
 
     public override string ToString() => Label;
 
-    public NestableFieldAccessor? GetAccessor(ContentWorkspace workspace, string path)
+    public object? Get(string path)
     {
-        if (path == "value") {
-            return new NestableFieldAccessor.Custom<EnumMappingResource>(RszFieldType.S64, m => m.Value, (m, v) => m.Value = Convert.ToInt64(v));
+        switch (path) {
+            case "value":
+                return Value;
+            case "id":
+                return ID;
+            case "label":
+                return Label;
+            default:
+                throw new Exception("Unknown enum mapping field " + path);
         }
+    }
 
-        if (path == "id") {
-            return new NestableFieldAccessor.Custom<EnumMappingResource>(RszFieldType.S64, m => m.ID, (m, v) => m.ID = Convert.ToInt64(v));
+    public void Set(string path, object? value)
+    {
+        switch (path) {
+            case "value":
+                Value = Convert.ToInt64(value);
+                break;
+            case "id":
+                ID = Convert.ToInt64(value);
+                break;
+            case "label":
+                Label = value?.ToString() ?? "";
+                break;
+            default:
+                throw new Exception("Unknown enum mapping field " + path);
         }
-
-        if (path == "label") {
-            return new NestableFieldAccessor.Custom<EnumMappingResource>(RszFieldType.String, m => m.Label, (m, v) => m.Label = v as string ?? "");
-        }
-
-        return null;
     }
 }

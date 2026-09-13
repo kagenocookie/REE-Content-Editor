@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 public class RuntimeBundle : BaseBundle
 {
     [JsonPropertyName("data")]
-    public List<JsonObject>? LegacyData { get; set; }
+    public List<JsonObject>? RuntimeEntities { get; set; }
 
     public void CopyFrom(RuntimeBundle other)
     {
@@ -21,7 +21,7 @@ public class RuntimeBundle : BaseBundle
         UpdatedAt = other.UpdatedAt;
         UpdatedAtTime = other.UpdatedAtTime;
         DependsOn = other.DependsOn;
-        LegacyData = other.LegacyData;
+        RuntimeEntities = other.RuntimeEntities;
         GameVersion = other.GameVersion;
         InitialInsertIds = other.InitialInsertIds;
     }

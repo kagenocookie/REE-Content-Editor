@@ -63,33 +63,40 @@ entities:
       # alternatively we use content editor runtime tech, the patch needs to be saved as a CE bundle with tex and rect info
       type: DD2_ItemIcon
       field_type: DD2_ItemIcon
-    - name: armorEnhanceData
+    - name: enhanceData
       label: Enhance data
-      type: app.ArmorEnhanceParam
       display_after: icon
-      when:
-        field: data
+      when_any:
+      - field: data
         property: classname
         equals: app.ItemArmorParam
-      resource:
-        id: [_ItemId]
-        sub_id: [_Type, _EnhanceNo]
-        type: array-file
-        file: AppSystem/Item/ItemData/ArmorEnhanceData.user
-        classname: app.ArmorEnhanceParam
-    - name: weaponEnhanceData
-      label: Enhance data
-      display_after: icon
-      when:
-        field: data
+      - field: data
         property: classname
         equals: app.ItemWeaponParam
       resource:
         id: [_ItemId]
         sub_id: [_Type, _EnhanceNo]
-        type: array-file
-        file: AppSystem/Item/ItemData/WeaponEnhanceData.user
-        classname: app.WeaponEnhanceParam
+        classname: app.EnhanceParamBase
+        type: merged-group
+        subtypes:
+          armor:
+            type: array-file
+            file: AppSystem/Item/ItemData/ArmorEnhanceData.user
+            classname: app.ArmorEnhanceParam
+          weapon:
+            type: array-file
+            file: AppSystem/Item/ItemData/WeaponEnhanceData.user
+            classname: app.WeaponEnhanceParam
+    runtime_mapping:
+      runtime_type: item_data
+      to_both:
+        data: data
+        name: name
+        description: description
+        enhanceData: enhance
+        icon.icon_rect: icon_rect
+        icon.icon_path: icon_path
+
   items.weapon:
     enums:
     - name: app.WeaponID
@@ -150,8 +157,8 @@ classes:
     fields:
       _Id: { readOnly: true }
       _Attr: { enum: app.ItemAttrBits }
-      _FakeItemId: { enum: app.ItemIDEnum }
-      _DecayedItemId: { enum: app.ItemIDEnum }
+      _FakeItemId: { enum: item_data }
+      _DecayedItemId: { enum: item_data }
       _UseAttr: { enum: app.ItemUseAttrBits }
   app.ItemWeaponParam:
     fields:
@@ -161,6 +168,7 @@ classes:
   app.ItemArmorParam:
     fields:
       _Id: { readOnly: true }
+      _EquipCategory: { readOnly: true } # read-only to prevent mismatched object types
       _Attr: { enum: app.ItemAttrBits }
       # _StyleNo_Backup: { handler: DD2.ArmorStyle }
       _StyleNo:

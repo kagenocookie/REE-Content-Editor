@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using ContentEditor;
 using ReeLib;
@@ -74,7 +73,7 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
                 var data = ((MessageData)entry);
                 var msgEntry = msgFile.FindEntryByKeyHash((uint)hash);
                 if (msgEntry == null) {
-                    if (!string.IsNullOrEmpty(data.FileResourcePath)) {
+                    if (!string.IsNullOrEmpty(data.FileResourcePath) && !data.FileResourcePath.Equals(file, StringComparison.OrdinalIgnoreCase)) {
                         continue;
                     }
 
@@ -82,9 +81,21 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
                     msgEntry = msgFile.AddNewEntry(data.MessageKey);
                 }
 
-                foreach (var (lang, text) in ((MessageData)entry).Messages) {
+                foreach (var (lang, text) in data.Messages) {
                     var langIndex = (int)Enum.Parse<Language>(lang);
                     msgEntry.Strings[langIndex] = text;
+                }
+
+                foreach (var (attr, value) in data.Attributes) {
+                    msgEntry.SetAttribute(attr, value);
+                }
+
+                if (data.SoundID != 0) {
+                    msgEntry.Header.soundId = data.SoundID;
+                }
+                if (data.Guid == Guid.Empty) {
+                    if (data.Guid == Guid.Empty) data.Guid = Guid.NewGuid();
+                    msgEntry.Header.guid = data.Guid;
                 }
             }
         }

@@ -6,7 +6,6 @@ namespace ContentPatcher;
 [ResourcePatcher("array-file")]
 public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
 {
-    private string? classname;
     private RszFieldAccessorBase<IList<object>> arrayAccessor = null!;
 
     public override EntityFieldValueHandler CreateValueHandler(EntityField field) => Config.SubIDGenerator == null ? new ObjectField() : new ObjectArray();
@@ -16,7 +15,6 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
         return new ArrayFileResourceHandler() {
             Config = resource,
             Files = data.TargetFiles.ToList(),
-            classname = data.Classname,
             arrayAccessor = data.GetDirectFieldAccessor<IList<object>>(static f => f.array && f.type == RszFieldType.Object),
         };
     }
@@ -26,7 +24,7 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
         var idgen = Config.IDGeneratorRequired;
         if (Config.SubIDGenerator != null) {
             var list = new RSZObjectListResource(Config, Files[0]);
-            workspace.Diff.ApplyDiff(list.Instances, initialData, classname ?? Config.Type);
+            workspace.Diff.ApplyDiff(list.Instances, initialData, Config.RszClassRequired.name);
             foreach (var inst in list.Instances) {
                 if (idgen.Fields?.Length == 1) {
                     var idField = idgen.Fields[0].Field;
@@ -45,7 +43,7 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
             }
             return list;
         } else {
-            var inst = RszInstance.CreateInstance(workspace.Env.RszParser, workspace.Env.RszParser.GetRSZClass(classname ?? Config.Type)!);
+            var inst = RszInstance.CreateInstance(workspace.Env.RszParser, Config.RszClassRequired);
             workspace.Diff.ApplyDiff(inst, initialData);
             if (idgen.Fields?.Length == 1) {
                 var idField = idgen.Fields[0].Field;

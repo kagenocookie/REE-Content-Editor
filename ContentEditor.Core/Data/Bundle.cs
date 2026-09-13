@@ -64,6 +64,16 @@ public class Bundle : BaseBundle
         }
     }
 
+    public Entity? GetEntity(string type, long id)
+    {
+        foreach (var entity in Entities) {
+            if (entity.Type == type && entity.Id == id) {
+                return entity;
+            }
+        }
+        return null;
+    }
+
     /// <summary>
     /// Update / replace an existing entity or add it to the list.
     /// </summary>

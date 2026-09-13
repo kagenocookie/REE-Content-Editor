@@ -1,5 +1,5 @@
 entities:
-  costume:
+  costumes.closet:
     to_string: "Costume {closet._CharacterID.Hash:enum(ce.CharacterDefine)} #{id}"
     fields:
       - name: closet

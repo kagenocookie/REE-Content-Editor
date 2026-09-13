@@ -4,7 +4,7 @@ using ReeLib;
 namespace ContentPatcher;
 
 [ResourceField("objectArray")]
-public class ObjectArray : EntityFieldValueHandler, IMainField, IDiffableField, IResourceValueContainer
+public class ObjectArray : EntityFieldValueHandler, IMainField, IDiffableField
 {
     private string? elementClassname;
     public override string ResourceType => Field.Config.Type;
@@ -39,15 +39,5 @@ public class ObjectArray : EntityFieldValueHandler, IMainField, IDiffableField, 
             return list;
         }
         return null;
-    }
-
-    public NestableFieldAccessor? GetAccessor(ContentWorkspace workspace, string path)
-    {
-        var clsAcc = NestableFieldAccessor.CreateForClass(workspace.Env.RszParser, Field.Config.RszClass, path);
-        return new NestableFieldAccessor.Custom<RSZObjectListResource>(clsAcc.Field, l => clsAcc.Get(l.Instances[0])!, (l, v) => {
-            foreach (var inst in l.Instances) {
-                clsAcc.Set(inst, v!);
-            }
-        });
     }
 }

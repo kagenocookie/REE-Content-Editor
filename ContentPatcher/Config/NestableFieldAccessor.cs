@@ -48,7 +48,7 @@ public abstract class NestableFieldAccessor
         public override void Set(object instance, object? value) => setter((T)instance, value);
     }
 
-    public class EntitySimpleField(string entityField, NestableFieldAccessor accessor) : NestableFieldAccessor
+    public class EntityAccessorField(string entityField, NestableFieldAccessor accessor) : NestableFieldAccessor
     {
         public override RszField Field => accessor.Field;
 
@@ -60,11 +60,7 @@ public abstract class NestableFieldAccessor
                 return null;
             }
 
-            if (field is IValueProvider rv) {
-                return accessor.Get(rv.MainValue);
-            } else {
-                return accessor.Get(field);
-            }
+            return accessor.Get(field);
         }
 
         public override void Set(object instance, object? value)
@@ -74,11 +70,7 @@ public abstract class NestableFieldAccessor
                 Logger.Error($"Could not set unknown field {entityField} for entity {instance}");
                 return;
             }
-            if (field is IValueProvider rv) {
-                accessor.Set(rv.MainValue, value!);
-            } else {
-                accessor.Set(field, value!);
-            }
+            accessor.Set(field, value!);
         }
     }
 
@@ -118,46 +110,12 @@ public abstract class NestableFieldAccessor
                     ?? throw new Exception("Unknown field inner class " + innerClass);
 
                 var accessor = new NestableFieldAccessor.NestedField(innerCls, path);
-                var entityField = dict.GetValueOrDefault("field") as string;
-                if (!string.IsNullOrEmpty(entityField)) {
-                    return new NestableFieldAccessor.EntitySimpleField(entityField, accessor);
-                }
-
                 return accessor;
-            } else if (dict.TryGetValue("field", out var fieldRaw) && fieldRaw is string field) {
-
             }
 
             throw new NotSupportedException("Unsupported field " + path + " with config " + JsonSerializer.Serialize(dict));
         }
 
         throw new NotSupportedException("Unsupported field ID type " + pathConfig.GetType().FullName + ": " + pathConfig);
-    }
-
-    public static NestableFieldAccessor CreateForEntity(ContentWorkspace workspace, EntityConfig entity, Dictionary<object, object> dict)
-     => CreateForEntity(workspace, entity, dict.ToDictionary(k => k.Key.ToString()!, k => k.Value));
-    public static NestableFieldAccessor CreateForEntity(ContentWorkspace workspace, EntityConfig entity, Dictionary<string, object> dict)
-    {
-        if (!dict.TryGetValue("field", out var fieldRaw) || fieldRaw is not string fieldName) {
-            throw new Exception("We need a field for this type of field path in entity " + entity);
-        }
-
-        var field = entity.GetField(fieldName);
-        if (field == null) {
-            throw new Exception($"Unknown field {fieldName} for entity {entity}");
-        }
-
-        if (dict.TryGetValue("path", out var pathRaw) && pathRaw is string path) {
-            if (field.ValueHandler is IResourceValueContainer rvc) {
-                var acc = rvc.GetAccessor(workspace, path);
-                if (acc != null) {
-                    return new NestableFieldAccessor.EntitySimpleField(field.name, acc);
-                }
-            }
-
-            throw new NotSupportedException("Unsupported field " + path + " with config " + JsonSerializer.Serialize(dict));
-        }
-
-        throw new NotSupportedException("Unsupported field accessor combination " + fieldName + " for entity " + entity);
     }
 }

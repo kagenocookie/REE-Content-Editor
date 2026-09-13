@@ -7,7 +7,7 @@ namespace ContentPatcher;
 [ResourcePatcher("group")]
 public class GroupResourceHandler : ResourceHandler, IResourceHandlerStatic
 {
-    public override EntityFieldValueHandler CreateValueHandler(EntityField field) => Config.Subtypes!.First().Value.Resource!.CreateValueHandler(field);
+    public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new GroupedField();
 
     public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
     {
@@ -64,7 +64,7 @@ public class GroupResourceHandler : ResourceHandler, IResourceHandlerStatic
     }
 }
 
-public class GroupedResource(ResourceConfig config, IEnumerable<string>? initialKeys = null) : IContentResource, IValueProvider
+public class GroupedResource(ResourceConfig config, IEnumerable<string>? initialKeys = null) : IContentResource, IPropertyContainer
 {
     public ResourceConfig ResourceType { get; } = config;
 
@@ -76,13 +76,6 @@ public class GroupedResource(ResourceConfig config, IEnumerable<string>? initial
 
     public IReadOnlyDictionary<string, IContentResource?> Resources => subresources;
 
-    public object MainValue {
-        get {
-            var sub = subresources.FirstOrDefault(kv => kv.Value != null).Value;
-            return (sub as IValueProvider)?.MainValue ?? sub ?? this;
-        }
-    }
-
     public void Set(string key, IContentResource? resource)
     {
         Debug.Assert(subresources.ContainsKey(key));
@@ -92,6 +85,25 @@ public class GroupedResource(ResourceConfig config, IEnumerable<string>? initial
     public IContentResource? Get(string key)
     {
         return subresources[key];
+    }
+
+    object? IPropertyContainer.Get(string path)
+    {
+        foreach (var (k, sub) in subresources) {
+            if (sub is IPropertyContainer pc) {
+                return pc.Get(path);
+            }
+        }
+        return null;
+    }
+
+    void IPropertyContainer.Set(string path, object? value)
+    {
+        foreach (var (k, sub) in subresources) {
+            if (sub is IPropertyContainer pc) {
+                pc.Set(path, value);
+            }
+        }
     }
 
     public IContentResource Clone()

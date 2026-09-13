@@ -6,10 +6,10 @@ using ReeLib.Pfb;
 
 namespace ContentPatcher;
 
-public class ResourcePathResource(ResourceConfig type, string path) : IAddressableContentResource, IResourceValueContainer
+public class ResourcePathResource(ResourceConfig type, string filepath) : IAddressableContentResource, IPropertyContainer
 {
     public ResourceConfig ResourceType { get; } = type;
-    public string FileResourcePath { get; set; } = path;
+    public string FileResourcePath { get; set; } = filepath;
 
     public RszInstance? CatalogEntry { get; set; }
     public string ResourcePath { get; set; } = "";
@@ -21,12 +21,19 @@ public class ResourcePathResource(ResourceConfig type, string path) : IAddressab
         CatalogEntry = CatalogEntry?.Clone(),
     };
 
-    public NestableFieldAccessor? GetAccessor(ContentWorkspace workspace, string path)
+    public object? Get(string path)
     {
         switch (path) {
-            case "path":
-                return new NestableFieldAccessor.Custom<ResourcePathResource>(RszFieldType.String, d => d.ResourcePath, (c, v) => c.ResourcePath = (string)v!);
-            default: return null;
+            case "path": return ResourcePath;
+            default: throw new Exception($"Invalid property {path} for resource prefab proxy {ResourceType}");
+        }
+    }
+
+    public void Set(string path, object? value)
+    {
+        switch (path) {
+            case "path": ResourcePath = value as string ?? ""; break;
+            default: throw new Exception($"Invalid property {path} for resource prefab proxy {ResourceType}");
         }
     }
 
@@ -37,18 +44,22 @@ public class ResourcePathResource(ResourceConfig type, string path) : IAddressab
 
 public class ResourcePathResourceValueHandler : EntityFieldValueHandler
 {
-    // public override string? ResourceType => throw new NotImplementedException();
-
     public override IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
     {
-        throw new NotImplementedException();
-    }
+        var newPath = data?.GetValueKind() == System.Text.Json.JsonValueKind.String ? data.GetValue<string>() : null;
+        if (string.IsNullOrEmpty(newPath)) {
+            if (currentResource != null) {
+                (currentResource as ResourcePathResource)?.ResourcePath = "";
+            }
+            return currentResource;
+        }
 
-    // public override IContentResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
-    // {
-    //     // Field.Config.Resource.
-    //     throw new NotImplementedException();
-    // }
+        if (currentResource is not ResourcePathResource res) {
+            currentResource = res = new ResourcePathResource(Field.Config, Field.Config.Resource.Files[0]);
+        }
+        res.ResourcePath = newPath.Replace('\\', '/');
+        return res;
+    }
 }
 
 [ResourcePatcher("resource_proxy_pfb")]
@@ -121,7 +132,11 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
         }
         var prefabPath = viaPrefab.Get(RszFieldCache.Prefab.Path);
         if (string.IsNullOrEmpty(prefabPath)) {
-            RszFieldCache.Prefab.Path.Set(viaPrefab, prefabPath = string.Concat(PathUtils.GetFilepathWithoutExtensionOrVersion(resource.FileResourcePath), ".pfb"));
+            RszFieldCache.Prefab.Path.Set(viaPrefab, prefabPath = string.Concat(
+                PathUtils.GetFilepathWithoutExtensionOrVersion(resource.FileResourcePath),
+                "_",
+                PathUtils.GetExtensionWithoutPeriod(resource.FileResourcePath),
+                ".pfb"));
             catFile.Modified = true;
         }
 
@@ -201,6 +216,10 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
     public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
     {
         var path = (initialData?.GetValueKind() == System.Text.Json.JsonValueKind.String ? initialData.GetValue<string>() : null) ?? "";
+        if (path == "null") {
+            return new ResourcePathResource(Config, Files[0]);
+        }
+
         if (catalogEntryClass == null) throw new Exception();
 
         var idgen = Config.IDGeneratorRequired;

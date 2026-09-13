@@ -28,6 +28,7 @@ public class PatchConfig(string filepath)
     public bool IsLoaded { get; private set; }
 
     public HierarchyTypeList<EntityConfig> EntityHierarchy { get; } = new("");
+    public BundleRuntimeMapping? RuntimeMapping { get; private set; }
 
     public ClassConfig? GetClassConfig(string classname) => classes.GetValueOrDefault(classname);
     public ClassFieldConfig? GetClassFieldConfig(string classname, string fieldName) => classes.GetValueOrDefault(classname)?.Fields?.GetValueOrDefault(fieldName);
@@ -165,6 +166,17 @@ public class PatchConfig(string filepath)
             var config = SetupEntityConfig(workspace, entity, name);
             var shortname = EntityHierarchy.Add(name, config, entity.DisplayName);
             entities.Add(shortname, config);
+
+            if (entity.RuntimeMapping != null) {
+                RuntimeMapping ??= new ();
+                RuntimeMapping.Add(
+                    shortname,
+                    entity.RuntimeMapping.runtimeType,
+                    entity.RuntimeMapping.ToRuntime,
+                    entity.RuntimeMapping.ToDesktop,
+                    entity.RuntimeMapping.ToBoth
+                );
+            }
         }
 
         foreach (var (cls, config) in newDict.Classes ?? []) {
@@ -321,7 +333,8 @@ public class PatchConfig(string filepath)
         }
         foreach (var field in config.Fields) {
             if (field.config.fieldId != null) {
-                field.IdField = NestableFieldAccessor.CreateForEntity(workspace, config, field.config.fieldId);
+                field.IdField = field.config.fieldId;
+                field.IdField.Workspace = workspace;
             }
         }
         config.PrimaryField = config.Fields.FirstOrDefault(f => f.name == entity.PrimaryField)!;
@@ -364,12 +377,9 @@ public class PatchConfig(string filepath)
         field.ValueHandler.Field = field;
         field.ValueHandler.LoadParams(data);
         if (data.condition != null) {
-            var conditionField = data.condition.field ?? field.name;
-            if (data.condition.property == "classname") {
-                field.Condition = new (conditionField, new WhenClassnameCondition(data.condition.property, data.condition.equals as string ?? ""));
-            } else {
-                field.Condition = new (conditionField, new WhenFieldValueCondition(data.condition.property, data.condition.equals));
-            }
+            field.Condition = EntityPropertyValueEquals.Create(data.condition, field.name);
+        } else if (data.multiConditionsAny?.Length > 0) {
+            field.Condition = EntityPropertyMultiCondition.Create(data.multiConditionsAny, field.name);
         }
         field.IsRequired = data.isRequired;
         field.IsNotStandaloneValue = data.isNotStandalone;

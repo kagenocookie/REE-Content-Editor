@@ -71,7 +71,7 @@ public static partial class Lang
         public static readonly FixedString Image = "Image";
         public static readonly FixedString Preview = "Preview";
         public static readonly FixedString EntityType = "Type";
-        public static readonly FixedString LegacyEntities = "Legacy entities";
+        public static readonly FixedString LegacyEntities = "Runtime entities";
         public static readonly FixedString Entities = "Entities";
         public static readonly FixedString Files = "Files";
         public static readonly FixedString UnknownLegacyEntityType = "Unknown legacy entity type";

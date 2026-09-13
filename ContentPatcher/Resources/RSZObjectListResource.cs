@@ -3,7 +3,7 @@ using ReeLib;
 
 namespace ContentPatcher;
 
-public class RSZObjectListResource : IContentResource, IResourceValueContainer
+public class RSZObjectListResource : IContentResource, IPropertyContainer
 {
     private string file;
     public ResourceConfig ResourceType { get; }
@@ -29,19 +29,15 @@ public class RSZObjectListResource : IContentResource, IResourceValueContainer
 
     public JsonNode ToJson(Workspace env) => new JsonArray(Instances.Select(i => i.ToJson(env)).ToArray());
 
-
-    public NestableFieldAccessor? GetAccessor(ContentWorkspace workspace, string path)
+    public object? Get(string path)
     {
-        if (int.TryParse(path, out var index)) {
-            return new NestableFieldAccessor.Custom<RSZObjectListResource>(RszFieldType.Object, l => l.Instances[index]!, (l, v) => {
-                l.Instances[index] = (RszInstance)v!;
-            });
+        return Instances.FirstOrDefault()?.GetNestedFieldValue(path);
+    }
+
+    public void Set(string path, object? value)
+    {
+        foreach (var inst in Instances) {
+            inst.SetNestedFieldValue(path, value ?? RszInstance.NULL);
         }
-        var clsAcc = NestableFieldAccessor.CreateForClass(workspace.Env.RszParser, ResourceType.RszClass, path);
-        return new NestableFieldAccessor.Custom<RSZObjectListResource>(clsAcc.Field, l => clsAcc.Get(l.Instances[0])!, (l, v) => {
-            foreach (var inst in l.Instances) {
-                clsAcc.Set(inst, v!);
-            }
-        });
     }
 }

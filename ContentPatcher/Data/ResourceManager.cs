@@ -359,12 +359,15 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
 
             if (fieldResource.FileResourcePath == null) {
                 // ignore - there's no file here
-            } else if (openFiles.TryGetValue(fieldResource.FileResourcePath, out var file)) {
-                file.Modified = true;
             } else {
-                throw new Exception("New resource file should've been opened, wtf?");
+                var filepath = PreprocessTargetFilepath(fieldResource.FileResourcePath);
+                if (filepath != null && openFiles.TryGetValue(filepath, out var file)) {
+                    file.Modified = true;
+                } else {
+                    throw new Exception("New resource's file should've been opened, wtf?");
+                }
             }
-            AddResource(fieldResource.ResourceType.Type, resourceId, fieldResource, state);
+            AddResource(resourceConfig.Type, resourceId, fieldResource, state);
         } else {
             if (resourceId == -1) resourceId = EntityToFieldResourceId(field, entity);
             fieldResource = CreateResourceInternal(resourceId, resourceConfig, state, initialData);
@@ -389,14 +392,14 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         } else {
             throw new Exception("New resource file should've been opened, wtf?");
         }
-        AddResource(fieldResource.ResourceType.Type, resourceId, fieldResource, state);
+        AddResource(resource.Type, resourceId, fieldResource, state);
         return fieldResource;
     }
 
-    public T CreateEntityResource<T>(ResourceEntity entity, EntityField field, ResourceState state, string? resourceType = null) where T : IContentResource
-        => (T)CreateEntityResource(entity, field, state, resourceType);
+    public T CreateEntityResource<T>(ResourceEntity entity, EntityField field, ResourceState state, string? resourceType = null, JsonNode? initialData = null) where T : IContentResource
+        => (T)CreateEntityResource(entity, field, state, resourceType, initialData);
 
-    public IContentResource CreateEntityResource(ResourceEntity entity, EntityField field, ResourceState state, string? resourceType = null)
+    public IContentResource CreateEntityResource(ResourceEntity entity, EntityField field, ResourceState state, string? resourceType = null, JsonNode? initialData = null)
     {
         var key = resourceType ?? field.ResourceType;
         if (key == null) {
@@ -410,7 +413,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             }
 
             if (data.config.Resource != null) {
-                return CreateEntityFieldInternal(entity, field, state, data.config, null)
+                return CreateEntityFieldInternal(entity, field, state, data.config, initialData)
                     ?? throw new Exception($"Failed to create entity {entity} field {field} resource");
             }
 
@@ -630,7 +633,14 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
     /// </summary>
     private void LoadSingleEntityResources(ResourceEntity entity, ResourceState state)
     {
+        var idField = entity.Config.IDField;
+        if (entity.Get(idField.name) == null) {
+            entity.FieldValues[idField.name] = idField.ValueHandler.FetchResource(workspace, entity, -1, state);
+        }
         foreach (var field in entity.Config.Fields) {
+            if (field == idField) {
+                continue;
+            }
             if (field.Condition?.IsEnabled(entity) == false) {
                 continue;
             }

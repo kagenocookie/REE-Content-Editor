@@ -184,12 +184,7 @@ public class EntityStringFormatterSource(EntityConfig config) : ISource
 
         var target = config.GetField(selectorInfo.SelectorText);
         if (target != null) {
-            var fieldValue = entity.Get(selectorInfo.SelectorText);
-            if (fieldValue is IValueProvider fv) {
-                selectorInfo.Result = fv.MainValue;
-            } else {
-                selectorInfo.Result = fieldValue;
-            }
+            selectorInfo.Result = entity.Get(selectorInfo.SelectorText);
             return true;
         }
 
@@ -216,12 +211,9 @@ public class ResourceStringFormatter(ContentWorkspace workspace) : ISource
             return true;
         }
 
-        if (resource is IResourceValueContainer values) {
-            var acc = values.GetAccessor(workspace, selectorInfo.SelectorText);
-            if (acc != null) {
-                selectorInfo.Result = acc.Get(resource);
-                return true;
-            }
+        if (resource is IPropertyContainer props) {
+            selectorInfo.Result = props.Get(selectorInfo.SelectorText);
+            return selectorInfo.Result != null;
         }
 
         if (selectorInfo.SelectorOperator.Contains('?')) return false;

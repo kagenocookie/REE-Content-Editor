@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace ContentPatcher;
 
 [ResourceField("object")]
-public class ObjectField : EntityFieldValueHandler, IMainField, IDiffableField, IResourceValueContainer
+public class ObjectField : EntityFieldValueHandler, IMainField, IDiffableField
 {
     public bool? forceNested;
     bool IDiffableField.EnableDiff => true;
@@ -15,9 +15,6 @@ public class ObjectField : EntityFieldValueHandler, IMainField, IDiffableField, 
         }
     }
 
-    public NestableFieldAccessor? GetAccessor(ContentWorkspace workspace, string path)
-        => NestableFieldAccessor.CreateForClass(workspace.Env.RszParser, Field.Config.RszClass, path);
-
     public override IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
     {
         if (data == null) {
@@ -25,8 +22,7 @@ public class ObjectField : EntityFieldValueHandler, IMainField, IDiffableField, 
             return null;
         }
         if (currentResource == null) {
-            var resourceKey = data["$type"]?.GetValue<string>() ?? Field.Config.RszClassRequired.name;
-            var inst = workspace.ResourceManager.CreateEntityResource<RSZObjectResource>(entity, Field, state);
+            var inst = workspace.ResourceManager.CreateEntityResource<RSZObjectResource>(entity, Field, state, initialData: data);
             workspace.Diff.ApplyDiff(inst.Instance, data);
             return inst;
         }

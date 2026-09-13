@@ -54,6 +54,37 @@
             "items": {
               "$ref": "#/definitions/entityField"
             }
+          },
+          "runtime_mapping": {
+            "description": "Data mapping definitions for conversion from/to runtime bundle data structures.",
+            "type": "object",
+            "properties": {
+              "runtime_type": {
+                "type": "string"
+              },
+              "to_runtime": {
+                "type": "object",
+                "description": "Mapping of full JSON path strings where key = desktop bundle path, value = runtime bundle path.",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "to_desktop": {
+                "type": "object",
+                "description": "Mapping of full JSON path strings where key = runtime bundle path, value = desktop bundle path.",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "to_both": {
+                "type": "object",
+                "description": "Mapping of full JSON path strings where key = desktop bundle path, value = runtime bundle path.",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": ["runtime_type"]
           }
         },
         "required": ["fields"],
@@ -211,6 +242,13 @@
         "when": {
           "description": "Custom condition to determine whether this field should be used.",
           "$ref": "#/definitions/entityCondition"
+        },
+        "when_any": {
+          "description": "Multiple custom conditions to determine whether this field should be used - field shows if any of them match.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/entityCondition"
+          }
         },
         "resource": {
           "description": "Inline resource configuration for this field. Supports file paths, ID fields, and nested resource references.",

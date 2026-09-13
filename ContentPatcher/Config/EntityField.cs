@@ -23,7 +23,7 @@ public sealed class EntityField
     /// <summary>
     /// Condition for when the field is valid and displayed.
     /// </summary>
-    public EntityFieldCondition? Condition { get; set; }
+    public IEntityCondition? Condition { get; set; }
 
     /// <summary>
     /// Denotes that the field must have a value for a valid entity. The resource will be automatically created during new entity creation.
@@ -36,7 +36,7 @@ public sealed class EntityField
     /// </summary>
     public bool IsNotStandaloneValue { get; set; }
 
-    public NestableFieldAccessor? IdField { get; set; }
+    public EntityProperty? IdField { get; set; }
 
     public override string ToString() => $"{name} [{ResourceType}]";
 }

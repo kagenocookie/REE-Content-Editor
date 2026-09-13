@@ -23,13 +23,8 @@ public interface IAddressableContentResource : IContentResource
     public long ID { get; }
 }
 
-public interface IValueProvider : IContentResource
+public interface IPropertyContainer
 {
-    public object MainValue { get; }
-}
-
-public interface IResourceValueContainer
-{
-    // note: using accessors instead of plain get so we're also able to "set" through it
-    public NestableFieldAccessor? GetAccessor(ContentWorkspace workspace, string path);
+    public object? Get(string path);
+    public void Set(string path, object? value);
 }
