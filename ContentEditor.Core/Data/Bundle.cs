@@ -245,7 +245,7 @@ public class Bundle : BaseBundle
     {
         Touch();
         var outfilepath = Path.Combine(StoragePath, "bundle.json");
-        if (!Directory.Exists(outfilepath)) {
+        if (!Directory.Exists(StoragePath)) {
             if (RuntimeBundle != null && File.Exists(RuntimeBundle.StoragePath)) {
                 Logger.Info($"Creating main desktop bundle counterpart for runtime-only bundle {Name}");
             }
