@@ -42,6 +42,7 @@ public class FileConverter : BaseWindowHandler
 
     private bool allConverterSettingsReady = false;
     private bool sourceChanged = true;
+    private bool ConvertInPlace => string.IsNullOrEmpty(destinationFolder);
     public override void OnIMGUI()
     {
         sourceChanged |= AppImguiHelpers.InputFolder("Source Folder"u8, ref sourceFolder);
@@ -61,7 +62,7 @@ public class FileConverter : BaseWindowHandler
             sourceChanged = true;
         }
         mode = (ConversionMode)mode_n;
-        if (sourceFolder == destinationFolder) {
+        if (!ConvertInPlace && sourceFolder == destinationFolder) {
             ImGui.TextColored(Colors.Warning, "The source and target folders should not be the same."u8);
             return;
         }
@@ -129,6 +130,9 @@ public class FileConverter : BaseWindowHandler
             if (!allConverterSettingsReady) {
                 ImGui.SameLine();
                 ImGui.TextColored(Colors.Faded, "Ensure all the file format conversion settings are either fully configured or disabled");
+            } else if (ConvertInPlace) {
+                ImGui.SameLine();
+                ImGui.TextColored(Colors.Note, "Conversion will be done in place. Original file will be backed up to " + Path.Combine(sourceFolder, ".backup"));
             }
         }
         var avail = ImGui.GetContentRegionAvail();
@@ -247,8 +251,8 @@ public class FileConverter : BaseWindowHandler
         if (upgradeableFileList.Count == 0) {
             return;
         }
-        if (!Directory.Exists(destinationFolder)) {
-            if (string.IsNullOrEmpty(destinationFolder) || !Path.IsPathFullyQualified(destinationFolder)) {
+        if (!string.IsNullOrEmpty(destinationFolder) && !Directory.Exists(destinationFolder)) {
+            if (!Path.IsPathFullyQualified(destinationFolder)) {
                 return;
             }
             if (ImGui.Button("Create destination folder"u8)) {
@@ -269,7 +273,7 @@ public class FileConverter : BaseWindowHandler
         foreach (var relativePath in upgradeableFileList) {
             try {
                 var sourcePath = Path.Combine(sourceFolder, relativePath);
-                var destinationPath = Path.Combine(destinationFolder, relativePath);
+                var destinationPath = string.IsNullOrEmpty(destinationFolder) ? sourcePath : Path.Combine(destinationFolder, relativePath);
                 Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
                 if (!relativePath.StartsWith("natives")) {
                     continue;
@@ -314,6 +318,9 @@ public class FileConverter : BaseWindowHandler
     private void AttemptConvert()
     {
         using var context = PrepareWorkspace();
+        if (ConvertInPlace) {
+            Logger.Info("Original files will be backed up to " + Path.Combine(sourceFolder, ".backup"));
+        }
 
         foreach (var relativePath in upgradeableFileList) {
             try {
@@ -323,7 +330,8 @@ public class FileConverter : BaseWindowHandler
                 }
 
                 var sourcePath = Path.Combine(sourceFolder, relativePath);
-                var destinationPath = Path.Combine(destinationFolder, relativePath);
+                var destinationPath = ConvertInPlace ? sourcePath : Path.Combine(destinationFolder, relativePath);
+                var backupPath = ConvertInPlace ? Path.Combine(sourceFolder, ".backup", relativePath) : null;
                 Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
                 string? nativePath = null;
                 if (relativePath.StartsWith("natives")) {
@@ -335,10 +343,17 @@ public class FileConverter : BaseWindowHandler
                     Logger.Warn($"Could not load source file: {sourcePath} (native: {nativePath ?? "unknown"})");
                     continue;
                 }
+                if (backupPath != null) {
+                    Directory.CreateDirectory(Path.GetDirectoryName(backupPath)!);
+                    File.Copy(sourcePath, backupPath);
+                }
 
                 if (!converter.Upgrade(sourceFile, destinationPath, context)) {
                     Logger.Warn($"Failed to upgrade file: {sourcePath} (native: {nativePath ?? "unknown"})");
                     continue;
+                }
+                if (backupPath != null) {
+                    File.Delete(sourcePath);
                 }
             } catch (Exception e) {
                 Logger.Error($"Failed to handle upgrade for file {relativePath}: {e.Message}");
