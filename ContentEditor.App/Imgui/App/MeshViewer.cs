@@ -1,5 +1,3 @@
-using System.Numerics;
-using System.Text.Json;
 using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.ImguiHandling;
@@ -13,6 +11,8 @@ using ReeLib;
 using ReeLib.Common;
 using ReeLib.Mesh;
 using ReeLib.via;
+using System.Numerics;
+using System.Text.Json;
 
 namespace ContentEditor.App;
 
@@ -30,8 +30,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     public Scene? Scene => scene;
 
     private const float TopMargin = 64;
-
-
     public Animator? PrimaryAnimator => meshContexts.FirstOrDefault()?.Animator;
     public IEnumerable<Animator> Animators => meshContexts.Select(m => m.Animator!).Where(a => a != null);
     private float playbackSpeed = 1.0f;
@@ -59,6 +57,8 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     private const float pitchLimit = MathF.PI / 2 - 0.01f;
 
     private bool showAnimationsMenu = false;
+    private bool showMeshEditorSettings = false;
+    private bool useHighResTextures = true;
     private bool isSynced;
 
     private bool exportAnimations = true;
@@ -82,7 +82,19 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
     private MeshViewerContext? _animationListContext;
     private readonly MeshEditor meshEditor;
     internal MeshEditor MeshEditor => meshEditor;
-
+    private enum OutlinerTab
+    {
+        Objects,
+        Animations,
+    }
+    private OutlinerTab outlinerTab = OutlinerTab.Objects;
+    private float outlinerWidth;
+    internal bool outlinerWidthInitialized;
+    internal bool outlinerWidthUserResized;
+    private bool isOutlinerCollapsed;
+    private bool isOutlinerOnLeft = AppConfig.Instance.ShowMeshViewerOutlinerOnLeftSide.Get();
+    private bool showOutlinerMeshCollectionOptions = false;
+    private bool? pendingGroupStateRequest;
     protected override void Reset()
     {
         base.Reset();
@@ -196,43 +208,63 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
 
         Vector2? embeddedMenuPos = null;
-        if (!ShowMenu(mainCtx) && !isSynced) {
+        if (!ShowMainMenu(mainCtx) && !isSynced) {
             embeddedMenuPos = ImGui.GetCursorPos();
         }
         var availableSize = ImGui.GetWindowSize() - ImGui.GetCursorPos() - ImGui.GetStyle().WindowPadding;
-        var editorPanelWidth = meshEditor.HasSidePanel ? meshEditor.GetPanelWidth(availableSize.X) : 0;
+        var editorPanelWidth = GetOutlinerPanelWidth(availableSize.X);
         var expectedSize = availableSize;
-        if (meshEditor.HasSidePanel) expectedSize.X -= editorPanelWidth + MeshEditor.SplitterWidth;
+        expectedSize.X -= editorPanelWidth + MeshEditor.SplitterWidth;
         expectedSize.X = Math.Max(expectedSize.X, 4);
         expectedSize.Y = Math.Max(expectedSize.Y, 4);
-        var nativeSize = data.ParentWindow.Size;
-        float meshSize = meshComponent.LocalBounds.Size.Length();
-        scene.ActiveCamera.FarPlane = meshSize + 100.0f;
+        float meshViewerSize = meshComponent.LocalBounds.Size.Length();
+        scene.ActiveCamera.FarPlane = meshViewerSize + 100.0f;
         scene.RenderContext.SetRenderToTexture(expectedSize);
 
         if (scene.RenderContext.RenderTargetTextureHandle == 0) return;
 
         var c = ImGui.GetCursorPos();
-        var editorSplitterPosition = c + new Vector2(expectedSize.X, 0);
-        var editorPanelPosition = editorSplitterPosition + new Vector2(MeshEditor.SplitterWidth, 0);
+
+        Vector2 editorPanelPosition;
+        Vector2 editorSplitterPosition;
+        Vector2 sceneImagePosition;
+        if (isOutlinerOnLeft) {
+            editorPanelPosition = c;
+            editorSplitterPosition = editorPanelPosition + new Vector2(editorPanelWidth, 0);
+            sceneImagePosition = editorSplitterPosition + new Vector2(MeshEditor.SplitterWidth, 0);
+        } else {
+            sceneImagePosition = c;
+            editorSplitterPosition = c + new Vector2(expectedSize.X, 0);
+            editorPanelPosition = editorSplitterPosition + new Vector2(MeshEditor.SplitterWidth, 0);
+        }
+        if (embeddedMenuPos != null) embeddedMenuPos = sceneImagePosition;
+
+        ImGui.SetCursorPos(sceneImagePosition);
         var cc = ImGui.GetCursorScreenPos();
         scene.OwnRenderContext.ViewportOffset = cc;
         AppImguiHelpers.Image(scene.RenderContext.RenderTargetTextureHandle, expectedSize, new System.Numerics.Vector2(0, 1), new System.Numerics.Vector2(1, 0));
         if (embeddedMenuPos != null) {
             ImGui.SetCursorPos(embeddedMenuPos.Value);
-            ShowEmbeddedMenu(meshComponent);
+            ShowEmbeddedMenuForRetargetDesigner(meshComponent);
         }
         scene.RenderUI();
-        ImGui.SetCursorPos(c);
+        ImGui.SetCursorPos(sceneImagePosition);
         ImGui.SetNextItemAllowOverlap();
-        ImGui.InvisibleButton("##image", expectedSize, ImGuiButtonFlags.MouseButtonLeft | ImGuiButtonFlags.MouseButtonRight | ImGuiButtonFlags.MouseButtonMiddle);
+        ImGui.InvisibleButton("##MasterScene", expectedSize, ImGuiButtonFlags.MouseButtonLeft | ImGuiButtonFlags.MouseButtonRight | ImGuiButtonFlags.MouseButtonMiddle);
         // need to store the click/hover events for after so we can handle clicks on the empty area below the info window same as a mesh image click event
         var meshClick = ImGui.IsItemClicked(ImGuiMouseButton.Right) || ImGui.IsItemClicked(ImGuiMouseButton.Left) || ImGui.IsItemClicked(ImGuiMouseButton.Middle);
         var hoveredMesh = ImGui.IsItemHovered();
 
+        var overlayLeftOffset = isOutlinerOnLeft ? editorPanelWidth + MeshEditor.SplitterWidth + 10.0f * UI.UIScale : 0.0f;
+        var overlayRightPanelWidth = !isOutlinerOnLeft ? outlinerWidth : 0.0f;
         if (meshEditor.IsEnabled) {
-            ImGui.SetCursorPos(c + new Vector2(10.0f * UI.UIScale));
-            if (meshEditor.ShowViewportModeControls(cc, expectedSize)) {
+            var modeControlsHovered = ShowMeshEditorModesOverlay(overlayLeftOffset);
+            var modeControlsHeight = ImGui.GetItemRectSize().Y;
+
+            ImGui.SetCursorPos(sceneImagePosition + new Vector2(10.0f * UI.UIScale, 10.0f * UI.UIScale + modeControlsHeight + ImGui.GetStyle().ItemSpacing.Y));
+            var viewportControlsHovered = meshEditor.ShowViewportModeControls(cc, expectedSize);
+
+            if (modeControlsHovered || viewportControlsHovered) {
                 hoveredMesh = false;
                 meshClick = false;
             }
@@ -242,32 +274,16 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             isSynced = false;
         }
 
-        if (showAnimationsMenu) {
-            ImGui.SetCursorPos(new Vector2(20, TopMargin));
-            ImGui.PushStyleColor(ImGuiCol.ChildBg, 0);
-            ImGui.BeginChild("OverlayControlsContainer", new Vector2(500, ImGui.GetContentRegionAvail().Y - ImGui.GetStyle().WindowPadding.Y), ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AlwaysAutoResize, ImGuiWindowFlags.NoMove);
-            ImGui.PushStyleColor(ImGuiCol.ChildBg, ImguiHelpers.GetColor(ImGuiCol.WindowBg) with { W = 0.5f });
-            ImGui.BeginChild("OverlayControls", new Vector2(500, AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().Y - 80 : 0), ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders);
-
-            ImGui.SameLine();
-            ShowRootAnimationList();
-
-            ImGui.PopStyleColor(2);
-            ImGui.EndChild();
-            hoveredMesh = hoveredMesh || ImGui.IsWindowHovered();
-            ImGui.EndChild();
+        if (outlinerTab == OutlinerTab.Animations) {
+            if (!isSynced) ShowPlaybackControls(meshComponent, overlayLeftOffset, overlayRightPanelWidth);
         }
 
         // 3D view controls
         meshClick = meshClick || ImGui.IsItemClicked(ImGuiMouseButton.Right) || ImGui.IsItemClicked(ImGuiMouseButton.Left) || ImGui.IsItemClicked(ImGuiMouseButton.Middle);
-        if (!isSynced) ShowPlaybackControls(meshComponent);
-
-        if (meshEditor.HasSidePanel) {
-            ImGui.SetCursorPos(editorSplitterPosition);
-            meshEditor.ShowSplitter(expectedSize.Y, availableSize.X);
-            ImGui.SetCursorPos(editorPanelPosition);
-            meshEditor.ShowPanel(new Vector2(editorPanelWidth, expectedSize.Y));
-        }
+        ImGui.SetCursorPos(editorSplitterPosition);
+        ShowOutlinerSplitter(expectedSize.Y, availableSize.X);
+        ImGui.SetCursorPos(editorPanelPosition);
+        ShowOutliner(new Vector2(editorPanelWidth, expectedSize.Y));
 
         if (meshClick) {
             if (!isDragging) {
@@ -281,54 +297,31 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             AppImguiHelpers.RedirectMouseInputToScene(scene, hoveredMesh);
         }
     }
-
-    private void ShowEmbeddedMenu(MeshComponent meshComponent)
-    {
-        ImGui.SetCursorPos(ImGui.GetCursorPos() + new Vector2(6, 6));
-        if (ImGui.Button($"{AppIcons.SI_GenericCamera}")) ImGui.OpenPopup("CameraSettings");
-        if (ImGui.BeginPopup("CameraSettings")) {
-            scene!.Controller.ShowCameraControls();
-            SaveCameraControlSettings();
-            ImGui.EndPopup();
-        }
-    }
-
-    private void SaveCameraControlSettings()
-    {
-        if (scene == null) return;
-        var changed = false;
-        if (Math.Abs(scene.Controller.MoveSpeed - AppConfig.Settings.MeshViewer.MoveSpeed) > 0.001f) {
-            AppConfig.Settings.MeshViewer.MoveSpeed = scene.Controller.MoveSpeed;
-            changed = true;
-        }
-        if (changed) AppConfig.Settings.Save();
-    }
-
-    private static void SaveMeshViewerCameraMode(SceneCameraMode mode)
-    {
-        if (AppConfig.Settings.MeshViewer.CameraMode == mode) return;
-        AppConfig.Settings.MeshViewer.CameraMode = mode;
-        AppConfig.Settings.Save();
-    }
-
-    private bool ShowMenu(MeshViewerContext mainCtx)
+    private bool ShowMainMenu(MeshViewerContext mainCtx)
     {
         if (ImGui.BeginMenuBar()) {
-            meshEditor.ShowButton(mainCtx);
+            meshEditor.ShowMeshEditorButton(mainCtx);
             ImguiHelpers.VerticalSeparator();
-            if (ImGui.MenuItem($"{AppIcons.SI_GenericCamera} Controls")) ImGui.OpenPopup("CameraSettings");
+            if (ImGui.MenuItem(Lang.MeshViewer.Menu_Camera)) ImGui.OpenPopup("CameraSettings");
             if (scene != null && ImGui.BeginPopup("CameraSettings")) {
                 scene.Controller.ShowCameraControls();
                 SaveCameraControlSettings();
                 ImGui.EndPopup();
             }
-
+            ImGui.Text(Lang.MeshViewer.Menu_Rendering.String + GetDisplayModeName(meshEditor.DisplayMode));
+            ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, ImGui.GetStyle().FramePadding.Y));
+            ImGui.PushItemFlag(ImGuiItemFlags.AutoClosePopups, false);
+            if (ImGui.BeginMenu($"{AppIcons.SI_Small_ArrowDown}")) {
+                ShowRenderingMenu(mainCtx);
+                ImGui.PopStyleVar();
+                ImGui.EndMenu();
+            } else {
+                ImGui.PopStyleVar();
+            }
+            ImGui.PopItemFlag();
             if (!isSynced && mainCtx.GameObject != null) {
-                if (ImGui.MenuItem($"{AppIcons.SI_GenericInfo} Mesh Info")) ImGui.OpenPopup("MeshInfo");
                 ImguiHelpers.VerticalSeparator();
-                if (ImGui.MenuItem($"{AppIcons.SI_SceneGameObject4} Mesh Collection")) ImGui.OpenPopup("MeshList");
-                if (ImGui.MenuItem($"{AppIcons.SI_MeshViewerMeshGroup} Mesh Groups")) ImGui.OpenPopup("MeshGroups");
-                if (ImGui.MenuItem($"{AppIcons.SI_FileType_MDF} Material")) ImGui.OpenPopup("Material");
+                if (ImGui.MenuItem(Lang.MeshViewer.Menu_Material)) ImGui.OpenPopup("Material");
                 var mdfErrors = mainCtx.GetMdfErrors();
                 if (!mdfErrors.IsEmpty) {
                     using var _ = ImguiHelpers.OverrideStyleCol(ImGuiCol.Text, Colors.Warning);
@@ -336,12 +329,12 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                     ImguiHelpers.Tooltip(mdfErrors);
                 }
                 ImguiHelpers.VerticalSeparator();
-                if (ImGui.BeginMenu($"{AppIcons.SI_FileType_RCOL} RCOL")) {
+                if (ImGui.BeginMenu(Lang.MeshViewer.Menu_RCOL)) {
                     var rcolEdit = Scene!.Root.SetEditMode(mainCtx.GameObject.GetOrAddComponent<RequestSetColliderComponent>());
                     rcolEdit?.DrawMainUI();
                     ImGui.EndMenu();
                 }
-                if (ImGui.BeginMenu($"{AppIcons.SI_MeshViewerChain} Chain")) {
+                if (ImGui.BeginMenu(Lang.MeshViewer.Menu_Chain)) {
                     mainCtx.GameObject.GetOrAddComponent<Chain>();
                     if (Workspace.Env.ComponentAvailable<CollisionShapePreset>()) {
                         mainCtx.GameObject.GetOrAddComponent<CollisionShapePreset>();
@@ -355,31 +348,10 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 //     Scene!.Root.SetEditMode(mainCtx.GameObject.GetOrAddComponent<GpuCloth>())?.DrawMainUI();
                 //     ImGui.EndMenu();
                 // }
-                if (ImGui.MenuItem(Lang.MeshViewer.Title_Animations)) showAnimationsMenu = !showAnimationsMenu;
-                if (showAnimationsMenu) ImguiHelpers.HighlightMenuItem(Lang.MeshViewer.Title_Animations);
-                var animWarns = GetAnimErrors();
-                if (animWarns != null) {
-                    using var _ = ImguiHelpers.OverrideStyleCol(ImGuiCol.Text, Colors.Warning);
-                    ImGui.MenuItem($"{AppIcons.SI_GenericWarning}##anim");
-                    ImguiHelpers.Tooltip(animWarns);
-                }
                 ImguiHelpers.VerticalSeparator();
-                if (ImGui.MenuItem($"{AppIcons.SI_GenericIO} Import / Export")) ImGui.OpenPopup("Export");
-
-                if (ImGui.BeginPopup("MeshInfo")) {
-                    ShowMeshInfo(mainCtx, true);
-                    ImGui.EndPopup();
-                }
-                if (ImGui.BeginPopup("MeshList")) {
-                    ShowMeshCollections();
-                    ImGui.EndPopup();
-                }
+                if (ImGui.MenuItem(Lang.MeshViewer.Menu_IO)) ImGui.OpenPopup("Export");
                 if (ImGui.BeginPopup("Material")) {
                     mainCtx.ShowMaterialSettings();
-                    ImGui.EndPopup();
-                }
-                if (ImGui.BeginPopup("MeshGroups")) {
-                    ShowMeshGroupSettings(mainCtx.Component);
                     ImGui.EndPopup();
                 }
                 if (ImGui.BeginPopup("Export")) {
@@ -399,7 +371,414 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             return false;
         }
     }
+    private void ShowOutliner(Vector2 size)
+    {
+        if (isOutlinerCollapsed) {
+            ImGui.BeginChild("##OutlinerCollapsed", new Vector2(ImGui.GetFrameHeight() + ImGui.GetStyle().WindowPadding.X * 2.0f, size.Y), ImGuiChildFlags.Borders);
+            if (ImGui.ArrowButton("##ExpandOutliner", isOutlinerOnLeft ? ImGuiDir.Right : ImGuiDir.Left)) {
+                isOutlinerCollapsed = false;
+            }
+            ImguiHelpers.Tooltip(Lang.MeshViewer.Tooltip_OutlinerExpand);
+            ImGui.EndChild();
+            return;
+        }        
+        ImGui.BeginChild("##Outliner", size, ImGuiChildFlags.Borders | ImGuiChildFlags.AlwaysUseWindowPadding, ImGuiWindowFlags.NoScrollbar);
+        if (ImGui.ArrowButton("##CollapseOutliner", isOutlinerOnLeft ? ImGuiDir.Left : ImGuiDir.Right)) {
+            isOutlinerCollapsed = true;
+        }
+        ImguiHelpers.Tooltip(Lang.MeshViewer.Tooltip_OutlinerCollapse);
+       
+        ImGui.SameLine();
+        if (ImGui.BeginTabBar("##OutlinerTabBar")) {
+            if (ImGui.BeginTabItem(Lang.MeshViewer.Tab_OutlinerModels)) {
+                ImGui.Spacing();
+                outlinerTab = OutlinerTab.Objects;
+                ImGui.EndTabItem();
+            }
+            if (ImGui.BeginTabItem(Lang.MeshViewer.Tab_OutlinerAnimations)) {
+                ImGui.Spacing();
+                outlinerTab = OutlinerTab.Animations;
+                ImGui.EndTabItem();
+            }
+            ImGui.EndTabBar();
+        }
+        ImGui.BeginChild("##OutlinerTabList", new Vector2(size.X - ImGui.GetStyle().ScrollbarSize, 0));
+        switch (outlinerTab) {
+            case OutlinerTab.Objects: ShowOutlinerTabObjects(); break;
+            case OutlinerTab.Animations: ShowOutlinerTabAnimations(); break;
+        }
+        ImGui.EndChild();
+        ImGui.EndChild();
+        
+    }
+    private void ShowOutlinerSplitter(float height, float availableWidth)
+    {
+        ImGui.InvisibleButton("##MeshEditorSplitter", new Vector2(MeshEditor.SplitterWidth, height));
+        var active = ImGui.IsItemActive();
+        var hovered = ImGui.IsItemHovered();
+        if (active) {
+            var maxWidth = Math.Max(availableWidth * 0.75f, 4.0f);
+            var minWidth = Math.Min(Math.Max(180.0f * UI.UIScale, ImGui.GetFontSize() * 7.0f), maxWidth);
+            var dragSign = isOutlinerOnLeft ? 1.0f : -1.0f;
+            outlinerWidth = Math.Clamp(outlinerWidth + dragSign * ImGui.GetIO().MouseDelta.X, minWidth, maxWidth);
+            outlinerWidthUserResized = true;
+        }
+        if (hovered || active) ImGui.SetMouseCursor(ImGuiMouseCursor.ResizeEw);
 
+        var drawList = ImGui.GetWindowDrawList();
+        var min = ImGui.GetItemRectMin();
+        var x = min.X + MeshEditor.SplitterWidth * 0.5f;
+        var color = ImGui.GetColorU32(active ? ImGuiCol.SeparatorActive : hovered ? ImGuiCol.SeparatorHovered : ImGuiCol.Separator);
+        drawList.AddLine(new Vector2(x, min.Y), new Vector2(x, min.Y + height), color, 2.0f);
+    }
+    private void ShowOutlinerTabObjects()
+    {
+        var contexts = MeshContexts;
+        var isHighlightEnabled = AppConfig.Instance.UseMeshViewerOutlinerHighlight.Get();
+        var previousHover = meshEditor.hoveredInOutliner;
+        meshEditor.hoveredInOutliner = MeshEditor.OutlinerHoverState.None;
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_MeshEditorOutlinerGroups, [Colors.IconSecondary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary], "##0")) {
+            pendingGroupStateRequest = false;
+        }
+        ImguiHelpers.Tooltip(Lang.MeshViewer.Tooltip_OutlinerGroupCollapse);
+        ImGui.SameLine();
+        if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_MeshEditorOutlinerGroups, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary], "##1")) {
+            pendingGroupStateRequest = true;
+        }
+        ImguiHelpers.Tooltip(Lang.MeshViewer.Tooltip_OutlinerGroupExpand);
+        ImGui.SameLine();
+        if (ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_MeshEditorOutlinerHighlight, ref isHighlightEnabled, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary], Colors.IconActive)) {
+            AppConfig.Instance.UseMeshViewerOutlinerHighlight.Set(isHighlightEnabled);
+        }
+        ImguiHelpers.Tooltip(Lang.MeshViewer.Tooltip_OutlinerHoverHighlight);
+        ImguiHelpers.InlineVerticalSeparator();
+        ImguiHelpers.ToggleButton(Lang.MeshViewer.Button_OutlinerMeshCollection.String, ref showOutlinerMeshCollectionOptions, Colors.IconActive);
+        ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_GenericInfo}")) ImGui.OpenPopup("MeshInfo");
+        ImguiHelpers.Tooltip(Lang.MeshViewer.Tooltip_OutlinerMeshInfo);
+        if (ImGui.BeginPopup("MeshInfo")) {
+            ShowMeshInfo(meshContexts.FirstOrDefault()!, true);
+            ImGui.EndPopup();
+        }
+        if (showOutlinerMeshCollectionOptions) {
+            ImGui.Separator();
+            ImGui.Spacing();
+            ShowMeshCollections();
+            ImGui.Spacing();
+            ImGui.Separator();
+        }
+        ImGui.Spacing();
+        ImGui.BeginChild("##OutlinerObjectsTab");
+        var hasArmatures = contexts.Any(context => context.Mesh?.Bones?.Bones.Count > 0);
+        if (hasArmatures && meshEditor.IsEnabled) {
+            ImGui.SeparatorText(Lang.MeshViewer.Armature);
+            for (var contextIndex = 0; contextIndex < contexts.Count; contextIndex++) {
+                var context = contexts[contextIndex];
+                if (context.Mesh?.Bones?.Bones.Count is not > 0) continue;
+                var isArmatureVisible = !meshEditor.hiddenArmatures.Contains(context);
+                if (ShowVisibilityButton($"armature_visibility_{contextIndex}", isArmatureVisible)) {
+                    meshEditor.ToggleArmatureVisibility(context);
+                }
+                ImGui.SameLine();
+                var isSelectedArmature = meshEditor.selectedArmatures.Contains(context);
+                var label = contexts.Count > 1 ? $"{AppIcons.SI_FileType_FBXSKEL} {PathUtils.GetFilenameWithoutExtensionOrVersion(context.Handle.Filepath).ToString()} - {Lang.MeshViewer.Armature}" : $"{AppIcons.SI_FileType_FBXSKEL} {Lang.MeshViewer.Armature}";
+                var armatureTextColor = isSelectedArmature ? Colors.TextActive with { W = isArmatureVisible ? Colors.TextActive.W : Colors.TextActive.W * 0.45f } : ImguiHelpers.GetColor(ImGuiCol.Text) with { W = isArmatureVisible ? 1.0f : 0.45f };
+                ImGui.PushStyleColor(ImGuiCol.Text, armatureTextColor);
+                if (ImGui.Selectable($"{label}##armature_{contextIndex}", isSelectedArmature, ImGuiSelectableFlags.None, new Vector2(Math.Max(ImGui.CalcTextSize(label).X, ImGui.GetContentRegionAvail().X), 0)) && meshEditor.IsEnabled) {
+                    meshEditor.SelectArmature(context, ImGui.IsKeyDown(ImGuiKey.ModShift), ImGui.IsKeyDown(ImGuiKey.ModCtrl));
+                }
+                ImGui.PopStyleColor();
+            }
+            ImGui.Spacing();
+        }
+
+        ImGui.SeparatorText(Lang.MeshViewer.Separator_Objects);
+        var hasSubmeshes = false;
+        var outlinerBaseX = ImGui.GetCursorPosX();
+        var outlinerIndentStep = ImGui.GetStyle().IndentSpacing * 1.45f;
+        var toggleColumnW = Math.Max(ImGui.CalcTextSize($"{AppIcons.Eye}").X, ImGui.CalcTextSize($"{AppIcons.EyeBlocked}").X) + ImGui.GetStyle().FramePadding.X * 2.0f + ImGui.GetStyle().ItemSpacing.X;
+
+        for (int contextIndex = 0; contextIndex < contexts.Count; contextIndex++) {
+            var context = contexts[contextIndex];
+            var meshes = context.Component.MeshHandle?.Meshes;
+            if (meshes == null) continue;
+
+            ImGui.PushID(contextIndex);
+
+            var groups = meshes.Select((mesh, index) => (meshGroup: mesh.MeshGroup, index)).GroupBy(entry => entry.meshGroup, entry => entry.index).ToList();
+            if (groups.Count > 0) {
+                hasSubmeshes = true;
+                ShowOutlinerTabObjectsMeshNode(context, groups, outlinerBaseX, toggleColumnW, outlinerIndentStep);
+            }
+
+            ImGui.PopID();
+        }
+
+        if (!hasSubmeshes) ImGui.TextDisabled(Lang.MeshViewer.Editor_NoSubmeshes);
+        if (meshEditor.IsEnabled && ImGui.IsWindowHovered() && ImGui.IsMouseClicked(ImGuiMouseButton.Left) && !ImGui.IsAnyItemHovered()) {
+            meshEditor.ClearAllSelection();
+        }
+        if (isHighlightEnabled && !meshEditor.hoveredInOutliner.HasSameContentAs(previousHover)) {
+            meshEditor.ApplyRenderState();
+        }
+        ImGui.EndChild();
+        pendingGroupStateRequest = null;
+    }
+    private void ShowOutlinerTabAnimations()
+    {
+        _animationListContext ??= meshContexts.FirstOrDefault();
+        if (_animationListContext == null) {
+            ImGui.TextDisabled(Lang.MeshViewer.NoMeshLoaded);
+            return;
+        }
+
+        var animControllers = meshContexts.Where(mc => mc.Animator?.ActiveOwner == null).ToArray();
+        if (animControllers.Skip(1).Any()) {
+            var names = animControllers.Select(c => c.ShortName).ToArray();
+            ImguiHelpers.ValueCombo("Controller", names, animControllers, ref _animationListContext);
+        }
+
+        ShowAnimationMenu(_animationListContext);
+    }
+    private void ShowOutlinerTabObjectsMeshNode(MeshViewerContext context, List<IGrouping<int, int>> groups, float baseX, float toggleColumnWidth, float indentStep)
+    {
+        var meshLabelX = baseX + toggleColumnWidth;
+        var allSubmeshIndices = groups.SelectMany(group => group).ToList();
+        var isMeshSelected = allSubmeshIndices.Any(index => meshEditor.selectedSubmeshes.Contains(new MeshEditor.SubmeshReference(context, index)));
+
+        ImGui.SetCursorPosX(baseX);
+        var meshVisible = allSubmeshIndices.Any(index => !meshEditor.hiddenSubmeshes.Contains(new MeshEditor.SubmeshReference(context, index)));
+        if (ShowVisibilityButton("mesh_visibility", meshVisible)) {
+            meshEditor.ToggleMeshGroupVisibility(context, allSubmeshIndices);
+        }
+        ImGui.SameLine();
+        ImGui.SetCursorPosX(meshLabelX);
+
+        var meshTextColor = isMeshSelected ? Colors.TextActive with { W = meshVisible ? Colors.TextActive.W : Colors.TextActive.W * 0.45f } : ImguiHelpers.GetColor(ImGuiCol.Text) with { W = meshVisible ? 1.0f : 0.45f };
+        ImGui.PushStyleColor(ImGuiCol.Text, meshTextColor);
+        var mainMesh = ImGui.TreeNodeEx($"##{context.ShortName}", ImGuiTreeNodeFlags.SpanAvailWidth | ImGuiTreeNodeFlags.DefaultOpen);
+        if (ImGui.IsItemHovered() && AppConfig.Instance.UseMeshViewerOutlinerHighlight.Get()) {
+            meshEditor.hoveredInOutliner = new MeshEditor.OutlinerHoverState(context, allSubmeshIndices.ToHashSet());
+        }
+        ImGui.SameLine(0, 0);
+        ImGui.TextColored(Colors.FileTypeMESH with { W = meshVisible ? Colors.FileTypeMESH.W : Colors.FileTypeMESH.W * 0.45f }, $"{AppIcons.SI_FileType_MESH}");
+        ImGui.SameLine(0, ImGui.GetStyle().ItemInnerSpacing.X);
+        ImGui.Text(PathUtils.GetFilenameWithoutExtensionOrVersion(context.Handle.Filepath).ToString());
+        ImGui.PopStyleColor();
+
+        if (mainMesh) {
+            var drawList = ImGui.GetWindowDrawList();
+            var lineW = 1.5f;
+            var lineColor = ImGui.GetColorU32(ImGuiCol.Text, 0.35f);
+            var groupLabelX = meshLabelX + indentStep;
+
+            ImGui.SetCursorPosX(groupLabelX);
+            var lineX = ImGui.GetCursorScreenPos().X - indentStep * 0.5f;
+            var lineTop = ImGui.GetCursorScreenPos().Y;
+            var lineBottom = lineTop;
+
+            foreach (var group in groups) {
+                var itemTopY = ImGui.GetCursorScreenPos().Y;
+                var itemMidY = itemTopY + ImGui.GetFrameHeight() * 0.5f;
+                drawList.AddLine(new Vector2(lineX, itemMidY), new Vector2(lineX + indentStep * 0.5f, itemMidY), lineColor, lineW);
+                lineBottom = itemMidY;
+
+                ShowOutlinerTabObjectsSubmeshGroupNode(context, group.Key, group.ToList(), baseX, toggleColumnWidth, indentStep, depth: 1);
+            }
+
+            drawList.AddLine(new Vector2(lineX, lineTop), new Vector2(lineX, lineBottom), lineColor, lineW);
+            ImGui.TreePop();
+        }
+    }
+    private void ShowOutlinerTabObjectsSubmeshGroupNode(MeshViewerContext context, int meshGroup, List<int> submeshIndices, float baseX, float toggleColumnWidth, float indentStep, int depth)
+    {
+        ImGui.PushID(meshGroup);
+
+        var labelX = baseX + toggleColumnWidth + indentStep * depth;
+        var isGroupSelected = submeshIndices.Any(index => meshEditor.selectedSubmeshes.Contains(new MeshEditor.SubmeshReference(context, index)));
+
+        ImGui.SetCursorPosX(baseX);
+        var groupVisible = submeshIndices.Any(index => !meshEditor.hiddenSubmeshes.Contains(new MeshEditor.SubmeshReference(context, index)));
+        if (ShowVisibilityButton("group_visibility", groupVisible)) {
+            meshEditor.ToggleMeshGroupVisibility(context, submeshIndices);
+        }
+        ImGui.SameLine();
+        ImGui.SetCursorPosX(labelX);
+
+        var groupTextColor = isGroupSelected ? Colors.TextActive with { W = groupVisible ? Colors.TextActive.W : Colors.TextActive.W * 0.45f } : ImguiHelpers.GetColor(ImGuiCol.Text) with { W = groupVisible ? 1.0f : 0.45f };
+        ImGui.PushStyleColor(ImGuiCol.Text, groupTextColor);
+        var groupLabel = $"{AppIcons.SI_MeshViewerMeshGroup} Group {meshGroup}";
+        if (pendingGroupStateRequest is { } forcedGroupOpen) ImGui.SetNextItemOpen(forcedGroupOpen);
+        var submeshGroups = ImGui.TreeNodeEx(groupLabel, ImGuiTreeNodeFlags.SpanAvailWidth | ImGuiTreeNodeFlags.DefaultOpen);
+        ImGui.PopStyleColor();
+        if (ImGui.IsItemHovered() && AppConfig.Instance.UseMeshViewerOutlinerHighlight.Get()) {
+            meshEditor.hoveredInOutliner = new MeshEditor.OutlinerHoverState(context, submeshIndices.ToHashSet());
+        }
+        if (submeshGroups) {
+            var drawList = ImGui.GetWindowDrawList();
+            var lineW = 1.5f;
+            var lineColor = ImGui.GetColorU32(ImGuiCol.Text, 0.35f);
+            var childLabelX = labelX + indentStep;
+            var connectorGap = 4.0f * UI.UIScale;
+
+            ImGui.SetCursorPosX(childLabelX);
+            var lineX = ImGui.GetCursorScreenPos().X - indentStep * 0.5f;
+            var lineTop = ImGui.GetCursorScreenPos().Y;
+            var lineBottom = lineTop;
+
+            foreach (var submeshIndex in submeshIndices) {
+                ImGui.PushID(submeshIndex);
+                var itemTopY = ImGui.GetCursorScreenPos().Y;
+                var itemMidY = itemTopY + ImGui.GetFrameHeight() * 0.5f;
+                drawList.AddLine(new Vector2(lineX, itemMidY), new Vector2(lineX + indentStep * 0.5f, itemMidY), lineColor, lineW);
+                lineBottom = itemMidY;
+
+                var submesh = new MeshEditor.SubmeshReference(context, submeshIndex);
+                var isSelected = meshEditor.selectedSubmeshes.Contains(submesh);
+                var isSubmeshVisible = !meshEditor.hiddenSubmeshes.Contains(submesh);
+                var label = meshEditor.GetSubmeshLabel(context, submeshIndex, meshGroup);
+                var labelW = ImGui.CalcTextSize(label.UTF8).X + ImGui.GetStyle().FramePadding.X * 2.0f;
+
+                ImGui.SetCursorPosX(baseX);
+                if (ShowVisibilityButton("visibility", isSubmeshVisible)) {
+                    meshEditor.ToggleSubmeshVisibility(submesh);
+                }
+                ImGui.SameLine();
+                ImGui.SetCursorPosX(childLabelX + connectorGap);
+
+                var submeshTextColor = isSelected ? Colors.TextActive with { W = isSubmeshVisible ? Colors.TextActive.W : Colors.TextActive.W * 0.45f } : ImguiHelpers.GetColor(ImGuiCol.Text) with { W = isSubmeshVisible ? 1.0f : 0.45f };
+                ImGui.PushStyleColor(ImGuiCol.Text, submeshTextColor);
+                var selectableWidth = Math.Max(labelW, ImGui.GetContentRegionAvail().X);
+                if (ImGui.Selectable(label.UTF8, isSelected, ImGuiSelectableFlags.None, new Vector2(selectableWidth, 0)) && meshEditor.IsEnabled) {
+                    meshEditor.SelectSubmesh(submesh, ImGui.IsKeyDown(ImGuiKey.ModShift), ImGui.IsKeyDown(ImGuiKey.ModCtrl), false);
+                }
+                ImGui.PopStyleColor();
+                if (ImGui.IsItemHovered() && AppConfig.Instance.UseMeshViewerOutlinerHighlight.Get()) {
+                    meshEditor.hoveredInOutliner = new MeshEditor.OutlinerHoverState(context, [submeshIndex]);
+                }
+                if (meshEditor.IsEnabled && ImGui.IsItemHovered() && isSubmeshVisible && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left)) {
+                    meshEditor.SelectSubmesh(submesh, false, false, false);
+                    meshEditor.SetInteractionMode(MeshEditor.EditorInteractionMode.Edit);
+                }
+                if (labelW > ImGui.GetWindowSize().X - ImGui.GetStyle().WindowPadding.X * 2.0f) {
+                    ImguiHelpers.Tooltip(label.UTF8);
+                }
+                if (meshEditor.scrollToSubmesh == submesh) {
+                    ImGui.SetScrollHereY();
+                    meshEditor.scrollToSubmesh = null;
+                }
+
+                ImGui.PopID();
+            }
+
+            drawList.AddLine(new Vector2(lineX, lineTop), new Vector2(lineX, lineBottom), lineColor, lineW);
+            ImGui.TreePop();
+        }
+
+        ImGui.PopID();
+    }
+    private static bool ShowVisibilityButton(string id, bool visible)
+    {
+        ImGui.PushID(id);
+        ImGui.PushStyleColor(ImGuiCol.Text, ImguiHelpers.GetColor(ImGuiCol.Text) with { W = visible ? 1.0f : 0.45f });
+        ImGui.PushStyleColor(ImGuiCol.Button, ImguiHelpers.GetColor(ImGuiCol.Button) with { W = visible ? 1.0f : 0.45f });
+        var clicked = ImGui.Button($"{(visible ? AppIcons.Eye : AppIcons.EyeBlocked)}");
+        ImGui.PopStyleColor(2);
+        ImGui.PopID();
+        return clicked;
+    }
+    //This is because for higher res displays it tends to not fit well otherwise
+    private float GetContentWidth()
+    {
+        var width = ImGui.CalcTextSize(Lang.MeshViewer.Editor_Submeshes).X;
+        foreach (var context in MeshContexts) {
+            width = Math.Max(width, ImGui.CalcTextSize(context.ShortName).X);
+            if (context.Mesh?.Bones?.Bones.Count > 0) {
+                width = Math.Max(width, ImGui.CalcTextSize($"{AppIcons.SI_FileType_FBXSKEL} {Lang.MeshViewer.Armature}").X);
+            }
+            var meshes = context.Component.MeshHandle?.Meshes;
+            if (meshes == null) continue;
+            var meshIndex = 0;
+            foreach (var mesh in meshes) {
+                width = Math.Max(width, ImGui.CalcTextSize(meshEditor.GetSubmeshLabel(context, meshIndex, mesh.MeshGroup).UTF8).X);
+                meshIndex++;
+            }
+        }
+        var style = ImGui.GetStyle();
+        return width + ImGui.GetFrameHeight() + style.ItemSpacing.X
+            + style.WindowPadding.X * 2.0f + style.FramePadding.X * 2.0f + style.ScrollbarSize;
+    }
+    private float GetOutlinerPanelWidth(float availableWidth)
+    {
+        if (isOutlinerCollapsed) {
+            return ImGui.GetFrameHeight() + ImGui.GetStyle().WindowPadding.X * 2.0f;
+        }
+        var maxWidth = Math.Max(availableWidth * 0.75f, 4.0f);
+        var minWidth = Math.Min(Math.Max(180.0f * UI.UIScale, ImGui.GetFontSize() * 7.0f), maxWidth);
+        if (!outlinerWidthInitialized) {
+            outlinerWidthInitialized = true;
+            outlinerWidth = Math.Clamp(GetContentWidth(), minWidth, maxWidth);
+        } else {
+            outlinerWidth = Math.Clamp(outlinerWidth, minWidth, maxWidth);
+            if (!outlinerWidthUserResized) outlinerWidth = Math.Max(outlinerWidth, Math.Min(GetContentWidth(), maxWidth));
+        }
+        return outlinerWidth;
+    }
+    private void ShowEmbeddedMenuForRetargetDesigner(MeshComponent meshComponent)
+    {
+        ImGui.SetCursorPos(ImGui.GetCursorPos() + new Vector2(6, 6));
+        if (ImGui.Button($"{AppIcons.SI_GenericCamera}")) ImGui.OpenPopup("CameraSettings");
+        if (ImGui.BeginPopup("CameraSettings")) {
+            scene!.Controller.ShowCameraControls();
+            SaveCameraControlSettings();
+            ImGui.EndPopup();
+        }
+    }
+    private void SaveCameraControlSettings()
+    {
+        if (scene == null) return;
+        var changed = false;
+        if (Math.Abs(scene.Controller.MoveSpeed - AppConfig.Settings.MeshViewer.MoveSpeed) > 0.001f) {
+            AppConfig.Settings.MeshViewer.MoveSpeed = scene.Controller.MoveSpeed;
+            changed = true;
+        }
+        if (changed) AppConfig.Settings.Save();
+    }
+    private static void SaveMeshViewerCameraMode(SceneCameraMode mode)
+    {
+        if (AppConfig.Settings.MeshViewer.CameraMode == mode) return;
+        AppConfig.Settings.MeshViewer.CameraMode = mode;
+        AppConfig.Settings.Save();
+    }
+    private static FixedString GetDisplayModeName(MeshDisplayMode mode) => mode switch {
+        MeshDisplayMode.Default => Lang.MeshViewer.Display_Default,
+        MeshDisplayMode.Solid => Lang.MeshViewer.Display_Solid,
+        MeshDisplayMode.Wireframe => Lang.MeshViewer.Display_Wireframe,
+        _ => "?"
+    };
+    private void ShowRenderingMenu(MeshViewerContext ctx)
+    {
+        ImGui.SeparatorText(Lang.MeshViewer.Separator_Render);
+        foreach (MeshDisplayMode mode in Enum.GetValues<MeshDisplayMode>()) {
+            ImGui.PushStyleColor(ImGuiCol.Text, meshEditor.DisplayMode == mode ? Colors.TextActive : ImguiHelpers.GetColor(ImGuiCol.Text));
+            if (ImGui.MenuItem(GetDisplayModeName(mode).ToString(), meshEditor.DisplayMode == mode)) {
+                meshEditor.SetDisplayMode(mode);
+            }
+            ImGui.PopStyleColor();
+        }
+        ImGui.SeparatorText(Lang.MeshViewer.Separator_TextureDisplay);
+        if (ImGui.RadioButton(Lang.MeshViewer.DisplayTex_HighRes, useHighResTextures)) {
+            useHighResTextures = true;
+            ctx.Component.UseStreamingTex = true;
+            ctx.UpdateMaterial(true);
+        }
+        ImGui.SameLine();
+        if (ImGui.RadioButton(Lang.MeshViewer.DisplayTex_LowRes, !useHighResTextures)) {
+            useHighResTextures = false;
+            ctx.Component.UseStreamingTex = false;
+            ctx.UpdateMaterial(true);
+        }
+    }
     private void RemoveSubmesh(MeshViewerContext ctx)
     {
         meshEditor.InvalidateSubmeshCache(ctx);
@@ -420,10 +799,38 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
     }
 
-    private void ShowMeshCollections()
+    public void ShowMeshCollections()
     {
         int groupId = 0;
         EnsureAnimationsInit();
+        if (ImGui.Button($"{AppIcons.SI_Save}")) {
+            var collection = GetSerializedCollection();
+            var collectionsDir = Path.Combine(AppConfig.Instance.GetGameUserPath(Workspace.Game), "mesh_collections");
+            Directory.CreateDirectory(collectionsDir);
+            PlatformUtils.ShowSaveFileDialog((path) => {
+                using var fs = File.Create(path);
+                JsonSerializer.Serialize(fs, collection, JsonConfig.configJsonOptions);
+            }, Path.Combine(collectionsDir, Handle.Filename.ToString() + ".collection.json"), FileFilters.CollectionJsonFile);
+        }
+        ImguiHelpers.Tooltip(Lang.MeshViewer.Tooltip_CollectionSave);
+        ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_GenericImport}")) {
+            var collectionsDir = Path.Combine(AppConfig.Instance.GetGameUserPath(Workspace.Game), "mesh_collections/");
+            PlatformUtils.ShowFileDialog((files) => {
+                MainLoop.Instance.InvokeFromUIThread(() => {
+                    LoadCollection(files[0]);
+                });
+            }, collectionsDir, FileFilters.CollectionJsonFile);
+        }
+        ImguiHelpers.Tooltip(Lang.MeshViewer.Tooltip_CollectionSave);
+        ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_GenericClear}")) {
+            while (meshContexts.Count > 1) {
+                RemoveSubmesh(meshContexts.Last());
+            }
+        }
+        ImguiHelpers.Tooltip(Lang.MeshViewer.Tooltip_CollectionClear);
+        ImGui.Spacing();
         foreach (var ctxGroup in meshContexts.GroupBy(c => c.Animator?.owner)) {
             if (groupId == 1) {
                 ImGui.Separator();
@@ -431,39 +838,35 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             foreach (var ctx in ctxGroup) {
                 if (ImGui.BeginMenu(ctx.Animator != null && ctx.Animator?.ActiveOwner == null ? $"{ctx.ShortName} *###{ctx.ShortName}" : $"{ctx.ShortName}###{ctx.ShortName}")) {
                     if (ctx != meshContexts[0]) {
-                        if (ImGui.Selectable($"{AppIcons.SI_GenericDelete} Remove", ImGuiSelectableFlags.NoAutoClosePopups)) {
+                        if (ImGui.Selectable(Lang.MeshViewer.MenuItem_MeshCollectionRemove, ImGuiSelectableFlags.NoAutoClosePopups)) {
                             RemoveSubmesh(ctx);
                             ImGui.EndMenu();
                             break;
                         }
                     }
-                    if (ImGui.BeginMenu($"{AppIcons.SI_GenericInfo} Info")) {
+                    if (ImGui.BeginMenu(Lang.MeshViewer.MenuItem_MeshCollectionInfo)) {
                         ShowMeshInfo(ctx, false);
                         ImGui.EndMenu();
                     }
-                    if (ImGui.BeginMenu($"{AppIcons.SI_Generic3Axis} Transform")) {
+                    if (ImGui.BeginMenu(Lang.MeshViewer.MenuItem_MeshCollectionTransform)) {
                         ctx.ShowTransformUI(meshContexts);
                         ImGui.EndMenu();
                     }
-                    if (ctx.IsAnimatable && ImGui.BeginMenu($"{AppIcons.SI_FileType_FBXSKEL} Skeleton")) {
+                    if (ctx.IsAnimatable && ImGui.BeginMenu(Lang.MeshViewer.MenuItem_MeshCollectionSkeleton)) {
                         EnsureAnimationsInit();
                         ctx.ShowSkeletonPicker();
                         ImGui.EndMenu();
                     }
-                    if (ctx.IsAnimatable && ImGui.BeginMenu($"{AppIcons.SI_Animation} Animation")) {
+                    if (ctx.IsAnimatable && ImGui.BeginMenu(Lang.MeshViewer.Tab_OutlinerAnimations)) {
                         EnsureAnimationsInit();
                         ctx.ShowAnimSettings(meshContexts, ctx != meshContexts[0]);
                         ImGui.EndMenu();
                     }
-                    if (ImGui.BeginMenu($"{AppIcons.SI_MeshViewerMeshGroup} Mesh Groups")) {
-                        ShowMeshGroupSettings(ctx.Component);
-                        ImGui.EndMenu();
-                    }
-                    if (ImGui.BeginMenu($"{AppIcons.SI_FileType_MDF} Material")) {
+                    if (ImGui.BeginMenu(Lang.MeshViewer.Menu_Material)) {
                         ctx.ShowMaterialSettings();
                         ImGui.EndMenu();
                     }
-                    if (ImGui.MenuItem($"{AppIcons.SI_WindowOpenNew} Open In Standalone Window")) {
+                    if (ImGui.MenuItem(Lang.MeshViewer.MenuItem_MeshCollectionOpenNewWin)) {
                         EditorWindow.CurrentWindow?.AddFileEditor(ctx.Handle);
                     }
                     ImGui.EndMenu();
@@ -471,8 +874,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             }
             if (groupId++ >= 1) ImGui.Separator();
         }
-
-        ImGui.SeparatorText("Add Mesh");
+        ImGui.SeparatorText(Lang.MeshViewer.Separator_AddMesh);
         if (addCollectionCtx == null) {
             addCollectionCtx = context.AddChild<MeshViewer, string>(
                 "Source File",
@@ -488,49 +890,18 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
         if (!string.IsNullOrEmpty(addCollectionPath)) {
             if (Workspace.ResourceManager.TryGetOrLoadFile(addCollectionPath, out var resolvedFile) && resolvedFile.Format.format == KnownFileFormats.Mesh) {
-                if (!meshContexts.Any(c => c.Handle == resolvedFile) && ImGui.Button($"{AppIcons.SI_GenericAdd} Add")) {
+                if (!meshContexts.Any(c => c.Handle == resolvedFile) && ImGui.Button(Lang.Buttons.AddWithIcon)) {
                     AppConfig.Settings.RecentMeshes.AddRecent(Workspace.Game, addCollectionPath);
                     CreateAdditionalMesh(resolvedFile).ChangeMesh(true);
                 }
             } else {
                 if (resolvedFile != null && resolvedFile.Format.format != KnownFileFormats.Mesh) {
-                    ImGui.TextColored(Colors.Warning, "External mesh files can't be opened directly under mesh collections.\nOpen it separately and convert to .mesh first."u8);
+                    ImGui.TextColored(Colors.Warning, Lang.MeshViewer.Warning_CantOpenMeshFromCollections);
                 } else if (Path.IsPathFullyQualified(addCollectionPath)) {
-                    ImGui.TextColored(Colors.Warning, """
-                        Can't resolve .mesh file from the given path.
-                        Re-check if you have the right file path and if the mesh is actually valid.
-                        If it's a mesh with a streaming file, ensure both are extracted to a matching file path.
-                        """u8);
+                    ImGui.TextColored(Colors.Warning, Lang.MeshViewer.Warning_CantResolveStreamingMeshPath);
                 } else {
-                    ImGui.TextColored(Colors.Warning, """
-                        Can't resolve .mesh file from the given path.
-                        Re-check if you have the right file path and if the mesh is actually valid.
-                        """u8);
+                    ImGui.TextColored(Colors.Warning, Lang.MeshViewer.Warning_CantResolveMeshPath);
                 }
-            }
-        }
-
-        ImGui.SeparatorText("Manage Collection");
-        if (ImGui.Selectable($"{AppIcons.SI_Save} Save collection")) {
-            var collection = GetSerializedCollection();
-            var collectionsDir = Path.Combine(AppConfig.Instance.GetGameUserPath(Workspace.Game), "mesh_collections");
-            Directory.CreateDirectory(collectionsDir);
-            PlatformUtils.ShowSaveFileDialog((path) => {
-                using var fs = File.Create(path);
-                JsonSerializer.Serialize(fs, collection, JsonConfig.configJsonOptions);
-            }, Path.Combine(collectionsDir, Handle.Filename.ToString() + ".collection.json"), FileFilters.CollectionJsonFile);
-        }
-        if (ImGui.Selectable($"{AppIcons.SI_GenericImport} Load collection")) {
-            var collectionsDir = Path.Combine(AppConfig.Instance.GetGameUserPath(Workspace.Game), "mesh_collections/");
-            PlatformUtils.ShowFileDialog((files) => {
-                MainLoop.Instance.InvokeFromUIThread(() => {
-                    LoadCollection(files[0]);
-                });
-            }, collectionsDir, FileFilters.CollectionJsonFile);
-        }
-        if (ImGui.Selectable($"{AppIcons.SI_GenericClear} Remove all additional meshes")) {
-            while (meshContexts.Count > 1) {
-                RemoveSubmesh(meshContexts.Last());
             }
         }
     }
@@ -599,25 +970,6 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
     private UIContext? addCollectionCtx;
     private string addCollectionPath = "";
-
-    private void ShowMeshGroupSettings(MeshComponent meshComponent)
-    {
-        var meshGroupIds = meshComponent.MeshHandle?.Meshes.Select(m => m.MeshGroup).Order().Distinct();
-        var parts = RszFieldCache.Mesh.PartsEnable.Get(meshComponent.Data);
-        if (meshGroupIds == null || parts == null) {
-            ImGui.TextColored(Colors.Error, "Could not resolve enabled parts for current game.");
-            return;
-        }
-        foreach (var group in meshGroupIds) {
-            if (group < 0 || group >= parts.Count) continue;
-
-            var enabled = (bool)parts[group];
-            if (ImGui.Checkbox(group.ToString(), ref enabled)) {
-                parts[group] = (object)enabled;
-                meshComponent.RefreshIfActive();
-            }
-        }
-    }
 
     private static void ShowMeshInfo(MeshViewerContext ctx, bool allowEditing)
     {
@@ -1148,23 +1500,8 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
         return true;
     }
-
-    private void ShowRootAnimationList()
-    {
-        _animationListContext ??= meshContexts.FirstOrDefault();
-        if (_animationListContext == null) return;
-
-        var animControllers = meshContexts.Where(mc => mc.Animator?.ActiveOwner == null).ToArray();
-        if (animControllers.Skip(1).Any()) {
-            var names = animControllers.Select(c => c.ShortName).ToArray();
-            ImguiHelpers.ValueCombo("Controller", names, animControllers, ref _animationListContext);
-        }
-
-        ShowAnimationMenu(_animationListContext);
-    }
     private void ShowAnimationMenu(MeshViewerContext ctx)
     {
-        ImGui.SeparatorText("Animations");
         UpdateAnimData();
 
         var animator = PrimaryAnimator;
@@ -1182,11 +1519,100 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
         ImGui.SameLine();
         AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/Animation-tools", true);
-
+        
+        var animWarns = GetAnimErrors();
+        if (animWarns != null) {
+            ImGui.SameLine();
+            using var __ = ImguiHelpers.OverrideStyleCol(ImGuiCol.Text, Colors.Warning);
+            ImGui.Button($"{AppIcons.SI_GenericWarning}##anim");
+            ImguiHelpers.Tooltip(animWarns);
+        }
         ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.CalcTextSize("Animation File").X - ImGui.GetStyle().ScrollbarSize);
         ctx.ShowAnimSettings(meshContexts, false);
     }
+    private bool ShowMeshEditorModesOverlay(float leftOffset = 0)
+    {
+        var hovered = false;
+        ImGui.SetCursorPos(new Vector2(20 + leftOffset, TopMargin * UI.UIScale));
+        ImGui.PushStyleColor(ImGuiCol.ChildBg, 0);
+        ImGui.BeginChild("MeshEditorModesOverlay", default, ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize, ImGuiWindowFlags.NoMove);
+        ImGui.PushStyleColor(ImGuiCol.ChildBg, ImguiHelpers.GetColor(ImGuiCol.WindowBg) with { W = 0.5f });
+        ImGui.BeginChild("MeshEditorModes", default, ImGuiChildFlags.AutoResizeX | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize | ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders);
 
+        var isObjectMode = meshEditor.interactionMode == MeshEditor.EditorInteractionMode.Object;
+        if (ImguiHelpers.ToggleButton($"{AppIcons.SI_MeshEditorModeObject} " + Lang.MeshViewer.Editor_ModeObject.String, ref isObjectMode, Colors.IconActive)) {
+            showMeshEditorSettings = false;
+            meshEditor.SetInteractionMode(MeshEditor.EditorInteractionMode.Object);
+        }
+        hovered |= ImGui.IsItemHovered();
+        ImGui.SameLine();
+
+        var isEditMode = meshEditor.interactionMode == MeshEditor.EditorInteractionMode.Edit;
+        if (ImguiHelpers.ToggleButton($"{AppIcons.SI_MeshEditorModeEdit} " + Lang.MeshViewer.Editor_ModeEdit.String, ref isEditMode, Colors.IconActive)) {
+            meshEditor.SetInteractionMode(MeshEditor.EditorInteractionMode.Edit);
+        }
+        hovered |= ImGui.IsItemHovered();
+        ImguiHelpers.InlineVerticalSeparator();
+        using (var _ = ImguiHelpers.Disabled(meshEditor.interactionMode != MeshEditor.EditorInteractionMode.Edit)) {
+            ImguiHelpers.ToggleButton($"{AppIcons.SI_Settings2}", ref showMeshEditorSettings, Colors.IconActive);
+        }
+        ImguiHelpers.Tooltip(Lang.Home.Tooltip_Settings);
+        ImGui.Separator();
+        if (showMeshEditorSettings) {
+            if (SettingsWindowHandler.ShowSliderFloatWithReset(Lang.MeshViewer.Editor_VertexSize, ref meshEditor.vertexPointSize, 1.0f, 32.0f, MeshViewerSettings.DefaultEditorVertexSize, "VertexSize", "%.1f px")) {
+                AppConfig.Settings.MeshViewer.EditorVertexSize = meshEditor.vertexPointSize;
+                AppConfig.Settings.Save();
+            }
+            if (SettingsWindowHandler.ShowSliderFloatWithReset(Lang.MeshViewer.Editor_SelectionRadius, ref meshEditor.vertexSelectionRadius, 3.0f, 100.0f, MeshViewerSettings.DefaultEditorVertexSelectionRadius, "SelectionRadius", "%.0f px")) {
+                AppConfig.Settings.MeshViewer.EditorVertexSelectionRadius = meshEditor.vertexSelectionRadius;
+                AppConfig.Settings.Save();
+            }
+            ImGui.Text(Lang.MeshViewer.Editor_MirrorAxes);
+            ImGui.SameLine();
+            var mirrorChanged = ImGui.Checkbox("X##MirrorAxis", ref meshEditor.mirrorX);
+            ImGui.SameLine();
+            mirrorChanged |= ImGui.Checkbox("Y##MirrorAxis", ref meshEditor.mirrorY);
+            ImGui.SameLine();
+            mirrorChanged |= ImGui.Checkbox("Z##MirrorAxis", ref meshEditor.mirrorZ);
+            if (mirrorChanged) {
+                AppConfig.Settings.MeshViewer.EditorMirrorX = meshEditor.mirrorX;
+                AppConfig.Settings.MeshViewer.EditorMirrorY = meshEditor.mirrorY;
+                AppConfig.Settings.MeshViewer.EditorMirrorZ = meshEditor.mirrorZ;
+                AppConfig.Settings.Save();
+            }
+            if (SettingsWindowHandler.ShowSliderFloatWithReset(Lang.MeshViewer.Editor_MirrorRadius, ref meshEditor.mirrorRadius, 0.0001f, 1.0f, MeshViewerSettings.DefaultEditorMirrorRadius, "MirrorRadius", "%.4f", ImGuiSliderFlags.Logarithmic)) {
+                AppConfig.Settings.MeshViewer.EditorMirrorRadius = meshEditor.mirrorRadius;
+                AppConfig.Settings.Save();
+            }
+            ImGui.Separator();
+        }
+        if (isEditMode) {
+            ImGui.Text("Selection Mode:");
+            var isVertexSelect = meshEditor.geometrySelectionMode == MeshEditor.GeometrySelectionMode.Vertex;
+            if (ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_MeshEditorSelectionVert, ref isVertexSelect, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary, Colors.IconSecondary,], Colors.IconActive)) {
+                meshEditor.SetGeometrySelectionMode(MeshEditor.GeometrySelectionMode.Vertex);
+            }
+            ImguiHelpers.Tooltip(Lang.Settings.Bind_MeshViewer_VertexSelection);
+            ImGui.SameLine();
+            var isEdgeSelect = meshEditor.geometrySelectionMode == MeshEditor.GeometrySelectionMode.Edge;
+            if (ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_MeshEditorSelectionEdge, ref isEdgeSelect, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary],Colors.IconActive)) {
+                meshEditor.SetGeometrySelectionMode(MeshEditor.GeometrySelectionMode.Edge);
+            }
+            ImguiHelpers.Tooltip(Lang.Settings.Bind_MeshViewer_EdgeSelection);
+            ImGui.SameLine();
+            var isFaceSelect = meshEditor.geometrySelectionMode == MeshEditor.GeometrySelectionMode.Face;
+            if (ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_MeshEditorSelectionFace, ref isFaceSelect, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary], Colors.IconActive)) {
+                meshEditor.SetGeometrySelectionMode(MeshEditor.GeometrySelectionMode.Face);
+            }
+            ImguiHelpers.Tooltip(Lang.Settings.Bind_MeshViewer_FaceSelection);
+        }
+        
+        ImGui.PopStyleColor(2);
+        ImGui.EndChild();
+        hovered = hovered || ImGui.IsWindowHovered();
+        ImGui.EndChild();
+        return hovered;
+    }
     private void RenderSkeleton(MeshViewerContext ctx)
     {
         var mcomp = ctx.Component;
@@ -1258,7 +1684,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         return true;
     }
 
-    private void ShowPlaybackControls(MeshComponent meshComponent)
+    private void ShowPlaybackControls(MeshComponent meshComponent, float leftOffset = 0, float rightPanelWidth = 0)
     {
         var animator = PrimaryAnimator;
         if (animator?.ActiveMotion == null) return;
@@ -1268,13 +1694,16 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         var timestamp = $"{animator.CurrentTime:0.00} / {animator.TotalTime:0.00} ({animator.CurrentFrame:000} / {animator.TotalFrames:000})";
         var timestampSize = ImGui.CalcTextSize(timestamp) + new Vector2(5 * 48, 0);
         if (AppConfig.Instance.UseFullscreenAnimPlayback) {
-            ImGui.SetCursorPos(new Vector2(20, ImGui.GetWindowHeight() - ImGui.GetContentRegionAvail().Y - ImGui.GetStyle().WindowPadding.Y - 80));
+            ImGui.SetCursorPos(new Vector2(20 + leftOffset, ImGui.GetWindowHeight() - ImGui.GetStyle().WindowPadding.Y - 85 * UI.UIScale));
         } else {
-            ImGui.SetCursorPos(new Vector2(windowSize.X - timestampSize.X - ImGui.GetStyle().WindowPadding.X * 2 - 100, TopMargin));
+            ImGui.SetCursorPos(new Vector2(windowSize.X - (isOutlinerOnLeft ? rightPanelWidth :(isOutlinerCollapsed ? ImGui.GetFrameHeight() + ImGui.GetStyle().WindowPadding.X * 2.0f : rightPanelWidth))
+                - timestampSize.X - ImGui.GetStyle().WindowPadding.X * 2 - 100, TopMargin * UI.UIScale));
         }
 
         ImGui.PushStyleColor(ImGuiCol.ChildBg, ImguiHelpers.GetColor(ImGuiCol.WindowBg) with { W = 0.5f });
-        ImGui.BeginChild("PlaybackControls", new Vector2(AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().X - ImGui.GetStyle().WindowPadding.X : timestampSize.X + 50, 80), ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);
+        ImGui.BeginChild("PlaybackControls", new Vector2(AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().X -
+            (isOutlinerOnLeft ? rightPanelWidth : (isOutlinerCollapsed ? ImGui.GetFrameHeight() + ImGui.GetStyle().WindowPadding.X * 2.0f : rightPanelWidth)) - ImGui.GetStyle().FramePadding.X * 2 : timestampSize.X + 50, 80 * UI.UIScale),
+            ImGuiChildFlags.AlwaysUseWindowPadding | ImGuiChildFlags.Borders | ImGuiChildFlags.AutoResizeY | ImGuiChildFlags.AlwaysAutoResize);// SILVER: man you know its bad when I start doing line breaks
 
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
         if (ImGui.Button((animator.IsPlaying ? AppIcons.Pause : AppIcons.Play).ToString()) || ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && AppConfig.Instance.Key_MeshViewer_PauseAnim.Get().IsPressed() && !ImGui.GetIO().WantCaptureKeyboard) {
@@ -1338,7 +1767,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
 
         using (var _ = ImguiHelpers.Disabled(!animator.IsActive)) {
             int frame = animator.CurrentFrame;
-            ImGui.SetNextItemWidth(AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X - 75: 325);
+            ImGui.SetNextItemWidth(AppConfig.Instance.UseFullscreenAnimPlayback ? ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X - 75 * UI.UIScale : 325);
             if (ImGui.SliderInt("##AnimFrameSlider", ref frame, 0, animator.TotalFrames)) {
                 foreach (var c in meshContexts) {
                     var anim = c.Animator;
@@ -1364,7 +1793,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
                 playbackSpeed = PlaybackSpeeds[idx - 1];
             }
         }
-        ImGui.SetNextItemWidth(75);
+        ImGui.SetNextItemWidth(75 * UI.UIScale);
         if (ImGui.BeginCombo("##PlaybackSpeed", $"{playbackSpeed:0.##}x")) {
             for (int i = 0; i < PlaybackSpeeds.Length; i++) {
                 bool selected = playbackSpeed == PlaybackSpeeds[i];
@@ -1521,7 +1950,6 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
     private string? originalMDF;
     private string skeletonPath = "";
     private UIContext? mdfPickerContext;
-    private bool useHighResTextures = true;
 
     public bool HasValidLoadedMdf2 => !string.IsNullOrEmpty(loadedMdf);
     public MdfFile? MaterialFile => string.IsNullOrEmpty(loadedMdf) ? null : viewer.Workspace.ResourceManager.GetFileHandle(loadedMdf)?.GetFile<MdfFile>();
@@ -1614,18 +2042,6 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
     public void ShowMaterialSettings()
     {
         var meshComponent = Component;
-        if (ImguiHelpers.ToggleButton("Textures: " + (useHighResTextures ? "Hi-Res" : "Low-Res"), ref useHighResTextures, Colors.IconActive)) {
-            meshComponent.UseStreamingTex = useHighResTextures;
-            UpdateMaterial(true);
-        }
-        ImGui.SameLine();
-        if (ImGui.Button($"{AppIcons.SI_ResetMaterial}")) {
-            mdfSource = originalMDF;
-            UpdateMaterial();
-        }
-        ImguiHelpers.Tooltip("Reset MDF"u8);
-        ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X * 3.0f);
-        viewer.MeshEditor.ShowDisplayModeControls();
         if (mdfPickerContext == null) {
             mdfPickerContext = UI.AddChild<MeshViewerContext, string>(
                 "MDF2 Material",
@@ -1635,6 +2051,12 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
                 (v, p) => v.mdfSource = p ?? "");
         }
         mdfPickerContext.ShowUI();
+        ImGui.SameLine();
+        if (ImGui.Button($"{AppIcons.SI_ResetMaterial}")) {
+            mdfSource = originalMDF;
+            UpdateMaterial();
+        }
+        ImguiHelpers.Tooltip("Reset MDF"u8);
         var mesh = MeshFile;
         if (mesh != null && meshComponent.MeshHandle?.Material != null) {
             var mdfMats = meshComponent.MeshHandle.Material.Materials;
@@ -1919,10 +2341,11 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             ImguiHelpers.Tooltip("Match Case");
 
             ImGui.SameLine();
-            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ScrollbarSize);
+            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
             AppImguiHelpers.ClearableInputText("##MotFilter"u8, $"{AppIcons.SI_GenericMagnifyingGlass} Filter Animations", ref motFilter, 200);
 
             ImGui.Spacing();
+            ImGui.BeginChild("##OutlinerAnimationList");
             foreach (var mot in animator.Animations) {
                 var name = mot.Name;
                 if (!string.IsNullOrEmpty(motFilter) && !name.Contains(motFilter, isMotFilterMatchCase ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase)) continue;
@@ -1952,6 +2375,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
                 }
                 ImGui.PopID();
             }
+            ImGui.EndChild();
         } else if (animator?.File != null) {
             ImGui.TextColored(Colors.Note, "Selected file contains no playable animations");
         }

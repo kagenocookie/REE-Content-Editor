@@ -456,6 +456,16 @@ public static class AppIcons
     public static readonly char[] SIC_MaterialImport = { '\uee6e', '\uee6f' };
     public static readonly char[] SIC_FolderOpenInTextEditor = { '\uee70', '\uee71', '\uee72', '\uee73', '\uee74' };
     public static readonly char[] SIC_FileUnsupportedFormat = { '\uee75', '\uee76', '\uee77' };
+    public static readonly char[] SIC_MeshEditor = { '\uee78', '\uee79', '\uee7a', '\uee7b', '\uee7c', '\uee7d'};
+    public static readonly char[] SIC_MeshEditorSelectionVert = { '\uee7e', '\uee7f', '\uee80', '\uee81', '\uee82', '\uee83', '\uee84' };
+    public static readonly char[] SIC_MeshEditorSelectionEdge = { '\uee85', '\uee86', '\uee87' };
+    public static readonly char[] SIC_MeshEditorSelectionFace = { '\uee88', '\uee89', '\uee8a' };
+    public static readonly char SI_MeshEditorModeObject = '\uee8b';
+    public static readonly char SI_MeshEditorModeEdit = '\uee8c';
+    public static readonly char SI_SceneRender = '\uee8d';
+    public static readonly char[] SIC_MeshEditorOutlinerGroups = { '\uee8e', '\uee8f', '\uee90', '\uee91' };
+    public static readonly char[] SIC_MeshEditorOutlinerHighlight = { '\uee92', '\uee93', '\uee94', '\uee95' };
+    public static readonly char[] SIC_FolderOpenGameFile = { '\uee96', '\uee97', '\uee98', '\uee99' };
 
     public static string PrependIcon(this string text, object target)
     {
