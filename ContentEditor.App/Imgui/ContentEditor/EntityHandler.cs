@@ -3,15 +3,19 @@ using ContentPatcher;
 
 namespace ContentEditor.App;
 
+[ObjectImguiHandler(typeof(ResourceEntity))]
 public class EntityHandler : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
         var instance = context.Get<ResourceEntity>();
-        ImGui.Text($"{context.label}: {instance.Label}");
+        ImGui.Text(instance.Label);
         ImGui.SameLine();
         if (ImGui.Button($"Copy ID:{instance.Id}")) {
             EditorWindow.CurrentWindow?.CopyToClipboard(instance.Id.ToString(), "ID copied!");
+        }
+        if (context.children.Count == 0) {
+            WindowHandlerFactory.CreateEntityHandler(context);
         }
 
         for (int i = 0; i < context.children.Count; i++) {

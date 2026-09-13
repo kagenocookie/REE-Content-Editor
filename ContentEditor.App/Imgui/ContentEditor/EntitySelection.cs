@@ -4,19 +4,19 @@ using ContentPatcher;
 
 namespace ContentEditor.App;
 
-public class EntitySelector : IWindowHandler
+public class EntitySelection : IWindowHandler
 {
-    public string HandlerName => nameof(EntitySelector);
+    public string HandlerName => nameof(EntitySelection);
     public bool HasUnsavedChanges => data?.Context?.GetChildByValue<Entity>()?.Changed == true;
     private long initialId = -1;
 
-    public EntitySelector(ContentWorkspace workspace, string entityType)
+    public EntitySelection(ContentWorkspace workspace, string entityType)
     {
         this.workspace = workspace;
         this.entityType = entityType;
     }
 
-    public EntitySelector(ContentWorkspace workspace, Entity initialEntity)
+    public EntitySelection(ContentWorkspace workspace, Entity initialEntity)
     {
         this.workspace = workspace;
         this.entityType = initialEntity.Type;
@@ -66,7 +66,9 @@ public class EntitySelector : IWindowHandler
 
         var selected = workspace.ResourceManager.GetActiveEntityInstance(entityType, selectedId);
         if (selected == null) {
-            ImGui.TextColored(Colors.Warning, "Selected object could not be found");
+            if (selectedId != 0) {
+                ImGui.TextColored(Colors.Warning, "Selected entity could not be found");
+            }
             return;
         }
 
@@ -76,7 +78,7 @@ public class EntitySelector : IWindowHandler
                 ImGui.CloseCurrentPopup();
             }
             if (ImGui.Button("Reopen in new window")) {
-                EditorWindow.CurrentWindow?.AddSubwindow(new EntitySelector(workspace, selected));
+                EditorWindow.CurrentWindow?.AddSubwindow(new EntitySelection(workspace, selected));
                 ImGui.CloseCurrentPopup();
             }
             ImGui.EndPopup();

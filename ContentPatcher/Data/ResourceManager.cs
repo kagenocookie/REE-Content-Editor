@@ -552,6 +552,11 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
     {
         var entityDict = new Dictionary<long, ResourceEntity>();
         List<ResourceEntity>? newEntities = null;
+        if (data.config.ZeroEntity != null) {
+            entityDict[data.config.ZeroEntity.id] = new ResourceEntity(data.config.ZeroEntity.id, type, data.config) {
+                Label = data.config.ZeroEntity.label ?? "None"
+            };
+        }
         foreach (var (primaryResourceId, primaryResource) in GetResourceInstances(data.config.PrimaryField.Config.Type)) {
             var entity = new ResourceEntity(primaryResourceId, type, data.config);
             entity.Set(data.config.PrimaryField.name, primaryResource);

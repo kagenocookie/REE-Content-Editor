@@ -69,6 +69,9 @@ entities:
     - name: "app.CharacterEditDefine.TopsBdMeshID"
       format: "tops_{id}_bd"
       primary: true
+    zero_entity:
+      id: 0
+      label: None
     fields:
     - name: mesh
       resource:
@@ -117,6 +120,9 @@ entities:
     - name: app.CharacterEditDefine.TopsBdSkinID
       format: "tops_bd_{id}"
       primary: true
+    zero_entity:
+      id: 0
+      label: None
     fields:
     - name: skin
       resource:
@@ -339,19 +345,19 @@ classes:
     fields:
       _TopsStyle: { readOnly: true }
       _Gender: { readOnly: true }
-      _BdMeshID: { entity: TopsBdMesh, label: Body Mesh }
-      _BdSkinID: { entity: TopsBdSkin, label: Body Skin }
-      _BdSubMeshID: { entity: TopsBdMesh, label: Body Sub Mesh }
-      _BdSubSkinID: { entity: TopsBdSkin, label: Body Sub Skin }
-      # _WbMeshID: { entity: TopsWbMesh, label: Waistband Mesh }
-      # _WbSkinID: { entity: TopsWbSkin, label: Waistband Skin }
-      # _WbSubMeshID: { entity: TopsWbMesh, label: Waistband Sub Mesh }
-      # _WbSubSkinID: { entity: TopsWbSkin, label: Waistband Sub Skin }
-      # _AmMeshID: { entity: TopsAmMesh, label: Arm Mesh }
-      # _AmSkinID: { entity: TopsAmSkin, label: Arm Skin }
-      # _AmSubMeshID: { entity: TopsAmMesh, label: Arm Sub Mesh }
-      # _AmSubSkinID: { entity: TopsAmSkin, label: Arm Sub Skin }
-      # _BtMeshID: { entity: TopsBtMesh, label: Belt Mesh }
-      # _BtSkinID: { entity: TopsBtSkin, label: Belt Skin }
-      # _BtSubMeshID: { entity: TopsBtMesh, label: Belt Sub Mesh }
-      # _BtSubSkinID: { entity: TopsBtSkin, label: Belt Sub Skin }
+      _BdMeshID: { enum: TopsBdMesh, label: Body Mesh }
+      _BdSkinID: { enum: TopsBdSkin, label: Body Skin }
+      _BdSubMeshID: { enum: TopsBdMesh, label: Body Sub Mesh }
+      _BdSubSkinID: { enum: TopsBdSkin, label: Body Sub Skin }
+      # _WbMeshID: { enum: TopsWbMesh, label: Waistband Mesh }
+      # _WbSkinID: { enum: TopsWbSkin, label: Waistband Skin }
+      # _WbSubMeshID: { enum: TopsWbMesh, label: Waistband Sub Mesh }
+      # _WbSubSkinID: { enum: TopsWbSkin, label: Waistband Sub Skin }
+      # _AmMeshID: { enum: TopsAmMesh, label: Arm Mesh }
+      # _AmSkinID: { enum: TopsAmSkin, label: Arm Skin }
+      # _AmSubMeshID: { enum: TopsAmMesh, label: Arm Sub Mesh }
+      # _AmSubSkinID: { enum: TopsAmSkin, label: Arm Sub Skin }
+      # _BtMeshID: { enum: TopsBtMesh, label: Belt Mesh }
+      # _BtSkinID: { enum: TopsBtSkin, label: Belt Skin }
+      # _BtSubMeshID: { enum: TopsBtMesh, label: Belt Sub Mesh }
+      # _BtSubSkinID: { enum: TopsBtSkin, label: Belt Sub Skin }

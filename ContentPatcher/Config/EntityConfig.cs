@@ -16,6 +16,7 @@ public class EntityConfig(string name)
     public EntityField[] DisplayFieldsOrder { get; set; } = [];
     public EntityEnumInfo? PrimaryEnum { get; init; }
     public EntityEnumInfo[]? Enums { get; init; }
+    public ZeroEntity? ZeroEntity { get; set; }
     public StringFormatter? StringFormatter { get; set; }
 
     public bool HasField(string name) => GetField(name) != null;
@@ -37,6 +38,8 @@ public partial class EntityConfigSerialized
     public string? IDField { get; set; }
 
     public string? PrimaryField { get; set; }
+
+    public ZeroEntity? ZeroEntity { get; set; }
 }
 
 [YamlObject(NamingConvention.SnakeCase)]
@@ -52,7 +55,7 @@ public partial class EntityFieldConfig
     public bool isRequired;
     public string? displayAfter;
     [YamlMember("not_standalone")]
-    public bool IsNotStandalone;
+    public bool isNotStandalone;
 
     public Dictionary<string, object>? fieldId;
 
@@ -91,6 +94,13 @@ public partial class EntityFieldConfig
 public partial class EntityFieldConditionData : ResourceConditionData
 {
     public string? field;
+}
+
+[YamlObject]
+public partial class ZeroEntity
+{
+    public long id;
+    public string? label;
 }
 
 [YamlObject]

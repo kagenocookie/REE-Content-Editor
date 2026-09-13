@@ -164,12 +164,10 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     private static void SetupTypes(ContentWorkspace workspace)
     {
         foreach (var (name, cfg) in workspace.Config.Classes) {
-            if (cfg.StringFormatter != null) {
-                var cls = workspace.Env.RszParser.GetRSZClass(name);
-                if (cls == null) continue;
+            var cls = workspace.Env.RszParser.GetRSZClass(name);
+            if (cls == null) continue;
 
-                WindowHandlerFactory.SetClassFormatter(cls, cfg.StringFormatter);
-            }
+            WindowHandlerFactory.InitClassConfig(workspace, cfg);
         }
 
         WindowHandlerFactory.SetupTypesForGame(workspace.Game, workspace.Env);

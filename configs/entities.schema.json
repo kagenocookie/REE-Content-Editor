@@ -35,6 +35,19 @@
               "$ref": "#/definitions/enumInfo"
             }
           },
+          "zero_entity": {
+            "description": "Id and label for a zero / none entity for cases where there's additional dataless entries.",
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": ["id"]
+          },
           "fields": {
             "description": "List of fields that make up this entity type. Each field maps to a resource with optional enum overrides and display options.",
             "type": "array",
@@ -72,41 +85,7 @@
             "type": "object",
             "additionalProperties": {
               "type": "object",
-              "properties": {
-                "enum": {
-                  "description": "Enum classname override for displaying this field instead of its default",
-                  "type": "string"
-                },
-                "entity": {
-                  "description": "Show an entity selector of this type for the field",
-                  "type": "string"
-                },
-                "translate_guid": {
-                  "description": "Whether to use the GUID property for translation lookup.",
-                  "type": "boolean"
-                },
-                "translate_fallback_enum": {
-                  "description": "Enum to use as fallback for translation when GUID translation fails.",
-                  "type": "string"
-                },
-                "readOnly": {
-                  "description": "Whether this field should be read-only in the UI.",
-                  "type": "boolean"
-                },
-                "tooltip": {
-                  "description": "Tooltip text shown when hovering over the field.",
-                  "type": "string"
-                },
-                "label": {
-                  "description": "Display label for the field.",
-                  "type": "string"
-                },
-                "handler": {
-                  "description": "Custom handler name for special field formatting (e.g., 'DD2.ArmorStyle').",
-                  "type": "string"
-                }
-              },
-              "additionalProperties": false
+              "$ref": "#/definitions/classFieldConfig"
             }
           }
         },
@@ -115,6 +94,59 @@
     }
   },
   "definitions": {
+    "classFieldConfig": {
+      "type": "object",
+      "properties": {
+        "enum": {
+          "description": "Enum type override for displaying this field instead of its default. Can be either an entity type or a classname.",
+          "type": "string"
+        },
+        "translate_guid": {
+          "description": "Whether to use the GUID property for translation lookup.",
+          "type": "boolean"
+        },
+        "translate_fallback_enum": {
+          "description": "Enum to use as fallback for translation when GUID translation fails.",
+          "type": "string"
+        },
+        "readOnly": {
+          "description": "Whether this field should be read-only in the UI.",
+          "type": "boolean"
+        },
+        "tooltip": {
+          "description": "Tooltip text shown when hovering over the field.",
+          "type": "string"
+        },
+        "label": {
+          "description": "Display label for the field.",
+          "type": "string"
+        },
+        "handler": {
+          "description": "Custom handler name for special field formatting (e.g., 'DD2.ArmorStyle').",
+          "type": "string"
+        },
+        "switch": {
+          "description": "Switch condition",
+          "$ref": "#/definitions/switch"
+        }
+      },
+      "additionalProperties": false
+    },
+    "switch": {
+      "type": "object",
+      "properties": {
+        "cases": {
+          "additionalProperties": {
+            "type": "object",
+            "$ref": "#/definitions/classFieldConfig"
+          }
+        },
+        "property": {
+          "type": "string"
+        }
+      },
+      "required": ["cases", "property"]
+    },
     "entityField": {
       "description": "Field definition within an entity type. Maps to a resource with optional enum formatting and display options.",
       "type": "object",

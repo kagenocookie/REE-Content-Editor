@@ -74,7 +74,7 @@ public class EntitiesWindow : IWindowHandler, IWorkspaceContainer
             data.Context ??= UIContext.CreateRootContext("ContentEditor", this);
             var tab = data.GetOrAddSubwindow(name, true);
             if (tab.Handler == null) {
-                tab.Handler = new EntitySelector(Workspace, name);
+                tab.Handler = new EntitySelection(Workspace, name);
                 tab.Handler.Init(tab.Context!);
             }
 

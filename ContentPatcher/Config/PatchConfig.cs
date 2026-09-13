@@ -53,15 +53,17 @@ public class PatchConfig(string filepath)
                 Logger.Error(e, $"Failed to execute setup {setup.GetType().Name}");
             }
         }
-        AddDefaultConfigs();
+        AddDefaultConfigs(workspace.Env);
         LoadPatchConfigs(workspace);
         LoadEnums(workspace.Env, EnumFilepath);
     }
 
-    private void AddDefaultConfigs()
+    private void AddDefaultConfigs(Workspace env)
     {
         classes["via.GameObject"] = new ClassConfig() {
-            StringFormatter = new StringFormatter("{Name}", FormatterSettings.DefaultFormatter)
+            StringFormatter = new StringFormatter("{Name}", FormatterSettings.DefaultFormatter),
+            SourceConfig = new ClassConfigSerialized(),
+            Class = env.Classes.GameObject,
         };
     }
 
@@ -155,18 +157,17 @@ public class PatchConfig(string filepath)
             }
         }
 
-        if (newDict.Entities != null) foreach (var (name, entity) in newDict.Entities) {
+        foreach (var (name, entity) in newDict.Entities ?? []) {
             if (entity.Fields == null || entity.Fields.Count == 0) {
                 throw new Exception($"Unsupported user-defined object config {name}. Must have at least one field");
             }
 
             var config = SetupEntityConfig(workspace, entity, name);
-
             var shortname = EntityHierarchy.Add(name, config, entity.DisplayName);
             entities.Add(shortname, config);
         }
 
-        if (newDict.Classes != null) foreach (var (cls, config) in newDict.Classes) {
+        foreach (var (cls, config) in newDict.Classes ?? []) {
             var rszClass = workspace.Env.RszParser.GetRSZClass(cls);
             if (rszClass == null) {
                 if (!noWarnings) {
@@ -176,29 +177,19 @@ public class PatchConfig(string filepath)
             }
 
             if (!classes.TryGetValue(cls, out var runtimeConfig)) {
-                classes[cls] = runtimeConfig = new();
+                classes[cls] = runtimeConfig = new() { Class = rszClass, SourceConfig = config };
+            } else {
+                runtimeConfig.SourceConfig.Merge(config);
             }
-
-            // config.MergeIntoRuntimeConfig(workspace.Env, rszClass, runtimeConfig);
 
             if (config.To_String != null) {
                 var fmt = FormatterSettings.CreateWorkspaceFormatter(workspace);
                 runtimeConfig.StringFormatter = new StringFormatter(config.To_String, fmt);
             }
-
-            // if (config.Subclasses != null) {
-            //     foreach (var (subcls, sub) in config.Subclasses) {
-            //         if (!configs.TryGetValue(subcls, out var subConfig)) {
-            //             configs[subcls] = subConfig = new();
-            //         }
-            //         runtimeConfig.MergeIntoSubclass(subcls, subConfig);
-            //         subConfig.StringFormatter ??= runtimeConfig.StringFormatter;
-            //     }
-            // }
         }
     }
 
-    private ResourceConfig SetupResourceConfig(ContentWorkspace workspace, string resType, ResourceConfigSerialized resCfg, bool addResourceHandler = true)
+    private static ResourceConfig SetupResourceConfig(ContentWorkspace workspace, string resType, ResourceConfigSerialized resCfg, bool addResourceHandler = true)
     {
         var cfg = new ResourceConfig(resType) {
             CustomIDRange = resCfg.CustomIDRange,
@@ -213,9 +204,6 @@ public class PatchConfig(string filepath)
                 }
                 // all subtypes must inherit id range from base resource type
                 subConfig.CustomIDRange = resCfg.CustomIDRange;
-                // inherit ID settings only if there are no more specific ones
-                // subConfig.ID ??= resCfg.ID;
-                // subConfig.SubID ??= resCfg.SubID;
 
                 var sub = SetupResourceConfig(workspace, resType + "." + subType, subConfig, addResourceHandler);
                 sub.ParentResource = cfg;
@@ -307,6 +295,7 @@ public class PatchConfig(string filepath)
             PrimaryEnum = entity.Enums?.FirstOrDefault(e => e.primary),
             // Enums = Enums?.Where(e => !e.primary).ToArray(),
             Enums = entity.Enums?.ToArray(),
+            ZeroEntity = entity.ZeroEntity,
         };
         if (entity.To_String != null) {
             config.StringFormatter = new StringFormatter(entity.To_String, FormatterSettings.CreateFullEntityFormatter(config, workspace));
@@ -383,7 +372,7 @@ public class PatchConfig(string filepath)
             }
         }
         field.IsRequired = data.isRequired;
-        field.IsNotStandaloneValue = data.IsNotStandalone;
+        field.IsNotStandaloneValue = data.isNotStandalone;
         return field;
     }
 
