@@ -69,6 +69,10 @@ entities:
       to_desktop:
         "furmasks.1910070090" : "furmask.female"
         "furmasks.2776536455" : "furmask.male"
+      to_runtime:
+        # null out furmask configs for runtime since it's storing pfb paths instead of direct files
+        # this way it'll just read the active state which will be whichever we patched in
+        "null.1": "furmasks"
 
   items.styles.tops.TopsBdMesh:
     to_string: "{id:enum(app.CharacterEditDefine.TopsBdMeshID)} | {mesh.path}"

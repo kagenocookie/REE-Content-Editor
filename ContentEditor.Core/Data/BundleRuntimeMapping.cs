@@ -136,6 +136,9 @@ public class BundleRuntimeMapping
         foreach (var (desktop, runtimePath) in mapping.editorToRuntime) {
             var (editorField, editorPath) = desktop;
             if (!editorEntity.Data.TryGetValue(editorField, out var sourceData) || sourceData == null) {
+                if (editorField == "null") {
+                    SetNodeByPath(runtimeData, runtimePath, new JsonObject());
+                }
                 continue;
             }
 
