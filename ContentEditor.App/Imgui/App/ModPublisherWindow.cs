@@ -58,11 +58,8 @@ public class ModPublisherWindow : IWindowHandler
                 if (!string.IsNullOrEmpty(bundle.ImagePath) && File.Exists(Path.Combine(bundlePath, bundle.ImagePath))) {
                     File.Copy(Path.Combine(bundlePath, bundle.ImagePath), Path.Combine(outputPath, bundle.ImagePath), true);
                 }
-                if (window.ApplyContentPatches(outputPath, bundle.Name)) {
-                    File.WriteAllText(Path.Combine(outputPath, "bundle.json"), JsonSerializer.Serialize(bundle, JsonConfig.jsonOptions));
-                    if (bundle.RuntimeBundle != null) {
-                        WriteFile(Path.Combine(outputPath, "reframework/data/usercontent/bundles/" + bundle.RuntimeBundle.Name + ".json"), JsonSerializer.Serialize(bundle, JsonConfig.jsonOptions));
-                    }
+                if (!window.ApplyContentPatches(PatchOutputType.Publish, false, outputPath, bundle.Name)) {
+                    Logger.Error("Publishing failed");
                 }
             });
         }
@@ -80,11 +77,7 @@ public class ModPublisherWindow : IWindowHandler
                 if (!string.IsNullOrEmpty(bundle.ImagePath) && File.Exists(Path.Combine(bundlePath, bundle.ImagePath))) {
                     File.Copy(Path.Combine(bundlePath, bundle.ImagePath), Path.Combine(outputPath, bundle.ImagePath), true);
                 }
-                if (window.ApplyContentPatches(outputPath, bundle.Name)) {
-                    if (bundle.RuntimeBundle != null) {
-                        WriteFile(Path.Combine(outputPath, "reframework/data/usercontent/bundles/" + bundle.RuntimeBundle.Name + ".json"), JsonSerializer.Serialize(bundle, JsonConfig.jsonOptions));
-                    }
-                } else {
+                if (!window.ApplyContentPatches(PatchOutputType.Publish, true, outputPath, bundle.Name)) {
                     Logger.Error("Publishing failed");
                 }
             }, null, FileFilters.PakFile);

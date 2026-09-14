@@ -39,6 +39,7 @@ public class AppConfig : Singleton<AppConfig>
         public const string LoadFromNatives = "load_natives";
         public const string BundleDefaultSaveFullPath = "bundle_save_full_path";
         public const string BundleCustomBaseTargetPath = "bundle_custom_base_path";
+        public const string AlwaysIncludeBundleInPublish = "bundle_include_in_publish";
         public const string Theme = "theme";
         public const string EnableUpdateCheck = "enable_update_check";
         public const string EnableKeyboardNavigation = "enable_keyboard_nav";
@@ -346,6 +347,7 @@ public class AppConfig : Singleton<AppConfig>
     public readonly SettingWrapper<bool> LoadFromNatives = new SettingWrapper<bool>(Keys.LoadFromNatives, _lock, false);
     public readonly SettingWrapper<bool> BundleDefaultSaveFullPath = new SettingWrapper<bool>(Keys.BundleDefaultSaveFullPath, _lock, false);
     public readonly ClassSettingWrapper<string> BundleCustomBaseTargetPath = new ClassSettingWrapper<string>(Keys.BundleCustomBaseTargetPath, _lock);
+    public readonly SettingWrapper<bool> AlwaysIncludeBundleInPublish = new SettingWrapper<bool>(Keys.AlwaysIncludeBundleInPublish, _lock, true);
     public readonly SettingWrapper<Vector4> WindowRect = new SettingWrapper<Vector4>(Keys.WindowRect, _lock, new Vector4(50, 50, 1280, 720));
     public readonly SettingWrapper<DateTime> LastUpdateCheck = new SettingWrapper<DateTime>(Keys.LastUpdateCheck, _lock, DateTime.MinValue);
     public readonly SettingWrapper<bool> PauseAnimPlayerOnSeek = new SettingWrapper<bool>(Keys.PauseAnimPlayerOnSeek, _lock, true);
@@ -543,6 +545,7 @@ public class AppConfig : Singleton<AppConfig>
             (Keys.IsFirstTime, instance.IsFirstTime.value.ToString(), null),
             (Keys.LoadFromNatives, instance.LoadFromNatives.value.ToString(), null),
             (Keys.BundleDefaultSaveFullPath, instance.BundleDefaultSaveFullPath.value.ToString(), null),
+            (Keys.AlwaysIncludeBundleInPublish, instance.AlwaysIncludeBundleInPublish.value.ToString(), null),
             (Keys.MainWindowGame, instance.MainSelectedGame.value?.ToString() ?? "", null),
             (Keys.MainActiveBundle, instance.MainActiveBundle.value?.ToString() ?? "", null),
             (Keys.BlenderPath, instance.BlenderPath.value?.ToString() ?? "", null),
@@ -724,6 +727,9 @@ public class AppConfig : Singleton<AppConfig>
                             break;
                         case Keys.BundleDefaultSaveFullPath:
                             BundleDefaultSaveFullPath.value = ReadBool(value);
+                            break;
+                        case Keys.AlwaysIncludeBundleInPublish:
+                            AlwaysIncludeBundleInPublish.value = ReadBool(value);
                             break;
                         case Keys.MainWindowGame:
                             MainSelectedGame.value = ReadString(value);

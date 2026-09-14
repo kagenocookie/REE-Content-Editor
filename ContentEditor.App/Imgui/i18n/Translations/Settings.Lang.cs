@@ -126,6 +126,12 @@ public static partial class Lang
         public static readonly TextTooltip PauseAnimPlayerOnSeek = new TextTooltip("Pause Animation Player on seek", "Whether to pause the animation player while seeking with the slider.");
         public static readonly TextTooltip BundleDefaultSaveFullPath = new TextTooltip("Save bundle files with full path", "When checked, will always default to saving with the full relative path instead of the root bundle folder when adding new files to the active bundle.");
         public static readonly TextTooltip MaxUndoSteps = new TextTooltip("Max undo steps", "The maximum number of steps you can undo. Higher number means a bit higher memory usage after longer sessions.");
+        public static readonly TextTooltip AlwaysIncludeBundleInPublish = new TextTooltip("Include bundle.json when publishing", """
+            Whether your original bundle.json files should be included in published mod output.
+            This is usually not needed for using mods, but might help users be able to auto-patch
+            the actual changes made in cases where the files get updated in newer patches.
+            The bundle.json file will be placed in the content/installed/ folder.
+            """);
         public static readonly TextTooltip CustomBundleBasePath = new TextTooltip("Base Bundle File Path", """
             The default base path added to every custom file when saving a new file to bundle.
             Accepts replace parameters for {AUTHOR} or {BUNDLE_NAME}
