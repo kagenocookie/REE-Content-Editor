@@ -302,8 +302,8 @@ public class WindowBase : IDisposable, IDragDropTarget, IRectWindow
         var file = (subwindow.Handler as IFileHandleReferenceHolder)?.Handle;
         if (file == null) return;
 
-        var wnd = EditorWindow.CurrentWindow;
-        if (wnd == null) return;
+        var wnd = subwindow.ParentWindow as EditorWindow ?? EditorWindow.CurrentWindow;
+        if (wnd?.Workspace == null) return;
         if (!wnd.Workspace.ResourceManager.IsFileOpen(file)) {
             return;
         }
