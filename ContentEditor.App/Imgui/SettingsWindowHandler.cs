@@ -287,6 +287,7 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     {
         ImGui.Spacing();
         ShowSetting(config.BundleDefaultSaveFullPath, Lang.Settings.BundleDefaultSaveFullPath);
+        ShowSetting(config.AlwaysIncludeBundleInPublish, Lang.Settings.AlwaysIncludeBundleInPublish);
         ShowSetting(config.BundleCustomBaseTargetPath, Lang.Settings.CustomBundleBasePath);
 
         ImGui.SeparatorText(Lang.Settings.Section_BundleDefaults);
@@ -419,7 +420,6 @@ public class SettingsWindowHandler : IWindowHandler, IKeepEnabledWhileSaving
     }
     private void ShowHotkeysMeshViewerTab()
     {
-        
         ImGui.Spacing();
         ImGui.SeparatorText(Lang.Settings.Section_MeshEditor);
         ImguiKeybinding(Lang.Settings.Bind_MeshViewer_VertexSelection, config.Key_MeshViewer_VertexSelection);

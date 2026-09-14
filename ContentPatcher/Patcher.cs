@@ -14,7 +14,6 @@ public class Patcher : IDisposable
 {
     private Workspace env;
     private ContentWorkspace? workspace;
-    private string runtimeEnumsPath = string.Empty;
     private string nativesPath = string.Empty;
 
     private const string EnumsRelativePath = "reframework/data/injected_enums/";
@@ -22,13 +21,9 @@ public class Patcher : IDisposable
     public Workspace Env => env;
     private GameConfig config => env.Config;
 
-    public string? OutputFilepath { get; set; }
-    public bool IsPublishingMod { get; set; }
-    public bool AllowSymlinks { get; set; }
+    public PatchParameters Parameters { get; set; } = new() { OutputFilepath = "" };
 
-    public bool StoreGDeflateTexturesAsSubPak { get; set; } = false;
-
-    private string? LoosePublishMetdataFilepath => Directory.Exists(OutputFilepath) ? Path.Combine(OutputFilepath, "_patch_metadata.json") : null;
+    private string? LoosePublishMetdataFilepath => Directory.Exists(Parameters?.OutputFilepath) ? Path.Combine(Parameters.OutputFilepath, "_patch_metadata.json") : null;
 
     private bool _symlinkFailed;
 
@@ -54,10 +49,25 @@ public class Patcher : IDisposable
         config.LoadValues(values);
     }
 
-    public bool Execute(bool reloadBundles = true)
+    public bool Execute(PatchParameters parameters)
     {
         if (string.IsNullOrEmpty(config.GamePath) || !Directory.Exists(config.GamePath)) {
             Logger.Error("Could not execute patch. Game path is incorrect or not configured.");
+            return false;
+        }
+
+        Parameters = parameters;
+        if (string.IsNullOrEmpty(parameters.OutputFilepath) && parameters.OutputType == PatchOutputType.GamePatch) {
+            parameters.OutputFilepath = config.GamePath;
+        }
+
+        if (string.IsNullOrEmpty(parameters.OutputFilepath)) {
+            Logger.Error("No patch output file path was given.");
+            return false;
+        }
+
+        if (parameters.ExportAsPak && !parameters.OutputFilepath.EndsWith(".pak")) {
+            Logger.Error("Attempted PAK export with no exact pak file path given.");
             return false;
         }
 
@@ -71,14 +81,13 @@ public class Patcher : IDisposable
             // 2. load game-specific patch config / overrides
             workspace = new ContentWorkspace(env, new PatchDataContainer(configPath));
         }
-        runtimeEnumsPath = Path.Combine(config.GamePath, EnumsRelativePath);
         nativesPath = Path.Combine(config.GamePath, env.BasePath);
 
         Logger.Info("Setup workspace in", sw.Elapsed.TotalSeconds);
         sw.Restart();
 
         // 3. resolve / find all active mods
-        if (reloadBundles) {
+        if (parameters.ReloadBundles) {
             workspace.BundleManager.LoadDataBundles();
             Logger.Info($"Loaded {workspace.BundleManager.AllBundles.Count} bundles ({workspace.BundleManager.ActiveBundles.Count} active) in {sw.Elapsed.TotalSeconds}");
         }
@@ -136,21 +145,18 @@ public class Patcher : IDisposable
         string outputDirMain;
         string outputDirSub;
 
-        var outfile = OutputFilepath;
-        var isPak = Path.GetExtension(OutputFilepath) == ".pak";
-        if (isPak) {
+        var publishBundle = Parameters.OutputType is PatchOutputType.Publish or PatchOutputType.BundlePublish ? workspace.BundleManager.ActiveBundles.LastOrDefault() : null;
+        if (Parameters.ExportAsPak) {
             var outputDir = Path.Combine(config.GamePath, ".content-patcher-staging");
-            outputDirLoose = Path.GetDirectoryName(OutputFilepath)!;
+            outputDirLoose = Path.GetDirectoryName(Parameters.OutputFilepath)!;
             outputDirMain = Path.Combine(outputDir, "main");
             outputDirSub = Path.Combine(outputDir, "sub");
             if (Directory.Exists(outputDir)) {
                 Directory.Delete(outputDir, true);
             }
-            outfile = OutputFilepath!;
         } else {
-            outputDirMain = OutputFilepath ?? config.GamePath;
-            outfile = outputDirMain;
-            outputDirLoose = outputDirMain;
+            outputDirLoose = Parameters.OutputFilepath;
+            outputDirMain = Parameters.OutputFilepath;
             outputDirSub = Path.Combine(outputDirMain, ".content-patcher-staging/sub");
             if (Directory.Exists(outputDirSub)) {
                 Directory.Delete(outputDirSub, true);
@@ -158,7 +164,7 @@ public class Patcher : IDisposable
         }
 
         // prepare all modified files
-        var needsSubPak = StoreGDeflateTexturesAsSubPak && Env.RequiresSubPaksForTextures;
+        var needsSubPak = Parameters.StoreGDeflateTexturesAsSubPak && Env.RequiresSubPaksForTextures;
         var hasTextures = false;
         foreach (var file in workspace!.ResourceManager.GetOpenFiles()) {
             var targetPath = file.TargetPath ?? file.Filepath;
@@ -173,7 +179,7 @@ public class Patcher : IDisposable
             }
 
             Directory.CreateDirectory(Path.GetDirectoryName(fileOutput)!);
-            if (!isPak && !file.Modified && AllowSymlinks && !_symlinkFailed && File.Exists(file.Filepath)) {
+            if (!Parameters.ExportAsPak && !file.Modified && Parameters.AllowSymlinks && !_symlinkFailed && File.Exists(file.Filepath)) {
                 try {
                     File.CreateSymbolicLink(fileOutput, file.Filepath);
                 } catch (Exception e) {
@@ -189,8 +195,40 @@ public class Patcher : IDisposable
             };
         }
 
+        if (publishBundle != null) {
+            var modinfoRelativePath = "modinfo.ini";
+            string? bundleRelativePath = null;
+            if (Parameters.OutputType is PatchOutputType.Publish && Parameters.IncludeBundleJsonForPublish) {
+                bundleRelativePath = $"content/installed/{publishBundle.Name}.bundle.json";
+            } else if (Parameters.OutputType is PatchOutputType.BundlePublish) {
+                bundleRelativePath = $"content/bundles/{publishBundle.Name}/bundle.json";
+            }
+
+            var modConfigPath = Path.Combine(workspace.BundleManager.GetBundleFolder(publishBundle), modinfoRelativePath);
+            var modinfoOutputPath = Path.Combine(outputDirMain, modinfoRelativePath);
+            if (File.Exists(modConfigPath)) {
+                File.Copy(modConfigPath, modinfoOutputPath, true);
+            } else {
+                File.WriteAllBytes(modinfoOutputPath, Encoding.Default.GetBytes(publishBundle.ToModConfigIni()));
+            }
+            if (Parameters.ExportAsPak) {
+                // include modinfo as both loose and inside the pak to be safe
+                File.Copy(modinfoOutputPath, Path.Combine(outputDirLoose, modinfoRelativePath), true);
+            }
+
+            if (bundleRelativePath != null) {
+                var modBundleOutputPath = Path.Combine(outputDirMain, bundleRelativePath);
+                Directory.CreateDirectory(Path.GetDirectoryName(modBundleOutputPath)!);
+                using var fs = File.Create(modBundleOutputPath);
+                JsonSerializer.Serialize(fs, publishBundle, JsonConfig.jsonOptions);
+                if (Parameters.ExportAsPak) {
+                    File.Copy(modBundleOutputPath, Path.Combine(outputDirLoose, bundleRelativePath));
+                }
+            }
+        }
+
         // full pak handling
-        if (isPak) {
+        if (Parameters.ExportAsPak) {
             if (!Directory.Exists(outputDirMain) && !Directory.Exists(outputDirSub))
             {
                 Logger.Error("No files have been modified by the active bundles");
@@ -200,28 +238,16 @@ public class Patcher : IDisposable
             var writer = new PakWriter();
             writer.AddFilesFromDirectory(outputDirMain, true);
             writer.AddFilesFromDirectory(outputDirSub, true);
-            if (IsPublishingMod && workspace.BundleManager.ActiveBundles.LastOrDefault() != null) {
-                var bundle = workspace.BundleManager.ActiveBundles.Last();
-                var modConfigPath = Path.Combine(workspace.BundleManager.GetBundleFolder(bundle), "modinfo.ini");
-                if (File.Exists(modConfigPath)) {
-                    writer.AddFile("modinfo.ini", modConfigPath);
-                } else {
-                    writer.AddFile("modinfo.ini", Encoding.Default.GetBytes(bundle.ToModConfigIni()));
-                }
-                writer.AddFile("bundle.json", Encoding.Default.GetBytes(JsonSerializer.Serialize(bundle, JsonConfig.jsonOptions)));
-            }
-            writer.SaveTo(outfile);
-            Logger.Info("Patch saved to PAK file: " + outfile);
-            patch.PakSize = new FileInfo(outfile).Length;
+            writer.SaveTo(Parameters.OutputFilepath);
+            Logger.Info("Patch saved to PAK file: " + Parameters.OutputFilepath);
+            patch.PakSize = new FileInfo(Parameters.OutputFilepath).Length;
         }
 
         // handle enums
         foreach (var bundle in workspace.BundleManager.ActiveBundles) {
             if (!(bundle.Enums?.Count > 0)) continue;
 
-            // if the output is PAK, output any custom enums into a reframework dir next to it
-            var outputBaseDir = Path.GetExtension(outfile) == ".pak" ? Path.GetDirectoryName(outfile)! : outfile;
-            var enumFile = Path.Combine(outputBaseDir, EnumsRelativePath, bundle.Name + ".txt");
+            var enumFile = Path.Combine(outputDirLoose, EnumsRelativePath, bundle.Name + ".txt");
             Directory.CreateDirectory(Path.GetDirectoryName(enumFile)!);
             var enumData = new StringBuilder();
             enumData.AppendLine("# This file was auto generated by REE Content Editor").AppendLine();
@@ -239,14 +265,16 @@ public class Patcher : IDisposable
             };
         }
 
+        // TODO handle runtime bundle.json if needed
+
         // loose files additional sub pak for textures
-        if (!isPak && needsSubPak && hasTextures) {
-            string texPakFile = PakUtils.GetNextSubPakFilepath(Path.HasExtension(outfile) ? Path.GetDirectoryName(outfile)! : outfile);
+        if (!Parameters.ExportAsPak && needsSubPak && hasTextures) {
+            string texPakFile = PakUtils.GetNextSubPakFilepath(outputDirMain);
             try {
                 var writerSub = new PakWriter();
                 writerSub.AddFilesFromDirectory(outputDirSub, true);
                 writerSub.SaveTo(texPakFile);
-                Logger.Info("Texture pak saved to file: " + outfile);
+                Logger.Info("Texture pak saved to file: " + texPakFile);
                 patch.SubPakSize = new FileInfo(texPakFile).Length;
             } catch (Exception e) {
                 Logger.Error($"Failed to update texture sub pak: {e.Message} (file {texPakFile})");
@@ -337,15 +365,17 @@ public class Patcher : IDisposable
 
     private void DumpPatchMetadata(PatchInfo patch)
     {
-        string metaPath;
-        if (Path.GetExtension(OutputFilepath) == ".pak" && Path.Exists(OutputFilepath)) {
-            metaPath = OutputFilepath + ".patch_metadata.json";
-        } else {
-            metaPath = LoosePublishMetdataFilepath ?? workspace!.BundleManager.ResourcePatchLogPath;
+        if (Parameters.IncludePatchMetadataJson) {
+            string metaPath;
+            if (Parameters.ExportAsPak && Path.Exists(Parameters.OutputFilepath)) {
+                metaPath = Parameters.OutputFilepath + ".patch_metadata.json";
+            } else {
+                metaPath = LoosePublishMetdataFilepath ?? workspace!.BundleManager.ResourcePatchLogPath;
+            }
+            using var fs = File.Create(metaPath);
+            JsonSerializer.Serialize(fs, patch, JsonConfig.jsonOptions);
+            Logger.Info("Patch metadata written to " + metaPath);
         }
-        using var fs = File.Create(metaPath);
-        JsonSerializer.Serialize(fs, patch, JsonConfig.jsonOptions);
-        Logger.Info("Patch metadata written to " + metaPath);
         Logger.Info("File list:\n", string.Join("\n", patch.Resources.Select(r => r.Key)));
     }
 

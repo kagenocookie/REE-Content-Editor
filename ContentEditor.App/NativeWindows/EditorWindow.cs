@@ -611,11 +611,11 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                             string launchSuffix = "";
                             switch (launchType) {
                                 case GameLaunchType.LooseFiles:
-                                    ApplyContentPatches(null);
+                                    ApplyContentPatches(PatchOutputType.GamePatch, false);
                                     launchSuffix = " with patched loose files";
                                     break;
                                 case GameLaunchType.Pak:
-                                    ApplyContentPatches("pak");
+                                    ApplyContentPatches(PatchOutputType.GamePatch, true);
                                     launchSuffix = " with patched pak files";
                                     break;
                             }
@@ -663,13 +663,13 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             ImGui.PopStyleColor();
             ImGui.Separator();
             if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Home.ApplyPatches_Loose))) {
-                ApplyContentPatches(null);
+                ApplyContentPatches(PatchOutputType.GamePatch, false);
             }
             if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Home.ApplyPatches_Pak))) {
-                ApplyContentPatches("pak");
+                ApplyContentPatches(PatchOutputType.GamePatch, true);
             }
             if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Home.ApplyPatches_CustomPath))) {
-                PlatformUtils.ShowFolderDialog((path) => ApplyContentPatches(path), workspace.Env.Config.GamePath);
+                PlatformUtils.ShowFolderDialog((path) => ApplyContentPatches(PatchOutputType.GamePatch, false, path), workspace.Env.Config.GamePath);
             }
             if (ImGui.MenuItem(Lang.Home.ApplyPatches_Revert)) {
                 RevertContentPatches();
@@ -1161,7 +1161,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         if (dragging) ImGui.EndDisabled();
     }
 
-    internal bool ApplyContentPatches(string? outputPath, string? singleBundle = null)
+    internal bool ApplyContentPatches(PatchOutputType outputType, bool usePak, string? outputPath = null, string? singleBundle = null)
     {
         if (workspace == null) {
             Logger.Error("Select a game first!");
@@ -1172,16 +1172,27 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
             var manager = singleBundle == null ? workspace.BundleManager : workspace.BundleManager.CreateBundleSpecificManager(singleBundle);
             var patchWorkspace = new ContentWorkspace(workspace.Env, workspace.Config, manager);
             var patcher = new Patcher(patchWorkspace);
-            patcher.IsPublishingMod = singleBundle != null;
-            patcher.StoreGDeflateTexturesAsSubPak = AppConfig.Instance.UseSubPakForLooseTextures;
-            if (outputPath == "pak") {
-                patcher.OutputFilepath = patcher.FindActivePatchPak()
+            var parameters = new PatchParameters() {
+                ReloadBundles = singleBundle == null,
+                OutputType = outputType,
+                ExportAsPak = usePak,
+                IncludePatchMetadataJson = outputType == PatchOutputType.GamePatch,
+                IncludeBundleJsonForPublish = AppConfig.Instance.AlwaysIncludeBundleInPublish,
+                StoreGDeflateTexturesAsSubPak = AppConfig.Instance.UseSubPakForLooseTextures,
+            };
+            if (usePak) {
+                parameters.OutputFilepath = outputPath
+                    ?? patcher.FindActivePatchPak()
                     ?? (Workspace.Env.RequiresSubPaksForTextures ? PakUtils.GetNextSubPakFilepath(Workspace.Env.Config.GamePath) : PakUtils.GetNextPakFilepath(Workspace.Env.Config.GamePath));
             } else {
-                patcher.OutputFilepath = outputPath;
-                patcher.AllowSymlinks = !patcher.IsPublishingMod && AppConfig.Instance.UseSymlinkPatching.Get();
+                parameters.OutputFilepath = outputPath ?? "";
             }
-            return patcher.Execute(singleBundle == null);
+
+            if (outputType == PatchOutputType.GamePatch && AppConfig.Instance.UseSymlinkPatching.Get()) {
+                parameters.AllowSymlinks = true;
+            }
+
+            return patcher.Execute(parameters);
         } catch (Exception e) {
             Logger.Error(e, Lang.Errors.PatchFailed);
             return false;
