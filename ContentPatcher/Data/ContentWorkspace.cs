@@ -14,7 +14,7 @@ public sealed class ContentWorkspace : IDisposable
     public Workspace Env { get; }
     public ResourceManager ResourceManager { get; }
     public ContentWorkspaceData Data { get; set; } = new();
-    public PatchDataContainer Config { get; }
+    public PatchConfig Config { get; }
     public BundleManager BundleManager { get; set; }
     public BundleManager? EditedBundleManager { get; private set; }
     public Bundle? CurrentBundle { get; private set; }
@@ -25,7 +25,7 @@ public sealed class ContentWorkspace : IDisposable
     public UIService UI { get; set; } = new UIServiceStub();
     public string VersionHash { get; private set; }
 
-    public ContentWorkspace(Workspace env, PatchDataContainer patchConfig, BundleManager? rootBundleManager = null)
+    public ContentWorkspace(Workspace env, PatchConfig patchConfig, BundleManager? rootBundleManager = null)
     {
         Env = env;
         Config = patchConfig;
@@ -48,6 +48,7 @@ public sealed class ContentWorkspace : IDisposable
             }
             if (valid) patchConfig.Load(this);
         }
+        BundleManager.Mapping = patchConfig.RuntimeMapping;
         VersionHash = string.IsNullOrEmpty(env.Config.GamePath) ? "0000" : AppUtils.GetGameVersionHash(env.Config);
         ResourceManager.Setup(this);
     }
@@ -129,12 +130,12 @@ public sealed class ContentWorkspace : IDisposable
             WindowManager.Instance.ShowError($"Bundle '{Data.ContentBundle}' not found!");
             return;
         }
-        if (bundle.HasResources) {
+        if (bundle.HasFiles) {
             // update the diffs for all open bundle resource files that are part of the bundle
             // we don't check for file.Modified because it can be marked as false but still be different from the current diff
             // e.g. if we manually replaced the file or undo'ed our changes
             if (forceDiffAllFiles) {
-                foreach (var info in bundle.Resources) {
+                foreach (var info in bundle.Files) {
                     FileHandle? file;
                     try {
                         file = ResourceManager.GetFileHandle(info.Target);

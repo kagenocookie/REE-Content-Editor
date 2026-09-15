@@ -3,123 +3,136 @@ using ReeLib;
 
 namespace ContentPatcher;
 
-[ResourcePatcher("array-file", nameof(Deserialize))]
-public class ArrayFileResourceHandler : ResourceHandler
+[ResourcePatcher("array-file")]
+public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
 {
-    private string? targetArrayField;
+    private RszFieldAccessorBase<IList<object>> arrayAccessor = null!;
 
-    public static ArrayFileResourceHandler Deserialize(string resourceTypeId, Dictionary<string, object> data)
+    public override EntityFieldValueHandler CreateValueHandler(EntityField field) => Config.SubIDGenerator == null ? new ObjectField() : new ObjectArray();
+
+    public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
     {
-        var file = data.GetValueOrDefault("file");
-        var files = new List<string>();
-        if (file is string str) {
-            files.Add(str);
-        } else {
-            files.AddRange(((IEnumerable<object>)data["files"]).Cast<string>());
-        }
-
-        if (files.Count != 1) {
-            throw new InvalidDataException("array-file requires exactly one file");
-        }
         return new ArrayFileResourceHandler() {
-            Files = files,
-            ResourceTypeID = resourceTypeId,
-            targetArrayField = data.TryGetValue("field", out var ff) ? ff as string : null,
+            Config = resource,
+            Files = data.TargetFiles.ToList(),
+            arrayAccessor = data.GetDirectFieldAccessor<IList<object>>(static f => f.array && f.type == RszFieldType.Object),
         };
     }
 
-    public override (long id, IContentResource resource) CreateResource(ContentWorkspace workspace, ClassConfig config, ResourceEntity entity, JsonNode? initialData)
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
     {
-        if (config.SubIDFields?.Length > 0) {
-            var list = new RSZObjectListResource(ResourceTypeID, Files[0]);
-            workspace.Diff.ApplyDiff(list.Instances, initialData, ResourceTypeID);
-            foreach (var inst in list.Instances) {
-                if (config.IDFields?.Length == 1) {
-                    var idField = config.IDFields[0].Field;
-                    if (idField.type is RszFieldType.String or RszFieldType.Resource) {
-                        throw new NotImplementedException("String IDs not yet supported");
-                    } else {
-                        var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
-                        config.IDFields[0].Set(inst, Convert.ChangeType(entity.Id, fieldType));
-                    }
-                } else {
-                    throw new NotImplementedException("Unsupported rsz object id combination");
-                }
+        if (Config.SubIDGenerator != null) {
+            if (resource is not RSZObjectListResource rszl) {
+                resource = rszl = new RSZObjectListResource(Config, [], Files[0]);
             }
-            return (entity.Id, list);
+
+            workspace.Diff.ApplyDiff(rszl.Instances, data, Config.RszClassRequired.name);
         } else {
-            var inst = RszInstance.CreateInstance(workspace.Env.RszParser, workspace.Env.RszParser.GetRSZClass(ResourceTypeID)!);
-            workspace.Diff.ApplyDiff(inst, initialData);
-            if (config.IDFields?.Length == 1) {
-                var idField = config.IDFields[0].Field;
-                var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
-                config.IDFields[0].Set(inst, Convert.ChangeType(entity.Id, fieldType));
-            } else {
-                throw new NotImplementedException("Unsupported rsz object id combination");
+            if (resource is not RSZObjectResource rszo) {
+                resource = rszo = new RSZObjectResource(Config, workspace.Env.CreateRszInstance(Config.RszClassRequired), Files[0]);
             }
-            return (entity.Id, new RSZObjectResource(inst, Files[0]));
+
+            workspace.Diff.ApplyDiff(rszo.Instance, data);
         }
+        if (Config.Filter is ISettable settable) {
+            settable.Set(resource);
+        }
+        return resource;
     }
 
-    public override void ReadResources(ContentWorkspace workspace, ClassConfig config, Dictionary<long, IContentResource> dict)
+    public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
     {
-        var items = GetObjectList(workspace, false);
-        if (items.Count == 0) return;
+        var res = ApplyResourceData(workspace, null, initialData);
+        var idgen = Config.IDGeneratorRequired;
+        if (idgen.Fields != null && idgen.Fields.Length != 1) {
+            throw new NotImplementedException("Unsupported rsz object id combination");
+        }
 
-        var idGenerator = IDGenerator.GetGenerator(items[0], config.IDFields!);
-        var subIdGenerator = config.SubIDFields?.Length > 0 ? IDGenerator.GetGenerator(items[0], config.SubIDFields) : null;
-        foreach (var item in items.OfType<RszInstance>()) {
-            var id = idGenerator.GetID(item, config.IDFields!);
-            if (subIdGenerator != null) {
-                if (dict.TryGetValue(id, out var list) && list is RSZObjectListResource objlist) {
+        if (idgen.Fields == null) {
+            return res;
+        }
+
+        var idField = idgen.Fields[0].Field;
+        var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
+        var castId = Convert.ChangeType(id, fieldType);
+
+        if (res is RSZObjectListResource list) {
+            foreach (var item in list.Instances) {
+                idgen.Fields[0].Set(item, castId);
+            }
+        } else if (res is RSZObjectResource inst) {
+            idgen.Fields[0].Set(inst.Instance, castId);
+        }
+        return res;
+    }
+
+    public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)
+    {
+        var idGenerator = Config.IDGeneratorRequired;
+        var subIdGenerator = Config.SubIDGenerator;
+
+        foreach (var filepath in Files) {
+            var userfile = workspace.ResourceManager.GetFileContents<UserFile>(filepath);
+            var items = arrayAccessor.Get(userfile.Instance!);
+            foreach (var item in items.Cast<RszInstance>()) {
+                if (Config.Filter?.IsEnabled(item) == false) {
+                    continue;
+                }
+                var id = idGenerator.GetID(item);
+                if (subIdGenerator != null) {
+                    if (!dict.TryGetValue(id, out var list) || list is not RSZObjectListResource objlist) {
+                        dict[id] = objlist = new RSZObjectListResource(Config, filepath);
+                    }
                     objlist.Instances.Add(item);
                 } else {
-                    dict[id] = new RSZObjectListResource(item, Files[0]);
+                    dict[id] = new RSZObjectResource(Config, item, filepath);
                 }
-            } else {
-                dict[id] = new RSZObjectResource(item, Files[0]);
             }
         }
     }
 
-    public override void ModifyResources(ContentWorkspace workspace, ClassConfig config, IEnumerable<KeyValuePair<long, IContentResource>> resources)
+    private void ClearList(IList<object> list)
     {
-        var items = GetObjectList(workspace, true);
-        if (items.Count == 0) return;
-        // the current expected behavior is that we read _all_ the resources in ReadResources, meaning we can just clear and re-add everything here
+        if (Config.Filter == null) {
+            list.Clear();
+            return;
+        }
 
-        var dict = new Dictionary<long, RszInstance>();
-        var isarray = config.SubIDFields?.Length > 0;
-        if (isarray) {
-            items.Clear();
+        for (int i = list.Count - 1; i >= 0; i--) {
+            var item = list[i];
+            if (Config.Filter.IsEnabled(item)) {
+                list.RemoveAt(i);
+            }
+        }
+    }
+
+    public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
+    {
+        var outFiles = new Dictionary<string, IList<object>>();
+        if (Config.SubIDGenerator != null) {
             foreach (var (id, resource) in resources) {
                 var list = (RSZObjectListResource)resource;
+                if (!outFiles.TryGetValue(list.FileResourcePath, out var outList)) {
+                    var userfile = workspace.ResourceManager.GetFileContents<UserFile>(list.FileResourcePath, true);
+                    outFiles[list.FileResourcePath] = outList = arrayAccessor.Get(userfile.Instance!);
+                    ClearList(outList);
+                }
+
                 foreach (var item in list.Instances) {
-                    items.Add(item);
+                    outList.Add(item);
                 }
             }
         } else {
-            items.Clear();
             foreach (var (_, item) in resources) {
-                items.Add(((RSZObjectResource)item).Instance);
+                var citem = (RSZObjectResource)item;
+                if (!outFiles.TryGetValue(citem.FileResourcePath, out var outList)) {
+                    var userfile = workspace.ResourceManager.GetFileContents<UserFile>(citem.FileResourcePath, true);
+                    outFiles[citem.FileResourcePath] = outList = arrayAccessor.Get(userfile.Instance!);
+                    ClearList(outList);
+                }
+
+                outList.Add(citem.Instance);
             }
-        }
-    }
-
-    private IList<object> GetObjectList(ContentWorkspace workspace, bool modify)
-    {
-        UserFile userfile = workspace.ResourceManager.ReadFileResource<UserFile>(Files[0], modify);
-
-        var instance = userfile.Instance!;
-        if (string.IsNullOrEmpty(targetArrayField)) {
-            var arrayField = instance.RszClass.fields.FirstOrDefault(f => f.array);
-            if (arrayField == null) throw new Exception($"Invalid array-field patcher - root instance {instance} has no array fields");
-            return (IList<object>)instance.GetFieldValue(arrayField!)!;
-        } else {
-            var arrayField = instance.RszClass.IndexOfField(targetArrayField);
-            if (arrayField == -1) throw new Exception($"Invalid array-field patcher - root instance {instance} does not have field{targetArrayField}");
-
-            return (IList<object>)instance.Values[arrayField];
         }
     }
 }

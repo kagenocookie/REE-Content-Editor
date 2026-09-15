@@ -1,150 +1,96 @@
 using System.Text.Json.Nodes;
-using ContentEditor;
 using ReeLib;
-using ReeLib.Common;
 
 namespace ContentPatcher;
 
-[ResourcePatcher("multi-array", nameof(Deserialize))]
-public class MultiFileArrayResourceHandler : ResourceHandler
+[ResourcePatcher("multi-array")]
+public class MultiFileArrayResourceHandler : ResourceHandler, IResourceHandlerStatic
 {
-    private string path = "";
-    private bool nonUniqueIds = false;
+    private RszFieldAccessorBase<IList<object>> arrayAccessor = null!;
 
-    private class FileObjectContainer
-    {
-        public string file = "";
-        public string path = "";
-        public IList<object> list = null!;
+    public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new ObjectArray();
 
-        public override string ToString() => $"{path} [{list.Count}] ({file})";
-    }
-
-    public static MultiFileArrayResourceHandler Deserialize(string resourceTypeId, Dictionary<string, object> data)
+    public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
     {
         return new MultiFileArrayResourceHandler() {
-            ResourceTypeID = resourceTypeId,
-            path = (string)data["path"],
-            Files = ((IEnumerable<object>)data["files"]).Cast<string>().ToList(),
-            nonUniqueIds = data.GetValueOrDefault("nonUniqueIds") is bool bb ? bb : false,
+            Config = resource,
+            // path = data.Field ?? throw new Exception("Field is required for multi-array patcher!"),
+            Files = data.TargetFiles.ToList(),
+            arrayAccessor = data.GetDirectFieldAccessor<IList<object>>(static f => f.array && f.type == RszFieldType.Object),
         };
     }
 
-    public override (long id, IContentResource resource) CreateResource(ContentWorkspace workspace, ClassConfig config, ResourceEntity entity, JsonNode? initialData)
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
     {
-        // always store new resources on the first path, the idea is that it probably doesn't matter which because the catalogs are usually just merged for runtime anyway
-        var file = Files[0];
-        var inst = RszInstance.CreateInstance(workspace.Env.RszParser, workspace.Env.RszParser.GetRSZClass(ResourceTypeID)!);
-        workspace.Diff.ApplyDiff(inst, initialData);
-        if (config.IDFields?.Length == 1) {
-            var idField = config.IDFields[0].Field;
-            var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
-            config.IDFields[0].Set(inst, Convert.ChangeType(entity.Id, fieldType));
-        } else {
+        if (resource is not RSZObjectListResource rszl) {
+            // always store new resources on the first path, the idea is that it probably doesn't matter which because the catalogs are usually just merged for runtime anyway
+            resource = rszl = new RSZObjectListResource(Config, [], Files[0]);
+        }
+
+        workspace.Diff.ApplyDiff(rszl.Instances, data, Config.RszClassRequired.name);
+        return resource;
+    }
+
+    public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
+    {
+        var list = (RSZObjectListResource)ApplyResourceData(workspace, null, initialData);
+
+        var idgen = Config.IDGeneratorRequired;
+        if (idgen.Fields != null && idgen.Fields.Length != 1) {
             throw new NotImplementedException("Unsupported rsz object id combination");
         }
-        return (entity.Id, new RSZObjectResource(inst, file));
-    }
 
-    public override void ReadResources(ContentWorkspace workspace, ClassConfig config, Dictionary<long, IContentResource> dict)
-    {
-        var items = GetObjectList(workspace, false);
-        if (items.Count == 0) return;
-
-        var firstInstance = items.SelectMany(i => i.list).First();
-        var idGenerator = IDGenerator.GetGenerator(firstInstance, config.IDFields!);
-        if (config.SubIDFields?.Length > 0) {
-            throw new NotImplementedException("Sub ID not yet supported for multi file resources");
+        if (idgen.Fields == null) {
+            return list;
         }
 
-        foreach (var item in items) {
-            var file = item.file;
-            foreach (var elem in item.list.OfType<RszInstance>()) {
-                var id = idGenerator.GetID(elem, config.IDFields!);
-                if (nonUniqueIds) {
-                    id = AppUtils.StableHashCombine((uint)id, MurMur3HashUtils.GetHash(file));
-                }
-                dict[id] = new RSZObjectResource(elem, file);
-            }
-        }
-    }
+        var idField = idgen.Fields[0].Field;
+        var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
+        var castId = Convert.ChangeType(id, fieldType);
 
-    public override void ModifyResources(ContentWorkspace workspace, ClassConfig config, IEnumerable<KeyValuePair<long, IContentResource>> resources)
-    {
-        var items = GetObjectList(workspace, true);
-        if (items.Count == 0) return;
-        // the current expected behavior is that we read _all_ the resources in ReadResources, meaning we can just clear and re-add everything here
-
-        foreach (var obj in items) {
-            obj.list.Clear();
+        foreach (var item in list.Instances) {
+            idgen.Fields[0].Set(item, castId);
         }
 
-        foreach (var (_, item) in resources) {
-            var file = item.FilePath;
-            var container = items.FirstOrDefault(it => it.file == file);
-            if (container == null) {
-                Logger.Error("Multi-file resource pointing to unknown file " + file);
-                continue;
-            }
-
-            container.list.Add(((RSZObjectResource)item).Instance);
-        }
-    }
-
-    private List<FileObjectContainer> GetObjectList(ContentWorkspace workspace, bool modify)
-    {
-        var list = new List<FileObjectContainer>();
-        foreach (var file in Files) {
-            UserFile userfile = workspace.ResourceManager.ReadFileResource<UserFile>(file!, modify);
-
-            var instance = userfile.Instance!;
-            if (path.Contains('.')) {
-                var parts = path.Split('.');
-                static void HandleRecursiveSubfields(Span<string> parts, object instance, List<FileObjectContainer> list, string file, string path)
-                {
-                    var part = parts[0];
-                    if (part == "*") {
-                        var arr = (IEnumerable<object>)instance;
-                        var i = 0;
-                        foreach (var item in arr.Cast<RszInstance>()) {
-                            var subpath = path == "" ? i.ToString() : $"{path}.{i}";
-                            HandleRecursiveSubfields(parts.Slice(1), item, list, file, subpath);
-                            i++;
-                        }
-                    } else if (int.TryParse(part, out var index)) {
-                        var arr = (IEnumerable<object>)instance;
-                        var item = arr.ElementAt(index);
-                        var subpath = path == "" ? index.ToString() : $"{path}.{index}";
-                        HandleRecursiveSubfields(parts.Slice(1), item!, list, file, subpath);
-                    } else {
-                        var item = (RszInstance)instance;
-                        var fieldIndex = item.RszClass.IndexOfField(part);
-                        if (fieldIndex == -1) {
-                            throw new Exception($"Invalid array-field patcher - root instance {instance} does not have field {path}");
-                        }
-                        var fieldValue = item.Values[fieldIndex];
-                        var subpath = path == "" ? part : $"{path}.{part}";
-                        if (parts.Length == 1) {
-                            list.Add(new FileObjectContainer() {
-                                file = file,
-                                path = subpath,
-                                list = (IList<object>)fieldValue,
-                            });
-                        } else {
-                            HandleRecursiveSubfields(parts.Slice(1), fieldValue, list, file, subpath);
-                        }
-                    }
-                }
-                HandleRecursiveSubfields(parts.AsSpan(), instance, list, file, "");
-            } else {
-                var arrayField = instance.RszClass.IndexOfField(path);
-                if (arrayField == -1) throw new Exception($"Invalid array-field patcher - root instance {instance} does not have field {path}");
-
-                var item = new FileObjectContainer() { file = file, path = path };
-                item.list = (IList<object>)instance.Values[arrayField];
-                list.Add(item);
-            }
-        }
         return list;
+    }
+
+    public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)
+    {
+        var idGenerator = Config.IDGeneratorRequired;
+        foreach (var filepath in Files) {
+            var userfile = workspace.ResourceManager.GetFileContents<UserFile>(filepath);
+            var items = arrayAccessor.Get(userfile.Instance!);
+            if (items == null) continue;
+
+            foreach (var item in items.Cast<RszInstance>()) {
+                if (Config.Filter?.IsEnabled(item) == false) {
+                    continue;
+                }
+                var id = idGenerator.GetID(item);
+                if (!dict.TryGetValue(id, out var list) || list is not RSZObjectListResource objlist) {
+                    dict[id] = objlist = new RSZObjectListResource(Config, filepath);
+                }
+                objlist.Instances.Add(item);
+            }
+        }
+    }
+
+    public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
+    {
+        var outFiles = new Dictionary<string, IList<object>>();
+        foreach (var (id, resource) in resources) {
+            var list = (RSZObjectListResource)resource;
+            if (!outFiles.TryGetValue(list.FileResourcePath, out var outList)) {
+                var userfile = workspace.ResourceManager.GetFileContents<UserFile>(list.FileResourcePath, true);
+                // outFiles[list.FileResourcePath] = outList = (List<object>)userfile.Instance!.GetNestedFieldValue(path)!;
+                outFiles[list.FileResourcePath] = outList = (List<object>)arrayAccessor.Get(userfile.Instance!);
+                outList.Clear();
+            }
+
+            foreach (var item in list.Instances) {
+                outList.Add(item);
+            }
+        }
     }
 }

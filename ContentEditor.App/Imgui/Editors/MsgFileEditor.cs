@@ -276,7 +276,7 @@ public class MsgFileEditor : FileEditor, IWorkspaceContainer
         using (var _ = ImguiHelpers.Disabled(!(selectedRow >= 0 && selectedRow < File.Entries.Count))) {
             ImGui.SameLine();
             if (ImguiHelpers.ButtonMultiColor(AppIcons.SIC_Copy, [Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconPrimary, Colors.IconSecondary, Colors.IconPrimary])) {
-                var data = new MessageData(File.Entries[selectedRow], Filename, "");
+                var data = new MessageData(File.Entries[selectedRow], Filename, ResourceConfig.Placeholder);
                 EditorWindow.CurrentWindow?.CopyToClipboard(data.ToJson().ToJsonString(), "Entry copied!");
             }
             ImguiHelpers.Tooltip("Copy entry"u8);

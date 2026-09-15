@@ -2,25 +2,42 @@
 
 entities:
   events.event:
-    to_string: "Event {id}: {select_data._StartLocation:enum(app.AIKeyLocation)}"
-    custom_id_range: [10000, 999000]
+    to_string: "Event {id}: {data._StartLocation:enum(app.AIKeyLocation)}"
     fields:
-      select_data:
-        type: object
-        label: Data
-        param:
+      - name: data
+        resource:
+          id: [_SerialNum]
+          custom_id_range: [10000, 999000]
+          type: array-file
           classname: app.SuddenQuestSelectData
-          nested: false
+          file: appsystem/quest/userdata/questsudden/suddenquesttable.user
+          field: _SelectDataArray
+          params:
+            nested: false
+    runtime_mapping:
+      runtime_type: event
+      to_both:
+        data: data
+
   events.event_context:
     to_string: "Event context {id}: {data._Data._Type:enum(app.QuestDefine.SuddenQuestType)} - NPC={data._Data._NpcID:enum(app.CharacterID)}"
-    custom_id_range: [10000, 999000]
     fields:
-      data:
-        type: object
+      - name: data
         label: Data
-        param:
+        resource:
+          id: [_SerialNum]
+          custom_id_range: [10000, 999000]
           classname: app.SuddenQuestContextData
-          nested: false
+          type: array-file
+          file: appsystem/quest/userdata/questsudden/suddenquesttable.user
+          field: _ContextDataArray
+          params:
+            nested: false
+    runtime_mapping:
+      runtime_type: event_context
+      to_both:
+        data._Data: data
+
   events.event_spawns:
     enums:
     - name: app.DomainQueryGenerateRequestID
@@ -28,40 +45,28 @@ entities:
       primary: true
     to_string: "Event spawn table {id}: {id:enum(app.DomainQueryGenerateRequestID)}"
     fields:
-      data:
-        type: object
+      - name: data
         label: Data
-        param:
+        resource:
+          id: [_RequestID]
           classname: app.DomainQueryGenerateTable.DomainQueryGenetateTableElement
-          nested: false
+          type: array-file
+          file: leveldesign/generate/domainquerygenerate/domainquerygeneratetable.user
 
+  # app.GenerateRowData:
+  #   id: [_ManualSetGuid, _AutoSetGuid] ## TODO: verify are these really unique?
+  # app.GenerateTableData:
+  #   id: [_TableID]
+  #   group: spawns
+  #   type: autoset_spawns
 
 classes:
   app.SuddenQuestSelectData:
-    id: [_SerialNum]
     to_string: "Event select data {_SerialNum}"
-    patcher:
-      type: array-file
-      file: natives/stm/appsystem/quest/userdata/questsudden/suddenquesttable.user.2
-      field: _SelectDataArray
   app.SuddenQuestContextData:
-    id: [_SerialNum]
     to_string: "Event context data {_SerialNum}"
-    patcher:
-      type: array-file
-      file: natives/stm/appsystem/quest/userdata/questsudden/suddenquesttable.user.2
-      field: _ContextDataArray
   app.DomainQueryGenerateTable.DomainQueryGenetateTableElement:
-    id: [_RequestID]
     to_string: "Generate table {_RequestID:enum(app.DomainQueryGenerateRequestID)}"
-    patcher:
-      type: array-file
-      file: natives/stm/leveldesign/generate/domainquerygenerate/domainquerygeneratetable.user.2
   app.GenerateRowData:
-    id: [_ManualSetGuid, _AutoSetGuid] ## TODO: verify are these really unique?
     fields:
       _CharaID: { enum: app.CharacterID }
-  app.GenerateTableData:
-    id: [_TableID]
-    group: spawns
-    type: autoset_spawns

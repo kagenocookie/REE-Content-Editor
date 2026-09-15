@@ -3,13 +3,27 @@ using ReeLib;
 
 namespace ContentPatcher;
 
-public class RSZObjectResource(RszInstance instance, string file) : IContentResource
+public class RSZObjectResource(ResourceConfig type, RszInstance instance, string file) : IContentResource, IPropertyContainer
 {
-    public string ResourceTypeID => Instance.RszClass.name;
-    public string FilePath => file;
+    public ResourceConfig ResourceType => type;
+    public string FileResourcePath => file;
     public RszInstance Instance { get; set; } = instance;
 
-    public IContentResource Clone() => new RSZObjectResource(Instance.Clone(), file);
+    public IContentResource Clone() => new RSZObjectResource(ResourceType, Instance.Clone(), file);
+
+    public object? Get(string path)
+    {
+        return Instance.GetNestedFieldValue(path);
+    }
+
+    public void Set(string path, object? value)
+    {
+        var currentValue = Get(path);
+        if (currentValue != null && value?.GetType() != currentValue.GetType()) {
+            value = Convert.ChangeType(value, currentValue.GetType());
+        }
+        Instance.SetNestedFieldValue(path, value ?? RszInstance.NULL);
+    }
 
     public JsonNode ToJson(Workspace env) => Instance.ToJson(env);
 }

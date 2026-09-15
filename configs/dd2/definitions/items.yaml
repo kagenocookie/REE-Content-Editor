@@ -4,206 +4,211 @@ entities:
     - name: app.ItemIDEnum
       format: "It{id:06}"
       primary: true # denotes that the entity label should override this enum's corresponding display labels (entity id == enum value)
-    custom_id_range: [30000, 65000]
     # SmartFormat library is used for all string interpolation functionality
     # can fetch entity fields as well as nested object fields with "."
     to_string: "Item {id}: {name}"
+    zero_entity:
+      id: 0
     fields:
-      # name and desc, now with enum injection support, might work by just modifying the msg files
-      # assuming enum is enough to make the game generate the msg key strings correctly, otherwise we need a runtime patch as well
-      name:
-        # msg is a built-in field type that handles msg-by-key integration
-        # it will get saved as a per-lang dictionary in the mod patch.json { en: "My English name", jp: "超日本人です" }
+    - name: data
+      required: true
+      resource:
+        id: [_Id]
+        custom_id_range: [30000, 65000]
+        type: merged-group
+        classname: app.ItemCommonParam
+        subtypes:
+          app.ItemDataParam:
+            type: array-file
+            classname: app.ItemDataParam
+            files:
+            - AppSystem/Item/ItemData/ItemData.user
+            - AppSystem/Item/ItemData/ExItemData.user
+          app.ItemWeaponParam:
+            type: array-file
+            classname: app.ItemWeaponParam
+            file: AppSystem/Item/ItemData/ItemWeaponData.user
+          app.ItemArmorParam:
+            type: array-file
+            classname: app.ItemArmorParam
+            file: AppSystem/Item/ItemData/ItemArmorData.user
+    - name: name
+      label: Name
+      required: true
+      field_type: keyed_message
+      display_after: start
+      resource:
         type: msg
-        label: Name
-        required: true
-        param:
-          key: "item_name_{id}"
-          resource: item_name
-      description:
+        files:
+        - Message/UI/ItemName.msg
+        - Message/UI/ItemName_END.msg
+        params:
+          key_pattern: "item_name_(\\d+)"
+          key_format: "item_name_{id}"
+    - name: description
+      label: Description
+      required: true
+      field_type: keyed_message
+      display_after: name
+      resource:
         type: msg
-        label: Description
-        required: true
-        param:
-          key: "item_detail_{id}"
-          resource: item_detail
+        files:
+        - Message/UI/ItemDetail.msg
+        - Message/UI/ItemDetail_END.msg
+        params:
+          key_pattern: "item_detail_(\\d+)"
+          key_format: "item_detail_{id}"
           multiline: true
-      data:
-        type: object
-        label: Data
-        required: true
-        param:
-          classname: app.ItemCommonParam
-          matchBy: _Id   # Optional - default always match by id (assuming the target object has an ID set defined)
-      icon:
-        display_after: description
-        # if we used vanilla tech, there would be a uvs file, added to the item master uvs file, and then an ID taken from there
-        # alternatively we use content editor runtime tech, the patch needs to be saved as a CE bundle with tex and rect info
-        type: DD2_ItemIcon
-      armorEnhanceData:
-        type: objectArray
-        label: Enhance data
-        display_after: icon
-        when_classname:
-          field: data
-          classname: app.ItemArmorParam
-        param:
-          classname: app.ArmorEnhanceParam
-      weaponEnhanceData:
-        type: objectArray
-        label: Enhance data
-        display_after: icon
-        when_classname:
-          field: data
-          classname: app.ItemWeaponParam
-        param:
-          classname: app.WeaponEnhanceParam
+    - name: icon
+      display_after: description
+      # if we used vanilla tech, there would be a uvs file, added to the item master uvs file, and then an ID taken from there
+      # alternatively we use content editor runtime tech, the patch needs to be saved as a CE bundle with tex and rect info
+      type: DD2_ItemIcon
+      field_type: DD2_ItemIcon
+    - name: enhanceData
+      label: Enhance data
+      display_after: icon
+      when_any:
+      - field: data
+        property: classname
+        equals: app.ItemArmorParam
+      - field: data
+        property: classname
+        equals: app.ItemWeaponParam
+      resource:
+        id: [_ItemId]
+        sub_id: [_Type, _EnhanceNo]
+        classname: app.EnhanceParamBase
+        type: merged-group
+        subtypes:
+          armor:
+            type: array-file
+            file: AppSystem/Item/ItemData/ArmorEnhanceData.user
+            classname: app.ArmorEnhanceParam
+          weapon:
+            type: array-file
+            file: AppSystem/Item/ItemData/WeaponEnhanceData.user
+            classname: app.WeaponEnhanceParam
+    runtime_mapping:
+      runtime_type: item_data
+      to_both:
+        data: data
+        name: name
+        description: description
+        enhanceData: enhance
+        icon.icon_rect: icon_rect
+        icon.icon_path: icon_path
+
   items.weapon:
     enums:
     - name: app.WeaponID
       format: "{name}"
       primary: true # denotes that the entity label should override this enum's corresponding display labels (entity id == enum value)
-    custom_id_range: [1000, 100000]
     to_string: 'Weapon {id:enum(app.WeaponID)} (#{id}): {id:reverseLookupEntity(item_data|\{data?._WeaponId@ItemWeaponParam\}|\{label\}|Unknown item)}'
     fields:
-      data:
-        type: object
+      - name: data
         label: Data
-        param:
+        resource:
+          id: [ID]
+          custom_id_range: [1000, 100000]
+          type: array-file
           classname: app.WeaponCatalogData.Data
-      name:
+          file: AppSystem/Catalog/MainContents/Userdata/WeaponCatalogData.user
+      - name: name
         type: string
         label: Weapon ID name
         required: true
-        param:
-          regex: "^wp[0-9_]+$"
-          regexDescription: "Example: wp00_000"
-          tooltip: Enter a name for the weapon ID. This should be unique across all weapons.
-          initial: "{id:enum(app.WeaponID)}"
-          diffable: false
         display_after: start
-      offsets:
-        type: object
+        resource:
+          type: string
+          params:
+            regex: "^wp[0-9_]+$"
+            regexDescription: "Example: wp00_000"
+            tooltip: Enter a name for the weapon ID. This should be unique across all weapons.
+            initial: "{id:enum(app.WeaponID)}"
+            diffable: false
+      - name: offsets
         label: Offset setting
-        param:
+        resource:
+          id: [ID]
+          type: array-file
           classname: app.WeaponSetting.OffsetSetting
-      prefab:
-        type: resource
-        label: Weapon prefab
-        required: true
-        param:
-          type: Prefab
-          path: "{data?.Prefab?.Path}"
+          file: AppSystem/Equipment/wp/WeaponSetting.user
+      # - name: prefab
+      #   label: Weapon prefab
+      #   required: true
+      #   field_type: resource_link
+      #   resource:
+      #     resource_type: prefab
+      #     params:
+      #       path: "{data?.Prefab?.Path}"
 
-resources:
-  item_name:
-    patcher:
-      type: msg
-      key: "item_name_(\\d+)"
-      files:
-      - Message/UI/ItemName.msg.22
-      - Message/UI/ItemName_END.msg.22
-  item_detail:
-    patcher:
-      type: msg
-      key: "item_detail_(\\d+)"
-      files:
-      - Message/UI/ItemDetail.msg.22
-      - Message/UI/ItemDetail_END.msg.22
+  # app.ItemMixParam:
+  #   id: [_ItemId]
+  # app.ItemMixMaterialParam:
+  #   id: [_ItemID]
+  # app.ItemMixMaterialParam.CombineData:
+  #   id: [_PairList, _CombineItem]
 
 classes:
   app.ItemCommonParam:
-    id: [_Id]
-    group: item
-    type: item_data
     fields:
-      _Id: { enum: app.ItemIDEnum, readOnly: true }
       _Attr: { enum: app.ItemAttrBits }
-    subclasses:
-      app.ItemDataParam:
-        patcher:
-          type: multi-array
-          path: _Params
-          files:
-          - AppSystem/Item/ItemData/ItemData.user.2
-          - AppSystem/Item/ItemData/ExItemData.user.2
-      app.ItemWeaponParam:
-        patcher:
-          type: array-file
-          file: AppSystem/Item/ItemData/ItemWeaponData.user.2
-      app.ItemArmorParam:
-        patcher:
-          type: array-file
-          file: AppSystem/Item/ItemData/ItemArmorData.user.2
   app.ItemDataParam:
     to_string: "Item Data {_Id}"
     fields:
-      _FakeItemId: { enum: app.ItemIDEnum }
-      _DecayedItemId: { enum: app.ItemIDEnum }
+      _Id: { readOnly: true }
+      _Attr: { enum: app.ItemAttrBits }
+      _FakeItemId: { enum: item_data }
+      _DecayedItemId: { enum: item_data }
       _UseAttr: { enum: app.ItemUseAttrBits }
   app.ItemWeaponParam:
     fields:
+      _Id: { readOnly: true }
+      _Attr: { enum: app.ItemAttrBits }
       _Job: { enum: ce.ItemJobFlags }
   app.ItemArmorParam:
     fields:
-      _StyleNo: { handler: DD2.ArmorStyle }
-  app.WeaponCatalogData.Data:
-    id: [ID]
-    patcher:
-      type: array-file
-      file: appsystem/catalog/maincontents/userdata/weaponcatalogdata.user.2
-  app.WeaponSetting.OffsetSetting:
-    id: [ID]
-    patcher:
-      type: array-file
-      file: appsystem/equipment/wp/weaponsetting.user.2
+      _Id: { readOnly: true }
+      _EquipCategory: { readOnly: true } # read-only to prevent mismatched object types
+      _Attr: { enum: app.ItemAttrBits }
+      # _StyleNo_Backup: { handler: DD2.ArmorStyle }
+      _StyleNo:
+        switch:
+          property: _EquipCategory
+          cases: {
+            # 2: { enum: "HelmStyle" }
+            "3": { enum: "TopsStyle" }
+            # 4: { enum: "PantsStyle" }
+            # 5: { enum: "MantleStyle" }
+            # 7: { enum: "FacewearStyle" }
+          }
 
   app.EnhanceParamBase:
-    id: [_ItemId]
-    subId: [_Type, _EnhanceNo]
-    group: item
-    type: item_enhance
     to_string: "{_Type:enum(app.EnhanceType)} {_EnhanceNo}"
     fields:
       _Type: { enum: app.EnhanceType }
       _ItemId: { enum: app.ItemIDEnum }
       _NeedItemId0: { enum: app.ItemIDEnum }
       _NeedItemId1: { enum: app.ItemIDEnum }
-    subclasses:
-      app.WeaponEnhanceParam:
-        patcher:
-          type: array-file
-          file: appsystem/item/itemdata/weaponenhancedata.user.2
-      app.ArmorEnhanceParam:
-        patcher:
-          type: array-file
-          file: appsystem/item/itemdata/armorenhancedata.user.2
-
   app.ItemMixParam:
-    id: [_ItemId]
-    group: item
-    type: item_mix
     fields:
-      _ItemID: { enum: app.ItemIDEnum }
+      _ItemId: { enum: app.ItemIDEnum }
       _MaterialA: { tooltip: 'Combination requires any MaterialA + any MaterialB item' }
       _MaterialB: { tooltip: 'Combination requires any MaterialA + any MaterialB item' }
       _IsNoSame: { tooltip: "Disallow picking the same item if it's present in both material sets" }
       _IsAutoMix: { tooltip: 'Possibly used for logistician?' }
 
   app.ItemMixMaterialParam:
-    id: [_ItemID]
-    group: item
-    type: item_combination
     fields:
-      _ItemId: { enum: app.ItemIDEnum }
-
+      _ItemID: { enum: app.ItemIDEnum }
   app.ItemMixMaterialParam.CombineData:
-    id: [_PairList, _CombineItem]
     fields:
       _PairList: { label: Items, tooltip: Combining with any item from this list will create the combine item }
       _CombineItem: { label: 'Output item' }
       _CombineMakeNum: { label: 'Output count' }
     to_string: "{_CombineItem}: {_PairList}"
+
   app.TopsPartsEnableItem:
     to_string: "Tops PartsEnable {_Gender:enum(app.Gender)} Job={_Job:enum(app.Character.JobEnum)} | {_TopsStyle:enum(app.TopsStyle)}"
   app.TopsAmPartsHiddenItem:
@@ -214,6 +219,7 @@ classes:
     to_string: "PantsLg PartsHidden Job={_Job:enum(app.Character.JobEnum)} | {_LgMeshID:enum(app.CharacterEditDefine.PantsLgMeshID)}"
   app.TopsBtPrimaryPartsHiddenItem:
     to_string: "BtPrimary PartsHidden Job={_Job:enum(app.Character.JobEnum)}"
+
 
 # custom user-defined types (mainly useful for the content editor part, not raw file editing)
 # need to have at least one field
@@ -234,7 +240,7 @@ classes:
 #         type: _GuiRect
 #       icon_path:
 #         type: resource
-#         param:
+#         params:
 #           resource_type: tex
 #     example: # (this wouldn't be here but in the mod patch.json file and edited through UI)
 #       icon_path: npc_outfits_for_arisen/npc_item_icons_01.tex.760230703
@@ -244,7 +250,7 @@ classes:
 # id: used to determine unique entities
 # group: category to group the entity under
 # type: simplified name of the individiual entity type; should be unique
-# subId: for cases where an entity has one main ID but several sub-instances (e.g. item upgrade options); will get displayed as a list in the UI
+# sub_id: for cases where an entity has one main ID but several sub-instances (e.g. item upgrade options); will get displayed as a list in the UI
 # subclasses: list of subclasses of this entity type, each can have their own patcher configs
 # fields: list of fields and their enum and UI overrides
 # to_string: method to use to generate a quick preview string of the entity (e.g. combo list, when it's collapsed inside an array); if unspecified, concat the ID fields; if that's unspecified too, use classname

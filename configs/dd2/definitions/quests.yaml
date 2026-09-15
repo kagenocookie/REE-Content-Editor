@@ -4,70 +4,60 @@
 
 entities:
   quests.quest_data:
+    to_string: "Quest {id}: {quest_log?._Resource?.file?._Title?:translate()}"
     fields:
-      context:
-        type: object
-        label: Context Data
-        required: true
-        param:
-          classname: app.QuestContextData.ContextData
-          nested: false
-      variables:
-        type: object
-        label: Variable Data
-        param:
-          classname: app.QuestContextData.VariableData
-      deliver:
-        type: object
-        label: Deliver Data
-        param:
-          classname: app.QuestContextData.DeliverData
-      after_story:
-        type: object
-        label: After Story Data
-        param:
-          classname: app.QuestContextData.AfterStoryData
-      quest_log:
-        type: object
-        label: Quest Logs
-        param:
-          classname: app.QuestLogCatalog.Item
+    - name: context
+      label: Context Data
+      required: true
+      resource:
+        id: [_IDValue]
+        type: array-file
+        file: AppSystem/Quest/UserData/QuestContext.user
+        field: ContextDataArray
+        classname: app.QuestContextData.ContextData
+    - name: variables
+      label: Variable Data
+      resource:
+        id: [_IDValue]
+        type: array-file
+        file: AppSystem/Quest/UserData/QuestContext.user
+        field: VariableDataArray
+        classname: app.QuestContextData.VariableData
+    - name: deliver
+      label: Deliver Data
+      resource:
+        id: [_IDValue]
+        type: array-file
+        file: AppSystem/Quest/UserData/QuestContext.user
+        field: DeliverDataArray
+        classname: app.QuestContextData.DeliverData
+    - name: after_story
+      label: After Story Data
+      resource:
+        id: [_IDValue]
+        type: array-file
+        file: AppSystem/Quest/UserData/QuestContext.user
+        field: AfterStoryDataArray
+        classname: app.QuestContextData.AfterStoryData
+    - name: quest_log
+      label: Quest Logs
+      resource:
+        id: [_Id]
+        type: array-file
+        file: AppSystem/Catalog/MainContents/UserData/QuestLogCatalog.user
+        classname: app.QuestLogCatalog.Item
 
 classes:
   app.QuestContextData.ContextData:
-    id: [_IDValue]
     to_string: "Quest context {_IDValue}"
-    patcher:
-      type: array-file
-      file: natives/stm/appsystem/quest/userdata/questcontext.user.2
-      field: ContextDataArray
   app.QuestContextData.VariableData:
-    id: [_IDValue]
     to_string: "Quest variables {_IDValue}"
-    patcher:
-      type: array-file
-      file: natives/stm/appsystem/quest/userdata/questcontext.user.2
-      field: VariableDataArray
   app.QuestContextData.DeliverData:
-    id: [_IDValue]
     to_string: "Quest deliveries {_IDValue}"
-    patcher:
-      type: array-file
-      file: natives/stm/appsystem/quest/userdata/questcontext.user.2
-      field: DeliverDataArray
   app.QuestContextData.AfterStoryData:
-    id: [_IDValue]
     to_string: "Quest AfterStory {_IDValue}"
-    patcher:
-      type: array-file
-      file: natives/stm/appsystem/quest/userdata/questcontext.user.2
-      field: AfterStoryDataArray
   app.QuestLogCatalog.Item:
-    id: [_Id]
     to_string: "Quest Logs {_Id}"
-    patcher:
-      type: array-file
-      file: natives/stm/appsystem/catalog/maincontents/userdata/questlogcatalog.user.2
 
   app.QuestNpcOverrideData:
     to_string: "QuestNpcOverrideData QuestId={_IDValue}"

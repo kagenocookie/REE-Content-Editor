@@ -135,7 +135,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         this.env = env;
 
         var configPath = Path.Combine(AppConfig.Instance.ConfigBasePath, env.Config.Game.name);
-        var patchConfig = this.workspace?.Config ?? new PatchDataContainer(Path.GetFullPath(configPath));
+        var patchConfig = this.workspace?.Config ?? new PatchConfig(Path.GetFullPath(configPath));
 
         var workspace = new ContentWorkspace(env, patchConfig, this.workspace?.BundleManager);
         ChangeWorkspace(workspace, bundle);
@@ -164,12 +164,10 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
     private static void SetupTypes(ContentWorkspace workspace)
     {
         foreach (var (name, cfg) in workspace.Config.Classes) {
-            if (cfg.StringFormatter != null) {
-                var cls = workspace.Env.RszParser.GetRSZClass(name);
-                if (cls == null) continue;
+            var cls = workspace.Env.RszParser.GetRSZClass(name);
+            if (cls == null) continue;
 
-                WindowHandlerFactory.SetClassFormatter(cls, cfg.StringFormatter);
-            }
+            WindowHandlerFactory.InitClassConfig(workspace, cfg);
         }
 
         WindowHandlerFactory.SetupTypesForGame(workspace.Game, workspace.Env);
@@ -1041,7 +1039,7 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                 }
                 if (workspace.Config.Entities.Any()) {
                     if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Windows.Entities))) {
-                        AddSubwindow(new AppContentEditorWindow(workspace));
+                        AddSubwindow(new EntitiesWindow(workspace));
                     }
                 }
                 if (AppImguiHelpers.HotkeyMenuItem(Lang.Windows.MacroShelf, AppConfig.Instance.Key_OpenMacroShelf.Get())) {

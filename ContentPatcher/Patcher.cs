@@ -17,6 +17,7 @@ public class Patcher : IDisposable
     private string nativesPath = string.Empty;
 
     private const string EnumsRelativePath = "reframework/data/injected_enums/";
+    private const string RuntimeBundlesRelativeDir = "reframework/data/usercontent/bundles";
 
     public Workspace Env => env;
     private GameConfig config => env.Config;
@@ -79,7 +80,7 @@ public class Patcher : IDisposable
         if (workspace == null) {
             var configPath = $"configs/{env.Config.Game.name}";
             // 2. load game-specific patch config / overrides
-            workspace = new ContentWorkspace(env, new PatchDataContainer(configPath));
+            workspace = new ContentWorkspace(env, new PatchConfig(configPath));
         }
         nativesPath = Path.Combine(config.GamePath, env.BasePath);
 
@@ -115,9 +116,9 @@ public class Patcher : IDisposable
         if (workspace == null) throw new NullReferenceException("Workspace was not setup");
 
         foreach (var bundle in workspace.BundleManager.ActiveBundles) {
-            if (!bundle.HasResources) continue;
+            if (!bundle.HasFiles) continue;
 
-            var hasAnyUndiffedResources = bundle.Resources.Any(e => e.Diff == null && e.DiffTime < new DateTime(2025, 1, 1)) == true;
+            var hasAnyUndiffedResources = bundle.Files.Any(e => e.Diff == null && e.DiffTime < new DateTime(2025, 1, 1)) == true;
             if (hasAnyUndiffedResources) {
                 // NOTE: we could skip ResourceManager.ClearInstances() if active bundle != null
                 // also, we could avoid loading _everything_ and instead only calculate diffs for anything that's missing them
@@ -265,7 +266,13 @@ public class Patcher : IDisposable
             };
         }
 
-        // TODO handle runtime bundle.json if needed
+        // handle runtime bundle.json if needed
+        if (publishBundle?.RuntimeBundle != null) {
+            var runtimeBundlePath = Path.Combine(outputDirLoose, $"{RuntimeBundlesRelativeDir}/{publishBundle.RuntimeBundle.Name}.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(runtimeBundlePath)!);
+            using var fs = File.Create(runtimeBundlePath);
+            JsonSerializer.Serialize(fs, publishBundle.RuntimeBundle, JsonConfig.jsonOptions);
+        }
 
         // loose files additional sub pak for textures
         if (!Parameters.ExportAsPak && needsSubPak && hasTextures) {

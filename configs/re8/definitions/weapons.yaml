@@ -8,25 +8,28 @@ entities:
       primary: true
     to_string: "Weapon {id}: {data.Basic.NameMessageID:translate()}"
     fields:
-      data:
-        type: object
+      - name: data
+        type: app.ItemSpecificationData.SpecUnit
         label: Data
         required: true
-        param:
-          classname: app.ItemSpecificationData.SpecUnit
-          nested: false
-      # prefab:
-      #   type: resource
-      #   label: Weapon prefab
-      #   required: true
-      #   param:
-      #     type: Prefab
-      #     path: "{catalog?.Prefab?.Path}"
+        resource:
+          params:
+            nested: false
+      - name: prefab
+        label: Weapon prefab
+        required: true
+        field_type: resource_link
+        resource:
+          resource_type: prefab
+          params:
+            path: "{catalog?.Prefab?.Path}"
+
+resources:
+  app.ItemSpecificationData.SpecUnit:
+    id: [ItemID]
+    type: array-file
+    file: natives/stm/singletonuserdatas/playerweaponspecificationdata.user.2
 
 classes:
   app.ItemSpecificationData.SpecUnit:
-    id: [ItemID]
     to_string: "Item {ItemID}: {Basic.NameMessageID:translate()}"
-    patcher:
-      type: array-file
-      file: natives/stm/singletonuserdatas/playerweaponspecificationdata.user.2

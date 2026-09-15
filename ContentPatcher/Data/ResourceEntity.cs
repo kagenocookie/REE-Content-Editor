@@ -33,14 +33,35 @@ public class ResourceEntity : Entity
         FieldValues[name] = instance;
     }
 
+    public void Set(EntityFieldValueHandler handler, IContentResource? instance)
+    {
+        Set(handler.Field.name, instance);
+    }
+
     public IContentResource? Get(string name)
     {
         return FieldValues.GetValueOrDefault(name);
     }
 
+    public IContentResource? Get(EntityFieldValueHandler handler)
+    {
+        return FieldValues.GetValueOrDefault(handler.Field.name);
+    }
+
     public T? Get<T>(string name) where T : class, IContentResource
     {
         return FieldValues.GetValueOrDefault(name) as T;
+    }
+
+    public T? Get<T>(EntityFieldValueHandler handler) where T : class, IContentResource
+    {
+        return FieldValues.GetValueOrDefault(handler.Field.name) as T;
+    }
+
+    public long GetFieldId(string field)
+    {
+        var fieldCfg = Config.GetField(field);
+        return fieldCfg?.IdField == null ? Id : Convert.ToInt64(fieldCfg.IdField.Get(this));
     }
 
     public Dictionary<string, JsonNode?>? CalculateDiff(ContentWorkspace workspace)
@@ -55,13 +76,15 @@ public class ResourceEntity : Entity
                 continue;
             }
 
-            if (field is not IDiffableField diffable || !diffable.EnableDiff) {
+            if (field.ValueHandler is not IDiffableField diffable || !diffable.EnableDiff) {
+                // always store full value for non-diffable fields
                 resultDiff ??= new();
                 resultDiff[name] = value?.ToJson(workspace.Env);
                 continue;
             }
 
-            var baseValue = field.FetchResource(workspace.ResourceManager, this, ResourceState.Base);
+            var resourceId = field.IdField == null ? Id : Convert.ToInt64(field.IdField.Get(this));
+            var baseValue = field.ValueHandler.FetchResource(workspace, this, resourceId, ResourceState.Base);
             if (baseValue == null) {
                 if (value == null) {
                     continue;
@@ -112,27 +135,12 @@ public class ResourceEntity : Entity
                 continue;
             }
 
-            var newValue = field.ApplyValue(workspace, currentValue, data, this, state);
+            var newValue = field.ValueHandler.ApplyValue(workspace, currentValue, data, this, state);
+            if (currentValue == null && newValue != null) {
+                var resourceId = field.GetIDForEntity(this);
+                workspace.ResourceManager.AddResource(field.Config.Type, resourceId, newValue, state);
+            }
             Set(name, newValue);
-        }
-    }
-
-    /// <summary>
-    /// Fetches all referenced resources with the given state. If Active state, resources will be copied from the base state data if found.
-    /// </summary>
-    public void LoadResources(ResourceManager resources, ResourceState state)
-    {
-        foreach (var field in Config.Fields) {
-            if (field.Condition?.IsEnabled(this) == false) {
-                continue;
-            }
-
-            var value = Get(field.name);
-            if (value != null) {
-                // note: if multiple active entities reference the same resource, they'll all get the same instance
-                // that's fine, since it's not like we can have multiple variants of a single resource anyway
-                FieldValues[field.name] = field.FetchResource(resources, this, state);
-            }
         }
     }
 }

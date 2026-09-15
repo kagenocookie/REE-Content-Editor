@@ -17,8 +17,9 @@ public class ScanDD2EntityData : IEntitySetup
     private static void ScanArmors(ContentWorkspace workspace)
     {
         // note: accessing the files directly because entity setup happens too early to use the ResourceManager
-        var armorsFile = workspace.Env.GetFile("appsystem/item/itemdata/itemarmordata.user.2");
-        var namesFile = workspace.Env.GetFile("message/ui/itemname.msg.22");
+        // note: we probably want to get rid of this file altogether
+        var armorsFile = workspace.Env.GetFile("Appsystem/Item/ItemData/ItemArmorData.user");
+        var namesFile = workspace.Env.GetFile("Message/UI/ItemName.msg");
         if (armorsFile == null || namesFile == null) return;
 
         var armorFile = new UserFile(workspace.Env.RszFileOption, new FileHandler(armorsFile));

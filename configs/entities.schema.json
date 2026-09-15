@@ -1,0 +1,520 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Entity Definitions",
+  "description": "Schema for entity and resource definitions used by the REE Content Editor. Defines patchable resources and entity groupings for game-specific content editing.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "entities": {
+      "description": "Top-level entity type definitions. Each key is the entity type name used as a prefix for resource paths and UI grouping.",
+      "type": "object",
+      "additionalProperties": {
+        "description": "Entity type configuration including enum definitions, display string format, and field definitions.",
+        "type": "object",
+        "properties": {
+          "to_string": {
+            "description": "SmartFormat expression for generating a preview string of the entity type when collapsed. May reference enum values and entity fields.",
+            "type": "string"
+          },
+          "primary_field": {
+            "description": "Name of the primary field used for the entity ID. If unspecified, the first field is used.",
+            "type": "string"
+          },
+          "display_name": {
+            "description": "Name of the primary field used for the entity ID. If unspecified, the first field is used.",
+            "type": "string"
+          },
+          "id_field": {
+            "description": "The field to use for determining the entity ID. Defaults to using the primary field.",
+            "type": "string"
+          },
+          "enums": {
+            "description": "Custom enum definitions for this entity type. Each defines a new enum entry set with display label format.",
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/enumInfo"
+            }
+          },
+          "zero_entity": {
+            "description": "Id and label for a zero / none entity for cases where there's additional dataless entries.",
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": ["id"]
+          },
+          "fields": {
+            "description": "List of fields that make up this entity type. Each field maps to a resource with optional enum overrides and display options.",
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/entityField"
+            }
+          },
+          "runtime_mapping": {
+            "description": "Data mapping definitions for conversion from/to runtime bundle data structures.",
+            "type": "object",
+            "properties": {
+              "runtime_type": {
+                "type": "string"
+              },
+              "to_runtime": {
+                "type": "object",
+                "description": "Mapping of full JSON path strings where key = desktop bundle path, value = runtime bundle path.",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "to_desktop": {
+                "type": "object",
+                "description": "Mapping of full JSON path strings where key = runtime bundle path, value = desktop bundle path.",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "to_both": {
+                "type": "object",
+                "description": "Mapping of full JSON path strings where key = desktop bundle path, value = runtime bundle path.",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": ["runtime_type"]
+          }
+        },
+        "required": ["fields"],
+        "additionalProperties": false
+      }
+    },
+    "resources": {
+      "description": "Resource type definitions. Each defines how a resource is loaded from files and its properties.",
+      "type": "object",
+      "additionalProperties": {
+        "description": "Resource type configuration including file sources, ID fields, and linked resources.",
+        "type": "object",
+        "$ref": "#/definitions/resourceConfig"
+      }
+    },
+    "classes": {
+      "description": "Class specific display overrides.",
+      "type": "object",
+      "additionalProperties": {
+        "description": "String format configuration for a C# class.",
+        "type": "object",
+        "properties": {
+          "to_string": {
+            "description": "SmartFormat expression for generating display strings. May reference enum values, entity fields, and translation keys.",
+            "type": "string"
+          },
+          "fields": {
+            "description": "Additional per-field settings to further customize how a class display and edits.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "$ref": "#/definitions/classFieldConfig"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "definitions": {
+    "classFieldConfig": {
+      "type": "object",
+      "properties": {
+        "enum": {
+          "description": "Enum type override for displaying this field instead of its default. Can be either an entity type or a classname.",
+          "type": "string"
+        },
+        "translate_guid": {
+          "description": "Whether to use the GUID property for translation lookup.",
+          "type": "boolean"
+        },
+        "translate_fallback_enum": {
+          "description": "Enum to use as fallback for translation when GUID translation fails.",
+          "type": "string"
+        },
+        "readOnly": {
+          "description": "Whether this field should be read-only in the UI.",
+          "type": "boolean"
+        },
+        "tooltip": {
+          "description": "Tooltip text shown when hovering over the field.",
+          "type": "string"
+        },
+        "label": {
+          "description": "Display label for the field.",
+          "type": "string"
+        },
+        "handler": {
+          "description": "Custom handler name for special field formatting (e.g., 'DD2.ArmorStyle').",
+          "type": "string"
+        },
+        "switch": {
+          "description": "Switch condition",
+          "$ref": "#/definitions/switch"
+        }
+      },
+      "additionalProperties": false
+    },
+    "switch": {
+      "type": "object",
+      "properties": {
+        "cases": {
+          "additionalProperties": {
+            "type": "object",
+            "$ref": "#/definitions/classFieldConfig"
+          }
+        },
+        "property": {
+          "type": "string"
+        }
+      },
+      "required": ["cases", "property"]
+    },
+    "entityField": {
+      "description": "Field definition within an entity type. Maps to a resource with optional enum formatting and display options.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Field name as used in SmartFormat expressions and code access.",
+          "type": "string"
+        },
+        "type": {
+          "description": "Resource type name that matches an entry in the resources section. Can be a custom type defined inline via field_type.",
+          "type": "string"
+        },
+        "label": {
+          "description": "Display label shown in the UI for this field.",
+          "type": "string"
+        },
+        "label_type": {
+          "description": "Type of label: 'string' for literal text or 'field' to use a nested field as label. Deprecated in favor of resource.label.",
+          "type": "string",
+          "enum": ["string", "field"]
+        },
+        "field_type": {
+          "description": "Custom field type for inline resource definitions. When set, type becomes ignored and params define the resource.",
+          "type": "string"
+        },
+        "field_id": {
+          "description": "Field ID specification for multi-variant fields. Maps field names to their value paths.",
+          "type": "object",
+          "properties": {
+            "field": {
+              "description": "Field name in the entity.",
+              "type": "string"
+            },
+            "path": {
+              "description": "Path within the resource object for ID lookup.",
+              "type": "string"
+            },
+            "value": {
+              "description": "Literal value to use as ID when no field is specified.",
+              "type": ["string", "integer", "boolean", "number"]
+            }
+          },
+          "required": ["field", "path"],
+          "additionalProperties": false
+        },
+        "required": {
+          "description": "Whether this field is required when creating a new entity. Affects UI validation and creation flow.",
+          "type": "boolean"
+        },
+        "display_after": {
+          "description": "Field name to wait for before displaying this field in the UI. Used for conditional field ordering.",
+          "type": "string"
+        },
+        "display_after_start": {
+          "description": "Alias for display_after showing field should appear after all other fields are filled (start of editing session).",
+          "type": "boolean"
+        },
+        "display_after_end": {
+          "description": "Alias for display_after showing field should appear before other fields (end of editing session).",
+          "type": "boolean"
+        },
+        "when": {
+          "description": "Custom condition to determine whether this field should be used.",
+          "$ref": "#/definitions/entityCondition"
+        },
+        "when_any": {
+          "description": "Multiple custom conditions to determine whether this field should be used - field shows if any of them match.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/entityCondition"
+          }
+        },
+        "resource": {
+          "description": "Inline resource configuration for this field. Supports file paths, ID fields, and nested resource references.",
+          "$ref": "#/definitions/resourceConfig"
+        }
+      },
+      "additionalProperties": false
+    },
+    "resourceConfig": {
+      "description": "Inline resource configuration within a field definition.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "Resource loading and patching type",
+          "type": "string",
+          "enum": ["array-file", "multi-array", "resource_proxy_pfb", "enum_mapping", "string", "msg", "group", "merged-group"]
+        },
+        "custom_id_range": {
+          "description": "Single file path for this resource.",
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "integer"
+          }
+        },
+        "subtypes": {
+          "description": "List of subresources of this resource. Used by group resource stype to merge multiple classes into one resource with a shared ID pool",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "$ref": "#/definitions/resourceConfig"
+          }
+        },
+        "resources": {
+          "description": "List of subresources referenced by this resource.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/linkedResourceData"
+          }
+        },
+        "file": {
+          "description": "Single file path for this resource.",
+          "type": "string"
+        },
+        "files": {
+          "description": "Array of file paths for array-file resources.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "filter": {
+          "description": "Custom filter condition for matching objects.",
+          "$ref": "#/definitions/resourceCondition"
+        },
+        "id": {
+          "description": "Array of field names that uniquely identify this resource.",
+          "type": "array",
+          "items": {
+            "type": ["string", "object"]
+          },
+          "minItems": 1
+        },
+        "sub_id": {
+          "description": "Additional fields for sub-variants.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "to_string": {
+          "description": "SmartFormat expression for generating display strings. May reference enum values, resource fields, and translation keys. If unspecified, the ID and resource's ToString() is used instead.",
+          "type": "string"
+        },
+        "classname": {
+          "description": "C# class name of the resource type.",
+          "type": "string"
+        },
+        "field": {
+          "description": "Field name within file for resource identification.",
+          "type": "string"
+        },
+        "display_name": {
+          "description": "The name to display in the category UI for this resource.",
+          "type": "string"
+        },
+        "resource_type": {
+          "description": "The file format type to use for this resource when applicable. Matches RE-Engine-Lib's KnownFileFormats enum in camelCase.",
+          "type": "string"
+        },
+        "parent_resource": {
+          "description": "The parent resource type. Denotes that this resource relies on another resource existing and inherits its ID from the parent.",
+          "type": "string"
+        },
+        "not_standalone": {
+          "description": "If true, resource will be hidden from the Resources window and can only be edited through an entity.",
+          "type": "boolean"
+        },
+        "enums": {
+          "description": "Custom enum definitions for this resource type.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/enumInfo"
+          }
+        },
+        "params": {
+          "description": "Resource configuration parameters.",
+          "$ref": "#/definitions/resourceCustomParams"
+        }
+      },
+      "additionalProperties": false
+    },
+    "resourceCustomParams": {
+      "description": "Resource configuration parameters.",
+      "type": "object",
+      "properties": {
+        "regex": {
+          "description": "Regex pattern for generating translation keys from field values.",
+          "type": "string"
+        },
+        "regexDescription": {
+          "description": "Tooltip explaining the regex pattern for string fields.",
+          "type": "string"
+        },
+        "regexDescriptionFormat": {
+          "description": "SmartFormat string for customizing regexDescription. Uses {params} placeholder.",
+          "type": "string"
+        },
+        "tooltip": {
+          "description": "Tooltip text for the field.",
+          "type": "string"
+        },
+        "initial": {
+          "description": "Initial value for string fields, enum references, or other fields.",
+          "type": "string"
+        },
+        "diffable": {
+          "description": "Whether this field can be partially patched (true) or requires full replacement (false).",
+          "type": "boolean"
+        },
+        "multiline": {
+          "description": "Whether the field accepts multi-line text (for msg resources).",
+          "type": "boolean"
+        },
+        "key_format": {
+          "description": "SmartFormat string for generating translation key from ID or other fields.",
+          "type": "string"
+        },
+        "key_pattern": {
+          "description": "Regex pattern for extracting ID from translation keys.",
+          "type": "string"
+        },
+        "virtual_enum_name": {
+          "description": "Name of a virtual enum for enum_mapping resource types. IDs are generated dynamically.",
+          "type": "string"
+        },
+        "new_label_format": {
+          "description": "SmartFormat string for enum labels in enum_mapping resources.",
+          "type": "string"
+        },
+        "label_id_parse": {
+          "description": "Regex pattern for parsing existing label IDs from translation keys.",
+          "type": "string"
+        },
+        "value_from": {
+          "description": "Source field and path for enum value. Used with enum_mapping.",
+          "type": "object",
+          "properties": {
+            "field": {
+              "description": "Field name to read from.",
+              "type": "string"
+            },
+            "path": {
+              "description": "Path within the field object.",
+              "type": "string"
+            }
+          },
+          "required": ["field"]
+        }
+      },
+      "additionalProperties": true
+    },
+    "enumInfo": {
+      "description": "Enum definition for entity types. Defines new enum entries with custom display labels.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Enum type name referenced in SmartFormat expressions.",
+          "type": "string"
+        },
+        "format": {
+          "description": "SmartFormat string for formatting enum values. Uses {id} for the raw ID value.",
+          "type": "string"
+        },
+        "primary": {
+          "description": "Whether this enum's display labels should be used as the primary entity label. Overrides enum value labels.",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "linkedResourceData": {
+      "description": "Data for a linked subresource.",
+      "type": "object",
+      "properties": {
+        "field": {
+          "description": "The field that determines this subresource's ID",
+          "type": "string"
+        },
+        "type": {
+          "description": "Subresource type",
+          "type": "string"
+        },
+        "name": {
+          "description": "The user-facing name to use for the subresource",
+          "type": "string"
+        },
+        "key": {
+          "description": "The storage property name to use for this subresource",
+          "type": "string"
+        },
+        "when": {
+          "description": "Custom condition to determine whether this subresources should be used.",
+          "$ref": "#/definitions/resourceCondition"
+        }
+      },
+      "required": ["field", "key", "type"],
+      "additionalProperties": false
+    },
+    "resourceCondition": {
+      "description": "Conditional loading specification for fields and resources.",
+      "type": "object",
+      "properties": {
+        "property": {
+          "description": "Nested property within the field object to compare.",
+          "type": "string"
+        },
+        "equals": {
+          "description": "Value to compare against (enum name or literal value). Used with property.",
+          "type": ["string", "number", "boolean", "integer"]
+        }
+      },
+      "required": ["property", "equals"],
+      "additionalProperties": false
+    },
+    "entityCondition": {
+      "description": "Conditional loading specification for fields and resources.",
+      "type": "object",
+      "properties": {
+        "field": {
+          "description": "Field name to check.",
+          "type": "string"
+        },
+        "property": {
+          "description": "Nested property within the field object to compare.",
+          "type": "string"
+        },
+        "equals": {
+          "description": "Value to compare against (enum name or literal value). Used with property.",
+          "type": ["string", "number", "boolean", "integer"]
+        }
+      },
+      "required": ["property", "equals"],
+      "additionalProperties": false
+    }
+  }
+}

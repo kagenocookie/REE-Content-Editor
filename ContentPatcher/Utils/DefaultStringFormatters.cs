@@ -2,6 +2,7 @@ using System.Collections;
 using System.Globalization;
 using ContentEditor.Editor;
 using ReeLib;
+using ReeLib.Il2cpp;
 using SmartFormat;
 using SmartFormat.Core.Extensions;
 using SmartFormat.Core.Settings;
@@ -22,6 +23,22 @@ public static class FormatterSettings
     {
         var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
         fmt.AddExtensions(new EntityStringFormatterSource(config));
+        if (workspace != null) {
+            fmt.AddExtensions(new ResourceStringFormatter(workspace), new UserDataFileFormatter(workspace));
+        }
+        ApplyDefaultFormatters(fmt);
+        if (workspace != null) ApplyWorkspaceFormatters(fmt, workspace);
+        else {
+            fmt.AddExtensions(new RszFieldStringFormatterSource(null));
+        }
+        fmt.AddExtensions(new NullFallbackSource());
+        return fmt;
+    }
+
+    public static SmartFormatter CreateResourceFormatter(ResourceConfig resource, ContentWorkspace workspace)
+    {
+        var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
+        fmt.AddExtensions(new ResourceStringFormatter(workspace), new UserDataFileFormatter(workspace));
         ApplyDefaultFormatters(fmt);
         if (workspace != null) ApplyWorkspaceFormatters(fmt, workspace);
         else {
@@ -177,6 +194,67 @@ public class EntityStringFormatterSource(EntityConfig config) : ISource
     }
 }
 
+public class ResourceStringFormatter(ContentWorkspace workspace) : ISource
+{
+    public bool TryEvaluateSelector(ISelectorInfo selectorInfo)
+    {
+        if (selectorInfo.CurrentValue is not IContentResource resource) {
+            return false;
+        }
+
+        if (selectorInfo.SelectorText == "id" && resource is IAddressableContentResource addressable) {
+            selectorInfo.Result = addressable.ID;
+            return true;
+        }
+        if (selectorInfo.SelectorText == "label") {
+            selectorInfo.Result = resource.Label;
+            return true;
+        }
+
+        if (resource is IPropertyContainer props) {
+            selectorInfo.Result = props.Get(selectorInfo.SelectorText);
+            return selectorInfo.Result != null;
+        }
+
+        if (selectorInfo.SelectorOperator.Contains('?')) return false;
+
+        throw new Exception($"Invalid field {selectorInfo.SelectorText} for resource {resource}");
+    }
+}
+
+public class UserDataFileFormatter(ContentWorkspace workspace) : ISource
+{
+    public bool TryEvaluateSelector(ISelectorInfo selectorInfo)
+    {
+        if (selectorInfo.CurrentValue is not RszInstance rsz || rsz.RSZUserData == null) {
+            return false;
+        }
+
+        var userPath = rsz.RSZUserData.Path;
+        if (selectorInfo.SelectorText == "path") {
+            selectorInfo.Result = userPath ?? "";
+            return true;
+        }
+
+        if (selectorInfo.SelectorText == "file") {
+            if (string.IsNullOrEmpty(userPath)) {
+                selectorInfo.Result = null;
+                return true;
+            }
+
+            if (workspace.ResourceManager.TryResolveGameFile(userPath, out var handle)) {
+                selectorInfo.Result = handle.GetFile<UserFile>().Instance;
+                return true;
+            }
+
+            selectorInfo.Result = null;
+            return true;
+        }
+
+        return false;
+    }
+}
+
 public class PathFormatter : IFormatter
 {
     public string Name { get; set; } = "path";
@@ -207,7 +285,9 @@ public class TranslateGuidFormatter(MessageManager msg) : IFormatter
 
     public bool TryEvaluateFormat(IFormattingInfo formattingInfo)
     {
-        if (formattingInfo.CurrentValue is not Guid guid) return false;
+        if (formattingInfo.CurrentValue is not Guid guid) {
+            return true;
+        }
 
         if (guid == Guid.Empty) {
             return true;
@@ -283,14 +363,21 @@ public class EnumLabelFormatter(Workspace env) : IFormatter
             return true;
         }
 
-        var enumDesc = env.TypeCache.GetEnumDescriptor(formattingInfo.FormatterOptions);
+        EnumDescriptor? enumDesc;
+        var rawLabel = formattingInfo.FormatterOptions.StartsWith('#');
+        if (rawLabel) {
+            enumDesc = env.TypeCache.GetEnumDescriptor(formattingInfo.FormatterOptions.Substring(1));
+        } else {
+            enumDesc = env.TypeCache.GetEnumDescriptor(formattingInfo.FormatterOptions);
+        }
         if (enumDesc == null) {
             formattingInfo.Write(formattingInfo.CurrentValue.ToString() ?? string.Empty);
             return true;
         }
 
-        // should probably also handle enumDesc.IsFlags somehow
-        var label = enumDesc.GetDisplayLabel(Convert.ChangeType(formattingInfo.CurrentValue, enumDesc.BackingType));
+        var label = rawLabel
+            ? enumDesc.GetLabel(Convert.ChangeType(formattingInfo.CurrentValue, enumDesc.BackingType))
+            : enumDesc.GetDisplayLabel(Convert.ChangeType(formattingInfo.CurrentValue, enumDesc.BackingType));
         formattingInfo.Write(label ?? formattingInfo.CurrentValue.ToString() ?? string.Empty);
         return true;
     }

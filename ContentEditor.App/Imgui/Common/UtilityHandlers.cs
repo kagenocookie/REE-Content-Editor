@@ -54,6 +54,15 @@ public class FixedLabelHandler(TranslatableBase text, Vector4 color = default) :
     }
 }
 
+public class LabelOverrideHandler(TranslatableBase label, IObjectUIHandler inner) : IObjectUIHandler
+{
+    public void OnIMGUI(UIContext context)
+    {
+        context.label = label;
+        inner.OnIMGUI(context);
+    }
+}
+
 public class DynamicLabelHandler(Func<UIContext, string?> textFunc, Vector4 color = default) : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)

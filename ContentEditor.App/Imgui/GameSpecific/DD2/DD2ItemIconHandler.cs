@@ -7,18 +7,17 @@ using ReeLib;
 
 namespace ContentEditor.App.DD2;
 
-[CustomFieldHandler(typeof(ItemIconField), "dd2")]
-public sealed class DD2ItemIconHandler(EntityField field) : IObjectUIHandler, IObjectUIInstantiator
+[ObjectImguiHandler(typeof(ItemIconResource))]
+public sealed class DD2ItemIconHandler : IObjectUIHandler
 {
-    public static Func<EntityField, IObjectUIHandler> GetFactory() => (field) => new DD2ItemIconHandler(field);
-
     public void OnIMGUI(UIContext context)
     {
         var entity = context.GetOwnerEntity();
-        var data = entity?.Get("data") as RSZObjectResource;
+        var field = context.GetEntityField()!;
+        var data = entity?.Get<RSZObjectResource>("data");
         var workspace = context.GetWorkspace();
         if (entity == null || data == null || workspace == null) {
-            ImGui.TextColored(Colors.Error, $"{field.label} field requires a valid item entity and workspace");
+            ImGui.TextColored(Colors.Error, $"{field} field requires a valid item entity and workspace");
             return;
         }
 
@@ -33,28 +32,29 @@ public sealed class DD2ItemIconHandler(EntityField field) : IObjectUIHandler, IO
                 return;
             }
             var texture = context.GetChildValue<Texture>();
-            var uvsFile = workspace.ResourceManager.ReadFileResource<UvsFile>("gui/ui01/common/item/c00/uvs_ui01c00.uvs.8");
+            var uvsFile = workspace.ResourceManager.GetFileContents<UvsFile>("gui/ui01/common/item/c00/uvs_ui01c00.uvs");
             var pattern = uvsFile.Sequences[sequenceId].patterns[patternId];
             var texPath = uvsFile.Textures[pattern.textureIndex].path;
             if (texture == null || texture.Path?.Contains(texPath) != true) {
                 context.ClearChildren();
-                var tex = workspace.ResourceManager.ReadFileResource<TexFile>(workspace.Env.AppendFileVersion(texPath));
+                var (th, tex) = workspace.ResourceManager.GetFileHandleAndContents<TexFile>(workspace.Env.AppendFileVersion(texPath));
                 context.AddChild("texture", texture = new Texture().LoadFromTex(tex));
+                workspace.ResourceManager.CloseFile(th, true);
             }
 
             var (uv0, uv1) = pattern.GetBoundingPoints();
             ImGui.Image(texture.AsTextureRef(), new Vector2(200, 200), uv0, uv1);
-            if (entity.Id < entity.Config.CustomIDRange![0]) {
+            if (entity.Id < entity.Config.PrimaryField?.Config.CustomIDRange![0]) {
                 return;
             }
         }
 
         if (instance == null) {
             ImGui.Text(context.label);
-            if (workspace != null) {
+            if (workspace != null && field != null) {
                 ImGui.SameLine();
                 if (ImGui.Button("Add custom icon")) {
-                    context.Set(new ItemIconResource());
+                    context.Set(new ItemIconResource(field.Config));
                 }
             }
             return;
@@ -88,8 +88,9 @@ public sealed class DD2ItemIconHandler(EntityField field) : IObjectUIHandler, IO
                     return;
                 }
                 context.ClearChildren();
-                var tex = workspace.ResourceManager.ReadFileResource<TexFile>(workspace.Env.AppendFileVersion(texPath));
+                var (th, tex) = workspace.ResourceManager.GetFileHandleAndContents<TexFile>(workspace.Env.AppendFileVersion(texPath));
                 context.AddChild("texture", texture = new Texture().LoadFromTex(tex));
+                workspace.ResourceManager.CloseFile(th, true);
             }
 
             if (string.IsNullOrEmpty(instance.data.IconTexture) || texture == null) {
