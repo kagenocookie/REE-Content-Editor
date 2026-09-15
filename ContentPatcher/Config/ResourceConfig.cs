@@ -13,7 +13,6 @@ public class ResourceConfig(string type)
     public IDGenerator? IDGenerator { get; set; }
     public IDGenerator? SubIDGenerator { get; set; }
     public ResourceHandler Resource { get; set; } = null!;
-    public ResourceConfig? ParentResource { get; set; }
     public IResourceCondition? Filter { get; set; }
 
     public Dictionary<string, ResourceConfig>? Subtypes { get; set; }

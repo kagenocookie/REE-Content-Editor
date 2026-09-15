@@ -11,37 +11,46 @@ public class GroupResourceHandler : ResourceHandler, IResourceHandlerStatic
 
     public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
     {
+        if (resource.Subtypes == null) throw new Exception($"Missing subtypes for group resource {resource}");
+
         return new GroupResourceHandler() {
             Config = resource,
         };
     }
 
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
+    {
+        if (resource is not GroupedResource group || group.ResourceType != Config) {
+            group = new GroupedResource(Config, Config.Subtypes!.Keys);
+        }
+
+        foreach (var (type, subconfig) in Config.Subtypes!) {
+            var subdata = data?[type];
+            var subvalue = group.Get(type);
+            subvalue = subconfig.Resource.ApplyResourceData(workspace, subvalue, subdata);
+            group.Set(type, subvalue);
+        }
+
+        return group;
+    }
+
     public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
     {
-        if (Config.Subtypes == null) throw new Exception($"Missing subtypes for group resource {Config}");
+        var group = new GroupedResource(Config, Config.Subtypes!.Keys);
 
-        if (initialData is not JsonObject obj || obj.Count == 0) {
-            throw new Exception($"Creating blank resources of type {Config} is not supported");
+        foreach (var (type, subconfig) in Config.Subtypes) {
+            var subdata = initialData?[type];
+            var subvalue = subconfig.Resource.CreateResource(workspace, id, subdata);
+            group.Set(type, subvalue);
         }
 
-        var group = new GroupedResource(Config, Config.Subtypes.Keys);
-        foreach (var (type, data) in obj) {
-            if (!Config.Subtypes.TryGetValue(type, out var sub)) {
-                throw new Exception($"Unknown {Config} subresource type {type}");
-            }
-
-            var inst = sub.Resource.CreateResource(workspace, id, data);
-            group.Set(type, inst);
-        }
         return group;
     }
 
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)
     {
-        if (Config.Subtypes == null) throw new Exception($"Missing subtypes for group resource {Config}");
-
         var subdict = new Dictionary<long, IContentResource>();
-        var keys = Config.Subtypes.Keys;
+        var keys = Config.Subtypes!.Keys;
         foreach (var (type, sub) in Config.Subtypes) {
             sub.Resource?.ReadResources(workspace, subdict);
             foreach (var (id, res) in subdict) {
@@ -56,9 +65,7 @@ public class GroupResourceHandler : ResourceHandler, IResourceHandlerStatic
 
     public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
     {
-        if (Config.Subtypes == null) throw new Exception($"Missing subtypes for group resource {Config}");
-
-        foreach (var (type, sub) in Config.Subtypes) {
+        foreach (var (type, sub) in Config.Subtypes!) {
             sub.Resource?.ModifyResources(workspace, resources);
         }
     }

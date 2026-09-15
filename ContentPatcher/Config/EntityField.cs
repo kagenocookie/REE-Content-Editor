@@ -38,10 +38,24 @@ public sealed class EntityField
 
     public EntityProperty? IdField { get; set; }
 
+    public long GetIDForEntity(ResourceEntity entity)
+    {
+        if (ValueHandler is ICustomEntityResourceIdMapper mapper) {
+            return mapper.GetID(entity);
+        }
+
+        return IdField == null ? entity.Id : Convert.ToInt64(IdField.Get(entity));
+    }
+
     public override string ToString() => $"{name} [{ResourceType}]";
 }
 
-public abstract class EntityFieldValueHandler
+public interface ICustomEntityResourceIdMapper
+{
+    public long GetID(ResourceEntity entity);
+}
+
+public class EntityFieldValueHandler
 {
     public EntityField Field { get; internal set; } = null!;
 
@@ -67,7 +81,8 @@ public abstract class EntityFieldValueHandler
     /// Apply a data JSON on top of an existing resource object or create a new resource.
     /// </summary>
     /// <returns>A resource representing the applied data. Can be the same instance that was given.</returns>
-    public abstract IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state);
+    public virtual IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
+        => Field.Config.Resource.ApplyResourceData(workspace, currentResource, data);
 
     public virtual void LoadParams(EntityFieldConfig param)
     {
@@ -78,26 +93,13 @@ public abstract class EntityFieldValueHandler
     }
 }
 
-/// <summary>
-/// <inheritdoc/>
-/// </summary>
-public abstract class EntityFieldValueHandler<TContentType> : EntityFieldValueHandler where TContentType : IContentResource
-{
-    public sealed override IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
-    {
-        return ApplyValue(workspace, (TContentType?)currentResource, data, entity, state);
-    }
-
-    public abstract TContentType? ApplyValue(ContentWorkspace workspace, TContentType? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state);
-}
-
 public interface IMainField
 {
 }
 
 public interface IDiffableField
 {
-    bool EnableDiff => false;
+    bool EnableDiff => true;
     JsonNode? GetDiff(ContentWorkspace workspace, IContentResource value, IContentResource baseValue)
     {
         // default diff implementation - converts both values to json and naively diffs that

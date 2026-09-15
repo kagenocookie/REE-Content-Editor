@@ -114,11 +114,16 @@ public class DiffPatcher
                 }
 
                 if (csType == typeof(ulong)) {
-                    // handle case where diff is int64 while csType is uint64 (lua-generated diff json)
-                    try {
-                        instance.Values[fieldIndex] = diffprop.Value?.GetValue<ulong>() ?? 0;
-                    } catch (Exception) {
-                        instance.Values[fieldIndex] = (ulong)(diffprop.Value?.GetValue<long>() ?? 0);
+                    if (diffprop.Value == null) {
+                        instance.Values[fieldIndex] = 0UL;
+                    } else {
+                        // handle case where diff is int64 while csType is uint64 (lua-generated diff json)
+                        var jval = diffprop.Value.AsValue();
+                        if (jval.TryGetValue<long>(out var int64)) {
+                            instance.Values[fieldIndex] = (ulong)int64;
+                        } else {
+                            instance.Values[fieldIndex] = jval.GetValue<ulong>();
+                        }
                     }
                 } else {
                     instance.Values[fieldIndex] = diffprop.Value.Deserialize(csType, env.JsonOptions) ?? Activator.CreateInstance(csType)!;

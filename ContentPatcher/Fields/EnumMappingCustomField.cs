@@ -10,7 +10,7 @@ using ReeLib.Common;
 namespace ContentPatcher;
 
 [ResourceField("enum_mapping", typeof(EnumMapResourceHandler))]
-public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResource>
+public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResource>, ICustomEntityResourceIdMapper
 {
     public Regex? ParseRegex { get; private set; }
     private string virtualEnumName = "";
@@ -25,6 +25,11 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
         ParseRegex = new Regex(pattern);
         virtualEnumName = data.RequireParam<string>("virtual_enum_name");
         fallbackId = data.GetParam<long>("fallback_id", 0);
+    }
+
+    public long GetID(ResourceEntity entity)
+    {
+        return entity.Id;
     }
 
     public override void EntitySetup(EntityConfig entityConfig, ContentWorkspace workspace)
@@ -124,6 +129,11 @@ public class EnumMapResourceHandler : ResourceHandler, IResourceHandlerStatic
     public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
     {
         return new EnumMapResourceHandler() { Config = resource };
+    }
+
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
+    {
+        throw new Exception($"Creating blank resources of type {Config} is not supported");
     }
 
     public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)

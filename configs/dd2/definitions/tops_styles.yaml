@@ -13,12 +13,6 @@ entities:
       #   new_label_format: "Tops_{data._TopsStyle:D03}"
       #   primary: true
       resource:
-        # file: AppSystem/CharaEdit/ch000/SwapData/TopsSwapData.user
-        # type: array-file
-        # id: [_TopsStyle]
-        # sub_id: [_Gender]
-        # custom_id_range: [10000, 10000000]
-        # classname: app.TopsSwapItem
         type: group
         id: [_TopsStyle]
         custom_id_range: [10000, 10000000]

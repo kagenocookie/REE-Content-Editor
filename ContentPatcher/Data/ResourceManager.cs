@@ -40,7 +40,6 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         public ResourceConfig config;
         public Dictionary<long, IContentResource>? baseInstances;
         public Dictionary<long, IContentResource>? activeInstances;
-        public readonly List<string> baseTypes = new(0);
 
         public ResourceData(ResourceConfig config)
         {
@@ -313,47 +312,12 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         throw new NotImplementedException("Requested unknown resource " + type);
     }
 
-    private long EntityToFieldResourceId(EntityField field, ResourceEntity entity)
-    {
-        // if it's a subresource, we need to inherit the parent resource's ID
-        if (field.Config.ParentResource != null) {
-            var parentFieldName = entity.FieldValues.FirstOrDefault(f => f.Value?.ResourceType == field.Config.ParentResource).Key;
-            if (parentFieldName == null) {
-                Logger.Warn($"Could not find parent resource of {field} for entity {entity}");
-                return 0;
-            }
-
-            var parentField = entity.Config.GetField(parentFieldName);
-            if (parentField == null) {
-                Logger.Warn($"Could not find parent resource of {field} for entity {entity}");
-                return 0;
-            }
-
-            var parentId = EntityToFieldResourceId(parentField, entity);
-            return parentId;
-        }
-
-        // could also be a specific "other field"'s field/value
-        if (field.IdField != null) {
-            return Convert.ToInt64(field.IdField.Get(entity));
-        }
-
-        if (field.ValueHandler is CustomEntityFieldHandler customField) {
-            // customField.GetComputedId()
-        }
-
-        // TODO or some custom enum mapping?
-
-        // or fallback to entity == resource id (in case the IDs don't matter / are purely arbitrary)
-        return entity.Id;
-    }
-
     private IContentResource? CreateEntityFieldInternal(ResourceEntity entity, EntityField field, ResourceState state, ResourceConfig resourceConfig, JsonNode? initialData, long resourceId = -1)
     {
         IContentResource? fieldResource;
         if (field.ValueHandler is CustomEntityFieldHandler customField) {
             (resourceId, fieldResource) = customField.CreateValue(workspace, entity, initialData);
-            if (resourceId == -1) resourceId = EntityToFieldResourceId(field, entity);
+            if (resourceId == -1) resourceId = field.GetIDForEntity(entity);
             entity.Set(field.name, fieldResource);
             if (fieldResource == null) return null;
 
@@ -369,7 +333,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             }
             AddResource(resourceConfig.Type, resourceId, fieldResource, state);
         } else {
-            if (resourceId == -1) resourceId = EntityToFieldResourceId(field, entity);
+            if (resourceId == -1) resourceId = field.GetIDForEntity(entity);
             fieldResource = CreateResourceInternal(resourceId, resourceConfig, state, initialData);
             entity.Set(field.name, fieldResource);
         }
@@ -474,18 +438,6 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
 
             var instances = (state == ResourceState.Base ? data.baseInstances : data.activeInstances ??= new());
             instances.Add(id, resource);
-            var resid = resource.ResourceType.Type;
-            if (!string.IsNullOrEmpty(resid) && resid != resourceKey && resources.TryGetValue(resid, out var sub)) {
-                instances = (state == ResourceState.Base ? sub.baseInstances ??= new() : sub.activeInstances ??= new());
-                instances.Add(id, resource);
-            }
-
-            foreach (var baseclass in data.baseTypes) {
-                var bt = resources[baseclass];
-                if (bt.baseInstances == null) ReadObjectSourceData(data.config, bt);
-                instances = (state == ResourceState.Base ? bt.baseInstances! : bt.activeInstances ??= new());
-                instances.Add(id, resource);
-            }
         }
     }
 
@@ -594,7 +546,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
                     continue;
                 }
 
-                var fieldId = field.IdField == null ? entity.Id : Convert.ToInt64(field.IdField.Get(entity));
+                var fieldId = field.GetIDForEntity(entity);
                 var fieldValue = field.ValueHandler.FetchResource(workspace, entity, fieldId, ResourceState.Base);
                 entity.Set(field.name, fieldValue);
             }

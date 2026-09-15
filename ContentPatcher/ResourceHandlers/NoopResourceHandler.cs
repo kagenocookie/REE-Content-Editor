@@ -1,4 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Nodes;
+using ReeLib;
 
 namespace ContentPatcher;
 
@@ -15,6 +17,14 @@ public class NoopResourceHandler<TFieldType> : ResourceHandler, IResourceHandler
         Config = config;
     }
 
+    public class VoidResource(ResourceConfig config) : IContentResource
+    {
+        public ResourceConfig ResourceType { get; } = config;
+        public string? FileResourcePath => null;
+        public IContentResource Clone() => new VoidResource(ResourceType);
+        public JsonNode ToJson(Workspace env) => new JsonObject();
+    }
+
     public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new TFieldType();
 
     public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
@@ -28,5 +38,10 @@ public class NoopResourceHandler<TFieldType> : ResourceHandler, IResourceHandler
 
     public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
     {
+    }
+
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
+    {
+        return resource ?? new VoidResource(Config);
     }
 }

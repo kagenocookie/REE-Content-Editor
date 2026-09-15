@@ -136,6 +136,10 @@ public class ResourceEntity : Entity
             }
 
             var newValue = field.ValueHandler.ApplyValue(workspace, currentValue, data, this, state);
+            if (currentValue == null && newValue != null) {
+                var resourceId = field.GetIDForEntity(this);
+                workspace.ResourceManager.AddResource(field.Config.Type, resourceId, newValue, state);
+            }
             Set(name, newValue);
         }
     }

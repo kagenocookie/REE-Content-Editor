@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using ContentEditor;
 using ReeLib;
@@ -21,6 +22,20 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
             Files = files,
             keyFormat = string.IsNullOrEmpty(keyFormat) ? null : new Regex(keyFormat),
         };
+    }
+
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
+    {
+        if (resource is not MessageData msgData) {
+            msgData = MessageData.FromJson(data as JsonObject, Config);
+            msgData.FileResourcePath = Files[0];
+            if (string.IsNullOrEmpty(msgData.MessageKey)) {
+                throw new NotImplementedException($"Can't create blank new resources of type {Config.Resource} ({Config.Type})");
+            }
+        }
+
+        workspace.Diff.ApplyDiff(msgData, data);
+        return msgData;
     }
 
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)

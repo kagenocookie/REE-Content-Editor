@@ -9,7 +9,7 @@ public abstract class ResourceHandler
     public required ResourceConfig Config { get; init; }
     public List<string> Files { get; init; } = new();
 
-    public abstract EntityFieldValueHandler CreateValueHandler(EntityField field);
+    public virtual EntityFieldValueHandler CreateValueHandler(EntityField field) => new EntityFieldValueHandler();
 
     private static readonly Dictionary<string, Func<ResourceConfig, ResourceConfigSerialized, ContentWorkspace, ResourceHandler>> patchers = new();
     private static readonly Dictionary<string, (string[]? gameWhitelist, Type? handlerType, Func<EntityFieldValueHandler> func)> fieldTypes = new();
@@ -78,12 +78,20 @@ public abstract class ResourceHandler
     public abstract void ReadResources(ContentWorkspace env, Dictionary<long, IContentResource> dict);
 
     /// <summary>
+    /// Apply partial data on top of a resource or create a new detached resource instance. May return a new resource instance.
+    /// </summary>
+    public abstract IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data);
+
+    /// <summary>
+    /// Createa a new instance of this resource from the given ID and optionally apply some initial data. Should also assign ID fields if applicable.
+    /// </summary>
+    public virtual IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
+        => throw new NotImplementedException($"Can't create new resources of type {Config.Resource} ({Config.Type})");
+
+    /// <summary>
     /// Apply all resource changes to files based on current resource data.
     /// </summary>
     public abstract void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources);
-
-    public virtual IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
-        => throw new NotImplementedException($"Can't create new resources of type {Config.Resource} ({Config.Type})");
 }
 
 public interface IResourceHandlerStatic

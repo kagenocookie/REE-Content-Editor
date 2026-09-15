@@ -4,6 +4,7 @@
 
 entities:
   quests.quest_data:
+    to_string: "Quest {id}: {quest_log?._Resource?.file?._Title?:translate()}"
     fields:
     - name: context
       label: Context Data

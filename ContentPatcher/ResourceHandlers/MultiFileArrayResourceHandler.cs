@@ -20,21 +20,39 @@ public class MultiFileArrayResourceHandler : ResourceHandler, IResourceHandlerSt
         };
     }
 
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
+    {
+        if (resource is not RSZObjectListResource rszl) {
+            // always store new resources on the first path, the idea is that it probably doesn't matter which because the catalogs are usually just merged for runtime anyway
+            resource = rszl = new RSZObjectListResource(Config, [], Files[0]);
+        }
+
+        workspace.Diff.ApplyDiff(rszl.Instances, data, Config.RszClassRequired.name);
+        return resource;
+    }
+
     public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
     {
-        // always store new resources on the first path, the idea is that it probably doesn't matter which because the catalogs are usually just merged for runtime anyway
-        var file = Files[0];
-        var inst = RszInstance.CreateInstance(workspace.Env.RszParser, workspace.Env.RszParser.GetRSZClass(Config.Type)!);
-        workspace.Diff.ApplyDiff(inst, initialData);
+        var list = (RSZObjectListResource)ApplyResourceData(workspace, null, initialData);
+
         var idgen = Config.IDGeneratorRequired;
-        if (idgen.Fields.Length == 1) {
-            var idField = idgen.Fields[0].Field;
-            var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
-            idgen.Fields[0].Set(inst, Convert.ChangeType(id, fieldType));
-        } else {
+        if (idgen.Fields != null && idgen.Fields.Length != 1) {
             throw new NotImplementedException("Unsupported rsz object id combination");
         }
-        return new RSZObjectListResource(Config, file);
+
+        if (idgen.Fields == null) {
+            return list;
+        }
+
+        var idField = idgen.Fields[0].Field;
+        var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
+        var castId = Convert.ChangeType(id, fieldType);
+
+        foreach (var item in list.Instances) {
+            idgen.Fields[0].Set(item, castId);
+        }
+
+        return list;
     }
 
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)

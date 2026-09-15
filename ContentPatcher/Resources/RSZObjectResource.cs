@@ -18,6 +18,10 @@ public class RSZObjectResource(ResourceConfig type, RszInstance instance, string
 
     public void Set(string path, object? value)
     {
+        var currentValue = Get(path);
+        if (currentValue != null && value?.GetType() != currentValue.GetType()) {
+            value = Convert.ChangeType(value, currentValue.GetType());
+        }
         Instance.SetNestedFieldValue(path, value ?? RszInstance.NULL);
     }
 

@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using ReeLib;
 
 namespace ContentPatcher;
@@ -22,6 +23,16 @@ public class UserFileSingletonResourceHandler : ResourceHandler, IResourceHandle
         var instance = userfile.Instance!;
         var id = Config.IDGeneratorRequired.GetID(instance);
         dict[id] = new RSZObjectResource(Config, instance, Files[0]);
+    }
+
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
+    {
+        if (resource is not RSZObjectResource obj) {
+            throw new NotImplementedException($"Can't create new resources of type {Config.Resource} ({Config.Type})");
+        }
+
+        workspace.Diff.ApplyDiff(obj.Instance, data);
+        return obj;
     }
 
     public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)

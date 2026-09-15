@@ -218,7 +218,6 @@ public class PatchConfig(string filepath)
                 subConfig.CustomIDRange = resCfg.CustomIDRange;
 
                 var sub = SetupResourceConfig(workspace, resType + "." + subType, subConfig, addResourceHandler);
-                sub.ParentResource = cfg;
                 cfg.Subtypes[subType] = sub;
             }
         }

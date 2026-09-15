@@ -24,7 +24,7 @@ public static class FormatterSettings
         var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
         fmt.AddExtensions(new EntityStringFormatterSource(config));
         if (workspace != null) {
-            fmt.AddExtensions(new ResourceStringFormatter(workspace));
+            fmt.AddExtensions(new ResourceStringFormatter(workspace), new UserDataFileFormatter(workspace));
         }
         ApplyDefaultFormatters(fmt);
         if (workspace != null) ApplyWorkspaceFormatters(fmt, workspace);
@@ -38,7 +38,7 @@ public static class FormatterSettings
     public static SmartFormatter CreateResourceFormatter(ResourceConfig resource, ContentWorkspace workspace)
     {
         var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
-        fmt.AddExtensions(new ResourceStringFormatter(workspace));
+        fmt.AddExtensions(new ResourceStringFormatter(workspace), new UserDataFileFormatter(workspace));
         ApplyDefaultFormatters(fmt);
         if (workspace != null) ApplyWorkspaceFormatters(fmt, workspace);
         else {
@@ -222,6 +222,39 @@ public class ResourceStringFormatter(ContentWorkspace workspace) : ISource
     }
 }
 
+public class UserDataFileFormatter(ContentWorkspace workspace) : ISource
+{
+    public bool TryEvaluateSelector(ISelectorInfo selectorInfo)
+    {
+        if (selectorInfo.CurrentValue is not RszInstance rsz || rsz.RSZUserData == null) {
+            return false;
+        }
+
+        var userPath = rsz.RSZUserData.Path;
+        if (selectorInfo.SelectorText == "path") {
+            selectorInfo.Result = userPath ?? "";
+            return true;
+        }
+
+        if (selectorInfo.SelectorText == "file") {
+            if (string.IsNullOrEmpty(userPath)) {
+                selectorInfo.Result = null;
+                return true;
+            }
+
+            if (workspace.ResourceManager.TryResolveGameFile(userPath, out var handle)) {
+                selectorInfo.Result = handle.GetFile<UserFile>().Instance;
+                return true;
+            }
+
+            selectorInfo.Result = null;
+            return true;
+        }
+
+        return false;
+    }
+}
+
 public class PathFormatter : IFormatter
 {
     public string Name { get; set; } = "path";
@@ -252,7 +285,9 @@ public class TranslateGuidFormatter(MessageManager msg) : IFormatter
 
     public bool TryEvaluateFormat(IFormattingInfo formattingInfo)
     {
-        if (formattingInfo.CurrentValue is not Guid guid) return false;
+        if (formattingInfo.CurrentValue is not Guid guid) {
+            return true;
+        }
 
         if (guid == Guid.Empty) {
             return true;

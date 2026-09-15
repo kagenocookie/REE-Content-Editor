@@ -42,33 +42,11 @@ public class ResourcePathResource(ResourceConfig type, string filepath) : IAddre
     public override string ToString() => ResourcePath;
 }
 
-public class ResourcePathResourceValueHandler : EntityFieldValueHandler
-{
-    public override IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
-    {
-        var newPath = data?.GetValueKind() == System.Text.Json.JsonValueKind.String ? data.GetValue<string>() : null;
-        if (string.IsNullOrEmpty(newPath)) {
-            if (currentResource != null) {
-                (currentResource as ResourcePathResource)?.ResourcePath = "";
-            }
-            return currentResource;
-        }
-
-        if (currentResource is not ResourcePathResource res) {
-            currentResource = res = new ResourcePathResource(Field.Config, Field.Config.Resource.Files[0]);
-        }
-        res.ResourcePath = newPath.Replace('\\', '/');
-        return res;
-    }
-}
-
 [ResourcePatcher("resource_proxy_pfb")]
 public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStatic
 {
     private RszFieldAccessorBase<List<object>> arrayAccessor = null!;
     public KnownFileFormats ResourceType { get; set; }
-
-    public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new ResourcePathResourceValueHandler();
 
     private RszClass? catalogEntryClass;
     private RszClass? componentClass;
@@ -211,6 +189,24 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
                 dict[id] = new ResourcePathResource(Config, filepath) { ResourcePath = resourcePath, CatalogEntry = item };
             }
         }
+    }
+
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
+    {
+        var path = (data?.GetValueKind() == System.Text.Json.JsonValueKind.String ? data.GetValue<string>() : null) ?? "";
+        if (resource is not ResourcePathResource pathRes) {
+            pathRes = new ResourcePathResource(Config, Files[0]);
+        }
+        if (path == "null" || string.IsNullOrEmpty(path)) {
+            pathRes.ResourcePath = "";
+            pathRes.CatalogEntry = null;
+            return pathRes;
+        }
+
+        pathRes.ResourcePath = path.Replace('\\', '/');
+        if (catalogEntryClass == null) throw new Exception();
+
+        return pathRes;
     }
 
     public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)

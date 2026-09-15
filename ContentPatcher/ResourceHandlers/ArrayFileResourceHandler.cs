@@ -19,44 +19,51 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
         };
     }
 
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
+    {
+        if (Config.SubIDGenerator != null) {
+            if (resource is not RSZObjectListResource rszl) {
+                resource = rszl = new RSZObjectListResource(Config, [], Files[0]);
+            }
+
+            workspace.Diff.ApplyDiff(rszl.Instances, data, Config.RszClassRequired.name);
+        } else {
+            if (resource is not RSZObjectResource rszo) {
+                resource = rszo = new RSZObjectResource(Config, workspace.Env.CreateRszInstance(Config.RszClassRequired), Files[0]);
+            }
+
+            workspace.Diff.ApplyDiff(rszo.Instance, data);
+        }
+        if (Config.Filter is ISettable settable) {
+            settable.Set(resource);
+        }
+        return resource;
+    }
+
     public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
     {
+        var res = ApplyResourceData(workspace, null, initialData);
         var idgen = Config.IDGeneratorRequired;
-        if (Config.SubIDGenerator != null) {
-            var list = new RSZObjectListResource(Config, Files[0]);
-            workspace.Diff.ApplyDiff(list.Instances, initialData, Config.RszClassRequired.name);
-            foreach (var inst in list.Instances) {
-                if (idgen.Fields?.Length == 1) {
-                    var idField = idgen.Fields[0].Field;
-                    if (idField.type is RszFieldType.String or RszFieldType.Resource) {
-                        throw new NotImplementedException("String IDs not yet supported");
-                    } else {
-                        var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
-                        idgen.Fields[0].Set(inst, Convert.ChangeType(id, fieldType));
-                    }
-                } else {
-                    throw new NotImplementedException("Unsupported rsz object id combination");
-                }
-                if (Config.Filter is ISettable settable) {
-                    settable.Set(inst);
-                }
-            }
-            return list;
-        } else {
-            var inst = RszInstance.CreateInstance(workspace.Env.RszParser, Config.RszClassRequired);
-            workspace.Diff.ApplyDiff(inst, initialData);
-            if (idgen.Fields?.Length == 1) {
-                var idField = idgen.Fields[0].Field;
-                var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
-                idgen.Fields[0].Set(inst, Convert.ChangeType(id, fieldType));
-            } else {
-                throw new NotImplementedException("Unsupported rsz object id combination");
-            }
-            if (Config.Filter is ISettable settable) {
-                settable.Set(inst);
-            }
-            return new RSZObjectResource(Config, inst, Files[0]);
+        if (idgen.Fields != null && idgen.Fields.Length != 1) {
+            throw new NotImplementedException("Unsupported rsz object id combination");
         }
+
+        if (idgen.Fields == null) {
+            return res;
+        }
+
+        var idField = idgen.Fields[0].Field;
+        var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
+        var castId = Convert.ChangeType(id, fieldType);
+
+        if (res is RSZObjectListResource list) {
+            foreach (var item in list.Instances) {
+                idgen.Fields[0].Set(item, castId);
+            }
+        } else if (res is RSZObjectResource inst) {
+            idgen.Fields[0].Set(inst.Instance, castId);
+        }
+        return res;
     }
 
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)
