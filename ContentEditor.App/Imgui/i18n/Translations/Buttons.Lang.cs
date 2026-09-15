@@ -44,6 +44,7 @@ public static partial class Lang
         public static readonly IconString Undo = new IconString("{0} Undo", AppIcons.SI_Undo);
         public static readonly IconString Redo = new IconString("{0} Redo", AppIcons.SI_Redo);
         public static readonly FixedString Create = "Create";
+        public static readonly FixedString Change = "Change";
         public static readonly FixedString Reload = "Reload";
         public static readonly FixedString ForceReload = "Force Reload";
         public static readonly IconString ForceReimport = new("{0} Re-Import", AppIcons.SI_Update);
