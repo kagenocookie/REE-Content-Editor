@@ -217,12 +217,18 @@ public class Patcher : IDisposable
             }
 
             if (bundleRelativePath != null) {
-                var modBundleOutputPath = Path.Combine(outputDirMain, bundleRelativePath);
-                Directory.CreateDirectory(Path.GetDirectoryName(modBundleOutputPath)!);
-                using var fs = File.Create(modBundleOutputPath);
-                JsonSerializer.Serialize(fs, publishBundle, JsonConfig.jsonOptions);
+                var bundleJson = JsonSerializer.Serialize(publishBundle, JsonConfig.jsonOptions);
+
+                // output the bundle json as loose whether or not we have PAK or loose publish
+                var looseBundleOutputPath = Path.Combine(outputDirLoose, bundleRelativePath);
+                Directory.CreateDirectory(Path.GetDirectoryName(looseBundleOutputPath)!);
+                File.WriteAllText(looseBundleOutputPath, bundleJson);
+
                 if (Parameters.ExportAsPak) {
-                    File.Copy(modBundleOutputPath, Path.Combine(outputDirLoose, bundleRelativePath));
+                    // store bundle json inside the pak as well
+                    var modBundleOutputPath = Path.Combine(outputDirMain, bundleRelativePath);
+                    Directory.CreateDirectory(Path.GetDirectoryName(modBundleOutputPath)!);
+                    File.WriteAllText(modBundleOutputPath, bundleJson);
                 }
             }
         }
