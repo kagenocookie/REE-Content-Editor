@@ -316,7 +316,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
     {
         IContentResource? fieldResource;
         if (field.ValueHandler is CustomEntityFieldHandler customField) {
-            (resourceId, fieldResource) = customField.CreateValue(workspace, entity, initialData);
+            fieldResource = customField.ApplyValue(workspace, null, initialData, entity, state);
             if (resourceId == -1) resourceId = field.GetIDForEntity(entity);
             entity.Set(field.name, fieldResource);
             if (fieldResource == null) return null;
@@ -700,17 +700,15 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
                 // we already instantiated this one, skip it
                 continue;
             }
-            if (field.ResourceType == null || field.Condition?.IsEnabled(entity) == false) {
+            if (field.Condition?.IsEnabled(entity) == false) {
                 continue;
             }
 
-            var resourceData = resources[field.ResourceType];
             IContentResource? fieldResource = null;
             if (sourceEntity != null && sourceEntity.Get(field.name) is IContentResource src) {
-                resourceData = resources[src.ResourceType.Type];
-                fieldResource = CreateEntityFieldInternal(entity, field, ResourceState.Active, resourceData.config, src.ToJson(workspace.Env));
+                fieldResource = CreateEntityFieldInternal(entity, field, ResourceState.Active, src.ResourceType, src.ToJson(workspace.Env));
             } else if (field.IsRequired) {
-                var resource = CreateEntityFieldInternal(entity, field, ResourceState.Active, resourceData.config, null);
+                var resource = CreateEntityFieldInternal(entity, field, ResourceState.Active, field.Config, null);
                 if (resource == null) {
                     throw new Exception($"Could not create field value for entity {entity} field {field}");
                 }

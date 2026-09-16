@@ -38,6 +38,11 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
         return msgData;
     }
 
+    public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
+    {
+        return ApplyResourceData(workspace, null, initialData);
+    }
+
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)
     {
         foreach (var file in Files) {

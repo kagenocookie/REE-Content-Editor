@@ -52,16 +52,16 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
             return res;
         }
 
-        var idField = idgen.Fields[0].Field;
-        var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
+        var idField = idgen.Fields[0];
+        var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.Field.type);
         var castId = Convert.ChangeType(id, fieldType);
 
         if (res is RSZObjectListResource list) {
             foreach (var item in list.Instances) {
-                idgen.Fields[0].Set(item, castId);
+                idField.Set(item, castId);
             }
         } else if (res is RSZObjectResource inst) {
-            idgen.Fields[0].Set(inst.Instance, castId);
+            idField.Set(inst.Instance, castId);
         }
         return res;
     }

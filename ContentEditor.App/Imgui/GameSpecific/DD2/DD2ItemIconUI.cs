@@ -8,7 +8,7 @@ using ReeLib;
 namespace ContentEditor.App.DD2;
 
 [ObjectImguiHandler(typeof(ItemIconResource))]
-public sealed class DD2ItemIconHandler : IObjectUIHandler
+public sealed class DD2ItemIconUI : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -49,20 +49,20 @@ public sealed class DD2ItemIconHandler : IObjectUIHandler
             }
         }
 
-        if (instance == null) {
+        if (instance?.data.IconTexture == null) {
             ImGui.Text(context.label);
             if (workspace != null && field != null) {
                 ImGui.SameLine();
                 if (ImGui.Button("Add custom icon")) {
-                    UndoRedo.RecordSet(context, new ItemIconResource(field.Config));
+                    UndoRedo.RecordSet(context, new ItemIconResource(field.Config) { data = new() { IconTexture = "" }});
+                    if (iconNo != entity.Id) {
+                        UndoRedo.RecordCallbackSetter(null, data.Instance, (ushort)data.Instance.GetFieldValue("_IconNo")!, (ushort)entity.Id, (d, v) => d.SetFieldValue("_IconNo", v));
+                    }
                 }
             }
             return;
         }
 
-        if (iconNo != entity.Id) {
-            data.Instance.SetFieldValue("_IconNo", (ushort)entity.Id);
-        }
         var texHandler = context.GetChild<ResourcePathPicker>() ?? context.AddChild(
             "Icon Path",
             instance.data,
@@ -111,7 +111,6 @@ public sealed class DD2ItemIconHandler : IObjectUIHandler
 
             var wh = new Vector2(texture.Width, texture.Height);
             ImGui.Image(texture.AsTextureRef(), new System.Numerics.Vector2(200, 200), v0 / wh, (v0 + v1) / wh);
-            return;
         }
     }
 }

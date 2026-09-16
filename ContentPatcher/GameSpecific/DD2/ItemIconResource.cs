@@ -37,8 +37,8 @@ public class ItemIconResource(ResourceConfig config) : IContentResource
     {
         public float x;
         public float y;
-        public float h = 152;
-        public float w = 152;
+        public float h = 160;
+        public float w = 144;
 
         public override string ToString() => $"{x} {y} {w} {h}";
     }
@@ -49,11 +49,7 @@ public class ItemIconField : CustomEntityFieldHandler<ItemIconResource>
 {
     public override string? ResourceType => null;
 
-    public override void LoadParams(EntityFieldConfig param)
-    {
-    }
-
-    public override ItemIconResource? ApplyValue(ContentWorkspace workspace, ItemIconResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
+    public override ItemIconResource ApplyValue(ContentWorkspace workspace, ItemIconResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
     {
         var parsedData = data == null ? null : ItemIconResource.FromJson(data);
         if (currentResource == null) {
@@ -74,6 +70,7 @@ public class ItemIconField : CustomEntityFieldHandler<ItemIconResource>
 
     public override (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData)
     {
-        return (-1, new ItemIconResource(Field.Config));
+        var res = ApplyValue(workspace, null, initialData, entity, ResourceState.Active);
+        return (-1, res);
     }
 }
