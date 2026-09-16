@@ -37,8 +37,8 @@ public class ItemIconResource(ResourceConfig config) : IContentResource
     {
         public float x;
         public float y;
-        public float h;
-        public float w;
+        public float h = 152;
+        public float w = 152;
 
         public override string ToString() => $"{x} {y} {w} {h}";
     }
