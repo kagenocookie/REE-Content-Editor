@@ -36,6 +36,7 @@ public class EntitySelection : IWindowHandler
             data.SetPersistentData("selectedEntity", initialId);
         }
     }
+    private bool currentBundleOnly;
 
     public void OnWindow() => this.ShowDefaultWindow(context);
     public void OnIMGUI()
@@ -51,7 +52,15 @@ public class EntitySelection : IWindowHandler
         }
 
         var instances = workspace.ResourceManager.GetEntityInstances(entityType);
-        var selectedId = data.GetOrAddPersistentData<long>("selectedEntity", -1);
+        var selectedId = data.GetOrAddPersistentData<long>("selectedEntity", workspace.ResourceManager.GetEntityZeroId(entityType));
+        ImGui.BeginDisabled(workspace.CurrentBundle == null || workspace.CurrentBundle?.Entities.Any(e => e.Type == entityType) != true);
+        ImguiHelpers.ToggleButton($"{AppIcons.Star}", ref currentBundleOnly, Colors.IconActive);
+        if (currentBundleOnly) {
+            instances = instances.Where(ii => ii.Key == selectedId || workspace.CurrentBundle?.ContainsEntity(ii.Value) == true);
+        }
+        ImGui.EndDisabled();
+        ImguiHelpers.Tooltip("Show only active bundle entities"u8);
+        ImGui.SameLine();
 
         if (ImguiHelpers.FilterableEntityCombo("Entity"u8, instances, ref selectedId, ref data.Context.Filter)) {
             data.SetPersistentData("selectedEntity", selectedId);

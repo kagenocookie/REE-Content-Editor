@@ -1379,6 +1379,12 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         return resources.GetValueOrDefault(resourceTypeID)?.config;
     }
 
+    public long GetEntityZeroId(string? entityType)
+    {
+        if (string.IsNullOrEmpty(entityType)) return -1;
+        return entities.GetValueOrDefault(entityType)?.config.ZeroEntity?.id ?? -1;
+    }
+
     /// <summary>
     /// "Hybrid" path comparer that uses case sensitive comparison for absolute disk file paths (C:/games/...),
     /// but case-insensitive PAK style hashed comparison for relative game paths.
