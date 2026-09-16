@@ -28,32 +28,6 @@ public class ChainEditMode : EditModeHandler
         }
     }
 
-    public void OpenEditor(string filepath)
-    {
-        if (!(Target is RequestSetColliderComponent component)) {
-            return;
-        }
-        if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(filepath, out var file)) {
-            OpenEditor(file);
-        }
-    }
-
-    public void OpenEditor(FileHandle file)
-    {
-        if (!(Target is Chain component)) {
-            return;
-        }
-        if (file.Format.format == KnownFileFormats.Chain) {
-            EditorWindow.CurrentWindow!.AddSubwindow(PrimaryEditor = new ChainEditor(Scene.Workspace, file, component));
-        } else if (file.Format.format == KnownFileFormats.Chain2) {
-            EditorWindow.CurrentWindow!.AddSubwindow(PrimaryEditor = new Chain2Editor(Scene.Workspace, file, component));
-        } else if (file.Format.format == KnownFileFormats.CollisionShapePreset) {
-            EditorWindow.CurrentWindow!.AddSubwindow(new ClspEditor(Scene.Workspace, file, component));
-        } else {
-            return;
-        }
-    }
-
     public override void DrawMainUI()
     {
         if (context == null) {

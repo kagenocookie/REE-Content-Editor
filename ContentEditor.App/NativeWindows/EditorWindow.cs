@@ -349,11 +349,11 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
         }
     }
 
-    public void AddFileEditor(FileHandle file)
+    public void AddFileEditor(FileHandle file, UIContext? sourceContext = null)
     {
         if (workspace == null) return;
 
-        var handler = WindowHandlerFactory.CreateFileResourceHandler(workspace, file);
+        var handler = WindowHandlerFactory.CreateFileResourceHandler(workspace, file, sourceContext);
         if (handler != null) {
             if (file.HandleType != FileHandleType.Embedded && file.HandleType != FileHandleType.New) {
                 AppConfig.Settings.RecentFiles.AddRecent(workspace.Game, file.Filepath);

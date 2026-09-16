@@ -381,13 +381,13 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             ImguiHelpers.Tooltip(Lang.MeshViewer.Tooltip_OutlinerExpand);
             ImGui.EndChild();
             return;
-        }        
+        }
         ImGui.BeginChild("##Outliner", size, ImGuiChildFlags.Borders | ImGuiChildFlags.AlwaysUseWindowPadding, ImGuiWindowFlags.NoScrollbar);
         if (ImGui.ArrowButton("##CollapseOutliner", isOutlinerOnLeft ? ImGuiDir.Left : ImGuiDir.Right)) {
             isOutlinerCollapsed = true;
         }
         ImguiHelpers.Tooltip(Lang.MeshViewer.Tooltip_OutlinerCollapse);
-       
+
         ImGui.SameLine();
         if (ImGui.BeginTabBar("##OutlinerTabBar")) {
             if (ImGui.BeginTabItem(Lang.MeshViewer.Tab_OutlinerModels)) {
@@ -409,7 +409,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
         ImGui.EndChild();
         ImGui.EndChild();
-        
+
     }
     private void ShowOutlinerSplitter(float height, float availableWidth)
     {
@@ -1519,7 +1519,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
         ImGui.SameLine();
         AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/Animation-tools", true);
-        
+
         var animWarns = GetAnimErrors();
         if (animWarns != null) {
             ImGui.SameLine();
@@ -1606,7 +1606,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             }
             ImguiHelpers.Tooltip(Lang.Settings.Bind_MeshViewer_FaceSelection);
         }
-        
+
         ImGui.PopStyleColor(2);
         ImGui.EndChild();
         hovered = hovered || ImGui.IsWindowHovered();
@@ -2286,6 +2286,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             (v, p) => v.animationSourceFile = p ?? "");
 
         var animator = Animator;
+        var prefix = ImguiHelpers.InlinePrefix();
         ImGui.BeginDisabled(!(animator?.AnimationCount > 0));
         if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
             if (animator!.File!.Format.format == KnownFileFormats.Motion) {
@@ -2301,6 +2302,7 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
         ImguiHelpers.Tooltip("Open current motlist in Motlist Editor");
         ImGui.SameLine();
         ImGui.EndDisabled();
+        prefix.Dispose();
         animationPickerContext.ShowUI();
 
         var settings = AppConfig.Settings;

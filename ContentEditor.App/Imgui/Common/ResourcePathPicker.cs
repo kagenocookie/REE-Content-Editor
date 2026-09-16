@@ -137,7 +137,7 @@ public class ResourcePathPicker : IObjectUIHandler
             ImGui.BeginDisabled(string.IsNullOrEmpty(currentPath) && ws != null);
             if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
                 if (ws!.ResourceManager.TryResolveGameFile(currentPath, out var handle)) {
-                    EditorWindow.CurrentWindow?.AddFileEditor(handle);
+                    EditorWindow.CurrentWindow?.AddFileEditor(handle, context);
                 } else {
                     Logger.Warn("Failed to open file " + currentPath);
                 }

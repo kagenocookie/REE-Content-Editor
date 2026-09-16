@@ -303,7 +303,7 @@ public static class WindowHandlerFactory
         return type.IsArray ? Array.CreateInstance(type, 0) : Activator.CreateInstance(type)!;
     }
 
-    public static IWindowHandler? CreateFileResourceHandler(ContentWorkspace env, FileHandle file)
+    public static IWindowHandler? CreateFileResourceHandler(ContentWorkspace env, FileHandle file, UIContext? openContext = null)
     {
         switch (file.Format.format) {
             case KnownFileFormats.UserData:
@@ -323,7 +323,7 @@ public static class WindowHandlerFactory
             case KnownFileFormats.Effect:
                 return new ImguiHandling.Efx.EfxEditor(env, file);
             case KnownFileFormats.RequestSetCollider:
-                return new ImguiHandling.Rcol.RcolEditor(env, file);
+                return new ImguiHandling.Rcol.RcolEditor(env, file, openContext?.FindValueInParentValues<RcolEditMode>()?.Target as RequestSetColliderComponent);
             case KnownFileFormats.MotionList:
                 return new MotlistEditor(env, file);
             case KnownFileFormats.Motion:
@@ -379,11 +379,11 @@ public static class WindowHandlerFactory
             case KnownFileFormats.MotionPack:
                 return new MotpackEditor(env, file);
             case KnownFileFormats.Chain:
-                return new ChainEditor(env, file);
+                return new ChainEditor(env, file, openContext?.FindValueInParentValues<ChainEditMode>()?.Target as Chain);
             case KnownFileFormats.Chain2:
-                return new Chain2Editor(env, file);
+                return new Chain2Editor(env, file, openContext?.FindValueInParentValues<ChainEditMode>()?.Target as Chain);
             case KnownFileFormats.CollisionShapePreset:
-                return new ClspEditor(env, file);
+                return new ClspEditor(env, file, openContext?.FindValueInParentValues<ChainEditMode>()?.Target as Chain);
         }
 
         if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {

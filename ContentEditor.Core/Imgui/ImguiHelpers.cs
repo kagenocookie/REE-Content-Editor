@@ -384,6 +384,11 @@ public static class ImguiHelpers
         return new DisposableIndent(indent);
     }
 
+    public static DisposableInlinePrefix InlinePrefix()
+    {
+        return new DisposableInlinePrefix();
+    }
+
     public struct DisposableImguiID : IDisposable
     {
         public void Dispose()
@@ -404,6 +409,22 @@ public static class ImguiHelpers
         public void Dispose()
         {
             ImGui.Unindent(indent);
+        }
+    }
+
+    public struct DisposableInlinePrefix : IDisposable
+    {
+        private float startX;
+        private float width;
+        public DisposableInlinePrefix()
+        {
+            startX = ImGui.GetCursorPosX();
+            width = ImGui.CalcItemWidth();
+        }
+        public void Dispose()
+        {
+            var endX = ImGui.GetCursorPosX();
+            ImGui.SetNextItemWidth(width - (endX - startX));
         }
     }
 

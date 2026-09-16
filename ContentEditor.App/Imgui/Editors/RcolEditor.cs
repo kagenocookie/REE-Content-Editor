@@ -36,12 +36,7 @@ public class RcolEditor : FileEditor, IWorkspaceContainer, IObjectUIHandler, IIn
         typeof(RcolFile).GetProperty(nameof(RcolFile.RequestSets))!,
     ];
 
-    public RcolEditor(ContentWorkspace env, FileHandle file) : base(file)
-    {
-        Workspace = env;
-    }
-
-    public RcolEditor(ContentWorkspace env, FileHandle file, RequestSetColliderComponent component) : base(file)
+    public RcolEditor(ContentWorkspace env, FileHandle file, RequestSetColliderComponent? component = null) : base(file)
     {
         Workspace = env;
         _component = component;
