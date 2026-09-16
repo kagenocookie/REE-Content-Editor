@@ -39,11 +39,15 @@ public class KeyedMessage : EntityFieldValueHandler, IDiffableField, ICustomEnti
     public override IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
     {
         if (data is not JsonObject obj) {
-            data = obj = new JsonObject();
+            var initalStr = data?.GetValueKind() == System.Text.Json.JsonValueKind.String ? data.GetValue<string>() : null;
+            obj = new JsonObject();
+            obj[nameof(MessageData.Messages)] = new JsonObject() {
+                { nameof(Language.English), initalStr }
+            };
         }
         string entityKey = keyFormat.GetString(entity);
         var messageId = MurMur3HashUtils.GetHash(entityKey);
-        obj["MessageKey"] = entityKey;
-        return base.ApplyValue(workspace, currentResource, data, entity, state);
+        obj[nameof(MessageData.MessageKey)] = entityKey;
+        return base.ApplyValue(workspace, currentResource, obj, entity, state);
     }
 }
