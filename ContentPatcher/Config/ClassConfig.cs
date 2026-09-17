@@ -47,6 +47,7 @@ public partial class ClassConfigSerialized
             if (!string.IsNullOrEmpty(newConf.Tooltip)) myConf.Tooltip = newConf.Tooltip;
             if (newConf.ReadOnly) myConf.ReadOnly = newConf.ReadOnly;
             if (newConf.Switch != null) myConf.Switch = newConf.Switch;
+            if (newConf.DefaultValue != null) myConf.DefaultValue = newConf.DefaultValue;
         }
     }
 
@@ -83,6 +84,8 @@ public partial class ClassFieldConfig
     public string? Handler { get; set; }
     public bool ReadOnly { get; set; }
 
+    [YamlMember("default")]
+    public object? DefaultValue { get; set; }
     public ConditionalClassSwitchConfig? Switch { get; set; }
 }
 

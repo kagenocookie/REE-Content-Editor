@@ -29,7 +29,7 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
             workspace.Diff.ApplyDiff(rszl.Instances, data, Config.RszClassRequired.name);
         } else {
             if (resource is not RSZObjectResource rszo) {
-                resource = rszo = new RSZObjectResource(Config, workspace.Env.CreateRszInstance(Config.RszClassRequired), Files[0]);
+                resource = rszo = new RSZObjectResource(Config, workspace.CreateRszInstance(Config.RszClassRequired), Files[0]);
             }
 
             workspace.Diff.ApplyDiff(rszo.Instance, data);

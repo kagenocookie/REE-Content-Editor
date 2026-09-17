@@ -9,7 +9,7 @@ public class RSZObjectResource(ResourceConfig type, RszInstance instance, string
     public string FileResourcePath => file;
     public RszInstance Instance { get; set; } = instance;
 
-    public IContentResource Clone() => new RSZObjectResource(ResourceType, Instance.Clone(), file);
+    public virtual IContentResource Clone() => new RSZObjectResource(ResourceType, Instance.Clone(), file);
 
     public object? Get(string path)
     {

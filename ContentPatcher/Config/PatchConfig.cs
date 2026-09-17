@@ -198,6 +198,24 @@ public class PatchConfig(string filepath)
                 var fmt = FormatterSettings.CreateWorkspaceFormatter(workspace);
                 runtimeConfig.StringFormatter = new StringFormatter(config.To_String, fmt);
             }
+
+            if (config.Fields != null) {
+                foreach (var (fn, f) in config.Fields) {
+                    var targetField = rszClass.GetField(fn);
+                    if (targetField == null) {
+                        Logger.Debug($"Unknown field {fn} for clas {cls}");
+                        continue;
+                    }
+
+                    // ensure we type the default values correctly
+                    if (f.DefaultValue != null) {
+                        var cstype = RszInstance.RszFieldTypeToCSharpType(targetField.type);
+                        if (f.DefaultValue.GetType() != cstype) {
+                            f.DefaultValue = Convert.ChangeType(f.DefaultValue, cstype);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -350,15 +368,11 @@ public class PatchConfig(string filepath)
         var data = field.config;
         if (!string.IsNullOrEmpty(data.resource?.Type)) {
             field.Config = SetupResourceConfig(workspace, entity.Name + "__" + field.name, data.resource);
-            field.config.type ??= field.Config.Type;
             resources.TryAdd(field.Config.Type, field.Config);
-        } else if (!string.IsNullOrEmpty(data.type) && resources.TryGetValue(data.type, out var globalResource)) {
-            field.Config = globalResource;
         } else if (!string.IsNullOrEmpty(data.fieldType)) {
             // handle fields with no resources (entity-only fields)
             field.ValueHandler = ResourceHandler.CreateValueHandler(data.fieldType, workspace);
             var resCfg = new ResourceConfigSerialized() { Type = data.fieldType };
-            field.config.type ??= data.fieldType;
             field.Config = SetupResourceConfig(workspace, entity.Name + "__" + field.name, resCfg, false);
             field.Config.Resource = (field.ValueHandler as CustomEntityFieldHandler)?.CreateResourceHandler(field.Config)
                 ?? throw new Exception($"Field {data.name} declared with field type {data.fieldType} but no resource provided.");

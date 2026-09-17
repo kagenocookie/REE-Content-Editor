@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using ReeLib;
 using VYaml.Annotations;
 
@@ -75,6 +76,29 @@ public partial class ResourceConfigSerialized
         }
         return new RszFieldAccessorFirst<T>(func);
     }
+
+    [return: NotNullIfNotNull(nameof(defaultValue))]
+    public T GetParam<T>(string key, T defaultValue = default!)
+    {
+        return TryGetParam<T>(key, out var vv) ? vv : defaultValue;
+    }
+
+    public bool TryGetParam<T>(string key, [MaybeNullWhen(false)] out T value)
+    {
+        if (Params?.TryGetValue(key, out var val) == true) {
+            if (val is T vv) {
+                value = vv;
+                return true;
+            }
+
+            throw new Exception($"Resource type {Type} parameter {key} must be {typeof(T)}");
+        }
+        value = default;
+        return false;
+    }
+
+    public T RequireParam<T>(string key)
+        => Params?.GetValueOrDefault(key) is T vvv ? vvv : throw new Exception($"Resource {Type} requires {typeof(T)} parameter {key}");
 }
 
 [YamlObject]

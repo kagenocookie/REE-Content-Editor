@@ -66,6 +66,20 @@ public sealed class ContentWorkspace : IDisposable
         ResourceManager.Setup(this);
     }
 
+    public RszInstance CreateRszInstance(RszClass rszClass)
+    {
+        var instance = Env.CreateRszInstance(rszClass);
+        var config = Config.GetClassConfig(rszClass.name);
+        if (config?.Fields != null) {
+            foreach (var f in config.Fields) {
+                if (f.Value.DefaultValue != null) {
+                    instance.SetFieldValue(f.Key, f.Value.DefaultValue);
+                }
+            }
+        }
+        return instance;
+    }
+
     public ContentWorkspace CreateTempClone()
     {
         return new ContentWorkspace(this);

@@ -57,7 +57,6 @@ public partial class RuntimeMappingConfig
 public partial class EntityFieldConfig
 {
     public string name = string.Empty;
-    public string? type = string.Empty;
     public string? label;
 
     [YamlMember("when")]
@@ -76,31 +75,12 @@ public partial class EntityFieldConfig
 
     public ResourceConfigSerialized? resource;
 
-    [YamlIgnore]
-    public ResourceConfigSerialized RequireResourceSettings => resource ?? throw new Exception($"Resource is required for entity field type {type}");
-
     [return: NotNullIfNotNull(nameof(defaultValue))]
-    public T GetParam<T>(string key, T defaultValue = default!)
-    {
-        return TryGetParam<T>(key, out var vv) ? vv : defaultValue;
-    }
+    public T GetParam<T>(string key, T defaultValue = default!) => resource!.GetParam<T>(key, defaultValue);
 
-    public bool TryGetParam<T>(string key, [MaybeNullWhen(false)] out T value)
-    {
-        if (resource?.Params?.TryGetValue(key, out var val) == true) {
-            if (val is T vv) {
-                value = vv;
-                return true;
-            }
+    public bool TryGetParam<T>(string key, [MaybeNullWhen(false)] out T value) => resource!.TryGetParam<T>(key, out value) == true;
 
-            throw new Exception($"Resource type {type} parameter {key} must be {typeof(T)}");
-        }
-        value = default;
-        return false;
-    }
-
-    public T RequireParam<T>(string key)
-        => resource?.Params?.GetValueOrDefault(key) is T vvv ? vvv : throw new Exception($"Resource {type} requires {typeof(T)} parameter {key}");
+    public T RequireParam<T>(string key) => resource!.RequireParam<T>(key);
 }
 
 [YamlObject]
