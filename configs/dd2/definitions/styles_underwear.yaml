@@ -1,0 +1,103 @@
+entities:
+  items.styles.underwear.UnderwearStyle:
+    primary_field: data
+    id_field: styleNo
+    to_string: "Underwear Style {id}: {data._Style:enum(app.UnderwearStyle)}"
+    display_name: Style
+    zero_entity:
+      id: 0
+    enums:
+      - name: app.UnderwearStyle
+        format: "Underwear_{id}"
+        primary: true
+    fields:
+    - name: data
+      display_after: styleNo
+      # field_id: { field: styleNo, path: value }
+      resource:
+        type: group
+        id: [_Style]
+        custom_id_range: [10000, 10000000]
+        classname: app.UnderwearSwapItem
+        subtypes:
+          male:
+            file: AppSystem/CharaEdit/ch000/SwapData/UnderwearSwapData.user
+            type: array-file
+            filter:
+              property: _Gender
+              equals: 2776536455
+          female:
+            file: AppSystem/CharaEdit/ch000/SwapData/UnderwearSwapData.user
+            type: array-file
+            filter:
+              property: _Gender
+              equals: 1910070090
+    # - name: styleNo
+    #   resource:
+    #     type: enum_mapping
+    #     classname: app.UnderwearStyle
+    #     custom_id_range: [10000, 32700] # _StyleNo on the armor data is a signed short so we need to limit to that range
+    #     params:
+    #       virtual_enum_name: ce.UnderwearStyleNo
+    #       new_label_format: "Underwear_{id:D03}"
+    #       label_id_parse: "Underwear_(\\d+)"
+    #       value_from: { field: data, path: _Style }
+
+  items.styles.underwear.UnderwearMesh:
+    to_string: "{id:enum(app.CharacterEditDefine.UnderwearMeshID)} | {mesh._Mesh}"
+    display_name: Underwear Mesh
+    enums:
+    - name: "app.CharacterEditDefine.UnderwearMeshID"
+      format: "underwear_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: mesh
+      required: true
+      resource:
+        custom_id_range: [10000, 10000000]
+        file: AppSystem/CharaEdit/ch000/Catalog/UnderwearMeshCatalog.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: Underwear
+      to_both:
+        mesh: Mesh
+        chain: Chain
+        clsp: Clsp
+
+  items.styles.underwear.UnderwearSkin:
+    to_string: "{id:enum(app.CharacterEditDefine.UnderwearSkinID)} | {skin._Material}"
+    display_name: Underwear Skin
+    enums:
+    - name: app.CharacterEditDefine.UnderwearSkinID
+      format: "underwear_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: skin
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/UnderwearSkinCatalog.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: UnderwearSkin
+      to_both:
+        skin: Skin
+
+classes:
+  app.UnderwearSwapItem:
+    to_string: "{class_shortname} {_Style:enum(app.UnderwearStyle)} {_Gender:enum(app.Gender)}"
+    fields:
+      _Style: { readOnly: true }
+      _Gender: { readOnly: true }
+      _MeshID: { enum: UnderwearMesh, label: Mesh }
+      _SkinID: { enum: UnderwearSkin, label: Skin }

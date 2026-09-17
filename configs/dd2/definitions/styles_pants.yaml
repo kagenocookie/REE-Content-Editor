@@ -1,0 +1,213 @@
+entities:
+  items.styles.pants.PantsStyle:
+    primary_field: data
+    id_field: styleNo
+    to_string: "Pants Style {id}: {data._PantsStyle:enum(app.PantsStyle)}"
+    display_name: Style
+    fields:
+    - name: data
+      display_after: styleNo
+      field_id: { field: styleNo, path: value }
+      resource:
+        type: group
+        id: [_PantsStyle]
+        custom_id_range: [10000, 10000000]
+        classname: app.PantsSwapItem
+        subtypes:
+          male:
+            file: AppSystem/CharaEdit/ch000/SwapData/PantsSwapData.user
+            type: array-file
+            filter:
+              property: _Gender
+              equals: 2776536455
+          female:
+            file: AppSystem/CharaEdit/ch000/SwapData/PantsSwapData.user
+            type: array-file
+            filter:
+              property: _Gender
+              equals: 1910070090
+    - name: styleNo
+      resource:
+        type: enum_mapping
+        classname: app.PantsStyle
+        custom_id_range: [10000, 32700] # _PantsStyleNo on the armor data is a signed short so we need to limit to that range
+        params:
+          virtual_enum_name: ce.PantsStyleNo
+          new_label_format: "Pants_{id:D03}"
+          label_id_parse: "Pants_(\\d+)"
+          value_from: { field: data, path: _PantsStyle }
+
+  items.styles.pants.PantsLgMesh:
+    to_string: "{id:enum(app.CharacterEditDefine.PantsLgMeshID)} | {mesh._Mesh}"
+    display_name: Legs Mesh
+    enums:
+    - name: "app.CharacterEditDefine.PantsLgMeshID"
+      format: "pants_{id}_lg"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: mesh
+      required: true
+      resource:
+        custom_id_range: [10000, 10000000]
+        file: AppSystem/CharaEdit/ch000/Catalog/PantsLgMeshCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: chain
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/PantsLgChainCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: clsp
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/PantsLgCollisionShapePresetCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: cloth
+      required: true
+      resource:
+        custom_id_range: [10000, 10000000]
+        file: AppSystem/CharaEdit/ch000/Catalog/PantsLgGpuClothCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: sfur
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/PantsLgShellFurCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    # runtime_mapping:
+    #   runtime_type: PantsLgMesh
+    #   to_both:
+    #     mesh: mesh
+    #     beastMesh: BeastMesh
+    #     chain: Chain
+    #     clsp: Clsp
+
+  items.styles.pants.PantsLgSkin:
+    to_string: "{id:enum(app.CharacterEditDefine.PantsLgSkinID)} | {skin._Material}"
+    display_name: Legs Skin
+    enums:
+    - name: app.CharacterEditDefine.PantsLgSkinID
+      format: "pants_{id}_lg"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: skin
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/PantsLgSkinCatalog_Default.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: PantsLgSkin
+      to_both:
+        skin: Skin
+
+  items.styles.pants.PantsWlMesh:
+    to_string: "{id:enum(app.CharacterEditDefine.PantsWlMeshID)} | {mesh._Mesh}"
+    display_name: Waist Mesh
+    enums:
+    - name: "app.CharacterEditDefine.PantsWlMeshID"
+      format: "pants_{id}_wl"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: mesh
+      required: true
+      resource:
+        custom_id_range: [10000, 10000000]
+        file: AppSystem/CharaEdit/ch000/Catalog/PantsWlMeshCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: chain
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/PantsWlChainCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: clsp
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/PantsWlCollisionShapePresetCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: cloth
+      required: true
+      resource:
+        custom_id_range: [10000, 10000000]
+        file: AppSystem/CharaEdit/ch000/Catalog/PantsWlGpuClothCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: sfur
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/PantsWlShellFurCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    # runtime_mapping:
+    #   runtime_type: PantsWlMesh
+    #   to_both:
+    #     mesh: mesh
+    #     beastMesh: BeastMesh
+    #     chain: Chain
+    #     clsp: Clsp
+
+  items.styles.pants.PantsWlSkin:
+    to_string: "{id:enum(app.CharacterEditDefine.PantsWlSkinID)} | {skin._Material}"
+    display_name: Waist Skin
+    enums:
+    - name: app.CharacterEditDefine.PantsWlSkinID
+      format: "pants_{id}_wl"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: skin
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/PantsWlSkinCatalog_Default.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: PantsWlSkin
+      to_both:
+        skin: Skin
+
+classes:
+  app.PantsSwapItem:
+    to_string: "{class_shortname} {_PantsStyle:enum(app.PantsStyle)} {_Gender:enum(app.Gender)}"
+    fields:
+      _PantsStyle: { readOnly: true }
+      _Gender: { readOnly: true }
+      _LgMeshID: { enum: PantsLgMesh, label: Leg Mesh }
+      _LgSkinID: { enum: PantsLgSkin, label: Leg Skin }
+      _LgSubMeshID: { enum: PantsLgMesh, label: Leg Sub Mesh }
+      _LgSubSkinID: { enum: PantsLgSkin, label: Leg Sub Skin }
+      _WlMeshID: { enum: PantsWlMesh, label: Waist Mesh }
+      _WlSkinID: { enum: PantsWlSkin, label: Waist Skin }
+      _WlSubMeshID: { enum: PantsWlMesh, label: Waist Sub Mesh }
+      _WlSubSkinID: { enum: PantsWlSkin, label: Waist Sub Skin }

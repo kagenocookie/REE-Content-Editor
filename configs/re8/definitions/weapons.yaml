@@ -9,10 +9,12 @@ entities:
     to_string: "Weapon {id}: {data.Basic.NameMessageID:translate()}"
     fields:
       - name: data
-        type: app.ItemSpecificationData.SpecUnit
         label: Data
         required: true
         resource:
+          id: [ItemID]
+          type: array-file
+          file: natives/stm/singletonuserdatas/playerweaponspecificationdata.user.2
           params:
             nested: false
       - name: prefab
@@ -23,12 +25,6 @@ entities:
           resource_type: prefab
           params:
             path: "{catalog?.Prefab?.Path}"
-
-resources:
-  app.ItemSpecificationData.SpecUnit:
-    id: [ItemID]
-    type: array-file
-    file: natives/stm/singletonuserdatas/playerweaponspecificationdata.user.2
 
 classes:
   app.ItemSpecificationData.SpecUnit:

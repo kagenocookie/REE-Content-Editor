@@ -159,6 +159,9 @@
         "switch": {
           "description": "Switch condition",
           "$ref": "#/definitions/switch"
+        },
+        "default": {
+          "description": "The default value for this field when creating new instance of the class"
         }
       },
       "additionalProperties": false
@@ -184,10 +187,6 @@
       "properties": {
         "name": {
           "description": "Field name as used in SmartFormat expressions and code access.",
-          "type": "string"
-        },
-        "type": {
-          "description": "Resource type name that matches an entry in the resources section. Can be a custom type defined inline via field_type.",
           "type": "string"
         },
         "label": {

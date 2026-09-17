@@ -47,22 +47,19 @@ entities:
         subtypes:
           male:
             file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_m_Tops.user
-            # classname: app.PartSwapCatalog.Item
             type: resource_proxy_pfb
-            resource_type: texture
+            params:
+              skipFields: 1
           female:
             file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_f_Tops.user
-            # classname: app.PartSwapCatalog.Item
             type: resource_proxy_pfb
-            resource_type: texture
+            params:
+              skipFields: 1
     runtime_mapping:
       runtime_type: TopsStyle
       to_both:
         "data.female": "data.1910070090"
         "data.male": "data.2776536455"
-      to_desktop:
-        "furmasks.1910070090" : "furmask.female"
-        "furmasks.2776536455" : "furmask.male"
       to_runtime:
         # null out furmask configs for runtime since it's storing pfb paths instead of direct files
         # this way it'll just read the active state which will be whichever we patched in
@@ -100,17 +97,17 @@ entities:
         type: resource_proxy_pfb
         params:
           skipFields: 1
-    - name: cloth
-      label: GPU Cloth
-      resource:
-        file: AppSystem/CharaEdit/ch000/Catalog/TopsBdGpuClothCatalog_Default.user
-        type: resource_proxy_pfb
-        params:
-          skipFields: 1
     - name: clsp
       label: Collision Shape Preset
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsBdCollisionShapePresetCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: cloth
+      label: GPU Cloth
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBdGpuClothCatalog_Default.user
         type: resource_proxy_pfb
         params:
           skipFields: 1
@@ -179,17 +176,17 @@ entities:
         type: resource_proxy_pfb
         params:
           skipFields: 1
-    - name: cloth
-      label: GPU Cloth
-      resource:
-        file: AppSystem/CharaEdit/ch000/Catalog/TopsWbGpuClothCatalog_Default.user
-        type: resource_proxy_pfb
-        params:
-          skipFields: 1
     - name: clsp
       label: Collision Shape Preset
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/TopsWbCollisionShapePresetCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: cloth
+      label: GPU Cloth
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsWbGpuClothCatalog_Default.user
         type: resource_proxy_pfb
         params:
           skipFields: 1
@@ -233,75 +230,139 @@ entities:
       to_both:
         skin: Skin
 
-resources:
-  items.catalogs.TopsAmMesh:
-    custom_id_range: [10000, 10000000]
-    file: AppSystem/CharaEdit/ch000/Catalog/TopsAmMeshCatalog_Default.user
+  items.styles.tops.TopsAmMesh:
+    to_string: "{id:enum(app.CharacterEditDefine.TopsAmMeshID)} | {mesh._Mesh}"
+    display_name: Arms Mesh
     enums:
-    - name: app.CharacterEditDefine.TopsAmMeshID
-      format: "tops_am_{id}"
+    - name: "app.CharacterEditDefine.TopsAmMeshID"
+      format: "tops_{id}_am"
       primary: true
-    type: resource_proxy_pfb
-    resource_type: mesh
-  items.catalogs.TopsAmSkin:
-    custom_id_range: [10000, 10000000]
-    file: AppSystem/CharaEdit/ch000/Catalog/TopsAmSkinCatalog_Default.user
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: mesh
+      required: true
+      resource:
+        custom_id_range: [10000, 10000000]
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsAmMeshCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: chain
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsAmChainCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: clsp
+      label: Collision Shape Preset
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsAmCollisionShapePresetCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: cloth
+      label: GPU Cloth
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsAmGpuClothCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: TopsAm
+      to_both:
+        mesh: Mesh
+        chain: Chain
+        cloth: Gpuc
+        clsp: Clsp
+
+  items.styles.tops.TopsAmSkin:
+    to_string: "{id:enum(app.CharacterEditDefine.TopsAmSkinID)} | {skin._Material}"
+    display_name: Arms Skin
     enums:
     - name: app.CharacterEditDefine.TopsAmSkinID
-      format: "tops_am_{id}"
+      format: "tops_{id}_am"
       primary: true
-    type: resource_proxy_pfb
-    resource_type: meshMaterial
-  items.catalogs.TopsBtMesh:
-    custom_id_range: [10000, 10000000]
-    file: AppSystem/CharaEdit/ch000/Catalog/TopsBtMeshCatalog_Default.user
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: skin
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsAmSkinCatalog_Default.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: TopsAmSkin
+      to_both:
+        skin: Skin
+
+  items.styles.tops.TopsBtMesh:
+    to_string: "{id:enum(app.CharacterEditDefine.TopsBtMeshID)} | {mesh._Mesh}"
+    display_name: Belt Mesh
     enums:
-    - name: app.CharacterEditDefine.TopsBtMeshID
-      format: "tops_bt_{id}"
+    - name: "app.CharacterEditDefine.TopsBtMeshID"
+      format: "tops_{id}_bt"
       primary: true
-    type: resource_proxy_pfb
-    resource_type: mesh
-  items.catalogs.TopsBtSkin:
-    custom_id_range: [10000, 10000000]
-    file: AppSystem/CharaEdit/ch000/Catalog/TopsBtSkinCatalog_Default.user
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: mesh
+      required: true
+      resource:
+        custom_id_range: [10000, 10000000]
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBtMeshCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: chain
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBtChainCatalog.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: clsp
+      label: Collision Shape Preset
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBtCollisionShapePresetCatalog.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: TopsBt
+      to_both:
+        mesh: Mesh
+        chain: Chain
+        clsp: Clsp
+
+  items.styles.tops.TopsBtSkin:
+    to_string: "{id:enum(app.CharacterEditDefine.TopsBtSkinID)} | {skin._Material}"
+    display_name: Belt Skin
     enums:
     - name: app.CharacterEditDefine.TopsBtSkinID
-      format: "tops_bt_{id}"
+      format: "tops_{id}_bt"
       primary: true
-    type: resource_proxy_pfb
-    resource_type: meshMaterial
-  items.catalogs.UnderwearMesh:
-    custom_id_range: [10000, 10000000]
-    file: AppSystem/CharaEdit/ch000/Catalog/UnderwearMeshCatalog.user
-    enums:
-    - name: app.CharacterEditDefine.UnderwearMeshID
-      format: "underwear_{id}"
-      primary: true
-    type: resource_proxy_pfb
-    resource_type: mesh
-  items.catalogs.UnderwearSkin:
-    custom_id_range: [10000, 10000000]
-    file: AppSystem/CharaEdit/ch000/Catalog/UnderwearSkinCatalog.user
-    enums:
-    - name: app.CharacterEditDefine.UnderwearSkinID
-      format: "underwear_{id}"
-      primary: true
-    type: resource_proxy_pfb
-    resource_type: meshMaterial
-
-  # items.furmask.TopsFurMask:
-  #   type: group
-  #   subclasses:
-  #     male:
-  #       file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_m_Tops.user
-  #       # classname: app.PartSwapCatalog.Item
-  #       type: resource_proxy_pfb
-  #       resource_type: texture
-  #     female:
-  #       file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_f_Tops.user
-  #       # classname: app.PartSwapCatalog.Item
-  #       type: resource_proxy_pfb
-  #       resource_type: texture
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: skin
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBtSkinCatalog_Default.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: TopsBtSkin
+      to_both:
+        skin: Skin
 
 classes:
   app.TopsSwapItem:
@@ -313,18 +374,19 @@ classes:
       _BdSkinID: { enum: TopsBdSkin, label: Body Skin }
       _BdSubMeshID: { enum: TopsBdMesh, label: Body Sub Mesh }
       _BdSubSkinID: { enum: TopsBdSkin, label: Body Sub Skin }
-      # _WbMeshID: { enum: TopsWbMesh, label: Waistband Mesh }
-      # _WbSkinID: { enum: TopsWbSkin, label: Waistband Skin }
-      # _WbSubMeshID: { enum: TopsWbMesh, label: Waistband Sub Mesh }
-      # _WbSubSkinID: { enum: TopsWbSkin, label: Waistband Sub Skin }
-      # _AmMeshID: { enum: TopsAmMesh, label: Arm Mesh }
-      # _AmSkinID: { enum: TopsAmSkin, label: Arm Skin }
-      # _AmSubMeshID: { enum: TopsAmMesh, label: Arm Sub Mesh }
-      # _AmSubSkinID: { enum: TopsAmSkin, label: Arm Sub Skin }
-      # _BtMeshID: { enum: TopsBtMesh, label: Belt Mesh }
-      # _BtSkinID: { enum: TopsBtSkin, label: Belt Skin }
-      # _BtSubMeshID: { enum: TopsBtMesh, label: Belt Sub Mesh }
-      # _BtSubSkinID: { enum: TopsBtSkin, label: Belt Sub Skin }
+      _WbMeshID: { enum: TopsWbMesh, label: Waistband Mesh }
+      _WbSkinID: { enum: TopsWbSkin, label: Waistband Skin }
+      _WbSubMeshID: { enum: TopsWbMesh, label: Waistband Sub Mesh }
+      _WbSubSkinID: { enum: TopsWbSkin, label: Waistband Sub Skin }
+      _AmMeshID: { enum: TopsAmMesh, label: Arm Mesh }
+      _AmSkinID: { enum: TopsAmSkin, label: Arm Skin }
+      _AmSubMeshID: { enum: TopsAmMesh, label: Arm Sub Mesh }
+      _AmSubSkinID: { enum: TopsAmSkin, label: Arm Sub Skin }
+      _BtMeshID: { enum: TopsBtMesh, label: Belt Mesh }
+      _BtSkinID: { enum: TopsBtSkin, label: Belt Skin }
+      _BtSubMeshID: { enum: TopsBtMesh, label: Belt Sub Mesh }
+      _BtSubSkinID: { enum: TopsBtSkin, label: Belt Sub Skin }
+      _UnderwearStyle: { enum: UnderwearStyle, label: Underwear Style }
   app.PartSwapMeshHolder:
     fields:
       Enabled: { default: true }
@@ -343,3 +405,8 @@ classes:
   app.PartSwapShellFurHolder:
     fields:
       Enabled: { default: true }
+  app.PartSwapTextureHolder:
+    fields:
+      Enabled: { default: true }
+  app.PartSwapCatalog.Item:
+    to_string: "PartSwapItem [{_Hash}] {_Prefab.Path}"

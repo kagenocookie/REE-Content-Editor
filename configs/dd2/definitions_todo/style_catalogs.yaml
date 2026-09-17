@@ -125,10 +125,3 @@ resources:
     classname: app.PartSwapCatalog.Item
     files:
     - AppSystem/CharaEdit/ch000/Catalog/BeardSkinCatalog.user.2
-
-  # TopsCatalog:
-  #   patcher:
-  #     type: dd2-catalog-scn
-  #     files:
-  #     - AppSystem/CharaEdit/ch000/CatalogHolder/TopsCatalogHolder_Chunk0.pfb.17
-  #     - AppSystem/CharaEdit/ch000/CatalogHolder/TopsCatalogHolder_Chunk1.pfb.17

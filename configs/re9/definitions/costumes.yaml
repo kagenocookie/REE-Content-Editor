@@ -14,12 +14,17 @@
 
 entities:
   costumes.timeline_costume:
-    custom_id_range: [100000, 999999]
     to_string: "Timeline Costume [{data[0]?._CostumeId}]"
     fields:
     - name: data
-      type: costumes.timeline_unit
       required: true
+      resource:
+        custom_id_range: [100000, 999999]
+        id: [_CostumeId]
+        sub_id: [_CostumeVariationId]
+        classname: app.TimelineEventCostumeCatalog.Unit
+        type: array-file
+        file: natives/stm/event/resource/costumecatalog/ch0200.user.3
   # costumes.montage_preset:
   #   custom_id_range: [100000, 999999]
   #   to_string: "Montage Preset [{data._Preset._ModelID} / {data._Preset._ID}]"
@@ -31,13 +36,6 @@ entities:
   #       params:
   #         classname: app.CharacterMontagePresetCatalogUserData.Entry
 
-resources:
-  costumes.timeline_unit:
-    id: [_CostumeId]
-    sub_id: [_CostumeVariationId]
-    classname: app.TimelineEventCostumeCatalog.Unit
-    type: array-file
-    file: natives/stm/event/resource/costumecatalog/ch0200.user.3
 classes:
   app.TimelineEventCostumeCatalog.Unit:
     to_string: "Costume {_CostumeId} (Variation: {_CostumeVariationId})"
