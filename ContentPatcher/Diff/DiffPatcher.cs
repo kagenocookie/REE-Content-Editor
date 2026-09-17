@@ -17,7 +17,14 @@ public class DiffPatcher
     public void ApplyRSZObjectDiff(ref RszInstance instance, JsonNode diff, Workspace env)
     {
         if (diff.GetValueKind() == JsonValueKind.Null) return;
-        if (diff.GetValueKind() != JsonValueKind.Object) throw new ArgumentException("Object diff must be an object", nameof(diff));
+        if (diff.GetValueKind() != JsonValueKind.Object) {
+            if (diff.GetValueKind() == JsonValueKind.String && diff.GetValue<string>() == "null") {
+                instance = RszInstance.NULL;
+                return;
+            }
+
+            throw new ArgumentException("Object diff must be an object", nameof(diff));
+        }
 
         var diffObj = (JsonObject)diff;
         var newClassname = diffObj["$type"];
