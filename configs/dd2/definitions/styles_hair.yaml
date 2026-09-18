@@ -1,7 +1,7 @@
 entities:
   styles.hair.HairStyle:
     primary_field: data
-    to_string: "Hair Style {id}: {data._HairStyle:enum(app.HairStyle)}"
+    to_string: "Hair {data._HairStyle:enum(app.HairStyle)} [#{id}]"
     display_name: Style
     fields:
     - name: DD2_StylePreview

@@ -1,10 +1,7 @@
 using System.Numerics;
-using ContentEditor.App.Graphics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentPatcher;
-using ContentPatcher.DD2;
-using ReeLib;
 
 namespace ContentEditor.App.DD2;
 
@@ -27,6 +24,7 @@ public sealed class DD2PartSwapperPreview : IObjectUIHandler
         if (!ImGui.TreeNode("3D Preview"u8)) {
             return;
         }
+        ImGui.SetNextWindowSizeConstraints(new Vector2(200, 400), new Vector2(float.MaxValue));
         ImGui.BeginChild("##PartPreview"u8);
         var sceneView = context.GetChildHandler<EmbeddedWindowHandler>()?.Window as SceneView;
         var isInit = sceneView == null;

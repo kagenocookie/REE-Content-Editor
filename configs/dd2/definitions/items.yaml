@@ -63,7 +63,6 @@ entities:
       display_after: description
       # if we used vanilla tech, there would be a uvs file, added to the item master uvs file, and then an ID taken from there
       # alternatively we use content editor runtime tech, the patch needs to be saved as a CE bundle with tex and rect info
-      type: DD2_ItemIcon
       field_type: DD2_ItemIcon
     - name: enhanceData
       label: Enhance data
@@ -115,7 +114,6 @@ entities:
           classname: app.WeaponCatalogData.Data
           file: AppSystem/Catalog/MainContents/Userdata/WeaponCatalogData.user
       - name: name
-        type: string
         label: Weapon ID name
         required: true
         display_after: start
@@ -172,17 +170,15 @@ classes:
       _Id: { readOnly: true }
       _EquipCategory: { readOnly: true } # read-only to prevent mismatched object types
       _Attr: { enum: app.ItemAttrBits }
-      # _StyleNo_Backup: { handler: DD2.ArmorStyle }
       _StyleNo:
         switch:
           property: _EquipCategory
-          cases: {
-            # 2: { enum: "HelmStyle" }
-            "3": { enum: "TopsStyle" }
-            # 4: { enum: "PantsStyle" }
-            # 5: { enum: "MantleStyle" }
-            # 7: { enum: "FacewearStyle" }
-          }
+          cases:
+            2: { enum: "HelmStyle" }
+            3: { enum: "TopsStyle" }
+            4: { enum: "PantsStyle" }
+            5: { enum: "MantleStyle" }
+            7: { enum: "FacewearStyle" }
 
   app.EnhanceParamBase:
     to_string: "{_Type:enum(app.EnhanceType)} {_EnhanceNo}"

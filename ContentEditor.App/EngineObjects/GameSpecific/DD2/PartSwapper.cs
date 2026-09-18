@@ -1,8 +1,5 @@
 using System.Text.Json;
-using Assimp;
-using ContentEditor.App.FileLoaders;
 using ContentEditor.App.Graphics;
-using ContentEditor.App.ImguiHandling;
 using ContentPatcher;
 using ReeLib;
 

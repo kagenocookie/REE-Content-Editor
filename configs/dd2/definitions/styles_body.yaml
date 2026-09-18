@@ -1,7 +1,7 @@
 entities:
   styles.body.BodyMeshStyle:
     primary_field: data
-    to_string: "Body Style {id}: {data._Species:enum(app.Species)} {data._Gender:enum(app.Gender)}"
+    to_string: "Body Style: {data._Species:enum(app.Species)} {data._Gender:enum(app.Gender)}"
     fields:
     - name: data
       resource:
