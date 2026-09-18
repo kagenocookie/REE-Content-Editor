@@ -1,84 +1,101 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Text.RegularExpressions;
+using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher.StringFormatting;
 using VYaml.Annotations;
 
 namespace ContentPatcher;
 
-public class EntityConfig
+public class EntityConfig(string name)
 {
-    public required EntityField[] Fields { get; init; }
-    public required EntityField[] DisplayFieldsOrder { get; init; }
-    public long[]? CustomIDRange { get; init; }
+    public string Name { get; internal set; } = name;
+    public string ShortName { get; internal set; } = name.GetStringAfterLastDelimiter('.').ToString();
+    public EntityField PrimaryField { get; set; } = null!;
+    public EntityField IDField { get; set; } = null!;
+    public EntityField[] Fields { get; set; } = [];
+    public EntityField[] DisplayFieldsOrder { get; set; } = [];
     public EntityEnumInfo? PrimaryEnum { get; init; }
     public EntityEnumInfo[]? Enums { get; init; }
+    public ZeroEntity? ZeroEntity { get; set; }
     public StringFormatter? StringFormatter { get; set; }
 
     public bool HasField(string name) => GetField(name) != null;
     public EntityField? GetField(string name) => Fields.FirstOrDefault(f => f.name == name);
+
+    public override string ToString() => Name;
+}
+
+[YamlObject(NamingConvention.SnakeCase)]
+public partial class EntityConfigSerialized
+{
+    public List<EntityFieldConfig> Fields = null!;
+    public string? To_String { get; set; }
+
+    public string? DisplayName { get; set; }
+    public EntityEnumInfo[]? Enums { get; set; }
+
+    [YamlMember("id_field")]
+    public string? IDField { get; set; }
+
+    public string? PrimaryField { get; set; }
+
+    public ZeroEntity? ZeroEntity { get; set; }
+
+    public RuntimeMappingConfig? RuntimeMapping { get; set; }
+}
+
+[YamlObject(NamingConvention.SnakeCase)]
+public partial class RuntimeMappingConfig
+{
+    public string runtimeType = "";
+    public Dictionary<string, string> ToRuntime { get; set; } = new();
+    public Dictionary<string, string> ToDesktop { get; set; } = new();
+    public Dictionary<string, string> ToBoth { get; set; } = new();
+}
+
+[YamlObject(NamingConvention.SnakeCase)]
+public partial class EntityFieldConfig
+{
+    public string name = string.Empty;
+    public string? label;
+
+    [YamlMember("when")]
+    public EntityFieldConditionData? condition;
+    [YamlMember("when_any")]
+    public EntityFieldConditionData[]? multiConditionsAny;
+    [YamlMember("required")]
+    public bool isRequired;
+    public string? displayAfter;
+    [YamlMember("not_standalone")]
+    public bool isNotStandalone;
+
+    public EntityProperty? fieldId;
+
+    public string? fieldType;
+
+    public ResourceConfigSerialized? resource;
+
+    [return: NotNullIfNotNull(nameof(defaultValue))]
+    public T GetParam<T>(string key, T defaultValue = default!) => resource!.GetParam<T>(key, defaultValue);
+
+    public bool TryGetParam<T>(string key, [MaybeNullWhen(false)] out T value) => resource!.TryGetParam<T>(key, out value) == true;
+
+    public T RequireParam<T>(string key) => resource!.RequireParam<T>(key);
 }
 
 [YamlObject]
-public partial class EntityConfigSerialized
+public partial class EntityFieldConditionData : ResourceConditionData
 {
-    public Dictionary<string, CustomFieldSerialized> Fields = null!;
-    [YamlMember("to_string")]
-    public string? To_String { get; set; }
-    [YamlMember("custom_id_range")]
-    public long[]? CustomIDRange { get; set; }
-    public EntityEnumInfo[]? Enums { get; set; }
+    public string? field;
+}
 
-    public EntityConfig ToRuntimeConfig(ContentWorkspace workspace)
-    {
-        var fieldlist = new List<EntityField>();
-        var displaylist = new List<EntityField>();
-        foreach (var (name, data) in Fields) {
-            var newfield = CustomTypeConfigSerialized.CreateField(name, data);
-            fieldlist.Add(newfield);
-            displaylist.Add(newfield);
-        }
-
-        foreach (var (name, data) in Fields) {
-            var curIndex = fieldlist.FindIndex(f => f.name == name);
-            var field = fieldlist[curIndex];
-            if (data.displayAfter != null && data.displayAfter != name) {
-                var otherIndex = displaylist.FindIndex(dl => dl.name == data.displayAfter);
-                if (otherIndex != -1) {
-                    displaylist.RemoveAt(curIndex);
-                    otherIndex = displaylist.FindIndex(dl => dl.name == data.displayAfter);
-                    if (otherIndex == displaylist.Count - 1) {
-                        displaylist.Add(field);
-                    } else {
-                        displaylist.Insert(otherIndex + 1, field);
-                    }
-                }
-            }
-        }
-
-        var config = new EntityConfig() {
-            Fields = fieldlist.ToArray(),
-            DisplayFieldsOrder = displaylist.ToArray(),
-            CustomIDRange = CustomIDRange,
-            PrimaryEnum = Enums?.FirstOrDefault(e => e.primary),
-            // Enums = Enums?.Where(e => !e.primary).ToArray(),
-            Enums = Enums?.ToArray(),
-        };
-        if (To_String != null) {
-            config.StringFormatter = new StringFormatter(To_String, FormatterSettings.CreateFullEntityFormatter(config, workspace));
-        }
-        if (config.Enums != null) {
-            foreach (var ee in config.Enums) {
-                ee.Init(workspace, config);
-            }
-        }
-
-        foreach (var field in config.Fields) {
-            field.EntitySetup(config, workspace);
-        }
-
-        return config;
-    }
+[YamlObject]
+public partial class ZeroEntity
+{
+    public long id;
+    public string? label;
 }
 
 [YamlObject]

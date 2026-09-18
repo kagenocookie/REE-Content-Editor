@@ -1,0 +1,160 @@
+using ContentEditor.App.ImguiHandling;
+using ContentEditor.App.Windowing;
+using ContentEditor.Core;
+using ContentPatcher;
+
+namespace ContentEditor.App;
+
+public class EntitySelection : IWindowHandler
+{
+    public string HandlerName => nameof(EntitySelection);
+    public bool HasUnsavedChanges => data?.Context?.GetChildByValue<Entity>()?.Changed == true;
+    private long initialId = -1;
+
+    public EntitySelection(ContentWorkspace workspace, string entityType)
+    {
+        this.workspace = workspace;
+        this.entityType = entityType;
+    }
+
+    public EntitySelection(ContentWorkspace workspace, Entity initialEntity)
+    {
+        this.workspace = workspace;
+        this.entityType = initialEntity.Type;
+        initialId = initialEntity.Id;
+    }
+
+    private ContentWorkspace workspace;
+    private readonly string entityType;
+    private WindowData data = null!;
+    protected UIContext context = null!;
+
+    public void Init(UIContext context)
+    {
+        this.context = context;
+        data = context.Get<WindowData>();
+        if (initialId != -1) {
+            data.SetPersistentData("selectedEntity", initialId);
+        }
+    }
+    private bool currentBundleOnly;
+
+    public void OnWindow() => this.ShowDefaultWindow(context);
+    public void OnIMGUI()
+    {
+        if (workspace == null) {
+            ImGui.TextColored(Colors.Warning, "Couldn't get game configuration");
+            return;
+        }
+
+        if (data.Context == null) {
+            ImGui.TextColored(Colors.Error, "Missing UI container");
+            return;
+        }
+
+        var instances = workspace.ResourceManager.GetEntityInstances(entityType);
+        var selectedId = data.GetOrAddPersistentData<long>("selectedEntity", workspace.ResourceManager.GetEntityZeroId(entityType));
+
+        var pfx = ImguiHelpers.InlinePrefix();
+        ImGui.BeginDisabled(workspace.CurrentBundle == null || workspace.CurrentBundle?.Entities.Any(e => e.Type == entityType) != true);
+        ImguiHelpers.ToggleButton($"{AppIcons.Star}", ref currentBundleOnly, Colors.IconActive);
+        if (currentBundleOnly) {
+            instances = instances.Where(ii => ii.Key == selectedId || workspace.CurrentBundle?.ContainsEntity(ii.Value) == true);
+        }
+        ImGui.EndDisabled();
+        ImguiHelpers.Tooltip("Show only active bundle entities"u8);
+        ImGui.SameLine();
+
+        if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
+            var lastSelected = workspace.ResourceManager.GetActiveEntityInstance(entityType, selectedId);
+            if (lastSelected != null) {
+                EditorWindow.CurrentWindow!.AddSubwindow(new HandlerEmbedWindow(EntityHandler.Instance, lastSelected));
+            }
+        }
+        ImguiHelpers.Tooltip("Open entity in separate window");
+        ImGui.SameLine();
+
+        pfx.Dispose();
+
+        if (ImguiHelpers.FilterableEntityCombo("Entity"u8, instances, ref selectedId, ref data.Context.Filter)) {
+            data.SetPersistentData("selectedEntity", selectedId);
+            // note: we can clear children safely, any changes are still stored in the resource manager
+            // just gotta figure out how to keep those changes tracked in bundle
+            data.Context.ClearChildren();
+        }
+
+        if (selectedId == -1) {
+            return;
+        }
+
+        var selected = workspace.ResourceManager.GetActiveEntityInstance(entityType, selectedId);
+        if (selected == null) {
+            if (selectedId != 0) {
+                ImGui.TextColored(Colors.Warning, "Selected entity could not be found");
+            }
+            return;
+        }
+
+        if (ImGui.BeginPopupContextItem(entityType)) {
+            if (ImGui.Button("Change label")) {
+                data.Context.AddChild("Rename", selected.Label);
+                ImGui.CloseCurrentPopup();
+            }
+            if (ImGui.Button("Reopen in new window")) {
+                EditorWindow.CurrentWindow?.AddSubwindow(new EntitySelection(workspace, selected));
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
+
+        var renameCtx = data.Context.GetChildByValue<string>();
+        if (renameCtx?.Get<string>() != null) {
+            ImGui.Indent(16);
+            var newName = renameCtx.Get<string>();
+            if (ImGui.InputText("New label", ref newName, 200)) {
+                data.Context.GetChildByValue<string>()!.target = newName;
+            }
+            ImGui.Unindent(16);
+            if (ImGui.Button("Cancel rename")) {
+                data.Context.RemoveChild(renameCtx);
+            }
+            if (newName != selected.Label && ImguiHelpers.SameLine() && ImGui.Button("Confirm rename")) {
+                selected.Label = newName;
+                data.Context.Changed = true;
+                selected.Config.PrimaryEnum?.UpdateEnum(workspace, selected);
+                if (workspace.CurrentBundle != null && workspace.CurrentBundle.RecordEntity(selected) == Bundle.EntityRecordUpdateType.Added) {
+                    Logger.Info($"Entity {selected.Label} added to current bundle {workspace.CurrentBundle.Name}");
+                }
+                data.Context.RemoveChild(renameCtx);
+            }
+        }
+
+        ImGui.Separator();
+        if (ImGui.Button("Duplicate")) {
+            selected = workspace.ResourceManager.CreateEntity(selected.Type, selected.Id);
+            data.Context.children.Clear();
+            data.SetPersistentData("selectedEntity", selected.Id);
+        }
+
+        var child = data.Context.GetChildByValue<ResourceEntity>();
+        if (child == null) {
+            child = data.Context.AddChild("selected", selected);
+            WindowHandlerFactory.CreateEntityHandler(child);
+        }
+
+        if (child.Changed && workspace.CurrentBundle == null) {
+            ImGui.TextColored(Colors.Warning, "No active bundle. Changes can't be saved. Create a bundle please.");
+        }
+        child.ShowUI();
+        if (child.Changed && workspace.CurrentBundle != null) {
+            if (workspace.CurrentBundle.RecordEntity(selected) == Bundle.EntityRecordUpdateType.Added) {
+                Logger.Info($"Entity {selected.Label} added to current bundle {workspace.CurrentBundle.Name}");
+            }
+        }
+    }
+
+    public bool RequestClose()
+    {
+        return false;
+    }
+}

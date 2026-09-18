@@ -25,6 +25,9 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
         }
         if (showLabel) ImguiHelpers.TextSuffix(context.label, context.annotation ??= instance.RszClass.name);
 
+        if (context.children.Count == 0) {
+            WindowHandlerFactory.SetupRSZInstanceHandler(context);
+        }
         if (context.children.Count >= 10) {
             ImGui.Spacing();
             ImGui.SetNextItemWidth(Math.Min(200, ImGui.CalcItemWidth() - 16));
@@ -607,6 +610,7 @@ public class RszEnumFieldHandler : IObjectUIHandler
     public RszEnumFieldHandler(EnumDescriptor enumDescriptor)
     {
         this.EnumDescriptor = enumDescriptor;
+        BackingConvertType = enumDescriptor.BackingType;
     }
 
     private struct RszEnumSource : IEnumDataSource
@@ -845,7 +849,7 @@ public class SizeFieldHandler : Singleton<SizeFieldHandler>, IObjectUIHandler
     }
 }
 
-public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IObjectUIHandler
+public class UserDataReferenceHandler : IObjectUIHandler
 {
     private string? baseClassname;
 
@@ -862,96 +866,8 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
     {
         var instance = context.Get<RszInstance>();
         var ws = context.GetWorkspace();
-        if (instance.RSZUserData == null || ws == null) {
-            if (instance.RszClass.crc == 0) {
-                if (ws != null && !string.IsNullOrEmpty(baseClassname)) {
-                    var subtypes = ws.Env.TypeCache.GetSubclasses(baseClassname).ToArray();
-                    if (subtypes.Length == 0) {
-                        ImGui.Text(context.label + ": NULL (unable to create new instance)");
-                        return;
-                    }
-                    if (ws.Env.UsesEmbeddedUserdataAny) {
-                        // TODO recheck re7 userdata
-                        ImGui.PushID(context.label);
-                        ImguiHelpers.BeginRect();
-                        ImGui.Text(context.label + ": NULL");
-
-                        if (string.IsNullOrEmpty(context.ClassnameFilter)) {
-                            context.ClassnameFilter = subtypes[0];
-                        }
-                        ImguiHelpers.ValueCombo(context._label, subtypes, subtypes, ref context.ClassnameFilter);
-                        if (!string.IsNullOrEmpty(context.ClassnameFilter)) {
-                            ImGui.SameLine();
-                            if (ImGui.Button("Create")) {
-                                var parentRsz = context.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
-                                if (parentRsz == null) {
-                                    Logger.Error("Can't find parent RSZ file!");
-                                } else {
-                                    var cls = ws.Env.RszParser.GetRSZClass(context.ClassnameFilter);
-                                    if (cls == null) {
-                                        Logger.Error("Invalid classname " + context.ClassnameFilter);
-                                        return;
-                                    }
-
-                                    var uinfo = new RSZUserDataInfo_TDB_LE_67();
-                                    uinfo.ChangeClass(ws.Env.RszParser, ws.Env.RszFileOption, cls, $"assets:/UserData/{instance.RszClass.ShortName}_{System.Random.Shared.Next()}.user.json", parentRsz);
-                                    var rszLinkInstance = new RszInstance(cls, uinfo);
-                                    UndoRedo.RecordSet(context, rszLinkInstance);
-                                    context.ResetState();
-                                }
-                            }
-                        }
-                        ImguiHelpers.EndRect();
-                        ImGui.PopID();
-                    }
-                    return;
-                }
-
-                ImGui.Text(context.label + ": NULL (unable to create new instance)");
-                return;
-            }
-            if (ws?.Env.UsesEmbeddedUserdataAny == false) {
-                ImguiHelpers.BeginRect();
-                ImGui.Text(context.label + ": NULL");
-                if (context.children.Count == 0) {
-                    context.AddChild("User Data File Path", instance, new ResourcePathPicker(ws, KnownFileFormats.UserData), _ => "", (inst, newPath) => {
-                        if (newPath == null || !ws.ResourceManager.TryResolveGameFile(newPath, out var file)) {
-                            Logger.Error("Could not resolve user file " + newPath);
-                            return;
-                        }
-
-                        var target = file.GetFile<UserFile>().Instance;
-                        if (target == null) {
-                            Logger.Error("Could not resolve user file " + newPath);
-                            return;
-                        }
-
-                        inst.RSZUserData = new RSZUserDataInfo() {
-                            Path = newPath,
-                            typeId = target.RszClass.typeId,
-                            instanceId = inst.Index,
-                        };
-                        context.ClearChildren();
-                    });
-                }
-                context.ShowChildrenUI();
-                ImguiHelpers.EndRect();
-            } else {
-                ImGui.TextColored(Colors.Warning, "Invalid UserData instance");
-                if (ws != null && ImGui.Button("Create New")) {
-                    var parentRsz = context.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
-                    if (parentRsz == null) {
-                        Logger.Error("Can't find parent RSZ file!");
-                    } else {
-                        var cls = instance.RszClass;
-                        var uinfo = new RSZUserDataInfo_TDB_LE_67();
-                        uinfo.ChangeClass(ws.Env.RszParser, ws.Env.RszFileOption, cls, $"assets:/UserData/{cls.ShortName}_{System.Random.Shared.Next()}.user.json", parentRsz);
-                        var rszLinkInstance = new RszInstance(cls, uinfo);
-                        UndoRedo.RecordSet(context, rszLinkInstance);
-                        context.ResetState();
-                    }
-                }
-            }
+        if (ws == null) {
+            ImGui.Text(context.label + " (workspace not available)");
             return;
         }
 
@@ -963,21 +879,12 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
                 infoEmbedded.ReadClassName(ws.Env.RszParser);
                 context.CachedString = $"{infoEmbedded.ClassName} [Hash: {infoEmbedded.jsonPathHash}]";
             } else {
-                ImGui.Text(context.label + ": Unhandled UserData");
-                return;
+                context.CachedString = "NULL";
             }
         }
 
         ImguiHelpers.BeginRect();
         if (ImguiHelpers.TreeNodeSuffix(context.label, context.CachedString)) {
-            if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
-                if (context.children.Count > 0) {
-                    var editor = context.GetChildHandler<UserDataFileEditor>()!;
-                    EditorWindow.CurrentWindow!.AddFileEditor(editor.Handle);
-                }
-            }
-            ImguiHelpers.Tooltip("Open in New Window"u8);
-            ImGui.SameLine();
             HandleLinkedUserdata(context, instance, ws);
             ImGui.TreePop();
         }
@@ -987,48 +894,19 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
 
     private void HandleLinkedUserdata(UIContext context, RszInstance instance, ContentPatcher.ContentWorkspace ws)
     {
+        if (ws.Env.UsesEmbeddedUserdataAny == false) {
+            HandleLinkedPath(context, instance, ws);
+        } else {
+            HandleEmbeddedType(context, instance, ws);
+            instance = context.Get<RszInstance>();
+        }
+
+        if (instance.RSZUserData == null) {
+            context.ShowChildrenUI();
+            return;
+        }
+
         if (instance.RSZUserData is RSZUserDataInfo info) {
-            if (context.children.Count == 0) {
-                var pathCtx = context.AddChild(
-                    "Userdata file path",
-                    info,
-                    new ResourcePathPicker(ws, KnownFileFormats.UserData),
-                    getter: (c) => ((RSZUserDataInfo)c!.target!).Path,
-                    setter: (ctx, newPathObj) => {
-                        var info = (RSZUserDataInfo)ctx.target!;
-                        var newPath = newPathObj as string;
-                        if (info.Path == newPath) return;
-                        if (string.IsNullOrEmpty(newPath)) {
-                            Logger.Error("Empty user data file path not allowed");
-                            return;
-                        }
-                        if (!ws.ResourceManager.TryResolveGameFile(newPath, out var fileHandle)) {
-                            Logger.Error("User data file not found: " + newPath);
-                            return;
-                        }
-                        var file = fileHandle.GetFile<UserFile>();
-                        context.StateBool = false;
-
-                        var rsz = ctx.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
-                        if (rsz == null || !rsz.InstanceList.Any(ii => ii.RSZUserData?.InstanceId == info.InstanceId && ii != instance)) {
-                            // we can do a full replace here - eithe rif we can't find the rsz container, or if there's no other references to this same userdata intance
-                            info.Path = newPath;
-                            info.typeId = file.Instance!.RszClass.typeId;
-                        } else {
-                            // create a new userdata info
-                            ctx.parent!.Set(instance = new RszInstance(file.Instance!.RszClass, new RSZUserDataInfo() {
-                                Path = newPath,
-                                typeId = file.Instance!.RszClass.typeId,
-                                instanceId = instance.Index,
-                            }));
-
-                            rsz.RSZUserDataInfoList.Add(instance.RSZUserData!);
-                        }
-                        ctx.parent?.ClearChildren();
-                    }
-                );
-            }
-
             var didLoadingFail = context.StateBool;
             if (!didLoadingFail && context.GetChild<UserDataFileEditor>() == null) {
                 context.CachedString = "";
@@ -1073,16 +951,115 @@ public class UserDataReferenceHandler : Singleton<UserDataReferenceHandler>, IOb
             }
         }
 
+        context.ShowChildrenUI();
         if (context.children.Count == 0 || context.GetChild<UserDataFileEditor>() == null) {
-            context.ShowChildrenUI();
             ImGui.TextColored(Colors.Error, "Failed to load or find UserData reference");
             ImGui.SameLine();
             if (ImGui.Button("Try again")) {
                 context.StateBool = false;
             }
-        } else {
-            context.ShowChildrenUI();
         }
+    }
+
+    private static void HandleLinkedPath(UIContext context, RszInstance instance, ContentWorkspace ws)
+    {
+        if (context.GetChildHandler<ResourcePathPicker>() != null) {
+            return;
+        }
+
+        var cc = context.AddChildContextSetter("User Data File Path", instance, new ResourcePathPicker(
+            ws,
+            KnownFileFormats.UserData) { Flags = ResourcePathPicker.PathPickerFlags.IngameDefault|ResourcePathPicker.PathPickerFlags.HideContentPreview },
+            getter: (c) => (c!.RSZUserData as RSZUserDataInfo)?.Path ?? "",
+            setter: (ctx, inst, newPath) => {
+                var info = (RSZUserDataInfo?)inst.RSZUserData;
+                var mainCtx = ctx.parent!;
+                if (info?.Path == newPath) return;
+                if (string.IsNullOrEmpty(newPath)) {
+                    UndoRedo.RecordSet(mainCtx, RszInstance.NULL, mergeMode: UndoRedoMergeMode.NeverMerge);
+                    UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, () => mainCtx.CachedString = "");
+                    return;
+                }
+                if (!ws.ResourceManager.TryResolveGameFile(newPath, out var file)) {
+                    Logger.Error("Could not resolve user file " + newPath);
+                    return;
+                }
+
+                var target = file.GetFile<UserFile>().Instance;
+                if (target == null) {
+                    Logger.Error("Could not resolve user file " + newPath);
+                    return;
+                }
+                var rsz = mainCtx.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
+                var existing = rsz?.InstanceList.FirstOrDefault(ii => ii.RSZUserData?.Path?.Equals(newPath, StringComparison.OrdinalIgnoreCase) == true);
+                if (existing != null) {
+                    inst = existing;
+                } else {
+                    inst = new RszInstance(target.RszClass, new RSZUserDataInfo() {
+                        Path = newPath,
+                        typeId = target.RszClass.typeId,
+                        instanceId = inst.Index,
+                    });
+                    rsz?.RSZUserDataInfoList.Add(inst.RSZUserData!);
+                }
+                UndoRedo.RecordSet(mainCtx, inst, mergeMode: UndoRedoMergeMode.NeverMerge);
+                UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, () => mainCtx.CachedString = "");
+            });
+        cc.options |= UIOptions.DisableUndoRedo;
+    }
+
+    private void HandleEmbeddedType(UIContext context, RszInstance instance, ContentWorkspace ws)
+    {
+        var isnull = instance.RszClass.crc == 0 || instance.RSZUserData == null;
+        var subtypes = string.IsNullOrEmpty(baseClassname) ? [] : ws.Env.TypeCache.GetSubclasses(baseClassname).ToArray();
+        if (subtypes.Length == 0) {
+            if (isnull) {
+                ImGui.Text(context.label + ": NULL (unable to create new instance)");
+            }
+            return;
+        }
+
+        // TODO recheck re7 userdata
+        if (isnull) {
+            ImGui.Text(context.label + ": NULL");
+        }
+
+        ImGui.PushID(context.label);
+        if (string.IsNullOrEmpty(context.ClassnameFilter)) {
+            context.ClassnameFilter = subtypes[0];
+        }
+        ImguiHelpers.ValueCombo(Lang.General.Classname.String, subtypes, subtypes, ref context.ClassnameFilter);
+        if (!string.IsNullOrEmpty(context.ClassnameFilter)) {
+            if (ImGui.Button(isnull ? Lang.Buttons.Create : Lang.Buttons.Change)) {
+                var parentRsz = context.FindHandlerInParents<IRSZFileEditor>()?.GetRSZFile();
+                if (parentRsz == null) {
+                    Logger.Error("Can't find parent RSZ file!");
+                } else {
+                    var cls = ws.Env.RszParser.GetRSZClass(context.ClassnameFilter);
+                    if (cls == null) {
+                        Logger.Error("Invalid classname " + context.ClassnameFilter);
+                        ImguiHelpers.EndRect();
+                        ImGui.PopID();
+                        return;
+                    }
+
+                    var uinfo = new RSZUserDataInfo_TDB_LE_67();
+                    uinfo.ChangeClass(ws.Env.RszParser, ws.Env.RszFileOption, cls, $"assets:/UserData/{instance.RszClass.ShortName}_{System.Random.Shared.Next()}.user.json", parentRsz);
+                    var rszLinkInstance = new RszInstance(cls, uinfo);
+                    UndoRedo.RecordSet(context, rszLinkInstance, mergeMode: UndoRedoMergeMode.NeverMerge);
+                    UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, () => context.CachedString = "");
+                    context.ResetState();
+                }
+            }
+        }
+        if (!isnull) {
+            ImGui.SameLine();
+            if (ImGui.Button(Lang.Buttons.Delete)) {
+                UndoRedo.RecordSet(context, RszInstance.NULL, mergeMode: UndoRedoMergeMode.NeverMerge);
+                UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, () => context.CachedString = "");
+            }
+        }
+        ImGui.PopID();
     }
 }
 

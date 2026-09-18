@@ -184,6 +184,7 @@ public class Chain(GameObject gameObject, RszInstance data) : Component(gameObje
             switch (coll.shape) {
                 case ChainCollisionShape.None:
                     break;
+                case ChainCollisionShape.LineSphere: // not sure how exatly a line sphere differs from a capsule but it sounds similar enough
                 case ChainCollisionShape.Capsule: {
                         if (coll.jointNameHash == 0 || coll.pairJointNameHash == 0) {
                             break;
@@ -222,6 +223,8 @@ public class Chain(GameObject gameObject, RszInstance data) : Component(gameObje
                         gizmo.Cur.Add(new OBB(m1, (p2)));
                     }
                     break;
+                // case ChainCollisionShape.LineSphere:
+                //     break;
                 default:
                     Logger.Debug("Unhandled collision shape type " + coll.shape);
                     break;

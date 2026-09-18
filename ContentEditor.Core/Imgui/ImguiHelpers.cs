@@ -145,7 +145,7 @@ public static class ImguiHelpers
     public static bool FilterableCombo<TValue>(ReadOnlySpan<byte> label, string[] labels, ReadOnlySpan<TValue> values, ref TValue? selected, ref string filter)
     {
         var selectedIndex = values!.BoxedIndexOf(selected);
-        if (!ImGui.BeginCombo(label, selectedIndex == -1 ? selected?.ToString() ?? "" : labels[selectedIndex])) {
+        if (!ImGui.BeginCombo(label, selectedIndex == -1 ? selected?.ToString() ?? "" : labels[selectedIndex], ImGuiComboFlags.HeightLarge)) {
             return false;
         }
 
@@ -156,17 +156,26 @@ public static class ImguiHelpers
         ImGui.Separator();
         ImGui.Spacing();
 
+        ImGui.SetNextWindowSizeConstraints(new Vector2(0, 0), new Vector2(float.MaxValue, 400));
+        ImGui.BeginChild("##contents"u8, new Vector2(0, 0), ImGuiChildFlags.AutoResizeY);
         var count = labels.Length;
         var changed = false;
         for (int i = 0; i < count; ++i) {
             var text = string.IsNullOrEmpty(labels[i]) ? "<empty>##" + i : labels[i];
             if (!string.IsNullOrEmpty(filter) && !text.Contains(filter, StringComparison.InvariantCultureIgnoreCase)) continue;
 
-            if (ImGui.Selectable(text, selected != null && selected.Equals(values[i]))) {
+            var isSelected = selected != null && selected.Equals(values[i]);
+            if (ImGui.Selectable(text, isSelected)) {
                 selected = values[i];
                 changed = true;
+                ImGui.CloseCurrentPopup();
+            }
+            if (isSelected && ImGui.IsWindowAppearing()) {
+                ImGui.SetScrollHereY();
             }
         }
+
+        ImGui.EndChild();
 
         ImGui.EndCombo();
         return changed;
@@ -384,6 +393,11 @@ public static class ImguiHelpers
         return new DisposableIndent(indent);
     }
 
+    public static DisposableInlinePrefix InlinePrefix()
+    {
+        return new DisposableInlinePrefix();
+    }
+
     public struct DisposableImguiID : IDisposable
     {
         public void Dispose()
@@ -404,6 +418,22 @@ public static class ImguiHelpers
         public void Dispose()
         {
             ImGui.Unindent(indent);
+        }
+    }
+
+    public struct DisposableInlinePrefix : IDisposable
+    {
+        private float startX;
+        private float width;
+        public DisposableInlinePrefix()
+        {
+            startX = ImGui.GetCursorPosX();
+            width = ImGui.CalcItemWidth();
+        }
+        public void Dispose()
+        {
+            var endX = ImGui.GetCursorPosX();
+            ImGui.SetNextItemWidth(width - (endX - startX));
         }
     }
 

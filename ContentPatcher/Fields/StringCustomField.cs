@@ -6,8 +6,8 @@ using ReeLib;
 
 namespace ContentPatcher;
 
-[ResourceField("string")]
-public class StringCustomField : EntityField<StringResource>, ICustomResourceField, IDiffableField
+[ResourceField("string", typeof(NoopResourceHandler<StringCustomField>))]
+public class StringCustomField : CustomEntityFieldHandler<StringResource>, IDiffableField
 {
     public Regex? Regex { get; private set; }
     public string? RegexDescription { get; private set; }
@@ -15,18 +15,20 @@ public class StringCustomField : EntityField<StringResource>, ICustomResourceFie
     private string? initialFormatString;
     private StringFormatter? initialFormat;
     private bool allowDiff;
-    public override string? ResourceTypeId => null;
+    public override string? ResourceType => null;
 
     bool IDiffableField.EnableDiff => allowDiff;
 
-    public override void LoadParams(string fieldName, Dictionary<string, object>? param)
+    public override void LoadParams(EntityFieldConfig data)
     {
-        var pattern = param?.GetValueOrDefault("regex") as string;
-        if (pattern != null) Regex = new Regex(pattern);
-        RegexDescription = param?.GetValueOrDefault("regexDescription") as string;
-        Tooltip = param?.GetValueOrDefault("tooltip") as string;
-        initialFormatString = param?.GetValueOrDefault("initial") as string;
-        allowDiff = param?.GetValueOrDefault("diffable") is bool b ? b : true;
+        if (data.TryGetParam<string>("regex", out var pattern)) {
+            Regex = new Regex(pattern);
+        }
+
+        RegexDescription = data.GetParam<string>("regexDescription");
+        Tooltip = data.GetParam<string>("tooltip");
+        initialFormatString = data.GetParam<string>("initial");
+        allowDiff = data.GetParam<bool>("diffable", true);
     }
 
     public override void EntitySetup(EntityConfig entityConfig, ContentWorkspace workspace)
@@ -43,38 +45,21 @@ public class StringCustomField : EntityField<StringResource>, ICustomResourceFie
         }
         var newStr = data.GetValue<string>();
         if (currentResource?.Text != newStr) {
-            entity.Set(name, currentResource = new StringResource(data.GetValue<string>()));
+            entity.Set(Field.name, currentResource = new StringResource(Field.Config, data.GetValue<string>()));
         }
         return currentResource;
     }
 
-    public ClassConfig CreateConfig()
-    {
-        var cfg = new ClassConfig();
-        cfg.IDFields = [NestableFieldAccessor.PlainReturn.Instance];
-        return cfg;
-    }
-
-    public (long id, IContentResource resource) CreateResource(ContentWorkspace workspace, ClassConfig config, ResourceEntity entity, JsonNode? initialData)
-    {
-        if (Regex != null) {
-            // assume it's expected to be unique - always start empty maybe?
-            return (Random.Shared.NextInt64(), new StringResource(string.Empty));
-        } else {
-            return (Random.Shared.NextInt64(), new StringResource(initialData?.GetValue<string>() ?? string.Empty));
-        }
-    }
-
     public IEnumerable<KeyValuePair<long, IContentResource>> FetchInstances(ResourceManager workspace)
     {
-        return ResourceTypeId == null ? [] : workspace.GetResourceInstances(ResourceTypeId);
+        return Field.Config.Type == null ? [] : workspace.GetResourceInstances(Field.Config.Type);
     }
 
-    public override StringResource? FetchResource(ResourceManager workspace, ResourceEntity entity, ResourceState state)
+    public override StringResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
     {
-        var res = entity.Get(name) as StringResource;
+        var res = entity.Get<StringResource>(Field.name);
         if (res == null) {
-            res = new StringResource(initialFormat?.GetString(entity) ?? string.Empty);
+            res = new StringResource(Field.Config, initialFormat?.GetString(entity) ?? string.Empty);
         }
         return res;
     }
@@ -82,17 +67,21 @@ public class StringCustomField : EntityField<StringResource>, ICustomResourceFie
 
 public sealed class StringResource : IContentResource
 {
-    public StringResource() {}
-    public StringResource(string str)
+    public StringResource(ResourceConfig config)
     {
+        ResourceType = config;
+    }
+    public StringResource(ResourceConfig config, string str)
+    {
+        ResourceType = config;
         Text = str;
     }
 
     public string Text { get; set; } = string.Empty;
-    public string ResourceTypeID => "string";
-    public string? FilePath => null;
+    public ResourceConfig ResourceType { get; }
+    public string? FileResourcePath => null;
 
-    public IContentResource Clone() => new StringResource() { Text = Text };
+    public IContentResource Clone() => new StringResource(ResourceType, Text);
 
     public JsonNode ToJson(Workspace env) => JsonValue.Create(Text);
 

@@ -1,90 +1,80 @@
 entities:
   items.item_data:
-    custom_id_range: [100000, 999999]
     to_string: "Item [{data._ItemIDStr}]: {name}"
     fields:
-      # TODO: add an easy UI link to the prefab of ItemData
-      data:
-        type: object
-        label: Data
-        required: true
-        display_after: caption
-        param:
-          classname: app.ItemCatalogUserData.ItemData
-      name:
-        type: single-msg
-        label: Name
-        required: true
-        param:
-          key: "Item_Name_{data._ItemIDStr}"
-          file: natives/stm/message/gamesystem/item.msg.23
-      caption:
-        type: single-msg
-        label: Caption
-        required: true
-        param:
-          key: "Item_Caption_{data._ItemIDStr}"
-          file: natives/stm/message/gamesystem/item.msg.23
+    # TODO: add an easy UI link to the prefab of ItemData
+    - name: data
+      required: true
+      display_after: caption
+      resource:
+        id: [_ItemIDStr]
+        type: array-file
+        custom_id_range: [100000, 999999]
+        classname: app.ItemCatalogUserData.ItemData
+        file: leveldesign/item/userdata/itemcataloguserdata.user
+    - name: name
+      label: Name
+      required: true
+      resource:
+        type: msg
+        file: message/gamesystem/item.msg
+        params:
+          key_format: "Item_Name_{data._ItemIDStr}"
+    - name: caption
+      label: Caption
+      required: true
+      resource:
+        type: msg
+        file: message/gamesystem/item.msg
+        params:
+          key_format: "Item_Caption_{data._ItemIDStr}"
           multiline: true
-      gui_data:
-        type: object
-        label: GUI Data
-        not_standalone: true
-        param:
-          classname: app.GuiItemInfo
-      detail_search:
-        type: object
-        label: Details Prefab
-        required: true
-        param:
-          classname: app.DetailSearchCatalogUserData`1.ObjectData<app.ItemID>
-      craft_sound:
-        type: object
-        label: Craft Sound
-        required: true
-        param:
-          classname: app.CraftRecipeCatalogUserData.CraftSoundCatalogUserData.CatalogData
+    - name: gui_data
+      label: GUI Data
+      resource:
+        id: [_ItemIdStr]
+        type: array-file
+        classname: app.GuiItemInfo
+        file: gui/userdata/guiitemdata.user
+    - name: detail_search
+      label: Details Prefab
+      required: true
+      resource:
+        id: [_IDStr]
+        type: array-file
+        classname: app.DetailSearchCatalogUserData`1.ObjectData<app.ItemID>
+        file: gameassets/item/userdata/detailsearchitemcatalog.user
+    - name: craft_sound
+      label: Craft Sound
+      required: true
+      resource:
+        id: [_ItemID]
+        type: array-file
+        classname: app.CraftRecipeCatalogUserData.CraftSoundCatalogUserData.CatalogData
+        file: sound/craftsoundcataloguserdata.user
   items.craft_recipe:
     to_string: Recipe [{data._RecipeIDStr}] => {data._ProductItems.0._ItemID:translate_fmt(Item_Name_$0)}
     fields:
-      data:
-        type: object
-        label: Data
-        required: true
-        param:
-          classname: app.CraftRecipe
+    - name: data
+      label: Data
+      required: true
+      resource:
+        id: [_RecipeIDStr]
+        type: array-file
+        classname: app.CraftRecipe
+        file: leveldesign/item/userdata/craftrecipecataloguserdata.user
 
 classes:
   app.ItemCatalogUserData.ItemData:
-    id: [_ItemIDStr]
     to_string: "ItemData {_ItemIDStr}"
-    patcher:
-      type: array-file
-      file: natives/stm/leveldesign/item/userdata/itemcataloguserdata.user.3
   app.GuiItemInfo:
-    id: [_ItemIdStr]
     to_string: "GuiItemInfo {_ItemIdStr}"
-    patcher:
-      type: array-file
-      file: natives/stm/gui/userdata/guiitemdata.user.3
   app.DetailSearchCatalogUserData`1.ObjectData<app.ItemID>:
-    id: [_IDStr]
     to_string: "DetailSearchCatalog {_IDStr}"
-    patcher:
-      type: array-file
-      file: natives/stm/gameassets/item/userdata/detailsearchitemcatalog.user.3
   app.CraftRecipeCatalogUserData.CraftSoundCatalogUserData.CatalogData:
-    id: [_ItemID]
     to_string: "Craft Sound {_ItemID}"
-    patcher:
-      type: array-file
-      file: natives/stm/sound/craftsoundcataloguserdata.user.3
   app.CraftRecipe:
-    id: [_RecipeIDStr]
     to_string: Crafting Recipe {_RecipeIDStr}
-    patcher:
-      type: array-file
-      file: natives/stm/leveldesign/item/userdata/craftrecipecataloguserdata.user.3
   app.CraftRecipe.MaterialItemData_Basic:
     to_string: "Crafting Material: {_Stock}x {_ItemID} ({_ItemID:translate_fmt(Item_Name_$0)})"
   app.CraftRecipe.MaterialItemData_Contained:
@@ -96,6 +86,6 @@ classes:
 
   app.ItemCarryOverSettingUserData.CarryOverItemSetting:
     to_string: "Item Carry Over Settings {_ItemID}"
-    # natives/stm/leveldesign/item/userdata/itemcarryoversetting.user.3
+    # leveldesign/item/userdata/itemcarryoversetting.user
 
-# TODO prices (3 separate files per difficulty) natives/stm/leveldesign/shop/userdata/shopitempriceuserdata.user.3
+# TODO prices (3 separate files per difficulty) leveldesign/shop/userdata/shopitempriceuserdata.user

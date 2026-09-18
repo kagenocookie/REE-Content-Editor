@@ -1,7 +1,7 @@
 # additional files:
-# costume weapon positioning settings: natives/stm/sectionroot/userdata/system/equipment/weaponequippedpositionuserdata.user.2
+# costume weapon positioning settings: sectionroot/userdata/system/equipment/weaponequippedpositionuserdata.user
 
-# TODO hardcoded-catalog patcher: natives/stm/sectionroot/userdata/esweaponuserdata.user.2
+# TODO hardcoded-catalog patcher: sectionroot/userdata/esweaponuserdata.user
 
 entities:
   weapon:
@@ -11,62 +11,70 @@ entities:
       primary: true
     to_string: "Weapon {name} {displayName}"
     fields:
-      # data:
+      # - name: data
       #   type: object
       #   label: Data
-      #   param:
+      #   params:
       #     field: "{name:lower()}"
       #     classname: offline.gamemastering.item.WeaponElement
-      catalog:
-        type: object
+      - name: catalog
         label: Catalog data
         required: true
-        param:
+        resource:
+          id: [_Type]
+          type: array-file
           classname: offline.WeaponPrefabUserData.WeaponParam
-          nested: false
-      name:
-        type: string
+          file: sectionroot/userdata/system/equipment/weaponprefabuserdata.user
+          params:
+            nested: false
+      - name: motionResources
+        required: true
+        resource:
+          id: [_WeaponType]
+          type: array-file
+          classname: offline.survivor.motion.WeaponCharacterMotionResourcePrefabSettings
+          file: sectionroot/userdata/system/equipment/weaponcharactermotionresourceuserdata.user
+          params:
+            nested: false
+      - name: name
         label: Weapon code name
         required: true
-        param:
-          regex: "^WP[0-9_]{4}$"
-          regexDescription: "Example: WP0123"
-          tooltip: Enter a code name for the weapon. This should be unique across all weapons and is used for enum entries.
-          initial: "{id:enum(offline.EquipmentDefine.WeaponType)}"
+        resource:
+          type: string
+          params:
+            regex: "^WP[0-9_]{4}$"
+            regexDescription: "Example: WP0123"
+            tooltip: Enter a code name for the weapon. This should be unique across all weapons and is used for enum entries.
+            initial: "{id:enum(offline.EquipmentDefine.WeaponType)}"
         display_after: start
-      displayName:
-        type: single-msg
+      - name: displayName
+        field_type: keyed_message
         required: true
-        param:
-          key: "Weapon_{name:lower()}"
-          file: natives/stm/escape/message/mes_weapon.msg.67305745
+        resource:
+          type: msg
+          file: escape/message/mes_weapon.msg
+          params:
+            key_format: "Weapon_{name:lower()}"
         display_after: name
-      prefab:
-        type: resource
+      - name: prefab
         label: Weapon prefab
         required: true
-        param:
-          type: Prefab
-          path: "{catalog?.Prefab?.Path}"
+        field_type: resource_link
+        resource:
+          resource_type: prefab
+          params:
+            path: "{catalog?.Prefab?.Path}"
+
+  # offline.gamemastering.item.WeaponElement:
+  #   type: hardcoded-catalog
+  #   classname: offline.gamemastering.item.WeaponElementList
+  #   file: sectionroot/userdata/ropewayweaponuserdata.user
 
 classes:
   offline.WeaponPrefabUserData.WeaponParam:
-    id: [_Type]
     to_string: "Weapon {_Type:enum(offline.EquipmentDefine.WeaponType)} ({_Name}) {Prefab.Path}"
-    patcher:
-      type: array-file
-      file: natives/stm/sectionroot/userdata/system/equipment/weaponprefabuserdata.user.2
-  # offline.gamemastering.item.WeaponElement:
-  #   patcher:
-  #     type: hardcoded-catalog
-  #     classname: offline.gamemastering.item.WeaponElementList
-  #     file: natives/stm/sectionroot/userdata/ropewayweaponuserdata.user.2
   offline.survivor.motion.WeaponCharacterMotionResourceContainer:
-    id: [_WeaponType]
-    to_string: "Weapon {_WeaponType:enum(offline.EquipmentDefine.WeaponType)} Motions"
-    patcher:
-      type: array-file
-      file: natives/stm/sectionroot/userdata/system/equipment/weaponcharactermotionresourceuserdata.user.2
+    to_string: "Motion Prefab {Prefab.Path}"
   offline.WeaponEquippedPositionUserData.PlayerParam:
     to_string: "{PlayerType:enum(offline.PlayerDefine.PlayerType)}"
   offline.WeaponEquippedPositionUserData.CostumeParam:

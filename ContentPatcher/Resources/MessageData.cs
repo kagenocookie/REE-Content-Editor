@@ -3,22 +3,23 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using ContentEditor.Core;
 using ReeLib;
+using ReeLib.Common;
 using ReeLib.Msg;
 
 namespace ContentPatcher;
 
-public class MessageData : IContentResource
+public class MessageData : IAddressableContentResource
 {
     public MessageData()
     {
     }
 
     [SetsRequiredMembers]
-    public MessageData(MessageEntry entry, string filename, string resourceIdentifier)
+    public MessageData(MessageEntry entry, string filename, ResourceConfig? resourceIdentifier = null)
     {
         MessageKey = entry.Name;
         Guid = entry.Guid;
-        FilePath = filename;
+        FileResourcePath = filename;
         for (int i = 0; i < entry.Strings.Length; i++) {
             var str = entry.Strings[i];
             if (!string.IsNullOrEmpty(str)) {
@@ -30,17 +31,20 @@ public class MessageData : IContentResource
             var name = entry.AttributeItems[i].Name;
             Attributes[string.IsNullOrEmpty(name) ? i.ToString() : name] = value ?? "";
         }
-        ResourceTypeID = resourceIdentifier;
+        ResourceType = resourceIdentifier ?? ResourceConfig.Placeholder;
     }
 
     public Guid Guid { get; set; }
     public required string MessageKey { get; set; } = string.Empty;
+    public uint SoundID { get; set; }
     public Dictionary<string, string> Messages { get; set; } = new((int)Language.Max);
     public Dictionary<string, string> Attributes { get; set; } = new();
 
-    public required string ResourceTypeID { get; set; }
+    public required ResourceConfig ResourceType { get; set; }
 
-    public required string FilePath { get; set; }
+    public required string FileResourcePath { get; set; }
+
+    public long ID => MurMur3HashUtils.GetHash(MessageKey);
 
     public string? Get(Language lang) => Messages.GetValueOrDefault(lang.ToString());
     public string? Get(string lang) => Messages.GetValueOrDefault(lang);
@@ -57,19 +61,27 @@ public class MessageData : IContentResource
 
     public IContentResource Clone()
     {
-        return new MessageData() { MessageKey = MessageKey, Guid = Guid, Messages = Messages.ToDictionary(), ResourceTypeID = ResourceTypeID, FilePath = FilePath };
+        return new MessageData() {
+            MessageKey = MessageKey,
+            SoundID = SoundID,
+            Guid = Guid,
+            Messages = Messages.ToDictionary(),
+            ResourceType = ResourceType,
+            FileResourcePath = FileResourcePath,
+        };
     }
-    public static MessageData FromJson(string json)
+    public static MessageData FromJson(string json, ResourceConfig? config = null)
     {
         var obj = JsonSerializer.Deserialize<JsonObject>(json);
-        return FromJson(obj);
+        return FromJson(obj, config);
     }
 
-    public static MessageData FromJson(JsonObject? obj)
+    public static MessageData FromJson(JsonObject? obj, ResourceConfig? config = null)
     {
         return new MessageData() {
-            FilePath = "",
-            ResourceTypeID = "",
+            FileResourcePath = "",
+            ResourceType = config ?? ResourceConfig.Placeholder,
+            SoundID = obj?[nameof(SoundID)]?.AsValue()?.GetValue<uint>() ?? 0,
             MessageKey = obj?[nameof(MessageKey)]?.AsValue()?.GetValue<string>() ?? "",
             Guid = obj?[nameof(Guid)]?.AsValue()?.GetValue<string>() is string str && Guid.TryParse(str, out var gg) ? gg : Guid.NewGuid(),
             Messages = obj?[nameof(Messages)].Deserialize<Dictionary<string, string>>() ?? new(),
@@ -83,6 +95,7 @@ public class MessageData : IContentResource
             var index = Enum.Parse<Language>(msg.Key);
             entry.Strings[(int)index] = msg.Value;
         }
+        entry.Header.soundId = SoundID;
         foreach (var attr in Attributes) {
             if (!int.TryParse(attr.Key, out var index)) {
                 index = entry.AttributeItems.FindIndex(it => it.Name == attr.Key);

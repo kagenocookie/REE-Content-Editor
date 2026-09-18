@@ -1,0 +1,109 @@
+entities:
+  styles.body.BodyMeshStyle:
+    primary_field: data
+    to_string: "Body Style: {data._Species:enum(app.Species)} {data._Gender:enum(app.Gender)}"
+    fields:
+    - name: data
+      resource:
+        type: array-file
+        id: [_Species, _Gender]
+        classname: app.BodyMeshSwapItem
+        file: AppSystem/CharaEdit/ch000/SwapData/BodyMeshSwapData.user
+
+  styles.body.BodyMesh:
+    to_string: "Body Mesh {id} | {mesh._Mesh}"
+    fields:
+    - name: mesh
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/BodyMeshCatalog.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+
+  styles.body.BodySkinStyle:
+    primary_field: data
+    to_string: "Body Skin {id:enum(app.SkinStyle)}"
+    enums:
+    - name: app.SkinStyle
+      format: "Body_{id}"
+      primary: true
+    fields:
+    - name: data
+      # display_after: styleNo
+      # field_id: { field: styleNo, path: value }
+      resource:
+        type: group
+        id: [_SkinStyle]
+        custom_id_range: [10000, 10000000]
+        classname: app.BodySkinSwapItem
+        subtypes:
+          humanMale:
+            file: AppSystem/CharaEdit/ch000/SwapData/BodySkinSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 2776536455
+            - property: _Species
+              equals: 2501532887
+          humanFemale:
+            file: AppSystem/CharaEdit/ch000/SwapData/BodySkinSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 1910070090
+            - property: _Species
+              equals: 2501532887
+          beastMale:
+            file: AppSystem/CharaEdit/ch000/SwapData/BodySkinSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 2776536455
+            - property: _Species
+              equals: 3666037007
+          beastFemale:
+            file: AppSystem/CharaEdit/ch000/SwapData/BodySkinSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 1910070090
+            - property: _Species
+              equals: 3666037007
+
+  styles.body.BodySkin:
+    to_string: "{id:enum(app.CharacterEditDefine.BodySkinID)} | {skin._Material}"
+    enums:
+    - name: app.CharacterEditDefine.BodySkinID
+      format: "body_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: skin
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/BodySkinCatalog_Main.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: BodySkin
+      to_both:
+        skin: Skin
+
+classes:
+  app.BodyMeshSwapItem:
+    to_string: "{class_shortname} {_Species:enum(app.Species)} {_Gender:enum(app.Gender)}"
+    fields:
+      _Species: { readOnly: true }
+      _Gender: { readOnly: true }
+      _MeshID: { enum: BodyMesh }
+  app.BodySkinSwapItem:
+    to_string: "{class_shortname} {_Species:enum(app.Species)} {_Gender:enum(app.Gender)}"
+    fields:
+      _Species: { readOnly: true }
+      _Gender: { readOnly: true }
+      _SkinID: { enum: BodySkin }

@@ -36,6 +36,10 @@ public class UIContext
     public ref string InputClassname => ref GetStateRef<string>(3, "");
     public ref string ClassnameFilter => ref GetStateRef<string>(4, "");
     public ref string CachedString => ref GetStateRef<string>(5, "");
+    public EntityParams? EntityParams {
+        get => GetStateOrNull(6)?.value as EntityParams;
+        set => GetStateRef<EntityParams>(6, EntityParams.Placeholder) = value ?? throw new ArgumentNullException(nameof(value));
+    }
 
     public bool Changed
     {
@@ -62,8 +66,8 @@ public class UIContext
         originalValue = GetRaw();
     }
 
-    public T[]? GetStateArray<T>() => GetStateOrNull(6)?.value as T[];
-    public void SetStateArray<T>(T[] list) => GetStateRef<T[]>(6, list) = list;
+    public T[]? GetStateArray<T>() => GetStateOrNull(7)?.value as T[];
+    public void SetStateArray<T>(T[] list) => GetStateRef<T[]>(7, list) = list;
 
     public string InitFilterDefault(string? defaultFilter) => GetStateRef<string>(2, defaultFilter ?? "");
 
@@ -148,6 +152,7 @@ public class UIContext
     }
     public UIContext? GetChild<T>() where T : IObjectUIHandler => children.FirstOrDefault(ch => ch.uiHandler is T);
     public UIContext? GetChildByValue<T>() => children.FirstOrDefault(ch => ch.GetRaw() is T);
+    public IEnumerable<UIContext> GetChildrenByValue<T>() => children.Where(ch => ch.GetRaw() is T);
     public UIContext? GetChildByValue(object? value) => children.FirstOrDefault(ch => ch.GetRaw()?.Equals(value) == true);
     public T? GetChildValue<T>() => (T?)children.FirstOrDefault(ch => ch.target is T)?.target;
     public T? GetChildHandler<T>() => (T?)children.FirstOrDefault(ch => ch.uiHandler is T)?.uiHandler;

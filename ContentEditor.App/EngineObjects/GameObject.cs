@@ -256,16 +256,16 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         if (workspace == null) {
             throw new Exception("Could not create Component - workspace is not accessible");
         }
-        return (TComponent)Component.Create(this, workspace.Env, TComponent.Classname);
+        return (TComponent)Component.Create(this, workspace, TComponent.Classname);
     }
 
-    public Component AddComponent(string classname)
+    public Component AddComponent(string classname, ContentWorkspace? workspace = null)
     {
-        var workspace = Scene?.Workspace ?? Folder?.Scene?.Workspace;
+        workspace ??= Scene?.Workspace ?? Folder?.Scene?.Workspace;
         if (workspace == null) {
             throw new Exception("Could not create Component - workspace is not accessible");
         }
-        return Component.Create(this, workspace.Env, classname);
+        return Component.Create(this, workspace, classname);
     }
 
     public TComponent? GetComponent<TComponent>() where TComponent : Component

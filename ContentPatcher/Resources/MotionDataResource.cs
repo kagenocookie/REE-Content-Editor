@@ -22,7 +22,7 @@ public class MotionDataResource : IContentResource
     {
         MotName = mot.Header.motName;
         MotVersion = mot.Header.version;
-        FilePath = mot.FileHandler.FilePath + "|" + MotName;
+        FileResourcePath = mot.FileHandler.FilePath + "|" + MotName;
         MotType = KnownFileFormats.Motion;
 
         var stream = new MemoryStream();
@@ -44,10 +44,10 @@ public class MotionDataResource : IContentResource
     public int VerificationId { get; set; }
 
     [JsonIgnore]
-    public string ResourceTypeID => "mot_data";
+    public ResourceConfig ResourceType => ResourceConfig.NamedPlaceholder("mot_data");
 
     [JsonIgnore]
-    public string? FilePath { get; private set; }
+    public string? FileResourcePath { get; private set; }
 
     private static JsonSerializerOptions jsonOptions = new(JsonConfig.jsonOptions);
     static MotionDataResource()

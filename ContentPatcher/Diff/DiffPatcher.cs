@@ -17,7 +17,14 @@ public class DiffPatcher
     public void ApplyRSZObjectDiff(ref RszInstance instance, JsonNode diff, Workspace env)
     {
         if (diff.GetValueKind() == JsonValueKind.Null) return;
-        if (diff.GetValueKind() != JsonValueKind.Object) throw new ArgumentException("Object diff must be an object", nameof(diff));
+        if (diff.GetValueKind() != JsonValueKind.Object) {
+            if (diff.GetValueKind() == JsonValueKind.String && diff.GetValue<string>() == "null") {
+                instance = RszInstance.NULL;
+                return;
+            }
+
+            throw new ArgumentException("Object diff must be an object", nameof(diff));
+        }
 
         var diffObj = (JsonObject)diff;
         var newClassname = diffObj["$type"];
@@ -81,6 +88,12 @@ public class DiffPatcher
                     newInstance ??= new RszInstance(env.RszParser.GetRSZClass(user.ClassName)!, user);
                     user.typeId = newInstance.RszClass.typeId;
                     instance.Values[fieldIndex] = newInstance;
+                } else if (diffprop.Value?.GetValueKind() == JsonValueKind.String && diffprop.Value.GetValue<string>() == "null") {
+                    if (field.type is RszFieldType.UserData or RszFieldType.Object) {
+                        instance.Values[fieldIndex] = RszInstance.NULL;
+                    } else {
+                        Logger.Warn($"Unexpected null string for non-object field {cls.name}.{field.name}.");
+                    }
                 } else {
                     // does this happen? maybe?
                     Logger.Warn($"Found missing data or unsupported userdata field {field.name} in {cls.name}. Ignoring.");
@@ -107,7 +120,21 @@ public class DiffPatcher
                     }
                 }
 
-                instance.Values[fieldIndex] = diffprop.Value.Deserialize(csType, env.JsonOptions) ?? Activator.CreateInstance(csType)!;
+                if (csType == typeof(ulong)) {
+                    if (diffprop.Value == null) {
+                        instance.Values[fieldIndex] = 0UL;
+                    } else {
+                        // handle case where diff is int64 while csType is uint64 (lua-generated diff json)
+                        var jval = diffprop.Value.AsValue();
+                        if (jval.TryGetValue<long>(out var int64)) {
+                            instance.Values[fieldIndex] = (ulong)int64;
+                        } else {
+                            instance.Values[fieldIndex] = jval.GetValue<ulong>();
+                        }
+                    }
+                } else {
+                    instance.Values[fieldIndex] = diffprop.Value.Deserialize(csType, env.JsonOptions) ?? Activator.CreateInstance(csType)!;
+                }
             }
         }
     }
@@ -204,9 +231,15 @@ public class DiffPatcher
             int index;
             switch (actionType) {
                 case 0: // if no action type, assume add (because the base most likely didn't have this array at all)
+                    if (!itemObj.TryGetPropertyValue("$type", out var propTmp) || propTmp == null) {
+                        itemObj["$type"] = elementClassname;
+                    }
                     list.Add(item.Deserialize(csType, env.JsonOptions)!);
                     break;
                 case DiffPatchActionTypes.Added:
+                    if (csType == typeof(RszInstance) && ((item["$item"] as JsonObject)?.TryGetPropertyValue("$type", out propTmp) != true || propTmp == null)) {
+                        item["$item"]!["$type"] = elementClassname;
+                    }
                     list.Add(item["$item"].Deserialize(csType, env.JsonOptions)!);
                     break;
                 case DiffPatchActionTypes.Changed:
@@ -215,11 +248,17 @@ public class DiffPatcher
                         var instance = list[index] as RszInstance;
                         list[index] = CreateOrApplyRSZDiff(instance, item["$item"], elementClassname, env);
                     } else {
+                        if (csType == typeof(RszInstance) && ((item["$item"] as JsonObject)?.TryGetPropertyValue("$type", out propTmp) != true || propTmp == null)) {
+                            item["$item"]!["$type"] = elementClassname;
+                        }
                         list[index] = item["$item"].Deserialize(csType, env.JsonOptions)!;
                     }
                     break;
                 case DiffPatchActionTypes.Inserted:
                     index = indexOffset + item["$index"]!.GetValue<int>();
+                    if (csType == typeof(RszInstance) && ((item["$item"] as JsonObject)?.TryGetPropertyValue("$type", out propTmp) != true || propTmp == null)) {
+                        item["$item"]!["$type"] = elementClassname;
+                    }
                     list.Insert(index, item["$item"].Deserialize(csType, env.JsonOptions)!);
                     indexOffset++;
                     break;

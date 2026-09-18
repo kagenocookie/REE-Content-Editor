@@ -1,0 +1,129 @@
+entities:
+  items.styles.mantle.MantleStyle:
+    primary_field: data
+    id_field: styleNo
+    to_string: "Mantle Style {id}: {data._MantleStyle:enum(app.MantleStyle)}"
+    display_name: Style
+    fields:
+    - name: DD2_StylePreview
+      field_type: DD2_StylePreview
+      resource:
+        params:
+          dataField: _MantleStyle
+          partField: _Meta._MantleStyle
+    - name: data
+      display_after: styleNo
+      field_id: { field: styleNo, path: value }
+      resource:
+        type: group
+        id: [_MantleStyle]
+        custom_id_range: [10000, 10000000]
+        classname: app.MantleSwapItem
+        subtypes:
+          male:
+            file: AppSystem/CharaEdit/ch000/SwapData/MantleSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 2776536455
+          female:
+            file: AppSystem/CharaEdit/ch000/SwapData/MantleSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 1910070090
+    - name: styleNo
+      resource:
+        type: enum_mapping
+        classname: app.MantleStyle
+        custom_id_range: [10000, 32700] # _MantleStyleNo on the armor data is a signed short so we need to limit to that range
+        params:
+          virtual_enum_name: ce.MantleStyleNo
+          new_label_format: "Mantle_{id:D03}"
+          label_id_parse: "Mantle_(\\d+)"
+          value_from: { field: data, path: _MantleStyle }
+
+  items.styles.mantle.MantleMesh:
+    to_string: "{id:enum(app.CharacterEditDefine.MantleMeshID)} | {mesh._Mesh}"
+    display_name: Mantle Mesh
+    enums:
+    - name: "app.CharacterEditDefine.MantleMeshID"
+      format: "mantle_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: mesh
+      required: true
+      resource:
+        custom_id_range: [10000, 10000000]
+        file: AppSystem/CharaEdit/ch000/Catalog/MantleMeshCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: chain
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/MantleChainCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: clsp
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/MantleCollisionShapePresetCatalog_Default.user
+        type: resource_proxy_pfb
+        classname: app.PartSwapCollisionShapePresetHolder
+        params:
+          skipFields: 1
+    - name: cloth
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/MantleGpuClothCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: sfur
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/MantleShellFurCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: Mantle
+      to_both:
+        mesh: Mesh
+        chain: Chain
+        clsp: Clsp
+        cloth: Cloth
+
+  items.styles.mantle.MantleSkin:
+    to_string: "{id:enum(app.CharacterEditDefine.MantleSkinID)} | {skin._Material}"
+    display_name: Mantle Skin
+    enums:
+    - name: app.CharacterEditDefine.MantleSkinID
+      format: "mantle_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: skin
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/MantleSkinCatalog_Default.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: MantleSkin
+      to_both:
+        skin: Skin
+
+classes:
+  app.MantleSwapItem:
+    to_string: "{class_shortname} {_MantleStyle:enum(app.MantleStyle)} {_Gender:enum(app.Gender)}"
+    fields:
+      _MantleStyle: { readOnly: true }
+      _Gender: { readOnly: true }
+      _MeshID: { enum: MantleMesh, label: Mesh }
+      _SkinID: { enum: MantleSkin, label: Skin }

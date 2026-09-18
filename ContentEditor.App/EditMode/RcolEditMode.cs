@@ -27,26 +27,6 @@ public class RcolEditMode : EditModeHandler
         }
     }
 
-    public void OpenEditor(string rcolFilepath)
-    {
-        if (!(Target is RequestSetColliderComponent component)) {
-            return;
-        }
-        if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(rcolFilepath, out var file)) {
-            OpenEditor(file);
-        }
-    }
-
-    public void OpenEditor(FileHandle file)
-    {
-        Debug.Assert(file.GetFile<RcolFile>() != null);
-        if (!(Target is RequestSetColliderComponent component)) {
-            return;
-        }
-        PrimaryEditor = new RcolEditor(Scene.Workspace, file, component);
-        EditorWindow.CurrentWindow!.AddSubwindow(PrimaryEditor);
-    }
-
     public override void DrawMainUI()
     {
         if (context == null) {
@@ -79,15 +59,6 @@ public class RcolEditMode : EditModeHandler
             if (AppImguiHelpers.ShowRecentFiles(settings.RecentRcols, Scene.Workspace.Game, ref rcolPath)) {
                 filePicker?.ResetState();
             }
-        }
-
-        if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(rcolPath, out var file)) {
-            var rcol = file.GetFile<RcolFile>();
-            if (ImGui.Button("Open Editor")) {
-                OpenEditor(file);
-            }
-        } else if (!string.IsNullOrEmpty(rcolPath)) {
-            ImGui.TextColored(Colors.Warning, "File not found");
         }
     }
 

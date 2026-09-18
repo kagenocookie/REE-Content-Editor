@@ -1,0 +1,121 @@
+entities:
+  items.styles.backpack.BackpackStyle:
+    primary_field: data
+    id_field: styleNo
+    to_string: "Backpack Style {id}: {data._BackpackStyle:enum(app.BackpackStyle)}"
+    display_name: Style
+    zero_entity:
+      id: 0
+    enums:
+      - name: app.BackpackStyle
+        format: "Backpack_{id}"
+        primary: true
+    fields:
+    - name: DD2_StylePreview
+      field_type: DD2_StylePreview
+      resource:
+        params:
+          dataField: _BackpackStyle
+          partField: _Meta._BackpackStyle
+    - name: data
+      display_after: styleNo
+      field_id: { field: styleNo, path: value }
+      resource:
+        type: group
+        id: [_BackpackStyle]
+        custom_id_range: [10000, 10000000]
+        classname: app.BackpackSwapItem
+        subtypes:
+          male:
+            file: AppSystem/CharaEdit/ch000/SwapData/BackpackSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 2776536455
+          female:
+            file: AppSystem/CharaEdit/ch000/SwapData/BackpackSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 1910070090
+    - name: styleNo
+      resource:
+        type: enum_mapping
+        classname: app.BackpackStyle
+        custom_id_range: [10000, 32700] # _BackpackStyleNo on the armor data is a signed short so we need to limit to that range
+        params:
+          virtual_enum_name: ce.BackpackStyleNo
+          new_label_format: "Backpack_{id:D03}"
+          label_id_parse: "Backpack_(\\d+)"
+          value_from: { field: data, path: _BackpackStyle }
+
+  items.styles.backpack.BackpackMesh:
+    to_string: "{id:enum(app.CharacterEditDefine.BackpackMeshID)} | {mesh._Mesh}"
+    display_name: Backpack Mesh
+    enums:
+    - name: "app.CharacterEditDefine.BackpackMeshID"
+      format: "backpack_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: mesh
+      required: true
+      resource:
+        custom_id_range: [10000, 10000000]
+        file: AppSystem/CharaEdit/ch000/Catalog/BackpackMeshCatalog.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: chain
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/BackpackChainCatalog.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: clsp
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/BackpackCollisionShapePresetCatalog.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: Backpack
+      to_both:
+        mesh: Mesh
+        chain: Chain
+        clsp: Clsp
+
+  items.styles.backpack.BackpackSkin:
+    to_string: "{id:enum(app.CharacterEditDefine.BackpackSkinID)} | {skin._Material}"
+    display_name: Backpack Skin
+    enums:
+    - name: app.CharacterEditDefine.BackpackSkinID
+      format: "backpack_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: skin
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/BackpackSkinCatalog.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: BackpackSkin
+      to_both:
+        skin: Skin
+
+classes:
+  app.BackpackSwapItem:
+    to_string: "{class_shortname} {_BackpackStyle:enum(app.BackpackStyle)} {_Gender:enum(app.Gender)}"
+    fields:
+      _BackpackStyle: { readOnly: true }
+      _Gender: { readOnly: true }
+      _MeshID: { enum: BackpackMesh, label: Mesh }
+      _SkinID: { enum: BackpackSkin, label: Skin }

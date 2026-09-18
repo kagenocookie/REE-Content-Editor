@@ -8,11 +8,23 @@ public interface IContentResource
     /// <summary>
     /// The unique type identifier of this resource. For most resources this would be a constant type value or empty.
     /// </summary>
-    string ResourceTypeID { get; }
+    ResourceConfig ResourceType { get; }
     /// <summary>
     /// Path to the file containing this resource. Can be null in case it's a resource without a file (e.g. arbitrary entity strings).
     /// </summary>
-    string? FilePath { get; }
+    string? FileResourcePath { get; }
+    string Label => ToString() ?? $"{ResourceType} [{FileResourcePath ?? "/"}]";
     IContentResource Clone();
     JsonNode ToJson(Workspace env);
+}
+
+public interface IAddressableContentResource : IContentResource
+{
+    public long ID { get; }
+}
+
+public interface IPropertyContainer
+{
+    public object? Get(string path);
+    public void Set(string path, object? value);
 }
