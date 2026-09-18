@@ -1,0 +1,141 @@
+entities:
+  styles.head.HeadMeshStyle:
+    primary_field: data
+    to_string: "Head Mesh {data._HeadStyle:enum(app.HeadStyle)}"
+    fields:
+    - name: data
+      resource:
+        type: group
+        id: [_HeadStyle]
+        custom_id_range: [10000, 10000000]
+        classname: app.HeadMeshSwapItem
+        subtypes:
+          humanMale:
+            file: AppSystem/CharaEdit/ch000/SwapData/HeadMeshSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 2776536455
+            - property: _Species
+              equals: 2501532887
+          humanFemale:
+            file: AppSystem/CharaEdit/ch000/SwapData/HeadMeshSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 1910070090
+            - property: _Species
+              equals: 2501532887
+          beastMale:
+            file: AppSystem/CharaEdit/ch000/SwapData/HeadMeshSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 2776536455
+            - property: _Species
+              equals: 3666037007
+          beastFemale:
+            file: AppSystem/CharaEdit/ch000/SwapData/HeadMeshSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 1910070090
+            - property: _Species
+              equals: 3666037007
+
+  styles.head.HeadMesh:
+    to_string: "Head Mesh {id} | {mesh._Mesh}"
+    fields:
+    - name: mesh
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/HeadMeshCatalog.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+
+  styles.head.HeadSkinStyle:
+    primary_field: data
+    to_string: "Head Skin {id:enum(app.SkinStyle)}"
+    enums:
+    - name: app.SkinStyle
+      format: "Style_{id}"
+      primary: true
+    fields:
+    - name: data
+      resource:
+        type: group
+        id: [_SkinStyle]
+        custom_id_range: [10000, 10000000]
+        classname: app.HeadSkinSwapItem
+        subtypes:
+          humanMale:
+            file: AppSystem/CharaEdit/ch000/SwapData/HeadSkinSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 2776536455
+            - property: _Species
+              equals: 2501532887
+          humanFemale:
+            file: AppSystem/CharaEdit/ch000/SwapData/HeadSkinSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 1910070090
+            - property: _Species
+              equals: 2501532887
+          beastMale:
+            file: AppSystem/CharaEdit/ch000/SwapData/HeadSkinSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 2776536455
+            - property: _Species
+              equals: 3666037007
+          beastFemale:
+            file: AppSystem/CharaEdit/ch000/SwapData/HeadSkinSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 1910070090
+            - property: _Species
+              equals: 3666037007
+
+  styles.head.HeadSkin:
+    to_string: "{id:enum(app.CharacterEditDefine.HeadSkinID)} | {skin._Material}"
+    enums:
+    - name: app.CharacterEditDefine.HeadSkinID
+      format: "head_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: skin
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/HeadSkinCatalog_Main.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: HeadSkin
+      to_both:
+        skin: Skin
+
+classes:
+  app.HeadMeshSwapItem:
+    to_string: "{class_shortname} {_Species:enum(app.Species)} {_Gender:enum(app.Gender)}"
+    fields:
+      _Species: { readOnly: true }
+      _Gender: { readOnly: true }
+      _HeadStyle: { readOnly: true }
+      _MeshID: { enum: HeadMesh }
+  app.HeadSkinSwapItem:
+    to_string: "{class_shortname} {_Species:enum(app.Species)} {_Gender:enum(app.Gender)}"
+    fields:
+      _Species: { readOnly: true }
+      _Gender: { readOnly: true }
+      _SkinID: { enum: HeadSkin }

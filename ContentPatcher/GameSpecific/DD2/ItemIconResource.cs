@@ -67,10 +67,4 @@ public class ItemIconField : CustomEntityFieldHandler<ItemIconResource>
     }
 
     public override ResourceHandler? CreateResourceHandler(ResourceConfig config) => new NoopResourceHandler<ItemIconField>() { Config = config };
-
-    public override (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData)
-    {
-        var res = ApplyValue(workspace, null, initialData, entity, ResourceState.Active);
-        return (-1, res);
-    }
 }

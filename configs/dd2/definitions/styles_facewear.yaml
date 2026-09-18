@@ -11,6 +11,12 @@ entities:
         format: "Facewear_{id}"
         primary: true
     fields:
+    - name: DD2_StylePreview
+      field_type: DD2_StylePreview
+      resource:
+        params:
+          dataField: _Style
+          partField: _Meta._FacewearStyle
     - name: data
       display_after: styleNo
       field_id: { field: styleNo, path: value }
@@ -24,13 +30,13 @@ entities:
             file: AppSystem/CharaEdit/ch000/SwapData/FacewearSwapData.user
             type: array-file
             filter:
-              property: _Gender
+            - property: _Gender
               equals: 2776536455
           female:
             file: AppSystem/CharaEdit/ch000/SwapData/FacewearSwapData.user
             type: array-file
             filter:
-              property: _Gender
+            - property: _Gender
               equals: 1910070090
     - name: styleNo
       resource:

@@ -6,6 +6,8 @@ namespace ContentEditor.App;
 [ObjectImguiHandler(typeof(ResourceEntity))]
 public class EntityHandler : IObjectUIHandler
 {
+    public static readonly EntityHandler Instance = new();
+
     public void OnIMGUI(UIContext context)
     {
         var instance = context.Get<ResourceEntity>();
@@ -19,11 +21,13 @@ public class EntityHandler : IObjectUIHandler
         }
 
         for (int i = 0; i < context.children.Count; i++) {
+            if (i != 0) {
+                ImGui.Spacing();
+            }
             var child = context.children[i];
             ImGui.PushID(i);
             child.ShowUI();
             ImGui.PopID();
-            ImGui.Spacing();
         }
     }
 }

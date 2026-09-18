@@ -45,6 +45,7 @@ public class EntitiesWindow : IWindowHandler, IWorkspaceContainer
         int i = 0;
         while (curLevelList != null) {
             int index = i >= selectedTabIndexes.Count ? -1 : selectedTabIndexes[i];
+            ImGui.PushID(i);
             if (ImguiHelpers.Tabs(curLevelList.FriendlyNames, ref index)) {
                 selectedTabIndexes.RemoveAtAfter(i);
                 if (i >= selectedTabIndexes.Count) {
@@ -54,6 +55,7 @@ public class EntitiesWindow : IWindowHandler, IWorkspaceContainer
                 }
                 data.SetPersistentData("tabIndex", selectedTabIndexes);
             }
+            ImGui.PopID();
             if (index == -1) {
                 selectedTabIndexes.RemoveAtAfter(i);
                 break;

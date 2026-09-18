@@ -1,3 +1,5 @@
+using ContentEditor.App.ImguiHandling;
+using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
 using ReeLib;
@@ -24,6 +26,17 @@ public class EntityPicker : IObjectUIHandler
     {
         var instances = workspace.ResourceManager.GetEntityInstances(entityType);
         var selectedId = Convert.ToInt64(context.GetRaw());
+        var pfx = ImguiHelpers.InlinePrefix();
+        using var _ = ImguiHelpers.ScopedID(context.GetHashCode());
+        if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
+            var lastSelected = workspace.ResourceManager.GetActiveEntityInstance(entityType, selectedId);
+            if (lastSelected != null) {
+                EditorWindow.CurrentWindow!.AddSubwindow(new HandlerEmbedWindow(EntityHandler.Instance, lastSelected));
+            }
+        }
+        ImguiHelpers.Tooltip("Open entity in separate window");
+        ImGui.SameLine();
+        pfx.Dispose();
 
         if (ImguiHelpers.FilterableEntityCombo(context.label, instances, ref selectedId, ref context.Filter)) {
             UndoRedo.RecordSet<object>(context, Convert.ChangeType(selectedId, valueType));

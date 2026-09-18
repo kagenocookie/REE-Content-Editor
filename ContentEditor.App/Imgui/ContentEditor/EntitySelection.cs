@@ -1,3 +1,4 @@
+using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
 using ContentPatcher;
@@ -53,6 +54,8 @@ public class EntitySelection : IWindowHandler
 
         var instances = workspace.ResourceManager.GetEntityInstances(entityType);
         var selectedId = data.GetOrAddPersistentData<long>("selectedEntity", workspace.ResourceManager.GetEntityZeroId(entityType));
+
+        var pfx = ImguiHelpers.InlinePrefix();
         ImGui.BeginDisabled(workspace.CurrentBundle == null || workspace.CurrentBundle?.Entities.Any(e => e.Type == entityType) != true);
         ImguiHelpers.ToggleButton($"{AppIcons.Star}", ref currentBundleOnly, Colors.IconActive);
         if (currentBundleOnly) {
@@ -61,6 +64,17 @@ public class EntitySelection : IWindowHandler
         ImGui.EndDisabled();
         ImguiHelpers.Tooltip("Show only active bundle entities"u8);
         ImGui.SameLine();
+
+        if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
+            var lastSelected = workspace.ResourceManager.GetActiveEntityInstance(entityType, selectedId);
+            if (lastSelected != null) {
+                EditorWindow.CurrentWindow!.AddSubwindow(new HandlerEmbedWindow(EntityHandler.Instance, lastSelected));
+            }
+        }
+        ImguiHelpers.Tooltip("Open entity in separate window");
+        ImGui.SameLine();
+
+        pfx.Dispose();
 
         if (ImguiHelpers.FilterableEntityCombo("Entity"u8, instances, ref selectedId, ref data.Context.Filter)) {
             data.SetPersistentData("selectedEntity", selectedId);

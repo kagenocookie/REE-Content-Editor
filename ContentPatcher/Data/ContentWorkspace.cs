@@ -66,6 +66,7 @@ public sealed class ContentWorkspace : IDisposable
         ResourceManager.Setup(this);
     }
 
+    public RszInstance CreateRszInstance(string classname) => CreateRszInstance(Env.RszParser.GetRSZClass(classname)!);
     public RszInstance CreateRszInstance(RszClass rszClass)
     {
         var instance = Env.CreateRszInstance(rszClass);

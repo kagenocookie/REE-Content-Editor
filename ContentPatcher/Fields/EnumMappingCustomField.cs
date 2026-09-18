@@ -87,29 +87,6 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
         return new EnumMappingResource(Field.Config, label, Convert.ToInt64(value)) { ID = id };
     }
 
-    public override (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData)
-    {
-        var label = newLabelFormat.GetString(entity);
-        var value = MurMur3HashUtils.GetHash(label);
-        if (Field.Config.RszClass != null) {
-            var enumdesc = workspace.Env.TypeCache.GetEnumDescriptor(Field.Config.RszClass.name, RszFieldType.U32);
-            enumdesc.AddValue(value, label);
-            if (workspace.CurrentBundle != null) {
-                var entries = workspace.CurrentBundle.AddEnumData(Field.Config.RszClass.name);
-                entries[label] = enumdesc.GetValue(label);
-            }
-        }
-        var id = GetIDFromLabel(label);
-        if (id == -1) {
-            id = fallbackId;
-            Logger.Error("New enum format " + newLabelFormat + " does not match the expected ID regex");
-        }
-        var virtualEnum = workspace.Env.TypeCache.CreateEnum(virtualEnumName, "System.UInt32");
-        virtualEnum?.AddValue(id, label);
-
-        return (id, new EnumMappingResource(Field.Config, label, value) { ID = id });
-    }
-
     private long GetIDFromLabel(string label)
     {
         var result = ParseRegex?.Match(label);

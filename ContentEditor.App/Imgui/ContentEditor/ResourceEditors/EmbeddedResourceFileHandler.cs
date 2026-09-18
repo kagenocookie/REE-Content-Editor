@@ -5,7 +5,7 @@ using ContentPatcher;
 
 namespace ContentEditor.App.EntityResources;
 
-[ObjectImguiHandler(typeof(FileContentResource))]
+[ObjectImguiHandler(typeof(PlaceholderResource<ResourceLinkCustomField>))]
 public class EmbeddedResourceFileHandler : IObjectUIHandler
 {
     private FileHandle? file;
@@ -13,6 +13,7 @@ public class EmbeddedResourceFileHandler : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var entity = context.GetOwnerEntity();
+        var fieldRaw = context.GetEntityField()!;
         var field = context.GetEntityField<ResourceLinkCustomField>()!;
         var workspace = context.GetWorkspace();
         if (entity == null || workspace == null) {

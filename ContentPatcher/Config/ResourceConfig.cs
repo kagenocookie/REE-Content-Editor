@@ -53,7 +53,7 @@ public partial class ResourceConfigSerialized
 
     public Dictionary<string, ResourceConfigSerialized>? Subtypes { get; set; }
 
-    public ResourceConditionData? filter;
+    public ResourceConditionData[]? filter;
 
     public KnownFileFormats ResourceType { get; set; }
 

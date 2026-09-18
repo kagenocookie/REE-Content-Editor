@@ -1,10 +1,14 @@
 namespace ContentEditor;
 
+/// <summary>
+/// Wraps an IWindowHandler inside an IObjectUIHandler.
+/// </summary>
 public sealed class EmbeddedWindowHandler(IWindowHandler window) : IObjectUIHandler, IWindowHandler, IDisposable
 {
     private UIContext? _lastContext;
     public string HandlerName => window.HandlerName;
     public bool HasUnsavedChanges => window.HasUnsavedChanges;
+    public IWindowHandler Window => window;
 
     public void Init(UIContext context) => window.Init(context);
     public void OnIMGUI(UIContext context)

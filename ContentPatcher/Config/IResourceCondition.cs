@@ -7,7 +7,7 @@ public interface IResourceCondition
 {
     bool IsEnabled(object? resource);
 
-    public static IResourceCondition Deserialize(EntityFieldConditionData data)
+    public static IResourceCondition Deserialize(ResourceConditionData data)
     {
         if (data.property == "classname") {
             return new WhenClassnameCondition(data.property, data.equals as string ?? "");
@@ -31,6 +31,18 @@ public class WhenAnyCondition(IResourceCondition[] subconditions) : IResourceCon
         }
 
         return false;
+    }
+}
+
+public class WhenAllCondition(IResourceCondition[] subconditions) : IResourceCondition
+{
+    public bool IsEnabled(object? resource)
+    {
+        foreach (var c in subconditions) {
+            if (!c.IsEnabled(resource)) return false;
+        }
+
+        return true;
     }
 }
 

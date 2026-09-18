@@ -94,6 +94,11 @@ public class GroupedResource(ResourceConfig config, IEnumerable<string>? initial
         return subresources[key];
     }
 
+    public TRes? Get<TRes>(string key) where TRes : IContentResource
+    {
+        return (TRes?)subresources[key];
+    }
+
     object? IPropertyContainer.Get(string path)
     {
         foreach (var (k, sub) in subresources) {

@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Text.RegularExpressions;
+using ContentEditor.Core;
 using ContentEditor.Editor;
 using ContentPatcher.StringFormatting;
 using VYaml.Annotations;
@@ -10,6 +11,7 @@ namespace ContentPatcher;
 public class EntityConfig(string name)
 {
     public string Name { get; internal set; } = name;
+    public string ShortName { get; internal set; } = name.GetStringAfterLastDelimiter('.').ToString();
     public EntityField PrimaryField { get; set; } = null!;
     public EntityField IDField { get; set; } = null!;
     public EntityField[] Fields { get; set; } = [];

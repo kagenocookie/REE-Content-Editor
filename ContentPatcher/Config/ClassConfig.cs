@@ -9,16 +9,11 @@ public class ClassConfig
     public required RszClass Class { get; init; }
     public required ClassConfigSerialized SourceConfig { get; init; }
 
-    public Dictionary<string, ClassFieldConfig>? Fields { get; set; }
+    public Dictionary<string, ClassFieldConfig>? Fields => SourceConfig.Fields;
     // public Dictionary<string, SubclassConfig>? Subclasses { get; set; }
 
 
     public StringFormatter? StringFormatter { get; set; }
-
-    public void MergeIntoSubclass(string subclass, ClassConfig subConfig)
-    {
-        subConfig.Fields = subConfig.Fields ?? Fields;
-    }
 }
 
 [YamlObject]
@@ -53,15 +48,6 @@ public partial class ClassConfigSerialized
 
     public void MergeIntoRuntimeConfig(ContentWorkspace workspace, RszClass? cls, ClassConfig target)
     {
-        if (Fields != null) {
-            target.Fields ??= new();
-            foreach (var field in Fields) {
-                if (target.Fields.ContainsKey(field.Key)) continue;
-
-                target.Fields.Add(field.Key, field.Value);
-            }
-        }
-
         // if (Subclasses != null) {
         //     target.Subclasses ??= new();
         //     foreach (var (subclass, subdata) in Subclasses) {

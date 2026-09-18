@@ -46,6 +46,7 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
 
     public void UpdateCatalogEntry(CatalogPrefabResource resource, long id, ContentWorkspace workspace)
     {
+        componentClass ??= Config.RszClass;
         Debug.Assert(componentClass != null);
         if (!workspace.ResourceManager.TryResolveGameFile(resource.FileResourcePath, out var catFile)) {
             Logger.Error("Failed to resolve catalog file " + (resource.FileResourcePath));
@@ -145,12 +146,18 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
 
     public override CatalogPrefabResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
     {
-        var path = (data?.GetValueKind() == System.Text.Json.JsonValueKind.String ? data.GetValue<string>() : null) ?? "";
+        componentClass ??= Config.RszClass;
+        Debug.Assert(componentClass != null);
+        var path = data?.GetValueKind() == System.Text.Json.JsonValueKind.String ? data.GetValue<string>() : null;
         if (resource is not CatalogPrefabResource pfbRes) {
-            pfbRes = new CatalogPrefabResource(Config, workspace.CreateRszInstance(componentClass!), Files[0]);
+            pfbRes = new CatalogPrefabResource(Config, workspace.CreateRszInstance(componentClass), Files[0]);
         }
 
-        workspace.Diff.ApplyDiff(pfbRes.Instance, data);
+        if (string.IsNullOrEmpty(path) && data?.GetValueKind() != System.Text.Json.JsonValueKind.String) {
+            workspace.Diff.ApplyDiff(pfbRes.Instance, data);
+        } else {
+            Logger.Warn($"Straight strings are not currently accepted here: {path}");
+        }
         return pfbRes;
     }
 

@@ -25,6 +25,9 @@ public class RszInstanceHandler : Singleton<RszInstanceHandler>, IObjectUIHandle
         }
         if (showLabel) ImguiHelpers.TextSuffix(context.label, context.annotation ??= instance.RszClass.name);
 
+        if (context.children.Count == 0) {
+            WindowHandlerFactory.SetupRSZInstanceHandler(context);
+        }
         if (context.children.Count >= 10) {
             ImGui.Spacing();
             ImGui.SetNextItemWidth(Math.Min(200, ImGui.CalcItemWidth() - 16));
@@ -607,6 +610,7 @@ public class RszEnumFieldHandler : IObjectUIHandler
     public RszEnumFieldHandler(EnumDescriptor enumDescriptor)
     {
         this.EnumDescriptor = enumDescriptor;
+        BackingConvertType = enumDescriptor.BackingType;
     }
 
     private struct RszEnumSource : IEnumDataSource

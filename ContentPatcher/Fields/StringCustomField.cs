@@ -50,16 +50,6 @@ public class StringCustomField : CustomEntityFieldHandler<StringResource>, IDiff
         return currentResource;
     }
 
-    public override (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData)
-    {
-        if (Regex != null) {
-            // assume it's expected to be unique - always start empty maybe?
-            return (-1, new StringResource(Field.Config, string.Empty));
-        } else {
-            return (-1, new StringResource(Field.Config, initialData?.GetValue<string>() ?? string.Empty));
-        }
-    }
-
     public IEnumerable<KeyValuePair<long, IContentResource>> FetchInstances(ResourceManager workspace)
     {
         return Field.Config.Type == null ? [] : workspace.GetResourceInstances(Field.Config.Type);

@@ -10,7 +10,7 @@ namespace ContentPatcher;
 /// This field type only serves as a UI reference to a resource file based on another field's data.
 /// </summary>
 [ResourceField("resource_link")]
-public class ResourceLinkCustomField : CustomEntityFieldHandler
+public class ResourceLinkCustomField : FieldOnlyEntityField<ResourceLinkCustomField>
 {
     public KnownFileFormats resourceType;
     public StringFormatter pathFormat = null!;
@@ -37,39 +37,6 @@ public class ResourceLinkCustomField : CustomEntityFieldHandler
     {
         // would we want to force-open the referenced file here?
         var path = GetPath(entity);
-        return new FileContentResource(Field.Config, path);
+        return new PlaceholderResource<ResourceLinkCustomField>(Field.Config, path);
     }
-
-    public override IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
-    {
-        return null;
-    }
-
-    public override (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData)
-    {
-        return (-1, new FileContentResource(Field.Config));
-    }
-}
-
-public sealed class FileContentResource : IContentResource
-{
-    public ResourceConfig ResourceType { get; }
-    public string FileResourcePath { get; set; } = string.Empty;
-
-    public FileContentResource(ResourceConfig config)
-    {
-        ResourceType = config;
-    }
-
-    public FileContentResource(ResourceConfig config, string fileResourcePath)
-    {
-        ResourceType = config;
-        FileResourcePath = fileResourcePath;
-    }
-
-    public IContentResource Clone() => new FileContentResource(ResourceType, FileResourcePath);
-
-    public JsonNode ToJson(Workspace env) => new JsonObject();
-
-    public override string ToString() => FileResourcePath;
 }

@@ -122,11 +122,6 @@ public abstract class CustomEntityFieldHandler : EntityFieldValueHandler
     // string? ResourceTypeId { get; }
 
     public virtual ResourceHandler? CreateResourceHandler(ResourceConfig config) => null;
-
-    /// <summary>
-    /// Create an entity-specific value for this field and its ID. If the object doesn't have a custom id, it can return -1 which will then auto determine the ID based on the entity.
-    /// </summary>
-    public abstract (long id, IContentResource resource) CreateValue(ContentWorkspace workspace, ResourceEntity entity, JsonNode? initialData);
 }
 
 /// <summary>

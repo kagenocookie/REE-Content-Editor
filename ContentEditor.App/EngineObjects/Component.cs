@@ -1,6 +1,7 @@
 using System.Reflection;
 using ContentEditor.App.Graphics;
 using ContentEditor.App.ImguiHandling;
+using ContentPatcher;
 using ReeLib;
 
 namespace ContentEditor.App;
@@ -148,7 +149,7 @@ public class Component(GameObject gameObject, RszInstance data)
     /// <summary>
     /// Creates a new component and adds it to the target GameObject.
     /// </summary>
-    public static TComponent Create<TComponent>(GameObject gameObject, Workspace env) where TComponent : Component, IFixedClassnameComponent
+    public static TComponent Create<TComponent>(GameObject gameObject, ContentWorkspace env) where TComponent : Component, IFixedClassnameComponent
     {
         return (TComponent)Create(gameObject, env, TComponent.Classname);
     }
@@ -182,5 +183,10 @@ public class Component(GameObject gameObject, RszInstance data)
     public static Component Create(GameObject gameObject, Workspace workspace, string classname)
     {
         return Create(gameObject, workspace, workspace.RszParser.GetRSZClass(classname)!);
+    }
+
+    public static Component Create(GameObject gameObject, ContentWorkspace workspace, string classname)
+    {
+        return Create(gameObject, workspace.CreateRszInstance(classname));
     }
 }

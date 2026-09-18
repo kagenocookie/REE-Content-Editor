@@ -303,7 +303,10 @@
         },
         "filter": {
           "description": "Custom filter condition for matching objects.",
-          "$ref": "#/definitions/resourceCondition"
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/resourceCondition"
+          }
         },
         "id": {
           "description": "Array of field names that uniquely identify this resource.",

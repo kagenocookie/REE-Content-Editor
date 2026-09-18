@@ -24,13 +24,13 @@ entities:
             file: AppSystem/CharaEdit/ch000/SwapData/UnderwearSwapData.user
             type: array-file
             filter:
-              property: _Gender
+            - property: _Gender
               equals: 2776536455
           female:
             file: AppSystem/CharaEdit/ch000/SwapData/UnderwearSwapData.user
             type: array-file
             filter:
-              property: _Gender
+            - property: _Gender
               equals: 1910070090
     # - name: styleNo
     #   resource:

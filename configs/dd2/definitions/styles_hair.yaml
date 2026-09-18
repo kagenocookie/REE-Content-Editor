@@ -1,0 +1,88 @@
+entities:
+  styles.hair.HairStyle:
+    primary_field: data
+    to_string: "Hair Style {id}: {data._HairStyle:enum(app.HairStyle)}"
+    display_name: Style
+    fields:
+    - name: DD2_StylePreview
+      field_type: DD2_StylePreview
+      resource:
+        params:
+          dataField: _HairStyle
+          partField: _Meta._HairStyle
+    - name: data
+      resource:
+        id: [_HairStyle]
+        custom_id_range: [10000, 10000000]
+        classname: app.HairSwapItem
+        file: AppSystem/CharaEdit/ch000/SwapData/HairSwapData.user
+        type: array-file
+
+  styles.hair.HairMesh:
+    to_string: "{id:enum(app.CharacterEditDefine.HairMeshID)} | {mesh._Mesh}"
+    display_name: Hair Mesh
+    enums:
+    - name: "app.CharacterEditDefine.HairMeshID"
+      format: "Hair_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: mesh
+      required: true
+      resource:
+        custom_id_range: [10000, 10000000]
+        file: AppSystem/CharaEdit/ch000/Catalog/HairMeshCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: chain
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/HairChainCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: clsp
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/HairClspCatalog_Default.user
+        type: resource_proxy_pfb
+        classname: app.PartSwapCollisionShapePresetHolder
+        params:
+          skipFields: 1
+
+  styles.hair.HairSkin:
+    to_string: "{id:enum(app.CharacterEditDefine.HairSkinID)} | {skin._Material}"
+    display_name: Hair Skin
+    enums:
+    - name: app.CharacterEditDefine.HairSkinID
+      format: "Hair_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: skin
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/HairSkinCatalog_Default.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: skinBeast
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/HairSkinCatalog_Default_BA.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+
+classes:
+  app.HairSwapItem:
+    to_string: "{class_shortname} {_HairStyle:enum(app.HairStyle)} {_Gender:enum(app.Gender)}"
+    fields:
+      _HairStyle: { readOnly: true }
+      _Gender: { readOnly: true }
+      _MeshID: { enum: HairMesh, label: Mesh }
+      _SkinID: { enum: HairSkin, label: Skin }

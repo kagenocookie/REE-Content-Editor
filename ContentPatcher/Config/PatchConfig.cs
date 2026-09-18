@@ -188,22 +188,11 @@ public class PatchConfig(string filepath)
                 continue;
             }
 
-            if (!classes.TryGetValue(cls, out var runtimeConfig)) {
-                classes[cls] = runtimeConfig = new() { Class = rszClass, SourceConfig = config };
-            } else {
-                runtimeConfig.SourceConfig.Merge(config);
-            }
-
-            if (config.To_String != null) {
-                var fmt = FormatterSettings.CreateWorkspaceFormatter(workspace);
-                runtimeConfig.StringFormatter = new StringFormatter(config.To_String, fmt);
-            }
-
             if (config.Fields != null) {
                 foreach (var (fn, f) in config.Fields) {
                     var targetField = rszClass.GetField(fn);
                     if (targetField == null) {
-                        Logger.Debug($"Unknown field {fn} for clas {cls}");
+                        Logger.Debug($"Unknown field {fn} for class {cls}");
                         continue;
                     }
 
@@ -215,6 +204,16 @@ public class PatchConfig(string filepath)
                         }
                     }
                 }
+            }
+
+            if (!classes.TryGetValue(cls, out var runtimeConfig)) {
+                classes[cls] = runtimeConfig = new() { Class = rszClass, SourceConfig = config };
+            }
+            runtimeConfig.SourceConfig.Merge(config);
+
+            if (config.To_String != null) {
+                var fmt = FormatterSettings.CreateWorkspaceFormatter(workspace);
+                runtimeConfig.StringFormatter = new StringFormatter(config.To_String, fmt);
             }
         }
     }
@@ -245,11 +244,12 @@ public class PatchConfig(string filepath)
         } else {
             cfg.RszClass = workspace.Env.RszParser.GetRSZClass(resType);
         }
-        if (resCfg.filter != null) {
-            if (resCfg.filter.property == "classname") {
-                cfg.Filter = new WhenClassnameCondition(resCfg.filter.property, resCfg.filter.equals as string ?? "");
+        if (resCfg.filter?.Length > 0) {
+            if (resCfg.filter.Length == 1) {
+                var flt = resCfg.filter[0];
+                cfg.Filter = IResourceCondition.Deserialize(flt);
             } else {
-                cfg.Filter = new WhenFieldValueCondition(resCfg.filter.property, resCfg.filter.equals);
+                cfg.Filter = new WhenAllCondition(resCfg.filter.Select(ff => IResourceCondition.Deserialize(ff)).ToArray());
             }
         }
 
@@ -367,13 +367,13 @@ public class PatchConfig(string filepath)
     {
         var data = field.config;
         if (!string.IsNullOrEmpty(data.resource?.Type)) {
-            field.Config = SetupResourceConfig(workspace, entity.Name + "__" + field.name, data.resource);
+            field.Config = SetupResourceConfig(workspace, entity.ShortName + "__" + field.name, data.resource);
             resources.TryAdd(field.Config.Type, field.Config);
         } else if (!string.IsNullOrEmpty(data.fieldType)) {
             // handle fields with no resources (entity-only fields)
             field.ValueHandler = ResourceHandler.CreateValueHandler(data.fieldType, workspace);
             var resCfg = new ResourceConfigSerialized() { Type = data.fieldType };
-            field.Config = SetupResourceConfig(workspace, entity.Name + "__" + field.name, resCfg, false);
+            field.Config = SetupResourceConfig(workspace, entity.ShortName + "__" + field.name, resCfg, false);
             field.Config.Resource = (field.ValueHandler as CustomEntityFieldHandler)?.CreateResourceHandler(field.Config)
                 ?? throw new Exception($"Field {data.name} declared with field type {data.fieldType} but no resource provided.");
         } else {
