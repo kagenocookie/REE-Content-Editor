@@ -432,6 +432,7 @@ public static class ImguiHelpers
         }
         public void Dispose()
         {
+            ImGui.SameLine();
             var endX = ImGui.GetCursorPosX();
             ImGui.SetNextItemWidth(width - (endX - startX));
         }

@@ -905,13 +905,12 @@ public static class WindowHandlerFactory
 
         context.EntityParams = new EntityParams() {
             EntityField = entityField.name,
-            ResourceType = subtype?.Type ?? entityField.ResourceType,
+            ResourceType = subtype?.Type ?? entityField.ResourceType ?? entityField.Config.Type,
             ResourceId = resourceId,
             Entity = entity
         };
 
         if (resource == null) {
-            context.uiHandler = new NullResourceHandler();
             return;
         }
 

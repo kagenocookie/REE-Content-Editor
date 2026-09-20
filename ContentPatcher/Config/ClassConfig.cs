@@ -23,6 +23,9 @@ public partial class ClassConfigSerialized
     [YamlMember("to_string")]
     public string? To_String { get; set; }
 
+    [YamlMember("flags_enum")]
+    public bool? IsFlagsEnum { get; set; }
+
     internal void Merge(ClassConfigSerialized source)
     {
         To_String = source.To_String ?? To_String;

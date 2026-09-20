@@ -1,3 +1,4 @@
+using System.Numerics;
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentEditor.Core;
@@ -34,10 +35,21 @@ public class EntitySelection : IWindowHandler
         this.context = context;
         data = context.Get<WindowData>();
         if (initialId != -1) {
-            data.SetPersistentData("selectedEntity", initialId);
+            SelectedEntityId = initialId;
         }
     }
     private bool currentBundleOnly;
+    private bool showCreateSettings;
+    private bool showCustomTemplates = true;
+    private bool showUserTemplates = true;
+    private TemplateItem? selectedCreateTemplate;
+    private string templateFilter = "";
+    private string newTemplateName = "";
+
+    public long SelectedEntityId {
+        get => data.GetOrAddPersistentData<long>("selectedEntity", workspace.ResourceManager.GetEntityZeroId(entityType));
+        set => data.SetPersistentData("selectedEntity", value);
+    }
 
     public void OnWindow() => this.ShowDefaultWindow(context);
     public void OnIMGUI()
@@ -53,7 +65,10 @@ public class EntitySelection : IWindowHandler
         }
 
         var instances = workspace.ResourceManager.GetEntityInstances(entityType);
-        var selectedId = data.GetOrAddPersistentData<long>("selectedEntity", workspace.ResourceManager.GetEntityZeroId(entityType));
+        var entityConfig = workspace.ResourceManager.GetEntityConfig(entityType);
+        var canCreate = workspace.CurrentBundle != null && (entityConfig?.AllowCreateEmpty == true || entityConfig?.AllowTemplates == true); // TODO + verify has custom id range?
+        var selectedId = SelectedEntityId;
+        var selected = selectedId == -1 ? null : workspace.ResourceManager.GetActiveEntityInstance(entityType, selectedId);
 
         var pfx = ImguiHelpers.InlinePrefix();
         ImGui.BeginDisabled(workspace.CurrentBundle == null || workspace.CurrentBundle?.Entities.Any(e => e.Type == entityType) != true);
@@ -61,33 +76,109 @@ public class EntitySelection : IWindowHandler
         if (currentBundleOnly) {
             instances = instances.Where(ii => ii.Key == selectedId || workspace.CurrentBundle?.ContainsEntity(ii.Value) == true);
         }
-        ImGui.EndDisabled();
         ImguiHelpers.Tooltip("Show only active bundle entities"u8);
         ImGui.SameLine();
+        ImGui.EndDisabled();
+
+        ImGui.BeginDisabled(workspace.CurrentBundle == null || selected == null);
+        if (ImGui.Button($"{AppIcons.SI_Copy}") && selected != null) {
+            selected = workspace.ResourceManager.CreateEntity(selected.Type, selected.ToJson(workspace.Env));
+            data.Context.children.Clear();
+            SelectedEntityId = selected.Id;
+        }
+        ImguiHelpers.Tooltip(Lang.Buttons.Duplicate);
+        ImGui.EndDisabled();
+        ImGui.SameLine();
+
+        bool doCreate = false;
+        if (canCreate && entityConfig != null) {
+            if (entityConfig.AllowTemplates) {
+                ImguiHelpers.ToggleButton($"{AppIcons.SI_GenericAdd}", ref showCreateSettings, Colors.IconActive);
+            } else {
+                showCreateSettings = false;
+                doCreate = ImGui.Button($"{AppIcons.SI_GenericAdd}");
+            }
+            ImguiHelpers.Tooltip(Lang.Buttons.Create);
+            ImGui.SameLine();
+        }
 
         if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
-            var lastSelected = workspace.ResourceManager.GetActiveEntityInstance(entityType, selectedId);
-            if (lastSelected != null) {
-                EditorWindow.CurrentWindow!.AddSubwindow(new HandlerEmbedWindow(EntityHandler.Instance, lastSelected));
+            if (selected != null) {
+                EditorWindow.CurrentWindow!.AddSubwindow(new HandlerEmbedWindow(EntityHandler.Instance, selected));
             }
         }
         ImguiHelpers.Tooltip("Open entity in separate window");
-        ImGui.SameLine();
-
         pfx.Dispose();
 
         if (ImguiHelpers.FilterableEntityCombo("Entity"u8, instances, ref selectedId, ref data.Context.Filter)) {
-            data.SetPersistentData("selectedEntity", selectedId);
+            SelectedEntityId = selectedId;
             // note: we can clear children safely, any changes are still stored in the resource manager
             // just gotta figure out how to keep those changes tracked in bundle
             data.Context.ClearChildren();
+            selected = selectedId == -1 ? null : workspace.ResourceManager.GetActiveEntityInstance(entityType, selectedId);
         }
 
-        if (selectedId == -1) {
-            return;
+        if (entityConfig != null && canCreate && showCreateSettings) {
+            ImGui.Spacing();
+            ImguiHelpers.BeginRect();
+
+            if (entityConfig.AllowTemplates) {
+                var prefix = ImguiHelpers.InlinePrefix();
+                ImGui.BeginDisabled(selected == null);
+                if (ImGui.Button(Lang.Buttons.CreateTemplate) && selected != null && !string.IsNullOrEmpty(newTemplateName)) {
+                    if (TemplateManager.Instance.TemplateExists(workspace.Game, entityType, newTemplateName)) {
+                        Logger.Error($"Template {newTemplateName} already exists");
+                    } else {
+                        var json = selected.GetDataJson(workspace.Env);
+                        TemplateManager.Instance.AddTemplate(workspace.Game, entityType, newTemplateName, json);
+                        newTemplateName = "";
+                    }
+                }
+                ImGui.SameLine();
+                if (ImGui.Button($"{AppIcons.SI_FolderLink}")) {
+                    FileSystemUtils.ShowFileInExplorer(TemplateManager.GetUserTemplatesFolder(workspace.Game, true));
+                }
+                ImguiHelpers.Tooltip(Lang.Buttons.OpenTemplateFolder);
+                prefix.Dispose();
+                ImGui.InputText(Lang.General.NewTemplateName, ref newTemplateName, 100);
+                ImGui.EndDisabled();
+
+                prefix = ImguiHelpers.InlinePrefix();
+                if (ImGui.Button($"{AppIcons.SI_Update}")) {
+                    TemplateManager.Instance.ReloadTemplates(workspace.Game);
+                }
+                ImguiHelpers.Tooltip(Lang.Buttons.RefreshList);
+                prefix.Dispose();
+
+                var templates = !entityConfig.AllowTemplates ? default : TemplateManager.Instance.GetTemplatesForGui(workspace.Game, entityType, showCustomTemplates, showUserTemplates);
+                if (templates.labels.Length > 0) {
+                    // var names = templates.Select(t => t.Name).Prepend("<blank>").ToArray();
+                    ImguiHelpers.FilterableCombo("Template"u8, templates.labels, templates.options, ref selectedCreateTemplate, ref templateFilter);
+                } else if (entityConfig.AllowTemplates && !entityConfig.AllowCreateEmpty) {
+                    ImGui.TextColored(Colors.Info, "No templates yet defined for this entity type. Duplicate or create a new template from an existing one first.");
+                } else {
+                    ImGui.Dummy(new Vector2(1, 1));
+                }
+            }
+
+            if (selectedCreateTemplate == null) {
+                using var _ = ImguiHelpers.Disabled(!entityConfig.AllowCreateEmpty);
+                doCreate = entityConfig.AllowCreateEmpty && ImGui.Button(Lang.Buttons.CreateWithIcon);
+            } else {
+                doCreate = entityConfig.AllowTemplates && ImGui.Button(Lang.Buttons.CreateWithIcon);
+            }
+
+            ImguiHelpers.EndRect();
+            ImGui.Spacing();
         }
 
-        var selected = workspace.ResourceManager.GetActiveEntityInstance(entityType, selectedId);
+        if (doCreate) {
+            selected = workspace.ResourceManager.CreateEntity(entityType, selectedCreateTemplate?.Data ?? new System.Text.Json.Nodes.JsonObject());
+            SelectedEntityId = selected.Id;
+            workspace.CurrentBundle!.RecordEntity(selected);
+            data.Context.ClearChildren();
+        }
+
         if (selected == null) {
             if (selectedId != 0) {
                 ImGui.TextColored(Colors.Warning, "Selected entity could not be found");
@@ -130,11 +221,6 @@ public class EntitySelection : IWindowHandler
         }
 
         ImGui.Separator();
-        if (ImGui.Button("Duplicate")) {
-            selected = workspace.ResourceManager.CreateEntity(selected.Type, selected.Id);
-            data.Context.children.Clear();
-            data.SetPersistentData("selectedEntity", selected.Id);
-        }
 
         var child = data.Context.GetChildByValue<ResourceEntity>();
         if (child == null) {

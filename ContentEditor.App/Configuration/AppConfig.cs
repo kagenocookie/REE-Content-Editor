@@ -465,7 +465,7 @@ public class AppConfig : Singleton<AppConfig>
     public Platform GetGamePlatform(GameIdentifier game) => _lock.Read(() => gameConfigs.GetValueOrDefault(game.name)?.platform ?? Platform.Unknown);
     public void SetGamePlatform(GameIdentifier game, Platform platformId) => SetForGameAndSave(game.name, platformId, (cfg, val) => cfg.platform = val);
 
-    public string GetGameUserPath(GameIdentifier game) => Path.Combine(BookmarksFilepath.Get() ?? Path.Combine(AppDataPath, "thumbs"), game.name);
+    public string GetGameUserPath(GameIdentifier game) => Path.Combine(BookmarksFilepath.Get() ?? Path.Combine(AppDataPath, "user"), game.name);
     public string LuaUserPath => Path.Combine(BookmarksFilepath.Get() ?? AppDataPath, "lua");
 
     public bool HasAnyGameConfigured => _lock.Read(() => gameConfigs.Any(g => !string.IsNullOrEmpty(g.Value?.gamepath)));

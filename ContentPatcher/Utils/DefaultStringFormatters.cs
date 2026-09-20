@@ -365,11 +365,14 @@ public class EnumLabelFormatter(Workspace env) : IFormatter
 
         EnumDescriptor? enumDesc;
         var rawLabel = formattingInfo.FormatterOptions.StartsWith('#');
+        string classname;
         if (rawLabel) {
-            enumDesc = env.TypeCache.GetEnumDescriptor(formattingInfo.FormatterOptions.Substring(1));
+            classname = formattingInfo.FormatterOptions.Substring(1);
         } else {
-            enumDesc = env.TypeCache.GetEnumDescriptor(formattingInfo.FormatterOptions);
+            classname = formattingInfo.FormatterOptions;
         }
+
+        enumDesc = env.TypeCache.GetEnumDescriptor(classname);
         if (enumDesc == null) {
             formattingInfo.Write(formattingInfo.CurrentValue.ToString() ?? string.Empty);
             return true;
@@ -378,7 +381,11 @@ public class EnumLabelFormatter(Workspace env) : IFormatter
         var label = rawLabel
             ? enumDesc.GetLabel(Convert.ChangeType(formattingInfo.CurrentValue, enumDesc.BackingType))
             : enumDesc.GetDisplayLabel(Convert.ChangeType(formattingInfo.CurrentValue, enumDesc.BackingType));
-        formattingInfo.Write(label ?? formattingInfo.CurrentValue.ToString() ?? string.Empty);
+        if (!string.IsNullOrEmpty(label)) {
+            formattingInfo.Write(label);
+        } else {
+            formattingInfo.Write(formattingInfo.CurrentValue.ToString() ?? string.Empty);
+        }
         return true;
     }
 }

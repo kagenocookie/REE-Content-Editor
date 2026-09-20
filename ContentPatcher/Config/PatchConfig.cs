@@ -215,6 +215,11 @@ public class PatchConfig(string filepath)
                 var fmt = FormatterSettings.CreateWorkspaceFormatter(workspace);
                 runtimeConfig.StringFormatter = new StringFormatter(config.To_String, fmt);
             }
+
+            if (config.IsFlagsEnum != null) {
+                var desc = workspace.Env.TypeCache.GetEnumDescriptor(cls);
+                desc.IsFlags = config.IsFlagsEnum.Value;
+            }
         }
     }
 
@@ -360,6 +365,8 @@ public class PatchConfig(string filepath)
         }
         config.IDField = config.Fields.FirstOrDefault(f => f.name == entity.IDField)!;
         config.IDField ??= config.PrimaryField;
+        config.AllowCreateEmpty = entity.AllowCreateEmpty ?? (config.IDField.Config.CustomIDRange != null);
+        config.AllowTemplates = entity.AllowTemplates ?? config.AllowCreateEmpty;
         return config;
     }
 

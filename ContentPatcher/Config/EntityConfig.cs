@@ -21,6 +21,9 @@ public class EntityConfig(string name)
     public ZeroEntity? ZeroEntity { get; set; }
     public StringFormatter? StringFormatter { get; set; }
 
+    public bool AllowCreateEmpty { get; set; }
+    public bool AllowTemplates { get; set; }
+
     public bool HasField(string name) => GetField(name) != null;
     public EntityField? GetField(string name) => Fields.FirstOrDefault(f => f.name == name);
 
@@ -42,6 +45,9 @@ public partial class EntityConfigSerialized
     public string? PrimaryField { get; set; }
 
     public ZeroEntity? ZeroEntity { get; set; }
+
+    public bool? AllowCreateEmpty { get; set; }
+    public bool? AllowTemplates { get; set; }
 
     public RuntimeMappingConfig? RuntimeMapping { get; set; }
 }

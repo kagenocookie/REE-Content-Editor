@@ -1,3 +1,4 @@
+using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
 using ContentPatcher;
 
@@ -20,14 +21,52 @@ public class EntityHandler : IObjectUIHandler
             WindowHandlerFactory.CreateEntityHandler(context);
         }
 
+        var isZero = (context.GetWorkspace()?.ResourceManager.GetEntityZeroId(instance.Type) ?? 0) == instance.Id;
+
         for (int i = 0; i < context.children.Count; i++) {
             if (i != 0) {
                 ImGui.Spacing();
             }
             var child = context.children[i];
             ImGui.PushID(i);
-            child.ShowUI();
+            var fieldValue = child.GetRaw();
+            if (fieldValue != null) {
+                child.ShowUI();
+            } else if (isZero) {
+                ImGui.Text(child.label);
+                ImGui.SameLine();
+                ImGui.TextColored(Colors.Faded, Lang.General.ObjectIsNull);
+            } else {
+                ShowNullField(child, context);
+            }
             ImGui.PopID();
+        }
+    }
+
+    private static void ShowNullField(UIContext context, UIContext parentContext)
+    {
+        var workspace = parentContext.GetWorkspace();
+        ImGui.Text(context.label);
+        ImGui.SameLine();
+        ImGui.TextColored(Colors.Faded, Lang.General.ObjectIsNull);
+        if (workspace == null || workspace.CurrentBundle == null) {
+            return;
+        }
+
+        var param = context.EntityParams;
+        if (string.IsNullOrEmpty(param?.ResourceType)) return;
+
+        ImGui.SameLine();
+        if (ImGui.Button(Lang.Buttons.Create)) {
+            var entity = context.GetOwnerEntity();
+            var field = context.GetEntityField();
+            if (field == null || entity == null) {
+                Logger.Error("Entity field could not be determined");
+                return;
+            }
+            var resource = context.CreateEntityResource(workspace, field, param.ResourceType);
+            UndoRedo.RecordCallbackSetter(context, entity, null, resource, (e, v) => e.Set(field.name, v));
+            UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, parentContext);
         }
     }
 }

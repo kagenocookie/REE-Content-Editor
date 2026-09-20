@@ -316,8 +316,9 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
     {
         IContentResource? fieldResource;
         if (field.ValueHandler is CustomEntityFieldHandler customField) {
-            fieldResource = customField.ApplyValue(workspace, null, initialData, entity, state);
             if (resourceId == -1) resourceId = field.GetIDForEntity(entity);
+            if (resourceId == -1) resourceId = GetRandomUniqueResourceID(resources[field.Config.Type], state);
+            fieldResource = customField.ApplyValue(workspace, null, initialData, entity, state);
             entity.Set(field.name, fieldResource);
             if (fieldResource == null) return null;
 
@@ -384,41 +385,25 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             throw new NotImplementedException($"Unable to create new entity {entity} field {field} resource");
         }
 
+        if (field.ResourceType == null) {
+            return CreateEntityFieldInternal(entity, field, state, field.Config, initialData)
+                ?? throw new Exception($"Failed to create entity {entity} field {field} resource");
+        }
+
         throw new NotImplementedException();
     }
 
-    public (long id, IContentResource resource) CreateResource(string resourceType, ResourceState state, IContentResource? sourceResource = null, long id = -1)
+    public (long id, IContentResource resource) CreateResource(ResourceConfig resourceType, ResourceState state, JsonNode? sourceResource = null)
     {
-        if (!resources.TryGetValue(resourceType, out var data)) {
+        if (!resources.TryGetValue(resourceType.Type, out var data)) {
             throw new Exception("Unknown resource type " + resourceType);
         }
 
-        if (data.baseInstances == null) {
-            data.baseInstances = new();
-            ReadObjectSourceData(data.config, data);
-        }
-
-        if (id == -1) {
-            var idRange = data.config.CustomIDRange;
-            if (idRange == null) {
-                throw new Exception($"Resource type {resourceType} does not have a custom ID range defined");
-            }
-
-            var instanceList = state == ResourceState.Active ? data.activeInstances! : data.baseInstances!;
-            int attempts = 100;
-            do {
-                id = Random.Shared.NextInt64(idRange[0], idRange[1]);
-                // TODO verify uniqueness with inactive bundles as well
-                // TODO use bundle-defined initial IDs
-                if (attempts-- <= 0) {
-                    throw new Exception($"Could not generate a new ID for resource type {resourceType}");
-                }
-            } while (instanceList.ContainsKey(id) == true);
-        }
+        var id = GetRandomUniqueResourceID(data, state);
 
         // TODO for enum_mapping: generate enum label based on entity id
         if (data.config.Resource != null) {
-            var newResource = CreateResourceInternal(id, data.config, state, sourceResource?.ToJson(workspace.Env));
+            var newResource = CreateResourceInternal(id, data.config, state, sourceResource);
             if (newResource == null) {
                 throw new Exception($"Failed to create new {resourceType} resource");
             }
@@ -426,6 +411,32 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         }
 
         throw new Exception($"Unable to create new {resourceType} resources");
+    }
+
+    private long GetRandomUniqueResourceID(ResourceData data, ResourceState state)
+    {
+        if (data.baseInstances == null) {
+            data.baseInstances = new();
+            ReadObjectSourceData(data.config, data);
+        }
+
+        long id;
+        var idRange = data.config.CustomIDRange;
+        if (idRange == null) {
+            throw new Exception($"Resource type {data.config} does not have a custom ID range defined");
+        }
+
+        var instanceList = state == ResourceState.Active ? data.activeInstances ?? data.baseInstances! : data.baseInstances!;
+        int attempts = 100;
+        do {
+            id = Random.Shared.NextInt64(idRange[0], idRange[1]);
+            // TODO verify uniqueness with inactive bundles as well
+            // TODO use bundle-defined initial IDs
+            if (attempts-- <= 0) {
+                throw new Exception($"Could not generate a new ID for resource type {data.config}");
+            }
+        } while (instanceList.ContainsKey(id) == true);
+        return id;
     }
 
     public void AddResource(string resourceKey, long id, IContentResource resource, ResourceState state)
@@ -508,9 +519,11 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         var entityDict = new Dictionary<long, ResourceEntity>();
         List<ResourceEntity>? newEntities = null;
         if (data.config.ZeroEntity != null) {
-            entityDict[data.config.ZeroEntity.id] = new ResourceEntity(data.config.ZeroEntity.id, type, data.config) {
+            var zero = new ResourceEntity(data.config.ZeroEntity.id, type, data.config) {
                 Label = data.config.ZeroEntity.label ?? "None"
             };
+            entityDict[data.config.ZeroEntity.id] = zero;
+            newEntities = new();
         }
         foreach (var (primaryResourceId, primaryResource) in GetResourceInstances(data.config.PrimaryField.Config.Type)) {
             var entity = new ResourceEntity(primaryResourceId, type, data.config);
@@ -529,11 +542,16 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             }
 
             if (entityDict.TryGetValue(entity.Id, out var previousEntity)) {
-                // note: I think this technically shouldn't happen
-                Logger.Warn($"Detected potentially duplicate {type} entity: ID {entity.Id}");
-                entity = previousEntity;
-                if (data.config.IDField != data.config.PrimaryField) {
-                    previousEntity.Set(data.config.IDField.name, entity.Get(data.config.IDField.name));
+                if (entity.Id == data.config.ZeroEntity?.id) {
+                    entityDict[entity.Id] = entity;
+                    newEntities ??= new();
+                    newEntities.Add(entity);
+                } else {
+                    Logger.Warn($"Detected potentially duplicate {type} entity: ID {entity.Id}");
+                    entity = previousEntity;
+                    if (data.config.IDField != data.config.PrimaryField) {
+                        previousEntity.Set(data.config.IDField.name, entity.Get(data.config.IDField.name));
+                    }
                 }
             } else {
                 newEntities ??= new();
@@ -659,7 +677,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         }
     }
 
-    public ResourceEntity CreateEntity(string type, long? sourceEntityId)
+    public ResourceEntity CreateEntity(string type, long sourceEntityId)
     {
         if (!entities.TryGetValue(type, out var data)) {
             throw new ArgumentException("Unknown entity type " + type, nameof(type));
@@ -674,23 +692,50 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             throw new Exception($"Entity type {type} primary field {data.config.PrimaryField} is not instantiable");
         }
 
-        var sourceEntity = sourceEntityId == null ? null : data.instances![sourceEntityId.Value];
+        var sourceEntity = data.instances![sourceEntityId];
+        var jsonEntity = sourceEntity.ToJson(workspace.Env).Data!;
+        return CreateEntity(type, jsonEntity);
+    }
+
+    public ResourceEntity CreateEntity(string type, Entity sourceEntity)
+    {
+        if (sourceEntity.Type != type) {
+            throw new Exception($"Mismatched source entity {sourceEntity} for new entity type {type}");
+        }
+
+        return CreateEntity(type, sourceEntity.Data);
+    }
+
+    public ResourceEntity CreateEntity(string type, JsonObject initialData)
+    {
+        var dict = new Dictionary<string, JsonNode?>(initialData);
+        return CreateEntity(type, dict);
+    }
+
+    public ResourceEntity CreateEntity(string type, Dictionary<string, JsonNode?>? initialData = null)
+    {
+        if (!entities.TryGetValue(type, out var data)) {
+            throw new ArgumentException("Unknown entity type " + type, nameof(type));
+        }
+
+        if (data.config.PrimaryField == null) {
+            throw new Exception($"Entity type {type} does not have a primary field");
+        }
 
         ResourceEntity entity;
-        long id;
         if (data.config.IDField != null && data.config.IDField != data.config.PrimaryField) {
             if (data.config.IDField.ResourceType == null) throw new Exception($"ID field must have a resource type ID {data.config.IDField}");
             var idField = data.config.GetField(data.config.IDField.name)!;
+            var id = GetRandomUniqueResourceID(resources[data.config.IDField.Config.Type], ResourceState.Active);
 
-            IContentResource idResource;
-            (id, idResource) = CreateResource(resourceKey, ResourceState.Active);
+            var (primaryId, primaryResource) = CreateResource(data.config.PrimaryField.Config, ResourceState.Active, initialData?.GetValueOrDefault(data.config.PrimaryField.name));
             entity = new ResourceEntity(id, type, data.config);
-            entity.Set(idField.name, idResource);
-
-            var primaryResource = CreateEntityFieldInternal(entity, data.config.PrimaryField, ResourceState.Active, data.config.PrimaryField.Config, sourceEntity?.Get(data.config.PrimaryField.name)?.ToJson(workspace.Env));
             entity.Set(data.config.PrimaryField.name, primaryResource);
+
+            var idResource = CreateEntityFieldInternal(entity, data.config.IDField, ResourceState.Active, data.config.IDField.Config, initialData?.GetValueOrDefault(data.config.PrimaryField.name));
+            entity.Set(data.config.IDField.name, idResource);
         } else {
-            var (primaryId, primaryResource) = CreateResource(resourceKey, ResourceState.Active, sourceEntity?.Get(data.config.PrimaryField.name));
+            var (primaryId, primaryResource) = CreateResource(data.config.PrimaryField.Config, ResourceState.Active, initialData?.GetValueOrDefault(data.config.PrimaryField.name));
             entity = new ResourceEntity(primaryId, type, data.config);
             entity.Set(data.config.PrimaryField.name, primaryResource);
         }
@@ -705,8 +750,8 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             }
 
             IContentResource? fieldResource = null;
-            if (sourceEntity != null && sourceEntity.Get(field.name) is IContentResource src) {
-                fieldResource = CreateEntityFieldInternal(entity, field, ResourceState.Active, src.ResourceType, src.ToJson(workspace.Env));
+            if (initialData != null && initialData.TryGetValue(field.name, out var src)) {
+                fieldResource = CreateEntityFieldInternal(entity, field, ResourceState.Active, field.Config, src);
             } else if (field.IsRequired) {
                 var resource = CreateEntityFieldInternal(entity, field, ResourceState.Active, field.Config, null);
                 if (resource == null) {
@@ -1369,6 +1414,12 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
     public bool IsFileOpen(FileHandle file)
     {
         return openFiles.ContainsKey(file.Filepath) || file.TargetPath != null && openFiles.ContainsKey(file.TargetPath);
+    }
+
+    public EntityConfig? GetEntityConfig(string? entityType)
+    {
+        if (entityType == null) return null;
+        return entities.GetValueOrDefault(entityType)?.config;
     }
 
     public ResourceConfig? GetResourceConfig(string? resourceTypeID)

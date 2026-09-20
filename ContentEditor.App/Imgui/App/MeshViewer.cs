@@ -2300,7 +2300,6 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             }
         }
         ImguiHelpers.Tooltip("Open current motlist in Motlist Editor");
-        ImGui.SameLine();
         ImGui.EndDisabled();
         prefix.Dispose();
         animationPickerContext.ShowUI();

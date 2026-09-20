@@ -429,10 +429,8 @@ public partial class FileTesterWindow : IWindowHandler
 
     internal IEnumerable<(string path, Stream file)> GetExecutableFiles(GameIdentifier game, string extension, CancellationToken token = default)
     {
-        Debug.Assert(Workspace != null);
-
-        var env = Workspace.Env;
-        if (game != Workspace.Game) {
+        var env = Workspace?.Env;
+        if (game != Workspace?.Game) {
             try {
                 env = WorkspaceManager.Instance.GetWorkspace(game);
             } catch (Exception) {
@@ -440,6 +438,7 @@ public partial class FileTesterWindow : IWindowHandler
                 yield break;
             }
         }
+        Debug.Assert(env != null);
         ContentWorkspace? cw = null;
         try {
             cw = new ContentWorkspace(env, new PatchConfig("!"));
@@ -457,7 +456,7 @@ public partial class FileTesterWindow : IWindowHandler
                 yield return (path, stream);
             }
         } finally {
-            if (env != Workspace.Env) {
+            if (env != Workspace?.Env) {
                 WorkspaceManager.Instance.Release(env);
                 cw?.Dispose();
             }

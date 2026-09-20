@@ -19,6 +19,6 @@ public class FieldOnlyEntityField<T> : CustomEntityFieldHandler where T : FieldO
 
     public override IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
     {
-        return currentResource;
+        return currentResource ?? new PlaceholderResource<T>(Field.Config);
     }
 }

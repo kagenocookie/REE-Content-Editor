@@ -45,6 +45,7 @@ entities:
 
   styles.head.HeadMesh:
     to_string: "Head Mesh {id} | {mesh._Mesh}"
+    allow_templates: false
     fields:
     - name: mesh
       required: true
@@ -103,7 +104,8 @@ entities:
               equals: 3666037007
 
   styles.head.HeadSkin:
-    to_string: "{id:enum(app.CharacterEditDefine.HeadSkinID)} | {skin._Material}"
+    to_string: "HeadSkin {id:enum(app.CharacterEditDefine.HeadSkinID)} | {skin._Material}"
+    allow_templates: false
     enums:
     - name: app.CharacterEditDefine.HeadSkinID
       format: "head_{id}"

@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using ContentEditor;
 using ContentEditor.Core;
+using ReeLib;
 
 namespace ContentPatcher;
 
@@ -62,6 +63,34 @@ public class ResourceEntity : Entity
     {
         var fieldCfg = Config.GetField(field);
         return fieldCfg?.IdField == null ? Id : Convert.ToInt64(fieldCfg.IdField.Get(this));
+    }
+
+    public Entity ToJson(Workspace env)
+    {
+        var jsonEntity = new Entity() {
+            Type = Type,
+            Id = Id,
+            Label = Label,
+            Enums = Enums?.ToDictionary(),
+        };
+        jsonEntity.Data ??= new();
+        foreach (var (name, value) in FieldValues) {
+            var field = Config.GetField(name);
+            if (field == null) continue;
+
+            if (field.Condition?.IsEnabled(this) == false) {
+                continue;
+            }
+
+            jsonEntity.Data[name] = value?.ToJson(env);
+        }
+
+        return jsonEntity;
+    }
+
+    public JsonObject GetDataJson(Workspace env)
+    {
+        return new JsonObject(ToJson(env).Data!);
     }
 
     public Dictionary<string, JsonNode?>? CalculateDiff(ContentWorkspace workspace)

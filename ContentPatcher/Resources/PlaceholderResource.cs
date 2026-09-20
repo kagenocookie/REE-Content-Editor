@@ -9,14 +9,14 @@ namespace ContentPatcher;
 public sealed class PlaceholderResource<TField> : IContentResource where TField : CustomEntityFieldHandler
 {
     public ResourceConfig ResourceType { get; }
-    public string FileResourcePath { get; set; } = string.Empty;
+    public string? FileResourcePath { get; set; } = null;
 
     public PlaceholderResource(ResourceConfig config)
     {
         ResourceType = config;
     }
 
-    public PlaceholderResource(ResourceConfig config, string fileResourcePath)
+    public PlaceholderResource(ResourceConfig config, string? fileResourcePath)
     {
         ResourceType = config;
         FileResourcePath = fileResourcePath;
@@ -26,5 +26,5 @@ public sealed class PlaceholderResource<TField> : IContentResource where TField 
 
     public JsonNode ToJson(Workspace env) => new JsonObject();
 
-    public override string ToString() => FileResourcePath;
+    public override string ToString() => FileResourcePath ?? typeof(TField).Name;
 }

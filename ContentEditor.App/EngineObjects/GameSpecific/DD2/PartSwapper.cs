@@ -218,7 +218,7 @@ public class PartSwapper(GameObject gameObject, RszInstance data) : BaseMultiMes
     {
         var meshId = (uint)swapData.GetFieldValue(meshField)!;
         var skinId = (uint)swapData.GetFieldValue(skinField)!;
-        if (meshId == 0 || skinId == 0) return;
+        if (meshId == 0) return;
 
         // var mesh = Workspace.ResourceManager.GetActiveEntityInstance(meshEntity, meshId)?.Get<RSZObjectResource>(entityMeshField)?.Instance?.GetFieldValue("_Mesh") as string;
         var mesh = GetMeshOrNull(meshEntity, meshId, entityMeshField);

@@ -6,6 +6,7 @@ entities:
     fields:
     - name: DD2_StylePreview
       field_type: DD2_StylePreview
+      required: true
       resource:
         params:
           dataField: _HairStyle
@@ -19,7 +20,7 @@ entities:
         type: array-file
 
   styles.hair.HairMesh:
-    to_string: "{id:enum(app.CharacterEditDefine.HairMeshID)} | {mesh._Mesh}"
+    to_string: "HairMesh {id:enum(app.CharacterEditDefine.HairMeshID)} | {mesh._Mesh}"
     display_name: Hair Mesh
     enums:
     - name: "app.CharacterEditDefine.HairMeshID"
@@ -52,7 +53,7 @@ entities:
           skipFields: 1
 
   styles.hair.HairSkin:
-    to_string: "{id:enum(app.CharacterEditDefine.HairSkinID)} | {skin._Material}"
+    to_string: "HairSkin {id:enum(app.CharacterEditDefine.HairSkinID)} | {skin._Material}"
     display_name: Hair Skin
     enums:
     - name: app.CharacterEditDefine.HairSkinID
@@ -83,6 +84,5 @@ classes:
     to_string: "{class_shortname} {_HairStyle:enum(app.HairStyle)} {_Gender:enum(app.Gender)}"
     fields:
       _HairStyle: { readOnly: true }
-      _Gender: { readOnly: true }
       _MeshID: { enum: HairMesh, label: Mesh }
       _SkinID: { enum: HairSkin, label: Skin }

@@ -41,6 +41,7 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
             Files = data.TargetFiles.ToList(),
             SkipFieldCount = data.GetParam<int>("skipFields", 0),
             arrayAccessor = data.GetDirectFieldAccessor<List<object>>(static f => f.array && f.type == RszFieldType.Object),
+            catalogEntryClass = data.TryGetParam<string>("catalogClassname", out var ctgCls) ? workspace.Env.RszParser.GetRSZClass(ctgCls) : null,
         };
     }
 
@@ -165,22 +166,22 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
     {
         var res = ApplyResourceData(workspace, null, initialData);
         if (catalogEntryClass == null) throw new Exception();
+        Config.IDGenerator ??= IDGenerator.GetGenerator(catalogEntryClass);
 
         var idgen = Config.IDGeneratorRequired;
-        var inst = workspace.CreateRszInstance(catalogEntryClass);
-        workspace.Diff.ApplyDiff(inst, initialData);
+        var catalogInstance = workspace.CreateRszInstance(catalogEntryClass);
         if (idgen.Fields.Length == 1) {
             var idField = idgen.Fields[0].Field;
             var fieldType = RszInstance.RszFieldTypeToCSharpType(idField.type);
-            idgen.Fields[0].Set(inst, Convert.ChangeType(id, fieldType));
+            idgen.Fields[0].Set(catalogInstance, Convert.ChangeType(id, fieldType));
         } else {
             throw new NotImplementedException("Unsupported rsz object id combination");
         }
         if (workspace.ResourceManager.TryResolveGameFile(Files[0], out var file)) {
             var user = file.GetFile<UserFile>().Instance!;
-            arrayAccessor.Get(user).Add(inst);
+            arrayAccessor.Get(user).Add(catalogInstance);
         }
-        res.CatalogEntry = inst;
+        res.CatalogEntry = catalogInstance;
         return res;
     }
 

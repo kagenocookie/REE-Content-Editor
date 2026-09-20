@@ -48,6 +48,14 @@
             },
             "required": ["id"]
           },
+          "allow_templates": {
+            "description": "Allow management and creation of this entity type through templates.",
+            "type": "boolean"
+          },
+          "allow_blank": {
+            "description": "Allow creating fully blank instances of this entity type.",
+            "type": "boolean"
+          },
           "fields": {
             "description": "List of fields that make up this entity type. Each field maps to a resource with optional enum overrides and display options.",
             "type": "array",
@@ -118,6 +126,10 @@
               "type": "object",
               "$ref": "#/definitions/classFieldConfig"
             }
+          },
+          "flags_enum": {
+            "description": "Force override the IsFlags setting (represents multiple bit-masked values) for an enum. It's usually auto-detected correctly but on the off chance, this can be used there.",
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -161,7 +173,7 @@
           "$ref": "#/definitions/switch"
         },
         "default": {
-          "description": "The default value for this field when creating new instance of the class"
+          "description": "The default value for this field when creating new instance of the class."
         }
       },
       "additionalProperties": false
@@ -223,7 +235,7 @@
           "additionalProperties": false
         },
         "required": {
-          "description": "Whether this field is required when creating a new entity. Affects UI validation and creation flow.",
+          "description": "Whether this field is required when creating a new entity. If required, it will be auto-created for every new entity.",
           "type": "boolean"
         },
         "display_after": {

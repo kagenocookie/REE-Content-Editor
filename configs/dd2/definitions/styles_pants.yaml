@@ -7,6 +7,7 @@ entities:
     fields:
     - name: DD2_StylePreview
       field_type: DD2_StylePreview
+      required: true
       resource:
         params:
           dataField: _PantsStyle
@@ -44,8 +45,9 @@ entities:
           value_from: { field: data, path: _PantsStyle }
 
   items.styles.pants.PantsLgMesh:
-    to_string: "{id:enum(app.CharacterEditDefine.PantsLgMeshID)} | {mesh._Mesh}"
+    to_string: "PantsLgMesh {id:enum(app.CharacterEditDefine.PantsLgMeshID)} | {mesh._Mesh}"
     display_name: Legs Mesh
+    allow_templates: false
     enums:
     - name: "app.CharacterEditDefine.PantsLgMeshID"
       format: "pants_{id}_lg"
@@ -63,21 +65,18 @@ entities:
         params:
           skipFields: 1
     - name: chain
-      required: true
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/PantsLgChainCatalog_Default.user
         type: resource_proxy_pfb
         params:
           skipFields: 1
     - name: clsp
-      required: true
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/PantsLgCollisionShapePresetCatalog_Default.user
         type: resource_proxy_pfb
         params:
           skipFields: 1
     - name: cloth
-      required: true
       resource:
         custom_id_range: [10000, 10000000]
         file: AppSystem/CharaEdit/ch000/Catalog/PantsLgGpuClothCatalog_Default.user
@@ -85,12 +84,13 @@ entities:
         params:
           skipFields: 1
     - name: sfur
-      required: true
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/PantsLgShellFurCatalog_Default.user
         type: resource_proxy_pfb
+        classname: app.PartSwapShellFurHolder
         params:
           skipFields: 1
+          catalogClassname: app.PartSwapCatalog.Item
     # runtime_mapping:
     #   runtime_type: PantsLgMesh
     #   to_both:
@@ -100,8 +100,9 @@ entities:
     #     clsp: Clsp
 
   items.styles.pants.PantsLgSkin:
-    to_string: "{id:enum(app.CharacterEditDefine.PantsLgSkinID)} | {skin._Material}"
+    to_string: "PantsLgSkin {id:enum(app.CharacterEditDefine.PantsLgSkinID)} | {skin._Material}"
     display_name: Legs Skin
+    allow_templates: false
     enums:
     - name: app.CharacterEditDefine.PantsLgSkinID
       format: "pants_{id}_lg"
@@ -124,8 +125,9 @@ entities:
         skin: Skin
 
   items.styles.pants.PantsWlMesh:
-    to_string: "{id:enum(app.CharacterEditDefine.PantsWlMeshID)} | {mesh._Mesh}"
+    to_string: "PantsWlMesh {id:enum(app.CharacterEditDefine.PantsWlMeshID)} | {mesh._Mesh}"
     display_name: Waist Mesh
+    allow_templates: false
     enums:
     - name: "app.CharacterEditDefine.PantsWlMeshID"
       format: "pants_{id}_wl"
@@ -143,21 +145,18 @@ entities:
         params:
           skipFields: 1
     - name: chain
-      required: true
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/PantsWlChainCatalog_Default.user
         type: resource_proxy_pfb
         params:
           skipFields: 1
     - name: clsp
-      required: true
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/PantsWlCollisionShapePresetCatalog_Default.user
         type: resource_proxy_pfb
         params:
           skipFields: 1
     - name: cloth
-      required: true
       resource:
         custom_id_range: [10000, 10000000]
         file: AppSystem/CharaEdit/ch000/Catalog/PantsWlGpuClothCatalog_Default.user
@@ -165,12 +164,13 @@ entities:
         params:
           skipFields: 1
     - name: sfur
-      required: true
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/PantsWlShellFurCatalog_Default.user
         type: resource_proxy_pfb
+        classname: app.PartSwapShellFurHolder
         params:
           skipFields: 1
+          catalogClassname: app.PartSwapCatalog.Item
     # runtime_mapping:
     #   runtime_type: PantsWlMesh
     #   to_both:
@@ -180,8 +180,9 @@ entities:
     #     clsp: Clsp
 
   items.styles.pants.PantsWlSkin:
-    to_string: "{id:enum(app.CharacterEditDefine.PantsWlSkinID)} | {skin._Material}"
+    to_string: "PantsWlSkin {id:enum(app.CharacterEditDefine.PantsWlSkinID)} | {skin._Material}"
     display_name: Waist Skin
+    allow_templates: false
     enums:
     - name: app.CharacterEditDefine.PantsWlSkinID
       format: "pants_{id}_wl"
@@ -217,3 +218,7 @@ classes:
       _WlSkinID: { enum: PantsWlSkin, label: Waist Skin }
       _WlSubMeshID: { enum: PantsWlMesh, label: Waist Sub Mesh }
       _WlSubSkinID: { enum: PantsWlSkin, label: Waist Sub Skin }
+      _LgPartsEnable: { default: 3462145515300338695 }
+      _LgSubPartsEnable: { default: 3462145515300338695 }
+      _WlPartsEnable: { default: 3462145515300338689 }
+      _WlSubPartsEnable: { default: 3462145515300338689 }

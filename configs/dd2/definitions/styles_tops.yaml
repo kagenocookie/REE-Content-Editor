@@ -4,9 +4,12 @@ entities:
     id_field: styleNo
     to_string: "Tops Style {id}: {data._TopsStyle:enum(app.TopsStyle)}"
     display_name: Style
+    zero_entity:
+      id: 0
     fields:
     - name: DD2_StylePreview
       field_type: DD2_StylePreview
+      required: true
       resource:
         params:
           dataField: _TopsStyle
@@ -72,8 +75,9 @@ entities:
         "null.1": "furmasks"
 
   items.styles.tops.TopsBdMesh:
-    to_string: "{id:enum(app.CharacterEditDefine.TopsBdMeshID)} | {mesh._Mesh}"
+    to_string: "TopsBdMesh {id:enum(app.CharacterEditDefine.TopsBdMeshID)} | {mesh._Mesh}"
     display_name: Body Mesh
+    allow_templates: false
     enums:
     - name: "app.CharacterEditDefine.TopsBdMeshID"
       format: "tops_{id}_bd"
@@ -134,8 +138,9 @@ entities:
         sfur: Sfur
 
   items.styles.tops.TopsBdSkin:
-    to_string: "{id:enum(app.CharacterEditDefine.TopsBdSkinID)} | {skin._Material}"
+    to_string: "TopsBdSkin {id:enum(app.CharacterEditDefine.TopsBdSkinID)} | {skin._Material}"
     display_name: Body Skin
+    allow_templates: false
     enums:
     - name: app.CharacterEditDefine.TopsBdSkinID
       format: "tops_{id}_bd"
@@ -158,8 +163,9 @@ entities:
         skin: Skin
 
   items.styles.tops.TopsWbMesh:
-    to_string: "{id:enum(app.CharacterEditDefine.TopsWbMeshID)} | {mesh._Mesh}"
+    to_string: "TopsWbMesh {id:enum(app.CharacterEditDefine.TopsWbMeshID)} | {mesh._Mesh}"
     display_name: Waistband Mesh
+    allow_templates: false
     enums:
     - name: "app.CharacterEditDefine.TopsWbMeshID"
       format: "tops_{id}_wb"
@@ -213,8 +219,9 @@ entities:
         sfur: Sfur
 
   items.styles.tops.TopsWbSkin:
-    to_string: "{id:enum(app.CharacterEditDefine.TopsWbSkinID)} | {skin._Material}"
+    to_string: "TopsWbSkin {id:enum(app.CharacterEditDefine.TopsWbSkinID)} | {skin._Material}"
     display_name: Waistband Skin
+    allow_templates: false
     enums:
     - name: app.CharacterEditDefine.TopsWbSkinID
       format: "tops_{id}_wb"
@@ -237,8 +244,9 @@ entities:
         skin: Skin
 
   items.styles.tops.TopsAmMesh:
-    to_string: "{id:enum(app.CharacterEditDefine.TopsAmMeshID)} | {mesh._Mesh}"
+    to_string: "TopsAmMesh {id:enum(app.CharacterEditDefine.TopsAmMeshID)} | {mesh._Mesh}"
     display_name: Arms Mesh
+    allow_templates: false
     enums:
     - name: "app.CharacterEditDefine.TopsAmMeshID"
       format: "tops_{id}_am"
@@ -284,8 +292,9 @@ entities:
         clsp: Clsp
 
   items.styles.tops.TopsAmSkin:
-    to_string: "{id:enum(app.CharacterEditDefine.TopsAmSkinID)} | {skin._Material}"
+    to_string: "TopsAmSkin {id:enum(app.CharacterEditDefine.TopsAmSkinID)} | {skin._Material}"
     display_name: Arms Skin
+    allow_templates: false
     enums:
     - name: app.CharacterEditDefine.TopsAmSkinID
       format: "tops_{id}_am"
@@ -308,8 +317,9 @@ entities:
         skin: Skin
 
   items.styles.tops.TopsBtMesh:
-    to_string: "{id:enum(app.CharacterEditDefine.TopsBtMeshID)} | {mesh._Mesh}"
+    to_string: "TopsBtMesh {id:enum(app.CharacterEditDefine.TopsBtMeshID)} | {mesh._Mesh}"
     display_name: Belt Mesh
+    allow_templates: false
     enums:
     - name: "app.CharacterEditDefine.TopsBtMeshID"
       format: "tops_{id}_bt"
@@ -347,8 +357,9 @@ entities:
         clsp: Clsp
 
   items.styles.tops.TopsBtSkin:
-    to_string: "{id:enum(app.CharacterEditDefine.TopsBtSkinID)} | {skin._Material}"
+    to_string: "TopsBtSkin {id:enum(app.CharacterEditDefine.TopsBtSkinID)} | {skin._Material}"
     display_name: Belt Skin
+    allow_templates: false
     enums:
     - name: app.CharacterEditDefine.TopsBtSkinID
       format: "tops_{id}_bt"
@@ -393,6 +404,15 @@ classes:
       _BtSubMeshID: { enum: TopsBtMesh, label: Belt Sub Mesh }
       _BtSubSkinID: { enum: TopsBtSkin, label: Belt Sub Skin }
       _UnderwearStyle: { enum: UnderwearStyle, label: Underwear Style }
+      # note: needs to be defined as string, otherwise the deserializer thinks it's a double
+      _BdPartsEnable: { default: "18445652327382646783" }
+      _BdSubPartsEnable: { default: "18445652327382646783" }
+      _WbPartsEnable: { default: "17549402948573920263" }
+      _WbSubPartsEnable: { default: "17549402948573920263" }
+      _AmPartsEnable: { default: 3302292454401 }
+      _AmSubPartsEnable: { default: 3302292454401 }
+      _BtPartsEnable: { default: 1049603 }
+      _BtSubPartsEnable: { default: 1049603 }
 
   app.PartSwapMeshHolder:
     fields:
@@ -423,3 +443,5 @@ classes:
       _Species: { default: 2501532887 }
       _HeadStyle: { default: 3812533812 }
       _SkinStyle: { default: 3812533812 }
+  app.PantsWlPartFlags:
+    flags_enum: true

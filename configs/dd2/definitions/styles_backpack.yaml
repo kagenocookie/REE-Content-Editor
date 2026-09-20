@@ -13,6 +13,7 @@ entities:
     fields:
     - name: DD2_StylePreview
       field_type: DD2_StylePreview
+      required: true
       resource:
         params:
           dataField: _BackpackStyle
@@ -50,8 +51,8 @@ entities:
           value_from: { field: data, path: _BackpackStyle }
 
   items.styles.backpack.BackpackMesh:
-    to_string: "{id:enum(app.CharacterEditDefine.BackpackMeshID)} | {mesh._Mesh}"
-    display_name: Backpack Mesh
+    to_string: "BackpackMesh {id:enum(app.CharacterEditDefine.BackpackMeshID)} | {mesh._Mesh}"
+    allow_templates: false
     enums:
     - name: "app.CharacterEditDefine.BackpackMeshID"
       format: "backpack_{id}"
@@ -88,8 +89,8 @@ entities:
         clsp: Clsp
 
   items.styles.backpack.BackpackSkin:
-    to_string: "{id:enum(app.CharacterEditDefine.BackpackSkinID)} | {skin._Material}"
-    display_name: Backpack Skin
+    to_string: "BackpackSkin {id:enum(app.CharacterEditDefine.BackpackSkinID)} | {skin._Material}"
+    allow_templates: false
     enums:
     - name: app.CharacterEditDefine.BackpackSkinID
       format: "backpack_{id}"
@@ -119,3 +120,6 @@ classes:
       _Gender: { readOnly: true }
       _MeshID: { enum: BackpackMesh, label: Mesh }
       _SkinID: { enum: BackpackSkin, label: Skin }
+      _PartsEnable: { default: 3 }
+  app.BackpackPartFlags:
+    flags_enum: true

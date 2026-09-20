@@ -8,6 +8,9 @@ public static partial class Lang
     {
         public static readonly FixedString Add = "Add";
         public static readonly IconString AddWithIcon = new IconString("{0} Add", AppIcons.SI_GenericAdd);
+        public static readonly IconString CreateWithIcon = new IconString("{0} Create", AppIcons.SI_GenericAdd);
+        public static readonly IconString CreateTemplate = new IconString("{0} New Template", AppIcons.SI_FileNew);
+        public static readonly FixedString OpenTemplateFolder = "Open Custom Templates Folder";
         public static readonly FixedString Open = "Open";
         public static readonly FixedString Save = "Save";
         public static readonly FixedString Rename = "Rename";
@@ -47,6 +50,7 @@ public static partial class Lang
         public static readonly FixedString Change = "Change";
         public static readonly FixedString Reload = "Reload";
         public static readonly FixedString ForceReload = "Force Reload";
+        public static readonly FixedString RefreshList = "Refresh List";
         public static readonly IconString ForceReimport = new("{0} Re-Import", AppIcons.SI_Update);
         public static readonly FixedString UpdateSceneCache = "Update Scene Cache";
         public static readonly FixedString NewWorkspace = "Open New Workspace";

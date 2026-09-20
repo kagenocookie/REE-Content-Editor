@@ -35,7 +35,6 @@ public class EntityPicker : IObjectUIHandler
             }
         }
         ImguiHelpers.Tooltip("Open entity in separate window");
-        ImGui.SameLine();
         pfx.Dispose();
 
         if (ImguiHelpers.FilterableEntityCombo(context.label, instances, ref selectedId, ref context.Filter)) {

@@ -43,14 +43,9 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
 
     public override EnumMappingResource? ApplyValue(ContentWorkspace workspace, EnumMappingResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
     {
-        if (data == null) {
-            return null;
-        }
-        var newStr = data.GetValue<string>();
-        if (currentResource?.Label != newStr) {
-            entity.Set(Field.name, currentResource = new EnumMappingResource(Field.Config, data.GetValue<string>()));
-        }
-        return currentResource;
+        var res = currentResource ?? DetermineEnumResource(workspace, entity);
+        // note: unsure if we need any sort of actual diffing here
+        return res;
     }
 
     public override EnumMappingResource? FetchResource(ContentWorkspace workspace, ResourceEntity entity, long resourceId, ResourceState state)
@@ -110,7 +105,7 @@ public class EnumMapResourceHandler : ResourceHandler, IResourceHandlerStatic
 
     public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
     {
-        throw new Exception($"Creating blank resources of type {Config} is not supported");
+        return resource ?? throw new Exception($"Creating blank resources of type {Config} is not supported");
     }
 
     public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)

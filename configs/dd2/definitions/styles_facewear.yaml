@@ -13,6 +13,7 @@ entities:
     fields:
     - name: DD2_StylePreview
       field_type: DD2_StylePreview
+      required: true
       resource:
         params:
           dataField: _Style
@@ -50,8 +51,8 @@ entities:
           value_from: { field: data, path: _Style }
 
   items.styles.facewear.FacewearMesh:
-    to_string: "{id:enum(app.CharacterEditDefine.FacewearMeshID)} | {humanMesh._Mesh}"
-    display_name: Facewear Mesh
+    to_string: "FacewearMesh {id:enum(app.CharacterEditDefine.FacewearMeshID)} | {humanMesh._Mesh}"
+    allow_templates: false
     enums:
     - name: "app.CharacterEditDefine.FacewearMeshID"
       format: "facewear_{id}"
@@ -107,8 +108,8 @@ entities:
         clsp: Clsp
 
   items.styles.facewear.FacewearSkin:
-    to_string: "{id:enum(app.CharacterEditDefine.FacewearSkinID)} | {skin._Material}"
-    display_name: Facewear Skin
+    to_string: "FacewearSkin {id:enum(app.CharacterEditDefine.FacewearSkinID)} | {skin._Material}"
+    allow_templates: false
     enums:
     - name: app.CharacterEditDefine.FacewearSkinID
       format: "facewear_{id}"
@@ -138,3 +139,4 @@ classes:
       _Gender: { readOnly: true }
       _MeshID: { enum: FacewearMesh, label: Mesh }
       _SkinID: { enum: FacewearSkin, label: Skin }
+      _PartsEnable: { default: 1072694271 }

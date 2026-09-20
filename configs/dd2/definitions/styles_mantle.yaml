@@ -7,6 +7,7 @@ entities:
     fields:
     - name: DD2_StylePreview
       field_type: DD2_StylePreview
+      required: true
       resource:
         params:
           dataField: _MantleStyle
@@ -44,8 +45,9 @@ entities:
           value_from: { field: data, path: _MantleStyle }
 
   items.styles.mantle.MantleMesh:
-    to_string: "{id:enum(app.CharacterEditDefine.MantleMeshID)} | {mesh._Mesh}"
+    to_string: "MantleMesh {id:enum(app.CharacterEditDefine.MantleMeshID)} | {mesh._Mesh}"
     display_name: Mantle Mesh
+    allow_templates: false
     enums:
     - name: "app.CharacterEditDefine.MantleMeshID"
       format: "mantle_{id}"
@@ -75,6 +77,7 @@ entities:
         classname: app.PartSwapCollisionShapePresetHolder
         params:
           skipFields: 1
+          catalogClassname: app.PartSwapCatalog.Item
     - name: cloth
       resource:
         file: AppSystem/CharaEdit/ch000/Catalog/MantleGpuClothCatalog_Default.user
@@ -96,8 +99,9 @@ entities:
         cloth: Cloth
 
   items.styles.mantle.MantleSkin:
-    to_string: "{id:enum(app.CharacterEditDefine.MantleSkinID)} | {skin._Material}"
+    to_string: "MantleSkin {id:enum(app.CharacterEditDefine.MantleSkinID)} | {skin._Material}"
     display_name: Mantle Skin
+    allow_templates: false
     enums:
     - name: app.CharacterEditDefine.MantleSkinID
       format: "mantle_{id}"
@@ -127,3 +131,4 @@ classes:
       _Gender: { readOnly: true }
       _MeshID: { enum: MantleMesh, label: Mesh }
       _SkinID: { enum: MantleSkin, label: Skin }
+      _PartsEnable: { default: 15363 }

@@ -9,7 +9,7 @@ public class EnumMappingEditor : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var res = context.Get<EnumMappingResource>();
-        var str = $"{res.ResourceType} | ID {res.ID}: {res.Label} => {res.Value}";
+        var str = $"{context.label} | ID {res.ID}: {res.Label} => {res.Value}";
         ImGui.Text(str);
         if (ImGui.BeginPopupContextItem(str)) {
             if (ImGui.Selectable("Copy ID")) {

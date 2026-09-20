@@ -72,7 +72,7 @@ entities:
               equals: 3666037007
 
   styles.body.BodySkin:
-    to_string: "{id:enum(app.CharacterEditDefine.BodySkinID)} | {skin._Material}"
+    to_string: "BodySkin {id:enum(app.CharacterEditDefine.BodySkinID)} | {skin._Material}"
     enums:
     - name: app.CharacterEditDefine.BodySkinID
       format: "body_{id}"

@@ -12,8 +12,6 @@ entities:
         primary: true
     fields:
     - name: data
-      display_after: styleNo
-      # field_id: { field: styleNo, path: value }
       resource:
         type: group
         id: [_Style]
@@ -32,20 +30,11 @@ entities:
             filter:
             - property: _Gender
               equals: 1910070090
-    # - name: styleNo
-    #   resource:
-    #     type: enum_mapping
-    #     classname: app.UnderwearStyle
-    #     custom_id_range: [10000, 32700] # _StyleNo on the armor data is a signed short so we need to limit to that range
-    #     params:
-    #       virtual_enum_name: ce.UnderwearStyleNo
-    #       new_label_format: "Underwear_{id:D03}"
-    #       label_id_parse: "Underwear_(\\d+)"
-    #       value_from: { field: data, path: _Style }
 
   items.styles.underwear.UnderwearMesh:
-    to_string: "{id:enum(app.CharacterEditDefine.UnderwearMeshID)} | {mesh._Mesh}"
+    to_string: "UnderwearMesh {id:enum(app.CharacterEditDefine.UnderwearMeshID)} | {mesh._Mesh}"
     display_name: Underwear Mesh
+    allow_templates: false
     enums:
     - name: "app.CharacterEditDefine.UnderwearMeshID"
       format: "underwear_{id}"
@@ -66,12 +55,11 @@ entities:
       runtime_type: Underwear
       to_both:
         mesh: Mesh
-        chain: Chain
-        clsp: Clsp
 
   items.styles.underwear.UnderwearSkin:
-    to_string: "{id:enum(app.CharacterEditDefine.UnderwearSkinID)} | {skin._Material}"
+    to_string: "UnderwearSkin {id:enum(app.CharacterEditDefine.UnderwearSkinID)} | {skin._Material}"
     display_name: Underwear Skin
+    allow_templates: false
     enums:
     - name: app.CharacterEditDefine.UnderwearSkinID
       format: "underwear_{id}"
