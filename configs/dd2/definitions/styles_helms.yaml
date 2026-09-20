@@ -43,6 +43,21 @@ entities:
           new_label_format: "Helm_{id:D03}"
           label_id_parse: "Helm_(\\d+)"
           value_from: { field: data, path: _HelmStyle }
+    - name: furmask
+      field_id: { field: styleNo, path: value }
+      resource:
+        type: group
+        subtypes:
+          male:
+            file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_m_Helm.user
+            type: resource_proxy_pfb
+            params:
+              skipFields: 1
+          female:
+            file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_f_Helm.user
+            type: resource_proxy_pfb
+            params:
+              skipFields: 1
 
   items.styles.helms.HelmMesh:
     to_string: "HelmMesh {id:enum(app.CharacterEditDefine.HelmMeshID)} | {humanMesh._Mesh}"

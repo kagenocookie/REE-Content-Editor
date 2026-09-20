@@ -12,19 +12,6 @@ public sealed class ObjectResourceHandler : IObjectUIHandler
     {
         var instance = context.Get<RSZObjectResource>();
         var field = context.GetEntityField<ObjectField>();
-        if (instance == null) {
-            ImGui.Text(context.label);
-            var workspace = context.GetWorkspace();
-            if (workspace != null) {
-                ImGui.SameLine();
-                ImGui.PushID(context.label);
-                if (ImGui.Button("Create")) {
-                    context.CreateEntityResource(workspace, field?.Field, context.EntityParams?.ResourceType);
-                }
-                ImGui.PopID();
-            }
-            return;
-        }
         if (context.children.Count == 0 || context.children[0].uiHandler == null) {
             var child = context.AddChild(context.label, instance.Instance, setter: (ctx, val) => instance.Instance = (RszInstance?)val!);
             WindowHandlerFactory.SetupRSZInstanceHandler(child);

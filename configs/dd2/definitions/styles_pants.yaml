@@ -43,6 +43,21 @@ entities:
           new_label_format: "Pants_{id:D03}"
           label_id_parse: "Pants_(\\d+)"
           value_from: { field: data, path: _PantsStyle }
+    - name: furmask
+      field_id: { field: styleNo, path: value }
+      resource:
+        type: group
+        subtypes:
+          male:
+            file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_m_Pants.user
+            type: resource_proxy_pfb
+            params:
+              skipFields: 1
+          female:
+            file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_f_Pants.user
+            type: resource_proxy_pfb
+            params:
+              skipFields: 1
 
   items.styles.pants.PantsLgMesh:
     to_string: "PantsLgMesh {id:enum(app.CharacterEditDefine.PantsLgMeshID)} | {mesh._Mesh}"

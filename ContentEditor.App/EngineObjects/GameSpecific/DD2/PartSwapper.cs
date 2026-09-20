@@ -220,13 +220,12 @@ public class PartSwapper(GameObject gameObject, RszInstance data) : BaseMultiMes
         var skinId = (uint)swapData.GetFieldValue(skinField)!;
         if (meshId == 0) return;
 
-        // var mesh = Workspace.ResourceManager.GetActiveEntityInstance(meshEntity, meshId)?.Get<RSZObjectResource>(entityMeshField)?.Instance?.GetFieldValue("_Mesh") as string;
         var mesh = GetMeshOrNull(meshEntity, meshId, entityMeshField);
         var skin = GetSkinOrNull(skinEntity, skinId);
         if (!string.IsNullOrEmpty(mesh)) {
             var loadedMesh = AddMesh(mesh, skin, ShaderFlags.EnableStreamingTex);
             if (!string.IsNullOrEmpty(enablePartsField) && loadedMesh != null) {
-                // TODO enable parts
+                // TODO also check disable part flags
                 var partBits = Convert.ToUInt64(swapData.GetFieldValue(enablePartsField));
                 for (int i = 0; i < 64; i++) {
                     if ((partBits & (1ul << i)) == 0) {

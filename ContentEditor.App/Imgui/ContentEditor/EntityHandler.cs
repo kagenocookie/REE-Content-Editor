@@ -64,7 +64,11 @@ public class EntityHandler : IObjectUIHandler
                 Logger.Error("Entity field could not be determined");
                 return;
             }
-            var resource = context.CreateEntityResource(workspace, field, param.ResourceType);
+
+            // TODO if group resource type, show subtype selection here when possible
+
+            var resource = workspace.ResourceManager.CreateEntityField(entity, field, ResourceState.Active);
+            context.Set(resource);
             UndoRedo.RecordCallbackSetter(context, entity, null, resource, (e, v) => e.Set(field.name, v));
             UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, parentContext);
         }

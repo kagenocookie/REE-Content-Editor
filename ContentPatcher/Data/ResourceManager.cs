@@ -312,11 +312,17 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         throw new NotImplementedException("Requested unknown resource " + type);
     }
 
-    private IContentResource? CreateEntityFieldInternal(ResourceEntity entity, EntityField field, ResourceState state, ResourceConfig resourceConfig, JsonNode? initialData, long resourceId = -1)
+    public IContentResource CreateEntityField(ResourceEntity entity, EntityField field, ResourceState state)
+    {
+        return CreateEntityFieldInternal(entity, field, state, field.Config, null)
+            ?? throw new NotImplementedException($"Unable to create new entity {entity} field {field} resource");
+    }
+
+    private IContentResource? CreateEntityFieldInternal(ResourceEntity entity, EntityField field, ResourceState state, ResourceConfig resourceConfig, JsonNode? initialData)
     {
         IContentResource? fieldResource;
         if (field.ValueHandler is CustomEntityFieldHandler customField) {
-            if (resourceId == -1) resourceId = field.GetIDForEntity(entity);
+            var resourceId = field.GetIDForEntity(entity);
             if (resourceId == -1) resourceId = GetRandomUniqueResourceID(resources[field.Config.Type], state);
             fieldResource = customField.ApplyValue(workspace, null, initialData, entity, state);
             entity.Set(field.name, fieldResource);
@@ -334,83 +340,11 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             }
             AddResource(resourceConfig.Type, resourceId, fieldResource, state);
         } else {
-            if (resourceId == -1) resourceId = field.GetIDForEntity(entity);
+            var resourceId = field.GetIDForEntity(entity);
             fieldResource = CreateResourceInternal(resourceId, resourceConfig, state, initialData);
             entity.Set(field.name, fieldResource);
         }
         return fieldResource;
-    }
-
-    private IContentResource? CreateResourceInternal(long resourceId, ResourceConfig resource, ResourceState state, JsonNode? initialData)
-    {
-        IContentResource? fieldResource = null;
-
-        if (resource.Resource != null) {
-            fieldResource = resource.Resource.CreateResource(workspace, resourceId, initialData);
-        }
-        if (fieldResource == null) return null;
-
-        if (fieldResource.FileResourcePath == null) {
-            // ignore - there's no file here
-        } else if (TryResolveGameFile(fieldResource.FileResourcePath, out var file)) {
-            file.Modified = true;
-        } else {
-            throw new Exception("New resource file should've been opened, wtf?");
-        }
-        AddResource(resource.Type, resourceId, fieldResource, state);
-        return fieldResource;
-    }
-
-    public T CreateEntityResource<T>(ResourceEntity entity, EntityField field, ResourceState state, string? resourceType = null, JsonNode? initialData = null) where T : IContentResource
-        => (T)CreateEntityResource(entity, field, state, resourceType, initialData);
-
-    public IContentResource CreateEntityResource(ResourceEntity entity, EntityField field, ResourceState state, string? resourceType = null, JsonNode? initialData = null)
-    {
-        var key = resourceType ?? field.ResourceType;
-        if (key == null) {
-            throw new Exception("Can't create unknown resource type");
-        }
-
-        if (resources.TryGetValue(key, out var data)) {
-            if (data.baseInstances == null) {
-                data.baseInstances = new();
-                ReadObjectSourceData(data.config, data);
-            }
-
-            if (data.config.Resource != null) {
-                return CreateEntityFieldInternal(entity, field, state, data.config, initialData)
-                    ?? throw new Exception($"Failed to create entity {entity} field {field} resource");
-            }
-
-            throw new NotImplementedException($"Unable to create new entity {entity} field {field} resource");
-        }
-
-        if (field.ResourceType == null) {
-            return CreateEntityFieldInternal(entity, field, state, field.Config, initialData)
-                ?? throw new Exception($"Failed to create entity {entity} field {field} resource");
-        }
-
-        throw new NotImplementedException();
-    }
-
-    public (long id, IContentResource resource) CreateResource(ResourceConfig resourceType, ResourceState state, JsonNode? sourceResource = null)
-    {
-        if (!resources.TryGetValue(resourceType.Type, out var data)) {
-            throw new Exception("Unknown resource type " + resourceType);
-        }
-
-        var id = GetRandomUniqueResourceID(data, state);
-
-        // TODO for enum_mapping: generate enum label based on entity id
-        if (data.config.Resource != null) {
-            var newResource = CreateResourceInternal(id, data.config, state, sourceResource);
-            if (newResource == null) {
-                throw new Exception($"Failed to create new {resourceType} resource");
-            }
-            return (id, newResource);
-        }
-
-        throw new Exception($"Unable to create new {resourceType} resources");
     }
 
     private long GetRandomUniqueResourceID(ResourceData data, ResourceState state)
@@ -437,6 +371,20 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             }
         } while (instanceList.ContainsKey(id) == true);
         return id;
+    }
+
+    private IContentResource CreateResourceInternal(long resourceId, ResourceConfig resource, ResourceState state, JsonNode? initialData)
+    {
+        var fieldResource = resource.Resource.CreateResource(workspace, resourceId, initialData);
+        if (fieldResource.FileResourcePath == null) {
+            // ignore - there's no file here
+        } else if (TryResolveGameFile(fieldResource.FileResourcePath, out var file)) {
+            file.Modified = true;
+        } else {
+            throw new Exception("New resource file should've been opened, wtf?");
+        }
+        AddResource(resource.Type, resourceId, fieldResource, state);
+        return fieldResource;
     }
 
     public void AddResource(string resourceKey, long id, IContentResource resource, ResourceState state)
@@ -722,26 +670,28 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             throw new Exception($"Entity type {type} does not have a primary field");
         }
 
+        var primaryField = data.config.PrimaryField;
+        var idField = data.config.IDField;
+
+        var primaryId = GetRandomUniqueResourceID(resources[primaryField.Config.Type], ResourceState.Active);
+        var primaryResource = CreateResourceInternal(primaryId, primaryField.Config, ResourceState.Active, initialData?.GetValueOrDefault(primaryField.name));
         ResourceEntity entity;
-        if (data.config.IDField != null && data.config.IDField != data.config.PrimaryField) {
-            if (data.config.IDField.ResourceType == null) throw new Exception($"ID field must have a resource type ID {data.config.IDField}");
-            var idField = data.config.GetField(data.config.IDField.name)!;
-            var id = GetRandomUniqueResourceID(resources[data.config.IDField.Config.Type], ResourceState.Active);
+        if (idField != null && idField != primaryField) {
+            if (idField.ResourceType == null) throw new Exception($"ID field must have a resource type ID {idField}");
+            var id = GetRandomUniqueResourceID(resources[idField.Config.Type], ResourceState.Active);
 
-            var (primaryId, primaryResource) = CreateResource(data.config.PrimaryField.Config, ResourceState.Active, initialData?.GetValueOrDefault(data.config.PrimaryField.name));
             entity = new ResourceEntity(id, type, data.config);
-            entity.Set(data.config.PrimaryField.name, primaryResource);
+            entity.Set(primaryField.name, primaryResource);
 
-            var idResource = CreateEntityFieldInternal(entity, data.config.IDField, ResourceState.Active, data.config.IDField.Config, initialData?.GetValueOrDefault(data.config.PrimaryField.name));
-            entity.Set(data.config.IDField.name, idResource);
+            var idResource = CreateEntityFieldInternal(entity, idField, ResourceState.Active, idField.Config, initialData?.GetValueOrDefault(idField.name));
+            entity.Set(idField.name, idResource);
         } else {
-            var (primaryId, primaryResource) = CreateResource(data.config.PrimaryField.Config, ResourceState.Active, initialData?.GetValueOrDefault(data.config.PrimaryField.name));
             entity = new ResourceEntity(primaryId, type, data.config);
-            entity.Set(data.config.PrimaryField.name, primaryResource);
+            entity.Set(primaryField.name, primaryResource);
         }
 
         foreach (var field in data.config.Fields) {
-            if (field == data.config.PrimaryField || field == data.config.IDField) {
+            if (field == primaryField || field == idField) {
                 // we already instantiated this one, skip it
                 continue;
             }

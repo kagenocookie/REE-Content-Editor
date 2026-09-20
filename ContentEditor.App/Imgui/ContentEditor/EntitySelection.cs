@@ -118,6 +118,13 @@ public class EntitySelection : IWindowHandler
             selected = selectedId == -1 ? null : workspace.ResourceManager.GetActiveEntityInstance(entityType, selectedId);
         }
 
+        if (selected != null && ImGui.BeginPopupContextItem(entityType)) {
+            if (ImGui.Selectable("Change label")) {
+                data.Context.AddChild("Rename", selected.Label);
+            }
+            ImGui.EndPopup();
+        }
+
         if (entityConfig != null && canCreate && showCreateSettings) {
             ImGui.Spacing();
             ImguiHelpers.BeginRect();
@@ -184,18 +191,6 @@ public class EntitySelection : IWindowHandler
                 ImGui.TextColored(Colors.Warning, "Selected entity could not be found");
             }
             return;
-        }
-
-        if (ImGui.BeginPopupContextItem(entityType)) {
-            if (ImGui.Button("Change label")) {
-                data.Context.AddChild("Rename", selected.Label);
-                ImGui.CloseCurrentPopup();
-            }
-            if (ImGui.Button("Reopen in new window")) {
-                EditorWindow.CurrentWindow?.AddSubwindow(new EntitySelection(workspace, selected));
-                ImGui.CloseCurrentPopup();
-            }
-            ImGui.EndPopup();
         }
 
         var renameCtx = data.Context.GetChildByValue<string>();
