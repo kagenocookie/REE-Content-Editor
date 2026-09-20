@@ -377,7 +377,7 @@ public class SceneController(Scene scene)
         camera.Position = cameraPivot - camera.Forward * orbitDistance;
     }
 
-    private void ResetCameraToScene()
+    public void ResetCameraToScene()
     {
         var bounds = Scene.RootFolder.GetWorldSpaceBounds();
         Scene.ActiveCamera.LookAt(bounds, true);

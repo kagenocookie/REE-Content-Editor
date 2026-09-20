@@ -65,7 +65,6 @@ internal sealed class MeshEditor(MeshViewer viewer) : IDisposable
     private bool shiftSubmeshSelection;
     private bool ctrlSubmeshSelection;
     private bool suppressNextSceneClick;
-    private WindowData? optionsWindowData;
     public float vertexPointSize = AppConfig.Settings.MeshViewer.EditorVertexSize;
     public float vertexSelectionRadius = AppConfig.Settings.MeshViewer.EditorVertexSelectionRadius;
     public bool mirrorX = AppConfig.Settings.MeshViewer.EditorMirrorX;
