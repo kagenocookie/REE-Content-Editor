@@ -29,7 +29,7 @@ public class MdfBatchExporter
                     if (string.IsNullOrEmpty(tex.texPath)) continue;
                     if (MaterialGroupWrapper.AlbedoTextureNames.Contains(tex.texType)
                         || MaterialGroupWrapper.NormalTextureNames.Contains(tex.texType)
-                        || MaterialGroupWrapper.ATXXTextureNames.Contains(tex.texType)) {
+                        || MaterialGroupWrapper.MapsTextureNames.Contains(tex.texType)) {
                         data.Add(tex.texPath);
                     }
                 }
