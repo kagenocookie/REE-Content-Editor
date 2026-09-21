@@ -13,6 +13,12 @@ public class RSZObjectResource(ResourceConfig type, RszInstance instance, string
 
     public object? Get(string path)
     {
+        if (path == "classname") {
+            return Instance.RszClass.name;
+        }
+        if (path == "class_shortname") {
+            return Instance.RszClass.ShortName;
+        }
         return Instance.GetNestedFieldValue(path);
     }
 

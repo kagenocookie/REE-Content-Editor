@@ -399,7 +399,7 @@ public class PatchConfig(string filepath)
         if (data.condition != null) {
             field.Condition = EntityPropertyValueEquals.Create(data.condition, field.name);
         } else if (data.multiConditionsAny?.Length > 0) {
-            field.Condition = EntityPropertyMultiCondition.Create(data.multiConditionsAny, field.name);
+            field.Condition = EntityPropertyAnyCondition.Create(data.multiConditionsAny, field.name);
         }
         field.IsRequired = data.isRequired;
         field.IsNotStandaloneValue = data.isNotStandalone;

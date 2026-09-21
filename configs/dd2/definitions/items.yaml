@@ -172,6 +172,7 @@ classes:
       _Id: { readOnly: true }
       _EquipCategory: { readOnly: true } # read-only to prevent mismatched object types
       _Attr: { enum: app.ItemAttrBits }
+      _Job: { enum: ce.ItemJobFlags }
       _StyleNo:
         switch:
           property: _EquipCategory
@@ -182,8 +183,15 @@ classes:
             5: { enum: "MantleStyle" }
             7: { enum: "FacewearStyle" }
 
-  app.EnhanceParamBase:
-    to_string: "{_Type:enum(app.EnhanceType)} {_EnhanceNo}"
+  app.ArmorEnhanceParam:
+    to_string: ArmorEnhanceParam {_Type:enum(app.EnhanceType)} {_EnhanceNo}
+    fields:
+      _Type: { enum: app.EnhanceType }
+      _ItemId: { enum: app.ItemIDEnum }
+      _NeedItemId0: { enum: app.ItemIDEnum }
+      _NeedItemId1: { enum: app.ItemIDEnum }
+  app.WeaponEnhanceParam:
+    to_string: WeaponEnhanceParam {_Type:enum(app.EnhanceType)} {_EnhanceNo}
     fields:
       _Type: { enum: app.EnhanceType }
       _ItemId: { enum: app.ItemIDEnum }
@@ -217,50 +225,4 @@ classes:
     to_string: "PantsLg PartsHidden Job={_Job:enum(app.Character.JobEnum)} | {_LgMeshID:enum(app.CharacterEditDefine.PantsLgMeshID)}"
   app.TopsBtPrimaryPartsHiddenItem:
     to_string: "BtPrimary PartsHidden Job={_Job:enum(app.Character.JobEnum)}"
-
-
-# custom user-defined types (mainly useful for the content editor part, not raw file editing)
-# need to have at least one field
-# types:
-#   _GuiRect:
-#     fields:
-#       x:
-#         type: float
-#       y:
-#         type: float
-#       w:
-#         type: float
-#       h:
-#         type: float
-#   DD2_ItemIcon:
-#     fields:
-#       icon_rect:
-#         type: _GuiRect
-#       icon_path:
-#         type: resource
-#         params:
-#           resource_type: tex
-#     example: # (this wouldn't be here but in the mod patch.json file and edited through UI)
-#       icon_path: npc_outfits_for_arisen/npc_item_icons_01.tex.760230703
-#       icon_rect: { "x": 314, "y": 314, "h": 152, "w": 152 } # TODO add tex header reading so we can determine a default rect automatically
-
-### config field descriptions
-# id: used to determine unique entities
-# group: category to group the entity under
-# type: simplified name of the individiual entity type; should be unique
-# sub_id: for cases where an entity has one main ID but several sub-instances (e.g. item upgrade options); will get displayed as a list in the UI
-# subclasses: list of subclasses of this entity type, each can have their own patcher configs
-# fields: list of fields and their enum and UI overrides
-# to_string: method to use to generate a quick preview string of the entity (e.g. combo list, when it's collapsed inside an array); if unspecified, concat the ID fields; if that's unspecified too, use classname
-# patcher: the method of patching this object type; if unspecified, it will get patched with whatever the closest patchable parent is; if there is none, it's only used for UI purposes
-
-# items within the same group, sharing the same ID, will get grouped into subcategories in the UI
-
-# unresolved: how do we handle cases that have arrays of multiple different subtypes? (e.g. if there were an item array that had ArmorData and WeaponData?) are there such cases even?
-
-### patcher types (naming TBD)
-# array-file: a single user file with the root object containing an array field (takes the first array field if multiple), containing every single entity of the type
-# file-catalog: a single user file that serves as a catalog of multiple array-file files
-# scn-catalog: a scn file containing linked scn files per entity (quests)
-# user-pfb-catalog: a user file containing a catalog of pfb files (style data, armor meshes, probably)
 

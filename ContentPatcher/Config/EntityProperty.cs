@@ -70,10 +70,10 @@ public class EntityPropertyValueEquals(string field, string path, object? compar
     }
 }
 
-public class EntityPropertyMultiCondition(EntityPropertyValueEquals[] conditions) : IEntityCondition
+public class EntityPropertyAnyCondition(EntityPropertyValueEquals[] conditions) : IEntityCondition
 {
-    public static EntityPropertyMultiCondition Create(EntityFieldConditionData[] data, string fieldFallback)
-        => new EntityPropertyMultiCondition(data.Select(d => new EntityPropertyValueEquals(d.field ?? fieldFallback, d.property, d.equals)).ToArray());
+    public static EntityPropertyAnyCondition Create(EntityFieldConditionData[] data, string fieldFallback)
+        => new EntityPropertyAnyCondition(data.Select(d => new EntityPropertyValueEquals(d.field ?? fieldFallback, d.property, d.equals)).ToArray());
 
     public bool IsEnabled(ResourceEntity entity)
     {
