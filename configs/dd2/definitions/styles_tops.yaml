@@ -413,35 +413,3 @@ classes:
       _AmSubPartsEnable: { default: 3302292454401 }
       _BtPartsEnable: { default: 1049603 }
       _BtSubPartsEnable: { default: 1049603 }
-
-  app.PartSwapMeshHolder:
-    fields:
-      Enabled: { default: true }
-  app.PartSwapMaterialHolder:
-    fields:
-      Enabled: { default: true }
-  app.PartSwapGpuClothHolder:
-    fields:
-      Enabled: { default: true }
-  app.PartSwapChainHolder:
-    fields:
-      Enabled: { default: true }
-  app.PartSwapCollisionShapePresetHolder:
-    fields:
-      Enabled: { default: true }
-  app.PartSwapShellFurHolder:
-    fields:
-      Enabled: { default: true }
-  app.PartSwapTextureHolder:
-    fields:
-      Enabled: { default: true }
-  app.PartSwapCatalog.Item:
-    to_string: "PartSwapItem [{_Hash}] {_Prefab.Path}"
-  app.CharacterEditDefine.MetaData:
-    fields:
-      _Gender: { default: 2776536455 }
-      _Species: { default: 2501532887 }
-      _HeadStyle: { default: 3812533812 }
-      _SkinStyle: { default: 3812533812 }
-  app.PantsWlPartFlags:
-    flags_enum: true

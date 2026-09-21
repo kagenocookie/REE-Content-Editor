@@ -1,5 +1,5 @@
 entities:
-  styles.head.HeadMeshStyle:
+  charaEdit.head.HeadMeshStyle:
     primary_field: data
     to_string: "Head Mesh {data._HeadStyle:enum(app.HeadStyle)}"
     fields:
@@ -43,7 +43,7 @@ entities:
             - property: _Species
               equals: 3666037007
 
-  styles.head.HeadMesh:
+  charaEdit.head.HeadMesh:
     to_string: "Head Mesh {id} | {mesh._Mesh}"
     allow_templates: false
     fields:
@@ -55,7 +55,7 @@ entities:
         params:
           skipFields: 1
 
-  styles.head.HeadSkinStyle:
+  charaEdit.head.HeadSkinStyle:
     primary_field: data
     to_string: "Head Skin {id:enum(app.SkinStyle)}"
     enums:
@@ -103,7 +103,7 @@ entities:
             - property: _Species
               equals: 3666037007
 
-  styles.head.HeadSkin:
+  charaEdit.head.HeadSkin:
     to_string: "HeadSkin {id:enum(app.CharacterEditDefine.HeadSkinID)} | {skin._Material}"
     allow_templates: false
     enums:

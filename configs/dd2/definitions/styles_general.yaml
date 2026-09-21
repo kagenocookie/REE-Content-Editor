@@ -1,0 +1,43 @@
+entities:
+  charaEdit.CharaEditData:
+    to_string: "Character Creation Data"
+    allow_create_empty: false
+    allow_templates: false
+    fields:
+      - name: data
+        resource:
+          type: user-singleton
+          file: AppSystem/Gui/UserData/GUICharaEditData.user
+          params:
+            nested: false
+
+classes:
+  app.PartSwapMeshHolder:
+    fields:
+      Enabled: { default: true }
+  app.PartSwapMaterialHolder:
+    fields:
+      Enabled: { default: true }
+  app.PartSwapGpuClothHolder:
+    fields:
+      Enabled: { default: true }
+  app.PartSwapChainHolder:
+    fields:
+      Enabled: { default: true }
+  app.PartSwapCollisionShapePresetHolder:
+    fields:
+      Enabled: { default: true }
+  app.PartSwapShellFurHolder:
+    fields:
+      Enabled: { default: true }
+  app.PartSwapTextureHolder:
+    fields:
+      Enabled: { default: true }
+  app.PartSwapCatalog.Item:
+    to_string: "PartSwapItem [{_Hash}] {_Prefab.Path}"
+  app.CharacterEditDefine.MetaData:
+    fields:
+      _Gender: { default: 2776536455 }
+      _Species: { default: 2501532887 }
+      _HeadStyle: { default: 3812533812 }
+      _SkinStyle: { default: 3812533812 }

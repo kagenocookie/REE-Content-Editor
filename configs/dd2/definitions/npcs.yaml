@@ -96,6 +96,6 @@ classes:
   app.LipSyncCatalogUserData.CharacterElement:
     to_string: "NPC Data: {_CharacterID:enum(app.CharacterID)}"
   app.charaedit.ch000.CostumeData:
-    to_string: "Costume Data {_TopsStyle:enum(app.TopsStyle)} {_PantsStyle:enum(app.PantsStyle)}"
+    to_string: "Costume Data [ID={_CostumeID}] | {_TopsStyle:enum(app.TopsStyle)} {_PantsStyle:enum(app.PantsStyle)}"
   app.charaedit.ch000.AppearanceData:
-    to_string: "Appearance Data [AppearanceID={_AppearanceID}]"
+    to_string: "Appearance Data [ID={_AppearanceID}]"

@@ -52,7 +52,7 @@
             "description": "Allow management and creation of this entity type through templates.",
             "type": "boolean"
           },
-          "allow_blank": {
+          "allow_create_empty": {
             "description": "Allow creating fully blank instances of this entity type.",
             "type": "boolean"
           },
@@ -275,7 +275,7 @@
         "type": {
           "description": "Resource loading and patching type",
           "type": "string",
-          "enum": ["array-file", "multi-array", "resource_proxy_pfb", "enum_mapping", "string", "msg", "group", "merged-group"]
+          "enum": ["array-file", "multi-array", "resource_proxy_pfb", "enum_mapping", "string", "msg", "group", "merged-group", "user-singleton"]
         },
         "custom_id_range": {
           "description": "Single file path for this resource.",

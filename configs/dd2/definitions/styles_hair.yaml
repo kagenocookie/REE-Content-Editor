@@ -1,5 +1,5 @@
 entities:
-  styles.hair.HairStyle:
+  charaEdit.hair.HairStyle:
     primary_field: data
     to_string: "Hair {data._HairStyle:enum(app.HairStyle)} [#{id}]"
     display_name: Style
@@ -19,7 +19,7 @@ entities:
         file: AppSystem/CharaEdit/ch000/SwapData/HairSwapData.user
         type: array-file
 
-  styles.hair.HairMesh:
+  charaEdit.hair.HairMesh:
     to_string: "HairMesh {id:enum(app.CharacterEditDefine.HairMeshID)} | {mesh._Mesh}"
     display_name: Hair Mesh
     enums:
@@ -52,7 +52,7 @@ entities:
         params:
           skipFields: 1
 
-  styles.hair.HairSkin:
+  charaEdit.hair.HairSkin:
     to_string: "HairSkin {id:enum(app.CharacterEditDefine.HairSkinID)} | {skin._Material}"
     display_name: Hair Skin
     enums:

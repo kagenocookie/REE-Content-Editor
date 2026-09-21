@@ -237,3 +237,5 @@ classes:
       _LgSubPartsEnable: { default: 3462145515300338695 }
       _WlPartsEnable: { default: 3462145515300338689 }
       _WlSubPartsEnable: { default: 3462145515300338689 }
+  app.PantsWlPartFlags:
+    flags_enum: true

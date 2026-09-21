@@ -65,6 +65,9 @@ public class EntitySelection : IWindowHandler
         var canCreate = workspace.CurrentBundle != null && (entityConfig?.AllowCreateEmpty == true || entityConfig?.AllowTemplates == true); // TODO + verify has custom id range?
         var selectedId = SelectedEntityId;
         var selected = selectedId == -1 ? null : workspace.ResourceManager.GetActiveEntityInstance(entityType, selectedId);
+        if (selectedId == -1 && instances.Count() == 1 && selected == null) {
+            (selectedId, selected) = instances.First();
+        }
 
         var pfx = ImguiHelpers.InlinePrefix();
         ImGui.BeginDisabled(workspace.CurrentBundle == null || workspace.CurrentBundle?.Entities.Any(e => e.Type == entityType) != true);

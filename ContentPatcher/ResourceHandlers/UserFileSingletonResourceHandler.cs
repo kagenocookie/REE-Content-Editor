@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using ReeLib;
+using ReeLib.Common;
 
 namespace ContentPatcher;
 
@@ -18,11 +19,12 @@ public class UserFileSingletonResourceHandler : ResourceHandler, IResourceHandle
 
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)
     {
-        var userfile = workspace.ResourceManager.GetFileContents<UserFile>(Files[0]);
+        var filepath = Files[0];
+        var userfile = workspace.ResourceManager.GetFileContents<UserFile>(filepath);
 
         var instance = userfile.Instance!;
-        var id = Config.IDGeneratorRequired.GetID(instance);
-        dict[id] = new RSZObjectResource(Config, instance, Files[0]);
+        var id = MurMur3HashUtils.GetHash(filepath);
+        dict[id] = new RSZObjectResource(Config, instance, filepath);
     }
 
     public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
@@ -37,6 +39,20 @@ public class UserFileSingletonResourceHandler : ResourceHandler, IResourceHandle
 
     public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
     {
-        throw new NotImplementedException();
+        foreach (var (id, res) in resources) {
+            if (res is not RSZObjectResource resource || string.IsNullOrEmpty(res.FileResourcePath)) {
+                continue;
+            }
+
+            if (workspace.ResourceManager.TryResolveGameFile(res.FileResourcePath, out var file)) {
+                var user = file.GetFile<UserFile>();
+                if (user.Instance != resource.Instance) {
+                    user.Clear();
+                    resource.Instance.Index = -1;
+                    user.RSZ.AddToObjectTable(resource.Instance);
+                    file.Modified = true;
+                }
+            }
+        }
     }
 }
