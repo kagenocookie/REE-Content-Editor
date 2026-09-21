@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using ContentEditor.Core;
 using ReeLib;
 
 namespace ContentEditor.App;
@@ -53,7 +54,7 @@ public class TemplateManager : Singleton<TemplateManager>
             Dictionary<string, List<TemplateItem>> items;
             try {
                 using var fs = File.OpenRead(path);
-                items = JsonSerializer.Deserialize<Dictionary<string, List<TemplateItem>>>(fs)!;
+                items = JsonSerializer.Deserialize<Dictionary<string, List<TemplateItem>>>(fs, JsonConfig.jsonOptions)!;
                 if (items == null) continue;
             } catch (Exception e) {
                 Logger.Error($"Could not read template file {path}: {e.Message}");
@@ -78,10 +79,11 @@ public class TemplateManager : Singleton<TemplateManager>
         }
     }
 
-    public void AddTemplate(GameIdentifier game, string objectType, string name, JsonObject template)
+    public TemplateItem AddTemplate(GameIdentifier game, string objectType, string name, JsonObject template)
     {
         var item = new TemplateItem() { Name = name, Data = template };
         AddTemplate(game, objectType, item);
+        return item;
     }
 
     public void AddTemplate(GameIdentifier game, string objectType, TemplateItem item)
@@ -117,7 +119,7 @@ public class TemplateManager : Singleton<TemplateManager>
             // template, just re-read what's in there already and replace just our current object type's list
             try {
                 using var prevFs = File.OpenRead(savePath);
-                storeData = JsonSerializer.Deserialize<Dictionary<string, List<TemplateItem>>>(prevFs)!;
+                storeData = JsonSerializer.Deserialize<Dictionary<string, List<TemplateItem>>>(prevFs, JsonConfig.jsonOptions)!;
             } catch (Exception e) {
                 Logger.Error($"Templates not saved. Could not confirm existing template data from file {savePath}: {e.Message}");
                 return;
@@ -128,7 +130,7 @@ public class TemplateManager : Singleton<TemplateManager>
 
         storeData[objectType] = targetFileTemplates;
         using var fs = File.Create(savePath);
-        JsonSerializer.Serialize(fs, storeData);
+        JsonSerializer.Serialize(fs, storeData, JsonConfig.jsonOptions);
         foreach (var a in list) {
             a.StorageFilepath ??= savePath;
         }

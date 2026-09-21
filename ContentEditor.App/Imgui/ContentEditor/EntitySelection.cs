@@ -54,13 +54,9 @@ public class EntitySelection : IWindowHandler
     public void OnWindow() => this.ShowDefaultWindow(context);
     public void OnIMGUI()
     {
-        if (workspace == null) {
-            ImGui.TextColored(Colors.Warning, "Couldn't get game configuration");
-            return;
-        }
-
-        if (data.Context == null) {
-            ImGui.TextColored(Colors.Error, "Missing UI container");
+        if (workspace == null || data.Context == null) {
+            // this shouldn't really happen, but just as a sanity check
+            ImGui.TextColored(Colors.Warning, Lang.Errors.MissingWorkspace);
             return;
         }
 
@@ -76,7 +72,7 @@ public class EntitySelection : IWindowHandler
         if (currentBundleOnly) {
             instances = instances.Where(ii => ii.Key == selectedId || workspace.CurrentBundle?.ContainsEntity(ii.Value) == true);
         }
-        ImguiHelpers.Tooltip("Show only active bundle entities"u8);
+        ImguiHelpers.Tooltip(Lang.Entities.ShowActiveBundleOnly);
         ImGui.SameLine();
         ImGui.EndDisabled();
 
@@ -107,10 +103,10 @@ public class EntitySelection : IWindowHandler
                 EditorWindow.CurrentWindow!.AddSubwindow(new HandlerEmbedWindow(EntityHandler.Instance, selected));
             }
         }
-        ImguiHelpers.Tooltip("Open entity in separate window");
+        ImguiHelpers.Tooltip(Lang.Entities.OpenInNewWindow);
         pfx.Dispose();
 
-        if (ImguiHelpers.FilterableEntityCombo("Entity"u8, instances, ref selectedId, ref data.Context.Filter)) {
+        if (ImguiHelpers.FilterableEntityCombo(Lang.Entities.Entity, instances, ref selectedId, ref data.Context.Filter)) {
             SelectedEntityId = selectedId;
             // note: we can clear children safely, any changes are still stored in the resource manager
             // just gotta figure out how to keep those changes tracked in bundle
@@ -119,8 +115,8 @@ public class EntitySelection : IWindowHandler
         }
 
         if (selected != null && ImGui.BeginPopupContextItem(entityType)) {
-            if (ImGui.Selectable("Change label")) {
-                data.Context.AddChild("Rename", selected.Label);
+            if (ImGui.Selectable(Lang.Entities.ChangeLabel)) {
+                data.Context.AddChild(Lang.Buttons.Rename, selected.Label);
             }
             ImGui.EndPopup();
         }
@@ -132,12 +128,14 @@ public class EntitySelection : IWindowHandler
             if (entityConfig.AllowTemplates) {
                 var prefix = ImguiHelpers.InlinePrefix();
                 ImGui.BeginDisabled(selected == null);
-                if (ImGui.Button(Lang.Buttons.CreateTemplate) && selected != null && !string.IsNullOrEmpty(newTemplateName)) {
-                    if (TemplateManager.Instance.TemplateExists(workspace.Game, entityType, newTemplateName)) {
+                if (ImGui.Button(Lang.Buttons.CreateTemplate)) {
+                    if (selected == null || string.IsNullOrEmpty(newTemplateName)) {
+                        Logger.Error("Enter a name for the new template!");
+                    } else if (TemplateManager.Instance.TemplateExists(workspace.Game, entityType, newTemplateName)) {
                         Logger.Error($"Template {newTemplateName} already exists");
                     } else {
                         var json = selected.GetDataJson(workspace.Env);
-                        TemplateManager.Instance.AddTemplate(workspace.Game, entityType, newTemplateName, json);
+                        selectedCreateTemplate = TemplateManager.Instance.AddTemplate(workspace.Game, entityType, newTemplateName, json);
                         newTemplateName = "";
                     }
                 }
@@ -160,9 +158,9 @@ public class EntitySelection : IWindowHandler
                 var templates = !entityConfig.AllowTemplates ? default : TemplateManager.Instance.GetTemplatesForGui(workspace.Game, entityType, showCustomTemplates, showUserTemplates);
                 if (templates.labels.Length > 0) {
                     // var names = templates.Select(t => t.Name).Prepend("<blank>").ToArray();
-                    ImguiHelpers.FilterableCombo("Template"u8, templates.labels, templates.options, ref selectedCreateTemplate, ref templateFilter);
+                    ImguiHelpers.FilterableCombo(Lang.Entities.Template, templates.labels, templates.options, ref selectedCreateTemplate, ref templateFilter);
                 } else if (entityConfig.AllowTemplates && !entityConfig.AllowCreateEmpty) {
-                    ImGui.TextColored(Colors.Info, "No templates yet defined for this entity type. Duplicate or create a new template from an existing one first.");
+                    ImGui.TextColored(Colors.Info, Lang.Entities.EntityCreateNoTemplates);
                 } else {
                     ImGui.Dummy(new Vector2(1, 1));
                 }
@@ -170,7 +168,11 @@ public class EntitySelection : IWindowHandler
 
             if (selectedCreateTemplate == null) {
                 using var _ = ImguiHelpers.Disabled(!entityConfig.AllowCreateEmpty);
-                doCreate = entityConfig.AllowCreateEmpty && ImGui.Button(Lang.Buttons.CreateWithIcon);
+                doCreate = ImGui.Button(Lang.Buttons.CreateWithIcon) && entityConfig.AllowCreateEmpty;
+                if (!entityConfig.AllowCreateEmpty && entityConfig.AllowTemplates) {
+                    ImGui.SameLine();
+                    ImGui.TextColored(Colors.Note, Lang.Entities.EntityCreateBlankDisallowed);
+                }
             } else {
                 doCreate = entityConfig.AllowTemplates && ImGui.Button(Lang.Buttons.CreateWithIcon);
             }
@@ -188,7 +190,7 @@ public class EntitySelection : IWindowHandler
 
         if (selected == null) {
             if (selectedId != 0) {
-                ImGui.TextColored(Colors.Warning, "Selected entity could not be found");
+                ImGui.TextColored(Colors.Warning, Lang.Entities.EntityNotFound);
             }
             return;
         }
@@ -197,14 +199,14 @@ public class EntitySelection : IWindowHandler
         if (renameCtx?.Get<string>() != null) {
             ImGui.Indent(16);
             var newName = renameCtx.Get<string>();
-            if (ImGui.InputText("New label", ref newName, 200)) {
+            if (ImGui.InputText(Lang.Entities.NewLabel, ref newName, 200)) {
                 data.Context.GetChildByValue<string>()!.target = newName;
             }
             ImGui.Unindent(16);
-            if (ImGui.Button("Cancel rename")) {
+            if (ImGui.Button(Lang.Entities.CancelRename)) {
                 data.Context.RemoveChild(renameCtx);
             }
-            if (newName != selected.Label && ImguiHelpers.SameLine() && ImGui.Button("Confirm rename")) {
+            if (newName != selected.Label && ImguiHelpers.SameLine() && ImGui.Button(Lang.Entities.ConfirmRename)) {
                 selected.Label = newName;
                 data.Context.Changed = true;
                 selected.Config.PrimaryEnum?.UpdateEnum(workspace, selected);
@@ -224,7 +226,7 @@ public class EntitySelection : IWindowHandler
         }
 
         if (child.Changed && workspace.CurrentBundle == null) {
-            ImGui.TextColored(Colors.Warning, "No active bundle. Changes can't be saved. Create a bundle please.");
+            ImGui.TextColored(Colors.Warning, Lang.Bundles.NeedBundleToSave);
         }
         child.ShowUI();
         if (child.Changed && workspace.CurrentBundle != null) {
