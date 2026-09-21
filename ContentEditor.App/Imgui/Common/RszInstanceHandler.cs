@@ -630,7 +630,7 @@ public class RszEnumFieldHandler : IObjectUIHandler
         }
         var useCustomValueInput = context.StateBool;
         ImGui.PushID(context.label);
-        var w = ImGui.CalcItemWidth();
+        var pfx = ImguiHelpers.InlinePrefix();
         ImGui.SetNextItemWidth(UI.FontSize);
         if (ImguiHelpers.ToggleButton(useCustomValueInput ? $"{AppIcons.SI_InspectorCustomValue}" : $"{AppIcons.SI_InspectorEnum}", ref useCustomValueInput, useCustomValueInput ? Colors.IconActive : null)) {
             context.StateBool = useCustomValueInput;
@@ -639,8 +639,8 @@ public class RszEnumFieldHandler : IObjectUIHandler
             UndoRedo.RecordCallback(null, () => context.StateBool = useCustomValueInput, () => context.StateBool = !useCustomValueInput);
         }
         ImguiHelpers.Tooltip("Use Custom Value Input"u8);
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(w - UI.FontSize);
+        pfx.Dispose();
+
         var valueType = selected!.GetType();
         if (useCustomValueInput) {
             NumericFieldHandler<int>.GetHandlerForType(valueType).OnIMGUI(context);
