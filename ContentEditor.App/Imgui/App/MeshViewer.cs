@@ -44,6 +44,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         1.5f,
         2.0f
     };
+    private bool isAutoplayNextAnimation = false;
 
     private string exportTemplate;
     private bool _removeStreamingMesh;
@@ -1774,9 +1775,11 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             }
         }
         ImguiHelpers.Tooltip("Next Frame");
-
         ImGui.SameLine();
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 4);
+        ImguiHelpers.ToggleButton("Auto##AutoplayNext", ref isAutoplayNextAnimation, Colors.IconActive);
+        ImguiHelpers.Tooltip("Automatically play the next animation when the current one ends");
+        ImGui.SameLine();
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 6);
         ImGui.Text(timestamp);
 
         using (var _ = ImguiHelpers.Disabled(!animator.IsActive)) {
@@ -1824,8 +1827,28 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         ImGui.PopStyleColor();
 
         if (animator.IsPlaying && UpdateAnimData()) {
-            foreach (var c in meshContexts) {
-                c.Animator?.Update(Time.Delta * playbackSpeed);
+            var delta = Time.Delta * playbackSpeed;
+            var clipEnds = isAutoplayNextAnimation && animator.CurrentTime + delta > animator.TotalTime;
+
+            if (clipEnds) {
+                var anims = animator.Animations.ToList();
+                var next = anims.IndexOf(animator.ActiveMotion!) + 1;
+                foreach (var c in meshContexts) {
+                    var a = c.Animator;
+                    if (a == null) continue;
+                    if (next >= anims.Count) {
+                        a.Pause();
+                        a.Restart();
+                    } else if (a.owner == animator) {
+                        a.SetActiveMotion(anims[next]);
+                    } else {
+                        a.Update(delta);
+                    }
+                }
+            } else {
+                foreach (var c in meshContexts) {
+                    c.Animator?.Update(delta);
+                }
             }
         } else if (animator.IsActive) {
             foreach (var c in meshContexts) {
