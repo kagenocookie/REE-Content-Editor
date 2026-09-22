@@ -18,7 +18,7 @@ public sealed class ObjectResourceHandler : IObjectUIHandler
         }
         var nested = field?.forceNested ?? instance.Instance.Fields.Length > 2;
         if (nested) {
-            if (ImGui.TreeNode(context.label)) {
+            if (ImguiHelpers.TreeNodeSuffix(context.label, WindowHandlerFactory.GetString(instance.Instance))) {
                 context.children[0].ShowUI();
                 ImGui.TreePop();
             }

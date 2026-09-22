@@ -15,7 +15,31 @@ public class GroupedResourceUIHandler : IObjectUIHandler
         ImGui.Spacing();
         foreach (var (type, res) in group.Resources) {
             ImGui.PushID(type);
-            var child = context.GetChildByValue(group.Get(type));
+            var subres = group.Get(type);
+            if (subres == null) {
+                ImGui.Text(type.PrettyPrint());
+                ImGui.SameLine();
+                ImGui.TextColored(Colors.Faded, Lang.General.ObjectIsNull);
+                ImGui.SameLine();
+                if (ImGui.Button(Lang.Buttons.Create)) {
+                    var workspace = context.GetWorkspace();
+                    var entity = context.GetOwnerEntity();
+                    var field = context.GetEntityField();
+                    if (workspace == null || entity == null || field == null) {
+                        Logger.Error(Lang.Errors.MissingEntityContext);
+                        ImGui.PopID();
+                        continue;
+                    }
+
+                    var subresourceType = field.Config.Subtypes![type];
+                    var resource = workspace.ResourceManager.CreateSubResource(entity, field, ResourceState.Active, subresourceType, null);
+                    UndoRedo.RecordCallbackSetter(context, group, null, resource, (g, v) => g.Set(type, v));
+                    UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
+                }
+                ImGui.PopID();
+                continue;
+            }
+            var child = context.GetChildByValue(subres);
             if (child == null) {
                 var field = context.GetEntityField()!;
                 var subtype = group.ResourceType.Subtypes![type];

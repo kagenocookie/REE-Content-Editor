@@ -63,6 +63,9 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
         } else if (res is RSZObjectResource inst) {
             idField.Set(inst.Instance, castId);
         }
+        if (Config.Filter is ISettable settable) {
+            settable.Set(res);
+        }
         return res;
     }
 

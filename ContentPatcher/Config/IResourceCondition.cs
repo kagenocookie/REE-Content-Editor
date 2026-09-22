@@ -34,7 +34,7 @@ public class WhenAnyCondition(IResourceCondition[] subconditions) : IResourceCon
     }
 }
 
-public class WhenAllCondition(IResourceCondition[] subconditions) : IResourceCondition
+public class WhenAllCondition(IResourceCondition[] subconditions) : IResourceCondition, ISettable
 {
     public bool IsEnabled(object? resource)
     {
@@ -43,6 +43,15 @@ public class WhenAllCondition(IResourceCondition[] subconditions) : IResourceCon
         }
 
         return true;
+    }
+
+    public void Set(object target)
+    {
+        foreach (var c in subconditions) {
+            if (c is ISettable ss) {
+                ss.Set(target);
+            }
+        }
     }
 }
 

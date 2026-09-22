@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.Json.Nodes;
@@ -345,6 +346,17 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             entity.Set(field.name, fieldResource);
         }
         return fieldResource;
+    }
+
+    public IContentResource CreateSubResource(ResourceEntity entity, EntityField field, ResourceState state, ResourceConfig subresourceType, JsonNode? initialData)
+    {
+        Debug.Assert(field.Config.Subtypes?.ContainsValue(subresourceType) == true);
+        var baseResource = entity.Get(field.name);
+        Debug.Assert(baseResource != null);
+
+        var id = entity.GetFieldId(field.name);
+        var sub = subresourceType.Resource.CreateResource(workspace, id, initialData);
+        return sub;
     }
 
     private long GetRandomUniqueResourceID(ResourceData data, ResourceState state)

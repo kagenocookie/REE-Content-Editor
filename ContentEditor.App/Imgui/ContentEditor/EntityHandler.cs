@@ -65,7 +65,7 @@ public class EntityHandler : IObjectUIHandler
                 return;
             }
 
-            // TODO if group resource type, show subtype selection here when possible
+            // TODO if merged-group resource type, show subtype selection here when possible
 
             var resource = workspace.ResourceManager.CreateEntityField(entity, field, ResourceState.Active);
             context.Set(resource);
