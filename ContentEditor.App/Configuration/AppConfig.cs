@@ -1202,6 +1202,10 @@ public record SceneViewSettings
 public record DevSettings
 {
     public KnownFileFormats LastFileTestFormat { get; set; }
+    public string? PythonPath { get; set; }
+    public string? REFPath { get; set; }
+    public string? ReasyPath { get; set; }
+    public string[]? RefRSZList { get; set; }
 }
 
 public record ChangelogData

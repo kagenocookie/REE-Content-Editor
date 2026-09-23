@@ -992,6 +992,10 @@ public partial class EditorWindow : WindowBase, IWorkspaceContainer
                     AddSubwindow(new ListFileGeneratorTaskWindow());
                 }
 
+                if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Tools.DataGeneration_RSZJson))) {
+                    AddSubwindow(new RszJsonGeneratorTaskWindow(workspace));
+                }
+
                 if (ImGui.MenuItem(Lang.General.BlankPrefix.Format(Lang.Tools.DataGeneration_Bookmarks))) {
                     var list = PrefabLister.GenerateFileSets(workspace);
                     if (list != null) {
