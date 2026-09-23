@@ -95,16 +95,19 @@ public class HierarchyTypeList<T>(string name) where T : class
     public void SortEntries()
     {
         items.Sort((a, b) => {
+            if (a is T && b is T) {
+                return 0;
+            }
+            // leave leaf nodes at the more easily controllable default definition order
             var strA = (a as HierarchyTypeList<T>)?.Name ?? itemsDict.First(kv => kv.Value == a).Key;
             var strB = (b as HierarchyTypeList<T>)?.Name ?? itemsDict.First(kv => kv.Value == b).Key;
             return strA.CompareTo(strB);
         });
-        // sort only the root entries - this way the leaf entries stay in the more easily controllable definition order
 
-        // foreach (var sub in items) {
-        //     if (sub is HierarchyTypeList<T> hsub) {
-        //         hsub.SortEntries();
-        //     }
-        // }
+        foreach (var sub in items) {
+            if (sub is HierarchyTypeList<T> hsub) {
+                hsub.SortEntries();
+            }
+        }
     }
 }
