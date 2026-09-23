@@ -10,8 +10,14 @@ public interface IResourceCondition
     public static IResourceCondition Deserialize(ResourceConditionData data)
     {
         if (data.property == "classname") {
+            if (data.notEquals != null) {
+                return new InvertResourceCondition(new WhenClassnameCondition(data.property, data.notEquals as string ?? ""));
+            }
             return new WhenClassnameCondition(data.property, data.equals as string ?? "");
         } else {
+            if (data.notEquals != null) {
+                return new InvertResourceCondition(new WhenFieldValueCondition(data.property, data.notEquals));
+            }
             return new WhenFieldValueCondition(data.property, data.equals);
         }
     }
@@ -66,6 +72,11 @@ public class WhenClassnameCondition(string field, string classname) : IResourceC
 
         throw new Exception($"Invalid field {field} for classname condition - must be an RSZObjectInstance");
     }
+}
+
+public class InvertResourceCondition(IResourceCondition condition) : IResourceCondition
+{
+    public bool IsEnabled(object? resource) => !condition.IsEnabled(resource);
 }
 
 public class WhenFieldValueCondition(string field, object? compareValue) : IResourceCondition, ISettable

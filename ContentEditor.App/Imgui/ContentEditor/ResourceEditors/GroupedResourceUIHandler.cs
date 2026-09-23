@@ -10,9 +10,16 @@ public class GroupedResourceUIHandler : IObjectUIHandler
     public void OnIMGUI(UIContext context)
     {
         var group = context.Get<GroupedResource>();
-        ImguiHelpers.BeginRect();
-        ImGui.Text(context.label);
-        ImGui.Spacing();
+        var nested = group.ResourceType.OriginalConfig?.GetParam<bool>("nested", false) == true;
+        if (nested) {
+            if (!ImGui.TreeNode(context.label)) {
+                return;
+            }
+        } else {
+            ImguiHelpers.BeginRect();
+            ImGui.Text(context.label);
+            ImGui.Spacing();
+        }
         foreach (var (type, res) in group.Resources) {
             ImGui.PushID(type);
             var subres = group.Get(type);
@@ -49,7 +56,11 @@ public class GroupedResourceUIHandler : IObjectUIHandler
             child.ShowUI();
             ImGui.PopID();
         }
-        ImguiHelpers.EndRect();
-        ImGui.Spacing();
+        if (nested) {
+            ImGui.TreePop();
+        } else {
+            ImguiHelpers.EndRect();
+            ImGui.Spacing();
+        }
     }
 }

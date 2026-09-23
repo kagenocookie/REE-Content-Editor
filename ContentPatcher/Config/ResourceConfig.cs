@@ -9,6 +9,7 @@ public class ResourceConfig(string type)
     public static readonly ResourceConfig Placeholder = new ("");
     public string Type { get; } = type;
     public string DisplayName { get; init; } = type;
+    public ResourceConfigSerialized? OriginalConfig { get; set; }
     public long[]? CustomIDRange { get; set; }
     public RszClass? RszClass { get; set; }
     public IDGenerator? IDGenerator { get; set; }
@@ -101,9 +102,10 @@ public partial class ResourceConfigSerialized
         => Params?.GetValueOrDefault(key) is T vvv ? vvv : throw new Exception($"Resource {Type} requires {typeof(T)} parameter {key}");
 }
 
-[YamlObject]
+[YamlObject(NamingConvention.SnakeCase)]
 public partial class ResourceConditionData
 {
     public string property = string.Empty;
     public object? equals;
+    public object? notEquals;
 }

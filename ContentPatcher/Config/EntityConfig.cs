@@ -91,7 +91,7 @@ public partial class EntityFieldConfig
     public T RequireParam<T>(string key) => resource!.RequireParam<T>(key);
 }
 
-[YamlObject]
+[YamlObject(NamingConvention.SnakeCase)]
 public partial class EntityFieldConditionData : ResourceConditionData
 {
     public string? field;

@@ -505,9 +505,13 @@
         "equals": {
           "description": "Value to compare against (enum name or literal value). Used with property.",
           "type": ["string", "number", "boolean", "integer"]
+        },
+        "not_equals": {
+          "description": "Value to compare against (enum name or literal value). Used with property.",
+          "type": ["string", "number", "boolean", "integer"]
         }
       },
-      "required": ["property", "equals"],
+      "required": ["property"],
       "additionalProperties": false
     },
     "entityCondition": {
@@ -525,9 +529,13 @@
         "equals": {
           "description": "Value to compare against (enum name or literal value). Used with property.",
           "type": ["string", "number", "boolean", "integer"]
+        },
+        "not_equals": {
+          "description": "Value to compare against (enum name or literal value). Used with property.",
+          "type": ["string", "number", "boolean", "integer"]
         }
       },
-      "required": ["property", "equals"],
+      "required": ["property"],
       "additionalProperties": false
     }
   }

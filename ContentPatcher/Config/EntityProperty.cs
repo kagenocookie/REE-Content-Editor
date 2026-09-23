@@ -46,12 +46,21 @@ public partial record EntityProperty(string field, string path)
 public interface IEntityCondition
 {
     bool IsEnabled(ResourceEntity entity);
+
+    public static IEntityCondition Deserialize(EntityFieldConditionData data, string fallbackField)
+    {
+        if (data.notEquals != null) {
+            return new InvertEntityCondition(EntityPropertyValueEquals.Create(data, data.notEquals, fallbackField));
+        }
+
+        return EntityPropertyValueEquals.Create(data, data.equals, fallbackField);
+    }
 }
 
 public class EntityPropertyValueEquals(string field, string path, object? compareValue) : IEntityCondition
 {
-    public static EntityPropertyValueEquals Create(EntityFieldConditionData data, string fieldFallback)
-        => new EntityPropertyValueEquals(data.field ?? fieldFallback, data.property, data.equals);
+    public static EntityPropertyValueEquals Create(EntityFieldConditionData data, object? compareValue, string fieldFallback)
+        => new EntityPropertyValueEquals(data.field ?? fieldFallback, data.property, compareValue);
 
     public EntityProperty Property { get; set; } = new EntityProperty(field, path);
 
@@ -70,10 +79,10 @@ public class EntityPropertyValueEquals(string field, string path, object? compar
     }
 }
 
-public class EntityPropertyAnyCondition(EntityPropertyValueEquals[] conditions) : IEntityCondition
+public class EntityPropertyAnyCondition(IEntityCondition[] conditions) : IEntityCondition
 {
     public static EntityPropertyAnyCondition Create(EntityFieldConditionData[] data, string fieldFallback)
-        => new EntityPropertyAnyCondition(data.Select(d => new EntityPropertyValueEquals(d.field ?? fieldFallback, d.property, d.equals)).ToArray());
+        => new EntityPropertyAnyCondition(data.Select(d => IEntityCondition.Deserialize(d, fieldFallback)).ToArray());
 
     public bool IsEnabled(ResourceEntity entity)
     {
@@ -82,4 +91,12 @@ public class EntityPropertyAnyCondition(EntityPropertyValueEquals[] conditions) 
         }
         return false;
     }
+}
+
+public class InvertEntityCondition(IEntityCondition condition) : IEntityCondition
+{
+    public static EntityPropertyAnyCondition Create(EntityFieldConditionData[] data, string fieldFallback)
+        => new EntityPropertyAnyCondition(data.Select(d => new EntityPropertyValueEquals(d.field ?? fieldFallback, d.property, d.equals)).ToArray());
+
+    public bool IsEnabled(ResourceEntity entity) => !condition.IsEnabled(entity);
 }

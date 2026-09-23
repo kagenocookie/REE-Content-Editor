@@ -228,6 +228,7 @@ public class PatchConfig(string filepath)
         var cfg = new ResourceConfig(resType) {
             CustomIDRange = resCfg.CustomIDRange,
             DisplayName = resCfg.DisplayName ?? resType.GetStringAfterLastDelimiter('.').ToString(),
+            OriginalConfig = resCfg,
         };
 
         if (resCfg.Subtypes?.Count > 0) {
@@ -397,7 +398,7 @@ public class PatchConfig(string filepath)
         field.ValueHandler.Field = field;
         field.ValueHandler.LoadParams(data);
         if (data.condition != null) {
-            field.Condition = EntityPropertyValueEquals.Create(data.condition, field.name);
+            field.Condition = IEntityCondition.Deserialize(data.condition, field.name);
         } else if (data.multiConditionsAny?.Length > 0) {
             field.Condition = EntityPropertyAnyCondition.Create(data.multiConditionsAny, field.name);
         }

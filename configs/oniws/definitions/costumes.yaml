@@ -1,0 +1,181 @@
+# GameDesign/System/Scene/Catalog.scn.21
+
+entities:
+  CostumeItem:
+    to_string: "CostumeItem {id} {id:enum(app.ItemEnum.ID_Fixed)}: {itemData._NameGuid:translate()}"
+    enums:
+      - name: app.ItemEnum.ID_Fixed
+        format: "ITEM_{id}"
+        primary: true
+    fields:
+    - name: costumeData
+      required: true
+      resource:
+        type: array-file
+        classname: app.user_data.CostumeItemTable.cCostumeItemData
+        id: [_ItemID]
+        file: GameDesign/GUI/CostumeChange/CostumeItemData.user
+    - name: itemData
+      required: true
+      resource:
+        type: array-file
+        classname: app.user_data.ItemData.cData
+        id: [{ path: _Id._Value, class: app.ItemEnum.ID_Serializable }]
+        file: GameDesign/DataExcel/ItemData.user
+    - name: cloakParts
+      required: true
+      field_id:
+        field: costumeData
+        path: _PlayerCloakID
+      when:
+        field: costumeData
+        property: _PlayerCloakID
+        not_equals: 15318
+      resource:
+        type: array-file
+        id: [_ID]
+        classname: app.user_data.PlayerPartsList.cData
+        files:
+        - GameDesign/System/CatalogData/PlayerCloakPartsList_2nd.user
+        - GameDesign/System/CatalogData/PlayerCloakPartsList_1st.user
+    - name: cloakPartsHQ
+      required: true
+      field_id:
+        field: costumeData
+        path: _PlayerCloakID
+      when:
+        field: costumeData
+        property: _PlayerCloakID
+        not_equals: 15318
+      resource:
+        type: array-file
+        id: [_ID]
+        classname: app.user_data.PlayerPartsList.cData
+        files:
+        - GameDesign/System/CatalogData/PlayerCloakPartsListHQ_2nd.user
+        - GameDesign/System/CatalogData/PlayerCloakPartsListHQ_1st.user
+    - name: weaponCatalogData
+      required: true
+      field_id:
+        field: costumeData
+        path: _PlayerWeaponsID
+      when:
+        field: costumeData
+        property: _PlayerWeaponsID
+        not_equals: 27531
+      resource:
+        type: group
+        params:
+          nested: true
+        subtypes:
+          weaponParts:
+            type: array-file
+            id: [_ID]
+            classname: app.user_data.PlayerPartsList.cData
+            files:
+            - GameDesign/System/CatalogData/PlayerWeaponPartsList_2nd.user
+            - GameDesign/System/CatalogData/PlayerWeaponPartsList_1st.user
+          weaponPartsHQ:
+            type: array-file
+            id: [_ID]
+            classname: app.user_data.PlayerPartsList.cData
+            files:
+            - GameDesign/System/CatalogData/PlayerWeaponPartsListHQ_2nd.user
+            - GameDesign/System/CatalogData/PlayerWeaponPartsListHQ_1st.user
+          weaponSubParts:
+            type: array-file
+            id: [_ID]
+            classname: app.user_data.PlayerPartsList.cData
+            files:
+            - GameDesign/System/CatalogData/PlayerWeaponSubPartsList_2nd.user
+            - GameDesign/System/CatalogData/PlayerWeaponSubPartsList_1st.user
+          weaponSubPartsHQ:
+            type: array-file
+            id: [_ID]
+            classname: app.user_data.PlayerPartsList.cData
+            files:
+            - GameDesign/System/CatalogData/PlayerWeaponSubPartsListHQ_2nd.user
+            - GameDesign/System/CatalogData/PlayerWeaponSubPartsListHQ_1st.user
+          weaponSheathParts:
+            type: array-file
+            id: [_ID]
+            classname: app.user_data.PlayerPartsList.cData
+            files:
+            - GameDesign/System/CatalogData/PlayerSheathPartsList_2nd.user
+            - GameDesign/System/CatalogData/PlayerSheathPartsList_1st.user
+          weaponSheathPartsHQ:
+            type: array-file
+            id: [_ID]
+            classname: app.user_data.PlayerPartsList.cData
+            files:
+            - GameDesign/System/CatalogData/PlayerSheathPartsListHQ_2nd.user
+            - GameDesign/System/CatalogData/PlayerSheathPartsListHQ_1st.user
+          weaponSheathSubParts:
+            type: array-file
+            id: [_ID]
+            classname: app.user_data.PlayerPartsList.cData
+            files:
+            - GameDesign/System/CatalogData/PlayerSheathSubPartsList_2nd.user
+            - GameDesign/System/CatalogData/PlayerSheathSubPartsList_1st.user
+          weaponSheathSubPartsHQ:
+            type: array-file
+            id: [_ID]
+            classname: app.user_data.PlayerPartsList.cData
+            files:
+            - GameDesign/System/CatalogData/PlayerSheathSubPartsListHQ_2nd.user
+            - GameDesign/System/CatalogData/PlayerSheathSubPartsListHQ_1st.user
+    - name: playerBodyData
+      field_id:
+        field: costumeData
+        path: _PlayerBodyID
+      when:
+        field: costumeData
+        property: _PlayerBodyID
+        not_equals: 16365
+      resource:
+        type: group
+        subtypes:
+          bodyParts:
+            type: array-file
+            id: [_ID]
+            classname: app.user_data.PlayerPartsList.cData
+            files:
+            - GameDesign/System/CatalogData/PlayerBodyPartsList_2nd.user
+            - GameDesign/System/CatalogData/PlayerBodyPartsList_1st.user
+          bodyPartsHQ:
+            type: array-file
+            id: [_ID]
+            classname: app.user_data.PlayerPartsList.cData
+            files:
+            - GameDesign/System/CatalogData/PlayerBodyPartsListHQ_2nd.user
+            - GameDesign/System/CatalogData/PlayerBodyPartsListHQ_1st.user
+
+classes:
+  app.user_data.ItemData.cData:
+    to_string: "ItemData {_Index} {_Id._Value}"
+  app.user_data.CostumeItemTable.cCostumeItemData:
+    to_string: "CostumeItemData {_ItemID}"
+  app.ItemEnum.ID_Serializable:
+    to_string: "{_Value:enum(app.ItemEnum.ID_Fixed)} ({_Value})"
+    fields:
+      _Value: { enum: app.ItemEnum.ID_Fixed }
+  app.ItemEnum.CATEGORY_Serializable:
+    to_string: "{_Value:enum(app.ItemEnum.CATEGORY_Fixed)} ({_Value})"
+    fields:
+      _Value: { enum: app.ItemEnum.CATEGORY_Fixed }
+  app.ItemEnum.OBTAIN_GUI_Serializable:
+    to_string: "{_Value:enum(app.ItemEnum.OBTAIN_GUI_Fixed)} ({_Value})"
+    fields:
+      _Value: { enum: app.ItemEnum.OBTAIN_GUI_Fixed }
+  app.ItemEnum.FIRST_OBTAIN_GUI_Serializable:
+    to_string: "{_Value:enum(app.ItemEnum.FIRST_OBTAIN_GUI_Fixed)} ({_Value})"
+    fields:
+      _Value: { enum: app.ItemEnum.FIRST_OBTAIN_GUI_Fixed }
+  app.ItemEnum.USE_MOTION_Serializable:
+    to_string: "{_Value:enum(app.ItemEnum.USE_MOTION_Fixed)} ({_Value})"
+    fields:
+      _Value: { enum: app.ItemEnum.USE_MOTION_Fixed }
+  app.MissionDef.ID_Serializable:
+    to_string: "{_Value:enum(app.MissionDef.ID_Fixed)} ({_Value})"
+    fields:
+      _Value: { enum: app.MissionDef.ID_Fixed }
