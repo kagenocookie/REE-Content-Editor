@@ -150,6 +150,15 @@ entities:
       #     resource_type: prefab
       #     params:
       #       path: "{data?.Prefab?.Path}"
+  items.WorldModel:
+    to_string: "WorldModel {id} | {model._Mesh}"
+    fields:
+    - name: model
+      required: true
+      resource:
+        custom_id_range: [200, 100000]
+        type: resource_proxy_pfb
+        file: AppSystem/Item/ItemModelData/ItemModelPrefabData.user
 
   # app.ItemMixParam:
   #   id: [_ItemId]
@@ -166,6 +175,7 @@ classes:
     to_string: "Item Data {_Id}"
     fields:
       _Id: { readOnly: true }
+      _ModelId: { enum: WorldModel }
       _Attr: { enum: app.ItemAttrBits }
       _FakeItemId: { enum: item_data }
       _DecayedItemId: { enum: item_data }
@@ -173,11 +183,13 @@ classes:
   app.ItemWeaponParam:
     fields:
       _Id: { readOnly: true }
+      _ModelId: { enum: WorldModel }
       _Attr: { enum: app.ItemAttrBits }
       _Job: { enum: ce.ItemJobFlags }
   app.ItemArmorParam:
     fields:
       _Id: { readOnly: true }
+      _ModelId: { enum: WorldModel }
       _EquipCategory: { readOnly: true } # read-only to prevent mismatched object types
       _Attr: { enum: app.ItemAttrBits }
       _Job: { enum: ce.ItemJobFlags }
