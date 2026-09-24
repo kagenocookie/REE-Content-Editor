@@ -103,7 +103,7 @@ public class EnumMapResourceHandler : ResourceHandler, IResourceHandlerStatic
         return new EnumMapResourceHandler() { Config = resource };
     }
 
-    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data, ResourceEntity? entity)
     {
         return resource ?? throw new Exception($"Creating blank resources of type {Config} is not supported");
     }

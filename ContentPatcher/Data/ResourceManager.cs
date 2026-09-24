@@ -350,7 +350,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
 
     public IContentResource CreateSubResource(ResourceEntity entity, EntityField field, ResourceState state, ResourceConfig subresourceType, JsonNode? initialData)
     {
-        Debug.Assert(field.Config.Subtypes?.ContainsValue(subresourceType) == true);
+        Debug.Assert(field.Config.Subtypes?.Any(kv => kv.Value.resource == subresourceType) == true);
         var baseResource = entity.Get(field.name);
         Debug.Assert(baseResource != null);
 

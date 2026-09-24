@@ -241,7 +241,11 @@ public class PatchConfig(string filepath)
                 subConfig.CustomIDRange = resCfg.CustomIDRange;
 
                 var sub = SetupResourceConfig(workspace, resType + "." + subType, subConfig, addResourceHandler);
-                cfg.Subtypes[subType] = sub;
+                IEntityCondition? subcondition = null;
+                if (subConfig.when != null) {
+                    subcondition = EntityPropertyAllCondition.Deserialize(subConfig.when, "");
+                }
+                cfg.Subtypes[subType] = new (sub, subcondition);
             }
         }
 
@@ -276,9 +280,9 @@ public class PatchConfig(string filepath)
         // subtypes values are inherited unless specified otherwise
         if (cfg.Subtypes != null) {
             foreach (var sub in cfg.Subtypes) {
-                sub.Value.RszClass ??= cfg.RszClass;
-                sub.Value.IDGenerator ??= cfg.IDGenerator;
-                sub.Value.SubIDGenerator ??= cfg.SubIDGenerator;
+                sub.Value.resource.RszClass ??= cfg.RszClass;
+                sub.Value.resource.IDGenerator ??= cfg.IDGenerator;
+                sub.Value.resource.SubIDGenerator ??= cfg.SubIDGenerator;
             }
         }
         if (addResourceHandler) {
@@ -400,7 +404,7 @@ public class PatchConfig(string filepath)
         if (data.condition != null) {
             field.Condition = IEntityCondition.Deserialize(data.condition, field.name);
         } else if (data.multiConditionsAny?.Length > 0) {
-            field.Condition = EntityPropertyAnyCondition.Create(data.multiConditionsAny, field.name);
+            field.Condition = EntityPropertyAnyCondition.Deserialize(data.multiConditionsAny, field.name);
         }
         field.IsRequired = data.isRequired;
         field.IsNotStandaloneValue = data.isNotStandalone;

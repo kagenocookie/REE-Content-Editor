@@ -101,6 +101,13 @@ public abstract class IDGenerator(NestableFieldAccessor[] fields)
                 return DefineGenerator(rszClass, [new NestableFieldAccessor.SimpleField(rszClass, i)]);
             }
         }
+        for (int i = 0; i < rszClass.fields.Length; i++) {
+            var field = rszClass.fields[i];
+            if (field.type == RszFieldType.S32) {
+                Logger.Debug($"Auto-determined ID field {field.name} for class {rszClass.name}");
+                return DefineGenerator(rszClass, [new NestableFieldAccessor.SimpleField(rszClass, i)]);
+            }
+        }
 
         return null;
     }

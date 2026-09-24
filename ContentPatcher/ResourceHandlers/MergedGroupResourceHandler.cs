@@ -5,7 +5,7 @@ namespace ContentPatcher;
 [ResourcePatcher("merged-group")]
 public class MergedGroupResourceHandler : ResourceHandler, IResourceHandlerStatic
 {
-    public override EntityFieldValueHandler CreateValueHandler(EntityField field) => Config.Subtypes!.First().Value.Resource!.CreateValueHandler(field);
+    public override EntityFieldValueHandler CreateValueHandler(EntityField field) => Config.Subtypes!.First().Value.resource.Resource!.CreateValueHandler(field);
 
     public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
     {
@@ -16,19 +16,26 @@ public class MergedGroupResourceHandler : ResourceHandler, IResourceHandlerStati
         };
     }
 
-    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data, ResourceEntity? entity)
     {
         if (resource?.ResourceType != null) {
             // note: the assumption here is that we never swap a resource from one subtype to another
-            return resource.ResourceType.Resource.ApplyResourceData(workspace, resource, data);
+            return resource.ResourceType.Resource.ApplyResourceData(workspace, resource, data, entity);
         }
 
-        // otherwise try and match a classname or subtype name from the data JSON
-        if (data?.AsObject().TryGetPropertyValue("$type", out var typeStr) == true && typeStr?.GetValueKind() == System.Text.Json.JsonValueKind.String) {
+        var classname = data?.DetermineObjectClassname();
+        if (classname != null) {
             foreach (var (subtype, sub) in Config.Subtypes!) {
-                var type = typeStr.GetValue<string>();
-                if ((type == subtype || type == sub.RszClass?.name) && sub.Resource != null) {
-                    return sub.Resource.ApplyResourceData(workspace, resource, data);
+                if ((classname == subtype || classname == sub.resource.RszClass?.name) && sub.resource.Resource != null) {
+                    return sub.resource.Resource.ApplyResourceData(workspace, resource, data, entity);
+                }
+            }
+        }
+
+        if (entity != null) {
+            foreach (var (subtype, sub) in Config.Subtypes!) {
+                if (sub.condition != null && sub.condition.IsEnabled(entity)) {
+                    return sub.resource.Resource.ApplyResourceData(workspace, resource, data, entity);
                 }
             }
         }
@@ -38,11 +45,11 @@ public class MergedGroupResourceHandler : ResourceHandler, IResourceHandlerStati
 
     public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
     {
-        if (initialData?.AsObject().TryGetPropertyValue("$type", out var typeStr) == true && typeStr?.GetValueKind() == System.Text.Json.JsonValueKind.String) {
+        var classname = initialData?.DetermineObjectClassname();
+        if (classname != null) {
             foreach (var (subtype, sub) in Config.Subtypes!) {
-                var type = typeStr.GetValue<string>();
-                if ((type == subtype || type == sub.RszClass?.name) && sub.Resource != null) {
-                    return sub.Resource.CreateResource(workspace, id, initialData);
+                if ((classname == subtype || classname == sub.resource.RszClass?.name) && sub.resource.Resource != null) {
+                    return sub.resource.Resource.CreateResource(workspace, id, initialData);
                 }
             }
         }
@@ -52,14 +59,14 @@ public class MergedGroupResourceHandler : ResourceHandler, IResourceHandlerStati
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)
     {
         foreach (var (type, sub) in Config.Subtypes!) {
-            sub.Resource?.ReadResources(workspace, dict);
+            sub.resource.Resource?.ReadResources(workspace, dict);
         }
     }
 
     public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
     {
         foreach (var (type, sub) in Config.Subtypes!) {
-            sub.Resource?.ModifyResources(workspace, resources);
+            sub.resource.Resource?.ModifyResources(workspace, resources);
         }
     }
 }

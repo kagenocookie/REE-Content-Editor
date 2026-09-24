@@ -18,7 +18,7 @@ public class GroupResourceHandler : ResourceHandler, IResourceHandlerStatic
         };
     }
 
-    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data, ResourceEntity? entity)
     {
         if (resource is not GroupedResource group || group.ResourceType != Config) {
             group = new GroupedResource(Config, Config.Subtypes!.Keys);
@@ -27,7 +27,7 @@ public class GroupResourceHandler : ResourceHandler, IResourceHandlerStatic
         foreach (var (type, subconfig) in Config.Subtypes!) {
             var subdata = data?[type];
             var subvalue = group.Get(type);
-            subvalue = subconfig.Resource.ApplyResourceData(workspace, subvalue, subdata);
+            subvalue = subconfig.resource.Resource.ApplyResourceData(workspace, subvalue, subdata, entity);
             group.Set(type, subvalue);
         }
 
@@ -40,7 +40,7 @@ public class GroupResourceHandler : ResourceHandler, IResourceHandlerStatic
 
         foreach (var (type, subconfig) in Config.Subtypes) {
             var subdata = initialData?[type];
-            var subvalue = subconfig.Resource.CreateResource(workspace, id, subdata);
+            var subvalue = subconfig.resource.Resource.CreateResource(workspace, id, subdata);
             group.Set(type, subvalue);
         }
 
@@ -52,7 +52,7 @@ public class GroupResourceHandler : ResourceHandler, IResourceHandlerStatic
         var subdict = new Dictionary<long, IContentResource>();
         var keys = Config.Subtypes!.Keys;
         foreach (var (type, sub) in Config.Subtypes) {
-            sub.Resource?.ReadResources(workspace, subdict);
+            sub.resource.Resource?.ReadResources(workspace, subdict);
             foreach (var (id, res) in subdict) {
                 if (!dict.TryGetValue(id, out var existing) || existing is not GroupedResource group) {
                     dict[id] = group = new GroupedResource(Config, keys);
@@ -66,7 +66,7 @@ public class GroupResourceHandler : ResourceHandler, IResourceHandlerStatic
     public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
     {
         foreach (var (type, sub) in Config.Subtypes!) {
-            sub.Resource?.ModifyResources(workspace, resources);
+            sub.resource.Resource?.ModifyResources(workspace, resources);
         }
     }
 }

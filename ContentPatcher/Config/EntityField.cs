@@ -82,7 +82,7 @@ public class EntityFieldValueHandler
     /// </summary>
     /// <returns>A resource representing the applied data. Can be the same instance that was given.</returns>
     public virtual IContentResource? ApplyValue(ContentWorkspace workspace, IContentResource? currentResource, JsonNode? data, ResourceEntity entity, ResourceState state)
-        => Field.Config.Resource.ApplyResourceData(workspace, currentResource, data);
+        => Field.Config.Resource.ApplyResourceData(workspace, currentResource, data, entity);
 
     public virtual void LoadParams(EntityFieldConfig param)
     {

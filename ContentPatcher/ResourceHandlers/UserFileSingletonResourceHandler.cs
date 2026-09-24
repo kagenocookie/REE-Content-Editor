@@ -27,7 +27,7 @@ public class UserFileSingletonResourceHandler : ResourceHandler, IResourceHandle
         dict[id] = new RSZObjectResource(Config, instance, filepath);
     }
 
-    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data, ResourceEntity? entity)
     {
         if (resource is not RSZObjectResource obj) {
             throw new NotImplementedException($"Can't create new resources of type {Config.Resource} ({Config.Type})");

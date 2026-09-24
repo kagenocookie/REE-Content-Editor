@@ -41,6 +41,8 @@ public partial record EntityProperty(string field, string path)
         }
         throw new NotImplementedException();
     }
+
+    public override string ToString() => $"{field}.{path}";
 }
 
 public interface IEntityCondition
@@ -77,11 +79,29 @@ public class EntityPropertyValueEquals(string field, string path, object? compar
             return Convert.ChangeType(compareValue, fieldType).Equals(value);
         }
     }
+
+    public override string ToString() => $"{Property} == {compareValue}";
+}
+
+public class EntityPropertyAllCondition(IEntityCondition[] conditions) : IEntityCondition
+{
+    public static IEntityCondition Deserialize(EntityFieldConditionData[] data, string fieldFallback)
+        => data.Length == 1
+            ? IEntityCondition.Deserialize(data[0], fieldFallback)
+            : new EntityPropertyAllCondition(data.Select(d => IEntityCondition.Deserialize(d, fieldFallback)).ToArray());
+
+    public bool IsEnabled(ResourceEntity entity)
+    {
+        foreach (var c in conditions) {
+            if (!c.IsEnabled(entity)) return false;
+        }
+        return true;
+    }
 }
 
 public class EntityPropertyAnyCondition(IEntityCondition[] conditions) : IEntityCondition
 {
-    public static EntityPropertyAnyCondition Create(EntityFieldConditionData[] data, string fieldFallback)
+    public static EntityPropertyAnyCondition Deserialize(EntityFieldConditionData[] data, string fieldFallback)
         => new EntityPropertyAnyCondition(data.Select(d => IEntityCondition.Deserialize(d, fieldFallback)).ToArray());
 
     public bool IsEnabled(ResourceEntity entity)
@@ -95,8 +115,5 @@ public class EntityPropertyAnyCondition(IEntityCondition[] conditions) : IEntity
 
 public class InvertEntityCondition(IEntityCondition condition) : IEntityCondition
 {
-    public static EntityPropertyAnyCondition Create(EntityFieldConditionData[] data, string fieldFallback)
-        => new EntityPropertyAnyCondition(data.Select(d => new EntityPropertyValueEquals(d.field ?? fieldFallback, d.property, d.equals)).ToArray());
-
     public bool IsEnabled(ResourceEntity entity) => !condition.IsEnabled(entity);
 }

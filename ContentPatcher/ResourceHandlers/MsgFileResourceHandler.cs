@@ -24,7 +24,7 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
         };
     }
 
-    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data, ResourceEntity? entity)
     {
         if (resource is not MessageData msgData) {
             msgData = MessageData.FromJson(data as JsonObject, Config);
@@ -40,7 +40,7 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
 
     public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
     {
-        return ApplyResourceData(workspace, null, initialData);
+        return ApplyResourceData(workspace, null, initialData, null);
     }
 
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)

@@ -86,10 +86,18 @@ entities:
             type: array-file
             file: AppSystem/Item/ItemData/ArmorEnhanceData.user
             classname: app.ArmorEnhanceParam
+            when:
+            - field: data
+              property: classname
+              equals: app.ItemArmorParam
           weapon:
             type: array-file
             file: AppSystem/Item/ItemData/WeaponEnhanceData.user
             classname: app.WeaponEnhanceParam
+            when:
+            - field: data
+              property: classname
+              equals: app.ItemWeaponParam
     runtime_mapping:
       runtime_type: item_data
       to_both:

@@ -370,6 +370,13 @@
             "$ref": "#/definitions/enumInfo"
           }
         },
+        "when": {
+          "description": "The condition under which a subresource is allowed to match in a field. Only used by subresources.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/entityCondition"
+          }
+        },
         "params": {
           "description": "Resource configuration parameters.",
           "$ref": "#/definitions/resourceCustomParams"

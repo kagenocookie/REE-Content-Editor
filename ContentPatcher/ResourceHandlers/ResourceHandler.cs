@@ -80,7 +80,7 @@ public abstract class ResourceHandler
     /// <summary>
     /// Apply partial data on top of a resource or create a new detached resource instance. May return a new resource instance.
     /// </summary>
-    public abstract IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data);
+    public abstract IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data, ResourceEntity? entity);
 
     /// <summary>
     /// Createa a new instance of this resource from the given ID and optionally apply some initial data. Should also assign ID fields if applicable.

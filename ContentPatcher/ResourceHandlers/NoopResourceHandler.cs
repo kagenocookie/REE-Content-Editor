@@ -40,7 +40,7 @@ public class NoopResourceHandler<TFieldType> : ResourceHandler, IResourceHandler
     {
     }
 
-    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data, ResourceEntity? entity)
     {
         return resource ?? new VoidResource(Config);
     }

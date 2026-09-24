@@ -899,7 +899,7 @@ public static class WindowHandlerFactory
         if (resourceId == -1) {
             resourceId = (resource as IAddressableContentResource)?.ID ?? -1;
         }
-        if (subtype != null && entityField.Config.Subtypes?.ContainsValue(subtype) != true) {
+        if (subtype != null && entityField.Config.Subtypes?.Any(kv => kv.Value.resource == subtype) != true) {
             Logger.Warn($"Potentially wrong sub resource given for entity {entity} field {entityField}");
         }
 

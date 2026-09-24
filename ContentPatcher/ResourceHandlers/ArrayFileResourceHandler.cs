@@ -19,7 +19,7 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
         };
     }
 
-    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data, ResourceEntity? entity)
     {
         if (Config.SubIDGenerator != null) {
             if (resource is not RSZObjectListResource rszl) {
@@ -42,7 +42,7 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
 
     public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
     {
-        var res = ApplyResourceData(workspace, null, initialData);
+        var res = ApplyResourceData(workspace, null, initialData, null);
         var idgen = Config.IDGeneratorRequired;
         if (idgen.Fields != null && idgen.Fields.Length != 1) {
             throw new NotImplementedException("Unsupported rsz object id combination");

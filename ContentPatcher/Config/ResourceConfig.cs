@@ -17,7 +17,7 @@ public class ResourceConfig(string type)
     public ResourceHandler Resource { get; set; } = null!;
     public IResourceCondition? Filter { get; set; }
 
-    public Dictionary<string, ResourceConfig>? Subtypes { get; set; }
+    public Dictionary<string, SubresourceConfig>? Subtypes { get; set; }
 
     public IDGenerator IDGeneratorRequired => IDGenerator ?? throw new NotImplementedException($"Missing ID setting for resource {Type}");
     public RszClass RszClassRequired => RszClass ?? throw new NotImplementedException($"Missing required classname for resource {Type}");
@@ -28,6 +28,11 @@ public class ResourceConfig(string type)
         => _namedPlaceholders.TryGetValue(name, out var p) ? p : (_namedPlaceholders[name] = p = new ResourceConfig(name));
 
     public override string ToString() => Type;
+}
+
+public record SubresourceConfig(ResourceConfig resource, IEntityCondition? condition)
+{
+    public static implicit operator ResourceConfig(SubresourceConfig c) => c.resource;
 }
 
 [YamlObject(NamingConvention.SnakeCase)]
@@ -52,7 +57,7 @@ public partial class ResourceConfigSerialized
     public string? Classname { get; set; }
     public string? Key { get; set; }
 
-    public Dictionary<string, ResourceConfigSerialized>? Subtypes { get; set; }
+    public Dictionary<string, SubResourceConfigSerialized>? Subtypes { get; set; }
 
     public ResourceConditionData[]? filter;
 
@@ -100,6 +105,12 @@ public partial class ResourceConfigSerialized
 
     public T RequireParam<T>(string key)
         => Params?.GetValueOrDefault(key) is T vvv ? vvv : throw new Exception($"Resource {Type} requires {typeof(T)} parameter {key}");
+}
+
+[YamlObject(NamingConvention.SnakeCase)]
+public partial class SubResourceConfigSerialized : ResourceConfigSerialized
+{
+    public EntityFieldConditionData[]? when;
 }
 
 [YamlObject(NamingConvention.SnakeCase)]

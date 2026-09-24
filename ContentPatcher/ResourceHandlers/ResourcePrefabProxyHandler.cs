@@ -145,7 +145,7 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
         }
     }
 
-    public override CatalogPrefabResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
+    public override CatalogPrefabResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data, ResourceEntity? entity)
     {
         componentClass ??= Config.RszClass;
         Debug.Assert(componentClass != null);
@@ -164,7 +164,7 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
 
     public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
     {
-        var res = ApplyResourceData(workspace, null, initialData);
+        var res = ApplyResourceData(workspace, null, initialData, null);
         if (catalogEntryClass == null) throw new Exception();
         Config.IDGenerator ??= IDGenerator.GetGenerator(catalogEntryClass);
 

@@ -20,7 +20,7 @@ public class MultiFileArrayResourceHandler : ResourceHandler, IResourceHandlerSt
         };
     }
 
-    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data)
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data, ResourceEntity? entity)
     {
         if (resource is not RSZObjectListResource rszl) {
             // always store new resources on the first path, the idea is that it probably doesn't matter which because the catalogs are usually just merged for runtime anyway
@@ -33,7 +33,7 @@ public class MultiFileArrayResourceHandler : ResourceHandler, IResourceHandlerSt
 
     public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
     {
-        var list = (RSZObjectListResource)ApplyResourceData(workspace, null, initialData);
+        var list = (RSZObjectListResource)ApplyResourceData(workspace, null, initialData, null);
 
         var idgen = Config.IDGeneratorRequired;
         if (idgen.Fields != null && idgen.Fields.Length != 1) {
