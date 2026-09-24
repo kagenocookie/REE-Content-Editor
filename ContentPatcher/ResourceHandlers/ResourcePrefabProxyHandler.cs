@@ -154,10 +154,33 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
             pfbRes = new CatalogPrefabResource(Config, workspace.CreateRszInstance(componentClass), Files[0]);
         }
 
-        if (string.IsNullOrEmpty(path) && data?.GetValueKind() != System.Text.Json.JsonValueKind.String) {
+        if (!string.IsNullOrEmpty(path)) {
+            // compatibility for ingame bundles since they're usually .pfb paths
+            if (Path.GetExtension(path) == ".pfb") {
+                path = path.NormalizeFilepath();
+                var fs = workspace.Env.FindSingleFile(path, out var resolvedPath, Workspace.FileSourceType.Loose);
+                if (fs == null) {
+                    Logger.Warn($"Could not locate {Config} source file {path}. Make sure it's an active loose file in the game's natives/ dir.");
+                    return pfbRes;
+                }
+                try {
+                    using var file = workspace.ResourceManager.CreateCustomFileHandle(resolvedPath ?? path, resolvedPath, fs);
+                    var pfb = file.GetFile<PfbFile>();
+                    var component = pfb.GameObjects.First().Components.First(c => c.RszClass.name != "via.Transform");
+                    if (component == null) {
+                        Logger.Warn("No valid resource path component in prefab " + path);
+                        return pfbRes;
+                    }
+
+                    pfbRes.Instance = component;
+                } catch (Exception) {
+                    // ignore, the load attempt should've already logged the error
+                }
+            } else {
+                Logger.Warn($"Unsupported prefab string path for resource {Config}: {path}");
+            }
+        } else if (data?.GetValueKind() != System.Text.Json.JsonValueKind.String) {
             workspace.Diff.ApplyDiff(pfbRes.Instance, data);
-        } else {
-            Logger.Warn($"Straight strings are not currently accepted here: {path}");
         }
         return pfbRes;
     }
