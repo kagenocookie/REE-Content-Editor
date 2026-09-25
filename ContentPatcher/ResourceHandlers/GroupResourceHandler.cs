@@ -66,7 +66,7 @@ public class GroupResourceHandler : ResourceHandler, IResourceHandlerStatic
     public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
     {
         foreach (var (type, sub) in Config.Subtypes!) {
-            sub.resource.Resource?.ModifyResources(workspace, resources);
+            sub.resource.Resource?.ModifyResources(workspace, resources.Where(r => r.Value.ResourceType == sub.resource));
         }
     }
 }
