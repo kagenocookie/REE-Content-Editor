@@ -13,7 +13,6 @@ public interface IContentResource
     /// Path to the file containing this resource. Can be null in case it's a resource without a file (e.g. arbitrary entity strings).
     /// </summary>
     string? FileResourcePath { get; }
-    string Label => ToString() ?? $"{ResourceType} [{FileResourcePath ?? "/"}]";
     IContentResource Clone();
     JsonNode ToJson(Workspace env);
 }

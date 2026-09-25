@@ -22,9 +22,9 @@ public static class FormatterSettings
     public static SmartFormatter CreateFullEntityFormatter(EntityConfig config, ContentWorkspace? workspace = null)
     {
         var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
-        fmt.AddExtensions(new EntityStringFormatterSource(config));
+        fmt.AddExtensions(new EntityStringFormatterSource(config), new ResourceStringFormatter());
         if (workspace != null) {
-            fmt.AddExtensions(new ResourceStringFormatter(workspace), new UserDataFileFormatter(workspace));
+            fmt.AddExtensions(new UserDataFileFormatter(workspace));
         }
         ApplyDefaultFormatters(fmt);
         if (workspace != null) ApplyWorkspaceFormatters(fmt, workspace);
@@ -38,7 +38,7 @@ public static class FormatterSettings
     public static SmartFormatter CreateResourceFormatter(ResourceConfig resource, ContentWorkspace workspace)
     {
         var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
-        fmt.AddExtensions(new ResourceStringFormatter(workspace), new UserDataFileFormatter(workspace));
+        fmt.AddExtensions(new ResourceStringFormatter(), new UserDataFileFormatter(workspace));
         ApplyDefaultFormatters(fmt);
         if (workspace != null) ApplyWorkspaceFormatters(fmt, workspace);
         else {
@@ -194,7 +194,7 @@ public class EntityStringFormatterSource(EntityConfig config) : ISource
     }
 }
 
-public class ResourceStringFormatter(ContentWorkspace workspace) : ISource
+public class ResourceStringFormatter() : ISource
 {
     public bool TryEvaluateSelector(ISelectorInfo selectorInfo)
     {
@@ -204,10 +204,6 @@ public class ResourceStringFormatter(ContentWorkspace workspace) : ISource
 
         if (selectorInfo.SelectorText == "id" && resource is IAddressableContentResource addressable) {
             selectorInfo.Result = addressable.ID;
-            return true;
-        }
-        if (selectorInfo.SelectorText == "label") {
-            selectorInfo.Result = resource.Label;
             return true;
         }
 
