@@ -756,8 +756,6 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
                 }
                 return entity;
             }
-
-            Logger.Info($"Entity not found: {type} {entityId}");
         }
 
         return null;

@@ -207,19 +207,19 @@ classes:
     to_string: ArmorEnhanceParam {_Type:enum(app.EnhanceType)} {_EnhanceNo}
     fields:
       _Type: { enum: app.EnhanceType }
-      _ItemId: { enum: app.ItemIDEnum }
+      _ItemId: { enum: app.ItemIDEnum, readOnly: true }
       _NeedItemId0: { enum: app.ItemIDEnum }
       _NeedItemId1: { enum: app.ItemIDEnum }
   app.WeaponEnhanceParam:
     to_string: WeaponEnhanceParam {_Type:enum(app.EnhanceType)} {_EnhanceNo}
     fields:
       _Type: { enum: app.EnhanceType }
-      _ItemId: { enum: app.ItemIDEnum }
+      _ItemId: { enum: app.ItemIDEnum, readOnly: true }
       _NeedItemId0: { enum: app.ItemIDEnum }
       _NeedItemId1: { enum: app.ItemIDEnum }
   app.ItemMixParam:
     fields:
-      _ItemId: { enum: app.ItemIDEnum }
+      _ItemId: { enum: app.ItemIDEnum, readOnly: true }
       _MaterialA: { tooltip: 'Combination requires any MaterialA + any MaterialB item' }
       _MaterialB: { tooltip: 'Combination requires any MaterialA + any MaterialB item' }
       _IsNoSame: { tooltip: "Disallow picking the same item if it's present in both material sets" }

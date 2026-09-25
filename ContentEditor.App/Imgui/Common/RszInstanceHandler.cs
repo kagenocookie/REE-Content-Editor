@@ -622,10 +622,10 @@ public class RszEnumFieldHandler : IObjectUIHandler
 
     public unsafe void OnIMGUI(UIContext context)
     {
-        var selected = context.GetRaw();
+        var selected = context.GetRaw()!;
         if (BackingConvertType != null) selected = Convert.ChangeType(selected, EnumDescriptor.BackingType);
         if (!context.HasBoolState) {
-            var isMatchedValue = !string.IsNullOrEmpty(EnumDescriptor.GetLabel(selected!));
+            var isMatchedValue = !string.IsNullOrEmpty(EnumDescriptor.GetLabel(selected));
             context.StateBool = !isMatchedValue;
         }
         var useCustomValueInput = context.StateBool;
@@ -641,9 +641,9 @@ public class RszEnumFieldHandler : IObjectUIHandler
         ImguiHelpers.Tooltip("Use Custom Value Input"u8);
         pfx.Dispose();
 
-        var valueType = selected!.GetType();
+        var valueType = selected.GetType();
         if (useCustomValueInput) {
-            NumericFieldHandler<int>.GetHandlerForType(valueType).OnIMGUI(context);
+            NumericFieldHandler<int>.GetHandlerForType(BackingConvertType ?? valueType).OnIMGUI(context);
         } else {
             var enumsrc = new RszEnumSource { descriptor = EnumDescriptor };
             if (ImguiHelpers.FilterableEnumCombo(context.label, enumsrc, ref selected, ref context.Filter)) {
