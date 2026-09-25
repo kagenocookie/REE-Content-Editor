@@ -41,9 +41,9 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
         return resource;
     }
 
-    public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
+    public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData, ResourceEntity? entity)
     {
-        var res = ApplyResourceData(workspace, null, initialData, null);
+        var res = ApplyResourceData(workspace, null, initialData, entity);
         var idgen = Config.IDGeneratorRequired;
         if (idgen.Fields != null && idgen.Fields.Length != 1) {
             throw new NotImplementedException("Unsupported rsz object id combination");

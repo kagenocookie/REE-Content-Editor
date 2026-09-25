@@ -210,7 +210,7 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
         return pfbRes;
     }
 
-    public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
+    public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData, ResourceEntity? entity)
     {
         var res = ApplyResourceData(workspace, null, initialData, null);
         if (catalogEntryClass == null) throw new Exception();

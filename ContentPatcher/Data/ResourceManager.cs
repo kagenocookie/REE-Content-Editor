@@ -343,7 +343,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             AddResource(resourceConfig.Type, resourceId, fieldResource, state);
         } else {
             var resourceId = field.GetIDForEntity(entity);
-            fieldResource = CreateResourceInternal(resourceId, resourceConfig, state, initialData);
+            fieldResource = CreateResourceInternal(resourceId, resourceConfig, state, entity, initialData);
             entity.Set(field.name, fieldResource);
         }
         return fieldResource;
@@ -356,7 +356,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         Debug.Assert(baseResource != null);
 
         var id = entity.GetFieldId(field.name);
-        var sub = subresourceType.Resource.CreateResource(workspace, id, null);
+        var sub = subresourceType.Resource.CreateResource(workspace, id, null, entity);
         return sub;
     }
 
@@ -386,9 +386,9 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         return id;
     }
 
-    private IContentResource CreateResourceInternal(long resourceId, ResourceConfig resource, ResourceState state, JsonNode? initialData)
+    private IContentResource CreateResourceInternal(long resourceId, ResourceConfig resource, ResourceState state, ResourceEntity? entity, JsonNode? initialData)
     {
-        var fieldResource = resource.Resource.CreateResource(workspace, resourceId, initialData);
+        var fieldResource = resource.Resource.CreateResource(workspace, resourceId, initialData, entity);
         if (fieldResource.FileResourcePath == null) {
             // ignore - there's no file here
         } else if (TryResolveGameFile(fieldResource.FileResourcePath, out var file)) {
@@ -409,7 +409,18 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             }
 
             var instances = (state == ResourceState.Base ? data.baseInstances : data.activeInstances ??= new());
-            instances.Add(id, resource);
+            if (instances.TryGetValue(id, out var existing)) {
+                if (existing == resource) return;
+
+                if (existing is NulledResource && resource is not NulledResource) {
+                    instances[id] = resource;
+                } else {
+                    // unsure yet if we treat this as error or allowed
+                    throw new Exception($"Added duplicate resource ID {id}");
+                }
+            } else {
+                instances.Add(id, resource);
+            }
         }
     }
 
@@ -668,7 +679,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         var idField = data.config.IDField;
 
         var primaryId = GetRandomUniqueResourceID(resources[primaryField.Config.Type], ResourceState.Active);
-        var primaryResource = CreateResourceInternal(primaryId, primaryField.Config, ResourceState.Active, initialData?.GetValueOrDefault(primaryField.name));
+        var primaryResource = CreateResourceInternal(primaryId, primaryField.Config, ResourceState.Active, null, initialData?.GetValueOrDefault(primaryField.name));
         ResourceEntity entity;
         if (idField != null && idField != primaryField) {
             if (idField.ResourceType == null) throw new Exception($"ID field must have a resource type ID {idField}");

@@ -23,6 +23,14 @@ public class MergedGroupResourceHandler : ResourceHandler, IResourceHandlerStati
             return resource.ResourceType.Resource.ApplyResourceData(workspace, resource, data, entity);
         }
 
+        if (entity != null) {
+            foreach (var (subtype, sub) in Config.Subtypes!) {
+                if (sub.condition != null && sub.condition.IsEnabled(entity)) {
+                    return sub.resource.Resource.ApplyResourceData(workspace, resource, data, entity);
+                }
+            }
+        }
+
         var classname = data?.DetermineObjectClassname();
         if (classname != null) {
             foreach (var (subtype, sub) in Config.Subtypes!) {
@@ -32,27 +40,28 @@ public class MergedGroupResourceHandler : ResourceHandler, IResourceHandlerStati
             }
         }
 
+        throw new NotImplementedException($"Can't create blank new resources of type {Config.Resource} ({Config.Type})");
+    }
+
+    public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData, ResourceEntity? entity)
+    {
         if (entity != null) {
             foreach (var (subtype, sub) in Config.Subtypes!) {
                 if (sub.condition != null && sub.condition.IsEnabled(entity)) {
-                    return sub.resource.Resource.ApplyResourceData(workspace, resource, data, entity);
+                    return sub.resource.Resource.CreateResource(workspace, id, initialData, entity);
                 }
             }
         }
 
-        throw new NotImplementedException($"Can't create blank new resources of type {Config.Resource} ({Config.Type})");
-    }
-
-    public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
-    {
         var classname = initialData?.DetermineObjectClassname();
         if (classname != null) {
             foreach (var (subtype, sub) in Config.Subtypes!) {
                 if ((classname == subtype || classname == sub.resource.RszClass?.name) && sub.resource.Resource != null) {
-                    return sub.resource.Resource.CreateResource(workspace, id, initialData);
+                    return sub.resource.Resource.CreateResource(workspace, id, initialData, entity);
                 }
             }
         }
+
         throw new Exception($"Creating blank resources of type {Config} is not supported");
     }
 

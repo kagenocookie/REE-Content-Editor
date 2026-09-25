@@ -34,13 +34,13 @@ public class GroupResourceHandler : ResourceHandler, IResourceHandlerStatic
         return group;
     }
 
-    public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
+    public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData, ResourceEntity? entity)
     {
         var group = new GroupedResource(Config, Config.Subtypes!.Keys);
 
         foreach (var (type, subconfig) in Config.Subtypes) {
             var subdata = initialData?[type];
-            var subvalue = subconfig.resource.Resource.CreateResource(workspace, id, subdata);
+            var subvalue = subconfig.resource.Resource.CreateResource(workspace, id, subdata, entity);
             group.Set(type, subvalue);
         }
 

@@ -38,9 +38,9 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
         return msgData;
     }
 
-    public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
+    public override IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData, ResourceEntity? entity)
     {
-        return ApplyResourceData(workspace, null, initialData, null);
+        return ApplyResourceData(workspace, null, initialData, entity);
     }
 
     public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)

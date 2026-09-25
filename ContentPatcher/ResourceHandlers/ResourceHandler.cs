@@ -85,7 +85,7 @@ public abstract class ResourceHandler
     /// <summary>
     /// Createa a new instance of this resource from the given ID and optionally apply some initial data. Should also assign ID fields if applicable.
     /// </summary>
-    public virtual IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData)
+    public virtual IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData, ResourceEntity? entity)
         => throw new NotImplementedException($"Can't create new resources of type {Config.Resource} ({Config.Type})");
 
     /// <summary>
