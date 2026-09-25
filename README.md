@@ -139,8 +139,8 @@ Field scene streaming is supported through the `natives/stm/appdata/maincontents
 For any spawn related data editing, my [anatomically accurate map](https://kagenocookie.github.io/dd2map/) can be used as a reference for grid cells and positions
 
 #### Custom entities:
+- Full custom item support (the [ingame Content Editor](https://github.com/kagenocookie/dd2-content-editor) is also required for custom icon display)
 - Shop modifications
-- Custom basic items and weapons (TODO: armors)
 - Weather parameters
 - NPC appearance and costume parameters
 - Events
@@ -188,9 +188,7 @@ There are some cases where doing a full overwrite of files may be required becau
 
 Represents a single uniquely identifiable "object". This can be anything from an individual translation message entry, an item's base data / icon / name / description field, or a quest name / summary / log entry / condition set / etc...
 
-Some resources can be edited directly, others must be edited from within the context of an entity. Directly editable ones can be accessed from the `Windows > Resources` menu option.
-
-A resource needs to be individually editable, it can be either a whole file, or a single object within the file. Some resources can originate from multiple files (multiple catalogs), but they still map to a single final object.
+All resources must be edited from within the context of an entity. A resource can be either a whole file or a single object within the file. Some resources can originate from multiple files (multiple catalogs), but they still map to a single final object.
 
 ***Entity***
 
@@ -198,15 +196,15 @@ An entity is, effectively, a group of resources. In the case of an item, it woul
 
 Entities can be accessed from the `Windows > Entities` menu option.
 
-Each entity needs to have a unique integer (int64) ID. Where possible, this is directly equivalent to the game IDs, but where those aren't available, can be a hashed combination of fields (e.g. a GUID or multiple fields hashed together into an integer).
+Each entity has a unique integer (int64) ID. Where possible, this is directly equivalent to the game IDs, but where those aren't available, can be a hashed combination of fields (e.g. a GUID or multiple fields hashed together into an integer).
 
 Entities can also have local resources that don't strictly have a patchable resource (like custom string names that may be required for some of the catalog entries or enum modifications).
 
 ***Bundle***
 
-A bundle can contain any number of data modifications, effectively describes a single "mod" or "patch". There is always the bundle.json file containing all information on what it changes and how. Can also contain any number of raw modified files, linked to by the resource_listing field of the bundle json, to tell the patcher where to place the file and if it should be a full replacement or a partial patch.
+A bundle can contain any number of data modifications and effectively describes a single "mod" or "patch" project. The bundle.json file contains all information on what it changes and how. Bundles can also contain any number of raw modified files, linked to by the resource_listing field of the bundle json, to tell the patcher where to place the file and if it should be a full replacement or a partial patch.
 
-One bundle modifying the same file as a direct file and through entities at the same time is "undefined" and may or may not work as expected. During the patching process, direct file modifications are processed before entity resources within the individual bundle.
+One bundle modifying the same file as a direct file and through entities at the same time is "undefined" and may or may not work as expected, so it's recommended to make such edits through entities alone where possible. During the patching process, direct file modifications in a bundle are processed before entity resources.
 
 ## Contributing
 Pull requests are welcome. There are several open issues for bigger features for anyone interested in helping, but if you feel like anything else could be improved upon, feel free to make a feature request or contribute yourself. I'm willing to assist with pointers regarding implementation details.
