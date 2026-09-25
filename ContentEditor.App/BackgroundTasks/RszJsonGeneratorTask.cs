@@ -213,8 +213,8 @@ public class RszJsonGeneratorTaskWindow(ContentWorkspace env) : BaseWindowHandle
         }
         context.ShowChildrenUI();
 
-        ImGui.TextColored(Colors.Note, "Make sure you have a functional python installation.");
-        ImGui.TextColored(Colors.Note, "This is not a fully self-contained tool! There will still be some manual work to do! This will mostly provide a somewhat reasonable starting point.");
+        ImGui.TextColored(Colors.Note, "Make sure you have a functional python installation."u8);
+        ImGui.TextColored(Colors.Note, "This is not a fully self-contained tool! There will still be some manual work to do! This will mostly provide a somewhat reasonable starting point."u8);
 
         ImGui.Separator();
 

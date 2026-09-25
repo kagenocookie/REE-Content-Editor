@@ -202,14 +202,9 @@ public class EntitySelection : IWindowHandler
         if (renameCtx?.Get<string>() != null) {
             ImGui.Indent(16);
             var newName = renameCtx.Get<string>();
-            if (ImGui.InputText(Lang.Entities.NewLabel, ref newName, 200)) {
-                data.Context.GetChildByValue<string>()!.target = newName;
-            }
-            ImGui.Unindent(16);
-            if (ImGui.Button(Lang.Entities.CancelRename)) {
-                data.Context.RemoveChild(renameCtx);
-            }
-            if (newName != selected.Label && ImguiHelpers.SameLine() && ImGui.Button(Lang.Entities.ConfirmRename)) {
+            pfx = ImguiHelpers.InlinePrefix();
+            ImGui.BeginDisabled(newName == selected.Label || string.IsNullOrEmpty(newName));
+            if (ImGui.Button($"{AppIcons.SI_Save}")) {
                 selected.Label = newName;
                 data.Context.Changed = true;
                 selected.Config.PrimaryEnum?.UpdateEnum(workspace, selected);
@@ -218,6 +213,16 @@ public class EntitySelection : IWindowHandler
                 }
                 data.Context.RemoveChild(renameCtx);
             }
+            ImGui.EndDisabled();
+            ImguiHelpers.SameLine();
+            if (ImGui.Button($"{AppIcons.SI_GenericClose}")) {
+                data.Context.RemoveChild(renameCtx);
+            }
+            pfx.Dispose();
+            if (ImGui.InputText(Lang.Entities.NewLabel, ref newName, 200)) {
+                data.Context.GetChildByValue<string>()!.target = newName;
+            }
+            ImGui.Unindent(16);
         }
 
         ImGui.Separator();
