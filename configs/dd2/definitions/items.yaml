@@ -2,7 +2,7 @@ entities:
   items.item_data:
     enums:
     - name: app.ItemIDEnum
-      format: "It{id:06}"
+      format: "It{id:D06}"
       primary: true # denotes that the entity label should override this enum's corresponding display labels (entity id == enum value)
     # SmartFormat library is used for all string interpolation functionality
     # can fetch entity fields as well as nested object fields with "."
@@ -63,6 +63,7 @@ entities:
           multiline: true
     - name: icon
       display_after: description
+      required: true
       # if we used vanilla tech, there would be a uvs file, added to the item master uvs file, and then an ID taken from there
       # alternatively we use content editor runtime tech, the patch needs to be saved as a CE bundle with tex and rect info
       field_type: DD2_ItemIcon

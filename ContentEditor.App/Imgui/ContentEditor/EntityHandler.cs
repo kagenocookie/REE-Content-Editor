@@ -1,5 +1,6 @@
 using ContentEditor.App.ImguiHandling;
 using ContentEditor.App.Windowing;
+using ContentEditor.Core;
 using ContentPatcher;
 
 namespace ContentEditor.App;
@@ -21,7 +22,8 @@ public class EntityHandler : IObjectUIHandler
             WindowHandlerFactory.CreateEntityHandler(context);
         }
 
-        var isZero = (context.GetWorkspace()?.ResourceManager.GetEntityZeroId(instance.Type) ?? 0) == instance.Id;
+        var workspace = context.GetWorkspace();
+        var isZero = (workspace?.ResourceManager.GetEntityZeroId(instance.Type) ?? 0) == instance.Id;
 
         for (int i = 0; i < context.children.Count; i++) {
             if (i != 0) {
@@ -29,8 +31,19 @@ public class EntityHandler : IObjectUIHandler
             }
             var child = context.children[i];
             ImGui.PushID(i);
-            var fieldValue = child.GetRaw();
-            if (fieldValue != null) {
+            var fieldValue = child.Get<IContentResource?>();
+            if (fieldValue != null && fieldValue is not NulledResource) {
+                var field = instance.Config.GetField(child.EntityParams?.EntityField ?? "");
+                if (field != null && !field.IsRequired) {
+                    using var pfb = ImguiHelpers.InlinePrefix();
+                    if (ImGui.Button($"{AppIcons.SI_GenericDelete}")) {
+                        UndoRedo.RecordCallbackSetter(context, instance, fieldValue, null, (e, v) => workspace!.ResourceManager.UpdateEntityField(e, field.name, v));
+                        UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
+                        ImGui.PopID();
+                        return;
+                    }
+                    ImguiHelpers.Tooltip(Lang.Buttons.Delete);
+                }
                 child.ShowUI();
             } else if (isZero) {
                 ImGui.Text(child.label);
@@ -68,8 +81,9 @@ public class EntityHandler : IObjectUIHandler
             // TODO if merged-group resource type, show subtype selection here when possible
 
             var resource = workspace.ResourceManager.CreateEntityField(entity, field, ResourceState.Active);
-            context.Set(resource);
-            UndoRedo.RecordCallbackSetter(context, entity, null, resource, (e, v) => e.Set(field.name, v));
+            // note: we dont't need to use context.Set() here since we're clearing the context either way
+
+            UndoRedo.RecordCallbackSetter(context, entity, null, resource, (e, v) => workspace.ResourceManager.UpdateEntityField(e, field.name, v));
             UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, parentContext);
         }
     }

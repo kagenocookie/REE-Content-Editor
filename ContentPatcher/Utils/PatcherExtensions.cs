@@ -26,4 +26,11 @@ public static class PatcherExtensions
 
         return null;
     }
+
+    public static bool IsNulled(this JsonNode? node)
+    {
+        if (node == null) return false;
+
+        return node.GetValueKind() == System.Text.Json.JsonValueKind.String && node.GetValue<string>() == "null";
+    }
 }

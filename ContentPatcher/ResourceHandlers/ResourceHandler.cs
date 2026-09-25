@@ -89,7 +89,7 @@ public abstract class ResourceHandler
         => throw new NotImplementedException($"Can't create new resources of type {Config.Resource} ({Config.Type})");
 
     /// <summary>
-    /// Apply all resource changes to files based on current resource data.
+    /// Apply all resource changes to files based on current resource data. The resource value can always be a NullableResource to indicate an explicit removal.
     /// </summary>
     public abstract void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources);
 }

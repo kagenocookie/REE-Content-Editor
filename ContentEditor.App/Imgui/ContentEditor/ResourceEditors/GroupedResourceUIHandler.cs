@@ -39,7 +39,7 @@ public class GroupedResourceUIHandler : IObjectUIHandler
                     }
 
                     var subresourceType = field.Config.Subtypes![type];
-                    var resource = workspace.ResourceManager.CreateSubResource(entity, field, ResourceState.Active, subresourceType, null);
+                    var resource = workspace.ResourceManager.CreateSubResource(entity, field, ResourceState.Active, subresourceType);
                     UndoRedo.RecordCallbackSetter(context, group, null, resource, (g, v) => g.Set(type, v));
                     UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
                 }

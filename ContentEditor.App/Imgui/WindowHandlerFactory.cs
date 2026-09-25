@@ -880,12 +880,15 @@ public static class WindowHandlerFactory
         if (context.uiHandler is not EntityHandler) {
             context.uiHandler = new EntityHandler();
         }
+        var workspace = context.GetWorkspace()!;
         foreach (var field in entity.Config.DisplayFieldsOrder) {
             if (field.Condition?.IsEnabled(entity) == false) {
                 continue;
             }
 
-            var child = context.AddChild(field.label, entity, getter: (ctx) => ((ResourceEntity)ctx.target!).Get(field.name), setter: (ctx, val) => ((ResourceEntity)ctx.target!).Set(field.name, val as IContentResource));
+            var child = context.AddChild(field.label, entity,
+                getter: (ctx) => ((ResourceEntity)ctx.target!).Get(field.name),
+                setter: (ctx, val) => workspace.ResourceManager.UpdateEntityField((ResourceEntity)ctx.target!, field.name, val as IContentResource));
             SetupEntityResourceContent(child, field);
         }
         return context;

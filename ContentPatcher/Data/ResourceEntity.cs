@@ -29,14 +29,12 @@ public class ResourceEntity : Entity
     [JsonIgnore]
     public EntityConfig Config { get; }
 
-    public void Set(string name, IContentResource? instance)
+    /// <summary>
+    /// Updates the data inside the entity for a field. Use <see cref="ResourceManager.UpdateEntityField"/> instead to ensure resource statuses also stay in sync.
+    /// </summary>
+    internal void Set(string name, IContentResource? instance)
     {
         FieldValues[name] = instance;
-    }
-
-    public void Set(EntityFieldValueHandler handler, IContentResource? instance)
-    {
-        Set(handler.Field.name, instance);
     }
 
     public IContentResource? Get(string name)
@@ -159,6 +157,15 @@ public class ResourceEntity : Entity
             // TODO how should this interact with source entity values? do we check both, only one?
             if (field.Condition?.IsEnabled(this) == false) {
                 if (currentValue != null) {
+                    Set(name, null);
+                }
+                continue;
+            }
+
+            if (data.IsNulled()) {
+                if (currentValue is not NulledResource nulled && !string.IsNullOrEmpty(currentValue?.FileResourcePath)) {
+                    workspace.ResourceManager.UpdateEntityField(this, name, new NulledResource(field.Config, currentValue.FileResourcePath));
+                } else {
                     Set(name, null);
                 }
                 continue;

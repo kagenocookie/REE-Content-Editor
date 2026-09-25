@@ -90,8 +90,15 @@ public class MsgFileResourceHandler : ResourceHandler, IResourceHandlerStatic
             }
 
             foreach (var (hash, entry) in resources) {
-                var data = ((MessageData)entry);
                 var msgEntry = msgFile.FindEntryByKeyHash((uint)hash);
+                if (entry is NulledResource) {
+                    if (msgEntry != null) {
+                        msgFile.Entries.Remove(msgEntry);
+                    }
+                    continue;
+                }
+
+                var data = ((MessageData)entry);
                 if (msgEntry == null) {
                     if (!string.IsNullOrEmpty(data.FileResourcePath) && !data.FileResourcePath.Equals(file, StringComparison.OrdinalIgnoreCase)) {
                         continue;

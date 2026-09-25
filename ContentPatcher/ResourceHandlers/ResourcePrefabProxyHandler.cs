@@ -45,18 +45,43 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
         };
     }
 
-    public void UpdateCatalogEntry(CatalogPrefabResource resource, long id, ContentWorkspace workspace)
+    public void UpdateCatalogEntry(IContentResource rawResource, long id, ContentWorkspace workspace)
     {
         componentClass ??= Config.RszClass;
         Debug.Assert(componentClass != null);
-        if (!workspace.ResourceManager.TryResolveGameFile(resource.FileResourcePath, out var catFile)) {
-            Logger.Error("Failed to resolve catalog file " + (resource.FileResourcePath));
+        Debug.Assert(!string.IsNullOrEmpty(rawResource.FileResourcePath));
+        if (!workspace.ResourceManager.TryResolveGameFile(rawResource.FileResourcePath, out var catFile)) {
+            Logger.Error("Failed to resolve catalog file " + (rawResource.FileResourcePath));
             return;
         }
-        var idgen = resource.ResourceType.IDGeneratorRequired;
 
         var catalog = catFile.GetFile<UserFile>().Instance!;
         var list = arrayAccessor.Get(catalog);
+        var idgen = rawResource.ResourceType.IDGeneratorRequired;
+
+        if (rawResource is NulledResource) {
+            var catalogEntry = list.FirstOrDefault(item => idgen.GetID((RszInstance)item) == id) as RszInstance;
+            if (catalogEntry != null) {
+                list.Remove(catalogEntry);
+                if (PrefabLinkField.Get(catalogEntry) is RszInstance pfbLink) {
+                    var path = pfbLink.Get(RszFieldCache.Prefab.Path);
+                    // force close the file; during patching, this should prevent emitting unused custom .pfbs
+                    // this does mean that if it isn't already open, we're opening it now for no reason
+                    // but it's easier to just handle both cases than add a second close method for resolving paths
+                    if (workspace.ResourceManager.TryResolveGameFile(path, out var ff)) {
+                        workspace.ResourceManager.CloseFile(ff);
+                    }
+                }
+
+                catFile.Modified = true;
+            }
+            return;
+        }
+
+        if (rawResource is not CatalogPrefabResource resource) {
+            return;
+        }
+
         if (resource.CatalogEntry == null) {
             resource.CatalogEntry = list.FirstOrDefault(item => idgen.GetID((RszInstance)item) == id) as RszInstance;
         } else if (list.Contains(resource.CatalogEntry)) {
@@ -212,12 +237,8 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
     {
         Debug.Assert(componentClass != null);
         var idgen = Config.IDGeneratorRequired;
-        foreach (var (id, rawRes) in resources) {
-            if (rawRes is not CatalogPrefabResource res) {
-                continue;
-            }
-
-            UpdateCatalogEntry(res, id, workspace);
+        foreach (var (id, resource) in resources) {
+            UpdateCatalogEntry(resource, id, workspace);
         }
     }
 }

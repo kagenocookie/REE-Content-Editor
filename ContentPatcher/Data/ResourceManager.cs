@@ -321,6 +321,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
 
     private IContentResource? CreateEntityFieldInternal(ResourceEntity entity, EntityField field, ResourceState state, ResourceConfig resourceConfig, JsonNode? initialData)
     {
+        Debug.Assert(!initialData.IsNulled());
         IContentResource? fieldResource;
         if (field.ValueHandler is CustomEntityFieldHandler customField) {
             var resourceId = field.GetIDForEntity(entity);
@@ -348,14 +349,14 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         return fieldResource;
     }
 
-    public IContentResource CreateSubResource(ResourceEntity entity, EntityField field, ResourceState state, ResourceConfig subresourceType, JsonNode? initialData)
+    public IContentResource CreateSubResource(ResourceEntity entity, EntityField field, ResourceState state, ResourceConfig subresourceType)
     {
         Debug.Assert(field.Config.Subtypes?.Any(kv => kv.Value.resource == subresourceType) == true);
         var baseResource = entity.Get(field.name);
         Debug.Assert(baseResource != null);
 
         var id = entity.GetFieldId(field.name);
-        var sub = subresourceType.Resource.CreateResource(workspace, id, initialData);
+        var sub = subresourceType.Resource.CreateResource(workspace, id, null);
         return sub;
     }
 
@@ -424,25 +425,6 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             return data.baseInstances?.GetValueOrDefault(id);
         }
         return null;
-    }
-
-    public IContentResource? GetActiveResourceInstance(ResourceEntity entity, IContentResource resource)
-    {
-        if (resources.TryGetValue(resource.ResourceType.Type, out var data)) {
-            if (data.baseInstances == null) {
-                GetResourceInstances(resource.ResourceType.Type);
-            }
-            data.activeInstances ??= new();
-            // if (!data.activeInstances.TryGetValue(resource, out var active)) {
-            //     if (data.baseInstances!.TryGetValue(id, out active)) {
-            //         data.activeInstances[id] = active = active.Clone();
-            //     }
-            // }
-
-            // return active;
-        }
-        // resource.ResourceTypeID
-        return resource.Clone();
     }
 
     /// <summary>
@@ -712,7 +694,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
             }
 
             IContentResource? fieldResource = null;
-            if (initialData != null && initialData.TryGetValue(field.name, out var src)) {
+            if (initialData != null && initialData.TryGetValue(field.name, out var src) && !src.IsNulled()) {
                 fieldResource = CreateEntityFieldInternal(entity, field, ResourceState.Active, field.Config, src);
             } else if (field.IsRequired) {
                 var resource = CreateEntityFieldInternal(entity, field, ResourceState.Active, field.Config, null);
@@ -1392,6 +1374,44 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
     {
         if (string.IsNullOrEmpty(entityType)) return -1;
         return entities.GetValueOrDefault(entityType)?.config.ZeroEntity?.id ?? -1;
+    }
+
+    public void UpdateEntityField(ResourceEntity entity, string fieldName, IContentResource? resource)
+    {
+        var field = entity.Config.GetField(fieldName);
+        Debug.Assert(field != null);
+        if (field.ResourceType == null) {
+            entity.Set(fieldName, resource);
+            return;
+        }
+
+        var fieldId = field.GetIDForEntity(entity);
+        var resourceData = resources[field.ResourceType];
+        var prevValue = entity.Get(fieldName);
+        Debug.Assert(resourceData.activeInstances != null);
+
+        var prevResource = resourceData.activeInstances.GetValueOrDefault(fieldId);
+        if (resource == prevValue && resource == prevResource) return;
+        if (prevValue != prevResource) {
+            Logger.Debug($"Entity and resource manager value mismatch for {entity} {fieldName}");
+        }
+
+        entity.Set(fieldName, resource);
+        if (prevValue != null && resource == null) {
+            if (prevValue is NulledResource) {
+                // nothing to change
+            } else if (!string.IsNullOrEmpty(prevValue.FileResourcePath)) {
+                resource = new NulledResource(field.Config, prevValue.FileResourcePath);
+                resourceData.activeInstances[fieldId] = resource;
+                entity.Set(fieldName, resource);
+            } else {
+                entity.Set(fieldName, null);
+            }
+        }
+
+        if (resource != null && resource != prevResource) {
+            resourceData.activeInstances[fieldId] = resource;
+        }
     }
 
     /// <summary>

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json.Nodes;
 using ReeLib;
 
@@ -112,28 +113,27 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
     public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
     {
         var outFiles = new Dictionary<string, IList<object>>();
-        if (Config.SubIDGenerator != null) {
-            foreach (var (id, resource) in resources) {
-                var list = (RSZObjectListResource)resource;
-                if (!outFiles.TryGetValue(list.FileResourcePath, out var outList)) {
-                    var userfile = workspace.ResourceManager.GetFileContents<UserFile>(list.FileResourcePath, true);
-                    outFiles[list.FileResourcePath] = outList = arrayAccessor.Get(userfile.Instance!);
-                    ClearList(outList);
-                }
+        foreach (var (_, item) in resources) {
+            var file = item.FileResourcePath;
+            Debug.Assert(!string.IsNullOrEmpty(file));
 
-                foreach (var item in list.Instances) {
+            if (!outFiles.TryGetValue(file, out var outList)) {
+                var userfile = workspace.ResourceManager.GetFileContents<UserFile>(file, true);
+                outFiles[file] = outList = arrayAccessor.Get(userfile.Instance!);
+                ClearList(outList);
+            }
+
+            if (item is NulledResource) {
+                // nothing to do - ClearList would've removed it already
+                continue;
+            }
+
+            if (Config.SubIDGenerator != null) {
+                foreach (var resource in ((RSZObjectListResource)item).Instances) {
                     outList.Add(item);
                 }
-            }
-        } else {
-            foreach (var (_, item) in resources) {
+            } else {
                 var citem = (RSZObjectResource)item;
-                if (!outFiles.TryGetValue(citem.FileResourcePath, out var outList)) {
-                    var userfile = workspace.ResourceManager.GetFileContents<UserFile>(citem.FileResourcePath, true);
-                    outFiles[citem.FileResourcePath] = outList = arrayAccessor.Get(userfile.Instance!);
-                    ClearList(outList);
-                }
-
                 outList.Add(citem.Instance);
             }
         }

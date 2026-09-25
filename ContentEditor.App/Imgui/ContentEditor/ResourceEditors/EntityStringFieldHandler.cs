@@ -15,18 +15,19 @@ public class EntityStringFieldHandler : IObjectUIHandler
         }
         var data = entity.Get<StringResource>(field);
         if (data == null) {
+            var ws = context.GetWorkspace()!;
             if (!field.Field.IsRequired) {
                 ImGui.Text(context.label + ": NULL");
                 ImGui.SameLine();
                 if (ImGui.Button("Add")) {
                     data = new StringResource(field.Field.Config, "");
-                    entity.Set(field, data);
+                    ws.ResourceManager.UpdateEntityField(entity, field.Field.name, data);
                 }
                 return;
             }
 
             data = new StringResource(field.Field.Config, "");
-            entity.Set(field, data);
+            ws.ResourceManager.UpdateEntityField(entity, field.Field.name, data);
         }
 
         var text = data.Text;

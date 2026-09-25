@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json.Nodes;
 using ReeLib;
 
@@ -80,14 +81,21 @@ public class MultiFileArrayResourceHandler : ResourceHandler, IResourceHandlerSt
     {
         var outFiles = new Dictionary<string, IList<object>>();
         foreach (var (id, resource) in resources) {
-            var list = (RSZObjectListResource)resource;
-            if (!outFiles.TryGetValue(list.FileResourcePath, out var outList)) {
-                var userfile = workspace.ResourceManager.GetFileContents<UserFile>(list.FileResourcePath, true);
-                // outFiles[list.FileResourcePath] = outList = (List<object>)userfile.Instance!.GetNestedFieldValue(path)!;
-                outFiles[list.FileResourcePath] = outList = (List<object>)arrayAccessor.Get(userfile.Instance!);
+            var file = resource.FileResourcePath;
+            Debug.Assert(!string.IsNullOrEmpty(file));
+
+            if (!outFiles.TryGetValue(file, out var outList)) {
+                var userfile = workspace.ResourceManager.GetFileContents<UserFile>(file, true);
+                outFiles[file] = outList = (List<object>)arrayAccessor.Get(userfile.Instance!);
                 outList.Clear();
             }
 
+            if (resource is NulledResource) {
+                // nothing to do - we would've cleared it already
+                continue;
+            }
+
+            var list = (RSZObjectListResource)resource;
             foreach (var item in list.Instances) {
                 outList.Add(item);
             }

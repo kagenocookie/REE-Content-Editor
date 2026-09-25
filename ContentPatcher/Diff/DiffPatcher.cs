@@ -18,7 +18,7 @@ public class DiffPatcher
     {
         if (diff.GetValueKind() == JsonValueKind.Null) return;
         if (diff.GetValueKind() != JsonValueKind.Object) {
-            if (diff.GetValueKind() == JsonValueKind.String && diff.GetValue<string>() == "null") {
+            if (diff.IsNulled()) {
                 instance = RszInstance.NULL;
                 return;
             }
@@ -88,7 +88,7 @@ public class DiffPatcher
                     newInstance ??= new RszInstance(env.RszParser.GetRSZClass(user.ClassName)!, user);
                     user.typeId = newInstance.RszClass.typeId;
                     instance.Values[fieldIndex] = newInstance;
-                } else if (diffprop.Value?.GetValueKind() == JsonValueKind.String && diffprop.Value.GetValue<string>() == "null") {
+                } else if (diffprop.Value?.IsNulled() == true) {
                     if (field.type is RszFieldType.UserData or RszFieldType.Object) {
                         instance.Values[fieldIndex] = RszInstance.NULL;
                     } else {
