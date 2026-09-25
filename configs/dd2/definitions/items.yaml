@@ -98,6 +98,30 @@ entities:
             - field: data
               property: classname
               equals: app.ItemWeaponParam
+    - name: mixRecipes
+      label: Combine Recipes
+      resource:
+        type: multi-array
+        field: _Params
+        classname: app.ItemMixParam
+        id: [_ItemId]
+        files:
+        - AppSystem/Item/ItemMixData/ItemMixData.user
+        - AppSystem/Item/ItemMixData/ExItemMixData.user
+        params:
+          nested: true
+    - name: mixMaterials
+      label: Mix Combinations
+      resource:
+        type: array-file
+        field: _MaterialList
+        classname: app.ItemMixMaterialParam
+        id: [_ItemID]
+        files:
+        - AppSystem/Item/ItemMixData/ItemMixData.user
+        - AppSystem/Item/ItemMixData/ExItemMixData.user
+        params:
+          nested: true
     runtime_mapping:
       runtime_type: item_data
       to_both:
@@ -159,13 +183,8 @@ entities:
         custom_id_range: [200, 100000]
         type: resource_proxy_pfb
         file: AppSystem/Item/ItemModelData/ItemModelPrefabData.user
-
-  # app.ItemMixParam:
-  #   id: [_ItemId]
-  # app.ItemMixMaterialParam:
-  #   id: [_ItemID]
-  # app.ItemMixMaterialParam.CombineData:
-  #   id: [_PairList, _CombineItem]
+        params:
+          skipFields: 1
 
 classes:
   app.ItemCommonParam:
@@ -207,33 +226,38 @@ classes:
     to_string: ArmorEnhanceParam {_Type:enum(app.EnhanceType)} {_EnhanceNo}
     fields:
       _Type: { enum: app.EnhanceType }
-      _ItemId: { enum: app.ItemIDEnum, readOnly: true }
-      _NeedItemId0: { enum: app.ItemIDEnum }
-      _NeedItemId1: { enum: app.ItemIDEnum }
+      _ItemId: { enum: item_data, readOnly: true }
+      _NeedItemId0: { enum: item_data }
+      _NeedItemId1: { enum: item_data }
   app.WeaponEnhanceParam:
     to_string: WeaponEnhanceParam {_Type:enum(app.EnhanceType)} {_EnhanceNo}
     fields:
       _Type: { enum: app.EnhanceType }
-      _ItemId: { enum: app.ItemIDEnum, readOnly: true }
-      _NeedItemId0: { enum: app.ItemIDEnum }
-      _NeedItemId1: { enum: app.ItemIDEnum }
+      _ItemId: { enum: item_data, readOnly: true }
+      _NeedItemId0: { enum: item_data }
+      _NeedItemId1: { enum: item_data }
   app.ItemMixParam:
+    to_string: "Mix Param {_ItemId:entity(item_data)}  (x{_Num})"
     fields:
-      _ItemId: { enum: app.ItemIDEnum, readOnly: true }
-      _MaterialA: { tooltip: 'Combination requires any MaterialA + any MaterialB item' }
-      _MaterialB: { tooltip: 'Combination requires any MaterialA + any MaterialB item' }
+      _ItemId: { enum: item_data } # note: not read only because we currently can't preselect the Id on array item creation
+      _MaterialA: { tooltip: 'Combination requires any MaterialA + any MaterialB item', enum: item_data }
+      _MaterialB: { tooltip: 'Combination requires any MaterialA + any MaterialB item', enum: item_data }
       _IsNoSame: { tooltip: "Disallow picking the same item if it's present in both material sets" }
       _IsAutoMix: { tooltip: 'Possibly used for logistician?' }
-
+      _Num: { default: 1 }
   app.ItemMixMaterialParam:
     fields:
-      _ItemID: { enum: app.ItemIDEnum }
+      _ItemID: { enum: item_data, readOnly: true }
   app.ItemMixMaterialParam.CombineData:
     fields:
-      _PairList: { label: Items, tooltip: Combining with any item from this list will create the combine item }
-      _CombineItem: { label: 'Output item' }
-      _CombineMakeNum: { label: 'Output count' }
-    to_string: "{_CombineItem}: {_PairList}"
+      _PairList: { label: Items, enum: item_data, tooltip: Combining with any item from this list will create the combine item }
+      _CombineItem: { label: 'Output Item', enum: item_data }
+      _CombineMakeNum: { label: 'Output Count', default: 1 }
+    to_string: "CombineData {_CombineItem:entity(item_data)}"
+
+  app.ItemModelHolder:
+    fields:
+      Enabled: { default: true }
 
   app.TopsPartsEnableItem:
     to_string: "Tops PartsEnable {_Gender:enum(app.Gender)} Job={_Job:enum(app.Character.JobEnum)} | {_TopsStyle:enum(app.TopsStyle)}"
@@ -245,4 +269,3 @@ classes:
     to_string: "PantsLg PartsHidden Job={_Job:enum(app.Character.JobEnum)} | {_LgMeshID:enum(app.CharacterEditDefine.PantsLgMeshID)}"
   app.TopsBtPrimaryPartsHiddenItem:
     to_string: "BtPrimary PartsHidden Job={_Job:enum(app.Character.JobEnum)}"
-

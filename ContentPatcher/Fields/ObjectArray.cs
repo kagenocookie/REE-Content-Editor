@@ -8,6 +8,7 @@ public class ObjectArray : EntityFieldValueHandler, IMainField, IDiffableField
 {
     private string? elementClassname;
     public override string ResourceType => Field.Config.Type;
+    public string? Classname => elementClassname ?? Field.Config.RszClass?.name;
 
     public override void LoadParams(EntityFieldConfig param)
     {

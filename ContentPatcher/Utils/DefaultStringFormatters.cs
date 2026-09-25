@@ -75,7 +75,7 @@ public static class FormatterSettings
     private static SmartFormatter ApplyWorkspaceFormatters(SmartFormatter formatter, ContentWorkspace workspace)
     {
         formatter.AddExtensions(new RszFieldStringFormatterSource(workspace));
-        formatter.AddExtensions(new TranslateGuidFormatter(workspace.Messages), new EnumLabelFormatter(workspace.Env), new EnumNameFormatter(workspace.Env), new TranslateFormattedString(workspace.Messages));
+        formatter.AddExtensions(new TranslateGuidFormatter(workspace.Messages), new EnumLabelFormatter(workspace.Env), new EnumNameFormatter(workspace.Env), new TranslateFormattedString(workspace.Messages), new EntityLabelFormatter(workspace));
         formatter.AddExtensions(new EntityReverseLookupFormatter(workspace));
         return formatter;
     }
@@ -386,6 +386,30 @@ public class EnumLabelFormatter(Workspace env) : IFormatter
         } else {
             formattingInfo.Write(formattingInfo.CurrentValue.ToString() ?? string.Empty);
         }
+        return true;
+    }
+}
+
+public class EntityLabelFormatter(ContentWorkspace workspace) : IFormatter
+{
+    public string Name { get; set; } = "entity";
+    public bool CanAutoDetect { get; set; } = false;
+
+    public bool TryEvaluateFormat(IFormattingInfo formattingInfo)
+    {
+        if (formattingInfo.CurrentValue == null) {
+            return true;
+        }
+
+        var entityType = formattingInfo.FormatterOptions;
+        var id = Convert.ToInt64(formattingInfo.CurrentValue);
+        var entity = workspace.ResourceManager.GetActiveEntityInstance(entityType, id);
+        if (entity == null) {
+            formattingInfo.Write(formattingInfo.CurrentValue.ToString() ?? string.Empty);
+            return true;
+        }
+
+        formattingInfo.Write(entity.Label);
         return true;
     }
 }
