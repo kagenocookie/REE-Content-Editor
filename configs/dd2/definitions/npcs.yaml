@@ -45,6 +45,7 @@ entities:
           classname: app.CharacterData
       - name: edit_data
         label: Customization
+        required: true
         resource:
           id: [_CharacterID]
           type: array-file
@@ -75,8 +76,17 @@ entities:
 classes:
   app.charaedit.ch000.EditDataTable.Data:
     to_string: "EditDataTable Character={_CharacterID:enum(app.CharacterID)}"
+    fields:
+      _CharacterID: { readOnly: true }
   app.CharacterData:
     to_string: "{ID:enum_name(app.CharacterID)} {NameID:translate()}"
+    fields:
+      ID: { readOnly: true }
+      Present: { enum: ItemData }
+      _SubSkillPresent: { enum: ItemData }
+      _ItemSteal: { enum: ItemData }
+      LeftWeapon: { enum: Weapon }
+      RightWeapon: { enum: Weapon }
   app.facial.LipSync.Phoneme:
     to_string: "Phoneme: SoundID={_SoundMediaID}, duration={_TotalTime}"
   app.facial.LipSync.Phoneme.KeyFrame:

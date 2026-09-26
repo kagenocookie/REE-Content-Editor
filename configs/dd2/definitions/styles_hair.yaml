@@ -12,12 +12,15 @@ entities:
           dataField: _HairStyle
           partField: _Meta._HairStyle
     - name: data
+      required: true
       resource:
         id: [_HairStyle]
         custom_id_range: [10000, 10000000]
         classname: app.HairSwapItem
         file: AppSystem/CharaEdit/ch000/SwapData/HairSwapData.user
         type: array-file
+        params:
+          nested: false
 
   charaEdit.hair.HairMesh:
     to_string: "HairMesh {id:enum(app.CharacterEditDefine.HairMeshID)} | {mesh._Mesh}"
@@ -81,7 +84,7 @@ entities:
 
 classes:
   app.HairSwapItem:
-    to_string: "{class_shortname} {_HairStyle:enum(app.HairStyle)} {_Gender:enum(app.Gender)}"
+    to_string: "{class_shortname} {_HairStyle:enum(app.HairStyle)}"
     fields:
       _HairStyle: { readOnly: true }
       _MeshID: { enum: HairMesh, label: Mesh }

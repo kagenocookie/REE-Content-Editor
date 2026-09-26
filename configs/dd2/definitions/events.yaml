@@ -51,6 +51,7 @@ entities:
           id: [_RequestID]
           classname: app.DomainQueryGenerateTable.DomainQueryGenetateTableElement
           type: array-file
+          custom_id_range: [1500, 999999]
           file: leveldesign/generate/domainquerygenerate/domainquerygeneratetable.user
 
   # app.GenerateRowData:
@@ -65,8 +66,12 @@ classes:
     to_string: "Event select data {_SerialNum}"
   app.SuddenQuestContextData:
     to_string: "Event context data {_SerialNum}"
+    fields:
+      _SerialNum: { readOnly: true }
   app.DomainQueryGenerateTable.DomainQueryGenetateTableElement:
     to_string: "Generate table {_RequestID:enum(app.DomainQueryGenerateRequestID)}"
+    fields:
+      _RequestID: { readOnly: true }
   app.GenerateRowData:
     fields:
       _CharaID: { enum: app.CharacterID }

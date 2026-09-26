@@ -381,6 +381,8 @@ public class PatchConfig(string filepath)
         config.IDField ??= config.PrimaryField;
         config.AllowCreateEmpty = entity.AllowCreateEmpty ?? (config.IDField.Config.CustomIDRange != null);
         config.AllowTemplates = entity.AllowTemplates ?? config.AllowCreateEmpty;
+        config.PrimaryField.IsRequired = true;
+        config.IDField.IsRequired = true;
         return config;
     }
 

@@ -1,6 +1,5 @@
 entities:
-  charaEdit.BodyMeshStyle:
-    primary_field: data
+  charaEdit.body.BodyMeshStyle:
     to_string: "Body Style: {data._Species:enum(app.Species)} {data._Gender:enum(app.Gender)}"
     fields:
     - name: data
@@ -9,8 +8,10 @@ entities:
         id: [_Species, _Gender]
         classname: app.BodyMeshSwapItem
         file: AppSystem/CharaEdit/ch000/SwapData/BodyMeshSwapData.user
+        params:
+          nested: false
 
-  charaEdit.BodyMesh:
+  charaEdit.body.BodyMesh:
     to_string: "Body Mesh {id} | {mesh._Mesh}"
     fields:
     - name: mesh
@@ -21,7 +22,7 @@ entities:
         params:
           skipFields: 1
 
-  charaEdit.BodySkinStyle:
+  charaEdit.body.BodySkinStyle:
     primary_field: data
     to_string: "Body Skin {id:enum(app.SkinStyle)}"
     enums:
@@ -71,7 +72,7 @@ entities:
             - property: _Species
               equals: 3666037007
 
-  charaEdit.BodySkin:
+  charaEdit.body.BodySkin:
     to_string: "BodySkin {id:enum(app.CharacterEditDefine.BodySkinID)} | {skin._Material}"
     enums:
     - name: app.CharacterEditDefine.BodySkinID

@@ -1,5 +1,6 @@
 entities:
   charaEdit.CharaEditData:
+    display_name: "Character Creation Data"
     to_string: "Character Creation Data"
     allow_create_empty: false
     allow_templates: false
