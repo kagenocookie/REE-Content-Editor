@@ -45,7 +45,7 @@ public class ComponentListEditor : DictionaryListImguiHandler<string, Component,
         Component? component = null;
         UndoRedo.RecordCallback(context, () => {
             if (component == null) {
-                component = Component.Create(gameobj, ws.Env, key);
+                component = Component.Create(gameobj, ws, key);
             } else {
                 gameobj.AddComponent(component);
             }

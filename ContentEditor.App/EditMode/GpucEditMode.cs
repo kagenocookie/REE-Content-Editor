@@ -76,14 +76,6 @@ public class GpucEditMode : EditModeHandler
                 filePicker?.ResetState();
             }
         }
-
-        if (Scene.Workspace.ResourceManager.TryGetOrLoadFile(filePath, out var file)) {
-            if (ImGui.Button("Open File")) {
-                OpenEditor(file);
-            }
-        } else if (!string.IsNullOrEmpty(filePath)) {
-            ImGui.TextColored(Colors.Warning, "File not found");
-        }
     }
 
     public override void OnIMGUI()

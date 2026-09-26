@@ -186,7 +186,6 @@ public class SceneTreeEditor : TreeHandler<IVisibilityTarget>
                         }
                         if (file != null && file.GetCustomContent<Prefab>() is Prefab prefab) {
                             var instance = prefab.Instantiate();
-                            instance.PrefabPath = file.ResourcePath ?? "";
                             instance.RandomizeGuids();
                             UndoRedo.RecordAddChild(context, instance, (INodeObject<GameObject>)node);
                             instance.MakeNameUnique();

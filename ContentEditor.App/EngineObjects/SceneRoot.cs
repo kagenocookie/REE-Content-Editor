@@ -35,7 +35,7 @@ public class SceneRoot : IDisposable
         EditorRoot.ForceSetScene(scene);
 
         var camGo = new GameObject("__editorCamera", scene.Workspace.Env);
-        Camera = Component.Create<Camera>(camGo, scene.Workspace.Env);
+        Camera = Component.Create<Camera>(camGo, scene.Workspace);
         EditorRoot.AddChild(camGo);
     }
 

@@ -48,16 +48,23 @@ public static class UIContextExtensions
         return parent?.target as ResourceEntity;
     }
 
-    public static bool CreateEntityResource<TResourceType>(this UIContext context, ContentWorkspace workspace, EntityField field) where TResourceType : IContentResource
+    public static EntityField? GetEntityField(this UIContext context)
     {
-        var entity = context.GetOwnerEntity();
-        if (entity == null) {
-            Logger.Error("Could not find parent entity");
-            return false;
+        var entity = context.EntityParams?.Entity ?? context.GetOwnerEntity();
+        var field = context.EntityParams?.EntityField;
+        if (entity == null || field == null) {
+            return null;
         }
-        var newInstance = workspace.ResourceManager.CreateEntityResource<TResourceType>(entity, field, ResourceState.Active);
-        context.Set(newInstance);
-        context.children.Clear();
-        return true;
+        return (entity as ResourceEntity)?.Config.GetField(field);
+    }
+
+    public static T? GetEntityField<T>(this UIContext context) where T : EntityFieldValueHandler
+    {
+        var entity = context.EntityParams?.Entity ?? context.GetOwnerEntity();
+        var field = context.EntityParams?.EntityField;
+        if (entity == null || field == null) {
+            return null;
+        }
+        return (entity as ResourceEntity)?.Config.GetField(field)?.ValueHandler as T;
     }
 }

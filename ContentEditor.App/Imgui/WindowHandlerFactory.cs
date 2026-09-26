@@ -34,8 +34,6 @@ public class OpenFileContext
 
 public static class WindowHandlerFactory
 {
-    private static Dictionary<Type, Func<EntityField, IObjectUIHandler>>? customFieldImguiHandlers;
-
     private static HashSet<string> NonEnumIntegerTypes = [
         "System.Byte", "System.SByte",
         "System.Int16", "System.UInt16",
@@ -44,6 +42,7 @@ public static class WindowHandlerFactory
     ];
 
     private static readonly Dictionary<RszClass, StringFormatter> classFormatters = new();
+    private static readonly Dictionary<RszField, Func<IObjectUIHandler, IObjectUIHandler>> fieldOverrides = new();
 
     private static bool showPrettyLabels = true;
     private static readonly Dictionary<string, string> prettyLabels = new();
@@ -226,9 +225,73 @@ public static class WindowHandlerFactory
             }
         }
     }
-    public static void SetClassFormatter(RszClass cls, StringFormatter formatter)
+
+    public static void InitClassConfig(ContentWorkspace workspace, ClassConfig config)
     {
-        classFormatters[cls] = formatter;
+        var data = config.SourceConfig;
+        var cls = config.Class;
+        if (config.StringFormatter != null) {
+            classFormatters[cls] = config.StringFormatter;
+        }
+
+        if (data.Fields == null) return;
+
+        foreach (var (fieldName, fdata) in data.Fields) {
+            var field = cls.GetField(fieldName);
+            if (field == null) {
+                Logger.Warn($"Unknown field {fieldName} for class {cls}");
+                continue;
+            }
+
+            var handlerGetter = CreateCustomUIHandler(workspace, fdata, field);
+            if (handlerGetter != null) {
+                fieldOverrides[field] = handlerGetter;
+            }
+        }
+    }
+
+    private static Func<IObjectUIHandler, IObjectUIHandler>? CreateCustomUIHandler(ContentWorkspace workspace, ClassFieldConfig fdata, RszField field)
+    {
+        if (fdata.Switch?.Cases?.Count > 0 && fdata.Switch.Property != null) {
+            var cases = new List<(IResourceCondition condition, Func<IObjectUIHandler, IObjectUIHandler>? handler)>();
+            Func<UIContext, IObjectUIHandler> defaultHandlerFunc = context => CreateRSZFieldElementHandlerRaw(context, field);
+            foreach (var (val, subdata) in fdata.Switch.Cases) {
+                // note: don't inherit any base settings; this way the base settings work as a fallback for when no case matches
+                var condition = new ContextParentFieldValueCondition(fdata.Switch.Property, val);
+                var subhandler = CreateCustomUIHandler(workspace, subdata, field);
+                cases.Add((condition, subhandler));
+            }
+            return h => new ConditionalDynamicUIHandler(cases, defaultHandlerFunc);
+        }
+
+        Func<IObjectUIHandler, IObjectUIHandler>? handler = null;
+        if (!string.IsNullOrEmpty(fdata.Enum)) {
+            var ecfg = workspace.Config.GetEntityConfig(fdata.Enum);
+            if (ecfg == null) {
+                // normal enum
+                var enumHandler = TryCreateEnumHandlerForClassname(workspace, fdata.Enum, field.type);
+                if (enumHandler == null) {
+                    Logger.Warn($"Failed to create \"{fdata.Enum}\" enum handler for field {field}");
+                } else {
+                    handler = (next) => enumHandler;
+                }
+            } else {
+                // entity picker
+                handler = (next) => new EntityPicker(workspace, fdata.Enum, field.type);
+            }
+        }
+
+        if (!string.IsNullOrEmpty(fdata.Label)) {
+            var inner = handler;
+            handler = (next) => new LabelOverrideHandler(fdata.Label, inner?.Invoke(next) ?? next);
+        }
+
+        if (fdata.ReadOnly) {
+            var inner = handler;
+            handler = (next) => new ReadOnlyWrapperHandler(inner?.Invoke(next) ?? next);
+        }
+
+        return handler;
     }
 
     public static T Instantiate<T>(UIContext context) => (T)Instantiate(context, typeof(T));
@@ -240,7 +303,7 @@ public static class WindowHandlerFactory
         return type.IsArray ? Array.CreateInstance(type, 0) : Activator.CreateInstance(type)!;
     }
 
-    public static IWindowHandler? CreateFileResourceHandler(ContentWorkspace env, FileHandle file)
+    public static IWindowHandler? CreateFileResourceHandler(ContentWorkspace env, FileHandle file, UIContext? openContext = null)
     {
         switch (file.Format.format) {
             case KnownFileFormats.UserData:
@@ -260,7 +323,7 @@ public static class WindowHandlerFactory
             case KnownFileFormats.Effect:
                 return new ImguiHandling.Efx.EfxEditor(env, file);
             case KnownFileFormats.RequestSetCollider:
-                return new ImguiHandling.Rcol.RcolEditor(env, file);
+                return new ImguiHandling.Rcol.RcolEditor(env, file, openContext?.FindValueInParentValues<RcolEditMode>()?.Target as RequestSetColliderComponent);
             case KnownFileFormats.MotionList:
                 return new MotlistEditor(env, file);
             case KnownFileFormats.Motion:
@@ -316,11 +379,11 @@ public static class WindowHandlerFactory
             case KnownFileFormats.MotionPack:
                 return new MotpackEditor(env, file);
             case KnownFileFormats.Chain:
-                return new ChainEditor(env, file);
+                return new ChainEditor(env, file, openContext?.FindValueInParentValues<ChainEditMode>()?.Target as Chain);
             case KnownFileFormats.Chain2:
-                return new Chain2Editor(env, file);
+                return new Chain2Editor(env, file, openContext?.FindValueInParentValues<ChainEditMode>()?.Target as Chain);
             case KnownFileFormats.CollisionShapePreset:
-                return new ClspEditor(env, file);
+                return new ClspEditor(env, file, openContext?.FindValueInParentValues<ChainEditMode>()?.Target as Chain);
         }
 
         if (TextureViewer.IsSupportedFileExtension(file.Filepath)) {
@@ -366,11 +429,11 @@ public static class WindowHandlerFactory
 
     public static IObjectUIHandler CreateRSZFieldElementHandler(UIContext context, RszField field)
     {
-        var handler = CreateRSZFieldElementHandlerRaw(context, field, out var fieldCfg, out var patch);
-        if (fieldCfg?.ReadOnly == true) {
-            context.uiHandler = new ReadOnlyWrapperHandler(handler);
+        var handler = CreateRSZFieldElementHandlerRaw(context, field);
+        if (fieldOverrides.TryGetValue(field, out var over)) {
+            return context.uiHandler = over.Invoke(handler);
         }
-        return handler;
+        return context.uiHandler = handler;
     }
 
     #region Reflection-based handlers
@@ -566,56 +629,50 @@ public static class WindowHandlerFactory
     #endregion
 
     #region RSZ based handlers
-    public static IObjectUIHandler CreateRSZFieldElementHandlerRaw(UIContext context, RszField field, out FieldConfig? fieldConfig, out ClassConfig? patchConfig)
+    private static IObjectUIHandler? TryCreateEnumHandlerForClassname(ContentWorkspace? workspace, string fieldClassname, RszFieldType fallbackType)
     {
-        static IObjectUIHandler? TryCreateEnumHandlerRaw(ContentWorkspace? workspace, string fieldClassname, RszFieldType fallbackType)
-        {
-            if (!string.IsNullOrEmpty(fieldClassname) && workspace != null && !NonEnumIntegerTypes.Contains(fieldClassname)) {
-                var enumdesc = workspace.Env.TypeCache.GetEnumDescriptor(fieldClassname, fallbackType);
-                var expectedBackingType = RszInstance.RszFieldTypeToCSharpType(fallbackType);
-                Type? convertType = null;
-                if (expectedBackingType != enumdesc.BackingType) {
-                    convertType = expectedBackingType;
-                }
-                if (enumdesc.IsFlags) {
-                    return new FlagsEnumFieldHandler(enumdesc);
-                } else {
-                    return new RszEnumFieldHandler(enumdesc) { BackingConvertType = convertType };
-                }
+        if (!string.IsNullOrEmpty(fieldClassname) && workspace != null && !NonEnumIntegerTypes.Contains(fieldClassname)) {
+            var enumdesc = workspace.Env.TypeCache.GetEnumDescriptor(fieldClassname, fallbackType);
+            var expectedBackingType = RszInstance.RszFieldTypeToCSharpType(fallbackType);
+            Type? convertType = null;
+            if (expectedBackingType != enumdesc.BackingType) {
+                convertType = expectedBackingType;
             }
-            return null;
+            if (enumdesc.IsFlags) {
+                return new FlagsEnumFieldHandler(enumdesc);
+            } else {
+                return new RszEnumFieldHandler(enumdesc) { BackingConvertType = convertType };
+            }
         }
+        return null;
+    }
+
+    private static IObjectUIHandler CreateRSZFieldElementHandlerRaw(UIContext context, RszField field)
+    {
         static IObjectUIHandler? TryCreateEnumHandler(ContentWorkspace? workspace, RszField field)
         {
             var fieldClassname = field.array ? RszInstance.GetElementType(field.original_type) : field.original_type;
-            return TryCreateEnumHandlerRaw(workspace, fieldClassname, field.type);
+            return TryCreateEnumHandlerForClassname(workspace, fieldClassname, field.type);
         }
-        fieldConfig = null;
-        patchConfig = null;
 
         var ws = context.GetWorkspace();
         if (ws != null) {
             if (context.parent?.target is RszInstance parent) {
-                fieldConfig = ws.Config.Get(parent.RszClass.name, field.name);
+                var fieldConfig = ws.Config.GetClassFieldConfig(parent.RszClass.name, field.name);
                 if (fieldConfig != null) {
                     if (fieldConfig.Handler != null && customHandlers.TryGetValue(fieldConfig.Handler, out var customhandler)) {
-                        return context.uiHandler = customhandler.Invoke();
+                        return customhandler.Invoke();
                     } else if (fieldConfig.Enum != null) {
-                        context.uiHandler = TryCreateEnumHandlerRaw(ws, fieldConfig.Enum, field.type);
-                        if (context.uiHandler != null) return context.uiHandler;
+                        var enumHandler = TryCreateEnumHandlerForClassname(ws, fieldConfig.Enum, field.type);
+                        if (enumHandler != null) return enumHandler;
                     }
                 }
-            }
-
-            patchConfig = ws.Config.Get(field.original_type);
-            if (patchConfig != null) {
-                // TODO
             }
         }
 
         var originalClass = string.IsNullOrEmpty(field.original_type) ? null : ws?.Env.RszParser.GetRSZClass(field.original_type);
         if (originalClass != null && classHandlers.TryGetValue(originalClass, out var handlerFunc)) {
-            return context.uiHandler = handlerFunc.Invoke();
+            return handlerFunc.Invoke();
         }
 
         static IObjectUIHandler CreateObjectHandler(RszField field, ContentWorkspace? workspace)
@@ -627,7 +684,7 @@ public static class WindowHandlerFactory
             return new NestedRszUIHandlerStringSuffixed(new RszClassnamePickerHandler(field.original_type));
         }
 
-        return context.uiHandler = field.type switch {
+        return field.type switch {
             RszFieldType.Object => CreateObjectHandler(field, ws),
             RszFieldType.Struct => new NestedRszInstanceHandler(),
             RszFieldType.String => StringFieldHandler.Instance,
@@ -817,50 +874,50 @@ public static class WindowHandlerFactory
     }
     #endregion
 
-    public static UIContext CreateResourceEntityHandler(UIContext context)
+    public static UIContext CreateEntityHandler(UIContext context)
     {
         var entity = context.Get<ResourceEntity>();
-        context.uiHandler = new ContentEditorEntityImguiHandler();
+        if (context.uiHandler is not EntityHandler) {
+            context.uiHandler = new EntityHandler();
+        }
+        var workspace = context.GetWorkspace()!;
         foreach (var field in entity.Config.DisplayFieldsOrder) {
             if (field.Condition?.IsEnabled(entity) == false) {
                 continue;
             }
 
-            var handler = GetCustomFieldImguiHandler(entity, field);
-            if (handler != null) {
-                var child = context.AddChild(field.label, entity, getter: (ctx) => ((ResourceEntity)ctx.target!).Get(field.name), setter: (ctx, val) => ((ResourceEntity)ctx.target!).Set(field.name, val as IContentResource));
-                child.uiHandler = handler;
-            }
+            var child = context.AddChild(field.label, entity,
+                getter: (ctx) => ((ResourceEntity)ctx.target!).Get(field.name),
+                setter: (ctx, val) => workspace.ResourceManager.UpdateEntityField((ResourceEntity)ctx.target!, field.name, val as IContentResource));
+            SetupEntityResourceContent(child, field);
         }
         return context;
     }
 
-    private static IObjectUIHandler? GetCustomFieldImguiHandler(ResourceEntity entity, EntityField field)
+    public static void SetupEntityResourceContent(UIContext context, EntityField entityField, ResourceConfig? subtype = null)
     {
-        if (customFieldImguiHandlers == null) {
-            customFieldImguiHandlers = new();
-            foreach (var type in typeof(ContentEditorRszInstanceHandler).Assembly.GetTypes()) {
-                if (type.IsAbstract || !typeof(IObjectUIHandler).IsAssignableFrom(type)) continue;
-
-                var attrs = type.GetCustomAttributes<CustomFieldHandlerAttribute>();
-                if (!attrs.Any()) continue;
-
-                var method = type.GetInterfaceMap(typeof(IObjectUIInstantiator)).TargetMethods.First();
-                if (method == null) {
-                    throw new Exception($"Invalid ObjectHandler type {type} - must implement {typeof(IObjectUIInstantiator)} for UI display");
-                }
-
-                foreach (var attr in attrs) {
-                    customFieldImguiHandlers[attr.HandledFieldType] = (Func<EntityField, IObjectUIHandler>)method.Invoke(null, Array.Empty<object?>())!;
-                }
-            }
+        var resource = context.Get<IContentResource?>();
+        var entity = context.GetOwnerEntity();
+        var resourceId = entity?.GetFieldId(entityField.name) ?? -1;
+        if (resourceId == -1) {
+            resourceId = (resource as IAddressableContentResource)?.ID ?? -1;
+        }
+        if (subtype != null && entityField.Config.Subtypes?.Any(kv => kv.Value.resource == subtype) != true) {
+            Logger.Warn($"Potentially wrong sub resource given for entity {entity} field {entityField}");
         }
 
-        if (customFieldImguiHandlers.TryGetValue(field.GetType(), out var handler)) {
-            return handler.Invoke(field);
+        context.EntityParams = new EntityParams() {
+            EntityField = entityField.name,
+            ResourceType = subtype?.Type ?? entityField.ResourceType ?? entityField.Config.Type,
+            ResourceId = resourceId,
+            Entity = entity
+        };
+
+        if (resource == null) {
+            return;
         }
 
-        return null;
+        context.uiHandler = CreateUIHandler(resource, resource.GetType());
     }
 
     public static string GetString(this RszInstance instance)

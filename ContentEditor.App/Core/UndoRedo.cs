@@ -184,7 +184,7 @@ public class UndoRedo
             return;
         }
         GetState(window).Push(act, mergeMode);
-        if (typeof(TValue).IsClass) UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context);
+        if (typeof(TValue).IsClass) UndoRedo.AttachClearChildren(UndoRedo.CallbackType.Both, context, window);
     }
 
     public static void RecordSet<TValue>(UIContext context, TValue value, Action<UIContext> postChangeAction, WindowBase? window = null, UndoRedoMergeMode mergeMode = UndoRedoMergeMode.MergeIdentical)

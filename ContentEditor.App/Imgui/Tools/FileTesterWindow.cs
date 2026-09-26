@@ -429,10 +429,8 @@ public partial class FileTesterWindow : IWindowHandler
 
     internal IEnumerable<(string path, Stream file)> GetExecutableFiles(GameIdentifier game, string extension, CancellationToken token = default)
     {
-        Debug.Assert(Workspace != null);
-
-        var env = Workspace.Env;
-        if (game != Workspace.Game) {
+        var env = Workspace?.Env;
+        if (game != Workspace?.Game) {
             try {
                 env = WorkspaceManager.Instance.GetWorkspace(game);
             } catch (Exception) {
@@ -440,9 +438,10 @@ public partial class FileTesterWindow : IWindowHandler
                 yield break;
             }
         }
+        Debug.Assert(env != null);
         ContentWorkspace? cw = null;
         try {
-            cw = new ContentWorkspace(env, new PatchDataContainer("!"));
+            cw = new ContentWorkspace(env, new PatchConfig("!"));
             cw.ResourceManager.SetupFileLoaders(typeof(MeshLoader).Assembly);
             try {
                 cw.Env.PakReader.EnableConsoleLogging = false;
@@ -457,7 +456,7 @@ public partial class FileTesterWindow : IWindowHandler
                 yield return (path, stream);
             }
         } finally {
-            if (env != Workspace.Env) {
+            if (env != Workspace?.Env) {
                 WorkspaceManager.Instance.Release(env);
                 cw?.Dispose();
             }
@@ -534,7 +533,7 @@ public partial class FileTesterWindow : IWindowHandler
             var env = WorkspaceManager.Instance.GetWorkspace(other);
             ContentWorkspace? cw = null;
             try {
-                cw = new ContentWorkspace(env, new PatchDataContainer("!"));
+                cw = new ContentWorkspace(env, new PatchConfig("!"));
                 cw.ResourceManager.SetupFileLoaders(typeof(MeshLoader).Assembly);
                 Logger.Info("Starting search for game " + env.Config.Game);
                 cw.Env.PakReader.EnableConsoleLogging = false;

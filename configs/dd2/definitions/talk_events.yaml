@@ -2,7 +2,7 @@ classes:
   app.TalkEventResourcePack.PackData:
     to_string: "TalkEvent Pack TalkEventId={_Data._Id}"
   app.TalkEventDefine.TalkEventData:
-    id: [_Id]
+    # id: [_Id]
     to_string: "TalkEvent Data Id={_Id}"
   app.NpcCommonTalkData:
     to_string: "CommonTalkData Voice={_VoiceVariation}"

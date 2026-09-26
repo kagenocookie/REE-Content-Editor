@@ -23,7 +23,10 @@ public enum SceneFlags
     Draw = (1 << 0),
     Selectable = (1 << 1),
     Update = (1 << 2),
-    All = Draw|Selectable|Update,
+    NonSerialized = (1 << 3),
+
+    Default = Draw|Selectable|Update,
+    DefaultNonSerialized = Draw|Selectable|Update|NonSerialized,
 }
 
 public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjectWithGuid, INodeObject<GameObject>, IVisibilityTarget
@@ -50,7 +53,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
 
     public Matrix4x4 WorldTransform => Transform.WorldTransform;
 
-    public SceneFlags SceneFlags { get; set; } = SceneFlags.All;
+    public SceneFlags SceneFlags { get; set; } = SceneFlags.Default;
 
     public bool ShouldDraw => (SceneFlags & SceneFlags.Draw) != 0 && (Parent == null ? Folder?.ShouldDraw != false : Parent.ShouldDraw);
     public bool ShouldDrawSelf
@@ -90,6 +93,8 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
     IVisibilityTarget? IVisibilityTarget.Parent => Parent as IVisibilityTarget ?? Folder;
     IEnumerable<IVisibilityTarget> IVisibilityTarget.VisibilityChildren => Children;
 
+    public bool IsSerialized => (SceneFlags & SceneFlags.NonSerialized) == 0;
+
     private GameObject(RszInstance instance, RszInstance transformInstance)
     {
         this.instance = instance;
@@ -99,7 +104,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
 
     public GameObject(string name, Workspace workspace, Folder? folder = null, Scene? scene = null)
     {
-        instance = RszInstance.CreateInstance(workspace.RszParser, workspace.Classes.GameObject);
+        instance = workspace.CreateRszInstance(workspace.Classes.GameObject);
         Name = name;
         Update = true;
         Folder = folder;
@@ -178,7 +183,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         if (workspace == null) {
             throw new Exception("Could not create GameObject - no transform component was given and no root workspace is accessible");
         }
-        var transform = new Transform(this, RszInstance.CreateInstance(workspace.RszParser, workspace.Classes.Transform));
+        var transform = new Transform(this, workspace.CreateRszInstance(workspace.Classes.Transform));
         Components.Insert(0, transform);
         return transform;
     }
@@ -256,16 +261,16 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         if (workspace == null) {
             throw new Exception("Could not create Component - workspace is not accessible");
         }
-        return (TComponent)Component.Create(this, workspace.Env, TComponent.Classname);
+        return (TComponent)Component.Create(this, workspace, TComponent.Classname);
     }
 
-    public Component AddComponent(string classname)
+    public Component AddComponent(string classname, ContentWorkspace? workspace = null)
     {
-        var workspace = Scene?.Workspace ?? Folder?.Scene?.Workspace;
+        workspace ??= Scene?.Workspace ?? Folder?.Scene?.Workspace;
         if (workspace == null) {
             throw new Exception("Could not create Component - workspace is not accessible");
         }
-        return Component.Create(this, workspace.Env, classname);
+        return Component.Create(this, workspace, classname);
     }
 
     public TComponent? GetComponent<TComponent>() where TComponent : Component
@@ -317,6 +322,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         }
 
         foreach (var child in Children) {
+            if (!child.IsSerialized) continue;
             var pfb = child.ToPfbGameObject();
             pfb.Parent = obj;
             obj.Children.Add(pfb);
@@ -352,6 +358,7 @@ public sealed class GameObject : NodeObject<GameObject>, IDisposable, IGameObjec
         }
 
         foreach (var child in Children) {
+            if (!child.IsSerialized) continue;
             var pfb = child.ToScnGameObject(prefabInfos);
             pfb.Parent = obj;
             obj.Children.Add(pfb);

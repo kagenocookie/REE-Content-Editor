@@ -1,0 +1,45 @@
+entities:
+  charaEdit.tattoo.TattooStyle:
+    primary_field: data
+    to_string: "Tattoo {data._Style:enum(app.TattooStyle)} [#{id}]"
+    display_name: Style
+    enums:
+    - name: app.TattooStyle
+      format: "Tattoo_{id:D03}"
+      primary: true
+    fields:
+    - name: data
+      required: true
+      resource:
+        id: [_Style]
+        type: array-file
+        custom_id_range: [10000, 10000000]
+        classname: app.TattooSwapItem
+        file: AppSystem/CharaEdit/ch000/SwapData/TattooSwapData.user
+
+  charaEdit.tattoo.TattooTexture:
+    to_string: "TattooTexture {id:enum(app.CharacterEditDefine.TattooID)} | {texture._Texture}"
+    allow_templates: false
+    enums:
+    - name: "app.CharacterEditDefine.TattooID"
+      format: "tattoos_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: texture
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TattooCatalog.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+
+classes:
+  app.TattooSwapItem:
+    to_string: "{class_shortname} {_Style:enum(app.TattooStyle)}"
+    fields:
+      _Style: { readOnly: true }
+      _TextureID: { enum: TattooTexture }

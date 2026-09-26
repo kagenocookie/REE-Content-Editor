@@ -38,11 +38,19 @@ public class ResourcePathPicker : IObjectUIHandler
         /// Disable warnings for potentially invalid file formats.
         /// </summary>
         DisableFormatWarning = 8,
+        /// <summary>
+        /// Hide file content preview / dropdown button.
+        /// </summary>
+        HideContentPreview = 16,
+        /// <summary>
+        /// Hide the "Open in new window" button.
+        /// </summary>
+        HideOpenInWindow = 32,
 
         IngameDefault = IsPathForIngame,
-        IngameDefaultNoConfirm = IsPathForIngame|PathPickerFlags.NoConfirmation,
-        EditorOnly = UseTargetPath|NoConfirmation|DisableFormatWarning,
-        EditorOnlyConfirmed = UseTargetPath|DisableFormatWarning,
+        IngameDefaultNoConfirm = IsPathForIngame|NoConfirmation,
+        EditorOnly = UseTargetPath|NoConfirmation|DisableFormatWarning|HideContentPreview,
+        EditorOnlyConfirmed = UseTargetPath|DisableFormatWarning|HideContentPreview,
     }
 
     public ResourcePathPicker()
@@ -118,6 +126,39 @@ public class ResourcePathPicker : IObjectUIHandler
         var newPath = context.InitFilterDefault(currentPath);
         var ws = workspace ??= context.GetWorkspace();
         var wnd = context.GetNativeWindow();
+        var allowPreview = !Flags.HasFlag(PathPickerFlags.HideContentPreview);
+        var showPreview = allowPreview && context.StateBool;
+
+        var w = ImGui.CalcItemWidth();
+        ImGui.PushID(context.label);
+
+        var x = ImGui.GetCursorPosX();
+        if (!Flags.HasFlag(PathPickerFlags.HideOpenInWindow)) {
+            ImGui.BeginDisabled(string.IsNullOrEmpty(currentPath) && ws != null);
+            if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
+                if (ws!.ResourceManager.TryResolveGameFile(currentPath, out var handle)) {
+                    EditorWindow.CurrentWindow?.AddFileEditor(handle, context);
+                } else {
+                    Logger.Warn("Failed to open file " + currentPath);
+                }
+            }
+            ImguiHelpers.Tooltip(Lang.General.OpenInNewWindow);
+            ImGui.SameLine();
+            ImGui.EndDisabled();
+        }
+
+        if (allowPreview) {
+            if (ImguiHelpers.ToggleButton($"{AppIcons.Eye}", ref showPreview, Colors.IconActive)) {
+                context.StateBool = showPreview;
+            }
+            ImguiHelpers.Tooltip(Lang.General.PreviewFile);
+            ImGui.SameLine();
+        }
+
+        var x2 = ImGui.GetCursorPosX();
+        ImGui.SetNextItemWidth(w - (x2 - x));
+        ImGui.PopID();
+
         var changed = Show(context.label, ref currentPath, ref newPath, ref context.ClassnameFilter, ws!, FileFormats, FileExtensionFilter ?? [], Flags, (nativePath) => {
             wnd?.InvokeFromUIThread(() => {
                 ApplyPathChange(context, nativePath, wnd);
@@ -129,6 +170,17 @@ public class ResourcePathPicker : IObjectUIHandler
             ApplyPathChange(context, currentPath ?? "");
         } else {
             context.Filter = newPath;
+        }
+        if (showPreview) {
+            if (string.IsNullOrEmpty(currentPath)) {
+                ImGui.TextColored(Colors.Note, "File is empty. Enter a valid file path.");
+            } else {
+                if (context.children.Count == 0) {
+                    context.AddChild("", this, new EmbeddedFileHandle(), getter: c => c.parent?.Get<string>() ?? context.Get<string>());
+                }
+                ImGui.Spacing();
+                context.ShowChildrenUI();
+            }
         }
     }
 
@@ -282,7 +334,6 @@ public class ResourcePathPicker : IObjectUIHandler
             }
         }
 
-        // TODO expandable resource preview
         ImGui.PopID();
         return changed;
     }
@@ -292,6 +343,7 @@ public class ResourcePathPicker : IObjectUIHandler
         newPath = newPath.NormalizeFilepath();
         if (!Flags.HasFlag(PathPickerFlags.IsPathForIngame)) {
             UndoRedo.RecordSet(context, newPath, window);
+            UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, () => context.Filter = context.Get<string>());
             context.Filter = newPath;
             return;
         }
@@ -308,6 +360,7 @@ public class ResourcePathPicker : IObjectUIHandler
         }
 
         UndoRedo.RecordSet(context, newPath, window);
+        UndoRedo.AttachCallbackToLastAction(UndoRedo.CallbackType.Both, () => context.Filter = context.Get<string>());
         context.Filter = newPath;
     }
 

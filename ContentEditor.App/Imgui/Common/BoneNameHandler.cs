@@ -64,7 +64,7 @@ public class BoneNameHandler(Func<UIContext, uint>? hashGetter = null, Action<UI
         ImGui.PopID();
     }
 }
-public class BoneHashHandler : IObjectUIHandler
+public class BoneHashHandler(bool includeEmpty = true) : IObjectUIHandler
 {
     public void OnIMGUI(UIContext context)
     {
@@ -80,7 +80,9 @@ public class BoneHashHandler : IObjectUIHandler
             ImGui.SameLine();
             var names = context.GetStateArray<string>();
             if (names == null || forceRefreshList) {
-                names = bones.GetBones().Select(bone => bone.name).ToArray();
+                var baseNames = bones.GetBones().Select(bone => bone.name);
+                if (includeEmpty) baseNames = baseNames.Prepend("");
+                names = baseNames.ToArray();
                 context.SetStateArray<string>(names);
             }
 

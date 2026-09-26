@@ -18,6 +18,7 @@ public static partial class Lang
         public static readonly FixedString TexturePacker = "Texture Channel Packer";
         public static readonly FixedString BatchConvert = "Batch File Conversion";
         public static readonly FixedString Entities = "Entities";
+        public static readonly FixedString Resources = "Resources";
         public static readonly IconString MacroShelf = new IconString("{0} Macro Shelf", AppIcons.SI_LUA);
     }
 }

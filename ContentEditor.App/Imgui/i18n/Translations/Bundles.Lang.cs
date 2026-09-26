@@ -19,6 +19,7 @@ public static partial class Lang
         public static readonly FixedString OpenGameFolder = "Open game folder in File Explorer";
         public static readonly FixedString OpenBundlesFolder = "Open Bundles folder in File Explorer";
         public static readonly FixedString PublishMod = "Publish Mod";
+        public static readonly FixedString NeedBundleToSave = "There is no active bundle. Changes you make will not be saveable. Create or select a bundle first.";
         public static readonly IconString ShowLoadOrder = new IconString("{0} Show Load Order", AppIcons.SI_BundleLoadOrder);
         public static readonly FixedString ApplyPatchesLoose = "Apply patches (Loose file)";
         public static readonly FixedString ApplyPatchesPak = "Apply patches (PAK file)";
@@ -29,7 +30,13 @@ public static partial class Lang
         public static readonly FixedString SelectBundle = "Select a bundle to view its details";
         public static readonly FixedString SaveBundleMetadata = "Save bundle metadata";
         public static readonly FixedString OpenCurrentBundleFolder = "Open Current Bundle folder in File Explorer";
+        public static readonly FixedString DeleteCurrentBundle = "Delete this Bundle";
         public static readonly FixedString UnloadCurrentBundle = "Unload current Bundle";
+        public static readonly FixedString DeleteBundleConfirmationTitle = "Deleting Bundle";
+        public static readonly InterpolatedString<string> DeleteBundleConfirmation = """
+            Are you sure you wish to delete the bundle {0}?
+            This will delete all of the bundle's edited files and runtime bundle data and is not recoverable.
+            """;
         public static readonly FixedString RebuildPatchDiffs = "Force Rebuild Patch Diffs";
         public static readonly FixedString OpenFileInEditor = "Open file in Editor";
         public static readonly FixedString EditTargetPathPopup = "EditTargetPath";
@@ -64,7 +71,7 @@ public static partial class Lang
         public static readonly FixedString Image = "Image";
         public static readonly FixedString Preview = "Preview";
         public static readonly FixedString EntityType = "Type";
-        public static readonly FixedString LegacyEntities = "Legacy entities";
+        public static readonly FixedString LegacyEntities = "Runtime entities";
         public static readonly FixedString Entities = "Entities";
         public static readonly FixedString Files = "Files";
         public static readonly FixedString UnknownLegacyEntityType = "Unknown legacy entity type";

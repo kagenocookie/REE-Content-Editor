@@ -1,30 +1,58 @@
+using System.Text.Json.Nodes;
 using ReeLib;
+using ReeLib.Common;
 
 namespace ContentPatcher;
 
-[ResourcePatcher("user-singleton", nameof(Deserialize))]
-public class UserFileSingletonResourceHandler : ResourceHandler
+[ResourcePatcher("user-singleton")]
+public class UserFileSingletonResourceHandler : ResourceHandler, IResourceHandlerStatic
 {
-    public override void ReadResources(ContentWorkspace workspace, ClassConfig config, Dictionary<long, IContentResource> dict)
+    public static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace)
     {
-        var userfile = workspace.ResourceManager.ReadFileResource<UserFile>(Files[0]);
-
-        var instance = userfile.RSZ.ObjectList[0];
-        var id = IDGenerator.GenerateID(instance, config.IDFields!);
-        dict[id] = new RSZObjectResource(instance, Files[0]);
+        return new UserFileSingletonResourceHandler() {
+            Files = [data.SingleFile],
+            Config = resource
+        };
     }
 
-    public static UserFileSingletonResourceHandler Deserialize(string resourceKey, Dictionary<string, object> data)
+    public override EntityFieldValueHandler CreateValueHandler(EntityField field) => new ObjectField();
+
+    public override void ReadResources(ContentWorkspace workspace, Dictionary<long, IContentResource> dict)
     {
-        var files = new List<string>(((IEnumerable<object>)data["files"]).Cast<string>());
-        if (files.Count != 1) {
-            throw new InvalidDataException("user-singleton requires exactly one file");
+        var filepath = Files[0];
+        var userfile = workspace.ResourceManager.GetFileContents<UserFile>(filepath);
+
+        var instance = userfile.Instance!;
+        var id = MurMur3HashUtils.GetHash(filepath);
+        dict[id] = new RSZObjectResource(Config, instance, filepath);
+    }
+
+    public override IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data, ResourceEntity? entity)
+    {
+        if (resource is not RSZObjectResource obj) {
+            throw new NotImplementedException($"Can't create new resources of type {Config.Resource} ({Config.Type})");
         }
-        return new UserFileSingletonResourceHandler() { Files = files };
+
+        workspace.Diff.ApplyDiff(obj.Instance, data);
+        return obj;
     }
 
-    public override void ModifyResources(ContentWorkspace workspace, ClassConfig config, IEnumerable<KeyValuePair<long, IContentResource>> resources)
+    public override void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources)
     {
-        throw new NotImplementedException();
+        foreach (var (id, res) in resources) {
+            if (res is not RSZObjectResource resource || string.IsNullOrEmpty(res.FileResourcePath)) {
+                continue;
+            }
+
+            if (workspace.ResourceManager.TryResolveGameFile(res.FileResourcePath, out var file)) {
+                var user = file.GetFile<UserFile>();
+                if (user.Instance != resource.Instance) {
+                    user.Clear();
+                    resource.Instance.Index = -1;
+                    user.RSZ.AddToObjectTable(resource.Instance);
+                    file.Modified = true;
+                }
+            }
+        }
     }
 }

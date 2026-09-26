@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using ReeLib;
 
 namespace ContentPatcher;
@@ -12,4 +13,24 @@ public static class PatcherExtensions
             or ReeLib.KnownFileFormats.MotionFsm2 or ReeLib.KnownFileFormats.BehaviorTree or ReeLib.KnownFileFormats.Fsm2 or ReeLib.KnownFileFormats.TimelineFsm2
             or KnownFileFormats.WwiseAudioRSZ or KnownFileFormats.AIMap
             or KnownFileFormats.Dialogue or KnownFileFormats.DialogueList;
+
+    public static string? DetermineObjectClassname(this JsonNode? node)
+    {
+        if (node == null) return null;
+        if (node is JsonArray arr) {
+            node = arr.FirstOrDefault();
+        }
+        if (node is JsonObject obj && obj.TryGetPropertyValue("$type", out var typeStr) && typeStr?.GetValueKind() == System.Text.Json.JsonValueKind.String) {
+            return typeStr.GetValue<string>();
+        }
+
+        return null;
+    }
+
+    public static bool IsNulled(this JsonNode? node)
+    {
+        if (node == null) return false;
+
+        return node.GetValueKind() == System.Text.Json.JsonValueKind.String && node.GetValue<string>() == "null";
+    }
 }

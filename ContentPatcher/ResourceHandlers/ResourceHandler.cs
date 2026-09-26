@@ -6,44 +6,95 @@ namespace ContentPatcher;
 
 public abstract class ResourceHandler
 {
-    public string ResourceTypeID { get; set; } = string.Empty;
+    public required ResourceConfig Config { get; init; }
     public List<string> Files { get; init; } = new();
 
-    private static readonly Dictionary<string, Func<string, Dictionary<string, object>, ResourceHandler>> patchers = new();
+    public virtual EntityFieldValueHandler CreateValueHandler(EntityField field) => new EntityFieldValueHandler();
+
+    private static readonly Dictionary<string, Func<ResourceConfig, ResourceConfigSerialized, ContentWorkspace, ResourceHandler>> patchers = new();
+    private static readonly Dictionary<string, (string[]? gameWhitelist, Type? handlerType, Func<EntityFieldValueHandler> func)> fieldTypes = new();
     static ResourceHandler()
     {
-        var pTypes = typeof(ResourceHandler).Assembly.GetTypes().Where(t => t.IsAssignableTo(typeof(ResourceHandler)) && !t.IsAbstract && t.GetCustomAttribute<ResourcePatcherAttribute>() != null);
-        foreach (var p in pTypes) {
-            var attr = p.GetCustomAttribute<ResourcePatcherAttribute>()!;
-            var deserializer = attr.DeserializeMethod;
-            var method = p.GetMethod(deserializer, BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Static)!;
-            patchers.Add(attr.PatcherType, (resourceKey, data) => (ResourceHandler)method.Invoke(null, [resourceKey, data])!);
+        var pTypes = typeof(ResourceHandler).Assembly.GetTypes();
+
+        foreach (var t in pTypes) {
+            if (t.IsAssignableTo(typeof(ResourceHandler)) && !t.IsAbstract && t.GetCustomAttribute<ResourcePatcherAttribute>() != null) {
+                var attr = t.GetCustomAttribute<ResourcePatcherAttribute>()!;
+                var statics = t.GetInterfaceMap(typeof(IResourceHandlerStatic));
+                var method = statics.TargetMethods[0];
+                patchers.Add(attr.PatcherType, (resourceKey, data, ws) => (ResourceHandler)method.Invoke(null, [resourceKey, data, ws])!);
+            }
+            else if (t.IsAssignableTo(typeof(EntityFieldValueHandler)) && !t.IsAbstract && t.GetCustomAttribute<ResourceFieldAttribute>() != null) {
+                var attr = t.GetCustomAttribute<ResourceFieldAttribute>()!;
+
+                fieldTypes.Add(attr.FieldTypeName, (attr.SupportedGames, attr.HandlerType, () => (EntityFieldValueHandler)Activator.CreateInstance(t)!));
+            }
+
         }
     }
 
-    [return: NotNullIfNotNull(nameof(config))]
-    public static ResourceHandler? CreateInstance(string resourceTypeId, Dictionary<string, object>? config)
+    public static ResourceHandler CreateInstance(ResourceConfig resource, ResourceConfigSerialized config, ContentWorkspace workspace)
     {
-        if (config == null) return null;
-        var type = config["type"] as string;
-        if (type == null) throw new ArgumentException("Patcher must have a type field", nameof(config));
+        if (string.IsNullOrEmpty(config.Type)) throw new ArgumentException("Patcher must have a type field", nameof(config));
 
-        if (patchers.TryGetValue(type, out var func)) {
-            return func.Invoke(resourceTypeId, config);
+        if (patchers.TryGetValue(config.Type, out var func)) {
+            return func.Invoke(resource, config, workspace);
         }
 
-        throw new ArgumentException($"Unknown patcher type {type}");
+        if (fieldTypes.TryGetValue(config.Type, out var custom)) {
+            if (custom.gameWhitelist?.Length > 0 && !custom.gameWhitelist.Contains(workspace.Game.name)) {
+                throw new ArgumentException($"Field type {config.Type} not allowed for game {workspace.Game}");
+            }
+
+            if (custom.handlerType != null) {
+                // var attr = custom.handlerType.GetCustomAttribute<ResourcePatcherAttribute>();
+                // if (attr != null && patchers.TryGetValue(attr.PatcherType, out func)) {
+                //     return func.Invoke(res, config, workspace);
+                // }
+                var attr = custom.handlerType.GetInterfaceMap(typeof(IResourceHandlerStatic));
+                return (ResourceHandler)attr.TargetMethods[0].Invoke(null, [resource, config, workspace])!;
+            }
+        }
+
+        throw new ArgumentException($"Unknown patcher type {config.Type}");
     }
 
-    public static void RegisterResourcePatcher(string type, Func<string, Dictionary<string, object>, ResourceHandler> factory)
+    public static EntityFieldValueHandler CreateValueHandler(string type, ContentWorkspace workspace)
     {
-        patchers[type] = factory;
+        if (fieldTypes.TryGetValue(type, out var custom)) {
+            if (custom.gameWhitelist?.Length > 0 && !custom.gameWhitelist.Contains(workspace.Game.name)) {
+                throw new ArgumentException($"Field type {type} not allowed for game {workspace.Game}");
+            }
+
+            return custom.func.Invoke();
+        }
+
+        throw new ArgumentException($"Unknown field type {type}");
     }
 
-    public abstract void ReadResources(ContentWorkspace env, ClassConfig config, Dictionary<long, IContentResource> dict);
+    /// <summary>
+    /// Read all available resource files.
+    /// </summary>
+    public abstract void ReadResources(ContentWorkspace env, Dictionary<long, IContentResource> dict);
 
-    public abstract void ModifyResources(ContentWorkspace workspace, ClassConfig config, IEnumerable<KeyValuePair<long, IContentResource>> resources);
+    /// <summary>
+    /// Apply partial data on top of a resource or create a new detached resource instance. May return a new resource instance.
+    /// </summary>
+    public abstract IContentResource ApplyResourceData(ContentWorkspace workspace, IContentResource? resource, JsonNode? data, ResourceEntity? entity);
 
-    public virtual (long id, IContentResource resource) CreateResource(ContentWorkspace workspace, ClassConfig config, ResourceEntity entity, JsonNode? initialData)
-        => throw new NotImplementedException($"Can't create new resources of type {ResourceTypeID}");
+    /// <summary>
+    /// Createa a new instance of this resource from the given ID and optionally apply some initial data. Should also assign ID fields if applicable.
+    /// </summary>
+    public virtual IContentResource CreateResource(ContentWorkspace workspace, long id, JsonNode? initialData, ResourceEntity? entity)
+        => throw new NotImplementedException($"Can't create new resources of type {Config.Resource} ({Config.Type})");
+
+    /// <summary>
+    /// Apply all resource changes to files based on current resource data. The resource value can always be a NullableResource to indicate an explicit removal.
+    /// </summary>
+    public abstract void ModifyResources(ContentWorkspace workspace, IEnumerable<KeyValuePair<long, IContentResource>> resources);
+}
+
+public interface IResourceHandlerStatic
+{
+    abstract static ResourceHandler Deserialize(ResourceConfig resource, ResourceConfigSerialized data, ContentWorkspace workspace);
 }

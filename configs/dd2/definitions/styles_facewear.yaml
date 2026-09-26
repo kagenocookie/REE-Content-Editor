@@ -1,0 +1,157 @@
+entities:
+  items.styles.facewear.FacewearStyle:
+    primary_field: data
+    id_field: styleNo
+    to_string: "Facewear Style {id}: {data._Style:enum(app.FacewearStyle)}"
+    display_name: Style
+    zero_entity:
+      id: 0
+    enums:
+      - name: app.FacewearStyle
+        format: "Facewear_{id}"
+        primary: true
+    fields:
+    - name: DD2_StylePreview
+      field_type: DD2_StylePreview
+      required: true
+      resource:
+        params:
+          dataField: _Style
+          partField: _Meta._FacewearStyle
+    - name: data
+      display_after: styleNo
+      field_id: { field: styleNo, path: value }
+      resource:
+        type: group
+        id: [_Style]
+        custom_id_range: [10000, 10000000]
+        classname: app.FacewearSwapItem
+        subtypes:
+          male:
+            file: AppSystem/CharaEdit/ch000/SwapData/FacewearSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 2776536455
+          female:
+            file: AppSystem/CharaEdit/ch000/SwapData/FacewearSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 1910070090
+    - name: styleNo
+      resource:
+        type: enum_mapping
+        classname: app.FacewearStyle
+        custom_id_range: [10000, 32700] # _StyleNo on the armor data is a signed short so we need to limit to that range
+        params:
+          virtual_enum_name: ce.FacewearStyleNo
+          new_label_format: "Facewear_{id:D03}"
+          label_id_parse: "Facewear_(\\d+)"
+          value_from: { field: data, path: _Style }
+    - name: furmask
+      field_id: { field: styleNo, path: value }
+      resource:
+        type: group
+        subtypes:
+          male:
+            file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_m_Facewear.user
+            type: resource_proxy_pfb
+            params:
+              skipFields: 1
+          female:
+            file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_f_Facewear.user
+            type: resource_proxy_pfb
+            params:
+              skipFields: 1
+
+  items.styles.facewear.FacewearMesh:
+    to_string: "FacewearMesh {id:enum(app.CharacterEditDefine.FacewearMeshID)} | {humanMesh._Mesh}"
+    allow_templates: false
+    enums:
+    - name: "app.CharacterEditDefine.FacewearMeshID"
+      format: "facewear_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: humanMesh
+      required: true
+      resource:
+        custom_id_range: [10000, 10000000]
+        file: AppSystem/CharaEdit/ch000/Catalog/FacewearMeshCatalog_Default_HA.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: beastMesh
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/FacewearMeshCatalog_Default_BA.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: humanJcns
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/FacewearJcnsCatalog_Default_HA.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: beastJcns
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/FacewearJcnsCatalog_Default_BA.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: humanWrap
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/FacewearWrapCatalog_Default_HA.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: beastWrap
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/FacewearWrapCatalog_Default_BA.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: Facewear
+      to_both:
+        mesh: Mesh
+        chain: Chain
+        clsp: Clsp
+
+  items.styles.facewear.FacewearSkin:
+    to_string: "FacewearSkin {id:enum(app.CharacterEditDefine.FacewearSkinID)} | {skin._Material}"
+    allow_templates: false
+    enums:
+    - name: app.CharacterEditDefine.FacewearSkinID
+      format: "facewear_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: skin
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/FacewearSkinCatalog_Default.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: FacewearSkin
+      to_both:
+        skin: Skin
+
+classes:
+  app.FacewearSwapItem:
+    to_string: "{class_shortname} {_Style:enum(app.FacewearStyle)} {_Gender:enum(app.Gender)}"
+    fields:
+      _Style: { readOnly: true }
+      _Gender: { readOnly: true }
+      _MeshID: { enum: FacewearMesh, label: Mesh }
+      _SkinID: { enum: FacewearSkin, label: Skin }
+      _PartsEnable: { default: 1072694271 }

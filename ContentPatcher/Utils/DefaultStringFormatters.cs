@@ -2,6 +2,7 @@ using System.Collections;
 using System.Globalization;
 using ContentEditor.Editor;
 using ReeLib;
+using ReeLib.Il2cpp;
 using SmartFormat;
 using SmartFormat.Core.Extensions;
 using SmartFormat.Core.Settings;
@@ -21,7 +22,23 @@ public static class FormatterSettings
     public static SmartFormatter CreateFullEntityFormatter(EntityConfig config, ContentWorkspace? workspace = null)
     {
         var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
-        fmt.AddExtensions(new EntityStringFormatterSource(config));
+        fmt.AddExtensions(new EntityStringFormatterSource(config), new ResourceStringFormatter());
+        if (workspace != null) {
+            fmt.AddExtensions(new UserDataFileFormatter(workspace));
+        }
+        ApplyDefaultFormatters(fmt);
+        if (workspace != null) ApplyWorkspaceFormatters(fmt, workspace);
+        else {
+            fmt.AddExtensions(new RszFieldStringFormatterSource(null));
+        }
+        fmt.AddExtensions(new NullFallbackSource());
+        return fmt;
+    }
+
+    public static SmartFormatter CreateResourceFormatter(ResourceConfig resource, ContentWorkspace workspace)
+    {
+        var fmt = new SmartFormatter(FormatterSettings.DefaultSettings);
+        fmt.AddExtensions(new ResourceStringFormatter(), new UserDataFileFormatter(workspace));
         ApplyDefaultFormatters(fmt);
         if (workspace != null) ApplyWorkspaceFormatters(fmt, workspace);
         else {
@@ -58,7 +75,7 @@ public static class FormatterSettings
     private static SmartFormatter ApplyWorkspaceFormatters(SmartFormatter formatter, ContentWorkspace workspace)
     {
         formatter.AddExtensions(new RszFieldStringFormatterSource(workspace));
-        formatter.AddExtensions(new TranslateGuidFormatter(workspace.Messages), new EnumLabelFormatter(workspace.Env), new EnumNameFormatter(workspace.Env), new TranslateFormattedString(workspace.Messages));
+        formatter.AddExtensions(new TranslateGuidFormatter(workspace.Messages), new EnumLabelFormatter(workspace.Env), new EnumNameFormatter(workspace.Env), new TranslateFormattedString(workspace.Messages), new EntityLabelFormatter(workspace));
         formatter.AddExtensions(new EntityReverseLookupFormatter(workspace));
         return formatter;
     }
@@ -177,6 +194,63 @@ public class EntityStringFormatterSource(EntityConfig config) : ISource
     }
 }
 
+public class ResourceStringFormatter() : ISource
+{
+    public bool TryEvaluateSelector(ISelectorInfo selectorInfo)
+    {
+        if (selectorInfo.CurrentValue is not IContentResource resource) {
+            return false;
+        }
+
+        if (selectorInfo.SelectorText == "id" && resource is IAddressableContentResource addressable) {
+            selectorInfo.Result = addressable.ID;
+            return true;
+        }
+
+        if (resource is IPropertyContainer props) {
+            selectorInfo.Result = props.Get(selectorInfo.SelectorText);
+            return selectorInfo.Result != null;
+        }
+
+        if (selectorInfo.SelectorOperator.Contains('?')) return false;
+
+        throw new Exception($"Invalid field {selectorInfo.SelectorText} for resource {resource}");
+    }
+}
+
+public class UserDataFileFormatter(ContentWorkspace workspace) : ISource
+{
+    public bool TryEvaluateSelector(ISelectorInfo selectorInfo)
+    {
+        if (selectorInfo.CurrentValue is not RszInstance rsz || rsz.RSZUserData == null) {
+            return false;
+        }
+
+        var userPath = rsz.RSZUserData.Path;
+        if (selectorInfo.SelectorText == "path") {
+            selectorInfo.Result = userPath ?? "";
+            return true;
+        }
+
+        if (selectorInfo.SelectorText == "file") {
+            if (string.IsNullOrEmpty(userPath)) {
+                selectorInfo.Result = null;
+                return true;
+            }
+
+            if (workspace.ResourceManager.TryResolveGameFile(userPath, out var handle)) {
+                selectorInfo.Result = handle.GetFile<UserFile>().Instance;
+                return true;
+            }
+
+            selectorInfo.Result = null;
+            return true;
+        }
+
+        return false;
+    }
+}
+
 public class PathFormatter : IFormatter
 {
     public string Name { get; set; } = "path";
@@ -207,7 +281,9 @@ public class TranslateGuidFormatter(MessageManager msg) : IFormatter
 
     public bool TryEvaluateFormat(IFormattingInfo formattingInfo)
     {
-        if (formattingInfo.CurrentValue is not Guid guid) return false;
+        if (formattingInfo.CurrentValue is not Guid guid) {
+            return true;
+        }
 
         if (guid == Guid.Empty) {
             return true;
@@ -283,15 +359,53 @@ public class EnumLabelFormatter(Workspace env) : IFormatter
             return true;
         }
 
-        var enumDesc = env.TypeCache.GetEnumDescriptor(formattingInfo.FormatterOptions);
+        EnumDescriptor? enumDesc;
+        var rawLabel = formattingInfo.FormatterOptions.StartsWith('#');
+        string classname;
+        if (rawLabel) {
+            classname = formattingInfo.FormatterOptions.Substring(1);
+        } else {
+            classname = formattingInfo.FormatterOptions;
+        }
+
+        enumDesc = env.TypeCache.GetEnumDescriptor(classname);
         if (enumDesc == null) {
             formattingInfo.Write(formattingInfo.CurrentValue.ToString() ?? string.Empty);
             return true;
         }
 
-        // should probably also handle enumDesc.IsFlags somehow
-        var label = enumDesc.GetDisplayLabel(Convert.ChangeType(formattingInfo.CurrentValue, enumDesc.BackingType));
-        formattingInfo.Write(label ?? formattingInfo.CurrentValue.ToString() ?? string.Empty);
+        var label = rawLabel
+            ? enumDesc.GetLabel(Convert.ChangeType(formattingInfo.CurrentValue, enumDesc.BackingType))
+            : enumDesc.GetDisplayLabel(Convert.ChangeType(formattingInfo.CurrentValue, enumDesc.BackingType));
+        if (!string.IsNullOrEmpty(label)) {
+            formattingInfo.Write(label);
+        } else {
+            formattingInfo.Write(formattingInfo.CurrentValue.ToString() ?? string.Empty);
+        }
+        return true;
+    }
+}
+
+public class EntityLabelFormatter(ContentWorkspace workspace) : IFormatter
+{
+    public string Name { get; set; } = "entity";
+    public bool CanAutoDetect { get; set; } = false;
+
+    public bool TryEvaluateFormat(IFormattingInfo formattingInfo)
+    {
+        if (formattingInfo.CurrentValue == null) {
+            return true;
+        }
+
+        var entityType = formattingInfo.FormatterOptions;
+        var id = Convert.ToInt64(formattingInfo.CurrentValue);
+        var entity = workspace.ResourceManager.GetActiveEntityInstance(entityType, id);
+        if (entity == null) {
+            formattingInfo.Write(formattingInfo.CurrentValue.ToString() ?? string.Empty);
+            return true;
+        }
+
+        formattingInfo.Write(entity.Label);
         return true;
     }
 }

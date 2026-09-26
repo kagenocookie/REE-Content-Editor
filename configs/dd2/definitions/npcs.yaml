@@ -1,25 +1,25 @@
 # list of resources required for a new common NPC:
-# - character data natives/stm/appsystem/ch/ch300/userdata/characterdatalist.user.2
+# - character data natives/stm/AppSystem/ch/ch300/userdata/characterdatalist.user.2
 # - head bake pfb (app.PartSwapTextureHolder pfb)
-# -> catalog - natives/stm/appsystem/charaedit/ch000/catalog/headprebaketexturecatalog_npc.user.2
+# -> catalog - natives/stm/AppSystem/CharaEdit/ch000/catalog/headprebaketexturecatalog_npc.user.2
 # - body bake pfb (app.PartSwapTextureHolder pfb)
-# -> catalog - natives/stm/appsystem/charaedit/ch000/catalog/bodyprebaketexturecatalog_npc.user.2
+# -> catalog - natives/stm/AppSystem/CharaEdit/ch000/catalog/bodyprebaketexturecatalog_npc.user.2
 # -> catalog _Hash is computed from "ch300000_0" - _0 or _1 for the main/replacement NPCs; does the value matter for anything, can we just pass in the chara ID?
-# - npcart image (app.GUITextureHolder pfb) - natives/stm/appsystem/gui/prefab/textureholder/npcart/npcart_ch300002_00_00.pfb.17
-# -> add to prefab list - natives/stm/appsystem/gui/userdata/newtextureholderdata/guinpcarttextureholderdata.user.2
+# - npcart image (app.GUITextureHolder pfb) - natives/stm/AppSystem/gui/prefab/textureholder/npcart/npcart_ch300002_00_00.pfb.17
+# -> add to prefab list - natives/stm/AppSystem/gui/userdata/newtextureholderdata/guinpcarttextureholderdata.user.2
 # -> enum: app.GUITextureLoaderDefine.NPCArtTextureID, enum format "NPCArt_{charaId}_{variantId}_{costumeId?}"
-# - add thumbnail (app.GUITextureHolder pfb) - natives/stm/appsystem/gui/prefab/textureholder/npcthumb/npcthumb_ch300000_00_00.pfb.17
-# -> add to prefab list - natives/stm/appsystem/gui/userdata/newtextureholderdata/guinpcthumbnailtextureholderdata.user.2
+# - add thumbnail (app.GUITextureHolder pfb) - natives/stm/AppSystem/gui/prefab/textureholder/npcthumb/npcthumb_ch300000_00_00.pfb.17
+# -> add to prefab list - natives/stm/AppSystem/gui/userdata/newtextureholderdata/guinpcthumbnailtextureholderdata.user.2
 # -> enum: app.GUITextureLoaderDefine.NPCThumbnailTextureID, enum format "NPCThumb_{charaId}_{variantId}_{costumeId?}"
-# - corpse image (app.GUITextureHolder pfb) - natives/stm/appsystem/gui/prefab/textureholder/corpsethumb/corpsethumb_ch300002_00.pfb.17
-# -> add to prefab list - natives/stm/appsystem/gui/userdata/newtextureholderdata/corpsethumbtextureholderdata.user.2
+# - corpse image (app.GUITextureHolder pfb) - natives/stm/AppSystem/gui/prefab/textureholder/corpsethumb/corpsethumb_ch300002_00.pfb.17
+# -> add to prefab list - natives/stm/AppSystem/gui/userdata/newtextureholderdata/corpsethumbtextureholderdata.user.2
 # -> enum: app.GUITextureLoaderDefine.CorpseThumbTextureID, enum format "CorpseThumb_{charaId}_{variantId}"
-# - lipsync user file - natives/stm/appsystem/ch/lipsync/npc/ch300002.pfb.17
-# -> catalog - natives/stm/appsystem/catalog/maincontents/userdata/lipsynccataloguserdata.user.2
+# - lipsync user file - natives/stm/AppSystem/ch/lipsync/npc/ch300002.pfb.17
+# -> catalog - natives/stm/AppSystem/catalog/maincontents/userdata/lipsynccataloguserdata.user.2
 # - textures - body (ALBD, NRRA), head (ALBD, NRRA)
-# - appearance and costume data (app.charaedit.ch000.EditDataTable.Data) - natives/stm/appsystem/charaedit/ch000/editdatatable_npc.user.2
+# - appearance and costume data (app.charaedit.ch000.EditDataTable.Data) - natives/stm/AppSystem/CharaEdit/ch000/editdatatable_npc.user.2
 # - name "Mes_{_CharacterID:enum(app.CharacterID)}" (natives/stm/message/ui/charactername.msg.22)
-# - NPC schedule - natives/stm/appsystem/ch/ch300/userdata/npcscheduledata.user.2
+# - NPC schedule - natives/stm/AppSystem/ch/ch300/userdata/npcscheduledata.user.2
 # - spawn them somewhere - natives/stm/appdata/generate/manualset/content/**/npc/normal/normal.user.2
 
 # other, maybe useless?
@@ -32,57 +32,76 @@ entities:
     - name: app.CharacterID
       format: "{name}"
       primary: true
-    custom_id_range: [1000, 999999]
     to_string: "NPC {name}: {displayName}"
     fields:
-      data:
-        type: object
+      - name: data
         label: Data
         required: true
-        param:
+        resource:
+          id: [ID]
+          type: array-file
+          custom_id_range: [1000, 999999]
+          filter:
+          - property: _SubNPC
+            equals: false
+          file: AppSystem/ch/ch300/UserData/CharacterDataList.user
           classname: app.CharacterData
-          nested: false
-      edit_data:
-        type: object
+      - name: alternativeData
+        label: Sub NPC Data
+        required: true
+        resource:
+          id: [ID]
+          type: array-file
+          custom_id_range: [1000, 999999]
+          filter:
+          - property: _SubNPC
+            equals: true
+          file: AppSystem/ch/ch300/UserData/CharacterDataList.user
+          classname: app.CharacterData
+      - name: edit_data
         label: Customization
-        param:
+        required: true
+        resource:
+          id: [_CharacterID]
+          type: array-file
           classname: app.charaedit.ch000.EditDataTable.Data
-          nested: false
-      name:
-        type: string
+          file: AppSystem/CharaEdit/ch000/EditDataTable_Npc.user
+      - name: name
         label: NPC internal code name
         required: true
-        param:
-          regex: "^ch3[0-9_]{5}$"
-          regexDescription: "Example: ch302345"
-          tooltip: Enter a code name for the NPC. This should be unique across all characters, used for translation keys and file names.
-          initial: "{id:enum_name(app.CharacterID)}"
-          diffable: false
         display_after: start
-      displayName:
-        type: single-msg
+        resource:
+          type: string
+          params:
+            diffable: false
+            regex: "^ch3[0-9_]{5}$"
+            regexDescription: "Example: ch302345"
+            tooltip: Enter a code name for the NPC. This should be unique across all characters, used for translation keys and file names.
+            initial: "{id:enum_name(app.CharacterID)}"
+      - name: displayName
         label: Name
         required: true
-        param:
-          key: "Mes_{name}" # if data._SubNPC -> _X1 suffix
-          # key might not really matter, there's a NameID on the character data
-          file: natives/stm/message/ui/charactername.msg.22
         display_after: name
+        resource:
+          type: msg
+          file: Message/UI/CharacterName.msg
+          params:
+            key_format: "Mes_{name}"  # if data._SubNPC -> _X1 suffix
 
 classes:
   app.charaedit.ch000.EditDataTable.Data:
-    id: [_CharacterID]
     to_string: "EditDataTable Character={_CharacterID:enum(app.CharacterID)}"
-    patcher:
-      type: array-file
-      file: natives/stm/appsystem/charaedit/ch000/editdatatable_npc.user.2
+    fields:
+      _CharacterID: { readOnly: true }
   app.CharacterData:
-    id: [ID]
     to_string: "{ID:enum_name(app.CharacterID)} {NameID:translate()}"
-    patcher:
-      type: array-file
-      file: natives/stm/appsystem/ch/ch300/userdata/characterdatalist.user.2
-
+    fields:
+      ID: { readOnly: true }
+      Present: { enum: ItemData }
+      _SubSkillPresent: { enum: ItemData }
+      _ItemSteal: { enum: ItemData }
+      LeftWeapon: { enum: Weapon }
+      RightWeapon: { enum: Weapon }
   app.facial.LipSync.Phoneme:
     to_string: "Phoneme: SoundID={_SoundMediaID}, duration={_TotalTime}"
   app.facial.LipSync.Phoneme.KeyFrame:
@@ -101,3 +120,7 @@ classes:
     to_string: "Generic NPC Data: {_Voice:enum(app.CharacterData.VoiceDefine)} {_Prefab.Path}"
   app.LipSyncCatalogUserData.CharacterElement:
     to_string: "NPC Data: {_CharacterID:enum(app.CharacterID)}"
+  app.charaedit.ch000.CostumeData:
+    to_string: "Costume Data [ID={_CostumeID}] | {_TopsStyle:enum(app.TopsStyle)} {_PantsStyle:enum(app.PantsStyle)}"
+  app.charaedit.ch000.AppearanceData:
+    to_string: "Appearance Data [ID={_AppearanceID}]"

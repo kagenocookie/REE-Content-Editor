@@ -1,0 +1,426 @@
+entities:
+  items.styles.tops.TopsStyle:
+    primary_field: data
+    id_field: styleNo
+    to_string: "Tops Style {id}: {data._TopsStyle:enum(app.TopsStyle)}"
+    display_name: Style
+    zero_entity:
+      id: 0
+    fields:
+    - name: DD2_StylePreview
+      field_type: DD2_StylePreview
+      required: true
+      resource:
+        params:
+          dataField: _TopsStyle
+          partField: _Meta._TopsStyle
+    - name: data
+      display_after: styleNo
+      field_id: { field: styleNo, path: value }
+      # enums:
+      # - name: app.TopsStyle
+      #   new_label_format: "Tops_{data._TopsStyle:D03}"
+      #   primary: true
+      resource:
+        type: group
+        id: [_TopsStyle]
+        custom_id_range: [10000, 10000000]
+        classname: app.TopsSwapItem
+        subtypes:
+          male:
+            file: AppSystem/CharaEdit/ch000/SwapData/TopsSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 2776536455
+          female:
+            file: AppSystem/CharaEdit/ch000/SwapData/TopsSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 1910070090
+    - name: styleNo
+      resource:
+        type: enum_mapping
+        classname: app.TopsStyle
+        custom_id_range: [10000, 32700] # _StyleNo on the armor data is a signed short so we need to limit to that range
+        params:
+          virtual_enum_name: ce.TopsStyleNo
+          new_label_format: "Tops_{id:D03}"
+          label_id_parse: "Tops_(\\d+)"
+          value_from: { field: data, path: _TopsStyle }
+    - name: furmask
+      field_id: { field: styleNo, path: value }
+      resource:
+        type: group
+        subtypes:
+          male:
+            file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_m_Tops.user
+            type: resource_proxy_pfb
+            params:
+              skipFields: 1
+          female:
+            file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_f_Tops.user
+            type: resource_proxy_pfb
+            params:
+              skipFields: 1
+    runtime_mapping:
+      runtime_type: TopsStyle
+      to_both:
+        "data.female": "data.1910070090"
+        "data.male": "data.2776536455"
+      to_runtime:
+        # null out furmask configs for runtime since it's storing pfb paths instead of direct files
+        # this way it'll just read the active state which will be whichever we patched in
+        "null.1": "furmasks"
+
+  items.styles.tops.TopsBdMesh:
+    to_string: "TopsBdMesh {id:enum(app.CharacterEditDefine.TopsBdMeshID)} | {mesh._Mesh}"
+    display_name: Body Mesh
+    allow_templates: false
+    enums:
+    - name: "app.CharacterEditDefine.TopsBdMeshID"
+      format: "tops_{id}_bd"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: mesh
+      required: true
+      resource:
+        custom_id_range: [10000, 10000000]
+        # catalog entry ID field should be auto determinable here
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBdMeshCatalog_Default.user
+        # `type` tells it how to handle the catalog entry
+        # resource_proxy_pfb: the entity is an object that contains a via.Prefab and it also has an ID field somewhere
+        # optionally we can manually configure but it should reasonably know how to auto determine the prefab and ID fields
+        # this one specifically is just a pfb containing a resource path (awful shit, really)
+        # the resource part inside the actual pfb will be auto handled to: 1. find single non-transform component, 2. find a resource field
+        # additionally, check for any "Enabled" flags and set them true, or maybe we can explicitly configure classname default values instead of looking for an enable flag
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: chain
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBdChainCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: clsp
+      label: Collision Shape Preset
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBdCollisionShapePresetCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: cloth
+      label: GPU Cloth
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBdGpuClothCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: sfur
+      label: Shell Fur
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBdShellFurCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: TopsBd
+      to_both:
+        mesh: Mesh
+        chain: Chain
+        cloth: Gpuc
+        clsp: Clsp
+        sfur: Sfur
+
+  items.styles.tops.TopsBdSkin:
+    to_string: "TopsBdSkin {id:enum(app.CharacterEditDefine.TopsBdSkinID)} | {skin._Material}"
+    display_name: Body Skin
+    allow_templates: false
+    enums:
+    - name: app.CharacterEditDefine.TopsBdSkinID
+      format: "tops_{id}_bd"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: skin
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBdSkinCatalog_Default.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: TopsBdSkin
+      to_both:
+        skin: Skin
+
+  items.styles.tops.TopsWbMesh:
+    to_string: "TopsWbMesh {id:enum(app.CharacterEditDefine.TopsWbMeshID)} | {mesh._Mesh}"
+    display_name: Waistband Mesh
+    allow_templates: false
+    enums:
+    - name: "app.CharacterEditDefine.TopsWbMeshID"
+      format: "tops_{id}_wb"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: mesh
+      required: true
+      resource:
+        custom_id_range: [10000, 10000000]
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsWbMeshCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: chain
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsWbChainCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: clsp
+      label: Collision Shape Preset
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsWbCollisionShapePresetCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: cloth
+      label: GPU Cloth
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsWbGpuClothCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: sfur
+      label: Shell Fur
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsWbShellFurCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: TopsWb
+      to_both:
+        mesh: Mesh
+        chain: Chain
+        cloth: Gpuc
+        clsp: Clsp
+        sfur: Sfur
+
+  items.styles.tops.TopsWbSkin:
+    to_string: "TopsWbSkin {id:enum(app.CharacterEditDefine.TopsWbSkinID)} | {skin._Material}"
+    display_name: Waistband Skin
+    allow_templates: false
+    enums:
+    - name: app.CharacterEditDefine.TopsWbSkinID
+      format: "tops_{id}_wb"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: skin
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsWbSkinCatalog_Default.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: TopsWbSkin
+      to_both:
+        skin: Skin
+
+  items.styles.tops.TopsAmMesh:
+    to_string: "TopsAmMesh {id:enum(app.CharacterEditDefine.TopsAmMeshID)} | {mesh._Mesh}"
+    display_name: Arms Mesh
+    allow_templates: false
+    enums:
+    - name: "app.CharacterEditDefine.TopsAmMeshID"
+      format: "tops_{id}_am"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: mesh
+      required: true
+      resource:
+        custom_id_range: [10000, 10000000]
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsAmMeshCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: chain
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsAmChainCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: clsp
+      label: Collision Shape Preset
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsAmCollisionShapePresetCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: cloth
+      label: GPU Cloth
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsAmGpuClothCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: TopsAm
+      to_both:
+        mesh: Mesh
+        chain: Chain
+        cloth: Gpuc
+        clsp: Clsp
+
+  items.styles.tops.TopsAmSkin:
+    to_string: "TopsAmSkin {id:enum(app.CharacterEditDefine.TopsAmSkinID)} | {skin._Material}"
+    display_name: Arms Skin
+    allow_templates: false
+    enums:
+    - name: app.CharacterEditDefine.TopsAmSkinID
+      format: "tops_{id}_am"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: skin
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsAmSkinCatalog_Default.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: TopsAmSkin
+      to_both:
+        skin: Skin
+
+  items.styles.tops.TopsBtMesh:
+    to_string: "TopsBtMesh {id:enum(app.CharacterEditDefine.TopsBtMeshID)} | {mesh._Mesh}"
+    display_name: Belt Mesh
+    allow_templates: false
+    enums:
+    - name: "app.CharacterEditDefine.TopsBtMeshID"
+      format: "tops_{id}_bt"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: mesh
+      required: true
+      resource:
+        custom_id_range: [10000, 10000000]
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBtMeshCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: chain
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBtChainCatalog.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: clsp
+      label: Collision Shape Preset
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBtCollisionShapePresetCatalog.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: TopsBt
+      to_both:
+        mesh: Mesh
+        chain: Chain
+        clsp: Clsp
+
+  items.styles.tops.TopsBtSkin:
+    to_string: "TopsBtSkin {id:enum(app.CharacterEditDefine.TopsBtSkinID)} | {skin._Material}"
+    display_name: Belt Skin
+    allow_templates: false
+    enums:
+    - name: app.CharacterEditDefine.TopsBtSkinID
+      format: "tops_{id}_bt"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: skin
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/TopsBtSkinCatalog_Default.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: TopsBtSkin
+      to_both:
+        skin: Skin
+
+classes:
+  app.TopsSwapItem:
+    to_string: "{class_shortname} {_TopsStyle:enum(app.TopsStyle)} {_Gender:enum(app.Gender)}"
+    fields:
+      _TopsStyle: { readOnly: true }
+      _Gender: { readOnly: true }
+      _BdMeshID: { enum: TopsBdMesh, label: Body Mesh }
+      _BdSkinID: { enum: TopsBdSkin, label: Body Skin }
+      _BdSubMeshID: { enum: TopsBdMesh, label: Body Sub Mesh }
+      _BdSubSkinID: { enum: TopsBdSkin, label: Body Sub Skin }
+      _WbMeshID: { enum: TopsWbMesh, label: Waistband Mesh }
+      _WbSkinID: { enum: TopsWbSkin, label: Waistband Skin }
+      _WbSubMeshID: { enum: TopsWbMesh, label: Waistband Sub Mesh }
+      _WbSubSkinID: { enum: TopsWbSkin, label: Waistband Sub Skin }
+      _AmMeshID: { enum: TopsAmMesh, label: Arm Mesh }
+      _AmSkinID: { enum: TopsAmSkin, label: Arm Skin }
+      _AmSubMeshID: { enum: TopsAmMesh, label: Arm Sub Mesh }
+      _AmSubSkinID: { enum: TopsAmSkin, label: Arm Sub Skin }
+      _BtMeshID: { enum: TopsBtMesh, label: Belt Mesh }
+      _BtSkinID: { enum: TopsBtSkin, label: Belt Skin }
+      _BtSubMeshID: { enum: TopsBtMesh, label: Belt Sub Mesh }
+      _BtSubSkinID: { enum: TopsBtSkin, label: Belt Sub Skin }
+      _UnderwearStyle: { enum: UnderwearStyle, label: Underwear Style }
+      # note: needs to be defined as string, otherwise the deserializer thinks it's a double
+      _BdPartsEnable: { default: "18445652327382646783" }
+      _BdSubPartsEnable: { default: "18445652327382646783" }
+      _WbPartsEnable: { default: "17549402948573920263" }
+      _WbSubPartsEnable: { default: "17549402948573920263" }
+      _AmPartsEnable: { default: 3302292454401 }
+      _AmSubPartsEnable: { default: 3302292454401 }
+      _BtPartsEnable: { default: 1049603 }
+      _BtSubPartsEnable: { default: 1049603 }
+
+  app.TopsPartsEnableItem:
+    to_string: "Tops PartsEnable {_Gender:enum(app.Gender)} Job={_Job:enum(app.Character.JobEnum)} | {_TopsStyle:enum(app.TopsStyle)}"
+  app.TopsAmPartsHiddenItem:
+    to_string: "TopsAm PartsHidden Job={_Job:enum(app.Character.JobEnum)} | {_AmMeshID:enum(app.CharacterEditDefine.TopsAmMeshID)}"
+  app.TopsBdPartsHiddenItem:
+    to_string: "TopsBd PartsHidden Job={_Job:enum(app.Character.JobEnum)} | {_BdMeshID:enum(app.CharacterEditDefine.TopsBdMeshID)}"
+  app.PantsLgPartsHiddenItem:
+    to_string: "PantsLg PartsHidden Job={_Job:enum(app.Character.JobEnum)} | {_LgMeshID:enum(app.CharacterEditDefine.PantsLgMeshID)}"
+  app.TopsBtPrimaryPartsHiddenItem:
+    to_string: "BtPrimary PartsHidden Job={_Job:enum(app.Character.JobEnum)}"

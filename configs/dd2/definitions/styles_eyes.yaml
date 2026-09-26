@@ -1,0 +1,102 @@
+entities:
+  charaEdit.eyes.EyeStyle:
+    primary_field: data
+    to_string: "Eye {data._EyeStyle:enum(app.EyeStyle)} [#{id}]"
+    display_name: Style
+    enums:
+    - name: app.EyeStyle
+      format: "Eye_{id:D03}"
+      primary: true
+    fields:
+    - name: data
+      required: true
+      resource:
+        id: [_EyeStyle]
+        custom_id_range: [10000, 10000000]
+        classname: app.EyeSwapItem
+        type: group
+        subtypes:
+          left:
+            file: AppSystem/CharaEdit/ch000/SwapData/EyeLeftSwapData.user
+            classname: app.EyeLeftSwapItem
+            type: array-file
+          right:
+            file: AppSystem/CharaEdit/ch000/SwapData/EyeRightSwapData.user
+            classname: app.EyeRightSwapItem
+            type: array-file
+
+  charaEdit.eyes.EyeTexture:
+    to_string: "EyeTexture {id:enum(app.CharacterEditDefine.EyeLeftTextureID)} | {textureLeft._Materials[0]._Texture}"
+    allow_templates: false
+    enums:
+    - name: "app.CharacterEditDefine.EyeLeftTextureID"
+      format: "eyes_{id}"
+      primary: true
+    - name: "app.CharacterEditDefine.EyeRightTextureID"
+      format: "eyes_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: textureLeft
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/EyeLeftTextureCatalog.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: textureRight
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/EyeRightTextureCatalog.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+
+  charaEdit.eyes.EyeParallax:
+    to_string: "EyeParallax {id:enum(app.CharacterEditDefine.EyeLeftParallaxID)} | {textureLeft._Materials[0]._Texture}"
+    allow_templates: false
+    enums:
+    - name: "app.CharacterEditDefine.EyeLeftParallaxID"
+      format: "eye_parallax_{id}"
+      primary: true
+    - name: "app.CharacterEditDefine.EyeRightParallaxID"
+      format: "eye_parallax_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: textureLeft
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/EyeLeftParallaxCatalog.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: textureRight
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/EyeRightParallaxCatalog.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+
+classes:
+  app.EyeLeftSwapItem:
+    to_string: "{class_shortname} {_EyeStyle:enum(app.EyeStyle)}"
+    fields:
+      _EyeStyle: { readOnly: true }
+      _TextureID: { enum: EyeTexture }
+      _ParallaxID: { enum: EyeParallax }
+  app.EyeRightSwapItem:
+    to_string: "{class_shortname} {_EyeStyle:enum(app.EyeStyle)}"
+    fields:
+      _EyeStyle: { readOnly: true }
+      _TextureID: { enum: EyeTexture }
+      _ParallaxID: { enum: EyeParallax }

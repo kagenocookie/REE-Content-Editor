@@ -1,0 +1,173 @@
+entities:
+  items.styles.helms.HelmStyle:
+    primary_field: data
+    id_field: styleNo
+    to_string: "Helm Style {id}: {data._HelmStyle:enum(app.HelmStyle)}"
+    display_name: Style
+    fields:
+    - name: DD2_StylePreview
+      field_type: DD2_StylePreview
+      required: true
+      resource:
+        params:
+          dataField: _HelmStyle
+          partField: _Meta._HelmStyle
+    - name: data
+      display_after: styleNo
+      field_id: { field: styleNo, path: value }
+      resource:
+        type: group
+        id: [_HelmStyle]
+        custom_id_range: [10000, 10000000]
+        classname: app.HelmSwapItem
+        subtypes:
+          male:
+            file: AppSystem/CharaEdit/ch000/SwapData/HelmSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 2776536455
+          female:
+            file: AppSystem/CharaEdit/ch000/SwapData/HelmSwapData.user
+            type: array-file
+            filter:
+            - property: _Gender
+              equals: 1910070090
+    - name: styleNo
+      resource:
+        type: enum_mapping
+        classname: app.HelmStyle
+        custom_id_range: [10000, 32700] # _HelmStyleNo on the armor data is a signed short so we need to limit to that range
+        params:
+          virtual_enum_name: ce.HelmStyleNo
+          new_label_format: "Helm_{id:D03}"
+          label_id_parse: "Helm_(\\d+)"
+          value_from: { field: data, path: _HelmStyle }
+    - name: furmask
+      field_id: { field: styleNo, path: value }
+      resource:
+        type: group
+        subtypes:
+          male:
+            file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_m_Helm.user
+            type: resource_proxy_pfb
+            params:
+              skipFields: 1
+          female:
+            file: AppSystem/CharaEdit/ch000/Catalog/FurMaskMapCatalog_f_Helm.user
+            type: resource_proxy_pfb
+            params:
+              skipFields: 1
+
+  items.styles.helms.HelmMesh:
+    to_string: "HelmMesh {id:enum(app.CharacterEditDefine.HelmMeshID)} | {humanMesh._Mesh}"
+    display_name: Helm Mesh
+    allow_templates: false
+    enums:
+    - name: "app.CharacterEditDefine.HelmMeshID"
+      format: "helm_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: humanMesh
+      required: true
+      resource:
+        custom_id_range: [10000, 10000000]
+        file: AppSystem/CharaEdit/ch000/Catalog/HelmMeshCatalog_HA_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: beastMesh
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/HelmMeshCatalog_BA_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: humanChain
+      resource:
+        custom_id_range: [10000, 10000000]
+        file: AppSystem/CharaEdit/ch000/Catalog/HelmChainCatalog_HA_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: beastChain
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/HelmChainCatalog_BA_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: humanGpuCloth
+      resource:
+        custom_id_range: [10000, 10000000]
+        file: AppSystem/CharaEdit/ch000/Catalog/HelmGpuClothCatalog_HA_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: beastGpuCloth
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/HelmGpuClothCatalog_BA_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: clsp
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/HelmCollisionShapePresetCatalog_Default.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: sfur
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/HelmShellFurCatalog_Default.user
+        type: resource_proxy_pfb
+        classname: app.PartSwapShellFurHolder
+        params:
+          skipFields: 1
+          catalogClassname: app.PartSwapCatalog.Item
+    # runtime_mapping:
+    #   runtime_type: HelmMesh
+    #   to_both:
+    #     humanMesh: HumanMesh
+    #     beastMesh: BeastMesh
+    #     chain: Chain
+    #     clsp: Clsp
+
+  items.styles.helms.HelmSkin:
+    to_string: "HelmSkin {id:enum(app.CharacterEditDefine.HelmSkinID)} | {skin._Material}"
+    display_name: Helm Skin
+    allow_templates: false
+    enums:
+    - name: app.CharacterEditDefine.HelmSkinID
+      format: "helm_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: skin
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/HelmSkinCatalog_Default.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    runtime_mapping:
+      runtime_type: HelmSkin
+      to_both:
+        skin: Skin
+
+classes:
+  app.HelmSwapItem:
+    to_string: "{class_shortname} {_HelmStyle:enum(app.HelmStyle)} {_Gender:enum(app.Gender)}"
+    fields:
+      _HelmStyle: { readOnly: true }
+      _Gender: { readOnly: true }
+      _MeshID: { enum: HelmMesh, label: Mesh }
+      _SkinID: { enum: HelmSkin, label: Skin }
+      _SubMeshID: { enum: HelmMesh, label: Sub Mesh }
+      _SubSkinID: { enum: HelmSkin, label: Sub Skin }
+      _PartsEnable: { default: 3301758204931 }
+      _SubPartsEnable: { default: 3301758204931 }

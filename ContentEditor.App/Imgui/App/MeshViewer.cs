@@ -381,13 +381,13 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             ImguiHelpers.Tooltip(Lang.MeshViewer.Tooltip_OutlinerExpand);
             ImGui.EndChild();
             return;
-        }        
+        }
         ImGui.BeginChild("##Outliner", size, ImGuiChildFlags.Borders | ImGuiChildFlags.AlwaysUseWindowPadding, ImGuiWindowFlags.NoScrollbar);
         if (ImGui.ArrowButton("##CollapseOutliner", isOutlinerOnLeft ? ImGuiDir.Left : ImGuiDir.Right)) {
             isOutlinerCollapsed = true;
         }
         ImguiHelpers.Tooltip(Lang.MeshViewer.Tooltip_OutlinerCollapse);
-       
+
         ImGui.SameLine();
         if (ImGui.BeginTabBar("##OutlinerTabBar")) {
             if (ImGui.BeginTabItem(Lang.MeshViewer.Tab_OutlinerModels)) {
@@ -409,7 +409,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
         ImGui.EndChild();
         ImGui.EndChild();
-        
+
     }
     private void ShowOutlinerSplitter(float height, float availableWidth)
     {
@@ -1519,7 +1519,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
         }
         ImGui.SameLine();
         AppImguiHelpers.WikiLinkButton("https://github.com/kagenocookie/REE-Content-Editor/wiki/Animation-tools", true);
-        
+
         var animWarns = GetAnimErrors();
         if (animWarns != null) {
             ImGui.SameLine();
@@ -1606,7 +1606,7 @@ public class MeshViewer : FileEditor, IDisposable, IFocusableFileHandleReference
             }
             ImguiHelpers.Tooltip(Lang.Settings.Bind_MeshViewer_FaceSelection);
         }
-        
+
         ImGui.PopStyleColor(2);
         ImGui.EndChild();
         hovered = hovered || ImGui.IsWindowHovered();
@@ -2281,10 +2281,27 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
         animationPickerContext ??= UI.AddChild<MeshViewerContext, string>(
             "Animation File",
             this,
-            new ResourcePathPicker(Workspace, FileFilters.MeshFilesAllNoBlend, KnownFileFormats.MotionList, KnownFileFormats.Motion) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly },
+            new ResourcePathPicker(Workspace, FileFilters.MeshFilesAllNoBlend, KnownFileFormats.MotionList, KnownFileFormats.Motion) { Flags = ResourcePathPicker.PathPickerFlags.EditorOnly|ResourcePathPicker.PathPickerFlags.HideOpenInWindow },
             (v) => v!.animationSourceFile,
             (v, p) => v.animationSourceFile = p ?? "");
 
+        var animator = Animator;
+        var prefix = ImguiHelpers.InlinePrefix();
+        ImGui.BeginDisabled(!(animator?.AnimationCount > 0));
+        if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
+            if (animator!.File!.Format.format == KnownFileFormats.Motion) {
+                var fakeMotlist = new MotlistFile(new FileHandler());
+                var ff = animator.File.GetFile<MotFile>();
+                fakeMotlist.MotFiles.Add(ff);
+                var fakeHandle = FileHandle.CreateEmbedded(new MotListFileLoader(), new BaseFileResource<MotlistFile>(fakeMotlist));
+                EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, fakeHandle));
+            } else {
+                EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, animator.File!));
+            }
+        }
+        ImguiHelpers.Tooltip("Open current motlist in Motlist Editor");
+        ImGui.EndDisabled();
+        prefix.Dispose();
         animationPickerContext.ShowUI();
 
         var settings = AppConfig.Settings;
@@ -2308,24 +2325,11 @@ internal class MeshViewerContext(MeshViewer viewer, UIContext ui, FileHandle fil
             }
         }
 
-        var animator = Animator;
+        animator = Animator;
         if (animator?.AnimationCount > 0) {
             ImGui.Separator();
             ImGui.Spacing();
             var ignoreRoot = animator.IgnoreRootMotion;
-            if (ImGui.Button($"{AppIcons.SI_WindowOpenNew}")) {
-                if (animator.File!.Format.format == KnownFileFormats.Motion) {
-                    var fakeMotlist = new MotlistFile(new FileHandler());
-                    var ff = animator.File.GetFile<MotFile>();
-                    fakeMotlist.MotFiles.Add(ff);
-                    var fakeHandle = FileHandle.CreateEmbedded(new MotListFileLoader(), new BaseFileResource<MotlistFile>(fakeMotlist));
-                    EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, fakeHandle));
-                } else {
-                    EditorWindow.CurrentWindow?.AddSubwindow(new MotlistEditor(Workspace, animator.File!));
-                }
-            }
-            ImguiHelpers.Tooltip("Open current motlist in Motlist Editor");
-            ImGui.SameLine();
             if (ImguiHelpers.ToggleButtonMultiColor(AppIcons.SIC_IgnoreRootMotion, ref ignoreRoot, [Colors.IconTertiary, Colors.IconPrimary, Colors.IconPrimary], Colors.IconActive)) {
                 AppConfig.Settings.MeshViewer.DisableRootMotion = ignoreRoot;
                 AppConfig.Settings.Save();

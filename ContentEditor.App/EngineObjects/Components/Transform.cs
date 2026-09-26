@@ -14,7 +14,7 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
     {
     }
 
-    public Transform(GameObject gameObject, Workspace data) : base(gameObject, RszInstance.CreateInstance(data.RszParser, data.Classes.Transform))
+    public Transform(GameObject gameObject, Workspace env) : base(gameObject, env.CreateRszInstance(env.Classes.Transform))
     {
     }
 
@@ -90,15 +90,12 @@ public sealed class Transform : Component, IConstructorComponent, IFixedClassnam
                 var absoluteScale = RszFieldCache.Transform.AbsoluteScaling.Get(Data);
                 var parentTrans = GameObject.Parent.WorldTransform;
                 var parentJoint = ParentJoint;
-                if (!string.IsNullOrEmpty(parentJoint)) {
-                    var parentAnimator = GameObject.Parent.GetComponent<Motion>()?.Animator;
-                    if (parentAnimator != null) {
-                        var parentMesh = GameObject.Parent.GetComponent<MeshComponent>()?.MeshHandle as AnimatedMeshHandle;
-                        var parentBone = parentMesh?.Bones?.GetByName(parentJoint);
-                        if (parentMesh != null && parentBone != null) {
-                            var mat = parentMesh.BoneMatrices[parentBone.index];
-                            parentTrans = mat * parentTrans;
-                        }
+                if (!string.IsNullOrEmpty(parentJoint) && GameObject.Parent.HasComponent<Motion>()) {
+                    var parentMesh = GameObject.Parent.GetComponent<MeshComponent>()?.MeshHandle as AnimatedMeshHandle;
+                    var parentBone = parentMesh?.Bones?.GetByName(parentJoint);
+                    if (parentMesh != null && parentBone != null) {
+                        var mat = parentMesh.BoneMatrices[parentBone.index];
+                        parentTrans = mat * parentTrans;
                     }
                 }
                 if (absoluteScale) {
