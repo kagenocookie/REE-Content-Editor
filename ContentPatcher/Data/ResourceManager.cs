@@ -420,7 +420,7 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
                     instances[id] = resource;
                 } else {
                     // unsure yet if we treat this as error or allowed
-                    throw new Exception($"Added duplicate resource ID {id}");
+                    Logger.Error($"Attempted to add duplicate resource {resourceKey} ID {id}");
                 }
             } else {
                 instances.Add(id, resource);
@@ -555,11 +555,33 @@ public sealed class ResourceManager(PatchConfig config) : IDisposable
         }
     }
 
+    private void LoadCustomEnums(Dictionary<string, Dictionary<string, System.Text.Json.JsonElement>>? enums)
+    {
+        if (enums == null) return;
+
+        foreach (var (classname, entries) in enums) {
+            var desc = workspace.Env.TypeCache.GetEnumDescriptor(classname);
+            if (desc == null) {
+                continue;
+            }
+
+            foreach (var (label, val) in entries) {
+                var currentLabel = desc.GetLabel(val);
+                if (string.IsNullOrEmpty(currentLabel)) {
+                    desc.AddValue(label, val);
+                } else if (currentLabel != label) {
+                    Logger.Debug($"Enum label mismatch {classname}; {val} = {label}/{currentLabel}");
+                }
+            }
+        }
+    }
+
     /// <summary>
     /// Fetches all referenced resources with the given state. If Active state, resources will be copied from the base state data if found.
     /// </summary>
     private void LoadSingleEntityResources(ResourceEntity entity, ResourceState state)
     {
+        LoadCustomEnums(entity.Enums);
         var idField = entity.Config.IDField;
         if (entity.Get(idField.name) == null) {
             entity.FieldValues[idField.name] = idField.ValueHandler.FetchResource(workspace, entity, -1, state);

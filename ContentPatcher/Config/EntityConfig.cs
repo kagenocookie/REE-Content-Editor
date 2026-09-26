@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using ContentEditor.Core;
 using ContentEditor.Editor;
@@ -112,36 +113,40 @@ public partial class EntityEnumInfo
 {
     public string name = string.Empty;
     public string? format;
+    [YamlMember("value")]
+    public string? valueFormat;
     public bool primary;
 
     [GeneratedRegex("[^0-9a-zA-Z_]")]
     private static partial Regex NonAlphanumericRegex();
 
     [YamlIgnore]
-    private StringFormatter? formatter;
+    private StringFormatter? labelFormatter;
+    [YamlIgnore]
+    private StringFormatter? valueFormatter;
 
     internal void Init(ContentWorkspace workspace, EntityConfig config)
     {
-        formatter = format == null ? null : new StringFormatter(format, FormatterSettings.CreateFullEntityFormatter(config, workspace));
+        labelFormatter = format == null ? null : new StringFormatter(format, FormatterSettings.CreateFullEntityFormatter(config, workspace));
+        valueFormatter = valueFormat == null ? null : new StringFormatter(valueFormat, FormatterSettings.CreateFullEntityFormatter(config, workspace));
     }
 
-    public void UpdateEnum<T>(ContentWorkspace workspace, T value, string label) where T : IBinaryInteger<T>
-    {
-        var desc = workspace.Env.TypeCache.GetEnumDescriptor(name);
-        desc.AddValue(value, label);
-    }
+    public string GetFormattedLabel(ResourceEntity entity) => labelFormatter?.GetString(entity) ?? NonAlphanumericRegex().Replace(entity.Label, "");
+    public object GetFormattedValue(ContentWorkspace workspace, ResourceEntity entity)
+        => Convert.ChangeType(valueFormatter?.GetString(entity) ?? entity.Id.ToString(), workspace.Env.TypeCache.GetEnumDescriptor(name).BackingType);
 
     public void UpdateEnum(ContentWorkspace workspace, ResourceEntity entity)
     {
         // NOTE: we don't currently have a way of resetting custom enum entries. Probably not worth the effort to fix
-        // May cause issues if the user swaps bundles or if we ever support changing IDs in runtime.
-
+        // May cause issues if the user swaps bundles or if we ever support changing IDs without a full reload.
         var desc = workspace.Env.TypeCache.GetEnumDescriptor(name);
-        var curLabel = desc.GetLabel(Convert.ChangeType(entity.Id, desc.BackingType));
+        var value = Convert.ChangeType(valueFormatter?.GetString(entity) ?? entity.Id.ToString(), desc.BackingType);
+        var curLabel = desc.GetLabel(value);
         if (string.IsNullOrEmpty(curLabel)) {
-            desc.AddValue(entity.Id, formatter?.GetString(entity) ?? NonAlphanumericRegex().Replace(entity.Label, ""), entity.Label);
-        } else {
-            desc.SetDisplayLabel(curLabel, entity.Label);
+            var valueJson = JsonSerializer.SerializeToElement(value);
+            curLabel = GetFormattedLabel(entity);
+            desc.AddValue(curLabel, valueJson);
         }
+        desc.SetDisplayLabel(curLabel, entity.Label);
     }
 }

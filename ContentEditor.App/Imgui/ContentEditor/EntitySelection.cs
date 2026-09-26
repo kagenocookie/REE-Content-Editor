@@ -85,6 +85,10 @@ public class EntitySelection : IWindowHandler
                 selected = workspace.ResourceManager.CreateEntity(selected.Type, selected.ToJson(workspace.Env));
                 data.Context.children.Clear();
                 SelectedEntityId = selected.Id;
+                showCreateSettings = false;
+                if (data.Context.GetChildByValue<string>() == null) {
+                    data.Context.AddChild(Lang.Buttons.Rename, selected.Label);
+                }
             }
             ImguiHelpers.Tooltip(Lang.Buttons.Duplicate);
             ImGui.EndDisabled();
@@ -191,6 +195,10 @@ public class EntitySelection : IWindowHandler
             SelectedEntityId = selected.Id;
             workspace.CurrentBundle!.RecordEntity(selected);
             data.Context.ClearChildren();
+            showCreateSettings = false;
+            if (data.Context.GetChildByValue<string>() == null) {
+                data.Context.AddChild(Lang.Buttons.Rename, selected.Label);
+            }
         }
 
         if (selected == null) {

@@ -4,6 +4,10 @@ entities:
     id_field: styleNo
     to_string: "Mantle Style {id}: {data._MantleStyle:enum(app.MantleStyle)}"
     display_name: Style
+    enums:
+    - name: app.MantleStyle
+      format: "Mantle_{id:D03}"
+      primary: true
     fields:
     - name: DD2_StylePreview
       field_type: DD2_StylePreview

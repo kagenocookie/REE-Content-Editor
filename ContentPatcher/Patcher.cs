@@ -120,11 +120,12 @@ public class Patcher : IDisposable
 
             var hasAnyUndiffedResources = bundle.Files.Any(e => e.Diff == null && e.DiffTime < new DateTime(2025, 1, 1)) == true;
             if (hasAnyUndiffedResources) {
+                var undiffed = bundle.Files.Where(e => e.Diff == null && e.DiffTime < new DateTime(2025, 1, 1)).ToList();
                 // NOTE: we could skip ResourceManager.ClearInstances() if active bundle != null
                 // also, we could avoid loading _everything_ and instead only calculate diffs for anything that's missing them
                 // although considering this only happens, maybe, one time, and then just reuses the precomputed diff, not very high priority
                 workspace.SetBundle(bundle.Name);
-                Logger.Info("Re-generating bundle resource file diffs for " + bundle.Name);
+                Logger.Info("Re-generating bundle file diffs for " + bundle.Name);
                 workspace.ResourceManager.LoadActiveBundle();
                 // TODO Get list of modified resources?
                 workspace.SaveBundle();

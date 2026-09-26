@@ -220,10 +220,8 @@ public sealed class ContentWorkspace : IDisposable
                     }
                     var localEnum = resEntity.Enums[enumInfo.name] = new Dictionary<string, JsonElement>();
 
-                    var fmt = new StringFormatter(enumInfo.format, enumFormatter);
-
-                    var label = fmt.GetString(entity);
-                    var value = JsonSerializer.SerializeToElement(entity.Id);
+                    var label = enumInfo.GetFormattedLabel(resEntity);
+                    var value = JsonSerializer.SerializeToElement(enumInfo.GetFormattedValue(this, resEntity));
                     enumData[label] = value;
                     localEnum[label] = value.Clone();
                 }
@@ -261,7 +259,12 @@ public sealed class ContentWorkspace : IDisposable
 
     private static void TryExecuteDiff(Bundle bundle, FileHandle file)
     {
-        if (file.TargetPath != null && bundle.TryFindResource(file.TargetPath, out var resourceListing, out var localPath) && file.DiffHandler != null) {
+        if (file.TargetPath != null && bundle.TryFindResource(file.TargetPath, out var resourceListing, out var localPath)) {
+            if (file.DiffHandler == null) {
+                resourceListing.DiffTime = DateTime.UtcNow;
+                resourceListing.Diff = null;
+                return;
+            }
             try {
                 var newdiff = file.DiffHandler.FindDiff(file);
                 if (newdiff?.ToJsonString() != resourceListing.Diff?.ToJsonString()) {

@@ -4,6 +4,10 @@ entities:
     id_field: styleNo
     to_string: "Helm Style {id}: {data._HelmStyle:enum(app.HelmStyle)}"
     display_name: Style
+    enums:
+    - name: app.HelmStyle
+      format: "Helm_{id:D03}"
+      primary: true
     fields:
     - name: DD2_StylePreview
       field_type: DD2_StylePreview

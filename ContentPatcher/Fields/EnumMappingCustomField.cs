@@ -57,7 +57,18 @@ public class EnumMappingCustomField : CustomEntityFieldHandler<EnumMappingResour
     private EnumMappingResource DetermineEnumResource(ContentWorkspace workspace, ResourceEntity entity)
     {
         var enumdesc = workspace.Env.TypeCache.GetEnumDescriptor(Field.Config.RszClassRequired.name, RszFieldType.U32);
-        var value = Convert.ChangeType(idProperty.Get(entity) ?? entity.Id, enumdesc.BackingType);
+        var idprop = idProperty.Get(entity);
+        object? value = null;
+        if (idprop == null) {
+            // entity probably isn't fully initialized yet, try reading the raw data
+            var rawLabel = (entity.Data?.GetValueOrDefault(Field.config.name) as JsonValue)?.GetValue<string>();
+            if (!string.IsNullOrEmpty(rawLabel) &&
+                entity.Enums?.TryGetValue(Field.Config.RszClassRequired.name, out var entityEnum) == true &&
+                entityEnum.TryGetValue(rawLabel, out var storedValue)) {
+                value = storedValue.Deserialize(enumdesc.BackingType);
+            }
+        }
+        value ??= Convert.ChangeType(idprop ?? entity.Id, enumdesc.BackingType);
         if (value == null) {
             Logger.Error($"Failed to determine enum value for entity {entity}");
             return new EnumMappingResource(Field.Config, "", -1) { ID = -1 };

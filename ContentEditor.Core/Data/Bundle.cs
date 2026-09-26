@@ -101,6 +101,7 @@ public class Bundle : BaseBundle
             var other = Entities[i];
             if (other.Type == type && other.Id == id) {
                 Entities.RemoveAt(i);
+                RuntimeBundle?.RemoveEntity(type, id);
                 return true;
             }
         }

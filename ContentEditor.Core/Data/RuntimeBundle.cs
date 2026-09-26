@@ -42,6 +42,24 @@ public class RuntimeBundle : BaseBundle
         InitialInsertIds = main.InitialInsertIds;
     }
 
+    public bool RemoveEntity(string type, long id)
+    {
+        if (RuntimeEntities == null) return false;
+
+        for (int i = 0; i < RuntimeEntities.Count; i++) {
+            var other = RuntimeEntities[i];
+            if (!(other.TryGetPropertyValue("type", out var tstr) && tstr?.GetValue<string>() == type)) {
+                continue;
+            }
+            if (!(other.TryGetPropertyValue("id", out var tid) && tid?.GetValue<long>() == id)) {
+                continue;
+            }
+            RuntimeEntities.RemoveAt(i);
+            return true;
+        }
+        return false;
+    }
+
     public void Save()
     {
         Touch();

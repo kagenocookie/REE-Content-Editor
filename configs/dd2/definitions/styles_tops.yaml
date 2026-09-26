@@ -6,6 +6,11 @@ entities:
     display_name: Style
     zero_entity:
       id: 0
+    enums:
+    - name: app.TopsStyle
+      format: "Tops_{id:D03}"
+      value: "{styleNo.value}"
+      primary: true
     fields:
     - name: DD2_StylePreview
       field_type: DD2_StylePreview
@@ -17,10 +22,6 @@ entities:
     - name: data
       display_after: styleNo
       field_id: { field: styleNo, path: value }
-      # enums:
-      # - name: app.TopsStyle
-      #   new_label_format: "Tops_{data._TopsStyle:D03}"
-      #   primary: true
       resource:
         type: group
         id: [_TopsStyle]
@@ -73,6 +74,8 @@ entities:
         # null out furmask configs for runtime since it's storing pfb paths instead of direct files
         # this way it'll just read the active state which will be whichever we patched in
         "null.1": "furmasks"
+        data.female._TopsStyle: styleHash
+        data.male._TopsStyle: styleHash
 
   items.styles.tops.TopsBdMesh:
     to_string: "TopsBdMesh {id:enum(app.CharacterEditDefine.TopsBdMeshID)} | {mesh._Mesh}"

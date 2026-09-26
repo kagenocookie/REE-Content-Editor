@@ -87,6 +87,15 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
             list.Remove(existingCatalogEntry);
             catFile.Modified = true;
         }
+
+        if (IsEmptyObject(resource.Instance)) {
+            if (existingCatalogEntry != null) {
+                list.Remove(existingCatalogEntry);
+                catFile.Modified = true;
+            }
+            return;
+        }
+
         if (resource.CatalogEntry == null) {
             resource.CatalogEntry = existingCatalogEntry;
             if (resource.CatalogEntry == null) {
@@ -248,5 +257,21 @@ public class ResourceProxyPrefabHandler : ResourceHandler, IResourceHandlerStati
         foreach (var (id, resource) in resources) {
             UpdateCatalogEntry(resource, id, workspace);
         }
+    }
+
+    private static bool IsEmptyObject(RszInstance instance)
+    {
+        // only check string fields for nonempty - these kinds of files are mostly just resource paths inside prefabs
+        // consider expanding if we get more meaningful fields anywhere
+        for (int i = 0; i < instance.Fields.Length; i++) {
+            var f = instance.Fields[i];
+            var v = instance.Values[i];
+            if (f.type is RszFieldType.String or RszFieldType.Resource) {
+                if (!string.IsNullOrEmpty(v as string)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }

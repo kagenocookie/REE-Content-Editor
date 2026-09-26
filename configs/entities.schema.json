@@ -468,7 +468,11 @@
           "type": "string"
         },
         "format": {
-          "description": "SmartFormat string for formatting enum values. Uses {id} for the raw ID value.",
+          "description": "SmartFormat string for formatting enum labels. Can use {id} or any of the entity's fields.",
+          "type": "string"
+        },
+        "value": {
+          "description": "SmartFormat string for assigning the enum value. Can use {id} or any of the entity's fields.",
           "type": "string"
         },
         "primary": {

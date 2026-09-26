@@ -21,6 +21,7 @@ public class ResourceEntity : Entity
         Type = source.Type;
         Label = source.Label;
         Data = source.Data;
+        Enums = source.Enums;
         Config = config;
     }
 
@@ -173,6 +174,9 @@ public class ResourceEntity : Entity
 
             var newValue = field.ValueHandler.ApplyValue(workspace, currentValue, data, this, state);
             if (currentValue == null && newValue != null) {
+                if (Config.PrimaryField == field) {
+                    Config.PrimaryEnum?.UpdateEnum(workspace, this);
+                }
                 var resourceId = field.GetIDForEntity(this);
                 workspace.ResourceManager.AddResource(field.Config.Type, resourceId, newValue, state);
             }
