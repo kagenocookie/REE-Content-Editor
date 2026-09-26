@@ -86,6 +86,7 @@ public class PartSwapper(GameObject gameObject, RszInstance data) : BaseMultiMes
         UpdateBodyMesh(Gender, Species, SkinStyle);
         UpdateHeadMesh(Gender, Species, HeadStyle, SkinStyle);
         UpdateHairMesh(HairStyle, Species);
+        UpdateBeard(BeardStyle, Species);
 
         UpdateTops(Gender, TopsStyle);
         UpdatePants(Gender, PantsStyle);
@@ -139,6 +140,27 @@ public class PartSwapper(GameObject gameObject, RszInstance data) : BaseMultiMes
             : GetSkinOrNull("HairSkin", skinId);
 
         AddMesh(mesh, skin);
+    }
+
+    private void UpdateBeard(uint beardStyle, uint species)
+    {
+        var swap = GetEntitySwapItem("BeardStyle__data", beardStyle);
+        if (swap == null) return;
+
+        var swapSpecies = (uint)swap.GetFieldValue("_Species")!;
+        if (swapSpecies != species) {
+            return;
+        }
+
+        var meshId = (uint)swap.GetFieldValue("_MeshID")!;
+        var skinId = (uint)swap.GetFieldValue("_SkinID")!;
+        var textureId = (uint)swap.GetFieldValue("_TextureID")!;
+
+        var mesh = GetMeshOrNull("BeardMesh", meshId);
+        if (mesh == null) return;
+        // note: "texture" in this case is a material parameter list that includes textures
+
+        AddMesh(mesh, GetSkinOrNull("BeardSkin", skinId));
     }
 
     private void UpdateTops(uint gender, uint styleHash)
@@ -344,6 +366,18 @@ public class PartSwapper(GameObject gameObject, RszInstance data) : BaseMultiMes
             ?.Get<RSZObjectResource>(skinField)
             ?.Instance
             ?.GetFieldValue("_Material") as string;
+
+        return string.IsNullOrEmpty(path) ? null : path;
+    }
+
+    private string? GetTextureOrNull(string skinEntity, uint texId, string textureField = "texture")
+    {
+        if (texId == 0) return null;
+
+        var path = Workspace.ResourceManager.GetActiveEntityInstance(skinEntity, texId)
+            ?.Get<RSZObjectResource>(textureField)
+            ?.Instance
+            ?.GetFieldValue("_Texture") as string;
 
         return string.IsNullOrEmpty(path) ? null : path;
     }

@@ -1,0 +1,101 @@
+entities:
+  charaEdit.beard.BeardStyle:
+    primary_field: data
+    to_string: "Beard {data._BeardStyle:enum(app.BeardStyle)} [#{id}]"
+    display_name: Style
+    enums:
+    - name: app.BeardStyle
+      format: "Beard_{id:D03}"
+      primary: true
+    fields:
+    - name: DD2_StylePreview
+      field_type: DD2_StylePreview
+      required: true
+      resource:
+        params:
+          dataField: _BeardStyle
+          partField: _Meta._BeardStyle
+    - name: data
+      required: true
+      resource:
+        id: [_BeardStyle]
+        custom_id_range: [10000, 10000000]
+        classname: app.BeardSwapItem
+        file: AppSystem/CharaEdit/ch000/SwapData/BeardSwapData.user
+        type: array-file
+        params:
+          nested: false
+
+  charaEdit.beard.BeardMesh:
+    to_string: "BeardMesh {id:enum(app.CharacterEditDefine.BeardMeshID)} | {mesh._Mesh}"
+    display_name: Beard Mesh
+    enums:
+    - name: "app.CharacterEditDefine.BeardMeshID"
+      format: "beard_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: mesh
+      required: true
+      resource:
+        custom_id_range: [10000, 10000000]
+        file: AppSystem/CharaEdit/ch000/Catalog/BeardMeshCatalog.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+    - name: wrap
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/BeardWrapDeformerCatalog.user
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+
+  charaEdit.beard.BeardSkin:
+    to_string: "BeardSkin {id:enum(app.CharacterEditDefine.BeardSkinID)} | {skin._Material}"
+    display_name: Beard Skin
+    enums:
+    - name: app.CharacterEditDefine.BeardSkinID
+      format: "beard_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: skin
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/BeardSkinCatalog.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+  charaEdit.beard.BeardTexture:
+    to_string: "BeardTexture {id:enum(app.CharacterEditDefine.BeardTextureID)} | {texture._Materials[0]._Texture}"
+    display_name: Beard Texture
+    enums:
+    - name: app.CharacterEditDefine.BeardTextureID
+      format: "beard_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: texture
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/BeardTextureCatalog.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+
+classes:
+  app.BeardSwapItem:
+    to_string: "{class_shortname} {_BeardStyle:enum(app.BeardStyle)}"
+    fields:
+      _BeardStyle: { readOnly: true }
+      _MeshID: { enum: BeardMesh }
+      _SkinID: { enum: BeardSkin }
+      _TextureID: { enum: BeardTexture }

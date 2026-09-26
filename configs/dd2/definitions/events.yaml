@@ -1,7 +1,5 @@
-# TODO optimize UI for app.SuddenQuestSelectData.SelectData: display only ID + expandable event context info, or a button to open the context in a new window
-
 entities:
-  events.event:
+  events.Event:
     to_string: "Event {id}: {data._StartLocation:enum(app.AIKeyLocation)}"
     fields:
       - name: data
@@ -19,7 +17,7 @@ entities:
       to_both:
         data: data
 
-  events.event_context:
+  events.EventContext:
     to_string: "Event context {id}: {data._Data._Type:enum(app.QuestDefine.SuddenQuestType)} - NPC={data._Data._NpcID:enum(app.CharacterID)}"
     fields:
       - name: data
@@ -38,7 +36,7 @@ entities:
       to_both:
         data._Data: data
 
-  events.event_spawns:
+  events.EventSpawns:
     enums:
     - name: app.DomainQueryGenerateRequestID
       format: "CustomTable{id}"
@@ -72,6 +70,10 @@ classes:
     to_string: "Generate table {_RequestID:enum(app.DomainQueryGenerateRequestID)}"
     fields:
       _RequestID: { readOnly: true }
+  app.SuddenQuestSelectData.SelectData:
+    to_string: "SelectData {_Key:entity(EventContext)}"
+    fields:
+      _Key: { enum: EventContext }
   app.GenerateRowData:
     fields:
       _CharaID: { enum: app.CharacterID }

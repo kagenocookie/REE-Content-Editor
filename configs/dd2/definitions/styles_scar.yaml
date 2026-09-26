@@ -1,0 +1,45 @@
+entities:
+  charaEdit.scar.ScarStyle:
+    primary_field: data
+    to_string: "Scar {data._Style:enum(app.ScarStyle)} [#{id}]"
+    display_name: Style
+    enums:
+    - name: app.ScarStyle
+      format: "Scar_{id:D03}"
+      primary: true
+    fields:
+    - name: data
+      required: true
+      resource:
+        id: [_Style]
+        type: array-file
+        custom_id_range: [10000, 10000000]
+        classname: app.ScarSwapItem
+        file: AppSystem/CharaEdit/ch000/SwapData/ScarSwapData.user
+
+  charaEdit.scar.ScarTexture:
+    to_string: "ScarTexture {id:enum(app.CharacterEditDefine.ScarID)} | {texture._Textures[0]}"
+    allow_templates: false
+    enums:
+    - name: "app.CharacterEditDefine.ScarID"
+      format: "Scars_{id}"
+      primary: true
+    zero_entity:
+      id: 0
+      label: None
+    fields:
+    - name: texture
+      required: true
+      resource:
+        file: AppSystem/CharaEdit/ch000/Catalog/ScarCatalog.user
+        custom_id_range: [10000, 10000000]
+        type: resource_proxy_pfb
+        params:
+          skipFields: 1
+
+classes:
+  app.ScarSwapItem:
+    to_string: "{class_shortname} {_Style:enum(app.ScarStyle)}"
+    fields:
+      _Style: { readOnly: true }
+      _TextureID: { enum: ScarTexture }

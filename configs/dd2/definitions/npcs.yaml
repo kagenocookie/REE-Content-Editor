@@ -41,6 +41,21 @@ entities:
           id: [ID]
           type: array-file
           custom_id_range: [1000, 999999]
+          filter:
+          - property: _SubNPC
+            equals: false
+          file: AppSystem/ch/ch300/UserData/CharacterDataList.user
+          classname: app.CharacterData
+      - name: alternativeData
+        label: Sub NPC Data
+        required: true
+        resource:
+          id: [ID]
+          type: array-file
+          custom_id_range: [1000, 999999]
+          filter:
+          - property: _SubNPC
+            equals: true
           file: AppSystem/ch/ch300/UserData/CharacterDataList.user
           classname: app.CharacterData
       - name: edit_data

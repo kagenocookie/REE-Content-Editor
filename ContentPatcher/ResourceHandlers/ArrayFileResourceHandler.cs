@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json.Nodes;
+using ContentEditor;
 using ReeLib;
 
 namespace ContentPatcher;
@@ -89,6 +90,9 @@ public class ArrayFileResourceHandler : ResourceHandler, IResourceHandlerStatic
                     }
                     objlist.Instances.Add(item);
                 } else {
+                    if (dict.ContainsKey(id)) {
+                        Logger.Warn($"Found duplicate {Config} resource {id}");
+                    }
                     dict[id] = new RSZObjectResource(Config, item, filepath);
                 }
             }
